@@ -5,6 +5,8 @@ description: Route sign-in for your company's email domains through your own ide
 
 Single sign-on delegates Carbon authentication to a SAML 2.0 <Term>identity provider</Term>, such as Okta, Entra ID, or Google Workspace. After you verify an email domain through DNS, Carbon routes ERP and MES users on that domain to the identity provider automatically. <Term>Magic link</Term> and other sign-in methods remain available until you enable [Require SSO](#requiring-sso).
 
+Single sign-on decides how people sign in, not who is a member. To have your identity provider add people to Carbon and remove them when they leave, set up [SCIM provisioning](/docs/reference/scim-provisioning).
+
 ## Requirements
 
 SSO is an Enterprise Edition (EE) feature of your own [self-hosted](/docs/platform/self-hosting) deployment (`CARBON_EDITION=enterprise`, which requires a [commercial license](/docs/platform/licensing)). Carbon Cloud sign-in is unaffected. Enable it through [environment variables](/docs/platform/self-hosting/environment-variables):

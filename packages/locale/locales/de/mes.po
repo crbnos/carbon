@@ -3150,6 +3150,9 @@ msgstr "Details des Dienstleistungsauftrags"
 msgid "Session locked"
 msgstr "Sitzung gesperrt"
 
+msgid "Set by your identity provider"
+msgstr "Vom Identitätsanbieter festgelegt"
+
 msgid "Set Clock Out"
 msgstr "Ausstempelzeit setzen"
 
@@ -3187,7 +3190,7 @@ msgid "Short pick {itemName}"
 msgstr "Kurzkommissionierung {itemName}"
 
 msgid "Short: {available} of {needed}"
-msgstr "Fehlbestand: {available} von {needed}"
+msgstr "Fehlmenge: {available} von {needed}"
 
 msgid "Show description"
 msgstr "Beschreibung anzeigen"

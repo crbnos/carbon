@@ -76,6 +76,7 @@
     "permissions",
     "two-factor",
     "single-sign-on",
+    "scim-provisioning",
     "account",
     "onboarding",
     "keyboard-shortcuts",

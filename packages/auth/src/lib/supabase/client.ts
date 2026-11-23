@@ -85,12 +85,16 @@ const viaInternalUrl =
 export const getCarbonClient = (
   supabaseKey: string,
   accessToken?: string,
-  fetch: typeof globalThis.fetch = storageReadFetch
+  fetch: typeof globalThis.fetch = storageReadFetch,
+  extraHeaders?: Record<string, string>
 ): SupabaseClient<Database, "public"> => {
   // Always explicit. Left to supabase-js, a new-format key (`sb_secret_…`) is
   // not sent as the bearer on Edge Function calls, and those functions tell a
   // service-role caller from anyone else by this header.
-  const headers = { Authorization: `Bearer ${accessToken ?? supabaseKey}` };
+  const headers = {
+    ...extraHeaders,
+    Authorization: `Bearer ${accessToken ?? supabaseKey}`
+  };
 
   const client = createClient<Database, "public">(SUPABASE_URL!, supabaseKey, {
     db,

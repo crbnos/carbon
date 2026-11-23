@@ -547,6 +547,10 @@ msgstr "{0} строк"
 msgid "{0} lines to map"
 msgstr "{0} строк для сопоставления"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "Участников: {0}"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1564,6 +1568,9 @@ msgstr "1 задание создано"
 
 msgid "1 line"
 msgstr "1 строка"
+
+msgid "1 member"
+msgstr "1 участник"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 деталь пропущена — у неё уже есть открытое задание"
@@ -3159,6 +3166,9 @@ msgstr "Добавьте дополнительный уровень безоп�
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "Добавить раздел операций, перечисляющий каждую операцию маршрута с ожидаемыми временами и сканируемыми штрих-кодами."
 
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Добавляйте и убирайте участников автоматически из Okta или Microsoft Entra ID, чтобы сотрудники, которых IT-отдел отключает, теряли доступ к Carbon."
+
 msgid "Add another option"
 msgstr "Добавить другой вариант"
 
@@ -4515,7 +4525,7 @@ msgid "Approved On"
 msgstr "Утверждено"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr "Утверждение также сторнирует его поступления {receipts}: поступивший по ним запас будет списан, а их проводки сторнированы. Операция отклоняется, если этот запас был использован после поступления."
+msgstr "Утверждение также сторнирует его поступления {receipts}: поступивший по ним запас удаляется, а их проведения сторнируются. Утверждение отклоняется, если этот запас с тех пор был использован."
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
 msgstr "Утверждение немедленно удалит {readableId}. Это нельзя отменить."
@@ -7216,6 +7226,9 @@ msgstr "Выберите поставщика"
 
 msgid "Choose suppliers"
 msgstr "Выберите поставщиков"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "Выберите тип сотрудника, который каждая группа присваивает своим участникам. Если сотрудник состоит в нескольких группах, применяется тип из группы с более высоким приоритетом."
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Выберите первый день текущего периода или одного из 3 периодов перед ним."
@@ -10130,6 +10143,9 @@ msgstr "CC по умолчанию"
 msgid "Default CC Recipients"
 msgstr "Получатели CC по умолчанию"
 
+msgid "Default employee type"
+msgstr "Тип сотрудника по умолчанию"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Счет учета по умолчанию, кредитуемый при выбытии основного средства, приносящем прибыль."
 
@@ -10147,6 +10163,9 @@ msgstr "Счет расходов главной книги по умолчан�
 
 msgid "Default horizon (days)"
 msgstr "Горизонт планирования по умолчанию (дней)"
+
+msgid "Default location"
+msgstr "Площадка по умолчанию"
 
 msgid "Default Method"
 msgstr "Метод по умолчанию"
@@ -12300,6 +12319,10 @@ msgstr "Кредиторская задолженность за возмеще�
 msgid "Employee Type"
 msgstr "Тип сотрудника"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "Тип сотрудника для {0}"
+
 msgid "Employee Types"
 msgstr "Типы сотрудников"
 
@@ -12593,6 +12616,9 @@ msgstr "Введите 6-значный код из приложения-аут�
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr ""
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "Введите базовый URL и этот токен в настройках автоматического создания учётных записей у вашего поставщика удостоверений. Этот токен показывается один раз."
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Введите URL Onshape, ID клиента и клиентский секрет вашего приватного OAuth приложения, затем сохраните."
@@ -14508,6 +14534,9 @@ msgstr "Генерируйте идентификаторы материалов
 msgid "Generate Picking List"
 msgstr "Создать лист отбора"
 
+msgid "Generate token"
+msgstr "Создать токен"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "Сгенерировано {created} шагов из плана движения"
 
@@ -14841,6 +14870,9 @@ msgstr "Группировать по"
 
 msgid "Group by material"
 msgstr "Группировать по материалу"
+
+msgid "Group Mappings"
+msgstr "Сопоставления групп"
 
 msgid "Group Members"
 msgstr "Члены группы"
@@ -15218,6 +15250,9 @@ msgstr "Как часто это средство измерения должн�
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Как часто это техобслуживание повторяется — Ежедневно, Еженедельно, Ежемесячно, На циклический пересчет; выбор «Ежедневно» показывает селектор дня недели, остальные используют более простую математику интервалов."
+
+msgid "How SCIM works"
+msgstr "Как работает SCIM"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Насколько строго должны совпадать свойства материала для размещения операций в одной серии на этом процессе."
@@ -16426,7 +16461,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Оно все еще используется записью «{table}»; сначала уберите эту запись."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "Он никогда не затрагивает сторону поставщика в учёте. Сначала аннулируйте отгрузки и предоплаты заказа и уберите его строки из счетов-фактур полученных. Запрос отклоняется, пока вы этого не сделаете."
+msgstr "Он никогда не затрагивает учет поставщика. Сначала аннулируйте отгрузки и предоплаты заказа и уберите его строки из полученных счетов-фактур. Запрос отклоняется, пока вы этого не сделаете."
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "Удаляет {readableId} навсегда, независимо от статуса. Это нельзя отменить."
@@ -17010,6 +17045,9 @@ msgstr "Последний раз передано {lastPushed}"
 msgid "Last Quarter"
 msgstr "Последний квартал"
 
+msgid "Last request"
+msgstr "Последний запрос"
+
 msgid "Last run"
 msgstr "Последний запуск"
 
@@ -17257,6 +17295,9 @@ msgstr "Позвольте членам входить через вашего �
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "Позволить проектам с проектным запасом использовать свободный неприсвоенный запас этого элемента в этом месте"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "Позвольте вашему поставщику удостоверений добавлять, обновлять и убирать участников через SCIM."
 
 msgid "Let's Build"
 msgstr "Начнём производство"
@@ -18044,6 +18085,12 @@ msgstr "Управление подпиской"
 msgid "Manage your subscription and billing information"
 msgstr "Управляйте своей подпиской и информацией о выставлении счетов"
 
+msgid "Managed by your identity provider"
+msgstr "Управляется вашим поставщиком удостоверений"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "Управляется вашим поставщиком удостоверений. Изменения имени, признака «Активный» или типа сотрудника, внесённые здесь, могут быть перезаписаны при его следующем обновлении."
+
 msgid "Manager"
 msgstr "Менеджер"
 
@@ -18457,8 +18504,14 @@ msgstr "Участник"
 msgid "Members"
 msgstr "Участники"
 
+msgid "Members in no mapped group get this type"
+msgstr "Участники, не входящие ни в одну сопоставленную группу, получают этот тип"
+
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "Члены консолидируют спрос вместе в MRP. Группа должна находиться на площадке проекта"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "Сотрудники с этим типом могут войти в систему, но ничего не могут открыть. Назначьте типу права доступа в разделе «Пользователи» → «Типы сотрудников» или выберите другой."
 
 msgid "Memo"
 msgstr "Памятка"
@@ -21044,7 +21097,7 @@ msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr "Пока ничего не удалено. Запрос отправляется на утверждение другим администраторам, и он будет удалён, когда один из них его утвердит."
+msgstr "Пока ничего не удалено. Запрос поступает на утверждение другим администраторам и удаляется, когда один из них его утвердит."
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "Пока ничего не удалено. Запрос отправляется на утверждение другим администраторам, и заказ будет удалён, когда один из них его утвердит."
@@ -22626,7 +22679,7 @@ msgid "Payments and credits applied to this invoice. A pending row is from a Dra
 msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "Платежи и кредит-ноты, отнесённые к нему, сначала снимаются: каждый платёж остаётся проведённым как неразнесённая сумма, которую можно отнести в другое место или принудительно удалить. Признанная по нему выручка сторнируется."
+msgstr "Платежи и кредит-ноты, примененные к нему, сначала отвязываются: каждый платеж остаётся проведённым как неприменённая сумма, которую можно применить в другом месте или принудительно удалить. Выручка, уже признанная по нему, сторнируется."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "Сначала с него снимаются применённые к нему платежи и кредит-ноты: каждый платёж остаётся проведённым в виде неприменённой суммы, которую можно применить к другому документу или принудительно удалить. Стоимость, которую он добавил к капитализированному основному средству, будет изъята; уже проведённая амортизация остаётся."
@@ -23550,7 +23603,7 @@ msgid "Print Output ({0})"
 msgstr "Вывод печати ({0})"
 
 msgid "Print this item's serial label when its job's last operation completes."
-msgstr "Печать серийной этикетки изделия при завершении последней операции его производственного заказа."
+msgstr "Печать серийной этикетки номенклатуры при завершении последней операции производственного заказа."
 
 msgid "Print travelers at the pick"
 msgstr "Печатать маршрутные листы при отборе"
@@ -23947,6 +24000,12 @@ msgstr "Предварительная операция"
 
 msgid "Provisional rate"
 msgstr "Предварительная ставка"
+
+msgid "Provisioned members"
+msgstr "Синхронизированные участники"
+
+msgid "Provisioning"
+msgstr "Автоматическое создание учётных записей"
 
 msgid "PTO"
 msgstr "PTO"
@@ -25110,11 +25169,17 @@ msgstr "Пересчитать из условий"
 msgid "Regenerate payments from the terms?"
 msgstr "Пересчитать платежи из условий?"
 
+msgid "Regenerate SCIM token"
+msgstr "Создать токен SCIM заново"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Пересчитать график для этой площадки сейчас. Пересчет также выполняется автоматически примерно через 30 секунд после последнего изменения в планировании (изменения группируются, поэтому несколько быстрых изменений запускают один пересчет)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Восстановить миниатюру из 3D модели"
+
+msgid "Regenerate token"
+msgstr "Создать токен заново"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "Переформировано {created} шагов из плана движения"
@@ -27164,6 +27229,18 @@ msgstr "Конфликт расписания"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "Конфликт планирования: операции не могут уложиться в срок выполнения"
 
+msgid "SCIM base URL"
+msgstr "Базовый URL SCIM"
+
+msgid "SCIM Connection"
+msgstr "Подключение SCIM"
+
+msgid "SCIM Provisioning"
+msgstr "Автоматическое создание учётных записей SCIM"
+
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM задаёт имя этого человека и статус активности, а также тип сотрудника после сопоставления групп. Измените эти данные у своего провайдера удостоверений."
+
 msgid "Scope"
 msgstr "Область действия"
 
@@ -28097,6 +28174,12 @@ msgstr "Установить цель"
 msgid "Set at activation"
 msgstr "Установлено при активации"
 
+msgid "Set by your identity provider"
+msgstr "Задаётся вашим провайдером удостоверений"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "Задаётся сопоставлениями групп вашего провайдера удостоверений"
+
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Настройте Carbon в соответствии с тем, как работает ваша организация: участки, детали, BOM, Перечень операций и используемые вами процессы."
 
@@ -28177,6 +28260,9 @@ msgstr "Настройте бухгалтерию для использован�
 
 msgid "Set up authenticator app"
 msgstr "Установить приложение аутентификации"
+
+msgid "Set up SCIM"
+msgstr "Настроить SCIM"
 
 msgid "Set up the right way"
 msgstr "Правильная настройка"
@@ -30877,6 +30963,9 @@ msgstr ""
 msgid "The current plan changed under this change request"
 msgstr "Текущий план изменился в соответствии с этим запросом на изменение"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "Текущий токен перестанет работать сразу. Автоматическое создание учётных записей будет остановлено, пока вы не введёте новый токен у поставщика удостоверений."
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "Покупатель фактически покупает единицу. При начислении она исключается из основных средств, продажа регистрируется, и проценты начисляются на дебиторскую задолженность в течение срока."
 
@@ -32286,6 +32375,9 @@ msgstr ""
 msgid "This download link is invalid or has been tampered with."
 msgstr "Эта ссылка для скачивания недействительна или была повреждена."
 
+msgid "This employee type has no permissions"
+msgstr "У этого типа сотрудников нет прав доступа"
+
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "Это значение должно остаться. Добавьте его снова через «Вставить значение»."
 
@@ -32972,6 +33064,9 @@ msgstr "Переключить боковую панель"
 msgid "Toggle views"
 msgstr "Переключить представления"
 
+msgid "Token"
+msgstr "Токен"
+
 msgid "Tol-"
 msgstr "Тол-"
 
@@ -33402,8 +33497,14 @@ msgstr "Повторить попытку"
 msgid "Tuesday"
 msgstr "Вторник"
 
+msgid "Turn off"
+msgstr "Отключить"
+
 msgid "Turn Off"
 msgstr "Выключить"
+
+msgid "Turn off SCIM provisioning"
+msgstr "Отключить автоматическое создание учётных записей SCIM"
 
 msgid "Turn On"
 msgstr "Включить"
@@ -35109,7 +35210,7 @@ msgid "What to set up"
 msgstr "Что настроить"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr "Что было введено ошибочно и почему это нельзя исправить или аннулировать"
+msgstr "Что было введено неверно и почему это нельзя исправить или аннулировать"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "Что было введено ошибочно и почему заказ нельзя исправить или закрыть"
@@ -35907,6 +36008,15 @@ msgstr "Экспорт готовится. Мы уведомим вас, ког�
 msgid "Your GL accounts"
 msgstr "Ваши счета ГЛ"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "Ваш поставщик удостоверений добавляет, обновляет и удаляет участников, которыми он управляет."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "Ваш поставщик удостоверений больше не может добавлять или убирать участников. Участники, которых он создал, остаются без изменений, а при повторной настройке SCIM процесс продолжается с того места, где остановился."
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "Ваш провайдер удостоверений создаёт пользователей с типом сотрудника и площадкой по умолчанию, указанными ниже. Сопоставьте его группы с типами сотрудников после того, как он их передаст."
+
 msgid "your Implementation Lead"
 msgstr "ваш руководитель внедрения"
 
@@ -35957,6 +36067,9 @@ msgstr "Ваши реальные данные загружены, вы пров
 
 msgid "Your reason and the decision are kept in the audit log."
 msgstr "Ваша причина и решение сохраняются в журнале аудита."
+
+msgid "Your SCIM token"
+msgstr "Ваш токен SCIM"
 
 msgid "Your session was locked after inactivity."
 msgstr "Ваш сеанс был заблокирован из-за неактивности."

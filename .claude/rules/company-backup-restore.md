@@ -114,6 +114,16 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   two excluded sets are unioned into `CATALOG_EXCLUDED_TABLES`, which
   `assertBackupImportable` also skips — an OLDER backup that still carries an
   excluded table is not schema drift, its rows are just ignored on load),
+  `FOREIGN_SKIPPED_TABLES` (`scimConnection`, `scimUser`, `scimGroup`,
+  `scimGroupMember`: an identity provider's SCIM state, whose token hash is unique
+  across all companies; a foreign restore wipes them and loads none, and an import
+  skips them, so SCIM is set up again — `restoreLoadsTable`),
+  `RESTORE_STRIPPED_COLUMNS` (`scimConnection.tokenHash` / `tokenPreview`: a
+  restore from a backup leaves them NULL, so a token regenerated or turned off
+  since the backup never works again and the company comes back with SCIM off, its
+  SCIM people and groups kept; a revert keeps them, since its snapshot is minutes
+  old — `restoreLoadsColumn`, `wipeAndLoad`'s `stripSecrets`; pinned by
+  `restore-scope.test.ts`),
   `RESEED_SKIPPED_TABLES` (memberships/invites/employee/externalIntegrationMapping
   — skipped on onboarding reseed), `IN_PLACE_SKIPPED_TABLES` (access/identity
   tables a restore must keep so the user isn't locked out).

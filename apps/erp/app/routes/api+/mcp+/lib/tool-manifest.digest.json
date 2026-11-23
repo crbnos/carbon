@@ -1823,7 +1823,7 @@
     {"name":"users_getUsersWithVerifiedMfa","classification":"READ","schema":"31b84d65b2ac","response":"4c1fdc714231","permission":"users:view","paginates":false},
     {"name":"users_resolveUserSelectIds","classification":"WRITE","schema":"1ddda22ecba8","response":"7fdfa4c9e77e","permission":"users:update","paginates":false},
     {"name":"users_searchUsersForSelect","classification":"READ","schema":"b9c0b50026a7","response":"c9c1df9c3e28","permission":"users:view","paginates":false},
-    {"name":"users_updatePublicAccount","classification":"WRITE","schema":"33bae4c74639","response":"8394fbabd845","permission":"none","paginates":false},
+    {"name":"users_updatePublicAccount","classification":"WRITE","schema":"1ce670a17890","response":"8394fbabd845","permission":"none","paginates":false},
     {"name":"users_upsertNotificationPreference","classification":"WRITE","schema":"537337e9e9aa","response":"bcde375ebd4c","permission":"none","paginates":false}
   ]
 }

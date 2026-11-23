@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { deactivateEmployee } from "./users.server";
+import { apiKeyCacheKey } from "./api-key.server";
+import {
+  deactivateEmployee,
+  deactivateUser,
+  deleteUserApiKeys
+} from "./users.server";
 
 // Import-safety: the module builds a Supabase client at import.
 vi.hoisted(() => {
@@ -129,5 +134,51 @@ describe("deactivateEmployee", () => {
     expect(update?.payload).toEqual({
       permissions: { parts_view: [OTHER_COMPANY] }
     });
+  });
+});
+
+describe("deleteUserApiKeys", () => {
+  const keys = [
+    { id: "key_1", keyHash: "hash_1" },
+    { id: "key_2", keyHash: "hash_2" }
+  ];
+
+  it("deletes the person's keys and drops their cached lookups, so they stop at once", async () => {
+    kv.set(apiKeyCacheKey("hash_1"), "{}");
+    kv.set(apiKeyCacheKey("hash_2"), "{}");
+    const client = makeClient({ apiKey: { data: keys, error: null } }) as any;
+
+    const result = await deleteUserApiKeys(client, USER, COMPANY);
+
+    expect(result.success).toBe(true);
+    expect(ops).toEqual([{ table: "apiKey", op: "delete" }]);
+    expect(kv.size).toBe(0);
+  });
+
+  it("deletes nothing when the keys cannot be read", async () => {
+    const client = makeClient({
+      apiKey: { data: null, error: { message: "boom" } }
+    }) as any;
+
+    const result = await deleteUserApiKeys(client, USER, COMPANY);
+
+    expect(result.success).toBe(false);
+    expect(ops).toEqual([]);
+  });
+});
+
+describe("deactivateUser", () => {
+  it("removes the API keys before the membership, so a failed cleanup changes nothing and can be retried", async () => {
+    // After the membership is gone a retry takes the "already deactivated"
+    // branch and never reaches the keys, which would keep working.
+    const client = makeClient({
+      apiKey: { data: null, error: { message: "boom" } },
+      userToCompany: { data: { role: "employee" }, error: null }
+    }) as any;
+
+    const result = await deactivateUser(client, USER, COMPANY);
+
+    expect(result.success).toBe(false);
+    expect(ops).toEqual([]);
   });
 });

@@ -547,6 +547,10 @@ msgstr "{0} पंक्तियां"
 msgid "{0} lines to map"
 msgstr "{0} लाइनें मैप करने के लिए"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "{0} सदस्य"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1564,6 +1568,9 @@ msgstr "1 नौकरी बनाई गई"
 
 msgid "1 line"
 msgstr "1 पंक्ति"
+
+msgid "1 member"
+msgstr "1 सदस्य"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 पार्ट छोड़ा गया — इसके पास पहले से एक खुला जॉब है"
@@ -3159,6 +3166,9 @@ msgstr "साइन इन करते समय एक प्रमाणक 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "एक ऑपरेशन सेक्शन जोड़ें जो प्रत्येक रूटिंग ऑपरेशन को उसके अपेक्षित समय और स्कैन बारकोड के साथ सूचीबद्ध करता है।"
 
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Okta या Microsoft Entra ID से सदस्यों को अपने-आप जोड़ें और निकालें, ताकि आपका IT विभाग जिन लोगों को हटाता है, उनकी Carbon तक पहुँच खत्म हो जाए।"
+
 msgid "Add another option"
 msgstr "एक और विकल्प जोड़ें"
 
@@ -4515,7 +4525,7 @@ msgid "Approved On"
 msgstr "पर अनुमोदित"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr "अनुमोदन करने पर इसकी प्राप्तियाँ {receipts} भी प्रतिवर्तित हो जाती हैं: उनके द्वारा लाया गया स्टॉक हटा दिया जाता है और उनकी पोस्टिंग प्रतिवर्तित कर दी जाती है। यदि उस स्टॉक का तब से उपयोग हो चुका है, तो यह अस्वीकार कर दिया जाता है।"
+msgstr "अनुमोदित करने पर इसकी प्राप्तियाँ {receipts} भी प्रतिवर्तित हो जाती हैं: उनके द्वारा लाया गया स्टॉक हटा दिया जाता है और उनकी पोस्टिंग प्रतिवर्तित कर दी जाती है। यदि वह स्टॉक तब से उपयोग हो चुका है, तो यह अस्वीकार कर दिया जाता है।"
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
 msgstr "अनुमोदन करते ही {readableId} हट जाएगा। इसे वापस नहीं लाया जा सकता।"
@@ -7216,6 +7226,9 @@ msgstr "आपूर्तिकर्ता चुनें"
 
 msgid "Choose suppliers"
 msgstr "आपूर्तिकर्ता चुनें"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "प्रत्येक समूह अपने सदस्यों को जो कर्मचारी प्रकार देता है, उसे चुनें। यदि कोई व्यक्ति एक से अधिक समूहों में है, तो उच्च स्तर वाले समूह का प्रकार लागू होगा।"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "वर्तमान अवधि के पहले दिन या उससे पहले की 3 अवधियों में से किसी एक के पहले दिन को चुनें।"
@@ -10130,6 +10143,9 @@ msgstr "डिफ़ॉल्ट cc"
 msgid "Default CC Recipients"
 msgstr "डिफ़ॉल्ट CC प्राप्तकर्ता"
 
+msgid "Default employee type"
+msgstr "डिफ़ॉल्ट कर्मचारी प्रकार"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "डिफ़ॉल्ट GL खाता जिसमें एक स्थिर-संपत्ति के निपटान के परिणामस्वरूप लाभ में क्रेडिट किया जाता है।"
 
@@ -10147,6 +10163,9 @@ msgstr "आवधिक मूल्यह्रास रन के लिए �
 
 msgid "Default horizon (days)"
 msgstr "डिफ़ॉल्ट क्षितिज (दिन)"
+
+msgid "Default location"
+msgstr "डिफ़ॉल्ट स्थान"
 
 msgid "Default Method"
 msgstr "डिफ़ॉल्ट विधि"
@@ -12300,6 +12319,10 @@ msgstr "कर्मचारी प्रतिपूर्ति देय"
 msgid "Employee Type"
 msgstr "कर्मचारी प्रकार"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} के लिए कर्मचारी प्रकार"
+
 msgid "Employee Types"
 msgstr "कर्मचारी प्रकार"
 
@@ -12593,6 +12616,9 @@ msgstr "पुनः शुरू करने के लिए अपने ऑ
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr ""
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "अपने पहचान प्रदाता की प्रोविज़निंग सेटिंग्स में बेस URL और यह टोकन दर्ज करें। यह टोकन केवल एक बार दिखाया जाता है।"
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "अपने निजी OAuth एप्लिकेशन का Onshape URL, क्लाइंट ID और क्लाइंट सीक्रेट दर्ज करें, फिर सहेजें।"
@@ -14156,7 +14182,7 @@ msgid "For Form 6765 Section E"
 msgstr "फॉर्म 6765 खंड E के लिए"
 
 msgid "Force delete"
-msgstr "ज़बरदस्ती हटाएँ"
+msgstr "ज़बरन हटाएँ"
 
 msgid "Force Delete"
 msgstr "ज़बरदस्ती हटाएँ"
@@ -14508,6 +14534,9 @@ msgstr "सामग्री के गुणों के आधार पर 
 msgid "Generate Picking List"
 msgstr "पिकिंग सूची जेनरेट करें"
 
+msgid "Generate token"
+msgstr "टोकन बनाएँ"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "गति योजना से {created} चरण उत्पन्न किए गए"
 
@@ -14841,6 +14870,9 @@ msgstr "द्वारा समूह"
 
 msgid "Group by material"
 msgstr "सामग्री के अनुसार समूह बनाएं"
+
+msgid "Group Mappings"
+msgstr "ग्रुप मैपिंग"
 
 msgid "Group Members"
 msgstr "समूह सदस्य"
@@ -15218,6 +15250,9 @@ msgstr "यह गेज कितनी बार पुनः-अंशां�
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "यह रखरखाव कितनी बार दोहराया जाता है — दैनिक, साप्ताहिक, मासिक, चक्रीय गणना पर; दैनिक सप्ताह-की-दिन चयनकर्ता को प्रकट करता है, अन्य सरल अंतराल गणित का उपयोग करते हैं।"
+
+msgid "How SCIM works"
+msgstr "SCIM कैसे काम करता है"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "ऑपरेशन को इस प्रक्रिया पर एक बैच साझा करने के लिए प्रत्येक सामग्री संपत्ति कितनी सख्ती से मेल खानी चाहिए।"
@@ -16426,7 +16461,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "इसका उपयोग अभी भी एक \"{table}\" रिकॉर्ड द्वारा किया जा रहा है; पहले उसे निकालें।"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "इससे आपूर्तिकर्ता की ओर के खाते कभी प्रभावित नहीं होते। पहले आदेश के शिपमेंट और अग्रिम भुगतान अमान्य करें, और क्रय चालानों से उसकी पंक्तियाँ हटाएँ। जब तक ऐसा नहीं किया जाता, अनुरोध अस्वीकार रहेगा।"
+msgstr "यह आपूर्तिकर्ता की ओर की बही को कभी नहीं छूता। पहले आदेश के शिपमेंट और अग्रिम भुगतान अमान्य करें, और क्रय चालानों से इसकी पंक्तियाँ हटाएँ। ऐसा करने तक अनुरोध अस्वीकार किया जाता है।"
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "इसकी स्थिति चाहे जो हो, यह {readableId} को स्थायी रूप से हटा देता है। इसे वापस नहीं लाया जा सकता।"
@@ -17010,6 +17045,9 @@ msgstr "अंतिम बार पुश किया गया: {lastPushed}
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
 
+msgid "Last request"
+msgstr "आखिरी अनुरोध"
+
 msgid "Last run"
 msgstr "अंतिम रन"
 
@@ -17257,6 +17295,9 @@ msgstr "अपने सदस्यों को SAML के साथ अप�
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "परियोजना स्टॉक वाली परियोजनाओं को इस स्थान पर इस आइटम का अप्रयुक्त अनिर्दिष्ट स्टॉक का उपयोग करने दें"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "आपका पहचान प्रदाता SCIM के ज़रिए सदस्यों को जोड़ने, अपडेट करने और निकालने दें।"
 
 msgid "Let's Build"
 msgstr "चलिए निर्माण करें"
@@ -18044,6 +18085,12 @@ msgstr "सदस्यता प्रबंधित करें"
 msgid "Manage your subscription and billing information"
 msgstr "अपनी सदस्यता और बिलिंग जानकारी प्रबंधित करें"
 
+msgid "Managed by your identity provider"
+msgstr "आपके पहचान प्रदाता द्वारा प्रबंधित"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "आपके पहचान प्रदाता द्वारा प्रबंधित। यहाँ उनके नाम, सक्रिय स्थिति या कर्मचारी प्रकार में किए गए बदलाव उसके अगले अपडेट में ओवरराइट हो सकते हैं।"
+
 msgid "Manager"
 msgstr "प्रबंधक"
 
@@ -18457,8 +18504,14 @@ msgstr "सदस्य"
 msgid "Members"
 msgstr "सदस्य"
 
+msgid "Members in no mapped group get this type"
+msgstr "जो सदस्य किसी भी मैप किए गए ग्रुप में नहीं हैं, उन्हें यह प्रकार मिलेगा"
+
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "सदस्य MRP में अपनी मांग को एक साथ समायोजित करते हैं। समूह परियोजना के स्थान पर होना चाहिए"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "जिन सदस्यों को यह मिलेगा वे साइन इन कर सकेंगे, पर कुछ भी खोल नहीं पाएँगे। उपयोगकर्ता → कर्मचारी प्रकार में इस प्रकार को अनुमतियाँ दें, या कोई और चुनें।"
 
 msgid "Memo"
 msgstr "मेमो"
@@ -21044,7 +21097,7 @@ msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr "अभी कुछ भी नहीं हटाया गया है। अनुरोध अन्य एडमिन के अनुमोदनों के पास जाता है, और उनमें से किसी एक के अनुमोदन करने पर इसे हटाया जाएगा।"
+msgstr "अभी कुछ नहीं हटाया गया है। अनुरोध अन्य एडमिन के अनुमोदनों के पास जाता है, और उनमें से किसी एक के अनुमोदित करने पर इसे हटा दिया जाता है।"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "अभी कुछ भी हटाया नहीं गया है। अनुरोध अन्य एडमिन के अनुमोदन के लिए जाता है, और जब उनमें से कोई एक इसे अनुमोदित करता है, तब ऑर्डर हटाया जाता है।"
@@ -22626,7 +22679,7 @@ msgid "Payments and credits applied to this invoice. A pending row is from a Dra
 msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "इस पर लागू भुगतान और मेमो पहले अलग किए जाते हैं: हर भुगतान पोस्ट रहता है, जो अनलागू जमा के रूप में रहता है जिसे आप अन्यत्र लागू कर सकते हैं या ज़बरदस्ती हटा सकते हैं। इससे पहले मान्य किया गया राजस्व प्रतिवर्तित हो जाता है।"
+msgstr "इसे लागू किए गए भुगतान और मेमो पहले अलग किए जाते हैं: हर भुगतान पोस्ट रहता है, अप्रयुक्त क्रेडिट के रूप में, जिसे आप कहीं और लागू कर सकते हैं या ज़बरन हटा सकते हैं। इससे मान्यता प्राप्त राजस्व प्रतिवर्तित होता है।"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "इस पर लागू भुगतान और मेमो पहले अलग किए जाते हैं: हर भुगतान पोस्ट किया गया रहता है, अप्रयुक्त जमा के रूप में, जिसे आप कहीं और लागू कर सकते हैं या ज़बरन हटा सकते हैं। इससे किसी पूंजीकृत अचल संपत्ति में जोड़ा गया मूल्य वापस निकाल लिया जाता है; पहले से पोस्ट किया गया मूल्यह्रास बना रहता है।"
@@ -22950,7 +23003,7 @@ msgid "Picking lists are created by hand"
 msgstr "पिकिंग सूचियाँ हाथ से बनाई जाती हैं"
 
 msgid "Picking lists on release disabled"
-msgstr "जारी करने पर पिकिंग सूचियाँ बंद"
+msgstr "जारी करने पर पिकिंग सूचियाँ अक्षम"
 
 msgid "Picking lists on release enabled"
 msgstr "जारी करने पर पिकिंग सूचियाँ चालू"
@@ -23947,6 +24000,12 @@ msgstr "अनंतिम जर्नल"
 
 msgid "Provisional rate"
 msgstr "अनंतिम दर"
+
+msgid "Provisioned members"
+msgstr "प्रावधानित सदस्य"
+
+msgid "Provisioning"
+msgstr "प्रोविज़निंग"
 
 msgid "PTO"
 msgstr "PTO"
@@ -25110,11 +25169,17 @@ msgstr "शर्तों से पुनः उत्पन्न करे�
 msgid "Regenerate payments from the terms?"
 msgstr "शर्तों से भुगतान पुनः उत्पन्न करें?"
 
+msgid "Regenerate SCIM token"
+msgstr "SCIM टोकन फिर से बनाएँ"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "इस स्थान के लिए अभी शेड्यूल फिर से जेनरेट करें। यह अंतिम शेड्यूलिंग परिवर्तन के लगभग 30 सेकंड बाद स्वचालित रूप से भी चलता है (संपादन बैच किए जाते हैं, इसलिए कई त्वरित परिवर्तन एकल पुनर्जनन को ट्रिगर करते हैं)।"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D मॉडल से थंबनेल पुनः उत्पन्न करें"
+
+msgid "Regenerate token"
+msgstr "टोकन फिर से बनाएँ"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "गति योजना से {created} चरण पुनर्जीवित किए गए"
@@ -25891,7 +25956,7 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "नियंत्रित वातावरण में आवश्यक — ऑडिट लॉगिंग को बंद नहीं किया जा सकता।"
 
 msgid "Required tracked parts disabled"
-msgstr "आवश्यक ट्रैक किए गए पार्ट्स बंद"
+msgstr "आवश्यक ट्रैक किए गए पार्ट्स अक्षम"
 
 msgid "Required tracked parts enabled"
 msgstr "ट्रैक किए गए पार्ट्स की आवश्यकता चालू"
@@ -27164,6 +27229,18 @@ msgstr "शेड्यूलिंग संघर्ष"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "शेड्यूलिंग संघर्ष: ऑपरेशन नियत तिथि तक पूरे नहीं हो सकते"
 
+msgid "SCIM base URL"
+msgstr "SCIM बेस URL"
+
+msgid "SCIM Connection"
+msgstr "SCIM कनेक्शन"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM प्रोविज़निंग"
+
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM इस व्यक्ति का नाम और सक्रिय स्थिति सेट करता है, और समूह मैप होने के बाद उनका कर्मचारी प्रकार भी। इन्हें अपने आइडेंटिटी प्रोवाइडर में बदलें।"
+
 msgid "Scope"
 msgstr "दायरा"
 
@@ -28097,6 +28174,12 @@ msgstr "लक्ष्य निर्धारित करें"
 msgid "Set at activation"
 msgstr "सक्रियण पर सेट करें"
 
+msgid "Set by your identity provider"
+msgstr "आपके आइडेंटिटी प्रोवाइडर द्वारा सेट किया गया"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "आपके आइडेंटिटी प्रोवाइडर की समूह मैपिंग द्वारा सेट किया गया"
+
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Carbon को अपनी कंपनी के संचालन के अनुसार सेट अप करें: साइटें, पार्ट्स, BOM, प्रक्रिया सूची, और जिन प्रवाहों का आप उपयोग करते हैं।"
 
@@ -28177,6 +28260,9 @@ msgstr "लेखांकन को रिपोर्ट, जर्नल प�
 
 msgid "Set up authenticator app"
 msgstr "प्रमाणकर्ता ऐप सेटअप करें"
+
+msgid "Set up SCIM"
+msgstr "SCIM सेट अप करें"
 
 msgid "Set up the right way"
 msgstr "सही तरीके से सेटअप करें"
@@ -30877,6 +30963,9 @@ msgstr ""
 msgid "The current plan changed under this change request"
 msgstr "इस परिवर्तन अनुरोध के तहत वर्तमान योजना बदल गई"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "मौजूदा टोकन तुरंत काम करना बंद कर देगा। जब तक आप अपने पहचान प्रदाता में नया टोकन दर्ज नहीं करते, प्रोविज़निंग रुकी रहेगी।"
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "ग्राहक प्रभावी रूप से इकाई को खरीदता है। यह शुरुआत में आपकी अचल संपत्ति से बाहर निकल जाता है, बिक्री दर्ज की जाती है, और अवधि के दौरान प्राप्य पर ब्याज अर्जित होता है।"
 
@@ -32286,6 +32375,9 @@ msgstr ""
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसके साथ छेड़छाड़ की गई है।"
 
+msgid "This employee type has no permissions"
+msgstr "इस कर्मचारी प्रकार की कोई अनुमति नहीं है"
+
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "यह आंकड़ा रहना चाहिए। इसे मान डालें से वापस जोड़ें।"
 
@@ -32972,6 +33064,9 @@ msgstr "साइडबार टॉगल करें"
 msgid "Toggle views"
 msgstr "दृश्य टॉगल करें"
 
+msgid "Token"
+msgstr "टोकन"
+
 msgid "Tol-"
 msgstr "Tol-"
 
@@ -33340,7 +33435,7 @@ msgid "Travel"
 msgstr "यात्रा"
 
 msgid "Traveler labels disabled"
-msgstr "ट्रैवलर लेबल बंद"
+msgstr "ट्रैवलर लेबल अक्षम"
 
 msgid "Traveler labels enabled"
 msgstr "ट्रैवलर लेबल चालू"
@@ -33402,8 +33497,14 @@ msgstr "फिर से कोशिश करें"
 msgid "Tuesday"
 msgstr "मंगलवार"
 
+msgid "Turn off"
+msgstr "बंद करें"
+
 msgid "Turn Off"
 msgstr "बंद करें"
+
+msgid "Turn off SCIM provisioning"
+msgstr "SCIM प्रोविज़निंग बंद करें"
 
 msgid "Turn On"
 msgstr "चालू करें"
@@ -35109,7 +35210,7 @@ msgid "What to set up"
 msgstr "सेटअप करने के लिए क्या"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr "क्या गलत दर्ज हुआ, और उसे सुधारा या अमान्य क्यों नहीं किया जा सकता"
+msgstr "गलत क्या दर्ज हुआ, और उसे सुधारा या अमान्य करना क्यों संभव नहीं है"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "क्या गलत दर्ज हुआ, और क्यों ऑर्डर को इसके बजाय सुधारा या बंद नहीं किया जा सकता"
@@ -35910,6 +36011,15 @@ msgstr "आपका निर्यात तैयार किया जा �
 msgid "Your GL accounts"
 msgstr "आपके GL खाते"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "आपका पहचान प्रदाता उसके द्वारा प्रबंधित सदस्यों को जोड़ता, अपडेट करता और हटाता है।"
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "आपका पहचान प्रदाता अब सदस्य न तो जोड़ सकता है और न ही निकाल सकता है। उसके द्वारा प्रावधानित सदस्य जैसे हैं वैसे ही रहते हैं, और SCIM को दोबारा सेट करने पर वहीं से जारी रहता है जहाँ यह रुका था।"
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "आपका पहचान प्रदाता नीचे दिए गए डिफ़ॉल्ट कर्मचारी प्रकार और स्थान के साथ सदस्य बनाता है। उसके समूह भेजे जाने के बाद, उन्हें कर्मचारी प्रकारों से मैप करें।"
+
 msgid "your Implementation Lead"
 msgstr "आपके कार्यान्वयन नेता"
 
@@ -35959,6 +36069,9 @@ msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "आपका वास्तविक डेटा लोड हो गया है और आपने एक नमूना जांचा है और इसे मंजूरी दे दी है।"
 
 msgid "Your reason and the decision are kept in the audit log."
+msgstr "आपका कारण और निर्णय ऑडिट लॉग में सुरक्षित रखे जाते हैं।"
+
+msgid "Your SCIM token"
 msgstr "आपका कारण और निर्णय ऑडिट लॉग में सुरक्षित रखे जाते हैं."
 
 msgid "Your session was locked after inactivity."

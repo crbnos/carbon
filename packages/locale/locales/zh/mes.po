@@ -3150,6 +3150,9 @@ msgstr "服务工单详情"
 msgid "Session locked"
 msgstr "会话已锁定"
 
+msgid "Set by your identity provider"
+msgstr "由身份提供商设置"
+
 msgid "Set Clock Out"
 msgstr "设置收工"
 
@@ -3187,7 +3190,7 @@ msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
 msgid "Short: {available} of {needed}"
-msgstr "缺料：{available} / {needed}"
+msgstr "短缺：{available} / {needed}"
 
 msgid "Show description"
 msgstr "显示描述"

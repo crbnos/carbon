@@ -3150,6 +3150,9 @@ msgstr "서비스 작업 지시 세부사항"
 msgid "Session locked"
 msgstr "세션 잠김"
 
+msgid "Set by your identity provider"
+msgstr "ID 공급자에서 설정됨"
+
 msgid "Set Clock Out"
 msgstr "작업 종료 설정"
 
@@ -3187,7 +3190,7 @@ msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
 msgid "Short: {available} of {needed}"
-msgstr "부족: {needed} 중 {available}"
+msgstr "부족: {available} / {needed}"
 
 msgid "Show description"
 msgstr "설명 표시"

@@ -547,6 +547,10 @@ msgstr "{0} 明細"
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "メンバー {0} 名"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1564,6 +1568,9 @@ msgstr "1件のジョブが作成されました"
 
 msgid "1 line"
 msgstr "1明細"
+
+msgid "1 member"
+msgstr "メンバー 1 名"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1個の部品はスキップ済 — 既に進行中の製造指図があります"
@@ -3159,6 +3166,9 @@ msgstr "認証器アプリからのコードを要求することで、サイン
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "各工順工程とその予想時間及びスキャンバーコードをリストアップした工程セクションを追加します。"
 
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Okta または Microsoft Entra ID からメンバーを自動的に追加・除去します。IT チームが退職処理を行った人は、Carbon へのアクセス権を失います。"
+
 msgid "Add another option"
 msgstr "別のオプションを追加"
 
@@ -4515,7 +4525,7 @@ msgid "Approved On"
 msgstr "承認日"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr "承認すると、入荷 {receipts} も取り消されます。入荷によって受け入れた在庫は削除され、その転記も取り消されます。その後にその在庫が使用されていた場合、承認は拒否されます。"
+msgstr "承認すると、入荷 {receipts} も取り消されます。入荷した在庫は削除され、その転記は反対仕訳で戻されます。その後にこの在庫が使用されている場合は実行できません。"
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
 msgstr "承認すると {readableId} は直ちに削除されます。この操作は元に戻せません。"
@@ -7216,6 +7226,9 @@ msgstr "仕入先を選択"
 
 msgid "Choose suppliers"
 msgstr "仕入先を選択"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "各グループがメンバーに付与する従業員タイプを選択してください。複数のグループに所属している場合は、上位のグループの設定が優先されます。"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "当期または前3会計期間のいずれかの初日を選択してください。"
@@ -10130,6 +10143,9 @@ msgstr "デフォルトCC"
 msgid "Default CC Recipients"
 msgstr "デフォルトCC受信者"
 
+msgid "Default employee type"
+msgstr "既定の従業員タイプ"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "固定資産の除却により利益が生じた場合にクレジットされるデフォルト勘定科目"
 
@@ -10147,6 +10163,9 @@ msgstr "定期的な減価償却実行のデフォルトGL費用勘定科目"
 
 msgid "Default horizon (days)"
 msgstr "デフォルト計画期間（日数）"
+
+msgid "Default location"
+msgstr "既定の拠点"
 
 msgid "Default Method"
 msgstr "デフォルト方法"
@@ -12300,6 +12319,10 @@ msgstr "従業員払戻金"
 msgid "Employee Type"
 msgstr "従業員タイプ"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} の従業員タイプ"
+
 msgid "Employee Types"
 msgstr "従業員タイプ"
 
@@ -12593,6 +12616,9 @@ msgstr "認証器アプリから6桁のコードを入力して再開します�
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr ""
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "IDプロバイダーのプロビジョニング設定に、ベースURLとこのトークンを入力してください。このトークンは一度だけ表示されます。"
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "プライベートOAuthアプリケーションのOnshape URL、クライアントID、クライアントシークレットを入力して保存します。"
@@ -14508,6 +14534,9 @@ msgstr "材料のプロパティに基づいて材料IDと説明を生成しま�
 msgid "Generate Picking List"
 msgstr "ピッキングリストを生成"
 
+msgid "Generate token"
+msgstr "トークンを生成"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "モーションプランから {created} ステップを生成"
 
@@ -14841,6 +14870,9 @@ msgstr "グループ化"
 
 msgid "Group by material"
 msgstr "材料でグループ化"
+
+msgid "Group Mappings"
+msgstr "グループマッピング"
 
 msgid "Group Members"
 msgstr "グループメンバー"
@@ -15218,6 +15250,9 @@ msgstr "この測定器をどのくらい頻繁に再校正する必要がある
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "この保全がどのくらい頻繁に繰り返されるか — 毎日、毎週、毎月、循環棚卸時。毎日の場合は曜日セレクタが表示され、その他は単純な間隔計算を使用します"
+
+msgid "How SCIM works"
+msgstr "SCIM の仕組み"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "このプロセスで工程がバッチを共有する場合、各材料特性がどの程度厳密に一致する必要があるか"
@@ -16426,7 +16461,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "「{table}」レコードで引き続き使用されています。先にそれを除去。"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "仕入先側の帳簿には一切影響しません。先に、この注文の出荷と前払金を取消し、仕入先請求書からその明細を除去してください。それまで依頼は拒否されます。"
+msgstr "仕入先側の帳簿には一切影響しません。先に発注書の出荷と前払金を取消し、仕入先請求書から明細を除去してください。それまでリクエストは拒否されます。"
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "ステータスにかかわらず、{readableId} を完全に削除します。元に戻すことはできません。"
@@ -17010,6 +17045,9 @@ msgstr "最終プッシュ: {lastPushed}"
 msgid "Last Quarter"
 msgstr "前四半期"
 
+msgid "Last request"
+msgstr "最終リクエスト"
+
 msgid "Last run"
 msgstr "最後の実行"
 
@@ -17257,6 +17295,9 @@ msgstr "SAMLを使用してIDプロバイダーを通じてメンバーがサイ
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "この拠点のこの品目の予備未割当在庫を使用するプロジェクト在庫を持つプロジェクトを許可"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "IDプロバイダーが SCIM を使ってメンバーを追加、更新、除去できるようにします。"
 
 msgid "Let's Build"
 msgstr "ビルドしましょう"
@@ -18044,6 +18085,12 @@ msgstr "サブスクリプションを管理"
 msgid "Manage your subscription and billing information"
 msgstr "サブスクリプションと請求情報を管理する"
 
+msgid "Managed by your identity provider"
+msgstr "ID プロバイダーで管理されています"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "ID プロバイダーで管理されています。ここで行った氏名、有効状態、従業員タイプの変更は、次回の更新で上書きされる場合があります。"
+
 msgid "Manager"
 msgstr "マネージャー"
 
@@ -18457,8 +18504,14 @@ msgstr "メンバー"
 msgid "Members"
 msgstr "メンバー"
 
+msgid "Members in no mapped group get this type"
+msgstr "割り当て済みのグループに属さないメンバーには、このタイプが適用されます。"
+
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "メンバーはMRPで所要量を相殺します。グループはプロジェクトの拠点にある必要があります"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "このタイプを割り当てられたメンバーはサインインできますが、何も開けません。ユーザー → 従業員タイプで、このタイプに権限を付与するか、別のタイプを選択してください。"
 
 msgid "Memo"
 msgstr "メモ"
@@ -21044,7 +21097,7 @@ msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr "まだ何も削除されません。依頼は他の管理者の承認に回され、いずれかの管理者が承認した時点で削除されます。"
+msgstr "まだ何も削除されていません。リクエストは他の管理者の承認に回され、いずれかの管理者が承認した時点で削除されます。"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "まだ削除されていません。リクエストは他の管理者の承認に回され、そのうちの1人が承認すると注文が削除されます。"
@@ -22626,7 +22679,7 @@ msgid "Payments and credits applied to this invoice. A pending row is from a Dra
 msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "それに充当されている支払とクレジットメモは、先に充当が解除されます。各支払は転記済のまま、他で充当するか強制削除できる未充当残高として残ります。そこから計上済の売上高は取り消されます。"
+msgstr "それに消込された支払と貸方メモは、先に消込解除されます。各支払は転記されたまま、消込解除済の貸方として他で消込むか、強制削除できます。それまでに計上された売上高は取り消されます。"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "これに消込されている支払およびメモは、先に消込が解除されます。各支払は転記済のまま、未消込残高として他で消込するか、強制削除できます。資産計上された固定資産に加算された金額は戻し入れられます。計上済の減価償却はそのまま残ります。"
@@ -22947,7 +23000,7 @@ msgid "Picking Lists"
 msgstr "ピッキングリスト"
 
 msgid "Picking lists are created by hand"
-msgstr "ピッキングリストは手動で作成します"
+msgstr "ピッキングリストは手動で作成"
 
 msgid "Picking lists on release disabled"
 msgstr "リリース時のピッキングリスト：無効"
@@ -23947,6 +24000,12 @@ msgstr "仮仕訳"
 
 msgid "Provisional rate"
 msgstr "暫定レート"
+
+msgid "Provisioned members"
+msgstr "プロビジョニング済みメンバー"
+
+msgid "Provisioning"
+msgstr "プロビジョニング"
 
 msgid "PTO"
 msgstr "PTO"
@@ -25110,11 +25169,17 @@ msgstr "支払条件から再生成"
 msgid "Regenerate payments from the terms?"
 msgstr "支払条件から支払を再生成しますか？"
 
+msgid "Regenerate SCIM token"
+msgstr "SCIM トークンを再生成"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "この拠点のスケジュールを今すぐ再生成してください。最後のスケジュール変更から約30秒後に自動的にも実行されます（編集はバッチ処理されるため、いくつかの迅速な変更により1つの再生成がトリガーされます）。"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3Dモデルからサムネイルを再生成"
+
+msgid "Regenerate token"
+msgstr "トークンを再生成"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "モーション計画から{created}個のステップを再生成しました"
@@ -25891,7 +25956,7 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "管理された環境では必須です。監査ログはオフにできません。"
 
 msgid "Required tracked parts disabled"
-msgstr "必須の追跡対象部品: 無効"
+msgstr "追跡部品の必須が無効"
 
 msgid "Required tracked parts enabled"
 msgstr "必須の追跡対象部品：有効"
@@ -27164,6 +27229,18 @@ msgstr "スケジュール競合"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "スケジュールの競合：工程では期日に間に合わせられません"
 
+msgid "SCIM base URL"
+msgstr "SCIM ベースURL"
+
+msgid "SCIM Connection"
+msgstr "SCIM 接続"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM プロビジョニング"
+
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM は、この人物の氏名と有効状態を設定し、グループのマッピング後は従業員タイプも設定します。これらは ID プロバイダーで変更してください。"
+
 msgid "Scope"
 msgstr "スコープ"
 
@@ -28097,6 +28174,12 @@ msgstr "ターゲットを設定"
 msgid "Set at activation"
 msgstr "有効化時に設定"
 
+msgid "Set by your identity provider"
+msgstr "ID プロバイダーによって設定されます"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "ID プロバイダーのグループマッピングによって設定されます"
+
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Carbonを会社の運営方法に合わせてセットアップします：サイト、部品、BOM、工程表、および使用するワークフロー。"
 
@@ -28177,6 +28260,9 @@ msgstr "レポート、仕訳、会計期間、減価償却実行などを使用
 
 msgid "Set up authenticator app"
 msgstr "認証アプリをセットアップ"
+
+msgid "Set up SCIM"
+msgstr "SCIM を設定"
 
 msgid "Set up the right way"
 msgstr "正しい方法でセットアップ"
@@ -30877,6 +30963,9 @@ msgstr ""
 msgid "The current plan changed under this change request"
 msgstr "この変更要求の下で現在の計画が変更されました"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "現在のトークンは直ちに使えなくなります。IDプロバイダーに新しいトークンを入力するまで、プロビジョニングは停止します。"
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "得意先は事実上その単位を購入します。開始時点で固定資産から外れ、販売が記録され、契約期間にわたって受取利息が発生します。"
 
@@ -32286,6 +32375,9 @@ msgstr ""
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
 
+msgid "This employee type has no permissions"
+msgstr "この従業員タイプには権限がありません"
+
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "この数値は残す必要があります。「値を挿入」で戻してください。"
 
@@ -32972,6 +33064,9 @@ msgstr "サイドバーを切り替え"
 msgid "Toggle views"
 msgstr "ビューを切り替える"
 
+msgid "Token"
+msgstr "トークン"
+
 msgid "Tol-"
 msgstr "許容差-"
 
@@ -33211,7 +33306,7 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "追跡される材料は、ピッキングリストがない場合でも、ピック順（FEFO）によって事前に選択されます。"
 
 msgid "Tracked parts are not required"
-msgstr "追跡対象部品は必須ではありません"
+msgstr "追跡部品は必須ではありません"
 
 msgid "Tracked parts must be scanned in"
 msgstr "追跡対象部品はスキャンして登録が必要"
@@ -33340,7 +33435,7 @@ msgid "Travel"
 msgstr "旅行"
 
 msgid "Traveler labels disabled"
-msgstr "現品票ラベル: 無効"
+msgstr "現品票ラベルが無効"
 
 msgid "Traveler labels enabled"
 msgstr "現品票ラベル：有効"
@@ -33402,8 +33497,14 @@ msgstr "もう一度お試しください"
 msgid "Tuesday"
 msgstr "火曜日"
 
+msgid "Turn off"
+msgstr "オフにする"
+
 msgid "Turn Off"
 msgstr "オフにする"
+
+msgid "Turn off SCIM provisioning"
+msgstr "SCIM プロビジョニングをオフにする"
 
 msgid "Turn On"
 msgstr "オンにする"
@@ -35109,7 +35210,7 @@ msgid "What to set up"
 msgstr "セットアップする内容"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr "誤って入力された内容と、訂正も取消もできない理由"
+msgstr "誤って入力された内容と、修正も取消もできない理由"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "誤って入力された内容と、代わりに受注を修正またはクローズできない理由"
@@ -35907,6 +36008,15 @@ msgstr "エクスポートを準備しています。準備ができたら通知
 msgid "Your GL accounts"
 msgstr "あなたのGL勘定"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "IDプロバイダーは、管理対象のメンバーを追加、更新、削除します。"
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "ID プロバイダーはメンバーを追加または除去できなくなります。プロビジョニング済みのメンバーはそのまま維持され、SCIM を再設定すると中断したところから再開されます。"
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "IDプロバイダーは、下記のデフォルトの従業員タイプと拠点でメンバーを作成します。プッシュ後に、そのグループを従業員タイプに対応付けてください。"
+
 msgid "your Implementation Lead"
 msgstr "あなたの実施リード"
 
@@ -35956,6 +36066,9 @@ msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"
 
 msgid "Your reason and the decision are kept in the audit log."
+msgstr "理由と判断内容は監査ログに保存されます。"
+
+msgid "Your SCIM token"
 msgstr "理由と決定内容は監査ログに保存されます。"
 
 msgid "Your session was locked after inactivity."

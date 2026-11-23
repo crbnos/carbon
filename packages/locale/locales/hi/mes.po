@@ -3150,6 +3150,9 @@ msgstr "सेवा जॉब विवरण"
 msgid "Session locked"
 msgstr "सत्र लॉक किया गया"
 
+msgid "Set by your identity provider"
+msgstr "आपके आइडेंटिटी प्रोवाइडर द्वारा सेट किया गया"
+
 msgid "Set Clock Out"
 msgstr "कार्य समाप्ति सेट करें"
 
@@ -3187,7 +3190,7 @@ msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
 msgid "Short: {available} of {needed}"
-msgstr "कमी: {needed} में से {available}"
+msgstr "कमी: {available} / {needed}"
 
 msgid "Show description"
 msgstr "विवरण दिखाएं"

@@ -3150,6 +3150,9 @@ msgstr "Détails de la prestation de service"
 msgid "Session locked"
 msgstr "Session verrouillée"
 
+msgid "Set by your identity provider"
+msgstr "Défini par votre fournisseur d'identité"
+
 msgid "Set Clock Out"
 msgstr "Définir le pointage fin"
 

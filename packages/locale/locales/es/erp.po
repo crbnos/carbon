@@ -547,6 +547,10 @@ msgstr "{0} líneas"
 msgid "{0} lines to map"
 msgstr "{0} líneas para mapear"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "{0} miembros"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1564,6 +1568,9 @@ msgstr "1 trabajo creado"
 
 msgid "1 line"
 msgstr "1 línea"
+
+msgid "1 member"
+msgstr "1 miembro"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 pieza omitida — ya tiene un trabajo abierto"
@@ -3159,6 +3166,9 @@ msgstr "Agregar una capa adicional de seguridad requiriendo un código de una ap
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "Agregar una sección de operaciones que enumere cada operación de la ruta de fabricación con sus tiempos esperados y códigos de barras para escanear."
 
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "Agregue y quite miembros automáticamente desde Okta o Microsoft Entra ID, para que las personas que su área de TI da de baja pierdan el acceso a Carbon."
+
 msgid "Add another option"
 msgstr "Agregar otra opción"
 
@@ -4515,7 +4525,7 @@ msgid "Approved On"
 msgstr "Aprobado en"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr "Al aprobar también se revierten sus recepciones {receipts}: se retiran las existencias que trajeron y se revierten sus contabilizaciones. Se rechaza si desde entonces se han usado esas existencias."
+msgstr "Al aprobar también se revierten sus recepciones {receipts}: se quitan las existencias que ingresaron y se revierten sus contabilizaciones. Se rechaza si esas existencias se usaron después."
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
 msgstr "Al aprobar se elimina {readableId} de inmediato. Esta acción no se puede deshacer."
@@ -7216,6 +7226,9 @@ msgstr "Seleccionar proveedor"
 
 msgid "Choose suppliers"
 msgstr "Seleccionar proveedores"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "Elija el tipo de empleado que cada grupo asigna a sus miembros. Si una persona pertenece a más de un grupo, prevalece el de mayor jerarquía."
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Elige el primer día del Período actual o de uno de los 3 Períodos anteriores."
@@ -10130,6 +10143,9 @@ msgstr "CC por defecto"
 msgid "Default CC Recipients"
 msgstr "Destinatarios CC predeterminados"
 
+msgid "Default employee type"
+msgstr "Tipo de empleado predeterminado"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Cuenta contable predeterminada acreditada cuando una baja de activo fijo resulta en ganancia."
 
@@ -10147,6 +10163,9 @@ msgstr "Cuenta de gasto contable predeterminada para ejecuciones de depreciació
 
 msgid "Default horizon (days)"
 msgstr "Horizonte predeterminado (días)"
+
+msgid "Default location"
+msgstr "Ubicación predeterminada"
 
 msgid "Default Method"
 msgstr "Método Predeterminado"
@@ -12300,6 +12319,10 @@ msgstr "Cuentas por Pagar de Reembolsos a Empleados"
 msgid "Employee Type"
 msgstr "Tipo de Empleado"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "Tipo de empleado para {0}"
+
 msgid "Employee Types"
 msgstr "Tipos de Empleados"
 
@@ -12593,6 +12616,9 @@ msgstr "Ingrese el código de 6 dígitos de su aplicación de autenticación par
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr ""
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "Ingrese la URL base y este token en la configuración de aprovisionamiento de su proveedor de identidad. Este token se muestra una sola vez."
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Ingrese la URL de Onshape, el ID de cliente y el secreto de cliente de su aplicación OAuth privada, luego guarde."
@@ -14508,6 +14534,9 @@ msgstr "Generar IDs de materiales y descripciones basadas en las propiedades del
 msgid "Generate Picking List"
 msgstr "Generar Lista de Picking"
 
+msgid "Generate token"
+msgstr "Generar token"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "Se generaron {created} pasos a partir del plan de movimiento"
 
@@ -14841,6 +14870,9 @@ msgstr "Agrupar por"
 
 msgid "Group by material"
 msgstr "Agrupar por material"
+
+msgid "Group Mappings"
+msgstr "Asignaciones de grupos"
 
 msgid "Group Members"
 msgstr "Miembros del Grupo"
@@ -15218,6 +15250,9 @@ msgstr "Con qué frecuencia debe recalibrarse este Instrumento de medición; com
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Con qué frecuencia se repite este Mantenimiento — Diario, Semanal, Mensual, En Conteo cíclico; Diario revela el selector de día de la semana, los otros usan matemática de intervalo más simple."
+
+msgid "How SCIM works"
+msgstr "Cómo funciona SCIM"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Qué tan estrictamente cada propiedad del material debe coincidir para que las operaciones compartan un lote de producción en este proceso."
@@ -16426,7 +16461,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Todavía está siendo utilizado por un registro de «{table}»; quítelo primero"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "Nunca afecta a la parte del proveedor en los libros. Anula primero los envíos y anticipos de la orden, y quita sus líneas de las facturas de compra. La solicitud se rechaza hasta que lo haga."
+msgstr "Nunca afecta el lado del proveedor en los libros. Anule primero los envíos y anticipos de la orden, y quite sus líneas de las facturas de compra. La solicitud se rechaza hasta que lo haga."
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "Elimina permanentemente {readableId}, sea cual sea su estado. No se puede deshacer."
@@ -17010,6 +17045,9 @@ msgstr "Último envío {lastPushed}"
 msgid "Last Quarter"
 msgstr "Trimestre Anterior"
 
+msgid "Last request"
+msgstr "Última solicitud"
+
 msgid "Last run"
 msgstr "Última ejecución"
 
@@ -17257,6 +17295,9 @@ msgstr "Permite que los miembros inicien sesión a través de su proveedor de id
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "Permitir que proyectos con existencias de proyecto utilicen existencias no asignadas disponibles de este artículo en esta ubicación"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "Permita que su proveedor de identidad agregue, actualice y quite miembros con SCIM."
 
 msgid "Let's Build"
 msgstr "Construyamos"
@@ -18044,6 +18085,12 @@ msgstr "Administrar Suscripción"
 msgid "Manage your subscription and billing information"
 msgstr "Administra tu suscripción e información de facturación"
 
+msgid "Managed by your identity provider"
+msgstr "Gestionado por tu proveedor de identidad"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "Gestionado por tu proveedor de identidad. Los cambios que hagas aquí en su nombre, su estado activo o su tipo de empleado pueden sobrescribirse en su próxima actualización."
+
 msgid "Manager"
 msgstr "Gerente"
 
@@ -18457,8 +18504,14 @@ msgstr "Miembro"
 msgid "Members"
 msgstr "Miembros"
 
+msgid "Members in no mapped group get this type"
+msgstr "Los miembros que no estén en ningún grupo asignado reciben este tipo"
+
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "Los miembros compensan su demanda conjunta en MRP. El grupo debe estar en la ubicación del proyecto"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "Los miembros que lo reciban pueden iniciar sesión, pero no pueden abrir nada. Asigna permisos al tipo en Usuarios → Tipos de empleado, o elige otro."
 
 msgid "Memo"
 msgstr "Memorándum"
@@ -22626,7 +22679,7 @@ msgid "Payments and credits applied to this invoice. A pending row is from a Dra
 msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "Los pagos y notas aplicados a ella se desvinculan primero: cada pago sigue contabilizado, como crédito sin aplicar que puede aplicar en otro lugar o forzar su eliminación. Los ingresos por ventas ya reconocidos a partir de ella se revierten."
+msgstr "Primero se desaplican los pagos y notas aplicados a él: cada pago permanece contabilizado, como crédito no aplicado que puede aplicar en otro lugar o cuya eliminación puede forzar. Los ingresos por ventas ya reconocidos de él se revierten."
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "Primero se desaplican los pagos y las notas de crédito aplicados a él: cada pago sigue contabilizado, como crédito no aplicado que puedes aplicar en otro lugar o eliminar forzadamente. El valor que añadió a un activo fijo capitalizado se retira; la depreciación ya contabilizada permanece."
@@ -23948,6 +24001,12 @@ msgstr "Asiento Provisional"
 msgid "Provisional rate"
 msgstr "Tasa provisional"
 
+msgid "Provisioned members"
+msgstr "Miembros aprovisionados"
+
+msgid "Provisioning"
+msgstr "Aprovisionamiento"
+
 msgid "PTO"
 msgstr "Permiso Pagado"
 
@@ -25110,11 +25169,17 @@ msgstr "Regenerar desde términos"
 msgid "Regenerate payments from the terms?"
 msgstr "¿Regenerar pagos desde los términos?"
 
+msgid "Regenerate SCIM token"
+msgstr "Regenerar token SCIM"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Regenera el programa para esta ubicación ahora. También se ejecuta automáticamente aproximadamente 30 segundos después del último cambio de programación (las ediciones se procesan en lotes, por lo que varios cambios rápidos desencadenan una única regeneración)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Regenerar miniatura del modelo 3D"
+
+msgid "Regenerate token"
+msgstr "Regenerar token"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "Se regeneraron {created} pasos a partir del plan de movimiento"
@@ -25891,7 +25956,7 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "Requerido en un entorno controlado: el registro de auditoría no se puede desactivar."
 
 msgid "Required tracked parts disabled"
-msgstr "Piezas con trazabilidad obligatorias desactivadas"
+msgstr "Piezas con trazabilidad obligatorias deshabilitadas"
 
 msgid "Required tracked parts enabled"
 msgstr "Piezas con trazabilidad requeridas: activado"
@@ -27164,6 +27229,18 @@ msgstr "Conflicto de programación"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "Conflicto de programación: las operaciones no pueden cumplir la fecha de vencimiento"
 
+msgid "SCIM base URL"
+msgstr "URL base de SCIM"
+
+msgid "SCIM Connection"
+msgstr "Conexión SCIM"
+
+msgid "SCIM Provisioning"
+msgstr "Aprovisionamiento SCIM"
+
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM define el nombre y el estado activo de esta persona, y su tipo de empleado una vez que se asignen los grupos. Cambie estos datos en su proveedor de identidad."
+
 msgid "Scope"
 msgstr "Alcance"
 
@@ -28097,6 +28174,12 @@ msgstr "Establecer un objetivo"
 msgid "Set at activation"
 msgstr "Establecido en la activación"
 
+msgid "Set by your identity provider"
+msgstr "Definido por su proveedor de identidad"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "Definido por las asignaciones de grupos de su proveedor de identidad"
+
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Configure Carbon de acuerdo con cómo funciona su empresa: ubicaciones, piezas, BOMs, lista de operaciones y los flujos que utiliza."
 
@@ -28177,6 +28260,9 @@ msgstr "Configura la contabilidad para usar informes, asientos, períodos contab
 
 msgid "Set up authenticator app"
 msgstr "Configurar aplicación autenticadora"
+
+msgid "Set up SCIM"
+msgstr "Configurar SCIM"
 
 msgid "Set up the right way"
 msgstr "Configura de la manera correcta"
@@ -30877,6 +30963,9 @@ msgstr ""
 msgid "The current plan changed under this change request"
 msgstr "El plan actual cambió bajo esta solicitud de cambio"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "El token actual deja de funcionar de inmediato. El aprovisionamiento se detiene hasta que ingrese el nuevo token en su proveedor de identidad."
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "El cliente compra efectivamente la unidad. Sale de tus activos fijos al comienzo, se contabiliza la venta e intereses se devengan sobre la cuenta por cobrar durante el plazo."
 
@@ -32286,6 +32375,9 @@ msgstr ""
 msgid "This download link is invalid or has been tampered with."
 msgstr "Este enlace de descarga es inválido o ha sido alterado."
 
+msgid "This employee type has no permissions"
+msgstr "Este tipo de empleado no tiene permisos"
+
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "Esta cifra debe permanecer. Vuelve a añadirla con Insertar valor."
 
@@ -32972,6 +33064,9 @@ msgstr "Alternar barra lateral"
 msgid "Toggle views"
 msgstr "Alternar vistas"
 
+msgid "Token"
+msgstr "Token"
+
 msgid "Tol-"
 msgstr "Tol-"
 
@@ -33211,7 +33306,7 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "El material rastreado se preselecciona por orden de picking (FEFO), incluso sin lista de picking."
 
 msgid "Tracked parts are not required"
-msgstr "Las piezas con trazabilidad no son obligatorias"
+msgstr "No se requieren piezas con trazabilidad"
 
 msgid "Tracked parts must be scanned in"
 msgstr "Las piezas con trazabilidad deben escanearse al entrar"
@@ -33340,7 +33435,7 @@ msgid "Travel"
 msgstr "Viaje"
 
 msgid "Traveler labels disabled"
-msgstr "Etiquetas de hoja viajera desactivadas"
+msgstr "Etiquetas de hoja viajera deshabilitadas"
 
 msgid "Traveler labels enabled"
 msgstr "Etiquetas de hoja viajera: activado"
@@ -33402,8 +33497,14 @@ msgstr "Intente de nuevo"
 msgid "Tuesday"
 msgstr "Martes"
 
+msgid "Turn off"
+msgstr "Desactivar"
+
 msgid "Turn Off"
 msgstr "Desactivar"
+
+msgid "Turn off SCIM provisioning"
+msgstr "Desactivar aprovisionamiento SCIM"
 
 msgid "Turn On"
 msgstr "Activar"
@@ -35109,7 +35210,7 @@ msgid "What to set up"
 msgstr "Qué configurar"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr "Qué se ingresó incorrectamente y por qué no puede corregirse ni anularse en su lugar"
+msgstr "Qué se introdujo mal y por qué no se puede corregir ni anular en su lugar"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "Qué se registró mal y por qué el pedido no se puede corregir ni cerrar en su lugar"
@@ -35907,6 +36008,15 @@ msgstr "Tu exportación se está preparando. Te avisaremos cuando esté lista."
 msgid "Your GL accounts"
 msgstr "Tus cuentas contables"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "Su proveedor de identidad agrega, actualiza y elimina los miembros que gestiona."
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "Su proveedor de identidad ya no puede agregar ni quitar miembros. Los miembros que aprovisionó permanecen como están, y al volver a configurar SCIM se retoma desde donde se quedó."
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "Tu proveedor de identidad crea los miembros con el tipo de empleado y la ubicación predeterminados que se indican a continuación. Asigna sus grupos a tipos de empleado después de que los envíe."
+
 msgid "your Implementation Lead"
 msgstr "tu Líder de Implementación"
 
@@ -35956,6 +36066,9 @@ msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Tus datos reales están cargados y has verificado una muestra y la has aprobado."
 
 msgid "Your reason and the decision are kept in the audit log."
+msgstr "Su motivo y la decisión se guardan en el registro de auditoría."
+
+msgid "Your SCIM token"
 msgstr "El motivo y la decisión se guardan en el registro de auditoría."
 
 msgid "Your session was locked after inactivity."

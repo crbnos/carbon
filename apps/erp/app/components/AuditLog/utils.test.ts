@@ -101,6 +101,19 @@ describe("buildAuditLogCsvRows", () => {
     ]);
   });
 
+  it("names a non-user actor by its label", () => {
+    const rows = build([
+      entry({
+        actorId: null,
+        diff: {},
+        metadata: { origin: "scim", actorLabel: "SCIM" }
+      }),
+      entry({ actorId: "u1", diff: {}, metadata: { actorLabel: "ignored" } })
+    ]);
+
+    expect(rows.map((r) => r["Changed By"])).toEqual(["SCIM", "Ada Lovelace"]);
+  });
+
   it("writes numbers, booleans and objects as text", () => {
     const rows = build([
       entry({

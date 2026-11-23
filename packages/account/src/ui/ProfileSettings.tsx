@@ -38,6 +38,7 @@ export default function ProfileSettings() {
             action={endpoints.profile}
             photo={{ action: endpoints.profile, companyId }}
             variant="plain"
+            isNameSetByIdentityProvider={data.isNameSetByIdentityProvider}
           />
           <AccountSettingsSection
             title={<Trans>Signature</Trans>}

@@ -7,6 +7,7 @@ import {
   Checkbox,
   DropdownMenuContent,
   DropdownMenuItem,
+  HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
@@ -60,6 +61,8 @@ type EmployeesTableProps = {
   employeeTypes: ListItem[];
   unrevokedInviteEmails: string[];
   mfaEnrolledUserIds: string[];
+  /** The people an identity provider manages over SCIM. */
+  scimManagedUserIds: string[];
 };
 
 const defaultColumnVisibility = {
@@ -74,7 +77,8 @@ const EmployeesTable = memo(
     infinite,
     employeeTypes,
     unrevokedInviteEmails,
-    mfaEnrolledUserIds
+    mfaEnrolledUserIds,
+    scimManagedUserIds
   }: EmployeesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -102,6 +106,11 @@ const EmployeesTable = memo(
     const mfaEnrolledSet = useMemo(
       () => new Set(mfaEnrolledUserIds),
       [mfaEnrolledUserIds]
+    );
+
+    const scimManagedSet = useMemo(
+      () => new Set(scimManagedUserIds),
+      [scimManagedUserIds]
     );
 
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -203,11 +212,32 @@ const EmployeesTable = memo(
             const status = item.getValue<
               "Active" | "Invited" | "Inactive" | null
             >();
-            if (status === "Active")
-              return <Badge variant="green">{t`Active`}</Badge>;
-            if (status === "Invited")
-              return <Badge variant="yellow">{t`Invited`}</Badge>;
-            return <Badge variant="secondary">{t`Inactive`}</Badge>;
+            const statusBadge =
+              status === "Active" ? (
+                <Badge variant="green">{t`Active`}</Badge>
+              ) : status === "Invited" ? (
+                <Badge variant="yellow">{t`Invited`}</Badge>
+              ) : (
+                <Badge variant="secondary">{t`Inactive`}</Badge>
+              );
+            if (!scimManagedSet.has(item.row.original.id!)) return statusBadge;
+            return (
+              <HStack spacing={1}>
+                {statusBadge}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline">SCIM</Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <Trans>
+                      Managed by your identity provider. Changes made here to
+                      their name, active state or employee type can be
+                      overwritten on its next update.
+                    </Trans>
+                  </TooltipContent>
+                </Tooltip>
+              </HStack>
+            );
           },
           meta: {
             mobile: "P2",
@@ -291,7 +321,7 @@ const EmployeesTable = memo(
           }
         }
       ];
-    }, [params, mfaEnrolledSet, requireMfa]);
+    }, [params, mfaEnrolledSet, requireMfa, scimManagedSet]);
 
     const renderActions = useCallback(
       (selectedRows: typeof data, scope?: BulkActionScope) => {

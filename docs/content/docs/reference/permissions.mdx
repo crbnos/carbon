@@ -76,7 +76,7 @@ Because an invite is a real record, an employee has a clear **status** derived f
   <Status name="Inactive" terminal>The account has been deactivated, or the invite was revoked before acceptance. No access.</Status>
 </StatusFlow>
 
-An invite is a company-scoped record keyed by email, and it carries the permission set the person will start with, so their grants are ready the moment they accept. While it's outstanding you can **resend** the invite email or **revoke** it entirely, both from the accounts list. Deactivating an active employee removes them from the company, strips their grants, and marks them inactive; it doesn't delete the person, who may still belong to other companies. For the full picture of a person's record, see [people](/docs/reference/people).
+An invite is a company-scoped record keyed by email, and it carries the permission set the person will start with, so their grants are ready the moment they accept. While it's outstanding you can **resend** the invite email or **revoke** it entirely, both from the accounts list. Deactivating an active employee removes them from the company, strips their grants, deletes the API keys they made in it, and marks them inactive; it doesn't delete the person, who may still belong to other companies. For the full picture of a person's record, see [people](/docs/reference/people).
 
 ## Shop-floor PIN accounts
 

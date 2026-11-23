@@ -547,6 +547,10 @@ msgstr "{0} 行"
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
 
+#. placeholder {0}: group.memberCount
+msgid "{0} members"
+msgstr "{0} 名成员"
+
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
 msgid "{0} months"
@@ -1564,6 +1568,9 @@ msgstr "1 个作业已创建"
 
 msgid "1 line"
 msgstr "1 行"
+
+msgid "1 member"
+msgstr "1 名成员"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1个零件已跳过——它已有未结的工单"
@@ -3159,6 +3166,9 @@ msgstr "通过在登录时要求身份验证器应用的代码来添加额外的
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
 msgstr "添加工序部分，列出每个工艺路线工序及其预期时间和扫码条码。"
 
+msgid "Add and remove members automatically from Okta or Microsoft Entra ID, so people your IT team offboards lose access to Carbon."
+msgstr "自动从 Okta 或 Microsoft Entra ID 添加和移除成员，使 IT 团队办理离职的人员失去 Carbon 的访问权限。"
+
 msgid "Add another option"
 msgstr "再添加一个选项"
 
@@ -4515,7 +4525,7 @@ msgid "Approved On"
 msgstr "批准日期"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr "审批时还将冲销其收货 {receipts}：移除其带入的库存，并冲销相应过账。如果该库存此后已被使用，则无法执行。"
+msgstr "审批时还会冲销其收货 {receipts}：移除其带入的库存，并冲销其过账。若该库存此后已被使用，则会被拒绝。"
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
 msgstr "审批将立即删除{readableId}。此操作无法撤销。"
@@ -7216,6 +7226,9 @@ msgstr "选择供应商"
 
 msgid "Choose suppliers"
 msgstr "选择供应商"
+
+msgid "Choose the employee type each group gives its members. If someone is in more than one group, the higher one wins."
+msgstr "请为每个组选择其成员所属的员工类型。如果某人属于多个组，则以级别较高的组为准。"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "选择当前期间或之前 3 个期间中任意一个的第一天。"
@@ -10130,6 +10143,9 @@ msgstr "默认抄送"
 msgid "Default CC Recipients"
 msgstr "默认抄送收件人"
 
+msgid "Default employee type"
+msgstr "默认员工类型"
+
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "固定资产处置获利时贷记的默认GL账户。"
 
@@ -10147,6 +10163,9 @@ msgstr "定期折旧处理的默认总账费用科目"
 
 msgid "Default horizon (days)"
 msgstr "默认计划周期（天数）"
+
+msgid "Default location"
+msgstr "默认地点"
 
 msgid "Default Method"
 msgstr "默认方法"
@@ -12300,6 +12319,10 @@ msgstr "员工报销应付"
 msgid "Employee Type"
 msgstr "员工类型"
 
+#. placeholder {0}: group.displayName
+msgid "Employee type for {0}"
+msgstr "{0} 的员工类型"
+
 msgid "Employee Types"
 msgstr "员工类型"
 
@@ -12593,6 +12616,9 @@ msgstr "输入您的身份验证器应用中的 6 位数字代码以继续。"
 #. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
 msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
 msgstr ""
+
+msgid "Enter the base URL and this token in your identity provider's provisioning settings. This token is shown once."
+msgstr "请在身份提供商的预配设置中输入基础 URL 和此令牌。此令牌仅显示一次。"
 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "输入您的私有 OAuth 应用程序的 Onshape URL、客户端 ID 和客户端密钥，然后保存。"
@@ -14508,6 +14534,9 @@ msgstr "根据原材料的属性生成原材料ID和描述。"
 msgid "Generate Picking List"
 msgstr "生成拣货单"
 
+msgid "Generate token"
+msgstr "生成令牌"
+
 msgid "Generated {created} steps from the motion plan"
 msgstr "从运动计划生成了{created}个步骤"
 
@@ -14841,6 +14870,9 @@ msgstr "分组依据"
 
 msgid "Group by material"
 msgstr "按材料分组"
+
+msgid "Group Mappings"
+msgstr "群组映射"
 
 msgid "Group Members"
 msgstr "群组成员"
@@ -15218,6 +15250,9 @@ msgstr "此量具必须多久重新校准一次；与上次校准日期结合自
 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "此维护的重复频率——每日、每周、每月、循环盘点；每日会显示星期选择器，其他则使用更简单的间隔计算。"
+
+msgid "How SCIM works"
+msgstr "SCIM 的工作原理"
 
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "在此工序上，为使多个操作能够共享一个生产批次，每个原材料属性必须匹配的严格程度。"
@@ -16426,7 +16461,7 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "它仍然被「{table}」记录使用；请先删除它。"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "此操作绝不会改动供应商一方的账目。请先作废该订单的收货和预付款，并从采购发票中移除其行。在完成这些操作之前，请求将被拒绝。"
+msgstr "此操作绝不影响供应商一方的账目。请先作废该订单的收货和预付款，并从采购发票中移除其行。在完成这些操作之前，该请求将被拒绝。"
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr "无论状态如何，都将永久删除{readableId}。此操作无法撤销。"
@@ -17010,6 +17045,9 @@ msgstr "最后推送：{lastPushed}"
 msgid "Last Quarter"
 msgstr "上一季度"
 
+msgid "Last request"
+msgstr "最近请求"
+
 msgid "Last run"
 msgstr "最后运行"
 
@@ -17257,6 +17295,9 @@ msgstr "允许成员通过您的身份提供商使用 SAML 登录。"
 
 msgid "Let projects with project stock use spare unassigned stock of this item at this location"
 msgstr "允许具有项目库存的项目在此地点使用此物料的备用未分配库存"
+
+msgid "Let your identity provider add, update and remove members with SCIM."
+msgstr "允许您的身份提供商通过 SCIM 添加、更新和移除成员。"
 
 msgid "Let's Build"
 msgstr "让我们构建"
@@ -18044,6 +18085,12 @@ msgstr "管理订阅"
 msgid "Manage your subscription and billing information"
 msgstr "管理您的订阅和账单信息"
 
+msgid "Managed by your identity provider"
+msgstr "由身份提供商管理"
+
+msgid "Managed by your identity provider. Changes made here to their name, active state or employee type can be overwritten on its next update."
+msgstr "由身份提供商管理。在此处对其姓名、启用状态或员工类型所做的更改，可能会在下次更新时被覆盖。"
+
 msgid "Manager"
 msgstr "经理"
 
@@ -18457,8 +18504,14 @@ msgstr "成员"
 msgid "Members"
 msgstr "成员"
 
+msgid "Members in no mapped group get this type"
+msgstr "不属于任何已映射群组的成员将获得此类型"
+
 msgid "Members net their demand together in MRP. The group must be at the project's location"
 msgstr "成员在MRP中合并需求。该组必须位于项目的地点"
+
+msgid "Members who get it can sign in but cannot open anything. Give the type permissions in Users → Employee Types, or pick another."
+msgstr "获得该类型的成员可以登录，但无法打开任何内容。请在“用户 → 员工类型”中为该类型授予权限，或选择其他类型。"
 
 msgid "Memo"
 msgstr "备忘录"
@@ -21044,7 +21097,7 @@ msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr "目前尚未删除任何内容。该请求将提交至其他管理员审批，经其中一位审批通过后将被删除。"
+msgstr "目前尚未删除任何内容。该请求将提交给其他管理员审批，经其中一位管理员批准后即删除。"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "尚未删除。该请求将提交给其他管理员审批，待其中一位审批通过后即会删除该订单。"
@@ -22626,7 +22679,7 @@ msgid "Payments and credits applied to this invoice. A pending row is from a Dra
 msgstr ""
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr "先取消其已核销的付款和贷项通知单：每笔付款仍保持已过账，作为未核销款项留存，您可将其核销到其他地方或强制删除。已从中确认的收入将被冲销。"
+msgstr "已核销到它的付款和贷项通知单会先取消核销：每笔付款保持已过账，并转为未核销的贷项，可核销到其他单据或强制删除。已从其确认的收入将被冲销。"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr "其已核销的付款和贷项通知单须先取消核销：每笔付款保持已过账状态，并作为未核销余额保留，您可将其核销至其他单据或强制删除。其计入已资本化固定资产的价值将被撤回；已过账的折旧保留。"
@@ -22947,7 +23000,7 @@ msgid "Picking Lists"
 msgstr "拣货单"
 
 msgid "Picking lists are created by hand"
-msgstr "拣货单手动创建"
+msgstr "拣货单需手动创建"
 
 msgid "Picking lists on release disabled"
 msgstr "下达时生成拣货单：已禁用"
@@ -23550,7 +23603,7 @@ msgid "Print Output ({0})"
 msgstr "打印输出 ({0})"
 
 msgid "Print this item's serial label when its job's last operation completes."
-msgstr "工单的最后一道工序完成时，打印此物料的序列号标签。"
+msgstr "工单的最后一道工序完成时，打印该物料的序列号标签。"
 
 msgid "Print travelers at the pick"
 msgstr "拣货时打印流转卡"
@@ -23947,6 +24000,12 @@ msgstr "临时凭证"
 
 msgid "Provisional rate"
 msgstr "暂定费率"
+
+msgid "Provisioned members"
+msgstr "已预配的成员"
+
+msgid "Provisioning"
+msgstr "预配"
 
 msgid "PTO"
 msgstr "PTO"
@@ -25110,11 +25169,17 @@ msgstr "从条款重新生成"
 msgid "Regenerate payments from the terms?"
 msgstr "从条款重新生成付款？"
 
+msgid "Regenerate SCIM token"
+msgstr "重新生成 SCIM 令牌"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "立即为该地点重新生成排程。它也会在最后一次排程变化后约30秒自动运行（编辑是批处理的，因此几次快速变化会触发单次重新生成）。"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "从 3D 模型重新生成缩略图"
+
+msgid "Regenerate token"
+msgstr "重新生成令牌"
 
 msgid "Regenerated {created} steps from the motion plan"
 msgstr "从动作计划重新生成了 {created} 个步骤"
@@ -27164,6 +27229,18 @@ msgstr "计划冲突"
 msgid "Scheduling conflict: operations cannot meet due date"
 msgstr "排程冲突：工序无法满足到期日"
 
+msgid "SCIM base URL"
+msgstr "SCIM 基础 URL"
+
+msgid "SCIM Connection"
+msgstr "SCIM 连接"
+
+msgid "SCIM Provisioning"
+msgstr "SCIM 预配"
+
+msgid "SCIM sets this person's name and active state, and their employee type once groups are mapped. Change those in your identity provider."
+msgstr "SCIM 会设置此人员的姓名和启用状态，并在分组映射后设置其员工类型。请在身份提供商中修改这些信息。"
+
 msgid "Scope"
 msgstr "范围"
 
@@ -28097,6 +28174,12 @@ msgstr "设置目标"
 msgid "Set at activation"
 msgstr "在激活时设置"
 
+msgid "Set by your identity provider"
+msgstr "由身份提供商设置"
+
+msgid "Set by your identity provider's group mappings"
+msgstr "由身份提供商的分组映射设置"
+
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "根据公司运营方式设置 Carbon：地点、零件、BOM、工序清单和您使用的流程。"
 
@@ -28177,6 +28260,9 @@ msgstr "设置会计以使用报表、凭证、会计期间、折旧等。"
 
 msgid "Set up authenticator app"
 msgstr "设置身份验证器应用"
+
+msgid "Set up SCIM"
+msgstr "设置 SCIM"
 
 msgid "Set up the right way"
 msgstr "以正确的方式设置"
@@ -30877,6 +30963,9 @@ msgstr ""
 msgid "The current plan changed under this change request"
 msgstr "此更改请求下的当前计划已更改"
 
+msgid "The current token stops working at once. Provisioning stops until you enter the new token in your identity provider."
+msgstr "当前令牌将立即失效。在身份提供商中输入新令牌之前，预配将停止。"
+
 msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
 msgstr "客户实际上购买该单位。从开始时该单位就离开您的固定资产，销售被记录，并在整个期限内赚取应收款上的利息。"
 
@@ -32286,6 +32375,9 @@ msgstr ""
 msgid "This download link is invalid or has been tampered with."
 msgstr "此下载链接无效或已被篡改。"
 
+msgid "This employee type has no permissions"
+msgstr "此员工类型没有任何权限"
+
 msgid "This figure must stay. Add it back with Insert value."
 msgstr "此数字必须保留。请使用“插入值”重新添加。"
 
@@ -32972,6 +33064,9 @@ msgstr "切换侧边栏"
 msgid "Toggle views"
 msgstr "切换视图"
 
+msgid "Token"
+msgstr "令牌"
+
 msgid "Tol-"
 msgstr "容差-"
 
@@ -33402,8 +33497,14 @@ msgstr "重试"
 msgid "Tuesday"
 msgstr "星期二"
 
+msgid "Turn off"
+msgstr "关闭"
+
 msgid "Turn Off"
 msgstr "关闭"
+
+msgid "Turn off SCIM provisioning"
+msgstr "关闭 SCIM 预配"
 
 msgid "Turn On"
 msgstr "打开"
@@ -35109,7 +35210,7 @@ msgid "What to set up"
 msgstr "要设置什么"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr "录入错误的内容，以及为何无法更正或作废"
+msgstr "录入的错误内容，以及为何不能改为更正或作废"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "录入错误的内容，以及为何无法改为更正或关闭订单"
@@ -35910,6 +36011,15 @@ msgstr "正在准备您的导出文件。准备就绪后我们将通知您。"
 msgid "Your GL accounts"
 msgstr "您的总账科目"
 
+msgid "Your identity provider adds, updates and removes the members it manages."
+msgstr "身份提供商会添加、更新和删除其管理的成员。"
+
+msgid "Your identity provider can no longer add or remove members. Members it provisioned stay as they are, and setting SCIM up again picks up where it left off."
+msgstr "身份提供商不能再添加或移除成员。其已预配的成员保持不变，重新设置 SCIM 时将从上次中断处继续。"
+
+msgid "Your identity provider creates members with the default employee type and location below. Map its groups to employee types after it pushes them."
+msgstr "您的身份提供商会使用下方的默认员工类型和地点创建成员。推送分组后，请将分组映射到员工类型。"
+
 msgid "your Implementation Lead"
 msgstr "你的实施负责人"
 
@@ -35960,6 +36070,9 @@ msgstr "您的真实数据已加载，您已检查样本并批准了它。"
 
 msgid "Your reason and the decision are kept in the audit log."
 msgstr "您的原因和决定将保存在审计日志中。"
+
+msgid "Your SCIM token"
+msgstr "您的 SCIM 令牌"
 
 msgid "Your session was locked after inactivity."
 msgstr "你的会话因不活动而被已锁定。"

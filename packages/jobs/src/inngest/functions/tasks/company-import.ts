@@ -12,6 +12,7 @@ import {
 } from "../../../backups/derived-groups";
 import { refreshReceiptInspectionStatuses } from "../../../backups/derived-receipts";
 import { applyTableRenames } from "../../../backups/renames";
+import { FOREIGN_SKIPPED_TABLES } from "../../../backups/schema";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import type { TableInfo } from "./company-backup";
@@ -146,6 +147,7 @@ export const companyImportFunction = inngest.createFunction(
 
       const skipped = new Set([
         ...SECRET_TABLES,
+        ...FOREIGN_SKIPPED_TABLES,
         ...(mode === "reseed" ? RESEED_SKIPPED_TABLES : [])
       ]);
       const backupColumns = new Map(

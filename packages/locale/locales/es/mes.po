@@ -3150,6 +3150,9 @@ msgstr "Detalles de la orden de servicio"
 msgid "Session locked"
 msgstr "Sesión bloqueada"
 
+msgid "Set by your identity provider"
+msgstr "Definido por su proveedor de identidad"
+
 msgid "Set Clock Out"
 msgstr "Establecer Fichar salida"
 

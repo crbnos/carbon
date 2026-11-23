@@ -3150,6 +3150,9 @@ msgstr "Service Job Details"
 msgid "Session locked"
 msgstr "Session locked"
 
+msgid "Set by your identity provider"
+msgstr "Set by your identity provider"
+
 msgid "Set Clock Out"
 msgstr "Set Clock Out"
 

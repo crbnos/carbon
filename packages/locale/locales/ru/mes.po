@@ -3150,6 +3150,9 @@ msgstr "Подробности работы по услуге"
 msgid "Session locked"
 msgstr "Сеанс заблокирован"
 
+msgid "Set by your identity provider"
+msgstr "Задаётся вашим провайдером удостоверений"
+
 msgid "Set Clock Out"
 msgstr "Установить окончание работы"
 
@@ -3187,7 +3190,7 @@ msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
 
 msgid "Short: {available} of {needed}"
-msgstr "Не хватает: {available} из {needed}"
+msgstr "Нехватка: {available} из {needed}"
 
 msgid "Show description"
 msgstr "Показать описание"
