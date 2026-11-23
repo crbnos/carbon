@@ -2839,18 +2839,20 @@ export async function editableDispatch(
   return dispatch.data;
 }
 
-/** Tell an internal assignment's groups they have a training to take. */
+/** Tell people they have an internal assignment's training to take. */
 export async function notifyTrainingAssignment(
   ctx: ServiceContext,
   assignmentId: string,
-  groupIds: string[]
+  recipient:
+    | { type: "group"; groupIds: string[] }
+    | { type: "users"; userIds: string[] }
 ) {
   try {
     await trigger("notify", {
       companyId: ctx.company.id,
       documentId: assignmentId,
       event: NotificationEvent.TrainingAssignment,
-      recipient: { type: "group", groupIds },
+      recipient,
       from: ctx.auditUserId
     });
   } catch (err) {
