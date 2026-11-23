@@ -126,7 +126,6 @@ export const path = {
             ? new URLSearchParams({ batchId: target.batchId })
             : new URLSearchParams(target.jobIds.map((id) => ["jobId", id]))
         }`,
-
       billOfMaterials: (methodId: string, withOperations: boolean = false) =>
         generatePath(
           `${api}/items/methods/${methodId}/bom?withOperations=${withOperations}`
@@ -333,6 +332,12 @@ export const path = {
         generatePath(`${api}/production/outside-operations/${jobId}`),
       outstandingTrainings: `${api}/resources/trainings`,
       paymentTerms: `${api}/accounting/payment-terms`,
+
+      plannedOrders: (args: {
+        itemId: string;
+        locationId: string;
+        orderType: "Make" | "Buy";
+      }) => `${api}/production/planned-orders?${new URLSearchParams(args)}`,
       procedures: `${api}/production/procedures`,
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>

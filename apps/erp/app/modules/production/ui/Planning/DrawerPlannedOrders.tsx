@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCarbon } from "@carbon/auth";
-import { useRevalidator } from "@carbon/query";
+import { RefreshRate, useLoaderQuery, useRevalidator } from "@carbon/query";
 import {
   Button,
   Modal,
@@ -19,13 +18,10 @@ import { isPlannedOrderHeld } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useUser } from "~/hooks";
-import {
-  type DrawerPlannedOrder,
-  getDrawerPlannedOrders,
-  getPlanningTimeFenceDays
-} from "~/modules/production/production.utils";
+import type { DrawerPlannedOrder } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
+import type { loader as plannedOrdersLoader } from "~/routes/api+/production.planned-orders";
+import { path } from "~/utils/path";
 import type { PlanningActionHandlers } from "./PlanningActionLines";
 import {
   actionForOrder,
@@ -71,9 +67,43 @@ type PlannedOrderChangeResult = {
 };
 
 /**
+ * The item's planned orders and time fence at the location, read through
+ * `api+/production.planned-orders`. Any action through the router marks the
+ * read stale (the root invalidation middleware), so it follows an Apply and
+ * an order placed. `refreshKey` reads again after a change the router does
+ * not see. Each answer is passed to `onLoaded`.
+ */
+function useDrawerPlannedOrders(args: {
+  url: string | null;
+  refreshKey: number;
+  onLoaded?: (orders: DrawerPlannedOrder[]) => void;
+}) {
+  const { url, refreshKey } = args;
+  const query = useLoaderQuery<typeof plannedOrdersLoader>(url, {
+    staleTime: RefreshRate.High
+  });
+  const { refetch } = query;
+  const lastRefreshKey = useRef(refreshKey);
+  useEffect(() => {
+    if (refreshKey === lastRefreshKey.current) return;
+    lastRefreshKey.current = refreshKey;
+    if (url) void refetch();
+  }, [refreshKey, url, refetch]);
+
+  // The latest callback, so a new function from the parent re-reads nothing.
+  const onLoadedRef = useRef(args.onLoaded);
+  onLoadedRef.current = args.onLoaded;
+  useEffect(() => {
+    if (query.data) onLoadedRef.current?.(query.data.orders);
+  }, [query.data]);
+
+  return query;
+}
+
+/**
  * The drawer's Planned Orders section: the item's Planned and Firm planned
- * orders at the location, read with the user's client as the open jobs and
- * PO lines are. Firm / Unfirm and a cell edit post to `planning.update`. An
+ * orders at the location, read with the user's permissions as the open jobs
+ * and PO lines are. Firm / Unfirm and a cell edit post to `planning.update`. An
  * edit of a Planned order firms it, so the drawer asks first. Each change
  * re-plans on the server, so a successful one reads the orders again, tells
  * the drawer (`onReplanned`) and reloads the page's data: the item's actions
@@ -95,98 +125,47 @@ export function DrawerPlannedOrders({
   onReplanned
 }: DrawerPlannedOrdersProps) {
   const { t } = useLingui();
-  const { carbon } = useCarbon();
-  const { company } = useUser();
-  const { revalidate, state: revalidationState } = useRevalidator();
+  const { revalidate } = useRevalidator();
   const isCommonSegment = !planningSegmentId;
 
-  const [orders, setOrders] = useState<DrawerPlannedOrder[] | null | Error>(
-    null
-  );
-  const [fenceDays, setFenceDays] = useState(0);
-  // Bumped after a change here, to read the orders again.
-  const [version, setVersion] = useState(0);
-  // The latest callback, so a new function from the parent re-reads nothing.
-  const onOrdersLoadedRef = useRef(onOrdersLoaded);
-  onOrdersLoadedRef.current = onOrdersLoaded;
-  // After a change here the orders are read at once (`version`): the server
-  // re-planned before it answered. The revalidation that follows brings the
-  // re-planned actions, whose new `actionsKey` needs no second read.
-  const skipActionsRead = useRef(false);
-  const lastTriggers = useRef<{ actionsKey: string; others: string } | null>(
-    null
-  );
-  // Only the latest read lands. Not an effect cleanup: a skipped run must
-  // not cancel the read in flight.
-  const readSeq = useRef(0);
+  // Only while open: the drawer stays mounted on its last item so it can
+  // slide out.
+  const query = useDrawerPlannedOrders({
+    url:
+      isOpen && itemId && isCommonSegment
+        ? path.to.api.plannedOrders({ itemId, locationId, orderType })
+        : null,
+    refreshKey,
+    onLoaded: onOrdersLoaded
+  });
+  const fenceDays = query.data?.fenceDays ?? 0;
+
+  // A cell's saved edit, shown until the read that follows it lands. Kept
+  // against the answer it edited, so a newer answer replaces it.
+  const [edits, setEdits] = useState<{
+    of: unknown;
+    byId: Map<string, { quantity: number; dueDate: string }>;
+  } | null>(null);
+
+  const orders = useMemo<DrawerPlannedOrder[] | null | Error>(() => {
+    if (query.error) {
+      return query.error instanceof Error
+        ? query.error
+        : new Error(String(query.error));
+    }
+    if (!query.data) return null;
+    const byId = edits?.of === query.data ? edits.byId : null;
+    if (!byId) return query.data.orders;
+    return query.data.orders.map((order) => {
+      const edit = byId.get(order.id);
+      return edit ? { ...order, ...edit } : order;
+    });
+  }, [query.data, query.error, edits]);
 
   const plannedOrderActions = useMemo(
     () => actions.filter((action) => action.plannedOrderId),
     [actions]
   );
-  // Re-read when the item's actions change: applying one edits its order.
-  const actionsKey = plannedOrderActions
-    .map((a) => `${a.id}:${a.status}`)
-    .join(",");
-
-  // Only while open: the drawer stays mounted on its last item so it can
-  // slide out.
-  useEffect(() => {
-    if (!isOpen || !carbon || !itemId || !isCommonSegment) return;
-    const others = [itemId, locationId, orderType, version, refreshKey].join(
-      "|"
-    );
-    const previous = lastTriggers.current;
-    lastTriggers.current = { actionsKey, others };
-    if (
-      skipActionsRead.current &&
-      previous?.others === others &&
-      previous.actionsKey !== actionsKey
-    ) {
-      skipActionsRead.current = false;
-      return;
-    }
-    const seq = ++readSeq.current;
-
-    (async () => {
-      const args = { companyId: company.id, itemId, locationId };
-      const [read, fence] = await Promise.all([
-        getDrawerPlannedOrders(carbon, { ...args, orderType }),
-        getPlanningTimeFenceDays(carbon, args)
-      ]);
-      if (seq !== readSeq.current) return;
-      if (read.error) {
-        setOrders(new Error(read.error.message));
-        return;
-      }
-      // a fence that cannot be read only hides the marker
-      setFenceDays(fence.data ?? 0);
-      setOrders(read.data ?? []);
-      onOrdersLoadedRef.current?.(read.data ?? []);
-    })().catch((error: unknown) => {
-      // A read that throws (not a PostgREST error) shows the same failure
-      // as one that returns an error, instead of a spinner that never ends.
-      if (seq !== readSeq.current) return;
-      setOrders(error instanceof Error ? error : new Error(String(error)));
-    });
-  }, [
-    isOpen,
-    carbon,
-    company.id,
-    itemId,
-    locationId,
-    orderType,
-    isCommonSegment,
-    actionsKey,
-    version,
-    refreshKey
-  ]);
-
-  // The revalidation has landed: a later change of the actions is someone
-  // else's, and is read.
-  useEffect(() => {
-    if (revalidationState === "idle") skipActionsRead.current = false;
-  }, [revalidationState]);
 
   const rows = useMemo<PlannedOrderRow[] | null | Error>(() => {
     if (!Array.isArray(orders)) return orders;
@@ -238,18 +217,19 @@ export function DrawerPlannedOrders({
     actionHandlers.canUpdate
   ]);
 
-  const onRowsChange = useCallback((next: PlannedOrderRow[]) => {
-    setOrders((previous) =>
-      Array.isArray(previous)
-        ? previous.map((order) => {
-            const row = next.find((r) => r.id === order.id);
-            return row && row.quantity !== null && row.dueDate !== null
-              ? { ...order, quantity: row.quantity, dueDate: row.dueDate }
-              : order;
-          })
-        : previous
-    );
-  }, []);
+  const answerData = query.data;
+  const onRowsChange = useCallback(
+    (next: PlannedOrderRow[]) => {
+      if (!answerData) return;
+      const byId = new Map<string, { quantity: number; dueDate: string }>();
+      for (const row of next) {
+        if (row.quantity === null || row.dueDate === null) continue;
+        byId.set(row.id, { quantity: row.quantity, dueDate: row.dueDate });
+      }
+      setEdits({ of: answerData, byId });
+    },
+    [answerData]
+  );
 
   const post = useCallback(
     async (body: Record<string, unknown>): Promise<string | null> => {
@@ -277,15 +257,15 @@ export function DrawerPlannedOrders({
     [locationId, t, updatePath]
   );
 
-  // The server re-planned before it answered: read the orders again, tell
-  // the drawer its suggestions are stale, and reload the actions and the
-  // grid row behind it (a plain fetch bypasses the router).
+  // The server re-planned before it answered. A plain fetch bypasses the
+  // router's invalidation, so read the orders again here, tell the drawer its
+  // suggestions are stale, and reload the actions and the grid row behind it.
+  const { refetch } = query;
   const afterReplan = useCallback(() => {
-    skipActionsRead.current = true;
+    void refetch();
     onReplanned?.();
-    setVersion((v) => v + 1);
     void revalidate();
-  }, [onReplanned, revalidate]);
+  }, [refetch, onReplanned, revalidate]);
 
   // ── The question an edit of a Planned order asks first ───────────────────
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);

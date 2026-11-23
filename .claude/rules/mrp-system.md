@@ -16,6 +16,7 @@ paths:
   - "apps/erp/app/modules/settings/ui/Planning/**"
   - "apps/erp/app/routes/x+/{production,purchasing}+/planning*.tsx"
   - "apps/erp/app/routes/x+/settings+/planning.tsx"
+  - "apps/erp/app/routes/api+/production.planned-orders.ts"
   - "apps/erp/app/modules/production/production.service.ts"
   - "apps/erp/app/modules/production/production.server.ts"
   - "apps/erp/app/modules/purchasing/purchasing.service.ts"
@@ -682,19 +683,26 @@ working-day dates.
   (`changedPlannedOrderIds`) — whatever the body returns, so no early return
   skips it. Without it the week's Order / Make kept the old total until the
   next scheduled run. A failed run is logged and never fails the change.
-  After a successful post `DrawerPlannedOrders` reads its orders again, calls
-  `onReplanned` (the drawer drops the row's draft and bumps the editor reset
-  key, so the Suggested Jobs / Orders are rebuilt from the re-planned actions
-  and orders, as after Plan on a Draft job) and revalidates the page; the read
-  the revalidated actions would trigger is skipped (one read per change). An
-  Apply that changed a planned order drops its rows' drafts the same way
-  (`usePlanningActions` `onRowsReplanned`, `rowsReplannedByApply`; the grid's
-  `draftVersion` resets the drawer's editors). Pinned by
+  After a successful post `DrawerPlannedOrders` refetches its orders (the post
+  is a plain `fetch`, which the router's invalidation does not see), calls
+  `onReplanned` and revalidates the page. Every run is company-wide, so a
+  component row's suggestions may have moved too: the production grid drops
+  EVERY row's draft and cached planned orders, as Recalculate does
+  (`dropAllDrafts`, through the drawer's `onPlanReran`), and bumps the editor
+  reset key. Planning or releasing a Draft job does the same. An Apply that
+  changed a planned order drops them the same way (`usePlanningActions`
+  `onRowsReplanned`, `rowsReplannedByApply`; the grid's `draftVersion` resets
+  the drawer's editors). Placing an order drops only its own row's draft. Pinned by
   `apps/erp/test/database/planned-order-firm.test.ts`.
 - **UI.** Both order drawers render `DrawerPlannedOrders` (Planned Orders section,
-  above Suggested Jobs / Orders, common segment only): `getDrawerPlannedOrders`
-  and `getPlanningTimeFenceDays` (`production.utils.ts`, browser reads with the
-  user's client) feed `PlannedOrdersGrid` (`PlanningOrderGrids.tsx`) — status
+  above Suggested Jobs / Orders, common segment only): `useLoaderQuery` reads
+  `api+/production.planned-orders` (`path.to.api.plannedOrders`; its loader runs
+  `getDrawerPlannedOrders` and `getPlanningTimeFenceDays` from
+  `production.utils.ts` as the caller, `view: production` for Make,
+  `view: purchasing` for Buy; 400 on a bad query, 500 on a failed read). The
+  router's invalidation makes it follow an Apply or an order placed, and
+  `refreshKey` refetches it after a change the router does not see (Plan,
+  Release). It feeds `PlannedOrdersGrid` (`PlanningOrderGrids.tsx`) — status
   chip, release date, due date, quantity with the trace tooltip ("Projected stock
   -3 → Fixed Reorder Quantity 5 → scrap +1 → explode 6"), a "Fence" marker on a
   Planned order `isPlannedOrderHeld` holds (the engine's rule), Firm / Unfirm, and
