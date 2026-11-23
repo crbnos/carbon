@@ -8,7 +8,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Use the closest package/module `AGENTS.md` for local architecture, imports, and validation commands.
 - Follow `.claude/rules/` for subsystem-specific conventions (auto-loaded via `paths:` frontmatter).
 - Read `.ai/lessons.md` before non-trivial changes to avoid known pitfalls.
-- Answer `.claude/rules/write-time-checklist.md` for every file before you write it, and again over the diff before you commit. `/execute`, `/fix` and `/self-review` run it; `/check-and-commit` and the pre-commit hook run the `@carbon/checks` conformance gate behind it.
+- Answer `.claude/rules/write-time-checklist.md` before writing each file and again over the diff before committing. `/execute`, `/fix` and `/self-review` run it.
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use existing components — grep `packages/react/src/` and `apps/erp/app/components/` before writing UI.
@@ -186,7 +186,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Bug fix: runtime instrumentation | `.claude/skills/debugging-difficult-bugs/SKILL.md` |
 | Bug fix: end-to-end pipeline (diagnose → fix → verify → commit) | `.claude/skills/fix/SKILL.md` |
 | Pre-commit verification gate | `.claude/skills/check-and-commit/SKILL.md` |
-| Write-time checklist (before writing any file; the same list `/self-review` runs) | `.claude/rules/write-time-checklist.md` |
+| Write-time checklist (before writing a file, and again over the diff) | `.claude/rules/write-time-checklist.md` |
 | Feature build (doer→gate→judge loop) | `.claude/skills/conductor/SKILL.md` |
 | Browser-verify a feature | `.claude/skills/test/SKILL.md` |
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |

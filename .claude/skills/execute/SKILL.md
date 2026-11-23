@@ -29,19 +29,14 @@ For each unchecked task, in dependency order:
 1. **Read the task** and every file it lists (including the precedent file for
    UI tasks).
 2. **Answer the write-time checklist** (`.claude/rules/write-time-checklist.md`)
-   for every file the task creates or edits, BEFORE writing it: open the
-   sections for what the file touches (a write, tenancy, a read at volume,
-   errors, dates, a migration, UI, types, docs, tests) and answer each
-   question from the code. Read `.ai/lessons.md` for the area. A question you
-   cannot answer from the plan is a plan gap → Step 3.
+   for each file, BEFORE writing it. Read `.ai/lessons.md` for the area. A
+   question you cannot answer from the plan is a plan gap → Step 3.
 3. **Do exactly the steps.** Exact paths, exact code, exact commands. If the
    task says "copy from precedent X", open X and match its structure and idiom.
 4. **Run the task's Verify block** and compare against the expected output. A
    verification you didn't run counts as failed.
-5. **Re-answer the checklist over the task's diff** (`git diff HEAD`): the same
-   sections, against what you actually wrote. Fix every "no" before the
-   commit. The tests section is not optional — a guard without the test that
-   submits what it rejects is unfinished.
+5. **Re-answer the checklist over `git diff HEAD`.** Fix every "no" before the
+   commit. A guard without a test that submits what it rejects is unfinished.
 6. **Commit via `/check-and-commit`** (it runs the gates, including the
    `@carbon/checks` conformance gate, stages the task's files specifically, and
    writes a conventional commit). One commit per task.

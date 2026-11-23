@@ -38,9 +38,7 @@ paths, derive:
   breaks `check:workflow-catalog` even though nothing under `packages/workflows`
   was edited by hand.
 - `CONFORMANCE_RELEVANT` — any `.ts`, `.tsx` or `.sql` file under `apps/` or
-  `packages/`. When true, Gate 2b runs the `@carbon/checks` conformance suite
-  (the same gate CI runs): every check in `packages/checks/src/conformance/`
-  over the whole tree, failing on any violation not in the committed baseline.
+  `packages/`. When true, Gate 2b runs the `@carbon/checks` suite (the gate CI runs).
 - `I18N_RELEVANT` — the diff adds/edits UI source that can introduce new
   translatable strings (`apps/erp/app/**`, `apps/mes/app/**`,
   `packages/react/src/**`) **or** touches any `packages/locale/locales/**/*.po`.
@@ -83,9 +81,8 @@ pnpm exec biome check --write --no-errors-on-unmatched <changed paths>
 # Gate 2b — conformance checks (only if CONFORMANCE_RELEVANT; ~5 s)
 [ -f packages/config/dist/vitest.mjs ] || pnpm --filter @carbon/config build
 pnpm --filter @carbon/checks exec vitest run src/run.test.ts
-# Must exit 0 with "Tests  2 passed". A failure prints every new violation as
-# `<check-id>  <file>:<line>  <snippet>`; fix the code per the check's message.
-# The pre-commit hook runs this same command, so a skipped gate still blocks the commit.
+# Must exit 0. A violation prints as `<check-id>  <file>:<line>  <snippet>`; fix the code.
+# The pre-commit hook runs this same command.
 
 # Gate 3 — typecheck, one package at a time. NEVER whole-repo (`pnpm typecheck`
 # runs every package at once and OOMs the machine).
@@ -125,7 +122,7 @@ translations by invoking the **translate skill** (`/translate`), not by hand:
 | Biome formatting/import order | Already fixed by `--write`; re-run to confirm clean |
 | Type error from stale generated types | Run Gate 1, re-run typecheck |
 | Type/test error caused by this change | Fix the code, re-run |
-| Conformance violation (Gate 2b) | Fix the code the way the check's message says. NEVER add the line to `packages/checks/src/conformance/baseline.json` to pass — the baseline grandfathers pre-existing code only, and a baseline edit in a feature diff is a finding at review |
+| Conformance violation (Gate 2b) | Fix the code. Never add it to `packages/checks/src/conformance/baseline.json`; the baseline grandfathers old code only |
 | Pre-existing failure, unrelated to this change | Note in report; don't block, don't fix |
 | Anything unclear or still failing after **2** fix attempts | STOP — report BLOCKED |
 
@@ -139,7 +136,6 @@ Red flags — thinking any of these means the gate is being weakened; STOP:
 - "`git add -A` is faster"
 - "that failure is probably pre-existing" (prove it — see above)
 - "the gate is flaky, I'll just retry until it passes"
-- "I'll baseline this conformance hit and fix it in a follow-up"
 
 ## Step 4: Commit
 
