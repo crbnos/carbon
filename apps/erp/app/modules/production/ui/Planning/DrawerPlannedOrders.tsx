@@ -163,7 +163,12 @@ export function DrawerPlannedOrders({
       setFenceDays(fence.data ?? 0);
       setOrders(read.data ?? []);
       onOrdersLoadedRef.current?.(read.data ?? []);
-    })();
+    })().catch((error: unknown) => {
+      // A read that throws (not a PostgREST error) shows the same failure
+      // as one that returns an error, instead of a spinner that never ends.
+      if (seq !== readSeq.current) return;
+      setOrders(error instanceof Error ? error : new Error(String(error)));
+    });
   }, [
     isOpen,
     carbon,

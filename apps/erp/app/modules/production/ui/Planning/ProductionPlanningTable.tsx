@@ -556,8 +556,16 @@ const ProductionPlanningTable = ({
     },
     []
   );
+  // MRP re-ran for the company (a planned order changed, a Draft job was
+  // planned or released): a component row's suggestions may have moved too,
+  // so every draft goes, as after Recalculate.
+  const dropAllDrafts = useCallback(() => {
+    setOrdersMap({});
+    setPlannedOrdersByRowKey({});
+    setDraftVersion((version) => version + 1);
+  }, []);
   dropRowDraftsRef.current = (rows) => {
-    for (const row of rows) dropOrders(row);
+    if (rows.length > 0) dropAllDrafts();
   };
 
   // The drawer's own Planning Horizon control: the same on-screen override as
@@ -990,6 +998,7 @@ const ProductionPlanningTable = ({
           actionHandlers={actionHandlers}
           setOrders={setOrders}
           onSuggestionsStale={dropOrders}
+          onPlanReran={dropAllDrafts}
           draftVersion={draftVersion}
           onPlannedOrdersLoaded={onPlannedOrdersLoaded}
           periods={periods}

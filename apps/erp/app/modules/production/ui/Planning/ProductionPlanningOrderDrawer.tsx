@@ -92,9 +92,12 @@ type ProductionPlanningOrderDrawerProps = {
   actionHandlers: PlanningActionHandlers;
   setOrders: (item: ProductionPlanningItem, orders: ProductionOrder[]) => void;
   /** Drop the item's draft list so the drawer re-seeds from MRP's new
-   *  suggestions — after a Draft job is planned, or a planned order is
-   *  firmed, unfirmed or edited, each of which re-runs MRP. */
+   *  suggestions — after an order is placed for the item. */
   onSuggestionsStale: (item: ProductionPlanningItem) => void;
+  /** MRP re-ran for the company — a Draft job planned or released, or a
+   *  planned order firmed, unfirmed or edited. Its component rows may have
+   *  new suggestions too, so every row's draft is dropped. */
+  onPlanReran: () => void;
   /** Bumped by the grid each time it drops a row's draft (an Apply on a
    *  planned order re-runs MRP): closes a cell editor left open. */
   draftVersion?: number;
@@ -122,6 +125,7 @@ export const ProductionPlanningOrderDrawer = memo(
     actionHandlers,
     setOrders,
     onSuggestionsStale,
+    onPlanReran,
     draftVersion = 0,
     onPlannedOrdersLoaded,
     locationId,
@@ -139,6 +143,10 @@ export const ProductionPlanningOrderDrawer = memo(
       onSuggestionsStale(row);
       setSuggestionsVersion((version) => version + 1);
     }, [onSuggestionsStale, row]);
+    const reseedAfterReplan = useCallback(() => {
+      onPlanReran();
+      setSuggestionsVersion((version) => version + 1);
+    }, [onPlanReran]);
     const submittedOrders = useRef<ProductionOrder[]>([]);
     // A refusal is toasted by useAction. On success the orders refused for
     // starting in the past stay in the drawer as they were sent; with none,
@@ -386,7 +394,7 @@ export const ProductionPlanningOrderDrawer = memo(
             if (result.data.warning) toast.error(result.data.warning);
             else toast.success(t`Planned job`);
             // MRP ran: the suggestions, the grid row and this list all moved
-            reseedSuggestions();
+            reseedAfterReplan();
             setOpenJobsVersion((version) => version + 1);
             void revalidate();
           } else {
@@ -398,7 +406,7 @@ export const ProductionPlanningOrderDrawer = memo(
           setPlanningJobId(null);
         }
       },
-      [locationId, reseedSuggestions, revalidate, t]
+      [locationId, reseedAfterReplan, revalidate, t]
     );
 
     // Release: a Planned job goes to the floor from here, without waiting for
@@ -409,7 +417,7 @@ export const ProductionPlanningOrderDrawer = memo(
     const { onReleaseJob, isReleasing } = useJobPlanningRelease({
       onReleased: () => {
         // MRP ran in the release: the suggestions and this list moved
-        reseedSuggestions();
+        reseedAfterReplan();
         setOpenJobsVersion((version) => version + 1);
       }
     });
@@ -632,7 +640,7 @@ export const ProductionPlanningOrderDrawer = memo(
                   actionHandlers={actionHandlers}
                   refreshKey={openJobsVersion}
                   onOrdersLoaded={onPlannedOrdersRead}
-                  onReplanned={reseedSuggestions}
+                  onReplanned={reseedAfterReplan}
                 />
 
                 <SuggestedOrdersGrid<ProductionOrder>
@@ -712,7 +720,7 @@ export const ProductionPlanningOrderDrawer = memo(
         onSuggestedOrdersChange,
         suggestionsVersion,
         draftVersion,
-        reseedSuggestions,
+        reseedAfterReplan,
         lastBeyondFenceDate,
         beyondFenceOrders,
         onIncludeBeyondFence,
