@@ -4774,7 +4774,7 @@ export const orderPlannedJobs = defineServiceFn({
         error: settled.error
       });
       warnings.push(
-        "The jobs were created, but their suggestions were not updated. Recalculate before making them again."
+        "The jobs were created, but their suggestions and planned orders were not updated. Recalculate before making them again, and unfirm any Firm planned order a new job replaces: MRP keeps Firm orders as supply."
       );
     } else if (segments.planningGroupIds.size > 0) {
       // A grouped Make's pegs move to the jobs that answered it. A failure
@@ -5214,7 +5214,7 @@ export const applyPlanningActions = defineServiceFn({
             jobIds.length > 0
               ? db
                   .selectFrom("job")
-                  .select(["id", "status"])
+                  .select(["id", "status", "quantityReceivedToInventory"])
                   .where("id", "in", jobIds)
                   .where("companyId", "=", companyId)
                   .execute()
@@ -5222,6 +5222,14 @@ export const applyPlanningActions = defineServiceFn({
         );
         if (jobs instanceof CarbonError) return jobs;
         const jobStatusById = new Map(jobs.map((job) => [job.id, job.status]));
+        // MRP sizes a job on what it has still to make (`quantity` less
+        // `quantityReceivedToInventory`); `job.quantity` is the total.
+        const receivedByJobId = new Map(
+          jobs.map((job) => [
+            job.id,
+            Number(job.quantityReceivedToInventory ?? 0)
+          ])
+        );
 
         const toClaim: typeof eligible = [];
         for (const target of eligible) {
@@ -5368,9 +5376,10 @@ export const applyPlanningActions = defineServiceFn({
                   id: jobId,
                   companyId,
                   updatedBy: userId,
-                  quantity: Number(
-                    claimedRow.suggestedQuantity ?? row.suggestedQuantity
-                  )
+                  quantity:
+                    Number(
+                      claimedRow.suggestedQuantity ?? row.suggestedQuantity
+                    ) + (receivedByJobId.get(jobId) ?? 0)
                 });
                 if (update.error) {
                   await releaseClaim(planningActionId);

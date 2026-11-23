@@ -837,18 +837,22 @@ export function netConsumeFirstContributors(args: {
   let attributed = 0;
   let consumed = 0;
   for (const c of contributors) {
+    // A contributor can carry more than this period needs: a lot split gives
+    // a week's contributors to its first release only. Its share is capped at
+    // the period's demand, so stock is left for the later releases.
+    const share = Math.min(c.quantity, Math.max(0, grossQty - attributed));
     const take = Math.min(
-      c.quantity,
+      share,
       consumableInWholeAssemblies(running, perAssemblyOf(c))
     );
     running -= take;
-    attributed += c.quantity;
+    attributed += share;
     consumed += take;
     if (take > 0) kept.push({ ...c, quantity: take });
-    if (c.quantity - take > 0) {
+    if (share - take > 0) {
       moved.push({
         ...c,
-        quantity: (c.quantity - take) * factor,
+        quantity: (share - take) * factor,
         redirectedFromItemId: c.redirectedFromItemId ?? itemId,
         perAssemblyQuantity:
           c.perAssemblyQuantity == null

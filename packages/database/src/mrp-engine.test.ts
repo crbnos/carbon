@@ -833,6 +833,32 @@ it("netConsumeFirstContributors nets demand no contributor accounts for by the u
   expect(out.running).toEqual(0);
 });
 
+// A lot split gives a week's contributors to its first release only: here
+// the first release needs 5 but carries a contributor of 10. It may take
+// only 5 of the 8 in stock, so 3 stay for the second release, and only 2 of
+// the 10 go to the successor in all.
+it("netConsumeFirstContributors takes no more stock than the period's own demand", () => {
+  const out = netConsumeFirstContributors({
+    itemId: "old",
+    contributors: [
+      {
+        sourceType: "Sales Order",
+        salesOrderLineId: "s1",
+        parentItemId: "asm",
+        quantity: 10
+      }
+    ],
+    grossQty: 5,
+    running: 8,
+    factor: 1,
+    perAssemblyOf: (c) => c.perAssemblyQuantity ?? 0
+  });
+  expect(out.consumed).toEqual(5);
+  expect(out.running).toEqual(3);
+  expect(out.kept.map((c) => c.quantity)).toEqual([5]);
+  expect(out.moved).toEqual([]);
+});
+
 it("netConsumeFirstContributors keeps the origin and converts the per-assembly quantity when moving", () => {
   const out = netConsumeFirstContributors({
     itemId: "mid",

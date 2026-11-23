@@ -13634,7 +13634,7 @@ export async function applyPlannedOrderPlanningActions(
   if (actions.length === 0) return result;
   const now = datetime.timestamp();
 
-  await db.transaction().execute(async (trx) => {
+  await withTransaction(db, async (trx) => {
     // 1. lock the targets: a convert or an MRP run waits for this apply, and
     // the reverse
     await lockCompanyPlanning(trx, companyId);

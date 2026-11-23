@@ -4530,7 +4530,7 @@ export const orderPlannedPurchases = defineServiceFn({
         error: settled.error
       });
       warnings.push(
-        "The orders were placed, but their suggestions were not updated. Recalculate before ordering them again."
+        "The orders were placed, but their suggestions and planned orders were not updated. Recalculate before ordering them again, and unfirm any Firm planned order a new line replaces: MRP keeps Firm orders as supply."
       );
     } else if (segments.planningGroupIds.size > 0) {
       // A grouped Order's pegs move to the PO lines that answered it. A
