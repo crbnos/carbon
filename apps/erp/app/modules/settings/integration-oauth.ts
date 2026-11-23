@@ -24,3 +24,39 @@ export function buildIntegrationOAuthUrl(
   url.searchParams.set("scope", oauth.scopes.join(" "));
   return url.toString();
 }
+
+export type XeroConnection = {
+  id: string;
+  authEventId?: string;
+  tenantId: string;
+  tenantName?: string | null;
+};
+
+/** The `authentication_event_id` claim of a Xero access token (a JWT), or null. */
+export function xeroAuthEventId(accessToken: string): string | null {
+  const payload = accessToken.split(".")[1];
+  if (!payload) return null;
+  try {
+    const claims = JSON.parse(Buffer.from(payload, "base64url").toString());
+    return typeof claims?.authentication_event_id === "string"
+      ? claims.authentication_event_id
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The organisation the user picked in this authorisation: the connection made
+ * by this auth event. Earlier connections stay listed, so the first entry is
+ * not necessarily the one just chosen.
+ */
+export function pickXeroConnection(
+  connections: ReadonlyArray<XeroConnection>,
+  authEventId: string | null
+): XeroConnection | null {
+  const fromThisAuth = authEventId
+    ? connections.find((c) => c.authEventId === authEventId)
+    : undefined;
+  return fromThisAuth ?? connections[0] ?? null;
+}

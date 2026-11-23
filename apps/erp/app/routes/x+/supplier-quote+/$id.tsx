@@ -7,14 +7,15 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getCurrencyByCode,
-  getExchangeRate
+  getExchangeRate,
+  resolveLineTaxes
 } from "~/modules/accounting/accounting.service";
 import {
   getSiblingQuotesForQuote,
@@ -31,6 +32,7 @@ import {
 } from "~/modules/purchasing/ui/SupplierQuote";
 import SupplierQuoteExplorer from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteExplorer";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -79,6 +81,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const taxDate =
+    quote.data.quotedDate ??
+    datetime.today(await getCompanyTimeZone(serviceRole, companyId)).toString();
   const [
     lines,
     prices,
@@ -87,7 +92,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     presentationCurrency,
     supplier,
     companySettings,
-    rate
+    rate,
+    resolvedTax
   ] = await Promise.all([
     getSupplierQuoteLines(serviceRole, id),
     getSupplierQuoteLinePricesByQuoteId(serviceRole, id),
@@ -102,7 +108,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           quote.data.companyId,
           quote.data.currencyCode
         )
-      : null
+      : null,
+    // The tax a new price break takes: the supplier's code (or bare
+    // percent), on the quote's date.
+    resolveLineTaxes(serviceRole, companyId, {
+      source: "purchase",
+      supplierId: quote.data.supplierId,
+      date: taxDate
+    })
   ]);
 
   if (supplierInteraction.error) {
@@ -159,7 +172,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     exchangeRate,
     siblingQuotes: siblingQuotesData,
     defaultCc,
-    supplier: supplier?.data ?? null
+    supplier: supplier?.data ?? null,
+    resolvedTax: resolvedTax.data,
+    taxDate
   };
 }
 

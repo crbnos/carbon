@@ -11,6 +11,7 @@ import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { issueTrackedEntityValidator } from "~/services/models";
 import { abilityBlockRefusal } from "~/services/operations.service";
+import { resolveWorkUnit } from "~/services/work-unit.server";
 
 const log = getLogger("mes");
 
@@ -40,15 +41,32 @@ export async function action({ request }: ActionFunctionArgs) {
   } = validation.data;
   const { materialId, itemId, children } = validation.data;
 
-  if (batchId ? !itemId : !parentTrackedEntityId) {
+  if (batchId ? !itemId : !parentTrackedEntityId || !jobOperationId) {
     return data(
       { success: false, message: "Failed to validate payload" },
       { status: 400 }
     );
   }
 
+  let parentId = parentTrackedEntityId;
   if (!batchId && jobOperationId) {
-    const refusal = await abilityBlockRefusal(await getCarbonServiceRole(), {
+    const serviceRole = getCarbonServiceRole();
+    const work = await resolveWorkUnit({
+      client: serviceRole,
+      companyId,
+      operationId: jobOperationId,
+      requestedUnitId: parentTrackedEntityId,
+      mode: "require"
+    });
+    if (work.kind === "refuse") {
+      return data(
+        { success: false, message: work.message, pickUnit: work.pickUnit },
+        { status: 409 }
+      );
+    }
+    if (work.kind === "unit") parentId = work.unitId;
+
+    const refusal = await abilityBlockRefusal(serviceRole, {
       operationId: jobOperationId,
       employeeId: userId,
       companyId
@@ -78,7 +96,7 @@ export async function action({ request }: ActionFunctionArgs) {
           materialId,
           jobOperationId,
           itemId,
-          parentTrackedEntityId: parentTrackedEntityId!,
+          parentTrackedEntityId: parentId!,
           children,
           jobOperationStepId,
           unitNumber,

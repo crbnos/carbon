@@ -116,6 +116,7 @@ export type RentalInvoiceLineValues = {
   description: string;
   unitPrice: number;
   taxPercent: number;
+  taxCodeId: string | null;
   serviceStartDate: string | null;
   serviceEndDate: string | null;
 };
@@ -140,7 +141,9 @@ export type RentalPlanCharge = {
   chargeType: Enums["rentalInvoiceLineType"];
   description: string;
   amount: number;
+  /** The charge's rate on the invoice date. */
   taxPercent: number;
+  taxCodeId: string | null;
   invoiceSeparately: boolean;
   voidedSalesInvoiceId: string | null;
 };
@@ -187,7 +190,9 @@ export function rentLineDescription(period: {
  */
 export function planAgreementRentalInvoices(input: {
   billingCycle: Enums["rentalBillingCycle"];
+  /** The rent lines' rate on the invoice date, from the agreement's code. */
   taxPercent: number;
+  taxCodeId: string | null;
   exchangeRate: number;
   mode: InvoiceAutomation;
   periods: RentalPlanPeriod[];
@@ -215,6 +220,7 @@ export function planAgreementRentalInvoices(input: {
           }),
           unitPrice: toBaseAmount(period.amount, input.exchangeRate),
           taxPercent: input.taxPercent,
+          taxCodeId: input.taxCodeId,
           serviceStartDate: period.periodStart,
           serviceEndDate: period.periodEnd
         },
@@ -232,6 +238,7 @@ export function planAgreementRentalInvoices(input: {
         description: charge.description,
         unitPrice: toBaseAmount(charge.amount, input.exchangeRate),
         taxPercent: charge.taxPercent,
+        taxCodeId: charge.taxCodeId,
         serviceStartDate: null,
         serviceEndDate: null
       },

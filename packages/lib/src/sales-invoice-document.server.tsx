@@ -22,6 +22,9 @@ import {
   withPdfLogos
 } from "./document-data.server";
 import { getCompanyTemplate, getPrintedTemplate } from "./document-edit.server";
+import { loadTaxSummary } from "./sales-invoice-tax-summary.server";
+
+export { loadTaxSummary };
 
 const logger = getLogger("lib", "sales-invoice-document");
 
@@ -100,6 +103,13 @@ async function loadCompanyInvoiceData(client: Client, companyId: string) {
  */
 export async function loadSalesInvoiceDocument(args: {
   client: Client;
+  /**
+   * Service-role client for the tax reads, whose RLS needs accounting, sales
+   * or purchasing view, so an invoicing-only reader prints the same tax as the
+   * emailed copy. Pass it only after checking the caller's permission; a
+   * caller that already holds a service-role `client` passes it again.
+   */
+  taxClient: Client;
   companyId: string;
   companyGroupId: string;
   invoiceId: string;
@@ -107,7 +117,15 @@ export async function loadSalesInvoiceDocument(args: {
   /** Draft edits to preview; omitted, the saved ones are read. */
   edit?: DocumentEdit | null;
 }): Promise<SalesInvoiceDocument> {
-  const { client, companyId, companyGroupId, invoiceId, locale, edit } = args;
+  const {
+    client,
+    taxClient,
+    companyId,
+    companyGroupId,
+    invoiceId,
+    locale,
+    edit
+  } = args;
 
   const [
     {
@@ -280,6 +298,19 @@ export async function loadSalesInvoiceDocument(args: {
     contactEmail: invoiceContact?.data?.contact?.email ?? null
   };
 
+  const tax = await loadTaxSummary({
+    taxClient,
+    companyId,
+    invoiceId,
+    company: company.data,
+    salesInvoice: salesInvoice.data,
+    lines: salesInvoiceLines.data ?? [],
+    headerShipping:
+      (salesInvoiceShipment.data?.shippingCost ?? 0) *
+      (salesInvoice.data.exchangeRate ?? 1),
+    currencyDecimals
+  });
+
   // `company` (the table row) stands in for the `companies` view row the
   // documents type against, as the routes always did.
   const pdfCompany = withPdfLogos(
@@ -315,7 +346,8 @@ export async function loadSalesInvoiceDocument(args: {
     shippingTerms: shippingTerms.data ?? [],
     thumbnails,
     template: templateConfig,
-    sections
+    sections,
+    ...tax
   };
 
   // The view types every column nullable; the table's invoiceId never is.
@@ -360,6 +392,7 @@ export type UnsavedSalesInvoice = {
     unitPrice: number;
     convertedUnitPrice: number;
     taxPercent: number;
+    taxCodeId: string | null;
   }[];
 };
 
@@ -371,12 +404,15 @@ export type UnsavedSalesInvoice = {
  */
 export async function loadUnsavedSalesInvoiceDocument(args: {
   client: Client;
+  /** Service-role client for the tax summary, as `loadSalesInvoiceDocument`. */
+  taxClient: Client;
   companyId: string;
   companyGroupId: string;
   locale: string;
   invoice: UnsavedSalesInvoice;
 }): Promise<{ pdfProps: SalesInvoicePDFProps; fileName: string }> {
-  const { client, companyId, companyGroupId, locale, invoice } = args;
+  const { client, taxClient, companyId, companyGroupId, locale, invoice } =
+    args;
 
   const [
     companyData,
@@ -492,6 +528,7 @@ export async function loadUnsavedSalesInvoiceDocument(args: {
     unitPrice: line.unitPrice,
     convertedUnitPrice: line.convertedUnitPrice,
     taxPercent: line.taxPercent,
+    taxCodeId: line.taxCodeId,
     discountPercent: 0,
     addOnCost: 0,
     convertedAddOnCost: 0,
@@ -548,6 +585,18 @@ export async function loadUnsavedSalesInvoiceDocument(args: {
     companyId
   } as unknown as SalesInvoicePDFProps["salesInvoiceShipment"];
 
+  // A draft's summary comes from its lines; the preview has no ledger rows.
+  const tax = await loadTaxSummary({
+    taxClient,
+    companyId,
+    invoiceId: invoice.invoiceId,
+    company: company.data,
+    salesInvoice,
+    lines: salesInvoiceLines,
+    headerShipping: 0,
+    currencyDecimals: currency.data?.decimalPlaces ?? null
+  });
+
   const pdfProps: SalesInvoicePDFProps = {
     company: pdfCompany,
     companySettings: companySettings.data,
@@ -573,7 +622,8 @@ export async function loadUnsavedSalesInvoiceDocument(args: {
     shippingTerms: companyData.shippingTerms.data ?? [],
     thumbnails: {},
     template: templateConfig,
-    sections
+    sections,
+    ...tax
   };
 
   return {

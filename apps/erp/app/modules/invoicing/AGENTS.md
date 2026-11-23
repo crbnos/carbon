@@ -36,7 +36,7 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
     - The document's own void runs (`voidForceDeleteDocument`).
     - The payment void reverses every `journalLine` of the payment, unapply journals included.
   - **Step 2, one transaction:** if the void refused, `reverseDocumentByJournal` runs:
-    1. It negates every journal carrying the document's lines. Before the cutover there are none to negate: an invoice writes its open amount off, and a payment negates its rebuilt posting.
+    1. It negates every journal carrying the document's lines, and an invoice's tax-ledger rows with them (`negateDocumentTaxLedger`, as a void does). Before the cutover there are none to negate: an invoice writes its open amount off, and a payment negates its rebuilt posting.
     2. It moves the stock back by adjustment, even negative, with its inspections cancelled under `withInspectionRelease`, and adds the original value back from its cost ledger.
     3. It restores PO received and invoiced quantities, and moves a capitalized asset's CIP value back.
     4. It marks the document Voided.
@@ -77,6 +77,44 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   the PARTY (`getMemos({ party })`) and offer direction as a separate filter;
   `vendor-credits.tsx` redirects old links. The readable id comes from the `creditMemo` or
   `debitMemo` sequence chosen by **direction**, not party.
+- **Memo tax** — `memo.amount` is the GROSS (what moves AR/AP); `memo.taxCodeId` and
+  `memo.taxAmount` hold the tax inside it. `MemoForm` posts **Net Amount** + **Tax Code**
+  (Tax and Gross are read-only). `upsertMemo` recomputes the tax server-side from the code's
+  rate on `memoDate` (`memoTaxAmounts` → `memoAmounts`, `@carbon/utils`) and refuses a code
+  with no net ("A tax code needs a net amount"). Stored tax is never dropped silently
+  (`resolveMemoTaxAmounts`, `invoicing.utils.ts`, shared with `MemoForm`): an UPDATE that
+  keeps the code (both null counts) of a memo with tax keeps the stored rate
+  (`deriveRate(taxAmount, amount − taxAmount)`, applied with `applyRate`; an unchanged net
+  keeps the tax exactly) — a codeless RMA / return credit with a bare percent, or a coded
+  memo whose source line overrode the percent; a changed code takes the new code's rate;
+  a gross-only update of a memo with tax or a code is refused ("This memo carries tax;
+  send netAmount"). Never trust a client tax amount, and never
+  infer tax from a gross. Posting is `post-memo` `planMemoTax`: a customer memo moves ALL its
+  tax through Tax Received; a supplier memo moves only the recoverable share through Tax
+  Paid and leaves the rest in the reason leg; a codeless supplier memo moves none (its tax
+  was cost). The memo tax leg always posts to the default tax account, not a component's
+  override. Credits made from a source (RMA `sales.service.ts`, purchase return
+  `purchasing.service.ts`, rental early return `create-rental-invoices`, contract
+  cancellation `post-customer-contract`) group their lines with `groupByTaxRate`: one memo
+  per (code, rate).
+- **Invoice tax** — invoice lines carry `taxCodeId` + `taxPercent` (resolver: accounting
+  AGENTS → Tax). Sales invoice line operations decide them with `resolveSalesLineTax`
+  (sales AGENTS → Line tax), purchase invoice line operations with `resolvePurchaseLineTax`
+  (purchasing AGENTS → Line tax; a Reverse Charge line refuses a supplier tax amount); the PI
+  line routes call the operations. `recalculateSalesInvoiceTaxes` (route
+  `x+/sales-invoice+/$invoiceId.recalculate-taxes.tsx`) re-applies the decision to a Draft
+  invoice's lines, leaving rental and contract lines alone. Service job invoices
+  (`createServiceInvoice`, `service.service.ts`) take the job's ship-to's or customer's code
+  on the invoice date (`serviceInvoiceLineTaxes`).
+  `post-sales-invoice` / `post-purchase-invoice` write the `taxLedger` rows in
+  the journal's transaction, and their voids write the negated rows. The sales invoice PDF's
+  tax summary, invoice messages and "Seller Tax ID" are read by `loadTaxSummary`
+  (`packages/lib/src/sales-invoice-tax-summary.server.ts`, pure helpers in
+  `packages/documents/src/utils/tax-summary.ts`). Its reads take a required service-role
+  `taxClient`, every one filtered by `companyId`: the tax tables' RLS needs accounting, sales
+  or purchasing view, and an invoicing-only reader must print the same tax as the emailed
+  copy. A route passes it only after its own permission check and after the caller's client
+  has read the invoice.
 - **Payment — THREE payee kinds.** `paymentValidator` requires exactly one of `customerId` /
   `supplierId` / `employeeId` (mirroring the DB `payment_party_check`). An `employeeId` payment
   is a **reimbursement payout**: always `Disbursement`, never AR, never a refund. In

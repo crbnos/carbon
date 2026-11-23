@@ -26,11 +26,7 @@ export function ActionTaskProgress({
         className
       )}
     >
-      <BarProgress
-        gradient
-        progress={progress}
-        value={`${done}/${tasks.length}`}
-      />
+      <BarProgress progress={progress} value={`${done}/${tasks.length}`} />
     </div>
   );
 }

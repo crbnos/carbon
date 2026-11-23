@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   loadUnsavedSalesInvoiceDocument,
   renderSalesInvoicePdf
@@ -61,6 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { locale } = getPreferenceHeaders(request);
   const { pdfProps, fileName } = await loadUnsavedSalesInvoiceDocument({
     client,
+    taxClient: getCarbonServiceRole(),
     companyId,
     companyGroupId,
     locale,
@@ -83,7 +85,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         description: line.description,
         unitPrice: line.unitPrice,
         convertedUnitPrice: round(line.unitPrice * exchangeRate),
-        taxPercent: line.taxPercent
+        taxPercent: line.taxPercent,
+        taxCodeId: line.taxCodeId
       }))
     }
   });

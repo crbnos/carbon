@@ -13,6 +13,7 @@ import {
   getLineSubtotal as getSalesInvoiceLineSubtotal,
   getLineTaxableSubtotal as getSalesInvoiceLineTaxableSubtotal,
   getLineTotal as getSalesInvoiceLineTotal,
+  getTaxTotal as getSalesInvoiceTaxTotal,
   getTotal as getSalesInvoiceTotal
 } from "./sales-invoice";
 import {
@@ -188,5 +189,20 @@ describe("sales invoice line subtotals", () => {
         { shippingCost: 20 } as never
       )
     );
+  });
+
+  it("adds the tax on header shipping that the view's total tax carries", () => {
+    // 100 at 20%, and header shipping of 10 taxed at the line's rate: the
+    // view's base tax is 22; at a rate of 2 that is 44 in document currency.
+    const line = {
+      quantity: 1,
+      convertedUnitPrice: 200,
+      taxPercent: 0.2
+    } as never;
+    const invoice = { exchangeRate: 2, totalTax: 22 } as never;
+    expect(getSalesInvoiceTaxTotal([line], invoice)).toBeCloseTo(44);
+    expect(
+      getSalesInvoiceTotal([line], invoice, { shippingCost: 10 } as never)
+    ).toBeCloseTo(200 + 44 + 20);
   });
 });

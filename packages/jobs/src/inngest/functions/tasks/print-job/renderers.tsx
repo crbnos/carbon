@@ -33,7 +33,7 @@ import {
 } from "@carbon/lib/sales-invoice-document.server";
 import { renderWithBinderyPress } from "@carbon/printing/printing.server";
 import type { LabelSize, ProductLabelItem } from "@carbon/utils";
-import { labelSizes } from "@carbon/utils";
+import { labelSizes, withLabelDpi } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ReactElement } from "react";
 import type { KanbanCardItem, StorageUnitItem } from "./resolvers";
@@ -75,11 +75,12 @@ export async function renderItemBuiltIn(
   companyId: string,
   doc: PrintableDocumentItem,
   format: "zpl" | "pdf",
-  mediaSizeId: string
+  mediaSizeId: string,
+  dpi: number
 ): Promise<GeneratedContent> {
   switch (doc.type) {
     case "productLabel": {
-      const mediaSize = requireMediaSize(mediaSizeId);
+      const mediaSize = requireMediaSize(mediaSizeId, dpi);
       // Apply the company's tracking-label template + logo, same as the
       // interactive download routes — otherwise queued jobs print a layout
       // that doesn't match what the customizer shows.
@@ -112,9 +113,16 @@ export async function renderItemBuiltIn(
       };
     }
     case "kanbanCard":
-      return renderKanbanCard(client, companyId, doc.item, format, mediaSizeId);
+      return renderKanbanCard(
+        client,
+        companyId,
+        doc.item,
+        format,
+        mediaSizeId,
+        dpi
+      );
     case "storageUnitLabel": {
-      const mediaSize = requireMediaSize(mediaSizeId);
+      const mediaSize = requireMediaSize(mediaSizeId, dpi);
       if (format === "pdf") {
         return renderPdfContent(
           <StorageUnitLabelPDF items={[doc.item]} labelSize={mediaSize} />
@@ -147,12 +155,12 @@ function pdfContent(body: Buffer): GeneratedContent {
   return { content: body.toString("base64"), contentType: "pdf" };
 }
 
-function requireMediaSize(mediaSizeId: string): LabelSize {
+function requireMediaSize(mediaSizeId: string, dpi: number): LabelSize {
   const mediaSize = labelSizes.find((s) => s.id === mediaSizeId);
   if (!mediaSize) {
     throw new Error(`Unknown media size ${mediaSizeId}`);
   }
-  return mediaSize;
+  return withLabelDpi(mediaSize, dpi);
 }
 
 // Not the public storage prefix: nothing here reaches a browser. The expanded
@@ -230,11 +238,14 @@ async function renderKanbanCard(
   companyId: string,
   item: KanbanCardItem,
   format: "zpl" | "pdf",
-  mediaSizeId: string
+  mediaSizeId: string,
+  dpi: number
 ): Promise<GeneratedContent> {
   const mediaSize = labelSizes.find((s) => s.id === mediaSizeId);
   const cardSize =
-    mediaSize && canHoldKanbanLabel(mediaSize) ? mediaSize : undefined;
+    mediaSize && canHoldKanbanLabel(mediaSize)
+      ? withLabelDpi(mediaSize, dpi)
+      : undefined;
 
   const label: KanbanLabelItem = {
     id: item.id,

@@ -66,6 +66,12 @@ export const LIVE_COLUMN_RENAMES: Record<string, Record<string, string>> = {
   // a NULL currencyCode reads as base).
   supplierPart: { unitPrice: "supplierUnitPrice" },
   supplierPartPrice: { unitPrice: "supplierUnitPrice" },
+  // 2026-10 (multi-jurisdiction tax): the tax account defaults took Odoo's
+  // names. Both columns kept their values; only the names changed.
+  accountDefault: {
+    salesTaxPayableAccount: "taxReceivedAccount",
+    purchaseTaxPayableAccount: "taxPaidAccount"
+  },
   // 2026-11 (inspection plan name): the column named the plan, not a drawing.
   inspectionDocument: { drawingNumber: "name" }
 };

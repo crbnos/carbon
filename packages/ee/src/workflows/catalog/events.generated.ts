@@ -958,7 +958,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     sourcingType: { kind: "primitive", of: "string" },
     mpn: { kind: "primitive", of: "string" },
     revisionStatus: { kind: "primitive", of: "string" },
-    changeOrderId: { kind: "primitive", of: "string" }
+    changeOrderId: { kind: "primitive", of: "string" },
+    taxable: { kind: "primitive", of: "boolean" }
   },
   job: {
     id: { kind: "primitive", of: "string" },
@@ -1216,7 +1217,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     internalNotes: { kind: "primitive", of: "string" },
     supplierInteractionId: { kind: "primitive", of: "string" },
     postedBy: { kind: "entity", of: "user" },
-    inspectionStatus: { kind: "primitive", of: "string" }
+    inspectionStatus: { kind: "primitive", of: "string" },
+    rejectedAtInspection: { kind: "primitive", of: "boolean" }
   },
   salesInvoice: {
     id: { kind: "primitive", of: "string" },

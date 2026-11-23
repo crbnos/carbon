@@ -277,6 +277,7 @@ const charge = (
   description: "Delivery",
   amount: 50,
   taxPercent: 0,
+  taxCodeId: null,
   invoiceSeparately: false,
   voidedSalesInvoiceId: null,
   ...overrides
@@ -288,6 +289,7 @@ const plan = (
   planAgreementRentalInvoices({
     billingCycle: "Monthly",
     taxPercent: 0.2,
+    taxCodeId: null,
     exchangeRate: 1,
     mode: "Draft Only",
     periods: [period()],

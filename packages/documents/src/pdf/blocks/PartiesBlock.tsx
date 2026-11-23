@@ -73,6 +73,7 @@ export function PartiesBlock({
               {row("shipping")}
               {row("shippingTerms")}
               {row("incoterm")}
+              {row("sellerTaxId")}
             </View>
           </View>
 

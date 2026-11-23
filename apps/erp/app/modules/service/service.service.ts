@@ -53,6 +53,7 @@ import { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { stripSpecialCharacters } from "~/utils/string";
+import type { LineTax } from "../accounting/accounting.utils";
 import {
   diffLaborGroups,
   type LaborDimension,
@@ -66,6 +67,7 @@ import {
 import {
   allocateJournalLineIds,
   createAdjustmentJournal,
+  customerLineTaxes,
   invokePosting,
   isActiveCompanyEmployee,
   refuseUnlessOwned,
@@ -2882,7 +2884,8 @@ export const createServiceInvoicePermission = {
  *    the customer's payment term and currency) and `salesInvoiceShipment`;
  * 4. inserts the lines, each with `serviceJobId`;
  * 5. stamps the job with the invoice and sets it Invoiced.
- * Tax stays at 0, as create-service-order-invoice did.
+ * Each line takes the tax a new invoice line takes on the invoice date: the
+ * job's ship-to's code, else the customer's (`serviceInvoiceLineTaxes`).
  */
 export async function createServiceInvoice(
   ctx: ServiceContext,
@@ -3019,8 +3022,26 @@ export async function createServiceInvoice(
     if (rate.error) throw new Error(rate.error.message);
     const exchangeRate = Number(rate.data);
 
+    // Each line's tax, as any new invoice line takes it: the job's ship-to's
+    // code, else the customer's, on the invoice date; none for an exempt
+    // customer or a non-taxable item.
+    const lineTaxes = await serviceInvoiceLineTaxes(ctx, trx, {
+      customerId,
+      customerLocationId: job.customerLocationId,
+      date: today,
+      itemIds: lines.map((line) => line.itemId)
+    });
+
     const subtotal = round(
       lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
+    );
+    const totalTax = round(
+      lines.reduce(
+        (sum, line) =>
+          sum +
+          line.quantity * line.unitPrice * lineTaxes(line.itemId).taxPercent,
+        0
+      )
     );
 
     const readableInvoiceId = await getNextSequence(
@@ -3055,8 +3076,8 @@ export async function createServiceInvoice(
         dateIssued: today,
         subtotal,
         totalDiscount: 0,
-        totalTax: 0,
-        totalAmount: subtotal,
+        totalTax,
+        totalAmount: round(subtotal + totalTax),
         opportunityId: opportunity.id,
         companyId,
         createdBy: userId
@@ -3087,7 +3108,7 @@ export async function createServiceInvoice(
           quantity: line.quantity,
           unitPrice: line.unitPrice,
           unitOfMeasureCode: line.unitOfMeasureCode,
-          taxPercent: 0,
+          ...lineTaxes(line.itemId),
           exchangeRate,
           locationId: job.locationId,
           serviceJobId: job.id,
@@ -3116,6 +3137,24 @@ export async function createServiceInvoice(
       invoiceId: readableInvoiceId
     };
   });
+}
+
+/**
+ * The tax of a service invoice's lines, by item (`customerLineTaxes`, read
+ * inside `trx`): the default a new invoice line opens with, the customer's
+ * bare percent included. A code with no rate in force on `date` is refused.
+ */
+export function serviceInvoiceLineTaxes(
+  ctx: ServiceContext,
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    customerId: string;
+    customerLocationId: string | null;
+    date: string;
+    itemIds: ReadonlyArray<string | null>;
+  }
+): Promise<(itemId: string | null) => LineTax> {
+  return customerLineTaxes(trx, { companyId: ctx.company.id, ...args });
 }
 
 /**

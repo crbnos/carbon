@@ -85,7 +85,11 @@ import {
   rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
-import { withRevisionSuffix } from "@carbon/documents/utils";
+import {
+  TAX_CODE_SUMMARY_SELECT,
+  withRevisionSuffix
+} from "@carbon/documents/utils";
+import { generateTestLabelZPL } from "@carbon/documents/zpl";
 import type {
   DescriptionModes,
   ItemEdit,
@@ -165,6 +169,8 @@ import {
   type RilletProvider,
   SYNC_OPERATION_ALLOWED_TRANSITIONS,
   SyncOperationStatusSchema,
+  type TaxRateOption,
+  toXeroTaxRateOptions,
   XERO_MAX_JOURNAL_DIMENSION_SLOTS,
   type XeroProvider
 } from "@carbon/ee/accounting";
@@ -241,6 +247,7 @@ import {
 import { packBySize } from "@carbon/jobs/events";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
+import { loadTaxSummary } from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -249,7 +256,8 @@ import {
   labelSizes,
   requireAffected,
   requiresItarEntityCertification,
-  searchFilter
+  searchFilter,
+  withLabelDpi
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -1993,6 +2001,29 @@ export async function listPreviewEntities(
 const emptyThumbnails: Record<string, string | null> = {};
 
 /**
+ * The codes a picked quote's or order's lines name, for its tax summary, as the
+ * PDF route reads them. Service role: the caller checked `update: settings`,
+ * and the tax tables need accounting, sales or purchasing view.
+ */
+async function previewTaxCodes(
+  companyId: string,
+  lines: ReadonlyArray<{ taxCodeId: string | null }> | null
+) {
+  const taxCodeIds = [
+    ...new Set(
+      (lines ?? []).flatMap((line) => (line.taxCodeId ? [line.taxCodeId] : []))
+    )
+  ];
+  if (taxCodeIds.length === 0) return null;
+  const taxCodes = await getCarbonServiceRole()
+    .from("taxCode")
+    .select(TAX_CODE_SUMMARY_SELECT)
+    .eq("companyId", companyId)
+    .in("id", taxCodeIds);
+  return taxCodes.data;
+}
+
+/**
  * Fetch the real data props a document's PDF needs for a record id, mirroring
  * the live PDF route loaders. Returns null when unsupported / not found, so the
  * preview falls back to sample data.
@@ -2040,8 +2071,22 @@ export async function buildPreviewProps(
         getAccountsReceivableBillingAddress(client, companyId)
       ]);
       if (!invoice.data) return null;
+      const tax = await loadTaxSummary({
+        // The caller checked `update: settings`; the tax tables need
+        // accounting, sales or purchasing view.
+        taxClient: getCarbonServiceRole(),
+        companyId,
+        invoiceId: id,
+        company: company.data,
+        salesInvoice: invoice.data,
+        lines: lines.data ?? [],
+        headerShipping:
+          (shipment.data?.shippingCost ?? 0) * (invoice.data.exchangeRate ?? 1),
+        currencyDecimals: null
+      });
       return {
         ...base,
+        ...tax,
         salesInvoice: invoice.data,
         salesInvoiceLines: lines.data ?? [],
         salesInvoiceLocations: locations.data,
@@ -2070,6 +2115,10 @@ export async function buildPreviewProps(
       if (!order.data) return null;
       return {
         ...base,
+        taxCodes: await previewTaxCodes(companyId, lines.data),
+        taxDate:
+          order.data.orderDate ??
+          datetime.today(company.data.timezone ?? "UTC").toString(),
         salesOrder: order.data,
         salesOrderLines: lines.data ?? [],
         salesOrderLocations: locations.data,
@@ -2146,6 +2195,9 @@ export async function buildPreviewProps(
         ...base,
         exchangeRate,
         printDate: datetime.today(timeZone).toString(),
+        // A quote has no document date; its codes are read on today.
+        taxCodes: await previewTaxCodes(companyId, lines.data),
+        taxDate: datetime.today(timeZone).toString(),
         quote: quote.data,
         quoteLines: lines.data ?? [],
         quoteLinePrices: prices.data ?? [],
@@ -3770,27 +3822,14 @@ export async function createHeadquarters(
 /** A one-label ZPL test page for the route's media size; null for a PDF route or no size. */
 export function generateTestLabel(
   format: string,
-  mediaSizeId: string | null
+  mediaSizeId: string | null,
+  dpi: number,
+  printedAt: string
 ): string | null {
   if (format !== "zpl" || !mediaSizeId) return null;
   const labelSize = labelSizes.find((s) => s.id === mediaSizeId);
   if (!labelSize?.zpl) return null;
-  const { width, height } = labelSize.zpl;
-  const dpi = labelSize.zpl.dpi || 203;
-  const widthDots = Math.round(width * dpi);
-  const heightDots = Math.round(height * dpi);
-  const now = new Date();
-  const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
-  return [
-    "^XA",
-    `^PW${widthDots}`,
-    `^LL${heightDots}`,
-    "^MNW",
-    "^FO20,20^A0N,30,30^FDTest Print^FS",
-    `^FO20,60^A0N,20,20^FD${mediaSizeId} — ${width}x${height}"^FS`,
-    `^FO20,90^A0N,16,16^FD${timestamp}^FS`,
-    "^XZ"
-  ].join("\n");
+  return generateTestLabelZPL(withLabelDpi(labelSize, dpi), printedAt);
 }
 
 /** An API key action on a company without the plan. */
@@ -9379,6 +9418,58 @@ export function panelResponse(
         { status: result.error.status, headers }
       )
     : data(result.data.body, { status: result.data.status, headers });
+}
+
+/** The providers that map Carbon tax codes to their own tax rates. */
+export const TAX_RATE_MAPPING_PROVIDERS: ReadonlySet<string> = new Set([
+  ProviderID.XERO,
+  ProviderID.QUICKBOOKS
+]);
+
+/**
+ * The provider's active tax rates as mapping options, both directions. Xero's
+ * read returns [] on failure, and an organisation always has active rates,
+ * so an empty Xero list sets `optionsError` like a thrown read. The settings
+ * drawer shows what loaded; saving a mapping refuses when the read fails.
+ */
+export async function getProviderTaxRateOptions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string
+): Promise<{ options: TaxRateOption[]; optionsError: boolean }> {
+  try {
+    const providerId =
+      integrationId === ProviderID.XERO
+        ? ProviderID.XERO
+        : ProviderID.QUICKBOOKS;
+    const accountingIntegration = await getAccountingIntegration(
+      client,
+      companyId,
+      providerId
+    );
+    const provider = getProviderIntegration(
+      client,
+      companyId,
+      providerId,
+      accountingIntegration.metadata
+    );
+    if (providerId === ProviderID.XERO) {
+      const rates = await (provider as XeroProvider).listTaxRates();
+      // listTaxRates answers [] on failure; an organisation always has rates.
+      return {
+        options: toXeroTaxRateOptions(rates),
+        optionsError: rates.length === 0
+      };
+    }
+    const options = await (provider as QboProvider).listTaxRateOptions();
+    return { options, optionsError: false };
+  } catch (err) {
+    getLogger("erp", "settings", "tax-rates").error(
+      "Failed to load provider tax rates",
+      { companyId, integrationId, error: err }
+    );
+    return { options: [], optionsError: true };
+  }
 }
 
 // Strict backflush gaps. Each count and its drawer list share one query, the

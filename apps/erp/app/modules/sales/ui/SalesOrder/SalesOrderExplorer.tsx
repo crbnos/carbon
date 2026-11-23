@@ -141,6 +141,7 @@ export default function SalesOrderExplorer() {
     salesOrder: SalesOrder;
     lines: SalesOrderLine[];
     customer: Customer;
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
   }>(path.to.salesOrder(orderId));
   const permissions = usePermissions();
 
@@ -153,7 +154,11 @@ export default function SalesOrderExplorer() {
     nonTaxableAddOnCost: 0,
     locationId:
       salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
-    taxPercent: salesOrderData?.customer?.taxPercent ?? 0,
+    taxPercent:
+      salesOrderData?.resolvedTax?.taxPercent ??
+      salesOrderData?.customer?.taxPercent ??
+      0,
+    taxCodeId: salesOrderData?.resolvedTax?.taxCodeId ?? undefined,
     promisedDate:
       salesOrderData?.salesOrder?.receiptPromisedDate ??
       salesOrderData?.salesOrder?.receiptRequestedDate ??

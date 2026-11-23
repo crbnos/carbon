@@ -27,7 +27,9 @@ async function closedAgreementFixture({
   invoiceSeparately = false,
   status = "Closed" as "Closed" | "Active",
   withPeriod = true,
-  chargeDate = "2026-09-01"
+  chargeDate = "2026-09-01",
+  withTaxCode = false,
+  withEarlyReturnCredits = false
 } = {}) {
   const db = await connectLocalTestDatabase();
   const prefix = `rentest-${crypto
@@ -43,6 +45,10 @@ async function closedAgreementFixture({
   const lineId = `${prefix}-line`;
   const periodId = `${prefix}-period`;
   const chargeId = `${prefix}-charge`;
+  const taxCodeId = `${prefix}-taxcode`;
+  const octoberPeriodId = `${prefix}-period-oct`;
+  const septemberCreditId = `${prefix}-credit-sep`;
+  const octoberCreditId = `${prefix}-credit-oct`;
 
   await db.transaction().execute(async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
@@ -76,12 +82,12 @@ async function closedAgreementFixture({
       .execute();
     await trx
       .insertInto("sequence")
-      .values({
-        table: "salesInvoice",
-        name: "Sales Invoice",
-        prefix: "INV-",
-        companyId
-      })
+      .values(
+        [
+          { table: "salesInvoice", name: "Sales Invoice", prefix: "INV-" },
+          { table: "creditMemo", name: "Credit Memo", prefix: "CM-" }
+        ].map((row) => ({ ...row, companyId }))
+      )
       .execute();
     await trx
       .insertInto("customer")
@@ -112,6 +118,41 @@ async function closedAgreementFixture({
         createdBy: USER
       })
       .execute();
+    // 10% throughout, plus 5% from October: a September line bills 10% and
+    // an October line 15%, whatever the agreement's stored percent says.
+    if (withTaxCode) {
+      await trx
+        .insertInto("taxCode")
+        .values({
+          id: taxCodeId,
+          name: "Rental VAT",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("taxCodeComponent")
+        .values([
+          {
+            taxCodeId,
+            name: "State",
+            taxPercent: 0.1,
+            sequence: 1,
+            companyId,
+            createdBy: USER
+          },
+          {
+            taxCodeId,
+            name: "City",
+            taxPercent: 0.05,
+            sequence: 2,
+            effectiveDate: "2026-10-01",
+            companyId,
+            createdBy: USER
+          }
+        ])
+        .execute();
+    }
     // Closed with nothing unbilled, then a void returned one period and one
     // charge to unbilled. Priced at 2 agreement units per base unit.
     await trx
@@ -127,6 +168,9 @@ async function closedAgreementFixture({
         startDate: "2026-09-01",
         endDate: "2026-09-30",
         status,
+        // The rate frozen when the code was picked; the code's dated
+        // components decide what each line bills.
+        ...(withTaxCode ? { taxCodeId, taxPercent: 0.02 } : {}),
         companyId,
         createdBy: USER
       })
@@ -168,10 +212,64 @@ async function closedAgreementFixture({
         amount: 50,
         chargeDate,
         invoiceSeparately,
+        ...(withTaxCode ? { taxCodeId, taxPercent: 0.02 } : {}),
         companyId,
         createdBy: USER
       })
       .execute();
+    if (withTaxCode) {
+      await trx
+        .insertInto("rentalBillingPeriod")
+        .values({
+          id: octoberPeriodId,
+          rentalAgreementLineId: lineId,
+          periodStart: "2026-10-01",
+          periodEnd: "2026-10-31",
+          days: 31,
+          amount: 300,
+          dueOn: "2026-10-01",
+          status: "Pending",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+    }
+    // Two early-return credits, one in each month: the code's rate on each
+    // period's start differs (10% in September, 15% from October), but both
+    // credit at the rate on the memo's date.
+    if (withEarlyReturnCredits) {
+      await trx
+        .insertInto("rentalBillingPeriod")
+        .values([
+          {
+            id: septemberCreditId,
+            rentalAgreementLineId: lineId,
+            periodStart: "2026-09-01",
+            periodEnd: "2026-09-30",
+            days: 30,
+            amount: -100,
+            isAdjustment: true,
+            dueOn: "2026-09-30",
+            status: "Pending",
+            companyId,
+            createdBy: USER
+          },
+          {
+            id: octoberCreditId,
+            rentalAgreementLineId: lineId,
+            periodStart: "2026-10-01",
+            periodEnd: "2026-10-31",
+            days: 31,
+            amount: -60,
+            isAdjustment: true,
+            dueOn: "2026-10-01",
+            status: "Pending",
+            companyId,
+            createdBy: USER
+          }
+        ])
+        .execute();
+    }
   });
 
   const ctx = { db, companyId, userId: USER };
@@ -182,7 +280,11 @@ async function closedAgreementFixture({
     companyId,
     agreementId,
     periodId,
+    octoberPeriodId,
+    septemberCreditId,
+    octoberCreditId,
     chargeId,
+    taxCodeId,
     async cleanup() {
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
@@ -346,10 +448,11 @@ async function billingState(
   return { invoices, opportunities, sequence, periods, charges };
 }
 
+for (const withTaxCode of [false, true]) {
 databaseTest(
-  "the Next Invoice preview is what the run drafts, and writes nothing",
+  `the Next Invoice preview is what the run drafts, and writes nothing${withTaxCode ? " (with a tax code)" : ""}`,
   async () => {
-    const f = await closedAgreementFixture({ status: "Active" });
+    const f = await closedAgreementFixture({ status: "Active", withTaxCode });
     try {
       const before = await billingState(f);
       const preview = await getRentalNextInvoice(f.db, {
@@ -418,6 +521,7 @@ databaseTest(
     }
   }
 );
+}
 
 databaseTest(
   "the Next Invoice preview waits for a charge dated after today",
@@ -439,6 +543,128 @@ databaseTest(
           invoice.lines.map((line) => line.rentalAgreementChargeId)
         )
       ).toEqual([f.chargeId]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a line with a tax code bills at the code's rate on the invoice's date",
+  async () => {
+    const f = await closedAgreementFixture({ withTaxCode: true });
+    try {
+      const result = await invokePosting(
+        f.ctx,
+        "create-rental-invoices",
+        { asOf: "2026-10-05" },
+        createRentalInvoices
+      );
+      expect(result.error).toBeNull();
+      expect(result.data!.failures).toEqual([]);
+      expect(result.data!.invoices).toHaveLength(1);
+
+      const lines = await f.db
+        .selectFrom("salesInvoiceLine")
+        .select([
+          "rentalBillingPeriodId",
+          "rentalAgreementChargeId",
+          "taxCodeId",
+          "taxPercent",
+          "unitPrice"
+        ])
+        .where("companyId", "=", f.companyId)
+        .where("rentalAgreementId", "=", f.agreementId)
+        .execute();
+      const rate = (line: (typeof lines)[number] | undefined) => ({
+        taxCodeId: line?.taxCodeId,
+        taxPercent: Number(line?.taxPercent)
+      });
+      // The invoice is dated 5 October, so every line takes the code's rate
+      // then (10% + the 5% component that starts on 1 October), even the
+      // September period: the invoice date is the tax point.
+      expect(
+        rate(lines.find((l) => l.rentalBillingPeriodId === f.periodId))
+      ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.15 });
+      expect(
+        rate(lines.find((l) => l.rentalBillingPeriodId === f.octoberPeriodId))
+      ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.15 });
+      expect(
+        rate(lines.find((l) => l.rentalAgreementChargeId === f.chargeId))
+      ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.15 });
+
+      // The header totals are the lines': (150 + 150 + 25) × 15%.
+      const invoice = await f.db
+        .selectFrom("salesInvoice")
+        .select(["subtotal", "totalTax", "totalAmount"])
+        .where("id", "=", result.data!.invoices[0]!.invoiceId)
+        .executeTakeFirstOrThrow();
+      expect({
+        subtotal: Number(invoice.subtotal),
+        totalTax: Number(invoice.totalTax),
+        totalAmount: Number(invoice.totalAmount)
+      }).toEqual({ subtotal: 325, totalTax: 48.75, totalAmount: 373.75 });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "early-return credits from two rate periods go on one credit memo at the code's rate on the memo date",
+  async () => {
+    const f = await closedAgreementFixture({
+      withTaxCode: true,
+      withEarlyReturnCredits: true
+    });
+    try {
+      const result = await invokePosting(
+        f.ctx,
+        "create-rental-invoices",
+        { asOf: "2026-10-05" },
+        createRentalInvoices
+      );
+      expect(result.error).toBeNull();
+      expect(result.data!.failures).toEqual([]);
+      const memoIds = result.data!.creditMemos.map((memo) => memo.memoId);
+      expect(memoIds).toHaveLength(1);
+
+      const memo = await f.db
+        .selectFrom("memo")
+        .select(["amount", "taxAmount", "taxCodeId", "status", "memoDate"])
+        .where("companyId", "=", f.companyId)
+        .where("id", "=", memoIds[0]!)
+        .executeTakeFirstOrThrow();
+      // 100 (a September period) + 60 (October), both at 15%: the code's
+      // rate on 5 October, the memo's date and tax point. `amount` is the
+      // gross.
+      expect({
+        amount: Number(memo.amount),
+        taxAmount: Number(memo.taxAmount),
+        taxCodeId: memo.taxCodeId,
+        status: memo.status,
+        memoDate: String(memo.memoDate)
+      }).toEqual({
+        amount: 184,
+        taxAmount: 24,
+        taxCodeId: f.taxCodeId,
+        status: "Draft",
+        memoDate: "2026-10-05"
+      });
+
+      // Both credits are stamped with the memo.
+      const credits = await f.db
+        .selectFrom("rentalBillingPeriod")
+        .select(["id", "memoId", "status"])
+        .where("companyId", "=", f.companyId)
+        .where("id", "in", [f.septemberCreditId, f.octoberCreditId])
+        .execute();
+      expect(
+        Object.fromEntries(credits.map((c) => [c.id, [c.memoId, c.status]]))
+      ).toEqual({
+        [f.septemberCreditId]: [memoIds[0], "Invoiced"],
+        [f.octoberCreditId]: [memoIds[0], "Invoiced"]
+      });
     } finally {
       await f.cleanup();
     }

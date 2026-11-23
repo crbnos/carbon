@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { datetime, searchFilter } from "@carbon/utils";
+import {
+  DEFAULT_LABEL_DPI,
+  datetime,
+  type LabelDpi,
+  searchFilter
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LabelTemplateType } from "./registry";
 import type {
@@ -89,7 +94,7 @@ export async function getPrintJobContent(
 ) {
   return client
     .from("printJob")
-    .select("id, content, contentType")
+    .select("id, content, contentType, dpi")
     .eq("id", printJobId)
     .eq("companyId", companyId)
     .single();
@@ -108,6 +113,8 @@ export async function createPrintJob(
     description: string;
     status?: PrintJobStatus;
     origin?: PrintJobOrigin;
+    /** The dpi `content` was drawn for; defaults to 203. */
+    dpi?: number;
     createdBy: string;
   }
 ) {
@@ -124,6 +131,7 @@ export async function createPrintJob(
       description: job.description,
       status: job.status ?? "generating",
       origin: job.origin ?? "auto",
+      dpi: job.dpi ?? DEFAULT_LABEL_DPI,
       createdBy: job.createdBy
     })
     .select("id")
@@ -135,13 +143,16 @@ export async function updatePrintJobContent(
   printJobId: string,
   companyId: string,
   content: string,
-  contentType: PrintJobContentType
+  contentType: PrintJobContentType,
+  /** The dpi `content` was drawn for. */
+  dpi: number
 ) {
   return client
     .from("printJob")
     .update({
       content,
       contentType,
+      dpi,
       status: "queued",
       updatedAt: new Date().toISOString()
     })
@@ -204,7 +215,9 @@ export async function getPrinterRoute(
 ) {
   return client
     .from("printerRoute")
-    .select("id, locationId, name, format, mediaSizeId, printerUrl, hasApiKey")
+    .select(
+      "id, locationId, name, format, mediaSizeId, dpi, printerUrl, hasApiKey"
+    )
     .eq("id", routeId)
     .eq("companyId", companyId)
     .single();
@@ -219,6 +232,8 @@ export async function upsertPrinterRoute(
     name: string;
     format: string;
     mediaSizeId?: string | null;
+    /** Absent keeps a saved route's dpi; a new route gets 203. */
+    dpi?: LabelDpi;
     printerUrl: string;
   }
 ) {
@@ -230,6 +245,7 @@ export async function upsertPrinterRoute(
         name: route.name,
         format: route.format,
         mediaSizeId: route.mediaSizeId ?? null,
+        dpi: route.dpi,
         printerUrl: route.printerUrl,
         updatedAt: new Date().toISOString()
       })
@@ -247,6 +263,7 @@ export async function upsertPrinterRoute(
       name: route.name,
       format: route.format,
       mediaSizeId: route.mediaSizeId ?? null,
+      dpi: route.dpi ?? DEFAULT_LABEL_DPI,
       printerUrl: route.printerUrl
     })
     .select("id")
