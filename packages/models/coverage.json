@@ -40,5 +40,15 @@
       "apps/erp/app/modules/shared/shared.service.ts#documentJournalLines": "18da8593e73775e4"
     },
     "confirmedAt": "a21bdfa4fe"
+  },
+  "job-material-issue": {
+    "model": "src/job-material-issue.ts",
+    "code": {
+      "apps/erp/app/modules/inventory/inventory.service.ts": [
+        "issueJobOperationMaterials"
+      ],
+      "apps/erp/app/modules/shared/shared.service.ts": ["lockUntrackedDraws"]
+    },
+    "databaseTests": ["test/database/job-material-issue-concurrency.test.ts"]
   }
 }

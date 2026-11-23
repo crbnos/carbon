@@ -29,6 +29,7 @@ SUPABASE_DB_URL=… pnpm --filter @carbon/models confirm <model>   # verify, the
 |---|---|---|
 | `accounting-period.ts` | lock, unlock, close and reopen of accounting periods | `lockAccountingPeriod`, `unlockAccountingPeriod`, `closeAccountingPeriod`, `reopenAccountingPeriod` (`apps/erp/app/modules/accounting/accounting.service.ts`) |
 | `invoice-void.ts` | voiding a posted sales or purchase invoice against a line account change, and against another void | the `void` branch of `postSalesInvoice` / `postPurchaseInvoice`, `changeInvoiceLineAccount` (`apps/erp/app/modules/invoicing/invoicing.service.ts`) |
+| `job-material-issue.ts` | issuing an untracked job material: operation completion, step issue and the job's backflush | `issueJobOperationMaterials`, the `partToOperation` case of `issueMaterial` (`apps/erp/app/modules/inventory/inventory.service.ts`), `backflush_job_materials` (SQL) |
 
 ## Always
 
