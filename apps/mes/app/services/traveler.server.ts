@@ -22,10 +22,15 @@ import {
   getMyPeopleAssignment,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
+import {
+  readOperationUnitFacts,
+  resolveWorkUnit,
+  SELECT_UNIT_FIRST
+} from "~/services/work-unit.server";
 import { makeDurations } from "~/utils/durations";
 import {
   batchScanQuantity,
-  isTravelerClaimAuto,
+  decideTravelerClaim,
   isUnitInOperationScope,
   pickTravelerClaims,
   pickTravelerMaterial,
@@ -475,6 +480,8 @@ export type TravelerUnit = {
 export type TravelerClaimOption = TravelerClaim & {
   operation: ActiveOperation;
   parentReadableId: string;
+  /** A later operation of a serial part: only a unit the operator names takes it. */
+  laterSerial: boolean;
 };
 
 /** The operation page an operator scanned on: claims stay inside it. */
@@ -505,7 +512,13 @@ export type TravelerResolution =
       options: TravelerClaimOption[];
       auto: boolean;
     }
-  | { kind: "refuse"; unit: TravelerUnit; message: string }
+  /** `pickUnit`: no unit is held where one must be; the screen asks for it. */
+  | {
+      kind: "refuse";
+      unit: TravelerUnit;
+      message: string;
+      pickUnit?: boolean;
+    }
   | { kind: "info"; unit: TravelerUnit; storageUnitName: string | null };
 
 const MAX_CLAIM_OPTIONS = 10;
@@ -681,13 +694,31 @@ export async function resolveTravelerScan(
     };
   }
 
-  const auto = isTravelerClaimAuto({
+  const decision = decideTravelerClaim({
     onOperationPage: !!at,
+    heldUnitId: at?.trackedEntityId ?? null,
     isSerial: item?.itemTrackingType === "Serial",
     workCenterId,
-    optionWorkCenterIds: options.map((o) => o.operation.workCenterId)
+    options
   });
-  return { kind: "claim", unit, options, auto };
+  if (decision.kind === "pickUnit") {
+    return {
+      kind: "refuse",
+      unit,
+      message: SELECT_UNIT_FIRST,
+      pickUnit: true
+    };
+  }
+  if (decision.options.length === 0) {
+    const name = unit.itemReadableId ?? unit.readableId;
+    return { kind: "refuse", unit, message: `This unit does not need ${name}` };
+  }
+  return {
+    kind: "claim",
+    unit,
+    options: decision.options,
+    auto: decision.auto
+  };
 }
 
 /**
@@ -717,9 +748,10 @@ export async function scanTraveler(
       claimed: TravelerClaimOption | null;
       error: null;
     }
-  | { resolution: null; claimed: null; error: string }
+  | { resolution: null; claimed: null; error: string; pickUnit?: boolean }
 > {
   let lastError = "Could not issue this unit. Try again.";
+  let pickUnit = false;
   for (let attempt = 0; attempt < 2; attempt++) {
     const resolution = await resolveTravelerScan(client, args);
     if (resolution.kind !== "claim" || !resolution.auto) {
@@ -734,29 +766,56 @@ export async function scanTraveler(
       // The unit the label travels with now: a kit's chamber, not the kit.
       trackedEntityId: resolution.unit.id,
       claim,
+      heldUnitId:
+        args.at?.operationId === claim.operationId
+          ? (args.at.trackedEntityId ?? null)
+          : null,
       jobOperationStepId: sameUnit ? args.at?.jobOperationStepId : undefined,
       unitNumber: sameUnit ? args.at?.unitNumber : undefined
     });
     if (!issued.error) return { resolution, claimed: claim, error: null };
     lastError = issued.error;
+    pickUnit = !!issued.pickUnit;
     if (!issued.retryable) break;
   }
-  return { resolution: null, claimed: null, error: lastError };
+  return { resolution: null, claimed: null, error: lastError, pickUnit };
 }
 
-/** Issues a scanned unit into the unit a claim names, through the ERP. */
-async function issueTravelerUnit(
+/**
+ * Issues a scanned unit into the unit a claim names, through the ERP. The
+ * claim's unit is the server's proposal: on a later operation of a serial
+ * part it goes in only when it is the unit on screen (`heldUnitId`) or the
+ * one left (`resolveWorkUnit`, mode `claim`).
+ */
+export async function issueTravelerUnit(
   client: ServiceRole,
   args: {
     companyId: string;
     userId: string;
     trackedEntityId: string;
     claim: TravelerClaim;
+    /** The unit on the screen the scan was made on, at the claim's operation. */
+    heldUnitId: string | null;
     jobOperationStepId?: string;
     unitNumber?: number;
-  }
-): Promise<{ error: null } | { error: string; retryable: boolean }> {
+  },
+  post: typeof erpPosting = erpPosting
+): Promise<
+  { error: null } | { error: string; retryable: boolean; pickUnit?: boolean }
+> {
   const { companyId, userId, claim } = args;
+  const work = await resolveWorkUnit({
+    client,
+    companyId,
+    operationId: claim.operationId,
+    requestedUnitId: claim.parentTrackedEntityId,
+    mode: "claim",
+    heldUnitId: args.heldUnitId
+  });
+  if (work.kind === "refuse") {
+    return { error: work.message, retryable: false, pickUnit: work.pickUnit };
+  }
+
   const refusal = await abilityBlockRefusal(client, {
     operationId: claim.operationId,
     employeeId: userId,
@@ -776,7 +835,7 @@ async function issueTravelerUnit(
     return { error: resolved.refusal, retryable: true };
   }
 
-  const issued = await erpPosting(
+  const issued = await post(
     "issue",
     { companyId, userId },
     {
@@ -958,11 +1017,21 @@ async function getClaimOptions(
     .flatMap((r) =>
       (unitIds.get(r.jobMakeMethodId) ?? []).filter((id) => isOpenAt(id, r.id))
     );
-  const consumption = await getUnitConsumption(client, {
-    companyId,
-    unitIds: serialUnitIds
-  });
-  if (!consumption.data) return { error: true };
+  const [consumption, facts] = await Promise.all([
+    getUnitConsumption(client, { companyId, unitIds: serialUnitIds }),
+    readOperationUnitFacts(client, {
+      companyId,
+      operationIds: candidates
+        .filter((r) => serialMakeMethodIds.has(r.jobMakeMethodId))
+        .map((r) => r.id)
+    })
+  ]);
+  if (!consumption.data || !facts) return { error: true };
+  // The same first / later rule every unit write uses.
+  const isLaterSerial = (operationId: string) => {
+    const rule = facts.get(operationId);
+    return !!rule?.serial && !rule.isFirstOperation;
+  };
 
   const options = pickTravelerClaims({
     operations: candidates,
@@ -980,7 +1049,8 @@ async function getClaimOptions(
       operation: byId.get(claim.operationId)!,
       parentReadableId:
         unitById.get(claim.parentTrackedEntityId)?.readableId ??
-        claim.parentTrackedEntityId
+        claim.parentTrackedEntityId,
+      laterSerial: isLaterSerial(claim.operationId)
     }));
   return { ...found, options };
 }

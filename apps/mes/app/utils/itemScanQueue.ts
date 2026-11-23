@@ -4,9 +4,11 @@
 
 import { round } from "@carbon/utils";
 
-/** Scans of one item that wait to be issued together. */
+/** Scans of one item into one unit that wait to be issued together. */
 export type QueuedItemScan = {
   itemId: string;
+  /** The unit held when the sticker was scanned; the issue goes into it. */
+  parentTrackedEntityId: string | null;
   /** How many times the sticker was scanned. */
   pieces: number;
   /** A scan was made with the Issue dialog open: close it once issued. */
@@ -14,18 +16,26 @@ export type QueuedItemScan = {
 };
 
 /**
- * Adds a scan to the queue. Scans of an item that already waits are counted
- * on its entry, so they go to the server as one issue of that many pieces.
+ * Adds a scan to the queue. Scans of an item that already waits for the same
+ * unit are counted on its entry, so they go to the server as one issue of
+ * that many pieces.
  */
 export function enqueueItemScan(
   queue: QueuedItemScan[],
-  scan: { itemId: string; closeDialog: boolean }
+  scan: {
+    itemId: string;
+    parentTrackedEntityId: string | null;
+    closeDialog: boolean;
+  }
 ): QueuedItemScan[] {
-  if (!queue.some((entry) => entry.itemId === scan.itemId)) {
+  const same = (entry: QueuedItemScan) =>
+    entry.itemId === scan.itemId &&
+    entry.parentTrackedEntityId === scan.parentTrackedEntityId;
+  if (!queue.some(same)) {
     return [...queue, { ...scan, pieces: 1 }];
   }
   return queue.map((entry) =>
-    entry.itemId === scan.itemId
+    same(entry)
       ? {
           ...entry,
           pieces: entry.pieces + 1,
@@ -52,4 +62,38 @@ export function afterItemScanRefusal(
 /** How many scanned pieces wait in the queue. */
 export function queuedPieces(queue: QueuedItemScan[]): number {
   return round(queue.reduce((sum, entry) => sum + entry.pieces, 0));
+}
+
+/**
+ * The queue once the held unit changes. Scans made for another unit are
+ * dropped, never issued into the new one; `dropped` is how many pieces went.
+ */
+export function keepScansForUnit(
+  queue: QueuedItemScan[],
+  heldUnitId: string | null
+): { queue: QueuedItemScan[]; dropped: number } {
+  const kept = queue.filter(
+    (entry) => entry.parentTrackedEntityId === heldUnitId
+  );
+  return {
+    queue: kept,
+    dropped: round(queuedPieces(queue) - queuedPieces(kept))
+  };
+}
+
+/**
+ * Whether a refused scan may open the Issue dialog: only while a unit is held
+ * where one must be, and only on the unit the scan was made for.
+ */
+export function canChooseInDialog({
+  unitRequired,
+  scannedForUnitId,
+  heldUnitId
+}: {
+  /** The operation needs a held unit and has none. */
+  unitRequired: boolean;
+  scannedForUnitId: string | null;
+  heldUnitId: string | null;
+}): boolean {
+  return !unitRequired && scannedForUnitId === heldUnitId;
 }

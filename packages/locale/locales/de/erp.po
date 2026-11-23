@@ -421,6 +421,10 @@ msgstr "{0} erfolgreich gelöscht"
 msgid "{0} distribution"
 msgstr ""
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} Entwurfs-Buchungszeilen"
@@ -1045,6 +1049,9 @@ msgstr "{documentTypeLabel} Genehmigungsregel"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} von {total} Phasen abgeschlossen"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# Zeile muss korrigiert werden} other {# Zeilen müssen korrigiert werden}}"
@@ -11280,6 +11287,9 @@ msgstr "Pfadbearbeitung abgeschlossen"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Erledigt, wenn der Tagesablauf ohne unsere Anwesenheit läuft"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Doppelklicken Sie, um diese Unterbaugruppe zu öffnen"
 
@@ -11319,6 +11329,9 @@ msgstr "Laden Sie die Zählung als Datei herunter, um sie auszufüllen"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Laden Sie die Vorlage herunter. Jede Zeile ist ein Standardkonto, auf das Carbon bucht. Geben Sie in Kontonummer die Nummer des Kontos in Ihrem Kontenplan ein, das es übernimmt. Carbon aktualisiert das Standardkonto, um es anzupassen."
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "Entwurf"
@@ -14948,6 +14961,9 @@ msgstr "Zeichnung ausblenden"
 
 msgid "Hide lines"
 msgstr "Positionen ausblenden"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Monatliche Umsatzerlöse ausblenden"
@@ -28631,6 +28647,9 @@ msgstr "Tastaturkürzel anzeigen"
 
 msgid "Show lines"
 msgstr "Positionen anzeigen"
+
+msgid "Show menu"
+msgstr ""
 
 msgid "Show monthly revenue"
 msgstr "Monatliche Umsatzerlöse anzeigen"

@@ -51371,6 +51371,7 @@ export type Database = {
         Row: {
           companyId: string
           createdAt: string
+          dpi: number
           format: string
           hasApiKey: boolean
           id: string
@@ -51383,6 +51384,7 @@ export type Database = {
         Insert: {
           companyId: string
           createdAt?: string
+          dpi?: number
           format: string
           hasApiKey?: boolean
           id?: string
@@ -51395,6 +51397,7 @@ export type Database = {
         Update: {
           companyId?: string
           createdAt?: string
+          dpi?: number
           format?: string
           hasApiKey?: boolean
           id?: string
@@ -51452,6 +51455,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           description: string
+          dpi: number
           error: string | null
           id: string
           origin: string
@@ -51472,6 +51476,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           description: string
+          dpi?: number
           error?: string | null
           id?: string
           origin?: string
@@ -51492,6 +51497,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           description?: string
+          dpi?: number
           error?: string | null
           id?: string
           origin?: string

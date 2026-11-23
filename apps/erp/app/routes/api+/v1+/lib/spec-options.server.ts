@@ -62,6 +62,38 @@ const ERROR_SCHEMA = {
             "internal",
             "unavailable"
           ]
+        },
+        title: {
+          type: "string",
+          description: "The operation's own message, without the reason."
+        },
+        reason: {
+          type: "object",
+          description:
+            "Why a database write was refused: a `code` and the names it needs in `values`."
+        },
+        field: {
+          type: "string",
+          description: "The one input field the refusal names."
+        },
+        fields: {
+          type: "array",
+          items: { type: "string" },
+          description: "Every input field the refusal names."
+        },
+        value: {
+          type: "string",
+          description: "The value the caller sent for `field`."
+        },
+        record: {
+          type: "string",
+          description: "The record the call was for (its readable id or id)."
+        },
+        issues: {
+          type: "array",
+          items: { type: "object" },
+          description:
+            "Input validation failures, each with its `path` and `message`."
         }
       }
     }

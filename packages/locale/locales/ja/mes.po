@@ -253,6 +253,9 @@ msgstr ""
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0}件の製造指図"
 
+msgid "{scrapped} scrapped"
+msgstr ""
+
 msgid "{unbinned} in stock, in no bin"
 msgstr ""
 
@@ -1328,6 +1331,9 @@ msgstr "完了する前に、ハイライトされた数量を修正してくだ
 msgid "Flag issue"
 msgstr "問題を報告"
 
+msgid "Flow chart view"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れていませんか？"
 
@@ -1717,6 +1723,9 @@ msgstr "完了を記録"
 #. placeholder {0}: operation.itemReadableId
 msgid "Log completed for {0}"
 msgstr "{0} の完了を記録"
+
+msgid "Log completed for {trackedEntityReadableId}"
+msgstr ""
 
 msgid "Log Rework"
 msgstr "手直しを記録"
@@ -2135,6 +2144,9 @@ msgstr "今週のタイムエントリーはありません"
 msgid "No unit"
 msgstr "ユニットなし"
 
+msgid "No unit selected"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
 
@@ -2293,6 +2305,9 @@ msgstr "オープン製造指図"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "サブアセンブリ {0} を開く: {1}"
 
+msgid "Open the operation to pick the unit"
+msgstr ""
+
 msgid "Operation"
 msgstr ""
 
@@ -2449,6 +2464,12 @@ msgstr "{itemName} をピッキング"
 
 msgid "Pick a style, a color and a face."
 msgstr "スタイル、色、面を選択"
+
+msgid "Pick an open unit to issue parts."
+msgstr ""
+
+msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
+msgstr ""
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "製造指図を選択してください。時間を追加するまでは表示されません。"
@@ -2888,9 +2909,6 @@ msgstr "シリアル番号をスキャンまたは検索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象をスキャンまたは選択してサンプル列として追加し、グリッドに結果を記録します。"
 
-msgid "Scan or select the unit, then scan the kanban card again"
-msgstr "ユニットをスキャンまたは選択してから、かんばんカードをもう一度スキャンしてください"
-
 msgid "Scan received"
 msgstr "スキャンを受け付けました"
 
@@ -3040,6 +3058,12 @@ msgstr "スクラップ数量と理由を選択"
 
 msgid "Select a serial number to continue with this operation"
 msgstr "この工程を続行するシリアル番号を選択してください"
+
+msgid "Select a unit"
+msgstr ""
+
+msgid "Select a unit first"
+msgstr ""
 
 msgid "Select an issue type"
 msgstr "イシュータイプを選択"
@@ -3520,6 +3544,9 @@ msgstr "この製造指図では、その部品は使用されません"
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "この製造指図には請求レートがありません。時間が請求される前にオフィスに設定するよう依頼してください。"
 
+msgid "This job has no operations"
+msgstr ""
+
 msgid "This label does not belong to a unit in this company"
 msgstr "このラベルは、この会社のユニットに属していません"
 
@@ -3546,6 +3573,12 @@ msgstr "これはクロックを停止して、製造指図の時間を転記し
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
 msgstr "この個品はこの修正の上限回数に達しました。代わりにスクラップするか、品質問題を起票してください。"
+
+msgid "This unit is complete here"
+msgstr ""
+
+msgid "This unit is not part of this operation"
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
@@ -3744,6 +3777,9 @@ msgstr "未保存の変更"
 
 msgid "Until <0/>"
 msgstr "<0/>まで"
+
+msgid "Untitled"
+msgstr ""
 
 msgid "Up next"
 msgstr "次は"

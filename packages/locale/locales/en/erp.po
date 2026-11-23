@@ -421,6 +421,10 @@ msgstr "{0} deleted successfully"
 msgid "{0} distribution"
 msgstr "{0} distribution"
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr "{0} dpi"
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} draft journal entries"
@@ -1045,6 +1049,9 @@ msgstr "{documentTypeLabel} approval rule"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} of {total} phases complete"
+
+msgid "{dpi} dpi"
+msgstr "{dpi} dpi"
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
@@ -11280,6 +11287,9 @@ msgstr "Done Editing Path"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Done when day-to-day runs without us in the room"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Double-click to open this sub-assembly"
 
@@ -11319,6 +11329,9 @@ msgstr "Download the count as a file to fill in"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
+
+msgid "DPI"
+msgstr "DPI"
 
 msgid "Draft"
 msgstr "Draft"
@@ -14948,6 +14961,9 @@ msgstr "Hide drawing"
 
 msgid "Hide lines"
 msgstr "Hide lines"
+
+msgid "Hide menu"
+msgstr "Hide menu"
 
 msgid "Hide monthly revenue"
 msgstr "Hide monthly revenue"
@@ -28631,6 +28647,9 @@ msgstr "Show keyboard shortcuts"
 
 msgid "Show lines"
 msgstr "Show lines"
+
+msgid "Show menu"
+msgstr "Show menu"
 
 msgid "Show monthly revenue"
 msgstr "Show monthly revenue"

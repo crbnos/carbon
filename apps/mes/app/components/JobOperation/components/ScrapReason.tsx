@@ -20,6 +20,7 @@ const ScrapReason = (props: ScrapReasonSelectProps) => {
   return (
     <Combobox
       options={options}
+      autoSelectSingleOption
       {...props}
       label={props?.label ?? t`Scrap Reason`}
     />

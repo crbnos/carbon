@@ -58,8 +58,15 @@ function databaseFields(error: unknown): Fields | null {
     // PostgREST names it `details`; node-postgres `detail`.
     details: text(e.details) || text(e.detail),
     column: text(e.column) || undefined,
-    table: text(e.table) || undefined,
-    constraint: text(e.constraint) || undefined
+    // PostgREST sends only the message, which names both.
+    table:
+      text(e.table) ||
+      quoted(/on table "([^"]+)"/, text(e.message)) ||
+      undefined,
+    constraint:
+      text(e.constraint) ||
+      quoted(/constraint "([^"]+)"/, text(e.message)) ||
+      undefined
   };
 }
 
@@ -105,11 +112,12 @@ function foreignKeyReason(f: Fields): FailureReason {
   );
   if (referencedBy) return reason("stillUsed", { table: referencedBy });
   const columns = keyColumns(f.details);
+  // Row-level security drops the key from the detail ("Key is not present
+  // in table …"); the constraint lets the server look its columns up.
   return reason("noMatch", {
     columns: columns.length ? list(columns) : undefined,
-    target: columns.length
-      ? quoted(/not present in table "([^"]+)"/, f.details)
-      : undefined
+    target: quoted(/not present in table "([^"]+)"/, f.details),
+    ...(columns.length ? {} : { constraint: f.constraint, table: f.table })
   });
 }
 
@@ -125,7 +133,8 @@ const REASONS: Record<string, (f: Fields) => FailureReason> = {
   "23505": (f) => {
     const columns = keyColumns(f.details);
     return reason("duplicate", {
-      columns: columns.length ? list(columns) : undefined
+      columns: columns.length ? list(columns) : undefined,
+      ...(columns.length ? {} : { constraint: f.constraint, table: f.table })
     });
   },
   "23503": foreignKeyReason,

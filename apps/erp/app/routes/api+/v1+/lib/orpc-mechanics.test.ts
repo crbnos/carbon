@@ -3,14 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The real base, converter and schema builders over one tiny inline procedure, so
-// the spec can be generated without the full service registry.
+// the spec can be generated from it alone; the last tests run real built procedures.
 
 import type { ManifestEntry } from "@carbon/api";
 import { CarbonJsonSchemaConverter, jsonSchema } from "@carbon/api/schema";
 import { OpenAPIGenerator } from "@orpc/openapi";
+import { call, type ORPCError } from "@orpc/server";
 import { describe, expect, it } from "vitest";
-import { base, scopesFromPermissions } from "./base.server";
+import { type AuthedContext, base, scopesFromPermissions } from "./base.server";
 import { outputSchema, shapeHttpBody } from "./operations.server";
+import { buildProcedure } from "./router.server";
 import { specOptions, withErrorResponses } from "./spec-options.server";
 
 function meta(overrides: Partial<ManifestEntry>): ManifestEntry {
@@ -147,5 +149,101 @@ describe("Carbon API v1 spec and response shaping", () => {
       bearerAuth: expect.objectContaining({ type: "http", scheme: "bearer" })
     });
     expect(spec.security).toEqual([{ bearerAuth: [] }]);
+  });
+
+  it("names the failing fields when a real procedure rejects its input", async () => {
+    const procedure = buildProcedure(
+      meta({
+        schema: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            quantity: { type: "number" }
+          },
+          required: ["name"]
+        }
+      })
+    );
+
+    const err: any = await call(
+      procedure,
+      { quantity: "three" },
+      { context: {} as AuthedContext }
+    ).catch((e) => e);
+
+    expect(err.message).toBe(
+      "Input validation failed — name: Invalid input: expected string, received undefined; quantity: Invalid input: expected number, received string"
+    );
+    expect(err.data.fields).toEqual(["name", "quantity"]);
+    expect(err.data.category).toBe("validation");
+  });
+
+  // A real published read whose database call fails as `client` makes it fail.
+  async function unitsOfMeasureFailing(
+    cause: unknown,
+    input: object = {}
+  ): Promise<ORPCError<string, any>> {
+    const procedure = buildProcedure(
+      meta({
+        name: "items_getUnitOfMeasuresList",
+        module: "items",
+        serviceFn: { path: ["items", "getUnitOfMeasuresList"] },
+        schema: { type: "object" }
+      })
+    );
+    const client = {
+      from() {
+        throw cause;
+      }
+    } as unknown as AuthedContext["client"];
+    return call(procedure, input, {
+      context: {
+        client,
+        userId: "u1",
+        companyId: "c1",
+        companyGroupId: "g1",
+        authKind: "api-key",
+        scopes: { parts_view: ["c1"] }
+      }
+    }).then(
+      () => {
+        throw new Error("expected the call to fail");
+      },
+      (e: ORPCError<string, any>) => e
+    );
+  }
+
+  it("sends an internal error's category and nothing of its cause", async () => {
+    const err = await unitsOfMeasureFailing(
+      new Error("connect ECONNREFUSED 10.0.0.5:5432")
+    );
+
+    expect(err.status).toBe(500);
+    expect(err.message).toBe("Something went wrong");
+    expect(err.toJSON().data).toEqual({ category: "internal" });
+  });
+
+  it("sends a refusal's reason and the field it names", async () => {
+    const duplicate = Object.assign(
+      new Error(
+        'duplicate key value violates unique constraint "unitOfMeasure_code_key"'
+      ),
+      {
+        code: "23505",
+        detail: 'Key ("companyId", code)=(c1, EA) already exists.'
+      }
+    );
+
+    const err = await unitsOfMeasureFailing(duplicate, { code: "EA" });
+
+    expect(err.status).toBe(409);
+    expect(err.toJSON().data).toEqual({
+      category: "conflict",
+      title: 'A record with this "code" already exists.',
+      reason: { code: "duplicate", values: { columns: '"code"', value: "EA" } },
+      fields: ["code"],
+      field: "code",
+      value: "EA"
+    });
   });
 });

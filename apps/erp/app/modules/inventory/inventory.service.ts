@@ -213,6 +213,7 @@ import {
   buildOffsetLines,
   calculateCOGS,
   chunked,
+  clearShipmentTags,
   createAdjustmentJournal,
   documentJournalLines,
   type ExpiredEntityPolicy,
@@ -318,6 +319,9 @@ import {
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
   inventoryCountGroupId,
+  liveShipmentTags,
+  serialLineShortfalls,
+  serialShortfallMessage,
   spreadBatchCount,
   writeOffRestoreQuantity
 } from "./inventory.utils";
@@ -19765,7 +19769,7 @@ export async function postShipment(
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
-    const [shipment, shipmentLines, shipmentLineTracking] = await inOrder([
+    const [shipment, shipmentLines, taggedUnits] = await inOrder([
       // The client is service-role: authorization proved the caller may
       // act in companyId, not that shipmentId belongs to it.
       () => maybeSingle(db, "shipment", { id: shipmentId, companyId }),
@@ -19797,6 +19801,30 @@ export async function postShipment(
     const shipmentHeader = shipment.data;
     if (shipmentLines.error) throw new Error("Failed to fetch shipment lines");
 
+    // A post ships only units tagged to a line the shipment still has, and
+    // clears the tags of deleted lines, so a later void cannot touch them. A
+    // void reads every tag: a posted shipment's lines cannot be deleted.
+    const shipmentLineTracking =
+      type === "post"
+        ? {
+            ...taggedUnits,
+            data: liveShipmentTags(
+              taggedUnits.data ?? [],
+              shipmentLines.data.map((line) => line.id)
+            )
+          }
+        : taggedUnits;
+    if (
+      type === "post" &&
+      (taggedUnits.data?.length ?? 0) > shipmentLineTracking.data.length
+    ) {
+      await clearShipmentTags(db, {
+        companyId,
+        shipmentId,
+        orphansOnly: true
+      });
+    }
+
     const itemIds = shipmentLines.data.reduce<string[]>((acc, shipmentLine) => {
       if (shipmentLine.itemId && !acc.includes(shipmentLine.itemId)) {
         acc.push(shipmentLine.itemId);
@@ -19820,7 +19848,14 @@ export async function postShipment(
           db,
           "item",
           { id: itemIds, companyId },
-          { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+          {
+            columns: [
+              "id",
+              "itemTrackingType",
+              "replenishmentSystem",
+              "readableIdWithRevision"
+            ]
+          }
         ),
       () =>
         many(
@@ -19853,6 +19888,26 @@ export async function postShipment(
     }
     if (jobs.error) {
       throw new Error("Failed to fetch jobs");
+    }
+
+    // The postShipment operation refuses this before any write; checked again
+    // here for every other caller of the posting.
+    if (type === "post") {
+      const [shortfall] = serialLineShortfalls(
+        shipmentHeader.sourceDocument,
+        shipmentLines.data,
+        shipmentLineTracking.data ?? []
+      );
+      if (shortfall) {
+        throw new ServerFnError(
+          serialShortfallMessage(
+            shortfall,
+            items.data.find((row) => row.id === shortfall.itemId)
+              ?.readableIdWithRevision
+          ),
+          422
+        );
+      }
     }
 
     const splitEntityIds: string[] = [];
@@ -21606,14 +21661,6 @@ export async function postShipment(
                 shipmentLine.lineId &&
                 serviceLineIds.has(shipmentLine.lineId)
               ) {
-                if (
-                  itemTrackingType === "Serial" &&
-                  lineEntities.length !== shippedQuantity
-                ) {
-                  throw new InvalidInputError(
-                    `Shipment line ${shipmentLine.id}: assign the serviced unit's serial before posting`
-                  );
-                }
                 serviceUnits.push({
                   salesReturnOrderLineId: shipmentLine.lineId,
                   trackedEntityId:

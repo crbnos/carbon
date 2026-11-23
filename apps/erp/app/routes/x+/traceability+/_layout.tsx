@@ -17,9 +17,7 @@ export const handle: Handle = {
   breadcrumb: msg`Inventory`,
   to: path.to.inventory,
   module: "inventory",
-  // Phones: this route is a section of its module, so it gets the module's
-  // section switcher there (desktop shows no sidebar here, unchanged).
-  compactSidebar: InventorySections
+  boardSidebar: InventorySections
 };
 
 export default function TraceabilityLayout() {

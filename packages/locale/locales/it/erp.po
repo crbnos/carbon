@@ -421,6 +421,10 @@ msgstr "{0} eliminato con successo"
 msgid "{0} distribution"
 msgstr ""
 
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
+
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} bozze di prima nota"
@@ -1045,6 +1049,9 @@ msgstr "{documentTypeLabel} regola di approvazione"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} di {total} fasi completate"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# riga richiede correzione} other {# righe richiedono correzione}}"
@@ -11280,6 +11287,9 @@ msgstr "Modifica del percorso completata"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Fatto quando le operazioni quotidiane funzionano senza di noi in sala."
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "Fai doppio clic per aprire questo sottoassembly"
 
@@ -11319,6 +11329,9 @@ msgstr "Scarica il conteggio come file da compilare"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "Scarica il modello. Ogni riga è un conto predefinito su cui Carbon registra le transazioni. Nel campo Numero di conto, inserisci il numero del conto nel tuo piano dei conti che lo sostituisce. Carbon aggiorna il conto predefinito per farlo corrispondere."
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "Bozza"
@@ -14948,6 +14961,9 @@ msgstr "Nascondi disegno"
 
 msgid "Hide lines"
 msgstr "Nascondi righe"
+
+msgid "Hide menu"
+msgstr ""
 
 msgid "Hide monthly revenue"
 msgstr "Nascondi ricavi mensili"
@@ -28631,6 +28647,9 @@ msgstr "Mostra i tasti di scelta rapida"
 
 msgid "Show lines"
 msgstr "Mostra righe"
+
+msgid "Show menu"
+msgstr ""
 
 msgid "Show monthly revenue"
 msgstr "Mostra ricavi mensili"

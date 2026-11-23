@@ -21,13 +21,19 @@ export function useTravelerScan({
   parentTrackedEntityId,
   jobOperationStepId,
   unitNumber,
-  active
+  active,
+  onUnitOpened,
+  onUnitRequired
 }: {
   operationId: string;
   parentTrackedEntityId: string | undefined;
   jobOperationStepId?: string;
   unitNumber?: number;
   active: boolean;
+  /** A scan named a unit of this operation: the operator holds it now. */
+  onUnitOpened: (unitId: string) => void;
+  /** The server refused to issue a part for want of a unit: ask for it. */
+  onUnitRequired: () => void;
 }) {
   const navigate = useNavigate();
   const revalidator = useRevalidator();
@@ -49,6 +55,7 @@ export function useTravelerScan({
     callback: async (input) => {
       const result = await postTravelerScan({ code: input, ...screen.current });
       if (!result.href) {
+        if (result.pickUnit) return onUnitRequired();
         if (result.message) toast.error(result.message);
         return;
       }
@@ -57,14 +64,9 @@ export function useTravelerScan({
       if (result.operationId !== here.operationId || !result.trackedEntityId) {
         return navigate(result.href);
       }
-      // This operation: stay in this view (operation or assembly).
-      if (result.trackedEntityId === here.trackedEntityId) {
-        return revalidator.revalidate();
-      }
-      const url = new URL(window.location.href);
-      url.searchParams.set("trackedEntityId", result.trackedEntityId);
-      url.searchParams.delete("unit");
-      return navigate(`${url.pathname}${url.search}`);
+      // This operation: the scanned unit is held now, in this view.
+      onUnitOpened(result.trackedEntityId);
+      return revalidator.revalidate();
     },
     inTextFields: true,
     active
