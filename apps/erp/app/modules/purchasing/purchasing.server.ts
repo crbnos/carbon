@@ -42,11 +42,11 @@ import {
   applyRate,
   colorNames,
   datetime,
-  deriveRate,
   groupBy,
   isUniqueViolation,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   requireAffected,
+  round,
   SCALE,
   sanitize,
   taxableBase,
@@ -55,7 +55,14 @@ import {
 } from "@carbon/utils";
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import { z } from "zod";
-import { getExchangeRate } from "~/modules/accounting/accounting.service";
+import {
+  getExchangeRate,
+  getTaxCodeInputs
+} from "~/modules/accounting/accounting.service";
+import {
+  decideLineTax,
+  updatedTaxCodeId
+} from "~/modules/accounting/accounting.utils";
 import {
   signRecordFileUrl,
   upsertDocument
@@ -926,7 +933,9 @@ export const recordSupplierQuoteLinkVisit = defineServiceFn({
  *
  * @remarks
  * Every line must be the quote's. Writes the price of each selected quantity
- * (the tax rate derived from the amounts), sets the quote Active with who
+ * with its tax (`supplierQuotePriceTaxes`: a code's rate, else the rate
+ * derived from the amounts; a Reverse Charge code refuses a tax amount),
+ * sets the quote Active with who
  * submitted it, stamps the link, and notifies the company's supplier-quote
  * group. A failed notification is logged; the submission stands.
  */
@@ -962,10 +971,11 @@ export const submitDigitalSupplierQuote = defineServiceFn({
     // The line ids come from the link's visitor and every write below runs as
     // the service role: each line must be this quote's.
     const lineIds = [...new Set(prices.map(({ lineId }) => lineId))];
+    const itemByLine = new Map<string, string | null>();
     if (lineIds.length > 0) {
       const owned = await client
         .from("supplierQuoteLine")
-        .select("id")
+        .select("id, itemId")
         .eq("supplierQuoteId", supplierQuoteId)
         .eq("companyId", companyId)
         .in("id", lineIds);
@@ -979,13 +989,14 @@ export const submitDigitalSupplierQuote = defineServiceFn({
       if (owned.data.length !== lineIds.length) {
         return ctx.error("validation", "Invalid selected lines data");
       }
+      for (const line of owned.data) itemByLine.set(line.id, line.itemId);
     }
 
     const existing =
       lineIds.length > 0
         ? await client
             .from("supplierQuoteLinePrice")
-            .select("supplierQuoteLineId, quantity")
+            .select("supplierQuoteLineId, quantity, taxCodeId")
             .eq("supplierQuoteId", supplierQuoteId)
             .in("supplierQuoteLineId", lineIds)
         : { data: [], error: null };
@@ -996,28 +1007,43 @@ export const submitDigitalSupplierQuote = defineServiceFn({
         existing.error
       );
     }
-    const stored = new Set(
-      existing.data.map((row) => `${row.supplierQuoteLineId}:${row.quantity}`)
+    const stored = new Map(
+      existing.data.map((row) => [
+        `${row.supplierQuoteLineId}:${row.quantity}`,
+        row.taxCodeId
+      ])
     );
+
+    // The share page collects amounts only. A price takes a code (its own,
+    // else the supplier's) at the code's rate; with none, the rate the
+    // amounts give over unit price × quantity + shipping.
+    const taxes = await service.supplierQuotePriceTaxes(client, {
+      companyId,
+      supplierId: quote.supplierId,
+      date:
+        quote.quotedDate ??
+        datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
+      prices: prices.map(({ lineId, quantity, line }) => ({
+        itemId: itemByLine.get(lineId) ?? null,
+        storedTaxCodeId: stored.get(`${lineId}:${quantity}`),
+        supplierTaxAmount: line.supplierTaxAmount ?? 0,
+        base: taxableBase(
+          line.supplierUnitPrice ?? 0,
+          quantity,
+          line.supplierShippingCost ?? 0
+        )
+      }))
+    });
+    if (taxes.error !== null) return ctx.error("validation", taxes.error);
 
     const now = datetime.timestamp();
     const userId = quote.createdBy;
-    const writes = prices.map(({ lineId, quantity, line }) => {
+    const writes = prices.map(({ lineId, quantity, line }, index) => {
       const fields = {
         supplierUnitPrice: line.supplierUnitPrice ?? 0,
         leadTime: line.leadTime ?? 0,
         supplierShippingCost: line.supplierShippingCost ?? 0,
-        supplierTaxAmount: line.supplierTaxAmount ?? 0,
-        // The share page collects amounts only: the rate is derived from the
-        // canonical denominator (unit price × quantity + shipping).
-        taxPercent: deriveRate(
-          line.supplierTaxAmount ?? 0,
-          taxableBase(
-            line.supplierUnitPrice ?? 0,
-            quantity,
-            line.supplierShippingCost ?? 0
-          )
-        )
+        ...taxes.data[index]
       };
       return stored.has(`${lineId}:${quantity}`)
         ? client
@@ -3985,7 +4011,7 @@ export const orderPlannedPurchases = defineServiceFn({
     if (location) return location;
     const ownedItems = await client
       .from("item")
-      .select("id, readableId, readableIdWithRevision")
+      .select("id, readableId, readableIdWithRevision, taxable")
       .in("id", Array.from(itemIds))
       .eq("companyId", companyId);
     if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
@@ -4156,6 +4182,42 @@ export const orderPlannedPurchases = defineServiceFn({
     let processedItems = 0;
     // Readable ids too, so the client can present a clickable toast.
     const poCache = new Map<string, { id: string; readableId: string }>();
+
+    // The tax a new line takes, by the resolver's own rule
+    // (`decideLineTax`): the supplier's tax code, else its bare percent,
+    // and none for a non-taxable item. Read once for the whole batch.
+    const taxDate = asOf.toString();
+    const itemTaxable = new Map(
+      ownedItems.data.map((item) => [item.id, item.taxable])
+    );
+    const supplierTaxes = await client
+      .from("supplierTax")
+      .select("supplierId, taxCodeId")
+      .in("supplierId", Array.from(supplierIds))
+      .eq("companyId", companyId);
+    const taxCodeIds = Array.from(
+      new Set(
+        (supplierTaxes.data ?? [])
+          .map((row) => row.taxCodeId)
+          .filter((id): id is string => !!id)
+      )
+    );
+    // A retired code a supplier still names keeps resolving, as everywhere.
+    const taxCodes = await getTaxCodeInputs(client, companyId, taxCodeIds);
+    if (supplierTaxes.error || taxCodes.error) {
+      return ctx.error(
+        "internal",
+        "Failed to retrieve supplier tax codes from database",
+        supplierTaxes.error ?? taxCodes.error
+      );
+    }
+    const taxCodeById = taxCodes.data;
+    const supplierTaxCode = new Map(
+      (supplierTaxes.data ?? []).map((row) => [
+        row.supplierId,
+        row.taxCodeId ? (taxCodeById.get(row.taxCodeId) ?? null) : null
+      ])
+    );
 
     // Every open PO an order may join, with its lines, in one read: the
     // suppliers' Draft / Planned purchase orders at this location, oldest
@@ -4353,8 +4415,18 @@ export const orderPlannedPurchases = defineServiceFn({
                     { currencyCode, exchangeRate: purchaseOrder.exchangeRate }
                   )
                 : 0;
-            const taxPercent = supplier.taxPercent ?? 0;
-            // supplier.taxPercent is a 0..1 fraction; the amount follows the
+            const tax = decideLineTax({
+              source: "purchase",
+              taxExempt: false,
+              taxExemptionReason: null,
+              itemTaxable: itemTaxable.get(itemId) ?? true,
+              locationTaxCode: null,
+              partyTaxCode: supplierTaxCode.get(supplierId) ?? null,
+              fallbackTaxPercent: Number(supplier.taxPercent ?? 0),
+              date: taxDate
+            });
+            const taxPercent = round(tax.taxPercent);
+            // taxPercent is a 0..1 fraction; the amount follows the
             // canonical denominator. Shipping is 0 on this path.
             const supplierTaxAmount = applyRate(
               taxableBase(supplierUnitPrice, adjustedQuantity, 0),
@@ -4374,6 +4446,7 @@ export const orderPlannedPurchases = defineServiceFn({
               conversionFactor,
               supplierUnitPrice,
               exchangeRate: purchaseOrder.exchangeRate,
+              taxCodeId: tax.taxCodeId ?? undefined,
               taxPercent,
               supplierTaxAmount,
               supplierShippingCost: 0,
@@ -6538,7 +6611,8 @@ export const updateSupplierTax = defineServiceFn({
       .nullable()
       .optional(),
     taxExemptionCertificateNumber: z.string().optional(),
-    taxExemptionCertificatePath: z.string().nullable().optional()
+    taxExemptionCertificatePath: z.string().nullable().optional(),
+    taxCodeId: z.string().optional()
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
@@ -6549,6 +6623,67 @@ export const updateSupplierTax = defineServiceFn({
         payload(ctx, input).forUpdate() as never
       )
     );
+  }
+});
+
+/**
+ * Assign a tax code to suppliers
+ *
+ * @remarks
+ * Sets the tax code (`supplierTax.taxCodeId`) of each supplier to one active
+ * tax code of the company. New purchase lines for these suppliers default to
+ * it.
+ *
+ * @param ids - The suppliers to update.
+ * @param taxCodeId - An active tax code of the company.
+ *
+ * @mcp
+ */
+export const assignSupplierTaxCode = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string()),
+    taxCodeId: z.string().min(1, { message: "Select a tax code" })
+  }),
+  permission: { update: "purchasing" },
+  async run(ctx, { ids, taxCodeId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const [taxCode, suppliers] = await Promise.all([
+      client
+        .from("taxCode")
+        .select("id")
+        .eq("id", taxCodeId)
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .maybeSingle(),
+      client
+        .from("supplier")
+        .select("id")
+        .in("id", ids)
+        .eq("companyId", companyId)
+    ]);
+    if (taxCode.error) {
+      return ctx.error("internal", taxCode.error.message, taxCode.error);
+    }
+    if (!taxCode.data) return ctx.error("notFound", "Tax code not found");
+    if (suppliers.error) {
+      return ctx.error("internal", suppliers.error.message, suppliers.error);
+    }
+    const supplierIds = suppliers.data.map((supplier) => supplier.id);
+    if (supplierIds.length === 0) {
+      return ctx.error("notFound", "No suppliers found");
+    }
+
+    const upsert = await service.upsertSupplierTaxCodes(ctx.asSystem.supabase, {
+      supplierIds,
+      taxCodeId: taxCode.data.id,
+      companyId,
+      userId: ctx.auditUserId
+    });
+    if (upsert.error) {
+      return ctx.error("internal", upsert.error.message, upsert.error);
+    }
+    return { ids: supplierIds };
   }
 });
 
@@ -6706,7 +6841,11 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
  * Create a purchase order line
  *
  * @remarks
- * Upsert purchase order line
+ * Upsert purchase order line. A line sent with no `taxCodeId` takes the
+ * supplier's tax code at the order date; an empty `taxCodeId` keeps the sent
+ * percent with no code. A sent code sets the rate (its rate on the order
+ * date), and a Reverse Charge code refuses a supplier tax amount. A
+ * non-taxable item carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -6754,6 +6893,12 @@ export const createPurchaseOrderLine = defineServiceFn({
       .describe(
         "Applied when creating; on update a field left out keeps its value."
       ),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe(
+        "Omit to take the supplier's tax code; an empty string keeps the sent percent with no code."
+      ),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -6769,6 +6914,26 @@ export const createPurchaseOrderLine = defineServiceFn({
     const jobId = await service.lineOperationJob(ctx, fields);
     if (jobId instanceof CarbonError) return jobId;
     const input = jobId ? { ...fields, jobId } : fields;
+    const client = ctx.asCaller.supabase;
+    // A new line takes the tax the form would have opened with: the
+    // supplier's code when none is sent, and none for a non-taxable item.
+    const tax = await service.resolvePurchaseLineTax(client, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseOrder",
+      documentId: input.purchaseOrderId,
+      lineId: null,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice ?? 0,
+        quantity: input.purchaseQuantity ?? 0,
+        shippingCost: input.supplierShippingCost ?? 0,
+        taxCodeId: input.taxCodeId,
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     return service.amendPurchaseOrder(
       ctx,
       input.purchaseOrderId,
@@ -6776,8 +6941,12 @@ export const createPurchaseOrderLine = defineServiceFn({
         unwrap(
           ctx,
           await service.upsertPurchaseOrderLine(
-            ctx.asCaller.supabase,
-            payload(ctx, input).forCreate() as never
+            client,
+            payload(ctx, {
+              ...input,
+              supplierTaxAmount: input.supplierTaxAmount ?? 0,
+              ...tax.data
+            }).forCreate() as never
           )
         ),
       { restatesStatus: true }
@@ -6789,7 +6958,10 @@ export const createPurchaseOrderLine = defineServiceFn({
  * Update a purchase order line
  *
  * @remarks
- * Upsert purchase order line
+ * Upsert purchase order line. A non-taxable item carries no tax, whatever was
+ * sent. A sent code (or the stored one, when only a percent is sent) sets
+ * the rate; an empty `taxCodeId` clears the code. A Reverse Charge code
+ * refuses a supplier tax amount.
  *
  * @mcp
  */
@@ -6838,6 +7010,7 @@ export const updatePurchaseOrderLine = defineServiceFn({
           "Applied when creating; on update a field left out keeps its value."
         )
         .optional(),
+      taxCodeId: z.string().optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()
@@ -6863,6 +7036,25 @@ export const updatePurchaseOrderLine = defineServiceFn({
     if (!line.data || line.data.purchaseOrderId !== input.purchaseOrderId) {
       return ctx.error("notFound", "Purchase order line not found");
     }
+    // A non-taxable item carries no tax, a code its rate, and a Reverse
+    // Charge code no supplier tax. A field left out keeps its stored value.
+    const tax = await service.resolvePurchaseLineTax(ctx.asCaller.supabase, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseOrder",
+      documentId: line.data.purchaseOrderId,
+      lineId: input.id,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice,
+        quantity: input.purchaseQuantity,
+        shippingCost: input.supplierShippingCost,
+        taxCodeId: updatedTaxCodeId(input),
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     if (input.itemId !== undefined && input.itemId !== line.data.itemId) {
       const held = await service.unreleasedChangeOrderRefusal(
         ctx,
@@ -6877,7 +7069,7 @@ export const updatePurchaseOrderLine = defineServiceFn({
         unwrap(
           ctx,
           await service.upsertPurchaseOrderLine(ctx.asCaller.supabase, {
-            ...payload(ctx, input).forUpdate(),
+            ...payload(ctx, { ...input, ...tax.data }).forUpdate(),
             companyId: ctx.company.id
           } as never)
         ),

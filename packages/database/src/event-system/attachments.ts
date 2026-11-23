@@ -493,6 +493,18 @@ export const attachments = {
     events: true,
     statement: ["broadcast_reference_changes"]
   },
+  // Audited (audit.config.ts): the audit log reaches them only through
+  // these event triggers.
+  taxAuthority: { events: true, statement: ["broadcast_reference_changes"] },
+  taxCode: { events: true, statement: ["broadcast_reference_changes"] },
+  taxCodeComponent: {
+    events: true,
+    statement: ["broadcast_reference_changes"]
+  },
+  taxRegistration: {
+    events: true,
+    statement: ["broadcast_reference_changes"]
+  },
   trackedActivity: { statement: ["broadcast_table_changes"] },
   trackedEntity: {
     before: ["check_tracked_entity_inspection_hold"],

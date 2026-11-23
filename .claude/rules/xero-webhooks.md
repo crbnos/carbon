@@ -66,7 +66,7 @@ because it uses `crypto` for HMAC.
 {
   "events": [{
     "tenantId": "...",
-    "eventCategory": "CONTACT" | "INVOICE",   // only these two accepted
+    "eventCategory": "CONTACT" | "INVOICE" | …, // others are logged and skipped
     "eventType": "CREATE" | "UPDATE" | "DELETE",
     "resourceId": "...",                       // Xero entity UUID
     "eventDateUtc": "..."
@@ -113,5 +113,7 @@ downstream syncer architecture see `accounting-sync-handlers.md`.
   each a separate parameterised `.eq()`; more than one company on one tenant resolves
   to nothing). Because a company-id match also succeeds, the route re-checks the
   resolved row's own tenant against the event (step 6).
-- Only `CONTACT` and `INVOICE` categories are accepted by the schema; any other category
-  fails zod validation → 401.
+- Only `CONTACT` and `INVOICE` events are processed. Any other category (Xero also
+  offers credit notes, payments, prepayments, overpayments) or event type is logged
+  ("Ignoring Xero event Carbon does not read") and skipped, so ticking an extra topic
+  in the Xero app never fails the delivery.

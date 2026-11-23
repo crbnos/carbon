@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { formatDate, formatPercent } from "@carbon/utils";
-import type { LineMergeToken, MergeToken } from "../../template";
+import type { MergeToken, RowVars } from "../../template";
 import {
   getLineDescription,
   getLineDescriptionDetails,
@@ -11,6 +11,7 @@ import {
   getLineGrossMerchandise,
   getLineTaxableSubtotal,
   getLineTotal,
+  getTaxTotal,
   getTotal
 } from "../../utils/sales-invoice";
 import { addressVars, companyVars, incotermText, str } from "./textVars";
@@ -36,6 +37,7 @@ export function buildSalesInvoiceVars(
     | "currencyCode"
     | "locale"
     | "numberFormatter"
+    | "sellerRegistration"
   >
 ): Record<MergeToken<"salesInvoice">, string> {
   const inv = data.salesInvoice;
@@ -65,10 +67,15 @@ export function buildSalesInvoiceVars(
   );
   const shipping =
     lineShipping + (shipment?.shippingCost ?? 0) * (inv?.exchangeRate ?? 1);
-  const tax = lines.reduce(
-    (sum, line) => sum + getLineTaxableSubtotal(line) * (line.taxPercent ?? 0),
-    0
-  );
+  // Every tax on the invoice, the header shipping's included, so the tax row
+  // adds up to the total (`getTotal`).
+  const tax = inv
+    ? getTaxTotal(lines, inv)
+    : lines.reduce(
+        (sum, line) =>
+          sum + getLineTaxableSubtotal(line) * (line.taxPercent ?? 0),
+        0
+      );
 
   return {
     "invoice.number": str(inv?.invoiceId),
@@ -93,6 +100,7 @@ export function buildSalesInvoiceVars(
       shipment?.incoterm,
       shipment?.incotermLocation
     ),
+    "invoice.sellerTaxId": str(data.sellerRegistration),
     "invoice.subtotal": money(
       lines.reduce((sum, line) => sum + getLineGrossMerchandise(line), 0)
     ),
@@ -138,7 +146,7 @@ export function buildSalesInvoiceLineVars(
   line: SalesInvoiceData["salesInvoiceLines"][number],
   rowNumber: number,
   data: Pick<SalesInvoiceData, "numberFormatter" | "rateFormatter" | "locale">
-): Record<LineMergeToken<"salesInvoice">, string> {
+): RowVars<"salesInvoice", "line"> {
   const money = (v: number) => data.numberFormatter.format(v);
   const common = {
     "line.description": str(getLineDescription(line)),

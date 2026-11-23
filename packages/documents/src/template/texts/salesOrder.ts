@@ -95,6 +95,12 @@ export const salesOrderTexts = {
     { key: "shipping", kind: "text", default: "Shipping ({order.currency})" },
     valueOf("shippingValue", "{order.shipping}", "shipping"),
     { key: "taxValue", kind: "value", default: "{order.tax}" },
+    {
+      key: "taxComponent",
+      kind: "text",
+      default: "{tax.name} {tax.rate} on {tax.base} ({order.currency})",
+      row: "tax"
+    },
     { key: "total", kind: "text", default: "Total ({order.currency})" },
     valueOf("totalValue", "{order.total}", "total")
   ],

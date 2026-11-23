@@ -287,6 +287,7 @@ export const purchaseOrderLineValidator = z
     supplierShippingCost: zfd.numeric(z.number().optional()),
     supplierTaxAmount: zfd.numeric(z.number().optional()),
     supplierUnitPrice: zfd.numeric(z.number().optional()),
+    taxCodeId: zfd.text(z.string().optional()),
     taxPercent: zfd.numeric(z.number().min(0).max(1).optional().default(0))
   })
   .refine(
@@ -439,7 +440,8 @@ export const supplierTaxValidator = z
       (val) => (val === "" ? undefined : val),
       z.enum(taxExemptionReasons).optional().nullable()
     ),
-    taxExemptionCertificateNumber: zfd.text(z.string().optional())
+    taxExemptionCertificateNumber: zfd.text(z.string().optional()),
+    taxCodeId: zfd.text(z.string().optional())
   })
   .refine(
     (data) => !data.taxExempt || (data.taxExempt && data.taxExemptionReason),
@@ -1217,6 +1219,7 @@ export const PURCHASE_ORDER_LINE_VERSION_COLUMNS = [
   "supplierShippingCost",
   "supplierTaxAmount",
   "taxPercent",
+  "taxCodeId",
   "setupPrice",
   "exchangeRate",
   "locationId",

@@ -22,6 +22,9 @@ import {
   withPdfLogos
 } from "./document-data.server";
 import { getPrintedTemplate } from "./document-edit.server";
+import { loadTaxSummary } from "./sales-invoice-tax-summary.server";
+
+export { loadTaxSummary };
 
 const logger = getLogger("lib", "sales-invoice-document");
 
@@ -51,6 +54,13 @@ type Client = SupabaseClient<Database>;
  */
 export async function loadSalesInvoiceDocument(args: {
   client: Client;
+  /**
+   * Service-role client for the tax reads, whose RLS needs accounting, sales
+   * or purchasing view, so an invoicing-only reader prints the same tax as the
+   * emailed copy. Pass it only after checking the caller's permission; a
+   * caller that already holds a service-role `client` passes it again.
+   */
+  taxClient: Client;
   companyId: string;
   companyGroupId: string;
   invoiceId: string;
@@ -58,7 +68,15 @@ export async function loadSalesInvoiceDocument(args: {
   /** Draft edits to preview; omitted, the saved ones are read. */
   edit?: DocumentEdit | null;
 }): Promise<SalesInvoiceDocument> {
-  const { client, companyId, companyGroupId, invoiceId, locale, edit } = args;
+  const {
+    client,
+    taxClient,
+    companyId,
+    companyGroupId,
+    invoiceId,
+    locale,
+    edit
+  } = args;
 
   const [
     company,
@@ -254,6 +272,19 @@ export async function loadSalesInvoiceDocument(args: {
     contactEmail: invoiceContact?.data?.contact?.email ?? null
   };
 
+  const tax = await loadTaxSummary({
+    taxClient,
+    companyId,
+    invoiceId,
+    company: company.data,
+    salesInvoice: salesInvoice.data,
+    lines: salesInvoiceLines.data ?? [],
+    headerShipping:
+      (salesInvoiceShipment.data?.shippingCost ?? 0) *
+      (salesInvoice.data.exchangeRate ?? 1),
+    currencyDecimals
+  });
+
   // `company` (the table row) stands in for the `companies` view row the
   // documents type against, as the routes always did.
   const pdfCompany = withPdfLogos(
@@ -289,7 +320,8 @@ export async function loadSalesInvoiceDocument(args: {
     shippingTerms: shippingTerms.data ?? [],
     thumbnails,
     template: templateConfig,
-    sections
+    sections,
+    ...tax
   };
 
   // The view types every column nullable; the table's invoiceId never is.
