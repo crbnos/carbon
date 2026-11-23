@@ -66,7 +66,6 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   batchPlanBreakdown,
   convertDateStringToIsoString,
@@ -164,6 +163,7 @@ import {
 } from "~/utils/kanban";
 import { useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
+import { operationUnits, shownRecordIndex } from "~/utils/workUnit";
 import ItemThumbnail from "../ItemThumbnail";
 import { MesAppBar } from "../MesAppBar";
 import { BatchCompleteModal } from "./components/BatchCompleteModal";
@@ -196,6 +196,7 @@ import { useFiles } from "./hooks/useFiles";
 import { useItemScan } from "./hooks/useItemScan";
 import { useOperation } from "./hooks/useOperation";
 import { useTravelerScan } from "./hooks/useTravelerScan";
+import { useWorkUnit } from "./hooks/useWorkUnit";
 
 const DOCK_COLLAPSED_KEY = "mes:operation-dock-collapsed";
 
@@ -289,17 +290,38 @@ export const JobOperation = ({
   const [params, setParams] = useUrlParams();
   const origin = useOrigin();
 
-  const trackedEntityParam = params.get("trackedEntityId");
-  const trackedEntityId = trackedEntityParam ?? trackedEntities[0]?.id;
-
   const parentIsSerial = method?.requiresSerialTracking;
   const parentIsBatch = method?.requiresBatchTracking;
+
+  const trackedEntityParam = params.get("trackedEntityId");
 
   // Batch mode: the loader only passes `batch` when the op belongs to an
   // Active/Completing batch, so its presence is the switch. In batch mode the
   // Start/Stop timer, planned durations, and completion all act on the whole
   // batch rather than this single member.
   const isBatched = !!batch;
+
+  // Serial work names the unit in hand (`useWorkUnit`, shared with the
+  // assembly view); a batch parent's lot entity is the default.
+  const isSerialOperation = !!parentIsSerial && !isBatched;
+  const workUnit = useWorkUnit({
+    serial: isSerialOperation,
+    isFirstOperation,
+    units: operationUnits(trackedEntities, originalOperation.operationQuantity),
+    isOpen: (entity) =>
+      isSerialEntityIncompleteForOperation(entity, originalOperation.id)
+  });
+  const heldUnit = workUnit.unit;
+  const writesBlocked = workUnit.writesBlocked;
+  const heldUnitOpen = workUnit.unitIsOpen;
+  const canPickUnit = workUnit.canPick;
+  // The unit on screen: the held unit, or a finished one looked back at.
+  const shownUnitId = isSerialOperation
+    ? workUnit.reviewUnitId
+    : (trackedEntityParam ?? trackedEntities[0]?.id);
+  // The unit a write that needs an open unit names (and a timer).
+  const trackedEntityId = isSerialOperation ? workUnit.workUnitId : shownUnitId;
+  const stepUnitId = isSerialOperation ? trackedEntityId : undefined;
   // A batched operation opens on the whole batch; "?scope=job" narrows to this
   // job's own details. Kept in the URL so a member link can land on either.
   const scope: "batch" | "job" =
@@ -351,15 +373,25 @@ export const JobOperation = ({
   // passing `batch`, and the modal unmounts mid-flight.
   const batchCompleteFetcher = useFetcher<{ completed?: boolean }>();
 
-  const serialIndex =
-    trackedEntities.findIndex((entity) => entity.id === trackedEntityId) ?? 0;
+  const recordIndex = shownRecordIndex(
+    workUnit,
+    Math.max(
+      trackedEntities.findIndex((entity) => entity.id === shownUnitId),
+      0
+    )
+  );
+  const serialIndex = recordIndex ?? 0;
+  const shownSteps = (steps: JobOperationStep[]) =>
+    recordIndex === null
+      ? steps.map((step) => ({ ...step, jobOperationStepRecord: [] }))
+      : steps;
   // `serialIndex` keys the step records, so it counts every unit of the job.
   // The "N of M" heading counts only the units this operation works: a
   // correction or rework operation works the units sent into it.
   const unitPosition = Math.max(
     trackedEntities
       .filter((entity) => entity.inOperationScope !== false)
-      .findIndex((entity) => entity.id === trackedEntityId),
+      .findIndex((entity) => entity.id === shownUnitId),
     0
   );
 
@@ -406,7 +438,6 @@ export const JobOperation = ({
 
   const {
     actionsSheet,
-    availableEntities,
     active,
     activeTab,
     completeModal,
@@ -420,7 +451,6 @@ export const JobOperation = ({
     progress,
     reworkModal,
     scrapModal,
-    serialModal,
     selectedMaterial,
     setActiveTab,
     setEventType,
@@ -429,20 +459,11 @@ export const JobOperation = ({
   } = useOperation({
     operation: originalOperation,
     events,
-    trackedEntities,
-    isFirstOperation,
-    requiresSerialTracking: !!parentIsSerial,
-    pauseInterval: isModalOpen,
+    pauseInterval: isModalOpen || workUnit.pickerOpen,
     procedure,
     // In batch mode the realtime subscription follows the batch's events (all
     // members) rather than this operation's own.
-    batchId: batch?.id,
-    // First operation only (no labels to scan yet): auto-select the next unit.
-    // `activeStep` follows `trackedEntityId` via the sync effect above, so setting
-    // the URL param is all that's needed.
-    onAdvanceToUnit: (entity) => {
-      setParams({ trackedEntityId: entity.id });
-    }
+    batchId: batch?.id
   });
   // Batch mode: the selected material's outstanding requirement ACROSS the
   // batch — the shared pick is split pro-rata over every member, so defaulting
@@ -724,29 +745,25 @@ export const JobOperation = ({
   // 'block': no production work here. The routes refuse it too.
   const abilityBlocked = abilityWarning?.policy === "Block";
 
+  const askForUnit = () => {
+    toast.info(t`Select a unit first`);
+    workUnit.askForUnit();
+  };
+
   const completeFetcher = useFetcher<Result>();
   useKeyboardWedge({
     test: (input) => !!kanban && isKanbanCompleteScan(input, kanban),
     callback: () => {
       // Complete the unit the operator holds, never one the server picks: at a
       // later operation that pick need not be the unit in their hands.
-      const selected = trackedEntityParam
-        ? trackedEntities.find((entity) => entity.id === trackedEntityParam)
-        : undefined;
       const target = kanbanCompleteTarget({
         requiresSerialTracking: !!parentIsSerial,
         isFirstOperation,
-        selectedEntityId: selected?.id ?? null,
-        selectedIsIncomplete:
-          !!selected &&
-          isSerialEntityIncompleteForOperation(selected, operation.id),
+        selectedEntityId: heldUnit?.id ?? null,
+        selectedIsIncomplete: heldUnitOpen,
         soleUnitId: soleUnitId(trackedEntities, operation.operationQuantity)
       });
-      if (target.action === "select") {
-        toast.info(t`Scan or select the unit, then scan the kanban card again`);
-        serialModal.onOpen();
-        return;
-      }
+      if (target.action === "select") return askForUnit();
       const endPath = path.to.endOperation(operation.id);
       return completeFetcher.load(
         target.trackedEntityId
@@ -765,7 +782,9 @@ export const JobOperation = ({
   useTravelerScan({
     operationId: operation.id,
     parentTrackedEntityId: trackedEntityId,
-    active: !issueModal.isOpen && !isBatched && !abilityBlocked
+    active: !issueModal.isOpen && !isBatched && !abilityBlocked,
+    onUnitOpened: workUnit.pick,
+    onUnitRequired: askForUnit
   });
 
   const item = items.find((it) => it.id === operation.itemId);
@@ -790,6 +809,8 @@ export const JobOperation = ({
     active: !isBatched && !abilityBlocked,
     isDialogOpen: issueModal.isOpen,
     onIssued: issueModal.onClose,
+    unitRequired: writesBlocked,
+    onUnitRequired: askForUnit,
     onChoose: (materialId) =>
       materials.then((resolved) =>
         openIssueModal(
@@ -824,7 +845,9 @@ export const JobOperation = ({
       material={selectedMaterial ?? undefined}
       batchId={batch?.id ?? undefined}
       batchRemainingQuantity={selectedBatchRemaining}
-      parentId={trackedEntityId ?? ""}
+      // Unconsume may name a finished unit; Issue waits for an open one.
+      parentId={shownUnitId ?? ""}
+      issueBlocked={writesBlocked}
       parentIdIsSerialized={method?.requiresSerialTracking ?? false}
       trackedInputs={resolvedMaterials?.trackedInputs ?? []}
       onClose={issueModal.onClose}
@@ -877,8 +900,6 @@ export const JobOperation = ({
                     })}`
                   : elapsed
               }
-              gradient
-              invertGradient
               stackOnPhone
               // A whole percent: the bar's aria-valuenow read "0.9259".
               progress={
@@ -1763,7 +1784,10 @@ export const JobOperation = ({
                 <Suspense key={`attributes-${operationId}`}>
                   <Await resolve={procedure}>
                     {(resolvedProcedure) => {
-                      const { attributes, parameters } = resolvedProcedure;
+                      const { parameters } = resolvedProcedure;
+                      const attributes = shownSteps(
+                        resolvedProcedure.attributes
+                      );
 
                       return (
                         <>
@@ -1891,12 +1915,18 @@ export const JobOperation = ({
                                                     size="h2"
                                                     className="font-sans"
                                                   >
-                                                    <Trans>
-                                                      {unitPosition + 1} of{" "}
-                                                      {
-                                                        operation.operationQuantity
-                                                      }
-                                                    </Trans>
+                                                    {recordIndex === null ? (
+                                                      <Trans>
+                                                        No unit selected
+                                                      </Trans>
+                                                    ) : (
+                                                      <Trans>
+                                                        {unitPosition + 1} of{" "}
+                                                        {
+                                                          operation.operationQuantity
+                                                        }
+                                                      </Trans>
+                                                    )}
                                                   </Heading>
                                                 )}
                                               </div>
@@ -1904,8 +1934,6 @@ export const JobOperation = ({
                                               <BarProgress
                                                 className="w-40"
                                                 label={t`Steps`}
-                                                gradient
-                                                invertGradient
                                                 progress={
                                                   (attributes.filter((a) =>
                                                     a.jobOperationStepRecord.some(
@@ -1948,11 +1976,14 @@ export const JobOperation = ({
                                           key={`step-${step.id}`}
                                           stepNumber={index + 1}
                                           activeStep={activeStep}
+                                          unitId={stepUnitId}
                                           step={step}
                                           onRecord={onRecordStepRecord}
                                           onDelete={onDeleteStepRecord}
                                           operationId={operationId}
-                                          disabled={abilityBlocked}
+                                          disabled={
+                                            abilityBlocked || writesBlocked
+                                          }
                                           className={
                                             index === attributes.length - 1
                                               ? "border-none"
@@ -2015,7 +2046,10 @@ export const JobOperation = ({
                         leftIcon={<LuGitBranchPlus />}
                         variant="secondary"
                         size="lg"
-                        isDisabled={abilityBlocked}
+                        // A finished unit looked back at opens it for Unconsume.
+                        isDisabled={
+                          abilityBlocked || (writesBlocked && !shownUnitId)
+                        }
                         onClick={() => openIssueModal(null)}
                       >
                         <Trans>Issue Material</Trans>
@@ -2039,7 +2073,12 @@ export const JobOperation = ({
                               onScrap={(material) =>
                                 scrapParts.open(material.id ?? undefined)
                               }
-                              disabled={abilityBlocked}
+                              // A finished unit looked back at still opens
+                              // the Issue dialog, for Unconsume only.
+                              disabled={
+                                abilityBlocked ||
+                                (writesBlocked && !shownUnitId)
+                              }
                             />
                             {renderIssueModal(resolvedMaterials)}
                           </>
@@ -2275,7 +2314,7 @@ export const JobOperation = ({
                                 variant="secondary"
                                 size="lg"
                                 leftIcon={<LuBarcode />}
-                                onClick={serialModal.onOpen}
+                                onClick={workUnit.askForUnit}
                               >
                                 <Trans>Scan</Trans>
                               </Button>
@@ -2338,7 +2377,7 @@ export const JobOperation = ({
                                             </>
                                           )}
                                         </div>
-                                        {entity.id === trackedEntityId && (
+                                        {entity.id === shownUnitId && (
                                           <LuCheck className="text-emerald-500 size-4 shrink-0" />
                                         )}
                                         <Copy
@@ -2382,22 +2421,17 @@ export const JobOperation = ({
                                           variant="secondary"
                                           size="lg"
                                           isDisabled={
-                                            entity.id === trackedEntityId ||
+                                            entity.id === shownUnitId ||
                                             entity.status === "Scrapped" ||
                                             entity.inOperationScope === false
                                           }
-                                          onClick={() => {
-                                            const entityIndex =
-                                              trackedEntities.findIndex(
-                                                (e) => e.id === entity.id
-                                              );
-                                            if (entityIndex !== -1) {
-                                              setActiveStep(entityIndex);
-                                            }
-                                            setParams({
-                                              trackedEntityId: entity.id
-                                            });
-                                          }}
+                                          onClick={() =>
+                                            isSerialOperation
+                                              ? workUnit.pick(entity.id)
+                                              : setParams({
+                                                  trackedEntityId: entity.id
+                                                })
+                                          }
                                         >
                                           <Trans>Select</Trans>
                                         </Button>
@@ -2475,7 +2509,8 @@ export const JobOperation = ({
               <Suspense key={`procedure-${operationId}`}>
                 <Await resolve={procedure}>
                   {(resolvedProcedure) => {
-                    const { attributes, parameters } = resolvedProcedure;
+                    const { parameters } = resolvedProcedure;
+                    const attributes = shownSteps(resolvedProcedure.attributes);
                     if (attributes.length === 0 && parameters.length === 0)
                       return null;
 
@@ -2592,10 +2627,14 @@ export const JobOperation = ({
                                             size="h2"
                                             className="font-sans"
                                           >
-                                            <Trans>
-                                              {serialIndex + 1} of{" "}
-                                              {operation.operationQuantity}
-                                            </Trans>
+                                            {recordIndex === null ? (
+                                              <Trans>No unit selected</Trans>
+                                            ) : (
+                                              <Trans>
+                                                {serialIndex + 1} of{" "}
+                                                {operation.operationQuantity}
+                                              </Trans>
+                                            )}
                                           </Heading>
                                         )}
                                       </div>
@@ -2604,8 +2643,6 @@ export const JobOperation = ({
                                         <BarProgress
                                           className="w-40 max-w-full"
                                           label={t`Steps`}
-                                          gradient
-                                          invertGradient
                                           progress={
                                             (attributes.filter((a) =>
                                               a.jobOperationStepRecord.some(
@@ -2648,12 +2685,15 @@ export const JobOperation = ({
                                               key={`step-${step.id}`}
                                               stepNumber={index + 1}
                                               activeStep={activeStep}
+                                              unitId={stepUnitId}
                                               step={step}
                                               compact={true}
                                               onRecord={onRecordStepRecord}
                                               onDelete={onDeleteStepRecord}
                                               operationId={operationId}
-                                              disabled={abilityBlocked}
+                                              disabled={
+                                                abilityBlocked || writesBlocked
+                                              }
                                               className={
                                                 index === attributes.length - 1
                                                   ? "border-none"
@@ -2847,18 +2887,21 @@ export const JobOperation = ({
                 </div>
               </div>
               <div className="flex flex-row lg:hidden lg:group-data-[collapsed=true]/dock:flex lg:flex-col items-center gap-2 justify-center">
+                {canPickUnit && (
+                  <div className="flex flex-col items-center gap-0.5">
+                    <IconButtonWithTooltip
+                      icon={
+                        <LuBarcode className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                      }
+                      tooltip={t`Select a unit`}
+                      onClick={workUnit.askForUnit}
+                    />
+                  </div>
+                )}
                 <div className="flex flex-col items-center gap-0.5">
                   <IconButtonWithTooltip
                     disabled={
-                      abilityBlocked ||
-                      (!isBatched &&
-                        parentIsSerial &&
-                        trackedEntities.some(
-                          (entity) =>
-                            entity.id === trackedEntityId &&
-                            `Operation ${operationId}` in
-                              (entity.attributes as TrackedEntityAttributes)
-                        ))
+                      abilityBlocked || (isSerialOperation && !heldUnitOpen)
                     }
                     icon={
                       isBatched ? (
@@ -2889,21 +2932,24 @@ export const JobOperation = ({
                 </div>
               </div>
               <div className="hidden w-full flex-col gap-2 lg:flex lg:group-data-[collapsed=true]/dock:hidden">
+                {canPickUnit && (
+                  <Button
+                    size="lg"
+                    variant="primary"
+                    className="w-full"
+                    leftIcon={<LuBarcode />}
+                    onClick={workUnit.askForUnit}
+                  >
+                    <Trans>Select a unit</Trans>
+                  </Button>
+                )}
                 <Button
                   size="lg"
                   variant="secondary"
                   className="w-full"
                   leftIcon={isBatched ? <LuPackageCheck /> : <FaPlus />}
                   isDisabled={
-                    abilityBlocked ||
-                    (!isBatched &&
-                      parentIsSerial &&
-                      trackedEntities.some(
-                        (entity) =>
-                          entity.id === trackedEntityId &&
-                          `Operation ${operationId}` in
-                            (entity.attributes as TrackedEntityAttributes)
-                      ))
+                    abilityBlocked || (isSerialOperation && !heldUnitOpen)
                   }
                   onClick={
                     isBatched ? batchCompleteModal.onOpen : completeModal.onOpen
@@ -2972,7 +3018,7 @@ export const JobOperation = ({
                 <>
                   <button
                     type="button"
-                    disabled={abilityBlocked}
+                    disabled={abilityBlocked || writesBlocked}
                     className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform disabled:pointer-events-none disabled:opacity-50"
                     onClick={() => {
                       actionsSheet.onClose();
@@ -2986,7 +3032,7 @@ export const JobOperation = ({
                   </button>
                   <button
                     type="button"
-                    disabled={abilityBlocked}
+                    disabled={abilityBlocked || writesBlocked}
                     className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 active:scale-[0.98] transition-transform disabled:pointer-events-none disabled:opacity-50"
                     onClick={() => {
                       actionsSheet.onClose();
@@ -3136,6 +3182,7 @@ export const JobOperation = ({
                   parentIsBatch={parentIsBatch}
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
+                  trackedEntityReadableId={heldUnit?.readableId ?? undefined}
                   isFirstOpenOperation={isFirstOpenOperation}
                   requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
                   returnFocusRef={actionsSheetOpenerRef}
@@ -3186,28 +3233,18 @@ export const JobOperation = ({
       )}
 
       <SerialSelectorModal
-        open={serialModal.isOpen}
-        availableEntities={availableEntities}
-        onClose={serialModal.onClose}
+        open={workUnit.pickerOpen}
+        availableEntities={workUnit.openUnits}
+        onClose={workUnit.closePicker}
         onCancel={() => navigate(path.to.operations)}
-        onSelect={(entity) => {
-          const entityIndex = availableEntities.findIndex(
-            (e) => e.id === entity.id
-          );
-          if (entityIndex !== -1) {
-            setActiveStep(entityIndex);
-          }
-          setParams({
-            trackedEntityId: entity.id
-          });
-          serialModal.onClose();
-        }}
+        onSelect={(entity) => workUnit.pick(entity.id)}
       />
 
       {selectedStep ? (
         <RecordModal
           open={attributeRecordModal.isOpen}
           activeStep={activeStep}
+          unitId={stepUnitId}
           attribute={selectedStep}
           onClose={onDeselectStep}
           onScrap={isBatched ? undefined : scrapModal.onOpen}
@@ -3232,7 +3269,7 @@ export const JobOperation = ({
       <QualityIssueModal
         operationId={operation.id}
         trackedEntityId={
-          parentIsSerial || parentIsBatch ? trackedEntityId : undefined
+          parentIsSerial || parentIsBatch ? shownUnitId : undefined
         }
         isOpen={qualityIssueModal.isOpen}
         onClose={qualityIssueModal.onClose}

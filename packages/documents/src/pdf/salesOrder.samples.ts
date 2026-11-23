@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { SAMPLE_TAX_CODE } from "./samples";
+
 /**
  * Sample data for previewing the Sales Order template. Cast to `any` — it only
  * needs the fields the blocks read.
@@ -48,6 +50,12 @@ export const SAMPLE_SALES_ORDER = {
       id: "line-1",
       salesOrderLineType: "Part",
       itemReadableId: "WIDGET-100",
+      // The line's own copy of the customer part, not the live cross-reference.
+      customerPartId: "C-100",
+      customerPartRevision: "3",
+      customerPartIdFromCustomer: null,
+      customerPartRevisionFromCustomer: null,
+      partNumberDisplay: "Ours First",
       description: "Precision Widget, anodized",
       saleQuantity: 10,
       unitOfMeasureCode: "EA",
@@ -56,6 +64,7 @@ export const SAMPLE_SALES_ORDER = {
       convertedNonTaxableAddOnCost: 0,
       convertedShippingCost: 0,
       taxPercent: 0.06,
+      taxCodeId: SAMPLE_TAX_CODE.id,
       externalNotes: {}
     },
     {
@@ -70,6 +79,7 @@ export const SAMPLE_SALES_ORDER = {
       convertedNonTaxableAddOnCost: 0,
       convertedShippingCost: 0,
       taxPercent: 0.06,
+      taxCodeId: SAMPLE_TAX_CODE.id,
       externalNotes: {}
     }
   ],
@@ -97,5 +107,7 @@ export const SAMPLE_SALES_ORDER = {
       }
     ]
   },
+  taxCodes: [SAMPLE_TAX_CODE],
+  taxDate: "2026-06-01",
   locale: "en-US"
 } as any;

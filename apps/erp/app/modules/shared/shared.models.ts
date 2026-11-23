@@ -751,3 +751,23 @@ export function forceDeleteNotificationId(
 ): string {
   return `${documentType}:${documentId}:${requestId}`;
 }
+
+// API notes (`.describe()`) for input fields a supplier sees on what we send
+// them. The MCP manifest reads each one through its name, so keep each a plain
+// string literal.
+export const itemNameNote =
+  "Short description. Printed on returns to suppliers and copied onto new purchase order, RFQ and supplier quote lines, which suppliers see: keep internal notes out.";
+export const itemDescriptionNote =
+  "Long description. Printed under the item on purchase orders sent to suppliers, including existing ones: keep internal notes out.";
+export const purchaseOrderLineDescriptionNote =
+  "Printed on the purchase order the supplier receives: keep internal notes out.";
+export const purchaseOrderExternalNotesNote =
+  "Printed on the purchase order and in its email to the supplier: keep internal notes out.";
+export const rfqLineDescriptionNote =
+  "Printed on the RFQ the supplier receives: keep internal notes out.";
+export const supplierQuoteLineDescriptionNote =
+  "Shown to the supplier on the quote page they price: keep internal notes out.";
+export const jobOperationDescriptionNote =
+  "Printed on the outside-processing purchase order for this operation, which the supplier receives: keep internal notes out.";
+export const issueNameNote =
+  "Shown to the supplier on the issue's corrective action (SCAR) page: keep internal notes out.";

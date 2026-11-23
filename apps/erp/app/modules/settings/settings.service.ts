@@ -22,7 +22,11 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import type { Database, Json } from "@carbon/database";
-import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import {
+  activeJobStatuses,
+  fetchAllFromTable,
+  getCompanyTimeZone
+} from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import {
   type Kysely,
@@ -85,7 +89,13 @@ import {
   rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
-import { withRevisionSuffix } from "@carbon/documents/utils";
+import {
+  type PartNumberDisplay,
+  summarizePartNumberDisplay,
+  TAX_CODE_SUMMARY_SELECT,
+  withRevisionSuffix
+} from "@carbon/documents/utils";
+import { generateTestLabelZPL } from "@carbon/documents/zpl";
 import type {
   DescriptionModes,
   ItemEdit,
@@ -165,6 +175,8 @@ import {
   type RilletProvider,
   SYNC_OPERATION_ALLOWED_TRANSITIONS,
   SyncOperationStatusSchema,
+  type TaxRateOption,
+  toXeroTaxRateOptions,
   XERO_MAX_JOURNAL_DIMENSION_SLOTS,
   type XeroProvider
 } from "@carbon/ee/accounting";
@@ -241,6 +253,7 @@ import {
 import { packBySize } from "@carbon/jobs/events";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
+import { loadTaxSummary } from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -249,7 +262,8 @@ import {
   labelSizes,
   requireAffected,
   requiresItarEntityCertification,
-  searchFilter
+  searchFilter,
+  withLabelDpi
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -347,7 +361,10 @@ import {
   companyValidator,
   type customFieldValidator
 } from "./settings.models";
-import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
+import {
+  DOCUMENT_EDIT_RECORDS,
+  partNumberLinesRefusal
+} from "./settings.utils";
 
 const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
 
@@ -2218,6 +2235,29 @@ export async function listPreviewEntities(
 const emptyThumbnails: Record<string, string | null> = {};
 
 /**
+ * The codes a picked quote's or order's lines name, for its tax summary, as the
+ * PDF route reads them. Service role: the caller checked `update: settings`,
+ * and the tax tables need accounting, sales or purchasing view.
+ */
+async function previewTaxCodes(
+  companyId: string,
+  lines: ReadonlyArray<{ taxCodeId: string | null }> | null
+) {
+  const taxCodeIds = [
+    ...new Set(
+      (lines ?? []).flatMap((line) => (line.taxCodeId ? [line.taxCodeId] : []))
+    )
+  ];
+  if (taxCodeIds.length === 0) return null;
+  const taxCodes = await getCarbonServiceRole()
+    .from("taxCode")
+    .select(TAX_CODE_SUMMARY_SELECT)
+    .eq("companyId", companyId)
+    .in("id", taxCodeIds);
+  return taxCodes.data;
+}
+
+/**
  * Fetch the real data props a document's PDF needs for a record id, mirroring
  * the live PDF route loaders. Returns null when unsupported / not found, so the
  * preview falls back to sample data.
@@ -2265,8 +2305,22 @@ export async function buildPreviewProps(
         getAccountsReceivableBillingAddress(client, companyId)
       ]);
       if (!invoice.data) return null;
+      const tax = await loadTaxSummary({
+        // The caller checked `update: settings`; the tax tables need
+        // accounting, sales or purchasing view.
+        taxClient: getCarbonServiceRole(),
+        companyId,
+        invoiceId: id,
+        company: company.data,
+        salesInvoice: invoice.data,
+        lines: lines.data ?? [],
+        headerShipping:
+          (shipment.data?.shippingCost ?? 0) * (invoice.data.exchangeRate ?? 1),
+        currencyDecimals: null
+      });
       return {
         ...base,
+        ...tax,
         salesInvoice: invoice.data,
         salesInvoiceLines: lines.data ?? [],
         salesInvoiceLocations: locations.data,
@@ -2295,6 +2349,10 @@ export async function buildPreviewProps(
       if (!order.data) return null;
       return {
         ...base,
+        taxCodes: await previewTaxCodes(companyId, lines.data),
+        taxDate:
+          order.data.orderDate ??
+          datetime.today(company.data.timezone ?? "UTC").toString(),
         salesOrder: order.data,
         salesOrderLines: lines.data ?? [],
         salesOrderLocations: locations.data,
@@ -2371,6 +2429,9 @@ export async function buildPreviewProps(
         ...base,
         exchangeRate,
         printDate: datetime.today(timeZone).toString(),
+        // A quote has no document date; its codes are read on today.
+        taxCodes: await previewTaxCodes(companyId, lines.data),
+        taxDate: datetime.today(timeZone).toString(),
         quote: quote.data,
         quoteLines: lines.data ?? [],
         quoteLinePrices: prices.data ?? [],
@@ -4029,27 +4090,14 @@ export async function createHeadquarters(
 /** A one-label ZPL test page for the route's media size; null for a PDF route or no size. */
 export function generateTestLabel(
   format: string,
-  mediaSizeId: string | null
+  mediaSizeId: string | null,
+  dpi: number,
+  printedAt: string
 ): string | null {
   if (format !== "zpl" || !mediaSizeId) return null;
   const labelSize = labelSizes.find((s) => s.id === mediaSizeId);
   if (!labelSize?.zpl) return null;
-  const { width, height } = labelSize.zpl;
-  const dpi = labelSize.zpl.dpi || 203;
-  const widthDots = Math.round(width * dpi);
-  const heightDots = Math.round(height * dpi);
-  const now = new Date();
-  const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
-  return [
-    "^XA",
-    `^PW${widthDots}`,
-    `^LL${heightDots}`,
-    "^MNW",
-    "^FO20,20^A0N,30,30^FDTest Print^FS",
-    `^FO20,60^A0N,20,20^FD${mediaSizeId} — ${width}x${height}"^FS`,
-    `^FO20,90^A0N,16,16^FD${timestamp}^FS`,
-    "^XZ"
-  ].join("\n");
+  return generateTestLabelZPL(withLabelDpi(labelSize, dpi), printedAt);
 }
 
 /** An API key action on a company without the plan. */
@@ -9640,6 +9688,58 @@ export function panelResponse(
     : data(result.data.body, { status: result.data.status, headers });
 }
 
+/** The providers that map Carbon tax codes to their own tax rates. */
+export const TAX_RATE_MAPPING_PROVIDERS: ReadonlySet<string> = new Set([
+  ProviderID.XERO,
+  ProviderID.QUICKBOOKS
+]);
+
+/**
+ * The provider's active tax rates as mapping options, both directions. Xero's
+ * read returns [] on failure, and an organisation always has active rates,
+ * so an empty Xero list sets `optionsError` like a thrown read. The settings
+ * drawer shows what loaded; saving a mapping refuses when the read fails.
+ */
+export async function getProviderTaxRateOptions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string
+): Promise<{ options: TaxRateOption[]; optionsError: boolean }> {
+  try {
+    const providerId =
+      integrationId === ProviderID.XERO
+        ? ProviderID.XERO
+        : ProviderID.QUICKBOOKS;
+    const accountingIntegration = await getAccountingIntegration(
+      client,
+      companyId,
+      providerId
+    );
+    const provider = getProviderIntegration(
+      client,
+      companyId,
+      providerId,
+      accountingIntegration.metadata
+    );
+    if (providerId === ProviderID.XERO) {
+      const rates = await (provider as XeroProvider).listTaxRates();
+      // listTaxRates answers [] on failure; an organisation always has rates.
+      return {
+        options: toXeroTaxRateOptions(rates),
+        optionsError: rates.length === 0
+      };
+    }
+    const options = await (provider as QboProvider).listTaxRateOptions();
+    return { options, optionsError: false };
+  } catch (err) {
+    getLogger("erp", "settings", "tax-rates").error(
+      "Failed to load provider tax rates",
+      { companyId, integrationId, error: err }
+    );
+    return { options: [], optionsError: true };
+  }
+}
+
 // Strict backflush gaps. Each count and its drawer list share one query, the
 // SQL form of `needsPullFrom`, so they cannot disagree.
 
@@ -9936,8 +10036,9 @@ export async function getOpenJobsMissingStorageUnit(
 
 /**
  * The record a document prints, for the "Edit document" modal: its readable
- * number, whether it is locked, and the notes its Notes block prints. Read with
- * the caller's client, so a record the caller cannot see is not found.
+ * number, whether it is locked, whether it prints lines whose part numbers a
+ * pick sets and whether they can change, and the notes its Notes block prints. Read with the caller's client, so a record
+ * the caller cannot see is not found.
  */
 export async function getDocumentEditRecord(
   client: SupabaseClient<Database>,
@@ -9946,10 +10047,11 @@ export async function getDocumentEditRecord(
   documentId: string
 ) {
   const record = DOCUMENT_EDIT_RECORDS[documentType];
+  const noLinesWhen = record.partNumberLines?.noLinesWhen;
   const { data, error } = await client
     .from(record.table as "purchaseOrder")
     .select(
-      ["status", record.readableId, record.notesColumn]
+      ["status", record.readableId, record.notesColumn, noLinesWhen?.column]
         .filter(Boolean)
         .join(", ")
     )
@@ -9958,13 +10060,55 @@ export async function getDocumentEditRecord(
     .maybeSingle();
   if (error || !data) return { data: null, error };
   const row = data as unknown as Record<string, unknown>;
+  const status = row.status as string | null;
+
   return {
     data: {
       label: String(row[record.readableId] ?? documentId),
-      locked: record.isLocked(row.status as string | null),
+      locked: record.isLocked(status),
+      partNumbersShown:
+        !!record.partNumberLines &&
+        !noLinesWhen?.values.includes(String(row[noLinesWhen.column])),
+      partNumbersLocked:
+        !record.partNumberLines ||
+        partNumberLinesRefusal(documentType, status) !== null,
       notes: record.notesColumn
         ? ((row[record.notesColumn] as JSONContent | null) ?? null)
         : null
+    },
+    error: null
+  };
+}
+
+/**
+ * The part number choices of a document's item lines, summed up for the Edit
+ * document select: their common choice, "mixed", or null for legacy lines, and
+ * how many lines there are. Lines with no item print no part number.
+ */
+export async function getDocumentPartNumberLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType: DocumentEditType,
+  documentId: string
+) {
+  const partNumberLines = DOCUMENT_EDIT_RECORDS[documentType].partNumberLines;
+  if (!partNumberLines) return { data: null, error: null };
+  const lines = await fetchAllFromTable<{
+    partNumberDisplay: PartNumberDisplay | null;
+  }>(client, partNumberLines.table, "id, partNumberDisplay", (query) =>
+    query
+      .eq(partNumberLines.documentColumn, documentId)
+      .eq("companyId", companyId)
+      .not("itemId", "is", null)
+      .order("id")
+  );
+  if (lines.error) return { data: null, error: lines.error };
+  return {
+    data: {
+      summary: summarizePartNumberDisplay(
+        lines.data.map((line) => line.partNumberDisplay)
+      ),
+      count: lines.data.length
     },
     error: null
   };
@@ -9983,6 +10127,8 @@ export async function saveDocumentEditRow(
     documentId: string;
     edit: DocumentEdit;
     notes?: JSONContent | null;
+    /** The modal's pick for every item line of the document. */
+    partNumberDisplay?: PartNumberDisplay;
     userId: string;
   }
 ) {
@@ -10002,6 +10148,10 @@ export async function saveDocumentEditRow(
       .executeTakeFirst();
     if (!current) return "notFound" as const;
     if (record.isLocked(current.status)) return "locked" as const;
+    if (args.partNumberDisplay !== undefined) {
+      const refusal = partNumberLinesRefusal(documentType, current.status);
+      if (refusal) return { refusal };
+    }
 
     if (isEmptyDocumentEdit(edit)) {
       await trx
@@ -10043,6 +10193,25 @@ export async function saveDocumentEditRow(
         } as never)
         .where("id", "=", documentId)
         .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    if (args.partNumberDisplay !== undefined && record.partNumberLines) {
+      // Every item line takes the one choice the modal made.
+      await trx
+        .updateTable(record.partNumberLines.table as "purchaseOrderLine")
+        .set({
+          partNumberDisplay: args.partNumberDisplay,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where(
+          record.partNumberLines.documentColumn as "purchaseOrderId",
+          "=",
+          documentId
+        )
+        .where("companyId", "=", companyId)
+        .where("itemId", "is not", null)
         .execute();
     }
     return "saved" as const;

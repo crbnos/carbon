@@ -133,6 +133,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   storageUnit: ["storageTypeIds"],
   supplierLedger: ["documentId"],
   supplierPartPrice: ["sourceDocumentId"],
+  taxLedger: ["documentId", "documentLineId"],
   timesheetEntryRevision: ["timesheetEntryId"],
   trackedActivity: ["sourceDocumentId"],
   trackedEntity: ["sourceDocumentId"],

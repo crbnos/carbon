@@ -22,7 +22,8 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
   React components (`pdf/ProductLabelPDF`, `pdf/StorageUnitLabelPDF`, `pdf/KanbanLabelPDF`, plus
   invoice/PO/quote/traveler docs); ZPL via `zpl/ProductLabelZPL`, `zpl/StorageUnitLabelZPL`,
   `zpl/KanbanLabelZPL` (`generateProductLabelZPL`, `generateStorageUnitLabelZPL`,
-  `generateKanbanLabelZPL`).
+  `generateKanbanLabelZPL`), and the printer test label `zpl/TestLabelZPL` (`generateTestLabelZPL`,
+  stamped in the company's timezone by `testPrinterRoute`).
 
 ## Document type registry — `packages/printing/src/registry.ts`
 
@@ -99,7 +100,13 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 ## Printer routing & assignments
 
 - **`printerRoute`** table (`pr` id) = physical printer: `companyId, locationId?, name, format(zpl|pdf
-  CHECK), mediaSizeId?, printerUrl, hasApiKey`. The ProxyBox API key is in Supabase Vault
+  CHECK), mediaSizeId?, dpi(203|300|600 CHECK, default 203), printerUrl, hasApiKey`. The print job
+  renders built-in ZPL at the route's dpi (`withLabelDpi`, `@carbon/utils` labels); the interactive
+  download routes have no printer and stay at 203. Known limits: custom (BinderyPress) templates
+  are drawn at 203 dpi whatever the route says, and a QR code prints smaller at 300/600 dpi because
+  ZPL caps `^BQ` magnification at 10. `printerRouteValidator.dpi` is optional
+  (`zfd.numeric(z.literal(labelDpis))`): the form leaves it out for a PDF printer, so saving one keeps
+  the stored dpi. The ProxyBox API key is in Supabase Vault
   as `printer:<companyId>:<routeId>` (`20261117091847_printer-api-key-vault.sql`), never in a column
   and never sent to the browser: `set_printer_api_key` / `get_printer_api_key` are service role only
   (`setPrinterApiKey` / `getPrinterApiKey`). The settings form treats it as write-only (blank keeps
@@ -123,7 +130,7 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 ## Redis printer-config cache — `packages/printing/src/cache.server.ts`
 
 `getCachedPrinterConfig(...)` → `CachedPrinterConfig { printerRouteId, printerUrl, format, mediaSizeId,
-autoPrint }`. Key `printing:{companyId}:{locationId}:{context}` (workCenter →
+dpi?, autoPrint }` (`dpi` is absent on entries cached before the column; readers default it to 203). Key `printing:{companyId}:{locationId}:{context}` (workCenter →
 `...:wc:{contextId}`), TTL 1h (`@carbon/kv` redis). Redis failures fall through to DB silently.
 `invalidatePrinterCache(companyId)` deletes `printing:{companyId}:*` — call it after any printer-route
 upsert/delete or assignment update.
@@ -132,7 +139,12 @@ upsert/delete or assignment update.
 
 `pj` id; `status` (`generating|queued|printing|completed|failed`), `contentType?(zpl|pdf)`, `content?`
 (ZPL text or base64 PDF), `printerUrl`, `sourceDocument`, `sourceDocumentId`, `sourceDocumentReadableId?`,
-`description`, `origin(auto|manual|reprint)`, `error?`, `attempts`, audit cols, `completedAt?`.
+`description`, `origin(auto|manual|reprint)`, `dpi(203|300|600 CHECK, default 203)`, `error?`, `attempts`,
+audit cols, `completedAt?`. `dpi` is what the content was drawn for (`20261119102744_print-job-dpi.sql`):
+`create-print-jobs` writes the route's dpi for a built-in label and 203 for a custom template
+(`updatePrintJobContent`). The jobs preview renders at it, and `reprintPrintJob` refuses a ZPL job for a
+printer route at another dpi (`canResendToPrinter`, `@carbon/utils` labels): the row keeps only the
+finished content, not what it was drawn from, so it cannot be redrawn.
 Realtime-enabled. RLS gated on `printing_*` permissions (Printing module). Cleanup
 (`scheduled/cleanup.ts`): completed > 30d and failed > 90d deleted.
 
@@ -215,7 +227,7 @@ wrapped in try/catch that never blocks the parent op, then `trigger("print-job",
 ## Gotchas
 
 - Built-in **ZPL** needs `labelSize.zpl`; a kanban card also needs media of at least 3" x 2"
-  (`label3x2`, `label4x2`, `label100x50mm`), or the job fails.
+  (`label3x2`, `label4x2`, `label4x3`, `label4x6`, `label100x50mm`), or the job fails.
 - Both Inngest fns use `retries: 0`; delivery timeouts are intentionally non-retriable to avoid dupes.
 - `print-job/` is a **directory** (`index.tsx` / `renderers.tsx` / `resolvers.ts`), not a single file.
   `.tsx` because renderers instantiate React-PDF components.

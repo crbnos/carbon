@@ -2,7 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { LabelSize, ProductLabelItem } from "@carbon/utils";
+import {
+  DEFAULT_LABEL_DPI,
+  type LabelSize,
+  type ProductLabelItem
+} from "@carbon/utils";
 import {
   buildLabelVars,
   type LabelCompany
@@ -20,11 +24,12 @@ function zplBarcode(
   symbology: string,
   value: string,
   heightDots: number,
-  qrModule: number
+  qrModule: number,
+  barWidth: number
 ): string {
   switch (symbology) {
     case "code128":
-      return `^BCN,${heightDots},N,N,N${zplFieldData(value)}`;
+      return `^BY${barWidth}^BCN,${heightDots},N,N,N${zplFieldData(value)}`;
     case "datamatrix":
       return `^BXN,${Math.max(3, Math.floor(heightDots / 20))},200${zplFieldData(value)}`;
     case "qrcode":
@@ -32,7 +37,7 @@ function zplBarcode(
       // mode.
       return `^BQN,2,${qrModule}${zplFieldData(value, "MA,")}`;
     default: // pdf417
-      return `^BY2^B7N,${Math.max(2, Math.floor(heightDots / 20))},5,0,0,N${zplFieldData(value)}`;
+      return `^BY${barWidth}^B7N,${Math.max(2, Math.floor(heightDots / 20))},5,0,0,N${zplFieldData(value)}`;
   }
 }
 
@@ -78,7 +83,7 @@ export function fitQrModule(
  * the PDF). Extension/custom blocks are skipped (no ZPL equivalent).
  *
  * Sizing is driven by `getZplLabelGeometry` so margins, fonts and the QR scale
- * continuously with the stock (203dpi, 2"x1" baseline), and the header carries
+ * continuously with the stock and the printer's dpi (2"x1" at 203dpi baseline), and the header carries
  * `^MNW` (continuous media) + `^CI28` (UTF-8).
  */
 export function generateProductLabelZPL(
@@ -90,7 +95,7 @@ export function generateProductLabelZPL(
   company?: LabelCompany | null
 ): string {
   const geometry = getZplLabelGeometry(labelSize);
-  const { widthDots, heightDots, hScale, scale, margin } = geometry;
+  const { dpi, widthDots, heightDots, hScale, scale, margin } = geometry;
 
   const titleFont = Math.round(25 * scale);
   const descFont = Math.round(18 * scale);
@@ -100,7 +105,13 @@ export function generateProductLabelZPL(
 
   // Top-right code slot, scaled to the stock. All dot values are rounded —
   // ZPL coordinates and sizes must be integers.
-  const qrModuleSize = Math.max(2, Math.min(8, Math.round(4 * scale)));
+  // Caps and bar widths are in 203dpi dots, scaled to the printer's dpi.
+  const dpiScale = dpi / DEFAULT_LABEL_DPI;
+  const qrModuleSize = Math.max(
+    2,
+    Math.min(10, Math.round(8 * dpiScale), Math.round(4 * scale))
+  );
+  const barWidth = Math.max(2, Math.round(2 * dpiScale));
   const qrSlotSize = Math.round(Math.min(heightDots * 0.7, widthDots * 0.3));
   const qrStartX = widthDots - qrSlotSize - margin;
   // Reserve for the bottom entity-id line so flowed barcodes clear it.
@@ -180,7 +191,8 @@ export function generateProductLabelZPL(
               block.symbology,
               value,
               bcHeight,
-              fitQrModule(value, qrModuleSize, widthDots - 2 * margin, avail)
+              fitQrModule(value, qrModuleSize, widthDots - 2 * margin, avail),
+              barWidth
             );
             yPosition = bcY + bcHeight;
           } else if (block.placement === "center") {
@@ -195,7 +207,8 @@ export function generateProductLabelZPL(
               block.symbology,
               value,
               bcSize,
-              fitQrModule(value, qrModuleSize, widthDots - 2 * margin, avail)
+              fitQrModule(value, qrModuleSize, widthDots - 2 * margin, avail),
+              barWidth
             );
             yPosition = bcY + bcSize;
           } else {
@@ -219,7 +232,8 @@ export function generateProductLabelZPL(
               block.symbology,
               value,
               Math.round(110 * scale),
-              module
+              module,
+              barWidth
             );
           }
         }

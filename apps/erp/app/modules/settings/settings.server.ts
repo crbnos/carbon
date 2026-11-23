@@ -24,14 +24,18 @@ import {
   validateDocumentEdit,
   validateTemplateText
 } from "@carbon/documents/template";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { integrations as availableIntegrations } from "@carbon/ee";
 import {
   getUnmappedRequiredAccounts,
+  getUnmappedTaxCodes,
   JOURNAL_ENTRY_SOURCE_TYPES,
+  loadReverseChargeCodeIds,
   POSTING_POLICY,
   suggestAccountMatchesWithAI,
   upsertAccountMappings,
   upsertDimensionValueMapping,
+  upsertTaxCodeMappings,
   validateDimensionSlots
 } from "@carbon/ee/accounting";
 import { deleteApiKey, upsertApiKey } from "@carbon/ee/api-keys.server";
@@ -88,7 +92,9 @@ import type { JSONContent } from "@carbon/react";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
 import {
+  canResendToPrinter,
   datetime,
+  formatDateTimeInZone,
   isUniqueViolation,
   requireAffected,
   unchecked
@@ -100,6 +106,7 @@ import { plmReleaseControl } from "~/modules/items/items.models";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import {
+  getCompanyTimeZone,
   invalidateCompanyTimeZone,
   invokePosting,
   isActiveCompanyEmployee
@@ -124,12 +131,14 @@ import {
   returnPickedMaterialTimings,
   serialNumberTimings,
   subsidiaryValidator,
+  taxCodeMappingEntrySchema,
   timekeepingControlsModes,
   timesheetTimecardChecks,
   weekNumberings
 } from "./settings.models";
 import * as service from "./settings.service";
 import {
+  DOCUMENT_EDIT_RECORDS,
   DOCUMENT_TERMS_FIELD,
   documentEditPermissions
 } from "./settings.utils";
@@ -519,7 +528,8 @@ export const updateProductionSettings = defineServiceFn({
  * signature on file, when a purchase updates the item's price (on invoice post
  * or on order finalize), whether a receipt updates the supplier lead time,
  * whether supplier readable ids show, who is notified about supplier quotes,
- * and the default CC on supplier emails.
+ * the default CC on supplier emails, and which part numbers new purchase
+ * order lines print (a supplier's own choice overrides it).
  *
  * @mcp
  */
@@ -538,7 +548,8 @@ export const updatePurchasingSettings = defineServiceFn({
     updateLeadTimesOnReceipt: z.boolean().optional(),
     showSupplierReadableId: z.boolean().optional(),
     supplierQuoteNotificationGroup: notificationGroup.optional(),
-    defaultSupplierCc: z.array(z.string().email()).optional()
+    defaultSupplierCc: z.array(z.string().email()).optional(),
+    supplierPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS).optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -738,9 +749,11 @@ export const updateResourcesSettings = defineServiceFn({
  * contact and location, whether every customer contact needs an email, whether customer readable ids show, the digital quote
  * (on or off, who is notified, and whether accepting one asks for a purchase
  * order), who is notified when an RFQ is ready and when a sales rule is
- * broken, the default markup per cost category on a quote line, and the
+ * broken, the default markup per cost category on a quote line, the
  * level of the delivery date check a sales order line runs (an item's
- * Planning tab can override it per location).
+ * Planning tab can override it per location), and which part numbers new
+ * quote, sales order, invoice and packing slip lines print (a customer's own
+ * choice overrides it).
  *
  * @mcp
  */
@@ -766,7 +779,8 @@ export const updateSalesSettings = defineServiceFn({
         overheadCost: z.number().min(0),
         outsideCost: z.number().min(0)
       })
-      .optional()
+      .optional(),
+    customerPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS).optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -1528,6 +1542,7 @@ export const savePrinterRoute = defineServiceFn({
       name: route.name,
       format: route.format,
       mediaSizeId: route.mediaSizeId || null,
+      dpi: route.dpi,
       printerUrl: route.printerUrl,
       locationId: route.locationId || null
     });
@@ -1594,15 +1609,24 @@ export const testPrinterRoute = defineServiceFn({
   async run(ctx, { routeId }) {
     const { data: route } = await ctx.asCaller.supabase
       .from("printerRoute")
-      .select("printerUrl, format, mediaSizeId, hasApiKey")
+      .select("printerUrl, format, mediaSizeId, dpi, hasApiKey")
       .eq("id", routeId)
       .eq("companyId", ctx.company.id)
       .single();
     if (!route) return ctx.error("notFound", "Printer route not found");
 
+    const timeZone = await getCompanyTimeZone(
+      ctx.asCaller.supabase,
+      ctx.company.id
+    );
     const testLabel = service.generateTestLabel(
       route.format,
-      route.mediaSizeId
+      route.mediaSizeId,
+      route.dpi,
+      formatDateTimeInZone(datetime.timestamp(), timeZone, undefined, {
+        dateStyle: "short",
+        timeStyle: "short"
+      })
     );
     if (!testLabel) {
       return ctx.error(
@@ -1866,8 +1890,11 @@ export const assignPrinter = defineServiceFn({
  * @remarks
  * Queues a new print job with the company's original job's content, to its
  * printer or to `printerUrl` when given, and starts its delivery. A job still
- * generating has no content and cannot be reprinted. Not published: the
- * server POSTs to `printerUrl`, so an API caller could aim it at any address.
+ * generating has no content and cannot be reprinted, and a ZPL label is
+ * refused for another printer at another dpi, which would print it the wrong
+ * size. The printer it was printed on always takes it again.
+ * Not published: the server POSTs to `printerUrl`, so an API caller could aim
+ * it at any address.
  */
 export const reprintPrintJob = defineServiceFn({
   input: reprintValidator,
@@ -1894,11 +1921,39 @@ export const reprintPrintJob = defineServiceFn({
       return ctx.error("rule", "Cannot reprint a job that is still generating");
     }
 
+    // The job keeps only its finished content, not what it was drawn from, so
+    // a label for another dpi cannot be redrawn here.
+    const targetUrl = printerUrl || originalMeta.data.printerUrl;
+    const { data: target } = await client
+      .from("printerRoute")
+      .select("dpi")
+      .eq("printerUrl", targetUrl)
+      .eq("companyId", ctx.company.id)
+      // The route delivery reads, when several share the URL.
+      .order("hasApiKey", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    // The printer it went to prints the same content the same way again.
+    if (
+      targetUrl !== originalMeta.data.printerUrl &&
+      !canResendToPrinter(
+        original.data.contentType,
+        original.data.dpi,
+        target?.dpi
+      )
+    ) {
+      return ctx.error(
+        "rule",
+        `This label was printed for a ${original.data.dpi} dpi printer. Print it again from the record to send it to a ${target?.dpi} dpi printer.`
+      );
+    }
+
     const job = await createPrintJob(client, {
       companyId: ctx.company.id,
       contentType: original.data.contentType as "zpl" | "pdf",
       content: original.data.content,
-      printerUrl: printerUrl || originalMeta.data.printerUrl,
+      dpi: original.data.dpi,
+      printerUrl: targetUrl,
       sourceDocument: originalMeta.data.sourceDocument,
       sourceDocumentId: originalMeta.data.sourceDocumentId,
       sourceDocumentReadableId:
@@ -1952,7 +2007,7 @@ export const deletePrintJob = defineServiceFn({
   }
 });
 
-/** What a print job printed: its ZPL or PDF content. */
+/** What a print job printed: its ZPL or PDF content, and the dpi it was drawn for. */
 export const viewPrintJobContent = defineServiceFn({
   input: z.object({ printJobId: z.string().min(1) }),
   permission: { update: "settings" },
@@ -1968,14 +2023,16 @@ export const viewPrintJobContent = defineServiceFn({
     return {
       printJobId: content.data.id,
       content: content.data.content,
-      contentType: content.data.contentType
+      contentType: content.data.contentType,
+      dpi: content.data.dpi
     };
   }
 });
 
 /**
  * Get the editor for one document: the company template, this document's own
- * edits, whether the record is locked, and its notes.
+ * edits, whether the record is locked, its notes, and its item lines' part
+ * number choice.
  */
 export const getDocumentEditor = defineServiceFn({
   input: z.object({
@@ -1998,15 +2055,28 @@ export const getDocumentEditor = defineServiceFn({
       return ctx.error("notFound", "The document could not be found");
     }
     const termsField = DOCUMENT_TERMS_FIELD[documentType];
-    const [template, edit, terms] = await Promise.all([
+    const [template, edit, terms, partNumberLines] = await Promise.all([
       getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
       getDocumentEdit(client, {
         companyId: ctx.company.id,
         documentType,
         documentId
       }),
-      termsField ? service.getTerms(client, ctx.company.id) : null
+      termsField ? service.getTerms(client, ctx.company.id) : null,
+      service.getDocumentPartNumberLines(
+        client,
+        ctx.company.id,
+        documentType,
+        documentId
+      )
     ]);
+    if (partNumberLines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the document's lines",
+        partNumberLines.error
+      );
+    }
     const termsSeed = termsField
       ? ((terms?.data?.[termsField] as JSONContent | null) ?? null)
       : null;
@@ -2018,6 +2088,8 @@ export const getDocumentEditor = defineServiceFn({
     );
     return {
       ...record.data,
+      partNumberDisplay: partNumberLines.data?.summary ?? null,
+      partNumberLineCount: partNumberLines.data?.count ?? 0,
       documentType,
       documentId,
       template,
@@ -2030,8 +2102,10 @@ export const getDocumentEditor = defineServiceFn({
 
 /**
  * Save how one document prints: the words, hidden fields and blocks, and Terms
- * that differ from the company template, plus its notes. Refused once the
- * record is locked.
+ * that differ from the company template, plus its notes and, when picked, the
+ * part numbers every item line prints. Refused once the record is locked; a
+ * pick is also refused while the lines' choice cannot change
+ * (`partNumberLinesRefusal`).
  */
 export const saveDocumentEdit = defineServiceFn({
   input: z.object({
@@ -2039,11 +2113,19 @@ export const saveDocumentEdit = defineServiceFn({
     documentId: z.string().min(1),
     blocks: z.array(blockSchema),
     settings: documentSettingsSchema,
-    notes: z.record(z.string(), z.unknown()).nullable().optional()
+    notes: z.record(z.string(), z.unknown()).nullable().optional(),
+    /** Which part numbers every line of the document prints. */
+    partNumberDisplay: z.enum(PART_NUMBER_DISPLAYS).optional()
   }),
   permission: { by: "documentType", rules: documentEditPermissions },
   async run(ctx, input) {
     const { documentType, documentId } = input;
+    if (
+      input.partNumberDisplay !== undefined &&
+      !DOCUMENT_EDIT_RECORDS[documentType].partNumberLines
+    ) {
+      return ctx.error("validation", "This document has no part number choice");
+    }
     const client = ctx.asCaller.supabase;
     const record = await service.getDocumentEditRecord(
       client,
@@ -2056,6 +2138,12 @@ export const saveDocumentEdit = defineServiceFn({
     }
     if (!record.data) {
       return ctx.error("notFound", "The document could not be found");
+    }
+    if (
+      input.partNumberDisplay !== undefined &&
+      !record.data.partNumbersShown
+    ) {
+      return ctx.error("validation", "This document has no part number choice");
     }
 
     const template = await getCompanyTemplate(client, {
@@ -2080,11 +2168,13 @@ export const saveDocumentEdit = defineServiceFn({
       documentId,
       edit,
       notes: input.notes as JSONContent | null | undefined,
+      partNumberDisplay: input.partNumberDisplay,
       userId: ctx.auditUserId
     });
     if (saved === "locked") {
       return ctx.error("rule", "This document is locked.");
     }
+    if (typeof saved === "object") return ctx.error("rule", saved.refusal);
     if (saved === "notFound") {
       return ctx.error("notFound", "The document could not be found");
     }
@@ -2907,12 +2997,103 @@ export const saveDimensionValueMappings = defineServiceFn({
 });
 
 /**
+ * Map Carbon tax codes to an accounting integration's tax rates.
+ *
+ * @remarks
+ * Xero and QuickBooks Online only: each mapping names one tax code (or the
+ * "no tax code" fallback), the direction it is used in (sales or purchase)
+ * and the provider's rate. The rate must be one the provider offers now; its
+ * name and percentage are read from the provider, never from the form. A
+ * Reverse Charge code charges no tax on sales, so its sales rate must be 0%.
+ * Written all or none.
+ */
+export const saveTaxCodeMappings = defineServiceFn({
+  input: z.object({
+    integrationId: z.string().min(1),
+    mappings: z
+      .array(taxCodeMappingEntrySchema)
+      .min(1, { message: "No tax code mappings to save" })
+  }),
+  permission: { update: "settings" },
+  async run(ctx, { integrationId, mappings }) {
+    if (!service.TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) {
+      return ctx.error("rule", "This integration does not map tax codes");
+    }
+    const provider = await service.getProviderTaxRateOptions(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      integrationId
+    );
+    if (provider.optionsError) {
+      return ctx.error("internal", "Failed to load the provider's tax rates");
+    }
+    const resolved = mappings.map((mapping) => ({
+      mapping,
+      option: provider.options.find(
+        (option) =>
+          option.id === mapping.externalId &&
+          option.direction === mapping.direction
+      )
+    }));
+    const unknown = resolved.find(({ option }) => !option);
+    if (unknown) {
+      return ctx.error(
+        "rule",
+        `${unknown.mapping.externalId} is not an active ${unknown.mapping.direction} tax rate in the provider`
+      );
+    }
+    const reverseCharge = await loadReverseChargeCodeIds(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      taxCodeIds: mappings
+        .filter((m) => m.direction === "sales")
+        .map((m) => m.taxCodeId)
+    });
+    if (
+      resolved.some(
+        ({ mapping, option }) =>
+          mapping.direction === "sales" &&
+          reverseCharge.has(mapping.taxCodeId) &&
+          option!.rate !== 0
+      )
+    ) {
+      return ctx.error(
+        "rule",
+        "A Reverse Charge tax code charges no tax on sales. Map its sales use to a 0% rate."
+      );
+    }
+    const result = await upsertTaxCodeMappings(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      integration: integrationId,
+      userId: ctx.auditUserId,
+      mappings: resolved.map(({ mapping, option }) => ({
+        taxCodeId: mapping.taxCodeId,
+        direction: mapping.direction,
+        externalId: mapping.externalId,
+        externalName: option!.name,
+        externalRate: option!.rate
+      }))
+    });
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        mappings.length === 1
+          ? "Failed to save tax code mapping"
+          : "Failed to save tax code mappings",
+        result.error
+      );
+    }
+    return { count: mappings.length };
+  }
+});
+
+/**
  * Turn an accounting integration's sync on or off.
  *
  * @remarks
  * A new connection starts with sync off. Turning it on is refused until
  * every required account is mapped, so the first push cannot park a wall of
- * unmapped-account warnings.
+ * unmapped-account warnings. Xero and QuickBooks Online also need a provider
+ * rate for every tax code in each direction it is used in.
  *
  * @mcp
  */
@@ -2947,6 +3128,33 @@ export const setIntegrationSyncEnabled = defineServiceFn({
             unmapped.data.length === 1 ? "" : "s"
           } before turning on sync`
         );
+      }
+
+      // A document whose code has no mapping parks with UNMAPPED_TAX_CODES.
+      // Rillet maps no tax codes.
+      if (service.TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) {
+        const unmappedTaxCodes = await getUnmappedTaxCodes(ctx.asSystem.pg, {
+          companyId: ctx.company.id,
+          integration: integrationId
+        });
+        if (unmappedTaxCodes.error || !unmappedTaxCodes.data) {
+          return ctx.error(
+            "internal",
+            "Failed to check the tax code mapping",
+            unmappedTaxCodes.error
+          );
+        }
+        const unmappedTaxCodeCount = new Set(
+          unmappedTaxCodes.data.map((code) => code.taxCodeId)
+        ).size;
+        if (unmappedTaxCodeCount > 0) {
+          return ctx.error(
+            "rule",
+            `Map the remaining ${unmappedTaxCodeCount} tax code${
+              unmappedTaxCodeCount === 1 ? "" : "s"
+            } before turning on sync`
+          );
+        }
       }
     }
 

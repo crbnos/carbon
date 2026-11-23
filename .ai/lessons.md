@@ -3966,6 +3966,16 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
 
+## The license-header fixer skips a file that is not staged
+
+**Context:** Multi-jurisdiction tax (2026-10-17). Two new files were committed with no SPDX header, although the fixer had run before each commit.
+
+**Problem:** `pnpm --filter @carbon/checks license-headers` walks `git ls-files --cached`. An untracked file is outside that walk, so the fixer reports "0 fixed" and the file stays bare. The conformance test then fails later, on someone else's run.
+
+**Rule:** Stage a new source file (`git add`) before you run the license-header fixer, then stage it again after the fixer writes the header.
+
+**Applies to:** every new source file, and `packages/checks/src/sources/license-files.ts`.
+
 ## A pick moves a job material's storage unit to lineside, so the line no longer names its Pull From
 
 **Context:** Strict backflush (2026-10-16) consumed what no pick covered from `jobMaterial.storageUnitId`.
@@ -5206,6 +5216,20 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 - **Rule:** Anything that adds journal lines to a posted document must be serialized with the void's read under the same lock. Lock the document row `FOR UPDATE` inside the void's transaction, then read and build the reversal from that locked state, taking the lock at the same point in the order as the writer (after the posting-status read, before the period) so neither deadlocks.
 - **Applies to:** `postSalesInvoice` / `postPurchaseInvoice` void, `changeInvoiceLineAccount`, and any future correction that posts onto an existing document's journal (memos, payments, receipts, shipments).
 
+## A gate on the buttons is not a gate: a rule needs one owner and a list of its writers
+
+- **Context:** On a later operation of a serial part, every write names a unit the operator picked or scanned.
+- **Problem:** The rule was copied into each entry point: buttons, scan hooks, the scan queue, a few routes. Nobody listed the writers, so three review rounds each found another one: a scan hook, the off-page traveler scan, then the kanban end route (and the start route still picked its own unit). The held unit lived only in the URL, which redirects, links, refresh and Back also write, so every fix filtered the URL after the fact and opened a new window. The two screens ran two different copies of the selection logic, and the tests checked helpers, not the routes.
+- **Rule:** Give a rule one owner per side and make a missed writer fail a check. On the server one function decides from the database and every writer calls it before it writes; a conformance check lists the writers and fails one that does not call it (or is not on an allow-list with its reason). On the client one pure decision is computed during render; the operator's pick is state set in the click or scan handler, and the URL only mirrors it. Test the write paths themselves over an in-memory client, and revert each call to see the test go red (not every route has such a test yet). An allow-list reason must be checked by code, not just written down (`unconsume` now checks the parts were consumed into the parent; "a manager override" did not cover writing a unit nobody picked, so complete-all now resolves its unit too). Gate a write by what the server accepts for it: a finished unit blocks `require` writes only, not `member` ones (unconsume, quality issue). The owner's reads, and the screens' reads of the same list, must not depend on PostgREST's 1000-row cap (one paged reader). A new gate must keep an older page's safe requests working: tablets keep the old bundle for hours, so a first-operation step with no unit still uses its index, and a timer naming a finished unit is not refused. When the server changes what a request named, it says so in the toast.
+- **Applies to:** MES `resolveWorkUnit` (`services/work-unit.server.ts`) and its `mes-unit-write-resolves-unit` check, `useWorkUnit` / `serialUnitSelection` (`~/utils/workUnit`) in `JobOperation` and `AssemblyView`, and any future rule on per-unit work.
+
+## A tag that points at a line is cleared by every write that removes the line
+
+- **Context:** A serial unit on a shipment carries `Shipment` and `Shipment Line` in `trackedEntity.attributes`; posting ships the units tagged to the shipment.
+- **Problem:** Deleting a line, deleting the shipment or re-sourcing a Draft removed the lines but left the tags. The post then shipped units no line asked for. A post-time filter hid the stale tag, so a test that checked only after posting still passed when the clear was removed.
+- **Rule:** A tag must name a live record. Every write that deletes or rebuilds the record clears its tags in the same place, and the reader still ignores tags to dead records. Test the clear right after the write, before any reader that would also hide it, and remove the clear once to see the test go red.
+- **Applies to:** `clearShipmentTags` callers (`deleteShipment`, `deleteShipmentLine`, the `create` re-source), `liveShipmentTags`, and any attribute that names another row (`Receipt Line`, `Job Make Method`).
+
 ## A job's WIP is not only the lines documented against the job
 
 - **Context:** Finished goods from a job with an outside processing operation came out without the supplier's cost.
@@ -5229,3 +5253,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** Never set `name` on a subclass of an Inngest error class (`NonRetriableError`, `RetryAfterError`); carry what tells it apart in another field (`code`). Check it against the client's copy: `createRequire("packages/lib/package.json").resolve("inngest")`.
 
 **Applies to:** Every error class thrown from an Inngest function in `@carbon/jobs` or `@carbon/ee`.
+
+## A trigger that fills a default skips only a backup load
+
+**Context:** The part number display triggers (`20261121061455_supplier-part-number-display.sql` and the customer migration after it) first skipped when `app.sync_in_progress` was set, so the dataset apply could stamp the seeded lines itself. Then they skipped `app.dataset_apply`, and a TypeScript helper stamped the seeded lines after the tiers.
+
+**Problem:** `app.sync_in_progress` is also the accounting sync's flag (`withTriggersDisabled`, `@carbon/ee/accounting`). The Xero purchase order pull deletes and re-inserts every line under it, so every synced line came back with no display choice and no copy of the supplier part number. The `app.dataset_apply` skip needed a second copy of the trigger's rule in TypeScript, and that helper's company-wide UPDATE stamped a real company's legacy lines on a dev seed without a wipe.
+
+**Rule:** A trigger that fills a default for a new row skips only `app.backup_load`: a restore brings its own values. Let it run during a dataset apply: the tiers insert parents before children, so it gives seeded rows the values it gives any row. Use `app.sync_in_progress` only to skip side effects an external sync must not cause (events, webhooks, contact cleanup).
+
+**Applies to:** Every new BEFORE/AFTER row trigger or interceptor that fills or derives a value on insert.

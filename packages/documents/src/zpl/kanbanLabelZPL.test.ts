@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { LabelSize } from "@carbon/utils";
-import { labelSizes } from "@carbon/utils";
+import { labelSizes, withLabelDpi } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
   canHoldKanbanLabel,
@@ -109,6 +109,15 @@ describe("generateKanbanLabelZPL", () => {
         expect(qr.x + qr.magnification * 37).toBeLessThanOrEqual(widthDots);
       }
     }
+  });
+
+  it("sizes a 3 x 2 inch card in a 300 dpi printer's dots", () => {
+    const zpl = generateKanbanLabelZPL(
+      item,
+      withLabelDpi(size("label3x2"), 300),
+      baseUrl
+    );
+    expect(zpl).toContain("^PW900^LL600");
   });
 
   it("escapes field-data control characters in user text", () => {

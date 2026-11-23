@@ -4,9 +4,39 @@
 
 import type { Database } from "@carbon/database";
 import { distinctItemText } from "@carbon/utils";
+import { formatLinePartNumber, type PartNumberDisplay } from "./part-number";
 
+type LineCustomerPart = { id: string | null; revision: string | null };
+
+/**
+ * A sales order line's customer part: its own copy, else the live
+ * cross-reference (`customerPartToItem`). The pair stays together, so a copy's
+ * number never prints with the cross-reference's revision.
+ */
+export function lineCustomerPart(line: {
+  customerPartId?: string | null;
+  customerPartRevision?: string | null;
+  customerPartIdFromCustomer?: string | null;
+  customerPartRevisionFromCustomer?: string | null;
+}): LineCustomerPart {
+  return line.customerPartId?.trim()
+    ? { id: line.customerPartId, revision: line.customerPartRevision ?? null }
+    : {
+        id: line.customerPartIdFromCustomer ?? null,
+        revision: line.customerPartRevisionFromCustomer ?? null
+      };
+}
+
+/**
+ * A sales order line's title: the asset for a Fixed Asset line, the
+ * description for a Comment line, else the line's part numbers per its display
+ * choice. `draft` is the Edit document modal's unsaved pick; `customerPart` is
+ * the line's `lineCustomerPart`, when the caller has it already.
+ */
 export function getLineDescription(
-  line: Database["public"]["Views"]["salesOrderLines"]["Row"]
+  line: Database["public"]["Views"]["salesOrderLines"]["Row"],
+  draft?: PartNumberDisplay,
+  customerPart?: LineCustomerPart
 ) {
   switch (line?.salesOrderLineType) {
     case "Fixed Asset":
@@ -17,14 +47,19 @@ export function getLineDescription(
       );
     case "Comment":
       return line?.description;
-    default:
-      let customerPartNumber = line.customerPartId
-        ? ` (${line.customerPartId}${
-            line.customerPartRevision ? ` Rev ${line.customerPartRevision}` : ""
-          })`
-        : "";
-
-      return line?.itemReadableId + customerPartNumber;
+    default: {
+      const part = customerPart ?? lineCustomerPart(line);
+      return formatLinePartNumber(
+        "salesOrder",
+        {
+          ours: line?.itemReadableId,
+          theirs: part.id,
+          theirsRevision: part.revision
+        },
+        line?.partNumberDisplay,
+        draft
+      );
+    }
   }
 }
 
@@ -36,16 +71,9 @@ export function getLineDescriptionDetails(
       return line?.description;
     case "Comment":
     default:
-      const itemDescription = line?.customerPartId
-        ? `\n${line.customerPartId}${
-            line.customerPartRevision ? ` Rev ${line.customerPartRevision}` : ""
-          }`
-        : "";
-      // A service's readable id is its name — don't print it twice.
-      return (
-        (distinctItemText(line?.itemReadableId, line?.description) ?? "") +
-        itemDescription
-      );
+      // A service's readable id is its name — don't print it twice. The
+      // customer part number prints in the title only.
+      return distinctItemText(line?.itemReadableId, line?.description) ?? "";
   }
 }
 

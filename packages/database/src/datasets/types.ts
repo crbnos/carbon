@@ -87,8 +87,12 @@ export type CustomerSpec = {
   currencyCode?: string;
   /** Defaults to Net 30. */
   paymentTerm?: string;
+  /** A `FoundationData.taxCodes` name, written to `customerTax.taxCodeId`. */
+  taxCode?: string;
   /** Omitted = the dataset-wide `foundation.partyAddress*`. */
   address?: PartyAddressSpec;
+  /** Omitted = the company default. */
+  partNumberDisplay?: Database["public"]["Enums"]["partNumberDisplay"];
 };
 
 export type SupplierSpec = {
@@ -106,6 +110,8 @@ export type SupplierSpec = {
   paymentTerm?: string;
   /** Omitted = the dataset-wide `foundation.partyAddress*`. */
   address?: PartyAddressSpec;
+  /** Omitted = the company default. */
+  partNumberDisplay?: Database["public"]["Enums"]["partNumberDisplay"];
 };
 
 export type ContactSpec = {
@@ -236,6 +242,35 @@ export type MaterialTaxonomySpec = {
   dimensions: { name: string; form: string; isMetric?: boolean }[];
 };
 
+export type TaxAuthoritySpec = { name: string };
+
+export type TaxCodeSpec = {
+  name: string;
+  description?: string;
+  calculationType?: "Normal" | "Reverse Charge";
+  reportingCategory?:
+    | "Standard"
+    | "Reduced"
+    | "Zero-Rated"
+    | "Exempt"
+    | "Reverse Charge"
+    | "Export"
+    | "Out of Scope";
+  invoiceMessage?: string;
+  /** Alpha-2, e.g. "US". */
+  countryCode: string;
+  state?: string;
+  components: Array<{
+    name: string;
+    /** A `taxAuthorities` name. */
+    authority: string;
+    /** As people write it: 6.25 means 6.25%. */
+    taxPercent: number;
+    /** As people write it: 100 means fully recoverable. Defaults to 0. */
+    recoverablePercent?: number;
+  }>;
+};
+
 export type FoundationData = {
   departments: string[];
   abilities: string[];
@@ -255,6 +290,8 @@ export type FoundationData = {
   workCenterProcessLinks: Array<[string, string]>;
   customerTypes: string[];
   supplierTypes: string[];
+  taxAuthorities: TaxAuthoritySpec[];
+  taxCodes: TaxCodeSpec[];
   costCenters: string[];
   noQuoteReasons: string[];
   contractors: ContractorSpec[];
