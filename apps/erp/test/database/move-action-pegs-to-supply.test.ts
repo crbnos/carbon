@@ -9,6 +9,7 @@
 // cover stays on the action, which projectPeg_planned_check allows only as a
 // Soft peg. Every moved peg is superseded, never updated in place.
 
+import { sql } from "kysely";
 import { afterEach, beforeEach, describe, expect } from "vitest";
 import { moveActionPegsToSupply } from "../../app/modules/projects/projects.service";
 import {
@@ -23,6 +24,7 @@ let f: Fixture;
 let groupId: string;
 let projectA: string;
 let projectB: string;
+let planner: string;
 
 /** A Soft peg of `projectId`'s demand on the planning action `actionId`. */
 async function pegOnAction(
@@ -75,6 +77,17 @@ async function currentPegs() {
     );
 }
 
+/** Who wrote each current peg. */
+async function currentPegAuthors() {
+  const rows = await f.db
+    .selectFrom("projectPeg")
+    .select("createdBy")
+    .where("companyId", "=", f.companyId)
+    .where("supersededAt", "is", null)
+    .execute();
+  return rows.map((row) => row.createdBy);
+}
+
 async function supersededCount() {
   const row = await f.db
     .selectFrom("projectPeg")
@@ -91,7 +104,19 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
     groupId = `${f.prefix}-group-plan`;
     projectA = `${f.prefix}-project-a`;
     projectB = `${f.prefix}-project-b`;
+    planner = `${f.prefix}-planner`;
     await seed(f, async (trx) => {
+      await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+      await trx
+        .insertInto("user")
+        .values({
+          id: planner,
+          email: `${planner}@example.com`,
+          firstName: "Plan",
+          lastName: "Ner"
+        })
+        .execute();
+      await sql`SET LOCAL session_replication_role = origin`.execute(trx);
       await trx
         .insertInto("project")
         .values([
@@ -113,6 +138,15 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
   });
 
   afterEach(async () => {
+    // The user row cannot go while the planner's pegs still name it.
+    await seed(f, async (trx) => {
+      await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+      await trx
+        .deleteFrom("projectPeg")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await trx.deleteFrom("user").where("id", "=", planner).execute();
+    });
     await f.cleanup();
   });
 
@@ -123,7 +157,7 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
       await pegOnAction("pa_1", projectB, 30, "2026-11-12");
       const result = await moveActionPegsToSupply(f.db, {
         companyId: f.companyId,
-        userId: USER,
+        userId: planner,
         moves: [
           {
             planningActionId: "pa_1",
@@ -139,8 +173,42 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
         { supply: "Job:job_1", projectId: projectB, quantity: 30, state: "Soft" }
       ]);
       expect(await supersededCount()).toBe(2);
+      // the moved pegs are stamped by the planner who applied the order
+      expect(await currentPegAuthors()).toEqual([planner, planner]);
     }
   );
+
+  databaseTest("an order with no supplies moves nothing", async () => {
+    await pegOnAction("pa_1", projectA, 10, "2026-11-10");
+    for (const moves of [
+      [],
+      [
+        {
+          planningActionId: "pa_1",
+          supplyType: "Job" as const,
+          supplies: [],
+          keepRemainder: false
+        }
+      ]
+    ]) {
+      expect(
+        await moveActionPegsToSupply(f.db, {
+          companyId: f.companyId,
+          userId: planner,
+          moves
+        })
+      ).toEqual({ moved: 0, error: null });
+    }
+    expect(await currentPegs()).toEqual([
+      {
+        supply: "Planning Action:pa_1",
+        projectId: projectA,
+        quantity: 10,
+        state: "Soft"
+      }
+    ]);
+    expect(await supersededCount()).toBe(0);
+  });
 
   databaseTest(
     "splits the pegs across the jobs a week was ordered as, earliest need first",
@@ -223,17 +291,27 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
           }
         ]
       });
-      expect(
-        (await currentPegs()).filter((peg) =>
-          peg.supply.startsWith("Planning Action")
-        )
-      ).toEqual([]);
-      expect(await currentPegs()).toContainEqual({
-        supply: "Purchase Order Line:pol_2",
-        projectId: projectB,
-        quantity: 15,
-        state: "Soft"
-      });
+      // and only the remainder: the pegs the first order superseded stay history
+      expect(await currentPegs()).toEqual([
+        {
+          supply: "Purchase Order Line:pol_1",
+          projectId: projectA,
+          quantity: 20,
+          state: "Soft"
+        },
+        {
+          supply: "Purchase Order Line:pol_1",
+          projectId: projectB,
+          quantity: 15,
+          state: "Soft"
+        },
+        {
+          supply: "Purchase Order Line:pol_2",
+          projectId: projectB,
+          quantity: 15,
+          state: "Soft"
+        }
+      ]);
     }
   );
 
