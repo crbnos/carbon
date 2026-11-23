@@ -648,7 +648,7 @@ const ContractProperties = () => {
               </span>
             )}
             isReadOnly={isEnded || !canUpdate}
-            helperText={invoiceAutomationHint(
+            labelHelp={invoiceAutomationHint(
               contract.invoiceAutomation ?? companySettings.invoiceAutomation
             )}
             options={[

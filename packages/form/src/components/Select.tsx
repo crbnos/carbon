@@ -32,6 +32,8 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
   name: string;
   label?: string;
   termId?: TermId;
+  /** The label's ⓘ text when no glossary term fits; ignored with `termId`. */
+  labelHelp?: string;
   helperText?: string;
   isConfigured?: boolean;
   isOptional?: boolean;
@@ -51,6 +53,7 @@ const Select = ({
   name,
   label,
   termId,
+  labelHelp,
   helperText,
   isConfigured = false,
   isOptional,
@@ -96,7 +99,9 @@ const Select = ({
           isConfigured={isConfigured}
           onConfigure={onConfigure}
         >
-          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
+          <LabelWithHelp termId={termId} text={labelHelp}>
+            {label}
+          </LabelWithHelp>
         </FormLabel>
       )}
 

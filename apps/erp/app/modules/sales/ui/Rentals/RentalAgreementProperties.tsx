@@ -423,12 +423,15 @@ const RentalAgreementProperties = () => {
             </span>
           )}
           isReadOnly={isInvoicingReadOnly}
+          labelHelp={
+            agreement.effectiveInvoiceAutomation
+              ? invoiceAutomationHint(agreement.effectiveInvoiceAutomation)
+              : undefined
+          }
           helperText={
             !contactEmail && !isInvoicingReadOnly
               ? t`Add a contact with an email to send invoices`
-              : agreement.effectiveInvoiceAutomation
-                ? invoiceAutomationHint(agreement.effectiveInvoiceAutomation)
-                : undefined
+              : undefined
           }
           options={invoiceAutomationOptions}
           onChange={(option) => {
