@@ -19,7 +19,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { erpPosting } from "~/services/erp";
-import { buildLineFeedRows } from "~/services/line-feed";
+import {
+  buildFlow,
+  buildLaneBoard,
+  buildLineFeedRows,
+  buildStationBoard,
+  summarizeLanes
+} from "~/services/line-feed";
 import type { SuggestedAllocationLot } from "./allocation";
 import { greedyFillAllocation, sortLotsByPickMethod } from "./allocation";
 
@@ -685,65 +691,113 @@ export async function insertManualInventoryAdjustment(
 }
 
 /**
- * The line feeder's queue for one location: open material requests, lineside
- * shortages and outstanding transfer lines to a work center's storage unit,
- * plus the names the cards show. Every source is paged with a stable order,
- * so a location past the row cap still gets its oldest requests and largest
- * shortages first from `buildLineFeedRows`.
+ * The line feed for one location: a lane per work center (`buildLaneBoard`)
+ * with its raw shelf, kit rack and station card (open material requests,
+ * lineside shortages and outstanding transfer lines), the board's summary, and
+ * the names the lanes show. Every source is paged with a stable order, so a
+ * location past the row cap is still read in full.
  */
 export async function getLineFeed(
   client: SupabaseClient<Database>,
-  args: { companyId: string; locationId: string }
+  args: { companyId: string; locationId: string; sort?: "line" | "worst" }
 ) {
-  const { companyId, locationId } = args;
+  const { companyId, locationId, sort } = args;
 
-  const [requests, shortages, transfers] = await Promise.all([
-    fetchAllRecords(() =>
-      client
-        .from("materialRequest")
-        .select(
-          "*, item(readableIdWithRevision), workCenter(name), jobOperation(job(jobId))"
-        )
-        .eq("status", "Open")
-        .eq("locationId", locationId)
-        .eq("companyId", companyId)
-        .order("id")
-    ),
-    fetchAllRecords(() =>
-      client
-        .rpc("get_line_feed_shortages", {
-          p_location_id: locationId,
-          p_company_id: companyId
-        })
-        .order("workCenterId")
-        .order("storageUnitId")
-        .order("itemId")
-    ),
-    fetchAllRecords(() =>
-      client
-        .from("stockTransferLine")
-        .select(
-          "id, itemId, outstandingQuantity, createdAt, toStorageUnitId, stockTransfer!inner(id, stockTransferId, status, locationId), toStorageUnit:storageUnit!stockTransferLine_toStorageUnitId_fkey!inner(name, workCenterId)"
-        )
-        .eq("companyId", companyId)
-        .eq("stockTransfer.locationId", locationId)
-        .in("stockTransfer.status", ["Released", "In Progress"])
-        .gt("outstandingQuantity", 0)
-        .not("toStorageUnit.workCenterId", "is", null)
-        .order("id")
-    )
-  ]);
+  const [requests, shortages, transfers, stations, stationBins, lanes] =
+    await Promise.all([
+      fetchAllRecords(() =>
+        client
+          .from("materialRequest")
+          .select(
+            "*, item(readableIdWithRevision), workCenter(name), jobOperation(job(jobId))"
+          )
+          .eq("status", "Open")
+          .eq("locationId", locationId)
+          .eq("companyId", companyId)
+          .order("id")
+      ),
+      fetchAllRecords(() =>
+        client
+          .rpc("get_line_feed_shortages", {
+            p_location_id: locationId,
+            p_company_id: companyId
+          })
+          .order("workCenterId")
+          .order("storageUnitId")
+          .order("itemId")
+      ),
+      fetchAllRecords(() =>
+        client
+          .from("stockTransferLine")
+          .select(
+            "id, itemId, outstandingQuantity, createdAt, toStorageUnitId, stockTransfer!inner(id, stockTransferId, status, locationId), toStorageUnit:storageUnit!stockTransferLine_toStorageUnitId_fkey!inner(name, workCenterId)"
+          )
+          .eq("companyId", companyId)
+          .eq("stockTransfer.locationId", locationId)
+          .in("stockTransfer.status", ["Released", "In Progress"])
+          .gt("outstandingQuantity", 0)
+          .not("toStorageUnit.workCenterId", "is", null)
+          .order("id")
+      ),
+      // Every station at the location, and the ones with lineside storage.
+      fetchAllRecords(() =>
+        client
+          .from("workCenter")
+          .select("id, name")
+          .eq("locationId", locationId)
+          .eq("companyId", companyId)
+          .eq("active", true)
+          .order("id")
+      ),
+      fetchAllRecords(() =>
+        client
+          .from("storageUnit")
+          .select("id, workCenterId")
+          .eq("locationId", locationId)
+          .eq("companyId", companyId)
+          .eq("active", true)
+          .not("workCenterId", "is", null)
+          .order("id")
+      ),
+      fetchAllRecords(() =>
+        client
+          .rpc("get_line_feed_lanes", {
+            p_location_id: locationId,
+            p_company_id: companyId
+          })
+          .order("workCenterId")
+          .order("tier")
+          .order("state")
+          .order("itemId")
+          .order("parentKitItemId")
+          .order("storageUnitId")
+          .order("jobId")
+          .order("trackedEntityId")
+      )
+    ]);
 
-  const error = requests.error ?? shortages.error ?? transfers.error;
+  const error =
+    requests.error ??
+    shortages.error ??
+    transfers.error ??
+    stations.error ??
+    stationBins.error ??
+    lanes.error;
   if (error) return { data: null, error };
 
   const requestRows = requests.data ?? [];
   const shortageRows = shortages.data ?? [];
   const transferRows = transfers.data ?? [];
+  const laneRows = lanes.data ?? [];
 
   // One read each for the names the shortages and transfers do not carry.
   const storageUnitIds = [
-    ...new Set(shortageRows.map((shortage) => shortage.storageUnitId))
+    ...new Set(
+      [
+        ...shortageRows.map((shortage) => shortage.storageUnitId),
+        ...laneRows.map((row) => row.storageUnitId)
+      ].filter((id): id is string => Boolean(id))
+    )
   ];
   const workCenterIds = [
     ...new Set(
@@ -754,7 +808,17 @@ export async function getLineFeed(
     )
   ];
 
-  const [storageUnits, workCenters] = await Promise.all([
+  const itemIds = [
+    ...new Set(
+      [
+        ...shortageRows.map((shortage) => shortage.itemId),
+        ...transferRows.map((transfer) => transfer.itemId),
+        ...laneRows.map((row) => row.itemId)
+      ].filter((id): id is string => Boolean(id))
+    )
+  ];
+
+  const [storageUnits, workCenters, items] = await Promise.all([
     fetchAllByIds(storageUnitIds, (batch) =>
       client
         .from("storageUnit")
@@ -770,10 +834,18 @@ export async function getLineFeed(
         .in("id", batch)
         .eq("companyId", companyId)
         .order("id")
+    ),
+    fetchAllByIds(itemIds, (batch) =>
+      client
+        .from("item")
+        .select("id, name, readableIdWithRevision, thumbnailPath")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
     )
   ]);
 
-  const nameError = storageUnits.error ?? workCenters.error;
+  const nameError = storageUnits.error ?? workCenters.error ?? items.error;
   if (nameError) return { data: null, error: nameError };
 
   const workCenterNames: Record<string, string> = {};
@@ -796,8 +868,23 @@ export async function getLineFeed(
     }
   }
 
-  // The readable ids a card shows: the job a request came from, and the
-  // stock transfer a transfer line belongs to.
+  // The readable ids a card shows: each line's part, the job a request came
+  // from, and the stock transfer a transfer line belongs to.
+  const itemReadableIds: Record<string, string> = {};
+  const itemThumbnailPaths: Record<string, string> = {};
+  const itemNames: Record<string, string> = {};
+  for (const item of items.data ?? []) {
+    itemNames[item.id] = item.name;
+    if (item.readableIdWithRevision) {
+      itemReadableIds[item.id] = item.readableIdWithRevision;
+    }
+    if (item.thumbnailPath) itemThumbnailPaths[item.id] = item.thumbnailPath;
+  }
+  for (const request of requestRows) {
+    if (request.itemId && request.item?.readableIdWithRevision) {
+      itemReadableIds[request.itemId] = request.item.readableIdWithRevision;
+    }
+  }
   const jobReadableIds: Record<string, string> = {};
   for (const request of requestRows) {
     const jobId = request.jobOperation?.job?.jobId;
@@ -809,14 +896,31 @@ export async function getLineFeed(
       transfer.stockTransfer.stockTransferId;
   }
 
-  return {
-    data: {
+  const board = buildLaneBoard({
+    stations: buildStationBoard({
+      workCenters: stations.data ?? [],
+      stationWorkCenterIds: (stationBins.data ?? [])
+        .map((bin) => bin.workCenterId)
+        .filter((id): id is string => Boolean(id)),
+      workCenterNames,
       rows: buildLineFeedRows({
         requests: requestRows,
         shortages: shortageRows,
         transfers: transferRows
-      }),
-      workCenterNames,
+      })
+    }),
+    laneRows,
+    sort
+  });
+
+  return {
+    data: {
+      lanes: board,
+      flow: buildFlow(board, laneRows),
+      summary: summarizeLanes(board),
+      itemReadableIds,
+      itemNames,
+      itemThumbnailPaths,
       storageUnitNames,
       jobReadableIds,
       stockTransferReadableIds

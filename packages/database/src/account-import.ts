@@ -281,6 +281,7 @@ const CLASS_OF_TYPE: Record<AccountType, AccountClass> = {
   Investments: "Asset",
   "Accounts Payable": "Liability",
   "Other Current Liability": "Liability",
+  "Credit Card": "Liability",
   "Long Term Liability": "Liability",
   Tax: "Liability",
   "Equity - No Close": "Equity",

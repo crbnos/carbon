@@ -8,8 +8,7 @@ import { withRevisionSuffix } from "./revision";
 
 /**
  * A PO line's title in the purchase order email: the asset name, the
- * description for G/L Account and Comment lines, else the item ID with the
- * supplier's part number in brackets.
+ * description for G/L Account and Comment lines, else the line's part number.
  */
 export function getLineDescription(
   line: Database["public"]["Views"]["purchaseOrderLines"]["Row"]
@@ -21,18 +20,19 @@ export function getLineDescription(
       return line?.description;
     case "Comment":
       return line?.description;
-    default: {
-      const supplierPartId = getLineSupplierPartId(line);
-      // `itemReadableId` is the view's `readableIdWithRevision` — the only
-      // place the revision reaches the document, so the supplier part number
-      // goes beside it rather than in its place (as the sales order does with
-      // the customer part number).
-      if (!line?.itemReadableId) return supplierPartId;
-      return supplierPartId
-        ? `${line.itemReadableId} (${supplierPartId})`
-        : line.itemReadableId;
-    }
+    default:
+      return getLinePartId(line);
   }
+}
+
+/**
+ * The part number a PO line shows the supplier: their own number when the line
+ * has one, else our item ID. The supplier's number carries no revision.
+ */
+export function getLinePartId(
+  line: Database["public"]["Views"]["purchaseOrderLines"]["Row"]
+) {
+  return getLineSupplierPartId(line, null) ?? line?.itemReadableId ?? null;
 }
 
 /**

@@ -61,6 +61,19 @@ impl AssemblyNode {
             .map(|m| m.geometry_hash.as_str())
             .unwrap_or("")
     }
+
+    /// Parts OCCT could not mesh, or not within the part deadline.
+    pub fn proxy_part_names(&self) -> Vec<String> {
+        let mut names = Vec::new();
+        let mut stack = vec![self];
+        while let Some(node) = stack.pop() {
+            if node.mesh.as_ref().is_some_and(|m| m.is_proxy) {
+                names.push(node.name.clone());
+            }
+            stack.extend(node.children.iter().rev());
+        }
+        names
+    }
 }
 
 // --- source unit detection ---------------------------------------------------

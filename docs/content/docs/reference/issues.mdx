@@ -67,7 +67,9 @@ The `issues` view computes a **containment status** from the action tasks. It re
 
 Action tasks run their own small lifecycle: **"Pending"** → **"In Progress"** → **"Completed"**, with **"Skipped"** as an off-path exit. Tasks start Pending and do *not* auto-start. Completing a task stamps its completed date. A completed or skipped task can be reopened back to Pending. Tasks can be reordered, given due dates, and tied to specific processes, and a supplier-facing action task can be shared externally as a **SCAR** (Supplier Corrective Action Request) report.
 
-The SCAR is a private, login-free link the supplier opens to respond. They see the non-conformance details, the current status, and the action tasks assigned to them — not the rest of the issue: dispositions, approvals, and closure stay internal. For each task the supplier can update the status and write notes in an editor that auto-saves as they type; entering notes on a **"Pending"** task promotes it to **"In Progress"** automatically. Once the issue is **"Closed"**, the SCAR locks and the supplier can no longer make changes. Whoever holds the URL can open it, so send it only to the supplier contact.
+The SCAR is a private, login-free link the supplier opens to respond. They see the issue's number, name and status, and the action tasks assigned to them. The rest of the issue stays internal, including its description, dispositions, assignees, approvals and closure, and the link sends none of it to the supplier's browser.
+
+For each task the supplier can update the status and write notes in an editor that auto-saves as they type; entering notes on a **"Pending"** task promotes it to **"In Progress"** automatically. Once the issue is **"Closed"**, the SCAR locks and the supplier can no longer make changes. Whoever holds the URL can open it, so send it only to the supplier contact.
 
 ## Approvals and the Material Review Board
 

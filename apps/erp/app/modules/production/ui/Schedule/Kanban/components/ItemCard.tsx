@@ -323,8 +323,14 @@ const OperationCardBody = memo(function OperationCardBody({
           Number(item?.duration) >= 0 && (
             <HStack>
               <BarProgress
-                gradient
-                invertGradient
+                activeClassName={
+                  // @ts-expect-error TS2339 - TODO: fix type
+                  progress > (item.duration ?? 0)
+                    ? "bg-red-500"
+                    : status === "Paused"
+                      ? "bg-yellow-500"
+                      : "bg-emerald-500"
+                }
                 progress={Math.min(
                   // @ts-expect-error TS2339 - TODO: fix type
                   progress && item.duration

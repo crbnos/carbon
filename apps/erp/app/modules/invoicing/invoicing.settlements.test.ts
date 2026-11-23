@@ -1207,7 +1207,7 @@ describe("invoice settlement history", () => {
   const history = (client: SupabaseClient<Database>) =>
     service.getInvoiceSettlementsForInvoice(client, "co", "sales", "invoice");
 
-  it("sums funding splits under the applying payment and leaves out draft activity", async () => {
+  it("sums funding splits under the applying payment and marks draft activity pending", async () => {
     const { client, calls } = clientFor({
       invoiceSettlement: [
         historyRow(),
@@ -1240,12 +1240,15 @@ describe("invoice settlement history", () => {
       memo: [{ id: "memo", companyId: "co", status: "Posted" }]
     });
     const result = await history(client);
-    expect(result.data).toHaveLength(1);
-    expect(result.data?.[0]).toMatchObject({
+    const posted = result.data?.filter((row) => !row.pending);
+    expect(posted).toHaveLength(1);
+    expect(posted?.[0]).toMatchObject({
       appliedAmount: 100,
       sourceAmount: 110,
       fxGainLossAmount: -3.33333
     });
+    // The Draft payment's cash and the memo applied through it.
+    expect(result.data?.filter((row) => row.pending)).toHaveLength(2);
     expect(companyScoped(calls, "invoiceSettlement")).toBe(true);
   });
 

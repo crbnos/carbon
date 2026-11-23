@@ -29,7 +29,24 @@ Once created, a document's number never changes. Retuning a sequence only affect
 
 ### Date tokens
 
-Prefix and suffix can embed the current date — how payments and journal entries get their year/month partitioning. Tokens are interpolated when the number is generated, not when you save: `%{yyyy}` (2026), `%{yy}` (26), `%{mm}` (01–12), `%{ww}` (ISO week, 01–53), `%{dd}` (01–31), plus `%{hh}` and `%{ss}` for hour and second.
+Prefix and suffix can embed the current date — how payments and journal entries get their year/month partitioning. Tokens are interpolated in the company's timezone when the number is generated, not when you save: `%{yyyy}` (2026), `%{yy}` (26), `%{mm}` (01–12), `%{ww}` (the week, 01–53, or 54 under US weeks), `%{dd}` (01–31), plus `%{hh}` and `%{ss}` for hour and second. Item serial and batch numbers (**Settings → Serial Numbers**) take the same tokens, plus `%{location}`.
+
+**Settings → Company → Week Numbering** decides how `%{ww}` counts weeks:
+
+- **ISO 8601** (the default): weeks start on Monday, and week 1 is the week with the year's first Thursday. A week is never split, so up to three days at either end of a calendar year belong to a week of the other year.
+- **US**: weeks start on Sunday, week 1 is the week of 1 January, and the last week ends on 31 December. The weeks around a new year are short.
+
+In a format with `%{ww}` and no `%{mm}` or `%{dd}`, `%{yyyy}` and `%{yy}` are the year the week belongs to. Beside a month or a day they stay the calendar year, so `%{yyyy}%{mm}%{dd}` is always the date.
+
+| Date | `%{yy}%{ww}`, ISO 8601 | `%{yy}%{ww}`, US |
+|---|---|---|
+| Monday 29 December 2025 | `2601` | `2553` |
+| Thursday 31 December 2026 | `2653` | `2653` |
+| Friday 1 January 2027 | `2653` | `2701` |
+| Sunday 3 January 2027 | `2653` | `2702` |
+| Monday 4 January 2027 | `2701` | `2702` |
+
+Changing the setting changes only numbers issued after it. Before this setting existed, `%{yyyy}` and `%{yy}` were always the calendar year, so a number issued on 30–31 December 2024 or 29–31 December 2025 under a year-and-week format carries the earlier year with week 01 (`2501` for 29 December 2025).
 
 ## Seed defaults
 

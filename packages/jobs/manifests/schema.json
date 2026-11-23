@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261115172437",
+  "schemaVersion": "20261123091437",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-16T12:58:08.973Z",
+  "exportedAt": "2026-11-23T10:17:24.743Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -518,7 +518,10 @@
         "requirePromisedDateToFinalizePurchaseOrder",
         "travelerLabels",
         "requireTrackedMaterialsIssued",
-        "autoPickingListOnRelease"
+        "autoPickingListOnRelease",
+        "deliveryDateControl",
+        "receiptBatchNumbersFromPurchaseOrder",
+        "sequenceWeekNumbering"
       ]
     },
     {
@@ -1386,6 +1389,21 @@
       ]
     },
     {
+      "name": "labelTemplate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "labelType",
+        "mediaSizeId",
+        "templateId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "laborCategory",
       "rows": 0,
       "columns": [
@@ -1846,7 +1864,8 @@
         "createdAt",
         "updatedAt",
         "updatedBy",
-        "completedAt"
+        "completedAt",
+        "dpi"
       ]
     },
     {
@@ -3821,7 +3840,8 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "position"
       ]
     },
     {
@@ -3935,7 +3955,8 @@
         "minimumReserveQuantity",
         "responsibleEmployee",
         "planningHorizonDays",
-        "allowCommonSupplyForProjects"
+        "allowCommonSupplyForProjects",
+        "deliveryDateControl"
       ]
     },
     {
@@ -3980,6 +4001,26 @@
       "name": "jobFavorite",
       "rows": 0,
       "columns": ["jobId", "userId"]
+    },
+    {
+      "name": "jobMaterialScrap",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobMaterialId",
+        "jobOperationId",
+        "itemId",
+        "trackedEntityId",
+        "quantity",
+        "scrapReasonId",
+        "replacement",
+        "materialRequestId",
+        "notes",
+        "idempotencyKey",
+        "createdBy",
+        "createdAt"
+      ]
     },
     {
       "name": "jobOperationNote",
@@ -4270,10 +4311,10 @@
         "format",
         "mediaSizeId",
         "printerUrl",
-        "apiKey",
         "createdAt",
         "updatedAt",
-        "templateId"
+        "hasApiKey",
+        "dpi"
       ]
     },
     {
@@ -5264,7 +5305,8 @@
         "workCenterId",
         "isWorkCenterDefault",
         "nettable",
-        "effectiveNettable"
+        "effectiveNettable",
+        "kitRack"
       ]
     },
     {
@@ -8168,7 +8210,14 @@
         "configuration",
         "serviceStartDate",
         "serviceEndDate",
-        "salesReturnOrderLineId"
+        "salesReturnOrderLineId",
+        "requestedDate",
+        "deliveryDateStatus",
+        "deliveryDateConstraint",
+        "earliestDeliveryDate",
+        "deliveryDateCheckedAt",
+        "deliveryDateOverriddenBy",
+        "deliveryDateOverriddenAt"
       ]
     },
     {
@@ -8609,7 +8658,8 @@
         "internalNotes",
         "supplierInteractionId",
         "postedBy",
-        "inspectionStatus"
+        "inspectionStatus",
+        "rejectedAtInspection"
       ]
     },
     {
@@ -8829,7 +8879,8 @@
         "salesOrderId",
         "rentalAgreementId",
         "customerContractId",
-        "purchaseOrderId"
+        "purchaseOrderId",
+        "postError"
       ]
     },
     {

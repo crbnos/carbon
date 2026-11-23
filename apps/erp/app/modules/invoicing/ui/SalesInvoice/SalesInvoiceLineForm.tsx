@@ -9,6 +9,7 @@ import {
   Alert,
   AlertTitle,
   Badge,
+  CardAction,
   cn,
   FormControl,
   FormLabel,
@@ -88,6 +89,7 @@ import {
   isItemlessServiceLine,
   isSalesInvoiceLocked
 } from "../../invoicing.models";
+import { ChangeInvoiceLineAccount } from "../InvoiceLineAccount/ChangeInvoiceLineAccount";
 import ContractInvoiceLineSource from "./ContractInvoiceLineSource";
 import RentalInvoiceLineSummary from "./RentalInvoiceLineSummary";
 
@@ -99,6 +101,8 @@ function netUnitPrice(unitPrice: number, discountPoints: number) {
     : 0;
   return unitPrice * (1 - discount / 100);
 }
+
+const SALES_LINE_ACCOUNT_CLASSES = ["Revenue"] as const;
 
 type SalesInvoiceLineFormProps = {
   initialValues: z.infer<typeof salesInvoiceLineValidator> & {
@@ -175,6 +179,13 @@ const SalesInvoiceItemLineForm = ({
 
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isEditable = !isLocked;
+  const canChangeAccount =
+    !!routeData?.salesInvoice?.postingDate &&
+    !["Draft", "Pending", "Voided"].includes(
+      routeData?.salesInvoice?.status ?? ""
+    ) &&
+    permissions.can("update", "invoicing") &&
+    permissions.can("update", "accounting");
 
   // A Service line with no item is a service job's labor or fixed price
   // line: no item, no method and no location, only its description, quantity,
@@ -582,6 +593,22 @@ const SalesInvoiceItemLineForm = ({
                     </TabsList>
                   )}
                 </div>
+                {isEditing && !isFixedAsset && canChangeAccount && (
+                  // pr-12 keeps it clear of the card's collapse chevron.
+                  <CardAction className="pr-12">
+                    <ChangeInvoiceLineAccount
+                      action={path.to.salesInvoiceLineAccount(
+                        invoiceId,
+                        initialValues.id!
+                      )}
+                      currentAccountPath={path.to.api.salesInvoiceLineAccount(
+                        invoiceId,
+                        initialValues.id!
+                      )}
+                      accountClasses={SALES_LINE_ACCOUNT_CLASSES}
+                    />
+                  </CardAction>
+                )}
               </HStack>
               <ModalCardBody>
                 <Hidden name="id" />

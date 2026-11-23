@@ -20,6 +20,7 @@ export const MOMENT_OUTPUT_KEYS = {
   "production.jobOperationCompleted": ["job", "jobOperation", "completedBy"],
   "sales.quoteSent": ["quote", "sentBy"],
   "sales.quoteAccepted": ["quote", "salesOrder"],
+  "sales.deliveryDateOverridden": ["salesOrder", "overriddenBy"],
   "inventory.receiptPosted": ["receipt", "postedBy"],
   "inventory.shipmentPosted": ["shipment", "postedBy"],
   "invoicing.salesInvoicePosted": ["salesInvoice", "postedBy"],

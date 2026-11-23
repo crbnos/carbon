@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
+import {
+  paged,
+  payload,
+  run,
+  serverFnRefusal,
+  unwrap
+} from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
@@ -32,7 +38,10 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
-import { upsertDocument } from "~/modules/documents/documents.service";
+import {
+  signRecordFileUrl,
+  upsertDocument
+} from "~/modules/documents/documents.service";
 import { stripeCustomerActions } from "~/modules/invoicing/invoicing.models";
 import { linkStripeCustomerForBilling } from "~/modules/invoicing/invoicing.service";
 import {
@@ -86,6 +95,7 @@ import {
   customerContractFundingValidator,
   customerContractTypes,
   customerContractValidator,
+  deliveryDateCheckValidator,
   invoiceAutomations,
   isQuoteLocked,
   isSalesOrderLocked,
@@ -1310,6 +1320,9 @@ export const convertQuote = defineServiceFn({
     }
     const salesOrderId = convert.data.convertedId;
 
+    // Flags each new line whose promised date fails the check; never stops.
+    await service.checkConvertedSalesOrderDeliveryDates(ctx, salesOrderId);
+
     await service.recordSalesRuleOutcome(serviceRole, {
       companyId,
       userId,
@@ -1657,6 +1670,7 @@ export const acceptDigitalQuote = defineServiceFn({
 
     const salesOrderId = convert.data?.convertedId;
     if (salesOrderId) {
+      await service.checkConvertedSalesOrderDeliveryDates(ctx, salesOrderId);
       // The order stands without its PDF or its email.
       const pdf = await service
         .attachSalesOrderPdf(ctx, {
@@ -2234,6 +2248,99 @@ export const updateSalesOrderDetails = defineServiceFn({
     return { salesOrderId: id };
   }
 });
+/**
+ * Check whether a sales order line can ship by its promised date.
+ *
+ * @remarks
+ * Reads the line as the form holds it, before a save, and writes nothing. The
+ * check level comes from the item at the line's location, else the company
+ * (Settings → Sales). Inside the item's cumulative lead time it checks free
+ * stock by week and, at the Capacity level, the shop's schedule. The result
+ * is null when the line is not checked: no item, a Service or Comment line, a
+ * level of None, or a Make to Order line whose job already holds its date.
+ *
+ * @param salesOrderLineId - The line being edited; empty for a new line.
+ * @param promisedDate - The date to check, as YYYY-MM-DD.
+ * @returns The check level and, when the line is checked, its status, the
+ * earliest date and the reason.
+ * @mcp read
+ */
+export const checkSalesOrderLineDeliveryDate = defineServiceFn({
+  input: deliveryDateCheckValidator.extend({ salesOrderId: z.string() }),
+  permission: { view: "sales" },
+
+  async run(ctx, input) {
+    const refused = await refuseUnlessOwned(ctx, "salesOrder", {
+      id: input.salesOrderId
+    });
+    if (refused) return refused;
+
+    const order = await service.getSalesOrder(
+      ctx.asSystem.supabase,
+      input.salesOrderId
+    );
+    if (order.error || !order.data) {
+      return ctx.error("notFound", "Failed to load sales order", order.error);
+    }
+
+    let quantitySent = 0;
+    let hasOpenJob = false;
+    if (input.salesOrderLineId) {
+      const existing = await service.getSalesOrderLine(
+        ctx.asSystem.supabase,
+        input.salesOrderLineId
+      );
+      if (
+        existing.error ||
+        existing.data.companyId !== ctx.company.id ||
+        existing.data.salesOrderId !== input.salesOrderId
+      ) {
+        return ctx.error(
+          "notFound",
+          "Failed to load sales order line",
+          existing.error
+        );
+      }
+      quantitySent = existing.data.quantitySent ?? 0;
+      hasOpenJob = (
+        await service.salesOrderLinesWithOpenJobs(ctx, [input.salesOrderLineId])
+      ).has(input.salesOrderLineId);
+    }
+
+    const key = input.salesOrderLineId ?? "new";
+    const locationId = input.locationId || order.data.locationId || null;
+    const extraDemand = await service.salesOrderSiblingDemand(ctx, {
+      salesOrderId: input.salesOrderId,
+      orderStatus: order.data.status,
+      orderLocationId: order.data.locationId,
+      excludeLineIds: input.salesOrderLineId ? [input.salesOrderLineId] : []
+    });
+    const { results, controls } = await service.runDeliveryDateCheck(
+      ctx,
+      [
+        {
+          key,
+          salesOrderLineId: input.salesOrderLineId ?? null,
+          salesOrderLineType: input.salesOrderLineType,
+          itemId: input.itemId,
+          locationId,
+          methodType: input.methodType,
+          quantity: input.saleQuantity - quantitySent,
+          promisedDate: input.promisedDate,
+          hasOpenJob
+        }
+      ],
+      { capacity: "run", extraDemand }
+    );
+    return {
+      control: locationId
+        ? (controls.get(`${input.itemId}:${locationId}`) ?? "None")
+        : "None",
+      result: results.get(key) ?? null
+    };
+  }
+});
+
 const salesOrderLineInput = salesOrderLineValidator.safeExtend({
   customFields: customFieldValues.optional(),
   acknowledged: z.boolean().default(false)
@@ -2284,8 +2391,14 @@ export const createSalesOrderLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
+    const deliveryDate = await service.deliveryDateForSave(ctx, {
+      salesOrderId: line.salesOrderId,
+      lineId: null,
+      line
+    });
     const created = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       ...line,
+      ...deliveryDate?.columns,
       companyId,
       createdBy: ctx.auditUserId,
       customFields
@@ -2309,6 +2422,13 @@ export const createSalesOrderLine = defineServiceFn({
       "acknowledged",
       gate.check
     );
+    if (deliveryDate) {
+      await service.afterDeliveryDateSave(ctx, {
+        salesOrderId: line.salesOrderId,
+        lineId: created.data.id,
+        save: deliveryDate
+      });
+    }
     return { salesOrderLineId: created.data.id };
   }
 });
@@ -2350,9 +2470,15 @@ export const updateSalesOrderLine = defineServiceFn({
     });
     if (gate.blocked) return gate.blocked;
 
+    const deliveryDate = await service.deliveryDateForSave(ctx, {
+      salesOrderId: line.salesOrderId,
+      lineId: id,
+      line
+    });
     const updated = await service.upsertSalesOrderLine(ctx.asCaller.supabase, {
       id,
       ...line,
+      ...deliveryDate?.columns,
       updatedBy: ctx.auditUserId,
       customFields
     });
@@ -2375,6 +2501,13 @@ export const updateSalesOrderLine = defineServiceFn({
       "acknowledged",
       gate.check
     );
+    if (deliveryDate) {
+      await service.afterDeliveryDateSave(ctx, {
+        salesOrderId: line.salesOrderId,
+        lineId: id,
+        save: deliveryDate
+      });
+    }
     return { salesOrderLineId: id };
   }
 });
@@ -2384,7 +2517,8 @@ export const updateSalesOrderLine = defineServiceFn({
  *
  * @remarks
  * The line needs a location; the shipment is created there through the
- * `create` server function.
+ * `create` server function. A serial job line whose finished units are not
+ * yet in stock there is refused with why.
  *
  * @mcp
  */
@@ -2420,10 +2554,17 @@ export const shipSalesOrderLine = defineServiceFn({
         salesOrderLineId
       }
     );
+    if (shipment.error && shipment.error.status < 500) {
+      // A refusal (no finished units in stock) is written for the person.
+      return serverFnRefusal(ctx, shipment.error);
+    }
     if (!shipment.data || shipment.error) {
       return ctx.error("internal", "Failed to create shipment", shipment.error);
     }
-    return { shipmentId: shipment.data.id };
+    return {
+      shipmentId: shipment.data.id,
+      warnings: shipment.data.warnings
+    };
   }
 });
 
@@ -9990,6 +10131,34 @@ export const createOpportunityDocumentUploadUrl = defineServiceFn({
 });
 
 /**
+ * Get a signed download URL for an opportunity (quote/sales order/RFQ/sales invoice) document
+ *
+ * @remarks
+ * A signed link to a file on the opportunity's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `sales_getOpportunityDocuments` lists it, or the
+ * name given to `sales_createOpportunityDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
+ * there is not found.
+ *
+ * @mcp read
+ */
+export const getOpportunityDocumentDownloadUrl = defineServiceFn({
+  input: z.object({
+    opportunityId: z.string().min(1),
+    name: z.string().min(1)
+  }),
+  permission: { view: "sales" },
+  async run(ctx, { opportunityId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "opportunity",
+      entityId: opportunityId,
+      name
+    });
+  }
+});
+
+/**
  * Create a presigned upload URL for an opportunity LINE document
  *
  * @mcp
@@ -10005,6 +10174,31 @@ export const createOpportunityLineDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for an opportunity LINE document
+ *
+ * @remarks
+ * A signed link to a file on the line's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `sales_getOpportunityLineDocuments` lists it, or
+ * the name given to `sales_createOpportunityLineDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that
+ * is not there is not found.
+ *
+ * @mcp read
+ */
+export const getOpportunityLineDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ lineId: z.string().min(1), name: z.string().min(1) }),
+  permission: { view: "sales" },
+  async run(ctx, { lineId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "opportunity-line",
+      entityId: lineId,
+      name
+    });
   }
 });
 

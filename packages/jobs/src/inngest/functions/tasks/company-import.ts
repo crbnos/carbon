@@ -10,6 +10,7 @@ import {
   groupConflictClause,
   rebuildDerivedGroups
 } from "../../../backups/derived-groups";
+import { refreshReceiptInspectionStatuses } from "../../../backups/derived-receipts";
 import { applyTableRenames } from "../../../backups/renames";
 import { FOREIGN_SKIPPED_TABLES } from "../../../backups/schema";
 import { getJobDatabaseClient } from "../../../db";
@@ -437,6 +438,7 @@ export const companyImportFunction = inngest.createFunction(
         // Triggers were off: the imported customers, suppliers and types have
         // no groups yet.
         await rebuildDerivedGroups(trx, companyId);
+        await refreshReceiptInspectionStatuses(trx, companyId);
       });
 
       if (unresolvedRefs.size > 0) {

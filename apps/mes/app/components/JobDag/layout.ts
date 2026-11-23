@@ -333,3 +333,48 @@ export function openingViewport(
     zoom
   };
 }
+
+// The operations in run order for the list view: an operation follows every
+// operation it depends on, and ties keep the routing order.
+export function sequenceOperations<
+  T extends { id: string; order: number; jobMakeMethodId?: string | null }
+>(operations: T[], dependencies: Dependency[]): T[] {
+  const byId = new Map(operations.map((op) => [op.id, op]));
+  const waitingOn = new Map(operations.map((op) => [op.id, 0]));
+  const next = new Map<string, string[]>();
+  for (const { operationId, dependsOnId } of dependencies) {
+    if (!byId.has(operationId) || !byId.has(dependsOnId)) continue;
+    waitingOn.set(operationId, waitingOn.get(operationId)! + 1);
+    next.set(dependsOnId, [...(next.get(dependsOnId) ?? []), operationId]);
+  }
+
+  // Each make method restarts at order 1 and the query is unordered, so equal
+  // orders fall back to make method, then id, to stay put across reloads.
+  const byOrder = (a: T, b: T) =>
+    a.order - b.order ||
+    compareText(a.jobMakeMethodId ?? "", b.jobMakeMethodId ?? "") ||
+    compareText(a.id, b.id);
+  const ready = operations.filter((op) => waitingOn.get(op.id) === 0);
+  const sequence: T[] = [];
+  while (ready.length > 0) {
+    ready.sort(byOrder);
+    const op = ready.shift()!;
+    sequence.push(op);
+    for (const id of next.get(op.id) ?? []) {
+      const remaining = waitingOn.get(id)! - 1;
+      waitingOn.set(id, remaining);
+      if (remaining === 0) ready.push(byId.get(id)!);
+    }
+  }
+  // A dependency cycle leaves operations waiting; list them in routing order.
+  const placed = new Set(sequence);
+  return [
+    ...sequence,
+    ...operations.filter((op) => !placed.has(op)).sort(byOrder)
+  ];
+}
+
+// Code-unit order, so the server render and the browser sort ties the same way.
+function compareText(a: string, b: string) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}

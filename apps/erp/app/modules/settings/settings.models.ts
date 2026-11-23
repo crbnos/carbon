@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { weekNumberings } from "@carbon/database/sequence-tokens";
 import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
@@ -21,6 +22,7 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
+import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import { DataType } from "~/modules/shared/types";
 
 export const modulesType = [
@@ -472,6 +474,10 @@ export const rescheduleToleranceValidator = z.object({
 });
 
 // Empty clears the default: items without their own horizon then have no fence.
+export const deliveryDateCheckSettingsValidator = z.object({
+  deliveryDateControl: z.enum(deliveryDateControlTypes)
+});
+
 export const planningHorizonValidator = z.object({
   days: zfd.numeric(z.number().int().min(0).max(3650).optional())
 });
@@ -549,6 +555,15 @@ export {
 
 export const serialNumberTimingValidator = z.object({
   serialNumberTiming: z.enum(serialNumberTimings).default("jobCreation")
+});
+
+export {
+  type WeekNumbering,
+  weekNumberings
+} from "@carbon/database/sequence-tokens";
+
+export const sequenceWeekNumberingValidator = z.object({
+  sequenceWeekNumbering: z.enum(weekNumberings).default("iso")
 });
 
 export const updateLeadTimesOnReceiptValidator = z.object({

@@ -20,6 +20,13 @@ export function PhoneThumbnail({ path, alt }: { path: string; alt: string }) {
   return (
     <img
       src={getPrivateUrl(path)}
+      // Lazy: a board renders every card, and each image is a round trip
+      // through /file/preview. Lazy images also skip fetching while hidden
+      // (this one on desktop). width/height reserve the square, avoiding shift.
+      loading="lazy"
+      decoding="async"
+      width={300}
+      height={300}
       alt={alt}
       className="hidden max-md:block size-10 shrink-0 rounded-md object-cover"
     />

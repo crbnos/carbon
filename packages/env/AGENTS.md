@@ -36,7 +36,8 @@ pnpm --filter @carbon/env test
 - **`schema`, `validateEnv(source)`, `formatReport(report)`** — the declaration and the startup report
 - **`getEnv(name)`** — reads one schema variable (its own name, then its aliases)
 - **Deployment:** `APP_URL` (this app's origin; alias `VERCEL_URL`), `APP_ENV` (alias `VERCEL_ENV`, defaults to `NODE_ENV`)
-- **Database / Supabase:** `DATABASE_URL` (alias `SUPABASE_DB_URL`), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`
+- **Database / Supabase:** `DATABASE_URL` (alias `SUPABASE_DB_URL`), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `SUPABASE_INTERNAL_URL` (server clients only; defaults to `SUPABASE_URL`)
+- **`internalSupabaseUrl(url)`** — a `SUPABASE_URL` address moved onto `SUPABASE_INTERNAL_URL` (`rebaseUrl` underneath). Server clients are built on `SUPABASE_URL`, so the links they sign can be handed out as is; this is for what the server itself requests: the clients' own calls (`packages/auth/src/lib/supabase/client.ts`), email attachments (`sendCompanyEmail`), the staged backup and the assembler (`internalizeStorageUrl`)
 - **Redis/Jobs:** `REDIS_URL`, `INNGEST_SIGNING_KEY`, `INNGEST_EVENT_KEY`
 - **Auth:** `SESSION_SECRET`, `SESSION_MAX_AGE`, `RATE_LIMIT`, `AUTH_PROVIDERS`, `isAuthProviderEnabled()`
 - **Edition:** `CarbonEdition` (Community/Cloud/Enterprise/Test), `CONTROLLED_ENVIRONMENT` (ITAR flag)

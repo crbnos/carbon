@@ -8,8 +8,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { MutableRefObject } from "react";
 import type { StoreApi } from "zustand";
 import {
+  internalSupabaseUrl,
   SUPABASE_ANON_KEY,
-  SUPABASE_INTERNAL_URL,
   SUPABASE_URL
 } from "../../config/env";
 
@@ -65,6 +65,22 @@ export const storageReadFetch: typeof fetch = async (input, init) => {
   }
 };
 
+// supabase-js builds a signed link from its client's own address and has no
+// option for another one. So a server client is built on the public
+// SUPABASE_URL, which makes every link it signs usable outside the cluster,
+// and its own calls are sent to SUPABASE_INTERNAL_URL here.
+const viaInternalUrl =
+  (fetch: typeof globalThis.fetch): typeof globalThis.fetch =>
+  (input, init) => {
+    const { url } = urlAndMethod(input, init);
+    const internal = internalSupabaseUrl(url);
+    if (internal === url) return fetch(input, init);
+    return fetch(
+      input instanceof Request ? new Request(internal, input) : internal,
+      init
+    );
+  };
+
 /** `fetch` replaces `storageReadFetch` — on the server, `requestFetch()`. */
 export const getCarbonClient = (
   supabaseKey: string,
@@ -80,18 +96,14 @@ export const getCarbonClient = (
     Authorization: `Bearer ${accessToken ?? supabaseKey}`
   };
 
-  const client = createClient<Database, "public">(
-    SUPABASE_INTERNAL_URL!,
-    supabaseKey,
-    {
-      db,
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      },
-      global: { headers, fetch }
-    }
-  );
+  const client = createClient<Database, "public">(SUPABASE_URL!, supabaseKey, {
+    db,
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    global: { headers, fetch: viaInternalUrl(fetch) }
+  });
 
   return client;
 };
@@ -100,10 +112,10 @@ export const getCarbonAPIKeyClient = (
   apiKey: string,
   fetch: typeof globalThis.fetch = storageReadFetch
 ): SupabaseClient<Database, "public"> => {
-  const client = createClient(SUPABASE_INTERNAL_URL!, SUPABASE_ANON_KEY!, {
+  const client = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
     db,
     global: {
-      fetch,
+      fetch: viaInternalUrl(fetch),
       headers: {
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         "carbon-key": apiKey

@@ -5,6 +5,10 @@
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { describe, expect, it } from "vitest";
 import { fromServerFn } from "../app/modules/shared/shared.service";
+import {
+  changePurchaseInvoiceLineAccount,
+  changeSalesInvoiceLineAccount
+} from "../app/modules/invoicing/invoicing.server";
 import { tieOutAdjustmentLines } from "../app/modules/invoicing/invoicing.service";
 
 const unreachable = () => {
@@ -85,5 +89,46 @@ describe("a tie-out adjustment", () => {
       { accountId: "control", debit: 3, credit: 0 },
       { accountId: "rounding", debit: 0, credit: 3 }
     ]);
+  });
+});
+
+describe("changing a posted line's account", () => {
+  // A user who may post and void invoices, but not change the ledger.
+  const invoicingOnly = () =>
+    createServiceContext({
+      actor: {
+        type: "user",
+        userId: "user-1",
+        permissions: {
+          invoicing: {
+            view: ["company-1"],
+            create: ["company-1"],
+            update: ["company-1"],
+            delete: ["company-1"]
+          },
+          accounting: {
+            view: ["company-1"],
+            create: [],
+            update: [],
+            delete: []
+          }
+        }
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: {} as never,
+      system: unreachable,
+      pg: unreachable,
+      kv: unreachable
+    });
+  const input = { invoiceId: "inv-1", lineId: "line-1", accountId: "acc-1" };
+
+  it("needs accounting update as well as invoicing update, before any read", async () => {
+    for (const change of [
+      changeSalesInvoiceLineAccount,
+      changePurchaseInvoiceLineAccount
+    ]) {
+      const result = await change(invoicingOnly(), input);
+      expect(result.error).toMatchObject({ category: "forbidden" });
+    }
   });
 });

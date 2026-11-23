@@ -441,6 +441,11 @@ export function buildRowTransforms(
     if (table.name === "trackedEntity" && col.name === "attributes") {
       return (v) => rewriteTrackedEntityReceiptRefs(v, ctx.idRewrite);
     }
+    // The key is in the vault under the source company and route ids, which a
+    // backup never carries: a remapped route has no key to point at.
+    if (table.name === "printerRoute" && col.name === "hasApiKey") {
+      return () => false;
+    }
     if (!fk && ID_REF_COLUMNS[table.name]?.includes(col.name)) {
       const { idRewrite } = ctx;
       const unmapped =

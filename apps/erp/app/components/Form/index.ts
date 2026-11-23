@@ -52,6 +52,7 @@ import CustomerType from "./CustomerType";
 import CustomerTypes from "./CustomerTypes";
 import CustomFormFields from "./CustomFormFields";
 import DefaultMethodType from "./DefaultMethodType";
+import DeliveryDateControl from "./DeliveryDateControl";
 import Department from "./Department";
 import EmailRecipients from "./EmailRecipients";
 import EmojiPicker from "./EmojiPicker";
@@ -61,6 +62,7 @@ import { useEmptyState } from "./emptyStates";
 import {
   FormFold,
   FormGroup,
+  FormSection,
   type FormStep,
   FormStepBar,
   FormStepButtons,
@@ -145,6 +147,7 @@ export {
   DateTimePicker,
   DefaultDisabledSubmit,
   DefaultMethodType,
+  DeliveryDateControl,
   Department,
   EmailRecipients,
   EmojiPicker,
@@ -153,6 +156,7 @@ export {
   FieldEmptyState,
   FormFold,
   FormGroup,
+  FormSection,
   FormStepBar,
   FormStepButtons,
   FormStepPanel,

@@ -290,14 +290,7 @@ export async function setPickingListLineQuantity(
   if (delta !== 0) {
     // A null source is allowed: the kitter can pick material the system shows no
     // stock for (counts are often wrong) — on-hand simply goes negative at the
-    // source until it's reconciled. Only the lineside destination is required.
-    if (delta > 0 && !line.toStorageUnitId) {
-      return {
-        data: null,
-        error: "No lineside destination is set for this line"
-      };
-    }
-
+    // source until it's reconciled. post-picking resolves the destination.
     const ids = {
       pickingListId: line.pickingListId,
       pickingListLineId: line.id,
@@ -396,12 +389,6 @@ export async function setPickingListLineTrackedEntity(
   const isBatch = item?.itemTrackingType === "Batch";
   if (!isSerial && !isBatch) {
     return { data: null, error: "This line is not a tracked item" };
-  }
-  if (!args.unpick && !line.toStorageUnitId) {
-    return {
-      data: null,
-      error: "No lineside destination is set for this line"
-    };
   }
 
   const ids = {

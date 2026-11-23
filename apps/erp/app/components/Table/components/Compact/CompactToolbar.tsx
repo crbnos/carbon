@@ -28,6 +28,7 @@ import { createValueSlot } from "~/components/Layout/Mobile/slots";
 import { RecordFrameContext } from "~/components/Layout/Panels";
 import { useDrawerItem } from "~/hooks";
 import type { fieldMappings } from "~/modules/shared/imports.models";
+import type { ServerExportLinks } from "../../types";
 import { type DownloadProps, useCsvDownload } from "../Download";
 import { ActiveFilters } from "../Filter";
 import type { ColumnFilter } from "../Filter/types";
@@ -46,6 +47,7 @@ type CompactToolbarProps = {
   /** The badge desktop shows beside the table title (e.g. a document status). */
   titleBadge?: ReactNode;
   csvExport?: DownloadProps;
+  serverExport?: ServerExportLinks;
   importCSV?: { table: keyof typeof fieldMappings; label: string }[];
   onSelect?: () => void;
   /** Extra items first in the ⋯ (a page's own phone actions). */
@@ -79,6 +81,7 @@ export function CompactToolbar({
   headerActions,
   titleBadge,
   csvExport,
+  serverExport,
   importCSV,
   onSelect,
   menuItems,
@@ -94,8 +97,9 @@ export function CompactToolbar({
   const canFilter =
     filters.length > 0 || (withSort && Object.keys(sortKeyToLabel).length > 0);
   const activeCount = urlFiltersParams.filter(Boolean).length;
-  const canExport = Boolean(csvExport?.data.length);
-  const hasBuiltIns = canExport || Boolean(importCSV?.length || onSelect);
+  const canExport = Boolean(csvExport?.href || csvExport?.data.length);
+  const hasBuiltIns =
+    canExport || Boolean(serverExport || importCSV?.length || onSelect);
   const hasMenu = hasBuiltIns || Boolean(menuItems);
 
   // Inside a record frame the app bar ⋯ is the record's: the table's own
@@ -119,6 +123,22 @@ export function CompactToolbar({
         {menuItems && hasBuiltIns ? <DropdownMenuSeparator /> : null}
         {canExport && csvExport ? (
           <ExportCsvItem csvExport={csvExport} />
+        ) : null}
+        {serverExport ? (
+          <>
+            <DropdownMenuItem asChild>
+              <a href={serverExport.csv}>
+                <DropdownMenuIcon icon={<LuDownload />} />
+                <Trans>Download CSV</Trans>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href={serverExport.xlsx}>
+                <DropdownMenuIcon icon={<LuDownload />} />
+                <Trans>Download Excel</Trans>
+              </a>
+            </DropdownMenuItem>
+          </>
         ) : null}
         {importCSV?.map(({ table, label }) => (
           <DropdownMenuItem key={table} onClick={() => importCsv.open(table)}>
@@ -216,14 +236,22 @@ export function CompactToolbar({
   );
 }
 
-/**
- * Export CSV, mounted only when there is something to export. Its hook reads
- * the signed-in company's items, suppliers, people and customers to name the
- * ids in the file, and a signed-out page — a customer portal — has no company
- * to read: called unconditionally, it threw "useUser must be used within an
- * authenticated route" and the page answered 500.
- */
 function ExportCsvItem({ csvExport }: { csvExport: DownloadProps }) {
+  if (csvExport.href) {
+    return (
+      <DropdownMenuItem asChild>
+        <a href={csvExport.href}>
+          <DropdownMenuIcon icon={<LuDownload />} />
+          <Trans>Export CSV</Trans>
+        </a>
+      </DropdownMenuItem>
+    );
+  }
+  return <ClientExportCsvItem csvExport={csvExport} />;
+}
+
+/** The client exporter needs company stores, which signed-out pages lack. */
+function ClientExportCsvItem({ csvExport }: { csvExport: DownloadProps }) {
   const { onClick: exportCsv } = useCsvDownload(csvExport);
   return (
     <DropdownMenuItem onClick={exportCsv}>

@@ -245,7 +245,14 @@ each with a preset filter:
 |---|---|
 | Pending inspection | `Pending Inspection`, `Inspection In Progress` |
 | Ready for putaway | `Inspection Passed`, `Partially Passed` |
-| Inspection failed | `Inspection Failed` |
+| Inspection failed | `rejectedAtInspection` is true (not a status filter) |
+
+`receipt.rejectedAtInspection` is true while a lot of the receipt is `Failed`
+or `Partial`. `refresh_receipt_inspection_status` sets it with the status, from
+the same lots. The link cannot filter on the status: a receipt with a `Partial`
+lot reads `Put Away` once its passed stock is put away, while its rejected
+stock is still held. The receipts list shows the flag as a "Rejected at
+Inspection" column, hidden by default.
 
 ### Design Decisions
 

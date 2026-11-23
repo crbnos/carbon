@@ -183,7 +183,10 @@ Brad's decisions of 2026-10-11 (`.ai/runs/2026-10-11-merge-origin-main.md`,
   job's (a Contract project whose Project WIP is the WIP account) opens as ONE "Work in Progress" item with no
   document (`getWorkInProgressItems`, `accounting-cutover/open-items.ts`): the
   non-job WIP lines before the cutover, less the Cost Relief rows before it that
-  credit the WIP account (the enable's step 5 posts those with no journal).
+  credit the WIP account (the enable's step 5 posts those with no journal). A
+  line is a job's when its `documentId` is the job or it is a receipt of the
+  job's outside processing (SQL `job_receipt_line_references`, as
+  `job_wip_balance` reads it); each job opens its own item.
 - **Fixed assets.** `getCutoverFixedAssets` values an asset as it stood at the
   cutover: less its `fixedAssetCipCost` rows dated on or after it, in the class the
   first capitalization on or after it moved the asset from (`fromClassId`).
@@ -255,7 +258,10 @@ project the job's cost object in place of WIP:
   debits the project account. A job that is both consume-to-project and Make to Asset
   raises.
 - On an outside processing receipt, only the job decides the route
-  (`loadReceiptProjectRoutes`).
+  (`loadReceiptProjectRoutes`). A capital job's receipt also gets a route:
+  it keeps the WIP account, writes the project's `projectLedger` row on that
+  WIP line and no CIP row, since the job's completion sweeps the WIP onto its
+  asset (as `issue` and `post-production-event` do for a capital job).
 - `post-production-event` and the catch-up rows of `complete_job_to_inventory` stamp the
   employee's `employeeJob.laborCategoryId` on the Labor ledger row (D37 of
   `.ai/specs/2026-10-21-project-contracts.md`), so a T&M contract line prices shop hours by

@@ -177,7 +177,7 @@ describe.each(["sales", "purchase"] as const)(
       });
     });
 
-    it("includes only posted cash, posted direct memos, and memos consumed through posted payments", async () => {
+    it("includes posted cash, posted direct memos and memos consumed through posted payments, and marks a Draft payment's as pending", async () => {
       const memo = {
         id: "memo",
         memoId: "MEMO-1",
@@ -227,12 +227,18 @@ describe.each(["sales", "purchase"] as const)(
         "invoice"
       );
       expect(result.error).toBeNull();
+      const posted = result.data?.filter((row) => !row.pending) ?? [];
+      expect(posted.reduce((sum, row) => sum + row.appliedAmount, 0)).toBe(4);
       expect(
-        result.data?.reduce((sum, row) => sum + row.appliedAmount, 0)
-      ).toBe(4);
-      expect(
-        result.data?.find((row) => row.source.type === "memo")?.appliedAmount
+        posted.find((row) => row.source.type === "memo")?.appliedAmount
       ).toBe(2);
+      // The Draft payment's own cash, and the memo applied through it.
+      const pending = result.data?.filter((row) => row.pending) ?? [];
+      expect(pending.map((row) => row.source.type).sort()).toEqual([
+        "memo",
+        "payment"
+      ]);
+      expect(pending.reduce((sum, row) => sum + row.appliedAmount, 0)).toBe(2);
     });
   }
 );

@@ -281,6 +281,13 @@ describe("placeSamples", () => {
     });
   });
 
+  it("puts a sample a reload returns before its save answers at the position it was saved at", () => {
+    // s3 was made by a save at position 2; position 1 is still empty.
+    expect(
+      placeSamples({ 0: "s1" }, ["s1", "s3"], { stored: new Map([["s3", 2]]) })
+    ).toEqual({ 0: "s1", 2: "s3" });
+  });
+
   it("frees a deleted serial sample's position and moves no other sample", () => {
     expect(
       placeSamples({ 0: "s1", 1: "s2", 2: "s3" }, ["s1", "s3"], {
@@ -293,5 +300,12 @@ describe("placeSamples", () => {
         dropMissing: true
       })
     ).toEqual({ 0: "s1", 1: "s4", 2: "s3" });
+  });
+
+  it("puts a reloaded sample back at the position saved with it", () => {
+    // B was typed into position 2 on another page; A predates stored positions.
+    expect(
+      placeSamples({}, ["A", "B"], { stored: new Map([["B", 2]]) })
+    ).toEqual({ 0: "A", 2: "B" });
   });
 });
