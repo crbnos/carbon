@@ -191,7 +191,12 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
           "--schema",
           "storage",
           "--schema",
-          "graphql_public"
+          "graphql_public",
+          // postgres-meta gives each introspection query 15 s by default. Over
+          // 600 tables, on a shared Postgres the other worktrees also load,
+          // that is not always enough, and the run fails with "Query read timeout".
+          "--query-timeout",
+          "120s"
         ],
         {
           stdio: ["ignore", out, "pipe"],

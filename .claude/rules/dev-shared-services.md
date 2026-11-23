@@ -229,6 +229,11 @@ Multi-tenant Storage skips `iceberg_namespaces` and `iceberg_tables` in a tenant
 database. `scripts/lib/generate-db-types.ts` strips them, so both modes generate
 the same `types.ts`. Carbon does not use them.
 
+The generator passes `--query-timeout 120s`. postgres-meta's default is 15 s per
+introspection query; over 600 tables, on the shared Postgres other worktrees
+also load, a run took 18 to 26 s and failed now and then with
+"Query read timeout".
+
 ## Verification
 
 - `node packages/dev/scripts/verify-stack.mjs <root> [<second root>]` checks a
