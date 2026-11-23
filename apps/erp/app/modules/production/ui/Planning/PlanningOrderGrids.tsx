@@ -778,6 +778,8 @@ type PlannedOrdersGridProps = PlanningActionHandlers & {
   onToggleFirm: (row: PlannedOrderRow) => void;
   /** The order a Firm / Unfirm is in flight for. */
   firmingId: string | null;
+  /** Bump to close every open editor and clear its error mark. */
+  resetKey?: number;
 };
 
 /**
@@ -794,6 +796,7 @@ export function PlannedOrdersGrid({
   onRowsChange,
   onToggleFirm,
   firmingId,
+  resetKey,
   ...handlers
 }: PlannedOrdersGridProps) {
   const { t } = useLingui();
@@ -925,7 +928,14 @@ export function PlannedOrdersGrid({
           const value = (
             <span className="tabular-nums">{formatQuantity(quantity)}</span>
           );
-          const line = traceLine(quantityTrace);
+          // The trace explains MRP's number. Once a planner edits the
+          // quantity, it would explain a number no longer shown.
+          const tracedQuantity = readQuantityTrace(quantityTrace)?.quantity;
+          const line =
+            typeof tracedQuantity === "number" &&
+            tracedQuantity !== Number(quantity)
+              ? null
+              : traceLine(quantityTrace);
           if (!line) return value;
           return (
             <Tooltip>
@@ -1022,6 +1032,7 @@ export function PlannedOrdersGrid({
         </span>
       ) : (
         <Grid<PlannedOrderRow>
+          key={resetKey}
           data={rows}
           columns={columns}
           canEdit={handlers.canUpdate}

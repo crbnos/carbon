@@ -1,6 +1,6 @@
 # MRP planned orders (MRP v2 Phase 2a)
 
-Last tested: 2026-11-15
+Last tested: 2026-11-23
 Routes: /x/production/planning, /x/purchasing/planning (drawer: `?location=<id>&item=<itemId>`),
 /x/part/<itemId>/planning, /x/resources/locations/<locationId>
 
@@ -43,7 +43,7 @@ quantity cell. The tooltip is Base UI: read it with
   rows come back with new ids. That is expected.
 
 ### 4. Time fence on the item Planning tab
-The Planning card has the groups "Reorder policy", "Planning window" and "Ownership".
+The fence field is in the Planning card's "Planning and Sales" section, beside Planning Horizon.
 Textbox "Planning time fence (days) Optional" has the placeholder "Location default: N".
 Fill 10, blur onto another field, then `requestSubmit` the form that holds
 `input[name=reorderingPolicy]` (its first "Save"). Recalculate and reopen the drawer: rows
@@ -59,7 +59,25 @@ Reopen the drawer: the order is gone from Planned Orders and the PO shows under 
 `/x/resources/locations/<id>` opens drawer "Edit Location" with textbox "Planning time fence
 (days) Optional" (value 0).
 
+### 7. Edge cases (2026-11-23)
+- Fence repeat: set a clean Buy item (e.g. TL-TORQUE-J1, a Tool) to Fixed Reorder 2/5 at a
+  location with fence 14. Run MRP 3 times: it keeps ONE Planned order at the fence end (count
+  with `select count(*) from "plannedOrder" where "itemId"=…`). Before the fix it grew by one
+  per run.
+- Cancel "Keep your numbers": edit a Planned quantity, click Cancel. The cell shows the old
+  value with no red ring, and the order stays Planned.
+- Edited quantity: after "Keep my numbers", the quantity cell has no trace tooltip (the trace
+  describes MRP's number). An untouched order keeps it.
+- Unfirm inside the fence: the order stays at the edited quantity (held) and MRP raises a
+  Decrease. Applying it sets the quantity and firms the order.
+- Clearing the location fence and saving stores 0. An empty item fence stores NULL; 0 stores 0.
+- Restore every value you change; Fixed Reorder refuses quantity 0, so switch back to
+  Demand-Based to restore 0/0.
+
 ## Selector Notes
+- Take a snapshot after every `open` before using refs: refs from an earlier page are unknown
+  or point at other elements (a stale ref closed the drawer).
+- `Escape` closes the whole drawer, not only a cell editor.
 - Drawer buttons can be covered: click them with
   `[...document.querySelectorAll('[role=dialog] button')].find(b=>b.textContent.trim()==='Make'|'Order'|'Unfirm').click()`.
 - To clear a react-aria number field, click it, press `Meta+a`, then `Backspace`, then click

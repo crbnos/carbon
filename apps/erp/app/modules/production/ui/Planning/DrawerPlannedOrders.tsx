@@ -284,6 +284,9 @@ export function DrawerPlannedOrders({
 
   // ── The question an edit of a Planned order asks first ───────────────────
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  // Bumped when the planner declines: the grid remounts on the unchanged
+  // rows, so the cell neither keeps the typed value nor reads as failed.
+  const [gridResetKey, setGridResetKey] = useState(0);
   const confirmAnswer = useRef<((keep: boolean) => void) | null>(null);
   const askToKeepNumbers = useCallback(
     () =>
@@ -307,6 +310,7 @@ export function DrawerPlannedOrders({
     ) => {
       // the edit firms the order: say so once, before a Planned one changes
       if (row.status === "Planned" && !(await askToKeepNumbers())) {
+        setGridResetKey((key) => key + 1);
         return false;
       }
       const failure = await post({
@@ -359,6 +363,7 @@ export function DrawerPlannedOrders({
         onRowsChange={onRowsChange}
         onToggleFirm={onToggleFirm}
         firmingId={firmingId}
+        resetKey={gridResetKey}
         {...actionHandlers}
       />
       <Modal
