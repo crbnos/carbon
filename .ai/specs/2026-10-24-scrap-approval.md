@@ -157,7 +157,7 @@ CREATE TABLE "scrapRequest" (
 
 ## API / Service Changes
 
-- `@carbon/ee/approvals/scrap.server`: `hasScrapApprovalRules`, `hasBatchScrapApproval`, `describeScrap`,
+- `@carbon/ee/approvals/scrap.server`: `hasScrapApprovalRules`, `findBatchScrapApproval`, `describeScrap`,
   `getScrapApprovalRequirement`, `authorizeScrapApprover`, `recordScrapApproval`,
   `markScrapApprovalPosted`, `discardScrapApproval`, `getScrapApprovals`. Pure decisions in
   `approvals/scrap.ts`.
@@ -220,7 +220,12 @@ CREATE TABLE "scrapRequest" (
   and carries no workflow run tag.
 - On Carbon Cloud a failed plan read makes `companyHasFeature` answer false, so the rule
   reads as off. Scrap no longer has this gap: `hasScrapApprovalRules` reads the plan with
-  `companyHasFeatureOrThrow` and refuses the scrap. The other approval types still share it.
+  `companyHasFeatureOrThrow`, and the tier lookup and the approver's authority check pass
+  `failClosed`, so a failed plan or owner read refuses the scrap. The other approval types
+  still share it.
+- The estimate values a kitted child's materials once per kit in the unit. The backflush
+  issues a kitted child's per-kit quantity per unit, so with more than one kit per unit the
+  journal writes off less than the estimate, and the tier errs high.
 - `prevent_direct_scrap_write` refuses a direct Scrap row that names another company's
   operation. It does not refuse a Production or Rework row that does: that operation's
   totals still follow the row. That gap is outside scrap approval.

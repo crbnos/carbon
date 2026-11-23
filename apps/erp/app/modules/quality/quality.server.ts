@@ -41,7 +41,9 @@ import {
 } from "~/modules/items/items.service";
 import {
   approveErpStockScraps,
-  settleErpScrapApprovals
+  type RecordedScrapApproval,
+  settleErpScrapApprovals,
+  settleErpStockScrapApprovals
 } from "~/modules/production/production.service";
 import {
   deletePurchaseReturnOrder,
@@ -496,9 +498,12 @@ export const completeIssue = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
     // Set by the scrap approval check inside the close.
-    const scrap: { refusal: CarbonError | null; scrapRequestIds: string[] } = {
+    const scrap: {
+      refusal: CarbonError | null;
+      scrapRequests: RecordedScrapApproval[];
+    } = {
       refusal: null,
-      scrapRequestIds: []
+      scrapRequests: []
     };
     const result = await service.closeIssue(
       ctx.asSystem.supabase,
@@ -520,11 +525,16 @@ export const completeIssue = defineServiceFn({
               scrap.refusal = approved;
               return false;
             }
-            scrap.scrapRequestIds = approved.scrapRequestIds;
+            scrap.scrapRequests = approved.scrapRequests;
             return true;
           },
-          settle: (outcome) =>
-            settleErpScrapApprovals(ctx, scrap.scrapRequestIds, outcome)
+          settle: (outcome, writtenOffItemIds) =>
+            settleErpStockScrapApprovals(
+              ctx,
+              scrap.scrapRequests,
+              outcome,
+              writtenOffItemIds
+            )
         }
       }
     );
@@ -1514,10 +1524,14 @@ export const rejectInspection = defineServiceFn({
             notes: `${writeOff.readableId} rejected`
           }
         ])
-      : { scrapRequestIds: [] };
+      : { scrapRequests: [] };
     if (approval instanceof CarbonError) return approval;
+    const scrapRequestIds = approval.scrapRequests.map(
+      (request) => request.scrapRequestId
+    );
 
-    const rejected = await ctx.transaction(async (tx) => {
+    // The decision and its write-off, in one transaction.
+    async function rejectInTransaction(tx: typeof ctx) {
       const decided = await engine.dispositionInspection(tx.asSystem.pg, {
         id,
         decision: "Reject",
@@ -1563,15 +1577,38 @@ export const rejectInspection = defineServiceFn({
         }
       }
       return decided.data;
-    });
+    }
+
+    // A transaction whose callback never ran, or threw (rolled back), wrote
+    // nothing; a failure after it returned (the commit) may have committed.
+    let started = false;
+    let rolledBack = false;
+    const rejectLot = () =>
+      ctx.transaction(async (tx) => {
+        started = true;
+        try {
+          return await rejectInTransaction(tx);
+        } catch (error) {
+          rolledBack = true;
+          throw error;
+        }
+      });
+    let rejected: Awaited<ReturnType<typeof rejectLot>>;
+    try {
+      rejected = await rejectLot();
+    } catch (error) {
+      await settleErpScrapApprovals(
+        ctx,
+        scrapRequestIds,
+        !started || rolledBack ? "refused" : { error }
+      );
+      return ctx.error("internal", "Failed to reject lot", error);
+    }
+    // A returned refusal rolled the transaction back.
     await settleErpScrapApprovals(
       ctx,
-      approval.scrapRequestIds,
-      rejected.error
-        ? { error: rejected.error }
-        : rejected.data?.writeOff
-          ? "written"
-          : "refused"
+      scrapRequestIds,
+      !rejected.error && rejected.data?.writeOff ? "written" : "refused"
     );
     if (rejected.error) return rejected.error;
 

@@ -3877,8 +3877,9 @@ export const adjustInventory = defineServiceFn({
         : { scrapRequestId: null, quantity: null };
     if (approval instanceof CarbonError) return approval;
 
-    // An approved scrap posts the quantity it was valued at: a whole tracked
-    // entity (quantity 0) is resolved once, so it cannot grow in between.
+    // A scrap met against the rules posts the quantity it was valued at,
+    // approved or under every tier: a whole tracked entity (quantity 0) is
+    // resolved once, so it cannot grow past the tier in between.
     const posted = await invokePosting(
       ctx,
       "post-inventory-adjustment",

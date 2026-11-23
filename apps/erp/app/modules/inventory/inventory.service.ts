@@ -33342,6 +33342,7 @@ export async function issueMaterial(
         parentTrackedEntityId,
         scrapReasonId,
         makeReplacement,
+        expectedQuantity,
         companyId,
         userId
       } = validatedPayload;
@@ -33394,7 +33395,25 @@ export async function issueMaterial(
         await assertPostingStatusUnchanged(trx, companyId, postingStatusScrap);
         const entity = trackedEntity.data!;
         const material = jobMaterial.data!;
-        const quantity = Number(entity.quantity);
+        let quantity = Number(entity.quantity);
+        // A scrap an approval valued scraps only that quantity: the entity is
+        // re-read under its lock, so a write since the approval cannot raise it.
+        if (expectedQuantity !== undefined) {
+          const locked = await trx
+            .selectFrom("trackedEntity")
+            .select("quantity")
+            .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!locked || !equals(Number(locked.quantity), expectedQuantity)) {
+            throw new ServerFnError(
+              "The quantity of this part changed since the scrap was approved. Scrap it again so an approver can approve the new quantity.",
+              409
+            );
+          }
+          quantity = expectedQuantity;
+        }
 
         const job = await trx
           .selectFrom("job")

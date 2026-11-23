@@ -4,6 +4,8 @@
 
 // Pure decisions behind `scrap.server.ts`, testable without a database.
 
+import { equals } from "@carbon/utils";
+
 /**
  * The cost one unit of a material writes off, by the item's costing method,
  * as the posting values it: a Standard item at its standard cost, any other
@@ -49,7 +51,8 @@ export function isBackflushed(material: ScrapValuationMaterial): boolean {
  * The material cost of one unit scrapped at an operation, on the basis the
  * scrap posting relieves from WIP (labor and overhead stay in WIP):
  * - the materials this operation backflushes, its kitted children's
- *   included (`kitMaterials`);
+ *   included (`kits`: each kit's quantity per unit made, and its materials
+ *   per kit, so a unit holds the kit's quantity of them);
  * - every non Make to Order material of the earlier operations of the make
  *   method (`materials` holds the method's non Make to Order rows).
  */
@@ -57,7 +60,7 @@ export function operationScrapUnitValue(args: {
   operation: { id: string; jobMakeMethodId: string | null; order: number };
   routing: { id: string; jobMakeMethodId: string | null; order: number }[];
   materials: ScrapValuationMaterial[];
-  kitMaterials: ScrapValuationMaterial[];
+  kits: { quantity: number; materials: ScrapValuationMaterial[] }[];
   costs: Map<string, number>;
 }): number {
   const { operation, costs } = args;
@@ -70,22 +73,29 @@ export function operationScrapUnitValue(args: {
       )
       .map((step) => step.id)
   );
-  const counted = [
+  const valueOf = (materials: ScrapValuationMaterial[]) =>
+    materials.reduce(
+      (sum, material) =>
+        sum +
+        (Number(material.quantity) || 0) * (costs.get(material.itemId) ?? 0),
+      0
+    );
+  const own = valueOf([
     ...args.materials.filter(
       (material) =>
         material.jobOperationId === operation.id && isBackflushed(material)
     ),
-    ...args.kitMaterials.filter(isBackflushed),
     ...args.materials.filter(
       (material) =>
         material.jobOperationId !== null && earlier.has(material.jobOperationId)
     )
-  ];
-  return counted.reduce(
-    (sum, material) =>
+  ]);
+  return args.kits.reduce(
+    (sum, kit) =>
       sum +
-      (Number(material.quantity) || 0) * (costs.get(material.itemId) ?? 0),
-    0
+      (Number(kit.quantity) || 0) *
+        valueOf(kit.materials.filter(isBackflushed)),
+    own
   );
 }
 
@@ -124,6 +134,69 @@ export function sumBatchScrap(
     quantity,
     value
   };
+}
+
+/**
+ * What a batch completion does with the scrap approvals recorded for its
+ * batch, read once the batch is past phase 1 (`approvals`). With none of the
+ * scrap's quantity it asks for approval (null). Otherwise the resume posts
+ * without asking, and `scrapRequestId` names the record to mark posted after
+ * it succeeds: the only record of that quantity, when it is unconfirmed.
+ * Beside a second record of it, the one phase 1 used cannot be told, so none
+ * is marked.
+ */
+export function batchScrapApprovalReuse(
+  approvals: { id: string; quantity: number; posted: boolean }[],
+  quantity: number
+): { scrapRequestId: string | null } | null {
+  const matching = approvals.filter((approval) =>
+    equals(approval.quantity, quantity)
+  );
+  if (matching.length === 0) return null;
+  const unconfirmed = matching.filter((approval) => !approval.posted);
+  return {
+    scrapRequestId:
+      matching.length === 1 && unconfirmed.length === 1
+        ? unconfirmed[0]!.id
+        : null
+  };
+}
+
+const PAST_PHASE_ONE = ["Completing", "Completed"];
+
+/**
+ * Whether a batch completion whose posting failed still recorded this
+ * attempt's scrap. Only the move past phase 1 during this attempt says so: a
+ * batch already past it before the attempt resumes with the quantities phase
+ * 1 recorded, so its status says nothing of this attempt's approval.
+ */
+export function batchScrapPostedDespiteError(args: {
+  statusBefore: string | null | undefined;
+  statusAfter: string | null | undefined;
+}): boolean | "unknown" {
+  if (PAST_PHASE_ONE.includes(args.statusBefore ?? "")) return "unknown";
+  return PAST_PHASE_ONE.includes(args.statusAfter ?? "");
+}
+
+/**
+ * Splits the approvals of a write-off of several items by what the write-off
+ * posted: the items with a Scrap movement are posted, the rest wrote off
+ * nothing and are refused.
+ */
+export function stockScrapSettlement(
+  approvals: { scrapRequestId: string; itemId: string | null }[],
+  writtenOffItemIds: string[]
+): { written: string[]; refused: string[] } {
+  const writtenOff = new Set(writtenOffItemIds);
+  const written: string[] = [];
+  const refused: string[] = [];
+  for (const approval of approvals) {
+    (approval.itemId && writtenOff.has(approval.itemId)
+      ? written
+      : refused
+    ).push(approval.scrapRequestId);
+  }
+  return { written, refused };
 }
 
 export type ScrapApproverRefusal =

@@ -53,9 +53,13 @@ export type ScrapApprovalOutcome<T> =
  *    this tier: active, with a PIN), that the value is still the one shown,
  *    then the PIN under the console PIN budgets. Then it records the
  *    approval, posts, and marks it posted.
- * 4. A posting that refused the scrap (4xx) removes the record. Any other
- *    failure may have posted (a timeout after the commit), so the record
- *    stays with no `postedAt`, unless `postedDespiteError` says it posted.
+ * 4. A posting that refused the scrap (4xx, a quantity changed since it was
+ *    valued included) removes the record. Any other failure may have posted
+ *    (a timeout after the commit), so the record stays with no `postedAt`,
+ *    unless `postedDespiteError` says it posted.
+ * 5. A scrap approved before (`alreadyApproved`, a resumed batch completion)
+ *    posts without asking, and marks the record it names posted once the
+ *    posting succeeds.
  */
 export async function postScrapWithApproval<T>(args: {
   request: Request;
@@ -71,18 +75,27 @@ export async function postScrapWithApproval<T>(args: {
     /** The estimated value the approver was shown. */
     approvedValue?: number;
   };
-  post: () => Promise<ScrapPostingResult<T>>;
-  /** True when this scrap was already approved (a resumed batch completion). */
-  alreadyApproved?: () => Promise<boolean>;
-  /** True when a failed posting still committed the scrap. */
-  postedDespiteError?: () => Promise<boolean>;
+  /**
+   * Posts the scrap. `valued` is the quantity the scrap was valued at, when
+   * a rule is enabled: a posting that can bind to it scraps only that.
+   */
+  post: (valued?: { quantity: number }) => Promise<ScrapPostingResult<T>>;
+  /**
+   * The approval this scrap already has (a resumed batch completion), with
+   * the record to mark posted when the posting succeeds; null when it has none.
+   */
+  alreadyApproved?: () => Promise<{ scrapRequestId: string | null } | null>;
+  /** Whether a failed posting still committed the scrap; "unknown" keeps the record. */
+  postedDespiteError?: () => Promise<boolean | "unknown">;
 }): Promise<ScrapApprovalOutcome<T>> {
   const { companyId, userId } = args;
   const serviceRole = getCarbonServiceRole();
   const db = getDatabaseClient();
 
-  const postAsBefore = async (): Promise<ScrapApprovalOutcome<T>> => {
-    const posted = await args.post();
+  const postAsBefore = async (valued?: {
+    quantity: number;
+  }): Promise<ScrapApprovalOutcome<T>> => {
+    const posted = await args.post(valued);
     if (posted.error) {
       return {
         status: "refused",
@@ -93,14 +106,43 @@ export async function postScrapWithApproval<T>(args: {
     return { status: "posted", data: posted.data };
   };
 
+  const markPosted = (scrapRequestId: string) =>
+    markScrapApprovalPosted(db, {
+      companyId,
+      scrapRequestIds: [scrapRequestId],
+      userId
+    }).catch((error) => {
+      // The scrap posted and its approval is recorded; only the posted mark
+      // is missing, which the list shows as not confirmed.
+      logger.error("Failed to mark a scrap approval posted", {
+        companyId,
+        scrapRequestId,
+        error
+      });
+    });
+
+  // A resume confirms the record its first attempt left unconfirmed.
+  const postApprovedBefore = async (
+    scrapRequestId: string | null
+  ): Promise<ScrapApprovalOutcome<T>> => {
+    const outcome = await postAsBefore();
+    if (outcome.status === "posted" && scrapRequestId) {
+      await markPosted(scrapRequestId);
+    }
+    return outcome;
+  };
+
   let requirement: Awaited<ReturnType<typeof getScrapApprovalRequirement>>;
   let scrap: Awaited<ReturnType<typeof describeScrap>>;
   try {
     if (!(await hasScrapApprovalRules(serviceRole, companyId))) {
       return postAsBefore();
     }
-    if (args.alreadyApproved && (await args.alreadyApproved())) {
-      return postAsBefore();
+    const approvedBefore = args.alreadyApproved
+      ? await args.alreadyApproved()
+      : null;
+    if (approvedBefore) {
+      return postApprovedBefore(approvedBefore.scrapRequestId);
     }
     scrap = await describeScrap(db, companyId, args.subject);
     requirement = await getScrapApprovalRequirement(serviceRole, db, {
@@ -121,7 +163,9 @@ export async function postScrapWithApproval<T>(args: {
     };
   }
 
-  if (!requirement.required || scrap.quantity <= 0) return postAsBefore();
+  // Under every tier too, the posting scraps the quantity that was valued.
+  const valued = scrap.quantity > 0 ? { quantity: scrap.quantity } : undefined;
+  if (!requirement.required || !valued) return postAsBefore(valued);
 
   const prompt = (error?: string): ScrapApprovalOutcome<T> => ({
     status: "approval-required",
@@ -137,12 +181,23 @@ export async function postScrapWithApproval<T>(args: {
   const { approverId, approverPin, approvedValue } = args.approver;
   if (!approverId || !approverPin) return prompt();
 
-  const authority = await authorizeScrapApprover(serviceRole, {
-    companyId,
-    approverId,
-    recordedBy: userId,
-    estimatedValue: requirement.estimatedValue
-  });
+  let authority: Awaited<ReturnType<typeof authorizeScrapApprover>>;
+  try {
+    authority = await authorizeScrapApprover(serviceRole, {
+      companyId,
+      approverId,
+      recordedBy: userId,
+      estimatedValue: requirement.estimatedValue
+    });
+  } catch (error) {
+    // Fail closed, and ask again: nothing was recorded or posted.
+    logger.error("Failed to check a scrap approver's authority", {
+      companyId,
+      approverId,
+      error
+    });
+    return prompt("Could not check this approver. Try again.");
+  }
   if (authority.error) return prompt(authority.error.message);
   // The offered list is the one that knows the person is active and has a
   // PIN: a deactivated approver keeps both their PIN row and rule membership.
@@ -160,13 +215,25 @@ export async function postScrapWithApproval<T>(args: {
     );
   }
 
-  const pinError = await checkApproverPin({
-    request: args.request,
-    companyId,
-    approverId,
-    pin: approverPin,
-    sessionUserId: args.sessionUserId
-  });
+  let pinError: string | null;
+  try {
+    pinError = await checkApproverPin({
+      request: args.request,
+      companyId,
+      approverId,
+      pin: approverPin,
+      sessionUserId: args.sessionUserId
+    });
+  } catch (error) {
+    // The lockout store or the PIN read failed: no answer is a "no", and the
+    // approver can enter the PIN again.
+    logger.error("Failed to check a scrap approver's PIN", {
+      companyId,
+      approverId,
+      error
+    });
+    return prompt("Could not check the PIN. Try again.");
+  }
   if (pinError) return prompt(pinError);
 
   let recorded: Awaited<ReturnType<typeof recordScrapApproval>>;
@@ -185,22 +252,7 @@ export async function postScrapWithApproval<T>(args: {
     };
   }
 
-  const markPosted = () =>
-    markScrapApprovalPosted(db, {
-      companyId,
-      scrapRequestIds: [recorded.scrapRequestId],
-      userId
-    }).catch((error) => {
-      // The scrap posted and its approval is recorded; only the posted mark
-      // is missing, which the list shows as not confirmed.
-      logger.error("Failed to mark a scrap approval posted", {
-        companyId,
-        scrapRequestId: recorded.scrapRequestId,
-        error
-      });
-    });
-
-  const posted = await args.post();
+  const posted = await args.post(valued);
   if (posted.error) {
     const refusedScrap =
       posted.error.status !== undefined &&
@@ -225,7 +277,7 @@ export async function postScrapWithApproval<T>(args: {
       committed
     });
     if (settlement === "mark posted") {
-      await markPosted();
+      await markPosted(recorded.scrapRequestId);
     } else if (settlement === "discard") {
       await discardScrapApproval(db, {
         companyId,
@@ -254,7 +306,7 @@ export async function postScrapWithApproval<T>(args: {
     };
   }
 
-  await markPosted();
+  await markPosted(recorded.scrapRequestId);
   return { status: "posted", data: posted.data };
 }
 

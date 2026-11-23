@@ -22,6 +22,8 @@ afterEach(() => vi.unstubAllGlobals());
 import {
   getCompanyPlanId,
   getCompanyPlanIdOrThrow,
+  isCarbonOwnedCompany,
+  isCarbonOwnedCompanyOrThrow,
   planIdFromCache
 } from "./company.server";
 
@@ -66,6 +68,22 @@ describe("a failed plan read", () => {
     failingDatabase();
     await expect(getCompanyPlanIdOrThrow("company-1")).rejects.toThrow(
       "Failed to read company plan"
+    );
+  });
+});
+
+describe("a failed company owner read", () => {
+  it("reads as not Carbon-owned for the lenient lookup", async () => {
+    failingDatabase();
+    await expect(isCarbonOwnedCompany("company-2")).resolves.toBe(false);
+  });
+
+  // Fail-closed enforcement on a company with no plan row would otherwise read
+  // the failure as "not Carbon-owned" and turn the company's rules off.
+  it("throws for the lookup that must fail closed", async () => {
+    failingDatabase();
+    await expect(isCarbonOwnedCompanyOrThrow("company-2")).rejects.toThrow(
+      "Failed to read company owner"
     );
   });
 });

@@ -7,7 +7,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { hasBatchScrapApproval } from "@carbon/ee/approvals/scrap.server";
+import {
+  batchScrapPostedDespiteError,
+  findBatchScrapApproval
+} from "@carbon/ee/approvals/scrap.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -214,6 +217,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   let completeError: ServerFnError | null = null;
   let approvalRefusal: string | null = null;
   if (scrapped.length > 0) {
+    const statusBefore = planned.data.status;
     const approver = await validator(scrapApproverValidator).validate(formData);
     const outcome = await postScrapWithApproval({
       request,
@@ -233,7 +237,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // A completion that failed in phase 2 already recorded its scrap; the
       // resume posts it without asking for a second approval.
       alreadyApproved: () =>
-        hasBatchScrapApproval(getDatabaseClient(), {
+        findBatchScrapApproval(getDatabaseClient(), {
           companyId,
           jobOperationBatchId: batchId,
           quantity: scrapped.reduce((sum, m) => sum + m.scrapQuantity, 0)
@@ -250,10 +254,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
             cause: after.error
           });
         }
-        return (
-          after.data?.status === "Completing" ||
-          after.data?.status === "Completed"
-        );
+        // Only this attempt's move past phase 1 links the batch's recorded
+        // scrap to this approval.
+        return batchScrapPostedDespiteError({
+          statusBefore,
+          statusAfter: after.data?.status
+        });
       }
     });
     if (outcome.status === "approval-required") {

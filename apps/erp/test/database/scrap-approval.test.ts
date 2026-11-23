@@ -437,7 +437,7 @@ describeLocal("scrap approval", () => {
       })
       .returning("id")
       .executeTakeFirstOrThrow();
-    await scrapApproval.recordScrapApproval(f.db, {
+    const recorded = await scrapApproval.recordScrapApproval(f.db, {
       companyId: f.companyId,
       scrap: await scrapApproval.describeScrap(f.db, f.companyId, {
         type: "batch",
@@ -448,14 +448,14 @@ describeLocal("scrap approval", () => {
       approvedBy: people.approver
     });
     const reused = (quantity: number) =>
-      scrapApproval.hasBatchScrapApproval(f.db, {
+      scrapApproval.findBatchScrapApproval(f.db, {
         companyId: f.companyId,
         jobOperationBatchId: batch.id,
         quantity
       });
 
     // A record kept from a failed attempt while the batch is still Active.
-    expect(await reused(2)).toBe(false);
+    expect(await reused(2)).toBeNull();
 
     await f.db
       .updateTable("jobOperationBatch")
@@ -463,8 +463,11 @@ describeLocal("scrap approval", () => {
       .where("id", "=", batch.id)
       .where("companyId", "=", f.companyId)
       .execute();
-    expect(await reused(2)).toBe(true);
-    expect(await reused(3)).toBe(false);
+    // Unconfirmed, it is the record the resume marks posted.
+    expect(await reused(2)).toEqual({
+      scrapRequestId: recorded.scrapRequestId
+    });
+    expect(await reused(3)).toBeNull();
   });
 
   it("lets only an approver record scrap on a job's quantities", async () => {
@@ -705,30 +708,57 @@ describeLocal("scrap approval", () => {
 
   it("removes the approval of an inventory scrap the posting refused", async () => {
     await approverOnlyRules(0);
-    const before = await f.db
-      .selectFrom("scrapRequest")
-      .select("id")
-      .where("companyId", "=", f.companyId)
-      .execute();
+    const scrapReasonId = await newScrapReason("too many");
+    // Copies each approval this company records, so the test sees the one
+    // written before the posting even after the settlement removes it.
+    const seen = `${f.prefix.replaceAll("-", "_")}_recorded_scrap`;
+    await sql
+      .raw(
+        `CREATE TABLE "${seen}" ("id" TEXT NOT NULL);
+         CREATE FUNCTION "${seen}"() RETURNS trigger LANGUAGE plpgsql AS $$
+         BEGIN
+           INSERT INTO "${seen}" ("id") VALUES (NEW."id");
+           RETURN NEW;
+         END $$;
+         CREATE TRIGGER "${seen}" AFTER INSERT ON "scrapRequest"
+           FOR EACH ROW WHEN (NEW."companyId" = '${f.companyId}')
+           EXECUTE FUNCTION "${seen}"();`
+      )
+      .execute(f.db);
+    try {
+      const refused = await adjustInventory(
+        contextFor(userActor(people.approver)),
+        {
+          itemId: f.partId,
+          adjustmentType: "Scrap",
+          quantity: 100000,
+          locationId: f.locationId,
+          scrapReasonId
+        }
+      );
+      // The posting refused the quantity; the approval check passed.
+      expect(refused.error).not.toBeNull();
+      expect(refused.error?.category).not.toBe("forbidden");
 
-    const refused = await adjustInventory(
-      contextFor(userActor(people.approver)),
-      {
-        itemId: f.partId,
-        adjustmentType: "Scrap",
-        quantity: 100000,
-        locationId: f.locationId,
-        scrapReasonId: await newScrapReason("too many")
-      }
-    );
-    expect(refused.error).not.toBeNull();
-
-    const after = await f.db
-      .selectFrom("scrapRequest")
-      .select("id")
-      .where("companyId", "=", f.companyId)
-      .execute();
-    expect(after).toHaveLength(before.length);
+      const recorded = (
+        await sql<{ id: string }>`SELECT "id" FROM ${sql.table(seen)}`.execute(
+          f.db
+        )
+      ).rows;
+      expect(recorded).toHaveLength(1);
+      const left = await f.db
+        .selectFrom("scrapRequest")
+        .select("id")
+        .where("id", "=", recorded[0]!.id)
+        .execute();
+      expect(left).toEqual([]);
+    } finally {
+      await sql
+        .raw(
+          `DROP TRIGGER "${seen}" ON "scrapRequest"; DROP FUNCTION "${seen}"(); DROP TABLE "${seen}";`
+        )
+        .execute(f.db);
+    }
   });
 
   it("values a tracked scrap with no quantity at the whole entity", async () => {
@@ -1035,6 +1065,66 @@ describeLocal("scrap approval", () => {
     expect(await inHeldUnit()).toBe(before);
   }, 60_000);
 
+  it("refuses job quantity scrap that names another company's scrap reason", async () => {
+    await approverOnlyRules(0);
+    const other = await alwaysPostFixture();
+    const foreign = await other.db
+      .insertInto("scrapReason")
+      .values({
+        name: `${other.prefix} foreign`,
+        companyId: other.companyId,
+        createdBy: USER
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const scrapRows = () =>
+      f.db
+        .selectFrom("productionQuantity")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("scrapReasonId", "=", foreign.id)
+        .execute();
+    try {
+      const created = await createProductionQuantity(
+        contextFor(userActor(people.approver)),
+        {
+          jobOperationId: job.operationId,
+          type: "Scrap",
+          scrapReasonId: foreign.id,
+          quantity: 1
+        }
+      );
+      expect(created.error?.category).toBe("notFound");
+
+      const own = await createProductionQuantity(
+        contextFor(userActor(people.approver)),
+        {
+          jobOperationId: job.operationId,
+          type: "Scrap",
+          scrapReasonId: await newScrapReason("own"),
+          quantity: 1
+        }
+      );
+      expect(own.error).toBeNull();
+      // A correction that only swaps the reason values no new scrap, and
+      // would still write the row as the system.
+      const corrected = await updateProductionQuantity(
+        contextFor(userActor(people.approver)),
+        {
+          id: own.data!.id,
+          jobOperationId: job.operationId,
+          type: "Scrap",
+          scrapReasonId: foreign.id,
+          quantity: 1
+        }
+      );
+      expect(corrected.error?.category).toBe("notFound");
+      expect(await scrapRows()).toEqual([]);
+    } finally {
+      await other.cleanup();
+    }
+  }, 60_000);
+
   it("refuses to value scrap of another company's tracked entity", async () => {
     // A real entity, stored in a second company.
     const other = await alwaysPostFixture();
@@ -1086,6 +1176,12 @@ describeLocal("scrap approval", () => {
       .execute();
     // The service role with the tier lookup (the one single-row approval
     // rule read) failing, as a dropped connection would.
+    const failedLookup = vi.fn(() =>
+      Promise.resolve({
+        data: null,
+        error: { message: "Tier lookup failed" }
+      })
+    );
     const failingTierLookup = new Proxy(client!, {
       get(target, prop, receiver) {
         if (prop !== "from") return Reflect.get(target, prop, receiver);
@@ -1094,11 +1190,7 @@ describeLocal("scrap approval", () => {
             new Proxy(builder, {
               get(inner, key) {
                 if (key === "maybeSingle" && table === "approvalRule") {
-                  return () =>
-                    Promise.resolve({
-                      data: null,
-                      error: { message: "Tier lookup failed" }
-                    });
+                  return failedLookup;
                 }
                 const value = Reflect.get(inner, key);
                 if (typeof value !== "function") return value;
@@ -1124,6 +1216,9 @@ describeLocal("scrap approval", () => {
         estimatedValue: 600
       }
     );
+    // A successful lookup refuses this approver too: the refusal counts only
+    // if the failure was injected.
+    expect(failedLookup).toHaveBeenCalledTimes(1);
     expect(authority.error?.code).toBe("forbidden");
   });
 

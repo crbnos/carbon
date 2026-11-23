@@ -76,7 +76,10 @@ redirects kinds it does not serve (no loops).
   `x+/entity+/$materialId.$trackedEntityId.scrap.tsx` → `issue`
   `scrapTrackedEntity`, reached from a dedicated **Scrap tab** in the
   `IssueMaterialModal` (`ScrapTab` lists the material's Available + Consumed
-  entities; each opens `ScrapEntityModal`). That case branches on entity
+  entities; each opens `ScrapEntityModal`). With a scrap rule enabled the route
+  sends the valued entity quantity as `expectedQuantity`; the posting re-reads
+  the entity `FOR UPDATE` and refuses a changed one (409), which discards the
+  approval. That case branches on entity
   **state**, not `methodType`: an `Available` (picked/in-stock) part scraps from
   stock (`Negative Adjmt`, Dr scrap / Cr inventory, `quantityIssued` untouched);
   a `Consumed` part relieves WIP (Dr scrap / Cr WIP at the item's unit cost) and
@@ -103,10 +106,13 @@ redirects kinds it does not serve (no loops).
   an approver the prompt did not offer (inactive, no PIN) and a value that
   differs from `approvedValue`, checks the PIN under the console pin-in budgets
   (`services/pin-limits.server.ts`, shared with `console.pin-in.tsx`), records
-  the approval, posts, and marks it posted. Only a 4xx refusal deletes the
-  record; any other failure keeps it unconfirmed. A batch whose phase 2 failed
-  keeps its record posted and resumes without a second approval
-  (`alreadyApproved` / `postedDespiteError`). No rule: the posting runs as before.
+  the approval, posts, and marks it posted. A failed authority or PIN check asks
+  again with a retryable message and records nothing. Only a 4xx refusal deletes
+  the record; any other failure keeps it unconfirmed. A batch whose phase 2 failed
+  resumes without a second approval (`alreadyApproved`, which names the
+  unconfirmed record a successful resume marks posted); a failed completion marks
+  its approval posted only when this attempt moved the batch past phase 1
+  (`postedDespiteError`). No rule: the posting runs as before.
 - **`finishJobOperation`** (`operations.service.ts`) flips the op to `Done` (firing
   the `sync_finish_job_operation` trigger that completes the job to inventory when
   it's the last op). It then runs `returnPickedRemainders`: one `post-picking`

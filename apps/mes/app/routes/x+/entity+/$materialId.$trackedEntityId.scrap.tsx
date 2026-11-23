@@ -106,7 +106,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       notes: validation.data.notes
     },
     approver: approver.error ? {} : approver.data,
-    post: () =>
+    // The entity's quantity the approval valued: the posting refuses one
+    // that changed since.
+    post: (valued) =>
       erpPosting(
         "issue",
         { companyId, userId },
@@ -116,7 +118,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
           parentTrackedEntityId: parentId!,
           type: "scrapTrackedEntity",
           scrapReasonId: validation.data.scrapReasonId,
-          makeReplacement: validation.data.makeReplacement
+          makeReplacement: validation.data.makeReplacement,
+          expectedQuantity: valued?.quantity
         }
       )
   });

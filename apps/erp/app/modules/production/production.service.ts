@@ -113,7 +113,8 @@ import {
   hasScrapApprovalRules,
   markScrapApprovalPosted,
   recordScrapApprovals,
-  scrapWriteFailure
+  scrapWriteFailure,
+  stockScrapSettlement
 } from "@carbon/ee/approvals/scrap.server";
 import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
@@ -4340,9 +4341,10 @@ export async function upsertProductionQuantity(
  * There is no tablet and no second person at a desk, so an approver at the
  * scrap's tier records it on their own authority and everyone else is
  * refused; an API key is refused, since no person stands behind it. Returns
- * the `scrapRequest` written for it and the quantity it was valued at (null
- * when no rule applies). The caller writes that quantity, then calls
- * `settleErpScrapApproval`.
+ * the `scrapRequest` written for it (null under every tier) and the quantity
+ * it was valued at (null when no rule is enabled). The caller writes that
+ * quantity, so a scrap under every tier cannot grow past its valuation
+ * either, then calls `settleErpScrapApproval`.
  */
 export async function approveErpScrap(
   ctx: ServiceContext,
@@ -4365,12 +4367,13 @@ export async function approveErpScrap(
     scrap.type === "operation"
   );
   if (approved instanceof CarbonError) return approved;
-  const scrapRequestId = approved.scrapRequestIds[0] ?? null;
-  // The quantity the approver signed: a whole tracked entity resolved once,
-  // so the posting cannot scrap more than was valued.
+  // The quantity the tiers were met at, approved or under every tier: a
+  // whole tracked entity resolved once, so the posting cannot scrap more
+  // than was valued.
+  const valued = described.scrap?.quantity ?? 0;
   return {
-    scrapRequestId,
-    quantity: scrapRequestId ? (described.scrap?.quantity ?? null) : null
+    scrapRequestId: approved.scrapRequests[0]?.scrapRequestId ?? null,
+    quantity: valued > 0 ? valued : null
   };
 }
 
@@ -4381,13 +4384,13 @@ export async function approveErpScrap(
  *
  * @remarks
  * The rules are met by the total value, so spreading a write-off over rows
- * passes no tier. Each item is recorded as its own `scrapRequest`. The caller
- * posts, then calls `settleErpScrapApprovals`.
+ * passes no tier. Each item is recorded as its own `scrapRequest`, returned
+ * with its item. The caller posts, then calls `settleErpScrapApprovals`.
  */
 export async function approveErpStockScraps(
   ctx: ServiceContext,
   scraps: { itemId: string; quantity: number; notes?: string | null }[]
-): Promise<{ scrapRequestIds: string[] } | CarbonError> {
+): Promise<{ scrapRequests: RecordedScrapApproval[] } | CarbonError> {
   return approveErpScraps(
     ctx,
     () => describeStockScraps(ctx.asSystem.pg, ctx.company.id, scraps),
@@ -4395,15 +4398,21 @@ export async function approveErpStockScraps(
   );
 }
 
+/** A `scrapRequest` the ERP recorded for a scrap, and the item it scraps. */
+export type RecordedScrapApproval = {
+  scrapRequestId: string;
+  itemId: string | null;
+};
+
 async function approveErpScraps(
   ctx: ServiceContext,
   describe: () => Promise<ScrapDescription[]>,
   atTablet: boolean
-): Promise<{ scrapRequestIds: string[] } | CarbonError> {
+): Promise<{ scrapRequests: RecordedScrapApproval[] } | CarbonError> {
   const companyId = ctx.company.id;
   const serviceRole = ctx.asSystem.supabase;
   const db = ctx.asSystem.pg;
-  const none = { scrapRequestIds: [] };
+  const none = { scrapRequests: [] };
   // The platform itself (a seed, a posting) records scrap as the system.
   if (ctx.actor.type === "system") return none;
 
@@ -4443,13 +4452,22 @@ async function approveErpScraps(
     ? "You cannot approve scrap of this value. Record it on the shop floor, where an approver enters their PIN, or ask an approver for this value to record it."
     : "You cannot approve scrap of this value. Ask an approver for this value to record it.";
 
-  const authority = await authorizeScrapApprover(serviceRole, {
-    companyId,
-    approverId: ctx.auditUserId,
-    recordedBy: ctx.auditUserId,
-    estimatedValue,
-    allowSelf: true
-  });
+  let authority: Awaited<ReturnType<typeof authorizeScrapApprover>>;
+  try {
+    authority = await authorizeScrapApprover(serviceRole, {
+      companyId,
+      approverId: ctx.auditUserId,
+      recordedBy: ctx.auditUserId,
+      estimatedValue,
+      allowSelf: true
+    });
+  } catch (error) {
+    return ctx.error(
+      "internal",
+      "Could not check whether you can approve this scrap",
+      error
+    );
+  }
   if (authority.error) return ctx.error("forbidden", needsApprover);
 
   try {
@@ -4460,7 +4478,12 @@ async function approveErpScraps(
       approvedBy: ctx.auditUserId,
       decisionNotes: "Recorded in the ERP by an approver"
     });
-    return { scrapRequestIds: recorded.map((row) => row.scrapRequestId) };
+    return {
+      scrapRequests: recorded.map(({ scrapRequestId, itemId }) => ({
+        scrapRequestId,
+        itemId
+      }))
+    };
   } catch (error) {
     return ctx.error("internal", "Failed to record the scrap approval", error);
   }
@@ -4534,6 +4557,35 @@ export async function settleErpScrapApprovals(
       error
     });
   }
+}
+
+/**
+ * `settleErpScrapApprovals` for the approvals of a write-off of several items
+ * (`approveErpStockScraps`): once written, an item a Scrap movement wrote off
+ * is marked posted, and one that wrote off nothing is removed.
+ */
+export async function settleErpStockScrapApprovals(
+  ctx: ServiceContext,
+  scrapRequests: RecordedScrapApproval[],
+  outcome: ScrapWriteOutcome,
+  writtenOffItemIds: string[]
+): Promise<void> {
+  if (outcome !== "written") {
+    await settleErpScrapApprovals(
+      ctx,
+      scrapRequests.map((request) => request.scrapRequestId),
+      outcome
+    );
+    return;
+  }
+  const { written, refused } = stockScrapSettlement(
+    scrapRequests,
+    writtenOffItemIds
+  );
+  await Promise.all([
+    settleErpScrapApprovals(ctx, written, "written"),
+    settleErpScrapApprovals(ctx, refused, "refused")
+  ]);
 }
 
 /**

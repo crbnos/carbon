@@ -4,12 +4,15 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  batchScrapApprovalReuse,
+  batchScrapPostedDespiteError,
   failedScrapPostingSettlement,
   materialUnitCost,
   operationScrapUnitValue,
   type ScrapValuationMaterial,
   scrapApproverRefusal,
   scrapWriteFailure,
+  stockScrapSettlement,
   sumBatchScrap
 } from "./scrap";
 
@@ -67,13 +70,13 @@ describe("operationScrapUnitValue", () => {
   ]);
   const value = (
     materials: ScrapValuationMaterial[],
-    kitMaterials: ScrapValuationMaterial[] = []
+    kits: { quantity: number; materials: ScrapValuationMaterial[] }[] = []
   ) =>
     operationScrapUnitValue({
       operation: { id: "op-20", jobMakeMethodId: "mm", order: 2 },
       routing,
       materials,
-      kitMaterials,
+      kits,
       costs
     });
 
@@ -108,8 +111,37 @@ describe("operationScrapUnitValue", () => {
 
   it("counts a kitted child's materials", () => {
     expect(
-      value([], [material({ itemId: "kit-part", jobOperationId: null })])
+      value(
+        [],
+        [
+          {
+            quantity: 1,
+            materials: [material({ itemId: "kit-part", jobOperationId: null })]
+          }
+        ]
+      )
     ).toBe(50);
+  });
+
+  it("counts a kitted child's materials once per kit in the unit", () => {
+    // Two kits per unit, each holding 3 kit parts at 50: 2 × 3 × 50.
+    expect(
+      value(
+        [],
+        [
+          {
+            quantity: 2,
+            materials: [
+              material({
+                itemId: "kit-part",
+                quantity: 3,
+                jobOperationId: null
+              })
+            ]
+          }
+        ]
+      )
+    ).toBe(300);
   });
 });
 
@@ -232,5 +264,83 @@ describe("scrapWriteFailure", () => {
     [null, "unknown"]
   ] as const)("cannot tell whether %o wrote", (error, expected) => {
     expect(scrapWriteFailure(error)).toBe(expected);
+  });
+});
+
+describe("batchScrapApprovalReuse", () => {
+  const approval = (id: string, quantity: number, posted = false) => ({
+    id,
+    quantity,
+    posted
+  });
+
+  it("asks again when no approval has the scrap's quantity", () => {
+    expect(batchScrapApprovalReuse([approval("a", 2)], 3)).toBeNull();
+  });
+
+  // Phase 1 recorded the scrap but its approval stayed unconfirmed.
+  it("names the one unconfirmed approval of the quantity to mark posted", () => {
+    expect(
+      batchScrapApprovalReuse([approval("a", 2), approval("b", 3)], 2)
+    ).toEqual({ scrapRequestId: "a" });
+  });
+
+  it("marks nothing when the approval is already posted", () => {
+    expect(batchScrapApprovalReuse([approval("a", 2, true)], 2)).toEqual({
+      scrapRequestId: null
+    });
+  });
+
+  it("marks nothing when two approvals of the quantity cannot be told apart", () => {
+    expect(
+      batchScrapApprovalReuse([approval("a", 2), approval("b", 2, true)], 2)
+    ).toEqual({ scrapRequestId: null });
+    expect(
+      batchScrapApprovalReuse([approval("a", 2), approval("b", 2)], 2)
+    ).toEqual({ scrapRequestId: null });
+  });
+});
+
+describe("batchScrapPostedDespiteError", () => {
+  it.each([
+    ["Active", "Completing", true],
+    ["Active", "Completed", true],
+    ["Active", "Active", false]
+  ] as const)(
+    "reads %s then %s as %s",
+    (statusBefore, statusAfter, expected) => {
+      expect(batchScrapPostedDespiteError({ statusBefore, statusAfter })).toBe(
+        expected
+      );
+    }
+  );
+
+  // A batch past phase 1 before the attempt resumes with phase 1's scrap, so
+  // its status cannot confirm this attempt's approval.
+  it.each(["Completing", "Completed"])(
+    "cannot tell from a batch already %s before the attempt",
+    (statusBefore) => {
+      expect(
+        batchScrapPostedDespiteError({
+          statusBefore,
+          statusAfter: "Completed"
+        })
+      ).toBe("unknown");
+    }
+  );
+});
+
+describe("stockScrapSettlement", () => {
+  it("posts the items written off and refuses the rest", () => {
+    expect(
+      stockScrapSettlement(
+        [
+          { scrapRequestId: "scr-a", itemId: "item-a" },
+          { scrapRequestId: "scr-b", itemId: "item-b" },
+          { scrapRequestId: "scr-c", itemId: null }
+        ],
+        ["item-a"]
+      )
+    ).toEqual({ written: ["scr-a"], refused: ["scr-b", "scr-c"] });
   });
 });

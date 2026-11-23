@@ -70,8 +70,10 @@ function callerWith(
 /** The system client of a company with no scrap approval rule. */
 function systemWithoutScrapRules() {
   const read: Record<string, unknown> = {};
-  for (const method of ["select", "eq"]) read[method] = () => read;
+  for (const method of ["select", "eq", "match"]) read[method] = () => read;
   read.limit = async () => ({ data: [], error: null });
+  // The scrap reason is the company's own (`refuseUnlessOwned`).
+  read.maybeSingle = async () => ({ data: { id: "sr1" }, error: null });
   return { from: () => read };
 }
 

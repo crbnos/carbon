@@ -5,12 +5,13 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { datetime, equals, round } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { employeesWithPin } from "../console.server";
 import { companyHasFeature, companyHasFeatureOrThrow } from "../plan.server";
 import {
   BACKFLUSHED_ITEM_TYPES,
+  batchScrapApprovalReuse,
   materialUnitCost,
   operationScrapUnitValue,
   scrapApproverRefusal,
@@ -27,7 +28,12 @@ import type {
   ScrapSubject
 } from "./types";
 
-export { failedScrapPostingSettlement, scrapWriteFailure } from "./scrap";
+export {
+  batchScrapPostedDespiteError,
+  failedScrapPostingSettlement,
+  scrapWriteFailure,
+  stockScrapSettlement
+} from "./scrap";
 
 const logger = getLogger("ee", "scrap-approval");
 
@@ -166,10 +172,10 @@ async function operationUnitValues(
       .where("jobMakeMethodId", "in", makeMethodIds)
       .execute(),
     // Kitted Make to Order children: the operation backflushes their
-    // materials too.
+    // materials too, a kit's quantity of them per unit.
     db
       .selectFrom("jobMaterialWithMakeMethodId")
-      .select(["jobOperationId", "jobMaterialMakeMethodId"])
+      .select(["jobOperationId", "jobMaterialMakeMethodId", "quantity"])
       .where("companyId", "=", companyId)
       .where("jobOperationId", "in", jobOperationIds)
       .where("itemType", "in", BACKFLUSHED_ITEM_TYPES)
@@ -223,18 +229,21 @@ async function operationUnitValues(
 
   return new Map(
     operations.map((operation) => {
-      const methods = new Set(
-        kits
-          .filter((kit) => kit.jobOperationId === operation.id)
-          .map((kit) => kit.jobMaterialMakeMethodId)
-      );
       const unitValue = operationScrapUnitValue({
         operation: { ...operation, order: Number(operation.order) },
         routing: routingSteps,
         materials: materials.map(toValuation),
-        kitMaterials: kitMaterials
-          .filter((material) => methods.has(material.jobMakeMethodId))
-          .map(toValuation),
+        kits: kits
+          .filter((kit) => kit.jobOperationId === operation.id)
+          .map((kit) => ({
+            quantity: Number(kit.quantity),
+            materials: kitMaterials
+              .filter(
+                (material) =>
+                  material.jobMakeMethodId === kit.jobMaterialMakeMethodId
+              )
+              .map(toValuation)
+          })),
         costs
       });
       return [
@@ -438,13 +447,15 @@ export async function getScrapApprovalRequirement(
   db: Kysely<KyselyDatabase>,
   args: { companyId: string; recordedBy: string; estimatedValue: number }
 ): Promise<ScrapApprovalRequirement> {
+  // Fail closed: a failed lookup, or a failed plan read inside it, must not
+  // read as "no rule".
   const matched = await getApprovalRuleByAmount(
     serviceRole,
     "scrap",
     args.companyId,
-    args.estimatedValue
+    args.estimatedValue,
+    { failClosed: true }
   );
-  // Fail closed: a failed lookup must not read as "no rule".
   if (matched.error) {
     logger.error("Failed to match a scrap approval rule", {
       companyId: args.companyId,
@@ -571,7 +582,8 @@ async function baseCurrency(
 /**
  * The approver's authority for this scrap, after their PIN was checked. The
  * person recording the scrap never approves it at the tablet; `allowSelf` is
- * for the ERP, where an approver records scrap on their own authority.
+ * for the ERP, where an approver records scrap on their own authority. Throws
+ * when the plan cannot be read, rather than reading the lowest tier.
  */
 export async function authorizeScrapApprover(
   serviceRole: SupabaseClient<Database>,
@@ -592,7 +604,8 @@ export async function authorizeScrapApprover(
       documentType: "scrap",
       companyId: args.companyId
     },
-    args.approverId
+    args.approverId,
+    { failClosed: true }
   );
   return scrapApproverRefusal({
     approverId: args.approverId,
@@ -618,7 +631,11 @@ export async function recordScrapApproval(
     approvedBy: string;
     decisionNotes?: string;
   }
-): Promise<{ scrapRequestId: string; approvalRequestId: string }> {
+): Promise<{
+  scrapRequestId: string;
+  approvalRequestId: string;
+  itemId: string | null;
+}> {
   const { scrap, ...rest } = args;
   const [recorded] = await recordScrapApprovals(db, {
     ...rest,
@@ -631,6 +648,8 @@ export async function recordScrapApproval(
 /**
  * `recordScrapApproval` for several scraps one approver signed together: a
  * `scrapRequest` and an Approved `approvalRequest` each, in one transaction.
+ * Each record names its item, so a write-off of several items can settle
+ * them one by one.
  */
 export async function recordScrapApprovals(
   db: Kysely<KyselyDatabase>,
@@ -641,7 +660,9 @@ export async function recordScrapApprovals(
     approvedBy: string;
     decisionNotes?: string;
   }
-): Promise<{ scrapRequestId: string; approvalRequestId: string }[]> {
+): Promise<
+  { scrapRequestId: string; approvalRequestId: string; itemId: string | null }[]
+> {
   if (args.scraps.length === 0) return [];
   const now = datetime.timestamp();
   return db.transaction().execute(async (trx) => {
@@ -663,8 +684,14 @@ export async function recordScrapApprovals(
           createdBy: args.recordedBy
         }))
       )
-      .returning(["id", "estimatedValue"])
+      .returning(["id", "estimatedValue", "itemId"])
       .execute();
+    const itemIdOf = new Map(
+      scrapRequests.map((scrapRequest) => [
+        scrapRequest.id,
+        scrapRequest.itemId
+      ])
+    );
 
     // Each request's amount comes from its own returned row, so the order
     // Postgres returns them in does not matter.
@@ -690,7 +717,8 @@ export async function recordScrapApprovals(
 
     return approvalRequests.map((approvalRequest) => ({
       scrapRequestId: approvalRequest.documentId,
-      approvalRequestId: approvalRequest.id
+      approvalRequestId: approvalRequest.id,
+      itemId: itemIdOf.get(approvalRequest.documentId) ?? null
     }));
   });
 }
@@ -706,6 +734,8 @@ export async function markScrapApprovalPosted(
     .set({ postedAt: now, updatedBy: args.userId, updatedAt: now })
     .where("id", "in", args.scrapRequestIds)
     .where("companyId", "=", args.companyId)
+    // Posted once: a later mark (a resumed batch) keeps the first time.
+    .where("postedAt", "is", null)
     .execute();
 }
 
@@ -732,16 +762,17 @@ export async function discardScrapApproval(
 }
 
 /**
- * Whether a batch completion's scrap was already approved: phase 1 of the
+ * The approval a batch completion's scrap already has: phase 1 of the
  * completion committed it, so a resumed completion posts it without asking
- * again. Only a batch past phase 1 qualifies, and only for the quantity that
- * was approved: a record kept from a failed attempt on an Active batch never
- * lets a different scrap through.
+ * again (null: ask). Only a batch past phase 1 qualifies, and only for the
+ * quantity that was approved: a record kept from a failed attempt on an
+ * Active batch never lets a different scrap through. `scrapRequestId` is the
+ * record to mark posted once the resume succeeds (`batchScrapApprovalReuse`).
  */
-export async function hasBatchScrapApproval(
+export async function findBatchScrapApproval(
   db: Kysely<KyselyDatabase>,
   args: { companyId: string; jobOperationBatchId: string; quantity: number }
-): Promise<boolean> {
+): Promise<{ scrapRequestId: string | null } | null> {
   const rows = await db
     .selectFrom("scrapRequest")
     .innerJoin("jobOperationBatch", (join) =>
@@ -749,12 +780,23 @@ export async function hasBatchScrapApproval(
         .onRef("jobOperationBatch.id", "=", "scrapRequest.jobOperationBatchId")
         .onRef("jobOperationBatch.companyId", "=", "scrapRequest.companyId")
     )
-    .select("scrapRequest.quantity")
+    .select([
+      "scrapRequest.id",
+      "scrapRequest.quantity",
+      "scrapRequest.postedAt"
+    ])
     .where("scrapRequest.companyId", "=", args.companyId)
     .where("scrapRequest.jobOperationBatchId", "=", args.jobOperationBatchId)
     .where("jobOperationBatch.status", "in", ["Completing", "Completed"])
     .execute();
-  return rows.some((row) => equals(Number(row.quantity), args.quantity));
+  return batchScrapApprovalReuse(
+    rows.map((row) => ({
+      id: row.id,
+      quantity: Number(row.quantity),
+      posted: row.postedAt !== null
+    })),
+    args.quantity
+  );
 }
 
 /**

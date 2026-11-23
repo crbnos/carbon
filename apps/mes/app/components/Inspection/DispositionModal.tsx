@@ -210,6 +210,9 @@ const DispositionBody = ({
   const scrapCount = isSerial ? scrapEntityIds.length : scrapQuantity;
   const reworkCount = isSerial ? reworkEntityIds.length : reworkQuantity;
   const overAllocated = !isSerial && scrapCount + reworkCount > maxAllocatable;
+  // The allocation is locked while a submit is pending: an answer for the
+  // allocation sent must not land on a different one.
+  const isSubmitting = fetcher.state !== "idle";
 
   const setAll = (outcome: UnitOutcome) => {
     approval.reset();
@@ -330,6 +333,7 @@ const DispositionBody = ({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    isDisabled={isSubmitting}
                     onClick={() => setAll("scrap")}
                   >
                     <Trans>All scrap</Trans>
@@ -338,6 +342,7 @@ const DispositionBody = ({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    isDisabled={isSubmitting}
                     onClick={() => setAll("rework")}
                   >
                     <Trans>All rework</Trans>
@@ -346,6 +351,7 @@ const DispositionBody = ({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    isDisabled={isSubmitting}
                     onClick={() => setAll("none")}
                   >
                     <Trans>Record only</Trans>
@@ -387,6 +393,7 @@ const DispositionBody = ({
                             <button
                               key={value}
                               type="button"
+                              disabled={isSubmitting}
                               onClick={() => {
                                 approval.reset();
                                 setUnitOutcomes((prev) => {
@@ -428,6 +435,7 @@ const DispositionBody = ({
                 }}
                 minValue={0}
                 maxValue={maxAllocatable}
+                isReadOnly={isSubmitting}
               />
               <NumberControlled
                 name="reworkQuantity"
@@ -436,6 +444,7 @@ const DispositionBody = ({
                 onChange={setReworkQuantity}
                 minValue={0}
                 maxValue={maxAllocatable}
+                isReadOnly={isSubmitting}
               />
             </div>
           )}

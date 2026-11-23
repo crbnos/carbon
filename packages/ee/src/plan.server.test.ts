@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getCompanyPlanId = vi.hoisted(() => vi.fn());
 const getCompanyPlanIdOrThrow = vi.hoisted(() => vi.fn());
 const isCarbonOwnedCompany = vi.hoisted(() => vi.fn());
+const isCarbonOwnedCompanyOrThrow = vi.hoisted(() => vi.fn());
 
 vi.mock("@carbon/auth", () => ({
   CarbonEdition: "cloud",
@@ -17,7 +18,8 @@ vi.mock("@carbon/auth", () => ({
 vi.mock("@carbon/auth/company.server", () => ({
   getCompanyPlanId,
   getCompanyPlanIdOrThrow,
-  isCarbonOwnedCompany
+  isCarbonOwnedCompany,
+  isCarbonOwnedCompanyOrThrow
 }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: vi.fn() }));
 
@@ -78,6 +80,7 @@ describe("companyHasFeatureOrThrow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     isCarbonOwnedCompany.mockResolvedValue(false);
+    isCarbonOwnedCompanyOrThrow.mockResolvedValue(false);
   });
 
   // Enforcement that read a failed plan read as "not entitled" turned the
@@ -104,6 +107,21 @@ describe("companyHasFeatureOrThrow", () => {
     );
 
     expect(allowed).toBe(false);
+  });
+
+  // A company with no plan row falls back to the owner check; a failed read
+  // there read as "not Carbon-owned" and turned the rules off too.
+  it("throws when the Carbon-owned read fails", async () => {
+    getCompanyPlanIdOrThrow.mockResolvedValue(null);
+    isCarbonOwnedCompanyOrThrow.mockRejectedValue(
+      new Error("Failed to read company owner")
+    );
+
+    await expect(
+      companyHasFeatureOrThrow(rlsBlockedClient() as never, "company-6", {
+        feature: "APPROVAL_RULES"
+      })
+    ).rejects.toThrow("Failed to read company owner");
   });
 
   it("answers true for a Business company", async () => {

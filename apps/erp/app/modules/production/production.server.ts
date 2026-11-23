@@ -60,7 +60,8 @@ import {
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
-  isActiveCompanyEmployee
+  isActiveCompanyEmployee,
+  refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { decodeCursor } from "~/utils/cursor";
 import {
@@ -5508,6 +5509,12 @@ export const createProductionQuantity = defineServiceFn({
 
     const scrapReasonId =
       quantity.type === "Scrap" ? quantity.scrapReasonId : undefined;
+    // A Scrap row can go in as the system, and the reason's foreign key
+    // accepts another company's reason.
+    const reasonRefusal = scrapReasonId
+      ? await refuseUnlessOwned(ctx, "scrapReason", { id: scrapReasonId })
+      : null;
+    if (reasonRefusal) return reasonRefusal;
     // Read first: a failed read must not leave an approval behind.
     const writer =
       quantity.type === "Scrap"
@@ -5605,6 +5612,11 @@ export const updateProductionQuantity = defineServiceFn({
           "You do not have permission to change production quantities"
         );
       }
+      // Nor does the reason's foreign key check its company.
+      const reasonRefusal = scrapReasonId
+        ? await refuseUnlessOwned(ctx, "scrapReason", { id: scrapReasonId })
+        : null;
+      if (reasonRefusal) return reasonRefusal;
       writer = await service.scrapQuantityClient(ctx);
       const current = await ctx.asCaller.supabase
         .from("productionQuantity")
