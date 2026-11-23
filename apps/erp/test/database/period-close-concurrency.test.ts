@@ -445,7 +445,11 @@ postgrestTest(
         data: { id: args.periodId },
         error: null
       });
-      expect((await unlocking).data).toBeNull();
+      // A refusal carries only a message; a database error would also carry its code.
+      expect(await unlocking).toEqual({
+        data: null,
+        error: { message: expect.any(String) }
+      });
       expect(
         await f.db
           .selectFrom("accountingPeriod")
