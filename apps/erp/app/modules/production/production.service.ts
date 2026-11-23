@@ -4030,9 +4030,14 @@ export async function updateJobStatus(
   const updated =
     !result.error && (!fromStatuses || (result.data?.length ?? 0) > 0);
 
-  if (updated && prior.data && prior.data.status !== status) {
-    if (status === "Ready") {
-      await raiseMoment("production.jobReleased", {
+  if (prior.data) {
+    const moment = jobStatusMoment({
+      updated,
+      priorStatus: prior.data.status,
+      status
+    });
+    if (moment === "production.jobReleased") {
+      await raiseMoment(moment, {
         outputs: { job: { id }, releasedBy: { id: updatedBy } },
         companyId,
         actorId: updatedBy
@@ -4045,8 +4050,8 @@ export async function updateJobStatus(
         priorStatus: prior.data.status,
         source
       });
-    } else if (status === "Paused") {
-      await raiseMoment("production.jobHeld", {
+    } else if (moment === "production.jobHeld") {
+      await raiseMoment(moment, {
         outputs: { job: { id }, heldBy: { id: updatedBy } },
         companyId,
         actorId: updatedBy
@@ -4055,6 +4060,23 @@ export async function updateJobStatus(
   }
 
   return { ...result, updated };
+}
+
+/**
+ * The workflow moment a job status write announces. Only a write that changed
+ * the row from another status is a release or a hold: a re-save, or a guarded
+ * write whose job had moved on in the meantime, announces nothing.
+ */
+export function jobStatusMoment(change: {
+  updated: boolean;
+  priorStatus: (typeof jobStatus)[number];
+  status: (typeof jobStatus)[number];
+}): "production.jobReleased" | "production.jobHeld" | null {
+  const { updated, priorStatus, status } = change;
+  if (!updated || priorStatus === status) return null;
+  if (status === "Ready") return "production.jobReleased";
+  if (status === "Paused") return "production.jobHeld";
+  return null;
 }
 
 export async function updateJobMaterialOrder(
