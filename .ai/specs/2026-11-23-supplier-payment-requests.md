@@ -109,7 +109,7 @@ When a purchase invoice posts, Carbon checks 3 conditions:
 3. The invoice has no request that is not Cancelled.
 
 If all 3 are true, Carbon creates one request. Its amount is the open balance
-after any prepayment is applied, and its due date is the invoice's `dateDue`.
+at posting, and its due date is the invoice's `dateDue`.
 Its status is Ready, so Carbon sends it at once. For a normal invoice this keeps
 today's behavior, but with the open balance.
 
@@ -131,6 +131,8 @@ The service function locks the invoice row, or the purchase order row, with
 `FOR UPDATE` in a Kysely transaction. It reads the allowance after the lock. Then it checks the new amount against it.
 
 ### Ramp: outbound
+
+> Held until the sandbox test in the plan passes (Risk 1). The plan builds the Ramp work last.
 
 A new spend entity, `paymentRequest`, replaces the `purchaseInvoice` bill
 entity on the event engine. The syncer creates one Ramp draft bill per request:
@@ -176,15 +178,11 @@ If the job stops after step 3 and before step 4, the next run finds the bill in 
 5. Ramp split payments and Ramp vendor credits stay refused. The Sync Activity message tells the user to add requests in Carbon instead.
 6. Apply each payment through `settlePaymentRequest`, inside one transaction. A repeated sync of the same Ramp payment finds the request already Paid and stops.
 
-### The deposit is applied when the invoice arrives
+### Prepayments are applied by hand
 
-When a purchase invoice from a purchase order posts, Carbon applies that order's
-unapplied prepayments to the invoice, up to its open balance. This matches how
-the customer works: the lump sum applies to the whole invoice up front. Then the
-automatic-request check runs on the balance that remains.
-<!-- UNVERIFIED: whether posting already applies PO prepayments. /plan confirms
-the current behavior in createPayment / the payment application flow and changes
-only what is missing. -->
+Posting does not apply a purchase order's prepayments. The user applies a prepayment to an invoice, as today. The posting code has no prepayment step. `invoicing.settlements.test.ts` covers manual application.
+
+If the purchase order has unapplied prepayments when the invoice posts, the automatic request is Planned, not Ready. The user applies the prepayment, edits the request amount to the new open balance, and marks the request Ready. Carbon then sends it. This stops Ramp from receiving the full balance while a prepayment still covers part of it.
 
 ### One settlement path
 
@@ -199,6 +197,8 @@ Two callers record that a payment settled a request: the `ramp-bill-payments` sy
 | Paying against a quote | Convert the quote to a PO first. The deposit request sits on the PO. | Paying is a commitment. Carbon's supplier prepayment already sits on the PO (Q3b). |
 | Path into Ramp | Every Ramp bill comes from a request. A normal invoice gets one automatic request. | One path in and one path out. It also fixes the deposit overpayment (Q4). |
 | Formal blanket PO records | Out of scope | The user needs the lump sum plus charges only (Q6). |
+| Prepayment application | Manual, as today | Auto-apply would change existing posting. A PO with unapplied prepayments gets a Planned automatic request. |
+| Operations publish as MCP tools | `@mcp` on each operation | The user chose to publish them, as other invoicing operations are. |
 | Installment payment terms | Out of scope | The user deferred them (Q5). Requests are planned by hand. |
 | Ramp split payments and vendor credits | Stay refused, with a clear Sync Activity message | The user does not need them (Q6). The API exposes only the first split payment and cannot create credits (research). |
 | Delivery | One delivery, no phases | The user's choice (Q7). |
@@ -329,7 +329,7 @@ Changed code:
 
 | Code | Change |
 |------|--------|
-| `postPurchaseInvoice` (posting) | Applies the PO's unapplied prepayments. Then creates the automatic request. |
+| `postPurchaseInvoice` (posting) | Creates the automatic request in the posting transaction. Planned when the PO has unapplied prepayments. |
 | `ramp-sync-bill.ts`, `ramp-sync-bill-stage.ts` | Treats a `remote_id` that is a request id as mapped. Creates no invoice. |
 | `ramp-sync-payment.ts` | Applies a payment for a request bill to the invoice or as a PO prepayment. Sets the request Paid. |
 | `ramp-sync-outbound.ts` (`loadRampOutboundCandidates`) | Selects Ready requests with no mapping, with no date window. |
@@ -378,7 +378,7 @@ All new strings use Lingui and go through `/translate`.
 - [ ] The user pays that bill in Ramp. After the next `ramp-sync`, APV-000500 shows a Posted payment of $20,000 and an open balance of $30,000. The request shows Paid. No new purchase invoice exists.
 - [ ] The user adds a second request of $35,000 to APV-000500. The guard refuses it and shows that $30,000 is the most allowed.
 - [ ] The user posts a normal $5,000 invoice while Ramp is connected. Carbon creates one automatic Ready request for $5,000. Ramp receives one $5,000 draft bill.
-- [ ] The user posts a $20,000 invoice from a PO with an $8,000 unapplied prepayment. Carbon applies $8,000. The automatic request is $12,000, and Ramp receives a $12,000 bill.
+- [ ] The user posts a $20,000 invoice from a PO with an $8,000 unapplied prepayment. No prepayment is applied. The automatic request is Planned at $20,000, and Ramp receives no bill. The user applies the $8,000, edits the request to $12,000, and marks it Ready. Ramp then receives a $12,000 bill.
 - [ ] The user adds 2 Planned requests to a Draft invoice and posts it. Carbon creates no automatic request, and Ramp receives no bill.
 - [ ] The user adds a Ready deposit request of $50,000 on a PO with no invoice. Ramp receives a $50,000 bill coded to the supplier prepayment account. After Ramp pays it, the PO has a Posted prepayment of $50,000 on account 1150.
 - [ ] A Ready request on an invoice posted 60 days ago goes to Ramp at the next sync.
@@ -398,7 +398,7 @@ All new strings use Lingui and go through `/translate`.
 | Ramp may dedupe or reject the suffixed `invoice_number` | Med | Test `-R1` and `-R2` on the same vendor in the sandbox. |
 | A Sent request is cancelled in Carbon, but its draft stays in Ramp and is paid | Med | The payment still applies, because it is within the open balance. The request shows Paid, and Sync Activity warns. |
 | Changing the push path breaks bills that are already in Ramp | High | Mapped invoices keep the `bill` path. A test covers an old mapped bill paying through. |
-| Posting now applies prepayments on its own | Med | Apply only prepayments of the invoice's own PO, up to the open balance. Cover it with a database test. |
+| A prepayment applied after posting leaves the Planned request at the old amount | Med | The user edits the amount before marking Ready. The guard refuses an amount above the allowance. |
 | Discarding a draft in Ramp's app is unverified | Low | Confirm in the sandbox. Document the exact steps in the cancel message. |
 | Ramp creates a bill, then Carbon fails to save Sent | Med | The retry looks up the bill by `remote_id` first (Ramp: outbound, step 2). |
 | A repeated payment sync pays a request twice | Med | `settlePaymentRequest` changes only from an allowed status. |
@@ -420,3 +420,4 @@ All new strings use Lingui and go through `/translate`.
 
 - 2026-11-23: Created after the Q1 to Q7 interview with the user.
 - 2026-11-23: Reviewed against the backend and frontend conventions. Removed the database lifecycle trigger and the event trigger. Added retry safety, one allowance helper and one settlement path. Fixed the payment foreign key. Added the Cancelled → Paid transition and the Ready → Planned operation.
+- 2026-11-23: Planning decisions. Prepayments are applied by hand. A PO with unapplied prepayments gets a Planned automatic request. Ramp work waits for a sandbox test. The operations publish as MCP tools.
