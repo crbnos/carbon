@@ -23781,6 +23781,9 @@ msgstr "Stampa"
 msgid "Prints as"
 msgstr "Stampa come"
 
+msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
+msgstr ""
+
 msgid "Priorities"
 msgstr "Priorità"
 

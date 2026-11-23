@@ -23781,6 +23781,9 @@ msgstr "印刷"
 msgid "Prints as"
 msgstr "印刷内容"
 
+msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
+msgstr ""
+
 msgid "Priorities"
 msgstr "優先度"
 
