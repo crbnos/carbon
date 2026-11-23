@@ -19,13 +19,13 @@ import type { Database } from "@carbon/database";
  * them would quarantine the whole provisioning job.
  */
 
-export const SCIM_CONTENT_TYPE = "application/scim+json";
+const SCIM_CONTENT_TYPE = "application/scim+json";
 
 export const USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User";
 export const GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group";
 export const ENTERPRISE_USER_SCHEMA =
   "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
-export const LIST_RESPONSE_SCHEMA =
+const LIST_RESPONSE_SCHEMA =
   "urn:ietf:params:scim:api:messages:2.0:ListResponse";
 export const PATCH_OP_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:PatchOp";
 export const ERROR_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:Error";
@@ -36,7 +36,7 @@ const RESOURCE_TYPE_SCHEMA =
 const SCHEMA_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Schema";
 
 /** The largest page `GET /Users` and `GET /Groups` return. */
-export const SCIM_MAX_RESULTS = 200;
+const SCIM_MAX_RESULTS = 200;
 const DEFAULT_COUNT = 100;
 
 /** RFC 7644 §3.12 `scimType` values Carbon answers with. */
@@ -114,7 +114,7 @@ export function scimListResponse<T>(
 // Routing and authentication
 // ---------------------------------------------------------------------------
 
-export const SCIM_RESOURCES = [
+const SCIM_RESOURCES = [
   "Users",
   "Groups",
   "ServiceProviderConfig",
@@ -287,7 +287,7 @@ function isEmailAddress(value: string): boolean {
  * one, else the first. Entries may be objects (`{ value, type, primary }`) or,
  * from looser clients, bare strings.
  */
-export function pickEmail(emails: unknown): string | null {
+function pickEmail(emails: unknown): string | null {
   if (!Array.isArray(emails)) return null;
   const entries = emails
     .map((entry) =>

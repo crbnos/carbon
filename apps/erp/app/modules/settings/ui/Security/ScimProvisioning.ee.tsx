@@ -42,7 +42,7 @@ import {
   LuTriangleAlert,
   LuUsers
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { type FetcherWithComponents, useFetcher } from "react-router";
 import { DateTime } from "~/components";
 import { Hidden, Location, Select, Submit } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
@@ -324,87 +324,18 @@ export default function ScimProvisioning({
         />
       )}
 
-      <Modal
-        open={shownToken !== null}
-        onOpenChange={(open) => {
-          if (!open) dismissToken();
-        }}
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Your SCIM token</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  Enter the base URL and this token in your identity provider's
-                  provisioning settings. This token is shown once.
-                </Trans>
-              </p>
-              <CopyableField label={t`SCIM base URL`} value={baseUrl} />
-              <CopyableField
-                label={t`Token`}
-                value={shownToken ?? lastShownToken.current ?? ""}
-              />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button onClick={dismissToken}>
-              <Trans>Done</Trans>
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <TokenModal
+        token={shownToken}
+        lastToken={lastShownToken.current}
+        baseUrl={baseUrl}
+        onDone={dismissToken}
+      />
 
-      <Modal
+      <RegenerateTokenModal
+        fetcher={regenerateFetcher}
         open={regenerateOpen}
-        onOpenChange={(open) => {
-          if (!open) setRegenerateOpen(false);
-        }}
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Regenerate SCIM token</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <p className="text-sm text-muted-foreground">
-              <Trans>
-                The current token stops working at once. Provisioning stops
-                until you enter the new token in your identity provider.
-              </Trans>
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setRegenerateOpen(false)}
-            >
-              <Trans>Cancel</Trans>
-            </Button>
-            <regenerateFetcher.Form
-              method="post"
-              action={path.to.scim}
-              onSubmit={() => setRegenerateOpen(false)}
-            >
-              <input type="hidden" name="intent" value="regenerate" />
-              <Button
-                type="submit"
-                isLoading={regenerateFetcher.state !== "idle"}
-                isDisabled={regenerateFetcher.state !== "idle"}
-              >
-                <Trans>Regenerate</Trans>
-              </Button>
-            </regenerateFetcher.Form>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+        onClose={() => setRegenerateOpen(false)}
+      />
 
       <ConfirmDelete
         isOpen={deleteOpen}
@@ -418,6 +349,110 @@ export default function ScimProvisioning({
         onSubmit={() => setDeleteOpen(false)}
       />
     </>
+  );
+}
+
+function TokenModal({
+  token,
+  lastToken,
+  baseUrl,
+  onDone
+}: {
+  token: string | null;
+  /** Kept on screen while the modal animates closed. */
+  lastToken: string | null;
+  baseUrl: string;
+  onDone: () => void;
+}) {
+  const { t } = useLingui();
+  return (
+    <Modal
+      open={token !== null}
+      onOpenChange={(open) => {
+        if (!open) onDone();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>Your SCIM token</Trans>
+          </ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <VStack spacing={4}>
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                Enter the base URL and this token in your identity provider's
+                provisioning settings. This token is shown once.
+              </Trans>
+            </p>
+            <CopyableField label={t`SCIM base URL`} value={baseUrl} />
+            <CopyableField label={t`Token`} value={token ?? lastToken ?? ""} />
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={onDone}>
+            <Trans>Done</Trans>
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+/**
+ * Not the shared `Confirm`: that posts through its own fetcher, and the raw
+ * token must come back to `fetcher` so the token modal can show it.
+ */
+function RegenerateTokenModal({
+  fetcher,
+  open,
+  onClose
+}: {
+  fetcher: FetcherWithComponents<TokenResponse>;
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>Regenerate SCIM token</Trans>
+          </ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              The current token stops working at once. Provisioning stops until
+              you enter the new token in your identity provider.
+            </Trans>
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <fetcher.Form method="post" action={path.to.scim} onSubmit={onClose}>
+            <input type="hidden" name="intent" value="regenerate" />
+            <Button
+              type="submit"
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+            >
+              <Trans>Regenerate</Trans>
+            </Button>
+          </fetcher.Form>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 }
 

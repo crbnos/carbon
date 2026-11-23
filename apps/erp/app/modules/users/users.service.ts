@@ -2873,6 +2873,8 @@ export async function scimOwnedChangeRefusal(
   userId: string,
   change: { employeeTypeId?: string; firstName?: string; lastName?: string }
 ): Promise<string | null> {
+  const differs = (next: string | undefined, current: string) =>
+    next !== undefined && next !== current;
   const owned = await getScimOwnedFields(serviceRole, companyId, userId);
   if (owned.error) {
     logger.error("Failed to read the fields SCIM owns", {
@@ -2891,29 +2893,26 @@ export async function scimOwnedChangeRefusal(
       .eq("companyId", companyId)
       .maybeSingle();
     if (
-      !employee.error &&
       employee.data &&
-      employee.data.employeeTypeId !== change.employeeTypeId
+      differs(change.employeeTypeId, employee.data.employeeTypeId)
     ) {
       return "Your identity provider sets this person's employee type from their groups. Change their groups there.";
     }
   }
 
-  const changesName =
-    change.firstName !== undefined || change.lastName !== undefined;
-  if (owned.data.name && changesName) {
+  if (
+    owned.data.name &&
+    (change.firstName !== undefined || change.lastName !== undefined)
+  ) {
     const user = await serviceRole
       .from("user")
       .select("firstName, lastName")
       .eq("id", userId)
       .maybeSingle();
     if (
-      !user.error &&
       user.data &&
-      ((change.firstName !== undefined &&
-        change.firstName !== user.data.firstName) ||
-        (change.lastName !== undefined &&
-          change.lastName !== user.data.lastName))
+      (differs(change.firstName, user.data.firstName) ||
+        differs(change.lastName, user.data.lastName))
     ) {
       return "Your identity provider manages this person's name. Change it there.";
     }

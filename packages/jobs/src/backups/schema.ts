@@ -71,12 +71,13 @@ export const SECRET_TABLES = [
  * point at the source company's people and employee types, so a foreign
  * restore and an import leave these tables empty (SCIM is set up again).
  */
-export const FOREIGN_SKIPPED_TABLES: readonly TableName[] = [
+export const FOREIGN_SKIPPED_TABLES = [
   "scimConnection",
   "scimUser",
   "scimGroup",
   "scimGroupMember"
-];
+] as const satisfies readonly TableName[];
+const foreignSkipped = new Set<string>(FOREIGN_SKIPPED_TABLES);
 
 /**
  * Columns a restore of a company's own backup leaves out, so they land on
@@ -100,9 +101,7 @@ export function restoreLoadsTable(
   tableName: string,
   { foreign }: { foreign: boolean }
 ): boolean {
-  return !(
-    foreign && (FOREIGN_SKIPPED_TABLES as readonly string[]).includes(tableName)
-  );
+  return !(foreign && foreignSkipped.has(tableName));
 }
 
 /** Whether a restore loads a column's values (else the column's default). */
@@ -111,10 +110,9 @@ export function restoreLoadsColumn(
   columnName: string,
   { stripSecrets }: { stripSecrets: boolean }
 ): boolean {
-  const stripped = (
-    RESTORE_STRIPPED_COLUMNS as Partial<Record<string, readonly string[]>>
-  )[tableName];
-  return !(stripSecrets && stripped?.includes(columnName));
+  const stripped: Partial<Record<string, readonly string[]>> =
+    RESTORE_STRIPPED_COLUMNS;
+  return !(stripSecrets && stripped[tableName]?.includes(columnName));
 }
 
 export const COMPANY_SINGLETON_TABLES = [

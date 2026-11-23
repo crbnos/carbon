@@ -20,9 +20,12 @@ licences, test tools): `.ai/research/scim-provisioning.md`. User docs:
 |---|---|
 | `packages/ee/src/scim/protocol.ts` | Pure wire format: `parseScimFilter`, `applyUserPatch`, `applyGroupPatch`, `readUserResource`, `matchScimRoute`, resource bodies, discovery documents |
 | `packages/ee/src/scim/mapping.ts` | Pure access decisions: `pickEmployeeType`, `typeGrantsFor`, `replaceCompanyGrants` |
-| `packages/ee/src/scim/engine.server.ts` | `handleScimRequest` (token → `scimConnection`, `requireEntitlement(…, "SCIM")`, rate limit, routing), the Users and Groups handlers, `reconcileEmployeeTypes` |
+| `packages/ee/src/scim/engine.server.ts` | `handleScimRequest`: token → `scimConnection`, `requireEntitlement(…, "SCIM")`, rate limit, the one log line, routing |
+| `packages/ee/src/scim/users.server.ts` / `groups.server.ts` | The `/Users` and `/Groups` handlers |
+| `packages/ee/src/scim/access.server.ts` | Membership, employee type and grants: `readEmployeeMembership`, `joinCompany`, `writeName`, `reconcileEmployeeTypes` |
+| `packages/ee/src/scim/shared.server.ts` | What the files above share: `Ctx`, `ScimRefusal`, `labelAsScim`, `missingDefault`, `hasMappedGroup`, `readListPage`, `idsMatchingWithoutCase` |
 | `packages/ee/src/scim/connections.server.ts` | The settings card's reads and writes; every write but `turnOffScimConnection` embeds `requireEntitlement`. Also `getScimOwnedFields` (the fields an admin cannot change, below), `getScimManagedUserIds` (the Users screen's "SCIM" badge and the employee drawer's note) and `getEmployeeTypesWithoutPermissions` (the no-permissions warning; reads `employeeTypePermission` with the service role, since its RLS needs `users_update`) |
-| `@carbon/ee/scim.server` | `scim/index.server.ts`, the export of the two files above |
+| `@carbon/ee/scim.server` | `scim/index.server.ts`: `handleScimRequest` and the settings reads and writes |
 | `apps/erp/app/routes/scim+/v2+/$.ts` | Loader and action both hand the request to `handleScimRequest` |
 | `apps/erp/app/routes/x+/settings+/scim.tsx` | Action-only, like `sso.tsx`: intents `create`, `update`, `regenerate`, `saveGroupMappings`, `delete` |
 | `ScimProvisioning.ee.tsx` | The Provisioning section of Settings → Security |

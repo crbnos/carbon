@@ -4,7 +4,6 @@
 
 export {
   createScimConnection,
-  generateScimToken,
   getEmployeeTypesWithoutPermissions,
   getScimConnection,
   getScimManagedUserIds,
@@ -14,9 +13,4 @@ export {
   turnOffScimConnection,
   updateScimConnection
 } from "./connections.server";
-export {
-  handleScimRequest,
-  reconcileEmployeeTypes,
-  SCIM_ACTOR_LABEL,
-  type ScimDeps
-} from "./engine.server";
+export { handleScimRequest } from "./engine.server";

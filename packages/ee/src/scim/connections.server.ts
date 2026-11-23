@@ -4,7 +4,7 @@
 
 /**
  * The admin side of SCIM provisioning — Settings → Security → Provisioning.
- * Mirrors `connections.server.ts` (SAML SSO). Every authoring write embeds
+ * Every authoring write embeds
  * `requireEntitlement(…, "SCIM")`; turning SCIM off does not, so a company
  * that lost the plan can still stop its IdP.
  *
@@ -22,7 +22,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { customAlphabet } from "nanoid";
 import { requireEntitlement } from "../entitlements.server";
-import { reconcileEmployeeTypes } from "./engine.server";
+import { reconcileEmployeeTypes } from "./access.server";
 import {
   compareGroupPrecedence,
   type EmployeeTypePermissionRow,
@@ -30,6 +30,11 @@ import {
   planGroupMappingSave,
   typeGrantsFor
 } from "./mapping";
+import {
+  hasMappedGroup,
+  missingDefault,
+  SCIM_TOKEN_PREFIX
+} from "./shared.server";
 
 const logger = getLogger("ee", "scim-connections");
 
@@ -40,12 +45,19 @@ const tokenBody = customAlphabet(
 
 type Result<T> = { data: T | null; error: string | null };
 
-export function generateScimToken(): {
+type ScimConnectionInput = {
+  companyId: string;
+  userId: string;
+  defaultEmployeeTypeId: string;
+  defaultLocationId: string;
+};
+
+function generateScimToken(): {
   token: string;
   tokenHash: string;
   tokenPreview: string;
 } {
-  const token = `scim_${tokenBody()}`;
+  const token = `${SCIM_TOKEN_PREFIX}${tokenBody()}`;
   return {
     token,
     tokenHash: hashApiKey(token),
@@ -206,12 +218,7 @@ export async function getEmployeeTypesWithoutPermissions(
   };
 }
 
-/**
- * The people an identity provider manages in a company, active or not: it
- * owns their name and active state and, once groups are mapped, their
- * employee type, so a change made in Carbon can be overwritten. `userIds`
- * narrows the read to those people.
- */
+/** The people SCIM provisioned in a company, active or not; `userIds` narrows the read. */
 export async function getScimManagedUserIds(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -230,34 +237,6 @@ export async function getScimManagedUserIds(
   return { data: rows.data.map((row) => row.userId), error: null };
 }
 
-/** Both defaults must belong to the company: their tables have single-column keys. */
-async function checkDefaults(
-  serviceRole: SupabaseClient<Database>,
-  companyId: string,
-  {
-    defaultEmployeeTypeId,
-    defaultLocationId
-  }: { defaultEmployeeTypeId: string; defaultLocationId: string }
-): Promise<string | null> {
-  const [type, location] = await Promise.all([
-    serviceRole
-      .from("employeeType")
-      .select("id")
-      .eq("id", defaultEmployeeTypeId)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    serviceRole
-      .from("location")
-      .select("id")
-      .eq("id", defaultLocationId)
-      .eq("companyId", companyId)
-      .maybeSingle()
-  ]);
-  if (type.error || !type.data) return "Employee type not found";
-  if (location.error || !location.data) return "Location not found";
-  return null;
-}
-
 /**
  * Set SCIM up, or turn it back on. A connection that was turned off is
  * resumed with a new token and the new defaults, so the SCIM people and
@@ -266,16 +245,11 @@ async function checkDefaults(
 export async function createScimConnection(
   serviceRole: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  input: {
-    companyId: string;
-    userId: string;
-    defaultEmployeeTypeId: string;
-    defaultLocationId: string;
-  }
+  input: ScimConnectionInput
 ): Promise<Result<{ token: string }>> {
   await requireEntitlement(serviceRole, input.companyId, "SCIM");
 
-  const refusal = await checkDefaults(serviceRole, input.companyId, input);
+  const refusal = await missingDefault(db, input.companyId, input);
   if (refusal) return { data: null, error: refusal };
 
   const { token, tokenHash, tokenPreview } = generateScimToken();
@@ -302,9 +276,7 @@ export async function createScimConnection(
   }
   if (resumed.data) {
     // The default type may have changed while SCIM was off.
-    await reconcileEmployeeTypes(db, {
-      connection: resumed.data
-    });
+    await reconcileEmployeeTypes(db, { connection: resumed.data });
     return { data: { token }, error: null };
   }
 
@@ -333,16 +305,11 @@ export async function createScimConnection(
 export async function updateScimConnection(
   serviceRole: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  input: {
-    companyId: string;
-    userId: string;
-    defaultEmployeeTypeId: string;
-    defaultLocationId: string;
-  }
+  input: ScimConnectionInput
 ): Promise<Result<{ changed: number }>> {
   await requireEntitlement(serviceRole, input.companyId, "SCIM");
 
-  const refusal = await checkDefaults(serviceRole, input.companyId, input);
+  const refusal = await missingDefault(db, input.companyId, input);
   if (refusal) return { data: null, error: refusal };
 
   const updated = await serviceRole
@@ -405,10 +372,8 @@ export async function regenerateScimToken(
 
 /**
  * Turn SCIM off: the token goes, so every `/scim/v2` request is refused. The
- * connection row, the SCIM people and groups and the group mappings stay, so
- * a new setup resumes them and the ids the IdP holds still work. Every Carbon
- * user, membership and employee stays as it is. Not gated, so a company that
- * lost the plan can still stop its IdP.
+ * connection, the SCIM people and groups and the mappings stay, so a new
+ * setup resumes them and the ids the IdP holds still work.
  */
 export async function turnOffScimConnection(
   serviceRole: SupabaseClient<Database>,
@@ -509,15 +474,9 @@ export async function saveScimGroupMappings(
       `.execute(trx);
     }
 
-    const stillMapped = await trx
-      .selectFrom("scimGroup")
-      .select("id")
-      .where("companyId", "=", input.companyId)
-      .where("employeeTypeId", "is not", null)
-      .limit(1)
-      .executeTakeFirst();
     const removedMembers =
-      plan.removedGroupIds.length > 0 && !stillMapped
+      plan.removedGroupIds.length > 0 &&
+      !(await hasMappedGroup(trx, input.companyId))
         ? await trx
             .selectFrom("scimGroupMember")
             .select("scimUserId")

@@ -50,12 +50,17 @@ export function compareGroupPrecedence(
 }
 
 /** The gap between two mapped groups' priorities after a save. */
-export const GROUP_PRIORITY_STEP = 10;
+const GROUP_PRIORITY_STEP = 10;
 
 export type GroupMappingChoice = {
   groupId: string;
   employeeTypeId: string | null;
 };
+
+type GroupMappingRow = Pick<
+  Tables["scimGroup"]["Row"],
+  "id" | "employeeTypeId" | "priority"
+>;
 
 /**
  * What a save of the group mappings writes. `submitted` is the list as the
@@ -65,20 +70,16 @@ export type GroupMappingChoice = {
  * are in `updates`. `removedGroupIds` are the groups that lose their mapping.
  */
 export function planGroupMappingSave(
-  current: { id: string; employeeTypeId: string | null; priority: number }[],
+  current: GroupMappingRow[],
   submitted: GroupMappingChoice[]
 ): {
   unknownGroupIds: string[];
-  updates: { id: string; employeeTypeId: string | null; priority: number }[];
+  updates: GroupMappingRow[];
   removedGroupIds: string[];
 } {
   const byId = new Map(current.map((group) => [group.id, group]));
   const unknownGroupIds: string[] = [];
-  const updates: {
-    id: string;
-    employeeTypeId: string | null;
-    priority: number;
-  }[] = [];
+  const updates: GroupMappingRow[] = [];
   const removedGroupIds: string[] = [];
   let position = 0;
 

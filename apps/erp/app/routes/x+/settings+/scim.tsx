@@ -28,8 +28,8 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "settings-scim");
 
-// Action-only route — the Provisioning section lives on the Security screen,
-// beside SAML SSO (the sibling `sso.tsx`). A direct GET lands there instead.
+// Action-only, like `sso.tsx`: the Provisioning section lives on the Security
+// screen, so a direct GET lands there.
 export async function loader() {
   throw redirect(path.to.security);
 }
@@ -44,50 +44,43 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = formData.get("intent");
   const serviceRole = getCarbonServiceRole();
 
+  // `token` is the raw token, returned once to the fetcher that made it.
+  const reply = async (
+    result: ReturnType<typeof success>,
+    body: { token?: string | null; success?: boolean } = {}
+  ) => data({ token: null, ...body }, await flash(request, result));
+  const refuse = (message: string, body?: { success: boolean }) =>
+    reply(error(null, message), body);
+
   try {
     if (intent === "create" || intent === "update") {
       const validation = await validator(scimConnectionValidator).validate(
         formData
       );
       if (validation.error) return validationError(validation.error);
+      const input = { ...validation.data, companyId, userId };
 
       if (intent === "create") {
         const created = await createScimConnection(
           serviceRole,
           getDatabaseClient(),
-          { ...validation.data, companyId, userId }
+          input
         );
-        if (created.error || !created.data) {
-          return data(
-            { token: null },
-            await flash(
-              request,
-              error(created.error, created.error ?? "Failed to set up SCIM")
-            )
-          );
+        if (!created.data) {
+          return refuse(created.error ?? "Failed to set up SCIM");
         }
-        // The raw token goes back once, to the fetcher that made it.
-        return data(
-          { token: created.data.token },
-          await flash(request, success("SCIM provisioning is set up"))
-        );
+        return reply(success("SCIM provisioning is set up"), {
+          token: created.data.token
+        });
       }
 
       const updated = await updateScimConnection(
         serviceRole,
         getDatabaseClient(),
-        { ...validation.data, companyId, userId }
+        input
       );
-      if (updated.error) {
-        return data(
-          { token: null },
-          await flash(request, error(updated.error, updated.error))
-        );
-      }
-      return data(
-        { token: null },
-        await flash(request, success("SCIM provisioning saved"))
-      );
+      if (updated.error) return refuse(updated.error);
+      return reply(success("SCIM provisioning saved"));
     }
 
     if (intent === "regenerate") {
@@ -95,24 +88,14 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         userId
       });
-      if (regenerated.error || !regenerated.data) {
-        return data(
-          { token: null },
-          await flash(
-            request,
-            error(
-              regenerated.error,
-              regenerated.error ?? "Failed to regenerate the SCIM token"
-            )
-          )
+      if (!regenerated.data) {
+        return refuse(
+          regenerated.error ?? "Failed to regenerate the SCIM token"
         );
       }
-      return data(
-        { token: regenerated.data.token },
-        await flash(
-          request,
-          success("New SCIM token made. The old token no longer works.")
-        )
+      return reply(
+        success("New SCIM token made. The old token no longer works."),
+        { token: regenerated.data.token }
       );
     }
 
@@ -127,16 +110,8 @@ export async function action({ request }: ActionFunctionArgs) {
         getDatabaseClient(),
         { ...validation.data, companyId, userId }
       );
-      if (saved.error) {
-        return data(
-          { token: null, success: false },
-          await flash(request, error(saved.error, saved.error))
-        );
-      }
-      return data(
-        { token: null, success: true },
-        await flash(request, success("Group mappings saved"))
-      );
+      if (saved.error) return refuse(saved.error, { success: false });
+      return reply(success("Group mappings saved"), { success: true });
     }
 
     if (intent === "delete") {
@@ -144,12 +119,7 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         userId
       });
-      if (turnedOff.error) {
-        return data(
-          { token: null },
-          await flash(request, error(turnedOff.error, turnedOff.error))
-        );
-      }
+      if (turnedOff.error) return refuse(turnedOff.error);
       throw redirect(
         path.to.security,
         await flash(request, success("SCIM provisioning is turned off"))
@@ -157,13 +127,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   } catch (err) {
     if (err instanceof EntitlementError) {
-      return data(
-        { token: null },
-        await flash(
-          request,
-          error(null, "SCIM provisioning requires the Business plan")
-        )
-      );
+      return refuse("SCIM provisioning requires the Business plan");
     }
     if (err instanceof Response) throw err;
     logger.error("SCIM settings action failed", {
@@ -171,14 +135,8 @@ export async function action({ request }: ActionFunctionArgs) {
       intent,
       error: err
     });
-    return data(
-      { token: null },
-      await flash(request, error(null, "Failed to save SCIM provisioning"))
-    );
+    return refuse("Failed to save SCIM provisioning");
   }
 
-  return data(
-    { token: null },
-    await flash(request, error(null, "Unknown intent"))
-  );
+  return refuse("Unknown intent");
 }
