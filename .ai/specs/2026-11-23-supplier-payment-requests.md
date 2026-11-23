@@ -98,6 +98,7 @@ Transitions:
 4. Sent → Paid: the `ramp-bill-payments` sync applies the payment.
 5. Planned, Ready or Sent → Cancelled: the user cancels it.
 6. Planned or Ready → Paid: the user records a payment by hand and links the request.
+7. Cancelled → Paid: a Ramp payment arrives for a request that Carbon sent before the user cancelled it. Carbon applies the payment. The Risks table describes this case.
 
 ### The automatic request
 
@@ -115,17 +116,19 @@ today's behavior, but with the open balance.
 For a blanket invoice, the user plans the requests while the invoice is a
 Draft. Then condition 3 is false, and Carbon makes no automatic request.
 
+Posting runs in one Kysely transaction. It posts the invoice, applies the prepayments, and creates the automatic request. Carbon sends the Ramp push only after the commit.
+
 ### The open-balance guard
 
-The sum of the amounts of all requests on an invoice that are not Paid or
-Cancelled must be at most the invoice's open balance. The invoice's open balance
-already excludes Paid requests, because their payments are settled. The service
-function locks the invoice row (`FOR UPDATE`) in a Kysely transaction before it
-checks the sum.
+One building block, `getRequestAllowance`, computes the amount that a request may still use. The create and update operations call it. The `getPaymentRequestsForDocument` operation returns the same figure, so the card and the form show the same limit.
 
-A purchase order has a similar guard. Add the deposit requests that are not
-Cancelled to the prepayments that have no request. The total must be at most the
-order total.
+| Target | Allowance |
+|--------|-----------|
+| Purchase invoice | The open balance, minus the amounts of its requests that are not Paid or Cancelled. The open balance already excludes Paid payments. |
+| Purchase order | The order total, minus the prepayments that have no request, minus the deposit requests that are not Paid or Cancelled. |
+
+The service function locks the invoice row, or the purchase order row, with
+`FOR UPDATE` in a Kysely transaction. It reads the allowance after the lock. Then it checks the new amount against it.
 
 ### Ramp: outbound
 
@@ -150,7 +153,16 @@ needs no Posted journal, and a pre-cutover invoice works.
 
 The `ramp-outbound-reconcile` step reads Ready requests that have no mapping. It
 uses the request status, not the 7-day posting-date window. So a request on an
-old invoice still goes out.
+old invoice still goes out. The operation also sends the outbound job after its commit, for speed. The reconcile sweep reads Ready requests anyway. So a missed event delays a request but does not lose it.
+
+The outbound job runs safely on retry. The Ramp API has no idempotency key on `POST /bills`, so the job does this:
+
+1. Read the Ready requests that have no mapping, in one query.
+2. For each request, call `GET /bills?remote_id=<request id>`. If a bill exists, skip step 3 and go to step 4.
+3. Create the draft bill. `remote_id` works only with `enable_accounting_sync: true`.
+4. In one transaction, save the mapping and set the request to Sent with `WHERE status = 'Ready'`.
+
+If the job stops after step 3 and before step 4, the next run finds the bill in step 2. It sets Sent and creates no second bill.
 
 ### Ramp: inbound
 
@@ -162,6 +174,7 @@ old invoice still goes out.
 3. If Ramp paid an amount that differs from the request, Carbon records the amount Ramp paid. Carbon also writes a Sync Activity `Warning`.
 4. Bills that Carbon pushed before this change keep the `bill` mapping to the invoice. Their payments sync as today.
 5. Ramp split payments and Ramp vendor credits stay refused. The Sync Activity message tells the user to add requests in Carbon instead.
+6. Apply each payment through `settlePaymentRequest`, inside one transaction. A repeated sync of the same Ramp payment finds the request already Paid and stops.
 
 ### The deposit is applied when the invoice arrives
 
@@ -172,6 +185,10 @@ automatic-request check runs on the balance that remains.
 <!-- UNVERIFIED: whether posting already applies PO prepayments. /plan confirms
 the current behavior in createPayment / the payment application flow and changes
 only what is missing. -->
+
+### One settlement path
+
+Two callers record that a payment settled a request: the `ramp-bill-payments` sync (transitions 4 and 7) and `linkPaymentRequestPayment` (transition 6). Both call one building block, `settlePaymentRequest(db, { requestId, paymentId })`. It sets `paymentId`, sets Paid, and changes the row only from an allowed status. The caller runs it inside its own transaction. No other code writes the Paid status.
 
 ### Design Decisions
 
@@ -199,6 +216,12 @@ only what is missing. -->
 | Heuristic 5, forms | `ValidatedForm` with `paymentRequestValidator` and a route action | Carbon rule. |
 | Heuristic 6, module layout | Invoicing module files. No new module. | A request is a part of AP. |
 | Heuristic 7, backward compatibility | Bills that are already mapped keep the `bill` path. The `purchaseInvoice` push stops for new invoices only. | No existing Ramp bill changes. |
+| Lifecycle | Service function with a conditional update. No database trigger. | The database holds shape rules only (CHECK constraints). Retry logic belongs in the service. |
+| Outbound trigger | No database event trigger. The sweep reads Ready requests. The operation also sends the job after commit. | A missed event delays a request but does not lose it. |
+| Retry, outbound | Look up by `remote_id` before create. Set Sent with a conditional update. | The Ramp API has no idempotency key on bill create. |
+| Retry, inbound | `settlePaymentRequest` changes only from an allowed status. | A repeated sync must not pay a request twice. |
+| Retry, create | `idempotencyKey` on `createPaymentRequest`. | A double submit must not add a second request. |
+| Allowance | One building block, `getRequestAllowance`. | Three callers need the same limit: the guard, the card and the form. |
 
 ## Data Model Changes
 
@@ -233,6 +256,7 @@ CREATE TABLE "paymentRequest" (
   "updatedBy" TEXT REFERENCES "user"("id"),
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "customFields" JSONB,
+  "idempotencyKey" TEXT,
   CONSTRAINT "paymentRequest_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "paymentRequest_companyId_fkey" FOREIGN KEY ("companyId")
     REFERENCES "company"("id") ON DELETE CASCADE,
@@ -241,7 +265,7 @@ CREATE TABLE "paymentRequest" (
   CONSTRAINT "paymentRequest_order_fkey" FOREIGN KEY ("purchaseOrderId", "companyId")
     REFERENCES "purchaseOrder"("id", "companyId") ON DELETE CASCADE,
   CONSTRAINT "paymentRequest_payment_fkey" FOREIGN KEY ("paymentId", "companyId")
-    REFERENCES "payment"("id", "companyId") ON DELETE SET NULL ("paymentId"),
+    REFERENCES "payment"("id", "companyId"),
   -- Exactly one target document.
   CONSTRAINT "paymentRequest_target_check"
     CHECK (num_nonnulls("purchaseInvoiceId", "purchaseOrderId") = 1),
@@ -261,14 +285,22 @@ CREATE UNIQUE INDEX "paymentRequest_order_number_key"
   ON "paymentRequest" ("purchaseOrderId", "requestNumber", "companyId")
   WHERE "purchaseOrderId" IS NOT NULL;
 CREATE INDEX "paymentRequest_status_idx" ON "paymentRequest" ("companyId", "status", "dueDate");
+CREATE UNIQUE INDEX "paymentRequest_idempotency_key"
+  ON "paymentRequest" ("companyId", "idempotencyKey")
+  WHERE "idempotencyKey" IS NOT NULL;
 
 ALTER TABLE "paymentRequest" ENABLE ROW LEVEL SECURITY;
 -- SELECT / INSERT / UPDATE / DELETE policies on invoicing permissions, same shape as "payment".
--- attach_event_trigger('paymentRequest', ...) so the spend sync receives INSERT and UPDATE.
+-- No event trigger. See "Ramp: outbound".
 ```
 
-A lifecycle trigger allows only the transitions in "Status lifecycle". It locks
-`amount`, `dueDate` and the target once the status is Sent, Paid or Cancelled.
+The database does not enforce the lifecycle with a trigger. The service layer does:
+
+1. The building block `transitionPaymentRequest` checks the move against "Status lifecycle".
+2. It updates the row with `WHERE id = ? AND status = <current status>`. A repeated or stale call then changes no row.
+3. Once the status is Sent, Paid or Cancelled, it refuses changes to `amount`, `dueDate` and the target.
+
+The CHECK constraints stay. They hold for every row, so they belong in the schema. The payment foreign key has no `ON DELETE` action. `SET NULL` would clear `paymentId` on a Paid row and break `paymentRequest_paid_check`.
 
 Other changes:
 
@@ -286,9 +318,10 @@ New operations in `apps/erp/app/modules/invoicing/invoicing.server.ts`, each `@m
 |-----------|------------|------|
 | `getPaymentRequests` | view invoicing | Lists requests. Filters: status, supplier, document, due date. |
 | `getPaymentRequestsForDocument` | view invoicing | Lists the requests of one invoice or one PO, with the open balance. |
-| `createPaymentRequest` | create invoicing | Adds a request. Runs the guard. Assigns the next `requestNumber`. |
+| `createPaymentRequest` | create invoicing | Adds a request. Runs the guard. Assigns the next `requestNumber`. Takes an `idempotencyKey`. A repeated call with the same key returns the first request. |
 | `updatePaymentRequest` | update invoicing | Edits a Planned or Ready request. Runs the guard. |
 | `markPaymentRequestReady` | update invoicing | Planned → Ready. Requires an amount and a due date. |
+| `markPaymentRequestPlanned` | update invoicing | Ready → Planned. Refused once Carbon sends the request. |
 | `cancelPaymentRequest` | update invoicing | Sets Cancelled. If the request was Sent, the result says to discard the draft in Ramp. |
 | `linkPaymentRequestPayment` | update invoicing | Links a payment that the user recorded by hand. Sets Paid. |
 
@@ -331,6 +364,12 @@ Archetype: record detail section plus a list page, the same as the sibling.
 4. **Invoicing → Payment requests.** A list page of all requests: Planned and Ready first, sorted by due date. Filters: status, supplier, due date. This page shows what the user must remember.
 5. **Add or edit form (modal).** Fields: amount, due date, description, PDF, status Planned or Ready. The form shows the remaining amount that the guard allows.
 
+Data and rules. The API decides every rule. The UI shows hints only.
+
+- Each card makes one call, to `getPaymentRequestsForDocument`. The card shows the balance and allowance that the call returns. It computes neither.
+- The list page asks only for the columns it shows, in cursor pages.
+- After a status change, the page refreshes its data through the action hook in `packages/query`. The UI uses no `useEffect`.
+
 All new strings use Lingui and go through `/translate`.
 
 ## Acceptance Criteria
@@ -347,6 +386,9 @@ All new strings use Lingui and go through `/translate`.
 - [ ] The user cancels a Sent request. The status is Cancelled, and the message tells the user to discard the draft in Ramp.
 - [ ] Ramp pays $19,000 on an $20,000 request. Carbon records $19,000, sets the request Paid, and writes a Sync Activity `Warning`.
 - [ ] The Invoicing → Payment requests page lists Planned and Ready requests by due date for one company only.
+- [ ] A Ramp payment arrives for a request the user cancelled after Carbon sent it. Carbon applies the payment, and the request shows Paid.
+- [ ] Two submits of the same create form add one request.
+- [ ] A retried outbound run, after a failed save of Sent, creates one Ramp bill.
 
 ## Risks
 
@@ -358,6 +400,8 @@ All new strings use Lingui and go through `/translate`.
 | Changing the push path breaks bills that are already in Ramp | High | Mapped invoices keep the `bill` path. A test covers an old mapped bill paying through. |
 | Posting now applies prepayments on its own | Med | Apply only prepayments of the invoice's own PO, up to the open balance. Cover it with a database test. |
 | Discarding a draft in Ramp's app is unverified | Low | Confirm in the sandbox. Document the exact steps in the cancel message. |
+| Ramp creates a bill, then Carbon fails to save Sent | Med | The retry looks up the bill by `remote_id` first (Ramp: outbound, step 2). |
+| A repeated payment sync pays a request twice | Med | `settlePaymentRequest` changes only from an allowed status. |
 
 ## Open Questions
 
@@ -375,3 +419,4 @@ All new strings use Lingui and go through `/translate`.
 ## Changelog
 
 - 2026-11-23: Created after the Q1 to Q7 interview with the user.
+- 2026-11-23: Reviewed against the backend and frontend conventions. Removed the database lifecycle trigger and the event trigger. Added retry safety, one allowance helper and one settlement path. Fixed the payment foreign key. Added the Cancelled → Paid transition and the Ready → Planned operation.
