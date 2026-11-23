@@ -235,7 +235,7 @@ export async function runMrp(
     };
 
     // Bulk-load item metadata
-    const [allItems, allReplenishments] = await Promise.all([
+    const [allItems, allReplenishments, openJobQuantities] = await Promise.all([
       db
         .selectFrom("item")
         .select(["id", "replenishmentSystem"])
@@ -245,8 +245,27 @@ export async function runMrp(
         .selectFrom("itemReplenishment")
         .select(["itemId", "leadTime"])
         .where("companyId", "=", companyId)
+        .execute(),
+      // A job is supply in good units (quantity less received), which
+      // openProductionOrders does not expose: its quantityToReceive counts
+      // the scrap allowance. One read of the view's open statuses.
+      db
+        .selectFrom("job")
+        .select(["id", "quantity", "quantityReceivedToInventory"])
+        .where("companyId", "=", companyId)
+        .where("status", "in", ["Planned", "Ready", "In Progress", "Paused"])
         .execute()
     ]);
+    const jobQuantityById = new Map(
+      openJobQuantities.map((job) => [
+        job.id,
+        {
+          quantity: Number(job.quantity) || 0,
+          quantityReceivedToInventory:
+            Number(job.quantityReceivedToInventory) || 0
+        }
+      ])
+    );
 
     // Supersession config per discontinued item (drives demand redirection).
     // Loaded via the supabase client (like the other demand inputs) so DATE
@@ -463,7 +482,10 @@ export async function runMrp(
       consumptionWindow,
       salesOrderLines: salesOrderLines.data ?? [],
       jobMaterialLines: jobMaterialLines.data ?? [],
-      productionLines: productionLines.data ?? [],
+      productionLines: (productionLines.data ?? []).map((line) => ({
+        ...line,
+        ...(line.id ? jobQuantityById.get(line.id) : undefined)
+      })),
       purchaseOrderLines: purchaseOrderLines.data ?? [],
       demandProjections: demandProjections.data ?? [],
       projectMaterialLines: projectMaterialLines.data ?? [],
@@ -506,6 +528,15 @@ export async function runMrp(
       // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
       // everything back on any throw.
       await db.transaction().execute(async (trx) => {
+        // Two runs for one company overlap (the cron and the route-triggered
+        // runs): both would delete, then both insert, and demandForecastSource
+        // has no natural key, so its rows would double. The second run waits
+        // here for the first to commit. A key apart from the planning-actions
+        // lock, so the two transactions never wait on each other.
+        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`mrp:${companyId}`}, 0))`.execute(
+          trx
+        );
+
         // Delete existing MRP forecasts
         await trx
           .deleteFrom("demandForecast")

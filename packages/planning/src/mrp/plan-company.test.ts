@@ -178,6 +178,92 @@ describe("planCompany", () => {
     expect(outputs.groupPegInputs).toEqual([]);
   });
 
+  // A small common-segment company: two bought items, no stock, no other
+  // demand or supply. Each test states only what differs.
+  const base = (
+    overrides: Partial<PlanCompanyInputs> = {}
+  ): PlanCompanyInputs => ({
+    ...loadFixture("plan-company.project.json"),
+    salesOrderLines: [],
+    projectMaterialLines: [],
+    stockedProjectIds: [],
+    items: [
+      { id: "item_old", replenishmentSystem: "Buy" },
+      { id: "item_new", replenishmentSystem: "Buy" }
+    ],
+    replenishments: [
+      { itemId: "item_old", leadTime: 7 },
+      { itemId: "item_new", leadTime: 7 }
+    ],
+    onHand: [],
+    ...overrides
+  });
+  const actuals = (outputs: PlanCompanyOutputs) =>
+    outputs.demandActualUpserts.map((row) => [
+      row.itemId,
+      row.sourceType,
+      row.periodId,
+      Number(row.actualQuantity)
+    ]);
+
+  it("moves a common project material's actual to the Prefer New successor", () => {
+    const outputs = planCompany(
+      base({
+        supersessions: [
+          {
+            itemId: "item_old",
+            supersessionMode: "Prefer New",
+            successorItemId: "item_new",
+            successorEffectivityDate: "2026-10-01",
+            conversionFactor: 1
+          }
+        ],
+        projectMaterialLines: [
+          {
+            id: "pem_common",
+            itemId: "item_old",
+            locationId: "loc_plant",
+            planningSegmentId: "",
+            quantity: 10,
+            requiredDate: "2026-10-14"
+          }
+        ]
+      })
+    );
+    expect(actuals(outputs)).toEqual([
+      ["item_new", "Project Material", "per_w2", 10]
+    ]);
+  });
+
+  // A job's scrap allowance is expected to be lost, so it is not supply.
+  it("books a job's good units as supply, not its scrap allowance", () => {
+    const outputs = planCompany(
+      base({
+        productionLines: [
+          {
+            id: "job_1",
+            itemId: "item_new",
+            locationId: "loc_plant",
+            dueDate: "2026-10-14",
+            deadlineType: "Hard Deadline",
+            // productionQuantity 105 (100 + 5 scrap), nothing received
+            quantityToReceive: 105,
+            quantity: 100,
+            quantityReceivedToInventory: 0
+          }
+        ]
+      })
+    );
+    expect(
+      outputs.supplyActualUpserts.map((row) => [
+        row.itemId,
+        row.sourceType,
+        row.periodId,
+        Number(row.actualQuantity)
+      ])
+    ).toEqual([["item_new", "Production Order", "per_w2", 100]]);
+  });
+
   it("writes one actual row per segment for the same item, location and week", () => {
     const fixture = loadFixture("plan-company.project.json");
     const jobMaterial = {
