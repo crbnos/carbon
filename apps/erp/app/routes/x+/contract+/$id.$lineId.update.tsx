@@ -103,6 +103,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     discountPercent: round(Number(line.discountPercent) * 100),
     discountEndsOn: line.discountEndsOn,
     taxPercent: round(Number(line.taxPercent) * 100),
+    taxCodeId: line.taxCodeId,
     startDate: line.startDate,
     endDate: line.endDate,
     goLiveDate: line.goLiveDate,
@@ -158,9 +159,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ error: upgrade }, { status: 400 });
   }
 
-  // Refuses a contract that is not a Draft and an item that is not a Service.
+  // Refuses a contract that is not a Draft and an item that is not a Service,
+  // and decides the tax (a non-taxable item carries none).
   const update = await upsertContractLine(client, {
     ...values,
+    taxCodeId: values.taxCodeId ?? null,
     customerContractId: id,
     id: lineId,
     updatedBy: userId

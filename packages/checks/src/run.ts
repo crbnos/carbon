@@ -54,8 +54,10 @@ import {
   NO_DUPLICATED_APP_FILE,
   SHARED_APP_DIRS
 } from "./conformance/no-duplicated-app-file";
+import { noForeignKeyWithoutOnDelete } from "./conformance/no-foreign-key-without-on-delete";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 import { noInlineSensorOptions } from "./conformance/no-inline-sensor-options";
+import { noInlineUniqueViolation } from "./conformance/no-inline-unique-violation";
 import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
@@ -131,6 +133,7 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noDerivedPercentColumn,
   noRequiredColumnWithoutDefault,
   noViewWithoutInvoker,
+  noForeignKeyWithoutOnDelete,
   journalStatusFilter
 ];
 
@@ -157,7 +160,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noUnmountingDialog,
   noPostgresChanges,
   journalStatusFilter,
-  mesUnitWriteResolvesUnit
+  mesUnitWriteResolvesUnit,
+  noInlineUniqueViolation
 ];
 
 /** Checks that run over git-tracked vitest files (apps, packages, scripts, docs). */

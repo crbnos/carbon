@@ -9,8 +9,12 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { suggestTaxCodes } from "~/modules/accounting/accounting.service";
 import { supplierTaxValidator } from "~/modules/purchasing/purchasing.models";
 import {
+  getSupplierLocation,
+  getSupplierLocations,
+  getSupplierPayment,
   getSupplierTax,
   updateSupplierTax
 } from "~/modules/purchasing/purchasing.service";
@@ -18,14 +22,17 @@ import { SupplierTaxForm } from "~/modules/purchasing/ui/Supplier";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "purchasing"
   });
 
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");
 
-  const supplierTax = await getSupplierTax(client, supplierId);
+  const [supplierTax, suggestedTaxCode] = await Promise.all([
+    getSupplierTax(client, supplierId),
+    getSuggestedTaxCode(client, companyId, supplierId)
+  ]);
 
   if (supplierTax.error) {
     throw redirect(
@@ -39,8 +46,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     supplierId,
-    supplierTax: supplierTax.data
+    supplierTax: supplierTax.data,
+    suggestedTaxCode
   };
+}
+
+/**
+ * The first active tax code that matches the supplier's address: the
+ * location the supplier invoices from, else its first location. A suggestion
+ * only — the user confirms it.
+ */
+async function getSuggestedTaxCode(
+  client: Parameters<typeof getSupplierTax>[0],
+  companyId: string,
+  supplierId: string
+) {
+  const payment = await getSupplierPayment(client, supplierId);
+  const invoiceLocationId = payment.data?.invoiceSupplierLocationId;
+  const address = invoiceLocationId
+    ? (await getSupplierLocation(client, invoiceLocationId)).data?.address
+    : ((await getSupplierLocations(client, supplierId)).data?.[0]?.address ??
+      null);
+  const countryCode = address?.country?.alpha2 ?? null;
+  if (!countryCode) return null;
+
+  const suggestions = await suggestTaxCodes(client, companyId, {
+    countryCode,
+    state: address?.stateProvince || null
+  });
+  return suggestions.data?.[0] ?? null;
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -86,7 +120,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function SupplierTaxRoute() {
-  const { supplierId, supplierTax } = useLoaderData<typeof loader>();
+  const { supplierId, supplierTax, suggestedTaxCode } =
+    useLoaderData<typeof loader>();
   const initialValues = {
     supplierId: supplierTax?.supplierId ?? supplierId,
     taxId: supplierTax?.taxId ?? "",
@@ -97,8 +132,14 @@ export default function SupplierTaxRoute() {
     taxExemptionCertificateNumber:
       supplierTax?.taxExemptionCertificateNumber ?? "",
     taxExemptionCertificatePath:
-      supplierTax?.taxExemptionCertificatePath ?? null
+      supplierTax?.taxExemptionCertificatePath ?? null,
+    taxCodeId: supplierTax?.taxCodeId ?? undefined
   };
 
-  return <SupplierTaxForm initialValues={initialValues} />;
+  return (
+    <SupplierTaxForm
+      initialValues={initialValues}
+      suggestedTaxCode={suggestedTaxCode}
+    />
+  );
 }

@@ -63,6 +63,21 @@ On a unit treated as a sale, rent and the purchase option credit net investment 
 
 <Term id="posting">Posting</Term> creates general-ledger entries: receivables against sales for a sales invoice, or payables against inventory or WIP for a purchase invoice. Before the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), those entries are Provisional and count in no balance. Posting also updates invoiced quantities on order lines and records the posting date.
 
+### Tax
+
+Each line carries a **"Tax Code"** and a **"Tax Percent"**. A new line takes them from the customer or supplier ([which code a line takes](/docs/reference/accounting#which-code-a-line-takes)), and an invoice made from an order copies the order line's code at its rate on the invoice date.
+
+- A **sales invoice** credits Tax Received once per <Term>tax component</Term>. Header shipping is taxed only when a line's code has **"Taxes Shipping"** on: that line's share of the shipping joins its tax base.
+- A **purchase invoice** posts the recoverable share of each component's tax to Tax Paid. The rest stays in the cost of the line. See [recoverable purchase tax](/docs/reference/accounting#recoverable-purchase-tax).
+
+On a draft sales invoice, the **"Recalculate taxes"** button beside **"Ship To"** works out each line's code and rate again from the saved ship-to, the customer and the item. Use it after you change the ship-to or the customer's tax code. It replaces the code and rate on every line that resolves to a code, including a code you changed or cleared on the line yourself. A line keeps a percent you typed only when no code applies. Rental and contract lines keep the tax of their agreement or contract.
+
+Posting also writes the [tax ledger](/docs/reference/accounting#the-tax-ledger), and voiding writes its negated rows.
+
+The sales invoice PDF prints the tax by component when there are two or more entries: one row per component and rate, with the amount it was charged on. With one entry it prints a single taxes row, as before. A posted invoice prints the rows its posting wrote to the tax ledger. A draft splits each line's tax across its code's components on the issue date. Every user who can open the invoice, and the emailed copy, print the same tax.
+
+Under the totals, the invoice prints the **"Invoice Message"** of each code on it. In **"Invoice Details"** it prints "Seller Tax ID": your [tax registration](/docs/reference/accounting#tax-codes) for the company's country in force on the issue date (a national one first, else one for the company's own state). With no such registration, it prints the company's tax ID, but only once the company has an active tax code. A registration for another state never prints. Sales order and quote PDFs print the same tax summary, without the message or the seller tax ID.
+
 <Callout type="warn">
 Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
 </Callout>

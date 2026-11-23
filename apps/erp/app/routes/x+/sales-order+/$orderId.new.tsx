@@ -28,6 +28,11 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.sales.createSalesOrderLine({
     ...input.data,
+    // The form posts the field: an empty one is a cleared code. A caller
+    // that does not takes the order's default.
+    taxCodeId: formData.has("taxCodeId")
+      ? (input.data.taxCodeId ?? "")
+      : undefined,
     // The URL order, not the form's copy.
     salesOrderId: orderId,
     customFields: setCustomFields(formData),
@@ -46,6 +51,7 @@ export default function NewSalesOrderLineRoute() {
   const salesOrderData = useRouteData<{
     salesOrder: SalesOrder;
     customer: Customer;
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
   }>(path.to.salesOrder(orderId));
 
   const initialValues = {
@@ -61,7 +67,11 @@ export default function NewSalesOrderLineRoute() {
     nonTaxableAddOnCost: 0,
     locationId:
       salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
-    taxPercent: salesOrderData?.customer?.taxPercent ?? 0,
+    taxPercent:
+      salesOrderData?.resolvedTax?.taxPercent ??
+      salesOrderData?.customer?.taxPercent ??
+      0,
+    taxCodeId: salesOrderData?.resolvedTax?.taxCodeId ?? undefined,
     promisedDate:
       salesOrderData?.salesOrder?.receiptPromisedDate ??
       salesOrderData?.salesOrder?.receiptRequestedDate ??

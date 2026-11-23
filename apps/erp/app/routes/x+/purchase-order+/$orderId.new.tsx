@@ -8,9 +8,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import { type ActionFunctionArgs, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import {
   chargeNumberError,
@@ -105,6 +106,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = await api.purchasing.createPurchaseOrderLine({
     ...d,
     purchaseOrderId: orderId,
+    // The form posts the field: an empty one is a cleared code. A request
+    // that does not takes the supplier's code.
+    taxCodeId: formData.has("taxCodeId") ? (d.taxCodeId ?? "") : undefined,
     customFields: setCustomFields(formData)
   });
 
@@ -120,10 +124,10 @@ export default function NewPurchaseOrderLineRoute() {
   const { orderId } = useParams();
 
   if (!orderId) throw new Error("Could not find purchase order id");
-
-  const routeData = useRouteData<{ purchaseOrder: PurchaseOrder }>(
-    path.to.purchaseOrder(orderId)
-  );
+  const routeData = useRouteData<{
+    purchaseOrder: PurchaseOrder;
+    resolvedTax: LineTaxDecision | null;
+  }>(path.to.purchaseOrder(orderId));
 
   const initialValues = {
     conversionFactor: 1,
@@ -143,7 +147,9 @@ export default function NewPurchaseOrderLineRoute() {
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
     supplierUnitPrice: 0,
-    taxPercent: 0
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: routeData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(routeData?.resolvedTax?.taxPercent ?? 0)
   };
 
   return <PurchaseOrderLineForm initialValues={initialValues} />;

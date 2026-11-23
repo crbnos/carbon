@@ -16,7 +16,7 @@ Edited under **Settings → Company**:
   <Field name="addressLine1 / addressLine2 / city / stateProvince / postalCode / countryCode" required>The registered address. `addressLine1`, `city`, `postalCode`, and `countryCode` are required.</Field>
   <Field name="baseCurrencyCode" type="text" required>The currency every posted amount is expressed in. See [base currency](#base-currency).</Field>
   <Field name="phone / fax / email / website">Contact details.</Field>
-  <Field name="taxId / vatNumber / eori">Tax registration identifiers printed on documents.</Field>
+  <Field name="taxId / vatNumber / eori">Tax registration identifiers printed on documents. The sales invoice prints "Seller Tax ID" from your [tax registration](/docs/reference/accounting#tax-codes) for the company's country, and falls back to `taxId`.</Field>
   <Field name="logoLight / logoDark / logoLightIcon / logoDarkIcon / logoWatermark" type="text">The five logo slots, edited under **Settings → Logos**: light/dark pairs for UI backgrounds, compact icon variants, and a watermark printed behind documents.</Field>
   <Field name="parentCompanyId" type="text">Set when this company is a subsidiary of another.</Field>
   <Field name="isEliminationEntity" type="boolean">Marks a consolidation-only company that nets intercompany pairs out of consolidated reports.</Field>
@@ -54,6 +54,7 @@ A user can belong to multiple companies and switch between them with the company
   <Field name="forecastConsumptionBackwardPeriods / forecastConsumptionForwardPeriods" type="number">How many weeks before and after its own week a real order reaches to consume forecast (defaults 4 and 1). Edited from **Settings → Planning**. See [forecast consumption](/docs/reference/forecast).</Field>
   <Field name="updateLeadTimesOnReceipt" type="boolean">Whether receiving recalculates supplier lead times.</Field>
   <Field name="purchasePriceUpdateTiming" type="enum">When purchase prices refresh: `Purchase Invoice Post` or `Purchase Order Finalize`.</Field>
+  <Field name="supplierPartNumberDisplay" type="enum">Which part numbers a new purchase order line prints, unless its supplier sets its own: `Ours First`, `Theirs First` (the default), `Theirs Only` or `Ours Only`. Edited from **Settings → Purchasing**. See [part numbers on documents](/docs/reference/suppliers-and-customers#part-numbers-on-documents).</Field>
   <Field name="maintenanceGenerateInAdvance / maintenanceAdvanceDays" type="boolean / number">Whether preventive maintenance is generated ahead of time, and by how many days (1–90).</Field>
   <Field name="samplingStandard" type="enum">The default inspection sampling standard.</Field>
   <Field name="enforceInspectionFourEyes" type="boolean">Requires a second person to sign off inspections.</Field>

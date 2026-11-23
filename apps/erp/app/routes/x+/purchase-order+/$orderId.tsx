@@ -19,6 +19,7 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import {
+  datetime,
   getPreferenceHeaders,
   isOwnSignaturePath,
   redirect
@@ -32,7 +33,10 @@ import type {
 } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
+import {
+  getCurrencyByCode,
+  resolveLineTaxes
+} from "~/modules/accounting/accounting.service";
 import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getDefaultAttachmentsForPO,
@@ -168,6 +172,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+  // The tax a new line takes: the supplier's code (or bare percent), on the
+  // order's date.
+  const taxDate =
+    purchaseOrder.data?.orderDate ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
   const db = getDatabaseClient();
   const [
     supplier,
@@ -178,7 +187,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     currency,
     isAdmin,
     forceDeleteRequest,
-    forceDeleteReceipts
+    forceDeleteReceipts,
+    resolvedTax
   ] = await Promise.all([
     purchaseOrder.data?.supplierId
       ? getSupplier(client, purchaseOrder.data.supplierId)
@@ -218,6 +228,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getPurchaseOrderForceDeleteReceipts(db, {
       companyId,
       purchaseOrderId: orderId
+    }),
+    resolveLineTaxes(client, companyId, {
+      source: "purchase",
+      supplierId: purchaseOrder.data?.supplierId,
+      date: taxDate
     })
   ]);
 
@@ -351,7 +366,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (receipt) => receipt.readableId
     ),
     defaultCc,
-    resolvedAttachments
+    resolvedAttachments,
+    resolvedTax: resolvedTax.data,
+    taxDate
   };
 }
 

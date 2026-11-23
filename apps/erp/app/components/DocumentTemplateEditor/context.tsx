@@ -19,6 +19,12 @@ import {
   validateDocumentEdit,
   validateTemplateText
 } from "@carbon/documents/template";
+import {
+  isPartNumberDisplay,
+  type PartNumberDisplay,
+  type PartNumberDisplaySummary,
+  type PartNumberParty
+} from "@carbon/documents/utils";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
@@ -97,6 +103,15 @@ export interface DocumentMode {
   hasNotes: boolean;
   /** The company template, for "Reset to template". */
   template: { blocks: DocumentBlock[]; settings: DocumentSettings };
+  /**
+   * Whose part number "theirs" is on this document's lines; null when the
+   * document has no part number choice.
+   */
+  partNumberParty: PartNumberParty | null;
+  /** The lines' choice cannot change in the record's status. */
+  partNumbersLocked?: boolean;
+  /** The item lines a pick sets. */
+  partNumberLineCount?: number;
 }
 
 /** The persisted shape — what `isDirty` compares and what `save` writes. */
@@ -114,6 +129,11 @@ interface EditorSnapshot {
   headerConfig: HeaderOptions;
   /** Document mode only: the record's notes, edited in the Notes block. */
   notes: JSONContent | null;
+  /**
+   * Document mode only: the lines' display choice, "mixed" when they differ,
+   * null when every line is legacy. A pick sets every line on save.
+   */
+  partNumberDisplay: PartNumberDisplaySummary;
 }
 
 interface EditorState extends EditorSnapshot {
@@ -168,6 +188,7 @@ interface EditorState extends EditorSnapshot {
   ) => void;
   setDocumentValues: (values: CollectedValues | null) => void;
   setNotes: (notes: JSONContent | null) => void;
+  setPartNumberDisplay: (value: PartNumberDisplay) => void;
   /** Document mode: drop this document's edits, back to the company template. */
   resetToTemplate: () => void;
   addBlock: (type: AddableBlockType) => void;
@@ -210,8 +231,13 @@ export interface DocumentTemplateProps {
   /** Edit one record's document instead of the company template. */
   document?: DocumentMode;
   initialNotes?: JSONContent | null;
+  initialPartNumberDisplay?: PartNumberDisplaySummary;
   /** Called after a successful save of one document, saying what it changed. */
-  onSaved?: (saved: { notesChanged: boolean; stillEditing: boolean }) => void;
+  onSaved?: (saved: {
+    notesChanged: boolean;
+    partNumbersChanged: boolean;
+    stillEditing: boolean;
+  }) => void;
 }
 
 function snapshot(s: EditorSnapshot): EditorSnapshot {
@@ -222,7 +248,8 @@ function snapshot(s: EditorSnapshot): EditorSnapshot {
     headerSectionId: s.headerSectionId,
     footerSectionId: s.footerSectionId,
     headerConfig: s.headerConfig,
-    notes: s.notes
+    notes: s.notes,
+    partNumberDisplay: s.partNumberDisplay
   };
 }
 
@@ -269,6 +296,20 @@ export function changedNotes(
   const notes = JSON.stringify(s.notes);
   return s.document?.hasNotes && notes !== JSON.stringify(s.baseline.notes)
     ? notes
+    : undefined;
+}
+
+/**
+ * The display choice to post, only when the user picked one: an untouched
+ * select must not overwrite the lines' own choices.
+ */
+export function changedPartNumberDisplay(
+  s: Pick<EditorState, "document" | "partNumberDisplay" | "baseline">
+): PartNumberDisplay | undefined {
+  return s.document?.partNumberParty &&
+    isPartNumberDisplay(s.partNumberDisplay) &&
+    s.partNumberDisplay !== s.baseline.partNumberDisplay
+    ? s.partNumberDisplay
     : undefined;
 }
 
@@ -344,7 +385,8 @@ function createEditorStore(props: DocumentTemplateProps) {
       props.sections,
       props.initialHeaderSectionId
     ),
-    notes: props.initialNotes ?? null
+    notes: props.initialNotes ?? null,
+    partNumberDisplay: props.initialPartNumberDisplay ?? null
   };
 
   return createStore<EditorState>((set, get) => ({
@@ -369,6 +411,7 @@ function createEditorStore(props: DocumentTemplateProps) {
     refreshPreview: () => set((s) => ({ previewNonce: s.previewNonce + 1 })),
     setLabelSizeId: (id) => set({ labelSizeId: id }),
     setNotes: (notes) => set({ notes }),
+    setPartNumberDisplay: (partNumberDisplay) => set({ partNumberDisplay }),
     resetToTemplate: () =>
       set((s) =>
         s.document
@@ -543,11 +586,16 @@ export function DocumentTemplateProvider({
       const notesChanged =
         changedNotes(sent ? { ...state, notes: sent.notes } : state) !==
         undefined;
+      const partNumbersChanged =
+        changedPartNumberDisplay(
+          sent ? { ...state, partNumberDisplay: sent.partNumberDisplay } : state
+        ) !== undefined;
       if (sent) state.rebaseline(sent);
       if (store.getState().document) {
         toast.success(t`Saved this document`);
         props.onSaved?.({
           notesChanged,
+          partNumbersChanged,
           // Words typed while it saved stay open, to be saved or cancelled.
           stillEditing: selectIsDirty(store.getState())
         });
@@ -581,6 +629,10 @@ export function DocumentTemplateProvider({
       formData.append("settings", JSON.stringify(s.settings));
       const notes = changedNotes(s);
       if (notes !== undefined) formData.append("notes", notes);
+      const partNumberDisplay = changedPartNumberDisplay(s);
+      if (partNumberDisplay !== undefined) {
+        formData.append("partNumberDisplay", partNumberDisplay);
+      }
       fetcher.submit(formData, { method: "post", action: props.actionPath });
       return;
     }
