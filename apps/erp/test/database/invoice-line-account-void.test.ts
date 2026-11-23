@@ -246,3 +246,36 @@ for (const { side, from, control, amount } of SIDES) {
     }
   );
 }
+
+/** Journals holding a line of the invoice: its posting, and one per void. */
+async function journalCount(f: Fixture, invoiceId: string) {
+  const { count } = await f.db
+    .selectFrom("journalLine")
+    .select((eb) => eb.fn.count<string>("journalId").distinct().as("count"))
+    .where("companyId", "=", f.companyId)
+    .where("documentType", "=", "Invoice")
+    .where("documentId", "=", invoiceId)
+    .executeTakeFirstOrThrow();
+  return Number(count);
+}
+
+// packages/models/src/invoice-void.ts finds the double void: a retry, a
+// second tab or an API call reverses the posting a second time.
+for (const { side, from, control } of SIDES) {
+  databaseTest(`a second void of a ${side} invoice is refused`, async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const { invoiceId } = await postedInvoice(f, side);
+      expect((await voidInvoice(f, side, invoiceId)).error).toBeNull();
+
+      expect((await voidInvoice(f, side, invoiceId)).error).not.toBeNull();
+      expect(await journalCount(f, invoiceId)).toBe(2);
+      expect(await netByAccount(f, invoiceId)).toEqual({
+        [f.account(from)]: 0,
+        [f.account(control)]: 0
+      });
+    } finally {
+      await f.cleanup();
+    }
+  });
+}

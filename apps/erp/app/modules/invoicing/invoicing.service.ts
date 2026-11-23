@@ -11069,13 +11069,16 @@ export async function postSalesInvoice(
           // Locked before the journal is read, as a line account change locks
           // it before it adds lines: those are reversed with the rest, never
           // left on a voided invoice.
-          await trx
+          const locked = await trx
             .selectFrom("salesInvoice")
-            .select("id")
+            .select("status")
             .where("id", "=", invoiceId)
             .where("companyId", "=", companyId)
             .forUpdate()
-            .execute();
+            .executeTakeFirst();
+          if (locked?.status === "Voided") {
+            throw new InvalidInputError("Sales invoice is already voided");
+          }
           const journalEntries = await documentJournalLines(trx, companyId, {
             documentId: invoiceId,
             documentType: "Invoice"
@@ -17307,13 +17310,16 @@ export async function postPurchaseInvoice(
         // Locked before the journal is read, as a line account change locks
         // it before it adds lines: those are reversed with the rest, never
         // left on a voided invoice.
-        await trx
+        const locked = await trx
           .selectFrom("purchaseInvoice")
-          .select("id")
+          .select("status")
           .where("id", "=", invoiceId)
           .where("companyId", "=", companyId)
           .forUpdate()
-          .execute();
+          .executeTakeFirst();
+        if (locked?.status === "Voided") {
+          throw new InvalidInputError("Purchase invoice is already voided");
+        }
         const originalJournalLines = await documentJournalLines(
           trx,
           companyId,
