@@ -6,39 +6,13 @@ import type { ConformanceCheck, Violation } from "../check";
 import { maskCommentsAndStrings } from "./no-default-on-effects";
 
 /**
- * supabase-js never throws: every query resolves to `{ data, error, count }`,
- * and a failed one has `data: null`. Code that reads `data` without `error`
- * turns a failed read into "none", and "none" usually means "allowed" or
- * "nothing to do". The consolidated ledger drill-down read every company when
- * its company-group read failed (cfdc4f9299), a price-list export ended early
- * instead of failing (b399972472), an approval check read a failed query as
- * "nothing pending" (c0b85077ee), and an RFQ-line mapping upsert whose result
- * was never bound failed on every call, silently (22c9b98508).
- *
- * Four shapes are failed, each on an awaited supabase-js call — a chain with a
- * `.from(…)`, `.rpc(…)` or `.functions.invoke(…)` member call (so
- * `.storage.from(…)` too), whose head is not a PascalCase global like
- * `Array.from`, and which has no Kysely `.execute…()`/`.compile()`:
- *
- *  1. an object destructure that binds `data` or `count` but not `error`
- *     (a `...rest` element counts as binding it);
- *  2. an awaited `.from(…)` write (`insert`/`update`/`upsert`/`delete`) used
- *     as a bare statement, so its result goes nowhere;
- *  3. `(await …).data` / `.count` read straight off the call;
- *  4. `const r = await …` whose block reads `r.data`/`r.count` but never
- *     `r.error`, and never hands `r` itself on (returned, passed, spread) —
- *     whoever receives it may check the error.
- *
- * A bound `error` that is never read is left to Biome (`noUnusedVariables`
- * fails it); what a read DOES with it (log and carry on) is beyond a text
- * check. A builder kept in a variable (`const q = client.from(…); await q`)
- * and `Promise.all` results are not followed.
+ * supabase-js never throws: a failed query resolves to `data: null`, so
+ * reading `data` without `error` turns a failure into "none" (cfdc4f9299).
  */
 
 const MESSAGE =
   "Check `error` before reading `data`: a failed supabase-js read must not mean 'none'. Bind `error` and `if (error) return/throw` it — and bind a write's result and check it.";
 
-/** Member calls that make a chain a supabase-js request. */
 const QUERY_CALLS = new Set(["from", "rpc"]);
 const WRITE_CALLS = new Set(["insert", "update", "upsert", "delete"]);
 /** Kysely builders also have `.from(` (`updateTable(…).from(…)`). */
@@ -60,7 +34,7 @@ function skipWsBack(text: string, i: number): number {
   return i;
 }
 
-/** Index of the bracket closing the one at `open` (strings already masked). */
+/** Assumes comments and strings are masked. */
 function matchForward(text: string, open: number): number {
   const opener = text[open] as string;
   const closer = { "(": ")", "[": "]", "{": "}", "<": ">" }[opener];
@@ -75,7 +49,6 @@ function matchForward(text: string, open: number): number {
   return -1;
 }
 
-/** Index of the bracket opening the one that closes at `close`. */
 function matchBack(text: string, close: number): number {
   const closer = text[close] as string;
   const opener = { ")": "(", "]": "[", "}": "{" }[closer];
@@ -162,7 +135,6 @@ function parseChain(text: string, start: number): Chain | null {
   }
 }
 
-/** Whether the chain is a supabase-js request, and whether it is a `.from` write. */
 function classify(chain: Chain): { query: boolean; write: boolean } {
   const none = { query: false, write: false };
   if (/^[A-Z]/.test(chain.head)) return none;
@@ -184,7 +156,7 @@ function classify(chain: Chain): { query: boolean; write: boolean } {
   return { query, write };
 }
 
-/** Top-level property keys of the object pattern `{…}` spanning open..close. */
+/** Top-level keys only; a rest element yields `...`. */
 function patternKeys(text: string, open: number, close: number): string[] {
   const keys: string[] = [];
   let depth = 0;
@@ -207,10 +179,6 @@ function patternKeys(text: string, open: number, close: number): string[] {
   return keys;
 }
 
-/**
- * The object pattern a `= await` at `eq` assigns to (`const { … } =`,
- * `({ … } =`), as its open/close indexes, or null for any other target.
- */
 function destructureBefore(
   text: string,
   eq: number
@@ -225,7 +193,6 @@ function destructureBefore(
   return ["const", "let", "var"].includes(keyword) ? { open, close } : null;
 }
 
-/** `const name =` / `let name =` before the `=` at `eq`. */
 function nameBefore(
   text: string,
   eq: number
@@ -240,18 +207,13 @@ function nameBefore(
   return { name: text.slice(start, end + 1), start: keyStart };
 }
 
-/** Start of the identifier whose last character is at `end`. */
 function wordStart(text: string, end: number): number {
   let start = end;
   while (start > 0 && IDENT_PART.test(text[start - 1] as string)) start--;
   return start;
 }
 
-/**
- * Whether the rest of the enclosing block reads `name.data`/`name.count` while
- * never touching `name.error` nor handing `name` itself on (returned, passed,
- * spread, reassigned) — any of which may check the error elsewhere.
- */
+/** False once `name` is handed on (returned, passed, spread, reassigned): the receiver may check the error. */
 function readsDataNotError(
   text: string,
   name: string,
@@ -288,7 +250,6 @@ function readsDataNotError(
   return readsResult;
 }
 
-/** Whether the `await` at `at` begins a statement. */
 function startsStatement(text: string, at: number): boolean {
   const prev = skipWsBack(text, at - 1);
   if (prev < 0) return true;
@@ -303,7 +264,6 @@ function startsStatement(text: string, at: number): boolean {
   return false;
 }
 
-/** Whether the statement ends where the chain does (`;`, `}`, or a new line). */
 function endsStatement(text: string, end: number): boolean {
   const next = skipWs(text, end);
   if (next >= text.length) return true;
@@ -321,7 +281,6 @@ function snippetOf(contents: string, from: number, to: number): string {
   return text.length <= 120 ? text : `${text.slice(0, 117)}...`;
 }
 
-/** End of the chain's first `.from(…)` / `.rpc(…)` / `.invoke(…)` call. */
 function requestEnd(text: string, from: number): number {
   const re = /\.\s*(?:from|rpc|invoke)\s*\(/g;
   re.lastIndex = from;

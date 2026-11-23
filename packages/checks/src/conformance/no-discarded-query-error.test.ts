@@ -11,7 +11,6 @@ const scan = (contents: string) =>
     .map(({ line, snippet }) => ({ line, snippet }));
 
 describe("noDiscardedQueryError", () => {
-  // cfdc4f9299^ accounting.service.ts — a failed group read scoped the ledger to every company.
   it("flags a data-only destructure of a read (cfdc4f9299 parent)", () => {
     expect(
       scan(`
@@ -48,7 +47,6 @@ describe("noDiscardedQueryError", () => {
     ).toEqual([]);
   });
 
-  // b399972472^ sales.service.ts — a failed read ended the price-list export early.
   it("flags a bare { data } destructure (b399972472 parent)", () => {
     expect(
       scan(`
@@ -77,7 +75,6 @@ describe("noDiscardedQueryError", () => {
     ).toEqual([]);
   });
 
-  // 22c9b98508^ sales-rfq.$rfqId.map-lines.ts — both writes' results were dropped.
   it("flags awaited writes used as bare statements (22c9b98508 parent)", () => {
     expect(
       scan(`
@@ -137,7 +134,6 @@ describe("noDiscardedQueryError", () => {
     ).toEqual([]);
   });
 
-  // c0b85077ee^ approvals/service.ts — a failed read meant "nothing pending".
   it("flags a bound result read for data with its error never read (c0b85077ee parent)", () => {
     expect(
       scan(`
