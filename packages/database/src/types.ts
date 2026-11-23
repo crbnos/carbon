@@ -403,7 +403,6 @@ export type Database = {
           prepaymentAccount: string
           projectExpenseAccount: string | null
           projectWorkInProgressAccount: string | null
-          purchaseTaxPayableAccount: string
           purchaseVarianceAccount: string
           rawMaterialsAccount: string
           realizedExchangeGainAccount: string
@@ -419,7 +418,6 @@ export type Database = {
           salesDiscountAccount: string
           salesReturnsAccount: string | null
           salesShippingRevenueAccount: string | null
-          salesTaxPayableAccount: string
           scrapAccount: string | null
           serviceChargeAccount: string
           serviceRevenueAccount: string | null
@@ -427,6 +425,8 @@ export type Database = {
           supplierPaymentDiscountAccount: string
           supplierPrepaymentAccount: string
           supplierWriteOffAccount: string
+          taxPaidAccount: string
+          taxReceivedAccount: string
           updatedBy: string | null
           variableLeaseExpenseAccount: string | null
           warrantyExpenseAccount: string | null
@@ -481,7 +481,6 @@ export type Database = {
           prepaymentAccount: string
           projectExpenseAccount?: string | null
           projectWorkInProgressAccount?: string | null
-          purchaseTaxPayableAccount: string
           purchaseVarianceAccount: string
           rawMaterialsAccount: string
           realizedExchangeGainAccount: string
@@ -497,7 +496,6 @@ export type Database = {
           salesDiscountAccount: string
           salesReturnsAccount?: string | null
           salesShippingRevenueAccount?: string | null
-          salesTaxPayableAccount: string
           scrapAccount?: string | null
           serviceChargeAccount: string
           serviceRevenueAccount?: string | null
@@ -505,6 +503,8 @@ export type Database = {
           supplierPaymentDiscountAccount: string
           supplierPrepaymentAccount: string
           supplierWriteOffAccount: string
+          taxPaidAccount: string
+          taxReceivedAccount: string
           updatedBy?: string | null
           variableLeaseExpenseAccount?: string | null
           warrantyExpenseAccount?: string | null
@@ -559,7 +559,6 @@ export type Database = {
           prepaymentAccount?: string
           projectExpenseAccount?: string | null
           projectWorkInProgressAccount?: string | null
-          purchaseTaxPayableAccount?: string
           purchaseVarianceAccount?: string
           rawMaterialsAccount?: string
           realizedExchangeGainAccount?: string
@@ -575,7 +574,6 @@ export type Database = {
           salesDiscountAccount?: string
           salesReturnsAccount?: string | null
           salesShippingRevenueAccount?: string | null
-          salesTaxPayableAccount?: string
           scrapAccount?: string | null
           serviceChargeAccount?: string
           serviceRevenueAccount?: string | null
@@ -583,6 +581,8 @@ export type Database = {
           supplierPaymentDiscountAccount?: string
           supplierPrepaymentAccount?: string
           supplierWriteOffAccount?: string
+          taxPaidAccount?: string
+          taxReceivedAccount?: string
           updatedBy?: string | null
           variableLeaseExpenseAccount?: string | null
           warrantyExpenseAccount?: string | null
@@ -1262,20 +1262,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "accountDefault_purchaseTaxPayableAccount_fkey"
-            columns: ["purchaseTaxPayableAccount"]
-            isOneToOne: false
-            referencedRelation: "account"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "accountDefault_purchaseTaxPayableAccount_fkey"
-            columns: ["purchaseTaxPayableAccount"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "accountDefault_purchaseVarianceAccount_fkey"
             columns: ["purchaseVarianceAccount"]
             isOneToOne: false
@@ -1486,20 +1472,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "accountDefault_salesTaxPayableAccount_fkey"
-            columns: ["salesTaxPayableAccount"]
-            isOneToOne: false
-            referencedRelation: "account"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "accountDefault_salesTaxPayableAccount_fkey"
-            columns: ["salesTaxPayableAccount"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "accountDefault_scrapAccount_fkey"
             columns: ["scrapAccount"]
             isOneToOne: false
@@ -1593,6 +1565,34 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_supplierWriteOffAccount_fkey"
             columns: ["supplierWriteOffAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_taxPaidAccount_fkey"
+            columns: ["taxPaidAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_taxPaidAccount_fkey"
+            columns: ["taxPaidAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_taxReceivedAccount_fkey"
+            columns: ["taxReceivedAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_taxReceivedAccount_fkey"
+            columns: ["taxReceivedAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -13559,6 +13559,7 @@ export type Database = {
           salesOrderLineId: string | null
           sortOrder: number | null
           startDate: string
+          taxCodeId: string | null
           taxPercent: number
           thresholdNoticeFundedCost: number | null
           updatedAt: string | null
@@ -13602,6 +13603,7 @@ export type Database = {
           salesOrderLineId?: string | null
           sortOrder?: number | null
           startDate: string
+          taxCodeId?: string | null
           taxPercent?: number
           thresholdNoticeFundedCost?: number | null
           updatedAt?: string | null
@@ -13645,6 +13647,7 @@ export type Database = {
           salesOrderLineId?: string | null
           sortOrder?: number | null
           startDate?: string
+          taxCodeId?: string | null
           taxPercent?: number
           thresholdNoticeFundedCost?: number | null
           updatedAt?: string | null
@@ -13825,6 +13828,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrderLines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "customerContractLine_updatedBy_fkey"
@@ -14789,6 +14799,7 @@ export type Database = {
           id: string
           name: string
           tags: string[] | null
+          taxCodeId: string | null
         }
         Insert: {
           addressId: string
@@ -14798,6 +14809,7 @@ export type Database = {
           id?: string
           name: string
           tags?: string[] | null
+          taxCodeId?: string | null
         }
         Update: {
           addressId?: string
@@ -14807,6 +14819,7 @@ export type Database = {
           id?: string
           name?: string
           tags?: string[] | null
+          taxCodeId?: string | null
         }
         Relationships: [
           {
@@ -14835,6 +14848,13 @@ export type Database = {
             columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerLocation_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
             referencedColumns: ["id", "companyId"]
           }
         ]
@@ -15437,6 +15457,7 @@ export type Database = {
           companyId: string
           customerId: string
           eori: string | null
+          taxCodeId: string | null
           taxExempt: boolean
           taxExemptionCertificateNumber: string | null
           taxExemptionCertificatePath: string | null
@@ -15452,6 +15473,7 @@ export type Database = {
           companyId: string
           customerId: string
           eori?: string | null
+          taxCodeId?: string | null
           taxExempt?: boolean
           taxExemptionCertificateNumber?: string | null
           taxExemptionCertificatePath?: string | null
@@ -15467,6 +15489,7 @@ export type Database = {
           companyId?: string
           customerId?: string
           eori?: string | null
+          taxCodeId?: string | null
           taxExempt?: boolean
           taxExemptionCertificateNumber?: string | null
           taxExemptionCertificatePath?: string | null
@@ -15526,6 +15549,13 @@ export type Database = {
             columns: ["customerId", "companyId"]
             isOneToOne: false
             referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerTax_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
             referencedColumns: ["id", "companyId"]
           },
           {
@@ -28471,6 +28501,7 @@ export type Database = {
           revision: string | null
           revisionStatus: Database["public"]["Enums"]["itemRevisionStatus"]
           sourcingType: Database["public"]["Enums"]["sourcingType"]
+          taxable: boolean
           thumbnailPath: string | null
           trackingMethod: string | null
           type: Database["public"]["Enums"]["itemType"]
@@ -28500,6 +28531,7 @@ export type Database = {
           revision?: string | null
           revisionStatus?: Database["public"]["Enums"]["itemRevisionStatus"]
           sourcingType?: Database["public"]["Enums"]["sourcingType"]
+          taxable?: boolean
           thumbnailPath?: string | null
           trackingMethod?: string | null
           type: Database["public"]["Enums"]["itemType"]
@@ -28529,6 +28561,7 @@ export type Database = {
           revision?: string | null
           revisionStatus?: Database["public"]["Enums"]["itemRevisionStatus"]
           sourcingType?: Database["public"]["Enums"]["sourcingType"]
+          taxable?: boolean
           thumbnailPath?: string | null
           trackingMethod?: string | null
           type?: Database["public"]["Enums"]["itemType"]
@@ -40713,6 +40746,8 @@ export type Database = {
           salesReturnOrderId: string | null
           status: Database["public"]["Enums"]["memoStatus"]
           supplierId: string | null
+          taxAmount: number
+          taxCodeId: string | null
           updatedAt: string | null
           updatedBy: string | null
           voidedAt: string | null
@@ -40744,6 +40779,8 @@ export type Database = {
           salesReturnOrderId?: string | null
           status?: Database["public"]["Enums"]["memoStatus"]
           supplierId?: string | null
+          taxAmount?: number
+          taxCodeId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
           voidedAt?: string | null
@@ -40775,6 +40812,8 @@ export type Database = {
           salesReturnOrderId?: string | null
           status?: Database["public"]["Enums"]["memoStatus"]
           supplierId?: string | null
+          taxAmount?: number
+          taxCodeId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
           voidedAt?: string | null
@@ -41010,6 +41049,13 @@ export type Database = {
             columns: ["supplierId", "companyId"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "memo_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
             referencedColumns: ["id", "companyId"]
           },
           {
@@ -58365,6 +58411,7 @@ export type Database = {
           supplierUnitPrice: number
           tags: string[] | null
           taxAmount: number | null
+          taxCodeId: string | null
           taxPercent: number | null
           totalAmount: number | null
           unitPrice: number | null
@@ -58412,6 +58459,7 @@ export type Database = {
           supplierUnitPrice?: number
           tags?: string[] | null
           taxAmount?: number | null
+          taxCodeId?: string | null
           taxPercent?: number | null
           totalAmount?: number | null
           unitPrice?: number | null
@@ -58459,6 +58507,7 @@ export type Database = {
           supplierUnitPrice?: number
           tags?: string[] | null
           taxAmount?: number | null
+          taxCodeId?: string | null
           taxPercent?: number | null
           totalAmount?: number | null
           unitPrice?: number | null
@@ -58612,6 +58661,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "purchaseInvoiceLines_companyId_fkey"
@@ -59892,6 +59948,7 @@ export type Database = {
           supplierUnitPrice: number | null
           tags: string[] | null
           taxAmount: number | null
+          taxCodeId: string | null
           taxPercent: number | null
           unitPrice: number | null
           updatedAt: string | null
@@ -59947,6 +60004,7 @@ export type Database = {
           supplierUnitPrice?: number | null
           tags?: string[] | null
           taxAmount?: number | null
+          taxCodeId?: string | null
           taxPercent?: number | null
           unitPrice?: number | null
           updatedAt?: string | null
@@ -60002,6 +60060,7 @@ export type Database = {
           supplierUnitPrice?: number | null
           tags?: string[] | null
           taxAmount?: number | null
+          taxCodeId?: string | null
           taxPercent?: number | null
           unitPrice?: number | null
           updatedAt?: string | null
@@ -60296,6 +60355,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchaseOrderLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "purchaseOrderLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -60368,6 +60434,7 @@ export type Database = {
           supplierTaxAmount: number
           supplierUnitPrice: number | null
           tags: string[] | null
+          taxCodeId: string | null
           taxPercent: number | null
           updatedAt: string | null
           updatedBy: string | null
@@ -60407,6 +60474,7 @@ export type Database = {
           supplierTaxAmount?: number
           supplierUnitPrice?: number | null
           tags?: string[] | null
+          taxCodeId?: string | null
           taxPercent?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -60446,6 +60514,7 @@ export type Database = {
           supplierTaxAmount?: number
           supplierUnitPrice?: number | null
           tags?: string[] | null
+          taxCodeId?: string | null
           taxPercent?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -60764,6 +60833,13 @@ export type Database = {
             columns: ["supplierPartId", "companyId"]
             isOneToOne: false
             referencedRelation: "supplierPart"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
             referencedColumns: ["id", "companyId"]
           },
           {
@@ -64124,6 +64200,7 @@ export type Database = {
           sortOrder: number
           status: Database["public"]["Enums"]["quoteLineStatus"]
           tags: string[] | null
+          taxCodeId: string | null
           taxPercent: number
           unitOfMeasureCode: string | null
           unitPricePrecision: number
@@ -64157,6 +64234,7 @@ export type Database = {
           sortOrder?: number
           status?: Database["public"]["Enums"]["quoteLineStatus"]
           tags?: string[] | null
+          taxCodeId?: string | null
           taxPercent?: number
           unitOfMeasureCode?: string | null
           unitPricePrecision?: number
@@ -64190,6 +64268,7 @@ export type Database = {
           sortOrder?: number
           status?: Database["public"]["Enums"]["quoteLineStatus"]
           tags?: string[] | null
+          taxCodeId?: string | null
           taxPercent?: number
           unitOfMeasureCode?: string | null
           unitPricePrecision?: number
@@ -64392,6 +64471,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "quotes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "quoteLine_unitOfMeasureCode_fkey"
@@ -67792,6 +67878,7 @@ export type Database = {
           specializedAsset: boolean
           startDate: string
           status: Database["public"]["Enums"]["rentalAgreementStatus"]
+          taxCodeId: string | null
           taxPercent: number
           updatedAt: string | null
           updatedBy: string | null
@@ -67828,6 +67915,7 @@ export type Database = {
           specializedAsset?: boolean
           startDate: string
           status?: Database["public"]["Enums"]["rentalAgreementStatus"]
+          taxCodeId?: string | null
           taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -67864,6 +67952,7 @@ export type Database = {
           specializedAsset?: boolean
           startDate?: string
           status?: Database["public"]["Enums"]["rentalAgreementStatus"]
+          taxCodeId?: string | null
           taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -68017,6 +68106,13 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "rentalAgreement_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "rentalAgreement_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -68066,6 +68162,7 @@ export type Database = {
           invoiceSeparately: boolean
           rentalAgreementLineId: string
           salesInvoiceLineId: string | null
+          taxCodeId: string | null
           taxPercent: number
           updatedAt: string | null
           updatedBy: string | null
@@ -68083,6 +68180,7 @@ export type Database = {
           invoiceSeparately?: boolean
           rentalAgreementLineId: string
           salesInvoiceLineId?: string | null
+          taxCodeId?: string | null
           taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -68100,6 +68198,7 @@ export type Database = {
           invoiceSeparately?: boolean
           rentalAgreementLineId?: string
           salesInvoiceLineId?: string | null
+          taxCodeId?: string | null
           taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -68174,6 +68273,13 @@ export type Database = {
             columns: ["rentalAgreementLineId", "companyId"]
             isOneToOne: false
             referencedRelation: "rentalAgreementLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "rentalAgreementCharge_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
             referencedColumns: ["id", "companyId"]
           },
           {
@@ -71072,6 +71178,8 @@ export type Database = {
           shippingCost: number
           sortOrder: number
           storageUnitId: string | null
+          taxCodeId: string | null
+          taxesShipping: boolean
           taxPercent: number
           unitOfMeasureCode: string
           unitPrice: number
@@ -71128,6 +71236,8 @@ export type Database = {
           shippingCost?: number
           sortOrder?: number
           storageUnitId?: string | null
+          taxCodeId?: string | null
+          taxesShipping?: boolean
           taxPercent?: number
           unitOfMeasureCode: string
           unitPrice?: number
@@ -71184,6 +71294,8 @@ export type Database = {
           shippingCost?: number
           sortOrder?: number
           storageUnitId?: string | null
+          taxCodeId?: string | null
+          taxesShipping?: boolean
           taxPercent?: number
           unitOfMeasureCode?: string
           unitPrice?: number
@@ -71470,6 +71582,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesInvoiceLine_updatedBy_fkey"
@@ -72142,6 +72261,7 @@ export type Database = {
           sortOrder: number
           status: Database["public"]["Enums"]["salesOrderLineStatus"]
           storageUnitId: string | null
+          taxCodeId: string | null
           taxPercent: number
           unitOfMeasureCode: string | null
           unitPrice: number | null
@@ -72203,6 +72323,7 @@ export type Database = {
           sortOrder?: number
           status?: Database["public"]["Enums"]["salesOrderLineStatus"]
           storageUnitId?: string | null
+          taxCodeId?: string | null
           taxPercent?: number
           unitOfMeasureCode?: string | null
           unitPrice?: number | null
@@ -72264,6 +72385,7 @@ export type Database = {
           sortOrder?: number
           status?: Database["public"]["Enums"]["salesOrderLineStatus"]
           storageUnitId?: string | null
+          taxCodeId?: string | null
           taxPercent?: number
           unitOfMeasureCode?: string | null
           unitPrice?: number | null
@@ -72452,6 +72574,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesOrderLine_unitOfMeasureCode_fkey"
@@ -81214,6 +81343,7 @@ export type Database = {
           supplierTaxAmount: number
           supplierUnitPrice: number
           taxAmount: number | null
+          taxCodeId: string | null
           taxPercent: number | null
           unitPrice: number | null
           updatedAt: string | null
@@ -81235,6 +81365,7 @@ export type Database = {
           supplierTaxAmount?: number
           supplierUnitPrice?: number
           taxAmount?: number | null
+          taxCodeId?: string | null
           taxPercent?: number | null
           unitPrice?: number | null
           updatedAt?: string | null
@@ -81256,6 +81387,7 @@ export type Database = {
           supplierTaxAmount?: number
           supplierUnitPrice?: number
           taxAmount?: number | null
+          taxCodeId?: string | null
           taxPercent?: number | null
           unitPrice?: number | null
           updatedAt?: string | null
@@ -81324,6 +81456,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "supplierQuoteLines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuoteLinePrice_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "supplierQuoteLinePrice_updatedBy_fkey"
@@ -81681,6 +81820,7 @@ export type Database = {
           companyId: string
           eori: string | null
           supplierId: string
+          taxCodeId: string | null
           taxExempt: boolean
           taxExemptionCertificateNumber: string | null
           taxExemptionCertificatePath: string | null
@@ -81696,6 +81836,7 @@ export type Database = {
           companyId: string
           eori?: string | null
           supplierId: string
+          taxCodeId?: string | null
           taxExempt?: boolean
           taxExemptionCertificateNumber?: string | null
           taxExemptionCertificatePath?: string | null
@@ -81711,6 +81852,7 @@ export type Database = {
           companyId?: string
           eori?: string | null
           supplierId?: string
+          taxCodeId?: string | null
           taxExempt?: boolean
           taxExemptionCertificateNumber?: string | null
           taxExemptionCertificatePath?: string | null
@@ -81770,6 +81912,13 @@ export type Database = {
             columns: ["supplierId", "companyId"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "supplierTax_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
             referencedColumns: ["id", "companyId"]
           },
           {
@@ -82652,6 +82801,958 @@ export type Database = {
           },
           {
             foreignKeyName: "tag_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      taxAuthority: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          id: string
+          name: string
+          supplierId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          id?: string
+          name: string
+          supplierId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          id?: string
+          name?: string
+          supplierId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxAuthority_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxAuthority_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxAuthority_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "taxAuthority_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "taxAuthority_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxAuthority_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxAuthority_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxAuthority_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxAuthority_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "taxAuthority_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxAuthority_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxAuthority_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxAuthority_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxAuthority_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxAuthority_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxAuthority_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxAuthority_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      taxCode: {
+        Row: {
+          active: boolean
+          calculationType: Database["public"]["Enums"]["taxCalculationType"]
+          companyId: string
+          countryCode: string | null
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          description: string | null
+          id: string
+          invoiceMessage: string | null
+          name: string
+          reportingCategory: Database["public"]["Enums"]["taxReportingCategory"]
+          state: string | null
+          taxesShipping: boolean
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          active?: boolean
+          calculationType?: Database["public"]["Enums"]["taxCalculationType"]
+          companyId: string
+          countryCode?: string | null
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          description?: string | null
+          id?: string
+          invoiceMessage?: string | null
+          name: string
+          reportingCategory?: Database["public"]["Enums"]["taxReportingCategory"]
+          state?: string | null
+          taxesShipping?: boolean
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          active?: boolean
+          calculationType?: Database["public"]["Enums"]["taxCalculationType"]
+          companyId?: string
+          countryCode?: string | null
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          description?: string | null
+          id?: string
+          invoiceMessage?: string | null
+          name?: string
+          reportingCategory?: Database["public"]["Enums"]["taxReportingCategory"]
+          state?: string | null
+          taxesShipping?: boolean
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxCode_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCode_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCode_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "taxCode_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "taxCode_countryCode_fkey"
+            columns: ["countryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "taxCode_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCode_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCode_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCode_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCode_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "taxCode_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCode_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCode_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCode_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCode_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      taxCodeComponent: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          effectiveDate: string | null
+          expirationDate: string | null
+          id: string
+          isCompound: boolean
+          name: string
+          recoverablePercent: number
+          sequence: number
+          taxAuthorityId: string | null
+          taxCodeId: string
+          taxPaidAccountId: string | null
+          taxPercent: number
+          taxReceivedAccountId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          effectiveDate?: string | null
+          expirationDate?: string | null
+          id?: string
+          isCompound?: boolean
+          name: string
+          recoverablePercent?: number
+          sequence?: number
+          taxAuthorityId?: string | null
+          taxCodeId: string
+          taxPaidAccountId?: string | null
+          taxPercent: number
+          taxReceivedAccountId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          effectiveDate?: string | null
+          expirationDate?: string | null
+          id?: string
+          isCompound?: boolean
+          name?: string
+          recoverablePercent?: number
+          sequence?: number
+          taxAuthorityId?: string | null
+          taxCodeId?: string
+          taxPaidAccountId?: string | null
+          taxPercent?: number
+          taxReceivedAccountId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxCodeComponent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_taxAuthorityId_fkey"
+            columns: ["taxAuthorityId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxAuthority"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_taxPaidAccountId_fkey"
+            columns: ["taxPaidAccountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_taxPaidAccountId_fkey"
+            columns: ["taxPaidAccountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_taxReceivedAccountId_fkey"
+            columns: ["taxReceivedAccountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_taxReceivedAccountId_fkey"
+            columns: ["taxReceivedAccountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxCodeComponent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      taxLedger: {
+        Row: {
+          companyId: string
+          componentName: string | null
+          createdAt: string
+          createdBy: string
+          currencyCode: string | null
+          customerId: string | null
+          documentId: string
+          documentLineId: string | null
+          documentTaxableAmount: number
+          documentTaxAmount: number
+          documentType: string
+          exchangeRate: number | null
+          exemptAmount: number
+          exemptionCertificateNumber: string | null
+          id: string
+          journalId: string
+          postingDate: string
+          recoverableAmount: number
+          recoverablePercent: number
+          selfAssessed: boolean
+          source: Database["public"]["Enums"]["taxLedgerSource"]
+          supplierId: string | null
+          taxableAmount: number
+          taxAmount: number
+          taxAuthorityId: string | null
+          taxCodeComponentId: string | null
+          taxCodeId: string | null
+          taxExemptionReason:
+            | Database["public"]["Enums"]["taxExemptionReason"]
+            | null
+          taxPercent: number
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          componentName?: string | null
+          createdAt?: string
+          createdBy: string
+          currencyCode?: string | null
+          customerId?: string | null
+          documentId: string
+          documentLineId?: string | null
+          documentTaxableAmount?: number
+          documentTaxAmount?: number
+          documentType: string
+          exchangeRate?: number | null
+          exemptAmount?: number
+          exemptionCertificateNumber?: string | null
+          id?: string
+          journalId: string
+          postingDate: string
+          recoverableAmount?: number
+          recoverablePercent?: number
+          selfAssessed?: boolean
+          source: Database["public"]["Enums"]["taxLedgerSource"]
+          supplierId?: string | null
+          taxableAmount?: number
+          taxAmount?: number
+          taxAuthorityId?: string | null
+          taxCodeComponentId?: string | null
+          taxCodeId?: string | null
+          taxExemptionReason?:
+            | Database["public"]["Enums"]["taxExemptionReason"]
+            | null
+          taxPercent?: number
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          componentName?: string | null
+          createdAt?: string
+          createdBy?: string
+          currencyCode?: string | null
+          customerId?: string | null
+          documentId?: string
+          documentLineId?: string | null
+          documentTaxableAmount?: number
+          documentTaxAmount?: number
+          documentType?: string
+          exchangeRate?: number | null
+          exemptAmount?: number
+          exemptionCertificateNumber?: string | null
+          id?: string
+          journalId?: string
+          postingDate?: string
+          recoverableAmount?: number
+          recoverablePercent?: number
+          selfAssessed?: boolean
+          source?: Database["public"]["Enums"]["taxLedgerSource"]
+          supplierId?: string | null
+          taxableAmount?: number
+          taxAmount?: number
+          taxAuthorityId?: string | null
+          taxCodeComponentId?: string | null
+          taxCodeId?: string | null
+          taxExemptionReason?:
+            | Database["public"]["Enums"]["taxExemptionReason"]
+            | null
+          taxPercent?: number
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxLedger_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "taxLedger_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_journalId_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_journalId_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_taxAuthorityId_fkey"
+            columns: ["taxAuthorityId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxAuthority"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_taxCodeComponentId_fkey"
+            columns: ["taxCodeComponentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCodeComponent"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "taxLedger_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxLedger_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      taxRegistration: {
+        Row: {
+          companyId: string
+          countryCode: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          effectiveDate: string | null
+          endDate: string | null
+          id: string
+          registrationNumber: string
+          state: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          countryCode: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          effectiveDate?: string | null
+          endDate?: string | null
+          id?: string
+          registrationNumber: string
+          state?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          countryCode?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          effectiveDate?: string | null
+          endDate?: string | null
+          id?: string
+          registrationNumber?: string
+          state?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxRegistration_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxRegistration_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxRegistration_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "taxRegistration_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "taxRegistration_countryCode_fkey"
+            columns: ["countryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "taxRegistration_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxRegistration_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxRegistration_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxRegistration_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxRegistration_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "taxRegistration_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxRegistration_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxRegistration_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxRegistration_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxRegistration_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -98091,6 +99192,7 @@ export type Database = {
           locationId: string | null
           modelUploadId: string | null
           ownerId: string | null
+          projectElementId: string | null
           projectId: string | null
           purchaseOrderId: string | null
           purchaseOrderLineId: string | null
@@ -98108,6 +99210,7 @@ export type Database = {
           supplierUnitPrice: number | null
           tags: string[] | null
           taxAmount: number | null
+          taxCodeId: string | null
           taxPercent: number | null
           thumbnailPath: string | null
           totalAmount: number | null
@@ -98244,6 +99347,13 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "purchaseInvoiceLine_projectElement_fkey"
+            columns: ["projectElementId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
             foreignKeyName: "purchaseInvoiceLine_projectId_fkey"
             columns: ["projectId", "companyId"]
             isOneToOne: false
@@ -98256,6 +99366,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "purchaseInvoiceLines_companyId_fkey"
@@ -98819,6 +99936,7 @@ export type Database = {
           supplierUnitPrice: number | null
           tags: string[] | null
           taxAmount: number | null
+          taxCodeId: string | null
           taxPercent: number | null
           thumbnailPath: string | null
           unitCost: number | null
@@ -99113,6 +100231,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "purchaseOrderLine_updatedBy_fkey"
@@ -100948,6 +102073,7 @@ export type Database = {
           sortOrder: number | null
           status: Database["public"]["Enums"]["quoteLineStatus"] | null
           tags: string[] | null
+          taxCodeId: string | null
           taxPercent: number | null
           thumbnailPath: string | null
           unitCost: number | null
@@ -101152,6 +102278,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "quotes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "quoteLine_unitOfMeasureCode_fkey"
@@ -102514,6 +103647,7 @@ export type Database = {
           specializedAsset: boolean | null
           startDate: string | null
           status: Database["public"]["Enums"]["rentalAgreementStatus"] | null
+          taxCodeId: string | null
           taxPercent: number | null
           unbilledAmount: number | null
           updatedAt: string | null
@@ -102666,6 +103800,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "rentalAgreement_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "rentalAgreement_updatedBy_fkey"
@@ -102921,11 +104062,14 @@ export type Database = {
           salesOrderId: string | null
           salesOrderLineId: string | null
           serviceEndDate: string | null
+          serviceJobId: string | null
           serviceStartDate: string | null
           setupPrice: number | null
           shippingCost: number | null
           sortOrder: number | null
           storageUnitId: string | null
+          taxCodeId: string | null
+          taxesShipping: boolean | null
           taxPercent: number | null
           thumbnailPath: string | null
           unitCost: number | null
@@ -103202,11 +104346,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "salesInvoiceLine_serviceJobId_fkey"
+            columns: ["serviceJobId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "serviceJob"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "salesInvoiceLine_storageUnitId_fkey"
             columns: ["storageUnitId"]
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesInvoiceLine_updatedBy_fkey"
@@ -103650,6 +104808,7 @@ export type Database = {
           sortOrder: number | null
           status: Database["public"]["Enums"]["salesOrderLineStatus"] | null
           storageUnitId: string | null
+          taxCodeId: string | null
           taxPercent: number | null
           thumbnailPath: string | null
           unitCost: number | null
@@ -103840,6 +104999,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesOrderLine_unitOfMeasureCode_fkey"
@@ -112825,6 +113991,7 @@ export type Database = {
         | "Skipped"
         | "Excluded"
       tableViewType: "Public" | "Private"
+      taxCalculationType: "Normal" | "Reverse Charge"
       taxDepreciationMethod: "Straight Line" | "Declining Balance" | "MACRS"
       taxExemptionReason:
         | "Resale"
@@ -112837,6 +114004,15 @@ export type Database = {
         | "Educational"
         | "Religious"
         | "Other"
+      taxLedgerSource: "Sales" | "Purchase"
+      taxReportingCategory:
+        | "Standard"
+        | "Reduced"
+        | "Zero-Rated"
+        | "Exempt"
+        | "Reverse Charge"
+        | "Export"
+        | "Out of Scope"
       testCaseVerdict: "Not Run" | "Pass" | "Fail" | "Inconclusive"
       timekeepingControls: "Standard" | "DCAA"
       timesheetEntryStatus:

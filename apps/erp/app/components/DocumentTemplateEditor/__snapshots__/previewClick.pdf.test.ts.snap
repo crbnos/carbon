@@ -1302,19 +1302,16 @@ exports[`clicking a real PDF > opens the right text on the quote sample 1`] = `
     "0.00": "summary:shippingValue",
   },
   {
-    "Taxes": "summary:taxValue",
+    "City Tax 2% on 533.00 (USD)": "summary:taxComponent",
   },
   {
-    "(": "summary:taxValue",
+    "10.66": "lineItems:total (panel)",
   },
   {
-    "USD": "summary:taxValue",
+    "State Tax 4% on 533.00 (USD)": "summary:taxComponent",
   },
   {
-    ")": "summary:taxValue",
-  },
-  {
-    "31.98": "summary:taxValue",
+    "21.32": "lineItems:total (panel)",
   },
   {
     "Total (USD)": "summary:total",
@@ -1416,6 +1413,9 @@ exports[`clicking a real PDF > opens the right text on the salesInvoice sample 1
   },
   {
     "Shipping Terms: FOB Origin": "parties:shippingTerms",
+  },
+  {
+    "Seller Tax ID: MI-0001234": "parties:sellerTaxId",
   },
   {
     "NOTES": "notes:notes",
@@ -1538,25 +1538,25 @@ exports[`clicking a real PDF > opens the right text on the salesInvoice sample 1
     "5.00": "summary:addOnsValue",
   },
   {
-    "Taxes": "summary:taxValue",
+    "City Tax 2% on 249.00 (USD)": "summary:taxComponent",
   },
   {
-    "(": "summary:taxValue",
+    "4.98": "lineItems:total (panel)",
   },
   {
-    "USD": "summary:taxValue",
+    "State Tax 4% on 249.00 (USD)": "summary:taxComponent",
   },
   {
-    ")": "summary:taxValue",
-  },
-  {
-    "14.94": "summary:taxValue",
+    "9.96": "lineItems:total (panel)",
   },
   {
     "Total (USD)": "summary:total",
   },
   {
     "263.94": "summary:totalValue",
+  },
+  {
+    "Sales tax charged at the combined state and city rate.": "summary:total (panel)",
   },
   {
     "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
@@ -1744,22 +1744,16 @@ exports[`clicking a real PDF > opens the right text on the salesOrder sample 1`]
     "5.00": "summary:addOnsValue",
   },
   {
-    "Taxes": "summary:taxValue",
+    "City Tax 2% on 298.00 (USD)": "summary:taxComponent",
   },
   {
-    "(": "summary:taxValue",
+    "5.96": "lineItems:total (panel)",
   },
   {
-    "USD": "summary:taxValue",
+    "State Tax 4% on 298.00 (USD)": "summary:taxComponent",
   },
   {
-    ")": "summary:taxValue",
-  },
-  {
-    "17": "summary:taxValue",
-  },
-  {
-    ".88": "summary:taxValue",
+    "11.92": "lineItems:total (panel)",
   },
   {
     "Total (USD)": "summary:total",

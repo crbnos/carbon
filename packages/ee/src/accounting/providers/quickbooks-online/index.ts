@@ -18,9 +18,8 @@ import { QboVendorSyncer } from "./entities/vendor";
 import { QboVendorCreditSyncer } from "./entities/vendor-credit";
 
 export * from "./entities/bill";
+export * from "./entities/bill-lines";
 export * from "./entities/charge";
-// credit-memo additionally exports the shared memo source shape + loader the
-// vendor-credit syncer reads (declared once so the barrel cannot collide)
 export * from "./entities/credit-memo";
 export * from "./entities/customer";
 export * from "./entities/invoice";
@@ -28,6 +27,8 @@ export * from "./entities/item";
 // journal-entry exports mapJournalEntryToQboJournalEntry + the syncer for a
 // future QBO daily-consolidation path, mirroring the Xero barrel's contract
 export * from "./entities/journal-entry";
+// memo-source: the memo shape + loader both memo syncers read
+export * from "./entities/memo-source";
 // payment exports the composite entity-id helpers + buildQboPaymentSyncChange
 // the inbound QBO webhook route uses to enqueue operations
 export * from "./entities/payment";

@@ -12,6 +12,7 @@ import type {
   ResolvedSection
 } from "../../../template";
 import type { Company, CompanySettings } from "../../../types";
+import type { TaxSummaryEntry } from "../../../utils/tax-summary";
 
 export type QuoteCustomerDetails =
   Database["public"]["Views"]["quoteCustomerDetails"]["Row"] & {
@@ -60,6 +61,8 @@ export interface QuoteData {
   vars: Record<string, string>;
   values: DocumentValues;
   headerOptions: HeaderOptions;
+  /** Tax per component and rate; printed in place of the tax row when two or more. */
+  taxSummary: TaxSummaryEntry[];
   /** The printed document title, from the template's document texts. */
   documentTitle: string;
   /** The printed document number, from the template's document texts. */

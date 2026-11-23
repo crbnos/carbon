@@ -236,6 +236,7 @@ import {
   type JournalLineDimensionValues,
   journalLineDimensionRows,
   leavingTrackedEntityIds,
+  loadTaxCodesInForce,
   lockUntrackedDraws,
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
@@ -16078,6 +16079,20 @@ export async function postReceipt(
           throw new Error("Failed to fetch purchase order lines");
         if (purchaseOrderDelivery.error)
           throw new Error("Failed to fetch purchase order delivery");
+
+        // The draft took no recoverable split for a code with no rate on the
+        // order's tax point; posting refuses it, as the invoice does.
+        const receivedLineIds = new Set(
+          receiptLines.data.map((line) => line.lineId)
+        );
+        await loadTaxCodesInForce(db, {
+          companyId,
+          taxCodeIds: purchaseOrderLines.data
+            .filter((line) => receivedLineIds.has(line.id))
+            .map((line) => line.taxCodeId),
+          taxPointDate: purchaseOrder.data.orderDate ?? today,
+          document: "purchase order"
+        });
 
         // supplierShippingCost is a supplier-currency amount and the order's
         // exchangeRate is foreign-units-per-base, so supplier -> base is
