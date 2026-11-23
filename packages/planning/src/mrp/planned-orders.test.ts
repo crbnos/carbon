@@ -1321,6 +1321,97 @@ describe("planned orders across runs", () => {
     expect(childDemand(next)).toEqual([]);
   });
 
+  // Fence 10 days: no new order can arrive before 12-03 (the fence end plus
+  // the 7-day lead time), so the floor stays short until then whatever is
+  // ordered. Run 1 plans one order at the fence end; stored and held, it
+  // covers the floor from 12-03, so later runs must plan nothing more.
+  it.each([
+    [
+      "Fixed Reorder Quantity",
+      {
+        reorderingPolicy: "Fixed Reorder Quantity",
+        reorderPoint: 2,
+        reorderQuantity: 5
+      },
+      []
+    ],
+    [
+      "Maximum Quantity",
+      {
+        reorderingPolicy: "Maximum Quantity",
+        reorderPoint: 2,
+        maximumInventoryQuantity: 8
+      },
+      []
+    ],
+    [
+      "Demand-Based Reorder",
+      { demandAccumulationSafetyStock: 3 },
+      [sale("2026-12-20", 4)]
+    ]
+  ] as const)(
+    "plans the floor's order at the fence end once, not on every run (%s)",
+    (_name, parent, salesOrderLines) => {
+      const fence = { locationTimeFenceDays: new Map([["loc_1", 10]]) };
+      // As the writer leaves them: the held rows kept, every other row
+      // replaced by what the run generated.
+      let stored: ExistingPlannedOrder[] = [];
+      // each run's stored rows: week, quantity, due date, release date
+      const storedAfter: string[][][] = [];
+      const runs = [1, 2, 3].map((run) => {
+        const outputs = planCompany(
+          base({
+            parent,
+            salesOrderLines: [...salesOrderLines],
+            planned: { ...fence, existingPlannedOrders: stored }
+          })
+        );
+        stored = [
+          ...stored.filter((order) =>
+            outputs.heldPlannedOrderIds.includes(order.id)
+          ),
+          ...outputs.plannedOrders.map((order, index) =>
+            heldOrder({
+              id: `plo_${run}_${index}`,
+              quantity: order.quantity,
+              scrapQuantity: order.scrapQuantity,
+              dueDate: order.dueDate,
+              releaseDate: order.releaseDate,
+              periodId: order.periodId,
+              splitIndex: order.splitIndex
+            })
+          )
+        ];
+        storedAfter.push(
+          stored
+            .map((order) => [
+              order.periodId,
+              String(order.quantity),
+              order.dueDate,
+              order.releaseDate
+            ])
+            .sort()
+        );
+        return outputs;
+      });
+      const [first, , third] = runs;
+      if (!first || !third) throw new Error("three runs expected");
+      // run 1's orders all start at the fence end (11-26) or later
+      expect(
+        first.plannedOrders.map((order) => order.releaseDate >= "2026-11-26")
+      ).not.toContain(false);
+      expect(storedAfter[0]?.length).toBeGreaterThan(0);
+      expect(storedAfter[1]).toEqual(storedAfter[0]);
+      expect(storedAfter[2]).toEqual(storedAfter[0]);
+      expect(
+        third.plannedOrderChangeActions.filter(
+          (action) => action.type === "Cancel"
+        )
+      ).toEqual([]);
+      expect(childDemand(third)).toEqual(childDemand(first));
+    }
+  );
+
   // The location fence is 10 days. Needed on 11-22 with a 7-day lead time,
   // a new order would start on 11-15; the Planned order released on 11-20 is
   // inside 10 days.

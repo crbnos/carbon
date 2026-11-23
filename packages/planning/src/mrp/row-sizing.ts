@@ -643,6 +643,13 @@ export type RowSizingInput = {
   preferredSupplierId: string | null;
   toleranceDays: number;
   todayDate: string;
+  /**
+   * The first period a NEW order can arrive in (a planning time fence). Each
+   * earlier period is sized on the stock it will have then: a shortfall no
+   * new order can reach is not ordered again. Unset, every period is sized
+   * as it stands.
+   */
+  earliestNewSupplyIndex?: number;
 };
 
 export type RowSizingResult = {
@@ -665,6 +672,21 @@ export function drawsByPeriod(
     );
   }
   return drawByPeriod;
+}
+
+/**
+ * The projection as new supply can change it: a period before
+ * `earliestIndex` reads no lower than `earliestIndex` itself, the first
+ * period a new order can reach. A shortfall that is gone by then needs no
+ * order; one that lasts is ordered once, in the first period it shows.
+ */
+function sizedFrom(projections: number[], earliestIndex?: number): number[] {
+  if (!earliestIndex || earliestIndex <= 0) return projections;
+  const last = Math.min(earliestIndex, projections.length - 1);
+  const reachable = projections[last] ?? 0;
+  return projections.map((value, i) =>
+    i < last ? Math.max(value, reachable) : value
+  );
 }
 
 /**
@@ -798,17 +820,20 @@ export function sizeRowSupply(input: RowSizingInput): RowSizingResult {
       drawn += drawByPeriod.get(p.id) ?? 0;
       return (input.projections[i] ?? 0) + drawn;
     });
-    const projections = projectionsWithExpedites({
-      projections: projected,
-      periods,
-      changeActions,
-      openOrders,
-      firstNeedPeriods: firstNeedPeriodByOrder(coverageInput, {
-        toleranceDays,
-        todayDate,
-        leadTimeDays: leadTime
-      })
-    });
+    const projections = sizedFrom(
+      projectionsWithExpedites({
+        projections: projected,
+        periods,
+        changeActions,
+        openOrders,
+        firstNeedPeriods: firstNeedPeriodByOrder(coverageInput, {
+          toleranceDays,
+          todayDate,
+          leadTimeDays: leadTime
+        })
+      }),
+      input.earliestNewSupplyIndex
+    );
     sizing = computePlanningOrders({
       reorderingPolicy: sizingPolicy,
       periods,

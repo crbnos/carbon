@@ -784,6 +784,12 @@ Inside the fence:
    the order silently, because someone may already have bought parts for it. Applying
    the Cancel deletes the order.
 
+A new order cannot arrive before the fence end plus the lead time. So the sizing judges
+each earlier week by the stock that week will have. A held order at the fence end then
+covers a reorder point or safety stock that is short before it. Without this rule, each
+run added one more order at the fence end for the same shortfall. With no fence, the
+sizing does not change.
+
 An order that MRP moved to the fence end is held on the next run, because its release
 date is then inside the fence. Because the fence is computed, a fence-held order cannot
 outlive its demand without a visible Cancel action. No cleanup sweep is necessary.
@@ -1529,7 +1535,7 @@ order drawers, `ItemPlanningForm`, `LocationForm`.
    target. It is always Apply, never "Review on document" (`planningActionNeedsReview`).
    It can be dismissed, reopened and assigned like any change action.
 4. **Settings.** `planningTimeFenceDays` on the location form, and on the item Planning
-   form in its "Planning window" group, with the location value as the placeholder. A
+   form in its "Planning and Sales" section, with the location value as the placeholder. A
    new item revision does not copy the item value.
 
 Not built in 2a:
@@ -1640,6 +1646,11 @@ changed action. The criteria that moved to 2b are under Phase 2b.
       deletes the planned order and its action")
 - [x] The next run does not create the cancelled order again. (`planned-orders.test.ts`
       "does not plan a cancelled order again")
+- [x] Fence 10 days and a reorder point or safety stock that is short from today: the
+      first run plans one order at the fence end. The next 2 runs keep that order and
+      plan no other. (`planned-orders.test.ts` "plans the floor's order at the fence end
+      once, not on every run", for Fixed Reorder Quantity, Maximum Quantity and
+      Demand-Based Reorder)
 - [x] Outside the fence, the run deletes a Planned order that lost its demand.
       (`planned-order-write.write.test.ts`)
 - [x] An item `planningTimeFenceDays` wins over the location value in both directions,

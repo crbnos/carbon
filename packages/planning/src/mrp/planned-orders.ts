@@ -518,7 +518,15 @@ export function createPlanSupply(inputs: CreatePlanSupplyInputs): {
       policy: policyRow,
       preferredSupplierId: inputs.preferredSupplierByItem.get(itemId) ?? null,
       toleranceDays: inputs.toleranceDays,
-      todayDate
+      todayDate,
+      // A new order starts at the fence end at the earliest, so it arrives a
+      // lead time later. Sized on the stock before then, a floor a held order
+      // covers from that date read as short on every run, and each run added
+      // another order the fence moved onto the same date.
+      earliestNewSupplyIndex:
+        fenceDays > 0
+          ? periodIndexOn(addDays(fenceDate, Number(leadTime) || 0))
+          : undefined
     });
 
     documentChangeActionsByRow.set(

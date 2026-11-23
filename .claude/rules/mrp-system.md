@@ -520,7 +520,15 @@ working-day dates.
   is moved: release = fence end, due date shifted by the same days, period = the
   week holding the new due date, and a signal (`plannedOrderSignals.expediteTo`)
   becomes an Expedite on that planned order to the real need date, never before
-  today. A held order nothing needs gets a Cancel (no silent delete). Nothing
+  today. With a fence, the sizing also judges each week before the earliest
+  week a new order can arrive (fence end + lead time,
+  `earliestNewSupplyIndex` on `sizeRowSupply`, `sizedFrom` in `row-sizing.ts`)
+  by the stock it will have in that week: a shortfall there no new order can
+  reach is ordered once, not again on every run. Without it, a reorder point or
+  safety stock short before the fence end read as short on each run, and each
+  run added another order the fence moved onto the same date as the held one.
+  With no fence the sizing is unchanged (the worklist parity holds). A held order
+  nothing needs gets a Cancel (no silent delete). Nothing
   stores the hold; it is recomputed per run. A Firm order of an item that is no
   longer eligible is neither counted as supply nor deleted.
 - **Read first, check before the write, retry.** Each attempt of a run
@@ -694,8 +702,8 @@ working-day dates.
   a Planned order the drawer first asks "Keep your numbers through plan
   updates?". `PlanningActionLines` names a planned-order target "Planned order",
   and `planningActionNeedsReview` is false for it (always Apply). The fence fields
-  are on `LocationForm` and `ItemPlanningForm` ("Planning window" group, the
-  location value as placeholder; a new revision does not copy it). The column is
+  are on `LocationForm` and `ItemPlanningForm` ("Planning and Sales" section,
+  beside the planning horizon; the location value as placeholder; a new revision does not copy it). The column is
   NOT NULL: `upsertLocation` (`resources.service.ts`) inserts a new location with
   no fence as 0, and an update without the field leaves it out of the UPDATE, so
   `updateLocation` called without `planningTimeFenceDays` (the API, MCP)

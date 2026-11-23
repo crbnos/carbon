@@ -96,9 +96,9 @@ A new due date moves the release date by the same number of days, and it must fa
 
 ### The planning time fence
 
-The <Term id="planning-time-fence">planning time fence</Term> is a number of calendar days from today. Set **Planning time fence (days)** on the location, and override it on the item's planning tab in the **Planning window** group. An empty item field uses the location's value; 0 means no fence. A Planned order released on or before today plus the fence is held like a Firm one, and the drawer marks it **Fence**.
+The <Term id="planning-time-fence">planning time fence</Term> is a number of calendar days from today. Set **Planning time fence (days)** on the location, and override it on the item's planning tab in the **Planning and Sales** section. An empty item field uses the location's value; 0 means no fence. A Planned order released on or before today plus the fence is held like a Firm one, and the drawer marks it **Fence**.
 
-A new need that would start inside the fence is planned to start at the fence end instead, with its due date moved by the same days. MRP adds an **Expedite** on that planned order to the date it is really needed, never before today, so you decide whether to pull it in. A held order that nothing needs any more gets a **Cancel**; MRP never deletes it by itself.
+A new need that would start inside the fence is planned to start at the fence end instead, with its due date moved by the same days. MRP adds an **Expedite** on that planned order to the date it is really needed, never before today, so you decide whether to pull it in. On the next run that order is held, and it covers the need from its due date, so MRP does not plan another one for the same shortfall. A held order that nothing needs any more gets a **Cancel**; MRP never deletes it by itself.
 
 <Callout type="info" title="The time fence is not the planning horizon">
 The [planning horizon](#planning-horizon) only filters what the planning pages show. The time fence changes what MRP does: inside it, MRP holds planned orders still and plans new needs at its end.
