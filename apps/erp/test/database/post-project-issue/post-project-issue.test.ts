@@ -198,6 +198,23 @@ databaseTest(
       expect(noCost.error?.message).toContain("has no cost");
       expect(await onHand(free.itemId)).toEqual(0);
 
+      // Stock that came in at no cost stays refused after a Unit Cost is set:
+      // FIFO costs the issue from the stock's own layer, not the Unit Cost.
+      const stale = await f.addStockedItem("stale", {
+        quantity: 3,
+        unitCost: 0
+      });
+      await f.db
+        .updateTable("itemCost")
+        .set({ unitCost: 5 })
+        .where("itemId", "=", stale.itemId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const staleIssue = await issue(1, stale.itemId);
+      expect(staleIssue.error?.status).toEqual(400);
+      expect(staleIssue.error?.message).toContain("stock on hand came in at no cost");
+      expect(await onHand(stale.itemId)).toEqual(3);
+
       // Strict backflush with Prevent negative stock refuses the shortfall.
       await f.db
         .updateTable("companySettings")
