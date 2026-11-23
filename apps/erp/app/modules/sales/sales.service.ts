@@ -3656,7 +3656,7 @@ export async function getCustomerItemPriceOverridesList(
 }
 
 export async function updateCustomerContact(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   customerContact: {
     contactId: string;
     companyId: string;
@@ -3665,78 +3665,100 @@ export async function updateCustomerContact(
     customFields?: Json;
   }
 ) {
-  if (!customerContact.contact.email?.trim()) {
-    const [owner, settings] = await Promise.all([
-      client
-        .from("customerContact")
-        .select("contact(firstName, lastName, email)")
-        .eq("contactId", customerContact.contactId)
-        .eq("companyId", customerContact.companyId)
-        .maybeSingle(),
-      client
-        .from("companySettings")
-        .select("requireCustomerContactEmail")
-        .eq("id", customerContact.companyId)
-        .maybeSingle()
-    ]);
-    if (owner.error) return { data: null, error: owner.error };
-    if (settings.error) return { data: null, error: settings.error };
-    // A field left out of the update keeps the stored value; a blank one
-    // clears it.
-    const stored = owner.data?.contact;
-    const { contact } = customerContact;
-    const merged = {
-      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
-      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
-      email: "email" in contact ? contact.email : stored?.email
-    };
-    const email = merged.email;
-    if (
-      !hasContactNameOrEmail({
-        firstName: merged.firstName ?? undefined,
-        lastName: merged.lastName ?? undefined,
-        email: email ?? undefined
-      })
-    ) {
-      return {
-        data: null,
-        error: ruleError(contactNameOrEmailMessage.message)
-      };
-    }
-    if (settings.data?.requireCustomerContactEmail && !email?.trim()) {
-      return {
-        data: null,
-        error: ruleError(CUSTOMER_CONTACT_EMAIL_REQUIRED)
-      };
-    }
-  }
-
-  if (customerContact.customFields) {
-    const customFieldUpdate = await client
-      .from("customerContact")
-      .update({
-        customFields: customerContact.customFields,
-        customerLocationId: customerContact.customerLocationId
-      })
-      .eq("contactId", customerContact.contactId);
-
-    if (customFieldUpdate.error) {
-      return customFieldUpdate;
-    }
-  }
-  // The contact id is the row key and the location is set on customerContact
-  // above; neither is a contact column.
+  const { contactId, companyId } = customerContact;
+  // The link's id, the contact id (the row key) and the location (set on
+  // customerContact) are not contact columns.
   const {
+    id: _linkId,
     contactId: _contactId,
     customerLocationId: _customerLocationId,
     ...contact
   } = customerContact.contact;
-  return client
-    .from("contact")
-    .update(sanitize(contact))
-    .eq("id", customerContact.contactId)
-    .select("id")
-    .single();
+  // The location is written whenever it is sent, custom fields or not. Left
+  // out, or blank in the form, it is kept: the app cannot clear it either.
+  const linkRow = {
+    ...(customerContact.customFields
+      ? { customFields: toJson(customerContact.customFields) }
+      : {}),
+    ...(customerContact.customerLocationId !== undefined
+      ? { customerLocationId: customerContact.customerLocationId }
+      : {})
+  };
+  try {
+    // One transaction: a failed contact write must not leave a new location
+    // saved on the link.
+    const result = await withTransaction(db, async (trx) => {
+      if (!contact.email?.trim()) {
+        const stored = await trx
+          .selectFrom("customerContact")
+          .innerJoin("contact", "contact.id", "customerContact.contactId")
+          .select(["contact.firstName", "contact.lastName", "contact.email"])
+          .where("customerContact.contactId", "=", contactId)
+          .where("customerContact.companyId", "=", companyId)
+          .executeTakeFirst();
+        // A field left out of the update keeps the stored value; a blank one
+        // clears it.
+        const merged = {
+          firstName:
+            "firstName" in contact ? contact.firstName : stored?.firstName,
+          lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+          email: "email" in contact ? contact.email : stored?.email
+        };
+        if (
+          !hasContactNameOrEmail({
+            firstName: merged.firstName ?? undefined,
+            lastName: merged.lastName ?? undefined,
+            email: merged.email ?? undefined
+          })
+        ) {
+          return contactNameOrEmailMessage.message;
+        }
+        if (
+          !merged.email?.trim() &&
+          (await isContactEmailRequired(trx, companyId, "customer"))
+        ) {
+          return CUSTOMER_CONTACT_EMAIL_REQUIRED;
+        }
+      }
+
+      const updated =
+        Object.keys(contact).length > 0
+          ? await trx
+              .updateTable("contact")
+              .set(sanitize(contact))
+              .where("id", "=", contactId)
+              .where("companyId", "=", companyId)
+              .returning("id")
+              .executeTakeFirst()
+          : await trx
+              .selectFrom("contact")
+              .select("id")
+              .where("id", "=", contactId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst();
+      if (!updated) return "Contact not found";
+
+      if (Object.keys(linkRow).length > 0) {
+        await trx
+          .updateTable("customerContact")
+          .set(linkRow)
+          .where("contactId", "=", contactId)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+      return { id: updated.id };
+    });
+    return typeof result === "string"
+      ? { data: null, error: ruleError(result) }
+      : { data: result, error: null };
+  } catch (error) {
+    logger.error("Failed to update customer contact", {
+      companyId,
+      contactId,
+      error
+    });
+    return { data: null, error: error as Error };
+  }
 }
 
 export async function updateCustomerLocation(
@@ -3745,12 +3767,12 @@ export async function updateCustomerLocation(
     addressId: string;
     name: string;
     address: {
-      addressLine1?: string;
-      addressLine2?: string;
-      city?: string;
-      stateProvince?: string;
-      countryCode?: string;
-      postalCode?: string;
+      addressLine1?: string | null;
+      addressLine2?: string | null;
+      city?: string | null;
+      stateProvince?: string | null;
+      countryCode?: string | null;
+      postalCode?: string | null;
     };
     /** Omit to leave the location's tax code as it is; null clears it. */
     taxCodeId?: string | null;

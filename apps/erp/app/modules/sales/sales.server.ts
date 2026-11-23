@@ -8017,13 +8017,13 @@ export const updateCustomer = defineServiceFn({
     .looseObject({
       readableId: z.string().optional(),
       name: z.string().min(1),
-      customerStatusId: z.string().optional(),
-      customerTypeId: z.string().optional(),
-      accountManagerId: z.string().optional(),
-      currencyCode: z.string().optional(),
+      customerStatusId: z.string().nullable().optional(),
+      customerTypeId: z.string().nullable().optional(),
+      accountManagerId: z.string().nullable().optional(),
+      currencyCode: z.string().nullable().optional(),
       taxPercent: z.number().min(0).max(1),
-      salesContactId: z.string().optional(),
-      website: z.string().optional(),
+      salesContactId: z.string().nullable().optional(),
+      website: z.string().nullable().optional(),
       partNumberDisplay: z
         .enum(PART_NUMBER_DISPLAYS)
         .describe(
@@ -8152,19 +8152,20 @@ export const updateCustomerContact = defineServiceFn({
     contact: z.looseObject({
       id: z.string().optional(),
       contactId: z.string().optional(),
-      firstName: z.string().optional(),
-      lastName: z.string().optional(),
-      title: z.string().optional(),
+      firstName: z.string().nullable().optional(),
+      lastName: z.string().nullable().optional(),
+      title: z.string().nullable().optional(),
       // Blank means no email: stored as NULL, never ''.
       email: z
         .string()
         .trim()
         .transform((v) => v || null)
+        .nullable()
         .optional(),
-      mobilePhone: z.string().optional(),
-      homePhone: z.string().optional(),
-      workPhone: z.string().optional(),
-      notes: z.string().optional(),
+      mobilePhone: z.string().nullable().optional(),
+      homePhone: z.string().nullable().optional(),
+      workPhone: z.string().nullable().optional(),
+      notes: z.string().nullable().optional(),
       customerLocationId: z.string().optional()
     }),
     customerLocationId: z.string().optional(),
@@ -8174,7 +8175,7 @@ export const updateCustomerContact = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.updateCustomerContact(ctx.asCaller.supabase, {
+      await service.updateCustomerContact(ctx.asSystem.pg, {
         ...payload(ctx, input).forUpdate(),
         companyId: ctx.company.id
       } as never)
@@ -8192,12 +8193,12 @@ export const updateCustomerLocation = defineServiceFn({
     addressId: z.string(),
     name: z.string(),
     address: z.looseObject({
-      addressLine1: z.string().optional(),
-      addressLine2: z.string().optional(),
-      city: z.string().optional(),
-      stateProvince: z.string().optional(),
-      countryCode: z.string().optional(),
-      postalCode: z.string().optional()
+      addressLine1: z.string().nullable().optional(),
+      addressLine2: z.string().nullable().optional(),
+      city: z.string().nullable().optional(),
+      stateProvince: z.string().nullable().optional(),
+      countryCode: z.string().nullable().optional(),
+      postalCode: z.string().nullable().optional()
     }),
     customFields: z.unknown().optional()
   }),
@@ -8221,10 +8222,10 @@ export const updateCustomerLocation = defineServiceFn({
 export const updateCustomerPayment = defineServiceFn({
   input: z.looseObject({
     customerId: z.string().min(1),
-    invoiceCustomerId: z.string().optional(),
-    invoiceCustomerLocationId: z.string().optional(),
-    invoiceCustomerContactId: z.string().optional(),
-    paymentTermId: z.string().optional()
+    invoiceCustomerId: z.string().nullable().optional(),
+    invoiceCustomerLocationId: z.string().nullable().optional(),
+    invoiceCustomerContactId: z.string().nullable().optional(),
+    paymentTermId: z.string().nullable().optional()
   }),
   permission: { update: "sales" },
   async run(ctx, input) {
@@ -8246,10 +8247,10 @@ export const updateCustomerPayment = defineServiceFn({
 export const updateCustomerShipping = defineServiceFn({
   input: z.looseObject({
     customerId: z.string().min(1),
-    shippingCustomerId: z.string().optional(),
-    shippingCustomerLocationId: z.string().optional(),
-    shippingCustomerContactId: z.string().optional(),
-    shippingMethodId: z.string().optional(),
+    shippingCustomerId: z.string().nullable().optional(),
+    shippingCustomerLocationId: z.string().nullable().optional(),
+    shippingCustomerContactId: z.string().nullable().optional(),
+    shippingMethodId: z.string().nullable().optional(),
     incoterm: z
       .enum([
         "EXW",
@@ -8264,8 +8265,9 @@ export const updateCustomerShipping = defineServiceFn({
         "DPU",
         "DDP"
       ])
+      .nullable()
       .optional(),
-    incotermLocation: z.string().optional()
+    incotermLocation: z.string().nullable().optional()
   }),
   permission: { update: "sales" },
   async run(ctx, input) {
@@ -8287,9 +8289,9 @@ export const updateCustomerShipping = defineServiceFn({
 export const updateCustomerTax = defineServiceFn({
   input: z.looseObject({
     customerId: z.string().min(1),
-    taxId: z.string().optional(),
-    vatNumber: z.string().optional(),
-    eori: z.string().optional(),
+    taxId: z.string().nullable().optional(),
+    vatNumber: z.string().nullable().optional(),
+    eori: z.string().nullable().optional(),
     taxExempt: z.boolean().optional(),
     taxExemptionReason: z
       .enum([
@@ -8306,7 +8308,7 @@ export const updateCustomerTax = defineServiceFn({
       ])
       .nullable()
       .optional(),
-    taxExemptionCertificateNumber: z.string().optional(),
+    taxExemptionCertificateNumber: z.string().nullable().optional(),
     taxExemptionCertificatePath: z.string().nullable().optional()
   }),
   permission: { update: "sales" },

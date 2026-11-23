@@ -26,6 +26,7 @@ import {
   updateCustomerContact
 } from "~/modules/sales/sales.service";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
+import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -56,7 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -81,7 +82,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (contactId === undefined)
     throw badRequest("contactId is undefined from form data");
 
-  const update = await updateCustomerContact(client, {
+  const update = await updateCustomerContact(getDatabaseClient(), {
     companyId,
     contactId,
     contact,

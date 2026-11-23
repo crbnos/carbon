@@ -49,6 +49,7 @@ Key columns (both, unless noted):
 ### `customerContact` / `supplierContact` (join: entity ↔ contact)
 `id` (default `xid()`), `customerId`/`supplierId` → entity (ON DELETE CASCADE), `contactId` → `contact` (CASCADE), `customerLocationId`/`supplierLocationId` → location (nullable, SET NULL), `userId` → `user` (nullable), `tags`, `customFields`.
 - `insertCustomerContact` (`sales.service.ts`) and `insertSupplierContact` (`purchasing.service.ts`) write the `contact` row and its link in ONE Kysely transaction, after checking the customer or supplier and the location belong to the company. Two separate writes left an orphaned contact whenever the link insert failed.
+- `updateCustomerContact` and `updateSupplierContact` write the contact and its link in ONE Kysely transaction too, scoped by contact and company, so a failed contact update never leaves a new location saved on the link.
 
 ### `customerLocation` / `supplierLocation` (join: entity ↔ address)
 `id` (default `xid()`), `customerId`/`supplierId` (CASCADE), `addressId` → `address` (CASCADE), `name` TEXT NOT NULL (`20240813213122`), `tags`, `supplierLocation.externalId` JSONB, `customFields`.

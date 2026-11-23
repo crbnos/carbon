@@ -5273,3 +5273,10 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A nullable enum must list null, or the API refuses the null its type allows
+
+- **Context:** The generator publishes each operation's input as JSON Schema, and the API validates every call with `z.fromJSONSchema` (`jsonSchemaInput`).
+- **Problem:** A nullable string-literal union was published as `{ "type": ["string", "null"], "enum": [...] }`. The validator checks `enum` apart from `type`, so it refused `null` although the operation's own zod input took it. Update inputs typed `.optional()` refused `null` before the operation ran. An API or MCP caller could not clear a field the app's form clears.
+- **Rule:** A nullable enum lists `null` in `enum` (`unionToJsonSchema` does this). An update's optional field over a nullable column is `.nullable().optional()`. Test a clear by sending `null` through `jsonSchemaInput`, not only through the zod input.
+- **Applies to:** `scripts/lib/response-schema.ts`, every published update or upsert operation.
