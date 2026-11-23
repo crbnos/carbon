@@ -445,7 +445,7 @@ seeded Posted journals before the cutover, where a void is refused and the reade
 assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
 `companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)
 runs `check_accounting_config_locked()` (newest definition in
-`20261120222959_base-currency-change-before-first-transaction.sql`), which refuses a change of
+`20261123192913_base-currency-change-before-first-transaction.sql`), which refuses a change of
 `accountingCutoverDate`, `accountingActivatedAt` or `accountingActivatedBy` once the OLD row's
 `accountingActivatedAt` is set, unless the transaction has set `app.dataset_apply` and the
 role is not an API role (`anon` / `authenticated`). `applyDatasetTiers` sets it with

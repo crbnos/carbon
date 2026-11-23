@@ -1,5 +1,5 @@
 -- A company's base currency changes only while nothing is denominated in it
--- (20261120222959_base-currency-change-before-first-transaction):
+-- (20261123192913_base-currency-change-before-first-transaction):
 --   1. a company with no data changes, before and after accounting is set up;
 --   2. a journal line with an amount, a document or a connected accounting
 --      integration refuses the change, and the refusal names the reason;
