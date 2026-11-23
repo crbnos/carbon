@@ -131089,6 +131089,63 @@ export default {
         tags: ["(rpc) accountTreeBalances"]
       }
     },
+    "/rpc/base_currency_change_blockers": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) base_currency_change_blockers"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) base_currency_change_blockers"]
+      }
+    },
     "/rpc/nanoid_optimized": {
       post: {
         parameters: [
@@ -132333,6 +132390,63 @@ export default {
           }
         },
         tags: ["(rpc) translateTrialBalance"]
+      }
+    },
+    "/rpc/base_currency_data_blockers": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) base_currency_data_blockers"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) base_currency_data_blockers"]
       }
     },
     "/rpc/sync_update_sales_order_exchange_rate": {

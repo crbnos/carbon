@@ -76,6 +76,10 @@ msgstr "(außerhalb dieser Abteilung)"
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
 msgstr "{0, plural, =0 {Das Verfahren benötigt einen qualifizierten Werker, daher können dessen Arbeitsgänge nicht geplant werden, bis jemand hinzugefügt wird.} one {Das Verfahren benötigt einen qualifizierten Werker: # Arbeitsgang kann nicht geplant werden, bis jemand hinzugefügt wird.} other {Das Verfahren benötigt einen qualifizierten Werker: # Arbeitsgänge können nicht geplant werden, bis jemand hinzugefügt wird.}}"
 
+#. placeholder {0}: pending.approvalRules
+msgid "{0, plural, one {# approval rule} other {# approval rules}}"
+msgstr ""
+
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
 msgstr "{0, plural, one {# Stückliste-Position wird weggelassen: Ihr Artikel hat keinen Kosteneintrag} other {# Stückliste-Positionen werden weggelassen: Ihre Artikel haben keine Kosteneinträge}}"
@@ -136,6 +140,14 @@ msgstr "{0, plural, one {# Element} other {# Elemente}}"
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
 msgstr "{0, plural, one {# durch den Typfilter verborgen} other {# durch den Typfilter verborgen}}"
+
+#. placeholder {0}: pending.itemCosts
+msgid "{0, plural, one {# item cost} other {# item costs}}"
+msgstr ""
+
+#. placeholder {0}: pending.itemPrices
+msgid "{0, plural, one {# item price} other {# item prices}}"
+msgstr ""
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -269,6 +281,10 @@ msgstr "{0, plural, one {# Artikel umlagern} other {Alle # Artikel umlagern}}"
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Buchen Sie das # Dokument ab oder löschen Sie es, das vor dem Stichtag datiert ist.} other {Buchen Sie die # Dokumente ab oder löschen Sie sie, die vor dem Stichtag datiert sind.}}"
+
+#. placeholder {0}: pending.workCenterRates
+msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
+msgstr ""
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -1333,6 +1349,9 @@ msgstr "{readyJobs, plural, =0 {Kein offener Fertigungsauftrag hat alle Teile} o
 
 msgid "{received} of {ordered}"
 msgstr "{received} von {ordered}"
+
+msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
+msgstr ""
 
 msgid "{ref} not found"
 msgstr "{ref} nicht gefunden"
@@ -3996,6 +4015,9 @@ msgstr "Ein Konto fehlt in dieser Liste, bis es erneut verbunden ist."
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Ein Buchhaltungs-Container, der Aufwendungen nach Abteilung oder Funktion gruppiert, sodass das Hauptbuch Ausgaben nach Gruppe statt nur nach Konto berichten kann."
 
+msgid "An accounting or spend integration is connected"
+msgstr ""
+
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "Ein Buchhaltungsdatensatz für einen aktivierten Vermögenswert, den Sie abschreiben anstatt ihn als Aufwand zu buchen; Entwurf → Aktiv → Vollständig abgeschrieben → Abgegangen."
 
@@ -4273,6 +4295,9 @@ msgstr "Jährlicher Satz, mit dem die Miete diskontiert wird"
 
 msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "Jährlich. Startet ab dem inkrementellen Kreditzins des Unternehmens"
+
+msgid "Another company in the group has transactions"
+msgstr ""
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "Eine andere Verbindung zu dieser Integration hat bereits diesen Namen. Wählen Sie einen anderen."
@@ -7010,6 +7035,9 @@ msgstr "Änderungslog-Newsletter"
 
 msgid "Changes"
 msgstr "Änderungen"
+
+msgid "Changing the base currency converts no amounts"
+msgstr ""
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "Das Ändern der Komponenten definiert die Gruppe neu. Führen Sie Motion Planning erneut aus, um die Änderung auf die Schritte anzuwenden."
@@ -9847,6 +9875,9 @@ msgstr "Kunden"
 msgid "Customers"
 msgstr "Kunden"
 
+msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+msgstr ""
+
 msgid "Customizations, training, and integrations"
 msgstr "Anpassungen, Schulung und Integrationen"
 
@@ -11939,6 +11970,9 @@ msgstr "Gebühr bearbeiten"
 
 msgid "Edit column visibility"
 msgstr "Spaltensichtbarkeit bearbeiten"
+
+msgid "Edit company"
+msgstr ""
 
 msgid "Edit Component Group"
 msgstr "Komponentengruppe bearbeiten"
@@ -14209,6 +14243,9 @@ msgstr "Anlagegüter"
 
 msgid "Fixed Assets"
 msgstr "Anlagevermögen"
+
+msgid "Fixed assets exist"
+msgstr ""
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Abweichung der Rüstkostenumlage, wenn die Losgröße vom Sollwert abweicht"
@@ -16952,6 +16989,9 @@ msgstr "{kept} von {total} behalten; {unresolved} konnten nicht geprüft werden.
 
 msgid "Kept {kept} of {total}."
 msgstr "{kept} von {total} behalten."
+
+msgid "Kept as entered and read in {toCode}:"
+msgstr ""
 
 msgid "Key"
 msgstr "Schlüssel"
@@ -24772,6 +24812,9 @@ msgstr "Angebote, Bestellungen und Rechnungen werden blockiert, bis der Lieferan
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "Angebote, Bestellungen, Rechnungen und Anfragen"
 
+msgid "Quotes, orders, invoices or other documents exist"
+msgstr ""
+
 msgid "Quoting"
 msgstr "Angebotserstellung"
 
@@ -29684,6 +29727,9 @@ msgstr "Bestand bei:"
 msgid "Stock Availability"
 msgstr "Bestandsverfügbarkeit"
 
+msgid "Stock has been received, moved or used"
+msgstr ""
+
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "Bestand in dieser Lagereinheit ist keine Deckung. MRP und die Planungsansichten zählen ihn nicht, und die Kommissionierung entnimmt nichts daraus. Eine Einheit ist auch nicht disponierbar, wenn ihre übergeordnete Einheit oder einer ihrer Lagertypen es ist. Für Quarantäne- und Sperrbereiche verwenden. Eine Bestandsumlagerung bringt den Bestand wieder heraus."
 
@@ -31119,6 +31165,12 @@ msgstr "Der Sicherungsvorgang hat diesen Fehler gemeldet."
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "Das rückwärts berechnete Datum, bis zu dem ein Arbeitsgang beendet sein muss, um seinen Fertigungsauftrag pünktlich zu halten, geschrieben auf das Fälligkeitsdatum des Arbeitsgangs. Ein stabiles Ziel zur Messung des Fortschritts - niemals eine Platzierungsbeschränkung."
 
+msgid "The base currency can't change because:"
+msgstr ""
+
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "Das Los geht in die Werkstatt. Seine Fertigungsaufträge sind bereits freigegeben."
 
@@ -31737,6 +31789,9 @@ msgstr "Des Leasings"
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
 msgstr "Das Leasingobjekt wird zum Anlagegut, das ab dem Ausübungsdatum abgeschrieben wird. Seine danach fälligen Zahlungen werden entfernt. Die anderen Anlagegüter des Leasings ändern sich nicht."
+
+msgid "The ledger has entries"
+msgstr ""
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "Die juristische Person, an die die Rechnung gesendet wird, wenn diese sich vom Kunden unterscheidet, der die Waren erhält – für Mutter-/Tochtergesellschaften oder Rechnungen Dritter."

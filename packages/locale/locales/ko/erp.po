@@ -76,6 +76,10 @@ msgstr "(이 부서 외부)"
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
 msgstr "{0, plural, =0 {해당 공법에는 숙련된 작업자가 필요하므로, 누군가가 추가될 때까지 공정을 예약할 수 없습니다.} one {해당 공법에는 숙련된 작업자가 필요합니다: # 개의 공정은 누군가가 추가될 때까지 예약할 수 없습니다.} other {해당 공법에는 숙련된 작업자가 필요합니다: # 개의 공정은 누군가가 추가될 때까지 예약할 수 없습니다.}}"
 
+#. placeholder {0}: pending.approvalRules
+msgid "{0, plural, one {# approval rule} other {# approval rules}}"
+msgstr ""
+
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
 msgstr "{0, plural, one {# 자재 명세서 라인이 제외됨: 해당 품목에 원가 기록이 없음} other {# 자재 명세서 라인들이 제외됨: 해당 품목들에 원가 기록이 없음}}"
@@ -136,6 +140,14 @@ msgstr "{0, plural, one {# 요소} other {# 요소들}}"
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
 msgstr "{0, plural, one {# 유형 필터로 숨겨짐} other {# 유형 필터로 숨겨짐}}"
+
+#. placeholder {0}: pending.itemCosts
+msgid "{0, plural, one {# item cost} other {# item costs}}"
+msgstr ""
+
+#. placeholder {0}: pending.itemPrices
+msgid "{0, plural, one {# item price} other {# item prices}}"
+msgstr ""
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -269,6 +281,10 @@ msgstr "{0, plural, one {품목 #개 이동} other {품목 #개 모두 이동}}"
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {회계 전환 전에 작성된 # 문서를 전기하거나 삭제하세요.} other {회계 전환 전에 작성된 # 문서를 전기하거나 삭제하세요.}}"
+
+#. placeholder {0}: pending.workCenterRates
+msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
+msgstr ""
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -1333,6 +1349,9 @@ msgstr "{readyJobs, plural, =0 {부품이 모두 갖춰진 미결 작업 지시�
 
 msgid "{received} of {ordered}"
 msgstr "{received} / {ordered}"
+
+msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
+msgstr ""
 
 msgid "{ref} not found"
 msgstr "{ref} 찾을 수 없음"
@@ -3996,6 +4015,9 @@ msgstr "이 목록에서 계정이 누락되어 있으며 다시 연결할 때�
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "부서나 기능별로 비용을 그룹화하여 총계정원장이 계정뿐 아니라 그룹별로도 지출을 보고할 수 있게 하는 회계 버킷입니다."
 
+msgid "An accounting or spend integration is connected"
+msgstr ""
+
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "비용 처리가 아닌 감가상각하는 자본화된 품목에 대한 회계 기록; 초안 → 활성 → 상각 완료 → 처분됨"
 
@@ -4273,6 +4295,9 @@ msgstr "렌트가 할인되는 연간 요율"
 
 msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "연간. 회사의 증분 차입 이율부터 시작합니다."
+
+msgid "Another company in the group has transactions"
+msgstr ""
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "이 통합의 다른 연결이 이미 해당 이름을 가지고 있습니다. 다른 이름을 선택하세요."
@@ -7010,6 +7035,9 @@ msgstr "변경 로그 뉴스레터"
 
 msgid "Changes"
 msgstr "변경 사항"
+
+msgid "Changing the base currency converts no amounts"
+msgstr ""
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "구성 요소를 변경하면 그룹이 다시 정의됩니다. 모션 계획을 다시 실행하여 단계의 변경 사항을 적용하세요."
@@ -9847,6 +9875,9 @@ msgstr "고객"
 msgid "Customers"
 msgstr "고객"
 
+msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+msgstr ""
+
 msgid "Customizations, training, and integrations"
 msgstr "사용자정의, 교육 및 연동"
 
@@ -11939,6 +11970,9 @@ msgstr "비용 편집"
 
 msgid "Edit column visibility"
 msgstr "열 표시 여부 편집"
+
+msgid "Edit company"
+msgstr ""
 
 msgid "Edit Component Group"
 msgstr "구성요소 그룹 편집"
@@ -14209,6 +14243,9 @@ msgstr "고정자산"
 
 msgid "Fixed Assets"
 msgstr "고정자산"
+
+msgid "Fixed assets exist"
+msgstr ""
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "배치 크기가 표준과 다를 때 고정 원가 상각 차이"
@@ -16952,6 +16989,9 @@ msgstr "{total}개 중 {kept}개를 유지했습니다. {unresolved}개는 확�
 
 msgid "Kept {kept} of {total}."
 msgstr "{total}개 중 {kept}개를 유지했습니다."
+
+msgid "Kept as entered and read in {toCode}:"
+msgstr ""
 
 msgid "Key"
 msgstr "키"
@@ -24772,6 +24812,9 @@ msgstr "공급업체가 이메일 주소가 있는 담당자와 국가가 있는
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "견적서, 주문, 송장 및 견적 요청"
 
+msgid "Quotes, orders, invoices or other documents exist"
+msgstr ""
+
 msgid "Quoting"
 msgstr "견적"
 
@@ -29684,6 +29727,9 @@ msgstr "재고 위치:"
 msgid "Stock Availability"
 msgstr "재고 가용성"
 
+msgid "Stock has been received, moved or used"
+msgstr ""
+
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "이 보관 단위의 재고는 공급이 아닙니다. MRP와 계획 화면은 이를 집계하지 않으며, 피킹도 여기서 가져가지 않습니다. 상위 단위나 저장 유형 중 하나가 MRP 제외이면 해당 단위도 MRP 제외입니다. 격리 및 보류 구역에 사용하세요. 재고 이송으로 재고를 다시 옮길 수 있습니다."
 
@@ -31119,6 +31165,12 @@ msgstr "백업 작업이 이 오류를 보고했습니다."
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "공정이 작업 지시를 제때 완료하기 위해 마감일까지 완료되어야 하는 역계산된 날짜이며 공정의 마감일에 기록됩니다. 진행 상황을 측정하기 위한 안정적인 목표 — 배치에 대한 제약 조건이 아닙니다."
 
+msgid "The base currency can't change because:"
+msgstr ""
+
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "배치가 현장으로 이동합니다. 포함된 작업 지시들은 이미 릴리스되었습니다."
 
@@ -31737,6 +31789,9 @@ msgstr "리스의"
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
 msgstr "리스된 자산은 행사일부터 감가상각되는 고정자산이 됩니다. 그 이후의 지불 의무는 제거됩니다. 리스의 다른 자산은 변경되지 않습니다."
+
+msgid "The ledger has entries"
+msgstr ""
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "재화를 수령하는 고객과 청구 대상이 다를 경우의 청구 법인입니다 — 모/자회사 또는 제3자 청구 방식에 사용됩니다."

@@ -246,6 +246,28 @@ const company = {
 
 export const companyValidator = z.object(company);
 
+// Why a base currency change is refused: the reason codes of SQL
+// `base_currency_change_blockers`, in its order.
+export const baseCurrencyChangeBlockers = [
+  "ledger-has-amounts",
+  "has-documents",
+  "has-stock-or-costs",
+  "has-fixed-assets",
+  "group-has-data",
+  "accounting-integration"
+] as const;
+
+export type BaseCurrencyChangeBlocker =
+  (typeof baseCurrencyChangeBlockers)[number];
+
+// A base currency change moves the customers, suppliers, supplier parts and
+// bank accounts set to the old base onto the new one, unless this is on.
+export const companyDetailsValidator = companyValidator.extend({
+  // Omitted when the form could not read the current base: the save keeps it.
+  baseCurrencyCode: zfd.text(z.string().optional()),
+  keepRecordCurrencies: zfd.checkbox()
+});
+
 // The onboarding company step collects only the address; the industry choice
 // comes from the dedicated industry step that follows.
 export const addressValidator = z.object({

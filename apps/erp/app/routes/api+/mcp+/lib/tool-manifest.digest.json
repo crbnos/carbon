@@ -1,5 +1,5 @@
 {
-  "totalTools": 1848,
+  "totalTools": 1849,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -1745,6 +1745,7 @@
     {"name":"settings_getAccountsPayableBillingAddress","classification":"READ","schema":"31b84d65b2ac","response":"7c0b9dc6d441","permission":"settings:view","paginates":false},
     {"name":"settings_getAccountsReceivableBillingAddress","classification":"READ","schema":"31b84d65b2ac","response":"7c0b9dc6d441","permission":"settings:view","paginates":false},
     {"name":"settings_getApiKeys","classification":"WRITE","schema":"cd40ae40fad5","response":"14fbafc2ddf8","permission":"users:update","paginates":true},
+    {"name":"settings_getBaseCurrencyChange","classification":"READ","schema":"bc8bfcf760d8","response":"b7c0f1db1ee1","permission":"settings:view","paginates":false},
     {"name":"settings_getCompanies","classification":"READ","schema":"31b84d65b2ac","response":"5783a32e0f4a","permission":"settings:view","paginates":false},
     {"name":"settings_getCompany","classification":"READ","schema":"31b84d65b2ac","response":"81a93f0029ec","permission":"settings:view","paginates":false},
     {"name":"settings_getCompanySettings","classification":"READ","schema":"31b84d65b2ac","response":"0fd620d9519d","permission":"settings:view","paginates":false},
@@ -1781,7 +1782,7 @@
     {"name":"settings_setIntegrationSyncEnabled","classification":"WRITE","schema":"fa07001f8501","response":"4111dc6445bb","permission":"settings:update","paginates":false},
     {"name":"settings_transitionSyncOperations","classification":"WRITE","schema":"c5a1f2594d65","response":"401e1aae225f","permission":"settings:update","paginates":false},
     {"name":"settings_updateAccountingSettings","classification":"WRITE","schema":"f8736424794b","response":"70bcf2b87ee3","permission":"settings:update","paginates":false},
-    {"name":"settings_updateCompanyDetails","classification":"WRITE","schema":"f48dad39eb59","response":"3797626bd17e","permission":"settings:update","paginates":false},
+    {"name":"settings_updateCompanyDetails","classification":"WRITE","schema":"bfdd038a1410","response":"3797626bd17e","permission":"settings:update","paginates":false},
     {"name":"settings_updateDimensionSync","classification":"WRITE","schema":"42c99362fccd","response":"f95fa90d0071","permission":"settings:update","paginates":false},
     {"name":"settings_updateInventorySettings","classification":"WRITE","schema":"c37d5ee19a22","response":"d13095155fa8","permission":"settings:update","paginates":false},
     {"name":"settings_updateInvoicingSettings","classification":"WRITE","schema":"48fd9aba9ea8","response":"a32ee5ad2099","permission":"settings:update","paginates":false},

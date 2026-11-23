@@ -76,6 +76,10 @@ msgstr "(outside this department)"
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
 msgstr "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
 
+#. placeholder {0}: pending.approvalRules
+msgid "{0, plural, one {# approval rule} other {# approval rules}}"
+msgstr "{0, plural, one {# approval rule} other {# approval rules}}"
+
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
 msgstr "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
@@ -136,6 +140,14 @@ msgstr "{0, plural, one {# element} other {# elements}}"
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
 msgstr "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
+
+#. placeholder {0}: pending.itemCosts
+msgid "{0, plural, one {# item cost} other {# item costs}}"
+msgstr "{0, plural, one {# item cost} other {# item costs}}"
+
+#. placeholder {0}: pending.itemPrices
+msgid "{0, plural, one {# item price} other {# item prices}}"
+msgstr "{0, plural, one {# item price} other {# item prices}}"
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -269,6 +281,10 @@ msgstr "{0, plural, one {Move # item} other {Move all # items}}"
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
+
+#. placeholder {0}: pending.workCenterRates
+msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
+msgstr "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -1333,6 +1349,9 @@ msgstr "{readyJobs, plural, =0 {No open job has every part} one {In production o
 
 msgid "{received} of {ordered}"
 msgstr "{received} of {ordered}"
+
+msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
+msgstr "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
 
 msgid "{ref} not found"
 msgstr "{ref} not found"
@@ -3996,6 +4015,9 @@ msgstr "An account is missing from this list until it is reconnected."
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 
+msgid "An accounting or spend integration is connected"
+msgstr "An accounting or spend integration is connected"
+
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 
@@ -4273,6 +4295,9 @@ msgstr "Annual rate the rent is discounted at"
 
 msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "Annual. Starts from the company's incremental borrowing rate"
+
+msgid "Another company in the group has transactions"
+msgstr "Another company in the group has transactions"
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "Another connection to this integration already has that name. Choose a different one."
@@ -7010,6 +7035,9 @@ msgstr "Changelog newsletter"
 
 msgid "Changes"
 msgstr "Changes"
+
+msgid "Changing the base currency converts no amounts"
+msgstr "Changing the base currency converts no amounts"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
@@ -9847,6 +9875,9 @@ msgstr "customers"
 msgid "Customers"
 msgstr "Customers"
 
+msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+msgstr "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+
 msgid "Customizations, training, and integrations"
 msgstr "Customizations, training, and integrations"
 
@@ -11939,6 +11970,9 @@ msgstr "Edit Charge"
 
 msgid "Edit column visibility"
 msgstr "Edit column visibility"
+
+msgid "Edit company"
+msgstr "Edit company"
 
 msgid "Edit Component Group"
 msgstr "Edit Component Group"
@@ -14209,6 +14243,9 @@ msgstr "fixed assets"
 
 msgid "Fixed Assets"
 msgstr "Fixed Assets"
+
+msgid "Fixed assets exist"
+msgstr "Fixed assets exist"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Fixed cost amortization variance when batch size differs from standard"
@@ -16952,6 +16989,9 @@ msgstr "Kept {kept} of {total}; {unresolved} could not be checked."
 
 msgid "Kept {kept} of {total}."
 msgstr "Kept {kept} of {total}."
+
+msgid "Kept as entered and read in {toCode}:"
+msgstr "Kept as entered and read in {toCode}:"
 
 msgid "Key"
 msgstr "Key"
@@ -24772,6 +24812,9 @@ msgstr "Quotes, orders and invoices are blocked until the supplier has a contact
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "Quotes, orders, invoices and RFQs"
 
+msgid "Quotes, orders, invoices or other documents exist"
+msgstr "Quotes, orders, invoices or other documents exist"
+
 msgid "Quoting"
 msgstr "Quoting"
 
@@ -29684,6 +29727,9 @@ msgstr "Stock at:"
 msgid "Stock Availability"
 msgstr "Stock Availability"
 
+msgid "Stock has been received, moved or used"
+msgstr "Stock has been received, moved or used"
+
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 
@@ -31119,6 +31165,12 @@ msgstr "The backup job reported this error."
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 
+msgid "The base currency can't change because:"
+msgstr "The base currency can't change because:"
+
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr "The base currency couldn't be loaded. Saving keeps it as it is."
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "The batch goes to the shop floor. Its jobs are already released."
 
@@ -31737,6 +31789,9 @@ msgstr "The lease's"
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
 msgstr "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
+
+msgid "The ledger has entries"
+msgstr "The ledger has entries"
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."

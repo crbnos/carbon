@@ -118,6 +118,7 @@ import {
   accountMappingEntrySchema,
   apiKeyValidator,
   calculatedShelfLifeInputScopes,
+  companyDetailsValidator,
   companyValidator,
   dimensionSlotEntrySchema,
   dimensionValueMappingEntrySchema,
@@ -1217,46 +1218,104 @@ export const updatePlanningSettings = defineServiceFn({
   }
 });
 /**
+ * What a base currency change of a company would do.
+ *
+ * @remarks
+ * The base currency can change until the company records its first
+ * transaction. `blockers` lists why it cannot change now (empty when it can):
+ * `ledger-has-amounts`, `has-documents`, `has-stock-or-costs`,
+ * `has-fixed-assets`, `group-has-data` (a parent whose group holds data) or
+ * `accounting-integration`. A change converts nothing: the counts are the
+ * stored amounts that keep their numbers and are read in the new currency,
+ * and the customers, suppliers and supplier parts set to the current base,
+ * which move to the new one unless `keepRecordCurrencies` is sent.
+ *
+ * @param companyId - A company of the caller's group; the caller's own when omitted.
+ * @mcp
+ */
+export const getBaseCurrencyChange = defineServiceFn({
+  input: z.object({ companyId: z.string().optional() }),
+  permission: { view: "settings" },
+  async run(ctx, { companyId }) {
+    const id = companyId ?? ctx.company.id;
+    if (id !== ctx.company.id) {
+      const refused = await service.refuseUnlessCanManageCompanies(ctx);
+      if (refused) return refused;
+      const inGroup = await ctx.asSystem.supabase
+        .from("company")
+        .select("id")
+        .eq("id", id)
+        .eq("companyGroupId", ctx.company.groupId)
+        .maybeSingle();
+      if (inGroup.error || !inGroup.data) {
+        return ctx.error("notFound", "Company not found", inGroup.error);
+      }
+    }
+    return service.getBaseCurrencyChangePreview(ctx.asSystem.pg, id);
+  }
+});
+
+/**
  * Update the company's details.
  *
  * @remarks
  * Writes the company's name, address, time zone, base currency, tax and
- * registration numbers and contact details. Changing the base currency also
- * deletes every exchange-rate override, in the same transaction: an override
- * is denominated in the old base and would rate every new document wrong.
+ * registration numbers and contact details. The base currency can change
+ * until the company records its first transaction (see
+ * `getBaseCurrencyChange`); a change is refused with its reasons after that.
+ * A change converts nothing: stored amounts keep their numbers. In the same
+ * transaction it deletes every exchange-rate override (denominated in the old
+ * base), makes the new base active in the group's currencies, moves the item
+ * price ladders to it and, unless `keepRecordCurrencies`, moves the
+ * customers, suppliers, supplier parts and bank accounts set to the old base.
  * The company's cached time zone is dropped, so a new one applies at once.
  *
+ * @param baseCurrencyCode - The new base currency; omit it to keep the current one.
+ * @param keepRecordCurrencies - On a base currency change, leave customers, suppliers, supplier parts and bank accounts in the old base.
  * @mcp
  */
 export const updateCompanyDetails = defineServiceFn({
-  input: companyValidator,
+  input: companyDetailsValidator,
   permission: { update: "settings" },
-  async run(ctx, company) {
+  async run(ctx, { keepRecordCurrencies, ...company }) {
     const existing = await ctx.asCaller.supabase
       .from("company")
       .select("baseCurrencyCode")
       .eq("id", ctx.company.id)
       .single();
+    // Without the current base the change could not be told apart from a
+    // plain save, which would move the base without moving its records.
+    if (existing.error || !existing.data) {
+      return ctx.error("internal", "Failed to update company", existing.error);
+    }
 
     const baseCurrencyChanged =
-      !!existing.data?.baseCurrencyCode &&
+      !!company.baseCurrencyCode &&
       existing.data.baseCurrencyCode !== company.baseCurrencyCode;
 
     if (baseCurrencyChanged) {
+      const refused = await service.refuseBaseCurrencyChange(
+        ctx,
+        ctx.company.id
+      );
+      if (refused) return refused;
       try {
         await service.updateCompanyWithBaseCurrencyChange(
           ctx.asSystem.pg,
           ctx.company.id,
-          { ...company, updatedBy: ctx.auditUserId }
+          { ...company, keepRecordCurrencies, updatedBy: ctx.auditUserId }
         );
       } catch (err) {
         return ctx.error("internal", "Failed to update company", err);
       }
     } else {
+      // The base stays out of a plain save: written back, it would undo a
+      // change committed after the read above and leave its moves behind.
+      const { baseCurrencyCode: _baseCurrencyCode, ...details } = company;
       const update = await service.updateCompany(
         ctx.asCaller.supabase,
         ctx.company.id,
-        { ...company, updatedBy: ctx.auditUserId }
+        { ...details, updatedBy: ctx.auditUserId }
       );
       if (update.error) {
         return ctx.error("internal", "Failed to update company", update.error);
@@ -1389,9 +1448,12 @@ export const createSubsidiary = defineServiceFn({
  * does: they are denominated in the old base.
  */
 export const updateSubsidiaryDetails = defineServiceFn({
-  input: subsidiaryValidator.safeExtend({ id: z.string() }),
+  input: subsidiaryValidator.safeExtend({
+    id: z.string(),
+    keepRecordCurrencies: companyDetailsValidator.shape.keepRecordCurrencies
+  }),
   permission: { update: "settings" },
-  async run(ctx, { id, ...subsidiary }) {
+  async run(ctx, { id, keepRecordCurrencies, ...subsidiary }) {
     const refused = await service.refuseUnlessCanManageCompanies(ctx);
     if (refused) return refused;
 
@@ -1404,6 +1466,9 @@ export const updateSubsidiaryDetails = defineServiceFn({
       .maybeSingle();
     if (current.error || !current.data) {
       return ctx.error("notFound", "Company not found", current.error);
+    }
+    if (subsidiary.parentCompanyId === id) {
+      return ctx.error("rule", "A company can't be its own parent");
     }
     if (subsidiary.parentCompanyId) {
       const parent = await client
@@ -1421,19 +1486,23 @@ export const updateSubsidiaryDetails = defineServiceFn({
       subsidiary.baseCurrencyCode &&
       subsidiary.baseCurrencyCode !== current.data.baseCurrencyCode
     ) {
+      const refused = await service.refuseBaseCurrencyChange(ctx, id);
+      if (refused) return refused;
       try {
         await service.updateCompanyWithBaseCurrencyChange(
           ctx.asSystem.pg,
           id,
-          { ...subsidiary, updatedBy: ctx.auditUserId },
+          { ...subsidiary, keepRecordCurrencies, updatedBy: ctx.auditUserId },
           Object.keys(subsidiaryValidator.shape).filter((key) => key !== "id")
         );
       } catch (error) {
         return ctx.error("internal", "Failed to update subsidiary", error);
       }
     } else {
+      // As in `updateCompanyDetails`, the base stays out of a plain save.
+      const { baseCurrencyCode: _baseCurrencyCode, ...details } = subsidiary;
       const result = await service.updateSubsidiary(ctx.asCaller.supabase, id, {
-        ...subsidiary,
+        ...details,
         updatedBy: ctx.auditUserId
       });
       if (result.error) {
