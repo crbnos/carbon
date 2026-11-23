@@ -52108,10 +52108,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.planningGroupId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
           },
           {
             $ref: "#/parameters/select"
@@ -52332,10 +52332,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.planningGroupId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -52510,10 +52510,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.planningGroupId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine"
@@ -103507,10 +103507,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.planningGroupId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLines.partNumberDisplay"
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.taxCodeId"
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLines.taxCodeId"
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.partNumberDisplay"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.supplierPartIdFromSupplier"
@@ -167120,13 +167120,13 @@ export default {
           format: "text",
           type: "string"
         },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
         partNumberDisplay: {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
           format: 'public."partNumberDisplay"',
-          type: "string"
-        },
-        taxCodeId: {
-          format: "text",
           type: "string"
         }
       },
@@ -191526,13 +191526,13 @@ export default {
           format: "text",
           type: "string"
         },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
         partNumberDisplay: {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
           format: 'public."partNumberDisplay"',
-          type: "string"
-        },
-        taxCodeId: {
-          format: "text",
           type: "string"
         },
         supplierPartIdFromSupplier: {
@@ -228977,14 +228977,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseOrderLine.partNumberDisplay": {
-      name: "partNumberDisplay",
+    "rowFilter.purchaseOrderLine.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseOrderLine.taxCodeId": {
-      name: "taxCodeId",
+    "rowFilter.purchaseOrderLine.partNumberDisplay": {
+      name: "partNumberDisplay",
       required: false,
       in: "query",
       type: "string"
@@ -256158,14 +256158,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseOrderLines.partNumberDisplay": {
-      name: "partNumberDisplay",
+    "rowFilter.purchaseOrderLines.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.purchaseOrderLines.taxCodeId": {
-      name: "taxCodeId",
+    "rowFilter.purchaseOrderLines.partNumberDisplay": {
+      name: "partNumberDisplay",
       required: false,
       in: "query",
       type: "string"
