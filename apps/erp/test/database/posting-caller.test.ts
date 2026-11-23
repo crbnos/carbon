@@ -87,58 +87,102 @@ describe("postingCaller", () => {
   });
 });
 
-describe("authorizePostingCaller (API key)", () => {
-  class Rollback extends Error {}
+class Rollback extends Error {}
 
-  /** Runs `fn` with a context for a real `apiKey` row, then rolls back. */
-  async function withApiKey(
+/** The permissions the member holds in their own company. */
+const HELD = ["inventory_view", "inventory_update"];
+
+/**
+ * Runs `fn` with an employee of a company of their own, holding `HELD`, and
+ * rolls it all back. Built here rather than read from whatever the database
+ * holds: a freshly migrated one has no users.
+ */
+async function withMember(
+  fn: (
+    fields: { db: Kysely<KyselyDatabase>; companyId: string; userId: string }
+  ) => Promise<void>
+) {
+  const db = await connectLocalTestDatabase();
+  const prefix = `posting-caller-${crypto.randomUUID()}`;
+  const companyId = `${prefix}-company`;
+  const userId = `${prefix}-user`;
+  try {
+    await db.transaction().execute(async (trx) => {
+      await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+      await trx
+        .insertInto("user")
+        .values({ id: userId, email: `${prefix}@example.com` })
+        .execute();
+      await trx
+        .insertInto("companyGroup")
+        .values({ id: `${prefix}-group`, name: prefix, createdBy: userId })
+        .execute();
+      await trx
+        .insertInto("company")
+        .values({
+          id: companyId,
+          name: prefix,
+          companyGroupId: `${prefix}-group`,
+          baseCurrencyCode: "USD"
+        })
+        .execute();
+      await trx
+        .insertInto("userToCompany")
+        .values({ userId, companyId, role: "employee" })
+        .execute();
+      await trx
+        .insertInto("userPermission")
+        .values({
+          id: userId,
+          permissions: JSON.stringify(
+            Object.fromEntries(HELD.map((key) => [key, [companyId]]))
+          )
+        })
+        .execute();
+      await sql`SET LOCAL session_replication_role = origin`.execute(trx);
+      await fn({ db: trx, companyId, userId });
+      throw new Rollback();
+    });
+  } catch (err) {
+    if (!(err instanceof Rollback)) throw err;
+  } finally {
+    await db.destroy();
+  }
+}
+
+describe("authorizePostingCaller (API key)", () => {
+  /** Runs `fn` with a context for a real `apiKey` row of the member's company. */
+  function withApiKey(
     row: { scopes: Record<string, string[]>; expiresAt: string | null },
     fn: (ctx: Caller, companyId: string) => Promise<void>
   ) {
-    const db = await connectLocalTestDatabase();
-    const owner = await sql<{ companyId: string; userId: string }>`
-      SELECT "companyId", "userId" FROM "userToCompany" LIMIT 1
-    `.execute(db);
-    const { companyId, userId } = owner.rows[0]!;
-    const rawKey = `crbn_test_${Date.now()}`;
-    try {
-      await db.transaction().execute(async (trx) => {
-        await trx
-          .insertInto("apiKey")
-          .values({
-            name: "authorize test",
-            companyId,
-            createdBy: userId,
-            keyHash: createHash("sha256").update(rawKey).digest("hex"),
-            scopes: JSON.stringify(row.scopes),
-            expiresAt: row.expiresAt
-          })
-          .execute();
-        const ctx = {
-          db: trx,
+    return withMember(async ({ db, companyId, userId }) => {
+      const rawKey = `crbn_test_${crypto.randomUUID()}`;
+      await db
+        .insertInto("apiKey")
+        .values({
+          name: "authorize test",
           companyId,
-          userId,
-          caller: postingCaller(
-            createClient<Database>("http://localhost:54321", "anon-key", {
-              global: { headers: { "carbon-key": rawKey } }
-            }),
-            userId
-          )
-        };
-        await fn(ctx, companyId);
-        throw new Rollback();
-      });
-    } catch (err) {
-      if (!(err instanceof Rollback)) throw err;
-    } finally {
-      await db.destroy();
-    }
+          createdBy: userId,
+          keyHash: createHash("sha256").update(rawKey).digest("hex"),
+          scopes: JSON.stringify(row.scopes),
+          expiresAt: row.expiresAt
+        })
+        .execute();
+      const caller = postingCaller(
+        createClient<Database>("http://localhost:54321", "anon-key", {
+          global: { headers: { "carbon-key": rawKey } }
+        }),
+        userId
+      );
+      await fn({ db, companyId, userId, caller }, companyId);
+    });
   }
 
   databaseTest("checks the key's scopes, not its creator's claims", () =>
     withApiKey({ scopes: {}, expiresAt: null }, async (ctx) => {
       await expect(authorize(ctx, {})).resolves.toBeUndefined();
-      // The creator of a real company holds this; the key does not.
+      // The key's creator holds this; the key does not.
       await expect(authorize(ctx, { view: "inventory" })).rejects.toMatchObject(
         { status: 403 }
       );
@@ -149,7 +193,7 @@ describe("authorizePostingCaller (API key)", () => {
     withApiKey({ scopes: {}, expiresAt: null }, async (ctx, companyId) => {
       await sql`UPDATE "apiKey" SET scopes = ${JSON.stringify({
         inventory_update: [companyId]
-      })}::jsonb WHERE name = 'authorize test'`.execute(ctx.db);
+      })}::jsonb WHERE "companyId" = ${companyId}`.execute(ctx.db);
       await expect(
         authorize(ctx, { update: "inventory" })
       ).resolves.toBeUndefined();
@@ -172,66 +216,36 @@ describe("authorizePostingCaller (API key)", () => {
 });
 
 describe("authorizePostingCaller (user)", () => {
-  /** Runs `fn` with a real employee of a real company. */
-  async function withEmployee(
-    fn: (
-      fields: { db: Kysely<KyselyDatabase>; companyId: string; userId: string },
-      held: string
-    ) => Promise<void>
-  ) {
-    const db = await connectLocalTestDatabase();
-    try {
-      const { rows } = await sql<{
-        companyId: string;
-        userId: string;
-        claims: Record<string, unknown>;
-      }>`
-        SELECT "companyId", "userId", get_claims("userId", "companyId") AS claims
-        FROM "userToCompany" WHERE "role" = 'employee' LIMIT 20
-      `.execute(db);
-      for (const { companyId, userId, claims } of rows) {
-        const held = Object.entries(claims).find(
-          ([key, companies]) =>
-            key.endsWith("_update") &&
-            Array.isArray(companies) &&
-            companies.includes(companyId)
-        );
-        if (held) {
-          return await fn({ db, companyId, userId }, held[0].split("_")[0]!);
-        }
-      }
-      throw new Error("No employee with an update permission to test with");
-    } finally {
-      await db.destroy();
-    }
-  }
-
   databaseTest(
     "admits a permission the user holds, in their company only",
     () =>
-      withEmployee(async (fields, held) => {
+      withMember(async (fields) => {
         await expect(
-          authorize({ ...fields, caller: { type: "user" } }, { update: held })
+          authorize(
+            { ...fields, caller: { type: "user" } },
+            { update: "inventory" }
+          )
         ).resolves.toBeUndefined();
         await expect(
           authorize(
             { ...fields, companyId: "not-theirs", caller: { type: "user" } },
-            {
-              update: held
-            }
+            { update: "inventory" }
           )
         ).rejects.toMatchObject({ status: 403 });
         await expect(
-          authorize({ ...fields, caller: { type: "user" } }, { update: "no-such-module" })
+          authorize(
+            { ...fields, caller: { type: "user" } },
+            { update: "invoicing" }
+          )
         ).rejects.toMatchObject({ status: 403 });
       })
   );
 
   databaseTest("applies the rule the input's type selects", () =>
-    withEmployee(async (fields, held) => {
+    withMember(async (fields) => {
       const rule = {
         by: "type",
-        rules: { internal: "system", open: { update: held } }
+        rules: { internal: "system", open: { update: "inventory" } }
       } as const;
       const user: Caller = { ...fields, caller: { type: "user" } };
       await expect(
