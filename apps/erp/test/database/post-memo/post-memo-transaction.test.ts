@@ -293,7 +293,12 @@ databaseTest(
     try {
       const memoId = await memoFixture(f);
       const original = await postMemoTransaction(f.db, { ...f.args, memoId });
-      const paymentId = await f.payment({ amount: 0, noApplication: true });
+      // A payment settles only what posted on or before its date: the memo's.
+      const paymentId = await f.payment({
+        amount: 0,
+        noApplication: true,
+        paymentDate: "2026-09-07"
+      });
       await f.db
         .insertInto("invoiceSettlement")
         .values({
