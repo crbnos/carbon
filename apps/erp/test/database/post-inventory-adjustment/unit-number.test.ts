@@ -95,6 +95,17 @@ databaseTest("a stocked batch unit keeps its number", () =>
   })
 );
 
+databaseTest("an increase that sends no number keeps the unit's", () =>
+  withFixture(async ({ adjust, unit }) => {
+    const increase = await adjust({
+      adjustmentType: "Positive Adjmt.",
+      quantity: 2
+    });
+    expect(increase.error).toBeNull();
+    expect(await unit()).toEqual({ readableId: "LOT-1", quantity: 7 });
+  })
+);
+
 // Runs `adjustment` on its own connection while another transaction has
 // cleared the unit's number and not committed: the adjustment reads its
 // quantities while the unit still has a number. Commits once the adjustment

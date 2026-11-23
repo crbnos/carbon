@@ -25542,10 +25542,24 @@ export async function postInventoryAdjustment(
       return;
     }
 
+    // The quantities were read before this transaction, so the unit is read
+    // again under the row lock its update takes: its stored row decides
+    // whether the adjustment creates it, and an increase that sends no number
+    // keeps the one it has now, never one cleared since.
+    const storedUnit = trackedEntityId
+      ? await trx
+          .selectFrom("trackedEntity")
+          .select("readableId")
+          .where("id", "=", trackedEntityId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst()
+      : undefined;
+
     // Every path below writes a number sent for an existing unit: a move, a
     // Set Quantity that leaves the quantity as it is, and an increase or a
     // decrease.
-    if (trackedEntityId && currentQuantity) {
+    if (storedUnit) {
       const blankNumber = blankUnitNumberRefusal({
         itemTrackingType: item.itemTrackingType,
         readableId
@@ -25764,27 +25778,14 @@ export async function postInventoryAdjustment(
     // A zero-quantity new unit creates nothing: the no-op below returns
     // success, so repeated scanner posts stay idempotent.
     const createsNothing =
-      !!trackedEntityId && !currentQuantity && round(adjustmentQuantity) === 0;
+      !!trackedEntityId && !storedUnit && round(adjustmentQuantity) === 0;
     if (entryType === "Positive Adjmt." && !createsNothing) {
-      // The quantities were read before this transaction. An existing unit's
-      // number is read again under the row lock its quantity update takes,
-      // so the increase never lands on a unit whose number was cleared since.
-      const lockedUnit =
-        trackedEntityId && currentQuantity
-          ? await trx
-              .selectFrom("trackedEntity")
-              .select("readableId")
-              .where("id", "=", trackedEntityId)
-              .where("companyId", "=", companyId)
-              .forUpdate()
-              .executeTakeFirst()
-          : undefined;
       const refusal = stockIncreaseRefusal({
         itemTrackingType: item.itemTrackingType,
         trackedEntityId,
-        createsUnit: !!trackedEntityId && !currentQuantity,
+        createsUnit: !!trackedEntityId && !storedUnit,
         readableId,
-        currentReadableId: lockedUnit?.readableId
+        currentReadableId: storedUnit?.readableId
       });
       if (refusal) throw new InvalidInputError(refusal);
     }
