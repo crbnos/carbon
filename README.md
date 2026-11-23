@@ -370,10 +370,11 @@ It builds on macOS and Linux. On Windows, run the stack inside WSL2 and follow t
    sudo apt install build-essential pkg-config libssl-dev curl git cmake ninja-build libfcl-dev libdraco-dev libopenblas-dev
    ```
 
-2. **Rust**, through rustup. Not the distribution's `cargo`: the locked dependencies need Rust 1.88 or later, and Ubuntu's is 1.75.
+2. **Rust**, through rustup. Not the distribution's `cargo`: the locked dependencies need Rust 1.88 or later, and Ubuntu's is 1.75. `crbn` checks only that Cargo is installed, not its version: `cargo --version` shows it.
 
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   . "$HOME/.cargo/env"   # this shell: rustup's cargo ahead of any older one on PATH
    ```
 
 3. **OCCT**, a patched static OpenCASCADE, built once per machine (~15–30 min) into `~/.cache/carbon-occt/8.0.0-p1` and shared by every worktree. Re-running it is a no-op:

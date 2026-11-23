@@ -353,6 +353,15 @@ describe("missingAssemblerDependencies", () => {
         OPENSSL_INCLUDE_DIR: "/opt/ssl/include"
       },
       file: "/opt/ssl/include"
+    },
+    {
+      how: "OPENSSL_LIB_DIR with OPENSSL_INCLUDE_DIR over a stale OPENSSL_DIR",
+      env: {
+        OPENSSL_DIR: "/opt/removed-ssl",
+        OPENSSL_LIB_DIR: "/opt/ssl/lib",
+        OPENSSL_INCLUDE_DIR: "/opt/ssl/include"
+      },
+      file: "/opt/ssl/include"
     }
   ])("finds OpenSSL installed elsewhere through $how", ({ env, file }) => {
     const files = [

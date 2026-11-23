@@ -356,16 +356,16 @@ function onPath(machine: MachineProbe, command: string): boolean {
 /**
  * openblas-src's build-dependency openblas-build fetches over native-tls, which
  * is `openssl-sys` everywhere but macOS. Off macOS that crate finds OpenSSL
- * through `OPENSSL_DIR`, `OPENSSL_LIB_DIR` with `OPENSSL_INCLUDE_DIR`, or
- * pkg-config only.
+ * through `OPENSSL_LIB_DIR` with `OPENSSL_INCLUDE_DIR`, else `OPENSSL_DIR`,
+ * else pkg-config, in that order (its `build/find_normal.rs`).
  */
 function opensslInstalled(machine: MachineProbe): boolean {
   const { env, exists } = machine;
   if (machine.platform === "darwin") return true;
-  if (env.OPENSSL_DIR) return exists(env.OPENSSL_DIR);
   if (env.OPENSSL_LIB_DIR && env.OPENSSL_INCLUDE_DIR) {
     return exists(env.OPENSSL_INCLUDE_DIR);
   }
+  if (env.OPENSSL_DIR) return exists(env.OPENSSL_DIR);
   const pkgConfigDirs = [
     ...(env.PKG_CONFIG_PATH ?? "").split(delimiter).filter(Boolean),
     ...LINUX_LIB_DIRS.map((dir) => join(dir, "pkgconfig"))
