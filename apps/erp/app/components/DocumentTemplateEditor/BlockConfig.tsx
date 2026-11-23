@@ -27,6 +27,10 @@ import {
   getTextEntries,
   HEADER_TEXT_KEYS
 } from "@carbon/documents/template";
+import {
+  isPartNumberDisplay,
+  type PartNumberParty
+} from "@carbon/documents/utils";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -53,6 +57,7 @@ import {
   LuTrash2
 } from "react-icons/lu";
 import { Link } from "react-router";
+import { usePartNumberDisplayOptions } from "~/components/Form";
 import { path } from "~/utils/path";
 import { ToggleRow } from "./configHelpers";
 import {
@@ -198,6 +203,7 @@ export function BlockConfig() {
         </RememberedSection>
       )}
       {isDocument && block.type === "notes" && <NotesConfig />}
+      {isDocument && block.type === "lineItems" && <PartNumberDisplayConfig />}
       {hasOptions && !isDocument && (
         <RememberedSection
           id={`options:${block.type}`}
@@ -262,6 +268,80 @@ function ReadOnlyWhenLocked({ children }: { children: ReactNode }) {
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * Which part numbers every line of the record prints. Each line stores its own
+ * choice; a pick here sets every line when the document is saved.
+ */
+function PartNumberDisplayConfig() {
+  const party = useEditorStore((s) => s.document?.partNumberParty ?? null);
+  if (!party) return null;
+  return <PartNumberDisplaySelect party={party} />;
+}
+
+function PartNumberDisplaySelect({ party }: { party: PartNumberParty }) {
+  const { t } = useLingui();
+  const value = useEditorStore((s) => s.partNumberDisplay);
+  const setPartNumberDisplay = useEditorStore((s) => s.setPartNumberDisplay);
+  const partNumbersLocked = useEditorStore(
+    (s) => s.document?.partNumbersLocked ?? false
+  );
+  const hasLines = useEditorStore(
+    (s) => (s.document?.partNumberLineCount ?? 0) > 0
+  );
+  const options = usePartNumberDisplayOptions(party);
+  const canPick = hasLines && !partNumbersLocked;
+
+  return (
+    <RememberedSection
+      id="document:part-numbers"
+      title={t`Part Numbers`}
+      className="-mx-3 border-t"
+    >
+      <ReadOnlyWhenLocked>
+        <div className="flex flex-col gap-1.5">
+          <Select
+            value={isPartNumberDisplay(value) ? value : ""}
+            disabled={!canPick}
+            onValueChange={(next) => {
+              if (isPartNumberDisplay(next)) setPartNumberDisplay(next);
+            }}
+          >
+            <SelectTrigger aria-label={t`Part Numbers`}>
+              <SelectValue
+                placeholder={
+                  value === "mixed" ? t`Mixed` : t`Not set: prints as before`
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {!hasLines ? (
+              <Trans>No line of this document has an item yet.</Trans>
+            ) : partNumbersLocked ? (
+              <Trans>
+                The part numbers of this document cannot change now.
+              </Trans>
+            ) : value === "mixed" ? (
+              <Trans>
+                The lines print different part numbers. A pick sets every line.
+              </Trans>
+            ) : (
+              <Trans>Sets every line of this document when you save.</Trans>
+            )}
+          </p>
+        </div>
+      </ReadOnlyWhenLocked>
+    </RememberedSection>
   );
 }
 

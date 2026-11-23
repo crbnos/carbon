@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261120052902",
+  "schemaVersion": "20261121061712",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-23T10:22:24.565Z",
+  "exportedAt": "2026-11-23T15:27:17.707Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -521,7 +521,9 @@
         "autoPickingListOnRelease",
         "deliveryDateControl",
         "receiptBatchNumbersFromPurchaseOrder",
-        "sequenceWeekNumbering"
+        "sequenceWeekNumbering",
+        "supplierPartNumberDisplay",
+        "customerPartNumberDisplay"
       ]
     },
     {
@@ -3393,7 +3395,8 @@
         "salesContactId",
         "defaultCc",
         "intercompanyCompanyId",
-        "readableId"
+        "readableId",
+        "partNumberDisplay"
       ]
     },
     {
@@ -4492,7 +4495,8 @@
         "pricingRuleId",
         "priceTrace",
         "sortOrder",
-        "taxCodeId"
+        "taxCodeId",
+        "partNumberDisplay"
       ]
     },
     {
@@ -7610,6 +7614,7 @@
         "projectId",
         "projectElementId",
         "planningGroupId",
+        "partNumberDisplay",
         "taxCodeId"
       ]
     },
@@ -8208,7 +8213,10 @@
         "deliveryDateCheckedAt",
         "deliveryDateOverriddenBy",
         "deliveryDateOverriddenAt",
-        "taxCodeId"
+        "taxCodeId",
+        "partNumberDisplay",
+        "customerPartId",
+        "customerPartRevision"
       ]
     },
     {
@@ -8261,7 +8269,8 @@
         "discountPercent",
         "serviceJobId",
         "taxCodeId",
-        "taxesShipping"
+        "taxesShipping",
+        "partNumberDisplay"
       ]
     },
     {
@@ -8492,7 +8501,8 @@
         "fulfillmentId",
         "serialNumber",
         "customerContractInvoiceLineId",
-        "previousInvoiceDate"
+        "previousInvoiceDate",
+        "partNumberDisplay"
       ]
     },
     {
@@ -8585,7 +8595,8 @@
         "supplierStatus",
         "intercompanyCompanyId",
         "readableId",
-        "supplierStageId"
+        "supplierStageId",
+        "partNumberDisplay"
       ]
     },
     {

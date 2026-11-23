@@ -256,7 +256,8 @@ export const CUSTOMERS = [
     status: "Active",
     phone: "+1-256-555-0100",
     website: "https://army-suas-po.example.gov",
-    taxCode: "Out of State – Exempt"
+    taxCode: "Out of State – Exempt",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "Northgate Defense Systems",
@@ -375,7 +376,8 @@ export const SUPPLIERS = [
     stage: "Production" as const,
     type: "Hardware",
     phone: "+1-206-555-0600",
-    website: "https://milspec-fasteners.example.com"
+    website: "https://milspec-fasteners.example.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Ridgeline Composites",

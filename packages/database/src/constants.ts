@@ -724,6 +724,12 @@ export const Constants = {
         "Outside Processing",
       ],
       parameterSource: ["Manual", "Sum", "Min", "Max", "Formula", "Item"],
+      partNumberDisplay: [
+        "Ours First",
+        "Theirs First",
+        "Theirs Only",
+        "Ours Only",
+      ],
       payableLineType: [
         "Comment",
         "G/L Account",

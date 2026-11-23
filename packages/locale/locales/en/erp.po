@@ -6745,6 +6745,15 @@ msgstr "Carbon only"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 
+msgid "Carbon part number only"
+msgstr "Carbon part number only"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Carbon part number, then customer part number"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Carbon part number, then supplier part number"
+
 msgid "Carbon Posted"
 msgstr "Carbon Posted"
 
@@ -7304,6 +7313,12 @@ msgstr "Choose where it goes"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
+
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
 
 msgid "Choose your style"
 msgstr "Choose your style"
@@ -9735,6 +9750,12 @@ msgstr "Customer Part ID"
 
 msgid "Customer Part Number"
 msgstr "Customer Part Number"
+
+msgid "Customer part number only"
+msgstr "Customer part number only"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "Customer part number, then Carbon part number"
 
 msgid "Customer Part Revision"
 msgstr "Customer Part Revision"
@@ -17534,6 +17555,12 @@ msgstr "line {position}"
 msgid "Line Add-On"
 msgstr "Line Add-On"
 
+msgid "Line Customer Part ID"
+msgstr "Line Customer Part ID"
+
+msgid "Line Customer Part Revision"
+msgstr "Line Customer Part Revision"
+
 msgid "Line description"
 msgstr "Line description"
 
@@ -17582,8 +17609,11 @@ msgstr "Line Shipping"
 msgid "Line Status"
 msgstr "Line Status"
 
-msgid "Line Supplier Part ID"
-msgstr "Line Supplier Part ID"
+msgid "Line Supplier Part ID Row"
+msgstr "Line Supplier Part ID Row"
+
+msgid "Line Supplier Part Number"
+msgstr "Line Supplier Part Number"
 
 msgid "Line Total"
 msgstr "Line Total"
@@ -18785,6 +18815,9 @@ msgstr "Missing Time"
 
 msgid "Missing:"
 msgstr "Missing:"
+
+msgid "Mixed"
+msgstr "Mixed"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20381,6 +20414,9 @@ msgstr "No lease run is posted yet"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 
+msgid "No line of this document has an item yet."
+msgstr "No line of this document has an item yet."
+
 msgid "No lines"
 msgstr "No lines"
 
@@ -21159,6 +21195,9 @@ msgstr "not set in company settings"
 
 msgid "Not set up"
 msgstr "Not set up"
+
+msgid "Not set: prints as before"
+msgstr "Not set: prints as before"
 
 msgid "Not started"
 msgstr "Not started"
@@ -22607,6 +22646,18 @@ msgstr "Part lead times update from posted purchase receipts."
 
 msgid "Part Number"
 msgstr "Part Number"
+
+msgid "Part number display"
+msgstr "Part number display"
+
+msgid "Part Numbers"
+msgstr "Part Numbers"
+
+msgid "Part Numbers on Documents"
+msgstr "Part Numbers on Documents"
+
+msgid "Part numbers on documents updated"
+msgstr "Part numbers on documents updated"
 
 msgid "Part Supersession"
 msgstr "Part Supersession"
@@ -28455,6 +28506,9 @@ msgstr "Set Version {0} as Active Version?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Set your default location in profile settings to pick a storage unit."
 
+msgid "Sets every line of this document when you save."
+msgstr "Sets every line of this document when you save."
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "Sets the labor warranty of a serial when it ships"
 
@@ -30178,6 +30232,9 @@ msgstr "Supplier Location"
 msgid "Supplier Name"
 msgstr "Supplier Name"
 
+msgid "Supplier or company default"
+msgstr "Supplier or company default"
+
 msgid "Supplier Order Number"
 msgstr "Supplier Order Number"
 
@@ -30195,6 +30252,12 @@ msgstr "Supplier Part ID"
 
 msgid "Supplier Part Number"
 msgstr "Supplier Part Number"
+
+msgid "Supplier part number only"
+msgstr "Supplier part number only"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "Supplier part number, then Carbon part number"
 
 msgid "Supplier Part Numbers"
 msgstr "Supplier Part Numbers"
@@ -31699,6 +31762,9 @@ msgstr "The lifecycle state of this supplier — Active, Inactive, Pending Appro
 msgid "The lines could not be loaded."
 msgstr "The lines could not be loaded."
 
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "The lines print different part numbers. A pick sets every line."
+
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 
@@ -31903,6 +31969,9 @@ msgstr "The part is manufactured as its own job when the parent that needs it is
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "The part is taken from existing stock when its parent is built — no new job or purchase order."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "The part numbers of this document cannot change now."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."

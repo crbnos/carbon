@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   bicMatchesCountry,
   colorNames,
@@ -120,7 +121,9 @@ export const customerValidator = z.object({
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
   salesContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 

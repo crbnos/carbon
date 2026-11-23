@@ -13,6 +13,7 @@ import {
   type ValueCollector
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
+import type { PartNumberDisplay } from "../utils/part-number";
 import { getLineTaxableSubtotal } from "../utils/sales-order";
 import {
   getMoneyFormatter,
@@ -52,6 +53,8 @@ interface SalesOrderPDFProps extends PDF {
   sections?: Record<string, ResolvedSection>;
   /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
   currencyDecimals?: number | null;
+  /** The Edit document modal's unsaved display choice for every line. */
+  partNumberDisplayDraft?: PartNumberDisplay;
   /** The codes the lines name (`TAX_CODE_SUMMARY_SELECT`), for the tax summary. */
   taxCodes?: TaxCodeSummaryRow[] | null;
   /** The date the codes' components are read on (YYYY-MM-DD). */
@@ -76,7 +79,8 @@ const SalesOrderPDF = ({
   template,
   sections = {},
   taxCodes,
-  taxDate
+  taxDate,
+  partNumberDisplayDraft
 }: SalesOrderPDFProps) => {
   const currencyCode = salesOrder.currencyCode ?? company.baseCurrencyCode;
   const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
@@ -155,7 +159,8 @@ const SalesOrderPDF = ({
     headerOptions,
     taxSummary,
     documentTitle,
-    documentNumber
+    documentNumber,
+    partNumberDisplayDraft
   };
 
   return (

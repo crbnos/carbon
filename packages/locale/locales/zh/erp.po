@@ -6745,6 +6745,15 @@ msgstr "仅限 Carbon"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon从其未结项目中开设此账户。此处的金额仅在迁移清算时比较。"
 
+msgid "Carbon part number only"
+msgstr "仅显示 Carbon 零件号"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Carbon 零件号，然后是客户零件号"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Carbon 零件号，然后是供应商零件号"
+
 msgid "Carbon Posted"
 msgstr "Carbon已过账"
 
@@ -7304,6 +7313,12 @@ msgstr "选择去向位置"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "选择物料清单浏览器是否在物料、报价单和工单上用描述或物料 ID 标记每行。"
+
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "选择新建采购订单行打印哪些零件号。供应商可以覆盖此选择，每一行也可以更改此选择。"
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "选择新建报价单、订单、发票和装箱单的行打印哪些零件号。客户可以覆盖此选择。"
 
 msgid "Choose your style"
 msgstr "选择您的风格"
@@ -9735,6 +9750,12 @@ msgstr "客户料号"
 
 msgid "Customer Part Number"
 msgstr "客户零件号"
+
+msgid "Customer part number only"
+msgstr "仅显示客户零件号"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "客户零件号，然后是 Carbon 零件号"
 
 msgid "Customer Part Revision"
 msgstr "客户零件修订版"
@@ -17534,6 +17555,12 @@ msgstr "第{position}行"
 msgid "Line Add-On"
 msgstr "行附加费"
 
+msgid "Line Customer Part ID"
+msgstr "行客户零件 ID"
+
+msgid "Line Customer Part Revision"
+msgstr "行客户修订版"
+
 msgid "Line description"
 msgstr "行描述"
 
@@ -17582,8 +17609,11 @@ msgstr "行运输"
 msgid "Line Status"
 msgstr "行状态"
 
-msgid "Line Supplier Part ID"
-msgstr "行供应商零件 ID"
+msgid "Line Supplier Part ID Row"
+msgstr "行供应商零件 ID 行"
+
+msgid "Line Supplier Part Number"
+msgstr "行供应商零件号"
 
 msgid "Line Total"
 msgstr "行总计"
@@ -18785,6 +18815,9 @@ msgstr "缺失时间"
 
 msgid "Missing:"
 msgstr "缺失："
+
+msgid "Mixed"
+msgstr "混合"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20381,6 +20414,9 @@ msgstr "尚未过账租赁运行"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "未设置休假元素。在间接项目中，打开休假元素并启用\"休假\"功能。"
 
+msgid "No line of this document has an item yet."
+msgstr "此单据的行中还没有物料。"
+
 msgid "No lines"
 msgstr "无行项"
 
@@ -21159,6 +21195,9 @@ msgstr "未在公司设置中设置"
 
 msgid "Not set up"
 msgstr "未设置"
+
+msgid "Not set: prints as before"
+msgstr "未设置：保持原有打印方式"
 
 msgid "Not started"
 msgstr "未开始"
@@ -22607,6 +22646,18 @@ msgstr "零件提前期从已过账的采购收货更新。"
 
 msgid "Part Number"
 msgstr "零件编号"
+
+msgid "Part number display"
+msgstr "零件号显示"
+
+msgid "Part Numbers"
+msgstr "零件号"
+
+msgid "Part Numbers on Documents"
+msgstr "单据上的零件号"
+
+msgid "Part numbers on documents updated"
+msgstr "单据上的零件号已更新"
 
 msgid "Part Supersession"
 msgstr "零件替代"
@@ -28455,6 +28506,9 @@ msgstr "将版本 {0} 设置为启用版本？"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "在个人资料设置中设置默认地点以选择存储单元。"
 
+msgid "Sets every line of this document when you save."
+msgstr "保存时，此单据的每一行都会设置为此选项。"
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "在序列号发运时设置劳动保证"
 
@@ -30178,6 +30232,9 @@ msgstr "供应商位置"
 msgid "Supplier Name"
 msgstr "供应商名称"
 
+msgid "Supplier or company default"
+msgstr "供应商或公司默认值"
+
 msgid "Supplier Order Number"
 msgstr "供应商订单号"
 
@@ -30195,6 +30252,12 @@ msgstr "供应商料号"
 
 msgid "Supplier Part Number"
 msgstr "供应商零件号"
+
+msgid "Supplier part number only"
+msgstr "仅显示供应商零件号"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "供应商零件号，然后是 Carbon 零件号"
 
 msgid "Supplier Part Numbers"
 msgstr "供应商零件号"
@@ -31699,6 +31762,9 @@ msgstr "此供应商的生命周期状态 — 启用、已停用、待批准等�
 msgid "The lines could not be loaded."
 msgstr "无法加载明细行。"
 
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "各行打印的零件号不同。选择一个选项将统一设置所有行。"
+
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "从计划组的订单的一部分到一个成员的需求的链接：订单未结时软链接(MRP可能会移动它)，收到或完成后硬链接(永不移动)，或规划员以原因设置时手动链接。"
 
@@ -31903,6 +31969,9 @@ msgstr "当需要该零件的父级被构造时，该零件被制造为其自己
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "构建其父级时，从现有库存中获取该零件 - 无新工作或采购订单。"
+
+msgid "The part numbers of this document cannot change now."
+msgstr "此单据的零件号现在不能更改。"
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "交付付款中政府保留的部分，用以收回进度付款或绩效付款：清算比率乘以发票，不超过未清算的融资。"

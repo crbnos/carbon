@@ -270,7 +270,8 @@ export const CUSTOMERS = [
     status: "Active",
     phone: "+1-319-555-0100",
     website: "https://cedarvalleyhydraulics.com",
-    taxCode: "IL – Rockford"
+    taxCode: "IL – Rockford",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "Granite State Instruments",
@@ -357,7 +358,8 @@ export const SUPPLIERS = [
     stage: "Qualified" as const,
     type: "Hardware",
     phone: "+1-847-555-0330",
-    website: "https://fastlinesupply.com"
+    website: "https://fastlinesupply.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Midway Bearing & Seal",

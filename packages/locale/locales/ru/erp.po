@@ -6745,6 +6745,15 @@ msgstr "Только Carbon"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon открывает этот счет из открытых позиций. Сумма здесь сравнивается только при очистке миграции."
 
+msgid "Carbon part number only"
+msgstr "Только номер детали Carbon"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Номер детали Carbon, затем номер детали покупателя"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Номер детали Carbon, затем номер детали поставщика"
+
 msgid "Carbon Posted"
 msgstr "Carbon проведен"
 
@@ -7304,6 +7313,12 @@ msgstr "Выберите, куда отправить"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Выберите, будут ли подписаны каждая строка спецификации на номенклатуре, коммерческих предложениях и производственных заказах с описанием или кодом номенклатуры."
+
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "Выберите, какие номера деталей будут печататься в новых строках заказов поставщику. Поставщик может переопределить этот выбор, а каждая строка может его изменить."
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "Выберите, какие номера деталей будут печататься в новых строках коммерческих предложений, заказов, счетов-фактур и упаковочных листов. Покупатель может переопределить этот выбор."
 
 msgid "Choose your style"
 msgstr "Выберите свой стиль"
@@ -9735,6 +9750,12 @@ msgstr "Артикул покупателя"
 
 msgid "Customer Part Number"
 msgstr "Номер детали покупателя"
+
+msgid "Customer part number only"
+msgstr "Только номер детали покупателя"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "Номер детали покупателя, затем номер детали Carbon"
 
 msgid "Customer Part Revision"
 msgstr "Ревизия детали покупателя"
@@ -17534,6 +17555,12 @@ msgstr "строка {position}"
 msgid "Line Add-On"
 msgstr "Дополнение строки"
 
+msgid "Line Customer Part ID"
+msgstr "ID детали покупателя в строке"
+
+msgid "Line Customer Part Revision"
+msgstr "Ревизия покупателя в строке"
+
 msgid "Line description"
 msgstr "Описание строки"
 
@@ -17582,8 +17609,11 @@ msgstr "Доставка строки"
 msgid "Line Status"
 msgstr "Статус строки"
 
-msgid "Line Supplier Part ID"
-msgstr "ID детали поставщика в строке"
+msgid "Line Supplier Part ID Row"
+msgstr "Строка ID детали поставщика в строке"
+
+msgid "Line Supplier Part Number"
+msgstr "Номер детали поставщика в строке"
 
 msgid "Line Total"
 msgstr "Итого по строке"
@@ -18785,6 +18815,9 @@ msgstr "Отсутствующее время"
 
 msgid "Missing:"
 msgstr "Отсутствует:"
+
+msgid "Mixed"
+msgstr "Смешанные"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20381,6 +20414,9 @@ msgstr "Ни один запуск аренды еще не проведен."
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Элемент отпуска не установлен. В косвенном проекте откройте элемент для отпуска и включите отпуск."
 
+msgid "No line of this document has an item yet."
+msgstr "Ни в одной строке этого документа пока нет номенклатуры."
+
 msgid "No lines"
 msgstr "Нет строк"
 
@@ -21159,6 +21195,9 @@ msgstr "не установлено в настройках организаци
 
 msgid "Not set up"
 msgstr "Не настроено"
+
+msgid "Not set: prints as before"
+msgstr "Не задано: печатается как прежде"
 
 msgid "Not started"
 msgstr "Не начинается"
@@ -22607,6 +22646,18 @@ msgstr "Сроки поставки деталей обновляются из �
 
 msgid "Part Number"
 msgstr "Номер детали"
+
+msgid "Part number display"
+msgstr "Отображение номера детали"
+
+msgid "Part Numbers"
+msgstr "Номера деталей"
+
+msgid "Part Numbers on Documents"
+msgstr "Номера деталей в документах"
+
+msgid "Part numbers on documents updated"
+msgstr "Номера деталей в документах обновлены"
 
 msgid "Part Supersession"
 msgstr "Замещение деталей"
@@ -28455,6 +28506,9 @@ msgstr "Установить версию {0} как активную верси
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Установите местоположение по умолчанию в настройках профиля, чтобы выбрать единицу хранения."
 
+msgid "Sets every line of this document when you save."
+msgstr "Применяется ко всем строкам этого документа при сохранении."
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "Устанавливает гарантию труда серийного номера при отгрузке"
 
@@ -30178,6 +30232,9 @@ msgstr "Местоположение поставщика"
 msgid "Supplier Name"
 msgstr "Название поставщика"
 
+msgid "Supplier or company default"
+msgstr "По умолчанию у поставщика или организации"
+
 msgid "Supplier Order Number"
 msgstr "Номер заказа поставщика"
 
@@ -30195,6 +30252,12 @@ msgstr "Артикул поставщика"
 
 msgid "Supplier Part Number"
 msgstr "Номер детали поставщика"
+
+msgid "Supplier part number only"
+msgstr "Только номер детали поставщика"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "Номер детали поставщика, затем номер детали Carbon"
 
 msgid "Supplier Part Numbers"
 msgstr "Номера деталей поставщика"
@@ -31699,6 +31762,9 @@ msgstr "Состояние жизненного цикла этого поста
 msgid "The lines could not be loaded."
 msgstr "Не удалось загрузить строки."
 
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "Строки печатают разные номера деталей. Выбор одного варианта задает всем строкам."
+
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "Связь от части заказа группы планирования к спросу одного члена: Мягкая пока заказ открыт (MRP может его переместить), Жесткая после получения или завершения (никогда не перемещается), или Ручная когда планировщик устанавливает её с причиной."
 
@@ -31903,6 +31969,9 @@ msgstr "Деталь производится как собственное за
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Деталь берется из существующего запаса при производстве ее родительского элемента — без создания нового производственного заказа или заказа поставщику."
+
+msgid "The part numbers of this document cannot change now."
+msgstr "Номера деталей этого документа сейчас изменить нельзя."
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Часть платежа по доставке, которую правительство удерживает для возмещения авансовых платежей или платежей по выполнению: произведение ставки ликвидации и суммы счета-фактуры, но не более оставшегося неликвидированного финансирования."

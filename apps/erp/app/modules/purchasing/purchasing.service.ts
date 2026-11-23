@@ -273,6 +273,7 @@ import {
   purchaseOrderLineDateOfOrderDate,
   purchaseOrderLineDateRefusal,
   purchaseOrderLineDeleteRefusal,
+  purchaseOrderPartNumberRefusal,
   purchaseOrderPromisedDateRefusal,
   purchaseOrderStatusAfterReversal,
   type ReceiptReceivedStock,
@@ -421,7 +422,7 @@ export async function duplicatePurchaseOrder(
     client
       .from("purchaseOrderLine")
       .select(
-        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, taxCodeId, taxPercent, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId"
+        "purchaseOrderLineType, itemId, assetId, description, purchaseQuantity, supplierUnitPrice, inventoryUnitOfMeasureCode, purchaseUnitOfMeasureCode, locationId, storageUnitId, setupPrice, customFields, conversionFactor, tags, internalNotes, externalNotes, exchangeRate, supplierShippingCost, modelUploadId, supplierTaxAmount, taxCodeId, taxPercent, jobId, jobOperationId, promisedDate, requiredDate, accountId, costCenterId, ownerId, sortOrder, supplierPartId, partNumberDisplay"
       )
       .eq("purchaseOrderId", sourcePurchaseOrderId)
       .eq("companyId", companyId)
@@ -2723,6 +2724,8 @@ type AmendPurchaseOrderOptions = {
   /** False for an edit that cannot change the total. */
   settle?: boolean;
   restatesStatus?: boolean;
+  /** The edit sets a line's part number choice. */
+  setsPartNumberDisplay?: boolean;
 };
 
 /**
@@ -2762,7 +2765,8 @@ async function amendLockedPurchaseOrder<T>(
     currencyCode,
     line,
     settle = true,
-    restatesStatus = false
+    restatesStatus = false,
+    setsPartNumberDisplay = false
   }: AmendPurchaseOrderOptions = {}
 ): Promise<T | CarbonError> {
   const gate = await getPurchaseOrderEditRefusal(
@@ -2780,6 +2784,10 @@ async function amendLockedPurchaseOrder<T>(
   }
   if (!gate.data) return ctx.error("notFound", "Purchase order not found");
   if (gate.data.refusal) return ctx.error("rule", gate.data.refusal);
+  if (setsPartNumberDisplay) {
+    const refusal = purchaseOrderPartNumberRefusal(gate.data.status);
+    if (refusal) return ctx.error("rule", refusal);
+  }
   if (line) {
     const lineRefusal =
       (line.purchaseQuantity === null
@@ -2927,7 +2935,7 @@ export async function getPurchaseOrderLineForAmendment(
   return ctx.asCaller.supabase
     .from("purchaseOrderLine")
     .select(
-      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, jobId, jobOperationId, requiredDate, promisedDate, receivedDate"
+      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, jobId, jobOperationId, requiredDate, promisedDate, receivedDate, partNumberDisplay"
     )
     .eq("id", purchaseOrderLineId)
     .eq("companyId", ctx.company.id)
@@ -3788,8 +3796,15 @@ export async function upsertPurchaseOrderLine(
   if (cleared.error) return { data: null, error: cleared.error };
 
   if ("id" in normalized) {
-    const { companyId, ...line } = normalized;
-    return updatePurchaseOrderLineRestatingCompletion(client, companyId, line);
+    // An edit never makes a line legacy again: one that leaves the part
+    // number choice out or empty keeps it, where `sanitize` would write null.
+    const { companyId, partNumberDisplay, ...line } = normalized;
+    const update = partNumberDisplay ? { ...line, partNumberDisplay } : line;
+    return updatePurchaseOrderLineRestatingCompletion(
+      client,
+      companyId,
+      update
+    );
   }
 
   const [existing, delivery] = await Promise.all([

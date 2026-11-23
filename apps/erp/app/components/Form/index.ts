@@ -78,6 +78,10 @@ import Location from "./Location";
 import LocationEmployee from "./LocationEmployee";
 import MaterialType from "./MaterialType";
 import Part from "./Part";
+import PartNumberDisplay, {
+  type PartNumberParty,
+  usePartNumberDisplayOptions
+} from "./PartNumberDisplay";
 import PaymentTerm from "./PaymentTerm";
 import Procedure from "./Procedure";
 import Process from "./Process";
@@ -177,6 +181,8 @@ export {
   Number,
   NumberControlled,
   Part,
+  PartNumberDisplay,
+  type PartNumberParty,
   Password,
   PaymentTerm,
   PhoneInput,
@@ -221,6 +227,7 @@ export {
   useConfigurableItems,
   useEmptyState,
   useLaborCategories,
+  usePartNumberDisplayOptions,
   useTaxCodes,
   useTaxPair,
   WorkCenter,

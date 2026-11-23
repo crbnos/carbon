@@ -294,6 +294,16 @@ export const COVERAGE = {
       "all three"
     )
   },
+  customerPartNumberDisplay: {
+    values: ["Theirs First"],
+    missing: (value) =>
+      `foundation.customers: no customer with partNumberDisplay "${value}"`
+  },
+  supplierPartNumberDisplay: {
+    values: ["Ours First"],
+    missing: (value) =>
+      `foundation.suppliers: no supplier with partNumberDisplay "${value}"`
+  },
   trackedEntityStatus: {
     values: enumValues("trackedEntityStatus", {
       Available: "opening lots exhibit it",
@@ -1676,6 +1686,18 @@ export function foundation(ctx: ValidationCtx): void {
     );
   }
   ctx.cover({ procedureStatus: seenProcedureStatuses });
+  ctx.cover({
+    customerPartNumberDisplay: new Set(
+      f.customers.flatMap((c) =>
+        c.partNumberDisplay ? [c.partNumberDisplay] : []
+      )
+    ),
+    supplierPartNumberDisplay: new Set(
+      f.suppliers.flatMap((s) =>
+        s.partNumberDisplay ? [s.partNumberDisplay] : []
+      )
+    )
+  });
 
   // A party's own address (a foreign buyer an export rule must see).
   for (const [bucket, parties] of [

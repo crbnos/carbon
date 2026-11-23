@@ -261,7 +261,8 @@ export const CUSTOMERS = [
     status: "Active",
     phone: "+1-313-555-0100",
     website: "https://lakeshoreauto.com",
-    taxCode: "PA – Allegheny"
+    taxCode: "PA – Allegheny",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "Cascade Integration Group",
@@ -341,7 +342,8 @@ export const SUPPLIERS = [
     stage: "Production" as const,
     type: "Motion Control",
     phone: "+1-847-555-0600",
-    website: "https://torqline.com"
+    website: "https://torqline.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Northgate Electronics",
