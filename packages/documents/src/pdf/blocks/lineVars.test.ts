@@ -54,7 +54,7 @@ describe("table row variables", () => {
 });
 
 describe("a rental invoice line", () => {
-  // A rental line has no item: its generated sentence is the line's description.
+  // A rental line has no item: its generated sentence is its name, printed once.
   const line = {
     id: "a",
     invoiceLineType: "Rental",
@@ -65,9 +65,10 @@ describe("a rental invoice line", () => {
 
   it("prints its sentence as one value", () => {
     const row = buildSalesInvoiceLineVars(line, 1, formats);
-    expect(row["line.details"]).toBe(
-      "2026-08-07 – 2026-09-03 · 28 days — Smallsat Bus"
-    );
+    expect([row["line.description"], row["line.details"]]).toEqual([
+      "2026-08-07 – 2026-09-03 · 28 days — Smallsat Bus",
+      ""
+    ]);
   });
 });
 

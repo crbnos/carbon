@@ -4372,6 +4372,9 @@ msgstr "适用于所有工作中心"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "适用于没有自己规则的特性，以及当该计划驱动检验时适用于批次。"
 
+msgid "Applies to invoices drafted from now on"
+msgstr ""
+
 msgid "Applies to Projects"
 msgstr "适用于项目"
 
@@ -7020,6 +7023,9 @@ msgstr "在每个租赁发票行计费"
 
 msgid "Charges"
 msgstr "卡消费"
+
+msgid "Charges invoice"
+msgstr ""
 
 msgid "Charging"
 msgstr "计费中"
@@ -11340,6 +11346,9 @@ msgstr "每天为到期付款创建草稿采购发票。使用此选项立即生
 
 msgid "Draft Request"
 msgstr "草稿请求"
+
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "为结束日期之后已开票的时间起草贷项凭证"
@@ -20722,6 +20731,9 @@ msgstr "没有日期在结转之前的未过账文档"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "此位置此工序上没有未开始、未批处理的操作。"
 
+msgid "No upcoming invoice."
+msgstr ""
+
 msgid "No value"
 msgstr "没有值"
 
@@ -23384,6 +23396,9 @@ msgstr "预览"
 msgid "Preview failed: {error}"
 msgstr "预览失败：{error}"
 
+msgid "Preview PDF"
+msgstr ""
+
 msgid "Preview Quantity"
 msgstr "预览数量"
 
@@ -25506,6 +25521,9 @@ msgstr "续订涨幅(%)"
 
 msgid "Rent"
 msgstr "租赁"
+
+msgid "Rent invoice"
+msgstr ""
 
 msgid "Rental"
 msgstr "租赁"

@@ -4372,6 +4372,9 @@ msgstr "Tüm iş merkezlerine uygulanır"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Kendi kuralı olmayan özelliklere ve bu kontrol planı bir muayene başlattığında lota uygulanır."
 
+msgid "Applies to invoices drafted from now on"
+msgstr ""
+
 msgid "Applies to Projects"
 msgstr "Projelere uygulanır"
 
@@ -7020,6 +7023,9 @@ msgstr "Her kiralama faturası satırında ücretlendirilir"
 
 msgid "Charges"
 msgstr "Harcamalar"
+
+msgid "Charges invoice"
+msgstr ""
 
 msgid "Charging"
 msgstr "Masraf yapılıyor"
@@ -11340,6 +11346,9 @@ msgstr "Vadesi gelen ödemeler için her gün Taslak alış faturaları oluştur
 
 msgid "Draft Request"
 msgstr "Taslak İstek"
+
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Bitiş Tarihinden Sonra Zaten Faturalandırılan Zaman İçin Bir Alacak Dekontu Taslağı Oluşturur."
@@ -20722,6 +20731,9 @@ msgstr "Cutover'dan ön tarihlenen muhasebeleştirilmemiş belgeler yok"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Bu konumdaki bu işlemde başlatılmamış, toplu işe eklenmemiş operasyon yok."
 
+msgid "No upcoming invoice."
+msgstr ""
+
 msgid "No value"
 msgstr "Değer yok"
 
@@ -23384,6 +23396,9 @@ msgstr "Önizle"
 msgid "Preview failed: {error}"
 msgstr "Önizleme başarısız oldu: {error}"
 
+msgid "Preview PDF"
+msgstr ""
+
 msgid "Preview Quantity"
 msgstr "Önizleme Miktarı"
 
@@ -25506,6 +25521,9 @@ msgstr "Yenileme Artışı (%)"
 
 msgid "Rent"
 msgstr "Kira"
+
+msgid "Rent invoice"
+msgstr ""
 
 msgid "Rental"
 msgstr "Kiralama"

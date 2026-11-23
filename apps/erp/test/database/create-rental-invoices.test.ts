@@ -15,12 +15,20 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
-import { createRentalInvoices } from "../../app/modules/sales/sales.service";
+import {
+  createRentalInvoices,
+  getRentalNextInvoice
+} from "../../app/modules/sales/sales.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 
 const USER = "system";
 
-async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
+async function closedAgreementFixture({
+  invoiceSeparately = false,
+  status = "Closed" as "Closed" | "Active",
+  withPeriod = true,
+  chargeDate = "2026-09-01"
+} = {}) {
   const db = await connectLocalTestDatabase();
   const prefix = `rentest-${crypto
     .randomUUID()
@@ -118,7 +126,7 @@ async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
         discountRate: 0,
         startDate: "2026-09-01",
         endDate: "2026-09-30",
-        status: "Closed",
+        status,
         companyId,
         createdBy: USER
       })
@@ -135,7 +143,8 @@ async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
         createdBy: USER
       })
       .execute();
-    await trx
+    if (withPeriod)
+      await trx
       .insertInto("rentalBillingPeriod")
       .values({
         id: periodId,
@@ -157,7 +166,7 @@ async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
         rentalAgreementLineId: lineId,
         description: "Delivery",
         amount: 50,
-        chargeDate: "2026-09-01",
+        chargeDate,
         invoiceSeparately,
         companyId,
         createdBy: USER
@@ -294,6 +303,142 @@ databaseTest(
         (invoice) => invoice.invoiceId === byLine.charge
       );
       expect(held?.holdReason).toBe(RENTAL_HOLD_CHARGES);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** Every row a preview must not write: invoices, opportunities, the invoice
+ *  number sequence, and the billing stamps. */
+async function billingState(
+  f: Awaited<ReturnType<typeof closedAgreementFixture>>
+) {
+  const [invoices, opportunities, sequence, periods, charges] =
+    await Promise.all([
+      f.db
+        .selectFrom("salesInvoice")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute(),
+      f.db
+        .selectFrom("opportunity")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute(),
+      f.db
+        .selectFrom("sequence")
+        .selectAll()
+        .where("companyId", "=", f.companyId)
+        .where("table", "=", "salesInvoice")
+        .execute(),
+      f.db
+        .selectFrom("rentalBillingPeriod")
+        .select(["id", "status", "salesInvoiceLineId"])
+        .where("companyId", "=", f.companyId)
+        .execute(),
+      f.db
+        .selectFrom("rentalAgreementCharge")
+        .select(["id", "salesInvoiceLineId"])
+        .where("companyId", "=", f.companyId)
+        .execute()
+    ]);
+  return { invoices, opportunities, sequence, periods, charges };
+}
+
+databaseTest(
+  "the Next Invoice preview is what the run drafts, and writes nothing",
+  async () => {
+    const f = await closedAgreementFixture({ status: "Active" });
+    try {
+      const before = await billingState(f);
+      const preview = await getRentalNextInvoice(f.db, {
+        companyId: f.companyId,
+        rentalAgreementId: f.agreementId,
+        today: "2026-10-05"
+      });
+      expect(await billingState(f)).toEqual(before);
+      expect(preview?.asOf).toBe("2026-10-05");
+
+      const result = await invokePosting(
+        f.ctx,
+        "create-rental-invoices",
+        { asOf: preview!.asOf },
+        createRentalInvoices
+      );
+      expect(result.error).toBeNull();
+      expect(result.data!.failures).toEqual([]);
+
+      const drafted = await f.db
+        .selectFrom("salesInvoice as i")
+        .innerJoin("salesInvoiceLine as l", "l.invoiceId", "i.id")
+        .select([
+          "i.subtotal",
+          "i.totalTax",
+          "i.totalAmount",
+          "l.rentalBillingPeriodId",
+          "l.rentalAgreementChargeId",
+          "l.description",
+          "l.unitPrice",
+          "l.taxPercent"
+        ])
+        .where("i.companyId", "=", f.companyId)
+        .orderBy("l.sortOrder")
+        .execute();
+      expect(
+        drafted.map((line) => ({
+          rentalBillingPeriodId: line.rentalBillingPeriodId,
+          rentalAgreementChargeId: line.rentalAgreementChargeId,
+          description: line.description,
+          unitPrice: Number(line.unitPrice),
+          taxPercent: Number(line.taxPercent)
+        }))
+      ).toEqual(
+        preview!.invoices.flatMap((invoice) =>
+          invoice.lines.map((line) => ({
+            rentalBillingPeriodId: line.rentalBillingPeriodId,
+            rentalAgreementChargeId: line.rentalAgreementChargeId,
+            description: line.description,
+            unitPrice: line.unitPrice,
+            taxPercent: line.taxPercent
+          }))
+        )
+      );
+      expect({
+        subtotal: Number(drafted[0]?.subtotal),
+        totalTax: Number(drafted[0]?.totalTax),
+        totalAmount: Number(drafted[0]?.totalAmount)
+      }).toEqual({
+        subtotal: preview!.invoices[0]!.subtotal,
+        totalTax: preview!.invoices[0]!.totalTax,
+        totalAmount: preview!.invoices[0]!.totalAmount
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the Next Invoice preview waits for a charge dated after today",
+  async () => {
+    const f = await closedAgreementFixture({
+      status: "Active",
+      withPeriod: false,
+      chargeDate: "2026-12-20"
+    });
+    try {
+      const preview = await getRentalNextInvoice(f.db, {
+        companyId: f.companyId,
+        rentalAgreementId: f.agreementId,
+        today: "2026-10-05"
+      });
+      expect(preview?.asOf).toBe("2026-12-20");
+      expect(
+        preview?.invoices.flatMap((invoice) =>
+          invoice.lines.map((line) => line.rentalAgreementChargeId)
+        )
+      ).toEqual([f.chargeId]);
     } finally {
       await f.cleanup();
     }

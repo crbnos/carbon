@@ -140,12 +140,16 @@ import {
   leasePaymentTerms,
   lineRevenueDates,
   type PeriodSpec,
+  type PlannedInvoice,
   type ProjectInvoicePlanItem,
   parseLineItemNumber,
+  planAgreementRentalInvoices,
   planProjectInvoiceLines,
-  planRentalInvoices,
   projectInvoiceHold,
   type RentalBillingCycle,
+  type RentalInvoiceLineValues,
+  rentalInvoiceTotals,
+  rentLineDescription,
   requireAffected,
   round,
   salesTypeRequirementError,
@@ -153,8 +157,7 @@ import {
   suggestContractType,
   suggestCoverage,
   sumFunding,
-  takeWithinFunding,
-  wholeRateUnits
+  takeWithinFunding
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { FileObject } from "@supabase/storage-js";
@@ -9470,6 +9473,33 @@ export async function updateRentalAgreement(
     .single();
 }
 
+/** The payment terms or tax percent of a Draft or Active agreement. Each
+ *  invoice copies them when it is drafted, so a change reaches only the
+ *  invoices drafted after it; drafted and posted invoices keep theirs. Writes
+ *  the given field only — every other term stays locked once Active. */
+export async function updateRentalAgreementInvoiceTerms(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    terms: { paymentTermId: string | null } | { taxPercent: number };
+  }
+) {
+  return client
+    .from("rentalAgreement")
+    .update({
+      ...args.terms,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .in("status", ["Draft", "Active"])
+    .select("id")
+    .single();
+}
+
 /** How the daily run's invoices are handled for one agreement — an
  *  operational preference, not a term, so it stays editable while Active.
  *  Null falls back to the company's setting. Sending needs an email to send
@@ -15922,17 +15952,235 @@ type RentalAgreementRecord = Selectable<KyselyDatabase["rentalAgreement"]>;
 const BILLABLE_STATUSES: Database["public"]["Enums"]["rentalAgreementStatus"][] =
   ["Active", "Closed"];
 
-type LineValues = {
-  rentalAgreementLineId: string;
-  rentalBillingPeriodId: string | null;
-  rentalAgreementChargeId: string | null;
-  rentalLineType: Database["public"]["Enums"]["rentalInvoiceLineType"];
-  description: string;
-  unitPrice: number;
-  taxPercent: number;
-  serviceStartDate: string | null;
-  serviceEndDate: string | null;
+type LineValues = RentalInvoiceLineValues;
+
+/** The Pending periods due on or before `asOf` and the unbilled charges dated
+ *  on or before it. `lock` takes them `FOR UPDATE` for drafting; a preview
+ *  reads them without a lock. */
+async function selectDueRentalRows(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; agreementId: string; asOf: string; lock: boolean }
+) {
+  const { companyId, agreementId, asOf, lock } = args;
+  let periodQuery = db
+    .selectFrom("rentalBillingPeriod as p")
+    .innerJoin("rentalAgreementLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "p.rentalAgreementLineId")
+        .onRef("l.companyId", "=", "p.companyId")
+    )
+    .leftJoin("fixedAsset as fa", (join) =>
+      join
+        .onRef("fa.id", "=", "l.fixedAssetId")
+        .onRef("fa.companyId", "=", "l.companyId")
+    )
+    .select([
+      "p.id",
+      "p.rentalAgreementLineId",
+      "p.periodStart",
+      "p.periodEnd",
+      "p.days",
+      "p.amount",
+      "p.rateUnitApplied",
+      "p.isAdjustment",
+      "p.voidedSalesInvoiceId",
+      "fa.name as assetName",
+      "fa.serialNumber"
+    ])
+    .where("l.rentalAgreementId", "=", agreementId)
+    .where("p.companyId", "=", companyId)
+    .where("p.status", "=", "Pending")
+    .where("p.dueOn", "<=", asOf)
+    .orderBy("p.periodStart")
+    .orderBy("p.isAdjustment");
+  if (lock) periodQuery = periodQuery.forUpdate("p");
+
+  let chargeQuery = db
+    .selectFrom("rentalAgreementCharge as c")
+    .innerJoin("rentalAgreementLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "c.rentalAgreementLineId")
+        .onRef("l.companyId", "=", "c.companyId")
+    )
+    .select([
+      "c.id",
+      "c.rentalAgreementLineId",
+      "c.chargeType",
+      "c.description",
+      "c.amount",
+      "c.taxPercent",
+      "c.invoiceSeparately",
+      "c.voidedSalesInvoiceId"
+    ])
+    .where("l.rentalAgreementId", "=", agreementId)
+    .where("c.companyId", "=", companyId)
+    .where("c.salesInvoiceLineId", "is", null)
+    .where("c.chargeDate", "<=", asOf)
+    .orderBy("c.chargeDate");
+  if (lock) chargeQuery = chargeQuery.forUpdate("c");
+
+  const periods = await periodQuery.execute();
+  const charges = await chargeQuery.execute();
+  return { periods, charges };
+}
+
+/** The readable ids of the voided invoices these rows were billed on, so a
+ *  re-bill's hold names them. One read; a deleted invoice keeps its raw id. */
+async function readVoidedInvoiceIds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  rows: { voidedSalesInvoiceId: string | null }[]
+): Promise<Map<string, string>> {
+  const voidedIds = [
+    ...new Set(
+      rows
+        .map((row) => row.voidedSalesInvoiceId)
+        .filter((voidedId): voidedId is string => !!voidedId)
+    )
+  ];
+  const readableIds = new Map<string, string>();
+  if (voidedIds.length === 0) return readableIds;
+  const voided = await db
+    .selectFrom("salesInvoice")
+    .select(["id", "invoiceId"])
+    .where("companyId", "=", companyId)
+    .where("id", "in", voidedIds)
+    .execute();
+  for (const invoice of voided) readableIds.set(invoice.id, invoice.invoiceId);
+  return readableIds;
+}
+
+/** Reads an agreement's due rows and plans their invoices, as of `asOf`.
+ *  Drafting (`lock: true`, inside its transaction) and the Next Invoice
+ *  preview (`lock: false`) both run this, so they bill the same rows the same
+ *  way. `adjustments` are the due early-return credits, for the credit memo. */
+async function planDueRentalInvoices(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    agreement: Pick<
+      RentalAgreementRecord,
+      "id" | "billingCycle" | "taxPercent" | "exchangeRate"
+    >;
+    mode: InvoiceAutomation;
+    asOf: string;
+    lock: boolean;
+  }
+) {
+  const { companyId, agreement, mode, asOf, lock } = args;
+  const { periods, charges } = await selectDueRentalRows(db, {
+    companyId,
+    agreementId: agreement.id,
+    asOf,
+    lock
+  });
+  const planned = planAgreementRentalInvoices({
+    billingCycle: agreement.billingCycle,
+    taxPercent: agreement.taxPercent,
+    exchangeRate: agreement.exchangeRate,
+    mode,
+    periods,
+    charges,
+    voidedReadableIds: await readVoidedInvoiceIds(db, companyId, [
+      ...periods,
+      ...charges
+    ])
+  });
+  return {
+    adjustments: periods.filter((period) => period.isAdjustment),
+    planned
+  };
+}
+
+export type RentalNextInvoice = {
+  /** The day the billing run drafts it: the next due date or charge date, or
+   *  today when something is already due. */
+  asOf: string;
+  invoices: (PlannedInvoice<LineValues> &
+    ReturnType<typeof rentalInvoiceTotals>)[];
 };
+
+/**
+ * What the next billing run will draft for an Active agreement, read only:
+ * the run as of the earliest Pending period's due date or unbilled charge's
+ * date (today when one is already due), planned by `planDueRentalInvoices`
+ * like the real run. Writes nothing and takes no lock. It does not cut new
+ * periods: activation and the daily run keep the next one cut. Null when
+ * nothing is upcoming.
+ */
+export async function getRentalNextInvoice(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; rentalAgreementId: string; today: string }
+): Promise<RentalNextInvoice | null> {
+  const { companyId, rentalAgreementId, today } = args;
+
+  const agreement = await db
+    .selectFrom("rentalAgreement as ra")
+    .innerJoin("companySettings as cs", "cs.id", "ra.companyId")
+    .select((eb) => [
+      "ra.id",
+      "ra.billingCycle",
+      "ra.taxPercent",
+      "ra.exchangeRate",
+      "ra.invoiceAutomation",
+      "cs.invoiceAutomation as companyInvoiceAutomation",
+      eb
+        .selectFrom("rentalBillingPeriod as p")
+        .innerJoin("rentalAgreementLine as l", (join) =>
+          join
+            .onRef("l.id", "=", "p.rentalAgreementLineId")
+            .onRef("l.companyId", "=", "p.companyId")
+        )
+        .select((sub) => sub.fn.min("p.dueOn").as("dueOn"))
+        .whereRef("l.rentalAgreementId", "=", "ra.id")
+        .whereRef("p.companyId", "=", "ra.companyId")
+        .where("p.status", "=", "Pending")
+        .where("p.isAdjustment", "=", false)
+        .as("nextDueOn"),
+      eb
+        .selectFrom("rentalAgreementCharge as c")
+        .innerJoin("rentalAgreementLine as l", (join) =>
+          join
+            .onRef("l.id", "=", "c.rentalAgreementLineId")
+            .onRef("l.companyId", "=", "c.companyId")
+        )
+        .select((sub) => sub.fn.min("c.chargeDate").as("chargeDate"))
+        .whereRef("l.rentalAgreementId", "=", "ra.id")
+        .whereRef("c.companyId", "=", "ra.companyId")
+        .where("c.salesInvoiceLineId", "is", null)
+        .as("nextChargeOn")
+    ])
+    .where("ra.id", "=", rentalAgreementId)
+    .where("ra.companyId", "=", companyId)
+    .where("ra.status", "=", "Active")
+    .executeTakeFirst();
+  if (!agreement) return null;
+
+  // YYYY-MM-DD strings compare as dates.
+  const next = [agreement.nextDueOn, agreement.nextChargeOn]
+    .filter((date): date is string => !!date)
+    .sort()[0];
+  const asOf = next && next > today ? next : today;
+
+  const { planned } = await planDueRentalInvoices(db, {
+    companyId,
+    agreement,
+    mode: effectiveInvoiceAutomation(
+      agreement.invoiceAutomation,
+      agreement.companyInvoiceAutomation
+    ),
+    asOf,
+    lock: false
+  });
+  if (planned.length === 0) return null;
+  return {
+    asOf,
+    invoices: planned.map((invoice) => ({
+      ...invoice,
+      ...rentalInvoiceTotals(invoice.lines)
+    }))
+  };
+}
 
 async function draftAgreementInvoices(
   trx: KyselyTx,
@@ -15993,73 +16241,18 @@ async function draftAgreementInvoices(
 
   // Locked so a concurrent run (the daily job and a manual "Generate
   // invoices") cannot bill the same period twice.
-  const periods = await trx
-    .selectFrom("rentalBillingPeriod as p")
-    .innerJoin("rentalAgreementLine as l", (join) =>
-      join
-        .onRef("l.id", "=", "p.rentalAgreementLineId")
-        .onRef("l.companyId", "=", "p.companyId")
-    )
-    .leftJoin("fixedAsset as fa", (join) =>
-      join
-        .onRef("fa.id", "=", "l.fixedAssetId")
-        .onRef("fa.companyId", "=", "l.companyId")
-    )
-    .select([
-      "p.id",
-      "p.rentalAgreementLineId",
-      "p.periodStart",
-      "p.periodEnd",
-      "p.days",
-      "p.amount",
-      "p.rateUnitApplied",
-      "p.isAdjustment",
-      "p.voidedSalesInvoiceId",
-      "fa.name as assetName",
-      "fa.serialNumber"
-    ])
-    .where("l.rentalAgreementId", "=", agreement.id)
-    .where("p.companyId", "=", companyId)
-    .where("p.status", "=", "Pending")
-    .where("p.dueOn", "<=", asOf)
-    .orderBy("p.periodStart")
-    .orderBy("p.isAdjustment")
-    .forUpdate("p")
-    .execute();
+  const { adjustments, planned } = await planDueRentalInvoices(trx, {
+    companyId,
+    agreement,
+    mode,
+    asOf,
+    lock: true
+  });
+  if (adjustments.length === 0 && planned.length === 0) return nothing;
 
-  const charges = await trx
-    .selectFrom("rentalAgreementCharge as c")
-    .innerJoin("rentalAgreementLine as l", (join) =>
-      join
-        .onRef("l.id", "=", "c.rentalAgreementLineId")
-        .onRef("l.companyId", "=", "c.companyId")
-    )
-    .select([
-      "c.id",
-      "c.rentalAgreementLineId",
-      "c.chargeType",
-      "c.description",
-      "c.amount",
-      "c.taxPercent",
-      "c.invoiceSeparately",
-      "c.voidedSalesInvoiceId"
-    ])
-    .where("l.rentalAgreementId", "=", agreement.id)
-    .where("c.companyId", "=", companyId)
-    .where("c.salesInvoiceLineId", "is", null)
-    .where("c.chargeDate", "<=", asOf)
-    .orderBy("c.chargeDate")
-    .forUpdate("c")
-    .execute();
-
-  if (periods.length === 0 && charges.length === 0) return nothing;
-
-  // An early-return adjustment is a credit, and a credit on an invoice can
-  // net it below zero — a document no payment can apply and no refund can
-  // pay out. Adjustments go on a credit memo instead; everything else is
-  // invoiced as before.
-  const adjustments = periods.filter((period) => period.isAdjustment);
-  const billable = periods.filter((period) => !period.isAdjustment);
+  // Early-return adjustments never go on an invoice (`planAgreementRentalInvoices`):
+  // a credit could net it below zero, which no payment can apply and no
+  // refund can pay out. They go on a credit memo instead.
   const creditMemos: DraftedRentalCreditMemo[] =
     adjustments.length > 0
       ? [
@@ -16072,89 +16265,6 @@ async function draftAgreementInvoices(
           }
         ]
       : [];
-
-  // The readable ids of the voided invoices these rows were billed on, so a
-  // re-bill's hold names them. One read; a deleted invoice keeps its raw id.
-  const voidedIds = [
-    ...new Set(
-      [...billable, ...charges]
-        .map((row) => row.voidedSalesInvoiceId)
-        .filter((voidedId): voidedId is string => !!voidedId)
-    )
-  ];
-  const voidedReadableIds = new Map<string, string>();
-  if (voidedIds.length > 0) {
-    const voided = await trx
-      .selectFrom("salesInvoice")
-      .select(["id", "invoiceId"])
-      .where("companyId", "=", companyId)
-      .where("id", "in", voidedIds)
-      .execute();
-    for (const invoice of voided) {
-      voidedReadableIds.set(invoice.id, invoice.invoiceId);
-    }
-  }
-  const voidedReadableId = (voidedId: string | null) =>
-    voidedId ? (voidedReadableIds.get(voidedId) ?? voidedId) : null;
-
-  // Periods and charges are priced in the agreement's currency;
-  // `salesInvoiceLine.unitPrice` is base currency (`convertedUnitPrice` =
-  // unitPrice × exchangeRate is what the customer sees), as on every sales
-  // document.
-  const exchangeRate = Number(agreement.exchangeRate);
-  const lines: {
-    values: LineValues;
-    isAdjustment: boolean;
-    invoiceSeparately: boolean;
-    voidedInvoiceReadableId: string | null;
-  }[] = [
-    ...billable.map((period) => ({
-      values: {
-        rentalAgreementLineId: period.rentalAgreementLineId,
-        rentalBillingPeriodId: period.id,
-        rentalAgreementChargeId: null,
-        rentalLineType: "Rent" as const,
-        description: rentLineDescription({
-          ...period,
-          cycle: agreement.billingCycle
-        }),
-        unitPrice: toBaseAmount(Number(period.amount), exchangeRate),
-        taxPercent: Number(agreement.taxPercent),
-        serviceStartDate: period.periodStart,
-        serviceEndDate: period.periodEnd
-      },
-      isAdjustment: period.isAdjustment ?? false,
-      invoiceSeparately: false,
-      voidedInvoiceReadableId: voidedReadableId(period.voidedSalesInvoiceId)
-    })),
-    ...charges.map((charge) => ({
-      values: {
-        rentalAgreementLineId: charge.rentalAgreementLineId,
-        rentalBillingPeriodId: null,
-        rentalAgreementChargeId: charge.id,
-        rentalLineType: charge.chargeType,
-        description: charge.description,
-        unitPrice: toBaseAmount(Number(charge.amount), exchangeRate),
-        taxPercent: Number(charge.taxPercent),
-        serviceStartDate: null,
-        serviceEndDate: null
-      },
-      isAdjustment: false,
-      invoiceSeparately: charge.invoiceSeparately,
-      voidedInvoiceReadableId: voidedReadableId(charge.voidedSalesInvoiceId)
-    }))
-  ];
-
-  const planned = planRentalInvoices(
-    mode,
-    lines.map((line) => ({
-      item: line.values,
-      lineType: line.values.rentalLineType,
-      isAdjustment: line.isAdjustment,
-      invoiceSeparately: line.invoiceSeparately,
-      voidedInvoiceReadableId: line.voidedInvoiceReadableId
-    }))
-  );
 
   const drafted: DraftedRentalInvoice[] = [];
   for (const invoice of planned) {
@@ -16271,10 +16381,7 @@ async function insertRentalInvoice(
 ): Promise<string> {
   const { companyId, asOf, userId } = args;
 
-  const subtotal = round(lines.reduce((sum, line) => sum + line.unitPrice, 0));
-  const totalTax = round(
-    lines.reduce((sum, line) => sum + line.unitPrice * line.taxPercent, 0)
-  );
+  const { subtotal, totalTax, totalAmount } = rentalInvoiceTotals(lines);
 
   const readableInvoiceId = await getNextSequence(
     trx,
@@ -16306,7 +16413,7 @@ async function insertRentalInvoice(
       subtotal,
       totalDiscount: 0,
       totalTax,
-      totalAmount: round(subtotal + totalTax),
+      totalAmount,
       opportunityId: opportunity.id,
       automationHoldReason: holdReason,
       companyId,
@@ -16492,39 +16599,6 @@ async function rollBillingPeriodsForward(
   if (rows.length > 0) {
     await trx.insertInto("rentalBillingPeriod").values(rows).execute();
   }
-}
-
-/** "2026-10-01 – 2026-10-28 · 28 days · 1 × Month rate — Skid Steer 4
- *  SN-1001", "… · 31 days · Month rate — …" (a Monthly unit on a Calendar
- *  Month or Monthly agreement is its month rate prorated by days, so it names
- *  no unit count), or for an early-return credit "Early return credit — 3 days used". */
-export function rentLineDescription(period: {
-  cycle: Database["public"]["Enums"]["rentalBillingCycle"];
-  periodStart: string;
-  periodEnd: string;
-  days: number;
-  rateUnitApplied: RateUnit | null;
-  isAdjustment: boolean;
-  assetName: string | null;
-  serialNumber: string | null;
-}): string {
-  // A unit capitalized from stock is named "<item> <serial>": its serial is
-  // named once, not twice.
-  const serial =
-    period.serialNumber && !period.assetName?.includes(period.serialNumber)
-      ? period.serialNumber
-      : null;
-  const unit = [period.assetName, serial].filter(Boolean).join(" ");
-  if (period.isAdjustment) {
-    return `Early return credit — ${period.days} days used${unit ? ` — ${unit}` : ""}`;
-  }
-  const tier =
-    period.rateUnitApplied === null
-      ? ""
-      : period.cycle !== "28 Days" && period.rateUnitApplied === "Month"
-        ? " · Month rate"
-        : ` · ${wholeRateUnits(period.days, period.rateUnitApplied)} × ${period.rateUnitApplied} rate`;
-  return `${period.periodStart} – ${period.periodEnd} · ${period.days} days${tier}${unit ? ` — ${unit}` : ""}`;
 }
 
 export const createRentalInvoicesInput = z.object({

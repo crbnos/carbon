@@ -4372,6 +4372,9 @@ msgstr "Применяется ко всем рабочим центрам"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Применяется к характеристикам без собственного правила и к партии, когда этот план контроля проводит контроль."
 
+msgid "Applies to invoices drafted from now on"
+msgstr ""
+
 msgid "Applies to Projects"
 msgstr "Применяется к проектам"
 
@@ -7020,6 +7023,9 @@ msgstr "Начисляется на каждую строку счета-фак�
 
 msgid "Charges"
 msgstr "Списания"
+
+msgid "Charges invoice"
+msgstr ""
 
 msgid "Charging"
 msgstr "Расчет"
@@ -11340,6 +11346,9 @@ msgstr "Ежедневно создаются черновики счетов-ф
 
 msgid "Draft Request"
 msgstr "Черновик запроса"
+
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Создает черновик кредит-ноты за время, уже выставленное счетом после даты окончания."
@@ -20722,6 +20731,9 @@ msgstr "Нет непроведенных документов, датирова
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "На этом процессе в этом месте нет неначатых, необработанных операций."
 
+msgid "No upcoming invoice."
+msgstr ""
+
 msgid "No value"
 msgstr "Нет значения"
 
@@ -23384,6 +23396,9 @@ msgstr "Предпросмотр"
 msgid "Preview failed: {error}"
 msgstr "Ошибка предпросмотра: {error}"
 
+msgid "Preview PDF"
+msgstr ""
+
 msgid "Preview Quantity"
 msgstr "Предпросмотр количества"
 
@@ -25506,6 +25521,9 @@ msgstr "Повышение при возобновлении (%)"
 
 msgid "Rent"
 msgstr "Аренда"
+
+msgid "Rent invoice"
+msgstr ""
 
 msgid "Rental"
 msgstr "Аренда"

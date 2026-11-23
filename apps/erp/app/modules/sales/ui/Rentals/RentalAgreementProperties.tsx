@@ -210,6 +210,13 @@ const RentalAgreementProperties = () => {
     !["Draft", "Active"].includes(agreement.status ?? "") ||
     !permissions.can("update", "sales");
 
+  // Payment terms and tax are read when each invoice is drafted, so they stay
+  // editable while Active, like Invoicing.
+  const invoiceTermHelper =
+    agreement.status === "Active" && !isInvoicingReadOnly
+      ? t`Applies to invoices drafted from now on`
+      : undefined;
+
   const isDisabled =
     agreement.status !== "Draft" || !permissions.can("update", "sales");
   const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
@@ -438,7 +445,8 @@ const RentalAgreementProperties = () => {
           name="paymentTermId"
           label={t`Payment Terms`}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
           onChange={(term) => {
             onUpdate("paymentTermId", term?.value ?? null);
           }}
@@ -475,7 +483,8 @@ const RentalAgreementProperties = () => {
           name="taxPercent"
           label={t`Tax Percent`}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
           value={agreement.taxPercent ?? 0}
           minValue={0}
           maxValue={1}

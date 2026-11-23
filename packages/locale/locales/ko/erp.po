@@ -4372,6 +4372,9 @@ msgstr "모든 작업장에 적용"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "자신의 규칙이 없는 특성과 이 계획이 검사를 실행하는 로트에 적용됩니다."
 
+msgid "Applies to invoices drafted from now on"
+msgstr ""
+
 msgid "Applies to Projects"
 msgstr "프로젝트에 적용됨"
 
@@ -7020,6 +7023,9 @@ msgstr "각 렌트 송장 라인에서 청구됩니다"
 
 msgid "Charges"
 msgstr "청구"
+
+msgid "Charges invoice"
+msgstr ""
 
 msgid "Charging"
 msgstr "청구 중"
@@ -11340,6 +11346,9 @@ msgstr "매일 지불할 매입 송장 초안이 생성됩니다. 이를 사용�
 
 msgid "Draft Request"
 msgstr "초안 요청"
+
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "종료일 이후 이미 청구된 시간에 대해 대변전표를 작성합니다."
@@ -20722,6 +20731,9 @@ msgstr "정산일 이전 날짜의 전기되지 않은 문서가 없습니다."
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "이 위치의 이 공정에서 시작되지 않은 배치 처리되지 않은 작업이 없습니다."
 
+msgid "No upcoming invoice."
+msgstr ""
+
 msgid "No value"
 msgstr "값 없음"
 
@@ -23384,6 +23396,9 @@ msgstr "미리보기"
 msgid "Preview failed: {error}"
 msgstr "미리보기 실패: {error}"
 
+msgid "Preview PDF"
+msgstr ""
+
 msgid "Preview Quantity"
 msgstr "미리보기 수량"
 
@@ -25506,6 +25521,9 @@ msgstr "갱신 인상률 (%)"
 
 msgid "Rent"
 msgstr "임차료"
+
+msgid "Rent invoice"
+msgstr ""
 
 msgid "Rental"
 msgstr "임차"

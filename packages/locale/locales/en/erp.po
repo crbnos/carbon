@@ -4372,6 +4372,9 @@ msgstr "Applies to all work centers"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 
+msgid "Applies to invoices drafted from now on"
+msgstr "Applies to invoices drafted from now on"
+
 msgid "Applies to Projects"
 msgstr "Applies to Projects"
 
@@ -7020,6 +7023,9 @@ msgstr "Charged on each rent invoice line"
 
 msgid "Charges"
 msgstr "Charges"
+
+msgid "Charges invoice"
+msgstr "Charges invoice"
 
 msgid "Charging"
 msgstr "Charging"
@@ -11340,6 +11346,9 @@ msgstr "Draft purchase invoices are created every day for the payments that are 
 
 msgid "Draft Request"
 msgstr "Draft Request"
+
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr "Drafted on <0/>. Nothing is saved until then."
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Drafts a credit memo for the time already invoiced after the end date."
@@ -20722,6 +20731,9 @@ msgstr "No unposted documents dated before the cutover"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "No unstarted, unbatched operations on this process at this location."
 
+msgid "No upcoming invoice."
+msgstr "No upcoming invoice."
+
 msgid "No value"
 msgstr "No value"
 
@@ -23384,6 +23396,9 @@ msgstr "Preview"
 msgid "Preview failed: {error}"
 msgstr "Preview failed: {error}"
 
+msgid "Preview PDF"
+msgstr "Preview PDF"
+
 msgid "Preview Quantity"
 msgstr "Preview Quantity"
 
@@ -25506,6 +25521,9 @@ msgstr "Renewal Uplift (%)"
 
 msgid "Rent"
 msgstr "Rent"
+
+msgid "Rent invoice"
+msgstr "Rent invoice"
 
 msgid "Rental"
 msgstr "Rental"

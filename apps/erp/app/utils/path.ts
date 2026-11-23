@@ -1366,6 +1366,10 @@ export const path = {
 
         return generatePath(url);
       },
+      rentalNextInvoice: (id: string, invoice?: "rent" | "charges") =>
+        generatePath(
+          `${file}/rental-agreement/${id}/next-invoice.pdf${invoice ? `?invoice=${invoice}` : ""}`
+        ),
       salesInvoice: (id: string) =>
         generatePath(`${file}/sales-invoice/${id}.pdf`),
       salesOrder: (id: string) => generatePath(`${file}/sales-order/${id}.pdf`),

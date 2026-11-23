@@ -4981,11 +4981,17 @@ const rentalBooleanTerms = new Set<string>([
   "purchaseOptionReasonablyCertain"
 ]);
 
+// Read when each invoice is drafted, so changing them on an Active agreement
+// changes only the invoices not drafted yet.
+const rentalActiveTerms = new Set<string>(["paymentTermId", "taxPercent"]);
+
 /**
- * Set one term of a Draft rental agreement.
+ * Set one term of a rental agreement.
  *
  * @remarks
- * The terms are checked as a whole (an end date after the start, a purchase
+ * A Draft agreement takes any term. An Active one takes only the payment
+ * terms and the tax percent: they apply to the invoices drafted from then on,
+ * and invoices already drafted keep theirs. The terms are checked as a whole (an end date after the start, a purchase
  * option reasonably certain needs an end date), so the stored terms are
  * read, the one field is swapped in and the whole set is validated and
  * saved. A new customer clears the site and the contacts; a new currency
@@ -5007,10 +5013,14 @@ export const setRentalAgreementTerm = defineServiceFn({
     const companyId = ctx.company.id;
     const agreement = await service.ownRentalAgreement(ctx, id);
     if (agreement instanceof Error) return agreement;
-    if (agreement.status !== "Draft") {
+    const isActiveTerm =
+      agreement.status === "Active" && rentalActiveTerms.has(field);
+    if (agreement.status !== "Draft" && !isActiveTerm) {
       return ctx.error(
         "rule",
-        "Only a Draft rental agreement's terms can be edited"
+        agreement.status === "Active"
+          ? "Only the payment terms and tax percent of an Active rental agreement can be changed"
+          : "Only a Draft rental agreement's terms can be edited"
       );
     }
 
@@ -5086,13 +5096,23 @@ export const setRentalAgreementTerm = defineServiceFn({
       ...data
     } = validation.data;
 
-    const update = await service.updateRentalAgreement(client, {
-      ...data,
-      id,
-      companyId,
-      updatedBy: ctx.auditUserId,
-      customFields: agreement.customFields ?? undefined
-    });
+    const update = isActiveTerm
+      ? await service.updateRentalAgreementInvoiceTerms(client, {
+          id,
+          companyId,
+          updatedBy: ctx.auditUserId,
+          terms:
+            field === "taxPercent"
+              ? { taxPercent: data.taxPercent }
+              : { paymentTermId: data.paymentTermId ?? null }
+        })
+      : await service.updateRentalAgreement(client, {
+          ...data,
+          id,
+          companyId,
+          updatedBy: ctx.auditUserId,
+          customFields: agreement.customFields ?? undefined
+        });
     if (update.error) {
       logger.error("rental agreement term update failed", {
         companyId,
