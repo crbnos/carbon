@@ -1,6 +1,6 @@
 ---
 name: formal-verification
-description: Check a change against Carbon's formal models of concurrent protocols (packages/models) and keep them in step with the code. Says whether the change touches verified code, runs every interleaving plus the database tests that pin each counterexample on the real code, tells a real bug from a modelling error, and moves the confirmation forward. Use when a diff touches a function listed in packages/models/coverage.json, when packages/models fails, or when adding a model for a race, retry or status change. Do not use for a pure calculation or a single-request bug — use /tdd or /fix.
+description: Check a change against Carbon's formal models of concurrent protocols (packages/models) and keep them in step with the code. Says whether the change touches verified code, runs every interleaving plus the database tests that pin each counterexample on the real code, tells a real bug from a modelling error, and moves the confirmation forward. Use when a diff touches a function listed in packages/models/coverage.json, when packages/models fails, when adding a model for a race, retry or status change, or when asked to choose what to model next. Do not use for a pure calculation or a single-request bug — use /tdd or /fix.
 ---
 
 # formal-verification — keep the protocol models true to the code
@@ -121,6 +121,51 @@ not checking that statement. STOP and report it; do not run `confirm`.
    It must fail before the code change and pass after.
 5. Add any new function to `code` and any new test to `databaseTests` in
    `coverage.json`, then Step 4.
+
+## Choosing a target
+
+Use when asked to pick what to model ("add the next model", "where would a
+model help"). The output is a proposal; build nothing until it is approved,
+unless the request said to build.
+
+1. List the fixes of the last year whose subject names a race, a retry or a
+   repeat:
+
+   ```bash
+   git log --no-merges --since="12 months ago" --format='%h %ad %s' --date=short \
+     | grep -iE ' fix.*\b(race|concurren\w*|twice|double|duplicate\w*|idempot\w*|retr(y|ies|ied)|seriali[sz]e\w*|reposted|already|stale|in flight|at once|lock(s|ed)? (the|a|its|before))\b'
+   ```
+
+   Expect a few dozen lines, most of them not races. Read `git show <sha>` for
+   each plausible one: keep it only when two requests, a retry or a job
+   running at the same time caused the bug.
+2. Group the kept fixes by the protocol they fixed (the functions and the
+   status they share), and drop any protocol already in `coverage.json`.
+3. Pick the tool for each group:
+
+   | The group | Tool | Model? |
+   |---|---|---|
+   | One write that must not happen twice (a duplicate row, a number reused) | a unique constraint or an atomic `UPDATE … RETURNING` | No |
+   | A status that must not move backwards (Voided → Posted) | a guarded update (`WHERE status = <expected>`) or a trigger refusing the edge | No |
+   | One known collision of two requests | a database test with two connections | No |
+   | Several operations or code paths (TypeScript and SQL) taking locks in different orders, and the bug came back in another shape | a model plus a database test of its counterexample | **Yes** |
+
+4. Rank the "Yes" groups: more fixes first; then damage (money, stock or
+   another company's data over a 500); then a protocol still changing
+   (`git log --since="3 months ago" -- <file>`).
+5. Propose, then STOP for approval:
+
+   ```
+   target: <protocol> (<functions>, <files>)
+   past bugs: <sha subject>, …
+   why a model, not a constraint or test: <one line>
+   actors: <operations that run at once>
+   invariant: <the rule that must never break>
+   not chosen: <group> → <constraint | test>, …
+   ```
+
+No group needs a model → report that, with the constraint or test each group
+needs instead. That is a valid result.
 
 ## Adding a model
 
