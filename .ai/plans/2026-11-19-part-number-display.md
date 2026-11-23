@@ -25,23 +25,23 @@ Section 1 — shared pieces (branch `eng-140-supplier-part-number-display`)
 - [x] Task 8: Run the shared gate
 
 Section 2 — Part I, sales (branch `eng-102-customer-part-number-display`)
-- [ ] Task 9: Stack the sales branch on the shared pieces
-- [ ] Task 10: Add the Part I migration (columns, triggers, views)
-- [ ] Task 11: Mark a backup load for the triggers
-- [ ] Task 12: Regenerate the types and run the backup check
-- [ ] Task 13: Update the demo datasets
-- [ ] Task 14: Format sales line part numbers per line
-- [ ] Task 15: Add the merge fields and fill them in the line builders
-- [ ] Task 16: Update the PDF samples and snapshots
-- [ ] Task 17: Pass the draft display choice from the four renderers
-- [ ] Task 18: Copy each line's display choice in the conversions
-- [ ] Task 19: Add the company default card in Settings > Sales
-- [ ] Task 20: Add the customer override to the customer form and operations
-- [ ] Task 21: Print each line's part number on the shared quote page
-- [ ] Task 22: Turn on the Edit document select for the four sales documents
-- [ ] Task 23: Update the docs page and the rules
-- [ ] Task 24: Run the Part I gate
-- [ ] Task 25: Verify Part I in the browser
+- [x] Task 9: Stack the sales branch on the shared pieces
+- [x] Task 10: Add the Part I migration (columns, triggers, views)
+- [x] Task 11: Mark a backup load for the triggers
+- [x] Task 12: Regenerate the types and run the backup check
+- [x] Task 13: Update the demo datasets
+- [x] Task 14: Format sales line part numbers per line
+- [x] Task 15: Add the merge fields and fill them in the line builders
+- [x] Task 16: Update the PDF samples and snapshots
+- [x] Task 17: Pass the draft display choice from the four renderers
+- [x] Task 18: Copy each line's display choice in the conversions
+- [x] Task 19: Add the company default card in Settings > Sales
+- [x] Task 20: Add the customer override to the customer form and operations
+- [x] Task 21: Print each line's part number on the shared quote page
+- [x] Task 22: Turn on the Edit document select for the four sales documents
+- [x] Task 23: Update the docs page and the rules
+- [x] Task 24: Run the Part I gate
+- [x] Task 25: Verify Part I in the browser
 
 Section 3 — Part II, purchasing (branch `eng-140-supplier-part-number-display`, built before Section 2)
 - [x] Task 26: Add the Part II migration (columns, 3 triggers, 2 views)
@@ -841,6 +841,8 @@ pnpm db:check:backups
 **Out of scope:** `ID_REF_COLUMNS` and `TABLE_RENAMES`: the new columns hold no row id, and no table changes name.
 
 ## Task 13: Update the demo datasets
+
+Superseded 2026-11-21: the triggers stamp the seeded lines, so the helper below was removed. The per-dataset overrides remain.
 
 **Depends on:** Task 12
 **Files:**

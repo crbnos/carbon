@@ -289,7 +289,8 @@ export async function loadSalesInvoiceDocument(args: {
     shippingTerms: shippingTerms.data ?? [],
     thumbnails,
     template: templateConfig,
-    sections
+    sections,
+    partNumberDisplayDraft: edit?.partNumberDisplay
   };
 
   // The view types every column nullable; the table's invoiceId never is.

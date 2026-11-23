@@ -269,7 +269,8 @@ export const CUSTOMERS = [
     type: "Hydraulics",
     status: "Active",
     phone: "+1-319-555-0100",
-    website: "https://cedarvalleyhydraulics.com"
+    website: "https://cedarvalleyhydraulics.com",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "Granite State Instruments",

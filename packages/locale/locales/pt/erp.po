@@ -17406,6 +17406,12 @@ msgstr "linha {position}"
 msgid "Line Add-On"
 msgstr "Complemento da Linha"
 
+msgid "Line Customer Part ID"
+msgstr "ID da peça do cliente da linha"
+
+msgid "Line Customer Part Revision"
+msgstr "Revisão do cliente da linha"
+
 msgid "Line description"
 msgstr "Descrição da linha"
 

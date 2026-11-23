@@ -32,6 +32,7 @@ import {
   Hidden,
   Input,
   Number,
+  PartNumberDisplay,
   SequenceOrCustomId,
   Submit
 } from "~/components/Form";
@@ -199,6 +200,13 @@ const CustomerForm = ({
                     </>
                   )}
                   <Currency name="currencyCode" label={t`Currency`} />
+                  <PartNumberDisplay
+                    party="customer"
+                    name="partNumberDisplay"
+                    label={t`Part Numbers on Documents`}
+                    isOptional
+                    placeholder={t`Company default`}
+                  />
 
                   <Number
                     name="taxPercent"

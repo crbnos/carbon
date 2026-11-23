@@ -17406,6 +17406,12 @@ msgstr "第{position}行"
 msgid "Line Add-On"
 msgstr "行附加费"
 
+msgid "Line Customer Part ID"
+msgstr "行客户零件 ID"
+
+msgid "Line Customer Part Revision"
+msgstr "行客户修订版"
+
 msgid "Line description"
 msgstr "行描述"
 

@@ -84,6 +84,8 @@ export interface DocumentEditRecord {
       | "purchaseOrderId";
     party: PartNumberParty;
     refusal?: (status: string | null | undefined) => string | null;
+    /** A record column whose values mean the document prints no lines. */
+    noLinesWhen?: { column: "sourceDocument"; values: readonly string[] };
   };
 }
 
@@ -123,14 +125,24 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     readableId: "quoteId",
     isLocked: isQuoteLocked,
     module: "sales",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "quoteLine",
+      documentColumn: "quoteId",
+      party: "customer"
+    }
   },
   salesOrder: {
     table: "salesOrder",
     readableId: "salesOrderId",
     isLocked: isSalesOrderLocked,
     module: "sales",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "salesOrderLine",
+      documentColumn: "salesOrderId",
+      party: "customer"
+    }
   },
   salesReturnOrder: {
     table: "salesReturnOrder",
@@ -144,14 +156,30 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     readableId: "invoiceId",
     isLocked: isSalesInvoiceLocked,
     module: "invoicing",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "salesInvoiceLine",
+      documentColumn: "invoiceId",
+      party: "customer"
+    }
   },
   packingSlip: {
     table: "shipment",
     readableId: "shipmentId",
     isLocked: (status) => status === "Posted" || status === "Voided",
     module: "inventory",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "shipmentLine",
+      documentColumn: "shipmentId",
+      party: "customer",
+      // A Delivery Ticket and a Receiving Report print rental units and
+      // contract lines, not the shipment's lines.
+      noLinesWhen: {
+        column: "sourceDocument",
+        values: ["Rental Agreement", "Customer Contract"]
+      }
+    }
   },
   stockTransfer: {
     table: "stockTransfer",

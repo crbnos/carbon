@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getQuoteDisplayId } from "@carbon/documents/utils";
+import {
+  formatLinePartNumber,
+  getQuoteDisplayId
+} from "@carbon/documents/utils";
 import { downloadUrl } from "@carbon/files";
 import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -253,7 +256,17 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       quoteLines: quotedLines.map((line) => ({
         id: line.id,
         description: line.description,
-        itemReadableId: line.itemReadableId,
+        // What the line heading prints: a legacy line (no choice stored)
+        // prints our part number only, as this page did before.
+        partNumber: formatLinePartNumber(
+          "sharedQuote",
+          {
+            ours: line.itemReadableId,
+            theirs: line.customerPartId,
+            theirsRevision: line.customerPartRevision
+          },
+          line.partNumberDisplay
+        ),
         quantity: line.quantity,
         additionalCharges: line.additionalCharges,
         taxPercent: line.taxPercent,
@@ -501,14 +514,14 @@ const LineItems = ({
           return null;
         }
 
-        const lineName = line.itemReadableId ?? "";
+        const lineName = line.partNumber;
 
         return (
           <div key={line.id} className="border-b border-input py-6 w-full">
             <HStack spacing={4} className="items-start">
               {thumbnails[line.id!] ? (
                 <img
-                  alt={line.itemReadableId!}
+                  alt={lineName}
                   className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={thumbnails[line.id!] ?? undefined}
                 />
@@ -535,9 +548,7 @@ const LineItems = ({
                     {/* min-w-0 so a long item id wraps inside the card
                         instead of shoving the price out of it. */}
                     <div className="flex min-w-0 items-center gap-2">
-                      <Heading className="min-w-0">
-                        {line.itemReadableId}
-                      </Heading>
+                      <Heading className="min-w-0">{line.partNumber}</Heading>
                       {selectedLines[line.id!]?.quantity === 0 &&
                         (pricingByLine[line.id!]?.length ?? 0) > 0 &&
                         ![

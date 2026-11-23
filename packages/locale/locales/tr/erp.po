@@ -17406,6 +17406,12 @@ msgstr "satır {position}"
 msgid "Line Add-On"
 msgstr "Satır Eki"
 
+msgid "Line Customer Part ID"
+msgstr "Satır müşteri parça kimliği"
+
+msgid "Line Customer Part Revision"
+msgstr "Satır müşteri revizyonu"
+
 msgid "Line description"
 msgstr "Satır açıklaması"
 

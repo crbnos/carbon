@@ -282,7 +282,8 @@ export const CUSTOMERS = [
     type: "Industrial OEM",
     status: "Active",
     phone: "+1-616-555-0110",
-    website: "https://ridgelinedrives.com"
+    website: "https://ridgelinedrives.com",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "Cardinal Motorworks",

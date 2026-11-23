@@ -9688,8 +9688,8 @@ export async function getOpenJobsMissingStorageUnit(
 
 /**
  * The record a document prints, for the "Edit document" modal: its readable
- * number, whether it is locked, whether its lines' part numbers can change, and
- * the notes its Notes block prints. Read with the caller's client, so a record
+ * number, whether it is locked, whether it prints lines whose part numbers a
+ * pick sets and whether they can change, and the notes its Notes block prints. Read with the caller's client, so a record
  * the caller cannot see is not found.
  */
 export async function getDocumentEditRecord(
@@ -9699,10 +9699,11 @@ export async function getDocumentEditRecord(
   documentId: string
 ) {
   const record = DOCUMENT_EDIT_RECORDS[documentType];
+  const noLinesWhen = record.partNumberLines?.noLinesWhen;
   const { data, error } = await client
     .from(record.table as "purchaseOrder")
     .select(
-      ["status", record.readableId, record.notesColumn]
+      ["status", record.readableId, record.notesColumn, noLinesWhen?.column]
         .filter(Boolean)
         .join(", ")
     )
@@ -9717,6 +9718,9 @@ export async function getDocumentEditRecord(
     data: {
       label: String(row[record.readableId] ?? documentId),
       locked: record.isLocked(status),
+      partNumbersShown:
+        !!record.partNumberLines &&
+        !noLinesWhen?.values.includes(String(row[noLinesWhen.column])),
       partNumbersLocked:
         !record.partNumberLines ||
         partNumberLinesRefusal(documentType, status) !== null,

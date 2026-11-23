@@ -28,16 +28,17 @@ export function isPartNumberDisplay(
 
 /**
  * What a legacy line (a null display choice) prints, per surface. Each value
- * repeats what the surface printed before the setting existed. Two surfaces
- * print their legacy lines in code instead: the packing slip prints our part
- * number, and the purchase order PDF prints our part number as the title with
- * the supplier's in the "Supplier Part ID:" row (`purchaseOrder/vars.ts`).
+ * repeats what the surface printed before the setting existed. The purchase
+ * order PDF prints its legacy lines in code instead: our part number as the
+ * title with the supplier's in the "Supplier Part ID:" row
+ * (`purchaseOrder/vars.ts`).
  */
 export const LEGACY_PART_NUMBER_DISPLAY = {
   quote: "Ours First",
   sharedQuote: "Ours Only",
   salesOrder: "Ours First",
   salesInvoice: "Ours Only",
+  packingSlip: "Ours Only",
   purchaseOrderEmail: "Ours First"
 } as const satisfies Record<string, PartNumberDisplay>;
 
@@ -64,16 +65,19 @@ export function summarizePartNumberDisplay(
   return values.every((value) => (value ?? null) === first) ? first : "mixed";
 }
 
+/** Our part number and the other party's, as one line holds them. */
+export type PartNumbers = {
+  ours: string | null | undefined;
+  theirs: string | null | undefined;
+  theirsRevision?: string | null;
+};
+
 /**
  * The part number one line prints. A line with no number of theirs, or one
  * equal to ours, prints ours whatever the choice.
  */
 export function formatPartNumber(
-  parts: {
-    ours: string | null | undefined;
-    theirs: string | null | undefined;
-    theirsRevision?: string | null;
-  },
+  parts: PartNumbers,
   display: PartNumberDisplay
 ): string {
   const ours = parts.ours?.trim() ?? "";
@@ -92,4 +96,21 @@ export function formatPartNumber(
     case "Ours Only":
       return ours;
   }
+}
+
+/**
+ * The part number a line prints on `surface`: the Edit document modal's
+ * unsaved `draft`, else the line's `stored` choice, else the surface's legacy
+ * output.
+ */
+export function formatLinePartNumber(
+  surface: PartNumberSurface,
+  parts: PartNumbers,
+  stored: PartNumberDisplay | null | undefined,
+  draft?: PartNumberDisplay
+): string {
+  return formatPartNumber(
+    parts,
+    resolvePartNumberDisplay(surface, draft ?? stored)
+  );
 }

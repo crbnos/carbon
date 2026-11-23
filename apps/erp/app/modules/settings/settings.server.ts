@@ -741,9 +741,11 @@ export const updateResourcesSettings = defineServiceFn({
  * contact and location, whether every customer contact needs an email, whether customer readable ids show, the digital quote
  * (on or off, who is notified, and whether accepting one asks for a purchase
  * order), who is notified when an RFQ is ready and when a sales rule is
- * broken, the default markup per cost category on a quote line, and the
+ * broken, the default markup per cost category on a quote line, the
  * level of the delivery date check a sales order line runs (an item's
- * Planning tab can override it per location).
+ * Planning tab can override it per location), and which part numbers new
+ * quote, sales order, invoice and packing slip lines print (a customer's own
+ * choice overrides it).
  *
  * @mcp
  */
@@ -769,7 +771,8 @@ export const updateSalesSettings = defineServiceFn({
         overheadCost: z.number().min(0),
         outsideCost: z.number().min(0)
       })
-      .optional()
+      .optional(),
+    customerPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS).optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -2017,6 +2020,12 @@ export const saveDocumentEdit = defineServiceFn({
     }
     if (!record.data) {
       return ctx.error("notFound", "The document could not be found");
+    }
+    if (
+      input.partNumberDisplay !== undefined &&
+      !record.data.partNumbersShown
+    ) {
+      return ctx.error("validation", "This document has no part number choice");
     }
 
     const template = await getCompanyTemplate(client, {
