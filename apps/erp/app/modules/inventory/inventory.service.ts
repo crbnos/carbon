@@ -316,6 +316,7 @@ import {
   batchPropertyColumns,
   batchPropertyFilter,
   batchPropertyValue,
+  blankUnitNumberRefusal,
   clampDepth,
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
@@ -324,6 +325,9 @@ import {
   serialLineShortfalls,
   serialShortfallMessage,
   spreadBatchCount,
+  stockIncreaseRefusal,
+  untrackedIssueRefusal,
+  untrackedUnscrapRefusal,
   writeOffRestoreQuantity
 } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
@@ -2328,7 +2332,8 @@ export async function getTrackedEntities(
 ) {
   let query = client
     .from("trackedEntity")
-    .select("*", {
+    // The item's tracking type decides whether Unscrap asks for a number.
+    .select("*, item(itemTrackingType)", {
       count: listCount(args)
     })
     .eq("companyId", companyId)
@@ -25070,6 +25075,24 @@ export async function postInventoryAdjustment(
   await db.transaction().execute(async (trx) => {
     await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
+    // Re-read under a lock: a tracking type change writes the item row, so
+    // it and this adjustment cannot cross, and the refusals and the valuation
+    // below see the type that is committed. An untracked scrap takes the
+    // update lock assignBatchToUnnumberedStock takes, so a batch given to
+    // this stock meanwhile is not scrapped as unnumbered too. It takes it
+    // here, not after a share lock: two scraps that both held a share lock
+    // and then asked for the update lock would deadlock.
+    const trackingQuery = trx
+      .selectFrom("item")
+      .select("itemTrackingType")
+      .where("id", "=", itemId)
+      .where("companyId", "=", companyId);
+    const tracking = await (adjustmentType === "Scrap" && !trackedEntityId
+      ? trackingQuery.forUpdate()
+      : trackingQuery.forShare()
+    ).executeTakeFirstOrThrow();
+    item.itemTrackingType = tracking.itemTrackingType;
+
     if (adjustmentType === "Scrap") {
       const scrapLedgerBase = {
         ...ledgerBase,
@@ -25257,15 +25280,6 @@ export async function postInventoryAdjustment(
       if (quantity <= 0) {
         throw new InvalidInputError("Scrap quantity must be greater than zero");
       }
-      // Re-read under the item lock assignBatchToUnnumberedStock takes, so a
-      // batch given to this stock meanwhile is not scrapped as unnumbered too.
-      await trx
-        .selectFrom("item")
-        .select("id")
-        .where("id", "=", itemId)
-        .where("companyId", "=", companyId)
-        .forUpdate()
-        .executeTakeFirst();
       const untracked = await trx
         .selectFrom("itemLedger")
         .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
@@ -25313,18 +25327,35 @@ export async function postInventoryAdjustment(
       );
 
       if (trackedEntityId) {
+        // Locked, after the item, as every adjustment locks them: the status
+        // and number checks below hold until the unit is written.
         const entity = await trx
           .selectFrom("trackedEntity")
-          .select(["id", "quantity", "status"])
+          .select(["id", "quantity", "status", "readableId", "itemId"])
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
+          .forUpdate()
           .executeTakeFirst();
         if (!entity) throw new InvalidInputError("Tracked entity not found");
+        // The number rule and the ledger row read the request's item.
+        if (entity.itemId && entity.itemId !== itemId) {
+          throw new InvalidInputError("Tracked entity is not of this item");
+        }
         if (entity.status !== "Scrapped") {
           throw new InvalidInputError(
             "Only scrapped tracked entities can be unscrapped"
           );
         }
+        // A batch or serial unit comes back with its number: one scrapped
+        // with none needs it sent.
+        const numberRefusal = stockIncreaseRefusal({
+          itemTrackingType: item.itemTrackingType,
+          trackedEntityId,
+          createsUnit: false,
+          readableId,
+          currentReadableId: entity.readableId
+        });
+        if (numberRefusal) throw new InvalidInputError(numberRefusal);
         const entityQuantity = Number(entity.quantity) || 0;
         if (entityQuantity <= 0) {
           throw new InvalidInputError(
@@ -25414,7 +25445,12 @@ export async function postInventoryAdjustment(
 
         await trx
           .updateTable("trackedEntity")
-          .set({ status: "Available" })
+          .set({
+            status: "Available",
+            ...(readableId !== undefined && readableId !== null
+              ? { readableId }
+              : {})
+          })
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
           .execute();
@@ -25487,6 +25523,11 @@ export async function postInventoryAdjustment(
           "Location is required to unscrap untracked stock"
         );
       }
+      const untrackedRefusal = untrackedUnscrapRefusal({
+        itemTrackingType: item.itemTrackingType,
+        readableIdWithRevision: itemResult.data.readableIdWithRevision
+      });
+      if (untrackedRefusal) throw new InvalidInputError(untrackedRefusal);
       const booked = await bookAdjustment(trx, {
         ledger: {
           ...unscrapLedgerBase,
@@ -25499,6 +25540,31 @@ export async function postInventoryAdjustment(
       });
       resultLedgerId = booked.itemLedgerId;
       return;
+    }
+
+    // The quantities were read before this transaction, so the unit is read
+    // again under the row lock its update takes: its stored row decides
+    // whether the adjustment creates it, and an increase that sends no number
+    // keeps the one it has now, never one cleared since.
+    const storedUnit = trackedEntityId
+      ? await trx
+          .selectFrom("trackedEntity")
+          .select("readableId")
+          .where("id", "=", trackedEntityId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst()
+      : undefined;
+
+    // Every path below writes a number sent for an existing unit: a move, a
+    // Set Quantity that leaves the quantity as it is, and an increase or a
+    // decrease.
+    if (storedUnit) {
+      const blankNumber = blankUnitNumberRefusal({
+        itemTrackingType: item.itemTrackingType,
+        readableId
+      });
+      if (blankNumber) throw new InvalidInputError(blankNumber);
     }
 
     if (isStorageUnitTransfer) {
@@ -25707,6 +25773,21 @@ export async function postInventoryAdjustment(
       }
       await reduceLotOf(trackedRowsInUnit[0]!);
       return;
+    }
+
+    // A zero-quantity new unit creates nothing: the no-op below returns
+    // success, so repeated scanner posts stay idempotent.
+    const createsNothing =
+      !!trackedEntityId && !storedUnit && round(adjustmentQuantity) === 0;
+    if (entryType === "Positive Adjmt." && !createsNothing) {
+      const refusal = stockIncreaseRefusal({
+        itemTrackingType: item.itemTrackingType,
+        trackedEntityId,
+        createsUnit: !!trackedEntityId && !storedUnit,
+        readableId,
+        currentReadableId: storedUnit?.readableId
+      });
+      if (refusal) throw new InvalidInputError(refusal);
     }
 
     let signedQuantity = adjustmentQuantity;
@@ -28312,6 +28393,10 @@ async function issueJobOperationMaterials(
         materialsToIssue.map((material) => material.itemId)
       )
       .select(["id", "item.itemTrackingType"])
+      // A tracking type change writes the item row, so it waits for this
+      // issue, then sees what it issued.
+      .orderBy("id")
+      .forShare()
       .execute()
   ]);
 
@@ -28324,6 +28409,17 @@ async function issueJobOperationMaterials(
 
   const itemIdHoldsStock = new Map(
     items.map((item) => [item.id, item.itemTrackingType === "Inventory"])
+  );
+  // A line copied before its item became batch or serial tracked still says
+  // untracked. Its units are issued by number, never by backflush.
+  const numberedItemIds = new Set(
+    items
+      .filter(
+        (item) =>
+          item.itemTrackingType === "Batch" ||
+          item.itemTrackingType === "Serial"
+      )
+      .map((item) => item.id)
   );
 
   // Company business day — item/cost ledgers and this function's journals must
@@ -28435,6 +28531,7 @@ async function issueJobOperationMaterials(
     data: { quantityIssued: number };
   }[] = [];
   for await (const material of materialsToIssue) {
+    if (numberedItemIds.has(material.itemId)) continue;
     const quantityToIssue = round(
       Math.max(
         0,
@@ -32422,6 +32519,7 @@ export async function issueMaterial(
             .where("companyId", "=", companyId)
             .select(["locationId", "jobId", "projectId"])
             .executeTakeFirst(),
+          // A share lock holds the tracking type until the issue commits.
           trx
             .selectFrom("item")
             .where("id", "=", itemId)
@@ -32433,6 +32531,7 @@ export async function issueMaterial(
               "readableIdWithRevision",
               "type"
             ])
+            .forShare()
             .executeTakeFirst()
         ]);
 
@@ -32591,6 +32690,24 @@ export async function issueMaterial(
           )
         });
 
+        // A material line is issued as its own item, whatever item the request
+        // names.
+        const issuedItem =
+          materialOwner && materialOwner.itemId !== item?.id
+            ? await trx
+                .selectFrom("item")
+                .where("id", "=", materialOwner.itemId)
+                .where("companyId", "=", companyId)
+                .select(["id", "itemTrackingType", "readableIdWithRevision"])
+                .forShare()
+                .executeTakeFirst()
+            : item;
+
+        // Read from the item, not the job line: a line copied before the item
+        // became batch or serial tracked still says untracked.
+        const untracked = issuedItem ? untrackedIssueRefusal(issuedItem) : null;
+        if (untracked) throw new InvalidInputError(untracked);
+
         if (materialId) {
           // Locked, so two issues of one material never both write
           // quantityIssued from the same read.
@@ -32613,14 +32730,14 @@ export async function issueMaterial(
             storageUnitId =
               (await getNettableDefaultStorageUnitId(
                 trx,
-                itemId,
+                material.itemId,
                 job?.locationId!,
                 companyId
               )) ??
               (
                 await getStorageUnitWithHighestQuantity(trx, {
                   companyId,
-                  itemId: itemId,
+                  itemId: material.itemId,
                   locationId: job?.locationId!,
                   stripes
                 })
@@ -32631,7 +32748,7 @@ export async function issueMaterial(
               (
                 await getStorageUnitWithHighestQuantity(trx, {
                   companyId,
-                  itemId: itemId,
+                  itemId: material.itemId,
                   locationId: job?.locationId!,
                   stripes
                 })
@@ -32726,7 +32843,10 @@ export async function issueMaterial(
                 }
               }
             }
-            if (item?.itemTrackingType === "Inventory" && remaining !== 0) {
+            if (
+              issuedItem?.itemTrackingType === "Inventory" &&
+              remaining !== 0
+            ) {
               const strictSettings =
                 adjustmentType !== "Positive Adjmt." && remaining > 0
                   ? await getStrictBackflushSettings(
@@ -32814,7 +32934,7 @@ export async function issueMaterial(
                     : quantityToIssue)
               )
             })
-            .where("id", "=", materialId)
+            .where("id", "=", material.id)
             .where("companyId", "=", companyId)
             .execute();
 
@@ -34723,8 +34843,12 @@ export async function issueMaterial(
           .selectFrom("item")
           .where("id", "=", itemId)
           .where("companyId", "=", companyId)
-          .select(["id", "itemTrackingType"])
+          .select(["id", "itemTrackingType", "readableIdWithRevision"])
+          .forShare()
           .executeTakeFirstOrThrow();
+
+        const untracked = untrackedIssueRefusal(item);
+        if (untracked) throw new InvalidInputError(untracked);
 
         // Create the dispatch item
         const dispatchItem = await trx
