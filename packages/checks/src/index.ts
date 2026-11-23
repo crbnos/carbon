@@ -18,6 +18,7 @@ export { moduleShape } from "./conformance/module-shape";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+export { noDiscardedQueryError } from "./conformance/no-discarded-query-error";
 export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 export { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 export { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
