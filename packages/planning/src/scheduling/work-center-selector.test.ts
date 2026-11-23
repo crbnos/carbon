@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { parseAbsolute } from "@internationalized/date";
-import { it } from "vitest";
+import { expect, it } from "vitest";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
   buildAssignmentsByEmployee,
@@ -990,3 +990,105 @@ it("requiresStaffing ON: a lights-out (alwaysOn) station still runs unattended",
     "lights-out machining is exempt and still schedules"
   );
 });
+
+// --- ops the selector cannot place on any work center -----------------------
+
+it.each([
+  ["has no process", null],
+  ["has a process no work center at the location runs", "proc-unrun"]
+])(
+  "an op that %s carries a conflict and still holds back its successor",
+  async (_label, processId) => {
+    const selector = new WorkCenterSelector(
+      {} as unknown as MasterDataProvider,
+      "loc1"
+    );
+    selector.setFiniteContext(
+      makeContext({
+        dependencies: [
+          { jobId: "job-1", operationId: "op-b", dependsOnId: "op-a" }
+        ]
+      })
+    );
+    const hours = {
+      startDate: null,
+      dueDate: null,
+      setupTime: 0,
+      laborTime: 4,
+      laborUnit: "Total Hours" as const,
+      machineTime: 0,
+      operationQuantity: 1,
+      quantityComplete: 0
+    };
+    const opA = makeOp({ id: "op-a", processId, workCenterId: null, ...hours });
+    // op-b runs on wc1 (its process has no pool, so it falls back to its center)
+    const opB = makeOp({ id: "op-b", workCenterId: "wc1", order: 1, ...hours });
+
+    const selections = selector.selectWorkCentersForOperations([opA, opB], {
+      jobDueDate: null
+    });
+
+    expect(selections.get("op-a")).toEqual({
+      workCenterId: null,
+      priority: 0,
+      error: expect.any(String),
+      conflict: expect.any(String)
+    });
+    // op-a's 4h of work, counted from now (00:00) in calendar time like a
+    // placeholder, ends 04:00; op-b may not start before then.
+    expect(selections.get("op-b")).toEqual({
+      workCenterId: "wc1",
+      priority: 0,
+      placedStart: "2026-01-05T04:00:00.000Z",
+      placedEnd: "2026-01-05T08:00:00.000Z",
+      conflict: null
+    });
+  }
+);
+
+// --- pinned outside processing ----------------------------------------------
+
+it.each([
+  [
+    "on time when the job is due the day the supplier returns it",
+    "2026-01-09",
+    null
+  ],
+  [
+    "late when the job is due before the supplier returns it",
+    "2026-01-08",
+    expect.any(String)
+  ]
+])(
+  "a pinned outside op counts in the forecast and is %s",
+  async (_label, jobDueDate, conflict) => {
+    const selector = new WorkCenterSelector(
+      {} as unknown as MasterDataProvider,
+      "loc1"
+    );
+    selector.setFiniteContext(makeContext({ timeZone: "America/Chicago" }));
+
+    const outside = makeOp({
+      id: "op-out",
+      processId: "proc-out",
+      operationType: "Outside Processing",
+      manuallyScheduled: true,
+      startDate: "2026-01-07",
+      dueDate: "2026-01-09"
+    });
+
+    const selections = selector.selectWorkCentersForOperations([outside], {
+      jobDueDate
+    });
+
+    // The pinned window in the factory's day (CST, UTC-6): from the start of
+    // 2026-01-07 to the last instant of 2026-01-09.
+    expect(selections.get("op-out")).toEqual({
+      workCenterId: null,
+      priority: 0,
+      placedStart: "2026-01-07T06:00:00.000Z",
+      placedEnd: "2026-01-10T05:59:59.999Z",
+      conflict
+    });
+  }
+);

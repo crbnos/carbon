@@ -2,12 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { parseDate } from "@internationalized/date";
 import { isOperationStarted } from "./apply-work-center-selections.ts";
 import type { BatchPlacement } from "./batch-scheduler.ts";
 import {
   type CalendarWindow,
   intersectWindows,
-  nextWorkingInstant
+  nextWorkingInstant,
+  shiftTimeToDate
 } from "./calendar-utils.ts";
 import {
   classifyLatePlacement,
@@ -442,12 +444,38 @@ export class WorkCenterSelector {
         // successors wait for the outsourced turnaround and the timeline
         // shows real dates instead of the coarse backward-pass ones.
         if (op.manuallyScheduled) {
-          // Keep pinned dates; successors still chain after the pinned end
+          // Keep the pinned window: from the start of its start day to the
+          // last instant of its due day, in the factory's calendar. It is
+          // emitted as a placement so it counts in the job's forecast and
+          // lateness, and successors chain after it.
           if (op.dueDate) {
-            placedEndByOperation.set(
-              op.id,
-              toInstantMs(op.dueDate) + 24 * 3_600_000
+            const end =
+              shiftTimeToDate(
+                parseDate(op.dueDate).add({ days: 1 }),
+                "00:00",
+                ctx.timeZone
+              ) - 1;
+            const start = Math.min(
+              shiftTimeToDate(
+                parseDate(op.startDate ?? op.dueDate),
+                "00:00",
+                ctx.timeZone
+              ),
+              end
             );
+            placedEndByOperation.set(op.id, end);
+            selections.set(op.id, {
+              workCenterId: op.workCenterId ?? null,
+              priority: 0,
+              placedStart: msToInstantIso(start),
+              placedEnd: msToInstantIso(end),
+              conflict:
+                jobDueDate && op.dueDate > jobDueDate
+                  ? composeLateConflict(op.dueDate, jobDueDate, {
+                      kind: "outside-processing"
+                    })
+                  : null
+            });
           }
           continue;
         }
@@ -497,15 +525,6 @@ export class WorkCenterSelector {
       // frozen-window reservation of the pinned span was removed with the
       // dual-dates split (spec 2026-08-15).
 
-      if (!op.processId) {
-        selections.set(op.id, {
-          workCenterId: null,
-          priority: 0,
-          error: "No process ID provided"
-        });
-        continue;
-      }
-
       // Sticky work centers: an op that has already STARTED stays on its machine
       // — setups/fixtures/operators physically live there, so a replan must not
       // bounce it. A not-yet-started op balances across the whole process pool
@@ -520,23 +539,25 @@ export class WorkCenterSelector {
         op.workCenterId && ctx.capacityByWorkCenter.has(op.workCenterId)
           ? op.workCenterId
           : null;
-      const pool = this.getWorkCentersForProcess(op.processId);
-      const candidates =
-        started && assignedWorkCenter
+      const pool = op.processId
+        ? this.getWorkCentersForProcess(op.processId)
+        : [];
+      const candidates = !op.processId
+        ? []
+        : started && assignedWorkCenter
           ? [assignedWorkCenter]
           : pool.length > 0
             ? pool
             : assignedWorkCenter
               ? [assignedWorkCenter]
               : [];
-      if (candidates.length === 0) {
-        selections.set(op.id, {
-          workCenterId: null,
-          priority: 0,
-          error: `No work centers found for process ${op.processId}`
-        });
-        continue;
-      }
+      // No work center to run on: it falls through to the unplaceable path
+      // below — a conflict, and successors wait for its work content.
+      const noCandidate = !op.processId
+        ? "No process ID provided"
+        : candidates.length === 0
+          ? `No work centers found for process ${op.processId}`
+          : null;
 
       // Earliest feasible start: forward-ASAP from now, never before an in-run
       // predecessor placement. No backward-pass floor — the projected finish
@@ -567,7 +588,9 @@ export class WorkCenterSelector {
       );
 
       // The operation's requirement comes from its PROCESS (single ability)
-      const requirement = ctx.requirementByProcess.get(op.processId) ?? null;
+      const requirement = op.processId
+        ? (ctx.requirementByProcess.get(op.processId) ?? null)
+        : null;
       const members = requirement
         ? this.buildEligibleMembers(requirement, earliestStart, ctx)
         : null;
@@ -596,7 +619,14 @@ export class WorkCenterSelector {
       } | null = null;
       let firstConflict: string | null = null;
 
-      if (requirement && members && members.length === 0 && attendedHours > 0) {
+      if (noCandidate) {
+        firstConflict = noCandidate;
+      } else if (
+        requirement &&
+        members &&
+        members.length === 0 &&
+        attendedHours > 0
+      ) {
         // Nobody qualified can ever free up — named conflict, no walk needed
         firstConflict = `No qualified operator for ${requirement.abilityName}`;
       } else {
@@ -914,32 +944,40 @@ export class WorkCenterSelector {
         // flagged isPlaceholder so getLiveReservations excludes it — it must not
         // hold the machine against other jobs. Chaining placedEndByOperation
         // still makes successors wait for it (they can't run before it does).
-        if (durationHours > 0 && fallbackWc) {
+        // An op with no work center at all gets no marker (there is no
+        // resource to draw it on) but chains its successors the same way.
+        if (durationHours > 0) {
           // Snap the marker onto a working day so it never renders on a night or
           // weekend just because the earliest start fell there — it holds no
           // capacity, so this only moves where the bar is drawn.
           const placeholderStart = nextWorkingInstant(
-            ctx.capacityByWorkCenter.get(fallbackWc)?.windows ?? [],
+            fallbackWc
+              ? (ctx.capacityByWorkCenter.get(fallbackWc)?.windows ?? [])
+              : [],
             earliestMs
           );
           const placeholderEnd = placeholderStart + durationHours * 3_600_000;
-          this.plannedReservations.push({
-            resourceKind: "WorkCenter",
-            resourceId: fallbackWc,
-            operationId: op.id,
-            startAt: placeholderStart,
-            endAt: placeholderEnd,
-            earliestStartAt: placeholderStart,
-            scheduleNote: conflictReason,
-            workHours: durationHours,
-            isPlaceholder: true
-          });
+          if (fallbackWc) {
+            this.plannedReservations.push({
+              resourceKind: "WorkCenter",
+              resourceId: fallbackWc,
+              operationId: op.id,
+              startAt: placeholderStart,
+              endAt: placeholderEnd,
+              earliestStartAt: placeholderStart,
+              scheduleNote: conflictReason,
+              workHours: durationHours,
+              isPlaceholder: true
+            });
+          }
           placedEndByOperation.set(op.id, placeholderEnd);
         }
 
         selections.set(op.id, {
           workCenterId: fallbackWc ?? op.workCenterId ?? null,
           priority: 0,
+          // quote-lead-time reads `error` for an op with nowhere to run
+          ...(noCandidate ? { error: noCandidate } : {}),
           conflict: conflictReason
         });
       }

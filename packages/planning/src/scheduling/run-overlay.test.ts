@@ -2,14 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { parseAbsolute } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
-import type { CrossJobOperation } from "./master-data-provider.ts";
+import type {
+  CrossJobOperation,
+  MasterDataProvider
+} from "./master-data-provider.ts";
 import {
   dependencyEdgesEqual,
   mergeCrossJobOperations,
+  startedOperationHolds,
   visibleReservations
 } from "./run-overlay.ts";
-import type { PlannedReservation } from "./types.ts";
+import type { ReservationInterval } from "./slot-allocator.ts";
+import type { PlannedReservation, ScheduledOperation } from "./types.ts";
+import {
+  type FiniteSchedulingContext,
+  WorkCenterSelector
+} from "./work-center-selector.ts";
 
 const NOW = 1_000;
 
@@ -143,5 +153,144 @@ describe("mergeCrossJobOperations", () => {
         ["wc1"]
       )
     ).toEqual([]);
+  });
+});
+
+describe("startedOperationHolds", () => {
+  const HOUR = 3_600_000;
+  const start = parseAbsolute("2026-01-05T00:00:00Z", "UTC").toDate().getTime();
+  const windows = new Map([["wc1", [{ start, end: start + 30 * 24 * HOUR }]]]);
+
+  // One job's run on wc1, seeing the given reservations, as buildFiniteContext
+  // would hand them to the selector.
+  const place = (
+    op: Partial<ScheduledOperation>,
+    reservations: ReservationInterval[]
+  ) => {
+    const selector = new WorkCenterSelector(
+      {} as unknown as MasterDataProvider,
+      "loc1"
+    );
+    const ctx: FiniteSchedulingContext = {
+      capacityByWorkCenter: new Map([
+        [
+          "wc1",
+          {
+            workCenter: { id: "wc1" },
+            windows: windows.get("wc1")!,
+            reservations
+          }
+        ]
+      ]),
+      requirementByProcess: new Map(),
+      employeesByAbility: new Map(),
+      reservationsByEmployee: new Map(),
+      dependencies: [],
+      now: start,
+      horizonDays: 365,
+      windowsEnd: start + 30 * 24 * HOUR,
+      peopleByWorkCenter: new Map(),
+      assignmentsByEmployee: new Map(),
+      requiresStaffing: false,
+      peopleBudgets: new Map(),
+      windowsByEmployee: new Map(),
+      timeZone: "UTC",
+      operationsWithEvents: new Set()
+    };
+    selector.setFiniteContext(ctx);
+    const scheduled: ScheduledOperation = {
+      id: "op",
+      jobId: "job",
+      processId: "proc",
+      workCenterId: "wc1",
+      startDate: null,
+      dueDate: null,
+      priority: 1,
+      durationHours: 0,
+      durationDays: 1,
+      hasConflict: false,
+      conflictReason: null,
+      setupTime: 0,
+      laborUnit: "Total Hours",
+      machineTime: 0,
+      operationQuantity: 1,
+      quantityComplete: 0,
+      ...op
+    };
+    return selector
+      .selectWorkCentersForOperations([scheduled], { jobDueDate: null })
+      .get("op");
+  };
+
+  it("keeps a running op on its machine ahead of a higher-priority job's unstarted op", () => {
+    // job-1 runs first (higher priority): an unstarted 2h op on wc1.
+    // job-2 runs second: its 3h op on wc1 is already In Progress.
+    const holds = startedOperationHolds({
+      operations: [
+        { jobId: "job-2", readableJobId: "J2", workCenterId: "wc1", hours: 3 }
+      ],
+      windowsByWorkCenter: windows,
+      reservations: [],
+      now: start,
+      horizonEnd: start + 30 * 24 * HOUR,
+      timeZone: "UTC"
+    });
+    expect(holds).toEqual([
+      {
+        resourceKind: "WorkCenter",
+        resourceId: "wc1",
+        startAt: start,
+        endAt: start + 3 * HOUR,
+        jobId: "job-2",
+        readableJobId: "J2",
+        jobOperationBatchId: null
+      }
+    ]);
+
+    // job-1 sees job-2's hold and waits for it.
+    const job1 = place({ laborTime: 2, status: "Ready" }, [...holds]);
+    expect([job1?.placedStart, job1?.placedEnd]).toEqual([
+      "2026-01-05T03:00:00.000Z",
+      "2026-01-05T05:00:00.000Z"
+    ]);
+
+    // job-2's own run sees job-1's placement, not its own hold: it runs now.
+    const job2 = place({ laborTime: 3, status: "In Progress" }, [
+      { startAt: start + 3 * HOUR, endAt: start + 5 * HOUR }
+    ]);
+    expect([job2?.placedStart, job2?.placedEnd]).toEqual([
+      "2026-01-05T00:00:00.000Z",
+      "2026-01-05T03:00:00.000Z"
+    ]);
+  });
+
+  it("queues two running ops on one machine in the order given", () => {
+    const holds = startedOperationHolds({
+      operations: [
+        { jobId: "job-a", readableJobId: "JA", workCenterId: "wc1", hours: 1 },
+        { jobId: "job-b", readableJobId: "JB", workCenterId: "wc1", hours: 2 }
+      ],
+      windowsByWorkCenter: windows,
+      reservations: [
+        {
+          resourceKind: "WorkCenter",
+          resourceId: "wc1",
+          startAt: start,
+          endAt: start + HOUR,
+          jobId: "job-x",
+          readableJobId: "JX",
+          jobOperationBatchId: null
+        }
+      ],
+      now: start,
+      horizonEnd: start + 30 * 24 * HOUR,
+      timeZone: "UTC"
+    });
+    expect(
+      holds.map((h) => [h.jobId, h.startAt - start, h.endAt - start])
+    ).toEqual([
+      ["job-a", HOUR, 2 * HOUR],
+      ["job-b", 2 * HOUR, 4 * HOUR]
+    ]);
   });
 });

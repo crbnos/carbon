@@ -75,7 +75,13 @@ export function applyWorkCenterSelections(
     // deliberately untouched. Outside operations have a placement but no work
     // center.
     if (selection.placedStart && selection.placedEnd) {
-      updated.startDate = businessDay(selection.placedStart, timeZone);
+      // A pinned outside op's window is the human's: its stored start day
+      // stays as it is, empty included.
+      const pinnedOutside =
+        op.manuallyScheduled && op.operationType === "Outside Processing";
+      updated.startDate = pinnedOutside
+        ? op.startDate
+        : businessDay(selection.placedStart, timeZone);
       updated.projectedCompletionAt = selection.placedEnd;
       updated.hasConflict = false;
       updated.conflictReason = null;

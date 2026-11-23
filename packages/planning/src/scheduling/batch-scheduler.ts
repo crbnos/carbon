@@ -15,6 +15,7 @@ import type {
   KyselyMasterDataProvider,
   LiveReservation
 } from "./master-data-provider.ts";
+import { lockLocationSchedule } from "./persist-location.ts";
 import { allocateOperation, isConflict } from "./slot-allocator.ts";
 
 /**
@@ -629,6 +630,8 @@ export async function placeReleasedBatches(args: {
   // One transaction: the old batch rows disappear only together with the new
   // ones appearing — the per-job runs that follow read a consistent set.
   await db.transaction().execute(async (trx) => {
+    await lockLocationSchedule(trx, locationId);
+
     // Persist auto-selected work centers to the batch (and its members —
     // mirroring the server fn's "assigning a work center writes it to every
     // member"). The IS NULL guard defers to a human pick that landed after

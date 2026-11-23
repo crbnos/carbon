@@ -2,11 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { CalendarWindow } from "./calendar-utils.ts";
 import { toIsoDate } from "./date-utils.ts";
 import type {
   CrossJobOperation,
   LiveReservation
 } from "./master-data-provider.ts";
+import {
+  allocateOperation,
+  isConflict,
+  type ResourceCapacityData
+} from "./slot-allocator.ts";
 import {
   type BaseOperation,
   capacityHoldingJobStatuses,
@@ -146,4 +152,67 @@ export function mergeCrossJobOperations(
     if (op.workCenterId && requested.has(op.workCenterId)) merged.push(op);
   }
   return merged;
+}
+
+/**
+ * Where the run's STARTED operations hold their machines before any job runs.
+ * Jobs run in priority order, so a later job's running operation would
+ * otherwise queue behind an earlier job's unstarted work on the same machine.
+ * Each hold is the earliest span from `now` for the work the operation has
+ * left on the work center it runs on, taken in the order given, around the
+ * reservations no job of the run rewrites. A job sees the holds of the jobs
+ * that have not run yet; its own run places the operation itself.
+ */
+export function startedOperationHolds(args: {
+  operations: {
+    jobId: string;
+    readableJobId: string;
+    workCenterId: string;
+    hours: number;
+  }[];
+  windowsByWorkCenter: Map<string, CalendarWindow[]>;
+  reservations: LiveReservation[];
+  now: number;
+  horizonEnd: number;
+  timeZone: string;
+}): LiveReservation[] {
+  const capacityByWorkCenter = new Map<string, ResourceCapacityData>();
+  const holds: LiveReservation[] = [];
+  for (const op of args.operations) {
+    if (op.hours <= 0) continue;
+    let capacity = capacityByWorkCenter.get(op.workCenterId);
+    if (!capacity) {
+      capacity = {
+        workCenter: { id: op.workCenterId },
+        windows: args.windowsByWorkCenter.get(op.workCenterId) ?? [],
+        reservations: args.reservations
+          .filter(
+            (r) =>
+              r.resourceKind === "WorkCenter" &&
+              r.resourceId === op.workCenterId
+          )
+          .map((r) => ({ startAt: r.startAt, endAt: r.endAt }))
+      };
+      capacityByWorkCenter.set(op.workCenterId, capacity);
+    }
+    const slot = allocateOperation({
+      durationHours: op.hours,
+      earliestStart: args.now,
+      horizonEnd: args.horizonEnd,
+      capacity,
+      timeZone: args.timeZone
+    });
+    if (isConflict(slot)) continue;
+    capacity.reservations.push({ startAt: slot.start, endAt: slot.end });
+    holds.push({
+      resourceKind: "WorkCenter",
+      resourceId: op.workCenterId,
+      startAt: slot.start,
+      endAt: slot.end,
+      jobId: op.jobId,
+      readableJobId: op.readableJobId,
+      jobOperationBatchId: null
+    });
+  }
+  return holds;
 }

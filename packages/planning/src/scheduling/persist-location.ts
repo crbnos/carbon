@@ -86,21 +86,44 @@ export function jobsClearingReservations(
 }
 
 /**
+ * Serialize writers of one location's schedule: the first statement of every
+ * transaction that rewrites the location's reservations. Taken before any
+ * per-job lock, so the order is always location → job.
+ */
+export async function lockLocationSchedule(
+  trx: Transaction<DB>,
+  locationId: string
+): Promise<void> {
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`schedule:location:${locationId}`}, 0))`.execute(
+    trx
+  );
+}
+
+/**
  * Write a whole location run in ONE transaction: a partial write (one job's
  * reservations deleted but not re-inserted, or half the jobs on the new plan)
  * would free or double-book capacity for the next run.
  * `failedJobIds`: see `jobsClearingReservations`.
+ * `runStartedAt`: the instant the run started, before it read anything. A
+ * stale mark stamped after it is kept for the next wave.
  */
 export async function persistLocationWrites(
   db: Kysely<DB>,
   writes: JobWrites[],
-  scope: { companyId: string; userId: string },
+  scope: {
+    companyId: string;
+    userId: string;
+    locationId: string;
+    runStartedAt: string;
+  },
   failedJobIds: string[] = []
 ): Promise<void> {
   if (writes.length === 0 && failedJobIds.length === 0) return;
-  const { companyId, userId } = scope;
+  const { companyId, userId, locationId, runStartedAt } = scope;
 
   await db.transaction().execute(async (trx) => {
+    await lockLocationSchedule(trx, locationId);
+
     const links = writes.flatMap((w) => w.materialLinks);
     for (const rows of chunks(links)) {
       await sql`
@@ -218,15 +241,18 @@ export async function persistLocationWrites(
       await trx.insertInto("capacityReservation").values(rows).execute();
     }
 
-    // The forecast, and the stale-schedule stamps cleared with it. The
-    // scheduler is status-neutral: releasing a job to Ready is the app's
-    // job-status flow, never a side effect of scheduling.
+    // The forecast, and the stale-schedule stamps cleared with it — only a
+    // stamp this run saw: one stamped after the run started (a MARK racing
+    // it) stays for the next wave. The scheduler is status-neutral: releasing
+    // a job to Ready is the app's job-status flow, never a side effect of
+    // scheduling.
+    const seenStamp = sql`(j."scheduleOutdatedAt" is null or j."scheduleOutdatedAt" <= ${runStartedAt}::timestamptz)`;
     for (const rows of chunks(writes)) {
       await sql`
         update "job" as j
         set "projectedCompletionAt" = v."projectedCompletionAt"::timestamptz,
-          "scheduleOutdatedReason" = null,
-          "scheduleOutdatedAt" = null,
+          "scheduleOutdatedReason" = case when ${seenStamp} then null else j."scheduleOutdatedReason" end,
+          "scheduleOutdatedAt" = case when ${seenStamp} then null else j."scheduleOutdatedAt" end,
           "updatedAt" = ${datetime.timestamp()},
           "updatedBy" = ${userId}
         from (values ${sql.join(
@@ -236,8 +262,11 @@ export async function persistLocationWrites(
           and j."companyId" = ${companyId}
           and (
             j."projectedCompletionAt" is distinct from v."projectedCompletionAt"::timestamptz
-            or j."scheduleOutdatedReason" is not null
-            or j."scheduleOutdatedAt" is not null
+            or (
+              (j."scheduleOutdatedReason" is not null
+                or j."scheduleOutdatedAt" is not null)
+              and ${seenStamp}
+            )
           )
       `.execute(trx);
     }

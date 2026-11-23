@@ -354,9 +354,10 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
       period: "30s",
       timeout: "10m"
     },
-    // env scope + the shared "schedule:" key serializes this per company so a
-    // wave and a user-triggered regen never run concurrently for one company
-    // and double-book capacity
+    // env scope + the "schedule:" key serializes waves per company. A
+    // user-triggered regen runs in-process in the ERP and does not share this
+    // key: the location write's advisory lock (persistLocationWrites)
+    // serializes the two writers for one location.
     concurrency: {
       limit: 1,
       scope: "env",

@@ -5,6 +5,7 @@
 import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import type { BatchPlacement } from "./batch-scheduler.ts";
@@ -67,7 +68,7 @@ const asMs = (value: unknown): number | null =>
  * The location's open jobs — widened with members of Active/Completing
  * operation batches — ordered deadline class FIRST (so a no-due-date ASAP
  * order leads the queue instead of trailing on NULLS LAST), then due date ASC
- * NULLS LAST, priority ASC, createdAt ASC. Sorted in TS.
+ * NULLS LAST, priority ASC, createdAt ASC, id ASC. Sorted in TS.
  */
 export async function loadOrderedBatch(
   db: Kysely<DB>,
@@ -128,7 +129,10 @@ export async function loadOrderedBatch(
     const ap = a.priority ?? 0;
     const bp = b.priority ?? 0;
     if (ap !== bp) return ap - bp;
-    return (asMs(a.createdAt) ?? 0) - (asMs(b.createdAt) ?? 0);
+    const ac = asMs(a.createdAt) ?? 0;
+    const bc = asMs(b.createdAt) ?? 0;
+    if (ac !== bc) return ac - bc;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
 
   return jobRows.map((j) => j.id);
@@ -147,10 +151,15 @@ export async function runLocationSchedule(
 ): Promise<LocationScheduleResult> {
   const { db, client, locationId, companyId, userId } = params;
 
+  // Before any input is read: a stale mark stamped after this instant may
+  // describe a change this run did not see, so the write keeps it.
+  const runStartedAt = datetime.timestamp();
+
   const batch = await loadOrderedBatch(db, locationId, companyId);
 
   // ONE clock for the whole run → determinism across every job in the batch.
   const now = Date.now();
+  const horizonEnd = now + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000;
   const provider = new KyselyMasterDataProvider(db, client, companyId, {
     // Share the company's STATIC master data (processes, work centers,
     // qualifications, shifts, machine calendars) across all jobs in the batch.
@@ -172,7 +181,7 @@ export async function runLocationSchedule(
       now,
       userId,
       orderedJobIds: batch,
-      horizonEnd: now + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000,
+      horizonEnd,
       persist: true
     });
   } catch (err) {
@@ -186,6 +195,13 @@ export async function runLocationSchedule(
   // After the pre-pass, which writes member operations and batch reservations.
   await provider.preloadJobs(batch);
   await provider.beginRun(batch, now);
+  // Jobs run in priority order, so a running operation would otherwise queue
+  // behind an earlier job's unstarted work on its own machine.
+  await provider.holdStartedOperations({
+    skipOperationIds: new Set(batchPlacements?.keys() ?? []),
+    timeZone: await provider.getLocationTimeZone(locationId),
+    horizonEnd
+  });
 
   const writes: JobWrites[] = [];
   let conflictsDetected = 0;
@@ -194,6 +210,7 @@ export async function runLocationSchedule(
 
   for (let i = 0; i < batch.length; i++) {
     const id = batch[i]!;
+    provider.releaseHolds(id);
     const engine = new SchedulingEngine({
       client,
       db,
@@ -233,7 +250,12 @@ export async function runLocationSchedule(
     }
   }
 
-  await persistLocationWrites(db, writes, { companyId, userId }, failedJobIds);
+  await persistLocationWrites(
+    db,
+    writes,
+    { companyId, userId, locationId, runStartedAt },
+    failedJobIds
+  );
 
   return {
     locationId,
