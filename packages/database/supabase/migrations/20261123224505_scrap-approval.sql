@@ -24,9 +24,9 @@ CREATE TABLE IF NOT EXISTS "scrapRequest" (
   -- Set once the scrap posted. Null means the approval was recorded and the
   -- posting never finished.
   "postedAt" TIMESTAMP WITH TIME ZONE,
-  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedBy" TEXT REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
 
   CONSTRAINT "scrapRequest_pkey" PRIMARY KEY ("id", "companyId"),
