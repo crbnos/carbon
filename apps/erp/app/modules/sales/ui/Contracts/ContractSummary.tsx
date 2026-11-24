@@ -207,7 +207,8 @@ const ContractSummary = ({
           {!isProject && !contract.endDate && (
             <p className="text-xs text-muted-foreground w-full">
               <Trans>
-                Open-ended: the value of the invoices planned so far.
+                No end date: the value of the invoices planned so far. A new
+                invoice is added every billing period.
               </Trans>
             </p>
           )}

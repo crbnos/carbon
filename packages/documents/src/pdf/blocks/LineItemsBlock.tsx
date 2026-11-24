@@ -14,7 +14,7 @@ import { getLineTaxesAndFees } from "../../utils/sales-invoice";
 import { Note } from "../components";
 import { Cell, ChargeRow, TextCell } from "./Cell";
 import { columnWidths } from "./columns";
-import { itemTextOverflowStyle } from "./itemText";
+import { breakLongItemWord, itemTextOverflowStyle } from "./itemText";
 import { useTw } from "./tw";
 import type { SalesInvoiceData } from "./types";
 import { buildSalesInvoiceLineVars } from "./vars";
@@ -107,7 +107,10 @@ export function LineItemsBlock({
                 {t("numberCell", row)}
               </TextCell>
               <Cell width={w.description} style={tw("pr-2")}>
-                <Text style={{ ...tw("text-gray-800"), ...overflow }}>
+                <Text
+                  style={{ ...tw("text-gray-800"), ...overflow }}
+                  hyphenationCallback={breakLongItemWord}
+                >
                   {t("descriptionCell", row)}
                 </Text>
                 <Text

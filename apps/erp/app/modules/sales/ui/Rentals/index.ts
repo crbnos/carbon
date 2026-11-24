@@ -26,6 +26,7 @@ import {
   resolveLineLeaseClassification
 } from "./RentalLeaseClassification";
 import RentalMoney from "./RentalMoney";
+import RentalNextInvoice from "./RentalNextInvoice";
 import RentalSetupSteps, {
   rentalAgreementSetupSteps,
   useRentalTermSave
@@ -60,6 +61,7 @@ export {
   RentalCommencementPreview,
   RentalDeposits,
   RentalMoney,
+  RentalNextInvoice,
   RentalSetupSteps,
   RentalStatus,
   RentalUnitsGrid,

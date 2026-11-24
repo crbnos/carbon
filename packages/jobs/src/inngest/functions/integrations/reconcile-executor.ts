@@ -104,8 +104,11 @@ const NATIVE_VOID_PROVIDERS_BY_ENTITY: Partial<
   supplierCredit: MEMO_NATIVE_VOID_PROVIDERS
 };
 
-/** Invoices and bills: Rillet is the only native document void today. */
-const DEFAULT_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set(["rillet"]);
+/** Invoices and bills: Rillet deletes, Xero voids (`xero/entities/void.ts`). */
+const DEFAULT_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set([
+  "rillet",
+  "xero"
+]);
 
 /** Whether the provider can void this document type natively. */
 export function providerSupportsNativeVoid(

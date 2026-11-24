@@ -57,8 +57,10 @@ const WebhookSchema = z.object({
   events: z.array(
     z.object({
       tenantId: z.string(),
-      eventCategory: z.enum(["CONTACT", "INVOICE"]),
-      eventType: z.enum(["CREATE", "UPDATE", "DELETE"]),
+      // Xero offers more topics (credit notes, payments, …) than Carbon reads;
+      // an unknown one is ignored below rather than failing the whole batch.
+      eventCategory: z.string(),
+      eventType: z.string(),
       resourceId: z.string(),
       eventDateUtc: z.string()
     })
@@ -66,6 +68,14 @@ const WebhookSchema = z.object({
   firstEventSequence: z.number(),
   lastEventSequence: z.number()
 });
+
+const ENTITY_OPERATIONS = ["create", "update", "delete"] as const;
+
+function isEntityOperation(
+  value: string
+): value is (typeof ENTITY_OPERATIONS)[number] {
+  return (ENTITY_OPERATIONS as readonly string[]).includes(value);
+}
 
 function verifySignature(payload: string, header: string, secret: string) {
   const expected = Buffer.from(
@@ -246,9 +256,18 @@ export async function action({ request }: ActionFunctionArgs) {
       for (const event of tenantEvents) {
         const { resourceId, eventCategory } = event;
 
-        const operation = event.eventType.toLowerCase() as Lowercase<
-          AccountingEntity["operation"]
-        >;
+        const operation = event.eventType.toLowerCase();
+        if (
+          (eventCategory !== "CONTACT" && eventCategory !== "INVOICE") ||
+          !isEntityOperation(operation)
+        ) {
+          logger.info("Ignoring Xero event Carbon does not read", {
+            eventCategory,
+            eventType: event.eventType,
+            resourceId
+          });
+          continue;
+        }
 
         logger.info("Xero entity change", {
           operation,

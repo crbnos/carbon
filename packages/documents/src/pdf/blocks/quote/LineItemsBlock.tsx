@@ -13,7 +13,7 @@ import {
 import { Note } from "../../components";
 import { Cell, ChargeRow, TextCell } from "../Cell";
 import { columnWidths } from "../columns";
-import { itemTextOverflowStyle } from "../itemText";
+import { breakLongItemWord, itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
 import type { QuoteData } from "./types";
 import {
@@ -102,7 +102,7 @@ export function LineItemsBlock({
         const lineRow = data.values.row(
           "line",
           line.id,
-          buildQuoteLineVars(line, lineIndex + 1)
+          buildQuoteLineVars(line, lineIndex + 1, data)
         );
         const additionalCharges = line.additionalCharges ?? {};
 
@@ -148,6 +148,7 @@ export function LineItemsBlock({
                             {/* Both stay when empty: the details margin holds the row's height. */}
                             <Text
                               style={{ ...tw("text-gray-800"), ...overflow }}
+                              hyphenationCallback={breakLongItemWord}
                             >
                               {t.prints("descriptionCell", lineRow)
                                 ? t("descriptionCell", lineRow)
