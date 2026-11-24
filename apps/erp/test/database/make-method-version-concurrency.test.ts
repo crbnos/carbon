@@ -27,6 +27,7 @@ import {
   databaseTest
 } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
+import { methodImportFixture } from "./fixtures/method-import";
 
 function signal() {
   let resolve!: () => void;
@@ -129,7 +130,7 @@ async function statuses(f: Fixture, ids: Record<string, string>) {
 }
 
 function activate(
-  f: Fixture,
+  f: { companyId: string },
   db: Kysely<KyselyDatabase>,
   makeMethodId: string
 ) {
@@ -338,6 +339,118 @@ databaseTest(
       await Promise.allSettled(running);
       await holder.destroy();
       await syncing.destroy();
+      await activating.destroy();
+      await monitor.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+// Ids that sort v1 < v3 < v2: the file names v2 first, and an activation
+// locks the item's versions in id order.
+databaseTest(
+  "a method import into two versions and an activation of a third at once both complete",
+  async () => {
+    const f = await methodImportFixture();
+    const holder = await connectLocalTestDatabase();
+    const importing = await connectLocalTestDatabase();
+    const activating = await connectLocalTestDatabase();
+    const monitor = await connectLocalTestDatabase();
+    const held = signal();
+    const release = signal();
+    let holding: Promise<void> | undefined;
+    const running: Promise<unknown>[] = [];
+    try {
+      const assemblyId = f.itemId("ASSY");
+      const v1 = await f.methodOf("ASSY");
+      const v2 = `${assemblyId}-method-c`;
+      const v3 = `${assemblyId}-method-b`;
+      expect([v2, v3, v1].sort()).toEqual([v1, v3, v2]);
+      await f.db
+        .insertInto("makeMethod")
+        .values(
+          [
+            { id: v2, version: 2 },
+            { id: v3, version: 3 }
+          ].map((method) => ({
+            ...method,
+            itemId: assemblyId,
+            status: "Draft" as const,
+            companyId: f.companyId,
+            createdBy: USER
+          }))
+        )
+        .execute();
+      const importPid = await backendPid(importing);
+      const activationPid = await backendPid(activating);
+
+      // Holds the component, whose key every BOM line written for it shares.
+      holding = holder.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("item")
+          .select("id")
+          .where("id", "=", f.itemId("COMP-1"))
+          .where("companyId", "=", f.companyId)
+          .forUpdate()
+          .execute();
+        held.resolve();
+        await release.promise;
+      });
+      void holding.catch(() => {});
+      await Promise.race([held.promise, holding]);
+
+      const line = (version: string) => ({
+        rowType: "BOM",
+        parentId: "ASSY",
+        componentId: "COMP-1",
+        quantity: "1",
+        makeMethodVersion: version
+      });
+      const imported = f.run("bom", [line("2"), line("3")], importing);
+      running.push(imported);
+      void imported.catch(() => {});
+      await waitForBlockedConnection(monitor, importPid);
+
+      const activation = activate(f, activating, v1);
+      running.push(activation);
+      void activation.catch(() => {});
+      await waitForBlockedConnection(monitor, activationPid);
+
+      release.resolve();
+      await holding;
+      const summary = await imported;
+      const activated = await activation;
+
+      const lines = await f.db
+        .selectFrom("methodMaterial")
+        .select("makeMethodId")
+        .where("makeMethodId", "in", [v2, v3])
+        .where("companyId", "=", f.companyId)
+        .orderBy("makeMethodId")
+        .execute();
+      const status = await f.db
+        .selectFrom("makeMethod")
+        .select("status")
+        .where("id", "=", v1)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect({
+        importErrors: summary.errors,
+        activationError: activated.error?.message ?? null,
+        linesOn: lines.map((row) => row.makeMethodId),
+        v1: status.status
+      }).toEqual({
+        importErrors: [],
+        activationError: null,
+        linesOn: [v3, v2],
+        v1: "Active"
+      });
+    } finally {
+      release.resolve();
+      await holding?.catch(() => {});
+      await Promise.allSettled(running);
+      await holder.destroy();
+      await importing.destroy();
       await activating.destroy();
       await monitor.destroy();
       await f.cleanup();

@@ -4572,17 +4572,23 @@ async function writeGroup(
       .forNoKeyUpdate()
       .execute();
 
+    // Every version is locked now, in the order an activation locks them: a
+    // file that writes two versions would otherwise take them one at a time
+    // and deadlock with an activation holding the second.
     const methods: MakeMethodVersion[] =
       g.versions.size === 0
         ? []
         : (
-            await trx
-              .selectFrom("makeMethod")
-              .select(["id", "version", "status", "changeOrderId"])
-              .where("itemId", "=", parentItemId)
-              .where("companyId", "=", companyId)
-              .execute()
-          ).map((m) => ({ ...m, version: Number(m.version) }));
+            await lockItemMakeMethods(trx, {
+              itemIds: [parentItemId],
+              companyId
+            })
+          ).map((m) => ({
+            id: m.id,
+            version: Number(m.version),
+            status: m.status,
+            changeOrderId: m.changeOrderId
+          }));
     // Versions this file creates. A blank version still resolves against the
     // versions that existed before the import, whatever the row order.
     const createdIds = new Map<number, string>();
