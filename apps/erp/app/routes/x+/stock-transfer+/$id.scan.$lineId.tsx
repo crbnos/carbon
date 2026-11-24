@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -17,15 +17,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { stockTransferLineScanValidator } from "~/modules/inventory/inventory.models";
-import {
-  getAvailableTrackedEntities,
-  getReceiptPutAwayStock
-} from "~/modules/inventory/inventory.service";
+import { getReceiptPutAwayStock } from "~/modules/inventory/inventory.service";
 import type {
   StockTransfer,
   StockTransferLine
 } from "~/modules/inventory/types";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -34,8 +30,8 @@ import { path } from "~/utils/path";
  * Select tab, not just Scan — the same contract the picking-list picker uses.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, api } = await authorize(request, {
+    "inventory.stockTransfers": "View"
   });
 
   const { lineId } = params;
@@ -72,7 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const entities =
     locationId && line.data.itemId
-      ? await getAvailableTrackedEntities(client, {
+      ? await api.inventory.getAvailableTrackedEntities({
           itemId: line.data.itemId,
           companyId,
           locationId,
@@ -110,7 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         )
       : null;
 
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await api.settings.getCompanySettings({});
   const shelfLife = (settings.data?.inventoryShelfLife ?? {}) as {
     nearExpiryWarningDays?: number | null;
     expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
@@ -138,7 +134,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { trackedEntityId, quantity, locationId } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.inventory.pickStockTransferLineEntity({
     lineId: input.params.lineId,
     trackedEntityId,

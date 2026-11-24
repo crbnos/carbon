@@ -3,14 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { contractLineFundingValidator } from "~/modules/sales/sales.models";
-import { updateContractLineFunding } from "~/modules/sales/sales.service";
 
 const logger = getLogger("erp", "contract-line-funding");
 
@@ -18,8 +17,8 @@ const logger = getLogger("erp", "contract-line-funding");
  *  terms of a billing line, on a Draft or Active contract (plan P9). */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { api, companyId } = await authorize(request, {
+    "sales.serviceContracts": "Edit"
   });
 
   const { lineId } = params;
@@ -30,11 +29,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  const update = await updateContractLineFunding(client, {
+  const update = await api.sales.updateContractLineFunding({
     ...validation.data,
-    id: lineId,
-    companyId,
-    updatedBy: userId
+    id: lineId
   });
   if (update.error) {
     logger.error("Failed to update a line's funding", {

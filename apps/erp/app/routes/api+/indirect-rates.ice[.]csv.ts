@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { ICE_SCHEDULES } from "@carbon/ee/indirect-rates";
 import { buildIceSchedule } from "@carbon/ee/indirect-rates.server";
@@ -26,8 +26,8 @@ const iceQuery = z.object({
  * answers 402.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
+  const { client, companyId } = await authorize(request, {
+    "accounting.indirectRates": "View"
   });
 
   const searchParams = new URL(request.url).searchParams;

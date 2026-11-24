@@ -2,6 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { StoredGrant } from "@carbon/database/access-write";
+import { subjectGates } from "@carbon/ee/permission-grants";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -12,62 +14,44 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  useRouteDialog,
-  VStack
+  useRouteDialog
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
+import { useState } from "react";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
-import PermissionMatrix from "~/components/PermissionMatrix";
 import { usePermissions } from "~/hooks";
-import {
-  fromEmployeeTypePermissions,
-  toEmployeeTypePermissions,
-  usePermissionMatrix
-} from "~/hooks/usePermissionMatrix";
-import type { CompanyPermission } from "~/modules/users/types";
 import { employeeTypeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
+import AccessGrid from "../components/AccessGrid.ee";
+import AccessHolders from "./AccessHolders.ee";
 
 type EmployeeTypeFormProps = {
-  initialValues: z.infer<typeof employeeTypeValidator> & {
-    permissions: Record<
-      string,
-      {
-        name: string;
-        permission: CompanyPermission;
-      }
-    >;
+  initialValues: Omit<z.infer<typeof employeeTypeValidator>, "grants"> & {
+    grants: StoredGrant[];
   };
+  /** The Admin type has Full on every module, whatever its grants say. */
+  isAdmin?: boolean;
+  /** Per module or page id, what the role gained when permissions became levels. */
+  convertedGrowth?: { id: string; gained: string[] }[];
 };
 
-const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
+const EmployeeTypeForm = ({
+  initialValues,
+  isAdmin = false,
+  convertedGrowth = []
+}: EmployeeTypeFormProps) => {
   const { t } = useLingui();
   const userPermissions = usePermissions();
   const dialog = useRouteDialog();
   const onClose = dialog.close;
 
-  const { state: initialState, modules } = useMemo(
-    () => fromEmployeeTypePermissions(initialValues.permissions),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [initialValues.permissions]
-  );
-
-  const matrix = usePermissionMatrix({
-    modules,
-    initialState
-  });
+  // The grants being edited; the route remounts the form for another type.
+  const [grants, setGrants] = useState(initialValues.grants);
 
   const isEditing = initialValues.id !== undefined;
-  const isDisabled = isEditing
-    ? !userPermissions.can("update", "users")
-    : !userPermissions.can("create", "users");
-
-  // Serialize permissions to the format expected by the action
-  const permissionsData = JSON.stringify(
-    Object.values(toEmployeeTypePermissions(matrix.permissions))
-  );
+  // Creating a type writes its grants too, so it asks Edit like an edit.
+  const isDisabled = !userPermissions.has(subjectGates("Edit").role);
 
   return (
     <Modal
@@ -87,6 +71,8 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
           }
           defaultValues={initialValues}
         >
+          <Hidden name="id" />
+          <Hidden name="grants" value={JSON.stringify(grants)} />
           <ModalHeader>
             <ModalTitle>
               {isEditing ? (
@@ -96,20 +82,39 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
               )}
             </ModalTitle>
           </ModalHeader>
-          <ModalBody>
-            <Hidden name="id" />
-            <VStack spacing={4}>
-              <Input name="name" label={t`Employee Type`} />
-              <Hidden name="data" value={permissionsData} />
-            </VStack>
-            <div className="mt-4">
-              <PermissionMatrix
-                matrix={matrix}
-                label={t`Default Permissions`}
+          <ModalBody className="flex flex-col gap-8">
+            <Input
+              name="name"
+              label={t`Employee Type`}
+              placeholder={t`e.g. Warehouse Supervisor`}
+            />
+
+            <section className="flex flex-col gap-3">
+              <div>
+                <h3 className="text-sm font-medium">
+                  <Trans>Permissions</Trans>
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  <Trans>
+                    Set module-level access, then expand a module to fine-tune
+                    each of its pages. A change reaches everyone with this type
+                    on their next request.
+                  </Trans>
+                </p>
+              </div>
+              <AccessGrid
+                value={grants}
+                onChange={setGrants}
                 termId="employee-type-default-permissions"
+                admin={isAdmin}
+                gained={Object.fromEntries(
+                  convertedGrowth.map((row) => [row.id, row.gained])
+                )}
                 isDisabled={isDisabled}
               />
-            </div>
+            </section>
+
+            {isEditing ? <AccessHolders /> : null}
           </ModalBody>
           <ModalFooter>
             <HStack>

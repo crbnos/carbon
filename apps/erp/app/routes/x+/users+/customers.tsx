@@ -3,19 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCustomerTypes } from "~/modules/sales/sales.service";
 import { CustomerAccountsTable } from "~/modules/users/ui";
-import {
-  getCustomers,
-  getUnrevokedInviteEmails
-} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
@@ -27,10 +22,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "users",
-    bypassRls: true
-  });
+  const { api } = await authorize(
+    request,
+    { "users.accounts": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -39,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { sorts, filters } = getGenericQueryFilters(searchParams);
 
   const [customers, customerTypes, invites] = await Promise.all([
-    getCustomers(client, companyId, {
+    api.users.getCustomers({
       search,
       // A single-load list: its default sort is on the joined user, which a
       // cursor cannot follow.
@@ -48,8 +44,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getCustomerTypes(client, companyId),
-    getUnrevokedInviteEmails(client, companyId)
+    api.sales.getCustomerTypes({}),
+    api.users.getUnrevokedInviteEmails({})
   ]);
 
   if (customers.error) {
@@ -60,10 +56,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    count: customers.count ?? 0,
-    customers: customers.data ?? [],
-    isTruncated: (customers.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,
-    customerTypes: customerTypes.data ?? [],
+    count: customers.data?.count ?? 0,
+    customers: customers.data?.rows ?? [],
+    isTruncated: (customers.data?.rows?.length ?? 0) >= SINGLE_LOAD_LIMIT,
+    customerTypes: customerTypes.data?.rows ?? [],
     unrevokedInviteEmails: invites.data?.map((i) => i.email) ?? []
   };
 }

@@ -7,7 +7,7 @@ DECLARE
   tbl_name TEXT;
   tbl REGCLASS;
 BEGIN
-  PERFORM assert_audit_log_access(p_company_id, 'settings_update');
+  PERFORM assert_audit_log_access(p_company_id, 'settings.auditLogs_update');
 
   tbl_name := 'auditLog_' || p_company_id;
 
@@ -59,7 +59,7 @@ BEGIN
          WHERE p.schemaname = 'public' AND p.tablename = tbl_name
            AND p.policyname = 'SELECT' AND p.cmd = 'SELECT'
            AND p.qual LIKE '%' || quote_literal(p_company_id) || '%'
-           AND p.qual LIKE '%settings_view%'
+           AND p.qual LIKE '%settings.auditLogs_view%'
        )
        OR has_table_privilege('anon', tbl, 'INSERT, UPDATE, DELETE, TRUNCATE')
        OR has_table_privilege('authenticated', tbl, 'INSERT, UPDATE, DELETE, TRUNCATE')

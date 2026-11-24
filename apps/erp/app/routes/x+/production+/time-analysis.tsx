@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   Card,
   CardContent,
@@ -70,8 +70,8 @@ const paramsValidator = z.object({
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "production"
+  const { companyId } = await authorize(request, {
+    "production.jobs": "View"
   });
   const params = paramsValidator.parse(
     Object.fromEntries(new URL(request.url).searchParams)

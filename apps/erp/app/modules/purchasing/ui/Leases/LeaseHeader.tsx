@@ -91,9 +91,10 @@ const LeaseHeader = ({
   const status = lease.status;
   const isDraft = status === "Draft";
   const isActive = status === "Active";
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.leases": "Edit" });
   // Invoicing drafts purchase invoices, so it needs the invoicing permission.
-  const canInvoice = canUpdate && permissions.can("create", "invoicing");
+  const canInvoice =
+    canUpdate && permissions.has({ "invoicing.purchaseInvoices": "Create" });
   // `create-lease-invoices` bills an Active lease and an ended one (its last
   // rows can come due after it ends); never a Draft or a Cancelled one.
   const isBillable = !isDraft && status !== "Cancelled";
@@ -186,7 +187,8 @@ const LeaseHeader = ({
                 <DropdownMenuItem
                   destructive
                   disabled={
-                    !isDraft || !permissions.can("delete", "purchasing")
+                    !isDraft ||
+                    !permissions.has({ "purchasing.leases": "Full" })
                   }
                   onClick={deleteDisclosure.onOpen}
                 >

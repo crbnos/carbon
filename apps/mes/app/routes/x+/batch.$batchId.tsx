@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -15,8 +15,8 @@ import { path } from "~/utils/path";
 // route only redirects legacy links (the ERP board's "Open in MES", the MES
 // kanban batch card) to a member operation.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production"
+  const { client, companyId } = await authorize(request, {
+    "production.batches": "View"
   });
   const { batchId } = params;
   if (!batchId) throw new Error("Batch ID is required");

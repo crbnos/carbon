@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Drawer,
@@ -23,8 +23,8 @@ import { path } from "~/utils/path";
 import { pageInMemory } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { companyId } = await authorize(request, {
+    "settings.items": "View"
   });
 
   const jobs = await getOpenJobsMissingStorageUnit(

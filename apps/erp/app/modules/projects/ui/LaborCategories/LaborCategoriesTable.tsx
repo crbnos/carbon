@@ -152,7 +152,7 @@ const LaborCategoriesTable = memo(
       (row: LaborCategoryRow) => (
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.edit}
-          disabled={!permissions.can("update", "projects")}
+          disabled={!permissions.has({ "projects.laborCategories": "Edit" })}
           onClick={() => navigate(path.to.laborCategory(row.id))}
         >
           <MenuIcon icon={<LuPencil />} />
@@ -168,7 +168,7 @@ const LaborCategoriesTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "projects") && (
+          permissions.has({ "projects.laborCategories": "Create" }) && (
             <New label={t`Labor Category`} to={path.to.newLaborCategory} />
           )
         }

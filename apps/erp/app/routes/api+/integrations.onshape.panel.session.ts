@@ -3,9 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  authorizePanel,
   deletePanelSession,
   panelSessionTokenFromRequest,
-  requireOnshapePanelPermissions,
   switchPanelSessionCompany
 } from "@carbon/ee/onshape/panel-session.server";
 import { getLogger } from "@carbon/logger";
@@ -44,7 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
 /** Moves the panel to another company and answers the new token. */
 async function switchCompany(request: Request) {
   const { client, companyId, userId, email, ssoProviderId } =
-    await requireOnshapePanelPermissions(request, {});
+    await authorizePanel(request);
   const token = panelSessionTokenFromRequest(request);
 
   const parsed = switchSchema.safeParse(await request.json().catch(() => null));

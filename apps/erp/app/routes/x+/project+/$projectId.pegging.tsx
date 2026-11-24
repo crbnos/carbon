@@ -2,15 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCompanyTimeZone } from "@carbon/database";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
-import { parseDate, toZoned } from "@internationalized/date";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getProjectPegs } from "~/modules/projects/projects.service";
 import ProjectPegging from "~/modules/projects/ui/Pegging/ProjectPegging";
 import PlanningGroupsUpgradeOverlay from "~/modules/projects/ui/PlanningGroups/PlanningGroupsUpgradeOverlay";
 
@@ -25,8 +22,8 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
  * and the Manual peg route enforces the plan.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId } = params;
@@ -35,16 +32,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const asOfParam = new URL(request.url).searchParams.get("asOf");
   const asOfDate = asOfParam && DATE_PATTERN.test(asOfParam) ? asOfParam : null;
 
-  // The end of the chosen day is the start of the next one in the company's
-  // timezone.
-  const asOf = asOfDate
-    ? toZoned(
-        parseDate(asOfDate).add({ days: 1 }),
-        await getCompanyTimeZone(client, companyId)
-      ).toAbsoluteString()
-    : null;
-
-  const pegs = await getProjectPegs(client, { companyId, projectId, asOf });
+  // The service function reads to the end of the chosen day on the
+  // company's calendar.
+  const pegs = await api.projects.getProjectPegs({
+    projectId,
+    asOf: asOfDate ?? undefined
+  });
   if (pegs.error) {
     logger.error("Failed to load the project's pegs", {
       companyId,
@@ -53,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  return { pegs: pegs.data, asOfDate };
+  return { pegs: pegs.data ?? [], asOfDate };
 }
 
 export default function ProjectPeggingRoute() {

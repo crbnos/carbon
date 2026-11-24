@@ -21,7 +21,7 @@ import {
 import { useParams } from "react-router";
 import { usePermissions } from "~/hooks";
 import { DETAIL_TAB_SHORTCUTS } from "~/shortcuts";
-import type { Role } from "~/types";
+import { OPEN_LIST, visibleRoutes } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 type Props = {
@@ -36,7 +36,7 @@ export function useSupplierSidebar({ contacts, locations, parts }: Props) {
   const { supplierId } = useParams();
   if (!supplierId) throw new Error("supplierId not found");
 
-  return [
+  const tabs = [
     {
       name: t`Details`,
       to: path.to.supplierDetails(supplierId),
@@ -46,7 +46,6 @@ export function useSupplierSidebar({ contacts, locations, parts }: Props) {
     {
       name: t`Contacts`,
       to: path.to.supplierContacts(supplierId),
-      role: ["employee"],
       count: contacts,
       icon: <LuContact />,
       shortcut: DETAIL_TAB_SHORTCUTS.contacts
@@ -54,7 +53,6 @@ export function useSupplierSidebar({ contacts, locations, parts }: Props) {
     {
       name: t`Locations`,
       to: path.to.supplierLocations(supplierId),
-      role: ["employee", "supplier"],
       count: locations,
       icon: <LuMapPin />,
       shortcut: DETAIL_TAB_SHORTCUTS.locations
@@ -62,111 +60,71 @@ export function useSupplierSidebar({ contacts, locations, parts }: Props) {
     {
       name: t`Payment`,
       to: path.to.supplierPayment(supplierId),
-      role: ["employee"],
       icon: <LuCreditCard />,
       shortcut: DETAIL_TAB_SHORTCUTS.payment
     },
     {
       name: t`Tax`,
       to: path.to.supplierTax(supplierId),
-      role: ["employee"],
       icon: <LuReceipt />,
       shortcut: DETAIL_TAB_SHORTCUTS.tax
     },
     {
       name: t`Shipping`,
       to: path.to.supplierShipping(supplierId),
-      role: ["employee"],
       icon: <LuTruck />,
       shortcut: DETAIL_TAB_SHORTCUTS.shipping
     },
     {
       name: t`Processes`,
       to: path.to.supplierProcesses(supplierId),
-      role: ["employee"],
       icon: <LuRedoDot />,
       shortcut: DETAIL_TAB_SHORTCUTS.processes
     },
     {
       name: t`Parts`,
       to: path.to.supplierParts(supplierId),
-      role: ["employee"],
       count: parts,
       icon: <LuPackage />
     },
     {
       name: t`Documents`,
       to: path.to.supplierDocuments(supplierId),
-      role: ["employee"],
       icon: <LuFiles />
     },
     {
       name: t`Default Attachments`,
       to: path.to.supplierDefaultAttachments(supplierId),
-      role: ["employee"],
       icon: <LuFiles />
     },
     {
       name: t`Bank Accounts`,
       to: path.to.supplierBankAccounts(supplierId),
-      role: ["employee"],
-      permission: { action: "view" as const, module: "accounting" },
       icon: <LuLandmark />
     },
     {
       name: t`Risks`,
       to: path.to.supplierRisks(supplierId),
-      role: ["employee"],
       icon: <LuShieldAlert />
     },
     {
       name: t`Quotes`,
       to: `${path.to.supplierQuotes}?filter=supplierId:eq:${supplierId}`,
-
+      gate: OPEN_LIST,
       icon: <LuPackageSearch />
     },
     {
       name: t`Orders`,
       to: `${path.to.purchaseOrders}?filter=supplierId:eq:${supplierId}`,
+      gate: OPEN_LIST,
       icon: <LuLayoutList />
     },
     {
       name: t`Invoices`,
       to: `${path.to.invoicingPurchasing}?filter=supplierId:eq:${supplierId}`,
+      gate: OPEN_LIST,
       icon: <LuCreditCard />
     }
-    // {
-    //   name: t`Shipping`,
-    //   to: path.to.supplierShipping(supplierId),
-    //   role: ["employee"],
-    //   icon: <LuTruck />,
-    //   shortcut: DETAIL_TAB_SHORTCUTS.shipping,
-    // },
-    // {
-    //   name: t`Accounting`,
-    //   to: path.to.supplierAccounting(supplierId),
-    //   role: ["employee"],
-    //   icon: <LuLandmark />,
-    //   shortcut: DETAIL_TAB_SHORTCUTS.accounting,
-    // },
-  ].filter((item) => {
-    // `role` gates on WHO the user is (employee / supplier / customer);
-    // `permission` gates on WHAT they may do (a <module>_<action> grant).
-    // They are separate checks — permissions.is() cannot express a module permission.
-    const roleOk =
-      item.role === undefined ||
-      item.role.some((role) => permissions.is(role as Role));
-    const permission = (
-      item as {
-        permission?: {
-          action: "view" | "create" | "update" | "delete";
-          module: string;
-        };
-      }
-    ).permission;
-    const permissionOk =
-      permission === undefined ||
-      permissions.can(permission.action, permission.module);
-    return roleOk && permissionOk;
-  });
+  ];
+  return visibleRoutes(tabs, permissions);
 }

@@ -32,7 +32,7 @@ const SupplierContacts = ({ contacts }: SupplierContactsProps) => {
   const { supplierId } = useParams();
   if (!supplierId) throw new Error("supplierId not found");
   const permissions = usePermissions();
-  const canEdit = permissions.can("create", "purchasing");
+  const canEdit = permissions.has({ "purchasing.suppliers": "Create" });
   const isEmpty = contacts === undefined || contacts?.length === 0;
 
   const deleteContactModal = useDisclosure();
@@ -42,7 +42,7 @@ const SupplierContacts = ({ contacts }: SupplierContactsProps) => {
     (contact: SupplierContact) => {
       const actions = [];
       actions.push({
-        label: permissions.can("update", "purchasing")
+        label: permissions.has({ "purchasing.suppliers": "Edit" })
           ? t`Edit Contact`
           : t`View Contact`,
         icon: <LuPencil />,
@@ -51,7 +51,7 @@ const SupplierContacts = ({ contacts }: SupplierContactsProps) => {
         }
       });
 
-      if (permissions.can("delete", "purchasing")) {
+      if (permissions.has({ "purchasing.suppliers": "Full" })) {
         actions.push({
           label: t`Delete Contact`,
           destructive: true,
@@ -64,7 +64,7 @@ const SupplierContacts = ({ contacts }: SupplierContactsProps) => {
       }
 
       if (
-        permissions.can("create", "users") &&
+        permissions.has({ "users.accounts": "Create" }) &&
         contact.user === null &&
         contact.contact.email
       ) {
@@ -79,7 +79,7 @@ const SupplierContacts = ({ contacts }: SupplierContactsProps) => {
         });
       }
 
-      if (permissions.can("create", "resources")) {
+      if (permissions.has({ "resources.abilities": "Create" })) {
         actions.push({
           label: t`Add Contractor`,
           icon: <IoMdAdd />,

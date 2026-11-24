@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, success } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (typeof id !== "string" || !id) {
       return failure("No funding action was given");
     }
-    const api = await carbon(request);
+    const { api } = await authorize(request);
     const result = await api.sales.deleteContractFunding({ id });
     if (result.error) return failure(result.error.message);
     return done("Funding action deleted");
@@ -62,7 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return invalid(validation.error);
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   // The line is the URL's, never the form's copy.
   const result = await api.sales.upsertContractFunding({
     ...validation.data,

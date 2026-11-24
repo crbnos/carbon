@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,22 +11,16 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { Confirm } from "~/components/Modals";
-import {
-  activateProcess,
-  getProcess
-} from "~/modules/resources/resources.service";
+import { activateProcess } from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "resources.processes": "View" });
 
   const { processId } = params;
   if (!processId) throw notFound("processId not found");
 
-  const process = await getProcess(client, processId);
+  const process = await api.resources.getProcess({ processId });
   if (process.error) {
     throw redirect(
       path.to.processes,
@@ -40,8 +34,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "resources"
+  const { client } = await authorize(request, {
+    "resources.processes": "Full"
   });
 
   const { processId } = params;

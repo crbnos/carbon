@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useMount, VStack } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
@@ -11,23 +12,18 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
 import { getPicksByJobMaterial } from "~/modules/inventory/inventory.service";
-import { getItemSupersessionsForItems } from "~/modules/items/items.service";
 import {
-  getJob,
-  getJobMaterialItemIds,
-  getJobMaterialsWithQuantityOnHand,
-  getJobOrderStatusMap
+  type getJob,
+  getJobMaterialsWithQuantityOnHand
 } from "~/modules/production/production.service";
 import { JobMaterialsTable } from "~/modules/production/ui/Jobs";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getLocationTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "production.jobs": "View"
   });
 
   const { jobId } = params;
@@ -39,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const job = await getJob(client, jobId);
+  const job = await api.production.getJob({ id: jobId });
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -65,8 +61,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           f.column !== "orderStatus" && f.column !== "readableIdWithRevision"
       )
     }),
-    getCompanySettings(client, companyId),
-    getJobMaterialItemIds(client, jobId, companyId),
+    api.settings.getCompanySettings({}),
+    api.production.getJobMaterialItemIds({ jobId }),
     getPicksByJobMaterial(client, jobId, companyId)
   ]);
 
@@ -116,16 +112,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         nearExpiryWarningDays,
         locationId
       ),
-      getJobOrderStatusMap(
-        client,
-        jobId,
-        companyId,
-        locationId,
-        job.data.status,
-        rows,
-        today
-      ),
-      getItemSupersessionsForItems(client, materialItemIds, companyId)
+      api.production
+        .getJobOrderStatusMap({
+          jobId,
+          locationId,
+          jobStatus: job.data.status,
+          materials: rows,
+          asOfDate: today
+        })
+        .then(dataOrThrow),
+      api.items.getItemSupersessionsForItems({ itemIds: materialItemIds })
     ]);
   if (supersessions.error) {
     throw redirect(

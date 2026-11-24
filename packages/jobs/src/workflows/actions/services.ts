@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { ExpandedClaims } from "@carbon/database/access";
 import {
   type ActionOutcome,
   getActionRoute,
@@ -14,7 +15,6 @@ import {
   type WorkflowServices
 } from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { OwnerPermissions } from "../engine/owner";
 import { runCreateAction } from "./create";
 import { getWorkflowDispatch } from "./dispatcher";
 import { runNotifyAction } from "./notify";
@@ -34,7 +34,7 @@ export function createWorkflowServices(params: {
   companyId: string;
   companyGroupId: string;
   ownerId: string;
-  permissions: OwnerPermissions;
+  permissions: ExpandedClaims;
   runId: string;
   workflowId: string;
 }): WorkflowServices {

@@ -4,7 +4,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const requirePermissions = vi.hoisted(() => vi.fn());
+const authorize = vi.hoisted(() => vi.fn());
 // "brex" stands in for a second spend provider: with only Ramp registered, a
 // spend role conflict would otherwise be unreachable.
 const getIntegrationIdsByRole = vi.hoisted(() =>
@@ -40,7 +40,7 @@ vi.mock("@carbon/auth", async (importOriginal) => ({
   CarbonEdition: "cloud",
   getAppUrl: () => "https://erp.example.com"
 }));
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize }));
 vi.mock("@carbon/ee", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   integrations: [RAMP],
@@ -70,7 +70,7 @@ function integrationTable(rows: Row[]) {
 }
 
 async function connect(mode: string | null, rows: Row[] = []) {
-  requirePermissions.mockResolvedValue({
+  authorize.mockResolvedValue({
     userId: "user-1",
     companyId: "company-1",
     email: "user@example.com",

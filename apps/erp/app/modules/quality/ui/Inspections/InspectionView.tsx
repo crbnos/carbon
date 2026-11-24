@@ -210,7 +210,7 @@ const InspectionView = ({
   const {
     company: { id: companyId }
   } = useUser();
-  const canUpdate = permissions.can("update", "quality");
+  const canUpdate = permissions.has({ "quality.inspections": "Edit" });
   const [items] = useItems();
 
   const isSerial = itemTrackingType === "Serial";
@@ -649,7 +649,8 @@ const InspectionView = ({
           onSelect: documentSwitchDisclosure.onOpen
         }
       : null,
-    canCancelInspection(inspection) && permissions.can("update", "quality")
+    canCancelInspection(inspection) &&
+    permissions.has({ "quality.inspections": "Edit" })
       ? {
           key: "cancel",
           icon: <LuCircleX />,
@@ -659,7 +660,7 @@ const InspectionView = ({
       : null,
     canDeleteInspection(inspection, samples) &&
     measurements.length === 0 &&
-    permissions.can("delete", "quality")
+    permissions.has({ "quality.inspections": "Full" })
       ? {
           key: "delete",
           icon: <LuTrash />,

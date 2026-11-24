@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -15,9 +15,10 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   // One authentication for the reads and the operation: an API key's rate
-  // limit counts each one. Update, as the operation requires.
-  const auth = await requirePermissions(request, { update: "purchasing" });
-  const { client, companyId } = auth;
+  // limit counts each one. Edit, as the operation requires.
+  const { client, companyId, api } = await authorize(request, {
+    "purchasing.purchaseOrders": "Edit"
+  });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
@@ -50,7 +51,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The operation refuses an order in approval or finished, and sends a
   // released order whose total goes above its approved amount back for
   // approval.
-  const api = carbonFor(auth);
   const result = await api.purchasing.updatePurchaseOrderExchangeRate({
     id: orderId,
     exchangeRate: exchangeRate.data

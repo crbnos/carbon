@@ -43,7 +43,8 @@ const FiscalYearSettingsForm = ({
   const onClose = () => closeRoute();
 
   const isDisabled =
-    !permissions.can("update", "accounting") || !permissions.is("employee");
+    !permissions.has({ "accounting.fiscalYear": "Edit" }) ||
+    !permissions.is("employee");
 
   const fields: FiscalYearSettingsField[] = useMemo(
     () => [

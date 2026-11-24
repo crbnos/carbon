@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, holdsGate, pagesOf } from "@carbon/database/access";
 import {
   now,
   parseDateTime,
@@ -19,9 +20,10 @@ type ProductionEvent = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production"
-  });
+  const { client, companyId, permissions } = await authorize(
+    request,
+    anyOf(pagesOf("production"), "View")
+  );
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
 
@@ -56,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
 
   const kpi = KPIs.find((k) => k.key === key);
-  if (!kpi)
+  if (!kpi || !holdsGate(permissions, kpi.gate, companyId))
     return {
       data: [],
       previousPeriodData: []

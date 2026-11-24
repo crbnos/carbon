@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   financingApproveValidator,
@@ -23,14 +23,17 @@ import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams } from "react-router";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import ContractFinancingRequest from "~/modules/sales/ui/Contracts/ContractFinancingRequest.ee";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    CONTRACT_READ_GATE
+  );
   const { id, requestId } = params;
   if (!id || !requestId) throw new Error("Could not find the request");
 
@@ -63,8 +66,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, companyId, userId } = await authorize(request, {
+    "sales.serviceContracts": "Edit"
   });
   const { id, requestId } = params;
   if (!id || !requestId) throw new Error("Could not find the request");

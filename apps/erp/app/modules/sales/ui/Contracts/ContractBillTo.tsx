@@ -111,7 +111,8 @@ const ContractBillTo = ({
   const contractId = contract.id!;
   const { save, submit } = useContractTermSave(contractId);
   const isDisabled =
-    contract.status !== "Draft" || !permissions.can("update", "sales");
+    contract.status !== "Draft" ||
+    !permissions.has({ "sales.serviceContracts": "Edit" });
   const billTo = contract.invoiceCustomerId ?? contract.customerId ?? "";
 
   const onChange = (field: Term, value: string | null) => {
@@ -440,7 +441,7 @@ const ContractInvoiceAutomation = ({
         helperText={invoiceAutomationHint(
           contract.invoiceAutomation ?? companySettings.invoiceAutomation
         )}
-        isReadOnly={!permissions.can("update", "sales")}
+        isReadOnly={!permissions.has({ "sales.serviceContracts": "Edit" })}
         options={[
           {
             value: COMPANY_DEFAULT,
@@ -550,7 +551,8 @@ export const ContractRevenueMigration = ({
         contract={contract}
         field="recognizeRevenueFrom"
         isDisabled={
-          contract.status !== "Draft" || !permissions.can("update", "sales")
+          contract.status !== "Draft" ||
+          !permissions.has({ "sales.serviceContracts": "Edit" })
         }
         onSave={(field, value) => {
           if ((contract[field as keyof Contract] ?? null) === (value ?? null))

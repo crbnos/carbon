@@ -7,7 +7,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { PartsTable } from "~/modules/items/ui/Parts";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { partsList } from "~/utils/list-registry/items.server";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -24,8 +23,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, partsList, {
     dataKey: "parts",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => ({
-      tags: (await getTagsList(client, companyId, "part")).data ?? []
+    firstPage: async ({ api }) => ({
+      tags: (await api.shared.getTagsList({ table: "part" })).data ?? []
     }),
     onError: {
       redirectTo: path.to.authenticatedRoot,

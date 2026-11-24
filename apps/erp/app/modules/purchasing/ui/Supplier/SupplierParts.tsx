@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import {
   Card,
   CardAction,
@@ -58,7 +59,7 @@ const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const canCreate = permissions.can("create", "parts");
+  const canCreate = permissions.has(anyOf(ITEM_PAGES, "Create"));
   const { company } = useUser();
 
   // Local state rather than a URL param: opening a row's drawer and closing it

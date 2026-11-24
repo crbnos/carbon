@@ -46,7 +46,7 @@ const RentalNextInvoice = ({
   const { t } = useLingui();
   const { locale } = useLocale();
   const permissions = usePermissions();
-  const canPreviewPdf = permissions.can("view", "invoicing");
+  const canPreviewPdf = permissions.has({ "invoicing.salesInvoices": "View" });
   const currencyCode = rentalAgreement.currencyCode;
 
   const invoiceTitle = (role: "combined" | "rent" | "charges") => {

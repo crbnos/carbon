@@ -2,16 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { Onshape } from "@carbon/ee";
 import { beginOnshapeAuthorization } from "@carbon/ee/onshape.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { path } from "~/utils/path";
 
-async function authorize(request: Request) {
-  const { userId, companyId } = await requirePermissions(request, {
-    update: "settings"
+async function beginAuthorization(request: Request) {
+  const { userId, companyId } = await authorize(request, {
+    "settings.integrations": "Edit"
   });
   return beginOnshapeAuthorization(request, {
     integrationId: Onshape.id,
@@ -21,7 +21,7 @@ async function authorize(request: Request) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const started = await authorize(request);
+  const started = await beginAuthorization(request);
 
   // `error` is an integration-errors code; the client sends it to the
   // integrations page, which renders the copy.
@@ -44,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
  * page, where a failure shows as the install-failure toast.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const started = await authorize(request);
+  const started = await beginAuthorization(request);
   if (!started.ok) {
     return data({
       redirectUrl: `${path.to.integrations}?integration=${Onshape.id}&error=${started.reason}`

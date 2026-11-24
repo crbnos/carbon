@@ -58,7 +58,7 @@ export function ProjectSidebar() {
     (milestone) => milestone.id === project.lockPlanAfterMilestoneId
   );
   const canMoveElements =
-    permissions.can("update", "projects") &&
+    permissions.has({ "projects.projects": "Edit" }) &&
     !isClosed &&
     (data.activeChangeRequest
       ? data.activeChangeRequest.status === "Draft"
@@ -74,7 +74,9 @@ export function ProjectSidebar() {
           projectId={projectId}
           changeRequests={data.openChangeRequests}
           active={data.activeChangeRequest}
-          canCreate={permissions.can("update", "projects") && !isClosed}
+          canCreate={
+            permissions.has({ "projects.projects": "Edit" }) && !isClosed
+          }
           className="min-w-0 max-w-none flex-1"
         />
         <Tooltip>

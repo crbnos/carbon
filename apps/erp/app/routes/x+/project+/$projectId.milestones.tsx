@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
@@ -24,11 +23,6 @@ import {
   projectMilestoneValidator,
   summarizeMilestones
 } from "~/modules/projects/projects.models";
-import {
-  getProjectCostSummary,
-  getProjectElements,
-  getProjectMilestones
-} from "~/modules/projects/projects.service";
 import type { Project } from "~/modules/projects/types";
 import MilestoneSchedule from "~/modules/projects/ui/Milestones/MilestoneSchedule";
 import { path } from "~/utils/path";
@@ -36,17 +30,17 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "project-milestones");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, client, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
   const [milestones, elements, costSummary, timeZone] = await Promise.all([
-    getProjectMilestones(client, projectId, companyId),
-    getProjectElements(client, projectId, companyId),
-    getProjectCostSummary(client, projectId, companyId),
+    api.projects.getProjectMilestones({ projectId }),
+    api.projects.getProjectElements({ projectId }),
+    api.projects.getProjectCostSummary({ projectId }),
     getCompanyTimeZone(client, companyId)
   ]);
 
@@ -184,7 +178,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const done = async (message: string) =>
     data({ success: true }, await flash(request, success(message)));
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
 
   switch (intent) {
     case "upsert": {

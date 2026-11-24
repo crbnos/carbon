@@ -3,30 +3,24 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getSuggestion,
-  updateSuggestionEmoji
-} from "~/modules/resources/resources.service";
+import { updateSuggestionEmoji } from "~/modules/resources/resources.service";
 import { SuggestionDetails } from "~/modules/resources/ui";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources"
-  });
+  const { api } = await authorize(request, { "resources.suggestions": "View" });
 
   const { suggestionId } = params;
   if (!suggestionId) throw notFound("suggestionId was not found");
 
   const [suggestion, tags] = await Promise.all([
-    getSuggestion(client, suggestionId),
-    getTagsList(client, companyId, "suggestion")
+    api.resources.getSuggestion({ suggestionId }),
+    api.shared.getTagsList({ table: "suggestion" })
   ]);
 
   if (suggestion.error) {
@@ -43,8 +37,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    update: "resources"
+  const { client } = await authorize(request, {
+    "resources.suggestions": "Edit"
   });
 
   const { suggestionId } = params;

@@ -95,7 +95,7 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
           {isManual && (
             <MenuItem
               disabled={
-                !permissions.can("update", "quality") ||
+                !permissions.has({ "quality.inspections": "Edit" }) ||
                 !canCancelInspection(row)
               }
               onClick={() => setPending({ action: "cancel", row })}
@@ -109,7 +109,7 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={
-                !permissions.can("delete", "quality") ||
+                !permissions.has({ "quality.inspections": "Full" }) ||
                 !canDeleteInspection(row, row.inspectionSample ?? []) ||
                 measurementCount > 0
               }
@@ -292,7 +292,7 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
         columns={columns}
         count={count ?? 0}
         primaryAction={
-          permissions.can("create", "quality") && (
+          permissions.has({ "quality.inspections": "Create" }) && (
             <New
               label={t`Inspection`}
               to={`${path.to.newInspection}?${params.toString()}`}

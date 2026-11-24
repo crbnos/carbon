@@ -2,16 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  getMaterialFormsList,
-  getMaterialSubstancesList,
-  getUnitOfMeasuresList
-} from "~/modules/items/items.service";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
 import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -22,20 +16,17 @@ export const meta = moduleMeta("Materials");
 
 export const handle: Handle = {
   breadcrumb: msg`Items`,
-  to: path.to.items,
-  module: "items"
+  to: path.to.items
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.materials": "View" });
 
   const [unitOfMeasures, locations, forms, substances] = await Promise.all([
-    getUnitOfMeasuresList(client, companyId),
-    getLocationsList(client, companyId),
-    getMaterialFormsList(client, companyId),
-    getMaterialSubstancesList(client, companyId)
+    api.items.getUnitOfMeasuresList({}),
+    api.resources.getLocationsList({}),
+    api.items.getMaterialFormsList({}),
+    api.items.getMaterialSubstancesList({})
   ]);
 
   return {

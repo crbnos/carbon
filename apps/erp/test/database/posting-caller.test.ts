@@ -5,31 +5,39 @@
 import { createHash } from "node:crypto";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { describe, expect, it, vi } from "vitest";
 import { resolvePermissions } from "@carbon/api/permissions";
+import { claimsFor, type PageGate, pageById } from "@carbon/database/access";
 import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
 import { ForbiddenError } from "@carbon/api/errors";
+import { SUPABASE_SERVICE_ROLE_KEY } from "@carbon/env";
 import {
   authorizePostingCaller,
-  type PostingCaller,
-  postingCaller
+  type PostingCredential,
+  postingCredential
 } from "~/modules/shared/shared.service";
 
-vi.mock("@carbon/env", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  SUPABASE_SERVICE_ROLE_KEY: "service-role-key"
-}));
+// An API key is authenticated through the auth package's service-role
+// client, so that client reads the local stack.
+vi.mock("@carbon/env", async (importOriginal) => {
+  const { localSupabaseEnv } = await import("./fixtures/local-supabase");
+  return {
+    ...(await importOriginal<object>()),
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+    ...localSupabaseEnv()
+  };
+});
 
 const jwt = (payload: object) =>
   `h.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.s`;
 
 type Caller = Parameters<typeof authorizePostingCaller>[0] & {
-  caller: PostingCaller;
+  caller: PostingCredential;
 };
 const authorize = (
   ctx: Caller,
@@ -45,12 +53,15 @@ const fields = {
 describe("authorizePostingCaller", () => {
   it("lets the system through without reading claims", async () => {
     await expect(
-      authorize({ ...fields, caller: { type: "system" } }, { update: "inventory" })
+      authorize(
+        { ...fields, caller: { type: "system" } },
+        { "inventory.receipts": "Edit" }
+      )
     ).resolves.toBeUndefined();
   });
 });
 
-describe("postingCaller", () => {
+describe("postingCredential", () => {
   const clientWith = (key: string, headers: Record<string, string> = {}) =>
     createClient<Database>("http://localhost:54321", key, {
       global: { headers }
@@ -58,7 +69,7 @@ describe("postingCaller", () => {
 
   it("makes a carbon-key client an API key, whatever user it names", async () => {
     expect(
-      postingCaller(
+      postingCredential(
         clientWith("anon-key", { "carbon-key": "crbn_k" }),
         fields.userId
       )
@@ -66,7 +77,7 @@ describe("postingCaller", () => {
   });
 
   it("makes the service-role client the system", async () => {
-    expect(postingCaller(clientWith("service-role-key"), fields.userId)).toEqual(
+    expect(postingCredential(clientWith(SUPABASE_SERVICE_ROLE_KEY!), fields.userId)).toEqual(
       { type: "system" }
     );
   });
@@ -75,24 +86,29 @@ describe("postingCaller", () => {
     const own = clientWith("anon-key", {
       Authorization: `Bearer ${jwt({ sub: "u1", role: "authenticated" })}`
     });
-    expect(postingCaller(own, fields.userId)).toEqual({ type: "user" });
+    expect(postingCredential(own, fields.userId)).toEqual({
+      type: "user",
+      client: own
+    });
 
     const other = clientWith("anon-key", {
       Authorization: `Bearer ${jwt({ sub: "u2", role: "authenticated" })}`
     });
-    expect(() => postingCaller(other, fields.userId)).toThrow(ForbiddenError);
-    expect(() => postingCaller(clientWith("anon-key"), fields.userId)).toThrow(
+    expect(() => postingCredential(other, fields.userId)).toThrow(ForbiddenError);
+    expect(() => postingCredential(clientWith("anon-key"), fields.userId)).toThrow(
       ForbiddenError
     );
   });
 });
 
 describe("authorizePostingCaller (API key)", () => {
-  class Rollback extends Error {}
-
-  /** Runs `fn` with a context for a real `apiKey` row, then rolls back. */
+  /**
+   * Runs `fn` with a context for a real `apiKey` row, then deletes it. The key
+   * is committed: the caller check reads it the way `authorize` does, through
+   * its own client.
+   */
   async function withApiKey(
-    row: { scopes: Record<string, string[]>; expiresAt: string | null },
+    row: { expiresAt: string | null; grant?: { module: string; level: string } },
     fn: (ctx: Caller, companyId: string) => Promise<void>
   ) {
     const db = await connectLocalTestDatabase();
@@ -101,67 +117,89 @@ describe("authorizePostingCaller (API key)", () => {
     `.execute(db);
     const { companyId, userId } = owner.rows[0]!;
     const rawKey = `crbn_test_${Date.now()}`;
+    const key = await db
+      .insertInto("apiKey")
+      .values({
+        name: "authorize test",
+        companyId,
+        createdBy: userId,
+        keyHash: createHash("sha256").update(rawKey).digest("hex"),
+        scopes: JSON.stringify({}),
+        expiresAt: row.expiresAt
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
     try {
-      await db.transaction().execute(async (trx) => {
-        await trx
-          .insertInto("apiKey")
-          .values({
-            name: "authorize test",
-            companyId,
-            createdBy: userId,
-            keyHash: createHash("sha256").update(rawKey).digest("hex"),
-            scopes: JSON.stringify(row.scopes),
-            expiresAt: row.expiresAt
-          })
-          .execute();
-        const ctx = {
-          db: trx,
+      if (row.grant) {
+        await sql`
+          INSERT INTO "permission" ("companyId", "apiKeyId", "module", "level", "createdBy")
+          VALUES (${companyId}, ${key.id}, ${row.grant.module}, ${row.grant.level}, ${userId})
+        `.execute(db);
+      }
+      await fn(
+        {
+          db,
           companyId,
           userId,
-          caller: postingCaller(
+          caller: postingCredential(
             createClient<Database>("http://localhost:54321", "anon-key", {
               global: { headers: { "carbon-key": rawKey } }
             }),
             userId
           )
-        };
-        await fn(ctx, companyId);
-        throw new Rollback();
-      });
-    } catch (err) {
-      if (!(err instanceof Rollback)) throw err;
+        },
+        companyId
+      );
     } finally {
+      await sql`DELETE FROM "permission" WHERE "apiKeyId" = ${key.id}`.execute(
+        db
+      );
+      await db.deleteFrom("apiKey").where("id", "=", key.id).execute();
       await db.destroy();
     }
   }
 
-  databaseTest("checks the key's scopes, not its creator's claims", () =>
-    withApiKey({ scopes: {}, expiresAt: null }, async (ctx) => {
-      await expect(authorize(ctx, {})).resolves.toBeUndefined();
+  databaseTest("refuses a key with no grant in the company, even for {}", () =>
+    withApiKey({ expiresAt: null }, async (ctx) => {
+      await expect(authorize(ctx, {})).rejects.toMatchObject({ status: 403 });
+      await expect(authorize(ctx, "employee")).rejects.toMatchObject({
+        status: 403
+      });
       // The creator of a real company holds this; the key does not.
-      await expect(authorize(ctx, { view: "inventory" })).rejects.toMatchObject(
-        { status: 403 }
-      );
-    })
-  );
-
-  databaseTest("passes a key whose scopes cover the requirement", () =>
-    withApiKey({ scopes: {}, expiresAt: null }, async (ctx, companyId) => {
-      await sql`UPDATE "apiKey" SET scopes = ${JSON.stringify({
-        inventory_update: [companyId]
-      })}::jsonb WHERE name = 'authorize test'`.execute(ctx.db);
       await expect(
-        authorize(ctx, { update: "inventory" })
-      ).resolves.toBeUndefined();
-      await expect(
-        authorize(ctx, { update: "invoicing" })
+        authorize(ctx, { "inventory.receipts": "View" })
       ).rejects.toMatchObject({ status: 403 });
     })
   );
 
+  databaseTest("passes a key whose grants cover the requirement", () =>
+    withApiKey(
+      { expiresAt: null, grant: { module: "Inventory", level: "Edit" } },
+      async (ctx) => {
+        await expect(authorize(ctx, {})).resolves.toBeUndefined();
+        // A module grant covers every page of the module, at its level.
+        await expect(
+          authorize(ctx, { "inventory.receipts": "Edit" })
+        ).resolves.toBeUndefined();
+        await expect(
+          authorize(ctx, { "inventory.shipments": "Edit" })
+        ).resolves.toBeUndefined();
+        await expect(
+          authorize(ctx, { "inventory.receipts": "Full" })
+        ).rejects.toMatchObject({ status: 403 });
+        await expect(
+          authorize(ctx, { "invoicing.payments": "Edit" })
+        ).rejects.toMatchObject({ status: 403 });
+      }
+    )
+  );
+
   databaseTest("refuses an expired key", () =>
     withApiKey(
-      { scopes: {}, expiresAt: "2000-01-01T00:00:00Z" },
+      {
+        expiresAt: "2000-01-01T00:00:00Z",
+        grant: { module: "Inventory", level: "Edit" }
+      },
       async (ctx) => {
         await expect(authorize(ctx, {})).rejects.toMatchObject({
           status: 403
@@ -172,6 +210,17 @@ describe("authorizePostingCaller (API key)", () => {
 });
 
 describe("authorizePostingCaller (user)", () => {
+  /** The caller's client as far as the claims read goes: `get_claims`, answered by the test database. */
+  const claimsClient = (db: Kysely<KyselyDatabase>) =>
+    ({
+      rpc: async (_fn: string, args: { uid: string; company: string }) => {
+        const { rows } = await sql<{ claims: unknown }>`
+          SELECT get_claims(${args.uid}, ${args.company}) AS claims
+        `.execute(db);
+        return { data: rows[0]?.claims ?? null, error: null };
+      }
+    }) as unknown as SupabaseClient<Database>;
+
   /** Runs `fn` with a real employee of a real company. */
   async function withEmployee(
     fn: (
@@ -190,17 +239,17 @@ describe("authorizePostingCaller (user)", () => {
         FROM "userToCompany" WHERE "role" = 'employee' LIMIT 20
       `.execute(db);
       for (const { companyId, userId, claims } of rows) {
-        const held = Object.entries(claims).find(
-          ([key, companies]) =>
-            key.endsWith("_update") &&
-            Array.isArray(companies) &&
-            companies.includes(companyId)
+        const held = Object.entries(
+          claimsFor(claims, companyId).permissions
+        ).find(
+          ([page, permission]) =>
+            pageById(page) && permission.update.includes(companyId)
         );
         if (held) {
-          return await fn({ db, companyId, userId }, held[0].split("_")[0]!);
+          return await fn({ db, companyId, userId }, held[0]);
         }
       }
-      throw new Error("No employee with an update permission to test with");
+      throw new Error("No employee with Edit on a page to test with");
     } finally {
       await db.destroy();
     }
@@ -210,19 +259,20 @@ describe("authorizePostingCaller (user)", () => {
     "admits a permission the user holds, in their company only",
     () =>
       withEmployee(async (fields, held) => {
+        const gate = { [held]: "Edit" } as PageGate;
         await expect(
-          authorize({ ...fields, caller: { type: "user" } }, { update: held })
+          authorize({ ...fields, caller: { type: "user", client: claimsClient(fields.db) } }, gate)
         ).resolves.toBeUndefined();
         await expect(
           authorize(
-            { ...fields, companyId: "not-theirs", caller: { type: "user" } },
-            {
-              update: held
-            }
+            { ...fields, companyId: "not-theirs", caller: { type: "user", client: claimsClient(fields.db) } },
+            gate
           )
         ).rejects.toMatchObject({ status: 403 });
         await expect(
-          authorize({ ...fields, caller: { type: "user" } }, { update: "no-such-module" })
+          authorize({ ...fields, caller: { type: "user", client: claimsClient(fields.db) } }, {
+            "no-such-page": "Edit"
+          } as PageGate)
         ).rejects.toMatchObject({ status: 403 });
       })
   );
@@ -231,9 +281,12 @@ describe("authorizePostingCaller (user)", () => {
     withEmployee(async (fields, held) => {
       const rule = {
         by: "type",
-        rules: { internal: "system", open: { update: held } }
+        rules: {
+          internal: "system",
+          open: { [held]: "Edit" } as PageGate
+        }
       } as const;
-      const user: Caller = { ...fields, caller: { type: "user" } };
+      const user: Caller = { ...fields, caller: { type: "user", client: claimsClient(fields.db) } };
       await expect(
         authorize(user, resolvePermissions(rule, { type: "internal" }))
       ).rejects.toMatchObject({ status: 403 });

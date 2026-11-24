@@ -15,9 +15,10 @@ import {
 import { useParams } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
 import { DETAIL_TAB_SHORTCUTS } from "~/shortcuts";
-import type { Role } from "~/types";
+import { visibleRoutes } from "~/utils/nav";
 import { path } from "~/utils/path";
 import type { ConsumableSummary } from "../../types";
+import { ITEM_TAB_GATES } from "../itemTabGates";
 
 export function useConsumableNavigation() {
   const { t } = useLingui();
@@ -33,7 +34,7 @@ export function useConsumableNavigation() {
 
   const itemTrackingType = routeData.consumableSummary.itemTrackingType;
 
-  return [
+  const tabs = [
     {
       name: t`Details`,
       to: path.to.consumableDetails(itemId),
@@ -43,16 +44,14 @@ export function useConsumableNavigation() {
     {
       name: t`Purchasing`,
       to: path.to.consumablePurchasing(itemId),
-      role: ["employee", "supplier"],
-      permission: "purchasing",
+      gate: ITEM_TAB_GATES.purchasing,
       icon: LuShoppingCart,
       shortcut: DETAIL_TAB_SHORTCUTS.purchasing
     },
     {
       name: t`Accounting`,
       to: path.to.consumableCosting(itemId),
-      role: ["employee"],
-      permission: "purchasing",
+      gate: ITEM_TAB_GATES.accounting,
       icon: LuTags,
       shortcut: DETAIL_TAB_SHORTCUTS.accounting
     },
@@ -60,7 +59,6 @@ export function useConsumableNavigation() {
       name: t`Planning`,
       to: path.to.consumablePlanning(itemId),
       isDisabled: itemTrackingType === "Non-Inventory",
-      role: ["employee"],
       icon: LuChartLine,
       shortcut: DETAIL_TAB_SHORTCUTS.planning
     },
@@ -68,31 +66,22 @@ export function useConsumableNavigation() {
       name: t`Inventory`,
       to: path.to.consumableInventory(itemId),
       isDisabled: itemTrackingType === "Non-Inventory",
-      role: ["employee", "supplier"],
       icon: LuBox,
       shortcut: DETAIL_TAB_SHORTCUTS.inventory
     },
     {
       name: t`Sales`,
       to: path.to.consumableSales(itemId),
-      role: ["employee"],
       icon: LuReceipt,
       shortcut: DETAIL_TAB_SHORTCUTS.sales
     },
     {
       name: t`Quality`,
       to: path.to.consumableQuality(itemId),
-      role: ["employee"],
-      permission: "quality",
+      gate: ITEM_TAB_GATES.quality,
       icon: LuClipboardCheck,
       shortcut: DETAIL_TAB_SHORTCUTS.quality
     }
-  ].filter(
-    (item) =>
-      !item.isDisabled &&
-      (item.role === undefined ||
-        item.role.some((role) => permissions.is(role as Role))) &&
-      (item.permission === undefined ||
-        permissions.can("view", item.permission))
-  );
+  ];
+  return visibleRoutes(tabs, permissions, (tab) => !tab.isDisabled);
 }

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import {
@@ -36,6 +36,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
 import {
+  accountingActivationGate,
   cutoverIgnoredInvoiceValidator,
   cutoverStepValidator,
   openingTrialBalanceImportValidator,
@@ -98,9 +99,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    accountingActivationGate("View")
+  );
   const { cutoverDate } = await getActivationCutover(
     client,
     companyId,
@@ -160,8 +162,10 @@ function toClearingItem(
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, { update: "accounting" });
+  const { client, companyId, companyGroupId, userId } = await authorize(
+    request,
+    accountingActivationGate("Edit")
+  );
 
   const formData = await request.formData();
   const intent = formData.get("intent");

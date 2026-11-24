@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -12,15 +12,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import {
-  getLease,
-  getLeaseEvents,
-  getLeaseLines,
-  getLeasePayments,
-  getLeaseRelatedDocuments,
-  getLeaseSchedule,
-  leaseOpeningAsOf
-} from "~/modules/purchasing/purchasing.service";
+import { leaseOpeningAsOf } from "~/modules/purchasing/purchasing.service";
 import type {
   LeaseFixedAssets,
   LeasePaymentInvoiceLinks,
@@ -42,8 +34,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Leases`, to: path.to.leases },
     (data) => data?.lease?.leaseId
-  ),
-  module: "purchasing"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
@@ -53,14 +44,14 @@ export async function loader({
   request,
   params
 }: LoaderFunctionArgs): Promise<LeaseRouteData> {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { client, companyId, api } = await authorize(request, {
+    "purchasing.leases": "View"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const lease = await getLease(client, id, companyId);
+  const lease = await api.purchasing.getLease({ leaseId: id });
   if (lease.error || !lease.data) {
     throw redirect(
       path.to.leases,
@@ -73,11 +64,11 @@ export async function loader({
 
   const [lines, payments, schedule, events, related, settings] =
     await Promise.all([
-      getLeaseLines(client, id, companyId),
-      getLeasePayments(client, id, companyId),
-      getLeaseSchedule(client, id, companyId),
-      getLeaseEvents(client, id, companyId),
-      getLeaseRelatedDocuments(client, id, companyId),
+      api.purchasing.getLeaseLines({ leaseId: id }),
+      api.purchasing.getLeasePayments({ leaseId: id }),
+      api.purchasing.getLeaseSchedule({ leaseId: id }),
+      api.purchasing.getLeaseEvents({ leaseId: id }),
+      api.purchasing.getLeaseRelatedDocuments({ leaseId: id }),
       client
         .from("companySettings")
         .select(

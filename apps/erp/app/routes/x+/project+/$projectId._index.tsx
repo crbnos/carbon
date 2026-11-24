@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { hasPermission } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getUserClaims } from "@carbon/auth/users.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { datetime, EPSILON } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -18,21 +17,16 @@ import {
 import {
   getProjectContractRevenue,
   getProjectContracts,
-  getProjectCostSummary,
-  getProjectElements,
-  getProjectJobs,
-  getProjectMembers,
-  getProjectMilestones,
-  getProjectOpenTimesheetEntries
+  getProjectJobs
 } from "~/modules/projects/projects.service";
 import type { Project } from "~/modules/projects/types";
 import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
 import ProjectOverview from "~/modules/projects/ui/Project/ProjectOverview";
 import {
+  CONTRACT_READ_GATE,
   currentContractLines,
   projectContractFunded
 } from "~/modules/sales/sales.models";
-import { getContractLineFunding } from "~/modules/sales/sales.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
@@ -43,19 +37,19 @@ const COMING_UP_LIMIT = 6;
 const ACTIVITY_LIMIT = 6;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, client, companyId, permissions } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
   // The project contract (the Contract card and its Needs attention rows) is
-  // sales data; billing review also needs `update: projects`.
-  const permissions = (await getUserClaims(userId, companyId))?.permissions;
-  const canViewSales = hasPermission(permissions, "sales", "view", companyId);
+  // sales data; billing review also needs Edit on Approvals.
+  const canViewSales = holdsGate(permissions, CONTRACT_READ_GATE, companyId);
   const canReviewBilling =
-    canViewSales && hasPermission(permissions, "projects", "update", companyId);
+    canViewSales &&
+    holdsGate(permissions, { "projects.approvals": "Edit" }, companyId);
 
   const [
     elements,
@@ -70,12 +64,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     billingReview,
     projectJobs
   ] = await Promise.all([
-    getProjectElements(client, projectId, companyId),
-    getProjectCostSummary(client, projectId, companyId),
-    getProjectMilestones(client, projectId, companyId),
-    getProjectOpenTimesheetEntries(client, projectId, companyId),
+    api.projects.getProjectElements({ projectId }),
+    api.projects.getProjectCostSummary({ projectId }),
+    api.projects.getProjectMilestones({ projectId }),
+    api.projects.getProjectOpenTimesheetEntries({ projectId }),
     getCompanyTimeZone(client, companyId),
-    getProjectMembers(client, projectId, companyId),
+    api.projects.getProjectMembers({ projectId }),
     // Recent activity: the latest comments and posted costs of the project.
     client
       .from("projectElementComment")
@@ -164,8 +158,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [funding, revenue, fixedBilled] =
     confirmed.length > 0
       ? await Promise.all([
-          getContractLineFunding(client, {
-            companyId,
+          api.sales.getContractLineFunding({
             lineIds: billingLineIds,
             asOf: today
           }),
@@ -479,7 +472,8 @@ export default function ProjectOverviewRoute() {
   const permissions = usePermissions();
   const project = routeData?.project;
   const isDisabled =
-    !permissions.can("update", "projects") || project?.status === "Closed";
+    !permissions.has({ "projects.projects": "Edit" }) ||
+    project?.status === "Closed";
 
   return (
     <ProjectOverview

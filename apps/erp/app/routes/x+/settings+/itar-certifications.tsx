@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
@@ -15,10 +15,7 @@ import {
   ItarCertificationsTable,
   ItarEntityCertificationStatus
 } from "~/modules/settings/ui";
-import {
-  getItarCertificationReport,
-  getItarEntityCertification
-} from "~/modules/users/users.service";
+import { getItarCertificationReport } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -54,19 +51,19 @@ async function getLastLoginByUserId(): Promise<Map<string, string | null>> {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "settings.itarCertifications": "View"
   });
 
-  // Controlled environments only.
+  // Controlled environments only. Home, not Settings: Settings opens on the
+  // first page the person can view, which may be this one, and loops.
   if (!CONTROLLED_ENVIRONMENT) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const [report, entityCertification, lastLoginByUserId] = await Promise.all([
     getItarCertificationReport(client, companyId),
-    getItarEntityCertification(client, companyId),
+    api.users.getItarEntityCertification({}),
     getLastLoginByUserId()
   ]);
 

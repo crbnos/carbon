@@ -65,7 +65,7 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
     return `${p}${next.toString().padStart(size, "0")}${s}`;
   };
 
-  const isDisabled = !permissions.can("update", "settings");
+  const isDisabled = !permissions.has({ "settings.sequences": "Edit" });
 
   return (
     <Drawer

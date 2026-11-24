@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,18 +11,15 @@ import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import RichText from "~/components/RichText";
-import { getNotes } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "people"
-  });
+  const { api } = await authorize(request, { "people.employees": "View" });
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
-  const notes = await getNotes(client, personId);
+  const notes = await api.shared.getNotes({ documentId: personId });
   if (notes.error) {
     throw redirect(
       path.to.people,

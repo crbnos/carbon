@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { hasPermission } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getUserClaims } from "@carbon/auth/users.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -14,13 +13,14 @@ const logger = getLogger("erp", "timesheet-revisions");
 
 /**
  * The correction trail of one timesheet entry, oldest first, for the cell's
- * history popover. The employee reads their own entries; a user with
- * `view: "projects"` reads any entry of the company.
+ * history popover. The employee reads their own entries; a user with View
+ * on Projects or on Approvals reads any entry of the company.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    role: "employee"
-  });
+  const { client, companyId, userId, permissions } = await authorize(
+    request,
+    {}
+  );
   const { entryId } = params;
   if (!entryId) throw new Error("Could not find entryId");
 
@@ -44,10 +44,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // from the revision itself.
   const ownsEntry = revisions.data.every((row) => row.employeeId === userId);
   if (!ownsEntry) {
-    const canViewProjects = hasPermission(
-      (await getUserClaims(userId, companyId))?.permissions,
-      "projects",
-      "view",
+    const canViewProjects = holdsGate(
+      permissions,
+      [{ "projects.projects": "View" }, { "projects.approvals": "View" }],
       companyId
     );
     if (!canViewProjects) {

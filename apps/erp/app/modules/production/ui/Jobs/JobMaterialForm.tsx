@@ -249,7 +249,9 @@ const JobMaterialForm = ({
         </CardContent>
         <CardFooter>
           <Submit
-            isDisabled={isDisabled || !permissions.can("update", "production")}
+            isDisabled={
+              isDisabled || !permissions.has({ "production.jobs": "Edit" })
+            }
           >
             Save
           </Submit>

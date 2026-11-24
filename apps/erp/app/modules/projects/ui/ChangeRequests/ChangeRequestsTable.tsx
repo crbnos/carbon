@@ -28,7 +28,8 @@ const ChangeRequestsTable = ({
   isClosed
 }: ChangeRequestsTableProps) => {
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "projects") && !isClosed;
+  const canUpdate =
+    permissions.has({ "projects.projects": "Edit" }) && !isClosed;
   const [isOpening, setIsOpening] = useState(false);
 
   return (

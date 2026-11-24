@@ -7,7 +7,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { ShiftsTable } from "~/modules/people/ui/Shifts";
-import { getLocations } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { shiftsList } from "~/utils/list-registry/people.server";
@@ -22,8 +21,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, shiftsList, {
     dataKey: "shifts",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => ({
-      locations: (await getLocations(client, companyId)).data ?? []
+    firstPage: async ({ api }) => ({
+      locations: (await api.resources.getLocations({})).data?.rows ?? []
     }),
     onError: { redirectTo: path.to.people, message: "Failed to load shifts" }
   });

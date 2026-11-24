@@ -54,7 +54,8 @@ export default function ProjectPegging({
   const { projectId } = useParams();
   if (!projectId) throw new Error("projectId not found");
   const permissions = usePermissions();
-  const canOverride = permissions.can("update", "projects") && !asOfDate;
+  const canOverride =
+    permissions.has({ "projects.projects": "Edit" }) && !asOfDate;
   const formatQuantity = useQuantityFormatter();
   const [, setParams] = useUrlParams();
   const navigate = useNavigate();

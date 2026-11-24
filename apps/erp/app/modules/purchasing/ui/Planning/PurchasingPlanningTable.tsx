@@ -208,7 +208,9 @@ const PlanningTable = memo(
 
     // ── Planning actions (the MRP worklist) ──────────────────────────────────
     const user = useUser();
-    const canUpdateActions = permissions.can("update", "purchasing");
+    const canUpdateActions = permissions.has({
+      "purchasing.materialPlanning": "Edit"
+    });
     const actionTypeOptions = usePlanningActionTypeOptions("Buy");
     const [people] = usePeople();
     const {
@@ -352,7 +354,7 @@ const PlanningTable = memo(
     }, [drawerRows]);
 
     const isDisabled =
-      !permissions.can("create", "purchasing") ||
+      !permissions.has({ "purchasing.materialPlanning": "Create" }) ||
       bulkUpdateFetcher.state !== "idle" ||
       mrpFetcher.state !== "idle";
 
