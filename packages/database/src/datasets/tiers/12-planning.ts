@@ -18,7 +18,7 @@ import type { Ctx } from "../types.ts";
 // (the default) requires explicit demand and produces quantityToOrder = 0 when
 // safetyStockQuantity is 0 (which it is by default).
 
-// Mirrors WEEKS_TO_PROJECT in apps/erp/app/routes/x+/production+/projections.tsx.
+// Mirrors PLANNING_WEEKS in apps/erp/app/modules/shared/shared.service.ts.
 // The whole horizon is seeded (not just the weeks that carry demand) so
 // getOrCreatePeriods finds every period already present and returns them in the
 // order they were inserted — otherwise the loader appends the ones it creates

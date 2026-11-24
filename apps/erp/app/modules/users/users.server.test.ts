@@ -3,6 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import type { KyselyDatabase } from "@carbon/database/client";
+import {
+  type CompiledQuery,
+  type DatabaseConnection,
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler,
+  type QueryResult
+} from "kysely";
 import { describe, expect, it, vi } from "vitest";
 
 // The job runner is Inngest over the network: keep what would be sent.
@@ -18,10 +29,13 @@ vi.mock("@carbon/ee/plan.server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/ee/plan.server")>()),
   companyHasFeature: vi.fn(async () => true)
 }));
+// Redis is over the network: deactivating clears the cached claims there.
+vi.mock("@carbon/kv", () => ({ redis: { del: vi.fn(async () => 1) } }));
 
 import {
   bulkUpdatePermissions,
   certifyItarEntity,
+  createGroup,
   deactivateUsers,
   getEmployeePermissions,
   inviteCustomerContact,
@@ -163,9 +177,9 @@ describe("operation guards", () => {
 type Row = Record<string, unknown>;
 
 /**
- * The service-role client over in-memory tables: `select` / `update` with the
- * `eq`, `in` and `is` filters the operations use, and the RPCs they call
- * (answering `rpcResults[name]`, else 1).
+ * The service-role client over in-memory tables: `select` / `update` /
+ * `delete` with the `eq`, `in` and `is` filters the operations use, and the
+ * RPCs they call (answering `rpcResults[name]`, else 1).
  */
 function memoryClient(
   tables: Record<string, Row[]>,
@@ -175,17 +189,27 @@ function memoryClient(
   const from = (table: string) => {
     const filters: ((row: Row) => boolean)[] = [];
     let patch: Row | null = null;
+    let remove = false;
     const run = () => {
       const rows = (tables[table] ?? []).filter((row) =>
         filters.every((keep) => keep(row))
       );
       if (patch) for (const row of rows) Object.assign(row, patch);
+      if (remove) {
+        tables[table] = (tables[table] ?? []).filter(
+          (row) => !rows.includes(row)
+        );
+      }
       return { data: rows.map((row) => ({ ...row })), error: null };
     };
     const query = {
       select: () => query,
       update: (values: Row) => {
         patch = values;
+        return query;
+      },
+      delete: () => {
+        remove = true;
         return query;
       },
       eq: (column: string, value: unknown) => {
@@ -207,6 +231,12 @@ function memoryClient(
         return query;
       },
       maybeSingle: async () => ({ data: run().data[0] ?? null, error: null }),
+      single: async () => {
+        const { data } = run();
+        return data.length === 1
+          ? { data: data[0], error: null }
+          : { data: null, error: { code: "PGRST116", message: "Not one row" } };
+      },
       then: (resolve: (result: ReturnType<typeof run>) => unknown) =>
         resolve(run())
     };
@@ -228,7 +258,8 @@ const ORIGIN = { ip: "203.0.113.9", city: "Oslo", userAgent: "agent/1.0" };
 function requestContext(
   permissions: Record<string, Record<string, string[]>>,
   tables: Record<string, Row[]> = {},
-  rpcResults: Record<string, unknown> = {}
+  rpcResults: Record<string, unknown> = {},
+  pg: Kysely<KyselyDatabase> | null = null
 ) {
   const system = memoryClient(tables, rpcResults);
   const ctx = createServiceContext({
@@ -237,11 +268,62 @@ function requestContext(
     origin: ORIGIN,
     caller: {} as never,
     system: () => system.client as never,
-    pg: unreachable as never,
+    pg: pg ? () => pg : (unreachable as never),
     kv: unreachable as never
   });
   return { ctx, rpcs: system.rpcs };
 }
+
+/**
+ * Kysely over a wire that records each statement and answers it with the
+ * next scripted rows.
+ */
+function recordingDatabase(results: unknown[][]) {
+  const sent: CompiledQuery[] = [];
+  class RecordingDriver extends DummyDriver {
+    override async acquireConnection(): Promise<DatabaseConnection> {
+      return {
+        executeQuery: async <R>(
+          query: CompiledQuery
+        ): Promise<QueryResult<R>> => {
+          sent.push(query);
+          return { rows: (results.shift() ?? []) as R[] };
+        },
+        // biome-ignore lint/correctness/useYield: never streamed
+        streamQuery: async function* () {
+          throw new Error("not streamed");
+        }
+      };
+    }
+  }
+  const db = new Kysely<KyselyDatabase>({
+    dialect: {
+      createAdapter: () => new PostgresAdapter(),
+      createDriver: () => new RecordingDriver(),
+      createIntrospector: (k) => new PostgresIntrospector(k),
+      createQueryCompiler: () => new PostgresQueryCompiler()
+    }
+  });
+  const statements = () =>
+    sent.map((query) => ({ sql: query.sql, parameters: query.parameters }));
+  return { db, statements };
+}
+
+/** People invited to COMPANY as employees, not yet accepted. */
+const invitedEmployees = (
+  ids: string[],
+  extra: Record<string, Row[]> = {}
+): Record<string, Row[]> => ({
+  user: ids.map((id) => ({ id, email: `${id}@example.com` })),
+  invite: ids.map((id) => ({
+    id: `inv_${id}`,
+    email: `${id}@example.com`,
+    companyId: COMPANY,
+    role: "employee"
+  })),
+  employee: ids.map((id) => ({ id, companyId: COMPANY, active: false })),
+  ...extra
+});
 
 // A caller once sent the IP and user agent as arguments, so an API key could
 // write any address into the invite email and the audit log.
@@ -250,7 +332,10 @@ describe("the request's origin", () => {
 
   it("puts the request's IP and city on queued invites", async () => {
     queued.length = 0;
-    const { ctx } = requestContext({ users: { create: [COMPANY] } });
+    const { ctx } = requestContext(
+      { users: { create: [COMPANY] } },
+      invitedEmployees(["usr_1", "usr_2"])
+    );
     const result = await resendInvites(ctx, {
       userIds: ["usr_1", "usr_2"],
       ...forged
@@ -309,7 +394,7 @@ describe("the request's origin", () => {
   it("writes the request's IP and user agent into a revocation's audit record", async () => {
     queued.length = 0;
     const { ctx, rpcs } = requestContext(
-      { users: { create: [COMPANY] } },
+      { users: { delete: [COMPANY] } },
       {
         user: [
           { id: "usr_1", email: "a@example.com" },
@@ -358,9 +443,39 @@ describe("revoking an invite", () => {
   });
   const revoke = (tables: Record<string, Row[]>, userIds = ["usr_1"]) =>
     revokeInvites(
-      requestContext({ users: { create: [COMPANY] } }, tables).ctx,
+      requestContext({ users: { delete: [COMPANY] } }, tables).ctx,
       { userIds }
     );
+
+  // The lists show Revoke Invite only with users delete.
+  it("refuses a caller with users create alone", async () => {
+    const result = await revokeInvites(
+      requestContext({ users: { create: [COMPANY] } }, invited()).ctx,
+      { userIds: ["usr_1"] }
+    );
+    expect(result.error?.category).toBe("forbidden");
+  });
+
+  // deactivateUser stamps the invite revoked itself, so the invite ids are
+  // read before it, or the revocation (and its audit record) finds none.
+  it("revokes one user's invite after deactivating them", async () => {
+    queued.length = 0;
+    const tables = invitedEmployees(["usr_1"]);
+    const { ctx, rpcs } = requestContext(
+      { users: { delete: [COMPANY] } },
+      tables
+    );
+    const result = await revokeInvites(ctx, { userIds: ["usr_1"] });
+    expect(result).toEqual({ data: { revoked: 1 }, error: null });
+    expect(queued).toEqual([]);
+    expect(tables.invite?.[0]?.revokedAt).toEqual(expect.any(String));
+    const audit = rpcs.find((call) => call.name === "insert_audit_log_batch");
+    expect(
+      (audit?.args.p_entries as { entityId: unknown }[]).map(
+        (entry) => entry.entityId
+      )
+    ).toEqual(["inv_usr_1"]);
+  });
 
   it("refuses a user who has an account in the company", async () => {
     const result = await revoke(
@@ -431,17 +546,171 @@ describe("API key scopes beyond the gate", () => {
   });
 });
 
+// Members are written with the service role, keyed on global user and group
+// ids: each must be the company's.
 describe("changing a group", () => {
-  it("refuses a group that is not the company's", async () => {
-    const { ctx } = requestContext(
-      { users: { view: [COMPANY] } },
-      { group: [{ id: "grp_x", companyId: "cmp_2" }] }
-    );
-    const result = await updateGroup(ctx, {
-      id: "grp_x",
+  const editor = { users: { view: [COMPANY], update: [COMPANY] } };
+  const company = (extra: Record<string, Row[]> = {}) => ({
+    group: [
+      { id: "grp_x", companyId: COMPANY },
+      { id: "grp_y", companyId: COMPANY },
+      { id: "grp_z", companyId: "cmp_2" }
+    ],
+    user: [
+      { id: "usr_1", email: "usr_1@example.com" },
+      { id: "usr_9", email: "usr_9@example.com" }
+    ],
+    employee: [
+      { id: "usr_1", companyId: COMPANY },
+      { id: "usr_9", companyId: "cmp_2" }
+    ],
+    ...extra
+  });
+  const update = (selections: string[], id = "grp_x") =>
+    updateGroup(requestContext(editor, company()).ctx, {
+      id,
       name: "Welders",
-      selections: ["user_usr_1"]
+      selections
     });
+
+  it("refuses a group that is not the company's", async () => {
+    const result = await update(["user_usr_1"], "grp_z");
+    expect(result.error?.category).toBe("notFound");
+  });
+
+  // Row-level security asked for update before the write bypassed it.
+  it("refuses a user with users view alone", async () => {
+    const result = await updateGroup(
+      requestContext({ users: { view: [COMPANY] } }, company()).ctx,
+      { id: "grp_x", name: "Welders", selections: ["user_usr_1"] }
+    );
+    expect(result.error?.category).toBe("forbidden");
+  });
+
+  it.each([
+    ["a user of another company", ["user_usr_1", "user_usr_9"]],
+    ["a group of another company", ["user_usr_1", "group_grp_z"]]
+  ])("refuses %s as a member", async (_label, selections) => {
+    const result = await update(selections);
+    expect(result.error?.category).toBe("notFound");
+  });
+
+  it("refuses the group as its own member", async () => {
+    const result = await update(["user_usr_1", "group_grp_x"]);
+    expect(result.error?.category).toBe("validation");
+  });
+
+  it("renames the group and replaces its members once each, in the company", async () => {
+    const { db, statements } = recordingDatabase([[{ id: "grp_x" }]]);
+    const result = await updateGroup(
+      requestContext(editor, company(), {}, db).ctx,
+      {
+        id: "grp_x",
+        name: "Welders",
+        selections: ["user_usr_1", "group_grp_y", "user_usr_1", "group_grp_y"]
+      }
+    );
+    expect(result).toEqual({ data: { id: "grp_x" }, error: null });
+    expect(statements()).toEqual([
+      {
+        sql: 'update "group" set "name" = $1, "updatedAt" = $2 where "id" = $3 and "companyId" = $4 returning "id"',
+        parameters: ["Welders", expect.any(String), "grp_x", COMPANY]
+      },
+      {
+        sql: 'delete from "membership" where "groupId" in (select "id" from "group" where "id" = $1 and "companyId" = $2)',
+        parameters: ["grp_x", COMPANY]
+      },
+      {
+        sql: 'insert into "membership" ("groupId", "memberGroupId", "memberUserId") values ($1, $2, $3), ($4, $5, $6)',
+        parameters: ["grp_x", "grp_y", null, "grp_x", null, "usr_1"]
+      }
+    ]);
+  });
+
+  it("creates a group with its members once each", async () => {
+    const { db, statements } = recordingDatabase([[{ id: "grp_new" }]]);
+    const result = await createGroup(
+      requestContext(
+        { users: { create: [COMPANY], update: [COMPANY] } },
+        company(),
+        {},
+        db
+      ).ctx,
+      { name: "Welders", selections: ["user_usr_1", "user_usr_1"] }
+    );
+    expect(result).toEqual({ data: { id: "grp_new" }, error: null });
+    expect(statements()).toEqual([
+      {
+        sql: 'insert into "group" ("name", "companyId") values ($1, $2) returning "id"',
+        parameters: ["Welders", COMPANY]
+      },
+      {
+        sql: 'insert into "membership" ("groupId", "memberGroupId", "memberUserId") values ($1, $2, $3)',
+        parameters: ["grp_new", null, "usr_1"]
+      }
+    ]);
+  });
+});
+
+// Resending clears the invite's acceptance, and accepting it again merges
+// the invite's grants back over what an admin removed since.
+describe("sending an invite again", () => {
+  const resend = (tables: Record<string, Row[]>, userIds: string[]) =>
+    resendInvites(
+      requestContext({ users: { create: [COMPANY] } }, tables).ctx,
+      { userIds }
+    );
+
+  it.each([
+    ["one user", ["usr_1"]],
+    ["several users", ["usr_1", "usr_2"]]
+  ])(
+    "refuses %s when one has an active account in the company",
+    async (_label, userIds) => {
+      queued.length = 0;
+      const tables = invitedEmployees(["usr_1", "usr_2"], {
+        userToCompany: [{ userId: "usr_1", companyId: COMPANY }]
+      });
+      const accepted = "2026-11-01T00:00:00Z";
+      Object.assign(tables.invite?.[0] ?? {}, { acceptedAt: accepted });
+      const result = await resend(tables, userIds);
+      expect(result.error?.category).toBe("rule");
+      expect(queued).toEqual([]);
+      expect(tables.invite?.[0]?.acceptedAt).toBe(accepted);
+    }
+  );
+
+  // Deactivating a customer deletes the account the invite would activate.
+  it("refuses a customer whose account was deactivated", async () => {
+    queued.length = 0;
+    const result = await resend(
+      {
+        user: [
+          { id: "usr_1", email: "usr_1@example.com" },
+          { id: "usr_2", email: "usr_2@example.com" }
+        ],
+        invite: [
+          { email: "usr_1@example.com", companyId: COMPANY, role: "customer" },
+          { email: "usr_2@example.com", companyId: COMPANY, role: "customer" }
+        ],
+        customerAccount: [{ id: "usr_2", companyId: COMPANY }]
+      },
+      ["usr_1", "usr_2"]
+    );
+    expect(result.error?.category).toBe("rule");
+    expect(queued).toEqual([]);
+  });
+
+  it("refuses a user with no invite in the company", async () => {
+    const result = await resend(
+      invitedEmployees(["usr_1"], {
+        user: [
+          { id: "usr_1", email: "usr_1@example.com" },
+          { id: "usr_9", email: "usr_9@example.com" }
+        ]
+      }),
+      ["usr_1", "usr_9"]
+    );
     expect(result.error?.category).toBe("notFound");
   });
 });
@@ -504,7 +773,9 @@ describe("deactivating users", () => {
 // A second account insert fails, and its rollback deactivated the account
 // the person already had: a removal under `create: users`.
 describe("inviting a portal contact", () => {
-  const contactTables = (extra: Record<string, Row[]> = {}) => ({
+  const contactTables = (
+    extra: Record<string, Row[]> = {}
+  ): Record<string, Row[]> => ({
     customerContact: [
       {
         id: "cc_1",
@@ -524,7 +795,16 @@ describe("inviting a portal contact", () => {
     user: [{ id: "usr_1", email: "pat@example.com" }],
     ...extra
   });
-  const admin = { users: { create: [COMPANY] } };
+  const portalGrants = {
+    view: [COMPANY],
+    create: [COMPANY],
+    update: [COMPANY]
+  };
+  const admin = {
+    users: { create: [COMPANY] },
+    sales: portalGrants,
+    purchasing: portalGrants
+  };
   const inviteCustomer = (
     tables: Record<string, Row[]>,
     customerId = "cus_1"
@@ -550,6 +830,29 @@ describe("inviting a portal contact", () => {
       expect(result.error?.category).toBe("conflict");
     }
   );
+
+  // The invite is upserted on (email, company): it would take the portal
+  // role and permissions in place of the pending employee invite.
+  it("refuses a contact whose person has a pending invite in the company", async () => {
+    const tables = contactTables({
+      invite: [
+        { email: "pat@example.com", companyId: COMPANY, role: "employee" }
+      ]
+    });
+    const result = await inviteCustomer(tables);
+    expect(result.error?.category).toBe("conflict");
+    expect(tables.invite?.[0]?.role).toBe("employee");
+  });
+
+  // The account and the invite are written beside each other: a write the
+  // caller's row-level security refuses leaves the invite redeemable.
+  it("refuses a user without sales create, update and view", async () => {
+    const result = await inviteCustomerContact(
+      requestContext({ users: { create: [COMPANY] } }, contactTables()).ctx,
+      { customerContactId: "cc_1", customerId: "cus_1" }
+    );
+    expect(result.error?.category).toBe("forbidden");
+  });
 
   it("refuses a supplier contact whose person has a supplier account in the company", async () => {
     const result = await inviteSupplierContact(

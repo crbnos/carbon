@@ -110,7 +110,8 @@ export type RequestOrigin = {
   userAgent?: string;
 };
 
-const NO_ORIGIN: RequestOrigin = Object.freeze({});
+/** The origin of a call no request made: a job, a workflow, a share link. */
+export const NO_ORIGIN: RequestOrigin = Object.freeze({});
 
 /**
  * The request's origin, read from its headers. The IP is the entry our own
@@ -132,8 +133,8 @@ export type ServiceContext = {
   company: { id: string; groupId: string };
   /**
    * Where the request came from, read by the entry point that authenticated
-   * it, never from the input: a caller cannot write another IP into an audit
-   * record. Empty for a job, a share link or a workflow.
+   * it, never from the input, so the IP in an audit record is our proxy's.
+   * `NO_ORIGIN` when no request made the call: a job, a workflow, a posting.
    */
   origin: RequestOrigin;
   /**

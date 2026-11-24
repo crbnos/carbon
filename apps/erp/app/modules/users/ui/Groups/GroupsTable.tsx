@@ -148,7 +148,8 @@ const GroupsTable = memo(({ data, count, isTruncated }: GroupsTableProps) => {
       isTruncated={isTruncated}
       columns={columns}
       primaryAction={
-        permissions.can("create", "users") && (
+        permissions.can("create", "users") &&
+        permissions.can("update", "users") && (
           <New label={t`Group`} to={`new?${params.toString()}`} />
         )
       }

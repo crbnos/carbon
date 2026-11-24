@@ -203,7 +203,8 @@ describe("Carbon API v1 spec and response shaping", () => {
         companyId: "c1",
         companyGroupId: "g1",
         authKind: "api-key",
-        scopes: { parts_view: ["c1"] }
+        scopes: { parts_view: ["c1"] },
+        origin: {}
       }
     }).then(
       () => {

@@ -1904,21 +1904,17 @@ export const saveInspectionDocument = defineServiceFn({
       if (!parameters) return service.inspectionDocumentWriteRefusal(ctx, id);
     }
 
-    const saved = await service.saveInspectionDocumentAtomic(
-      client,
-      ctx.asSystem.pg,
-      {
-        inspectionDocumentId: id,
-        companyId,
-        userId: ctx.auditUserId,
-        pdfUrl: input.pdfUrl,
-        pageCount: input.pageCount,
-        defaultPageWidth: input.defaultPageWidth,
-        defaultPageHeight: input.defaultPageHeight,
-        features,
-        balloons
-      }
-    );
+    const saved = await service.saveInspectionDocumentAtomic(client, {
+      inspectionDocumentId: id,
+      companyId,
+      userId: ctx.auditUserId,
+      pdfUrl: input.pdfUrl,
+      pageCount: input.pageCount,
+      defaultPageWidth: input.defaultPageWidth,
+      defaultPageHeight: input.defaultPageHeight,
+      features,
+      balloons
+    });
     if (saved.error || !saved.data) {
       return ctx.error(
         "rule",
@@ -2357,8 +2353,7 @@ export const updateIssueWorkflowField = defineServiceFn({
 const riskInput = riskRegisterValidator
   .omit({ id: true, notes: true, severity: true, likelihood: true })
   .extend({
-    // The rich-text body, as the editor's JSON.
-    notes: z.record(z.string(), z.unknown()).optional(),
+    notes: optionalTiptapDoc,
     // The form's ratings; the table checks the same range.
     severity: z.number().int().min(1).max(5),
     likelihood: z.number().int().min(1).max(5)
@@ -2381,7 +2376,7 @@ const riskInput = riskRegisterValidator
  * @mcp
  */
 export const createRisk = defineServiceFn({
-  input: riskInput.extend({ notes: optionalTiptapDoc }),
+  input: riskInput,
   // Any employee may record a risk, so the gate is company membership.
   permission: {},
 
@@ -2421,7 +2416,10 @@ export const createRisk = defineServiceFn({
  *
  * @remarks
  * As the risk's edit form does. A new assignee must be an active employee of
- * the company, and is notified; an unchanged assignee is kept as it is.
+ * the company, and is notified; an unchanged assignee is kept as it is. Notes
+ * left out keep their value.
+ *
+ * @param notes - The notes: Markdown, or a Tiptap document.
  *
  * @mcp
  */
@@ -2431,9 +2429,11 @@ export const updateRisk = defineServiceFn({
 
   async run(ctx, { id, ...input }) {
     const client = ctx.asCaller.supabase;
-    const previous = await service.getRisk(client, id);
+    const previous = unwrap(ctx, await service.getRisk(client, id));
+    if (previous instanceof CarbonError) return previous;
+    if (!previous) return ctx.error("notFound", "The risk could not be found");
     const newAssignee =
-      input.assignee && input.assignee !== previous.data?.assignee
+      input.assignee && input.assignee !== previous.assignee
         ? input.assignee
         : null;
     // The form posts the saved assignee on every edit, so only a change is
@@ -2446,7 +2446,8 @@ export const updateRisk = defineServiceFn({
     }
     const result = await service.upsertRisk(client, {
       ...input,
-      notes: input.notes ?? {},
+      // Left out, it stays undefined, which the update does not write.
+      notes: input.notes,
       id,
       assignee: input.assignee || undefined,
       companyId: ctx.company.id,
@@ -3546,9 +3547,10 @@ export const updateIssueActionProcesses = defineServiceFn({
  *
  * @remarks
  * Creates a gauge as the gauge form does. Its calibration status comes from
- * its dates, as the form decides it: Out-of-Calibration once the next
- * calibration date has passed, else In-Calibration with a last calibration
- * date, else Pending. The form has no status field, so the call takes none.
+ * its dates, as the form decides it: Pending without a next calibration date,
+ * Out-of-Calibration once that date has passed, else In-Calibration with a
+ * last calibration date, else Pending. The form has no status field, so the
+ * call takes none.
  *
  * @mcp
  */
@@ -3658,40 +3660,43 @@ export const updateGauge = defineServiceFn({
   }
 });
 
+const gaugeCalibrationRecordInput = z.object({
+  gaugeId: z.string().min(1),
+  supplierId: z.string().optional(),
+  dateCalibrated: z.string().min(1),
+  requiresAction: z.boolean().optional(),
+  requiresAdjustment: z.boolean().optional(),
+  requiresRepair: z.boolean().optional(),
+  temperature: z.number().min(-200).max(500).optional(),
+  humidity: z.number().min(0).max(1).optional(),
+  approvedBy: z.string().optional(),
+  measurementStandard: z.string().optional(),
+  calibrationAttempts: z.array(
+    z.object({ reference: z.number(), actual: z.number() })
+  ),
+  notes: optionalTiptapDoc,
+  inspectionStatus: z.enum(["Pass", "Fail"]).optional(),
+  customFields: z.unknown().optional()
+});
+
 /**
  * Create a gauge calibration record
  *
  * @remarks
  * Records a calibration as the calibration form does. When it is the gauge's
- * latest, it sets the gauge's calibration status, last and next calibration
- * dates, and a Pass also resets the gauge's last notified status
- * (`lastCalibrationStatus`) to In-Calibration, so the nightly check notifies
- * again when it next goes out of calibration. A flag left out is false, as an
- * unticked box on the form.
+ * latest, it sets the gauge's last and next calibration dates and its
+ * calibration status: a Fail is Out-of-Calibration, and a Pass is
+ * In-Calibration unless its next calibration date has already passed. A Pass
+ * also resets the gauge's last notified status (`lastCalibrationStatus`) to
+ * In-Calibration, so the nightly check notifies again when it next goes out
+ * of calibration. A flag left out is false, as an unticked box on the form.
  *
  * @param inspectionStatus - Fail when the calibration requires action, adjustment or repair, else Pass, as the form decides it. Leave it out; a value that contradicts the flags is refused.
  *
  * @mcp
  */
 export const createGaugeCalibrationRecord = defineServiceFn({
-  input: z.looseObject({
-    gaugeId: z.string().min(1),
-    supplierId: z.string().optional(),
-    dateCalibrated: z.string().min(1),
-    requiresAction: z.boolean().optional(),
-    requiresAdjustment: z.boolean().optional(),
-    requiresRepair: z.boolean().optional(),
-    temperature: z.number().min(-200).max(500).optional(),
-    humidity: z.number().min(0).max(1).optional(),
-    approvedBy: z.string().optional(),
-    measurementStandard: z.string().optional(),
-    calibrationAttempts: z.array(
-      z.looseObject({ reference: z.number(), actual: z.number() })
-    ),
-    notes: optionalTiptapDoc,
-    inspectionStatus: z.enum(["Pass", "Fail"]).optional(),
-    customFields: z.unknown().optional()
-  }),
+  input: gaugeCalibrationRecordInput,
   permission: { create: "quality" },
   async run(ctx, input) {
     const refusal = calibrationInspectionStatusRefusal(input);
@@ -3714,45 +3719,52 @@ export const createGaugeCalibrationRecord = defineServiceFn({
  *
  * @remarks
  * Saves a calibration as the calibration form does, with the gauge updates of
- * quality_createGaugeCalibrationRecord. A flag left out is false, as an
- * unticked box on the form.
+ * quality_createGaugeCalibrationRecord. A field left out keeps its value; the
+ * result is decided from the flags after the save.
  *
  * @param inspectionStatus - Fail when the calibration requires action, adjustment or repair, else Pass, as the form decides it. Leave it out; a value that contradicts the flags is refused.
  *
  * @mcp
  */
 export const updateGaugeCalibrationRecord = defineServiceFn({
-  input: z.looseObject({
-    gaugeId: z.string().min(1),
-    supplierId: z.string().optional(),
-    dateCalibrated: z.string().min(1),
-    requiresAction: z.boolean().optional(),
-    requiresAdjustment: z.boolean().optional(),
-    requiresRepair: z.boolean().optional(),
-    temperature: z.number().min(-200).max(500).optional(),
-    humidity: z.number().min(0).max(1).optional(),
-    approvedBy: z.string().optional(),
-    measurementStandard: z.string().optional(),
-    calibrationAttempts: z.array(
-      z.looseObject({ reference: z.number(), actual: z.number() })
-    ),
-    notes: optionalTiptapDoc,
-    inspectionStatus: z.enum(["Pass", "Fail"]).optional(),
-    customFields: z.unknown().optional(),
+  input: gaugeCalibrationRecordInput.extend({
     id: z.string().min(1).describe("The calibration record to change.")
   }),
   // The route gated on create; the write runs under the update policy.
   permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
-    const refusal = calibrationInspectionStatusRefusal(input);
+    const stored = await ctx.asCaller.supabase
+      .from("gaugeCalibrationRecord")
+      .select("requiresAction, requiresAdjustment, requiresRepair")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (stored.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the calibration record",
+        stored.error
+      );
+    }
+    if (!stored.data) {
+      return ctx.error("notFound", "Calibration record not found");
+    }
+    const record = {
+      ...input,
+      requiresAction: input.requiresAction ?? stored.data.requiresAction,
+      requiresAdjustment:
+        input.requiresAdjustment ?? stored.data.requiresAdjustment,
+      requiresRepair: input.requiresRepair ?? stored.data.requiresRepair
+    };
+    const refusal = calibrationInspectionStatusRefusal(record);
     if (refusal) return ctx.error("validation", refusal);
     const updated = unwrap(
       ctx,
       await service.upsertGaugeCalibrationRecord(
         ctx.asCaller.supabase,
         payload(ctx, {
-          ...input,
-          ...calibrationFlags(input)
+          ...record,
+          ...calibrationFlags(record)
         }).forUpdate() as never
       )
     );
@@ -3910,11 +3922,22 @@ export const updateIssue = defineServiceFn({
   }
 });
 
+const issueWorkflowInput = z.object({
+  name: z.string().min(1),
+  content: requiredTiptapDoc,
+  priority: z.enum(["Low", "Medium", "High", "Critical"]),
+  source: z.enum(["Internal", "External"]),
+  requiredActionIds: issueWorkflowRequiredActionIdsInput.optional(),
+  approvalRequirements: z.array(z.literal("MRB")).optional()
+});
+
 /**
  * Create a issue workflow
  *
  * @remarks
- * Upsert issue workflow
+ * Saves a new workflow: its name, template, priority, source, required actions
+ * and approvals. A required action that is not the company's is refused.
+ * Returns the new workflow's id.
  *
  * @param content - The issue template: Markdown, or a Tiptap document (as an object or as JSON text).
  * @param requiredActionIds - The required actions, in order (see quality_getRequiredActionsList). A string is read as a JSON list, `{a,b}` or comma-separated ids.
@@ -3922,23 +3945,17 @@ export const updateIssue = defineServiceFn({
  * @mcp
  */
 export const createIssueWorkflow = defineServiceFn({
-  input: z.looseObject({
-    name: z.string().min(1),
-    content: requiredTiptapDoc,
-    priority: z.enum(["Low", "Medium", "High", "Critical"]),
-    source: z.enum(["Internal", "External"]),
-    requiredActionIds: issueWorkflowRequiredActionIdsInput.optional(),
-    approvalRequirements: z.array(z.literal("MRB")).optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
+  input: issueWorkflowInput,
   permission: { create: "quality" },
   async run(ctx, input) {
+    const refused = await service.requiredActionsRefusal(
+      ctx,
+      input.requiredActionIds
+    );
+    if (refused) return refused;
     return unwrap(
       ctx,
-      await service.upsertIssueWorkflow(
+      await service.insertIssueWorkflow(
         ctx.asCaller.supabase,
         payload(ctx, input).forCreate() as never
       )
@@ -3951,8 +3968,9 @@ export const createIssueWorkflow = defineServiceFn({
  *
  * @remarks
  * Saves the workflow's name, template, priority, source, required actions and
- * approvals. An `id` that matches no workflow of the company is refused.
- * Returns the workflow's id, as quality_createIssueWorkflow does.
+ * approvals. An `id` that matches no workflow of the company, or a required
+ * action that is not the company's, is refused. Returns the workflow's id, as
+ * quality_createIssueWorkflow does.
  *
  * @param id - The workflow to update.
  * @param content - The issue template: Markdown, or a Tiptap document (as an object or as JSON text).
@@ -3961,31 +3979,24 @@ export const createIssueWorkflow = defineServiceFn({
  * @mcp
  */
 export const updateIssueWorkflow = defineServiceFn({
-  input: z
-    .looseObject({
-      name: z.string().min(1),
-      content: requiredTiptapDoc,
-      priority: z.enum(["Low", "Medium", "High", "Critical"]),
-      source: z.enum(["Internal", "External"]),
-      requiredActionIds: issueWorkflowRequiredActionIdsInput.optional(),
-      approvalRequirements: z.array(z.literal("MRB")).optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
+  input: issueWorkflowInput.extend({ id: z.string() }),
   // The route gated on create; the write runs under the update policy.
   permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
-    const updated = unwrap(
+    const refused = await service.requiredActionsRefusal(
       ctx,
-      await service.upsertIssueWorkflow(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      input.requiredActionIds
     );
-    if (updated instanceof CarbonError) return updated;
+    if (refused) return refused;
+    const updated = await service.updateIssueWorkflow(
+      ctx.asCaller.supabase,
+      payload(ctx, input).forUpdate() as never
+    );
+    if (updated.error?.code === NOT_APPLIED_CODE) {
+      return ctx.error("notFound", "The workflow could not be found");
+    }
+    const saved = unwrap(ctx, updated);
+    if (saved instanceof CarbonError) return saved;
     return { id: input.id };
   }
 });
@@ -4748,7 +4759,6 @@ export const saveInspectionDocumentAtomic = defineServiceFn({
       ctx,
       await service.saveInspectionDocumentAtomic(
         ctx.asCaller.supabase,
-        ctx.asSystem.pg,
         payload(ctx, input).withUser().build() as never
       )
     );

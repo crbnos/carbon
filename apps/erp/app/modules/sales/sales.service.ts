@@ -305,6 +305,7 @@ import type {
 import {
   CUSTOMER_CONTACT_EMAIL_REQUIRED,
   contractEndDate,
+  contractScheduleEditValidator,
   costCategoryKeys,
   type createContractFromSalesOrderValidator,
   isProjectBillingMethod,
@@ -350,11 +351,6 @@ import type {
   SalesOrder,
   SalesRFQ
 } from "./types";
-import {
-  toContractLineTerms,
-  toContractTerms
-} from "./ui/Contracts/contractTerms";
-import type { Contract } from "./ui/Contracts/types";
 
 // The customer list's columns: its table, filters, custom field columns and
 // cursor. Leaving out orderCount (a grouped count of salesOrder) and externalId
@@ -11532,7 +11528,7 @@ async function lockBillingLine(
     .where("customerContractLine.companyId", "=", args.companyId)
     .forUpdate("customerContractLine")
     .executeTakeFirst();
-  if (!line) throw new Error("The contract line does not exist");
+  if (!line) throw new NotFoundError("The contract line does not exist");
   if (!isProjectBillingMethod(line.billingMethod)) {
     throw new Error(CONTRACT_FUNDING_NOT_BILLING);
   }
@@ -11583,7 +11579,8 @@ export async function upsertContractFunding(
         .where("customerContractLineId", "=", args.customerContractLineId)
         .returning("id")
         .executeTakeFirst();
-      if (!updated) throw new Error("The funding action does not exist");
+      if (!updated)
+        throw new NotFoundError("The funding action does not exist");
       id = updated.id;
     } else {
       const inserted = await trx
@@ -11624,7 +11621,7 @@ export async function deleteContractFunding(
       .where("id", "=", args.id)
       .where("companyId", "=", args.companyId)
       .executeTakeFirst();
-    if (!funding) throw new Error("The funding action does not exist");
+    if (!funding) throw new NotFoundError("The funding action does not exist");
     await lockBillingLine(trx, {
       lineId: funding.customerContractLineId,
       companyId: args.companyId
@@ -21342,64 +21339,6 @@ const customerContractTypes = [
   "Contraction"
 ] as const satisfies readonly Enums["customerContractType"][];
 
-/** One edit to a Draft schedule — the ERP's
- *  `customerContractScheduleEditValidator` minus `reset`. Refs are a stored
- *  id or a `planned:` position ref (see `editSchedule`). */
-export const scheduleEdit = z.discriminatedUnion("intent", [
-  z.object({
-    intent: z.literal("move"),
-    customerContractInvoiceId: z.string().min(1),
-    invoiceDate: isoDate
-  }),
-  z.object({
-    intent: z.literal("split"),
-    customerContractInvoiceLineId: z.string().min(1),
-    installments: z
-      .array(
-        z.object({
-          invoiceDate: isoDate,
-          amount: z.number().positive("Each installment must be more than 0")
-        })
-      )
-      .min(2)
-  }),
-  z.object({
-    intent: z.literal("merge"),
-    sourceInvoiceId: z.string().min(1),
-    targetInvoiceId: z.string().min(1)
-  }),
-  z.object({
-    intent: z.literal("moveLine"),
-    customerContractInvoiceLineId: z.string().min(1),
-    invoiceDate: isoDate
-  }),
-  // The invoice grid (plan D10): one cell is one (invoice, line).
-  z.object({
-    intent: z.literal("setAmount"),
-    customerContractInvoiceId: z.string().min(1),
-    customerContractLineId: z.string().min(1),
-    amount: z.number().min(0)
-  }),
-  z.object({
-    intent: z.literal("addInvoice"),
-    invoiceDate: isoDate,
-    amounts: z
-      .array(
-        z.object({
-          customerContractLineId: z.string().min(1),
-          amount: z.number().min(0)
-        })
-      )
-      .refine((amounts) => amounts.some((a) => a.amount > 0), {
-        message: "Enter an amount for at least one line"
-      })
-  }),
-  z.object({
-    intent: z.literal("delete"),
-    customerContractInvoiceId: z.string().min(1)
-  })
-]);
-
 /** `YYYY-MM-01`: a revenue row is one calendar month. */
 const firstOfMonth = z
   .string()
@@ -21503,7 +21442,11 @@ const amendmentChange = z.discriminatedUnion("op", [
 
 export const postCustomerContractInput = z.discriminatedUnion("type", [
   z.object({ type: z.literal("confirm"), ...base }),
-  z.object({ type: z.literal("edit-schedule"), ...base, edit: scheduleEdit }),
+  z.object({
+    type: z.literal("edit-schedule"),
+    ...base,
+    edit: contractScheduleEditValidator
+  }),
   z.object({ type: z.literal("reset-schedule"), ...base }),
   z.object({ type: z.literal("edit-revenue"), ...base, edit: revenueEdit }),
   z.object({
@@ -25279,34 +25222,49 @@ export function salesRulesEntitlementRefusal(
 // --- Contract invoice schedule ------------------------------------------------
 
 /**
- * An unedited Draft contract's invoice schedule, planned live as the contract
- * page plans it, each invoice and row named by the position ref the schedule
+ * An unedited Draft contract's invoice schedule, planned as `edit-schedule`
+ * materializes it, each invoice and row named by the position ref the schedule
  * edits take (`planned:<invoiceDate>`,
  * `planned:<invoiceDate>:<lineId>:<periodStart>[:adjustment]`). Null for a
- * contract that is not a Draft, has no start date or stores its schedule.
+ * contract that is not a Draft or stores its schedule.
  */
 export async function plannedContractSchedule(
   ctx: ServiceContext,
   customerContractId: string,
   storedInvoiceCount: number
 ) {
-  if (storedInvoiceCount > 0) return null;
-  const [contract, lines] = await Promise.all([
-    getContract(ctx.asCaller.supabase, customerContractId, ctx.company.id),
-    getContractLines(ctx.asCaller.supabase, customerContractId, ctx.company.id)
-  ]);
-  if (contract.error) return contract.error;
-  if (lines.error) return lines.error;
-  if (contract.data?.status !== "Draft" || !contract.data.startDate) {
-    return null;
-  }
-  const terms = toContractTerms(contract.data as Contract);
+  if (storedInvoiceCount > 0) return { data: null, error: null };
+  const client = ctx.asCaller.supabase;
+  const contract = await client
+    .from("customerContract")
+    .select(
+      "startDate, endDate, billingFrequency, billingAlignment, billingTiming, firstInvoiceDate, billedThrough"
+    )
+    .eq("id", customerContractId)
+    .eq("companyId", ctx.company.id)
+    .eq("status", "Draft")
+    .maybeSingle();
+  if (contract.error) return { data: null, error: contract.error };
+  if (!contract.data) return { data: null, error: null };
+  // In `loadLines`' order, the order `editSchedule` plans in.
+  const lines = await client
+    .from("customerContractLine")
+    .select(
+      "id, revenueType, quantity, rate, rateUnit, discountPercent, startDate, endDate, billingMethod, amendsLineId"
+    )
+    .eq("customerContractId", customerContractId)
+    .eq("companyId", ctx.company.id)
+    .order("sortOrder", { ascending: true })
+    .order("startDate", { ascending: true })
+    .order("id", { ascending: true });
+  if (lines.error) return { data: null, error: lines.error };
+  const terms = toTerms(contract.data);
   const planned = planInvoiceSchedule(
     terms,
-    (lines.data ?? []).map(toContractLineTerms),
+    toLineTerms(lines.data),
     horizon(terms, await companyToday(ctx))
   );
-  return planned.map((invoice) => ({
+  const data = planned.map((invoice) => ({
     ref: `planned:${invoice.invoiceDate}`,
     invoiceDate: invoice.invoiceDate,
     status: invoice.status,
@@ -25321,4 +25279,5 @@ export async function plannedContractSchedule(
       isAdjustment: row.isAdjustment
     }))
   }));
+  return { data, error: null };
 }

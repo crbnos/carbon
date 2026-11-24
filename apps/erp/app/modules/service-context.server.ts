@@ -25,8 +25,8 @@ export type Caller = {
   companyId: string;
   companyGroupId: string;
   client: SupabaseClient<Database>;
-  /** Where the request came from, when a request made the call. */
-  origin?: RequestOrigin;
+  /** Where the request came from; `NO_ORIGIN` when no request made the call. */
+  origin: RequestOrigin;
 };
 
 /** The context a service function runs with for this caller. */
@@ -112,7 +112,7 @@ type Auth = Pick<
 /** The context for a request, built from what `requirePermissions` returned. */
 export function serviceContext(
   auth: Auth,
-  origin?: RequestOrigin
+  origin: RequestOrigin
 ): ServiceContext {
   return contextFor({
     // For a key, requirePermissions reports the key's creator as `userId`.

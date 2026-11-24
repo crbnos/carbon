@@ -11,7 +11,7 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { CONTRACT_HOLD_ADJUSTMENT, round } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import {
   buildProjectLedgerRow,
   insertProjectLedgerRows
@@ -21,12 +21,24 @@ import {
   createContractInvoices,
   postCustomerContract
 } from "../../../app/modules/sales/sales.service";
+import * as sales from "../../../app/modules/sales/sales.server";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import {
   connectLocalTestDatabase,
   databaseTest
 } from "../fixtures/local-database";
+import { operationContext, postgrestTest } from "../fixtures/local-supabase";
+
+// A posting run through the local service-role client is recognised as the
+// system only when the key matches the one @carbon/env holds.
+vi.mock("@carbon/env", async (importOriginal) => {
+  const { localServiceRoleKey } = await import("../fixtures/local-supabase");
+  return {
+    ...(await importOriginal<object>()),
+    SUPABASE_SERVICE_ROLE_KEY: localServiceRoleKey() ?? "test"
+  };
+});
 
 const USER = "system";
 
@@ -196,6 +208,7 @@ async function contractFixture() {
     db,
     ctx,
     companyId,
+    groupId,
     contractId,
     shipToId,
     oneTimeLineId,
@@ -3322,3 +3335,103 @@ for (const basis of ["Schedule", "Project"] as const) {
     }
   );
 }
+
+postgrestTest(
+  "a schedule edit through a ref the schedule read returned changes that row, and a reset plans the lines again",
+  async (client) => {
+    const f = await contractFixture();
+    try {
+      const { contractId } = await f.addRecurringContract({
+        key: "read-ref",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      const ctx = operationContext(f, client, USER);
+      const read = () =>
+        sales.getContractInvoiceSchedule(ctx, {
+          customerContractId: contractId
+        });
+
+      const unedited = await read();
+      expect(unedited.error).toBeNull();
+      const planned = unedited.data!.planned!;
+      expect(planned.map((invoice) => invoice.invoiceDate)).toEqual([
+        "2026-01-01",
+        "2026-02-01",
+        "2026-03-01"
+      ]);
+
+      const split = await sales.editContractSchedule(ctx, {
+        customerContractId: contractId,
+        edit: {
+          intent: "split",
+          customerContractInvoiceLineId: planned[0]!.rows[0]!.ref,
+          installments: [
+            { invoiceDate: "2026-01-01", amount: 60 },
+            { invoiceDate: "2026-01-15", amount: 40 }
+          ]
+        }
+      });
+      expect(split).toEqual({
+        data: { customerContractId: contractId },
+        error: null
+      });
+      expect(
+        (await plannedInvoices(f.db, f.companyId, contractId)).map((i) => [
+          i.invoiceDate,
+          i.total
+        ])
+      ).toEqual([
+        ["2026-01-01", 60],
+        ["2026-01-15", 40],
+        ["2026-02-01", 100],
+        ["2026-03-01", 100]
+      ]);
+      // A stored schedule is read as stored: nothing is planned live.
+      expect((await read()).data!.planned).toBeNull();
+
+      const reset = await sales.resetContractSchedule(ctx, {
+        customerContractId: contractId
+      });
+      expect(reset.error).toBeNull();
+      expect(await plannedInvoices(f.db, f.companyId, contractId)).toEqual([]);
+      expect((await read()).data!.planned).toHaveLength(3);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a schedule edit keeps the posting's refusal: invalid for a contract that is not a Draft, notFound for no contract",
+  async (client) => {
+    const f = await contractFixture();
+    try {
+      const ctx = operationContext(f, client, USER);
+      await f.db
+        .updateTable("customerContract")
+        .set({ status: "Active" })
+        .where("id", "=", f.contractId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const edit = {
+        intent: "move",
+        customerContractInvoiceId: "planned:2026-11-01",
+        invoiceDate: "2026-11-15"
+      } as const;
+
+      const active = await sales.editContractSchedule(ctx, {
+        customerContractId: f.contractId,
+        edit
+      });
+      const missing = await sales.resetContractSchedule(ctx, {
+        customerContractId: `${f.contractId}-missing`
+      });
+
+      expect(active.error).toMatchObject({ category: "validation" });
+      expect(missing.error).toMatchObject({ category: "notFound" });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

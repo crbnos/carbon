@@ -38,7 +38,6 @@
     "quality_updateIssueActionProcesses": "Unlinking what is not linked: already done.",
     "resources_updateMaintenanceSchedule": "Missing check: one record, answers success when it does not exist.",
     "resources_updateMaintenanceDispatchField": "Bulk edit by a list of ids: bulk writes are left unchecked (D8).",
-    "resources_updateMaintenanceDispatchComment": "Missing check: one record, answers success when it does not exist.",
     "sales_updateCustomerPayment": "Missing check: one record, answers success when it does not exist.",
     "sales_updateCustomerShipping": "Missing check: one record, answers success when it does not exist.",
     "sales_updateCustomerTax": "Missing check: one record, answers success when it does not exist.",

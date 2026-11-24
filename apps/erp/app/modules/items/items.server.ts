@@ -4100,7 +4100,8 @@ export const upsertConfigurationParameter = defineServiceFn({
  * @remarks
  * As the Add Group and Edit Group dialogs of a configurable item do: without
  * `id` it adds a group after the item's other groups; with `id` it renames
- * that group of the item. Returns the group's id.
+ * that group of the item. Returns the group's id. Renaming needs parts
+ * update, adding parts create as well.
  *
  * @param itemId - The configurable item the group belongs to.
  * @param id - The group to rename, from the `groups` of items_getConfigurationParameters; omit it to add a group.
@@ -4112,8 +4113,15 @@ export const upsertConfigurationParameterGroup = defineServiceFn({
   input: configurationParameterGroupValidator.extend({
     itemId: z.string().min(1)
   }),
-  permission: { create: "parts", update: "parts" },
+  // The dialogs' route gate; an add inserts, which also needs create.
+  permission: { update: "parts" },
   async run(ctx, input) {
+    if (!input.id && !ctx.can({ create: "parts" })) {
+      return ctx.error(
+        "forbidden",
+        "Adding a group needs permission to create parts"
+      );
+    }
     return unwrap(
       ctx,
       await service.upsertConfigurationParameterGroup(ctx.asCaller.supabase, {
@@ -4274,18 +4282,17 @@ export const createConsumable = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
-    const created = await service.upsertConsumable(
-      ctx.asCaller.supabase,
-      payload(ctx, input).forCreate() as never
+    // unwrap: a taken number (23505) is a conflict, not an internal error.
+    const created = unwrap(
+      ctx,
+      await service.upsertConsumable(
+        ctx.asCaller.supabase,
+        payload(ctx, input).forCreate() as never
+      )
     );
-    const id: string | null | undefined = created.data?.id;
-    if (created.error || !id) {
-      return ctx.error(
-        "internal",
-        "Failed to insert consumable",
-        created.error
-      );
-    }
+    if (created instanceof CarbonError) return created;
+    const id = (created as { id?: string | null } | null)?.id;
+    if (!id) return ctx.error("internal", "Failed to insert consumable");
     return { id };
   }
 });
@@ -5616,14 +5623,12 @@ export const setMethodOperationToolStepLink = defineServiceFn({
  *
  * @param id - The new material's ID. Required when material IDs are typed; with generated IDs leave it out.
  * @param name - The material's short description. Required when material IDs are typed; with generated IDs leave it out. Printed on returns to suppliers and copied onto new purchase order, RFQ and supplier quote lines, which suppliers see: keep internal notes out.
- * @param readableId - Not used on create: the new material's ID is `id`.
  *
  * @mcp
  */
 export const createMaterial = defineServiceFn({
   input: z.looseObject({
     id: z.string().min(1).max(255).optional(),
-    readableId: z.string().optional(),
     name: z.string().min(1).max(255).optional().describe(itemNameNote),
     description: z.string().optional().describe(itemDescriptionNote),
     mpn: z.string().optional(),
@@ -5672,9 +5677,8 @@ export const createMaterial = defineServiceFn({
 
     const created = unwrap(
       ctx,
-      await service.upsertMaterial(
+      await service.insertMaterial(
         client,
-        ctx.asSystem.pg,
         payload(ctx, {
           ...input,
           id: identity.readableId,
@@ -5683,9 +5687,8 @@ export const createMaterial = defineServiceFn({
       )
     );
     if (created instanceof CarbonError) return created;
-    const id = (created as { id?: string | null } | null)?.id;
-    if (!id) return ctx.error("internal", "Failed to insert material");
-    return { id };
+    if (!created?.id) return ctx.error("internal", "Failed to insert material");
+    return { id: created.id };
   }
 });
 
@@ -6355,14 +6358,17 @@ export const createTool = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
-    const created = await service.upsertTool(
-      ctx.asCaller.supabase,
-      payload(ctx, input).forCreate() as never
+    // unwrap: a taken number (23505) is a conflict, not an internal error.
+    const created = unwrap(
+      ctx,
+      await service.upsertTool(
+        ctx.asCaller.supabase,
+        payload(ctx, input).forCreate() as never
+      )
     );
-    const id: string | null | undefined = created.data?.id;
-    if (created.error || !id) {
-      return ctx.error("internal", "Failed to insert tool", created.error);
-    }
+    if (created instanceof CarbonError) return created;
+    const id = (created as { id?: string | null } | null)?.id;
+    if (!id) return ctx.error("internal", "Failed to insert tool");
     return { id };
   }
 });

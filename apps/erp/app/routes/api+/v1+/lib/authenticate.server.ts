@@ -21,7 +21,7 @@ import {
 } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { getLogger } from "@carbon/logger";
-import { type AuthedContext, scopesFromPermissions } from "./base.server";
+import { type Authenticated, scopesFromPermissions } from "./base.server";
 
 const logger = getLogger("erp", "api", "authenticate");
 
@@ -40,7 +40,7 @@ const logger = getLogger("erp", "api", "authenticate");
 export async function authenticateApiKey(
   url: string,
   rawKey: string
-): Promise<AuthedContext> {
+): Promise<Authenticated> {
   const authHeaders = new Headers();
   authHeaders.set("carbon-key", rawKey);
   const { client, companyId, companyGroupId, userId } =
@@ -60,7 +60,7 @@ export async function authenticateApiKey(
 
 export async function resolveApiKeyContext(
   request: Request
-): Promise<AuthedContext> {
+): Promise<Authenticated> {
   const authorization = request.headers.get("authorization") ?? "";
   const bearer = /^bearer\s+/i.test(authorization)
     ? authorization.replace(/^bearer\s+/i, "").trim()
@@ -117,7 +117,7 @@ export async function findOAuthToken(
 export async function oauthContext({
   userId,
   companyId
-}: OAuthIdentity): Promise<AuthedContext | null> {
+}: OAuthIdentity): Promise<Authenticated | null> {
   const serviceRole = getCarbonServiceRole();
   const [membership, company, claims, client] = await Promise.all([
     serviceRole

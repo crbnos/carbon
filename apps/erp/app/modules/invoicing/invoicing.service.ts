@@ -6326,10 +6326,20 @@ export async function refuseLockedInvoices(
 }
 
 /**
+ * The invoices a field write reached. None is a refusal: the ids are not
+ * the company's, or the caller's RLS hides them.
+ */
+export function updatedInvoices(ctx: ServiceContext, rows: { id: string }[]) {
+  if (rows.length === 0) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  return { ids: rows.map((row) => row.id) };
+}
+
+/**
  * Write one field on invoices of either kind. A new issue date or payment
- * term on a single invoice recomputes its due date (with several, nothing is
- * written); a new currency brings today's exchange rate; an empty value
- * clears the field.
+ * term recomputes the due date, so it takes one invoice; a new currency
+ * brings today's exchange rate; an empty value clears the field.
  */
 export async function writeInvoiceField(
   ctx: ServiceContext,
@@ -6341,17 +6351,29 @@ export async function writeInvoiceField(
   let changes: Record<string, unknown> = { [field]: value || null };
 
   if (field === "dateIssued" || field === "paymentTermId") {
-    if (ids.length !== 1) return { ids };
+    // Each invoice's due date follows its own issue date and term.
+    if (ids.length !== 1) {
+      return ctx.error(
+        "validation",
+        "Set the issue date or payment term on one invoice at a time"
+      );
+    }
     const invoice = await client
       .from(table as "salesInvoice")
       .select("dateIssued, paymentTermId")
       .eq("id", ids[0]!)
       .eq("companyId", companyId)
-      .single();
+      .maybeSingle();
+    if (invoice.error) {
+      return ctx.error("internal", "Failed to load the invoice", invoice.error);
+    }
+    if (!invoice.data) {
+      return ctx.error("notFound", "None of the invoices was found");
+    }
     const dateDue = await computeInvoiceDateDue(client, {
-      dateIssued: field === "dateIssued" ? value : invoice.data?.dateIssued,
+      dateIssued: field === "dateIssued" ? value : invoice.data.dateIssued,
       paymentTermId:
-        field === "paymentTermId" ? value : invoice.data?.paymentTermId,
+        field === "paymentTermId" ? value : invoice.data.paymentTermId,
       companyId
     });
     if (dateDue) changes = { ...changes, dateDue };
@@ -6377,11 +6399,12 @@ export async function writeInvoiceField(
       })
     )
     .in("id", ids)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id");
   if (update.error) {
     return ctx.error("internal", "Failed to update the invoices", update.error);
   }
-  return { ids };
+  return updatedInvoices(ctx, update.data);
 }
 
 /** A party's currency at today's rate, or null when it has none. */

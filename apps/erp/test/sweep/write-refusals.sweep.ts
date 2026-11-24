@@ -278,6 +278,7 @@ describe("every update and delete, for a record that does not exist", () => {
         // A fresh token per call: the sweep outlives a user token's five minutes.
         const client = await getUserScopedClient(userId);
         const ctx = contextFor({
+          origin: {},
           kind: "user",
           userId,
           permissions: claims.permissions,

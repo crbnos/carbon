@@ -3858,21 +3858,19 @@ export async function createFiscalYearPeriods(
   client: SupabaseClient<Database>,
   args: { companyId: string; fiscalYear: number; userId: string }
 ) {
+  // A failed read, or a row RLS hides (settings view), must not start the
+  // year in January.
   const settings = await getFiscalYearSettings(client, args.companyId);
-  const startMonth = settings.data?.startMonth
-    ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
-    : 1;
+  if (settings.error) return { data: null, error: settings.error };
+  const startMonth = MONTH_NUMBER[settings.data.startMonth] ?? 1;
 
-  const existing = await (client.from("accountingPeriod") as any)
+  const existing = await client
+    .from("accountingPeriod")
     .select("periodNumber")
     .eq("companyId", args.companyId)
     .eq("fiscalYear", args.fiscalYear);
-  if (existing.error) return existing;
-  const existingNumbers = new Set(
-    ((existing.data ?? []) as { periodNumber: number | null }[]).map(
-      (p) => p.periodNumber
-    )
-  );
+  if (existing.error) return { data: null, error: existing.error };
+  const existingNumbers = new Set(existing.data.map((p) => p.periodNumber));
 
   const rows = fiscalYearPeriodDates(
     args.fiscalYear,
@@ -3882,18 +3880,18 @@ export async function createFiscalYearPeriods(
     companyId: args.companyId,
     startDate: period.startDate,
     endDate: period.endDate,
-    status: "Inactive",
-    closeStatus: "Open",
+    status: "Inactive" as const,
+    closeStatus: "Open" as const,
     fiscalYear: args.fiscalYear,
     periodNumber: period.periodNumber,
     createdBy: args.userId
   }));
 
   if (rows.length === 0) {
-    return { data: [], error: null };
+    return { data: [] as { id: string }[], error: null };
   }
 
-  return (client.from("accountingPeriod") as any).insert(rows).select("id");
+  return client.from("accountingPeriod").insert(rows).select("id");
 }
 
 // A single readiness evaluator, keyed by the autoCheckKey that binds it to an

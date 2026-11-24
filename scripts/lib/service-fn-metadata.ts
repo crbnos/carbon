@@ -335,6 +335,17 @@ export function leafPermission(leaf: ServiceFnLeaf): {
     throw new Error(`${where}: a keyed permission cannot be published yet`);
   }
 
+  // A spread, a computed key or a name that is no action would be dropped by
+  // the walk below and publish the gate as membership.
+  for (const property of value.getProperties()) {
+    const name = Node.isPropertyAssignment(property) ? property.getName() : null;
+    if (!name || !(ACTIONS as readonly string[]).includes(name)) {
+      throw new Error(
+        `${where}: permission takes only ${ACTIONS.join(", ")} as plain keys, not ${property.getText()}`
+      );
+    }
+  }
+
   const modules = new Set<string>();
   const scopes = new Set<string>();
   const actions: PermissionAction[] = [];
@@ -457,6 +468,13 @@ export function buildServiceFnTools(
     }
     const { permission, actions } = leafPermission(leaf);
     const writes = actions.filter((action) => action !== "view");
+    if (docs.write && writes.length > 0) {
+      // @mcp write is for a write gated on view alone; on a gate that names a
+      // write it changes nothing and hides why it is there.
+      throw new Error(
+        `${where}: @mcp write on a function whose permission names ${writes.join(", ")}; drop "write"`
+      );
+    }
     if (docs.read && writes.length > 0) {
       // A READ tool is offered as safe to run unasked; a permission that
       // names a write says the function may change something.

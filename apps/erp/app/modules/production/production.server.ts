@@ -5,7 +5,6 @@
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { fetchAllByIds, type Json } from "@carbon/database";
-import { deleteDemandProjections as eeDeleteDemandProjections } from "@carbon/ee/forecast.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -61,7 +60,6 @@ import {
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
-  getOrCreatePeriods,
   isActiveCompanyEmployee,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
@@ -83,6 +81,7 @@ import {
   copyPeopleBoardValidator,
   copyPeopleWeekValidator,
   deadlineTypes,
+  demandProjectionRows,
   getAssemblyModelState,
   getDueDateForColumn,
   invalidOrderDateMessage,
@@ -6739,12 +6738,12 @@ export const deleteScrapReason = defineServiceFn({
  *
  * @remarks
  * Each row has its week's start date (`weekStart`), the date the projection
- * writes take. Without `periodIds`, the 52 weeks the forecast form shows,
- * from this week on in the location's time zone.
+ * writes take. Without `periodIds`, the weeks the writes take (see
+ * `createDemandProjections`).
  *
  * @param itemId - The item.
  * @param locationId - The location.
- * @param periodIds - The weekly period ids to read (see `shared_getPlanningPeriods`). Leave it out for the form's 52 weeks.
+ * @param periodIds - The weekly period ids to read (see `shared_getPlanningPeriods`). Leave it out for the weeks the writes take.
  *
  * @mcp read
  */
@@ -6781,9 +6780,10 @@ const demandProjectionInput = z.object({
  * @remarks
  * Needs demand forecasting (the FORECAST feature). A projection is a weekly
  * quantity the planning run counts as demand. A week is named by its start
- * date, a Sunday, among the 52 weeks from this week on in the location's
- * time zone. Only weeks above 0 are written, and at least one must be. A week
- * the item already has is overwritten.
+ * date, a Sunday, among the 52 weeks from this week on in the company's time
+ * zone or in the location's (the two can differ by a week). Only weeks above
+ * 0 are written, and at least one must be. A week the item already has is
+ * overwritten.
  *
  * @param itemId - The item.
  * @param locationId - The location.
@@ -6800,9 +6800,13 @@ export const createDemandProjections = defineServiceFn({
       (await refuseUnlessOwned(ctx, "item", { id: input.itemId })) ??
       (await refuseUnlessOwned(ctx, "location", { id: input.locationId }));
     if (refused) return refused;
-    const rows = await service.demandProjectionRows(ctx, input);
-    if (rows instanceof Error) return rows;
-    const positive = rows.filter((row) => row.forecastQuantity > 0);
+    const planned = demandProjectionRows(
+      await service.demandProjectionFormWeeks(ctx, input.locationId),
+      input,
+      { companyId: ctx.company.id, userId: ctx.auditUserId }
+    );
+    if ("refusal" in planned) return ctx.error("validation", planned.refusal);
+    const positive = planned.rows.filter((row) => row.forecastQuantity > 0);
     if (positive.length === 0) {
       return ctx.error("validation", "No forecast quantities provided");
     }
@@ -6816,8 +6820,8 @@ export const createDemandProjections = defineServiceFn({
  * @remarks
  * Needs demand forecasting (the FORECAST feature). Every week sent is
  * written: 0 removes its projection. Weeks not sent keep their quantity. A
- * week is named by its start date, a Sunday, among the 52 weeks from this
- * week on in the location's time zone.
+ * week is named by its start date, a Sunday, among the weeks a create takes
+ * (see `createDemandProjections`).
  *
  * @param itemId - The item.
  * @param locationId - The location.
@@ -6834,9 +6838,13 @@ export const updateDemandProjections = defineServiceFn({
       (await refuseUnlessOwned(ctx, "item", { id: input.itemId })) ??
       (await refuseUnlessOwned(ctx, "location", { id: input.locationId }));
     if (refused) return refused;
-    const rows = await service.demandProjectionRows(ctx, input);
-    if (rows instanceof Error) return rows;
-    return service.writeDemandProjections(ctx, input, rows);
+    const planned = demandProjectionRows(
+      await service.demandProjectionFormWeeks(ctx, input.locationId),
+      input,
+      { companyId: ctx.company.id, userId: ctx.auditUserId }
+    );
+    if ("refusal" in planned) return ctx.error("validation", planned.refusal);
+    return service.writeDemandProjections(ctx, input, planned.rows);
   }
 });
 
@@ -6844,11 +6852,12 @@ export const updateDemandProjections = defineServiceFn({
  * Delete an item's demand projections at a location.
  *
  * @remarks
- * Needs demand forecasting (the FORECAST feature). Removes the weeks from
- * this week on in the location's time zone; earlier weeks stay.
+ * Needs demand forecasting (the FORECAST feature). Removes the weeks a
+ * create takes (see `createDemandProjections`); earlier weeks stay.
  *
  * @param itemId - The item.
  * @param locationId - The location.
+ * @returns The weeks cleared, each with its period id and a quantity of 0.
  *
  * @mcp destructive
  */
@@ -6858,40 +6867,28 @@ export const deleteDemandProjections = defineServiceFn({
     locationId: z.string().min(1)
   }),
   permission: { delete: "production" },
-  async run(ctx, { itemId, locationId }) {
+  async run(ctx, input) {
     const refused =
-      (await refuseUnlessOwned(ctx, "item", { id: itemId })) ??
-      (await refuseUnlessOwned(ctx, "location", { id: locationId }));
+      (await refuseUnlessOwned(ctx, "item", { id: input.itemId })) ??
+      (await refuseUnlessOwned(ctx, "location", { id: input.locationId }));
     if (refused) return refused;
-    const periods = await getOrCreatePeriods(
-      ctx.asSystem.pg,
-      datetime.today(
-        await getLocationTimeZone(
-          ctx.asCaller.supabase,
-          locationId,
-          ctx.company.id
-        )
-      ),
-      service.DEMAND_PROJECTION_WEEKS
+    const formWeeks = await service.demandProjectionFormWeeks(
+      ctx,
+      input.locationId
     );
-    try {
-      const deleted = await eeDeleteDemandProjections(ctx.asCaller.supabase, {
-        itemId,
-        locationId,
-        companyId: ctx.company.id,
-        futurePeriodIds: periods.map((period) => period.id)
-      });
-      if (deleted.error) {
-        return ctx.error(
-          "internal",
-          "Failed to delete demand projections",
-          deleted.error
-        );
-      }
-      return { itemId, locationId };
-    } catch (err) {
-      return service.forecastEntitlementRefusal(ctx, err);
-    }
+    const planned = demandProjectionRows(
+      formWeeks,
+      {
+        ...input,
+        weeks: formWeeks.map((week) => ({
+          weekStart: week.startDate,
+          quantity: 0
+        }))
+      },
+      { companyId: ctx.company.id, userId: ctx.auditUserId }
+    );
+    if ("refusal" in planned) return ctx.error("validation", planned.refusal);
+    return service.writeDemandProjections(ctx, input, planned.rows);
   }
 });
 
@@ -7961,164 +7958,6 @@ export const getScrapReasons = defineServiceFn({
 });
 
 /**
- * Get failure mode
- *
- * @mcp read
- */
-export const getFailureMode = defineServiceFn({
-  input: z.looseObject({ failureModeId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getFailureMode(
-        ctx.asCaller.supabase,
-        input.failureModeId as never
-      )
-    );
-  }
-});
-
-/**
- * Get failure modes
- *
- * @mcp read
- */
-export const getFailureModes = defineServiceFn({
-  input: z.looseObject({
-    limit: z
-      .number()
-      .int()
-      .describe("Rows per page. Left out, the read is not paged.")
-      .optional(),
-    offset: z.number().int().default(0),
-    search: z.string().nullable().optional()
-  }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return paged(
-      ctx,
-      await service.getFailureModes(
-        ctx.asCaller.supabase,
-        ctx.company.id,
-        payload(ctx, input).build() as never
-      )
-    );
-  }
-});
-
-/**
- * Get failure modes list
- *
- * @mcp read
- */
-export const getFailureModesList = defineServiceFn({
-  input: z.record(z.string(), z.unknown()),
-  permission: { view: "production" },
-  async run(ctx) {
-    return unwrap(
-      ctx,
-      await service.getFailureModesList(ctx.asCaller.supabase, ctx.company.id)
-    );
-  }
-});
-
-/**
- * Get maintenance dispatch
- *
- * @mcp read
- */
-export const getMaintenanceDispatch = defineServiceFn({
-  input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getMaintenanceDispatch(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
-    );
-  }
-});
-
-/**
- * Get maintenance dispatch comments
- *
- * @mcp read
- */
-export const getMaintenanceDispatchComments = defineServiceFn({
-  input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getMaintenanceDispatchComments(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
-    );
-  }
-});
-
-/**
- * Get maintenance dispatch events
- *
- * @mcp read
- */
-export const getMaintenanceDispatchEvents = defineServiceFn({
-  input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getMaintenanceDispatchEvents(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
-    );
-  }
-});
-
-/**
- * Get maintenance dispatch items
- *
- * @mcp read
- */
-export const getMaintenanceDispatchItems = defineServiceFn({
-  input: z.looseObject({ dispatchId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getMaintenanceDispatchItems(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
-    );
-  }
-});
-
-/**
- * Get maintenance schedule
- *
- * @mcp read
- */
-export const getMaintenanceSchedule = defineServiceFn({
-  input: z.looseObject({ scheduleId: z.string() }),
-  permission: { view: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getMaintenanceSchedule(
-        ctx.asCaller.supabase,
-        input.scheduleId as never
-      )
-    );
-  }
-});
-
-/**
  * Get tracked entity by job id
  *
  * @mcp read
@@ -8237,9 +8076,10 @@ export const runMRP = defineServiceFn({
  * @remarks
  * Renames one tracked entity (`readableId`): the Serial and Batch Number
  * fields on the job page. The unit must be one of the job's own units or a
- * unit of one of its Make to Order sub-assemblies. The value is trimmed, and
- * an empty value clears the number. It is not checked against the item's
- * serial sequence or against other units.
+ * unit of one of its Make to Order sub-assemblies. Refused on a Completed,
+ * Closed or Cancelled job. The value is trimmed, and an empty value clears
+ * the number. It is not checked against the item's serial sequence or
+ * against other units.
  *
  * @param jobId - The job (its `id`) whose unit it is.
  * @param trackedEntityId - The unit. A job's own units come from
@@ -8260,18 +8100,17 @@ export const updateJobBatchNumber = defineServiceFn({
   async run(ctx, input) {
     // As the system, as the job page always wrote it: a unit's row is
     // inventory's under RLS, and the field needs production update only.
-    const updated = unwrap(
-      ctx,
-      await service.updateJobBatchNumber(
-        ctx.asSystem.supabase,
-        ctx.company.id,
-        {
-          jobId: input.jobId,
-          trackedEntityId: input.trackedEntityId,
-          value: input.value?.trim() || null
-        }
-      )
+    const result = await service.updateJobBatchNumber(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      {
+        jobId: input.jobId,
+        trackedEntityId: input.trackedEntityId,
+        value: input.value?.trim() || null
+      }
     );
+    if (result.locked) return ctx.error("rule", JOB_LOCKED_MESSAGE);
+    const updated = unwrap(ctx, result);
     if (updated instanceof CarbonError) return updated;
     const unit = updated?.[0];
     if (!unit)

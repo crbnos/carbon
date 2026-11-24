@@ -5907,179 +5907,13 @@ export async function upsertMaterial(
         customFields?: Json;
       })
 ) {
+  if ("createdBy" in material) return insertMaterial(client, material);
+
   const generatedIds = await materialIdsAreGenerated(
     client,
     material.companyId
   );
   if (generatedIds.error) return generatedIds;
-
-  if ("createdBy" in material) {
-    const plan = await planMaterialPropertyChanges(client, {
-      companyId: material.companyId,
-      current: noMaterialProperties,
-      changes: sentMaterialProperties(material),
-      generatedIds: generatedIds.data
-    });
-    if (plan.error) return plan;
-    if (generatedIds.data && !plan.data.generated) {
-      return {
-        data: null,
-        error: ruleError(generatedIdsNeedSubstanceAndShape)
-      };
-    }
-    const readableId = plan.data.generated?.readableId ?? material.id;
-    const name = plan.data.generated?.name ?? material.name;
-
-    // An existing id would take the new item rows as extra revisions and
-    // overwrite its material row; sizes on an update add revisions instead.
-    const taken = await materialIdIsTaken(
-      client,
-      readableId,
-      material.companyId
-    );
-    if (taken.error) return taken;
-    if (taken.data) {
-      return {
-        data: null,
-        error: ruleError(`Material ${readableId} already exists`)
-      };
-    }
-
-    // Collect every newly-created item id across the sizes / no-sizes
-    // branches so the shelf-life policy can be applied uniformly.
-    const newItemIds: string[] = [];
-
-    if (material.sizes) {
-      const itemInserts = await Promise.all(
-        material.sizes.map((size) =>
-          client
-            .from("item")
-            .insert({
-              readableId,
-              name,
-              description: material.description,
-              mpn: material.mpn,
-              type: "Material",
-              replenishmentSystem: material.replenishmentSystem,
-              defaultMethodType: material.defaultMethodType,
-              itemTrackingType: material.itemTrackingType,
-              unitOfMeasureCode: material.unitOfMeasureCode,
-              active: true,
-              revision: size,
-              companyId: material.companyId,
-              createdBy: material.createdBy
-            })
-            .select("id")
-            .single()
-        )
-      );
-
-      const hasErrors = itemInserts.some((insert) => insert.error);
-      if (hasErrors) {
-        const firstError = itemInserts.find((insert) => insert.error);
-        return firstError!;
-      }
-      for (const insert of itemInserts) {
-        if (insert.data?.id) newItemIds.push(insert.data.id);
-      }
-      const itemCostUpdate = await Promise.all(
-        itemInserts.map((insert) =>
-          client
-            .from("itemCost")
-            .update(
-              sanitize({
-                itemPostingGroupId: material.postingGroupId,
-                unitCost: material.unitCost
-              })
-            )
-            .eq("itemId", insert.data?.id ?? "")
-        )
-      );
-      if (itemCostUpdate.some((update) => update.error)) {
-        logger.error("Failed to update item cost", {
-          error: itemCostUpdate.find((update) => update.error)?.error
-        });
-      }
-    } else {
-      const itemInsert = await client
-        .from("item")
-        .insert({
-          readableId,
-          name,
-          description: material.description,
-          mpn: material.mpn,
-          type: "Material",
-          replenishmentSystem: material.replenishmentSystem,
-          defaultMethodType: material.defaultMethodType,
-          itemTrackingType: material.itemTrackingType,
-          unitOfMeasureCode: material.unitOfMeasureCode,
-          active: true,
-          companyId: material.companyId,
-          createdBy: material.createdBy
-        })
-        .select("id")
-        .single();
-      if (itemInsert.error) return itemInsert;
-      const itemId = itemInsert.data?.id;
-      if (itemId) newItemIds.push(itemId);
-      const itemCostUpdate = await client
-        .from("itemCost")
-        .update(
-          sanitize({
-            itemPostingGroupId: material.postingGroupId,
-            unitCost: material.unitCost
-          })
-        )
-        .eq("itemId", itemId);
-      if (itemCostUpdate.error) {
-        logger.error("Failed to update item cost", {
-          error: itemCostUpdate.error
-        });
-      }
-    }
-
-    for (const itemId of newItemIds) {
-      const pickMethod = await upsertItemDefaultPickMethod(client, {
-        itemId,
-        userId: material.createdBy,
-        storageUnitId: material.defaultStorageUnitId
-      });
-      if (pickMethod.error) return pickMethod;
-
-      const shelfLife = await upsertItemShelfLife(client, {
-        itemId,
-        userId: material.createdBy,
-        companyId: material.companyId,
-        mode: material.shelfLifeMode,
-        days: material.shelfLifeDays,
-        triggerProcessId: material.shelfLifeTriggerProcessId,
-        triggerTiming: material.shelfLifeTriggerTiming,
-        calculateFromBom: material.shelfLifeCalculateFromBom
-      });
-      if (shelfLife.error) return shelfLife;
-    }
-
-    const materialInsert = await client.from("material").upsert({
-      id: readableId,
-      ...plan.data.next,
-      companyId: material.companyId,
-      createdBy: material.createdBy,
-      customFields: material.customFields
-    });
-
-    if (materialInsert.error) return materialInsert;
-
-    const newMaterial = await client
-      .from("materials")
-      .select("*")
-      .eq("readableId", readableId)
-      .eq("companyId", material.companyId);
-
-    return {
-      data: newMaterial.data?.[0] ?? null,
-      error: newMaterial.error
-    };
-  }
 
   const { companyId, updatedBy } = material;
   const item = await resolveTypedItemRevision(client, {
@@ -6234,6 +6068,194 @@ export async function upsertMaterial(
     .select("id, readableId, readableIdWithRevision, revision, name")
     .eq("id", itemId)
     .single();
+}
+
+/**
+ * Creates a material, with one revision per entry of `sizes`. With generated
+ * material IDs on, its ID and name are derived from the properties sent.
+ * Returns the new material's row in the `materials` view.
+ */
+export async function insertMaterial(
+  client: SupabaseClient<Database>,
+  material: z.infer<typeof materialValidator> & {
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
+    sizes?: string[];
+  }
+): Promise<{
+  data: Database["public"]["Views"]["materials"]["Row"] | null;
+  error: ServiceError | null;
+}> {
+  const generatedIds = await materialIdsAreGenerated(
+    client,
+    material.companyId
+  );
+  if (generatedIds.error) return { data: null, error: generatedIds.error };
+
+  const plan = await planMaterialPropertyChanges(client, {
+    companyId: material.companyId,
+    current: noMaterialProperties,
+    changes: sentMaterialProperties(material),
+    generatedIds: generatedIds.data
+  });
+  if (plan.error) return { data: null, error: plan.error };
+  if (generatedIds.data && !plan.data.generated) {
+    return {
+      data: null,
+      error: ruleError(generatedIdsNeedSubstanceAndShape)
+    };
+  }
+  const readableId = plan.data.generated?.readableId ?? material.id;
+  const name = plan.data.generated?.name ?? material.name;
+
+  // An existing id would take the new item rows as extra revisions and
+  // overwrite its material row; sizes on an update add revisions instead.
+  const taken = await materialIdIsTaken(client, readableId, material.companyId);
+  if (taken.error) return { data: null, error: taken.error };
+  if (taken.data) {
+    return {
+      data: null,
+      error: ruleError(`Material ${readableId} already exists`)
+    };
+  }
+
+  // Collect every newly-created item id across the sizes / no-sizes
+  // branches so the shelf-life policy can be applied uniformly.
+  const newItemIds: string[] = [];
+
+  if (material.sizes) {
+    const itemInserts = await Promise.all(
+      material.sizes.map((size) =>
+        client
+          .from("item")
+          .insert({
+            readableId,
+            name,
+            description: material.description,
+            mpn: material.mpn,
+            type: "Material",
+            replenishmentSystem: material.replenishmentSystem,
+            defaultMethodType: material.defaultMethodType,
+            itemTrackingType: material.itemTrackingType,
+            unitOfMeasureCode: material.unitOfMeasureCode,
+            active: true,
+            revision: size,
+            companyId: material.companyId,
+            createdBy: material.createdBy
+          })
+          .select("id")
+          .single()
+      )
+    );
+
+    const hasErrors = itemInserts.some((insert) => insert.error);
+    if (hasErrors) {
+      const firstError = itemInserts.find((insert) => insert.error);
+      return { data: null, error: firstError!.error };
+    }
+    for (const insert of itemInserts) {
+      if (insert.data?.id) newItemIds.push(insert.data.id);
+    }
+    const itemCostUpdate = await Promise.all(
+      itemInserts.map((insert) =>
+        client
+          .from("itemCost")
+          .update(
+            sanitize({
+              itemPostingGroupId: material.postingGroupId,
+              unitCost: material.unitCost
+            })
+          )
+          .eq("itemId", insert.data?.id ?? "")
+      )
+    );
+    if (itemCostUpdate.some((update) => update.error)) {
+      logger.error("Failed to update item cost", {
+        error: itemCostUpdate.find((update) => update.error)?.error
+      });
+    }
+  } else {
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId,
+        name,
+        description: material.description,
+        mpn: material.mpn,
+        type: "Material",
+        replenishmentSystem: material.replenishmentSystem,
+        defaultMethodType: material.defaultMethodType,
+        itemTrackingType: material.itemTrackingType,
+        unitOfMeasureCode: material.unitOfMeasureCode,
+        active: true,
+        companyId: material.companyId,
+        createdBy: material.createdBy
+      })
+      .select("id")
+      .single();
+    if (itemInsert.error) return { data: null, error: itemInsert.error };
+    const itemId = itemInsert.data?.id;
+    if (itemId) newItemIds.push(itemId);
+    const itemCostUpdate = await client
+      .from("itemCost")
+      .update(
+        sanitize({
+          itemPostingGroupId: material.postingGroupId,
+          unitCost: material.unitCost
+        })
+      )
+      .eq("itemId", itemId);
+    if (itemCostUpdate.error) {
+      logger.error("Failed to update item cost", {
+        error: itemCostUpdate.error
+      });
+    }
+  }
+
+  for (const itemId of newItemIds) {
+    const pickMethod = await upsertItemDefaultPickMethod(client, {
+      itemId,
+      userId: material.createdBy,
+      storageUnitId: material.defaultStorageUnitId
+    });
+    if (pickMethod.error) return { data: null, error: pickMethod.error };
+
+    const shelfLife = await upsertItemShelfLife(client, {
+      itemId,
+      userId: material.createdBy,
+      companyId: material.companyId,
+      mode: material.shelfLifeMode,
+      days: material.shelfLifeDays,
+      triggerProcessId: material.shelfLifeTriggerProcessId,
+      triggerTiming: material.shelfLifeTriggerTiming,
+      calculateFromBom: material.shelfLifeCalculateFromBom
+    });
+    if (shelfLife.error) return { data: null, error: shelfLife.error };
+  }
+
+  const materialInsert = await client.from("material").upsert({
+    id: readableId,
+    ...plan.data.next,
+    companyId: material.companyId,
+    createdBy: material.createdBy,
+    customFields: material.customFields
+  });
+
+  if (materialInsert.error) {
+    return { data: null, error: materialInsert.error };
+  }
+
+  const newMaterial = await client
+    .from("materials")
+    .select("*")
+    .eq("readableId", readableId)
+    .eq("companyId", material.companyId);
+
+  return {
+    data: newMaterial.data?.[0] ?? null,
+    error: newMaterial.error
+  };
 }
 
 /**

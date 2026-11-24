@@ -34,9 +34,10 @@ const GroupForm = ({ initialValues }: GroupFormProps) => {
 
   const isEditing = !!initialValues.id;
 
-  const isDisabled = isEditing
-    ? !permissions.can("update", "users")
-    : !permissions.can("create", "users");
+  // Adding members is an update, so a new group needs both.
+  const isDisabled =
+    !permissions.can("update", "users") ||
+    (!isEditing && !permissions.can("create", "users"));
 
   return (
     <Drawer

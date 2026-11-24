@@ -3,20 +3,22 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { itemId, locationId } = params;
-  if (!itemId || !locationId) {
-    throw new Error("Item ID and Location ID are required");
-  }
-  const api = await carbon(request);
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["itemId", "locationId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { itemId, locationId } = input.params;
+  const api = await carbon(args.request);
   const result = await api.production.deleteDemandProjections({
     itemId,
     locationId
   });
-  return respond(request, result).redirect(
+  return respond(args.request, result).redirect(
     `${path.to.demandProjections}?location=${locationId}`,
     { message: "Demand projections deleted successfully" }
   );

@@ -27,7 +27,11 @@ vi.mock("@carbon/ee/accounting", async (importOriginal) => ({
   getUnmappedRequiredAccounts: unmappedRequiredAccounts
 }));
 vi.mock("@carbon/kv", () => ({
-  redis: { del: vi.fn(), keys: vi.fn(async () => []), pipeline: vi.fn() }
+  redis: {
+    del: vi.fn(),
+    keys: vi.fn(async () => []),
+    pipeline: vi.fn(() => ({ del: vi.fn(), exec: vi.fn(async () => []) }))
+  }
 }));
 vi.mock("@carbon/stripe/send-sales-invoice.server", () => ({
   getStripeConnectAccountId: stripeAccount
@@ -47,6 +51,8 @@ import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
 
 import {
+  createItemSerialSequence,
+  deleteCustomField,
   removePrinterRoute,
   savePrinterRoute,
   setIntegrationSyncEnabled,
@@ -58,9 +64,13 @@ import {
   updatePlanningSettings,
   updatePostingSync,
   updateProductionSettings,
+  updateCustomField,
+  updateItemSerialSequence,
   updateSecuritySettings,
   updateSubsidiaryDetails
 } from "../app/modules/settings/settings.server";
+import type { CustomFieldType } from "../app/modules/settings/settings.service";
+import { DataType } from "../app/modules/shared/types";
 
 const settings = {
   settings: {
@@ -674,13 +684,13 @@ describe("setting a record's custom field values", () => {
     actor = { type: "user", userId: "user-1", permissions: settings },
     module = "Items",
     changed = ["P-1"],
-    fields = ["color"],
+    fields = [{ id: "color", dataTypeId: DataType.Text, listOptions: null }],
     stored = []
   }: {
     actor?: Actor;
     module?: string | null;
     changed?: string[];
-    fields?: string[];
+    fields?: CustomFieldType[];
     stored?: { id: string; customFields: Record<string, unknown> }[];
   } = {}) {
     const sent: { method: string; url: URL; body: unknown }[] = [];
@@ -697,7 +707,7 @@ describe("setting a record's custom field values", () => {
           ? [{ module }]
           : []
         : url.pathname.endsWith("/customField")
-          ? fields.map((id) => ({ id }))
+          ? fields
           : method === "GET"
             ? stored
             : changed.map((id) => ({ id }));
@@ -843,5 +853,180 @@ describe("setting a record's custom field values", () => {
     const result = await setRecordCustomFields(ctx, partValues);
 
     expect(result.error?.category).toBe("notFound");
+  });
+
+  it("refuses a value its field's panel input never sends, and writes nothing", async () => {
+    const { ctx, updates } = recordCustomFields({
+      fields: [{ id: "weight", dataTypeId: DataType.Numeric, listOptions: null }],
+      stored: [{ id: "P-1", customFields: { weight: 3 } }]
+    });
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      ids: ["P-1"],
+      customFields: { weight: { kg: 3 } }
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(updates()).toEqual([]);
+  });
+
+  it("refuses more than 100 records in one call", async () => {
+    const { ctx, updates } = recordCustomFields();
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      ids: Array.from({ length: 101 }, (_, i) => `P-${i}`)
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(updates()).toEqual([]);
+  });
+});
+
+describe("custom field definitions and serial sequences", () => {
+  // The boundary is PostgREST: a real supabase-js client whose fetch answers
+  // every request with the rows `respond` gives, and records what was sent.
+  function postgrest(
+    respond: (method: string, url: URL) => { status?: number; body: unknown },
+    actor: Actor = { type: "user", userId: "user-1", permissions: settings }
+  ) {
+    const sent: { method: string; url: URL; body: unknown }[] = [];
+    const fetchStub = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      const url = new URL(String(input));
+      sent.push({
+        method,
+        url,
+        body: init?.body ? JSON.parse(String(init.body)) : null
+      });
+      const { status = 200, body } = respond(method, url);
+      return new Response(JSON.stringify(body), {
+        status,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+    const caller = createClient("http://localhost:54321", "anon-key", {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: fetchStub as typeof fetch }
+    });
+    const ctx = createServiceContext({
+      actor,
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => caller as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    const writes = () => sent.filter((request) => request.method !== "GET");
+    return { ctx, writes };
+  }
+
+  // PostgREST's answer to `.single()` when the write matched no row.
+  const noRow = {
+    status: 406,
+    body: {
+      code: "PGRST116",
+      details: "The result contains 0 rows",
+      hint: null,
+      message: "JSON object requested, multiple (or no) rows returned"
+    }
+  };
+
+  const sequence = {
+    itemId: "item-1",
+    prefix: "SN",
+    next: 0,
+    step: 1,
+    size: 5
+  };
+
+  it("creates a serial sequence without an id it was sent", async () => {
+    const { ctx, writes } = postgrest(() => ({ body: { id: "seq-new" } }));
+
+    const result = await createItemSerialSequence(ctx, {
+      ...sequence,
+      id: "seq-chosen"
+    } as never);
+
+    expect(result.error).toBeNull();
+    const [insert] = writes();
+    expect(insert?.body).toEqual([
+      { ...sequence, companyId: "company-1", createdBy: "user-1" }
+    ]);
+  });
+
+  it("updates a serial sequence only on its own item", async () => {
+    const { ctx, writes } = postgrest(() => noRow);
+
+    const result = await updateItemSerialSequence(ctx, {
+      ...sequence,
+      id: "seq-1",
+      itemId: "item-2"
+    });
+
+    expect(result.error?.category).toBe("notFound");
+    const [update] = writes();
+    expect(update?.url.searchParams.get("id")).toBe("eq.seq-1");
+    expect(update?.url.searchParams.get("companyId")).toBe("eq.company-1");
+    expect(update?.url.searchParams.get("itemId")).toBe("eq.item-2");
+  });
+
+  it("deletes a custom field only in this company, and refuses one it did not delete", async () => {
+    const { ctx, writes } = postgrest(() => ({ body: [] }));
+
+    const result = await deleteCustomField(ctx, { id: "field-1" });
+
+    expect(result.error?.category).toBe("notFound");
+    const [deleted] = writes();
+    expect(deleted?.method).toBe("DELETE");
+    expect(deleted?.url.searchParams.get("id")).toBe("eq.field-1");
+    expect(deleted?.url.searchParams.get("companyId")).toBe("eq.company-1");
+  });
+
+  it("updates a custom field only in this company", async () => {
+    const { ctx, writes } = postgrest((method) =>
+      method === "GET"
+        ? {
+            body: {
+              name: "Color",
+              table: "part",
+              dataTypeId: DataType.Text,
+              listOptions: null,
+              tags: null,
+              required: false
+            }
+          }
+        : { body: [{ id: "field-1" }] }
+    );
+
+    const result = await updateCustomField(ctx, { id: "field-1", name: "Hue" });
+
+    expect(result).toEqual({ data: { id: "field-1" }, error: null });
+    const [update] = writes();
+    expect(update?.url.searchParams.get("id")).toBe("eq.field-1");
+    expect(update?.url.searchParams.get("companyId")).toBe("eq.company-1");
+    expect(update?.body).toMatchObject({ name: "Hue" });
+  });
+
+  // Row-level security updates a custom field only with update: settings.
+  it("refuses a custom field change to a user who cannot update settings", async () => {
+    const { ctx, writes } = postgrest(() => ({ body: [] }), {
+      type: "user",
+      userId: "user-1",
+      permissions: {
+        settings: {
+          view: ["company-1"],
+          create: ["company-1"],
+          update: [],
+          delete: []
+        }
+      }
+    });
+
+    const result = await updateCustomField(ctx, { id: "field-1", name: "Hue" });
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(writes()).toEqual([]);
   });
 });

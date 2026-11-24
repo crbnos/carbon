@@ -64,6 +64,7 @@ import type {
 import {
   type employeeAbilityCellValidator,
   isMaintenanceDispatchLocked,
+  MAINTENANCE_DISPATCH_LOCKED_STATUSES,
   trainingCertificateKeyPrefix,
   validateTrainingCertificate
 } from "./resources.models";
@@ -128,17 +129,19 @@ export async function deleteLocation(
   );
 }
 
+/** No row back means the dispatch is gone, another company's, or locked. */
 export async function deleteMaintenanceDispatch(
   client: SupabaseClient<Database>,
+  companyId: string,
   dispatchId: string
 ) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatch")
-      .delete()
-      .eq("id", dispatchId)
-      .select("id")
-  );
+  return client
+    .from("maintenanceDispatch")
+    .delete()
+    .eq("id", dispatchId)
+    .eq("companyId", companyId)
+    .not("status", "in", `(${MAINTENANCE_DISPATCH_LOCKED_STATUSES.join(",")})`)
+    .select("id");
 }
 
 export async function deleteMaintenanceDispatchItem(
@@ -1955,24 +1958,26 @@ export async function upsertFailureMode(
     | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
         companyId: string;
         createdBy: string;
-        customFields?: Json;
       })
     | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
-        customFields?: Json;
       })
 ) {
-  // maintenanceFailureMode has no customFields column.
-  const { customFields: _customFields, ...mode } = failureMode;
-  if ("createdBy" in mode) {
-    return client.from("maintenanceFailureMode").insert([mode]).select("id");
+  if ("createdBy" in failureMode) {
+    return client
+      .from("maintenanceFailureMode")
+      .insert([failureMode])
+      .select("id");
   }
+  const { id, companyId, ...changes } = failureMode;
   return requireAffected(
     client
       .from("maintenanceFailureMode")
-      .update(sanitize(mode))
-      .eq("id", mode.id)
+      .update(sanitize(changes))
+      .eq("id", id)
+      .eq("companyId", companyId)
       .select("id")
   );
 }
@@ -2086,35 +2091,18 @@ export async function insertMaintenanceDispatch(
   };
 }
 
-export async function upsertMaintenanceDispatchComment(
+export async function insertMaintenanceDispatchComment(
   client: SupabaseClient<Database>,
-  comment:
-    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in comment) {
-    return client
-      .from("maintenanceDispatchComment")
-      .insert([comment])
-      .select("id")
-      .single();
-  } else {
-    // The comment must be on the dispatch the caller checked is editable.
-    return requireAffected(
-      client
-        .from("maintenanceDispatchComment")
-        .update(sanitize(comment))
-        .eq("id", comment.id)
-        .eq("maintenanceDispatchId", comment.maintenanceDispatchId)
-        .select("id")
-    );
+  comment: z.infer<typeof maintenanceDispatchCommentValidator> & {
+    companyId: string;
+    createdBy: string;
   }
+) {
+  return client
+    .from("maintenanceDispatchComment")
+    .insert([comment])
+    .select("id")
+    .single();
 }
 
 /** The bare insert under `resources.maintenanceEvent.create`, which also posts the labor. */

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbonFor, respond } from "@carbon/api/carbon.server";
+import { originOf } from "@carbon/api/service-fn.server";
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -50,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The operation refuses an order in approval or finished, and sends a
   // released order whose total goes above its approved amount back for
   // approval.
-  const api = carbonFor(auth);
+  const api = carbonFor(auth, originOf(request));
   const result = await api.purchasing.updatePurchaseOrderExchangeRate({
     id: orderId,
     exchangeRate: exchangeRate.data

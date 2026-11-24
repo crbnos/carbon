@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NO_ORIGIN } from "@carbon/api/service-fn.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   functions,
@@ -56,7 +57,8 @@ function wireWorkflowDispatch() {
       {
         ...context,
         authKind: "session",
-        scopes: scopesFromPermissions(permissions, context.companyId)
+        scopes: scopesFromPermissions(permissions, context.companyId),
+        origin: NO_ORIGIN
       },
       args
     );

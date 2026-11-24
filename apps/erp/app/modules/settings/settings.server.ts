@@ -96,6 +96,7 @@ import {
   datetime,
   formatDateTimeInZone,
   isUniqueViolation,
+  NOT_APPLIED_CODE,
   requireAffected,
   unchecked
 } from "@carbon/utils";
@@ -110,8 +111,7 @@ import {
   invalidateCompanyTimeZone,
   invokePosting,
   isActiveCompanyEmployee,
-  refuseKeyWithout,
-  refuseUnlessOwned
+  refuseKeyWithout
 } from "~/modules/shared/shared.service";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
@@ -143,8 +143,7 @@ import * as service from "./settings.service";
 import {
   DOCUMENT_EDIT_RECORDS,
   DOCUMENT_TERMS_FIELD,
-  documentEditPermissions,
-  refusedCustomFieldKeys
+  documentEditPermissions
 } from "./settings.utils";
 
 const logger = getLogger("erp", "settings");
@@ -2746,15 +2745,19 @@ export const setRecordTags = defineServiceFn({
  * Replaces the `customFields` of each record with the values sent, as a
  * record's properties panel does: send every value the record keeps. Only the
  * company's records change, and row-level security decides which of them the
- * caller may change. A table that takes no custom fields is refused, and so
- * is a key that is not one of the table's custom fields, unless the records
- * already hold that value (the panel sends back a deleted field's value
- * unchanged). A call that changes no record is refused. An API key needs
- * `update` on the module that edits the table's records (`parts` for item
- * tables such as part or material).
+ * caller may change. A table that takes no custom fields is refused. So is a
+ * key that is not one of the table's custom fields, and a value its field's
+ * input never sends, unless the records already hold that value (the panel
+ * sends back the stored values unchanged). The values each data type takes:
+ * Yes/No "on" or ""; Date a YYYY-MM-DD date or null; List one of the field's
+ * options or null; Numeric a number, a numeric string or null; Text any
+ * string; Link a web address or ""; User, Customer and Supplier an id. A File
+ * field takes none. A call that changes no record is refused. An API key
+ * needs `update` on the module that edits the table's records (`parts` for
+ * item tables such as part or material).
  *
  * @param table - A table with custom fields, such as part, customer, salesOrder or job. See settings_getCustomFieldsTables.
- * @param ids - The records to change.
+ * @param ids - The records to change, at most 100.
  * @param customFields - The values, keyed by custom field id. See settings_getCustomFields.
  *
  * @returns The ids of the records changed.
@@ -2764,7 +2767,7 @@ export const setRecordTags = defineServiceFn({
 export const setRecordCustomFields = defineServiceFn({
   input: z.object({
     table: z.string().min(1),
-    ids: z.array(z.string()),
+    ids: z.array(z.string()).min(1).max(100),
     customFields: z.record(z.string(), z.unknown())
   }),
   permission: {},
@@ -2790,7 +2793,7 @@ export const setRecordCustomFields = defineServiceFn({
     const scopeId =
       scopeColumn === "companyId" ? ctx.company.id : ctx.company.groupId;
 
-    const fields = await service.getTableCustomFieldIds(
+    const fields = await service.getTableCustomFieldTypes(
       ctx.asCaller.supabase,
       table,
       ctx.company.id
@@ -2802,8 +2805,10 @@ export const setRecordCustomFields = defineServiceFn({
         fields.error
       );
     }
-    const fieldIds = (fields.data ?? []).map((field) => field.id);
-    if (Object.keys(customFields).some((key) => !fieldIds.includes(key))) {
+    const fieldTypes = fields.data ?? [];
+    if (
+      service.unwritableCustomFieldKeys(customFields, fieldTypes).length > 0
+    ) {
       const stored = await service.getRecordsCustomFields(
         ctx.asCaller.supabase,
         { table, ids, scopeColumn, scopeId }
@@ -2815,15 +2820,25 @@ export const setRecordCustomFields = defineServiceFn({
           stored.error
         );
       }
-      const refused = refusedCustomFieldKeys(
+      const refused = service.refusedCustomFieldKeys(
         customFields,
-        fieldIds,
+        fieldTypes,
         (stored.data ?? []).map((record) => record.customFields)
       );
       if (refused.length > 0) {
+        const fieldIds = new Set(fieldTypes.map((field) => field.id));
+        const notFields = refused.filter((key) => !fieldIds.has(key));
+        const badValues = refused.filter((key) => fieldIds.has(key));
         return ctx.error(
           "validation",
-          `Not a custom field of ${table}: ${refused.join(", ")}`
+          [
+            notFields.length > 0 &&
+              `Not a custom field of ${table}: ${notFields.join(", ")}`,
+            badValues.length > 0 &&
+              `Not a value these fields take: ${badValues.join(", ")}`
+          ]
+            .filter(Boolean)
+            .join(". ")
         );
       }
     }
@@ -3701,7 +3716,9 @@ export const createCustomField = defineServiceFn({
  *
  * @remarks
  * Its table and data type cannot change, as in the field form. A field left
- * out keeps its value. A List field keeps at least one option.
+ * out keeps its value. A List field keeps at least one option. Needs `create`
+ * and `update` on settings: the field form's route requires create, and the
+ * row's security policy update.
  *
  * @param id - The custom field. See settings_getCustomField.
  * @param name - The field's label.
@@ -3719,8 +3736,8 @@ export const updateCustomField = defineServiceFn({
     tags: z.array(z.string()).optional(),
     required: z.boolean().optional()
   }),
-  // The field form's route has always required create, not update.
-  permission: { create: "settings" },
+  // The field form's route requires create; the row's RLS update needs update.
+  permission: { create: "settings", update: "settings" },
   async run(ctx, { id, ...changes }) {
     const stored = await ctx.asCaller.supabase
       .from("customField")
@@ -3753,8 +3770,12 @@ export const updateCustomField = defineServiceFn({
       ...field.data,
       required: field.data.required ?? false,
       id,
+      companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
     });
+    if (updated.error?.code === NOT_APPLIED_CODE) {
+      return ctx.error("notFound", "The custom field could not be found");
+    }
     if (updated.error) {
       return ctx.error(
         "internal",
@@ -3777,13 +3798,14 @@ export const deleteCustomField = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
   permission: { delete: "settings" },
   async run(ctx, { id }) {
-    const refused = await refuseUnlessOwned(ctx, "customField", { id });
-    if (refused) return refused;
     const deleted = await service.deleteCustomField(
       ctx.asCaller.supabase,
       id,
       ctx.company.id
     );
+    if (deleted.error?.code === NOT_APPLIED_CODE) {
+      return ctx.error("notFound", "The custom field could not be found");
+    }
     if (deleted.error) {
       return ctx.error(
         "internal",
@@ -4027,7 +4049,7 @@ export const getItemSerialSequence = defineServiceFn({
  * @mcp
  */
 export const createItemSerialSequence = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     itemId: z.string().min(1),
     prefix: z.string().optional(),
     suffix: z.string().optional(),
@@ -4046,29 +4068,17 @@ export const createItemSerialSequence = defineServiceFn({
       .optional()
       .describe(
         "Print the serial label when the job's last operation completes."
-      ),
-    id: z
-      .string()
-      .describe(
-        "Leave out: a new sequence gets its own id. To change one, use settings_updateItemSerialSequence."
       )
-      .optional()
   }),
   permission: { create: "settings" },
   async run(ctx, input) {
-    // The form never sends one on create; with it the insert took the id.
-    if (input.id) {
-      return ctx.error(
-        "validation",
-        "A new serial sequence takes no id. To change one, use settings_updateItemSerialSequence."
-      );
-    }
     return unwrap(
       ctx,
-      await service.upsertItemSerialSequence(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
+      await service.upsertItemSerialSequence(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -4078,7 +4088,8 @@ export const createItemSerialSequence = defineServiceFn({
  *
  * @remarks
  * Changes an item's serial number sequence, as its edit form in Settings →
- * Serial Numbers does. Serial numbers already issued keep their values.
+ * Serial Numbers does. Serial numbers already issued keep their values. A
+ * sequence stays on its item: an `itemId` other than its own is refused.
  *
  * @param next - The last number issued (the form's Current), not the next one: the next unit gets next + step.
  * @param step - How much the counter goes up per unit.
@@ -4087,62 +4098,43 @@ export const createItemSerialSequence = defineServiceFn({
  * @mcp
  */
 export const updateItemSerialSequence = defineServiceFn({
-  input: z
-    .looseObject({
-      itemId: z.string().min(1),
-      prefix: z.string().optional(),
-      suffix: z.string().optional(),
-      next: z.number().min(0),
-      step: z.number().min(1),
-      size: z.number().min(1).max(20),
-      serialNumberTiming: z
-        .enum(serialNumberTimings)
-        .nullable()
-        .optional()
-        .describe(
-          "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
-        ),
-      printLabelOnCompletion: z
-        .boolean()
-        .optional()
-        .describe(
-          "Print the serial label when the job's last operation completes."
-        ),
-      id: z.string().describe("The serial sequence to change.").optional()
-    })
-    .required({ id: true }),
+  input: z.object({
+    id: z.string().min(1).describe("The serial sequence to change."),
+    itemId: z.string().min(1),
+    prefix: z.string().optional(),
+    suffix: z.string().optional(),
+    next: z.number().min(0),
+    step: z.number().min(1),
+    size: z.number().min(1).max(20),
+    serialNumberTiming: z
+      .enum(serialNumberTimings)
+      .nullable()
+      .optional()
+      .describe(
+        "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
+      ),
+    printLabelOnCompletion: z
+      .boolean()
+      .optional()
+      .describe(
+        "Print the serial label when the job's last operation completes."
+      )
+  }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    // The edit form shows the item read-only: a sequence stays on its item.
-    const stored = await ctx.asCaller.supabase
-      .from("itemSerialSequence")
-      .select("itemId")
-      .eq("id", input.id)
-      .eq("companyId", ctx.company.id)
-      .maybeSingle();
-    if (stored.error) {
-      return ctx.error(
-        "internal",
-        "Failed to read the serial sequence",
-        stored.error
-      );
-    }
-    if (!stored.data) {
-      return ctx.error("notFound", "The serial sequence could not be found");
-    }
-    if (stored.data.itemId !== input.itemId) {
-      return ctx.error(
-        "validation",
-        "A serial sequence stays on its item: send the item it belongs to."
-      );
-    }
-    return unwrap(
-      ctx,
-      await service.upsertItemSerialSequence(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+    const updated = await service.upsertItemSerialSequence(
+      ctx.asCaller.supabase,
+      { ...input, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
     );
+    // The update matches only the sequence's own item: the edit form shows
+    // the item read-only.
+    if (updated.error?.code === "PGRST116") {
+      return ctx.error(
+        "notFound",
+        "No serial sequence with this id is on this item: a sequence stays on its item."
+      );
+    }
+    return unwrap(ctx, updated);
   }
 });
 

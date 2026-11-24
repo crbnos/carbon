@@ -57,7 +57,9 @@ export const cancelJob = defineServiceFn({
 - **Gate**: every ENTRY call is checked against `permission` for its actor
   (`user` claims, `apiKey` scopes; `system` passes). `{}` means company
   membership, which any key of the company passes, even a read-only one, so a
-  write on it also calls `refuseKeyWithout` (`shared/shared.service.ts`), `"system"` admits only the system actor, `{ by, rules }` keys
+  write on it also calls `refuseKeyWithout` (`shared/shared.service.ts`); so
+  does a write gated narrower than what its writes need (the `create: users`
+  invites, the `view: users` `updateGroup`), `"system"` admits only the system actor, `{ by, rules }` keys
   the rule on an input field. A call made from inside another function's
   `run` is not checked again.
 - **Context**: `ctx.asCaller.supabase` (RLS), `ctx.asSystem.supabase` /
@@ -72,8 +74,10 @@ export const cancelJob = defineServiceFn({
   (`@carbon/api/service-fn.server`) reads them from the headers: the IP
   through `getClientIp`, the city from `X-Vercel-IP-City`, the user agent
   from `User-Agent`. `carbon(request)`, the HTTP API route (`api+/v1+/$.ts`)
-  and the MCP route (`api+/mcp+/_index.ts`) put it on the context. A job, a
-  share link or a workflow has an empty origin. An operation that emails or
+  and the MCP route (`api+/mcp+/_index.ts`) put it on the context, and
+  `serviceContext(auth, origin)` and `carbonFor(auth, origin)` require it, so a
+  route cannot drop it. A job, a workflow or a posting passes `NO_ORIGIN`. The
+  user agent, and the city off Vercel, are what the caller sent. An operation that emails or
   audits where a request came from reads `ctx.origin`, never an input field:
   an input field lets an API caller write any address into the audit log.
 - **Transactions**: `ctx.transaction(async (tx) => …)` on `asSystem.pg`. A
@@ -90,9 +94,10 @@ export const cancelJob = defineServiceFn({
 - **Published**: `@mcp` in the TSDoc publishes the const as the MCP tool
   `{module}_{name}` and `POST /api/v1/{module}/{name}`. The permission decides
   the classification (only `view` → READ, any `delete` → DESTRUCTIVE, else
-  WRITE); `@mcp read` forces READ (a read gated on `update`), `@mcp write`
-  forces WRITE (a write whose route has only ever required `view`),
-  `@mcp destructive` forces DESTRUCTIVE. `@param name - text` describes an
+  WRITE); `@mcp read` forces READ (a read gated on membership alone; on a gate
+  that names a write it fails generation), `@mcp write` forces WRITE (a write
+  whose route has only ever required `view`; on a gate that names a write it
+  fails generation), `@mcp destructive` forces DESTRUCTIVE. `@param name - text` describes an
   input field. Publish an operation only when it is safe with nothing but its
   input: the API runs the gate and `run`, nothing the route does around the
   call.

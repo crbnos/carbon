@@ -7,6 +7,7 @@ import { type Actor, createServiceContext } from "@carbon/api/service-fn.server"
 import {
   createGaugeCalibrationRecord,
   createIssue,
+  createIssueWorkflow,
   createRisk,
   insertGauge,
   saveInspectionDocument,
@@ -38,7 +39,10 @@ function client(rows: Record<string, unknown>) {
   const writes: string[] = [];
   const written: { table: string; values: unknown }[] = [];
   const from = (table: string) => {
-    const result = { data: rows[table] ?? null, error: null };
+    const result =
+      rows[table] instanceof Error
+        ? { data: null, error: rows[table] }
+        : { data: rows[table] ?? null, error: null };
     const chain: Record<string, unknown> = {};
     for (const method of ["select", "eq", "in", "limit", "order"]) {
       chain[method] = () => chain;
@@ -258,32 +262,61 @@ describe("calibration records", () => {
   ])(
     "%s refuses a Pass on a calibration that requires repair, before any write",
     async (_name, save) => {
-      const { ctx, writes } = contextWith();
+      const { ctx, writes } = contextWith({
+        gaugeCalibrationRecord: {
+          requiresAction: false,
+          requiresAdjustment: false,
+          requiresRepair: false
+        }
+      });
       const result = await save(ctx as never);
       expect(result.error?.category).toBe("validation");
       expect(writes).toEqual([]);
     }
   );
 
-  it("saves the flags left out as false, with the result they decide", async () => {
+  it("a create saves the flags left out as false, with the result they decide", async () => {
     const { ctx, written } = contextWith({
       gauge: { lastCalibrationDate: "2026-11-01", calibrationIntervalInMonths: 6 }
     });
-    const result = await updateGaugeCalibrationRecord(ctx, {
+    const result = await createGaugeCalibrationRecord(ctx, {
       ...calibration,
-      id: "gcr-1",
       inspectionStatus: "Pass"
     });
     expect(result.error).toBeNull();
-    expect(
-      written.find((write) => write.table === "gaugeCalibrationRecord")?.values
-    ).toMatchObject({
+    const [inserted] = written.find(
+      (write) => write.table === "gaugeCalibrationRecord"
+    )?.values as unknown[];
+    expect(inserted).toMatchObject({
       requiresAction: false,
       requiresAdjustment: false,
       requiresRepair: false,
       inspectionStatus: "Pass"
     });
   });
+
+  it.each([
+    ["2020-01-01", "Out-of-Calibration"],
+    ["2999-01-01", "In-Calibration"]
+  ])(
+    "a Pass calibrated on %s sets the gauge %s, from its next calibration date",
+    async (dateCalibrated, status) => {
+      const { ctx, written } = contextWith({
+        gauge: { lastCalibrationDate: null, calibrationIntervalInMonths: 6 }
+      });
+      const result = await createGaugeCalibrationRecord(ctx, {
+        ...calibration,
+        dateCalibrated
+      });
+      expect(result.error).toBeNull();
+      expect(
+        written.find((write) => write.table === "gauge")?.values
+      ).toMatchObject({
+        gaugeCalibrationStatus: status,
+        lastCalibrationDate: dateCalibrated
+      });
+    }
+  );
 });
 
 describe("updating a calibration record", () => {
@@ -309,6 +342,47 @@ describe("updating a calibration record", () => {
     const result = await updateGaugeCalibrationRecord(ctx, record);
     expect(result.error).not.toBeNull();
     expect(writes).not.toContain("update:gauge");
+  });
+
+  const requiresRepair = {
+    requiresAction: false,
+    requiresAdjustment: false,
+    requiresRepair: true
+  };
+
+  it("keeps the stored flags left out, and the Fail they decide", async () => {
+    const { ctx, written } = contextWith({
+      gauge,
+      gaugeCalibrationRecord: requiresRepair
+    });
+    const result = await updateGaugeCalibrationRecord(ctx, {
+      ...record,
+      temperature: 21
+    });
+    expect(result.error).toBeNull();
+    expect(
+      written.find((write) => write.table === "gaugeCalibrationRecord")?.values
+    ).toMatchObject({
+      requiresRepair: true,
+      inspectionStatus: "Fail",
+      temperature: 21
+    });
+    expect(
+      written.find((write) => write.table === "gauge")?.values
+    ).toMatchObject({ gaugeCalibrationStatus: "Out-of-Calibration" });
+  });
+
+  it("refuses a Pass on a record whose stored flags require repair, before any write", async () => {
+    const { ctx, writes } = contextWith({
+      gauge,
+      gaugeCalibrationRecord: requiresRepair
+    });
+    const result = await updateGaugeCalibrationRecord(ctx, {
+      ...record,
+      inspectionStatus: "Pass"
+    });
+    expect(result.error?.category).toBe("validation");
+    expect(writes).toEqual([]);
   });
 });
 
@@ -372,6 +446,34 @@ describe("issue workflows", () => {
     const { ctx } = contextWith({ nonConformanceWorkflow: [] });
     const result = await updateIssueWorkflow(ctx, workflow);
     expect(result.error).not.toBeNull();
+  });
+
+  it.each([
+    ["create", (ctx: never) =>
+      createIssueWorkflow(ctx, { ...workflow, requiredActionIds: ["ra-9"] })],
+    ["update", (ctx: never) =>
+      updateIssueWorkflow(ctx, { ...workflow, requiredActionIds: ["ra-9"] })]
+  ])(
+    "%s refuses a required action that is not the company's, before any write",
+    async (_name, save) => {
+      // The company's required actions hold none of the ids sent.
+      const { ctx, writes } = contextWith({ nonConformanceRequiredAction: [] });
+      const result = await save(ctx as never);
+      expect(result.error?.category).toBe("notFound");
+      expect(writes).toEqual([]);
+    }
+  );
+
+  it("a create never inserts with an id the caller chose", async () => {
+    const { ctx, written } = contextWith({
+      nonConformanceWorkflow: { id: "ncw-new" }
+    });
+    const result = await createIssueWorkflow(ctx, workflow as never);
+    expect(result).toEqual({ data: { id: "ncw-new" }, error: null });
+    const [inserted] = written.find(
+      (write) => write.table === "nonConformanceWorkflow"
+    )?.values as Record<string, unknown>[];
+    expect(inserted).not.toHaveProperty("id");
   });
 });
 
@@ -445,6 +547,16 @@ describe("changing a risk", () => {
     });
     const result = await updateRisk(ctx, { ...risk, assignee: "user-9" });
     expect(result.error?.category).toBe("rule");
+    expect(writes).toEqual([]);
+  });
+
+  it("refuses to save when the risk cannot be read, before any write", async () => {
+    const { ctx, writes } = contextWith({
+      riskRegister: new Error("connection reset"),
+      employee: { id: "user-9" }
+    });
+    const result = await updateRisk(ctx, { ...risk, assignee: "user-9" });
+    expect(result.error).not.toBeNull();
     expect(writes).toEqual([]);
   });
 

@@ -248,6 +248,7 @@ import {
   type assemblyInstructionStatuses,
   type assemblyStepStatuses,
   type cameraSchema,
+  type DemandProjectionRow,
   type deadlineTypes,
   type fastenerSchema,
   getAssemblyModelState,
@@ -3519,29 +3520,35 @@ export async function runMRP(
  * Set the serial or batch number of a unit of a job: one of its own units or a
  * sub-assembly's (`attributes ->> Job Make Method` names one of the job's make
  * methods). The caller passes the service role, so the job and the company are
- * the write's only scope. No row back means the unit is not the job's.
+ * the write's only scope. `locked` when the job is Completed, Closed or
+ * Cancelled, and no row back means the unit is not the job's.
  */
 export async function updateJobBatchNumber(
   client: SupabaseClient<Database>,
   companyId: string,
   unit: { jobId: string; trackedEntityId: string; value: string | null }
 ) {
-  const makeMethods = await client
-    .from("jobMakeMethod")
-    .select("id")
-    .eq("jobId", unit.jobId)
-    .eq("companyId", companyId);
-  if (makeMethods.error) return { data: null, error: makeMethods.error };
-  return client
+  const job = await client
+    .from("job")
+    .select("status, jobMakeMethod(id)")
+    .eq("id", unit.jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (job.error) return { data: null, error: job.error, locked: false };
+  if (job.data && isJobLocked(job.data.status)) {
+    return { data: null, error: null, locked: true };
+  }
+  const renamed = await client
     .from("trackedEntity")
     .update({ readableId: unit.value })
     .eq("id", unit.trackedEntityId)
     .eq("companyId", companyId)
     .in(
       "attributes->>Job Make Method",
-      makeMethods.data.map((makeMethod) => makeMethod.id)
+      (job.data?.jobMakeMethod ?? []).map((makeMethod) => makeMethod.id)
     )
     .select("id, readableId");
+  return { data: renamed.data, error: renamed.error, locked: false };
 }
 
 export type JobReleaseReadiness = {
@@ -24186,7 +24193,7 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
       lookup[itemId] = { id: itemId, children: [] };
     }
 
-    lookup[itemId]!.data = item;
+    lookup[itemId]!["data"] = item;
 
     const treeItem = lookup[itemId]!;
 
@@ -24198,7 +24205,7 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
         lookup[parentId] = { id: parentId, children: [] };
       }
 
-      lookup[parentId]!.children.push(treeItem);
+      lookup[parentId]!["children"].push(treeItem);
     }
   }
 
@@ -29412,75 +29419,36 @@ export async function getJobCorrections(
 
 // --- Demand projections -------------------------------------------------------
 
-/**
- * The weeks the demand forecast form shows: the week of the location's today
- * (weeks start on Sunday) and the 51 after it.
- */
-export const DEMAND_PROJECTION_WEEKS = 52;
+/** The weeks a demand forecast form shows, from this week on. */
+const DEMAND_PROJECTION_WEEKS = 52;
 
 /**
- * The demand projection rows for the weeks sent, each week named by its start
- * date. A week the form does not show is refused, and so is a week sent twice.
+ * The weeks the demand forecast forms show, in date order: the new form
+ * counts its weeks from the company's today, the edit form from the
+ * location's, so both forms' weeks are here (one more when those weeks
+ * differ). A week a write takes is one of these, and a delete clears them.
  */
-export async function demandProjectionRows(
+export async function demandProjectionFormWeeks(
   ctx: ServiceContext,
-  input: {
-    itemId: string;
-    locationId: string;
-    weeks: { weekStart: string; quantity: number }[];
-  }
+  locationId: string
 ) {
-  // The new-projection form counts its weeks from the company's today, the
-  // edit form from the location's: a week either form shows is accepted.
   const [companyToday, locationToday] = await Promise.all([
     getCompanyTimeZone(ctx.asCaller.supabase, ctx.company.id).then((tz) =>
       datetime.today(tz)
     ),
-    getLocationTimeZone(
-      ctx.asCaller.supabase,
-      input.locationId,
-      ctx.company.id
-    ).then((tz) => datetime.today(tz))
+    getLocationTimeZone(ctx.asCaller.supabase, locationId, ctx.company.id).then(
+      (tz) => datetime.today(tz)
+    )
   ]);
   const sameWeek =
     startOfWeek(companyToday, "en-US").compare(
       startOfWeek(locationToday, "en-US")
     ) === 0;
-  const periods = await getOrCreatePeriods(
+  return getOrCreatePeriods(
     ctx.asSystem.pg,
     companyToday.compare(locationToday) <= 0 ? companyToday : locationToday,
     DEMAND_PROJECTION_WEEKS + (sameWeek ? 0 : 1)
   );
-  const periodByStart = new Map(periods.map((p) => [p.startDate, p.id]));
-  const outside = input.weeks
-    .map((week) => week.weekStart)
-    .filter((weekStart) => !periodByStart.has(weekStart));
-  if (outside.length > 0) {
-    const first = periods[0]?.startDate;
-    const last = periods[periods.length - 1]?.startDate;
-    return ctx.error(
-      "validation",
-      `A week starts on a Sunday from ${first} to ${last}: ${outside.join(", ")} is not one`
-    );
-  }
-  const starts = input.weeks.map((week) => week.weekStart);
-  const repeated = starts.filter((start, i) => starts.indexOf(start) !== i);
-  if (repeated.length > 0) {
-    return ctx.error(
-      "validation",
-      `Each week is sent once: ${[...new Set(repeated)].join(", ")}`
-    );
-  }
-  return input.weeks.map((week) => ({
-    itemId: input.itemId,
-    locationId: input.locationId,
-    periodId: periodByStart.get(week.weekStart)!,
-    weekStart: week.weekStart,
-    forecastQuantity: week.quantity,
-    companyId: ctx.company.id,
-    createdBy: ctx.auditUserId,
-    updatedBy: ctx.auditUserId
-  }));
 }
 
 /**
@@ -29497,45 +29465,32 @@ export function forecastEntitlementRefusal(ctx: ServiceContext, err: unknown) {
 
 /**
  * An item's demand projections at a location, each with its week's start
- * date. Without `periodIds`, the weeks the edit form shows: this week of the
- * location's today and the 51 after it.
+ * date. Without `periodIds`, the weeks the forms show
+ * (`demandProjectionFormWeeks`).
  */
 export async function getDemandProjectionWeeks(
   ctx: ServiceContext,
   input: { itemId: string; locationId: string; periodIds?: string[] }
 ) {
   const client = ctx.asCaller.supabase;
-  let periods;
+  let weeks: { id: string; startDate: string }[];
   if (input.periodIds) {
-    periods = await client
+    const periods = await client
       .from("period")
       .select("id, startDate")
       .in("id", input.periodIds);
+    if (periods.error) return { data: null, error: periods.error };
+    weeks = periods.data;
   } else {
-    const today = datetime.today(
-      await getLocationTimeZone(client, input.locationId, ctx.company.id)
-    );
-    const first = startOfWeek(today, "en-US");
-    const starts = Array.from({ length: DEMAND_PROJECTION_WEEKS }, (_, i) =>
-      first.add({ weeks: i }).toString()
-    );
-    periods = await client
-      .from("period")
-      .select("id, startDate")
-      .eq("periodType", "Week")
-      .in("startDate", starts);
+    weeks = await demandProjectionFormWeeks(ctx, input.locationId);
   }
-  if (periods.error) return { data: null, error: periods.error };
-  const weekStartById = new Map(
-    periods.data.map((period) => [period.id, period.startDate])
-  );
-  const projections = await client
-    .from("demandProjection")
-    .select("*")
-    .eq("itemId", input.itemId)
-    .eq("locationId", input.locationId)
-    .eq("companyId", ctx.company.id)
-    .in("periodId", [...weekStartById.keys()]);
+  const weekStartById = new Map(weeks.map((week) => [week.id, week.startDate]));
+  const projections = await getDemandProjections(client, {
+    itemId: input.itemId,
+    locationId: input.locationId,
+    companyId: ctx.company.id,
+    periodIds: [...weekStartById.keys()]
+  });
   if (projections.error) return { data: null, error: projections.error };
   return {
     data: projections.data
@@ -29552,7 +29507,7 @@ export async function getDemandProjectionWeeks(
 export async function writeDemandProjections(
   ctx: ServiceContext,
   input: { itemId: string; locationId: string },
-  rows: Exclude<Awaited<ReturnType<typeof demandProjectionRows>>, CarbonError>
+  rows: DemandProjectionRow[]
 ) {
   try {
     const written = await upsertDemandProjections(

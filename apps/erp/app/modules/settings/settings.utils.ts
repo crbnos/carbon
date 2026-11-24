@@ -243,26 +243,3 @@ export const documentEditPermissions = Object.fromEntries(
     { update: record.module }
   ])
 ) as Record<DocumentEditType, { update: DocumentEditRecord["module"] }>;
-
-/**
- * The custom field keys a save may not write: keys that are not one of the
- * table's custom fields, unless every record already holds that value. The
- * properties panel posts the whole stored map with one value changed, so a
- * value of a deleted field goes back unchanged and is kept.
- */
-export function refusedCustomFieldKeys(
-  sent: Record<string, unknown>,
-  fieldIds: readonly string[],
-  stored: readonly (Record<string, unknown> | null)[]
-): string[] {
-  const fields = new Set(fieldIds);
-  return Object.keys(sent).filter(
-    (key) =>
-      !fields.has(key) &&
-      (stored.length === 0 ||
-        stored.some(
-          (values) =>
-            JSON.stringify(values?.[key]) !== JSON.stringify(sent[key])
-        ))
-  );
-}

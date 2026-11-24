@@ -9836,58 +9836,80 @@ export async function unlockedWarehouseTransfer(
   return transfer.data;
 }
 
+function isTrackedItem(itemTrackingType: string | null | undefined) {
+  return itemTrackingType === "Serial" || itemTrackingType === "Batch";
+}
+
 /**
- * An adjustment as the quantities page sends it, read against the item, not
- * against what the caller says it is.
- *
- * A serial number is one unit: an adjustment of a serial item moves, sets or
- * scraps at most one. The stock of a Serial or Batch item is always a tracked
- * entity, so the page always names one: the row's own, or a new id that the
- * posting creates numbered `readableId` (a decrease with a new id finds its
- * lot by `readableId` in the storage unit). An adjustment that names none is
- * given a new id the same way, so it never books untracked stock on a tracked
- * item, and one of any other item names none, as the page sends none. An
- * unscrap names the Scrapped entity it restores.
+ * Why an adjustment does not fit its item, read against the item rather than
+ * what the caller says it is; null when it fits. A serial number is one unit,
+ * so a serial item moves, sets or scraps at most one. The stock of a Serial
+ * or Batch item is always a serial or lot: a scrap, and a move between
+ * storage units, name the one they take, and any other item names none.
  */
-export async function trackedAdjustment<
-  T extends {
-    itemId: string;
-    quantity: number;
+function trackedAdjustmentRefusal(
+  itemTrackingType: string | null | undefined,
+  adjustment: {
     adjustmentType: string;
-    trackedEntityId?: string;
+    quantity: number;
+    trackedEntityId?: string | null;
+    storageUnitId?: string | null;
+    originalStorageUnitId?: string | null;
   }
->(ctx: ServiceContext, adjustment: T) {
+): string | null {
+  if (itemTrackingType === "Serial" && Math.abs(adjustment.quantity) > 1) {
+    return "Serial items can only have a quantity of 1";
+  }
+  if (!isTrackedItem(itemTrackingType)) {
+    return adjustment.trackedEntityId
+      ? "Only a Serial or Batch item has serials or lots: leave out trackedEntityId"
+      : null;
+  }
+  if (adjustment.trackedEntityId) return null;
+  if (adjustment.adjustmentType === "Scrap") {
+    return "Name the serial or lot to scrap: send trackedEntityId";
+  }
+  if (
+    adjustment.originalStorageUnitId &&
+    adjustment.originalStorageUnitId !== adjustment.storageUnitId
+  ) {
+    return "Name the serial or lot to move to another storage unit: send trackedEntityId";
+  }
+  return null;
+}
+
+/**
+ * An adjustment's refusal by its item (`trackedAdjustmentRefusal`), read
+ * before the hold and the storage rules. The posting reads the item and
+ * refuses the same way for every caller, and gives a serial or lot the
+ * adjustment does not name a new id.
+ */
+export async function refuseTrackedAdjustment(
+  ctx: ServiceContext,
+  adjustment: {
+    itemId: string;
+    adjustmentType: string;
+    quantity: number;
+    trackedEntityId?: string;
+    storageUnitId?: string;
+    originalStorageUnitId?: string;
+  }
+) {
   const item = await ctx.asCaller.supabase
     .from("item")
     .select("itemTrackingType")
     .eq("id", adjustment.itemId)
     .eq("companyId", ctx.company.id)
     .maybeSingle();
-  if (item.error)
+  if (item.error) {
     return ctx.error("internal", "Failed to load item", item.error);
+  }
   if (!item.data) return ctx.error("notFound", "Item not found");
-  const { itemTrackingType } = item.data;
-  if (itemTrackingType === "Serial" && Math.abs(adjustment.quantity) > 1) {
-    return ctx.error(
-      "validation",
-      "Serial items can only have a quantity of 1"
-    );
-  }
-  const tracked = itemTrackingType === "Serial" || itemTrackingType === "Batch";
-  if (!tracked && adjustment.trackedEntityId) {
-    return ctx.error(
-      "validation",
-      "Only a Serial or Batch item has serials or lots: leave out trackedEntityId"
-    );
-  }
-  if (
-    tracked &&
-    !adjustment.trackedEntityId &&
-    adjustment.adjustmentType !== "Unscrap"
-  ) {
-    return { ...adjustment, trackedEntityId: nanoid() };
-  }
-  return adjustment;
+  const refusal = trackedAdjustmentRefusal(
+    item.data.itemTrackingType,
+    adjustment
+  );
+  return refusal ? ctx.error("validation", refusal) : null;
 }
 
 export const STOCK_TRANSFER_NOT_RELEASED =
@@ -24712,7 +24734,7 @@ export async function postInventoryAdjustment(
     itemId,
     locationId: payloadLocationId,
     storageUnitId,
-    trackedEntityId,
+    trackedEntityId: requestedTrackedEntityId,
     quantity,
     readableId,
     originalStorageUnitId,
@@ -24774,11 +24796,11 @@ export async function postInventoryAdjustment(
   // belongs to another company is not — the paths below would write ledger
   // rows pointing at it (the insert only fails by accident of the id-only PK).
   let namesExistingEntity = false;
-  if (trackedEntityId) {
+  if (requestedTrackedEntityId) {
     const existing = await db
       .selectFrom("trackedEntity")
       .select("companyId")
-      .where("id", "=", trackedEntityId)
+      .where("id", "=", requestedTrackedEntityId)
       .executeTakeFirst();
     if (existing && existing.companyId !== companyId) {
       throw new NotFoundError("Tracked entity not found");
@@ -24788,7 +24810,7 @@ export async function postInventoryAdjustment(
       existing &&
       (await inspectionHoldAdjustmentRefusal(db, companyId, {
         itemId,
-        trackedEntityId,
+        trackedEntityId: requestedTrackedEntityId,
         adjustmentType,
         quantity
       }));
@@ -24860,6 +24882,24 @@ export async function postInventoryAdjustment(
     itemPostingGroupId: itemCostResult.data.itemPostingGroupId
   };
   const itemCost = itemCostResult.data;
+
+  const trackingRefusal = trackedAdjustmentRefusal(item.itemTrackingType, {
+    adjustmentType,
+    quantity,
+    trackedEntityId: requestedTrackedEntityId,
+    storageUnitId,
+    originalStorageUnitId
+  });
+  if (trackingRefusal) throw new InvalidInputError(trackingRefusal);
+  // Every caller gets the stock of a Serial or Batch item as a serial or lot:
+  // one that names none is given a new id, as the quantities page does, which
+  // an increase creates and a decrease resolves by number in the bin.
+  const trackedEntityId =
+    isTrackedItem(item.itemTrackingType) &&
+    !requestedTrackedEntityId &&
+    adjustmentType !== "Unscrap"
+      ? nanoid()
+      : requestedTrackedEntityId;
 
   // Every adjustment that carries value posts a journal: Provisional before
   // the company's accounting cutover, Posted after it. Read here to decide

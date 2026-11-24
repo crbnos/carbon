@@ -13,7 +13,7 @@ import type { ModulePermissions } from "@carbon/api/permissions";
 import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
 import { getPlanningPeriods } from "../app/modules/shared/shared.server";
 
-// The read adds missing weeks to the calendar as the system, so a caller the
+// It adds missing weeks to the calendar as the system, so a caller the
 // planning screens would turn away must be refused before anything runs.
 const untouched = new Proxy(
   {},

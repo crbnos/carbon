@@ -50,16 +50,18 @@ export default function EditSalesRuleRoute() {
   const dialog = useRouteDialog(path.to.salesRules);
   return (
     <SalesRuleForm
-      // Per-field mapping from the DB row; the three casts below are genuine
+      // Per-field mapping from the DB row; the casts below are genuine
       // DB-boundary narrowings (severity/surfaces are CHECK-constrained TEXT/
-      // shared-enum columns, conditionAst is Json).
+      // shared-enum columns, the item types a text array, conditionAst Json).
       initialValues={{
         id: rule.id,
         name: rule.name,
         description: rule.description ?? undefined,
         message: rule.message,
         severity: rule.severity as (typeof salesRuleSeverities)[number],
-        filteredItemTypes: rule.filteredItemTypes ?? undefined,
+        filteredItemTypes: (rule.filteredItemTypes ?? undefined) as z.infer<
+          typeof salesRuleValidator
+        >["filteredItemTypes"],
         filteredItemGroupIds: rule.filteredItemGroupIds ?? undefined,
         filteredItemMatchAll: rule.filteredItemMatchAll,
         active: rule.active,

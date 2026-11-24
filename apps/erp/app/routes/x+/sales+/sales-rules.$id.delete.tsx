@@ -6,6 +6,7 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -30,11 +31,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { rule: rule.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { id } = params;
-  if (!id) throw new Error("id required");
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { request } = args;
   const api = await carbon(request);
-  const result = await api.sales.deleteSalesRule({ id });
+  const result = await api.sales.deleteSalesRule({ id: input.params.id });
   const list = `${path.to.salesRules}?${getParams(request)}`;
   return respond(request, result).redirect(list, {
     message: "Rule deleted",

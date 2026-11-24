@@ -2,13 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { datetime, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
@@ -16,13 +17,10 @@ import { useRouteData } from "~/hooks";
 import { gaugeValidator } from "~/modules/quality/quality.models";
 import {
   getGauge,
-  getGaugeCalibrationRecordsByGaugeId,
-  updateGauge
+  getGaugeCalibrationRecordsByGaugeId
 } from "~/modules/quality/quality.service";
-import { gaugeCalibrationStatusFromDates } from "~/modules/quality/quality.utils";
 import type { GaugeType } from "~/modules/quality/types";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
-import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { getParams, path } from "~/utils/path";
@@ -61,37 +59,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(gaugeValidator).request(args, {
+    params: ["id"]
   });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const formData = await request.formData();
-  const validation = await validator(gaugeValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { gaugeId, ...d } = validation.data;
-  if (!gaugeId) throw new Error("Could not find gaugeId");
-
-  const companyToday = datetime.today(
-    await getCompanyTimeZone(client, companyId)
-  );
-  const gaugeCalibrationStatus = gaugeCalibrationStatusFromDates(
-    d,
-    companyToday
-  );
-
-  const update = await updateGauge(client, {
+  if ("invalid" in input) return input.invalid;
+  const { id } = input.params;
+  const d = input.data;
+  const api = await carbon(args.request);
+  const result = await api.quality.updateGauge({
     id,
-    gaugeId,
-    gaugeCalibrationStatus,
+    gaugeId: d.gaugeId,
     gaugeTypeId: d.gaugeTypeId,
     gaugeRole: d.gaugeRole,
     manufacturer: d.manufacturer || null,
@@ -104,19 +82,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     locationId: d.locationId || null,
     storageUnitId: d.storageUnitId || null,
     calibrationIntervalInMonths: d.calibrationIntervalInMonths,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-  if (update.error) {
-    throw redirect(
-      path.to.gauge(id),
-      await flash(request, error(update.error, "Failed to update gauge"))
-    );
-  }
-
-  throw redirect(
-    `${path.to.gauges}?${getParams(request)}`,
-    await flash(request, success("Updated gauge"))
+  return respond(args.request, result).redirect(
+    `${path.to.gauges}?${getParams(args.request)}`,
+    { message: "Updated gauge", onError: path.to.gauge(id) }
   );
 }
 

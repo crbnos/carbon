@@ -6,12 +6,12 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  contractLineBillingFormValues,
-  customerContractLineValidator
+  contractLineFormValues,
+  customerContractLineValidator,
+  mergeContractLineChanges
 } from "~/modules/sales/sales.models";
 import {
   getContract,
@@ -90,54 +90,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
   const line = current.data;
 
-  const merged: Record<string, string | number | null | undefined> = {
-    id: line.id,
-    customerContractId: line.customerContractId,
-    revenueType: line.revenueType,
-    itemId: line.itemId,
-    description: line.description,
-    quantity: Number(line.quantity),
-    rate: Number(line.rate),
-    rateUnit: line.rateUnit,
-    // Stored as a 0–1 fraction; the validator speaks percent points.
-    discountPercent: round(Number(line.discountPercent) * 100),
-    discountEndsOn: line.discountEndsOn,
-    taxPercent: round(Number(line.taxPercent) * 100),
-    taxCodeId: line.taxCodeId,
-    startDate: line.startDate,
-    endDate: line.endDate,
-    goLiveDate: line.goLiveDate,
-    revenueMethod: line.revenueMethod,
-    revenueStartDate: line.revenueStartDate,
-    revenueEndDate: line.revenueEndDate,
-    projectId: line.projectId,
-    lineItemNumber: line.lineItemNumber,
-    parentLineId: line.parentLineId,
-    // The save writes every column: carry the billing terms and funding, or
-    // a cell edit would turn a billing line back into a Fixed one.
-    ...contractLineBillingFormValues(line)
-  };
-  merged[field] = value || null;
+  // Every column is written: the stored line's terms, billing terms and
+  // funding are carried, or a cell edit would turn a billing line back into
+  // a Fixed one. A cleared cell clears its field.
+  const merged = mergeContractLineChanges(contractLineFormValues(line), {
+    [field]: value || null
+  });
 
-  // A recurring line bills per a unit; a one-time line has none. Switching
-  // to Recurring picks the contract's billing frequency, as a new line does.
-  if (field === "revenueType") {
-    if (value === "One-time") {
-      merged.rateUnit = null;
-    } else if (!merged.rateUnit) {
-      const contract = await getContract(client, id, companyId);
-      if (contract.error || contract.data?.companyId !== companyId) {
-        return data({ error: "Contract not found" }, { status: 404 });
-      }
-      merged.rateUnit = contract.data.billingFrequency ?? "Month";
+  // A recurring line bills per a unit. Switching to Recurring picks the
+  // contract's billing frequency, as a new line does.
+  if (field === "revenueType" && value === "Recurring" && !merged.rateUnit) {
+    const contract = await getContract(client, id, companyId);
+    if (contract.error || contract.data?.companyId !== companyId) {
+      return data({ error: "Contract not found" }, { status: 404 });
     }
+    merged.rateUnit = contract.data.billingFrequency ?? "Month";
   }
 
   const form = new FormData();
   for (const [key, term] of Object.entries(merged)) {
-    if (term !== null && term !== undefined && term !== "") {
-      form.append(key, String(term));
-    }
+    form.append(key, String(term));
   }
 
   const validation = await validator(customerContractLineValidator).validate(

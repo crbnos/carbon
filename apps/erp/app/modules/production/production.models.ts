@@ -1439,18 +1439,76 @@ export const demandProjectionValidator = z.object({
   )
 });
 
+/** The form's values: `z.infer` drops the `week{i}` keys the spread adds. */
+type DemandProjectionFormValues = z.infer<typeof demandProjectionValidator> &
+  Partial<Record<`week${number}`, number>>;
+
 /**
  * The weeks of the demand projection form as the projection operations take
  * them: each week column's start date and quantity, an empty cell as 0.
  */
-export function demandProjectionWeeks(
-  data: z.infer<typeof demandProjectionValidator>
-) {
-  const values = data as Record<string, unknown>;
+export function demandProjectionWeeks(data: DemandProjectionFormValues) {
   return (data.weekStarts ?? []).map((weekStart, i) => ({
     weekStart,
-    quantity: Number(values[`week${i}`] ?? 0) || 0
+    quantity: data[`week${i}`] ?? 0
   }));
+}
+
+export type DemandProjectionRow = {
+  itemId: string;
+  locationId: string;
+  periodId: string;
+  weekStart: string;
+  forecastQuantity: number;
+  companyId: string;
+  createdBy: string;
+  updatedBy: string;
+};
+
+/**
+ * The demand projection rows for the weeks sent, each week named by its start
+ * date among `formWeeks`, the weeks the forecast forms show. A week outside
+ * them is refused, and so is a week sent twice.
+ */
+export function demandProjectionRows(
+  formWeeks: { id: string; startDate: string }[],
+  input: {
+    itemId: string;
+    locationId: string;
+    weeks: { weekStart: string; quantity: number }[];
+  },
+  author: { companyId: string; userId: string }
+): { rows: DemandProjectionRow[] } | { refusal: string } {
+  const periodByStart = new Map(formWeeks.map((p) => [p.startDate, p.id]));
+  const outside = input.weeks
+    .map((week) => week.weekStart)
+    .filter((weekStart) => !periodByStart.has(weekStart));
+  if (outside.length > 0) {
+    const first = formWeeks[0]?.startDate;
+    const last = formWeeks[formWeeks.length - 1]?.startDate;
+    return {
+      refusal: `A week starts on a Sunday from ${first} to ${last}: ${outside.join(", ")} is not one`
+    };
+  }
+  const starts = input.weeks.map((week) => week.weekStart);
+  const repeated = starts.filter((start, i) => starts.indexOf(start) !== i);
+  if (repeated.length > 0) {
+    return {
+      refusal: `Each week is sent once: ${[...new Set(repeated)].join(", ")}`
+    };
+  }
+  return {
+    rows: input.weeks.map((week) => ({
+      itemId: input.itemId,
+      locationId: input.locationId,
+      periodId: periodByStart.get(week.weekStart)!,
+      weekStart: week.weekStart,
+      forecastQuantity: week.quantity,
+      companyId: author.companyId,
+      createdBy: author.userId,
+      updatedBy: author.userId
+    }))
+  };
 }
 
 // --- Assembly Instructions ---------------------------------------------

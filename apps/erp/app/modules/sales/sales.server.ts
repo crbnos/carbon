@@ -106,9 +106,12 @@ import {
   contractDurationOf,
   contractLaborRateValidator,
   contractLineBuildValidator,
+  contractLineFormValues,
   contractLineFundingValidator,
+  contractScheduleEditValidator,
   customerContractAmendmentValidator,
   customerContractFundingValidator,
+  customerContractLineValidator,
   customerContractTypes,
   customerContractValidator,
   deliveryDateCheckValidator,
@@ -117,6 +120,7 @@ import {
   isSalesOrderLocked,
   isSalesReturnOrderLocked,
   isSalesRfqLocked,
+  mergeContractLineChanges,
   projectContractTermDefaults,
   quoteLineValidator,
   quoteMaterialValidator,
@@ -2028,8 +2032,8 @@ const salesOrderFields = [
  * Refused while any of the orders is To Ship and Invoice, To Ship, To
  * Invoice, Completed, Cancelled or Closed. A new customer on a single
  * order brings its currency and today's exchange rate; so does a new
- * currency. The requested and promised dates are the shipment's. An empty
- * value clears the field.
+ * currency. The customer cannot be cleared. The requested and promised dates
+ * are the shipment's. An empty value clears any other field.
  *
  * @param ids - The sales orders to change. See sales_getSalesOrders.
  * @param field - The field to set.
@@ -2070,8 +2074,10 @@ export const updateSalesOrderField = defineServiceFn({
     let table: "salesOrder" | "salesOrderShipment" = "salesOrder";
     let changes: Record<string, unknown> = { [field]: value || null };
     if (field === "customerId") {
-      changes = { customerId: value ?? undefined };
-      if (value && ids.length === 1) {
+      // The panel's customer field is required, as the column is.
+      if (!value) return ctx.error("validation", "Customer is required");
+      changes = { customerId: value };
+      if (ids.length === 1) {
         const customer = await client
           .from("customer")
           .select("currencyCode")
@@ -2745,8 +2751,8 @@ const salesReturnOrderFields = [
  * @remarks
  * Refused when any of them is completed or cancelled. A new customer on a
  * single return order brings its currency and today's exchange rate; so does
- * a new currency (a missing rate refuses rather than writing a stale one). An
- * empty value clears the field.
+ * a new currency (a missing rate refuses rather than writing a stale one). The
+ * customer cannot be cleared; an empty value clears any other field.
  */
 export const updateSalesReturnOrderField = defineServiceFn({
   input: service.fieldUpdate(salesReturnOrderFields),
@@ -2783,8 +2789,10 @@ export const updateSalesReturnOrderField = defineServiceFn({
 
     let changes: Record<string, unknown> = { [field]: value || null };
     if (field === "customerId") {
-      changes = { customerId: value ?? undefined };
-      if (value && ids.length === 1) {
+      // The panel's customer field is required, as the column is.
+      if (!value) return ctx.error("validation", "Customer is required");
+      changes = { customerId: value };
+      if (ids.length === 1) {
         const customer = await client
           .from("customer")
           .select("currencyCode")
@@ -11314,10 +11322,14 @@ export const getContractInvoiceSchedule = defineServiceFn({
       input.customerContractId,
       schedule.data.invoices.length
     );
-    if (planned instanceof Error) {
-      return ctx.error("internal", "Failed to plan the schedule", planned);
+    if (planned.error) {
+      return ctx.error(
+        "internal",
+        "Failed to plan the schedule",
+        planned.error
+      );
     }
-    return { ...schedule.data, planned };
+    return { ...schedule.data, planned: planned.data };
   }
 });
 
@@ -11342,7 +11354,7 @@ export const getContractInvoiceSchedule = defineServiceFn({
 export const editContractSchedule = defineServiceFn({
   input: z.object({
     customerContractId: z.string().min(1),
-    edit: service.scheduleEdit
+    edit: contractScheduleEditValidator
   }),
   permission: { update: "sales" },
   async run(ctx, { customerContractId, edit }) {
@@ -11353,10 +11365,10 @@ export const editContractSchedule = defineServiceFn({
       edit
     });
     if (result.error) {
-      return ctx.error(
-        "rule",
-        getErrorMessage(result.error, "Failed to edit the invoice schedule"),
-        result.error
+      return serverFnRefusal(
+        ctx,
+        result.error,
+        "Failed to edit the invoice schedule"
       );
     }
     return { customerContractId };
@@ -11384,10 +11396,10 @@ export const resetContractSchedule = defineServiceFn({
       asOf: await service.companyToday(ctx)
     });
     if (result.error) {
-      return ctx.error(
-        "rule",
-        getErrorMessage(result.error, "Failed to reset the invoice schedule"),
-        result.error
+      return serverFnRefusal(
+        ctx,
+        result.error,
+        "Failed to reset the invoice schedule"
       );
     }
     return { customerContractId };
@@ -11466,9 +11478,10 @@ export const createContractLine = defineServiceFn({
     revenueStartDate: z.string().optional(),
     revenueEndDate: z.string().optional(),
     projectId: z.string().optional(),
+    // The line form's default; left out, the insert failed.
     billingMethod: z
       .enum(["Fixed", "Time & Materials", "Cost Plus"])
-      .optional(),
+      .default("Fixed"),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -11487,11 +11500,7 @@ export const createContractLine = defineServiceFn({
       ctx,
       await service.upsertContractLine(
         ctx.asCaller.supabase,
-        payload(ctx, {
-          ...input,
-          // The line form's default; left out, the insert failed.
-          billingMethod: input.billingMethod ?? "Fixed"
-        }).forCreate() as never
+        payload(ctx, input).forCreate() as never
       )
     );
   }
@@ -11501,7 +11510,15 @@ export const createContractLine = defineServiceFn({
  * Update a contract line
  *
  * @remarks
- * Adds or changes a line on a Draft contract; the item must be a Service item
+ * Changes a line on a Draft contract. A field left out keeps the line's
+ * value, as a setup grid cell edit does: the billing terms, CLIN number,
+ * funding and tax code included. Switching to One-time drops the rate unit;
+ * switching to Recurring with none takes the contract's billing frequency.
+ * The whole line is then checked as the line form checks it. On a service
+ * contract the item must be a Service item.
+ *
+ * @param id - The line to change. See sales_getContractLines.
+ * @param customerContractId - The line's Draft contract.
  *
  * @mcp
  */
@@ -11533,27 +11550,64 @@ export const updateContractLine = defineServiceFn({
       billingMethod: z
         .enum(["Fixed", "Time & Materials", "Cost Plus"])
         .optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
+      id: z.string()
     })
-    .required({ id: true }),
+    .partial()
+    .required({ id: true, customerContractId: true }),
   permission: { update: "sales" },
-  async run(ctx, input) {
+  async run(ctx, { id, customerContractId, ...changes }) {
+    const client = ctx.asCaller.supabase;
+    const stored = await service.getContractLine(client, id, ctx.company.id);
+    if (stored.error || stored.data.customerContractId !== customerContractId) {
+      return ctx.error("notFound", "The line was not found", stored.error);
+    }
+    const values = mergeContractLineChanges(
+      contractLineFormValues(stored.data),
+      changes
+    );
+    if (values.revenueType === "Recurring" && !values.rateUnit) {
+      const contract = await service.getContract(
+        client,
+        customerContractId,
+        ctx.company.id
+      );
+      if (contract.error) {
+        return ctx.error(
+          "notFound",
+          "The contract was not found",
+          contract.error
+        );
+      }
+      values.rateUnit = contract.data.billingFrequency ?? "Month";
+    }
+    const merged = customerContractLineValidator.safeParse(values);
+    if (!merged.success) {
+      // The first issue, as the line form shows it beside its field.
+      const issue = merged.error.issues[0];
+      return ctx.error(
+        "validation",
+        issue
+          ? `${issue.path.join(".") || "line"}: ${issue.message}`
+          : "The line is not valid"
+      );
+    }
+    const { id: _id, ...line } = merged.data;
     // Cost Plus and Percent Complete need the project revenue feature.
     const upgrade = await service.projectRevenueRefusal(
-      ctx.asCaller.supabase,
+      client,
       ctx.company.id,
-      [input]
+      [line]
     );
     if (upgrade) return ctx.error("entitlement", upgrade);
     return unwrap(
       ctx,
-      await service.upsertContractLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.upsertContractLine(client, {
+        ...line,
+        taxCodeId: line.taxCodeId ?? null,
+        customerContractId,
+        id,
+        updatedBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -11893,21 +11947,19 @@ export const upsertContractFunding = defineServiceFn({
   permission: { update: "sales" },
 
   async run(ctx, input) {
-    try {
-      return await service.upsertContractFunding(ctx.asSystem.pg, {
-        ...input,
-        companyId: ctx.company.id,
-        userId: ctx.auditUserId
-      });
-    } catch (err) {
-      return ctx.error(
-        "rule",
-        err instanceof Error
-          ? err.message
-          : "Failed to save the funding action",
-        err
-      );
-    }
+    // A refusal the body throws is a `rule` (422); a database failure is
+    // `internal`, its text withheld.
+    return run(
+      ctx,
+      "upsert-contract-funding",
+      () =>
+        service.upsertContractFunding(ctx.asSystem.pg, {
+          ...input,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        }),
+      422
+    );
   }
 });
 
@@ -11927,21 +11979,17 @@ export const deleteContractFunding = defineServiceFn({
   permission: { delete: "sales" },
 
   async run(ctx, { id }) {
-    try {
-      return await service.deleteContractFunding(ctx.asSystem.pg, {
-        id,
-        companyId: ctx.company.id,
-        userId: ctx.auditUserId
-      });
-    } catch (err) {
-      return ctx.error(
-        "rule",
-        err instanceof Error
-          ? err.message
-          : "Failed to delete the funding action",
-        err
-      );
-    }
+    return run(
+      ctx,
+      "delete-contract-funding",
+      () =>
+        service.deleteContractFunding(ctx.asSystem.pg, {
+          id,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        }),
+      422
+    );
   }
 });
 

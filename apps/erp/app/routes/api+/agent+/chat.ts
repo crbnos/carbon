@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { originOf } from "@carbon/api/service-fn.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -18,7 +19,10 @@ export async function action(args: ActionFunctionArgs) {
     throw new Response("Invalid request", { status: 400 });
   }
   const auth = await requirePermissions(args.request, {});
-  const turn = await startAgentTurn(serviceContext(auth), input.data);
+  const turn = await startAgentTurn(
+    serviceContext(auth, originOf(args.request)),
+    input.data
+  );
   if (turn.error) {
     throw new Response(turn.error.message, { status: turn.error.status });
   }

@@ -6139,10 +6139,13 @@ export const setIndirectRate = defineServiceFn({
         return ctx.error("rule", result.error.message);
       }
       const rates = unwrap(ctx, result);
-      if (rates instanceof Error) return rates;
+      if (rates instanceof CarbonError) return rates;
+      if (!rates) {
+        return ctx.error("internal", "Failed to save the indirect rates");
+      }
       // One row per period from `fromPeriod` on; an object, so the tool does
       // not read as a paged list.
-      return { ids: (rates ?? []).map((rate) => rate.id) };
+      return { ids: rates.map((rate) => rate.id) };
     } catch (err) {
       if (!(err instanceof EntitlementError)) throw err;
       return ctx.error("entitlement", "Upgrade to use indirect rates");

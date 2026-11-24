@@ -19,9 +19,12 @@ import { path, requestReferrer } from "~/utils/path";
  *
  *  A grid cell posts `quiet`: it gets `{ error }` back instead of a redirect
  *  and a flash, so typing across a row does not toast per cell. */
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
+export async function action(args: ActionFunctionArgs) {
+  // The body is read below: a quiet cell's invalid edit answers `{ error }`.
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { request } = args;
+  const { id } = input.params;
 
   const formData = await request.formData();
   const quiet = formData.get("quiet") === "true";

@@ -2,55 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { configurationParameterGroupValidator } from "~/modules/items/items.models";
-import { upsertConfigurationParameterGroup } from "~/modules/items/items.service";
 
-const logger = getLogger("erp", "itemid-parameter-group");
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "parts"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(configurationParameterGroupValidator).request(
+    args,
+    { params: ["itemId"] }
+  );
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.items.upsertConfigurationParameterGroup({
+    ...input.data,
+    itemId: input.params.itemId
   });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const validation = await validator(
-    configurationParameterGroupValidator
-  ).validate(formData);
-
-  if (validation.error) {
-    return {
-      success: false,
-      error: "Invalid form data"
-    };
-  }
-
-  const upsert = await upsertConfigurationParameterGroup(client, {
-    ...validation.data,
-    itemId,
-    companyId
-  });
-
-  if (upsert.error) {
-    logger.error("Failed to save the configuration parameter group", {
-      itemId,
-      error: upsert.error
-    });
-    return {
-      success: false,
-      error: upsert.error.message
-    };
-  }
-
-  return {
-    success: true
-  };
 }

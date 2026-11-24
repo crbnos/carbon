@@ -18,7 +18,7 @@ import {
   findOAuthToken,
   oauthContext
 } from "../v1+/lib/authenticate.server";
-import type { AuthedContext } from "../v1+/lib/base.server";
+import type { AuthedContext, Authenticated } from "../v1+/lib/base.server";
 
 // The MCP engine lives in `@carbon/ee/mcp.server` and takes the dispatch, the
 // manifest and one catalog search index for the process as injected deps —
@@ -138,7 +138,7 @@ function make401Response(request: Request): Response {
 }
 
 async function resolveAuth(request: Request): Promise<{
-  ctx: AuthedContext;
+  ctx: Authenticated;
   request: Request;
 }> {
   const authHeader = request.headers.get("Authorization");

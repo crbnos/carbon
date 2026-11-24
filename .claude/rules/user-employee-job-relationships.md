@@ -116,11 +116,12 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   company's). A route saves one only after `isActiveCompanyEmployee(client, companyId, userId)`
   (`apps/erp/app/modules/shared/shared.service.ts`), which fails closed on a read error.
 - **Revoke Invite deactivates, so it takes only pending invites.** `revokeInvites`
-  (`users.server.ts`, gate `create: users`) deactivates each user before it marks the invite
+  (`users.server.ts`, gate `delete: users`, as the Employees, Customers and Suppliers lists show
+  Revoke Invite only with `users_delete`) deactivates each user before it marks the invite
   revoked. `refuseUnlessPendingInvites` (`users.service.ts`) refuses unless every user has an
   invite in the company with `acceptedAt` and `revokedAt` NULL and no `userToCompany` row there,
-  the rows the Employees, Customers and Suppliers lists offer the action on. Without it a
-  `users_create` holder could remove an active account, which Deactivate gates on `users_delete`.
+  the rows those lists offer the action on, and returns the pending invite ids, read before
+  `deactivateUser` stamps them revoked. An active account goes through Deactivate instead.
 - An API key inviting an employee (`inviteEmployee`) also needs `users_update` and `people_create`
   (`refuseKeyWithout`), the two the first-time insert needs under RLS and the re-add checks
   (`canReAddDeactivatedEmployee`). The re-add reads the key creator's claims, not the key's scopes,

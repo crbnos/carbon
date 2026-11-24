@@ -3797,7 +3797,8 @@ export const postInventoryCount = defineServiceFn({
  * with that quantity, even when a lot with that number exists; a decrease
  * takes the one numbered `readableId` in `storageUnitId` (with no number,
  * stock with no number in the unit, else the unit's only serial or lot); a
- * scrap needs `trackedEntityId`. A serial item moves one unit at a time.
+ * scrap, and a move to another storage unit (`originalStorageUnitId`), need
+ * `trackedEntityId`. A serial item moves one unit at a time.
  *
  * The posting date is today in the company's time zone; there is no other.
  * An increase is valued at the item's current cost: its standard cost
@@ -3844,10 +3845,12 @@ export const adjustInventory = defineServiceFn({
   // The adjustment route's gate, and the update the posting itself requires.
   permission: { create: "inventory", update: "inventory" },
 
-  async run(ctx, { acknowledged, ...input }) {
-    const adjustment = await service.trackedAdjustment(ctx, input);
-    if (adjustment instanceof Error) return adjustment;
+  async run(ctx, { acknowledged, ...adjustment }) {
+    const refused = await service.refuseTrackedAdjustment(ctx, adjustment);
+    if (refused) return refused;
 
+    // Checked on what the caller sent: the posting gives a new serial or lot
+    // its id, so the untracked branch still runs when none is named.
     const held = await service.inspectionHoldAdjustmentRefusal(
       ctx.asSystem.pg,
       ctx.company.id,
@@ -4451,6 +4454,7 @@ export const scanKanban = defineServiceFn({
       const system = createServiceContext({
         actor: { type: "system", onBehalfOf: userId },
         company: ctx.company,
+        origin: ctx.origin,
         caller: serviceRole,
         system: () => serviceRole,
         pg: () => ctx.asSystem.pg,

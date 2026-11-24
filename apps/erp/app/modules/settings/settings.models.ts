@@ -284,6 +284,21 @@ export const onboardingCompanyValidator = z.object({
   next: z.string().min(1, { message: "Next is required" })
 });
 
+/** A list field needs at least one option, and no empty one. */
+const listFieldHasOptions = (input: {
+  dataTypeId: number;
+  listOptions?: string[];
+}) =>
+  input.dataTypeId !== DataType.List ||
+  (input.listOptions !== undefined &&
+    input.listOptions.length > 0 &&
+    input.listOptions.every((option) => option.length > 0));
+
+const listFieldOptionsIssue = {
+  message: "A list field needs at least one option",
+  path: ["listOptions"]
+};
+
 export const customFieldValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -296,28 +311,7 @@ export const customFieldValidator = z
     tags: z.array(z.string()).optional(),
     required: zfd.checkbox()
   })
-  .refine((input) => {
-    // allows bar to be optional only when foo is 'foo'
-    if (
-      input.dataTypeId === DataType.List &&
-      (input.listOptions === undefined ||
-        input.listOptions.length === 0 ||
-        input.listOptions.some((option) => option.length === 0))
-    )
-      return false;
-
-    return true;
-  });
-
-/** A list field needs at least one option, and no empty one. */
-const listFieldHasOptions = (input: {
-  dataTypeId: number;
-  listOptions?: string[];
-}) =>
-  input.dataTypeId !== DataType.List ||
-  (input.listOptions !== undefined &&
-    input.listOptions.length > 0 &&
-    input.listOptions.every((option) => option.length > 0));
+  .refine(listFieldHasOptions, listFieldOptionsIssue);
 
 /** A custom field definition as the API creates it: the form's fields, as JSON. */
 export const customFieldInputValidator = z
@@ -329,10 +323,7 @@ export const customFieldInputValidator = z
     tags: z.array(z.string()).optional(),
     required: z.boolean().optional()
   })
-  .refine(listFieldHasOptions, {
-    message: "A list field needs at least one option",
-    path: ["listOptions"]
-  });
+  .refine(listFieldHasOptions, listFieldOptionsIssue);
 
 export const digitalQuoteValidator = z.object({
   digitalQuoteEnabled: zfd.checkbox(),

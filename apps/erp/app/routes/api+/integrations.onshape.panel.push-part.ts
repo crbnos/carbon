@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbonFor } from "@carbon/api/carbon.server";
+import { originOf } from "@carbon/api/service-fn.server";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { panelResponse } from "~/modules/settings/settings.service";
@@ -17,7 +18,8 @@ export async function action({ request }: ActionFunctionArgs) {
     await requireOnshapePanelPermissions(request, {
       create: "parts",
       update: "parts"
-    })
+    }),
+    originOf(request)
   );
   return panelResponse(
     await api.settings.pushOnshapePart(await request.json().catch(() => null))

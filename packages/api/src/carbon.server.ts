@@ -98,7 +98,7 @@ export async function carbon(request: Request): Promise<Api<RegisteredRouter>> {
  */
 export function carbonFor(
   auth: CallerAuth,
-  origin: RequestOrigin = {}
+  origin: RequestOrigin
 ): Api<RegisteredRouter> {
   if (!registered) {
     throw new Error("carbon(): the app has not called registerCarbon");

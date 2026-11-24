@@ -47,7 +47,10 @@ type Write = {
 
 /** A Supabase client that answers every read of a table with `reads[table]`
  *  and records each write. A table it has no answer for reads as null. */
-function fakeClient(reads: Record<string, unknown> = {}) {
+function fakeClient(
+  reads: Record<string, unknown> = {},
+  writeErrors: Record<string, unknown> = {}
+) {
   const writes: Write[] = [];
   const client = {
     from(table: string) {
@@ -56,7 +59,7 @@ function fakeClient(reads: Record<string, unknown> = {}) {
       const answer = () => {
         if (write) {
           writes.push({ table, ...write, filters });
-          return { data: null, error: null };
+          return { data: null, error: writeErrors[table] ?? null };
         }
         return { data: reads[table] ?? null, error: null };
       };
@@ -295,6 +298,25 @@ describe("item creates", () => {
     const result = await create(contextFor(client));
 
     expect(result).toEqual({ data: { id: "i1" }, error: null });
+  });
+
+  it.each([
+    ["createConsumable", (ctx: any) => createConsumable(ctx, item)],
+    ["createTool", (ctx: any) => createTool(ctx, { ...item, revision: "0" })]
+  ])("%s answers a number another item has as a conflict", async (_name, create) => {
+    const { client } = fakeClient(
+      {},
+      {
+        item: {
+          code: "23505",
+          message: 'duplicate key value violates unique constraint "item_unique"'
+        }
+      }
+    );
+
+    const result = await create(contextFor(client));
+
+    expect(result.error?.category).toBe("conflict");
   });
 });
 

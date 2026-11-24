@@ -126,16 +126,20 @@ describe("reopenPeriod", () => {
 });
 
 describe("createFiscalYearPeriods", () => {
-  /** A January fiscal year with periods `existing`; an insert answers each
-   *  row's id from its period number. */
-  function periodsClient(existing: number[]) {
+  const january = { data: { startMonth: "January" }, error: null };
+
+  /** A fiscal year read as `settings`, with periods `existing`; an insert
+   *  answers each row's id from its period number. */
+  function periodsClient(
+    existing: number[],
+    settings: { data: unknown; error: unknown } = january,
+    inserts: unknown[][] = []
+  ) {
     return {
       from(table: string) {
         let inserted: { periodNumber: number }[] | null = null;
         const answer = () => {
-          if (table === "fiscalYearSettings") {
-            return { data: { startMonth: "January" }, error: null };
-          }
+          if (table === "fiscalYearSettings") return settings;
           if (inserted) {
             return {
               data: inserted.map((row) => ({ id: `p-${row.periodNumber}` })),
@@ -152,6 +156,7 @@ describe("createFiscalYearPeriods", () => {
           eq: () => chain,
           insert: (rows: { periodNumber: number }[]) => {
             inserted = rows;
+            inserts.push(rows);
             return chain;
           },
           single: async () => answer(),
@@ -168,6 +173,27 @@ describe("createFiscalYearPeriods", () => {
       { fiscalYear: 2026 }
     );
     expect(result).toEqual({ data: { ids: ["p-11", "p-12"] }, error: null });
+  });
+
+  // A settings row the caller cannot read would have started the year in
+  // January.
+  it("creates no period when the fiscal year settings cannot be read", async () => {
+    const inserts: unknown[][] = [];
+    const result = await createFiscalYearPeriods(
+      context(
+        periodsClient(
+          [],
+          {
+            data: null,
+            error: { code: "PGRST116", message: "No rows found" }
+          },
+          inserts
+        )
+      ),
+      { fiscalYear: 2026 }
+    );
+    expect(result.error).not.toBeNull();
+    expect(inserts).toEqual([]);
   });
 
   it.each([1999, 2026.5])(

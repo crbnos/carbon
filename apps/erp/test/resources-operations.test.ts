@@ -90,6 +90,7 @@ function client(answers: Record<string, unknown>) {
       "eq",
       "neq",
       "in",
+      "not",
       "match",
       "limit",
       "order"
@@ -268,15 +269,29 @@ describe("deleting a maintenance dispatch", () => {
 
   it("deletes an open dispatch", async () => {
     const { ctx, writes } = contextWith({
-      maintenanceDispatch: { id: "md-1", status: "Open" }
+      "maintenanceDispatch:read": { id: "md-1", status: "Open" },
+      maintenanceDispatch: [{ id: "md-1" }]
     });
 
     const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
 
-    expect(result.error).toBeNull();
+    expect(result).toEqual({ data: [{ id: "md-1" }], error: null });
     expect(writes.map((w) => `${w.op}:${w.table}`)).toEqual([
       "delete:maintenanceDispatch"
     ]);
+  });
+
+  // The delete's own status predicate matched no row: the dispatch was
+  // completed or cancelled after it was read.
+  it("refuses a dispatch the delete no longer reaches", async () => {
+    const { ctx } = contextWith({
+      "maintenanceDispatch:read": { id: "md-1", status: "Open" },
+      maintenanceDispatch: []
+    });
+
+    const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
+
+    expect(result.error?.category).toBe("conflict");
   });
 });
 

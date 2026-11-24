@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { originOf } from "@carbon/api/service-fn.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
@@ -44,7 +45,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const scan = await scanKanban(serviceContext(auth), { kanbanId: id });
+  const scan = await scanKanban(serviceContext(auth, originOf(request)), {
+    kanbanId: id
+  });
   // A redirect, not data(): the root's flash middleware clears a flash set on
   // this request.
   if (scan.data?.type === "job" && scan.data.message) {

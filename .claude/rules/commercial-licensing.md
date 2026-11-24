@@ -138,8 +138,10 @@ Refactor one at a time; each PR should leave the tree green.
   (feature chosen by the `family` discriminator), `assignSalesRule`/`unassignSalesRule`
   (`SALES_RULES`), and `assignStorageRule`/`unassignStorageRule` (`STORAGE_RULES`). The
   runtime evaluators (`isSalesRulesEnabledForCompany`/`isStorageRulesEnabledForCompany`)
-  degrade via `companyHasFeature`; write routes gate with `requireFeature`. The
-  entitled writes are kept OUT of the client-safe `@carbon/ee/rules` barrel (which
+  degrade via `companyHasFeature`. The storage rule write routes gate with
+  `requireFeature`; the sales rule write routes call the `sales.server.ts`
+  operations, which turn the `EntitlementError` into an `entitlement` refusal
+  (`salesRulesEntitlementRefusal`). The entitled writes are kept OUT of the client-safe `@carbon/ee/rules` barrel (which
   client components reach via `useRuleViolations`) — the query getters stay there.
 - ✅ **API keys** — `upsertApiKey`/`deleteApiKey` in `packages/ee/src/api-keys.server.ts`,
   `requireEntitlement("API_KEYS")`; routes gate with `requireFeature`.

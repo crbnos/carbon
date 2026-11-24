@@ -1,6 +1,6 @@
 # MCP app parity: gaps to close
 
-Branch `feat/mcp-app-parity`, worktree `~/Desktop/carbon/carbon-feat-mcp-app-parity`, base main `05bd067c0a`.
+Branch `feat/mcp-app-parity`, worktree `~/Desktop/carbon/carbon-feat-mcp-app-parity`, base main `d7d4046c55`.
 
 ## Goal
 
@@ -111,11 +111,11 @@ Any key of the company passes a `{}` gate, even a read-only key. The precedent f
 - [x] `projects_upsertPlanningGroup`: `projects.server.ts:5341`. Routes `x+/projects+/planning-groups.new.tsx` and `planning-groups.$id.tsx`. It checks `create` or `update: projects` inside. Key scope: the same pair. **Done 2026-11-24:** published, with `refuseKeyWithout` for the create or update pair.
 - [x] `users_updateGroup`: `users.server.ts:690`. Its gate is `view: users` on a write, because the route has always required only view. Key scope: `update: users`. Keep the route's gate as it is. **Done 2026-11-24:** published as a WRITE (`@mcp write`, new); a key needs `update: users`; a group id that is not the company's is refused.
 
-## C. Needs 2 modules' permissions: the manifest cannot publish it
+## C. Needs 2 modules' permissions: the manifest did not show the gate
 
 **Done 2026-11-24:** the API already refused a key without every module the gate names; the manifest published such a gate as membership (`{ module: null, actions: [] }`), so `describe_tool` showed nothing and the digest wrote `none`. It now publishes `scopes` (every `<module>_<action>`, sorted), the digest line names them, and `describe_tool` joins a gate's actions with "and" (it said "or", wrongly, for 56 tools). `getRequestQuoteRows` and `writeMissingJournals` are published too.
 
-The manifest cannot publish a gate that names 2 modules. `getRequestQuoteRows` (purchasing) and `writeMissingJournals` (settings) wait on the same limit. Recommendation: teach the manifest and the API gate to publish a gate over 2 or more modules. Do not split each operation. This recommendation is approved (2026-11-24).
+As found: the manifest did not publish a gate that names 2 modules, and `getRequestQuoteRows` (purchasing) and `writeMissingJournals` (settings) waited on the same limit. Approved 2026-11-24: publish such a gate without splitting the operations.
 
 - [x] `projects_createJobFromMaterial`: `projects.server.ts:3509`, gate `{ create: production, view: projects }`. Route `x+/project+/$projectId.elements.$elementId.create-job.tsx`. This is a plan line's Create Job. Today `production_createJob` with `projectId` makes a job that the plan line does not remember. **Done 2026-11-24:** published.
 - [x] `projects_createProjectElementJob`: `projects.server.ts:3589`, same gate and route. It makes a job for a part on a task with no plan line. **Done 2026-11-24:** published.
@@ -216,7 +216,7 @@ Carbon records these actions against the person who did them. An API key acts as
 - [x] G-18 An API key gets 20 calls a minute, the column default. The form's rate limit field saves only on single-tenant deployments. A company gets 60 calls a minute across its keys. So 10,000 calls take 8 hours on one key. PR #1958 keeps this. **Decided 2026-11-24:** left as is and documented in `.claude/rules/mcp-tools-reference.md` (Rate limits).
 
 - [x] G-19 `sales_createContractLine` failed with a generic error when `billingMethod` was left out (the schema has it optional; the form defaults it to Fixed). The operation now defaults it to Fixed.
-- [x] G-20 `production_getDemandProjections` took required `periodIds`, and no tool lists periods. `periodIds` is now optional (left out: the form's 52 weeks from the location's today), and every row carries `weekStart`. Periods are read as the system: `period` reads only for the `authenticated` role, which an API key is not (the same class of policy as G-1, left alone).
+- [x] G-20 `production_getDemandProjections` took required `periodIds`, and no tool lists periods. `periodIds` is now optional (left out: the form's 52 weeks from the location's today), and every row carries `weekStart`. Periods were read as the system while `period` read only for the `authenticated` role; since PR #2344 they are read as the caller.
 - [x] G-21 Published `projects_getIndirectPools`, `projects_getIndirectPool` (with its accounts), `projects_getIndirectRates`, `projects_getIndirectRateRuns` (`view: accounting`) and `projects_runFinalTrueUp`. `projects_setIndirectRate` answers `{ ids }`, not a list.
 - [x] G-22 `invoicing_updatePurchaseInvoiceField` (and its route) gated on `update: sales` while its panel enables the fields on `update: invoicing` and the table's RLS needs `invoicing_update`. It now gates on `update: invoicing`. `updateSalesInvoiceField` keeps `update: sales`: its panel and route agree on it.
 
@@ -264,7 +264,7 @@ PR #2344 merged on 2026-11-23. Main was checked against this branch on 2026-11-2
 
 - Closed by it: G-1, and the `period`, `country`, `currencyCode` and `exchangeRate` reads for API keys.
 - Optional cleanup: `getDemandProjectionWeeks` can read `period` as the caller instead of the system.
-- Still open: this branch (uncommitted, no PR); the decisions above; B (6), C (3), D (5); G-18; `production_updateJobBatchNumber` gate (fixed only in #1958).
+- Then open (all closed on 2026-11-24, see the Status below): this branch, the decisions above, B, C, D, G-18 and the `production_updateJobBatchNumber` gate.
 - Main now has 1849 tools. The 26 new tools are tax tools (PR #1957) and `settings_getBaseCurrencyChange` (PR #2331). None of them closes a gap in this plan.
 - A dry-run merge of this branch with main conflicts in 6 files: `items/AGENTS.md`, `items.server.ts`, `quality.server.ts`, `quality.utils.ts`, `quality.utils.test.ts` and the tool digest. Merge main before you commit.
 - New gap it names: no tool lists planning periods, so `items_getItemDemand`, `items_getDemandForecastSources`, `production_getProductionPlanning`, `production_getProductionProjections` and `purchasing_getPurchasingPlanning` still cannot be called usefully.
@@ -284,6 +284,10 @@ PR #2344 merged on 2026-11-23. Main was checked against this branch on 2026-11-2
 - Groups B, C and D built; decisions done; 1890 tools.
 - Group D scenario passed on the local stack: 3 invites over MCP (3 employee types), each accepted in a browser and shown its type's modules; one `users_bulkUpdatePermissions` call added Sales view and create to all 3 (read back with `users_getEmployeePermissions` within 5 s, and the Sales module appeared in the app); a fourth and a fifth invite revoked; revoking an accepted user refused; the 3 deactivated with `users_deactivateUsers` (self, unknown id and a view-only key refused).
 - Live MCP pass over the other new and changed tools: all pass after the two fixes above (calibration record update, custom field keys).
+- Strict self-review fixes done: request origin required at every entry point (`NO_ORIGIN` for jobs), multi-module gates published as scopes, `@mcp write` refused on a gate naming a write, 1880 tools.
+- The changed database tests pass on the local stack after the review fixes: 10 files, 149 cases.
+- The live MCP recheck of the review fixes passes: 32 cases. It covers the gates on a view-only key, group and invite writes, custom field values, calibration, risk and workflow refusals, the locked-job batch number and the removed tools.
+- `quality_updateIssueWorkflow` now answers `notFound` for an unknown id.
 
 ## Checked: not gaps
 

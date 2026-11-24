@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbonFor } from "@carbon/api/carbon.server";
+import { originOf } from "@carbon/api/service-fn.server";
 import type { OnshapePropertyValue } from "@carbon/ee";
 import {
   bomColumnIds,
@@ -243,7 +244,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 /** Replace the property map, the description modes and the push defaults. */
 export async function action({ request }: ActionFunctionArgs) {
   const api = carbonFor(
-    await requireOnshapePanelPermissions(request, { update: "settings" })
+    await requireOnshapePanelPermissions(request, { update: "settings" }),
+    originOf(request)
   );
   return panelResponse(
     await api.settings.saveOnshapePropertyMap(

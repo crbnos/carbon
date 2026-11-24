@@ -25,6 +25,7 @@ import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import {
   compareInspectionFeatures,
+  gaugeCalibrationStatusFromDates,
   receiptLotIssueType,
   samplingRuleForPlanType
 } from "./quality.utils";
@@ -1659,6 +1660,7 @@ export async function upsertGaugeCalibrationRecord(
       })
     | (Omit<z.infer<typeof gaugeCalibrationRecordValidator>, "id"> & {
         id: string;
+        companyId: string;
         inspectionStatus: (typeof inspectionStatus)[number];
         updatedBy: string;
         customFields?: Json;
@@ -1706,15 +1708,26 @@ export async function upsertGaugeCalibrationRecord(
         months: gauge.data.calibrationIntervalInMonths
       })
       .toString();
+    // A Pass whose next date has already gone by is out of calibration, as
+    // the gauge form decides it from the same dates.
+    const gaugeStatus =
+      gaugeCalibrationRecord.inspectionStatus === "Pass"
+        ? gaugeCalibrationStatusFromDates(
+            {
+              lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
+              nextCalibrationDate
+            },
+            datetime.today(
+              await getCompanyTimeZone(client, gaugeCalibrationRecord.companyId)
+            )
+          )
+        : "Out-of-Calibration";
 
     const update = await requireAffected(
       client
         .from("gauge")
         .update({
-          gaugeCalibrationStatus:
-            gaugeCalibrationRecord.inspectionStatus === "Pass"
-              ? "In-Calibration"
-              : "Out-of-Calibration",
+          gaugeCalibrationStatus: gaugeStatus,
           lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
           nextCalibrationDate: nextCalibrationDate,
           // Reset lastCalibrationStatus when gauge passes calibration to allow future notifications
@@ -2086,33 +2099,65 @@ export async function updateIssue(
   return { data: { id: result.data.id }, error: null };
 }
 
-export async function upsertIssueWorkflow(
+export async function insertIssueWorkflow(
   client: SupabaseClient<Database>,
-  nonConformanceWorkflow:
-    | (Omit<z.infer<typeof issueWorkflowValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof issueWorkflowValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in nonConformanceWorkflow) {
-    return client
-      .from("nonConformanceWorkflow")
-      .insert([nonConformanceWorkflow])
-      .select("id")
-      .single();
-  } else {
-    return requireAffected(
-      client
-        .from("nonConformanceWorkflow")
-        .update(sanitize(nonConformanceWorkflow))
-        .eq("id", nonConformanceWorkflow.id)
-        .select("id")
-    );
+  nonConformanceWorkflow: Omit<z.infer<typeof issueWorkflowValidator>, "id"> & {
+    companyId: string;
+    createdBy: string;
   }
+) {
+  return client
+    .from("nonConformanceWorkflow")
+    .insert([nonConformanceWorkflow])
+    .select("id")
+    .single();
+}
+
+export async function updateIssueWorkflow(
+  client: SupabaseClient<Database>,
+  nonConformanceWorkflow: Omit<z.infer<typeof issueWorkflowValidator>, "id"> & {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  return requireAffected(
+    client
+      .from("nonConformanceWorkflow")
+      .update(sanitize(nonConformanceWorkflow))
+      .eq("id", nonConformanceWorkflow.id)
+      .eq("companyId", nonConformanceWorkflow.companyId)
+      .select("id")
+  );
+}
+
+/**
+ * Refuses required action ids that are not the company's. A task's
+ * `actionTypeId` has a single-column foreign key, so another company's id
+ * would be stored, and every issue made from the workflow would get a task
+ * pointing at it.
+ */
+export async function requiredActionsRefusal(
+  ctx: ServiceContext,
+  requiredActionIds: string[] | undefined
+): Promise<CarbonError | null> {
+  const ids = [...new Set(requiredActionIds ?? [])];
+  if (ids.length === 0) return null;
+  const { data, error } = await ctx.asCaller.supabase
+    .from("nonConformanceRequiredAction")
+    .select("id")
+    .eq("companyId", ctx.company.id)
+    .in("id", ids);
+  if (error) {
+    return ctx.error("internal", "Failed to read the required actions", error);
+  }
+  const known = new Set(data.map((row) => row.id));
+  const unknown = ids.filter((id) => !known.has(id));
+  if (unknown.length === 0) return null;
+  return ctx.error(
+    "notFound",
+    `Required action ${unknown.join(", ")} could not be found. It may have been deleted, or it belongs to another company.`
+  );
 }
 
 export async function upsertIssueType(
@@ -3882,16 +3927,8 @@ export async function updateInspectionDocumentSampling(
   );
 }
 
-/**
- * Saves a plan's characteristics and balloons with the atomic RPC, as the
- * caller. The RPC inserts in one transaction, so the characteristics it
- * creates share its `now()` as `createdAt`, and every list of them orders by
- * `createdAt`: one UPDATE then spaces them a microsecond apart in the order
- * they were sent, and the saved rows it returns are put in that order.
- */
 export async function saveInspectionDocumentAtomic(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     inspectionDocumentId: string;
     companyId: string;
@@ -3904,7 +3941,7 @@ export async function saveInspectionDocumentAtomic(
     balloons: unknown;
   }
 ) {
-  const saved = await (
+  return (
     client as unknown as {
       rpc: (
         fn: string,
@@ -3924,84 +3961,6 @@ export async function saveInspectionDocumentAtomic(
     p_default_page_height: args.defaultPageHeight ?? null,
     p_features: args.features,
     p_balloons: args.balloons
-  });
-  if (saved.error || !saved.data || typeof saved.data !== "object") {
-    return saved;
-  }
-
-  const data = saved.data as {
-    featureIdMap?: Record<string, string>;
-    features?: Array<Record<string, unknown>>;
-  };
-  const created = createdFeatureIds(args.features, data.featureIdMap ?? {});
-  if (created.length < 2) return saved;
-
-  try {
-    const spaced = await sql<{ id: string; createdAt: string }>`
-      UPDATE "inspectionFeature" AS f
-      SET "createdAt" = f."createdAt" + (v.position - 1) * interval '1 microsecond'
-      FROM unnest(${created}::text[]) WITH ORDINALITY AS v(id, position)
-      WHERE f."id" = v.id
-        AND f."inspectionDocumentId" = ${args.inspectionDocumentId}
-        AND f."companyId" = ${args.companyId}
-      RETURNING f."id", to_jsonb(f."createdAt") #>> '{}' AS "createdAt"
-    `.execute(db);
-    return {
-      data: {
-        ...data,
-        features: inSentOrder(data.features ?? [], created, spaced.rows)
-      },
-      error: null
-    };
-  } catch (error) {
-    // The save itself committed: report it, in the order the RPC returned.
-    logger.error("Failed to keep the order of saved characteristics", {
-      inspectionDocumentId: args.inspectionDocumentId,
-      error
-    });
-    return saved;
-  }
-}
-
-/** The persisted ids of the characteristics a save creates, in sent order. */
-function createdFeatureIds(
-  features: unknown,
-  featureIdMap: Record<string, string>
-): string[] {
-  const create = (features as { create?: unknown } | null)?.create;
-  if (!Array.isArray(create)) return [];
-  const ids = create.flatMap((item: unknown): string[] => {
-    const { id, tempId } = (item ?? {}) as { id?: unknown; tempId?: unknown };
-    if (typeof id === "string" && id) return [id];
-    const persisted = typeof tempId === "string" ? featureIdMap[tempId] : null;
-    return persisted ? [persisted] : [];
-  });
-  return [...new Set(ids)];
-}
-
-/**
- * The saved characteristics with the created ones in the slots the RPC gave
- * them (their `createdAt` tied, so in no set order), now in sent order and
- * with their new `createdAt`.
- */
-function inSentOrder(
-  features: Array<Record<string, unknown>>,
-  created: string[],
-  spaced: Array<{ id: string; createdAt: string }>
-) {
-  const position = new Map(created.map((id, index) => [id, index]));
-  const createdAt = new Map(spaced.map((row) => [row.id, row.createdAt]));
-  const sent = features
-    .filter((feature) => position.has(String(feature.id)))
-    .sort((a, b) => position.get(String(a.id))! - position.get(String(b.id))!);
-  let next = 0;
-  return features.map((feature) => {
-    if (!position.has(String(feature.id))) return feature;
-    const row = sent[next++]!;
-    return {
-      ...row,
-      createdAt: createdAt.get(String(row.id)) ?? row.createdAt
-    };
   });
 }
 type TrackedEntityRow = Database["public"]["Tables"]["trackedEntity"]["Row"];

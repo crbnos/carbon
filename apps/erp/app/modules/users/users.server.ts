@@ -167,11 +167,11 @@ export const inviteEmployee = defineServiceFn({
  * The contact must be one of the customer's contacts and have an email
  * address. The person gets the customer portal permissions when they accept
  * the invite, which they do from the email, outside the API. A person who
- * already has an account in the company is refused (a `conflict` error):
- * users_resendInvites sends a pending invite again. A person whose account
- * was deactivated is invited again. The account is written under the
- * caller's permissions, so an API key also needs `view`, `create` and
- * `update: sales`. Returns the new account's user id.
+ * already has an account or a pending invite in the company is refused (a
+ * `conflict` error): users_resendInvites sends a pending invite again. A
+ * person whose account was deactivated is invited again. The account is
+ * written under the caller's permissions, so the caller also needs `view`,
+ * `create` and `update: sales`. Returns the new account's user id.
  *
  * @param customerContactId - The customer contact to invite. See sales_getCustomerContacts.
  * @param customerId - The contact's customer. See sales_getCustomers.
@@ -185,12 +185,12 @@ export const inviteCustomerContact = defineServiceFn({
   }),
   permission: { create: "users" },
   async run(ctx, { customerContactId, customerId }) {
-    const keyRefused = refuseKeyWithout(ctx, {
+    const refused = service.refuseUnlessCan(ctx, {
       view: "sales",
       create: "sales",
       update: "sales"
     });
-    if (keyRefused) return keyRefused;
+    if (refused) return refused;
     const uninvitable = await service.refuseUninvitableContact(ctx, {
       role: "customer",
       id: customerContactId,
@@ -227,11 +227,11 @@ export const inviteCustomerContact = defineServiceFn({
  * The contact must be one of the supplier's contacts and have an email
  * address. The person gets the supplier portal permissions when they accept
  * the invite, which they do from the email, outside the API. A person who
- * already has an account in the company is refused (a `conflict` error):
- * users_resendInvites sends a pending invite again. A person whose account
- * was deactivated is invited again. The account is written under the
- * caller's permissions, so an API key also needs `view`, `create` and
- * `update: purchasing`. Returns the new account's user id.
+ * already has an account or a pending invite in the company is refused (a
+ * `conflict` error): users_resendInvites sends a pending invite again. A
+ * person whose account was deactivated is invited again. The account is
+ * written under the caller's permissions, so the caller also needs `view`,
+ * `create` and `update: purchasing`. Returns the new account's user id.
  *
  * @param supplierContactId - The supplier contact to invite. See purchasing_getSupplierContacts.
  * @param supplierId - The contact's supplier. See purchasing_getSuppliers.
@@ -245,12 +245,12 @@ export const inviteSupplierContact = defineServiceFn({
   }),
   permission: { create: "users" },
   async run(ctx, { supplierContactId, supplierId }) {
-    const keyRefused = refuseKeyWithout(ctx, {
+    const refused = service.refuseUnlessCan(ctx, {
       view: "purchasing",
       create: "purchasing",
       update: "purchasing"
     });
-    if (keyRefused) return keyRefused;
+    if (refused) return refused;
     const uninvitable = await service.refuseUninvitableContact(ctx, {
       role: "supplier",
       id: supplierContactId,
@@ -283,13 +283,19 @@ export const inviteSupplierContact = defineServiceFn({
  * Send invites again.
  *
  * @remarks
- * One user is re-invited at once: the invite gets a new code (the link
+ * For a person who is invited and has not accepted, or whose account was
+ * deactivated: what the Employees, Customers and Suppliers lists offer it
+ * on. One user is re-invited at once: the invite gets a new code (the link
  * already sent stops working), its acceptance and revocation are cleared,
- * and its `createdAt` restarts the controlled-environment expiry. Refused
- * when the user has no invite here. Several users are queued as a job
- * (`queued: true`), which sends the emails a few moments later.
+ * and its `createdAt` restarts the controlled-environment expiry. Several
+ * users are queued as a job (`queued: true`), which sends the emails a few
+ * moments later. Refused, for every user, when one has no invite here (a
+ * `notFound` error), has an active account in the company, or was a customer
+ * or supplier contact whose account was deactivated (a `rule` error; invite
+ * that contact again with users_inviteCustomerContact or
+ * users_inviteSupplierContact).
  *
- * @param userIds - The users to invite again, at least one. See users_getEmployees (status Invited or Inactive).
+ * @param userIds - The users to invite again, at least one. See users_getEmployees (status Invited or Inactive), users_getCustomers and users_getSuppliers.
  *
  * @mcp
  */
@@ -301,6 +307,8 @@ export const resendInvites = defineServiceFn({
   async run(ctx, { userIds }) {
     const companyId = ctx.company.id;
     const { ip, city } = ctx.origin;
+    const refused = await service.refuseUnlessReinvitable(ctx, userIds);
+    if (refused) return refused;
     if (userIds.length > 1) {
       try {
         await batchTrigger(
@@ -389,64 +397,41 @@ export const resendInvites = defineServiceFn({
  * Revoke pending invites, so the links already sent stop working.
  *
  * @remarks
- * Only a pending invite is revoked: every user must have an invite here that
- * is neither accepted nor revoked, and no account in the company. An active
- * account is refused: removing it is a deactivation, which needs
- * `delete: users`. One user is deactivated at once (and, on Cloud, the subscription's seat count
- * updated); several are deactivated by a job. Then every open invite of
- * theirs here is marked revoked, and each revocation is written to the
- * audit log when the company keeps one. Returns how many invites were
+ * Revoking deactivates the user, so it needs `delete: users`, as the lists'
+ * Revoke Invite does. Only a pending invite is revoked: every user must have
+ * an invite here that is neither accepted nor revoked, and no membership in
+ * the company (an active account is deactivated with users_deactivateUsers).
+ * One user is deactivated at once (and, on Cloud, the subscription's seat
+ * count updated); several are deactivated by a job. Then every pending
+ * invite of theirs here is marked revoked, and each revocation is written to
+ * the audit log when the company keeps one. Returns how many invites were
  * revoked.
  *
- * @param userIds - The invited users, at least one. See users_getEmployees (status Invited) and users_getUnrevokedInviteEmails.
+ * @param userIds - The invited users, from 1 to 100. See users_getEmployees (status Invited) and users_getUnrevokedInviteEmails.
  *
  * @mcp destructive
  */
 export const revokeInvites = defineServiceFn({
   input: z.object({
-    userIds: z.array(z.string().min(1)).min(1)
+    userIds: z.array(z.string().min(1)).min(1).max(100)
   }),
-  permission: { create: "users" },
+  permission: { delete: "users" },
   async run(ctx, { userIds }) {
     const companyId = ctx.company.id;
     const actorId = ctx.auditUserId;
     const serviceRole = ctx.asSystem.supabase;
     const { ip, userAgent } = ctx.origin;
 
-    const users = await serviceRole
-      .from("user")
-      .select("id, email")
-      .in("id", userIds);
-    if (users.error) {
-      return ctx.error("internal", "Failed to load users", users.error);
-    }
-    const notPending = await service.refuseUnlessPendingInvites(
-      ctx,
-      userIds,
-      users.data
-    );
-    if (notPending) return notPending;
+    // The pending invite ids are read before deactivating: deactivateUser
+    // stamps the invite revoked itself.
+    const pending = await service.refuseUnlessPendingInvites(ctx, userIds);
+    if (pending.error) return pending.error;
+    const { users, inviteIds } = pending.data;
 
-    // Read before deactivating: deactivateUser stamps the invite revoked itself,
-    // so an update filtered on revokedAt afterwards would find nothing.
-    const pending = await serviceRole
-      .from("invite")
-      .select("id")
-      .in(
-        "email",
-        users.data.map((user) => user.email)
-      )
-      .eq("companyId", companyId)
-      .is("acceptedAt", null)
-      .is("revokedAt", null);
-    if (pending.error) {
-      return ctx.error("internal", "Failed to load invites", pending.error);
-    }
-
-    if (users.data.length === 1) {
+    if (users.length === 1) {
       const deactivated = await deactivateUser(
         serviceRole,
-        users.data[0].id,
+        users[0].id,
         companyId,
         actorId,
         ip
@@ -464,21 +449,20 @@ export const revokeInvites = defineServiceFn({
     } else {
       await batchTrigger(
         "user-admin",
-        userIds.map((id) => ({
+        users.map(({ id }) => ({
           payload: { id, type: "deactivate" as const, companyId, actorId, ip }
         }))
       );
     }
 
+    // An invite accepted since it was read is not stamped revoked.
     const revokedAt = datetime.timestamp();
     const revoked = await serviceRole
       .from("invite")
       .update({ revokedAt })
-      .in(
-        "id",
-        pending.data.map((invite) => invite.id)
-      )
+      .in("id", inviteIds)
       .eq("companyId", companyId)
+      .is("acceptedAt", null)
       .select("id");
     if (revoked.error) {
       return ctx.error("internal", "Failed to revoke invites", revoked.error);
@@ -654,22 +638,8 @@ export const bulkUpdatePermissions = defineServiceFn({
     if (gated) return gated;
 
     const companyId = ctx.company.id;
-    // The job writes these users' grants as the service role: every id must
-    // be an employee of this company. One batched read.
-    const uniqueUserIds = [...new Set(userIds)];
-    const members = await ctx.asSystem.supabase
-      .from("employee")
-      .select("id")
-      .in("id", uniqueUserIds)
-      .eq("companyId", companyId);
-    if (members.error || (members.data ?? []).length !== uniqueUserIds.length) {
-      logger.error("Bulk permission edit names users outside the company", {
-        companyId,
-        userIds: uniqueUserIds,
-        error: members.error
-      });
-      return ctx.error("notFound", "Employee not found");
-    }
+    const outside = await service.refuseUnlessCompanyEmployees(ctx, userIds);
+    if (outside) return outside;
 
     await batchTrigger(
       "update-permissions",
@@ -692,8 +662,10 @@ export const bulkUpdatePermissions = defineServiceFn({
  * Create an employee type with its permissions.
  *
  * @remarks
- * Needs role authoring (the PERMISSIONS feature). The type and its
- * permissions are two writes: when the permissions fail, the type stays.
+ * Needs role authoring (the PERMISSIONS feature), and `update: users` beside
+ * `create`: row-level security writes an employee type and its permissions
+ * only with it. The type and its permissions are two writes: when the
+ * permissions fail, the type stays.
  *
  * @param name - The employee type's name.
  * @param permissions - One entry per module: `name` is the module in lower case (see users_getModules), `permission` its view, create, update and delete grants. A module left out grants nothing.
@@ -705,7 +677,7 @@ export const createEmployeeType = defineServiceFn({
     name: z.string().trim().min(1),
     permissions: employeeTypePermissionsValidator
   }),
-  permission: { create: "users" },
+  permission: { create: "users", update: "users" },
   async run(ctx, { name, permissions }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
@@ -743,8 +715,11 @@ export const createEmployeeType = defineServiceFn({
  * Rename an employee type and change its permissions.
  *
  * @remarks
- * Needs role authoring (the PERMISSIONS feature). Two writes, as for
- * `createEmployeeType`. Every employee of the type gets the new permissions.
+ * Needs role authoring (the PERMISSIONS feature). Refused when the type is
+ * not the company's. Two writes, as for `createEmployeeType`. The type's
+ * permissions are what a person invited with it gets; an employee who
+ * already has the type keeps their own grants (change those with
+ * users_bulkUpdatePermissions).
  *
  * @param id - The employee type. See users_getEmployeeTypes.
  * @param name - The employee type's name.
@@ -762,6 +737,8 @@ export const updateEmployeeType = defineServiceFn({
   async run(ctx, { id, name, permissions }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
+    const missing = await refuseUnlessOwned(ctx, "employeeType", { id });
+    if (missing) return missing;
 
     const client = ctx.asCaller.supabase;
     const updated = await upsertEmployeeType(client, { id, name });
@@ -803,8 +780,10 @@ const groupMembers = z
  * Create a group with its members.
  *
  * @remarks
- * Members are users (`user_<id>`) and groups (`group_<id>`). When the members
- * cannot be saved, the group is removed.
+ * Needs `update: users` beside `create`: adding members is an update. Members
+ * are users (`user_<id>`) and groups (`group_<id>`), each the company's (a
+ * `notFound` error otherwise); a member sent twice is saved once. The group
+ * and its members are saved together, or neither is.
  *
  * @param name - The group's name.
  * @param selections - The members, at least one: `user_<userId>` (see users_getEmployees) or `group_<groupId>` (see users_getGroups).
@@ -813,32 +792,22 @@ const groupMembers = z
  */
 export const createGroup = defineServiceFn({
   input: z.object({ name: z.string().trim().min(1), selections: groupMembers }),
-  permission: { create: "users" },
+  permission: { create: "users", update: "users" },
   async run(ctx, { name, selections }) {
-    const client = ctx.asCaller.supabase;
-    const created = await service.insertGroup(client, {
-      name,
-      companyId: ctx.company.id
-    });
-    const groupId = created.data?.id;
-    if (created.error || !groupId) {
-      return ctx.error("internal", "Failed to insert group", created.error);
-    }
+    const members = service.groupMembersOf(selections);
+    const foreign = await service.refuseForeignGroupMembers(ctx, members);
+    if (foreign) return foreign;
 
-    const members = await service.upsertGroupMembers(
-      client,
-      groupId,
-      selections
-    );
-    if (members.error) {
-      await service.deleteGroup(client, groupId);
-      return ctx.error(
-        "internal",
-        "Failed to insert group members",
-        members.error
-      );
+    try {
+      const id = await service.insertGroupWithMembers(ctx.asSystem.pg, {
+        name,
+        companyId: ctx.company.id,
+        members
+      });
+      return { id };
+    } catch (err) {
+      return ctx.error("internal", "Failed to create the group", err);
     }
-    return { id: groupId };
   }
 });
 
@@ -846,8 +815,11 @@ export const createGroup = defineServiceFn({
  * Rename a group and replace its members.
  *
  * @remarks
- * The members sent replace every member the group had. Refused when the
- * group is not the company's. An API key needs `update: users`.
+ * Needs `update: users`. The members sent replace every member the group
+ * had, in one write with the name. Each member must be the company's (a
+ * `notFound` error otherwise) and a group is never its own member (a
+ * `validation` error); a member sent twice is saved once. Refused when the
+ * group is not the company's.
  *
  * @param id - The group. See users_getGroups.
  * @param name - The group's name.
@@ -861,30 +833,28 @@ export const updateGroup = defineServiceFn({
     name: z.string().trim().min(1),
     selections: groupMembers
   }),
-  // The route has only ever required view; row-level security decides the
-  // write. Kept as it was. A view gate admits a read-only API key, so a key
-  // also needs update.
+  // The route has only ever required view. The write bypasses row-level
+  // security, which asked for update, so every actor needs update.
   permission: { view: "users" },
   async run(ctx, { id, name, selections }) {
-    const keyRefused = refuseKeyWithout(ctx, { update: "users" });
-    if (keyRefused) return keyRefused;
+    const refused = service.refuseUnlessCan(ctx, { update: "users" });
+    if (refused) return refused;
     const missing = await refuseUnlessOwned(ctx, "group", { id });
     if (missing) return missing;
+    const members = service.groupMembersOf(selections);
+    const foreign = await service.refuseForeignGroupMembers(ctx, members, id);
+    if (foreign) return foreign;
 
-    const client = ctx.asCaller.supabase;
-    const [group, members] = await Promise.all([
-      service.upsertGroup(client, { id, name, companyId: ctx.company.id }),
-      service.upsertGroupMembers(client, id, selections)
-    ]);
-    if (group.error) {
-      return ctx.error("internal", "Failed to update group", group.error);
-    }
-    if (members.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update group members",
-        members.error
-      );
+    try {
+      const replaced = await service.replaceGroup(ctx.asSystem.pg, {
+        id,
+        name,
+        companyId: ctx.company.id,
+        members
+      });
+      if (!replaced) return ctx.error("notFound", "Group not found");
+    } catch (err) {
+      return ctx.error("internal", "Failed to update group", err);
     }
     return { id };
   }

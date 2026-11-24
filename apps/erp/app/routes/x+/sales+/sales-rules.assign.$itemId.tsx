@@ -5,13 +5,13 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { z } from "zod";
+import { salesRuleAssignValidator } from "~/modules/sales/sales.models";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(
-    z.object({ ruleId: z.string().min(1, { message: "Rule id required" }) })
-  ).request(args, { params: ["itemId"] });
+  const input = await validator(salesRuleAssignValidator).request(args, {
+    params: ["itemId"]
+  });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.sales.assignSalesRule({

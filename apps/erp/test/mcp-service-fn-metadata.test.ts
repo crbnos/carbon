@@ -286,7 +286,38 @@ export const renameGroup = defineServiceFn({
         "/m/router.ts": ROUTER
       })[0]?.classification;
     expect(write(`{ view: "users" }`)).toBe("WRITE");
-    expect(write(`{ delete: "users" }`)).toBe("DESTRUCTIVE");
+    expect(() => write(`{ delete: "users" }`)).toThrow(
+      "@mcp write on a function whose permission names delete"
+    );
+  });
+
+  // A key the walk cannot read would be dropped, publishing the gate as
+  // membership: the tool would read as open to any member.
+  it.each([
+    ["a spread", `{ ...base, view: "users" }`],
+    ["a computed key", `{ ["update"]: "users" }`],
+    ["a key that is no action", `{ edit: "users" }`]
+  ])("refuses a permission with %s", (_name, permission) => {
+    expect(() =>
+      toolsFor({
+        "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+const base = { view: "users" } as const;
+/**
+ * Get users.
+ *
+ * @mcp
+ */
+export const getUsers = defineServiceFn({
+  input: null,
+  permission: ${permission},
+  async run(_ctx, input: { id: string }) {
+    return null;
+  }
+});`,
+        "/m/router.ts": ROUTER
+      })
+    ).toThrow("permission takes only");
   });
 
   it("refuses a summary that was cut off", () => {

@@ -1404,6 +1404,7 @@ export async function getOrCreatePeriods(
       ranges.map((r) => r.startDate)
     )
     .where("periodType", "=", "Week")
+    .orderBy("startDate")
     .execute();
 
   if (existingPeriods.length === ranges.length) {
@@ -1435,7 +1436,10 @@ export async function getOrCreatePeriods(
       .execute();
   });
 
-  return [...existingPeriods, ...created].map(toPlainPeriod);
+  // In week order: callers pair the i-th period with the i-th week column.
+  return [...existingPeriods, ...created]
+    .map(toPlainPeriod)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
 
 /** Convert a pg DATE value (Date object or string) to an ISO date string. */
@@ -1555,9 +1559,11 @@ export async function refuseUnlessOwned(
 }
 
 /**
- * For a write gated on company membership (`permission: {}`): a person logs
- * their own time, but that gate admits an API key holding any scope, even a
- * read-only one. A key also needs `required`.
+ * For a write whose gate admits a key without what the write needs: one gated
+ * on company membership (`permission: {}`; a person logs their own time, but
+ * that gate admits a key holding any scope, even a read-only one), and one
+ * gated narrower than what its writes need (the `create: users` invites, the
+ * `view: users` `updateGroup`). A key also needs `required`.
  */
 export function refuseKeyWithout(
   ctx: ServiceContext,

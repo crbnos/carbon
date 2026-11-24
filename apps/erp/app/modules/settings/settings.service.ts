@@ -263,9 +263,10 @@ import {
   requireAffected,
   requiresItarEntityCertification,
   searchFilter,
+  toSafeHref,
   withLabelDpi
 } from "@carbon/utils";
-import { parseAbsolute } from "@internationalized/date";
+import { parseAbsolute, parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type Insertable, type Selectable, sql } from "kysely";
 import { nanoid } from "nanoid";
@@ -330,6 +331,7 @@ import type {
 } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
+import { DataType } from "~/modules/shared/types";
 import {
   getItarCertificationStatus,
   getPermissionCacheKey
@@ -705,16 +707,107 @@ export async function getCustomFieldTableEditScope(
   };
 }
 
-export async function getTableCustomFieldIds(
+/** A table's custom fields, with what decides the values each takes. */
+export async function getTableCustomFieldTypes(
   client: SupabaseClient<Database>,
   table: string,
   companyId: string
 ) {
   return client
     .from("customField")
-    .select("id")
+    .select("id, dataTypeId, listOptions")
     .eq("table", table)
     .eq("companyId", companyId);
+}
+
+export type CustomFieldType = {
+  id: string;
+  dataTypeId: number;
+  listOptions: string[] | null;
+};
+
+function isIsoDate(value: string) {
+  try {
+    parseDate(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether a record's properties panel (`CustomFormInlineFields`) can send
+ * this value for a field of this type. A File field has no input there.
+ */
+function isCustomFieldValue(field: CustomFieldType, value: unknown) {
+  switch (field.dataTypeId) {
+    case DataType.Boolean:
+      return value === "on" || value === "";
+    case DataType.Date:
+      return value === null || (typeof value === "string" && isIsoDate(value));
+    case DataType.List:
+      return (
+        value === null ||
+        (typeof value === "string" && (field.listOptions ?? []).includes(value))
+      );
+    case DataType.Numeric:
+      return (
+        value === null ||
+        (typeof value === "number" && Number.isFinite(value)) ||
+        (typeof value === "string" &&
+          value.trim() !== "" &&
+          Number.isFinite(Number(value)))
+      );
+    case DataType.Text:
+      return typeof value === "string";
+    case DataType.Link:
+      return (
+        typeof value === "string" &&
+        (value === "" || toSafeHref(value) !== null)
+      );
+    case DataType.User:
+    case DataType.Customer:
+    case DataType.Supplier:
+      return typeof value === "string" && value.length > 0;
+    default:
+      return false;
+  }
+}
+
+/**
+ * The custom field keys a save may write only unchanged: a key that is not
+ * one of the table's custom fields, and a value its field's panel input never
+ * sends.
+ */
+export function unwritableCustomFieldKeys(
+  sent: Record<string, unknown>,
+  fields: readonly CustomFieldType[]
+): string[] {
+  const byId = new Map(fields.map((field) => [field.id, field]));
+  return Object.keys(sent).filter((key) => {
+    const field = byId.get(key);
+    return !field || !isCustomFieldValue(field, sent[key]);
+  });
+}
+
+/**
+ * The custom field keys a save may not write: the unwritable ones, unless
+ * every record already holds that value. The properties panel posts the whole
+ * stored map with one value changed, so a deleted field's value, or one stored
+ * in another shape, goes back unchanged and is kept.
+ */
+export function refusedCustomFieldKeys(
+  sent: Record<string, unknown>,
+  fields: readonly CustomFieldType[],
+  stored: readonly (Record<string, unknown> | null)[]
+): string[] {
+  return unwritableCustomFieldKeys(sent, fields).filter(
+    (key) =>
+      stored.length === 0 ||
+      stored.some(
+        (values) => JSON.stringify(values?.[key]) !== JSON.stringify(sent[key])
+      )
+  );
 }
 
 /** The stored custom field values of some records of one table. */
@@ -996,14 +1089,28 @@ export async function getItemSerialSequenceByItemId(
     .maybeSingle();
 }
 
+/**
+ * A sequence's fields as the form or the API sends them: the API may send a
+ * null timing (follow the company setting) and leave the label flag out.
+ */
+type ItemSerialSequenceFields = Omit<
+  z.infer<typeof itemSerialSequenceValidator>,
+  "id" | "serialNumberTiming" | "printLabelOnCompletion"
+> & {
+  serialNumberTiming?:
+    | z.infer<typeof itemSerialSequenceValidator>["serialNumberTiming"]
+    | null;
+  printLabelOnCompletion?: boolean;
+};
+
 export async function upsertItemSerialSequence(
   client: SupabaseClient<Database>,
   itemSerialSequence:
-    | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
+    | (ItemSerialSequenceFields & {
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof itemSerialSequenceValidator>, "id"> & {
+    | (ItemSerialSequenceFields & {
         id: string;
         companyId: string;
         updatedBy: string;
@@ -1016,12 +1123,14 @@ export async function upsertItemSerialSequence(
       .select("id")
       .single();
   }
+  // A sequence stays on its item: the update matches only that item's row.
   const { id, companyId, ...update } = itemSerialSequence;
   return client
     .from("itemSerialSequence")
     .update(sanitize(update))
     .eq("id", id)
     .eq("companyId", companyId)
+    .eq("itemId", update.itemId)
     .select("id")
     .single();
 }
@@ -2945,7 +3054,12 @@ export async function deleteCustomField(
     clearCustomFieldsCache(companyId);
   } finally {
     return requireAffected(
-      client.from("customField").delete().eq("id", id).select("id")
+      client
+        .from("customField")
+        .delete()
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .select("id")
     );
   }
 }
@@ -3237,6 +3351,7 @@ export async function upsertCustomField(
       })
     | (Omit<z.infer<typeof customFieldValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
       })
 ) {
@@ -3247,7 +3362,8 @@ export async function upsertCustomField(
       const sortOrders = await client
         .from("customField")
         .select("sortOrder")
-        .eq("table", customField.table);
+        .eq("table", customField.table)
+        .eq("companyId", customField.companyId);
 
       if (sortOrders.error) return sortOrders;
       const maxSortOrder = sortOrders.data.reduce((max, item) => {
@@ -3260,16 +3376,13 @@ export async function upsertCustomField(
         .select("id")
         .single();
     }
+    const { id, companyId, ...changes } = customField;
     return requireAffected(
       client
         .from("customField")
-        .update(
-          sanitize({
-            ...customField,
-            updatedBy: customField.updatedBy
-          })
-        )
-        .eq("id", customField.id)
+        .update(sanitize(changes))
+        .eq("id", id)
+        .eq("companyId", companyId)
         .select("id")
     );
   }

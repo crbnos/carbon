@@ -30,19 +30,11 @@ export async function action(args: ActionFunctionArgs) {
     maintenanceDispatchCommentValidator.omit({ maintenanceDispatchId: true })
   ).request(args, { params: ["dispatchId"] });
   if ("invalid" in input) return input.invalid;
-  const { id, comment } = input.data;
-  const maintenanceDispatchId = input.params.dispatchId;
   const api = await carbon(args.request);
-  const result = id
-    ? await api.resources.updateMaintenanceDispatchComment({
-        id,
-        comment,
-        maintenanceDispatchId
-      })
-    : await api.resources.createMaintenanceDispatchComment({
-        comment,
-        maintenanceDispatchId
-      });
+  const result = await api.resources.createMaintenanceDispatchComment({
+    comment: input.data.comment,
+    maintenanceDispatchId: input.params.dispatchId
+  });
   // The comment box posts through a plain fetcher: the flash is its toast.
   return data(
     result,

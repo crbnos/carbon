@@ -33,6 +33,7 @@ import {
   maintenanceDispatchEventValidator,
   maintenanceDispatchStatus,
   maintenanceDispatchValidator,
+  maintenanceFailureModeType,
   maintenanceScheduleValidator,
   processValidator,
   trainingAssignmentValidator,
@@ -1351,11 +1352,13 @@ export const issueMaintenancePart = defineServiceFn({
     );
     if (issued.error) return unwrap(ctx, issued) as CarbonError;
     const id = issued.data.maintenanceDispatchItemId;
-    return {
-      id: typeof id === "string" ? id : null,
-      dispatchId,
-      itemId
-    };
+    if (typeof id !== "string") {
+      return ctx.error(
+        "internal",
+        "The part was issued, but the posting did not return its id. Reload the dispatch to see it."
+      );
+    }
+    return { id, dispatchId, itemId };
   }
 });
 
@@ -1965,13 +1968,23 @@ export const deleteMaintenanceDispatch = defineServiceFn({
   async run(ctx, input) {
     const dispatch = await service.editableDispatch(ctx, input.dispatchId);
     if (dispatch instanceof CarbonError) return dispatch;
-    return unwrap(
-      ctx,
-      await service.deleteMaintenanceDispatch(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
+    const deleted = await service.deleteMaintenanceDispatch(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.dispatchId
     );
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete the dispatch",
+        deleted.error
+      );
+    }
+    // Completed, cancelled or deleted since it was read.
+    if (deleted.data.length === 0) {
+      return ctx.error("conflict", service.DISPATCH_LOCKED);
+    }
+    return deleted.data;
   }
 });
 
@@ -3259,28 +3272,24 @@ export const updateContractor = defineServiceFn({
  * Create a failure mode
  *
  * @remarks
- * Upsert failure mode
+ * The failure mode form's create: a name and a type.
  *
  * @mcp
  */
 export const createFailureMode = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     name: z.string().min(1),
-    type: z.enum(["Maintenance", "Quality", "Operations", "Other"]),
-    customFields: z.unknown().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+    type: z.enum(maintenanceFailureModeType)
   }),
   permission: { create: "resources" },
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertFailureMode(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
+      await service.upsertFailureMode(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -3289,30 +3298,25 @@ export const createFailureMode = defineServiceFn({
  * Update a failure mode
  *
  * @remarks
- * Upsert failure mode
+ * The failure mode form's save: its name and type.
  *
  * @mcp
  */
 export const updateFailureMode = defineServiceFn({
-  input: z
-    .looseObject({
-      name: z.string().min(1),
-      type: z.enum(["Maintenance", "Quality", "Operations", "Other"]),
-      customFields: z.unknown().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
+  input: z.object({
+    id: z.string().min(1).describe("The failure mode to change."),
+    name: z.string().min(1),
+    type: z.enum(maintenanceFailureModeType)
+  }),
   permission: { update: "resources" },
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertFailureMode(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.upsertFailureMode(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -3340,42 +3344,12 @@ export const createMaintenanceDispatchComment = defineServiceFn({
     if (dispatch instanceof CarbonError) return dispatch;
     return unwrap(
       ctx,
-      await service.upsertMaintenanceDispatchComment(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a maintenance dispatch comment
- *
- * @remarks
- * Refused when the dispatch is Completed or Cancelled, and when the comment
- * is not on that dispatch.
- *
- * @mcp
- */
-export const updateMaintenanceDispatchComment = defineServiceFn({
-  input: z.object({
-    id: z.string().min(1).describe("The comment to change."),
-    maintenanceDispatchId: z.string().min(1),
-    comment: z.string().min(1)
-  }),
-  permission: { update: "resources" },
-  async run(ctx, input) {
-    const dispatch = await service.editableDispatch(
-      ctx,
-      input.maintenanceDispatchId
-    );
-    if (dispatch instanceof CarbonError) return dispatch;
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchComment(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.insertMaintenanceDispatchComment(ctx.asCaller.supabase, {
+        maintenanceDispatchId: input.maintenanceDispatchId,
+        comment: input.comment,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -3413,61 +3387,6 @@ export const createMaintenanceDispatchItem = defineServiceFn({
     });
     if (issued.error) return issued.error;
     return { id: issued.data.id };
-  }
-});
-
-/**
- * Update a maintenance dispatch item
- *
- * @remarks
- * Refused when the dispatch is Completed or Cancelled, or the item is not on
- * it. Moves no stock.
- *
- * @mcp
- */
-export const updateMaintenanceDispatchItem = defineServiceFn({
-  input: z
-    .looseObject({
-      maintenanceDispatchId: z.string().min(1),
-      itemId: z.string().min(1),
-      quantity: z.number().min(1),
-      unitOfMeasureCode: z.string().min(1),
-      unitCost: z.number().min(0).optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "resources" },
-  async run(ctx, input) {
-    const dispatch = await service.editableDispatch(
-      ctx,
-      input.maintenanceDispatchId
-    );
-    if (dispatch instanceof CarbonError) return dispatch;
-    const owned = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
-    if (owned) return owned;
-    const updated = await ctx.asCaller.supabase
-      .from("maintenanceDispatchItem")
-      .update({
-        itemId: input.itemId,
-        quantity: input.quantity,
-        unitOfMeasureCode: input.unitOfMeasureCode,
-        ...(input.unitCost !== undefined && { unitCost: input.unitCost }),
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", input.id)
-      .eq("maintenanceDispatchId", input.maintenanceDispatchId)
-      .eq("companyId", ctx.company.id)
-      .select("id");
-    if (updated.error) {
-      return ctx.error("internal", "Failed to update the part", updated.error);
-    }
-    if (updated.data.length === 0)
-      return ctx.error("notFound", "Part not found");
-    return { id: input.id };
   }
 });
 

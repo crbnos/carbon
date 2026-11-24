@@ -144,24 +144,25 @@ export function calibrationInspectionStatusRefusal(record: {
  * compared as text, so it must keep its microseconds.
  */
 export function compareInspectionFeatures(
-  a: { createdAt?: unknown; label?: unknown; id?: unknown },
-  b: { createdAt?: unknown; label?: unknown; id?: unknown }
+  a: { createdAt?: string | null; label?: string | null; id: string },
+  b: { createdAt?: string | null; label?: string | null; id: string }
 ): number {
-  const aCreated = String(a.createdAt ?? "");
-  const bCreated = String(b.createdAt ?? "");
+  const aCreated = a.createdAt ?? "";
+  const bCreated = b.createdAt ?? "";
   return (
     (aCreated < bCreated ? -1 : aCreated > bCreated ? 1 : 0) ||
-    String(a.label ?? "").localeCompare(String(b.label ?? ""), undefined, {
+    (a.label ?? "").localeCompare(b.label ?? "", undefined, {
       numeric: true
     }) ||
-    String(a.id).localeCompare(String(b.id))
+    a.id.localeCompare(b.id)
   );
 }
 
 /**
  * A gauge's calibration status as the gauge form derives it from its dates:
- * Out-of-Calibration once the next calibration date has passed, else
- * In-Calibration when it has a last calibration date, else Pending.
+ * Pending without a next calibration date, Out-of-Calibration once that date
+ * has passed, else In-Calibration when it has a last calibration date, else
+ * Pending.
  */
 export function gaugeCalibrationStatusFromDates(
   dates: {

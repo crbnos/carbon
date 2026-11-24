@@ -117,7 +117,6 @@ export const locationValidator = z
   });
 
 export const maintenanceDispatchCommentValidator = z.object({
-  id: zfd.text(z.string().optional()),
   maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
   comment: z.string().min(1, { message: "Comment is required" })
 });

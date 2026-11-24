@@ -419,10 +419,15 @@ export function buildFeatureRowsFromLoader(
   const balloonByFeatureId = new Map(
     balloons.map((b) => [String(b.inspectionFeatureId), b])
   );
+  const orderOf = (feature: Record<string, unknown>) => ({
+    createdAt: typeof feature.createdAt === "string" ? feature.createdAt : null,
+    label: typeof feature.label === "string" ? feature.label : null,
+    id: String(feature.id)
+  });
   // Sorted on load only: a save response keeps the editor's order
   // (mergeSaveResponse), so a row never moves under the cursor.
   return [...features]
-    .sort(compareInspectionFeatures)
+    .sort((a, b) => compareInspectionFeatures(orderOf(a), orderOf(b)))
     .map((f) =>
       mapFeatureRowFromRecords(
         f,

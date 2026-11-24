@@ -99,7 +99,8 @@ const EmployeeTypesTable = memo((props: EmployeeTypesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "users") && (
+        permissions.can("create", "users") &&
+        permissions.can("update", "users") && (
           <New label={t`Employee Type`} to={`new?${params.toString()}`} />
         )
       }

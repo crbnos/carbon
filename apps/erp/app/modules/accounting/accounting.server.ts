@@ -3133,9 +3133,7 @@ export const createFiscalYearPeriods = defineServiceFn({
       )
     );
     if (created instanceof CarbonError) return created;
-    return {
-      ids: (created as { id: string }[]).map((period) => period.id)
-    };
+    return { ids: (created ?? []).map((period) => period.id) };
   }
 });
 

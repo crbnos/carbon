@@ -109,7 +109,7 @@ const SalesInvoiceProperties = () => {
       ? optimisticAssignment
       : routeData?.salesInvoice?.assignee;
 
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.can("update", "invoicing");
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isDisabled = !canUpdate || isLocked;
 

@@ -1051,10 +1051,10 @@ export const getBase64ImageFromSupabase = defineServiceFn({
  * List the weekly planning periods of a location.
  *
  * @remarks
- * The weeks the planning screens show: the week of the location's today and
- * the 47 after it, earliest first. A week runs Sunday to Saturday. Weeks
- * missing from the calendar are added, as the planning screens add them.
- * Pass the ids, in this order, as `periods` to
+ * The weeks the planning screens show, from the week of the location's today,
+ * earliest first. A week runs Sunday to Saturday. It adds the weeks missing
+ * from the calendar, as each planning screen does when it opens, so it is a
+ * write. Pass the ids, in this order, as `periods` to
  * `production_getProductionPlanning`, `production_getProductionProjections`,
  * `purchasing_getPurchasingPlanning`, `items_getItemDemand` and
  * `items_getDemandForecastSources`. Needs view on production, purchasing or
@@ -1062,7 +1062,7 @@ export const getBase64ImageFromSupabase = defineServiceFn({
  *
  * @param locationId - The location whose today starts the first week.
  *
- * @mcp read
+ * @mcp write
  */
 export const getPlanningPeriods = defineServiceFn({
   input: z.object({ locationId: z.string().min(1) }),

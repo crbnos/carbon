@@ -278,7 +278,8 @@ describe("every read tool, against real data", () => {
                 companyId,
                 companyGroupId,
                 authKind: "oauth",
-                scopes
+                scopes,
+                origin: {}
               },
               args
             )

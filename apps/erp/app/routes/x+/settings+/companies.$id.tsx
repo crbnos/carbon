@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
+import { originOf } from "@carbon/api/service-fn.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -52,7 +53,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [subsidiary, change] = await Promise.all([
     getSubsidiary(client, id),
-    carbonFor(auth).settings.getBaseCurrencyChange({ companyId: id })
+    carbonFor(auth, originOf(request)).settings.getBaseCurrencyChange({
+      companyId: id
+    })
   ]);
   if (subsidiary.error) {
     throw redirect(

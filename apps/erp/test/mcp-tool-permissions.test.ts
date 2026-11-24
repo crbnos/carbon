@@ -92,14 +92,34 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     actions: ["create"]
   },
   // Opens a quality Issue from an RMA line: quality_create AND sales_update.
-  sales_escalateReturnOrderLine: { module: null, actions: [], scopes: ["quality_create", "sales_update"] },
+  sales_escalateReturnOrderLine: {
+    module: null,
+    actions: [],
+    scopes: ["quality_create", "sales_update"]
+  },
   // A rental unit on a shipment or receipt: sales_update AND
   // inventory_create. Selling it: sales and invoicing create.
-  sales_deliverRentalUnit: { module: null, actions: [], scopes: ["inventory_create", "sales_update"] },
-  sales_returnRentalUnit: { module: null, actions: [], scopes: ["inventory_create", "sales_update"] },
-  sales_sellRentalUnit: { module: null, actions: [], scopes: ["invoicing_create", "sales_create", "sales_update"] },
+  sales_deliverRentalUnit: {
+    module: null,
+    actions: [],
+    scopes: ["inventory_create", "sales_update"]
+  },
+  sales_returnRentalUnit: {
+    module: null,
+    actions: [],
+    scopes: ["inventory_create", "sales_update"]
+  },
+  sales_sellRentalUnit: {
+    module: null,
+    actions: [],
+    scopes: ["invoicing_create", "sales_create", "sales_update"]
+  },
   // A part CLIN's delivery: sales_update AND inventory_create.
-  sales_deliverContractLine: { module: null, actions: [], scopes: ["inventory_create", "sales_update"] },
+  sales_deliverContractLine: {
+    module: null,
+    actions: [],
+    scopes: ["inventory_create", "sales_update"]
+  },
   // The classification override is an accounting decision: its route
   // requires accounting_update.
   sales_classifyRentalUnit: {
@@ -136,10 +156,26 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   production_runMRP: { module: "inventory", actions: ["update"] },
   // A method's steps and Save Method need production AND the owning module
   // (parts or sales).
-  production_updateMethodOperationStepOrder: { module: null, actions: [], scopes: ["parts_update", "production_update"] },
-  production_updateQuoteOperationStepOrder: { module: null, actions: [], scopes: ["production_update", "sales_update"] },
-  production_upsertMakeMethodFromJob: { module: null, actions: [], scopes: ["parts_update", "production_update"] },
-  production_upsertMakeMethodFromJobMethod: { module: null, actions: [], scopes: ["parts_update", "production_update"] },
+  production_updateMethodOperationStepOrder: {
+    module: null,
+    actions: [],
+    scopes: ["parts_update", "production_update"]
+  },
+  production_updateQuoteOperationStepOrder: {
+    module: null,
+    actions: [],
+    scopes: ["production_update", "sales_update"]
+  },
+  production_upsertMakeMethodFromJob: {
+    module: null,
+    actions: [],
+    scopes: ["parts_update", "production_update"]
+  },
+  production_upsertMakeMethodFromJobMethod: {
+    module: null,
+    actions: [],
+    scopes: ["parts_update", "production_update"]
+  },
   // Enrolling the company in the Implementation Hub: its route requires
   // settings_update.
   shared_enrollImplementationHub: { module: "settings", actions: ["update"] },
@@ -168,29 +204,89 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   service_setServiceJobDayHours: { module: null, actions: [] },
   // Each needs two modules, as its route does, so the function's own gate
   // checks them. A Kysely read or a posting has no RLS behind that gate.
-  projects_postProjectIssue: { module: null, actions: [], scopes: ["inventory_update", "projects_update"] },
-  projects_placeProjectAssetsInService: { module: null, actions: [], scopes: ["accounting_create", "projects_update"] },
-  projects_getLaborDistribution: { module: null, actions: [], scopes: ["people_view", "projects_view"] },
-  projects_getLaborDistributionPeriods: { module: null, actions: [], scopes: ["people_view", "projects_view"] },
-  projects_getRdSection174AReport: { module: null, actions: [], scopes: ["accounting_view", "projects_view"] },
-  projects_getRdForm6765GReport: { module: null, actions: [], scopes: ["accounting_view", "projects_view"] },
-  sales_buildContractLineJob: { module: null, actions: [], scopes: ["production_create", "sales_update"] },
-  sales_createProjectBillingInvoices: { module: null, actions: [], scopes: ["invoicing_create", "sales_update"] },
+  projects_postProjectIssue: {
+    module: null,
+    actions: [],
+    scopes: ["inventory_update", "projects_update"]
+  },
+  projects_placeProjectAssetsInService: {
+    module: null,
+    actions: [],
+    scopes: ["accounting_create", "projects_update"]
+  },
+  projects_getLaborDistribution: {
+    module: null,
+    actions: [],
+    scopes: ["people_view", "projects_view"]
+  },
+  projects_getLaborDistributionPeriods: {
+    module: null,
+    actions: [],
+    scopes: ["people_view", "projects_view"]
+  },
+  projects_getRdSection174AReport: {
+    module: null,
+    actions: [],
+    scopes: ["accounting_view", "projects_view"]
+  },
+  projects_getRdForm6765GReport: {
+    module: null,
+    actions: [],
+    scopes: ["accounting_view", "projects_view"]
+  },
+  sales_buildContractLineJob: {
+    module: null,
+    actions: [],
+    scopes: ["production_create", "sales_update"]
+  },
+  sales_createProjectBillingInvoices: {
+    module: null,
+    actions: [],
+    scopes: ["invoicing_create", "sales_update"]
+  },
   // Creating and editing a labor category need different permissions, which
   // its own body checks; contract billing needs projects AND sales.
   projects_upsertLaborCategory: { module: null, actions: [] },
-  projects_getContractBillableItems: { module: null, actions: [], scopes: ["projects_view", "sales_view"] },
-  projects_getContractBillingLines: { module: null, actions: [], scopes: ["projects_view", "sales_view"] },
-  projects_updateProjectBillableItems: { module: null, actions: [], scopes: ["projects_update", "sales_view"] },
+  projects_getContractBillableItems: {
+    module: null,
+    actions: [],
+    scopes: ["projects_view", "sales_view"]
+  },
+  projects_getContractBillingLines: {
+    module: null,
+    actions: [],
+    scopes: ["projects_view", "sales_view"]
+  },
+  projects_updateProjectBillableItems: {
+    module: null,
+    actions: [],
+    scopes: ["projects_update", "sales_view"]
+  },
   // Changing a warranty return line to a billable service line edits the RMA
   // (sales) AND re-posts the job's coverage (service).
-  sales_changeReturnLineToService: { module: null, actions: [], scopes: ["sales_update", "service_update"] },
+  sales_changeReturnLineToService: {
+    module: null,
+    actions: [],
+    scopes: ["sales_update", "service_update"]
+  },
   // Needs invoicing_update AND accounting_update.
-  invoicing_changePurchaseInvoiceLineAccount: { module: null, actions: [], scopes: ["accounting_update", "invoicing_update"] },
-  invoicing_changeSalesInvoiceLineAccount: { module: null, actions: [], scopes: ["accounting_update", "invoicing_update"] },
+  invoicing_changePurchaseInvoiceLineAccount: {
+    module: null,
+    actions: [],
+    scopes: ["accounting_update", "invoicing_update"]
+  },
+  invoicing_changeSalesInvoiceLineAccount: {
+    module: null,
+    actions: [],
+    scopes: ["accounting_update", "invoicing_update"]
+  },
   // Invoicing a completed service job needs service_update AND
   // invoicing_create (the old service order invoice's rule).
-  service_createServiceInvoice: { module: null, actions: [], scopes: ["invoicing_create", "service_update"] },
+  service_createServiceInvoice: {
+    module: null,
+    actions: [],
+    scopes: ["invoicing_create", "service_update"]
+  },
   // A plan line's Create Job, and a job for a part on a task: production
   // create AND projects view, as the route requires.
   projects_createJobFromMaterial: {
@@ -240,12 +336,14 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   // Any record's custom field values: RLS decides per record; a key also
   // needs update on the table's module, checked in the body.
   settings_setRecordCustomFields: { module: null, actions: [] },
-  // The group edit route has always required users_view; RLS decides the
-  // write. Published as a WRITE (@mcp write); a key also needs users_update.
+  // The group edit route has always required users_view. The write bypasses
+  // RLS, so the body requires users_update of every caller; published as a
+  // WRITE (@mcp write).
   users_updateGroup: { module: "users", actions: ["view"] },
-  // The sales invoice header fields: the page's panel and update route have
-  // always required sales_update (the table's RLS adds invoicing_update).
-  invoicing_updateSalesInvoiceField: { module: "sales", actions: ["update"] },
+  // A new group's members and a new type's grants are written under the
+  // users_update policy, so creating either needs create and update.
+  users_createGroup: { module: "users", actions: ["create", "update"] },
+  users_createEmployeeType: { module: "users", actions: ["create", "update"] },
   // Indirect rates are accounting: the pool and rate screens require
   // accounting_view to read, accounting_update to change, and
   // accounting_delete to delete a pool.
@@ -265,8 +363,12 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   projects_getIndirectPool: { module: "accounting", actions: ["view"] },
   projects_getIndirectRates: { module: "accounting", actions: ["view"] },
   projects_getIndirectRateRuns: { module: "accounting", actions: ["view"] },
-  // The custom field form's edit route has always required settings_create.
-  settings_updateCustomField: { module: "settings", actions: ["create"] }
+  // The custom field form's edit route has always required settings_create,
+  // and the row's RLS update needs settings_update.
+  settings_updateCustomField: {
+    module: "settings",
+    actions: ["create", "update"]
+  }
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));
@@ -320,9 +422,12 @@ describe("permission module mapping", () => {
 
 describe("permission actions in the manifest", () => {
   const ACTIONS = new Set(["view", "create", "update", "delete"]);
-  // `{}`: any member of the company. Published as no module and no actions.
+  // `{}`: any member of the company. Published as no module, no actions and
+  // no scopes; a gate over several modules carries its scopes.
   const membershipOnly = (t: Tool) =>
-    t.permission.module === null && t.permission.actions.length === 0;
+    t.permission.module === null &&
+    t.permission.actions.length === 0 &&
+    !t.permission.scopes?.length;
 
   it("every op gates on known actions, or on membership alone", () => {
     for (const t of tools.filter((t) => !membershipOnly(t))) {

@@ -19,7 +19,8 @@ import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    create: "users"
+    create: "users",
+    update: "users"
   });
 
   await requireFeature({

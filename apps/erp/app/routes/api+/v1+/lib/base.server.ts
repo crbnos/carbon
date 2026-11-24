@@ -32,9 +32,12 @@ export interface AuthedContext {
    *  (`scopesFromPermissions`). */
   scopes: Record<string, string[]>;
   /** Where the request came from (`originOf`), set by the HTTP and MCP
-   *  routes from its headers. A workflow has none. */
-  origin?: RequestOrigin;
+   *  routes from its headers. A workflow passes `NO_ORIGIN`. */
+  origin: RequestOrigin;
 }
+
+/** What authenticating a request yields; the route adds its origin. */
+export type Authenticated = Omit<AuthedContext, "origin">;
 
 export const base = os.$context<AuthedContext>();
 

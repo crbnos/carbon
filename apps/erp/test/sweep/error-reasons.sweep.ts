@@ -35,6 +35,7 @@ async function caller() {
   const companyGroupId = await companyGroupOf(db, companyId);
   const claims = await getUserClaims(userId, companyId);
   const ctx = contextFor({
+    origin: {},
     kind: "user",
     userId,
     permissions: claims.permissions,
