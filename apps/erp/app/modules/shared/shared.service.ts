@@ -19157,6 +19157,39 @@ async function deductInspectionHolds(
 }
 
 /**
+ * The item's pick method default as a guess may take it: nettable
+ * (`getNettableDefaultStorageUnitId`), active and not lineside, the units
+ * `getUntrackedBinStock` marks `nettable`. Else null, so the draw takes the
+ * bins that hold the stock.
+ */
+async function getGuessableDefaultStorageUnitId(
+  trx: Transaction<DB>,
+  args: { companyId: string; locationId: string; itemId: string }
+): Promise<string | null> {
+  const storageUnitId = await getNettableDefaultStorageUnitId(
+    trx,
+    args.itemId,
+    args.locationId,
+    args.companyId
+  );
+  if (!storageUnitId) return null;
+  const unit = await trx
+    .selectFrom("storageUnit")
+    .select(
+      sql<
+        string | null
+      >`get_effective_work_center_id(${sql.ref("storageUnit.id")})`.as(
+        "workCenterId"
+      )
+    )
+    .where("id", "=", storageUnitId)
+    .where("companyId", "=", args.companyId)
+    .where("active", "=", true)
+    .executeTakeFirst();
+  return unit && !unit.workCenterId ? storageUnitId : null;
+}
+
+/**
  * Where an untracked draw of one item comes from: the bin the caller names,
  * else the item's nettable default, then the other bins that hold the stock,
  * fullest first, stripe by stripe (`planStripedUntrackedDraw`). Quarantine and
@@ -19183,12 +19216,11 @@ export async function planUntrackedDraw(
   });
   const preferredStorageUnitId =
     args.storageUnitId ??
-    (await getNettableDefaultStorageUnitId(
-      trx,
-      args.itemId,
-      args.locationId,
-      args.companyId
-    ));
+    (await getGuessableDefaultStorageUnitId(trx, {
+      companyId: args.companyId,
+      locationId: args.locationId,
+      itemId: args.itemId
+    }));
   const bins =
     (
       await getUntrackedBinStock(trx, {

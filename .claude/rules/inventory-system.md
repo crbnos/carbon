@@ -416,10 +416,10 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   An empty bin field must never mean "take it from no storage unit". Each writer of a
   negative untracked `itemLedger` row follows one of two shared rules
   (`shared.service.ts`, `@carbon/database/picked-consumption`):
-  1. Ordinary stock: `planUntrackedDraw` (lock, the item's nettable default, then the
-     bins that hold stock, fullest first, split across them, stripe by stripe; never a
-     quarantine or lineside unit), or `shipmentSourceBinChooser` when a document line
-     names one bin.
+  1. Ordinary stock: `planUntrackedDraw` (lock, the item's pick method default when a
+     guess may take it — nettable, active, not lineside — then the bins that hold stock,
+     fullest first, split across them, stripe by stripe; never a quarantine or lineside
+     unit), or `shipmentSourceBinChooser` when a document line names one bin.
   2. Nonconforming or returned stock: `planHeldUntrackedDraw` /
      `returnShipmentSourceBinChooser` (`planHeldStockDraw` / `chooseHeldStockBin`). Held
      units (`BinStock.held`: active, non-nettable, not lineside — quarantine, MRB,
@@ -444,12 +444,17 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   backflush mirrors, does not pass it yet. A return of drawn stock (Project Issue Return,
   maintenance un-issue, service job part return) goes back through
   `planReturnToDrawnBins`: the bins the document's rows drew from, newest first, each up
-  to what it still has out. A purchase return puts an inspection write-off back in the
+  to what it still has out; a Project Issue Return takes the item's draw lock before it
+  reads the issues, so two Returns never give one bin back more than it had out. A
+  purchase return puts an inspection write-off back in the
   line's bin before it ships from it, so the two net there.
 
   A serial or batch row posts at the bin the unit holds stock in: sales order and return
   shipments (`trackedShipmentSourceBins`), Project Issue, and job consumption
-  (`resolveTrackedEntityBin`). A reversal books against the row it reverses (an Unconsume
+  (`resolveTrackedEntityBin`). A shipment reads those bins before its posting
+  transaction, so the transaction first calls `confirm`: it locks the units `FOR UPDATE`
+  in id order (the lock a stock transfer pick takes), reads the bins again and refuses
+  when a unit has moved since. A reversal books against the row it reverses (an Unconsume
   takes the unit's newest negative `Consumption` row). A stock transfer whose From is no
   storage unit keeps it: moving stock out of no bin is a deliberate re-binning, and the
   pick check refuses it only when no storage unit is short.
