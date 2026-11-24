@@ -52,8 +52,15 @@ export type ProvenanceInput = {
   id: string;
   /** The check's provenance, or null when the module exports none. */
   provenance: Provenance | null;
-  /** The check's `<id>.test.ts`, or null when it has none. */
+  /** The test file of the check's module, or null when it has none. */
   testSource: string | null;
+  /** That file's name, for the messages. Default `<id>.test.ts`. */
+  testFile?: string;
+  /**
+   * The fixes the other checks of the module declare. They share the test
+   * file, so a sha one of them declares is not this check's to account for.
+   */
+  siblingIncidents?: string[];
   /** On the list of checks written before provenance was required. */
   unproven: boolean;
 };
@@ -61,8 +68,12 @@ export type ProvenanceInput = {
 /** What is missing for the check to prove itself; empty when it does. */
 export function provenanceProblems(input: ProvenanceInput): string[] {
   const { id, provenance, testSource, unproven } = input;
+  const testFile = input.testFile ?? `${id}.test.ts`;
+  const siblings = input.siblingIncidents ?? [];
   const incidents = provenance?.incidents ?? [];
-  const cited = testSource ? citedShas(testSource) : [];
+  const cited = (testSource ? citedShas(testSource) : []).filter(
+    (sha) => !siblings.includes(sha)
+  );
 
   if (unproven) {
     if (incidents.length > 0 || cited.length > 0) {
@@ -75,11 +86,11 @@ export function provenanceProblems(input: ProvenanceInput): string[] {
 
   if (incidents.length === 0) {
     return [
-      `${id} declares no provenance.incidents: name the commit of the past fix it encodes, and replay its parent revision in ${id}.test.ts (a new check cannot join UNPROVEN_CHECKS)`
+      `${id} declares no provenance.incidents: name the commit of the past fix it encodes, and replay its parent revision in ${testFile} (a new check cannot join UNPROVEN_CHECKS)`
     ];
   }
   if (testSource === null) {
-    return [`${id} has no ${id}.test.ts to replay ${incidents.join(", ")}`];
+    return [`${id} has no ${testFile} to replay ${incidents.join(", ")}`];
   }
 
   const problems: string[] = [];
@@ -93,7 +104,7 @@ export function provenanceProblems(input: ProvenanceInput): string[] {
     }
     if (!testSource.includes(sha)) {
       problems.push(
-        `${id}: ${id}.test.ts never names ${sha}, the fix provenance.incidents declares`
+        `${id}: ${testFile} never names ${sha}, the fix provenance.incidents declares`
       );
       continue;
     }
@@ -102,14 +113,14 @@ export function provenanceProblems(input: ProvenanceInput): string[] {
     );
     if (!replays) {
       problems.push(
-        `${id}: no case in ${id}.test.ts names ${sha} and expects a finding — replay the code from before ${sha} (git show ${sha}^:<file>) and assert the check flags it`
+        `${id}: no case in ${testFile} names ${sha} and expects a finding — replay the code from before ${sha} (git show ${sha}^:<file>) and assert the check flags it`
       );
     }
   }
   for (const sha of cited) {
     if (!incidents.includes(sha)) {
       problems.push(
-        `${id}: ${id}.test.ts replays ${sha}, which provenance.incidents does not declare — add the fix to incidents`
+        `${id}: ${testFile} replays ${sha}, which provenance.incidents does not declare — add the fix to incidents`
       );
     }
   }

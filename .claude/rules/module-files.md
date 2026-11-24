@@ -3,9 +3,7 @@ paths:
   - "apps/erp/app/modules/**"
   - "apps/erp/app/routes/**"
   - "packages/api/src/**"
-  - "packages/checks/src/conformance/module-shape.ts"
-  - "packages/checks/src/conformance/service-fn-file.ts"
-  - "packages/checks/src/conformance/no-server-code-in-client.ts"
+  - "packages/checks/src/conformance/modules.ts"
 ---
 
 # Module files: service functions, building blocks, no barrels

@@ -15,7 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { eachFile } from "../check";
-import { spdxLicenseHeader } from "../conformance/spdx-license-header";
+import { spdxLicenseHeader } from "../conformance/licensing";
 import { LICENSE_HEADERS } from "../license-headers";
 import { listLicenseCandidates, loadLicenseFiles } from "./license-files";
 

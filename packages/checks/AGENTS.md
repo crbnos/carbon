@@ -12,23 +12,24 @@ fails on any violation the committed baseline does not list.
 - **Fix the code, not the baseline.** A new violation is fixed where it is. The
   baseline (`src/conformance/baseline.json`) grandfathers only the sites that
   existed before a check did.
-- **Read a check in its own file.** Each check's rule, its exemptions and the
-  incident that prompted it are in the comments of its file under
-  `src/conformance/`. This guide does not repeat them. `src/checks.ts` lists
-  every check.
+- **Read a check in its subject's file.** `src/conformance/` has one file per
+  subject (`migrations.ts`, `authz.ts`, `data-access.ts`, `ui.ts`, …). Each
+  check's rule, its exemptions and the incident that prompted it are in the
+  comments above it. This guide does not repeat them.
 - **Add a check as one object and one line.** Write a `Check`
-  (`src/check.ts`: `id`, `description`, `provenance`, `find(repo)`) and add it
-  to `CHECKS` in `src/checks.ts`. Nothing else registers it. There are three
-  ways to write one; copy the closest:
+  (`src/check.ts`: `id`, `description`, `provenance`, `find(repo)`) in its
+  subject's file and add it to the `checks` list at the end of that file.
+  `src/checks.ts` joins those lists into `CHECKS`. Nothing else registers it.
+  There are three ways to write one; copy the closest:
   - It reads one file at a time: `fileCheck(input, { …, scan })`. Tests call
     `scan(file, contents)` with a fixture string. Example:
-    `no-numeric-precision.ts`.
+    `noNumericPrecision` in `migrations.ts`.
   - Its scan needs data from the repo (the generated columns, the managed
     functions): keep a factory that takes the data, so tests pass their own,
     and export a `Check` that reads the data with `repo.read`. Example:
-    `no-authz-ddl-in-migrations.ts`.
+    `noAuthzDdlInMigrationsCheck` in `authz.ts`.
   - It compares several files: a pure `find*` function over its inputs, and a
-    `Check` that reads them. Example: `provider-role-backfilled.ts`.
+    `Check` that reads them. Example: `providerRoleBackfilled` in `drift.ts`.
 - **Read every input through `repo.read(loader)`.** A loader is a function
   `(root) => T`. `repo` runs each loader once and shares the result, so pass
   the same function every time:
@@ -53,7 +54,7 @@ fails on any violation the committed baseline does not list.
     statements are then read one by one, without conditions or loop queries.
 - **A rule about TypeScript syntax is a Biome plugin, not a regex.** Write a
   GritQL file in `biome-plugins/` and a `Check` that reads its findings
-  (`route-action-shape.ts` is the example). Then:
+  (`routeActionShape` in `routes.ts` is the example). Then:
   - Enable it for its folders with an `overrides` entry in the root
     `biome.jsonc`. The object form of `plugins` with `includes` does not match
     repo-relative globs in Biome 2.5.
@@ -122,10 +123,10 @@ The gate runs in four places with the same command
 | Path | Holds |
 |---|---|
 | `src/check.ts` | The types (`Check`, `Repo`, `Violation`, `Provenance`) and `fileCheck`, `eachFile` |
-| `src/checks.ts` | `CHECKS`: every check, the only registration |
+| `src/checks.ts` | `CHECKS`: the subject files' `checks` lists, joined |
 | `src/run.ts` | `collectFindings` (runs `CHECKS` over one `repo`) and `newViolations` (minus the baseline) |
 | `src/repo.ts` | `openRepo`: reads each input once |
-| `src/conformance/` | One file per check, or per group of related checks, with its tests |
+| `src/conformance/` | One file per subject, with its tests in `<subject>.test.ts` |
 | `src/sources/` | Loaders several checks share; `sql.ts` (parsed SQL) and `biome.ts` (plugin findings) |
 | `biome-plugins/` | The GritQL rules |
 | `src/baseline.ts`, `src/conformance/baseline.json` | The grandfathered violations |

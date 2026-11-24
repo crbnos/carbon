@@ -94,7 +94,7 @@ const UNPROVEN_CHECKS = new Set([
 // lets an unproven check in, which is what this test exists to stop. It went
 // from 61 to 63 once, when checks began to be read from the registry: the list
 // had been built from file names, which hid `account-fk-classified` (it shares
-// `account-fk-restrict.ts`) and `route-action-shape` (a Biome plugin). Both
+// one file with `account-fk-restrict`) and `route-action-shape` (a Biome plugin). Both
 // predate this rule.
 const UNPROVEN_CEILING = 63;
 
@@ -135,13 +135,18 @@ describe("every registered check proves itself on the fix it encodes", () => {
   it.each(exported.map((entry) => [entry.check.id, entry] as const))(
     "%s",
     (id, { check, file }) => {
-      const testFile = join(CONFORMANCE, file.replace(/\.ts$/, ".test.ts"));
+      const testFile = file.replace(/\.ts$/, ".test.ts");
+      const testPath = join(CONFORMANCE, testFile);
       const problems = provenanceProblems({
         id,
         provenance: check.provenance ?? null,
-        testSource: existsSync(testFile)
-          ? readFileSync(testFile, "utf8")
+        testSource: existsSync(testPath)
+          ? readFileSync(testPath, "utf8")
           : null,
+        testFile,
+        siblingIncidents: exported
+          .filter((other) => other.file === file && other.check !== check)
+          .flatMap((other) => other.check.provenance?.incidents ?? []),
         unproven: UNPROVEN_CHECKS.has(id)
       });
       expect(problems).toEqual([]);
@@ -212,6 +217,18 @@ it("passes the de82a88cc6 fix", () => {
     expect(provenanceProblems({ ...input, testSource: null })).toEqual([
       "c has no c.test.ts to replay de82a88cc6"
     ]);
+  });
+
+  it("leaves a fix another check of the module declares to that check", () => {
+    expect(
+      provenanceProblems({
+        ...input,
+        provenance: null,
+        unproven: true,
+        testSource: REPLAY,
+        siblingIncidents: ["de82a88cc6"]
+      })
+    ).toEqual([]);
   });
 
   it("sends an unproven check that gained a fix off the list", () => {

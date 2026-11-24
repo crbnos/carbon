@@ -1,0 +1,568 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { posix } from "node:path";
+import ts from "typescript5";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  fileCheck,
+  type SourceFile,
+  type Violation
+} from "../check";
+import { pluginFindings, routeTypescript, typescript } from "../sources/inputs";
+import { loadModuleServerFiles } from "../sources/modules";
+import { lineOf } from "../sources/text";
+
+// Routes: rules for the React Router route modules of the apps. A route writes
+// and reads through service functions, an index route that only redirects runs
+// its redirect before its parents' loaders, and a page under /x neither copies
+// its loader data into state nor keeps its state when the record changes.
+
+const ID = "route-action-shape";
+
+/**
+ * The rule itself is a Biome plugin, `biome-plugins/routeActionShape.grit`,
+ * so the editor shows it; this reads what the plugin reports.
+ *
+ * It fails a write in an ERP route: a `.from(…)` insert, upsert, update or
+ * delete, a Kysely `insertInto`/`updateTable`/`deleteFrom`, or an
+ * `invokePosting(`/`invokePostingOrThrow(`/`invokeCreate(` call (a posting
+ * body run outside its service function). The write belongs in a
+ * `defineServiceFn` the route calls, so the API and MCP run the same logic
+ * (`.ai/plans/2026-10-15-service-function-migration.md`).
+ *
+ * Biome matches the parsed call. So a comment or a line break inside the
+ * chain does not hide a write, and a write named in a comment or a string
+ * does not match. A route that calls a write building block from a
+ * `.service.ts` is not detected. The root `biome.jsonc` enables the plugin for
+ * ERP routes and leaves out test files. The baseline holds auth routes only
+ * (the OAuth routes, invite, unlock, account security and passkeys).
+ */
+export const routeActionShape: Check = {
+  id: ID,
+  description:
+    "An ERP route writes only through a service function: no client, Kysely or posting writes in the route",
+  provenance: {
+    deprecates: "a route action that composes writes itself",
+    replacedBy:
+      "one `defineServiceFn` per operation, called through `authorize(request)`",
+    since: "2026-10-15"
+  },
+  find: (repo) =>
+    repo
+      .read(pluginFindings)
+      .filter((finding) => finding.checkId === ID)
+      .map((finding) => finding.violation)
+};
+
+// An index route that renders nothing exists to redirect (`/x/issue/:id` →
+// `…/details`). React Router runs the loaders of a matched branch in parallel,
+// so its parents' loaders ran in full for a request that was about to be
+// redirected: one hover prefetch of a bare issue link cost ~20 queries, thrown
+// away, and a click cost them twice. Exporting the redirect as middleware runs
+// it before any loader.
+const INDEX_ROUTE = /\/app\/routes\/(?:.*[/.])?_index\.tsx$/;
+const LOADER = /^export\s+(?:async\s+function|function|const)\s+loader\b/m;
+const DEFAULT_EXPORT = /^export\s+default\b|^export\s*\{[^}]*\bdefault\b/m;
+const REDIRECT = /\bredirect\s*\(/;
+const MIDDLEWARE =
+  /^export\s+const\s+middleware\b[^;]*\bredirectBeforeLoaders\s*\(\s*loader\s*\)/m;
+
+export const indexRedirectBeforeLoaders = fileCheck(routeTypescript, {
+  id: "index-redirect-before-loaders",
+  description:
+    "An index route that only redirects must run the redirect before its parents' loaders",
+  provenance: {
+    deprecates:
+      "a redirect-only index route whose redirect runs alongside its parents' loaders",
+    replacedBy:
+      "export const middleware = [redirectBeforeLoaders(loader)] (@carbon/utils)",
+    since: "2026-10-02"
+  },
+  scan(file: string, contents: string): Violation[] {
+    if (!INDEX_ROUTE.test(file)) return [];
+    const loader = LOADER.exec(contents);
+    // A route with a default export renders a page; one without a redirect is
+    // a resource route. Neither is a redirect-only route.
+    if (!loader || DEFAULT_EXPORT.test(contents) || !REDIRECT.test(contents)) {
+      return [];
+    }
+    if (MIDDLEWARE.test(contents)) return [];
+    const line = lineOf(contents, loader.index);
+    return [
+      {
+        file,
+        line,
+        snippet: contents.split("\n")[line - 1]?.trim() ?? "",
+        message:
+          "Add `export const middleware = [redirectBeforeLoaders(loader)];` (@carbon/utils) so the redirect runs before the parents' loaders"
+      }
+    ];
+  }
+});
+
+// `useState(initial)` reads `initial` once. Seeded from loader or route data,
+// the state is a copy that no reload updates: a quote's totals kept a deleted
+// line until the page was reloaded, because they were summed from lines copied
+// into state at mount. Loaded data changes under a mounted component all the
+// time (a save's revalidation, a realtime reload, a layout that reloads after
+// its page mounts).
+//
+// What to write instead:
+// - a value computed from the data: compute it during render (`useMemo`);
+// - the user's own choices over the data: keep only the choices in state and
+//   combine them with the current data during render;
+// - a draft the user edits: render it in a component keyed on what it drafts.
+//
+// This sees only a hook result used by name in the same file. A copy seeded
+// from a prop is not found.
+const SOURCE =
+  /const\s+(\{[^}]*\}|\w+)\s*=\s*use(?:LoaderData|RouteData|RouteLoaderData)\b/g;
+const STATE = /\buseState\s*(?:<[^;(]*?>)?\s*\(/g;
+
+function boundNames(pattern: string): string[] {
+  if (!pattern.startsWith("{")) return [pattern];
+  return pattern
+    .slice(1, -1)
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) =>
+      part
+        .replace(/^\.\.\./, "")
+        .split(":")
+        .pop()!
+        .split("=")[0]!
+        .trim()
+    )
+    .filter((name) => /^\w+$/.test(name));
+}
+
+/** The text between the parenthesis at `open` and its match. */
+function argument(contents: string, open: number): string {
+  let depth = 0;
+  for (let i = open; i < contents.length && i < open + 2000; i++) {
+    const char = contents[i];
+    if (char === "(") depth++;
+    else if (char === ")" && --depth === 0) return contents.slice(open + 1, i);
+  }
+  return "";
+}
+
+export const noStateCopyOfLoaderData = fileCheck(typescript, {
+  id: "no-state-copy-of-loader-data",
+  description:
+    "state must not be seeded from loader or route data: it is a copy no reload updates",
+  provenance: {
+    deprecates: "useState(valueFrom(useLoaderData() | useRouteData()))",
+    replacedBy:
+      "a value computed during render, or a component keyed on what it drafts",
+    since: "2026-10-06"
+  },
+  scan(file: string, contents: string): Violation[] {
+    if (!file.endsWith(".tsx")) return [];
+    const names = [...contents.matchAll(SOURCE)].flatMap((match) =>
+      boundNames(match[1]!)
+    );
+    if (names.length === 0) return [];
+    const used = new RegExp(`(?<![.\\w])(?:${names.join("|")})\\b(?!\\s*:)`);
+
+    const violations: Violation[] = [];
+    for (const match of contents.matchAll(STATE)) {
+      const open = match.index + match[0].length - 1;
+      const initial = argument(contents, open);
+      const name = initial.match(used)?.[0];
+      if (!name) continue;
+      const line = lineOf(contents, match.index);
+      violations.push({
+        file,
+        line,
+        snippet: contents.split("\n")[line - 1]?.trim() ?? "",
+        message: `State seeded from \`${name}\` (loader or route data) is a copy that no reload updates. Compute it during render, or keep only the user's input in state`
+      });
+    }
+    return violations;
+  }
+});
+
+const LOADER_ROUTES = /^apps\/erp\/app\/routes\//;
+const SERVER_FILE =
+  /^apps\/erp\/app\/modules\/([a-z-]+)\/\1(?:\.ee)?\.server\.ts$/;
+const SERVICE_IMPORT = /modules\/([a-z-]+)\/\1(?:\.ee)?\.service$/;
+
+/**
+ * `<module>.<name>` for every building block a service function calls
+ * (`service.<name>(…)` in `<module>.server.ts`). A building block no service
+ * function calls is a helper, and a loader may call it directly.
+ */
+export function wrappedBuildingBlocks(serverFiles: SourceFile[]): Set<string> {
+  const wrapped = new Set<string>();
+  for (const { file, contents } of serverFiles) {
+    const module = SERVER_FILE.exec(file)?.[1];
+    if (!module) continue;
+    for (const m of contents.matchAll(/\bservice\.(\w+)\(/g)) {
+      wrapped.add(`${module}.${m[1]}`);
+    }
+  }
+  return wrapped;
+}
+
+function loaderBody(source: ts.SourceFile): ts.Node | undefined {
+  for (const statement of source.statements) {
+    if (
+      ts.isFunctionDeclaration(statement) &&
+      statement.name?.text === "loader"
+    ) {
+      return statement.body;
+    }
+    if (ts.isVariableStatement(statement)) {
+      for (const d of statement.declarationList.declarations) {
+        if (ts.isIdentifier(d.name) && d.name.text === "loader")
+          return d.initializer;
+      }
+    }
+  }
+  return undefined;
+}
+
+export const LOADER_READS_THROUGH_API = "loader-reads-through-api";
+
+const ABOUT = {
+  id: LOADER_READS_THROUGH_API,
+  description:
+    "An ERP route loader calls a wrapped building block through its service function, not directly",
+  provenance: {
+    deprecates:
+      "a loader that calls a `.service` building block a service function wraps",
+    replacedBy: "`api.<module>.<fn>(input)` from `authorize(request, gate)`",
+    since: "2026-10-18"
+  }
+};
+
+/**
+ * An ERP route loader reads through the service functions
+ * (`api.<module>.<fn>(input)`, `const { api } = await authorize(request, gate)`), never by calling a
+ * building block that a service function wraps: the loader and an API or
+ * MCP caller then pass the same permission gate.
+ *
+ * Only the `loader` is read; actions are not scanned. The baseline holds the
+ * reads that stay direct on purpose: service-role reads, reads for another
+ * company of the group, reads whose page derives its types from the building
+ * block, and the write-on-GET `upsertPickMethod` calls.
+ */
+export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
+  return {
+    ...ABOUT,
+    scan(file: string, contents: string): Violation[] {
+      if (!LOADER_ROUTES.test(file) || !contents.includes(".service"))
+        return [];
+      const source = ts.createSourceFile(
+        file,
+        contents,
+        ts.ScriptTarget.Latest,
+        true,
+        file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+      );
+      // local name -> `<module>.<name>`, for value imports of a service file
+      const imported = new Map<string, string>();
+      // namespace name -> `<module>`, for `import * as x` of a service file
+      const namespaces = new Map<string, string>();
+      for (const statement of source.statements) {
+        if (!ts.isImportDeclaration(statement)) continue;
+        const from = (statement.moduleSpecifier as ts.StringLiteral).text;
+        const module = SERVICE_IMPORT.exec(from)?.[1];
+        const clause = statement.importClause;
+        if (!module || !clause || clause.isTypeOnly) continue;
+        const named = clause.namedBindings;
+        if (named && ts.isNamespaceImport(named)) {
+          namespaces.set(named.name.text, module);
+          continue;
+        }
+        if (!named || !ts.isNamedImports(named)) continue;
+        for (const element of named.elements) {
+          if (element.isTypeOnly) continue;
+          const name = (element.propertyName ?? element.name).text;
+          imported.set(element.name.text, `${module}.${name}`);
+        }
+      }
+      const body = loaderBody(source);
+      if (!body || imported.size + namespaces.size === 0) return [];
+
+      const calledBlock = (callee: ts.Expression): string | undefined => {
+        if (ts.isIdentifier(callee)) return imported.get(callee.text);
+        if (
+          ts.isPropertyAccessExpression(callee) &&
+          ts.isIdentifier(callee.expression)
+        ) {
+          const module = namespaces.get(callee.expression.text);
+          if (module) return `${module}.${callee.name.text}`;
+        }
+        return undefined;
+      };
+
+      const violations: Violation[] = [];
+      const visit = (node: ts.Node) => {
+        if (ts.isCallExpression(node)) {
+          const block = calledBlock(node.expression);
+          if (block && wrapped.has(block)) {
+            violations.push({
+              file,
+              line:
+                source.getLineAndCharacterOfPosition(node.getStart(source))
+                  .line + 1,
+              snippet: block,
+              message: `Call ${block} through its service function: api.${block}(input), with api from authorize(request, gate)`
+            });
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(body);
+      return violations;
+    }
+  };
+}
+
+export const loaderReadsThroughApiCheck: Check = {
+  ...ABOUT,
+  find: (repo) =>
+    eachFile(
+      repo.read(routeTypescript),
+      loaderReadsThroughApi(
+        wrappedBuildingBlocks(
+          repo.read(loadModuleServerFiles).map((f) => f.server)
+        )
+      ).scan
+    )
+};
+
+// React Router keeps a route's components mounted when only its params change
+// (part A to part B, one order line to the next). Whatever the page seeded once
+// from its record — a form's default values, an editor's initial content, a
+// `useState` copy — then belongs to the previous record: a notes editor showed
+// record A's notes on record B and the first keystroke saved them there.
+// `RecordOutlet` remounts the page when it is shown for a different record.
+const OUTLET_ROUTES = /^apps\/(?:erp|mes)\/app\/routes\/x\+\//;
+const OUTLET = /<Outlet(?=[\s/>])([^>]*)>/g;
+
+export const noBareOutlet: ConformanceCheck & Check = {
+  id: "no-bare-outlet",
+  description:
+    "a route under /x renders RecordOutlet, which remounts its page when the record changes",
+  provenance: {
+    deprecates: "<Outlet />",
+    replacedBy: '<RecordOutlet /> from "@carbon/react"',
+    since: "2026-10-06"
+  },
+  scan(file: string, contents: string): Violation[] {
+    if (!OUTLET_ROUTES.test(file)) return [];
+    const violations: Violation[] = [];
+    for (const match of contents.matchAll(OUTLET)) {
+      // An outlet with its own key already says when its page remounts (the
+      // shell keys on the company).
+      if (/\bkey=/.test(match[1]!)) continue;
+      const line = lineOf(contents, match.index);
+      const text = contents.split("\n")[line - 1]?.trim() ?? "";
+      if (text.startsWith("//") || text.startsWith("*")) continue;
+      violations.push({
+        file,
+        line,
+        snippet: text,
+        message:
+          'Render `<RecordOutlet />` from "@carbon/react": a plain outlet keeps the page mounted when the record changes, with the previous record\'s form and editor state'
+      });
+    }
+    return violations;
+  },
+  find: (repo) => [
+    ...eachFile(repo.read(typescript), noBareOutlet.scan),
+    ...findNestedOutlets(repo.read(typescript))
+  ]
+};
+
+// A file that renders its own outlet must not also render a component that
+// renders one. Both outlets render the same child route, so a route dialog
+// opens twice: two "New API Key" modals with the same input ids, each setting
+// `aria-hidden` on the other, so assistive technology found no field in either.
+// The per-file scan above reads routes only, and a component's outlet sits in
+// `modules/` or `components/`. This finder follows imports across files: a
+// component renders an outlet when its file does, or when it renders such a
+// component. An import names a component by its file (`~/…/ApiKeysTable`,
+// `./ApiKeysTable`), or by its file's name through a barrel above it
+// (`{ ApiKeysTable }` from `~/modules/settings/ui`).
+//
+// The same bug opened New Webhook and a supplier's New Process twice. Because
+// the import names the file, a same-named component elsewhere is not taken
+// for it. A barrel that renames its export is not followed. The finder reads
+// the whole file, not its branches: an outlet behind an early return is
+// flagged too, because the rule is one outlet per route. The baselined
+// supplier processes route keeps its `SupplierProcesses` outlet until that
+// card gets its own fix.
+const APP_TSX = /^apps\/(erp|mes)\/app\/.+\.tsx$/;
+const ROUTE_TSX = /^apps\/(?:erp|mes)\/app\/routes\//;
+const ANY_OUTLET = /<(?:Record)?Outlet(?=[\s/>])/;
+const IMPORT =
+  /import\s+(?!type\s)(?:([\w$]+)\s*,?\s*)?(?:\{([^}]*)\}\s*)?from\s*["']([^"']+)["']/g;
+
+const isCommentLine = (text: string) => /^(?:\/\/|\*|\/\*|\{\/\*)/.test(text);
+
+/** The file's lines with comment lines blanked, so a mention is not a render. */
+const codeLines = (contents: string) =>
+  contents.split("\n").map((line) => (isCommentLine(line.trim()) ? "" : line));
+
+const componentName = (file: string) => {
+  const parts = file.split("/");
+  const base = parts[parts.length - 1]!.split(".")[0]!;
+  return base === "index" ? parts[parts.length - 2]! : base;
+};
+
+const stem = (file: string) => file.replace(/\.tsx?$/, "");
+
+/** An import's repo path without extension, or null for a package import. */
+const resolveImport = (file: string, app: string, specifier: string) => {
+  if (specifier.startsWith("~/")) {
+    return stem(`apps/${app}/app/${specifier.slice(2)}`);
+  }
+  if (specifier.startsWith(".")) {
+    return stem(posix.join(posix.dirname(file), specifier));
+  }
+  return null;
+};
+
+type Binding = { local: string; imported: string; from: string };
+
+const importBindings = (file: string, app: string, code: string) => {
+  const bindings: Binding[] = [];
+  for (const [, defaultName, named, specifier] of code.matchAll(IMPORT)) {
+    const from = resolveImport(file, app, specifier!);
+    if (!from) continue;
+    if (defaultName) {
+      bindings.push({ local: defaultName, imported: "default", from });
+    }
+    for (const part of named?.split(",") ?? []) {
+      const [imported, local = imported] = part.trim().split(/\s+as\s+/);
+      if (!imported || imported.startsWith("type ")) continue;
+      bindings.push({ local: local!, imported, from });
+    }
+  }
+  return bindings;
+};
+
+// A JSX tag, not a type argument: `useColumns<Part>(` and `<Grid<Part>` follow
+// a name or a bracket.
+const tagPattern = (name: string) =>
+  new RegExp(`(?<![\\w$.)\\]])<${name}(?=[\\s/>])`);
+
+type OutletComponent = { file: string; name: string; chain: string[] };
+
+// From the component's own file, only its default export or the export named
+// after the file counts: another export of that file renders no outlet.
+// A default import through a folder's index (`import Panel from "~/components/Panel"`)
+// is matched by its local name.
+const importsComponent = (binding: Binding, owner: OutletComponent) => {
+  const ownFile =
+    stem(owner.file) === binding.from ||
+    stem(owner.file) === `${binding.from}/index`;
+  if (ownFile) {
+    return binding.imported === "default" || binding.imported === owner.name;
+  }
+  return (
+    (binding.imported === "default" ? binding.local : binding.imported) ===
+      owner.name && owner.file.startsWith(`${binding.from}/`)
+  );
+};
+
+export function findNestedOutlets(files: SourceFile[]): Violation[] {
+  const sources = files.flatMap(({ file, contents }) => {
+    const app = APP_TSX.exec(file)?.[1];
+    if (!app) return [];
+    const lines = codeLines(contents);
+    const code = lines.join("\n");
+    return [
+      {
+        file,
+        lines,
+        code,
+        isRoute: ROUTE_TSX.test(file),
+        hasOutlet: ANY_OUTLET.test(code),
+        bindings: importBindings(file, app, code)
+      }
+    ];
+  });
+
+  /** The components this file renders that render an outlet, by local name. */
+  const rendered = (
+    source: (typeof sources)[number],
+    owners: Map<string, OutletComponent>
+  ) => {
+    const found: { local: string; owner: OutletComponent }[] = [];
+    for (const binding of source.bindings) {
+      if (!source.code.includes(`<${binding.local}`)) continue;
+      if (!tagPattern(binding.local).test(source.code)) continue;
+      for (const owner of owners.values()) {
+        if (owner.file === source.file || !importsComponent(binding, owner)) {
+          continue;
+        }
+        found.push({ local: binding.local, owner });
+        break;
+      }
+    }
+    return found;
+  };
+
+  // Components that render an outlet, directly or through another component.
+  const owners = new Map<string, OutletComponent>();
+  for (const source of sources) {
+    if (source.isRoute || !source.hasOutlet) continue;
+    owners.set(source.file, {
+      file: source.file,
+      name: componentName(source.file),
+      chain: [source.file]
+    });
+  }
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const source of sources) {
+      if (source.isRoute || owners.has(source.file)) continue;
+      const [first] = rendered(source, owners);
+      if (!first) continue;
+      owners.set(source.file, {
+        file: source.file,
+        name: componentName(source.file),
+        chain: [source.file, ...first.owner.chain]
+      });
+      grew = true;
+    }
+  }
+
+  const violations: Violation[] = [];
+  for (const source of sources) {
+    if (!source.hasOutlet) continue;
+    for (const { local, owner } of rendered(source, owners)) {
+      const tag = tagPattern(local);
+      source.lines.forEach((text, index) => {
+        if (!tag.test(text)) return;
+        violations.push({
+          file: source.file,
+          line: index + 1,
+          snippet: text.trim(),
+          message: `<${local}> renders an outlet (${owner.chain.join(" → ")}) and this file renders its own. Where both render, the child route mounts twice. Remove the component's outlet and keep the route's <RecordOutlet />`
+        });
+      });
+    }
+  }
+  return violations;
+}
+
+/** The routes checks, in the order they are written above. */
+export const checks: Check[] = [
+  routeActionShape,
+  indexRedirectBeforeLoaders,
+  noStateCopyOfLoaderData,
+  loaderReadsThroughApiCheck,
+  noBareOutlet
+];
