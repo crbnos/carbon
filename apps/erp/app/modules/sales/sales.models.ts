@@ -963,6 +963,9 @@ export const salesOrderShipmentValidator = z
     receiptRequestedDate: zfd.text(z.string().optional()),
     receiptPromisedDate: zfd.text(z.string().optional()),
     dropShipment: zfd.checkbox(),
+    // The order's own ship-to (`salesOrder.customerLocationId`); a drop
+    // shipment ships to `customerLocationId` below instead.
+    shipToCustomerLocationId: zfd.text(z.string().optional()),
     customerId: zfd.text(z.string().optional()),
     customerLocationId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),

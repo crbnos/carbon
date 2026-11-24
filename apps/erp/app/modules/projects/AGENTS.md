@@ -189,7 +189,10 @@ Building blocks in `projects.service.ts` unless marked (models, utils). Most hav
 operation of the same name in `projects.server.ts`.
 - `getChargeNumbers` — Released projects and chargeable elements for the picker.
 - `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs page.
-- `getProjectElementPage` — everything the element page loads, in parallel.
+- `getProjectElementPage` — everything the element page loads, in parallel. Its
+  `chargeCostRefusal` is `projectExpenseRefusalOnEveryDate` (`project-posting.ts`, on
+  the rule `postProjectExpense` refuses with), set when no entry date can post: the page
+  disables Charge cost with it.
 - `getProjectElementCommentCounts` — the comment count per element for the Tree layout's cards (one paged read; no `@mcp` tag).
 - `saveTimesheetEntry`, `submitTimesheetWeek` — the posting bodies of
   `save-timesheet-entry` and `submit-timesheet-week`, which hold the DCAA rules for the
@@ -348,7 +351,8 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
   `ElementSidebar` with `PropertyFields.tsx` (inline fields, the **Billing element** switch),
   `ElementPlanLines` (the Estimated tab: one card per plan line with its actual and its
   Issue / Log time / Charge button, `PlanLineModal` behind a click), `ElementTimeAndMaterials`
-  (the Actual tab: one card per ledger row and open time entry), both on `CostCards.tsx` and
+  (the Actual tab: one card per ledger row and open time entry; it also exports
+  `ChargeCostMenuItem`, the ⋯ menu's and its Charge menu's item), both on `CostCards.tsx` and
   the pure `cost-cards.ts`; `ElementChildren`, `ElementLinks`, `LogTimeModal`,
   `IssueMaterialModal`, `ChargeCostModal` (a `projectExpenseEntry` through
   `x+/projects+/expense.tsx`), `ElementEarnedValue.ee`.

@@ -6821,20 +6821,38 @@ export async function movePeopleAssignment(
 }
 
 /**
+ * The values two rows of one person, day, shift and station merge into: hours
+ * add (a whole-shift row absorbs the other) and the larger overtime is kept,
+ * since the scheduler reads a day's overtime as the maximum across its rows.
+ */
+function mergedPeopleAssignment(
+  a: { hours: number | null; overtimeHours: number },
+  b: { hours: number | null; overtimeHours: number }
+) {
+  return {
+    hours:
+      a.hours === null || b.hours === null
+        ? null
+        : Number(a.hours) + Number(b.hours),
+    overtimeHours: Math.max(Number(a.overtimeHours), Number(b.overtimeHours))
+  };
+}
+
+/**
  * Move one assignment row to another person and/or date at the SAME station
  * (the matrix's drag). If the person already has a row at that station for
  * the same effective shift on that date, the rows merge (hours add; a
- * whole-shift row absorbs the other). Refused, with nothing written, when the
- * person is absent that day (`"absent"`) or already holds that day's shift at
- * another station (`"taken"` — one row per person, day and shift).
+ * whole-shift row absorbs the other; the larger overtime is kept). Refused,
+ * with nothing written, when the person is absent that day (`"absent"`). A
+ * person who already works another station that day keeps it, and the moved
+ * row splits their day.
  * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleAssignmentCell(
   db: Kysely<KyselyDatabase>,
   args: { id: string; companyId: string; employeeId: string; date: string }
 ): Promise<
-  | { id: string; workCenterId: string; merged: boolean }
-  | { refused: "absent" | "taken" }
+  { id: string; workCenterId: string; merged: boolean } | { refused: "absent" }
 > {
   await requirePeopleBoardRefs(db, args.companyId, {
     employeeId: args.employeeId
@@ -6881,7 +6899,7 @@ export async function movePeopleAssignmentCell(
       null;
     let targetQuery = trx
       .selectFrom("peopleAssignment")
-      .select(["id", "hours"])
+      .select(["id", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("date", "=", args.date)
@@ -6889,16 +6907,13 @@ export async function movePeopleAssignmentCell(
     targetQuery = effectiveShiftId
       ? targetQuery.where(whereEffectiveShift(effectiveShiftId, args.companyId))
       : targetQuery.where("shiftId", "is", null);
-    const target = await targetQuery.executeTakeFirst();
+    // locked, so a concurrent merge into the same row reads this one's sum
+    const target = await targetQuery.forUpdate().executeTakeFirst();
 
     if (target) {
-      const mergedHours =
-        source.hours === null || target.hours === null
-          ? null
-          : Number(source.hours) + Number(target.hours);
       await trx
         .updateTable("peopleAssignment")
-        .set({ hours: mergedHours })
+        .set(mergedPeopleAssignment(source, target))
         .where("id", "=", target.id)
         .where("companyId", "=", args.companyId)
         .execute();
@@ -6909,20 +6924,6 @@ export async function movePeopleAssignmentCell(
         .execute();
       return { id: target.id, workCenterId: source.workCenterId, merged: true };
     }
-
-    // peopleAssignment_person_day_key: one row per person, date and stored
-    // shift — a row at another station holds the slot this one would take
-    let takenQuery = trx
-      .selectFrom("peopleAssignment")
-      .select("id")
-      .where("companyId", "=", args.companyId)
-      .where("employeeId", "=", args.employeeId)
-      .where("date", "=", args.date)
-      .where("id", "!=", source.id);
-    takenQuery = source.shiftId
-      ? takenQuery.where("shiftId", "=", source.shiftId)
-      : takenQuery.where("shiftId", "is", null);
-    if (await takenQuery.executeTakeFirst()) return { refused: "taken" };
 
     const moved = await trx
       .updateTable("peopleAssignment")
@@ -7291,11 +7292,9 @@ export async function assignPeopleWeek(
     }
     const weekEnd = addIsoDays(args.weekStart, 6);
     const [existing, absences, ownShift] = await Promise.all([
-      // Company-wide (NOT location-scoped): the unique index is
-      // peopleAssignment_person_day_key (companyId, employeeId, date,
-      // COALESCE(shiftId,'')) — a person already booked for this day+shift at
-      // ANY location/station collides, so a location-scoped skip let the bulk
-      // insert violate the constraint and fail the whole week assignment.
+      // Company-wide (NOT location-scoped): a person already booked for this
+      // day and shift at ANY location or station is not booked a second
+      // whole shift by a week assignment.
       trx
         .selectFrom("peopleAssignment")
         .select(["date", "shiftId"])
@@ -7319,9 +7318,9 @@ export async function assignPeopleWeek(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst()
     ]);
-    // A day is taken by a row in the same slot of the unique index, or by a
-    // row in the same EFFECTIVE shift (a shift-less row counts as the
-    // person's own), which the boards would show as a double booking.
+    // A day is taken by a row with the same stored shift, or by a row in the
+    // same EFFECTIVE shift (a shift-less row counts as the person's own),
+    // which the boards would show as a double booking.
     const slotKey = (date: string, shiftId: string | null) =>
       `${date}:${shiftId ?? ""}`;
     const personShiftId = ownShift?.shiftId ?? null;
@@ -7400,8 +7399,11 @@ export async function unassignPeopleWeek(
 
 /**
  * Move a person's whole week from one station to another. Days where they
- * already have a row at the target station keep the target row (the source
- * row is dropped); other days simply change station.
+ * already have a row at the target station for the same shift merge into it
+ * (hours add; a whole-shift row absorbs the other; the larger overtime is
+ * kept); other days simply change station. The source rows, then the target
+ * rows, are locked before the merge, so two moves into one station add both
+ * and a repeated request merges nothing twice.
  * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleWeek(
@@ -7422,7 +7424,7 @@ export async function movePeopleWeek(
   return db.transaction().execute(async (trx) => {
     let sourceQuery = trx
       .selectFrom("peopleAssignment")
-      .select(["id", "date", "shiftId"])
+      .select(["id", "date", "shiftId", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("workCenterId", "=", args.fromWorkCenterId)
@@ -7433,24 +7435,34 @@ export async function movePeopleWeek(
         whereEffectiveShift(args.shiftId, args.companyId)
       );
     }
-    const source = await sourceQuery.execute();
+    const source = await sourceQuery.forUpdate().execute();
 
     const target = await trx
       .selectFrom("peopleAssignment")
-      .select(["date", "shiftId"])
+      .select(["id", "date", "shiftId", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("workCenterId", "=", args.workCenterId)
       .where("date", ">=", args.weekStart)
       .where("date", "<=", weekEnd)
+      .forUpdate()
       .execute();
-    const occupied = new Set(
-      target.map((row) => `${toIsoDate(row.date)}:${row.shiftId ?? ""}`)
+    const occupied = new Map(
+      target.map((row) => [`${toIsoDate(row.date)}:${row.shiftId ?? ""}`, row])
     );
 
     let moved = 0;
     for (const row of source) {
-      if (occupied.has(`${toIsoDate(row.date)}:${row.shiftId ?? ""}`)) {
+      const existing = occupied.get(
+        `${toIsoDate(row.date)}:${row.shiftId ?? ""}`
+      );
+      if (existing) {
+        await trx
+          .updateTable("peopleAssignment")
+          .set(mergedPeopleAssignment(row, existing))
+          .where("id", "=", existing.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
         await trx
           .deleteFrom("peopleAssignment")
           .where("id", "=", row.id)

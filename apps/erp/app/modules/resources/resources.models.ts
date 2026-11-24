@@ -154,11 +154,19 @@ export const maintenanceDispatchPriority = [
 ] as const;
 
 export const MaintenanceKPIs = [
-  { key: "mttr", label: "Mean Time To Repair" },
-  { key: "mtbf", label: "Mean Time Between Failures" },
-  { key: "sparePartCost", label: "Spare Part Cost" },
-  { key: "worstPerformingMachines", label: "Worst Performing Machines" },
-  { key: "sparePartConsumption", label: "Spare Part Consumption" }
+  { key: "mttr", label: "Mean Time To Repair", lowerIsBetter: true },
+  { key: "mtbf", label: "Mean Time Between Failures", lowerIsBetter: false },
+  { key: "sparePartCost", label: "Spare Part Cost", lowerIsBetter: true },
+  {
+    key: "worstPerformingMachines",
+    label: "Worst Performing Machines",
+    lowerIsBetter: true
+  },
+  {
+    key: "sparePartConsumption",
+    label: "Spare Part Consumption",
+    lowerIsBetter: true
+  }
 ] as const;
 
 export const maintenanceDispatchStatus = [

@@ -4431,6 +4431,9 @@ msgstr "适用于所有工作中心"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "适用于没有自己规则的特性，以及当该计划驱动检验时适用于批次。"
 
+msgid "Applies to invoices drafted from now on"
+msgstr ""
+
 msgid "Applies to Projects"
 msgstr "适用于项目"
 
@@ -7116,6 +7119,9 @@ msgstr "在每个租赁发票行计费"
 
 msgid "Charges"
 msgstr "卡消费"
+
+msgid "Charges invoice"
+msgstr ""
 
 msgid "Charging"
 msgstr "计费中"
@@ -11482,6 +11488,9 @@ msgstr "每天为到期付款创建草稿采购发票。使用此选项立即生
 msgid "Draft Request"
 msgstr "草稿请求"
 
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "为结束日期之后已开票的时间起草贷项凭证"
 
@@ -11783,6 +11792,9 @@ msgstr "每一行都是从该公司的数据链接到它不拥有的一行。删
 
 msgid "Each line shows its item ID and revision."
 msgstr "每行显示其物料 ID 和修订版。"
+
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
 
 msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
 msgstr "每行将采用其物料在开票日期、发票收货地点对应的税码和税率。这会覆盖您在某行上清空的税码。租赁行和合同行保留各自的税码。"
@@ -15323,8 +15335,8 @@ msgstr "Carbon 在此浏览器中的外观"
 msgid "How coverage is worked out"
 msgstr "如何计算覆盖范围"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "每行如何确认收入：按天分配或每月均匀分配，从上线或其开始日期开始"
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "如何将每件的租赁分成周期，以及在周期内何时开具发票。"
@@ -16403,6 +16415,9 @@ msgstr "发票"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "激活会计后，发票和账单将同步"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "每天自动为到期的项目创建发票。使用此功能立即对应收项目开票——例如，在添加费用后。发票随后将遵循本协议的开票设置。"
 
@@ -16426,6 +16441,15 @@ msgstr "发票自动起草、已过账并发送电子邮件。"
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "发票自动起草、已过账并通过 Stripe 发送。"
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "发票发送到已链接到计费客户的 Stripe 客户。"
@@ -20304,6 +20328,9 @@ msgstr "未找到员工"
 msgid "No end"
 msgstr "无结束"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "没有预估行"
 
@@ -20995,6 +21022,9 @@ msgstr "没有日期在结转之前的未过账文档"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "此位置此工序上没有未开始、未批处理的操作。"
 
+msgid "No upcoming invoice."
+msgstr ""
+
 msgid "No value"
 msgstr "没有值"
 
@@ -21664,14 +21694,14 @@ msgstr "每三个月一笔付款。"
 msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 msgstr "税码内的一个税率，例如州税率或城市税率，具有其自己的税务部门、可抵扣百分比和生效日期。"
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "每个特性一行"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "每张发票一行，每行一列。更改日期或金额，添加或删除一张发票。"
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "每月一行，每行一列。每行确认其发票所开票的确切金额。"
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "每个零件一行"
@@ -22040,9 +22070,6 @@ msgstr "打开工作流"
 
 msgid "Open-ended"
 msgstr "开放式"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "无期限：迄今为止已计划发票的价值。"
 
 msgid "Opened"
 msgstr "打开"
@@ -23681,6 +23708,9 @@ msgstr "预览"
 msgid "Preview failed: {error}"
 msgstr "预览失败：{error}"
 
+msgid "Preview PDF"
+msgstr ""
+
 msgid "Preview Quantity"
 msgstr "预览数量"
 
@@ -23865,6 +23895,9 @@ msgstr "打印"
 
 msgid "Prints as"
 msgstr "打印为"
+
+msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
+msgstr ""
 
 msgid "Priorities"
 msgstr "优先级"
@@ -25828,6 +25861,9 @@ msgstr "续订涨幅(%)"
 msgid "Rent"
 msgstr "租赁"
 
+msgid "Rent invoice"
+msgstr ""
+
 msgid "Rental"
 msgstr "租赁"
 
@@ -26618,6 +26654,9 @@ msgstr "收入总账科目，用于记录经营租赁收入（在租赁期内采
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "在获得前开票的收入，作为负债持有并随着服务期间推移由识别运行释放为收入。"
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "添加行后，将预览收入。"
@@ -35528,12 +35567,6 @@ msgstr "第一年内该资产每个期间的付款是多少"
 
 msgid "What employees read or watch before the questions"
 msgstr "员工在回答问题前阅读或观看的内容"
-
-msgid "What happens to an invoice once it is created"
-msgstr "发票创建后会发生什么"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "发票草稿后会发生什么"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "每天从租赁协议和合同自动创建的发票会如何处理。具有租赁费用、贷项、已作废发票的重新计费或规则违规的发票始终等待评审。"

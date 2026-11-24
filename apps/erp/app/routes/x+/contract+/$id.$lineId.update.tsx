@@ -38,6 +38,7 @@ const LINE_FIELDS = [
   "rate",
   "rateUnit",
   "discountPercent",
+  "taxPercent",
   "startDate",
   "endDate",
   "goLiveDate",
