@@ -8,6 +8,7 @@
   },
   "scripts": {
     "baseline": "tsx src/scripts/generate-baseline.ts",
+    "brief": "tsx src/scripts/brief.ts",
     "clean": "rimraf .turbo node_modules dist",
     "clobbers": "tsx src/scripts/check-clobbers.ts",
     "invariants": "tsx src/scripts/run-invariants.ts",
