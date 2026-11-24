@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { buildIntegrationOAuthUrl } from "./integration-oauth";
+import {
+  buildIntegrationOAuthUrl,
+  pickXeroConnection,
+  xeroAuthEventId
+} from "./integration-oauth";
 
 describe("integration OAuth URL", () => {
   it("requires a server-issued state", async () => {
@@ -43,5 +47,30 @@ describe("integration OAuth URL", () => {
     expect(url.searchParams.get("scope")).toBe(
       "accounting:read offline_access"
     );
+  });
+});
+
+describe("pickXeroConnection", () => {
+  const jwt = (claims: object) =>
+    `h.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.s`;
+  const connections = [
+    { id: "c-old", authEventId: "evt-1", tenantId: "t-us", tenantName: "US" },
+    { id: "c-new", authEventId: "evt-2", tenantId: "t-uk", tenantName: "UK" }
+  ];
+
+  it("reads the auth event id from the access token", () => {
+    expect(xeroAuthEventId(jwt({ authentication_event_id: "evt-2" }))).toBe(
+      "evt-2"
+    );
+    expect(xeroAuthEventId("not-a-jwt")).toBeNull();
+  });
+
+  it("takes the organisation picked in this authorisation, not the first listed", () => {
+    expect(pickXeroConnection(connections, "evt-2")?.tenantId).toBe("t-uk");
+  });
+
+  it("falls back to the first connection when the event is unknown", () => {
+    expect(pickXeroConnection(connections, null)?.tenantId).toBe("t-us");
+    expect(pickXeroConnection([], "evt-2")).toBeNull();
   });
 });

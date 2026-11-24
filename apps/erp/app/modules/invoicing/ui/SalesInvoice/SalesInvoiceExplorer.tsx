@@ -67,6 +67,7 @@ export default function SalesInvoiceExplorer() {
     salesInvoice: SalesInvoice;
     salesInvoiceLines: SalesInvoiceLine[];
     supplier: Supplier;
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
   }>(path.to.salesInvoice(invoiceId));
   const permissions = usePermissions();
 
@@ -79,7 +80,8 @@ export default function SalesInvoiceExplorer() {
     locationId:
       salesInvoiceData?.salesInvoice?.locationId ?? defaults.locationId ?? "",
     unitOfMeasureCode: "",
-    taxPercent: 0,
+    taxPercent: salesInvoiceData?.resolvedTax?.taxPercent ?? 0,
+    taxCodeId: salesInvoiceData?.resolvedTax?.taxCodeId ?? undefined,
     unitPrice: 0,
     discountPercent: 0,
     shippingCost: 0,

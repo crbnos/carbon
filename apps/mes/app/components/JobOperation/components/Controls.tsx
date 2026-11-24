@@ -201,7 +201,11 @@ export function WorkTypeToggle({
       value={value}
       type="single"
       aria-label={t`Time type`}
-      onValueChange={onChange}
+      onValueChange={(type) => {
+        // Clicking the selected choice again does not clear it.
+        if (!type) return;
+        onChange(type);
+      }}
       disabled={!!value && count <= 1}
       className={cn(
         "grid w-full lg:group-data-[collapsed=true]/dock:grid-cols-1",
