@@ -5,14 +5,16 @@
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { datetime, defaultReportRange, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
   getAccount,
   getAccountLedgerPage
 } from "~/modules/accounting/accounting.service";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -29,9 +31,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
-  const companiesParam = searchParams.get("companies");
-  const startDate = searchParams.get("startDate") || null;
-  const endDate = searchParams.get("endDate") || null;
+  // Parsed as the report does, so a malformed date falls back to its defaults.
+  const parsed = financialReportParamsValidator.safeParse(
+    Object.fromEntries(searchParams.entries())
+  );
+  const report = parsed.success ? parsed.data : null;
+  const companiesParam = report?.companies ?? null;
+  // The report's own default range, so a row opened with no dates in the URL
+  // shows the same window.
+  const range = defaultReportRange(
+    report?.endDate ??
+      datetime.today(await getCompanyTimeZone(client, companyId)).toString()
+  );
+  const startDate = report?.startDate ?? range.startDate;
+  const endDate = range.endDate;
   const isConsolidated = companiesParam === "all";
   const selectedCompanyId = isConsolidated
     ? null
