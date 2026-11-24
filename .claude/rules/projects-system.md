@@ -898,13 +898,14 @@ checks the budget (source `purchase`: Block refuses, Warn flashes), then `addPro
 (`projects.service.ts`) inserts a `projectExpenseEntry` and posts it through
 `post-project-expense` (Dr the project account / Cr the employee payable, one Other Direct ledger row). An
 entry that does not post is deleted again, so a refusal leaves nothing behind.
-`getProjectElementPage` returns `chargeCostRefusal`: `projectExpenseRefusal` for today
-(company time zone) on the posting's own context (`loadProjectPostingContexts`). While it
-is set, the ⋯ menu, the Actual tab's Charge menu and the plan cards' **Charge** button show
-Charge cost disabled with it as the tooltip. The modal's date is free.
-Only an element override has an effective date (`costTreatmentEffectiveFrom`; no ERP
-screen or operation writes it), so only then can the chosen date have another treatment
-than today: the posting refuses a Capitalize date, and the modal shows the refusal.
+`getProjectElementPage` returns `chargeCostRefusal`: `projectExpenseRefusalOnEveryDate`
+on the posting's own context (`loadProjectPostingContexts`), set only when no entry date
+can post. While it is set, the ⋯ menu, the Actual tab's Charge menu and the plan cards'
+**Charge** button show Charge cost disabled with it as the tooltip. The modal's date is
+free. Only an element override has an effective date (`costTreatmentEffectiveFrom`; no
+ERP screen or operation writes it), so only then do some dates post and others not: the
+action stays enabled, the posting refuses a Capitalize date, and the modal shows the
+refusal.
 
 The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,
 pure, tested) gives a box to each parent that has matching descendants. Dagre places the

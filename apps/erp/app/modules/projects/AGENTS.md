@@ -190,8 +190,9 @@ operation of the same name in `projects.server.ts`.
 - `getChargeNumbers` — Released projects and chargeable elements for the picker.
 - `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs page.
 - `getProjectElementPage` — everything the element page loads, in parallel. Its
-  `chargeCostRefusal` is `projectExpenseRefusal` (`project-posting.ts`, the rule
-  `postProjectExpense` refuses with) for today: the page disables Charge cost with it.
+  `chargeCostRefusal` is `projectExpenseRefusalOnEveryDate` (`project-posting.ts`, on
+  the rule `postProjectExpense` refuses with), set when no entry date can post: the page
+  disables Charge cost with it.
 - `getProjectElementCommentCounts` — the comment count per element for the Tree layout's cards (one paged read; no `@mcp` tag).
 - `saveTimesheetEntry`, `submitTimesheetWeek` — the posting bodies of
   `save-timesheet-entry` and `submit-timesheet-week`, which hold the DCAA rules for the

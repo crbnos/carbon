@@ -209,8 +209,8 @@ export function ElementView({
     changeRequest?.status !== "Draft"
       ? projectPlanLockedMessage(lockMilestone.name)
       : null;
-  // A Capitalize treatment today refuses an expense entry: Charge cost shows
-  // disabled, with the posting's reason as its tooltip.
+  // An expense entry that no date can post (Capitalize on every date): Charge
+  // cost shows disabled, with the posting's reason as its tooltip.
   const chargeCostDisabledReason = canChargeCost ? chargeCostRefusal : null;
   const chargeCostEnabled = canChargeCost && !chargeCostDisabledReason;
 
