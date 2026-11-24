@@ -4030,8 +4030,13 @@ export async function updateJobStatus(
   const updated =
     !result.error && (!fromStatuses || (result.data?.length ?? 0) > 0);
 
-  if (updated && prior.data && prior.data.status !== status) {
-    if (status === "Ready") {
+  if (prior.data) {
+    const moment = jobStatusMoment({
+      updated,
+      priorStatus: prior.data.status,
+      status
+    });
+    if (moment === "production.jobReleased") {
       await raiseMoment("production.jobReleased", {
         outputs: { job: { id }, releasedBy: { id: updatedBy } },
         companyId,
@@ -4045,7 +4050,7 @@ export async function updateJobStatus(
         priorStatus: prior.data.status,
         source
       });
-    } else if (status === "Paused") {
+    } else if (moment === "production.jobHeld") {
       await raiseMoment("production.jobHeld", {
         outputs: { job: { id }, heldBy: { id: updatedBy } },
         companyId,
@@ -4055,6 +4060,22 @@ export async function updateJobStatus(
   }
 
   return { ...result, updated };
+}
+
+/**
+ * `updated: false` (a guarded write that found the job moved on) announces
+ * nothing.
+ */
+export function jobStatusMoment(change: {
+  updated: boolean;
+  priorStatus: (typeof jobStatus)[number];
+  status: (typeof jobStatus)[number];
+}): "production.jobReleased" | "production.jobHeld" | null {
+  const { updated, priorStatus, status } = change;
+  if (!updated || priorStatus === status) return null;
+  if (status === "Ready") return "production.jobReleased";
+  if (status === "Paused") return "production.jobHeld";
+  return null;
 }
 
 export async function updateJobMaterialOrder(
@@ -7124,20 +7145,38 @@ export async function movePeopleAssignment(
 }
 
 /**
+ * The values two rows of one person, day, shift and station merge into: hours
+ * add (a whole-shift row absorbs the other) and the larger overtime is kept,
+ * since the scheduler reads a day's overtime as the maximum across its rows.
+ */
+function mergedPeopleAssignment(
+  a: { hours: number | null; overtimeHours: number },
+  b: { hours: number | null; overtimeHours: number }
+) {
+  return {
+    hours:
+      a.hours === null || b.hours === null
+        ? null
+        : Number(a.hours) + Number(b.hours),
+    overtimeHours: Math.max(Number(a.overtimeHours), Number(b.overtimeHours))
+  };
+}
+
+/**
  * Move one assignment row to another person and/or date at the SAME station
  * (the matrix's drag). If the person already has a row at that station for
  * the same effective shift on that date, the rows merge (hours add; a
- * whole-shift row absorbs the other). Refused, with nothing written, when the
- * person is absent that day (`"absent"`) or already holds that day's shift at
- * another station (`"taken"` — one row per person, day and shift).
+ * whole-shift row absorbs the other; the larger overtime is kept). Refused,
+ * with nothing written, when the person is absent that day (`"absent"`). A
+ * person who already works another station that day keeps it, and the moved
+ * row splits their day.
  * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleAssignmentCell(
   db: Kysely<KyselyDatabase>,
   args: { id: string; companyId: string; employeeId: string; date: string }
 ): Promise<
-  | { id: string; workCenterId: string; merged: boolean }
-  | { refused: "absent" | "taken" }
+  { id: string; workCenterId: string; merged: boolean } | { refused: "absent" }
 > {
   await requirePeopleBoardRefs(db, args.companyId, {
     employeeId: args.employeeId
@@ -7184,7 +7223,7 @@ export async function movePeopleAssignmentCell(
       null;
     let targetQuery = trx
       .selectFrom("peopleAssignment")
-      .select(["id", "hours"])
+      .select(["id", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("date", "=", args.date)
@@ -7192,16 +7231,13 @@ export async function movePeopleAssignmentCell(
     targetQuery = effectiveShiftId
       ? targetQuery.where(whereEffectiveShift(effectiveShiftId, args.companyId))
       : targetQuery.where("shiftId", "is", null);
-    const target = await targetQuery.executeTakeFirst();
+    // locked, so a concurrent merge into the same row reads this one's sum
+    const target = await targetQuery.forUpdate().executeTakeFirst();
 
     if (target) {
-      const mergedHours =
-        source.hours === null || target.hours === null
-          ? null
-          : Number(source.hours) + Number(target.hours);
       await trx
         .updateTable("peopleAssignment")
-        .set({ hours: mergedHours })
+        .set(mergedPeopleAssignment(source, target))
         .where("id", "=", target.id)
         .where("companyId", "=", args.companyId)
         .execute();
@@ -7212,20 +7248,6 @@ export async function movePeopleAssignmentCell(
         .execute();
       return { id: target.id, workCenterId: source.workCenterId, merged: true };
     }
-
-    // peopleAssignment_person_day_key: one row per person, date and stored
-    // shift — a row at another station holds the slot this one would take
-    let takenQuery = trx
-      .selectFrom("peopleAssignment")
-      .select("id")
-      .where("companyId", "=", args.companyId)
-      .where("employeeId", "=", args.employeeId)
-      .where("date", "=", args.date)
-      .where("id", "!=", source.id);
-    takenQuery = source.shiftId
-      ? takenQuery.where("shiftId", "=", source.shiftId)
-      : takenQuery.where("shiftId", "is", null);
-    if (await takenQuery.executeTakeFirst()) return { refused: "taken" };
 
     const moved = await trx
       .updateTable("peopleAssignment")
@@ -7594,11 +7616,9 @@ export async function assignPeopleWeek(
     }
     const weekEnd = addIsoDays(args.weekStart, 6);
     const [existing, absences, ownShift] = await Promise.all([
-      // Company-wide (NOT location-scoped): the unique index is
-      // peopleAssignment_person_day_key (companyId, employeeId, date,
-      // COALESCE(shiftId,'')) — a person already booked for this day+shift at
-      // ANY location/station collides, so a location-scoped skip let the bulk
-      // insert violate the constraint and fail the whole week assignment.
+      // Company-wide (NOT location-scoped): a person already booked for this
+      // day and shift at ANY location or station is not booked a second
+      // whole shift by a week assignment.
       trx
         .selectFrom("peopleAssignment")
         .select(["date", "shiftId"])
@@ -7622,9 +7642,9 @@ export async function assignPeopleWeek(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst()
     ]);
-    // A day is taken by a row in the same slot of the unique index, or by a
-    // row in the same EFFECTIVE shift (a shift-less row counts as the
-    // person's own), which the boards would show as a double booking.
+    // A day is taken by a row with the same stored shift, or by a row in the
+    // same EFFECTIVE shift (a shift-less row counts as the person's own),
+    // which the boards would show as a double booking.
     const slotKey = (date: string, shiftId: string | null) =>
       `${date}:${shiftId ?? ""}`;
     const personShiftId = ownShift?.shiftId ?? null;
@@ -7703,8 +7723,11 @@ export async function unassignPeopleWeek(
 
 /**
  * Move a person's whole week from one station to another. Days where they
- * already have a row at the target station keep the target row (the source
- * row is dropped); other days simply change station.
+ * already have a row at the target station for the same shift merge into it
+ * (hours add; a whole-shift row absorbs the other; the larger overtime is
+ * kept); other days simply change station. The source rows, then the target
+ * rows, are locked before the merge, so two moves into one station add both
+ * and a repeated request merges nothing twice.
  * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleWeek(
@@ -7725,7 +7748,7 @@ export async function movePeopleWeek(
   return db.transaction().execute(async (trx) => {
     let sourceQuery = trx
       .selectFrom("peopleAssignment")
-      .select(["id", "date", "shiftId"])
+      .select(["id", "date", "shiftId", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("workCenterId", "=", args.fromWorkCenterId)
@@ -7736,24 +7759,34 @@ export async function movePeopleWeek(
         whereEffectiveShift(args.shiftId, args.companyId)
       );
     }
-    const source = await sourceQuery.execute();
+    const source = await sourceQuery.forUpdate().execute();
 
     const target = await trx
       .selectFrom("peopleAssignment")
-      .select(["date", "shiftId"])
+      .select(["id", "date", "shiftId", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("workCenterId", "=", args.workCenterId)
       .where("date", ">=", args.weekStart)
       .where("date", "<=", weekEnd)
+      .forUpdate()
       .execute();
-    const occupied = new Set(
-      target.map((row) => `${toIsoDate(row.date)}:${row.shiftId ?? ""}`)
+    const occupied = new Map(
+      target.map((row) => [`${toIsoDate(row.date)}:${row.shiftId ?? ""}`, row])
     );
 
     let moved = 0;
     for (const row of source) {
-      if (occupied.has(`${toIsoDate(row.date)}:${row.shiftId ?? ""}`)) {
+      const existing = occupied.get(
+        `${toIsoDate(row.date)}:${row.shiftId ?? ""}`
+      );
+      if (existing) {
+        await trx
+          .updateTable("peopleAssignment")
+          .set(mergedPeopleAssignment(row, existing))
+          .where("id", "=", existing.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
         await trx
           .deleteFrom("peopleAssignment")
           .where("id", "=", row.id)
@@ -9102,11 +9135,30 @@ export async function activateAssemblyInstructionVersion(
 
     const staleOpIds = (staleOps.data ?? []).map((o) => o.id);
     if (staleOpIds.length > 0) {
-      const repoint = await client
-        .from("jobOperation")
-        .update({ assemblyInstructionId: id })
-        .in("id", staleOpIds);
-      if (repoint.error) return repoint;
+      // Production → Jobs owns the operations: repointed on the system
+      // handle (the caller's assembly permission is the gate), this company's only.
+      try {
+        await db
+          .updateTable("jobOperation")
+          .set({ assemblyInstructionId: id })
+          .where("companyId", "=", companyId)
+          .where("id", "in", staleOpIds)
+          .execute();
+      } catch (error) {
+        return {
+          data: null,
+          error: {
+            name: "PostgrestError",
+            code: "",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Failed to repoint job operations",
+            details: "",
+            hint: ""
+          } as PostgrestError
+        };
+      }
 
       // Migrate step markers v(old) -> v(new) by lineage group before syncing.
       // Without this the job's steps still point at the old version's step ids,
@@ -11950,9 +12002,9 @@ export async function generateAssemblyStepsFromPlan(
   //
   // This is a SYSTEM/derived-data write (reflecting the plan), not a user
   // creating a unit — so the generate route passes a bypassRls (service-role)
-  // `client`. The assemblyUnit INSERT/DELETE RLS policies require
-  // `production_create`/`production_delete`, but generate only authorizes
-  // `production_update`; through a plain RLS client the write silently no-ops
+  // `client`. The assemblyUnit INSERT/DELETE RLS policies require Create and
+  // Full on Assemblies, but generate only authorizes Edit there; through a
+  // plain RLS client the write silently no-ops
   // (steps get built, units never do). Scoped to companyId, so it's tenant-safe.
   const detectedUnits = Object.entries(plan.groups ?? {})
     .filter(([groupId]) => groupId.startsWith("swarm:"))
@@ -14452,8 +14504,8 @@ export async function startAssemblyPlan(
   modelUploadId: string,
   options: { reMotionFor?: string; reDetectUnits?: boolean } = {}
 ) {
-  // The service role: the INSERT needs production_create, and the operations
-  // that start a plan require only update. Every caller read the model under
+  // The service role: the INSERT needs Create on Assemblies, and the
+  // operations that start a plan require only Edit. Every caller read the model under
   // the company, and the row is written to it.
   const created = await createAssemblyPlanJob(ctx.asSystem.supabase, {
     modelUploadId,
@@ -14763,7 +14815,7 @@ export const assignSerialNumbersInput = z.object({
  * Idempotent: it no-ops when the seed is already numbered or already split.
  */
 export const assignSerialNumbersPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof assignSerialNumbersInput>>;
 
 export async function assignSerialNumbers(
@@ -16083,7 +16135,7 @@ export const getMethodInput = z.object({
 export type GetMethodResult = { success: boolean; newQuoteId?: string };
 
 export const getMethodPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof getMethodInput>>;
 
 /** Copies a method (BOM + BOP) between items, quotes and jobs, per `type`. */
@@ -25710,7 +25762,7 @@ async function recalculatePriorities(
 }
 
 export const rescheduleJobPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof rescheduleInput>>;
 
 /**
@@ -25863,7 +25915,7 @@ const postedNetKey = (lines: Awaited<ReturnType<typeof readPostedNet>>) =>
     .join(";");
 
 export const postProductionEventPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof postProductionEventInput>>;
 
 export const SHOP_LABOR_CATEGORY_REQUIRED =
@@ -26772,7 +26824,7 @@ const recalculateRequirementsLogger = getLogger(
   "recalculate"
 );
 export const recalculateRequirementsPermission = {
-  update: "production"
+  "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof recalculateInput>>;
 
 /** Re-derives a job's (or one make method's) material and operation quantities. */
@@ -27515,9 +27567,7 @@ async function cloneReworkOperations(
   };
 }
 
-export const triggerReworkPermission = {
-  update: "production"
-} satisfies PermissionRule<z.output<typeof triggerReworkInput>>;
+export { triggerReworkPermission } from "@carbon/api/postings";
 
 /**
  * Sends a job back to an earlier operation: clones the operations from the
@@ -27670,9 +27720,7 @@ async function assertUnitsOfMakeMethod(
   }
 }
 
-export const triggerCorrectionPermission = {
-  update: "production"
-} satisfies PermissionRule<z.output<typeof triggerCorrectionInput>>;
+export { triggerCorrectionPermission } from "@carbon/api/postings";
 
 /**
  * Sends units through one of the job's corrections: inserts the correction's
@@ -29105,7 +29153,7 @@ async function completeBatch(
 }
 
 export const batchOperationPermission = {
-  update: "production"
+  "production.batches": "Edit"
 } satisfies PermissionRule<z.output<typeof batchOperationsInput>>;
 
 /** Job-operation batches: create, change membership, release, dissolve and complete. */

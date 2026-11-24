@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -17,14 +17,13 @@ import { useResourceReferenceLabels } from "~/modules/resources/ui/useResourceRe
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources"
+  const { api, client, companyId } = await authorize(request, {
+    "resources.workCenters": "View"
   });
 
   const { id } = params;
   if (!id) throw notFound("Invalid work center id");
 
-  const api = await carbon(request);
   // Read the table, not getWorkCenter: an inactive work center can be deleted too.
   const [workCenter, references] = await Promise.all([
     client
@@ -54,7 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.resources.deleteWorkCenter({
     id: input.params.id
   });

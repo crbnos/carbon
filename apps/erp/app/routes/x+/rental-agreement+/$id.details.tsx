@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   Card,
   CardContent,
@@ -10,12 +10,15 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { draftRentalAgreementSetupPath } from "~/modules/sales/sales.service";
+import {
+  draftRentalAgreementSetupPath,
+  getRentalNextInvoice
+} from "~/modules/sales/sales.service";
 import type { RentalAgreementRouteData } from "~/modules/sales/ui/Rentals";
 import {
   LeaseClassificationPreview,
@@ -23,26 +26,37 @@ import {
   RentalAgreementContacts,
   RentalAgreementSummary,
   RentalBillingPeriods,
-  RentalDeposits
+  RentalDeposits,
+  RentalNextInvoice
 } from "~/modules/sales/ui/Rentals";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 /** A Draft is worked on in its setup wizard, so its page sends an editor
  *  there — including every action that returns to the agreement page. A
  *  viewer who cannot edit sees the page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "sales"
+  const { client, companyId, permissions } = await authorize(request, {
+    "sales.rentalAgreements": "View"
   });
   const { id } = params;
   if (!id) throw new Error("Could not find id");
   const setup = await draftRentalAgreementSetupPath(client, {
     companyId,
-    userId,
+    permissions,
     id
   });
   if (setup) throw redirect(setup);
-  return null;
+
+  // What the next billing run drafts; null unless the agreement is Active.
+  const timeZone = await getCompanyTimeZone(client, companyId);
+  const nextInvoice = await getRentalNextInvoice(getDatabaseClient(), {
+    companyId,
+    rentalAgreementId: id,
+    today: datetime.today(timeZone).toString()
+  });
+  return { nextInvoice };
 }
 
 /** The agreement as a whole: the summary of its units and what it is owed,
@@ -50,6 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
  *  terms are in the properties panel; a unit's own page is `$lineId.details`. */
 export default function RentalAgreementDetailsRoute() {
   const { id } = useParams();
+  const { nextInvoice } = useLoaderData<typeof loader>();
   if (!id) throw new Error("Could not find id");
 
   const routeData = useRouteData<RentalAgreementRouteData>(
@@ -124,6 +139,12 @@ export default function RentalAgreementDetailsRoute() {
         lines={lines}
         invoiceLinks={invoiceLinks}
       />
+      {rentalAgreement.status === "Active" && (
+        <RentalNextInvoice
+          rentalAgreement={rentalAgreement}
+          nextInvoice={nextInvoice}
+        />
+      )}
       <RentalBillingPeriods
         rentalAgreement={rentalAgreement}
         periods={periods}

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -24,14 +24,13 @@ export const meta = newRecordMeta("Supplier");
 
 export const handle: Handle = {
   breadcrumb: msg`Suppliers`,
-  to: path.to.suppliers,
-  module: "purchasing"
+  to: path.to.suppliers
 };
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "purchasing"
+  const { client, companyId, userId } = await authorize(request, {
+    "purchasing.suppliers": "Create"
   });
 
   const formData = await request.formData();

@@ -47,7 +47,7 @@ import {
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
@@ -220,7 +220,7 @@ const WebhooksTable = memo((props: WebhooksTableProps) => {
         }}
         primaryAction={
           <HStack>
-            {permissions.can("update", "users") && (
+            {permissions.has({ "settings.webhooks": "Edit" }) && (
               <New
                 label={t`Webhook`}
                 to={`${path.to.newWebhook}?${params.toString()}`}
@@ -238,7 +238,6 @@ const WebhooksTable = memo((props: WebhooksTableProps) => {
         renderContextMenu={renderContextMenu}
         title={t`Webhooks`}
       />
-      <Outlet />
       <WebhookDocs
         open={docsDisclosure.isOpen}
         onClose={docsDisclosure.onClose}

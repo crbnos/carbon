@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { anyOf } from "@carbon/database/access";
 import { trigger } from "@carbon/jobs";
 import { getPrintPermissions, manualPrintValidator } from "@carbon/printing";
 import type { ActionFunctionArgs } from "react-router";
@@ -15,15 +16,15 @@ export async function action({ request }: ActionFunctionArgs) {
   const validation = manualPrintValidator.safeParse(json);
 
   if (!validation.success) {
-    await requirePermissions(request, {});
+    await authorize(request);
     return { success: false, message: "Invalid print request" };
   }
 
   // The task reads as the service role: check the document's own module.
   const view = getPrintPermissions(validation.data.sourceDocument);
-  const { companyId, userId } = await requirePermissions(
+  const { companyId, userId } = await authorize(
     request,
-    view.length > 0 ? { view } : {}
+    view.length > 0 ? anyOf(view, "View") : {}
   );
 
   const {

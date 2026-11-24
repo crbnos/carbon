@@ -57,6 +57,8 @@ import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
+import { quoteToSalesOrderPermission } from "~/modules/shared/shared.utils";
 import { path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
 import type {
@@ -96,6 +98,10 @@ const QuoteHeader = () => {
   const finalizeModal = useDisclosure();
   const convertToOrderModal = useDisclosure();
   const shareModal = useDisclosure();
+  // With Digital Quotes off the share link opens nothing, so it is not offered.
+  const externalLinkId = useCompanySettings()?.digitalQuoteEnabled
+    ? routeData?.quote.externalLinkId
+    : null;
   const createRevisionModal = useDisclosure();
   const deleteQuoteModal = useDisclosure();
   const [asRevision, setAsRevision] = useState(false);
@@ -125,7 +131,7 @@ const QuoteHeader = () => {
     isDraft ||
     (routeData?.opportunity?.salesOrders.length ?? 0) > 0 ||
     statusFetcher.state !== "idle" ||
-    !permissions.can("update", "sales");
+    !permissions.has({ "sales.quotes": "Edit" });
   const reopen = () => {
     statusFetcher.submit(
       { status: "Draft" },
@@ -165,7 +171,7 @@ const QuoteHeader = () => {
       <DropdownMenuItem
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
-          !permissions.can("delete", "sales") ||
+          !permissions.has({ "sales.quotes": "Full" }) ||
           !permissions.is("employee") ||
           isQuoteLocked(routeData?.quote?.status)
         }
@@ -205,8 +211,7 @@ const QuoteHeader = () => {
         onToggleProperties={toggleProperties}
         actions={
           <>
-            {routeData?.quote.externalLinkId &&
-            routeData?.quote.status === "Sent" ? (
+            {externalLinkId && routeData?.quote.status === "Sent" ? (
               <RecordAction slot="overflow">
                 <Button
                   onClick={shareModal.onOpen}
@@ -229,13 +234,11 @@ const QuoteHeader = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    {routeData?.quote.externalLinkId && (
+                    {externalLinkId && (
                       <DropdownMenuItem asChild>
                         <a
                           target="_blank"
-                          href={path.to.externalQuote(
-                            routeData.quote.externalLinkId
-                          )}
+                          href={path.to.externalQuote(externalLinkId)}
                           rel="noreferrer"
                         >
                           <DropdownMenuIcon icon={<LuExternalLink />} />
@@ -268,7 +271,7 @@ const QuoteHeader = () => {
                 onClick={finalizeModal.onOpen}
                 isDisabled={
                   routeData?.quote?.status !== "Draft" ||
-                  !permissions.can("update", "sales") ||
+                  !permissions.has({ "sales.quotes": "Edit" }) ||
                   !eligibleLines?.length
                 }
                 variant={isDraft ? "primary" : "secondary"}
@@ -282,7 +285,7 @@ const QuoteHeader = () => {
               <Button
                 isDisabled={
                   routeData?.quote?.status !== "Sent" ||
-                  !permissions.can("update", "sales")
+                  !permissions.has(quoteToSalesOrderPermission)
                 }
                 leftIcon={<LuTrophy />}
                 variant={isWinnable ? "primary" : "secondary"}
@@ -302,7 +305,7 @@ const QuoteHeader = () => {
                   isDisabled={
                     routeData?.quote?.status !== "Sent" ||
                     statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "sales")
+                    !permissions.has({ "sales.quotes": "Edit" })
                   }
                   isLoading={
                     statusFetcher.state !== "idle" &&
@@ -331,7 +334,7 @@ const QuoteHeader = () => {
                   <Button
                     isDisabled={
                       statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "sales")
+                      !permissions.has({ "sales.quotes": "Edit" })
                     }
                     isLoading={
                       statusFetcher.state !== "idle" &&

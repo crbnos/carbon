@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,20 +11,15 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteCustomerType,
-  getCustomerType
-} from "~/modules/sales/sales.service";
+import { deleteCustomerType } from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.types": "View" });
   const { customerTypeId } = params;
   if (!customerTypeId) throw notFound("customerTypeId not found");
 
-  const customerType = await getCustomerType(client, customerTypeId);
+  const customerType = await api.sales.getCustomerType({ customerTypeId });
   if (customerType.error) {
     throw redirect(
       `${path.to.customerTypes}?${getParams(request)}`,
@@ -39,9 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "sales"
-  });
+  const { client } = await authorize(request, { "sales.types": "Full" });
 
   const { customerTypeId } = params;
   if (!customerTypeId) {

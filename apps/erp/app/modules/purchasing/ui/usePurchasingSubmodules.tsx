@@ -16,6 +16,7 @@ import {
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function usePurchasingSubmodules() {
@@ -97,13 +98,11 @@ export default function usePurchasingSubmodules() {
         {
           name: t`Stages`,
           to: path.to.supplierStages,
-          role: "employee",
           icon: <LuListTodo />
         },
         {
           name: t`Types`,
           to: path.to.supplierTypes,
-          role: "employee",
           icon: <LuStar />
         }
       ]
@@ -111,33 +110,9 @@ export default function usePurchasingSubmodules() {
   ];
 
   return {
-    groups: purchasingRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else if (route.permission) {
-            return permissions.can("view", route.permission);
-          } else {
-            return true;
-          }
-        });
-
-        return filteredRoutes.length > 0;
-      })
-      .map((group) => ({
-        ...group,
-        routes: group.routes
-          .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else if (route.permission) {
-              return permissions.can("view", route.permission);
-            } else {
-              return true;
-            }
-          })
-          .map(addSavedViewsToRoutes)
-      }))
+    groups: visibleGroups(purchasingRoutes, permissions).map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes)
+    }))
   };
 }

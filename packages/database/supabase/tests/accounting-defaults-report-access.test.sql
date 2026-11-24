@@ -21,8 +21,8 @@ BEGIN
     VALUES ('Reporting child '||id(),group_id,parent_id,'EUR','Europe/Berlin') RETURNING id INTO child_id;
   INSERT INTO "user" (id,email) VALUES (user_id, user_id||'@reporting-review.invalid');
   INSERT INTO "userToCompany" ("userId","companyId",role) VALUES (user_id,child_id,'employee');
-  INSERT INTO "userPermission" (id,permissions) VALUES
-    (user_id,jsonb_build_object('accounting_view',jsonb_build_array(child_id),'accounting_update',jsonb_build_array(child_id)));
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (child_id, user_id, 'Accounting', 'Edit', 'system');
   INSERT INTO "account" (name,class,"accountType","incomeBalance","companyGroupId","createdBy")
     VALUES ('Reporting CTA','Equity','Equity - No Close','Balance Sheet',group_id,'system') RETURNING id INTO cta_id;
   INSERT INTO "account" (name,class,"accountType","incomeBalance","companyGroupId","createdBy")

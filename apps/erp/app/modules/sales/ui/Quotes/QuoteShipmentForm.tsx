@@ -160,7 +160,9 @@ const QuoteShipmentForm = forwardRef<
         </CardContent>
         <CardFooter>
           <Submit
-            isDisabled={!permissions.can("update", "sales") || !isEditable}
+            isDisabled={
+              !permissions.has({ "sales.quotes": "Edit" }) || !isEditable
+            }
           >
             <Trans>Save</Trans>
           </Submit>

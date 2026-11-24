@@ -12,6 +12,7 @@ import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
+import { clearCompanyAccessCaches } from "../../../backups/access-cache";
 import {
   groupConflictClause,
   rebuildDerivedGroups
@@ -154,6 +155,9 @@ export async function wipeAndLoad(
       await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
     }
     await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
+    // The triggers that fill a document line's part number display choice
+    // leave a backup's values as they are, also when replica mode is off.
+    await sql`SET LOCAL app.backup_load = 'on'`.execute(trx);
 
     // The company's groups before the wipe: memberships survive an own
     // restore, and any left pointing at a group that doesn't come back go.
@@ -307,6 +311,10 @@ export async function wipeAndLoad(
       `.execute(trx);
     }
   });
+
+  // Access rows are kept, but the app's cached claims must not outlive the
+  // data they were read next to.
+  await clearCompanyAccessCaches(db, companyId);
 
   return { rows: inserted, idRewrite };
 }

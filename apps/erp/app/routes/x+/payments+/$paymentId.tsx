@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -25,17 +25,14 @@ import {
 } from "~/modules/invoicing/invoicing.models";
 import {
   checkDepositDocument,
-  getAvailableCreditsForParty,
+  type getAvailableCreditsForParty,
   getDepositDocuments,
   getDocumentForceDeleteData,
-  getInvoiceSettlements,
-  getOpenPurchaseInvoicesForSupplier,
-  getOpenReimbursementsForEmployee,
-  getOpenSalesInvoicesForCustomer,
+  type getOpenSalesInvoicesForCustomer,
   getPayment,
   getPaymentCurrencyConfiguration,
   getSettlementRelatedItems,
-  getStagedCreditsForPayment,
+  type getStagedCreditsForPayment,
   upsertPayment
 } from "~/modules/invoicing/invoicing.service";
 import {
@@ -57,22 +54,21 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Payments`, to: path.to.payments },
     (data) => data?.payment?.paymentId
-  ),
-  module: "invoicing"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.payment?.paymentId, "Payment");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "invoicing"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "invoicing.payments": "View"
   });
   const { paymentId } = params;
   if (!paymentId) throw notFound("Missing paymentId");
   const [payment, applications, forceDelete] = await Promise.all([
-    getPayment(client, paymentId, companyId),
-    getInvoiceSettlements(client, companyId, paymentId),
+    api.invoicing.getPayment({ id: paymentId }),
+    api.invoicing.getInvoiceSettlements({ paymentId }),
     // The Admin force-delete override (`force-delete+`).
     getDocumentForceDeleteData(getCarbonServiceRole(), getDatabaseClient(), {
       companyId,
@@ -89,11 +85,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     if (applications.error) throw new Error(applications.error.message);
     const [configuration, depositDocuments] = await Promise.all([
-      getPaymentCurrencyConfiguration(
-        client,
-        companyId,
-        payment.data.currencyCode
-      ),
+      api.invoicing
+        .getPaymentCurrencyConfiguration({
+          currencyCode: payment.data.currencyCode
+        })
+        .then(dataOrThrow),
       // The payment's own document stays listed even once it is closed.
       getDepositDocuments(
         client,
@@ -123,12 +119,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // `stagedCredits` all stay empty — exactly what
     // `replaceInvoiceSettlements`' employee arm assumes.
     if (payment.data.status === "Draft" && payment.data.employeeId) {
-      const reimbursements = await getOpenReimbursementsForEmployee(
-        client,
-        companyId,
-        payment.data.employeeId,
-        payment.data.currencyCode
-      );
+      const reimbursements =
+        await api.invoicing.getOpenReimbursementsForEmployee({
+          employeeId: payment.data.employeeId,
+          currencyCode: payment.data.currencyCode
+        });
       if (reimbursements.error) throw reimbursements.error;
       openInvoices = (reimbursements.data ?? []).map((reimbursement) => ({
         id: reimbursement.id,
@@ -157,15 +152,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
         throw new Error("Payment requires exactly one customer or supplier");
       if (isRefund && !fundingScopeOf(payment.data)) {
-        const memos = await getAvailableCreditsForParty(
-          client,
-          companyId,
-          isAR
+        const memos = await api.invoicing.getAvailableCreditsForParty({
+          party: isAR
             ? { side: "sales", customerId: partyId }
             : { side: "purchase", supplierId: partyId },
-          paymentId,
-          payment.data.currencyCode
-        );
+          excludePaymentId: paymentId,
+          currencyCode: payment.data.currencyCode
+        });
         if (memos.error) throw memos.error;
         openInvoices = (memos.data ?? []).map((memo) => ({
           id: memo.id,
@@ -185,42 +178,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           purchaseOrderIds: []
         }));
       } else if (!isRefund) {
-        const api = await carbon(request);
         const [invoices, credit, credits, staged] = await Promise.all([
           isAR
-            ? getOpenSalesInvoicesForCustomer(
-                client,
-                companyId,
-                partyId,
-                payment.data.currencyCode
-              )
-            : getOpenPurchaseInvoicesForSupplier(
-                client,
-                companyId,
-                partyId,
-                payment.data.currencyCode
-              ),
+            ? api.invoicing.getOpenSalesInvoicesForCustomer({
+                customerId: partyId,
+                currencyCode: payment.data.currencyCode
+              })
+            : api.invoicing.getOpenPurchaseInvoicesForSupplier({
+                supplierId: partyId,
+                currencyCode: payment.data.currencyCode
+              }),
           api.invoicing.getAvailableOnAccountCreditSources({
             party: isAR
               ? { paymentType: "Receipt", customerId: partyId }
               : { paymentType: "Disbursement", supplierId: partyId },
             currencyCode: payment.data.currencyCode
           }),
-          getAvailableCreditsForParty(
-            client,
-            companyId,
-            isAR
+          api.invoicing.getAvailableCreditsForParty({
+            party: isAR
               ? { side: "sales", customerId: partyId }
               : { side: "purchase", supplierId: partyId },
+            excludePaymentId: paymentId,
+            currencyCode: payment.data.currencyCode
+          }),
+          api.invoicing.getStagedCreditsForPayment({
             paymentId,
-            payment.data.currencyCode
-          ),
-          getStagedCreditsForPayment(
-            client,
-            paymentId,
-            isAR ? "sales" : "purchase",
-            companyId
-          )
+            side: isAR ? "sales" : "purchase"
+          })
         ]);
         const loadError =
           invoices.error ?? credit.error ?? credits.error ?? staged.error;
@@ -268,8 +252,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "invoicing.payments": "Edit"
   });
   const { paymentId } = params;
   if (!paymentId) throw notFound("Missing paymentId");
@@ -341,7 +325,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (formData.get("intent") === "post") {
-    const api = await carbon(request);
     const posted = await api.invoicing.postPayment({ paymentId });
     return respond(request, posted).redirect(path.to.payment(paymentId), {
       message: "Payment saved and posted",

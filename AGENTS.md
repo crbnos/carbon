@@ -8,6 +8,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Use the closest package/module `AGENTS.md` for local architecture, imports, and validation commands.
 - Follow `.claude/rules/` for subsystem-specific conventions (auto-loaded via `paths:` frontmatter).
 - Read `.ai/lessons.md` before non-trivial changes to avoid known pitfalls.
+- Answer `.claude/rules/write-time-checklist.md` before writing each file and again over the diff before committing. `/execute`, `/fix` and `/self-review` run it.
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use existing components — grep `packages/react/src/` and `apps/erp/app/components/` before writing UI.
@@ -57,6 +58,12 @@ pnpm db:check:datasets       # Do the demo datasets still apply? (pre-commit gat
 pnpm db:check:backups        # Would existing customer backups still restore? (pre-commit gate)
 ```
 
+The pre-commit hook (`scripts/git-hooks/pre-commit`) also runs the `@carbon/checks`
+conformance suite (`pnpm --filter @carbon/checks exec vitest run src/run.test.ts`, ~5 s)
+whenever a staged file is a `.ts`/`.tsx`/`.sql` under `apps/` or `packages/`. It is
+the same gate CI runs; a violation beyond the committed baseline blocks the commit.
+Fix the code, never the baseline. `CARBON_SKIP_CONFORMANCE_CHECK=1` skips it.
+
 `typecheck`, `test`, `lint` and `build` are cached by Turborepo: a package re-runs
 only when its own files, a workspace dependency's files, or the lockfile changed
 (`--force` re-runs regardless). That is only correct while a task reads nothing
@@ -86,6 +93,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Working with the database package | `packages/database/AGENTS.md` |
 | **Server & Services** | |
 | Writing service functions | `.claude/rules/conventions-services.md` + `.claude/rules/module-files.md` |
+| Concurrency: a status change, a running total, a row lock, a side effect in a transaction, a retried external create | `.claude/rules/concurrency.md` |
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
 | Account settings modal (ERP, MES, starter) | `packages/account/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
@@ -179,6 +187,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Bug fix: runtime instrumentation | `.claude/skills/debugging-difficult-bugs/SKILL.md` |
 | Bug fix: end-to-end pipeline (diagnose → fix → verify → commit) | `.claude/skills/fix/SKILL.md` |
 | Pre-commit verification gate | `.claude/skills/check-and-commit/SKILL.md` |
+| Write-time checklist (before writing a file, and again over the diff) | `.claude/rules/write-time-checklist.md` |
 | Feature build (doer→gate→judge loop) | `.claude/skills/conductor/SKILL.md` |
 | Browser-verify a feature | `.claude/skills/test/SKILL.md` |
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |
@@ -246,7 +255,7 @@ apps/erp/app/modules/{module}/
 ```
 
 No barrel: import from the file that defines the thing. Routes call operations
-through `carbon(request)` (`@carbon/api/carbon.server`). See `.claude/rules/module-files.md`.
+through `authorize(request)` (`@carbon/auth/auth.server`). See `.claude/rules/module-files.md`.
 
 MES is lighter: services in `apps/mes/app/services/`, components in `apps/mes/app/components/`.
 

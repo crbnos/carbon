@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -23,9 +23,14 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { invoiceId } = input.params;
   const formData = input.formData ?? new FormData();
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.invoicing.createSalesInvoiceLine({
     ...input.data,
+    // The form posts the field: an empty one is a cleared code. A caller
+    // that does not takes the invoice's default.
+    taxCodeId: formData.has("taxCodeId")
+      ? (input.data.taxCodeId ?? "")
+      : undefined,
     // The URL invoice, not the form's copy.
     invoiceId,
     customFields: setCustomFields(formData),
@@ -43,6 +48,7 @@ export default function NewSalesInvoiceLineRoute() {
   if (!invoiceId) throw new Error("Could not find sales invoice id");
   const salesInvoiceData = useRouteData<{
     salesInvoice: SalesInvoice;
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
   }>(path.to.salesInvoice(invoiceId));
 
   if (!invoiceId) throw new Error("Could not find sales invoice id");
@@ -61,7 +67,8 @@ export default function NewSalesInvoiceLineRoute() {
     shippingCost: 0,
     addOnCost: 0,
     nonTaxableAddOnCost: 0,
-    taxPercent: 0,
+    taxPercent: salesInvoiceData?.resolvedTax?.taxPercent ?? 0,
+    taxCodeId: salesInvoiceData?.resolvedTax?.taxCodeId ?? undefined,
     exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1,
     serviceStartDate: "",
     serviceEndDate: ""

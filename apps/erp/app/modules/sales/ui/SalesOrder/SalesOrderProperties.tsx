@@ -32,7 +32,6 @@ import {
   Currency,
   Customer,
   CustomerContact,
-  CustomerLocation,
   Employee,
   Location
 } from "~/components/Form";
@@ -113,7 +112,7 @@ const SalesOrderProperties = () => {
       ? optimisticAssignment
       : routeData?.salesOrder?.assignee;
 
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.salesOrders": "Edit" });
   const isLocked = isSalesOrderLocked(routeData?.salesOrder?.status);
   const isDisabled = !canUpdate || isLocked;
 
@@ -224,28 +223,6 @@ const SalesOrderProperties = () => {
           inline
           onBlur={(e) => {
             onUpdate("customerReference", e.target.value);
-          }}
-        />
-      </ValidatedForm>
-
-      <ValidatedForm
-        defaultValues={{
-          customerLocationId: routeData?.salesOrder?.customerLocationId ?? ""
-        }}
-        validator={z.object({
-          customerLocationId: zfd.text(z.string().optional())
-        })}
-        className="w-full"
-      >
-        <CustomerLocation
-          name="customerLocationId"
-          customer={routeData?.salesOrder?.customerId ?? ""}
-          inline
-          isReadOnly={isDisabled}
-          onChange={(customerLocation) => {
-            if (customerLocation?.id) {
-              onUpdate("customerLocationId", customerLocation.id);
-            }
           }}
         />
       </ValidatedForm>

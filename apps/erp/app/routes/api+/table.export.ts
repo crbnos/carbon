@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -65,10 +65,20 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const { companyId, userId } = await requirePermissions(request, {
-    ...definition.permission,
-    role: "employee"
-  });
+  const { companyId, userId, caller } = await authorize(
+    request,
+    definition.gate
+  );
+  // The job reads as a person (an API key's would be its creator, with the creator's rights).
+  if (caller === "apiKey") {
+    return data(
+      {
+        error: "An API key cannot start a background export",
+        refusal: { code: "not-supported" } satisfies TableJobRefusal
+      },
+      { status: 403 }
+    );
+  }
 
   const exportId = newTableExportId(listKey);
   const refused = await startTableJob(

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -25,8 +25,8 @@ import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "sales"
+  const { client, companyId } = await authorize(request, {
+    "sales.priceLists": "Create"
   });
 
   const url = new URL(request.url);
@@ -55,8 +55,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "sales"
+  const { companyId, userId } = await authorize(request, {
+    "sales.priceLists": "Create"
   });
 
   const formData = await request.formData();

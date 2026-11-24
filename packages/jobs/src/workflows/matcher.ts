@@ -238,6 +238,8 @@ export async function matchAndQueue(
       join
         .onRef("w.id", "=", "te.workflowId")
         .onRef("w.companyId", "=", "te.companyId")
+        // Only the owner's published version may run as the owner.
+        .onRef("w.publishedVersionId", "=", "te.workflowVersionId")
     )
     .select([
       "te.workflowId",

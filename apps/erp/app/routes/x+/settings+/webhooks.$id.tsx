@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { upsertWebhook } from "@carbon/ee/webhooks.server";
@@ -13,19 +13,16 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { webhookValidator } from "~/modules/settings/settings.models";
-import { getWebhook } from "~/modules/settings/settings.service";
 import { WebhookForm } from "~/modules/settings/ui/Webhooks";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "settings"
-  });
+  const { api } = await authorize(request, { "settings.webhooks": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const webhook = await getWebhook(client, id);
+  const webhook = await api.settings.getWebhook({ id });
   if (webhook.error) {
     throw redirect(
       path.to.webhooks,
@@ -40,8 +37,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId } = await authorize(request, {
+    "settings.webhooks": "View"
   });
 
   await requireFeature({

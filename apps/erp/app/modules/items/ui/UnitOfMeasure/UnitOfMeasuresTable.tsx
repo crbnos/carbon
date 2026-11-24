@@ -118,7 +118,8 @@ const UnitOfMeasuresTable = memo(
           <DropdownMenuSeparator />
           <DropdownMenuItem
             disabled={
-              !permissions.can("update", "parts") || fetcher.state !== "idle"
+              !permissions.has({ "parts.units": "Edit" }) ||
+              fetcher.state !== "idle"
             }
             onClick={() => onSetActive(selectedRows, true)}
           >
@@ -127,7 +128,8 @@ const UnitOfMeasuresTable = memo(
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={
-              !permissions.can("update", "parts") || fetcher.state !== "idle"
+              !permissions.has({ "parts.units": "Edit" }) ||
+              fetcher.state !== "idle"
             }
             onClick={() => onSetActive(selectedRows, false)}
           >
@@ -145,7 +147,7 @@ const UnitOfMeasuresTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "parts")}
+              disabled={!permissions.has({ "parts.units": "Edit" })}
               onClick={() => {
                 navigate(`${path.to.uom(row.id)}?${params.toString()}`);
               }}
@@ -158,7 +160,7 @@ const UnitOfMeasuresTable = memo(
               destructive
               // Each is built in; the database refuses to delete it.
               disabled={
-                !permissions.can("delete", "parts") ||
+                !permissions.has({ "parts.units": "Full" }) ||
                 row.code === EACH_UNIT_OF_MEASURE_CODE
               }
               onClick={() => {
@@ -187,7 +189,7 @@ const UnitOfMeasuresTable = memo(
           }
         ]}
         primaryAction={
-          permissions.can("create", "parts") && (
+          permissions.has({ "parts.units": "Create" }) && (
             <New
               label={t`Unit of Measure`}
               to={`${path.to.newUom}?${params.toString()}`}

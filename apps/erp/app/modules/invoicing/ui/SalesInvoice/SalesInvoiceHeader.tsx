@@ -291,7 +291,7 @@ const SalesInvoiceHeader = () => {
   // invoice is fully settled, voided, or pre-posting.
   const canReceivePayment =
     isInvoicePayable(salesInvoice.status, salesInvoice.balance) &&
-    permissions.can("create", "invoicing");
+    permissions.has({ "invoicing.salesInvoices": "Create" });
   const receivePaymentHref = getPayInvoiceHref({
     side: "ar",
     partyId: salesInvoice.customerId,
@@ -306,7 +306,10 @@ const SalesInvoiceHeader = () => {
         <>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            disabled={isVoided || !permissions.can("update", "invoicing")}
+            disabled={
+              isVoided ||
+              !permissions.has({ "invoicing.salesInvoices": "Edit" })
+            }
             destructive
             onClick={voidModal.onOpen}
           >
@@ -320,7 +323,7 @@ const SalesInvoiceHeader = () => {
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
           salesInvoice.status !== "Draft" ||
-          !permissions.can("delete", "invoicing") ||
+          !permissions.has({ "invoicing.salesInvoices": "Full" }) ||
           !permissions.is("employee")
         }
         destructive
@@ -331,7 +334,6 @@ const SalesInvoiceHeader = () => {
       </DropdownMenuItem>
       <DocumentForceDeleteMenuItem
         forceDelete={routeData}
-        canDelete={permissions.can("delete", "invoicing")}
         onClick={forceDeleteModal.onOpen}
       />
     </>
@@ -480,7 +482,7 @@ const SalesInvoiceHeader = () => {
                   isLoading={sendFetcher.state !== "idle"}
                   isDisabled={
                     sendFetcher.state !== "idle" ||
-                    !permissions.can("update", "invoicing")
+                    !permissions.has({ "invoicing.salesInvoices": "Edit" })
                   }
                   onClick={() =>
                     sendFetcher.submit(
@@ -550,7 +552,7 @@ const SalesInvoiceHeader = () => {
                   postFetcher.state !== "idle" ||
                   isPosted ||
                   routeData?.salesInvoiceLines?.length === 0 ||
-                  !permissions.can("update", "invoicing")
+                  !permissions.has({ "invoicing.salesInvoices": "Edit" })
                 }
               >
                 <Trans>Post</Trans>

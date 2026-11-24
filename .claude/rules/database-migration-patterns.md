@@ -167,10 +167,17 @@ call. `packages/database/supabase/tests/rpc-privileges.test.sql` is the tenant-i
 ## Enums
 
 ```sql
-CREATE TYPE "warehouseTransferStatus" AS ENUM ('Draft', 'To Ship', 'To Receive', 'Completed');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'warehouseTransferStatus') THEN
+    CREATE TYPE "warehouseTransferStatus" AS ENUM ('Draft', 'To Ship', 'To Receive', 'Completed');
+  END IF;
+END $$;
 ```
 
-Add new values with `ALTER TYPE "<enum>" ADD VALUE '<v>'` in a later migration (cannot run
+`CREATE TYPE` has no `IF NOT EXISTS`, and a migration must be safe to re-run
+(`migration-replay-safe`), so it goes in a guarded DO block. Add new values with
+`ALTER TYPE "<enum>" ADD VALUE IF NOT EXISTS '<v>'` in a later migration (cannot run
 inside a transaction block with other statements that use the value).
 
 ## Gotchas

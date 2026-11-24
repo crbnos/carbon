@@ -7,6 +7,7 @@ import { createGunzip } from "node:zlib";
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type {
+  Actor,
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
@@ -17,12 +18,15 @@ import {
   SUPABASE_URL,
   VERCEL_URL
 } from "@carbon/auth";
-import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import type { Database, Json } from "@carbon/database";
-import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import {
+  activeJobStatuses,
+  fetchAllFromTable,
+  getCompanyTimeZone
+} from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import {
   type Kysely,
@@ -30,7 +34,7 @@ import {
   type KyselyTx,
   withTransaction
 } from "@carbon/database/client";
-import { single, updateRows } from "@carbon/database/rows";
+import { single } from "@carbon/database/rows";
 import {
   accountDefaults,
   accounts,
@@ -85,7 +89,12 @@ import {
   rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
-import { withRevisionSuffix } from "@carbon/documents/utils";
+import {
+  type PartNumberDisplay,
+  summarizePartNumberDisplay,
+  TAX_CODE_SUMMARY_SELECT,
+  withRevisionSuffix
+} from "@carbon/documents/utils";
 import { generateTestLabelZPL } from "@carbon/documents/zpl";
 import type {
   DescriptionModes,
@@ -166,11 +175,12 @@ import {
   type RilletProvider,
   SYNC_OPERATION_ALLOWED_TRANSITIONS,
   SyncOperationStatusSchema,
+  type TaxRateOption,
+  toXeroTaxRateOptions,
   XERO_MAX_JOURNAL_DIMENSION_SLOTS,
   type XeroProvider
 } from "@carbon/ee/accounting";
 import { enableAuditLog } from "@carbon/ee/audit.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
   ensureOnshapeReleaseWebhook,
   getIntegrationServerHooks,
@@ -242,6 +252,7 @@ import {
 import { packBySize } from "@carbon/jobs/events";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
+import { loadTaxSummary } from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -318,10 +329,7 @@ import type {
 } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
-import {
-  getItarCertificationStatus,
-  getPermissionCacheKey
-} from "~/modules/users/users.service";
+import { getItarCertificationStatus } from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
@@ -344,8 +352,15 @@ import type {
   sequenceValidator,
   subsidiaryValidator
 } from "./settings.models";
-import { companyValidator, type customFieldValidator } from "./settings.models";
-import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
+import {
+  type BaseCurrencyChangeBlocker,
+  companyValidator,
+  type customFieldValidator
+} from "./settings.models";
+import {
+  DOCUMENT_EDIT_RECORDS,
+  partNumberLinesRefusal
+} from "./settings.utils";
 
 const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
 
@@ -391,7 +406,7 @@ export async function getApiKey(
   return client
     .from("apiKey")
     .select(
-      "id, name, expiresAt, scopes, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId"
+      "id, name, expiresAt, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId, permission(module, page, level)"
     )
     .eq("id", id)
     .eq("companyId", companyId)
@@ -409,7 +424,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", { count: listCount(args) })
+    .select("*, permission(module, page, level)", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1269,17 +1284,125 @@ export async function insertSubsidiary(
 }
 
 /** Only the company fields: `updateSubsidiaryDetails` gates it and drops the cached time zone. */
+/**
+ * Writes a subsidiary's details. Bypasses row-level security when given the
+ * system client (Settings → Company owns `company`), so it is scoped to the
+ * caller's company group.
+ */
 export async function updateSubsidiary(
   client: SupabaseClient<Database>,
   id: string,
+  companyGroupId: string,
   subsidiary: Partial<z.infer<typeof subsidiaryValidator>> & {
     updatedBy: string;
   }
 ) {
   const { id: _, ...data } = subsidiary;
   return requireAffected(
-    client.from("company").update(data).eq("id", id).select("id")
+    client
+      .from("company")
+      .update(data)
+      .eq("id", id)
+      .eq("companyGroupId", companyGroupId)
+      .select("id")
   );
+}
+
+/**
+ * Who may own a company group: an active employee of any company in it. The
+ * one rule behind the billing page's list (`listOwnershipCandidates`) and the
+ * transfer's check (`readOwnershipTransfer`). Read past RLS: the group's other
+ * companies are not the caller's.
+ */
+function ownershipCandidates(db: Kysely<KyselyDatabase>, groupId: string) {
+  return db
+    .selectFrom("employee")
+    .innerJoin("company", "company.id", "employee.companyId")
+    .innerJoin("userToCompany", (join) =>
+      join
+        .onRef("userToCompany.userId", "=", "employee.id")
+        .onRef("userToCompany.companyId", "=", "employee.companyId")
+    )
+    .where("employee.active", "=", true)
+    .where("userToCompany.role", "=", "employee")
+    .where("company.companyGroupId", "=", groupId);
+}
+
+/** The users the owner of `companyId`'s group may hand it to (`ownershipCandidates`). */
+export async function listOwnershipCandidates(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{ id: string; fullName: string | null; email: string }[]> {
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  if (!company?.companyGroupId) return [];
+  return ownershipCandidates(db, company.companyGroupId)
+    .innerJoin("user", "user.id", "employee.id")
+    .select(["user.id", "user.fullName", "user.email"])
+    .distinct()
+    .orderBy("user.fullName")
+    .execute();
+}
+
+/**
+ * What deciding a transfer of the company group's ownership reads: the group
+ * and its owner, and whether the new owner is one of its
+ * `ownershipCandidates`. Read past RLS: `transferCompanyOwnership` decides
+ * itself.
+ */
+export async function readOwnershipTransfer(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; newOwnerId: string }
+): Promise<{
+  groupId: string;
+  ownerId: string | null;
+  newOwnerIsGroupEmployee: boolean;
+} | null> {
+  const group = await db
+    .selectFrom("company")
+    .innerJoin("companyGroup", "companyGroup.id", "company.companyGroupId")
+    .select(["companyGroup.id as groupId", "companyGroup.ownerId"])
+    .where("company.id", "=", args.companyId)
+    .executeTakeFirst();
+  if (!group) return null;
+
+  const employee = await ownershipCandidates(db, group.groupId)
+    .select("employee.id")
+    .where("employee.id", "=", args.newOwnerId)
+    .limit(1)
+    .executeTakeFirst();
+
+  return {
+    groupId: group.groupId,
+    ownerId: group.ownerId,
+    newOwnerIsGroupEmployee: employee !== undefined
+  };
+}
+
+/**
+ * Hand the company group to `toOwnerId`, only while `fromOwnerId` still owns
+ * it. False when the group changed hands since it was read.
+ */
+export async function setCompanyGroupOwner(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    groupId: string;
+    fromOwnerId: string;
+    toOwnerId: string;
+    userId: string;
+  }
+): Promise<boolean> {
+  const updated = await db
+    .updateTable("companyGroup")
+    .set({ ownerId: args.toOwnerId, updatedBy: args.userId })
+    .where("id", "=", args.groupId)
+    .where("ownerId", "=", args.fromOwnerId)
+    .returning("id")
+    .executeTakeFirst();
+  return updated !== undefined;
 }
 
 export async function updateCompanyPlan(
@@ -1322,18 +1445,99 @@ export async function updateCompany(
 }
 
 /**
- * Company update for a BASE-CURRENCY change: exchange-rate overrides are
- * denominated in the old base, so they must be cleared in the SAME transaction
- * — a committed base flip with surviving old-base pins silently mis-rates
- * every new document, and a non-atomic cleanup can race a freshly created
- * new-base override. Kysely throws on rollback; `settings.company.update`
- * try/catches.
+ * Why the company's base currency cannot change: the reason codes of SQL
+ * `base_currency_change_blockers`, which the `company` trigger also enforces.
+ * Empty when it may change.
+ */
+export async function getBaseCurrencyChangeBlockers(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string
+): Promise<BaseCurrencyChangeBlocker[]> {
+  const result = await sql<{ reason: BaseCurrencyChangeBlocker }>`
+    SELECT "reason" FROM public.base_currency_change_blockers(${companyId})
+  `.execute(db);
+  return result.rows.map((row) => row.reason);
+}
+
+/**
+ * What a base currency change of the company would touch: the blockers, the
+ * stored amounts that keep their numbers and are read in the new currency,
+ * and the records set to the current base that move with it.
+ */
+export async function getBaseCurrencyChangePreview(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+) {
+  const [blockers, counts] = await Promise.all([
+    getBaseCurrencyChangeBlockers(db, companyId),
+    sql<{
+      baseCurrencyCode: string;
+      itemCosts: number;
+      itemPrices: number;
+      workCenterRates: number;
+      approvalRules: number;
+      customers: number;
+      suppliers: number;
+      supplierParts: number;
+      bankAccounts: number;
+    }>`
+      SELECT
+        c."baseCurrencyCode",
+        (SELECT count(*)::int FROM "itemCost"
+          WHERE "companyId" = c."id"
+            AND (coalesce("unitCost", 0) <> 0 OR coalesce("standardCost", 0) <> 0)) AS "itemCosts",
+        (SELECT count(*)::int FROM "itemUnitSalePrice"
+          WHERE "companyId" = c."id" AND coalesce("unitSalePrice", 0) <> 0) AS "itemPrices",
+        (SELECT count(*)::int FROM "workCenter"
+          WHERE "companyId" = c."id"
+            AND (coalesce("laborRate", 0) <> 0 OR coalesce("machineRate", 0) <> 0
+              OR coalesce("overheadRate", 0) <> 0)) AS "workCenterRates",
+        (SELECT count(*)::int FROM "approvalRule" WHERE "companyId" = c."id") AS "approvalRules",
+        (SELECT count(*)::int FROM "customer"
+          WHERE "companyId" = c."id" AND "currencyCode" = c."baseCurrencyCode") AS "customers",
+        (SELECT count(*)::int FROM "supplier"
+          WHERE "companyId" = c."id" AND "currencyCode" = c."baseCurrencyCode") AS "suppliers",
+        (SELECT count(*)::int FROM "supplierPart"
+          WHERE "companyId" = c."id" AND "currencyCode" = c."baseCurrencyCode") AS "supplierParts",
+        (SELECT count(*)::int FROM "customerBankAccount"
+          WHERE "companyId" = c."id" AND "currencyCode" = c."baseCurrencyCode")
+          + (SELECT count(*)::int FROM "supplierBankAccount"
+          WHERE "companyId" = c."id" AND "currencyCode" = c."baseCurrencyCode") AS "bankAccounts"
+      FROM "company" c
+      WHERE c."id" = ${companyId}
+    `.execute(db)
+  ]);
+  const row = counts.rows[0];
+  if (!row) throw new NotFoundError("Company not found");
+  const { baseCurrencyCode, ...relabel } = row;
+  return { baseCurrencyCode, blockers, ...relabel };
+}
+
+/**
+ * Company update for a BASE-CURRENCY change. The change relabels: every
+ * stored amount keeps its number and is read in the new currency, which the
+ * `company` trigger allows only while no amount depends on the old base. In
+ * the same transaction:
+ * - exchange-rate overrides are deleted: they are denominated in the old
+ *   base and would rate every new document wrong;
+ * - for the company at the top of its group, the group's historical rates
+ *   are cleared: they are stated against its old base;
+ * - the new base is made active in the group's currencies, which posting
+ *   reads for its decimal places;
+ * - the item price ladders and the item, customer and customer-type rental
+ *   rates written in the old base move to the new one (the item page reads
+ *   the ladder of the base, rentals the rates of the agreement's currency);
+ * - unless `keepRecordCurrencies`, the customers, suppliers, supplier parts
+ *   and bank accounts set to the old base move with it;
+ * - a parent's elimination entity, which copied the parent's base, follows.
+ * Kysely throws on rollback; the service functions try/catch.
  */
 export async function updateCompanyWithBaseCurrencyChange(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   company: Partial<z.infer<typeof subsidiaryValidator>> & {
     updatedBy: string;
+    keepRecordCurrencies?: boolean;
   },
   // The subsidiary update also writes `parentCompanyId`.
   allowedFields: readonly string[] = Object.keys(companyValidator.shape)
@@ -1347,15 +1551,155 @@ export async function updateCompanyWithBaseCurrencyChange(
   ) as Partial<z.infer<typeof subsidiaryValidator>>;
 
   return db.transaction().execute(async (trx) => {
+    // The `company` trigger refuses a base change in a transaction without
+    // this flag: no other writer moves the rows below.
+    await sql`SELECT set_config('app.base_currency_change', 'true', true)`.execute(
+      trx
+    );
+    const current = await trx
+      .selectFrom("company")
+      .select(["baseCurrencyCode", "companyGroupId", "parentCompanyId"])
+      .where("id", "=", companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    const oldBase = current.baseCurrencyCode;
+    const newBase = fields.baseCurrencyCode ?? oldBase;
+
     await trx
       .updateTable("company")
       .set({ ...fields, updatedBy: company.updatedBy })
       .where("id", "=", companyId)
       .execute();
+    // `oldBase` is read under the row lock: a save that lost a race to the
+    // same change finds the base moved and leaves later overrides alone.
+    if (newBase === oldBase) return;
+
+    const restamp = { currencyCode: newBase, updatedBy: company.updatedBy };
     await trx
       .deleteFrom("exchangeRateOverride")
       .where("companyId", "=", companyId)
       .execute();
+
+    if (current.companyGroupId) {
+      const decimalPlaces =
+        currencies.find((currency) => currency.code === newBase)
+          ?.decimalPlaces ?? 2;
+      await trx
+        .insertInto("currency")
+        .values({
+          code: newBase,
+          decimalPlaces,
+          active: true,
+          companyGroupId: current.companyGroupId,
+          createdBy: company.updatedBy
+        })
+        .onConflict((oc) =>
+          oc
+            .columns(["code", "companyGroupId"])
+            .doUpdateSet({ active: true, updatedBy: company.updatedBy })
+        )
+        .execute();
+      // A historical rate is stated against the group's presentation
+      // currency, the base of the company at the top of the group.
+      if (!current.parentCompanyId) {
+        await trx
+          .updateTable("currency")
+          .set({ historicalExchangeRate: null, updatedBy: company.updatedBy })
+          .where("companyGroupId", "=", current.companyGroupId)
+          .where("historicalExchangeRate", "is not", null)
+          .execute();
+      }
+    }
+
+    await trx
+      .updateTable("itemUnitSalePrice")
+      .set(restamp)
+      .where("companyId", "=", companyId)
+      .where("currencyCode", "=", oldBase)
+      .execute();
+    // A rate that already exists in the new base keeps both (one per currency).
+    await trx
+      .updateTable("itemRentalRate")
+      .set(restamp)
+      .where("companyId", "=", companyId)
+      .where("currencyCode", "=", oldBase)
+      .where(({ not, exists, selectFrom }) =>
+        not(
+          exists(
+            selectFrom("itemRentalRate as existing")
+              .select("existing.id")
+              .where("existing.companyId", "=", companyId)
+              .where("existing.currencyCode", "=", newBase)
+              .whereRef("existing.itemId", "=", "itemRentalRate.itemId")
+          )
+        )
+      )
+      .execute();
+    await trx
+      .updateTable("customerItemRentalRate")
+      .set(restamp)
+      .where("companyId", "=", companyId)
+      .where("currencyCode", "=", oldBase)
+      .where(({ not, exists, selectFrom }) =>
+        not(
+          exists(
+            selectFrom("customerItemRentalRate as existing")
+              .select("existing.id")
+              .where("existing.companyId", "=", companyId)
+              .where("existing.currencyCode", "=", newBase)
+              .whereRef("existing.itemId", "=", "customerItemRentalRate.itemId")
+              .where((sub) =>
+                sub.or([
+                  sub(
+                    "existing.customerId",
+                    "=",
+                    sub.ref("customerItemRentalRate.customerId")
+                  ),
+                  sub(
+                    "existing.customerTypeId",
+                    "=",
+                    sub.ref("customerItemRentalRate.customerTypeId")
+                  )
+                ])
+              )
+          )
+        )
+      )
+      .execute();
+
+    if (!company.keepRecordCurrencies) {
+      for (const table of [
+        "customer",
+        "supplier",
+        "supplierPart",
+        "customerBankAccount",
+        "supplierBankAccount"
+      ] as const) {
+        await trx
+          .updateTable(table)
+          .set(restamp)
+          .where("companyId", "=", companyId)
+          .where("currencyCode", "=", oldBase)
+          .execute();
+      }
+    }
+
+    if (!current.companyGroupId) return;
+    const eliminationEntity = await trx
+      .selectFrom("company")
+      .select("id")
+      .where("parentCompanyId", "=", companyId)
+      .where("companyGroupId", "=", current.companyGroupId)
+      .where("isEliminationEntity", "=", true)
+      .where("baseCurrencyCode", "=", oldBase)
+      .executeTakeFirst();
+    if (eliminationEntity) {
+      await trx
+        .updateTable("company")
+        .set({ baseCurrencyCode: newBase, updatedBy: company.updatedBy })
+        .where("id", "=", eliminationEntity.id)
+        .execute();
+    }
   });
 }
 
@@ -1492,9 +1836,9 @@ export async function setLocationResponsibleEmployee(
     userId: string;
   }
 ) {
-  // `location` is a resources table: without resources_update, row-level
-  // security matches no row and the update succeeds having changed nothing.
-  // Returning the row lets the caller tell the two apart.
+  // `location` belongs to Resources → Locations; the operation passes the
+  // system client, so the write is scoped to the company. Returning the row
+  // tells a location of another company (no row) from a written one.
   return client
     .from("location")
     .update({ responsibleEmployee: args.employeeId, updatedBy: args.userId })
@@ -1995,6 +2339,30 @@ export async function listPreviewEntities(
 const emptyThumbnails: Record<string, string | null> = {};
 
 /**
+ * The codes a picked quote's or order's lines name, for its tax summary, as the
+ * PDF route reads them. Service role: the caller checked `update: settings`,
+ * and the tax tables need accounting, sales or purchasing view.
+ */
+async function previewTaxCodes(
+  companyId: string,
+  lines: ReadonlyArray<{ taxCodeId: string | null }> | null
+) {
+  const taxCodeIds = [
+    ...new Set(
+      (lines ?? []).flatMap((line) => (line.taxCodeId ? [line.taxCodeId] : []))
+    )
+  ];
+  if (taxCodeIds.length === 0) return null;
+  const taxCodes = await getCarbonServiceRole()
+    .from("taxCode")
+    .select(TAX_CODE_SUMMARY_SELECT)
+    .eq("companyId", companyId)
+    .in("id", taxCodeIds);
+  if (taxCodes.error) throw taxCodes.error;
+  return taxCodes.data;
+}
+
+/**
  * Fetch the real data props a document's PDF needs for a record id, mirroring
  * the live PDF route loaders. Returns null when unsupported / not found, so the
  * preview falls back to sample data.
@@ -2042,8 +2410,22 @@ export async function buildPreviewProps(
         getAccountsReceivableBillingAddress(client, companyId)
       ]);
       if (!invoice.data) return null;
+      const tax = await loadTaxSummary({
+        // The caller checked `update: settings`; the tax tables need
+        // accounting, sales or purchasing view.
+        taxClient: getCarbonServiceRole(),
+        companyId,
+        invoiceId: id,
+        company: company.data,
+        salesInvoice: invoice.data,
+        lines: lines.data ?? [],
+        headerShipping:
+          (shipment.data?.shippingCost ?? 0) * (invoice.data.exchangeRate ?? 1),
+        currencyDecimals: null
+      });
       return {
         ...base,
+        ...tax,
         salesInvoice: invoice.data,
         salesInvoiceLines: lines.data ?? [],
         salesInvoiceLocations: locations.data,
@@ -2072,6 +2454,10 @@ export async function buildPreviewProps(
       if (!order.data) return null;
       return {
         ...base,
+        taxCodes: await previewTaxCodes(companyId, lines.data),
+        taxDate:
+          order.data.orderDate ??
+          datetime.today(company.data.timezone ?? "UTC").toString(),
         salesOrder: order.data,
         salesOrderLines: lines.data ?? [],
         salesOrderLocations: locations.data,
@@ -2148,6 +2534,9 @@ export async function buildPreviewProps(
         ...base,
         exchangeRate,
         printDate: datetime.today(timeZone).toString(),
+        // A quote has no document date; its codes are read on today.
+        taxCodes: await previewTaxCodes(companyId, lines.data),
+        taxDate: datetime.today(timeZone).toString(),
         quote: quote.data,
         quoteLines: lines.data ?? [],
         quoteLinePrices: prices.data ?? [],
@@ -2373,42 +2762,6 @@ export async function getOeeDevicesTabData(
 
 const INTEGRATION_CACHE_TTL = 3600;
 const PIECE_HEALTHY_CACHE_TTL = 300;
-
-/**
- * Drop the cached auth record for an API key so a scope change or revocation
- * takes effect immediately in the common case. An in-flight auth read can still
- * re-prime the cache with the pre-write row, so the hard bound is the 30s TTL —
- * callers that delete the row should bust AGAIN after the delete commits, using
- * the returned keyHash (unreadable from the DB once the row is gone).
- *
- * Service-role on purpose: apiKey's RLS SELECT requires `settings_view`, but the
- * routes that revoke or rescope a key gate on `users_update`, so the caller's own
- * client cannot see the row and the bust would silently do nothing.
- */
-export async function invalidateApiKeyCache(
-  id: string,
-  companyId: string
-): Promise<string | null> {
-  const { data, error } = await getCarbonServiceRole()
-    .from("apiKey")
-    .select("keyHash")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  // A failed lookup is indistinguishable from a missing row at the return type,
-  // and neither may block the revoke — log it so a stale scope surviving its TTL
-  // is diagnosable rather than silent.
-  if (error) {
-    logger.error("Failed to read api key for cache bust", {
-      error,
-      id,
-      companyId
-    });
-  }
-  if (!data?.keyHash) return null;
-  await bustApiKeyCache(data.keyHash);
-  return data.keyHash;
-}
 
 export async function clearCustomFieldsCache(companyId?: string) {
   const keys = companyId ? `customFields:${companyId}:*` : "customFields:*";
@@ -3540,6 +3893,14 @@ export async function getProviderDimensionTargets(
 type CompanySettingsUpdate =
   Database["public"]["Tables"]["companySettings"]["Update"];
 
+/**
+ * Whose console PIN turning console mode on generates: a person's own. An
+ * API key gets none, since whoever holds the key may not be its creator.
+ */
+export function consolePinUserId(actor: Actor): string | undefined {
+  return actor.type === "user" ? actor.userId : undefined;
+}
+
 /** The fields the caller sent: an absent (undefined) one is left out. */
 export function sentFields<T extends object>(fields: T): Partial<T> {
   return Object.fromEntries(
@@ -3556,7 +3917,12 @@ export function nothingSent(
     : null;
 }
 
-/** Writes the sent fields to the company's settings row, as the caller. */
+/**
+ * Writes the sent fields to the company's settings row. Bypasses row-level
+ * security: Settings → Company owns the row, and the calling settings page's
+ * operation permission is the gate. Call it only with that operation's
+ * validated fields.
+ */
 export async function saveCompanySettings(
   ctx: ServiceContext,
   fields: CompanySettingsUpdate,
@@ -3565,7 +3931,7 @@ export async function saveCompanySettings(
   const changes = sentFields(fields);
   if (Object.keys(changes).length === 0) return null;
   const { error } = await requireAffected(
-    ctx.asCaller.supabase
+    ctx.asSystem.supabase
       .from("companySettings")
       .update(changes)
       .eq("id", ctx.company.id)
@@ -3692,6 +4058,40 @@ export async function dcaaTimekeepingRefusal(
   return null;
 }
 
+const BASE_CURRENCY_BLOCKER_MESSAGES: Record<
+  BaseCurrencyChangeBlocker,
+  string
+> = {
+  "ledger-has-amounts": "the ledger has entries",
+  "has-documents": "quotes, orders, invoices or other documents exist",
+  "has-stock-or-costs": "stock has been received, moved or used",
+  "has-fixed-assets": "fixed assets exist",
+  "group-has-data": "another company in the group has transactions",
+  "accounting-integration": "an accounting or spend integration is connected"
+};
+
+/**
+ * A refusal naming why the company's base currency cannot change, or null
+ * when it can. The `company` trigger refuses the same change; this check
+ * gives the caller the reasons instead of a failed write.
+ */
+export async function refuseBaseCurrencyChange(
+  ctx: ServiceContext,
+  companyId: string
+): Promise<CarbonError | null> {
+  const blockers = await getBaseCurrencyChangeBlockers(
+    ctx.asSystem.pg,
+    companyId
+  );
+  if (blockers.length === 0) return null;
+  return ctx.error(
+    "rule",
+    `The base currency can't change: ${blockers
+      .map((blocker) => BASE_CURRENCY_BLOCKER_MESSAGES[blocker])
+      .join("; ")}.`
+  );
+}
+
 /** Multi-company management: Carbon staff, and the companies the `multi-company-management` flag turns it on for. */
 export async function refuseUnlessCanManageCompanies(
   ctx: ServiceContext
@@ -3751,14 +4151,13 @@ export async function createHeadquarters(
     );
   }
 
-  const [job] = await Promise.all([
-    insertEmployeeJob(client, {
-      id: ctx.auditUserId,
-      companyId,
-      locationId: headquarters.data.id
-    }),
-    redis.del(getPermissionCacheKey(ctx.auditUserId))
-  ]);
+  // No claims clear: the cache holds one field per company, and a company
+  // just created has none yet.
+  const job = await insertEmployeeJob(client, {
+    id: ctx.auditUserId,
+    companyId,
+    locationId: headquarters.data.id
+  });
   if (job.error) {
     return ctx.error(
       "internal",
@@ -3780,12 +4179,6 @@ export function generateTestLabel(
   const labelSize = labelSizes.find((s) => s.id === mediaSizeId);
   if (!labelSize?.zpl) return null;
   return generateTestLabelZPL(withLabelDpi(labelSize, dpi), printedAt);
-}
-
-/** An API key action on a company without the plan. */
-export function apiKeysEntitlement(ctx: ServiceContext, err: unknown) {
-  if (!(err instanceof EntitlementError)) throw err;
-  return ctx.error("entitlement", "API keys require the Business plan");
 }
 
 /** The integration's stored metadata and its `settings` object, for a merge. */
@@ -4037,35 +4430,7 @@ export async function seedCompany(
     if (!employeeTypeId)
       throw new Error("Failed to insert admin employee type");
 
-    // get the modules
-    const modules = (await trx
-      .selectFrom("modules")
-      .select("name")
-      .execute()) as { name: string }[];
-
-    // create employee type permissions for admin
-    const employeeTypePermissions = modules.reduce<
-      Database["public"]["Tables"]["employeeTypePermission"]["Insert"][]
-    >((acc, module) => {
-      if (module.name) {
-        acc.push({
-          employeeTypeId: employeeTypeId,
-          // @ts-expect-error - it's legit, chill typescript
-          module: module.name,
-          create: [companyId],
-          update: [companyId],
-          delete: [companyId],
-          view: [companyId]
-        });
-      }
-      return acc;
-    }, []);
-
-    // insert employee type permissions
-    await trx
-      .insertInto("employeeTypePermission")
-      .values(employeeTypePermissions)
-      .execute();
+    // The Admin type resolves to Full on every page with no permission rows.
 
     // insert employee
     await trx
@@ -4431,54 +4796,6 @@ export async function seedCompany(
         await trx.insertInto("fixedAssetClass").values(classRows).execute();
       }
     } // end if (!identityOnly)
-
-    const user = await single(
-      trx,
-      "userPermission",
-      { id: userId },
-      { columns: ["permissions"] }
-    );
-    if (user.error) throw new Error(user.error.message);
-
-    const currentPermissions = (user.data?.permissions ?? {}) as Record<
-      string,
-      string[]
-    >;
-    const newPermissions = { ...currentPermissions };
-    modules.forEach(({ name }) => {
-      const module = name?.toLowerCase();
-      if (`${module}_view` in newPermissions) {
-        newPermissions[`${module}_view`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_view`] = [companyId];
-      }
-
-      if (`${module}_create` in newPermissions) {
-        newPermissions[`${module}_create`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_create`] = [companyId];
-      }
-
-      if (`${module}_update` in newPermissions) {
-        newPermissions[`${module}_update`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_update`] = [companyId];
-      }
-
-      if (`${module}_delete` in newPermissions) {
-        newPermissions[`${module}_delete`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_delete`] = [companyId];
-      }
-    });
-
-    const { error } = await updateRows(
-      trx,
-      "userPermission",
-      { permissions: newPermissions },
-      { id: userId }
-    );
-    if (error) throw new Error(error.message);
 
     // For subsidiaries: set companyGroupId + parentCompanyId now that the
     // reference data (including the supplier/customer sequences) has been
@@ -8246,7 +8563,7 @@ export async function pushOnshapeRelease(
   }
   // An item the notice could not take is removed: left in place it is outside
   // change control, and a re-push would reuse it instead of staging it. The
-  // service role removes it because the pusher may lack parts_delete.
+  // service role removes it because the pusher may lack Full on its page.
   const stageInNotice = async (
     label: string,
     itemId: string,
@@ -9370,6 +9687,58 @@ export function panelResponse(
     : data(result.data.body, { status: result.data.status, headers });
 }
 
+/** The providers that map Carbon tax codes to their own tax rates. */
+export const TAX_RATE_MAPPING_PROVIDERS: ReadonlySet<string> = new Set([
+  ProviderID.XERO,
+  ProviderID.QUICKBOOKS
+]);
+
+/**
+ * The provider's active tax rates as mapping options, both directions. Xero's
+ * read returns [] on failure, and an organisation always has active rates,
+ * so an empty Xero list sets `optionsError` like a thrown read. The settings
+ * drawer shows what loaded; saving a mapping refuses when the read fails.
+ */
+export async function getProviderTaxRateOptions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string
+): Promise<{ options: TaxRateOption[]; optionsError: boolean }> {
+  try {
+    const providerId =
+      integrationId === ProviderID.XERO
+        ? ProviderID.XERO
+        : ProviderID.QUICKBOOKS;
+    const accountingIntegration = await getAccountingIntegration(
+      client,
+      companyId,
+      providerId
+    );
+    const provider = getProviderIntegration(
+      client,
+      companyId,
+      providerId,
+      accountingIntegration.metadata
+    );
+    if (providerId === ProviderID.XERO) {
+      const rates = await (provider as XeroProvider).listTaxRates();
+      // listTaxRates answers [] on failure; an organisation always has rates.
+      return {
+        options: toXeroTaxRateOptions(rates),
+        optionsError: rates.length === 0
+      };
+    }
+    const options = await (provider as QboProvider).listTaxRateOptions();
+    return { options, optionsError: false };
+  } catch (err) {
+    getLogger("erp", "settings", "tax-rates").error(
+      "Failed to load provider tax rates",
+      { companyId, integrationId, error: err }
+    );
+    return { options: [], optionsError: true };
+  }
+}
+
 // Strict backflush gaps. Each count and its drawer list share one query, the
 // SQL form of `needsPullFrom`, so they cannot disagree.
 
@@ -9666,8 +10035,9 @@ export async function getOpenJobsMissingStorageUnit(
 
 /**
  * The record a document prints, for the "Edit document" modal: its readable
- * number, whether it is locked, and the notes its Notes block prints. Read with
- * the caller's client, so a record the caller cannot see is not found.
+ * number, whether it is locked, whether it prints lines whose part numbers a
+ * pick sets and whether they can change, and the notes its Notes block prints. Read with the caller's client, so a record
+ * the caller cannot see is not found.
  */
 export async function getDocumentEditRecord(
   client: SupabaseClient<Database>,
@@ -9676,10 +10046,11 @@ export async function getDocumentEditRecord(
   documentId: string
 ) {
   const record = DOCUMENT_EDIT_RECORDS[documentType];
+  const noLinesWhen = record.partNumberLines?.noLinesWhen;
   const { data, error } = await client
     .from(record.table as "purchaseOrder")
     .select(
-      ["status", record.readableId, record.notesColumn]
+      ["status", record.readableId, record.notesColumn, noLinesWhen?.column]
         .filter(Boolean)
         .join(", ")
     )
@@ -9688,13 +10059,55 @@ export async function getDocumentEditRecord(
     .maybeSingle();
   if (error || !data) return { data: null, error };
   const row = data as unknown as Record<string, unknown>;
+  const status = row.status as string | null;
+
   return {
     data: {
       label: String(row[record.readableId] ?? documentId),
-      locked: record.isLocked(row.status as string | null),
+      locked: record.isLocked(status),
+      partNumbersShown:
+        !!record.partNumberLines &&
+        !noLinesWhen?.values.includes(String(row[noLinesWhen.column])),
+      partNumbersLocked:
+        !record.partNumberLines ||
+        partNumberLinesRefusal(documentType, status) !== null,
       notes: record.notesColumn
         ? ((row[record.notesColumn] as JSONContent | null) ?? null)
         : null
+    },
+    error: null
+  };
+}
+
+/**
+ * The part number choices of a document's item lines, summed up for the Edit
+ * document select: their common choice, "mixed", or null for legacy lines, and
+ * how many lines there are. Lines with no item print no part number.
+ */
+export async function getDocumentPartNumberLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType: DocumentEditType,
+  documentId: string
+) {
+  const partNumberLines = DOCUMENT_EDIT_RECORDS[documentType].partNumberLines;
+  if (!partNumberLines) return { data: null, error: null };
+  const lines = await fetchAllFromTable<{
+    partNumberDisplay: PartNumberDisplay | null;
+  }>(client, partNumberLines.table, "id, partNumberDisplay", (query) =>
+    query
+      .eq(partNumberLines.documentColumn, documentId)
+      .eq("companyId", companyId)
+      .not("itemId", "is", null)
+      .order("id")
+  );
+  if (lines.error) return { data: null, error: lines.error };
+  return {
+    data: {
+      summary: summarizePartNumberDisplay(
+        lines.data.map((line) => line.partNumberDisplay)
+      ),
+      count: lines.data.length
     },
     error: null
   };
@@ -9713,6 +10126,8 @@ export async function saveDocumentEditRow(
     documentId: string;
     edit: DocumentEdit;
     notes?: JSONContent | null;
+    /** The modal's pick for every item line of the document. */
+    partNumberDisplay?: PartNumberDisplay;
     userId: string;
   }
 ) {
@@ -9732,6 +10147,10 @@ export async function saveDocumentEditRow(
       .executeTakeFirst();
     if (!current) return "notFound" as const;
     if (record.isLocked(current.status)) return "locked" as const;
+    if (args.partNumberDisplay !== undefined) {
+      const refusal = partNumberLinesRefusal(documentType, current.status);
+      if (refusal) return { refusal };
+    }
 
     if (isEmptyDocumentEdit(edit)) {
       await trx
@@ -9773,6 +10192,25 @@ export async function saveDocumentEditRow(
         } as never)
         .where("id", "=", documentId)
         .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    if (args.partNumberDisplay !== undefined && record.partNumberLines) {
+      // Every item line takes the one choice the modal made.
+      await trx
+        .updateTable(record.partNumberLines.table as "purchaseOrderLine")
+        .set({
+          partNumberDisplay: args.partNumberDisplay,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where(
+          record.partNumberLines.documentColumn as "purchaseOrderId",
+          "=",
+          documentId
+        )
+        .where("companyId", "=", companyId)
+        .where("itemId", "is not", null)
         .execute();
     }
     return "saved" as const;

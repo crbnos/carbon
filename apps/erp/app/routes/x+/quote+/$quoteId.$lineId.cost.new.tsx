@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -13,8 +13,8 @@ import { upsertQuoteLineAdditionalCharges } from "~/modules/sales/sales.service"
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { client, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, userId } = await authorize(request, {
+    "sales.quotes": "Edit"
   });
 
   const { lineId } = params;

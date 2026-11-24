@@ -3,13 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
-import type { ActionFunctionArgs } from "react-router";
-import { useParams } from "react-router";
+import { datetime, redirect, round } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { applyLineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { customerContractLineValidator } from "~/modules/sales/sales.models";
 import {
   getContract,
@@ -21,12 +22,46 @@ import {
   ContractLineForm,
   newContractLineFormValues
 } from "~/modules/sales/ui/Contracts";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
+
+/** The tax a new line opens with: the contract's ship-to's or customer's
+ *  code on the contract's start date, with no item. */
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { api, client, companyId } = await authorize(request, {
+    "sales.serviceContracts": "Create"
+  });
+
+  const { id } = params;
+  if (!id) throw new Error("Could not find id");
+
+  const contract = await api.sales.getContract({ customerContractId: id });
+  if (contract.error || contract.data?.companyId !== companyId) {
+    return { resolvedTax: null };
+  }
+
+  const date =
+    contract.data.startDate ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  const tax = await api.accounting.resolveLineTaxes({
+    source: "sales",
+    customerId: contract.data.customerId,
+    customerLocationId: contract.data.shipToCustomerLocationId,
+    date
+  });
+  // Only a code (or an exemption) changes the default: with no code a new
+  // line opens at 0%, as before tax codes.
+  return {
+    resolvedTax: tax.data
+      ? applyLineTaxDecision(tax.data, { taxCodeId: null, taxPercent: 0 })
+      : null
+  };
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "sales"
+  const { client, companyId, userId } = await authorize(request, {
+    "sales.serviceContracts": "Create"
   });
 
   const { id } = params;
@@ -60,9 +95,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // `upsertContractLine` refuses a contract that is not a Draft and an item
-  // that is not a Service; its refusal message is what the user reads.
+  // that is not a Service; its refusal message is what the user reads. It
+  // decides the tax: a caller that does not post the field (the form does;
+  // an empty one is a cleared code) takes the ship-to's or customer's code.
   const insert = await upsertContractLine(client, {
     ...line,
+    taxCodeId: formData.has("taxCodeId") ? (line.taxCodeId ?? null) : undefined,
     // The contract checked above is the URL's — never the form's copy.
     customerContractId: id,
     companyId,
@@ -83,6 +121,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function NewContractLineRoute() {
+  const { resolvedTax } = useLoaderData<typeof loader>();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -94,7 +133,12 @@ export default function NewContractLineRoute() {
   return (
     <ContractLineForm
       key={id}
-      initialValues={newContractLineFormValues(contract)}
+      initialValues={{
+        ...newContractLineFormValues(contract),
+        // The form types percent points.
+        taxPercent: round((resolvedTax?.taxPercent ?? 0) * 100),
+        taxCodeId: resolvedTax?.taxCodeId ?? undefined
+      }}
       currencyCode={contract.currencyCode}
       billingBasis={contract.billingBasis}
       isLocked={contract.status !== "Draft"}

@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -38,17 +38,7 @@ import {
   jobFormRefusalField,
   jobValidator
 } from "~/modules/production/production.models";
-import {
-  getJob,
-  getJobCorrections,
-  getJobDocumentsWithItemId,
-  getJobMakeMethodById,
-  getJobMaterialsByMethodId,
-  getJobOperationsByMethodId,
-  getJobPurchaseOrderLines,
-  getProductionDataByOperations,
-  getRootMakeMethod
-} from "~/modules/production/production.service";
+import { getJobCorrections } from "~/modules/production/production.service";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production/types";
 import {
   JobBillOfMaterial,
@@ -61,20 +51,18 @@ import {
 import JobCorrections from "~/modules/production/ui/Jobs/JobCorrections";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
-import {
-  getTagsList,
-  requireCompanyRecord
-} from "~/modules/shared/shared.service";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    bypassRls: true
-  });
+  const { client, companyId, api } = await authorize(
+    request,
+    { "production.jobs": "View" },
+    { bypassRls: true }
+  );
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -85,9 +73,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // is returned unless it passes.
   const [, job, rootMethod, tags] = await Promise.all([
     requireCompanyRecord(client, "job", companyId, { id: jobId }),
-    getJob(client, jobId),
-    getRootMakeMethod(client, jobId, companyId),
-    getTagsList(client, companyId, "operation")
+    api.production.getJob({ id: jobId }),
+    api.production.getRootMakeMethod({ jobId }),
+    api.shared.getTagsList({ table: "operation" })
   ]);
   if (job.error) {
     throw redirect(
@@ -99,7 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (rootMethod.error) {
     return {
       notes: (job.data?.notes ?? {}) as JSONContent,
-      purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+      purchaseOrderLines: api.production.getJobPurchaseOrderLines({ jobId }),
       materials: [],
       operations: [],
       makeMethod: null,
@@ -117,15 +105,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const methodId = rootMethod.data.id;
 
   const [materials, operations, makeMethod, corrections] = await Promise.all([
-    getJobMaterialsByMethodId(client, methodId),
-    getJobOperationsByMethodId(client, methodId),
-    getJobMakeMethodById(client, methodId, companyId),
+    api.production.getJobMaterialsByMethodId({ jobMakeMethodId: methodId }),
+    api.production.getJobOperationsByMethodId({ jobMakeMethodId: methodId }),
+    api.production.getJobMakeMethodById({ jobMakeMethodId: methodId }),
     getJobCorrections(client, methodId, companyId)
   ]);
 
   return {
     notes: (job.data?.notes ?? {}) as JSONContent,
-    purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+    purchaseOrderLines: api.production.getJobPurchaseOrderLines({ jobId }),
     materials:
       materials?.data?.map((m) => ({
         ...m,
@@ -146,16 +134,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })) ?? [],
     makeMethod: makeMethod.data ?? null,
     corrections: corrections.data ?? [],
-    files: getJobDocumentsWithItemId(
-      client,
-      companyId,
-      job.data,
-      rootMethod.data.itemId
-    ),
-    productionData: getProductionDataByOperations(
-      client,
-      operations?.data?.map((o) => o.id) ?? []
-    ),
+    files: api.production
+      .getJobDocumentsWithItemId({
+        job: job.data,
+        itemId: rootMethod.data.itemId
+      })
+      .then(dataOrThrow),
+    productionData: api.production
+      .getProductionDataByOperations({
+        jobOperationIds: operations?.data?.map((o) => o.id) ?? []
+      })
+      .then(dataOrThrow),
     tags: tags.data ?? []
   };
 }
@@ -166,7 +155,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { jobId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.updateJobDetails({
     ...input.data,
     id: jobId,
@@ -306,7 +295,7 @@ export default function JobDetailsRoute() {
         </DeferredFiles>
 
         <CadModel
-          isReadOnly={!permissions.can("update", "production")}
+          isReadOnly={!permissions.has({ "production.jobs": "Edit" })}
           metadata={{
             jobId: jobData?.job?.id ?? undefined,
             itemId: jobData?.job?.itemId ?? undefined

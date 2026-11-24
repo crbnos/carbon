@@ -360,7 +360,9 @@ function EditorToolbar({
   canEdit: boolean;
 }) {
   // A draft printed on a real record needs update rights (`$type.preview`).
-  const canPreviewRecords = usePermissions().can("update", "settings");
+  const canPreviewRecords = usePermissions().has({
+    "settings.documentTemplates": "Edit"
+  });
   const { t } = useLingui();
   const isDirty = useIsDirty();
   const { isSaving, reset, save, previewEntities, previewId, setPreviewId } =

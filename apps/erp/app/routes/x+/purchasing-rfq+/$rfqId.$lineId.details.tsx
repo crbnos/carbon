@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -40,9 +40,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "purchasing-rfq-line-details");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { companyId } = await authorize(request, { "purchasing.rfqs": "View" });
 
   const { rfqId, lineId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
@@ -90,11 +88,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
+  const { client: viewClient } = await authorize(request, {
+    "purchasing.rfqs": "View"
   });
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "purchasing"
+  const { client, companyId, userId } = await authorize(request, {
+    "purchasing.rfqs": "Edit"
   });
 
   const { rfqId, lineId } = params;
@@ -195,7 +193,9 @@ export default function PurchasingRFQLine() {
         )}
       </DeferredFiles>
       <CadModel
-        isReadOnly={isReadOnly || !permissions.can("update", "purchasing")}
+        isReadOnly={
+          isReadOnly || !permissions.has({ "purchasing.rfqs": "Edit" })
+        }
         metadata={{
           purchasingRfqLineId: line.id ?? undefined,
           itemId: line.itemId ?? undefined

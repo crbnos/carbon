@@ -10,15 +10,27 @@ export type {
   Violation
 } from "./check";
 export { findClobbers, objectRefs } from "./clobber";
+export {
+  accountFkClassified,
+  accountFkRestrict
+} from "./conformance/account-fk-restrict";
+export {
+  COUNTER_COLUMNS,
+  counterWriteRelative
+} from "./conformance/counter-write-relative";
 export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 export { journalStatusFilter } from "./conformance/journal-status-filter";
 export { linguiMacroMisuse } from "./conformance/lingui-macro-misuse";
+export { migrationReplaySafe } from "./conformance/migration-replay-safe";
 export { moduleShape } from "./conformance/module-shape";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+export { noDiscardedQueryError } from "./conformance/no-discarded-query-error";
+export { noForeignKeyWithoutOnDelete } from "./conformance/no-foreign-key-without-on-delete";
 export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
+export { noInlineUniqueViolation } from "./conformance/no-inline-unique-violation";
 export { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 export { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 export { noLegacyRls } from "./conformance/no-legacy-rls";
@@ -30,11 +42,19 @@ export { noRawRedirect } from "./conformance/no-raw-redirect";
 export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noServerCodeInClient } from "./conformance/no-server-code-in-client";
+export {
+  noSilentTestPass,
+  sharedTestWrappers
+} from "./conformance/no-silent-test-pass";
 export { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 export { routeActionShape } from "./conformance/route-action-shape";
 export { serviceFnFile } from "./conformance/service-fn-file";
 export { spdxLicenseHeader } from "./conformance/spdx-license-header";
+export {
+  statusColumns,
+  statusWriteGuarded
+} from "./conformance/status-write-guarded";
 export { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 export { testReadsSource } from "./conformance/test-reads-source";
 export {
@@ -66,7 +86,10 @@ export {
   TEST_CHECKS,
   TS_CHECKS
 } from "./run";
-export { loadDbTableColumns } from "./sources/db-columns";
+export {
+  loadDbTableColumns,
+  loadDbTableColumnTypes
+} from "./sources/db-columns";
 export { loadEdgeFunctions } from "./sources/edge-functions";
 export {
   listLicenseCandidates,
@@ -74,5 +97,8 @@ export {
 } from "./sources/license-files";
 export { loadModules, modulesDir } from "./sources/modules";
 export { loadServerFiles } from "./sources/server-files";
-export { loadTestFiles } from "./sources/test-files";
+export {
+  loadSharedTestFixtures,
+  loadTestFiles
+} from "./sources/test-files";
 export { loadTypescriptFiles } from "./sources/typescript";

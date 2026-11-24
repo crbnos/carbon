@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -17,11 +17,7 @@ import type {
 } from "react-router";
 import { data, useLoaderData, useNavigate, useParams } from "react-router";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
-import {
-  getIssueWorkflow,
-  getRequiredActionsList,
-  upsertIssueWorkflow
-} from "~/modules/quality/quality.service";
+import { upsertIssueWorkflow } from "~/modules/quality/quality.service";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
@@ -33,26 +29,25 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Issue Workflows`, to: path.to.issueWorkflows },
     (data) => data?.workflow?.name
-  ),
-  module: "quality"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.workflow?.name, "Issue Workflow");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality",
-    role: "employee",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "quality.issueWorkflows": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [workflow, requiredActions] = await Promise.all([
-    getIssueWorkflow(client, id),
-    getRequiredActionsList(client, companyId)
+    api.quality.getIssueWorkflow({ nonConformanceWorkflowId: id }),
+    api.quality.getRequiredActionsList({})
   ]);
 
   if (workflow.error) {
@@ -83,8 +78,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+  const { client, companyId, userId } = await authorize(request, {
+    "quality.issueWorkflows": "Create"
   });
   const formData = await request.formData();
   const validation = await validator(issueWorkflowValidator).validate(formData);

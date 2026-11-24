@@ -79,6 +79,11 @@ newest migrations, e.g. `20260609143732_document-template.sql`):
     the parent via `EXISTS` (see `database-migration-patterns.md`).
 - **Never**: an `itemReadableId` column, or a precision spec on `NUMERIC`.
 - **Views** use `WITH(SECURITY_INVOKER=true)`.
+- **Safe to re-run.** A failed deploy re-runs the migration over what it already applied, so
+  every statement must succeed a second time: `IF [NOT] EXISTS`, `CREATE OR REPLACE`,
+  `DROP … IF EXISTS` before re-creating a policy, trigger or constraint, `CREATE TYPE` in a
+  DO block that checks `pg_type`, and `ON CONFLICT` or `WHERE NOT EXISTS` on an `INSERT`. The
+  `migration-replay-safe` check (`@carbon/checks`) fails a statement that would not.
 
 ### 3b. Renaming or dropping a table? Record it for backups
 

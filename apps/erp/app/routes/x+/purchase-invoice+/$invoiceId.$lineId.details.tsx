@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { type JSONContent, RecordOutlet } from "@carbon/react";
@@ -21,17 +22,9 @@ import {
   isPurchaseInvoiceLocked,
   purchaseInvoiceLineValidator
 } from "~/modules/invoicing/invoicing.models";
-import {
-  getPurchaseInvoice,
-  getPurchaseInvoiceLine,
-  upsertPurchaseInvoiceLine
-} from "~/modules/invoicing/invoicing.service";
+import { getPurchaseInvoice } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
-import {
-  chargeNumberError,
-  getLineChargeNumber
-} from "~/modules/projects/projects.service";
-import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service";
+import { getLineChargeNumber } from "~/modules/projects/projects.service";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -42,23 +35,24 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "invoicing.purchaseInvoices": "View"
   });
 
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
 
   const [purchaseInvoiceLine, chargeNumber] = await Promise.all([
-    getPurchaseInvoiceLine(client, lineId),
+    api.invoicing.getPurchaseInvoiceLine({ purchaseInvoiceLineId: lineId }),
     getLineChargeNumber(client, "purchaseInvoiceLine", lineId, companyId)
   ]);
 
   return {
     purchaseInvoiceLine: purchaseInvoiceLine?.data ?? null,
     chargeNumber: chargeNumber.data ?? null,
-    files: getSupplierInteractionLineDocuments(client, companyId, lineId)
+    files: api.purchasing
+      .getSupplierInteractionLineDocuments({ lineId })
+      .then(dataOrThrow)
   };
 }
 
@@ -70,8 +64,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
 
   // Check if PI is locked
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "invoicing"
+  const { client: viewClient } = await authorize(request, {
+    "invoicing.purchaseInvoices": "View"
   });
 
   const purchaseInvoice = await getPurchaseInvoice(viewClient, invoiceId);
@@ -92,8 +86,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
+  const { api } = await authorize(request, {
+    "invoicing.purchaseInvoices": "Create"
   });
 
   const formData = await request.formData();
@@ -105,53 +99,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
+  const { id: _id, taxCodeId, ...d } = validation.data;
 
-  // if (d.invoiceLineType === "G/L Account") {
-  //   d.assetId = undefined;
-  //   d.itemId = undefined;
-  // } else if (d.invoiceLineType === "Fixed Asset") {
-  //   d.accountId = undefined;
-  //   d.itemId = undefined;
-  // } else
-  // if (d.invoiceLineType === "Comment") {
-  //   d.accountId = undefined;
-  //   d.assetId = undefined;
-  //   d.itemId = undefined;
-  // } else {
-  //   d.accountId = undefined;
-  //   d.assetId = undefined;
-  // }
-
-  const chargeError = await chargeNumberError(client, companyId, d);
-  if (chargeError) {
-    return validationError({
-      fieldErrors: { [chargeError.field]: chargeError.message }
-    });
-  }
-
-  const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
-    id: lineId,
+  // The operation checks the charge number and the order's funds, and
+  // decides the line's tax.
+  const result = await api.invoicing.updatePurchaseInvoiceLine({
     ...d,
-    updatedBy: userId,
+    // A posted empty field clears the code; an absent one keeps it.
+    ...(formData.has("taxCodeId") ? { taxCodeId: taxCodeId ?? "" } : {}),
+    id: lineId,
     customFields: setCustomFields(formData)
   });
 
-  if (updatePurchaseInvoiceLine.error) {
-    throw redirect(
-      path.to.purchaseInvoiceLine(invoiceId, lineId),
-      await flash(
-        request,
-        error(
-          updatePurchaseInvoiceLine.error,
-          "Failed to update purchase invoice line"
-        )
-      )
-    );
-  }
-
-  throw redirect(path.to.purchaseInvoiceLine(invoiceId, lineId));
+  return respond(request, result).redirect(
+    path.to.purchaseInvoiceLine(invoiceId, lineId)
+  );
 }
 
 export default function EditPurchaseInvoiceLineRoute() {
@@ -185,6 +147,7 @@ export default function EditPurchaseInvoiceLineRoute() {
     conversionFactor: purchaseInvoiceLine?.conversionFactor ?? 1,
     storageUnitId: purchaseInvoiceLine?.storageUnitId ?? "",
     costCenterId: purchaseInvoiceLine?.costCenterId ?? "",
+    taxCodeId: purchaseInvoiceLine?.taxCodeId ?? undefined,
     projectId: chargeNumber?.projectId ?? "",
     projectElementId: chargeNumber?.projectElementId ?? "",
     taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,

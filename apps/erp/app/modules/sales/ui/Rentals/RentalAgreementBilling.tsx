@@ -12,7 +12,12 @@ import {
   LuCalendarDays,
   LuRepeat
 } from "react-icons/lu";
-import { NumberControlled, PaymentTerm, Select } from "~/components/Form";
+import {
+  NumberControlled,
+  PaymentTerm,
+  Select,
+  TaxCode
+} from "~/components/Form";
 import { SetupSection, TermForm } from "~/components/Setup";
 import { useCurrencyDecimals, usePermissions, useSettings } from "~/hooks";
 import {
@@ -20,6 +25,7 @@ import {
   type rentalBillingCycles,
   type rentalBillingTimings
 } from "../../sales.models";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import { useRentalTermSave } from "./RentalSetupSteps";
 import type { RentalAgreement } from "./types";
 
@@ -54,7 +60,8 @@ const RentalAgreementBilling = ({
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { save, saveInvoiceAutomation } = useRentalTermSave(id);
   const isDisabled =
-    rentalAgreement.status !== "Draft" || !permissions.can("update", "sales");
+    rentalAgreement.status !== "Draft" ||
+    !permissions.has({ "sales.rentalAgreements": "Edit" });
   const billingCycle: BillingCycle =
     rentalAgreement.billingCycle ?? "Calendar Month";
   // The Monthly alignment the user left behind by picking 28 Days, so picking
@@ -84,6 +91,7 @@ const RentalAgreementBilling = ({
   };
   const companyLabel =
     invoiceAutomationLabels[companySettings.invoiceAutomation];
+  const invoiceAutomationHint = useInvoiceAutomationHint();
 
   return (
     <>
@@ -218,6 +226,17 @@ const RentalAgreementBilling = ({
               }
             />
           </TermForm>
+          <TermForm name="taxCodeId" value={rentalAgreement.taxCodeId}>
+            <TaxCode
+              name="taxCodeId"
+              label={t`Tax Code`}
+              helperText={t`Sets the tax percent to the code's rate`}
+              isReadOnly={isDisabled}
+              onChange={(option) =>
+                onChange("taxCodeId", option?.value ?? null)
+              }
+            />
+          </TermForm>
           <TermForm name="taxPercent" value={rentalAgreement.taxPercent}>
             <NumberControlled
               name="taxPercent"
@@ -256,10 +275,15 @@ const RentalAgreementBilling = ({
               label={t`Invoicing`}
               helperText={
                 contactEmail
-                  ? t`What happens to an invoice once it is created`
+                  ? invoiceAutomationHint(
+                      rentalAgreement.invoiceAutomation ??
+                        companySettings.invoiceAutomation
+                    )
                   : t`Add a contact with an email to send invoices`
               }
-              isReadOnly={!permissions.can("update", "sales")}
+              isReadOnly={
+                !permissions.has({ "sales.rentalAgreements": "Edit" })
+              }
               options={[
                 {
                   value: COMPANY_DEFAULT,

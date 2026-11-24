@@ -34,6 +34,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { useDrawerItem } from "~/hooks";
 import { useSubmoduleLayout } from "~/hooks/useModules";
 import type { RouteGroup } from "~/types";
+import { routeOwnsUrl } from "~/utils/nav";
 import { path } from "~/utils/path";
 import { arrangedGroups } from "~/utils/submodule-visibility";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
@@ -58,7 +59,8 @@ const matchesRoute = (
   route: GroupedRoute,
   pathname: string,
   exactMatch: boolean,
-  search = ""
+  search = "",
+  siblings: readonly GroupedRoute[] = []
 ) =>
   route.isActive
     ? route.isActive(pathname)
@@ -66,7 +68,13 @@ const matchesRoute = (
       ? matchesFilteredRoute(route.to, pathname, search)
       : exactMatch
         ? pathname === route.to
-        : pathname.includes(route.to);
+        : routeOwnsUrl(
+            route,
+            pathname,
+            siblings.filter(
+              (sibling) => !sibling.isActive && !sibling.to.includes("?")
+            )
+          );
 
 const GroupedContentSidebar = ({
   groups,
@@ -76,10 +84,9 @@ const GroupedContentSidebar = ({
   exactMatch?: boolean;
 }) => {
   const { t } = useLingui();
+  const siblings = groups.flatMap((group) => group.routes);
   const location = useSidebarLocation((pathname) =>
-    groups.some((group) =>
-      group.routes.some((route) => matchesRoute(route, pathname, exactMatch))
-    )
+    siblings.some((route) => matchesRoute(route, pathname, exactMatch))
   );
   const submit = useSubmit();
   const submoduleLayout = useSubmoduleLayout();
@@ -130,7 +137,13 @@ const GroupedContentSidebar = ({
     )
   );
   const isActive = (route: GroupedRoute) =>
-    matchesRoute(route, location.pathname, exactMatch, location.search) &&
+    matchesRoute(
+      route,
+      location.pathname,
+      exactMatch,
+      location.search,
+      siblings
+    ) &&
     (route.to.includes("?") ||
       !(filteredSiblingActive && route.to === location.pathname)) &&
     (Boolean(route.isActive) || exactMatch || !search.includes("view="));

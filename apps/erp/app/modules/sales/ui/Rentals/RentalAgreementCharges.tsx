@@ -196,7 +196,11 @@ const RentalAgreementCharges = ({
                             icon={<LuTrash />}
                             variant="ghost"
                             size="sm"
-                            isDisabled={!permissions.can("delete", "sales")}
+                            isDisabled={
+                              !permissions.has({
+                                "sales.rentalAgreements": "Full"
+                              })
+                            }
                             onClick={() => openDelete(charge)}
                           />
                         )}
@@ -213,7 +217,10 @@ const RentalAgreementCharges = ({
             <Button
               variant="secondary"
               leftIcon={<LuPlus />}
-              isDisabled={!hasLines || !permissions.can("create", "sales")}
+              isDisabled={
+                !hasLines ||
+                !permissions.has({ "sales.rentalAgreements": "Create" })
+              }
               onClick={() => setAdding(true)}
             >
               <Trans>Add Charge</Trans>
@@ -232,6 +239,7 @@ const RentalAgreementCharges = ({
           description: "",
           amount: 0,
           taxPercent: rentalAgreement.taxPercent ?? 0,
+          taxCodeId: rentalAgreement.taxCodeId ?? undefined,
           invoiceSeparately: false
         }}
         currencyCode={rentalAgreement.currencyCode ?? ""}

@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -23,11 +22,11 @@ const scheduleForm = z.discriminatedUnion("intent", [
 ]);
 
 export async function action(args: ActionFunctionArgs) {
-  await requirePermissions(args.request, { update: "service" });
+  const { api } = await authorize(args.request, { "service.schedule": "Edit" });
   const input = await validator(scheduleForm).request(args);
   if ("invalid" in input) return input.invalid;
   const form = input.data;
-  const service = (await carbon(args.request)).service;
+  const service = api.service;
 
   switch (form.intent) {
     case "assign":

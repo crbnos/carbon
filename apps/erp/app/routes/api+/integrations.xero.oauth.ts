@@ -3,14 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getAppUrl, XERO_CLIENT_ID, XERO_CLIENT_SECRET } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { Xero } from "@carbon/ee";
 import {
-  DEFAULT_SYNC_CONFIG,
+  connectedOrganizationId,
   getProviderIntegration,
+  metadataOnConnect,
   ProviderID,
-  syncEnabledOnConnect
+  type ProviderIntegrationMetadata
 } from "@carbon/ee/accounting";
 import { xeroOnInstall } from "@carbon/ee/xero/hooks.server";
 import { getLogger } from "@carbon/logger";
@@ -18,9 +19,11 @@ import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  getIntegration,
-  upsertCompanyIntegration
-} from "~/modules/settings/settings.service";
+  pickXeroConnection,
+  type XeroConnection,
+  xeroAuthEventId
+} from "~/modules/settings/integration-oauth";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
@@ -31,9 +34,8 @@ export const config = {
 const logger = getLogger("erp", "xero", "oauth");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+  const caller = await authorize(request, { "settings.integrations": "Edit" });
+  const { client, userId, companyId } = caller;
 
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
@@ -70,7 +72,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   try {
-    const provider = getProviderIntegration(client, companyId, ProviderID.XERO);
+    // Read the stored row BEFORE the code exchange: the exchange saves the new
+    // tokens through the provider, and without the stored metadata that save
+    // overwrote the organization and every setting.
+    const existing = await caller.api.settings.getIntegration({
+      id: Xero.id
+    });
+    const provider = getProviderIntegration(
+      client,
+      companyId,
+      ProviderID.XERO,
+      (existing.data?.metadata ?? undefined) as
+        | ProviderIntegrationMetadata
+        | undefined
+    );
 
     // Exchange the authorization code for tokens. The redirect_uri must match
     // the authorize-time one, which the connect route
@@ -116,16 +131,44 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return data({ error: "No Xero connections found" }, { status: 500 });
     }
 
-    // Get the first connection's tenant ID and name
-    const tenantId = connections[0].tenantId;
-    const tenantName = connections[0].tenantName;
+    const connection = pickXeroConnection(
+      connections as XeroConnection[],
+      xeroAuthEventId(auth.accessToken)
+    );
+    const tenantId = connection?.tenantId;
+    const tenantName = connection?.tenantName;
 
-    if (!tenantId) {
+    if (!connection || !tenantId) {
       return data(
         { error: "No tenant ID found in Xero connections" },
         { status: 500 }
       );
     }
+
+    // A refused connect must not leave Xero showing the app as connected to
+    // an organisation Carbon never saved — unless it is the one already in use.
+    const keepsExistingConnection =
+      connectedOrganizationId(existing.data?.metadata) === tenantId;
+    const refuse = async (error: string, status: number) => {
+      if (!keepsExistingConnection) {
+        const removed = await fetch(
+          `https://api.xero.com/connections/${connection.id}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${auth.accessToken}` }
+          }
+        ).catch((cause: unknown) => cause);
+        if (!(removed instanceof Response) || !removed.ok) {
+          logger.error("Failed to remove the refused Xero connection", {
+            companyId,
+            tenantId,
+            error:
+              removed instanceof Response ? removed.status : String(removed)
+          });
+        }
+      }
+      return data({ error }, { status });
+    };
 
     // Fetch Carbon company's base currency
     const { data: company, error: companyError } = await client
@@ -135,10 +178,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .single();
 
     if (companyError || !company?.baseCurrencyCode) {
-      return data(
-        { error: "Company base currency not configured" },
-        { status: 400 }
-      );
+      return refuse("Company base currency not configured", 400);
     }
 
     // Fetch Xero organisation to get base currency
@@ -160,10 +200,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         status: xeroOrgResponse.status,
         body: await xeroOrgResponse.text()
       });
-      return data(
-        { error: "Failed to fetch Xero organization details" },
-        { status: 500 }
-      );
+      return refuse("Failed to fetch Xero organization details", 500);
     }
 
     let xeroOrgData;
@@ -173,53 +210,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
       logger.error("Failed to parse Xero Organisation response", {
         error: parseError
       });
-      return data(
-        { error: "Invalid response from Xero organization API" },
-        { status: 500 }
-      );
+      return refuse("Invalid response from Xero organization API", 500);
     }
 
     const xeroBaseCurrency = xeroOrgData?.Organisations?.[0]?.BaseCurrency;
 
     if (!xeroBaseCurrency) {
-      return data(
-        { error: "Could not determine Xero organization base currency" },
-        { status: 500 }
-      );
+      return refuse("Could not determine Xero organization base currency", 500);
     }
 
     // Check if Carbon's base currency matches Xero's base currency
     if (company.baseCurrencyCode !== xeroBaseCurrency) {
-      return data(
-        {
-          error: `Currency mismatch: Your Carbon company uses ${company.baseCurrencyCode}, but your Xero organization uses ${xeroBaseCurrency}. Please ensure both systems use the same base currency before connecting.`
-        },
-        { status: 400 }
+      return refuse(
+        `Currency mismatch: Your Carbon company uses ${company.baseCurrencyCode}, but your Xero organization uses ${xeroBaseCurrency}. Please ensure both systems use the same base currency before connecting.`,
+        400
       );
     }
 
     // Sync starts off on a new connection so accounts can be mapped first; a
-    // reconnect to the same organization keeps the switch where it was.
-    const existing = await getIntegration(client, Xero.id, companyId);
-    const syncEnabled = syncEnabledOnConnect(existing.data?.metadata, tenantId);
-
+    // reconnect to the same organization keeps the switch and every setting.
     const createdXeroIntegration = await upsertCompanyIntegration(client, {
       id: Xero.id,
       active: true,
       // @ts-expect-error
-      metadata: {
-        syncConfig: DEFAULT_SYNC_CONFIG,
-        settings: { syncEnabled },
+      metadata: metadataOnConnect(existing.data?.metadata, tenantId, {
+        ...auth,
         // Provider-specific fields live under providerMetadata (new
         // credential shape) — legacy rows are upgraded on read
-        credentials: {
-          ...auth,
-          providerMetadata: {
-            tenantId,
-            tenantName: tenantName ?? undefined
-          }
+        providerMetadata: {
+          tenantId,
+          tenantName: tenantName ?? undefined
         }
-      },
+      }),
       updatedBy: userId,
       companyId: companyId
     });
@@ -233,10 +255,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         headers: { "Set-Cookie": consumedState.cookie }
       });
     } else {
-      return data(
-        { error: "Failed to save Xero integration" },
-        { status: 500 }
-      );
+      return refuse("Failed to save Xero integration", 500);
     }
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);

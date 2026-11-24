@@ -20,7 +20,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
@@ -44,6 +44,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { Supplier } from "~/modules/purchasing/types";
 import { itemType } from "~/modules/shared/shared.models";
@@ -65,6 +66,7 @@ export default function PurchaseInvoiceExplorer() {
     purchaseInvoice: PurchaseInvoice;
     purchaseInvoiceLines: PurchaseInvoiceLine[];
     supplier: Supplier;
+    resolvedTax: LineTaxDecision | null;
   }>(path.to.purchaseInvoice(invoiceId));
   const permissions = usePermissions();
 
@@ -81,7 +83,9 @@ export default function PurchaseInvoiceExplorer() {
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
-    taxPercent: 0,
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: purchaseInvoiceData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(purchaseInvoiceData?.resolvedTax?.taxPercent ?? 0),
     exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1
   };
 
@@ -103,7 +107,9 @@ export default function PurchaseInvoiceExplorer() {
     (line) => !line.itemId && line.invoiceLineType === "Comment"
   );
   const canReorder =
-    !isDisabled && permissions.can("update", "invoicing") && lines.length > 1;
+    !isDisabled &&
+    permissions.has({ "invoicing.purchaseInvoices": "Edit" }) &&
+    lines.length > 1;
 
   const editMode = useLineOrderEditMode<PurchaseInvoiceLine>({
     actionPath: path.to.purchaseInvoiceLineOrder(invoiceId),
@@ -170,7 +176,7 @@ export default function PurchaseInvoiceExplorer() {
             )
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "invoicing.purchaseInvoices": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -196,7 +202,10 @@ export default function PurchaseInvoiceExplorer() {
               <Button
                 className="flex-1"
                 shortcut={EXPLORER_SHORTCUTS.addLine}
-                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                isDisabled={
+                  isDisabled ||
+                  !permissions.has({ "invoicing.purchaseInvoices": "Edit" })
+                }
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newPurchaseInvoiceLineDisclosure.onOpen}
@@ -367,7 +376,10 @@ function PurchaseInvoiceLineItem({
               <DropdownMenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
-                disabled={isDisabled || !permissions.can("update", "sales")}
+                disabled={
+                  isDisabled ||
+                  !permissions.has({ "invoicing.purchaseInvoices": "Edit" })
+                }
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(line);

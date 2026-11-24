@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   dayBeforeCutover,
   isMigrationClearingZero
@@ -31,7 +31,10 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import { activateAccountingValidator } from "~/modules/accounting/accounting.models";
+import {
+  accountingActivationGate,
+  activateAccountingValidator
+} from "~/modules/accounting/accounting.models";
 import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,
@@ -81,9 +84,10 @@ const SUMMARY_LIST_CLASS =
   "grid w-full max-w-xl grid-cols-[18rem_1fr] gap-x-8 gap-y-3 text-sm";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    accountingActivationGate("View")
+  );
   const { cutoverDate } = await getActivationCutover(
     client,
     companyId,
@@ -116,7 +120,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(activateAccountingValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.accounting.enableAccountingCutover(input.data);
   const { pathname, search } = new URL(args.request.url);
   return respond(args.request, result).redirect(path.to.accountingPeriods, {
@@ -146,7 +150,7 @@ export default function AccountingActivationEnableRoute() {
     readinessPassed &&
     isClearingZero &&
     reconciliationBlockerCount === 0 &&
-    permissions.can("update", "accounting");
+    permissions.has(accountingActivationGate("Edit"));
 
   return (
     <>

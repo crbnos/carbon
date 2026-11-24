@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -18,13 +18,14 @@ const propertyForm = z.object({
 
 /**
  * One property of a rental agreement, saved from its properties panel.
- * Invoicing stays editable while Active; every other field is a Draft term.
+ * Invoicing, payment terms and tax percent stay editable while Active; every
+ * other field is a Draft term.
  */
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(propertyForm).request(args);
   if ("invalid" in input) return input.invalid;
   const { id, intent, field, value } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   // Each operation checks the value it is given against its own choices.
   if (intent === "invoiceAutomation") {
     return api.sales.setRentalInvoiceAutomation({

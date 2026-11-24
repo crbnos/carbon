@@ -165,6 +165,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   peopleAbsence: 1,
   peopleAssignment: 6,
   periodCloseTask: 3,
+  permission: 2, // the Buyer role's grants
   pickMethod: 19,
   pickingList: 2,
   pickingListLine: 4,
@@ -270,6 +271,10 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierStage: 4,
   supplierType: 6,
   tag: 5,
+  // Indiana (motor) has one statewide authority and no local rate.
+  taxAuthority: 1,
+  taxCode: 3,
+  taxCodeComponent: 3,
   timeCardEntry: 6,
   timesheetEntry: 6, // min 8
   tool: 2,

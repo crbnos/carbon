@@ -13,6 +13,7 @@ import {
   sectionConfigSchema,
   themeSchema
 } from "@carbon/documents/template";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   isValidTimeZone,
   labelSizes,
@@ -24,6 +25,7 @@ import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
 import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import { DataType } from "~/modules/shared/types";
+import { grantsField } from "~/modules/users/users.models";
 
 export const modulesType = [
   "Accounting",
@@ -59,39 +61,10 @@ export const purchasePriceUpdateTimingTypes = [
   "Purchase Order Finalize"
 ] as const;
 
-/** All permission modules with their available CRUD actions */
-export const apiKeyPermissionModules = {
-  accounting: ["view", "create", "update", "delete"],
-  documents: ["view", "create", "update", "delete"],
-  inventory: ["view", "create", "update", "delete"],
-  invoicing: ["view", "create", "update", "delete"],
-  parts: ["view", "create", "update", "delete"],
-  people: ["view", "create", "update", "delete"],
-  production: ["view", "create", "update", "delete"],
-  projects: ["view", "create", "update", "delete"],
-  purchasing: ["view", "create", "update", "delete"],
-  quality: ["view", "create", "update", "delete"],
-  resources: ["view", "create", "update", "delete"],
-  sales: ["view", "create", "update", "delete"],
-  service: ["view", "create", "update", "delete"],
-  settings: ["view", "create", "update", "delete"],
-  users: ["view", "create", "update", "delete"]
-} as const;
-
-export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
-
-/**
- * Permission keys (`${module}_${action}`) that are opt-in only: they must be
- * enabled by clicking their own cell and are never turned on by the "all
- * modules" or per-row select-all checkboxes. Deleting accounting data via the
- * API is high-risk, so it stays deselected unless explicitly chosen.
- */
-export const apiKeyOptInPermissionKeys = ["accounting_delete"] as const;
-
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
-  scopes: zfd.text(z.string().optional()),
+  grants: grantsField,
   /** Requests per minute. Saved on a single-tenant deployment only. */
   rateLimit: zfd.numeric(
     z
@@ -110,17 +83,6 @@ export const apiKeyValidator = z.object({
       })
   )
 });
-
-/** An API key form's fields as saved: the form posts its scopes as one JSON string. */
-export function apiKeyFields({
-  scopes,
-  ...form
-}: z.output<typeof apiKeyValidator>) {
-  return {
-    ...form,
-    scopes: (scopes ? JSON.parse(scopes) : {}) as Record<string, string[]>
-  };
-}
 
 export const integrationConnectionActionValidator = z.discriminatedUnion(
   "intent",
@@ -244,6 +206,28 @@ const company = {
 };
 
 export const companyValidator = z.object(company);
+
+// Why a base currency change is refused: the reason codes of SQL
+// `base_currency_change_blockers`, in its order.
+export const baseCurrencyChangeBlockers = [
+  "ledger-has-amounts",
+  "has-documents",
+  "has-stock-or-costs",
+  "has-fixed-assets",
+  "group-has-data",
+  "accounting-integration"
+] as const;
+
+export type BaseCurrencyChangeBlocker =
+  (typeof baseCurrencyChangeBlockers)[number];
+
+// A base currency change moves the customers, suppliers, supplier parts and
+// bank accounts set to the old base onto the new one, unless this is on.
+export const companyDetailsValidator = companyValidator.extend({
+  // Omitted when the form could not read the current base: the save keeps it.
+  baseCurrencyCode: zfd.text(z.string().optional()),
+  keepRecordCurrencies: zfd.checkbox()
+});
 
 // The onboarding company step collects only the address; the industry choice
 // comes from the dedicated industry step that follows.
@@ -429,6 +413,15 @@ export const rescheduleToleranceValidator = z.object({
 // Empty clears the default: items without their own horizon then have no fence.
 export const deliveryDateCheckSettingsValidator = z.object({
   deliveryDateControl: z.enum(deliveryDateControlTypes)
+});
+
+// Which part numbers new document lines print, by default for the company.
+export const supplierPartNumberDisplaySettingsValidator = z.object({
+  supplierPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS)
+});
+
+export const customerPartNumberDisplaySettingsValidator = z.object({
+  customerPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS)
 });
 
 export const planningHorizonValidator = z.object({
@@ -914,6 +907,60 @@ export const dimensionValueMappingBulkUpsertValidator = z.object({
   )
 });
 
+/**
+ * Saves one tax code's provider rates from the Tax Rates tab: a sales rate,
+ * a purchase rate, or both. `taxCodeId` may be the "no tax code" fallback
+ * row. The server reads each rate's name and percentage from the provider.
+ */
+export const taxCodeMappingUpsertValidator = z
+  .object({
+    intent: z.literal("upsert-tax-code-mapping"),
+    taxCodeId: z.string().min(1, { message: "Tax code is required" }),
+    salesExternalId: zfd.text(z.string().optional()),
+    purchaseExternalId: zfd.text(z.string().optional())
+  })
+  .refine(
+    (value) => Boolean(value.salesExternalId || value.purchaseExternalId),
+    {
+      message: "Select a sales or purchase rate",
+      path: ["salesExternalId"]
+    }
+  );
+
+export const taxCodeMappingEntrySchema = z.object({
+  taxCodeId: z.string().min(1),
+  direction: z.enum(["sales", "purchase"]),
+  externalId: z.string().min(1)
+});
+
+/**
+ * Confirm-all from the match-by-rate drawer. `mappings` is a repeated
+ * JSON-encoded form field, as in dimensionValueMappingBulkUpsertValidator.
+ */
+export const taxCodeMappingBulkUpsertValidator = z.object({
+  intent: z.literal("bulk-upsert-tax-code-mappings"),
+  mappings: zfd.repeatable(
+    z
+      .array(
+        z
+          .string()
+          .transform((value, ctx) => {
+            try {
+              return JSON.parse(value);
+            } catch {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Invalid tax code mapping payload"
+              });
+              return z.NEVER;
+            }
+          })
+          .pipe(taxCodeMappingEntrySchema)
+      )
+      .min(1, { message: "No tax code mappings to save" })
+  )
+});
+
 export const quoteLineCategoryMarkupsSettingsValidator = z.object({
   materialCost: zfd.numeric(z.number().min(0).default(0)),
   partCost: zfd.numeric(z.number().min(0).default(0)),
@@ -999,7 +1046,8 @@ export const documentEditValidator = zfd.formData({
   notes: jsonField(
     z.record(z.string(), z.unknown()).nullable(),
     "Invalid notes"
-  ).optional()
+  ).optional(),
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
 });
 
 export const documentSectionValidator = zfd.formData({

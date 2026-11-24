@@ -26,6 +26,8 @@ const PRESERVED_TABLES = new Set([
   // Console PIN hashes belong to the employees above, not to the story
   "employeePin",
   "employeeType",
+  // The grants of the roles, people and API keys kept here
+  "permission",
   "fiscalYearSettings",
   "fixedAssetClass",
   "gaugeType",
@@ -444,8 +446,10 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   // Settlements point at their target invoice/memo through ON DELETE RESTRICT
   // foreign keys, so they must go before the invoice headers below. Payments
   // and memos go with them: both carry a customer-XOR-supplier CHECK that the
-  // FK-nulling pass would violate when it nulls the party they point at.
-  for (const t of ["invoiceSettlement", "payment", "memo"]) {
+  // FK-nulling pass would violate when it nulls the party they point at. The
+  // tax subledger goes with its documents too: their journals were voided
+  // above, so a kept ledger would report tax the GL has reversed.
+  for (const t of ["taxLedger", "invoiceSettlement", "payment", "memo"]) {
     if (deleteSet.has(t)) {
       await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [
         companyId

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -29,19 +29,18 @@ import {
   ReportRangeSelect,
   useReportFormat
 } from "~/modules/projects/ui/Reports/ProjectReport";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export const handle = projectReportHandle("late-entries", msg`Late Entries`);
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    ...projectReportPermissions["late-entries"],
-    role: "employee"
-  });
+  const { api, companyId } = await authorize(
+    request,
+    projectReportPermissions["late-entries"]
+  );
   // A DCAA report: only with DCAA timekeeping on.
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await api.settings.getCompanySettings({});
   if (settings.data?.timekeepingControls !== "DCAA") {
     throw redirect(
       path.to.projectReports,
