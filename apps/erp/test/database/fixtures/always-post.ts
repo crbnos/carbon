@@ -767,7 +767,7 @@ export async function postCreditMemo(f: Fixture): Promise<string> {
 /** A job for one assembly, one operation at a work center, and one planned
  *  material: two of the part per assembly. `key` keeps two jobs of one
  *  fixture apart. */
-export async function jobFixture(f: Fixture, key = "1") {
+export async function jobFixture(f: Fixture, key = "1", quantity = 1) {
   const jobId = `${f.prefix}-job-${key}`;
   const processId = `${f.prefix}-process-${key}`;
   await seed(f, async (trx) => {
@@ -777,7 +777,7 @@ export async function jobFixture(f: Fixture, key = "1") {
         id: jobId,
         jobId: `J-${key}`,
         itemId: f.assemblyId,
-        quantity: 1,
+        quantity,
         unitOfMeasureCode: "EA",
         locationId: f.locationId,
         companyId: f.companyId,

@@ -20,6 +20,8 @@ export type JobSerialUnit = {
 
 /** What a job has received to inventory, from api+/production.job.$jobId.receipts. */
 export type JobReceiptSnapshot = {
+  /** In receipt order. Null for jobs with ordinary numbering. */
+  pairedSerials: string[] | null;
   quantityReceivedToInventory: number;
   trackedEntityIds: string[];
   /** The job's Consumed units that were booked out of stock (issued or shipped). */

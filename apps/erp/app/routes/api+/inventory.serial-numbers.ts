@@ -4,7 +4,11 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getSerialNumbersForItem } from "~/modules/inventory/inventory.service";
+import {
+  filterStockShipmentSerials,
+  getSerialNumbersForItem
+} from "~/modules/inventory/inventory.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
@@ -18,8 +22,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  return await getSerialNumbersForItem(client, {
+  const result = await getSerialNumbersForItem(client, {
     itemId,
     companyId
   });
+  if (!result.data || url.searchParams.get("stockShipment") !== "true")
+    return result;
+  const data = await filterStockShipmentSerials(
+    getDatabaseClient(),
+    companyId,
+    result.data
+  );
+  return { ...result, data };
 }

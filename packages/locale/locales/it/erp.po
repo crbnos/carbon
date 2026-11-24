@@ -2460,6 +2460,12 @@ msgstr "Un segreto con ambito inviato nell'intestazione della richiesta carbon-k
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un programma separato per la rendicontazione fiscale quando le norme fiscali richiedono un metodo diverso dall'ammortamento contabile."
 
+msgid "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+msgstr "Un'unità con numero di serie prodotta da esattamente un componente con numero di serie prende il numero di serie di quel componente quando il componente le viene assegnato. Gli articoli con una sequenza di numeri di serie mantengono i propri numeri."
+
+msgid "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+msgstr "Un'unità con numero di serie di un articolo senza sequenza di numeri di serie non ha un numero finché non ne viene digitato uno sull'ordine di produzione."
+
 msgid "A serial's build history"
 msgstr "Cronologia di costruzione di un numero di serie"
 
@@ -25162,11 +25168,17 @@ msgstr "Ricevi Pagamento"
 msgid "Receive Payment · {0} invoices"
 msgstr "Ricevi Pagamento · {0} fatture"
 
+msgid "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+msgstr "Ricevi le unità imballate finora. L’ordine rimane aperto finché non vengono registrate le unità rimanenti."
+
 msgid "Receive to Inventory"
 msgstr "Ricevi in Inventario"
 
 msgid "Receive to project stock"
 msgstr "Ricevi nel magazzino del progetto"
+
+msgid "Receive Units"
+msgstr "Ricevi unità"
 
 msgid "Received"
 msgstr "Ricevuto"
@@ -28353,6 +28365,12 @@ msgstr "I numeri di serie sono estratti quando le unità sono ricevute."
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "I numeri di serie vengono generati solo per articoli tracciati in serie o per lotto."
 
+msgid "Serial numbers from the part disabled"
+msgstr "Numeri di serie dal componente disattivati"
+
+msgid "Serial numbers from the part enabled"
+msgstr "Numeri di serie dal componente attivati"
+
 msgid "Serial numbers received"
 msgstr "Numeri di serie ricevuti"
 
@@ -30649,6 +30667,9 @@ msgstr "Prendi il primo articolo"
 
 msgid "Take the last item"
 msgstr "Prendi l'ultimo articolo"
+
+msgid "Take the serial number from the part"
+msgstr "Prendere il numero di serie dal componente"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Prendi la durata di conservazione rimanente più breve tra i materiali consumati per realizzare questo articolo. Utilizza quando la scadenza del prodotto dipende dai suoi ingredienti."
@@ -34268,6 +34289,9 @@ msgstr "Prezzo di vendita unitario"
 msgid "Units"
 msgstr "Unità"
 
+msgid "Units are not numbered from their parts"
+msgstr "Le unità non sono numerate in base ai loro componenti"
+
 msgid "Units don't match"
 msgstr "Le unità non corrispondono"
 
@@ -34280,8 +34304,14 @@ msgstr "unità di misura"
 msgid "Units of measure"
 msgstr "Unità di misura"
 
+msgid "Units received. The job is still open."
+msgstr "Unità ricevute. L’ordine è ancora aperto."
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Unità segnalate come non recuperabili in un'operazione, con un motivo — l'alternativa al rilavorazione."
+
+msgid "Units take the serial number of their part"
+msgstr "Le unità prendono il numero di serie del loro componente"
 
 msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 msgstr "Le unità che non hanno superato un campione restano rifiutate. Tutte le altre, comprese quelle mai campionate, sono pronte per lo stoccaggio."

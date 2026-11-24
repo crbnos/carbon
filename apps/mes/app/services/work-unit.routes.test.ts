@@ -400,12 +400,17 @@ describe("Unconsume (unconsume route)", () => {
         ]
       }
     });
-  const unconsume = (fake: ReturnType<typeof floor>, parent: string) =>
+  const unconsume = (
+    fake: ReturnType<typeof floor>,
+    parent: string,
+    pairingId?: string
+  ) =>
     unconsumeFromUnit(
       caller,
       {
         materialId: "m",
         parentTrackedEntityId: parent,
+        pairingId,
         children: [{ trackedEntityId: "c1", quantity: 1 }]
       },
       fake
@@ -423,11 +428,15 @@ describe("Unconsume (unconsume route)", () => {
 
   it("gives back a part from a unit already complete here", async () => {
     const fake = withConsumed("u1");
-    await unconsume(fake, "u1");
+    await unconsume(fake, "u1", "second-binding");
     expect(fake.posts).toMatchObject([
       {
         name: "issue",
-        input: { type: "unconsumeTrackedEntities", parentTrackedEntityId: "u1" }
+        input: {
+          type: "unconsumeTrackedEntities",
+          parentTrackedEntityId: "u1",
+          pairingId: "second-binding"
+        }
       }
     ]);
   });

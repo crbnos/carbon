@@ -18,7 +18,7 @@ import { parseTravelerCode } from "~/utils/traveler";
 
 const scanValidator = z.object({
   /** A traveler link, or a raw id or readable id from an older label. */
-  code: z.string().trim().min(1),
+  code: z.string().refine((value) => value.trim().length > 0),
   /** The operation page the scan was made on, and the unit on screen. */
   operationId: z.string().optional(),
   trackedEntityId: z.string().optional(),

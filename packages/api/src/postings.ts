@@ -191,6 +191,8 @@ export const issueInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("unconsumeTrackedEntities"),
+    // Identifies the binding the operator viewed before giving this unit back.
+    pairingId: z.string().optional(),
     materialId: z.string(),
     parentTrackedEntityId: z.string(),
     children: z.array(

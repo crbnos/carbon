@@ -2460,6 +2460,12 @@ msgstr "कार्बन-कुंजी अनुरोध हेडर प�
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "कर रिपोर्टिंग के लिए एक अलग अनुसूची जब कर नियम पुस्तक मूल्यह्रास से अलग विधि की आवश्यकता होती है।"
 
+msgid "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+msgstr "ठीक एक सीरियल पार्ट से बनी सीरियल यूनिट, उस पार्ट के उसमें जारी होने पर, उसी पार्ट का सीरियल नंबर लेती है। सीरियल नंबर सीक्वेंस वाले आइटम अपने ही नंबर रखते हैं।"
+
+msgid "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+msgstr "बिना सीरियल नंबर सीक्वेंस वाले आइटम की सीरियल यूनिट का तब तक कोई नंबर नहीं होता, जब तक जॉब पर एक टाइप नहीं किया जाता।"
+
 msgid "A serial's build history"
 msgstr "एक सीरीज का निर्माण इतिहास"
 
@@ -25162,11 +25168,17 @@ msgstr "भुगतान प्राप्त करें"
 msgid "Receive Payment · {0} invoices"
 msgstr "भुगतान प्राप्त करें · {0} चालान"
 
+msgid "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+msgstr "अब तक पैक की गई इकाइयाँ प्राप्त करें। शेष इकाइयाँ दर्ज होने तक जॉब खुला रहेगा।"
+
 msgid "Receive to Inventory"
 msgstr "इन्वेंटरी में प्राप्त करें"
 
 msgid "Receive to project stock"
 msgstr "परियोजना स्टॉक को प्राप्त करें"
+
+msgid "Receive Units"
+msgstr "इकाइयाँ प्राप्त करें"
 
 msgid "Received"
 msgstr "प्राप्त"
@@ -28353,6 +28365,12 @@ msgstr "जब इकाइयां प्राप्त की जाती �
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "सीरियल नंबर केवल सीरियल या बैच-ट्रैक किए गए आइटम के लिए उत्पन्न होते हैं।"
 
+msgid "Serial numbers from the part disabled"
+msgstr "पार्ट से सीरियल नंबर अक्षम"
+
+msgid "Serial numbers from the part enabled"
+msgstr "पार्ट से सीरियल नंबर सक्षम"
+
 msgid "Serial numbers received"
 msgstr "प्राप्त सीरियल नंबर"
 
@@ -30649,6 +30667,9 @@ msgstr "पहला आइटम लें"
 
 msgid "Take the last item"
 msgstr "अंतिम आइटम लें"
+
+msgid "Take the serial number from the part"
+msgstr "पार्ट से सीरियल नंबर लें"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "इस आइटम को बनाने के लिए उपयोग की गई सामग्रियों में सबसे कम शेष शेल्फ लाइफ लें। जब उत्पाद की समाप्ति तारीख इसकी सामग्री पर निर्भर करती है तो उपयोग करें।"
@@ -34268,6 +34289,9 @@ msgstr "यूनिट विक्रय मूल्य"
 msgid "Units"
 msgstr "इकाइयाँ"
 
+msgid "Units are not numbered from their parts"
+msgstr "यूनिट को उनके पार्ट्स से नंबर नहीं दिया जाता"
+
 msgid "Units don't match"
 msgstr "इकाइयाँ मेल नहीं खातीं"
 
@@ -34280,8 +34304,14 @@ msgstr "माप की इकाइयाँ"
 msgid "Units of measure"
 msgstr "माप की इकाइयाँ"
 
+msgid "Units received. The job is still open."
+msgstr "इकाइयाँ प्राप्त हो गई हैं। जॉब अभी खुला है।"
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "एक ऑपरेशन पर अपूरणीय के रूप में रिपोर्ट की गई इकाइयाँ, एक कारण के साथ — पुनः कार्य का विकल्प।"
+
+msgid "Units take the serial number of their part"
+msgstr "यूनिट अपने पार्ट का सीरियल नंबर लेती हैं"
 
 msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 msgstr "जो इकाइयाँ नमूने में विफल रहीं, वे अस्वीकृत रहती हैं। बाकी सभी इकाइयाँ, जिनका कभी नमूना नहीं लिया गया वे भी, पुटअवे के लिए तैयार हैं।"

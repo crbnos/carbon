@@ -3448,6 +3448,15 @@ export async function getJobReceiptSnapshot(
     .select([
       "job.quantityReceivedToInventory",
       sql<
+        string[] | null
+      >`CASE WHEN job_requires_serial_pairing("job".id, "job"."companyId")
+        THEN ARRAY(
+          SELECT te."readableId" FROM job_receivable_paired_units("job".id, "job"."companyId")
+            WITH ORDINALITY AS eligible(id, position)
+          JOIN "trackedEntity" te ON te.id = eligible.id AND te."companyId" = "job"."companyId"
+          ORDER BY eligible.position
+        ) END`.as("pairedSerials"),
+      sql<
         string[]
       >`COALESCE(array_agg("itemLedger"."trackedEntityId") FILTER (WHERE "itemLedger"."trackedEntityId" IS NOT NULL), '{}')`.as(
         "trackedEntityIds"

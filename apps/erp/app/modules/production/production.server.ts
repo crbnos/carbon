@@ -973,7 +973,8 @@ export const closeJob = defineServiceFn({
  * was received, a fractional quantity on a serial job, and the Make to Asset
  * rules; its message says what to fix (a `rule` error). Units it takes that
  * have no serial number yet (a deferred serial number timing) are numbered by
- * the same function, so a refused completion spends no numbers. Then the
+ * the same function, so a refused completion spends no numbers. A
+ * paired pack-out job stays open on a partial receipt. Once the job finishes,
  * picked material the job did not consume is returned to the warehouse; a
  * failure there leaves the job completed and is returned as `warning`.
  *
@@ -983,19 +984,24 @@ export const completeJob = defineServiceFn({
   input: z.object({
     jobId: z.string(),
     quantityComplete: z.number().min(0),
+    expectedSerials: z.array(z.string()).optional(),
     locationId: z.string().optional(),
     storageUnitId: z.string().optional()
   }),
   permission: { update: "production" },
 
-  async run(ctx, { jobId, quantityComplete, locationId, storageUnitId }) {
+  async run(
+    ctx,
+    { jobId, quantityComplete, locationId, storageUnitId, expectedSerials }
+  ) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
     // It must NOT write job.quantityShipped: that column is advanced only by
     // post-shipment, and the shipment builder ships quantityComplete less it.
-    const rpc = await ctx.asCaller.supabase.rpc("complete_job_to_inventory", {
+    const rpc = await ctx.asCaller.supabase.rpc("receive_job_to_inventory", {
       p_job_id: jobId,
+      p_expected_serials: expectedSerials,
       p_quantity_complete: quantityComplete,
       p_storage_unit_id: storageUnitId,
       p_location_id: locationId,
@@ -1008,6 +1014,10 @@ export const completeJob = defineServiceFn({
         rpc.error.message || "Failed to complete job",
         rpc.error
       );
+    }
+
+    if (rpc.data === false) {
+      return { jobId, completed: false, warning: null };
     }
 
     // A re-completion is supported; the job id is the idempotency key, so a
@@ -1034,10 +1044,11 @@ export const completeJob = defineServiceFn({
       });
       return {
         jobId,
+        completed: true,
         warning: "Job completed, but returning picked material failed"
       };
     }
-    return { jobId, warning: null };
+    return { jobId, completed: true, warning: null };
   }
 });
 

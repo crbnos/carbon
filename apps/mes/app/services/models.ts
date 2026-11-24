@@ -230,6 +230,7 @@ export const issueTrackedEntityValidator = z.object({
   // so parentTrackedEntityId is not sent.
   batchId: z.string().optional(),
   parentTrackedEntityId: z.string().optional(),
+  pairingId: z.string().optional(),
   children: z.array(
     z.object({
       trackedEntityId: z.string(),

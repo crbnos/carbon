@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   batchScanQuantity,
   decideTravelerClaim,
+  findScannedUnit,
   isUnitInOperationScope,
   parseTravelerCode,
   pickTravelerClaims,
@@ -29,6 +30,23 @@ describe("parseTravelerCode", () => {
     expect(
       parseTravelerCode("https://mes.carbon.ms/x/operation/op_1")
     ).toBeNull();
+  });
+});
+
+describe("findScannedUnit", () => {
+  const stock = [
+    { id: "one", readableId: "SN-123" },
+    { id: "two", readableId: " SN-123 " }
+  ];
+  it("resolves bare serials exactly and refuses an ambiguous printed number", () => {
+    expect(findScannedUnit(stock, "SN-123")).toBe(stock[0]);
+    expect(findScannedUnit(stock, " SN-123 ")).toBe(stock[1]);
+    const duplicated = [...stock, { id: "three", readableId: "SN-123" }];
+    expect(findScannedUnit(duplicated, "SN-123")).toBeUndefined();
+    expect(
+      findScannedUnit(duplicated, "https://labels.test/x/traveler/one")
+    ).toBe(stock[0]);
+    expect(findScannedUnit(duplicated, "three")).toBe(duplicated[2]);
   });
 });
 

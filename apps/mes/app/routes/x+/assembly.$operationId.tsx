@@ -348,6 +348,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : navEntities[unitIndex]?.id;
 
   const materials = await getJobMaterialsByOperationId(serviceRole, {
+    companyId,
     operation: op,
     trackedEntityId: effectiveEntityId,
     requiresSerialTracking:

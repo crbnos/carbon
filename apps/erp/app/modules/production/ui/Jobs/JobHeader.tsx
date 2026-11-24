@@ -178,7 +178,11 @@ const JobHeader = () => {
   const complete = useAction<typeof completeAction>({
     onSuccess: ({ data }) => {
       if (!data) return;
-      toast.success(t`Job completed successfully`);
+      toast.success(
+        data.completed
+          ? t`Job completed successfully`
+          : t`Units received. The job is still open.`
+      );
       if (data.warning) toast.error(data.warning);
     }
   });
@@ -1492,6 +1496,7 @@ function JobCompleteModal({
   const [serialChoice, setSerialChoice] = useState<SerialCompleteChoice>({
     mode: "locked"
   });
+  const [pairedReceipt, setPairedReceipt] = useState(false);
   const receivableSerials =
     serialChoice.mode === "serials" ? serialChoice.serials : null;
   const receivableUnitCount =
@@ -1568,7 +1573,14 @@ function JobCompleteModal({
       job?.quantityReceivedToInventory ??
       0;
 
-    if (
+    setPairedReceipt(receipts?.pairedSerials != null);
+    if (receipts?.pairedSerials != null) {
+      setSerialChoice({ mode: "serials", serials: receipts.pairedSerials });
+      setHasTrackedQuantity(false);
+      setQuantityComplete(
+        currentReceivedQuantity + receipts.pairedSerials.length
+      );
+    } else if (
       makeMethod.data?.requiresSerialTracking ||
       makeMethod.data?.requiresBatchTracking
     ) {
@@ -1713,13 +1725,26 @@ function JobCompleteModal({
                   : t`Receive ${job.jobId} to Inventory`}
               </ModalTitle>
               <ModalDescription>
-                {makeToOrder || completesToFixedAsset
-                  ? t`This job will no longer be available on the shop floor.`
-                  : t`This job will be received to inventory. It will no longer be available on the shop floor.`}
+                {pairedReceipt
+                  ? t`Receive the units packed so far. The job stays open until the remaining units are accounted for.`
+                  : makeToOrder || completesToFixedAsset
+                    ? t`This job will no longer be available on the shop floor.`
+                    : t`This job will be received to inventory. It will no longer be available on the shop floor.`}
               </ModalDescription>
             </ModalHeader>
             <Hidden name="salesOrderId" />
             <Hidden name="salesOrderLineId" />
+            {pairedReceipt && receivableSerials && (
+              <Hidden
+                name="expectedSerials"
+                value={JSON.stringify(
+                  receivableSerials.slice(
+                    0,
+                    Math.max(0, quantityComplete - priorReceivedQuantity)
+                  )
+                )}
+              />
+            )}
             <Hidden name="leftoverAction" value={leftoverAction} />
             <Hidden
               name="leftoverShipQuantity"
@@ -1973,10 +1998,18 @@ function JobCompleteModal({
                   // consumes nothing; the database refuses it as well.
                   (job.itemTrackingType !== "Non-Inventory" &&
                     !(quantityComplete > 0)) ||
-                  hasFractionalSerialQuantity
+                  hasFractionalSerialQuantity ||
+                  (pairedReceipt &&
+                    (quantityComplete <= priorReceivedQuantity ||
+                      quantityComplete >
+                        priorReceivedQuantity + (receivableUnitCount ?? 0)))
                 }
               >
-                <Trans>Complete Job</Trans>
+                {pairedReceipt ? (
+                  <Trans>Receive Units</Trans>
+                ) : (
+                  <Trans>Complete Job</Trans>
+                )}
               </Button>
             </ModalFooter>
           </ValidatedForm>

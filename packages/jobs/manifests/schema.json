@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261123192913",
+  "schemaVersion": "20261125000004",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-23T19:29:22.535Z",
+  "exportedAt": "2026-11-24T06:06:34.921Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -523,7 +523,9 @@
         "receiptBatchNumbersFromPurchaseOrder",
         "sequenceWeekNumbering",
         "supplierPartNumberDisplay",
-        "customerPartNumberDisplay"
+        "customerPartNumberDisplay",
+        "serialNumberFromComponent",
+        "serialNumberFromComponentEnabledAt"
       ]
     },
     {
@@ -7046,6 +7048,25 @@
       ]
     },
     {
+      "name": "jobUnitPairing",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobId",
+        "jobMaterialId",
+        "sourceId",
+        "outputId",
+        "serial",
+        "assignedSerial",
+        "releasedAt",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy"
+      ]
+    },
+    {
       "name": "jobOperation",
       "rows": 0,
       "columns": [
@@ -7614,8 +7635,8 @@
         "projectId",
         "projectElementId",
         "planningGroupId",
-        "partNumberDisplay",
-        "taxCodeId"
+        "taxCodeId",
+        "partNumberDisplay"
       ]
     },
     {

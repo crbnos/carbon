@@ -1693,6 +1693,7 @@ export async function getBatchWorkInstructions(
 export async function getJobMaterialsByOperationId(
   client: SupabaseClient<Database>,
   args: {
+    companyId: string;
     operation: BaseOperationWithDetails;
     trackedEntityId: string | undefined;
     requiresSerialTracking: boolean;
@@ -1720,7 +1721,7 @@ export async function getJobMaterialsByOperationId(
       .eq("jobMakeMethodId", operation.jobMakeMethodId)
       .order("itemReadableId", { ascending: true })
       .order("id", { ascending: true }),
-    getTrackedInputs(client, trackedEntityId)
+    getTrackedInputs(client, args.companyId, trackedEntityId)
   ]);
 
   const kittedMakeMethodIds = new Set(
@@ -2936,16 +2937,24 @@ export async function getTrackedEntitiesByOperationId(
 
 export async function getTrackedInputs(
   client: SupabaseClient<Database>,
+  companyId: string,
   trackedEntityId?: string
 ) {
   if (!trackedEntityId) return { data: [] };
-  const [inputs, outputs] = await Promise.all([
+  const [inputs, outputs, pairing] = await Promise.all([
     client.rpc("get_direct_descendants_of_tracked_entity_strict", {
       p_tracked_entity_id: trackedEntityId
     }),
     client.rpc("get_direct_ancestors_of_tracked_entity_strict", {
       p_tracked_entity_id: trackedEntityId
-    })
+    }),
+    client
+      .from("jobUnitPairing")
+      .select("id, sourceId")
+      .eq("companyId", companyId)
+      .eq("outputId", trackedEntityId)
+      .is("releasedAt", null)
+      .maybeSingle()
   ]);
 
   // A scrapped descendant is no longer a live consumed input — the scrap flow
@@ -2956,9 +2965,16 @@ export async function getTrackedInputs(
   // outputs as often as in inputs) is no longer inside the unit either.
   return {
     data: inputs.data
-      ? netTrackedInputs(inputs.data, outputs.error ? [] : (outputs.data ?? []))
+      ? netTrackedInputs(
+          inputs.data,
+          outputs.error ? [] : (outputs.data ?? [])
+        ).map((input) => ({
+          ...input,
+          pairingId:
+            pairing.data?.sourceId === input.id ? pairing.data.id : undefined
+        }))
       : inputs.data,
-    error: inputs.error
+    error: inputs.error ?? pairing.error
   };
 }
 

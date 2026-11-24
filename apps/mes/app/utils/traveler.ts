@@ -30,6 +30,18 @@ export function parseTravelerCode(input: string): string | null {
   return id;
 }
 
+/** Match the printed ID first. A human-readable serial must identify exactly one candidate. */
+export function findScannedUnit<
+  T extends { id: string | null; readableId: string | null }
+>(candidates: readonly T[], value: string): T | undefined {
+  if (!value.trim()) return undefined;
+  const travelerId = parseTravelerCode(value);
+  const byId = candidates.find((unit) => unit.id === (travelerId ?? value));
+  if (travelerId || byId) return byId;
+  const matches = candidates.filter((unit) => unit.readableId === value);
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
 /**
  * Which of a unit's open operations a traveler scan opens. The operator's work
  * center wins; without a match, the next operations in routing order. Two or

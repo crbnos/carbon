@@ -958,6 +958,8 @@ export const manifest = {
   }),
   jobMakeMethod: company("production"),
   jobMaterial: company("production"),
+  // Source/output pairs are written with the material issue or reversal.
+  jobUnitPairing: policies({ select: inCompany("companyId", "employee") }),
   // Written only by the scrapJobPart posting (system connection).
   jobMaterialScrap: company("production", {
     create: false,

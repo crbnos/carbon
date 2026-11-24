@@ -76,7 +76,8 @@ export async function getTravelerTarget(
 
 /**
  * Finds the unit a scanned or typed code names: by id first, then by
- * `readableId`. Two units with the same `readableId` are ambiguous. The code
+ * `readableId`. A pack-out can intentionally share a serial between the
+ * consumed production unit and the sales unit it supplies. The code
  * is passed only through `.eq()`, never into a PostgREST `.or()` string. A
  * failed read is an `error`, never `notFound`: the operator must try again,
  * not throw the label away.
@@ -111,7 +112,7 @@ export async function findTrackedEntityByCode(
     .select("*")
     .eq("readableId", args.code)
     .eq("companyId", args.companyId)
-    .limit(2);
+    .limit(3);
   if (byReadableId.error) {
     log.error("Could not look up the scanned unit by readable id", {
       companyId: args.companyId,
@@ -121,7 +122,32 @@ export async function findTrackedEntityByCode(
     return { kind: "error" };
   }
   const rows = byReadableId.data ?? [];
-  if (rows.length === 2) return { kind: "ambiguous" };
+  if (rows.length > 2) return { kind: "ambiguous" };
+  if (rows.length === 2) {
+    const ids = rows.map((row) => row.id);
+    const pair = await client
+      .from("jobUnitPairing")
+      .select("sourceId, outputId")
+      .eq("companyId", args.companyId)
+      .eq("serial", args.code)
+      .in("sourceId", ids)
+      .in("outputId", ids)
+      .is("releasedAt", null)
+      .maybeSingle();
+    if (pair.error) {
+      log.error("Could not resolve a packed serial", {
+        companyId: args.companyId,
+        error: pair.error
+      });
+      return { kind: "error" };
+    }
+    const source = rows.find((row) => row.id === pair.data?.sourceId);
+    const output = rows.find((row) => row.id === pair.data?.outputId);
+    if (source?.status === "Consumed" && output) {
+      return { kind: "found", entity: output };
+    }
+    return { kind: "ambiguous" };
+  }
   if (rows.length === 1) return { kind: "found", entity: rows[0] };
   return { kind: "notFound" };
 }

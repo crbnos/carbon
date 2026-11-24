@@ -641,6 +641,7 @@ export const leftoverAction = ["ship", "receive", "split", "discard"] as const;
 export type LeftoverAction = (typeof leftoverAction)[number];
 
 export const jobCompleteValidator = z.object({
+  expectedSerials: zfd.json(z.array(z.string())).optional(),
   quantityComplete: zfd.numeric(z.number().min(0)),
   salesOrderId: zfd.text(z.string().optional()),
   salesOrderLineId: zfd.text(z.string().optional()),

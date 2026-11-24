@@ -76,7 +76,7 @@ import { issueValidator } from "~/services/models";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { parseTravelerCode } from "~/utils/traveler";
+import { findScannedUnit, parseTravelerCode } from "~/utils/traveler";
 import { ShortStockBadge } from "./Materials";
 import { ScrapEntityModal } from "./ScrapEntityModal";
 import type { ScrappableEntity } from "./ScrapTab";
@@ -231,10 +231,11 @@ function IssueMaterialBody({
 
   // Serial number state and options
   // Only the lots of the job's stock stripes: `issue` refuses any other.
-  const { data: serialNumbers } = useSerialNumbers(
-    trackingType === "Serial" ? selectedItemId : undefined,
-    operationId
-  );
+  const { data: serialNumbers, isLoading: loadingSerialStock } =
+    useSerialNumbers(
+      trackingType === "Serial" ? selectedItemId : undefined,
+      operationId
+    );
   // Today in the local timezone — used for "is this entity expired"
   // comparisons throughout the modal. Memoized so we re-derive option
   // lists once a day rather than every render.
@@ -475,6 +476,20 @@ function IssueMaterialBody({
       serialOptions,
       selectedSerialNumbers
     ]
+  );
+  const scanRows = loadingSerialStock ? [] : issueSerialNumbers;
+  const resolveIssueSerial = useCallback(
+    (value: string) =>
+      findScannedUnit(serialNumbers?.data ?? [], value)?.id ?? value,
+    [serialNumbers?.data]
+  );
+  const resolvedIssueSerials = useMemo(
+    () =>
+      issueSerialNumbers.map((row) => ({
+        ...row,
+        id: resolveIssueSerial(row.id)
+      })),
+    [issueSerialNumbers, resolveIssueSerial]
   );
   const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
   const [scrapEntityTarget, setScrapEntityTarget] = useState<{
@@ -743,10 +758,10 @@ function IssueMaterialBody({
     const byId = new Map(
       (serialNumbers?.data ?? []).map((s) => [s.id, s.expirationDate])
     );
-    return issueSerialNumbers
+    return resolvedIssueSerials
       .filter((s) => s.id && isExpiryPast(byId.get(s.id)))
       .map((s) => s.id);
-  }, [issueSerialNumbers, serialNumbers, isExpiryPast]);
+  }, [resolvedIssueSerials, serialNumbers, isExpiryPast]);
   const expiredBatchIds = useMemo(() => {
     const byId = new Map(
       (batchNumbers?.data ?? []).map((b) => [b.id, b.expirationDate])
@@ -816,7 +831,7 @@ function IssueMaterialBody({
     (value: string, index: number) => {
       if (!value) return "Serial number is required";
       const isDuplicate = selectedSerialNumbers.some(
-        (sn, i) => sn.id === value && i !== index
+        (sn, i) => resolveIssueSerial(sn.id) === value && i !== index
       );
       if (isDuplicate) return "Duplicate serial number";
       const isValid = serialOptions.some((opt) => opt.value === value);
@@ -827,7 +842,12 @@ function IssueMaterialBody({
       }
       return null;
     },
-    [selectedSerialNumbers, serialOptions, serialNumbers?.data]
+    [
+      selectedSerialNumbers,
+      serialOptions,
+      serialNumbers?.data,
+      resolveIssueSerial
+    ]
   );
 
   const validateBatchNumber = useCallback(
@@ -1084,7 +1104,7 @@ function IssueMaterialBody({
     let hasErrors = false;
     const newErrors: Record<number, string> = {};
 
-    issueSerialNumbers.forEach((sn) => {
+    resolvedIssueSerials.forEach((sn) => {
       const error = validateSerialNumber(sn.id, sn.index);
       if (error) {
         newErrors[sn.index] = error;
@@ -1110,8 +1130,9 @@ function IssueMaterialBody({
       const payload = material?.id
         ? {
             materialId: material.id,
+            jobOperationId: operationId,
             parentTrackedEntityId: parentId,
-            children: issueSerialNumbers.map((sn) => ({
+            children: resolvedIssueSerials.map((sn) => ({
               trackedEntityId: sn.id,
               quantity: 1
             })),
@@ -1123,7 +1144,7 @@ function IssueMaterialBody({
             jobOperationId: operationId,
             itemId: selectedItemId,
             parentTrackedEntityId: parentId,
-            children: issueSerialNumbers.map((sn) => ({
+            children: resolvedIssueSerials.map((sn) => ({
               trackedEntityId: sn.id,
               quantity: 1
             })),
@@ -1139,7 +1160,7 @@ function IssueMaterialBody({
     }
   }, [
     issueBlocked,
-    issueSerialNumbers,
+    resolvedIssueSerials,
     validateSerialNumber,
     parentId,
     material?.id,
@@ -1205,6 +1226,7 @@ function IssueMaterialBody({
         : material?.id
           ? {
               materialId: material.id,
+              jobOperationId: operationId,
               parentTrackedEntityId: parentId,
               children: issueBatchNumbers.map((bn) => ({
                 trackedEntityId: bn.id,
@@ -1264,6 +1286,9 @@ function IssueMaterialBody({
     const payload = {
       materialId: material.id,
       parentTrackedEntityId: parentId,
+      pairingId: trackedInputs.find(
+        (input) => selectedTrackedInputs.includes(input.id) && input.pairingId
+      )?.pairingId,
       children: selectedTrackedInputs.map((id) => ({
         trackedEntityId: id,
         quantity: 1
@@ -1275,7 +1300,13 @@ function IssueMaterialBody({
       action: path.to.unconsume,
       encType: "application/json"
     });
-  }, [selectedTrackedInputs, material?.id, parentId, unconsumeFetcher]);
+  }, [
+    selectedTrackedInputs,
+    trackedInputs,
+    material?.id,
+    parentId,
+    unconsumeFetcher
+  ]);
 
   const handleUnconsumeBatch = useCallback(() => {
     const selectedBatches = unconsumedBatches.filter((batch) => batch.id);
@@ -1728,7 +1759,10 @@ function IssueMaterialBody({
 
                   <TabsContent value="scan">
                     <div className="flex flex-col gap-4">
-                      {issueSerialNumbers.map((sn, index) => (
+                      {loadingSerialStock && (
+                        <span role="status">{t`Loading...`}</span>
+                      )}
+                      {scanRows.map((sn, index) => (
                         <div
                           key={`${index}-serial-scan`}
                           className="flex flex-col gap-1"
@@ -1765,7 +1799,9 @@ function IssueMaterialBody({
                                     }
                                   }}
                                   onBlur={(e) => {
-                                    const newValue = e.target.value;
+                                    const newValue = resolveIssueSerial(
+                                      e.target.value
+                                    );
                                     const error = validateSerialNumber(
                                       newValue,
                                       index
@@ -2374,6 +2410,7 @@ function IssueMaterialBody({
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={
                   issueBlocked ||
+                  (trackingType === "Serial" && loadingSerialStock) ||
                   fetcher.state !== "idle" ||
                   !selectedItemId ||
                   isLoadingItem
@@ -2407,7 +2444,7 @@ function useSerialNumbers(itemId: string | undefined, operationId: string) {
     Awaited<ReturnType<typeof getIssueLotsForItem>>
   >(itemId ? path.to.api.serialNumbers(itemId, operationId) : null);
 
-  return { data: serialNumbersFetcher.data };
+  return serialNumbersFetcher;
 }
 
 // Hook for fetching batch numbers

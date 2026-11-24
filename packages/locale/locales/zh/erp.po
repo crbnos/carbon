@@ -2460,6 +2460,12 @@ msgstr "在 carbon-key 请求标头上发送的范围内秘密，用于验证对
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "当税收规则要求与账面折旧不同的方法时，用于税收报告的单独税收折旧方案。"
 
+msgid "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+msgstr "仅由一个序列号零件制成的序列号单元，在该零件发料到它时沿用该零件的序列号。设有序列号规则的物料保留自己的编号。"
+
+msgid "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+msgstr "没有序列号规则的物料，其序列号单元在工单上输入编号之前没有编号。"
+
 msgid "A serial's build history"
 msgstr "序列号的构建历史记录"
 
@@ -25162,11 +25168,17 @@ msgstr "收取付款"
 msgid "Receive Payment · {0} invoices"
 msgstr "收取付款 · {0}份发票"
 
+msgid "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+msgstr "将已包装的单件入库。剩余单件全部登记后，工单才会完成。"
+
 msgid "Receive to Inventory"
 msgstr "收货至库存管理"
 
 msgid "Receive to project stock"
 msgstr "接收到项目库存"
+
+msgid "Receive Units"
+msgstr "单件入库"
 
 msgid "Received"
 msgstr "已接收"
@@ -28353,6 +28365,12 @@ msgstr "序列号在收货时生成。"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "序列号仅为序列号或批次跟踪的物料生成。"
 
+msgid "Serial numbers from the part disabled"
+msgstr "已停用沿用零件序列号"
+
+msgid "Serial numbers from the part enabled"
+msgstr "已启用沿用零件序列号"
+
 msgid "Serial numbers received"
 msgstr "已接收的序列号"
 
@@ -30649,6 +30667,9 @@ msgstr "获取第一个物料"
 
 msgid "Take the last item"
 msgstr "获取最后一个物料"
+
+msgid "Take the serial number from the part"
+msgstr "沿用零件的序列号"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "采用制造此物料所消耗的原材料中最短的保质期。当产品的有效期取决于其成分时使用。"
@@ -34268,6 +34289,9 @@ msgstr "单位销售价格"
 msgid "Units"
 msgstr "单位"
 
+msgid "Units are not numbered from their parts"
+msgstr "单元不按其零件编号"
+
 msgid "Units don't match"
 msgstr "单位不一致"
 
@@ -34280,8 +34304,14 @@ msgstr "计量单位"
 msgid "Units of measure"
 msgstr "计量单位"
 
+msgid "Units received. The job is still open."
+msgstr "单件已入库。工单仍处于打开状态。"
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替代方案。"
+
+msgid "Units take the serial number of their part"
+msgstr "单元沿用其零件的序列号"
 
 msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 msgstr "抽样不合格的单元仍为已拒绝。其他所有单元，包括从未抽样的单元，均可上架。"

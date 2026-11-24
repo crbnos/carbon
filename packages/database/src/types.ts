@@ -8524,6 +8524,8 @@ export type Database = {
           salesRuleNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
           sequenceWeekNumbering: string
+          serialNumberFromComponent: boolean
+          serialNumberFromComponentEnabledAt: string | null
           serialNumberTiming: string
           serviceLaborBillRate: number | null
           serviceLaborCostRate: number | null
@@ -8628,6 +8630,8 @@ export type Database = {
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           sequenceWeekNumbering?: string
+          serialNumberFromComponent?: boolean
+          serialNumberFromComponentEnabledAt?: string | null
           serialNumberTiming?: string
           serviceLaborBillRate?: number | null
           serviceLaborCostRate?: number | null
@@ -8732,6 +8736,8 @@ export type Database = {
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           sequenceWeekNumbering?: string
+          serialNumberFromComponent?: boolean
+          serialNumberFromComponentEnabledAt?: string | null
           serialNumberTiming?: string
           serviceLaborBillRate?: number | null
           serviceLaborCostRate?: number | null
@@ -34963,6 +34969,209 @@ export type Database = {
           },
           {
             foreignKeyName: "jobOperationTrackedEntity_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      jobUnitPairing: {
+        Row: {
+          assignedSerial: boolean
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          jobId: string
+          jobMaterialId: string | null
+          outputId: string
+          releasedAt: string | null
+          serial: string
+          sourceId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          assignedSerial?: boolean
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          jobId: string
+          jobMaterialId?: string | null
+          outputId: string
+          releasedAt?: string | null
+          serial: string
+          sourceId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          assignedSerial?: boolean
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          jobId?: string
+          jobMaterialId?: string | null
+          outputId?: string
+          releasedAt?: string | null
+          serial?: string
+          sourceId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobUnitPairing_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "openProductionOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_jobMaterialId_fkey"
+            columns: ["jobMaterialId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterial"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_jobMaterialId_fkey"
+            columns: ["jobMaterialId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_jobMaterialId_fkey"
+            columns: ["jobMaterialId"]
+            isOneToOne: false
+            referencedRelation: "openJobMaterialLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_outputId_fkey"
+            columns: ["outputId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_sourceId_fkey"
+            columns: ["sourceId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobUnitPairing_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -109068,6 +109277,14 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      check_job_unit_pairing_company: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_job_unit_pairing_serial: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       check_location_goods_in_storage_units: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
@@ -111786,6 +112003,18 @@ export type Database = {
           purchaseOrderLineId: string
         }[]
       }
+      job_receivable_paired_units: {
+        Args: { p_company_id: string; p_job_id: string }
+        Returns: string[]
+      }
+      job_requires_serial_pairing: {
+        Args: { p_company_id: string; p_job_id: string }
+        Returns: boolean
+      }
+      job_scrapped_paired_output_count: {
+        Args: { p_company_id: string; p_job_id: string }
+        Returns: number
+      }
       job_wip_balance: {
         Args: {
           p_company_id: string
@@ -112020,6 +112249,18 @@ export type Database = {
           quantity: number
           supplierName: string
         }[]
+      }
+      receive_job_to_inventory: {
+        Args: {
+          p_company_id: string
+          p_expected_serials?: string[]
+          p_job_id: string
+          p_location_id?: string
+          p_quantity_complete: number
+          p_storage_unit_id?: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
       recompute_service_line_fulfillment: {
         Args: {

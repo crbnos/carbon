@@ -37,6 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     receipts: {
       quantityReceivedToInventory: job.quantityReceivedToInventory ?? 0,
+      pairedSerials: job.pairedSerials,
       trackedEntityIds: job.trackedEntityIds,
       issuedTrackedEntityIds: job.issuedTrackedEntityIds
     }

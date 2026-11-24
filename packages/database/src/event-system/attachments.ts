@@ -507,9 +507,13 @@ export const attachments = {
   },
   trackedActivity: { statement: ["broadcast_table_changes"] },
   trackedEntity: {
-    before: ["check_tracked_entity_inspection_hold"],
+    before: [
+      "check_tracked_entity_inspection_hold",
+      "check_job_unit_pairing_serial"
+    ],
     statement: ["broadcast_table_changes"]
   },
+  jobUnitPairing: { before: ["check_job_unit_pairing_company"] },
   unattributedMachineTime: { statement: ["broadcast_table_changes"] },
   unitOfMeasure: {
     before: ["unit_of_measure_enforce_unique_code"],

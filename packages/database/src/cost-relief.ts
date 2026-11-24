@@ -35,9 +35,9 @@ function movementCostRow(eb: CostLedgerExpression) {
 
 /**
  * A cost row that opened a layer: the inbound row of a movement. A job
- * return is not one: `issue` and the SQL backflush write it as a positive
- * "Job Consumption" row with nothing remaining. Its open adjustment
- * children (`appliesToCostLedgerId`) are relieved with it.
+ * return with a tracked entity restores that individual packed component
+ * at its booked cost. Ordinary untracked job returns carry no layer.
+ * Open adjustment children are relieved with their inbound layer.
  */
 export function isCostLayer(eb: CostLedgerExpression) {
   return eb.and([
@@ -45,7 +45,8 @@ export function isCostLayer(eb: CostLedgerExpression) {
     eb("quantity", ">", 0),
     eb.or([
       eb("documentType", "is", null),
-      eb("documentType", "!=", "Job Consumption")
+      eb("documentType", "!=", "Job Consumption"),
+      eb("trackedEntityId", "is not", null)
     ])
   ]);
 }

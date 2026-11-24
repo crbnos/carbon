@@ -1183,7 +1183,10 @@ function SerialForm({
   const [errors, setErrors] = useState<Record<number, string>>({});
   const { data: serialNumbersData } = useSerialNumbers(
     line.itemId!,
-    isReadOnly
+    isReadOnly,
+    !isReadOnly &&
+      shipment?.sourceDocument === "Sales Order" &&
+      line.fulfillment?.type !== "Job"
   );
 
   // Check for duplicates within the current form
@@ -1651,10 +1654,16 @@ function resolveTrackedEntity(
 
 export default ShipmentLines;
 
-export function useSerialNumbers(itemId?: string, isReadOnly = false) {
+export function useSerialNumbers(
+  itemId?: string,
+  isReadOnly = false,
+  stockShipment = false
+) {
   const serialNumbersFetcher = useLoaderQuery<
     Awaited<ReturnType<typeof getSerialNumbersForItem>>
-  >(itemId ? path.to.api.serialNumbers(itemId, isReadOnly) : null);
+  >(
+    itemId ? path.to.api.serialNumbers(itemId, isReadOnly, stockShipment) : null
+  );
 
   return { data: serialNumbersFetcher.data };
 }
