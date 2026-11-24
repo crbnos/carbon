@@ -53,6 +53,7 @@ import {
   datetime,
   Edition,
   getClientIp,
+  isOwnAvatarUpload,
   isOwnSignaturePath,
   requireAffected,
   SIGNATURES_BUCKET
@@ -2780,7 +2781,7 @@ export async function getAttributeCategoryWithValues(
     .single();
 }
 
-/** Avatars are changed through `account.avatar.update`, which checks the path. */
+/** Avatars are changed through `replaceAvatar`; its callers check the path. */
 export async function updateAvatar(
   client: SupabaseClient<Database>,
   userId: string,
@@ -2797,6 +2798,44 @@ export async function updateAvatar(
       .eq("id", userId)
       .select("id")
   );
+}
+
+/**
+ * Save a user's new avatar, then delete the uploaded photo it replaced.
+ *
+ * @remarks
+ * Saving first means a failed save never leaves the avatar pointing at a
+ * deleted file. A failed delete only leaves an orphan file, so it is logged,
+ * not returned.
+ */
+export async function replaceAvatar(
+  client: SupabaseClient<Database>,
+  userId: string,
+  avatarUrl: string
+) {
+  // Only the replaced avatar is needed: the narrow reader, not `select("*")`.
+  const previous = await getCurrentUser(client, userId);
+  if (previous.error) {
+    logger.error("Failed to read the avatar being replaced", {
+      userId,
+      error: previous.error
+    });
+  }
+  const saved = await updateAvatar(client, userId, avatarUrl);
+  if (saved.error) return saved;
+
+  const previousPath = previous.data?.avatarUrl;
+  if (isOwnAvatarUpload(userId, previousPath) && previousPath !== avatarUrl) {
+    const removal = await client.storage.from("avatars").remove([previousPath]);
+    if (removal.error) {
+      logger.error("Failed to remove the replaced avatar photo", {
+        userId,
+        path: previousPath,
+        error: removal.error
+      });
+    }
+  }
+  return saved;
 }
 
 /**

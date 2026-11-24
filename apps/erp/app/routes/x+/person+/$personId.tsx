@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { accountProfileValidator } from "@carbon/account";
+import { toResult } from "@carbon/api/service-fn.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -16,9 +17,15 @@ import type {
   MetaFunction
 } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { z } from "zod";
 import { getEmployeeSummary } from "~/modules/people/people.service";
 import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
+import { serviceContext } from "~/modules/service-context.server";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import {
+  updateOwnAvatar,
+  updatePersonAvatar
+} from "~/modules/users/users.server";
 import {
   getAllAttributeCategories,
   updatePublicAccount
@@ -73,16 +80,38 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
+const personPhotoValidator = z.object({
+  intent: z.literal("photo"),
+  path: z.string()
+});
+
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
+  const { personId } = params;
+  if (!personId) throw new Error("No person ID provided");
+  const formData = await request.formData();
+
+  // ProfilePhotoForm posts through a fetcher whose useAction toasts the result.
+  // The operations hold the permissions: your own photo saves like Account →
+  // Profile, with none; another person's needs people and users update.
+  if (formData.get("intent") === "photo") {
+    const auth = await requirePermissions(request, {});
+    const photo = await validator(personPhotoValidator).validate(formData);
+    if (photo.error) return validationError(photo.error);
+    const ctx = serviceContext(auth);
+    const { path } = photo.data;
+    return toResult(
+      personId === auth.userId
+        ? await updateOwnAvatar(ctx, { path })
+        : await updatePersonAvatar(ctx, { userId: personId, path })
+    );
+  }
+
   const { client } = await requirePermissions(request, {
     update: "people"
   });
-  const { personId } = params;
-  if (!personId) throw new Error("No person ID provided");
-
   const validation = await validator(accountProfileValidator).validate(
-    await request.formData()
+    formData
   );
 
   if (validation.error) {

@@ -5320,3 +5320,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** Move the posting's check into a pure function of the posting context and the date. The posting refuses with it, and the loader calls it on the context the posting loads (`loadProjectPostingContexts`), never on a copy of the rule. Before gating an action, grep its opener (`charging.open`) for every entry point and give each the same disabled state and reason. Disable the action only when no input the user can still change (the entry date) makes it post, and keep the server refusal for the inputs that are refused: a dated override (`costTreatmentEffectiveFrom`) leaves the dates before it open, so a today-only check would block entries the posting accepts.
 
 **Applies to:** `projectExpenseRefusal` / `getChargeCostRefusal`, and any action the UI disables with a reason the server decides by cost treatment or date.
+
+## A shared form rendered for another record points every sub-action at that record
+
+**Context:** The person page renders `ProfileForm` from `@carbon/account` for someone else. Its main form posted to the person route, but its photo form kept the Account settings action, which saves the caller's own avatar.
+
+**Problem:** Uploading a photo for another user failed on the `avatars` bucket policy, and Choose avatar and Remove saved to the caller's own account and deleted the caller's uploaded photo. Each toast said the save worked.
+
+**Rule:** When a shared form is reused for a record other than its usual one, list every action it submits, the nested forms included (`photo.action`), and point each at a route for that record. Check the storage policies the client uploads under as well: a client upload runs as the caller, and a bucket keyed on `auth.uid()` refuses another user's file.
+
+**Applies to:** `ProfileForm` / `ProfilePhotoForm`, the signature form, and any component in `packages/account` or `packages/react` that a page renders for another user or record.

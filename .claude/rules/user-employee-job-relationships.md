@@ -82,6 +82,11 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   (pending invites, deactivated people). Another user's row is writable only with
   `users_update` in a company where that user has an active `userToCompany` row. INSERT
   and DELETE are revoked from `anon`/`authenticated`, so they go through the service role.
+  The `avatars` bucket is narrower (`20261124115013_person-avatar-uploads.sql`): an
+  employee with `people_update` and `users_update` in one company may write
+  `<userId>.<ext>` at the bucket root for an employee of that company, the same
+  permissions `updatePersonAvatar` (users) needs to save the person page's photo, and
+  everyone writes their own.
   A BEFORE UPDATE trigger (`guard_user_identity_columns`) rejects any API-role change to
   `id`, `email`, `active`, `admin`, `developer` or `isConsoleOperator`. Sending those
   columns unchanged is fine. Deleting a user also deletes its identity `group`

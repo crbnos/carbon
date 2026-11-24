@@ -29,7 +29,7 @@ type ProfileFormProps = {
   user: Account;
   /** Where the form posts: the account settings action or a person route. */
   action: string;
-  /** Where the photo saves — always the account profile action. */
+  /** Where the photo saves: the account profile action, or the person route's. */
   photo: Omit<ProfilePhotoFormProps, "user">;
   /** `plain` drops the card, for a container that already frames the form. */
   variant?: "card" | "plain";

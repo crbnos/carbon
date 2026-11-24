@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   deleteAttributeValue,
   updateOwnAvatar,
+  updatePersonAvatar,
   upsertAttributeValue
 } from "../app/modules/users/users.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
@@ -16,11 +17,12 @@ const GENERATED = "dicebear:voxel-art:3f2b8c4e-6a1d-4f7e-9b2c:1e3a8a";
 
 /**
  * The user's client: each table's one row for a read; each write, and each
- * avatar photo removed, is logged to `calls`. `failing` names the tables
- * whose writes fail.
+ * avatar photo removed, is logged to `calls`, and the row each write names by
+ * `id` to `targets`. `failing` names the tables whose writes fail.
  */
 function clientWith(rows: Record<string, unknown>, failing: string[] = []) {
   const calls: string[] = [];
+  const targets: string[] = [];
   const from = (table: string) => {
     let written = false;
     const write = (entry: string) => {
@@ -34,12 +36,16 @@ function clientWith(rows: Record<string, unknown>, failing: string[] = []) {
         : { data: written ? { id: "value-1" } : (rows[table] ?? null), error: null };
     const chain: Record<string, any> = {
       select: () => chain,
-      eq: () => chain,
+      eq: (column: string, value: string) => {
+        if (written && column === "id") targets.push(`${table}:${value}`);
+        return chain;
+      },
       update: (values: { avatarUrl?: string }) =>
         write(table === "user" ? `update:${values.avatarUrl}` : `update ${table}`),
       insert: () => write(`insert ${table}`),
       delete: () => write(`delete ${table}`),
       single: async () => answer(),
+      maybeSingle: async () => answer(),
       then: (resolve: (value: unknown) => unknown) => resolve(answer())
     };
     return chain;
@@ -52,7 +58,7 @@ function clientWith(rows: Record<string, unknown>, failing: string[] = []) {
       }
     })
   };
-  return { client: { from, storage } as never, calls };
+  return { client: { from, storage } as never, calls, targets };
 }
 
 const unreachable = () => {
@@ -86,15 +92,19 @@ describe("updateOwnAvatar", () => {
     path: string,
     { previous = `${USER_ID}.webp`, failing = [] as string[] } = {}
   ) {
-    const { client, calls } = clientWith({ user: { avatarUrl: previous } }, failing);
+    const { client, calls, targets } = clientWith(
+      { user: { avatarUrl: previous } },
+      failing
+    );
     const result = await updateOwnAvatar(contextAs(client), { path });
-    return { result, calls };
+    return { result, calls, targets };
   }
 
   it("saves the generated avatar, THEN deletes the photo it replaced", async () => {
-    const { result, calls } = await saveAvatar(GENERATED);
+    const { result, calls, targets } = await saveAvatar(GENERATED);
     expect(result.error).toBeNull();
     expect(calls).toEqual([`update:${GENERATED}`, `remove:${USER_ID}.webp`]);
+    expect(targets).toEqual([`user:${USER_ID}`]);
   });
 
   it("keeps the photo when the save fails", async () => {
@@ -123,6 +133,61 @@ describe("updateOwnAvatar", () => {
   it("refuses another user's file and changes nothing", async () => {
     const { result, calls } = await saveAvatar("someone-else.webp");
     expect(result.error?.category).toBe("validation");
+    expect(calls).toEqual([]);
+  });
+});
+
+// The person page saves another person's avatar on that person's row and
+// deletes that person's replaced photo, never the caller's.
+describe("updatePersonAvatar", () => {
+  async function savePersonAvatar(
+    path: string,
+    {
+      employee = { id: OTHER } as unknown,
+      permissions = {
+        people: { update: ["company-1"] },
+        users: { update: ["company-1"] }
+      } as Record<string, unknown>
+    } = {}
+  ) {
+    const { client, calls, targets } = clientWith({
+      user: { avatarUrl: `${OTHER}.webp` },
+      employee
+    });
+    const result = await updatePersonAvatar(contextAs(client, permissions), {
+      userId: OTHER,
+      path
+    });
+    return { result, calls, targets };
+  }
+
+  it("saves the person's new photo on their row, then deletes the one it replaced", async () => {
+    const { result, calls, targets } = await savePersonAvatar(`${OTHER}.png`);
+    expect(result).toEqual({ data: { avatarUrl: `${OTHER}.png` }, error: null });
+    expect(calls).toEqual([`update:${OTHER}.png`, `remove:${OTHER}.webp`]);
+    expect(targets).toEqual([`user:${OTHER}`]);
+  });
+
+  it("refuses the caller's own file as the person's photo", async () => {
+    const { result, calls } = await savePersonAvatar(`${USER_ID}.webp`);
+    expect(result.error?.category).toBe("validation");
+    expect(calls).toEqual([]);
+  });
+
+  it("refuses a person who is not an active employee of the company", async () => {
+    const { result, calls } = await savePersonAvatar(GENERATED, {
+      employee: null
+    });
+    expect(result.error?.category).toBe("notFound");
+    expect(calls).toEqual([]);
+  });
+
+  it.each([
+    ["users update", { people: { update: ["company-1"] } }],
+    ["people update", { users: { update: ["company-1"] } }]
+  ])("refuses a caller without %s", async (_, permissions) => {
+    const { result, calls } = await savePersonAvatar(GENERATED, { permissions });
+    expect(result.error?.category).toBe("forbidden");
     expect(calls).toEqual([]);
   });
 });
