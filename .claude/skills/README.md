@@ -58,6 +58,7 @@ in root-cause, BLOCKED in fix) always surface to the human.
 | `self-review` | Review your own branch before/at PR time | Must fix / Risks / Suggestions |
 | `conductor` | Autonomous doer→gate→judge loop to a gated PR (no mid-loop human input) | PR + ledger |
 | `improve` | Senior-advisor audit; plans for other agents to execute | `.ai/plans/improve/` |
+| `find-repeated-mistakes` | Mine git history for a root cause fixed 3+ times, pick the strongest guard (architecture > types > conformance check > database test), prove it on the real past fix, baseline only existing sites | guard + `.ai/runs/{date}-repeated-mistakes-{slug}.md` |
 | `test` | Drive changed flows in the browser; cache playbooks | pass/fail + `.ai/playbooks/{slug}.md` |
 | `smoke-test` | Do all core modules load? | pass/fail table |
 | `auth` | Authenticate agent-browser against local dev | authed session (building block) |

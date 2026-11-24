@@ -14,7 +14,6 @@ BEGIN
     RETURN '{}';
   END IF;
 
-  -- Only consider root companies (no parent)
   SELECT array_agg(DISTINCT "companyGroupId"::text)
   INTO group_ids
   FROM "company"

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -14,8 +14,8 @@ import { setJobOperationToolStepLink } from "~/modules/production/production.ser
 // service ensures the operation-level tool row exists before linking.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+  const { client, companyId, userId } = await authorize(request, {
+    "production.jobs": "Edit"
   });
 
   const formData = await request.formData();

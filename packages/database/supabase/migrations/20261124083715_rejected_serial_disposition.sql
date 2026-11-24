@@ -1,7 +1,7 @@
 -- The open NCR holds its linked units. At closure only the serials on a
 -- Scrap or Return to Supplier disposition row remain blocked. A job-wide
 -- issue or a disposition for a different serial cannot reject this one.
-CREATE VIEW public."unitQualityHold" WITH (security_invoker = true) AS
+CREATE OR REPLACE VIEW public."unitQualityHold" WITH (security_invoker = true) AS
 SELECT affected."companyId", affected."trackedEntityId", nc.id AS "issueId",
        nc."nonConformanceId" AS "issueNumber", nc.name, nc.description,
        nc.status, nc."createdAt", typ.name AS "issueType", affected.disposition

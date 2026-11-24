@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -12,19 +12,15 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { GroupForm } from "~/modules/users/ui";
 import { groupValidator } from "~/modules/users/users.models";
-import { getGroupMembers } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "users",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "users.groups": "View" });
 
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const groupWithMembers = await getGroupMembers(client, groupId);
+  const groupWithMembers = await api.users.getGroupMembers({ groupId });
 
   if (groupWithMembers.error) {
     redirect(
@@ -60,7 +56,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(groupValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.users.updateGroup(input.data);
   return respond(args.request, result).redirect(path.to.groups, {
     message: "Group updated successfully"

@@ -204,7 +204,7 @@ const PurchaseReturnOrdersTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("view", "purchasing")}
+            disabled={!permissions.has({ "purchasing.returns": "View" })}
             onClick={() => {
               navigate(path.to.purchaseReturnOrderDetails(row.id!));
             }}
@@ -214,7 +214,7 @@ const PurchaseReturnOrdersTable = memo(
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "purchasing")}
+            disabled={!permissions.has({ "purchasing.returns": "Full" })}
             destructive
             onClick={() => {
               setSelectedPurchaseReturnOrder(row);
@@ -239,7 +239,7 @@ const PurchaseReturnOrdersTable = memo(
             left: ["purchaseReturnOrderId"]
           }}
           primaryAction={
-            permissions.can("create", "purchasing") && (
+            permissions.has({ "purchasing.returns": "Create" }) && (
               <New
                 label={t`Supplier Return`}
                 to={path.to.newPurchaseReturnOrder}

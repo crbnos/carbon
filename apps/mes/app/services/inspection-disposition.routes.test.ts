@@ -8,12 +8,12 @@ import { action as disposition } from "../routes/x+/inspection-lot.$id.dispositi
 import { fakeClient, serialUnits } from "./work-unit-test-fixture";
 
 const ports = vi.hoisted(() => ({
-  permissions: vi.fn(),
+  authorize: vi.fn(),
   service: vi.fn(),
   close: vi.fn()
 }));
 vi.mock("@carbon/auth/auth.server", () => ({
-  requirePermissions: ports.permissions
+  authorize: ports.authorize
 }));
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: ports.service
@@ -69,7 +69,7 @@ it.each(["unsampled", "Pending", "corrected failure"])(
       companySettings: [{ id: "co", holdUnitsWithOpenIssues: true }],
       unitQualityHold: held
     }).client;
-    ports.permissions.mockResolvedValue({
+    ports.authorize.mockResolvedValue({
       client,
       companyId: "co",
       userId: "operator"

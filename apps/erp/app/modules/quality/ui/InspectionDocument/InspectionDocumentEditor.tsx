@@ -161,7 +161,8 @@ export default function InspectionDocumentEditor({
   const permissions = usePermissions();
   // Active and Archived versions are what lots were inspected against.
   const isLocked = status !== "Draft";
-  const canUpdate = permissions.can("update", "quality") && !isLocked;
+  const canUpdate =
+    permissions.has({ "quality.inspectionPlans": "Edit" }) && !isLocked;
   const [items] = useItems();
   const deleteDisclosure = useDisclosure();
   // A model plan: the characteristic whose PMI item the model shows.

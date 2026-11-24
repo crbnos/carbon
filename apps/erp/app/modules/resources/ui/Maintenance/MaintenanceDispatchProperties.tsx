@@ -207,7 +207,7 @@ const MaintenanceDispatchProperties = () => {
           table="maintenanceDispatch"
           size="sm"
           value={assignee ?? ""}
-          isReadOnly={!permissions.can("update", "resources")}
+          isReadOnly={!permissions.has({ "resources.dispatches": "Edit" })}
         />
       </VStack>
 
@@ -221,7 +221,9 @@ const MaintenanceDispatchProperties = () => {
         className="w-full"
       >
         <Location
-          isReadOnly={isLocked || !permissions.can("update", "resources")}
+          isReadOnly={
+            isLocked || !permissions.has({ "resources.dispatches": "Edit" })
+          }
           label={t`Location`}
           name="locationId"
           inline
@@ -242,7 +244,9 @@ const MaintenanceDispatchProperties = () => {
         className="w-full"
       >
         <WorkCenter
-          isReadOnly={isLocked || !permissions.can("update", "resources")}
+          isReadOnly={
+            isLocked || !permissions.has({ "resources.dispatches": "Edit" })
+          }
           label={t`Work Center`}
           name="workCenterId"
           termId="work-center"
@@ -272,7 +276,9 @@ const MaintenanceDispatchProperties = () => {
               </div>
             )
           }))}
-          isReadOnly={isLocked || !permissions.can("update", "resources")}
+          isReadOnly={
+            isLocked || !permissions.has({ "resources.dispatches": "Edit" })
+          }
           label={t`Priority`}
           name="priority"
           inline={(value) => {
@@ -304,7 +310,9 @@ const MaintenanceDispatchProperties = () => {
             value: severity,
             label: severity
           }))}
-          isReadOnly={isLocked || !permissions.can("update", "resources")}
+          isReadOnly={
+            isLocked || !permissions.has({ "resources.dispatches": "Edit" })
+          }
           label={t`Severity`}
           name="severity"
           inline={(value) => {
@@ -336,7 +344,9 @@ const MaintenanceDispatchProperties = () => {
             value: source,
             label: <MaintenanceSource source={source} />
           }))}
-          isReadOnly={isLocked || !permissions.can("update", "resources")}
+          isReadOnly={
+            isLocked || !permissions.has({ "resources.dispatches": "Edit" })
+          }
           label={t`Source`}
           name="source"
           inline={(value) => {
@@ -364,7 +374,9 @@ const MaintenanceDispatchProperties = () => {
         className="w-full"
       >
         <Procedure
-          isReadOnly={isLocked || !permissions.can("update", "resources")}
+          isReadOnly={
+            isLocked || !permissions.has({ "resources.dispatches": "Edit" })
+          }
           label={t`Procedure`}
           name="procedureId"
           inline={(value, options) => {
@@ -392,7 +404,9 @@ const MaintenanceDispatchProperties = () => {
             value: impact,
             label: <MaintenanceOeeImpact oeeImpact={impact} />
           }))}
-          isReadOnly={isLocked || !permissions.can("update", "resources")}
+          isReadOnly={
+            isLocked || !permissions.has({ "resources.dispatches": "Edit" })
+          }
           label={t`OEE Impact`}
           name="oeeImpact"
           inline={(value) => {
@@ -424,7 +438,9 @@ const MaintenanceDispatchProperties = () => {
           name="plannedStartTime"
           label={t`Planned Start`}
           inline
-          isDisabled={!permissions.can("update", "resources") || isLocked}
+          isDisabled={
+            !permissions.has({ "resources.dispatches": "Edit" }) || isLocked
+          }
           onChange={(date) => {
             onUpdate(
               "plannedStartTime",
@@ -447,7 +463,9 @@ const MaintenanceDispatchProperties = () => {
           name="plannedEndTime"
           label={t`Planned End`}
           inline
-          isDisabled={!permissions.can("update", "resources") || isLocked}
+          isDisabled={
+            !permissions.has({ "resources.dispatches": "Edit" }) || isLocked
+          }
           onChange={(date) => {
             onUpdate(
               "plannedEndTime",
@@ -470,7 +488,9 @@ const MaintenanceDispatchProperties = () => {
           name="actualStartTime"
           label={t`Actual Start`}
           inline
-          isDisabled={!permissions.can("update", "resources") || isLocked}
+          isDisabled={
+            !permissions.has({ "resources.dispatches": "Edit" }) || isLocked
+          }
           onChange={(date) => {
             onUpdate(
               "actualStartTime",
@@ -493,7 +513,9 @@ const MaintenanceDispatchProperties = () => {
           name="actualEndTime"
           label={t`Actual End`}
           inline
-          isDisabled={!permissions.can("update", "resources") || isLocked}
+          isDisabled={
+            !permissions.has({ "resources.dispatches": "Edit" }) || isLocked
+          }
           onChange={(date) => {
             onUpdate(
               "actualEndTime",
@@ -520,7 +542,9 @@ const MaintenanceDispatchProperties = () => {
                 value: mode.id,
                 label: mode.name
               }))}
-              isReadOnly={isLocked || !permissions.can("update", "resources")}
+              isReadOnly={
+                isLocked || !permissions.has({ "resources.dispatches": "Edit" })
+              }
               label={t`Suspected Failure Mode`}
               name="suspectedFailureModeId"
               inline={(value) => {
@@ -553,7 +577,9 @@ const MaintenanceDispatchProperties = () => {
                 value: mode.id,
                 label: mode.name
               }))}
-              isReadOnly={isLocked || !permissions.can("update", "resources")}
+              isReadOnly={
+                isLocked || !permissions.has({ "resources.dispatches": "Edit" })
+              }
               label={t`Actual Failure Mode`}
               name="actualFailureModeId"
               inline={(value) => {
@@ -642,12 +668,16 @@ const MaintenanceDispatchProperties = () => {
                   <DateTimePicker
                     name="startTime"
                     label={t`Start Time`}
-                    isDisabled={!permissions.can("update", "resources")}
+                    isDisabled={
+                      !permissions.has({ "resources.dispatches": "Edit" })
+                    }
                   />
                   <DateTimePicker
                     name="endTime"
                     label={t`End Time`}
-                    isDisabled={!permissions.can("update", "resources")}
+                    isDisabled={
+                      !permissions.has({ "resources.dispatches": "Edit" })
+                    }
                   />
                 </VStack>
               </ModalBody>
@@ -664,7 +694,9 @@ const MaintenanceDispatchProperties = () => {
                 <Button
                   type="submit"
                   isLoading={eventFetcher.state !== "idle"}
-                  isDisabled={!permissions.can("update", "resources")}
+                  isDisabled={
+                    !permissions.has({ "resources.dispatches": "Edit" })
+                  }
                 >
                   <Trans>Save</Trans>
                 </Button>

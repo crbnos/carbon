@@ -12,7 +12,6 @@ const log = getLogger("auth");
 
 export async function sendVerificationCode(email: string) {
   try {
-    // Generate 6-digit verification code
     const verificationCode = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
@@ -33,7 +32,6 @@ export async function sendVerificationCode(email: string) {
       return false;
     }
 
-    // Send email with verification code using React template
     const html = await render(
       VerificationEmail({
         email,
@@ -68,7 +66,6 @@ export async function verifyEmailCode(email: string, code: string) {
       return false;
     }
 
-    // Delete the code after successful verification
     await redis.del(`verification:${email.toLowerCase()}`);
 
     return true;

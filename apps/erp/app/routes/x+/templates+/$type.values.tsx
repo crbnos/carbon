@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { DOCUMENT_PDFS, ensureFont } from "@carbon/documents/pdf";
 import {
   collectValues,
@@ -25,8 +25,8 @@ const logger = getLogger("erp", "templates", "values");
  * words, because the draft's words do not change a value.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId } = await authorize(request, {
+    "settings.documentTemplates": "View"
   });
   const documentType = documentTemplateTypeSchema.parse(params.type);
   const previewId = new URL(request.url).searchParams.get("previewId");

@@ -6,8 +6,6 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getDepartmentsList } from "~/modules/people/people.service";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import { WorkCentersTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -23,10 +21,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, workCentersList, {
     dataKey: "workCenters",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => {
+    firstPage: async ({ api }) => {
       const [departments, locations] = await Promise.all([
-        getDepartmentsList(client, companyId),
-        getLocationsList(client, companyId)
+        api.people.getDepartmentsList({}),
+        api.resources.getLocationsList({})
       ]);
       return {
         departments: departments.data ?? [],

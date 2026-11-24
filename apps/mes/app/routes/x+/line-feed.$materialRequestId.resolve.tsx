@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { resolveMaterialRequest } from "@carbon/database/material-request";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -15,7 +15,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   // The user's own client: the materialRequest RLS policy lets the requester
   // or an inventory editor resolve a request.
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request, {});
 
   const { materialRequestId } = params;
   if (!materialRequestId) {

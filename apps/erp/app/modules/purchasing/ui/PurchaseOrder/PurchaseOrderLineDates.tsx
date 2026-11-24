@@ -83,7 +83,7 @@ export function PurchaseOrderLineSummaryDates({
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.purchaseOrders": "Edit" });
   const fields: {
     field: PurchaseOrderLineDateField;
     label: string;
@@ -237,7 +237,7 @@ export function PurchaseOrderLineDateFields({
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "purchasing");
+  const canUpdate = permissions.has({ "purchasing.purchaseOrders": "Edit" });
   const fields: {
     field: PurchaseOrderLineDateField;
     label: string;

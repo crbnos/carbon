@@ -4,7 +4,7 @@
 
 // Runs against the local database and PostgREST; skipped without them. The
 // copy runs as the system through the database, so a copy failure is made
-// real with a trigger that refuses the step slide insert.
+// real by refusing the step slide insert (`withRefusedWrites`).
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
@@ -21,7 +21,7 @@ import {
   seed,
   USER
 } from "./fixtures/always-post";
-import { hasLocalDatabase } from "./fixtures/local-database";
+import { hasLocalDatabase, withRefusedWrites } from "./fixtures/local-database";
 import {
   localAnonClient,
   localServiceRoleClient
@@ -175,25 +175,19 @@ async function companyLines(f: Fixture) {
 // The operation and its step are copied before the slide, so a refused slide
 // insert fails the copy after it has written rows into the new version.
 async function withFailingSlideCopy(f: Fixture, fn: () => Promise<void>) {
-  const name = `fail_slide_copy_${f.prefix.replace(/[^a-z0-9]/gi, "_")}`;
-  await sql
-    .raw(
-      `CREATE FUNCTION "${name}"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'slide copy refused'; END $$`
-    )
-    .execute(f.db);
-  await sql
-    .raw(
-      `CREATE TRIGGER "${name}" BEFORE INSERT ON "methodOperationStepSlide" FOR EACH ROW WHEN (NEW."companyId" = '${f.companyId}') EXECUTE FUNCTION "${name}"()`
-    )
-    .execute(f.db);
-  try {
-    await fn();
-  } finally {
-    await sql
-      .raw(`DROP TRIGGER "${name}" ON "methodOperationStepSlide"`)
-      .execute(f.db);
-    await sql.raw(`DROP FUNCTION "${name}"()`).execute(f.db);
-  }
+  const sources = await f.db
+    .selectFrom("methodOperationStepSlide")
+    .select("stepId")
+    .where("companyId", "=", f.companyId)
+    .execute();
+  await withRefusedWrites(
+    f.db,
+    "methodOperationStepSlide",
+    sql`"companyId" = ${sql.lit(f.companyId)} AND "stepId" NOT IN (${sql.join(
+      sources.map((slide) => sql.lit(slide.stepId))
+    )})`,
+    fn
+  );
 }
 
 const version = (
@@ -530,32 +524,21 @@ versionTest("the Onshape Draft leaves nothing behind when its marker cannot be w
   await ownSourceLine(f, source);
   const before = { lines: await companyLines(f), mappings: await onshapeMappings(f) };
 
-  const name = `fail_marker_${f.prefix.replace(/[^a-z0-9]/gi, "_")}`;
-  await sql
-    .raw(
-      `CREATE FUNCTION "${name}"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'marker refused'; END $$`
-    )
-    .execute(f.db);
-  await sql
-    .raw(
-      `CREATE TRIGGER "${name}" BEFORE INSERT ON "externalIntegrationMapping" FOR EACH ROW WHEN (NEW."companyId" = '${f.companyId}' AND NEW."entityType" = 'makeMethod') EXECUTE FUNCTION "${name}"()`
-    )
-    .execute(f.db);
-  try {
-    const result = await ensureDraftMakeMethod(system!, f.db, {
-      itemId: f.assemblyId,
-      activeMethodId: source,
-      companyId: f.companyId,
-      userId: USER,
-      reusableDraft: null
-    });
-    expect(result).toMatchObject({ ok: false });
-  } finally {
-    await sql
-      .raw(`DROP TRIGGER "${name}" ON "externalIntegrationMapping"`)
-      .execute(f.db);
-    await sql.raw(`DROP FUNCTION "${name}"()`).execute(f.db);
-  }
+  await withRefusedWrites(
+    f.db,
+    "externalIntegrationMapping",
+    sql`"companyId" = ${sql.lit(f.companyId)} AND "entityType" = 'makeMethod'`,
+    async () => {
+      const result = await ensureDraftMakeMethod(system!, f.db, {
+        itemId: f.assemblyId,
+        activeMethodId: source,
+        companyId: f.companyId,
+        userId: USER,
+        reusableDraft: null
+      });
+      expect(result).toMatchObject({ ok: false });
+    }
+  );
 
   expect(await versions(f)).toEqual([
     { id: source, version: 1, status: "Active" }

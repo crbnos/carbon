@@ -7,9 +7,10 @@
 // authenticates and passes its clients in.
 
 import type { Permission } from "@carbon/auth";
-import { error, hasPermission, success } from "@carbon/auth";
+import { error, success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { holdsGate } from "@carbon/database/access";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -391,7 +392,7 @@ export async function completeOperationQuantity(
     if (expectedQuantityComplete !== undefined) {
       // The page sent the completed quantity it showed: record the unit only
       // if no other request (a second tab, a resend) recorded it meanwhile.
-      if (!hasPermission(permissions, "production", "create", companyId)) {
+      if (!holdsGate(permissions, { "production.jobs": "Create" }, companyId)) {
         return data(
           {},
           await flash(request, {

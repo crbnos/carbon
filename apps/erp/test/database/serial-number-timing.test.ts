@@ -48,11 +48,8 @@ import {
 // Release recalculates the job and numbers it through postings, and the
 // posting gate tells the system by its key.
 vi.mock("@carbon/env", async (importOriginal) => {
-  const { localServiceRoleKey } = await import("./fixtures/local-supabase");
-  return {
-    ...(await importOriginal<object>()),
-    SUPABASE_SERVICE_ROLE_KEY: localServiceRoleKey() ?? "test"
-  };
+  const { localSupabaseEnv } = await import("./fixtures/local-supabase");
+  return { ...(await importOriginal<object>()), ...localSupabaseEnv() };
 });
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
@@ -197,17 +194,32 @@ async function units(f: Fixture, makeMethodId: string) {
 
 async function inventoryIntegration(f: Fixture) {
   const rawKey = `crbn_split_${crypto.randomUUID()}`;
-  await f.db
+  const key = await f.db
     .insertInto("apiKey")
     .values({
-      name: "Inventory integration",
+      name: "Tracked entity integration",
       companyId: f.companyId,
       createdBy: USER,
       keyHash: createHash("sha256").update(rawKey).digest("hex"),
-      scopes: JSON.stringify({ inventory_update: [f.companyId] })
+      scopes: JSON.stringify({})
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return { caller: localApiKeyClient(rawKey)!, keyId: key.id };
+}
+
+async function grantTrackedEntityEdit(f: Fixture, keyId: string) {
+  await f.db
+    .insertInto("permission")
+    .values({
+      companyId: f.companyId,
+      apiKeyId: keyId,
+      module: "Inventory",
+      page: "inventory.trackedEntities",
+      level: "Edit",
+      createdBy: USER
     })
     .execute();
-  return localApiKeyClient(rawKey)!;
 }
 
 async function receivedUnits(f: Fixture, jobId: string) {
@@ -252,7 +264,8 @@ describe.skipIf(!client)("serial number timing", () => {
       await holdUnits(f, true);
       await raiseIssueOnUnit(f, seedUnit!.id, 1);
 
-      const caller = await inventoryIntegration(f);
+      const { caller, keyId } = await inventoryIntegration(f);
+      await grantTrackedEntityEdit(f, keyId);
       const hidden = await caller
         .from("unitQualityHold")
         .select("trackedEntityId")
@@ -283,7 +296,7 @@ describe.skipIf(!client)("serial number timing", () => {
     }
   });
 
-  it("preserves a partly received seed when the split RPC caller cannot read the ledger", async () => {
+  it("preserves the prior receipt on a partly received seed when an inventory editor calls the split RPC", async () => {
     const f = await alwaysPostFixture();
     try {
       await stockPart(f, 20);
@@ -307,23 +320,41 @@ describe.skipIf(!client)("serial number timing", () => {
 
       // Numbering is enabled after both units were received against the seed.
       await serialSetup(f, "production");
-      const caller = await inventoryIntegration(f);
-      const hidden = await caller
-        .from("itemLedger")
-        .select("trackedEntityId")
-        .eq("documentId", job.jobId);
-      expect(hidden.error).toBeNull();
-      expect(hidden.data).toEqual([]);
+      // The owner must exclude the seed even when the invoker's ledger read
+      // would independently keep it intact (as it does for an Inventory editor).
+      const exclusions = await sql<{ id: string }>`
+        SELECT unnest(util.lock_serial_split_exclusions(
+          ${job.jobId}, ${job.makeMethodId}, ${f.companyId}
+        )) AS id
+      `.execute(f.db);
+      expect(exclusions.rows).toEqual([{ id: before[0]!.id }]);
 
-      const split = await caller.rpc("split_serial_units_for_completion", {
-        p_job_id: job.jobId,
-        p_make_method_id: job.makeMethodId,
-        p_company_id: f.companyId,
-        p_count: 2
-      });
-      expect(split.error).toBeNull();
-      expect(split.data).toBe(0);
+      const { caller, keyId } = await inventoryIntegration(f);
+      const receipts = () =>
+        caller
+          .from("itemLedger")
+          .select("trackedEntityId, quantity")
+          .eq("documentType", "Job Receipt")
+          .eq("documentId", job.jobId);
+      const split = () =>
+        caller.rpc("split_serial_units_for_completion", {
+          p_job_id: job.jobId,
+          p_make_method_id: job.makeMethodId,
+          p_company_id: f.companyId,
+          p_count: 2
+        });
+
+      expect(await receipts()).toMatchObject({ error: null, data: [] });
+      expect(await split()).toMatchObject({ error: null, data: 0 });
+
+      // An Edit grant on Tracked Entities also grants ledger reads.
+      await grantTrackedEntityEdit(f, keyId);
+      expect(await split()).toMatchObject({ error: null, data: 0 });
       expect(await units(f, job.makeMethodId)).toEqual(before);
+      expect(await receipts()).toMatchObject({
+        error: null,
+        data: [{ trackedEntityId: before[0]!.id, quantity: 2 }]
+      });
     } finally {
       await f.cleanup();
     }

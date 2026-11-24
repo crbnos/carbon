@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { dataOrThrow } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { Combobox, cn, DatePicker, HStack, VStack } from "@carbon/react";
 import { datetime, round } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -15,11 +16,7 @@ import { useLoaderData } from "react-router";
 import { Table } from "~/components";
 import { useCurrencyFormatter, useUrlParams } from "~/hooks";
 import type { TaxLiabilityRow } from "~/modules/accounting/accounting.service";
-import {
-  getTaxAuthoritiesList,
-  getTaxLiability,
-  getTaxLiabilityBaseTotals
-} from "~/modules/accounting/accounting.service";
+import { getTaxLiabilityBaseTotals } from "~/modules/accounting/accounting.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -42,9 +39,8 @@ function parseDateParam(raw: string | null): string | null {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { api, client, companyId } = await authorize(request, {
+    "accounting.taxLiability": "View"
   });
 
   const url = new URL(request.url);
@@ -62,9 +58,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const filters = { startDate: from, endDate: to, taxAuthorityId };
   const [rows, baseTotals, authorities] = await Promise.all([
-    getTaxLiability(getDatabaseClient(), companyId, filters),
+    api.accounting.getTaxLiability(filters).then(dataOrThrow),
     getTaxLiabilityBaseTotals(getDatabaseClient(), companyId, filters),
-    getTaxAuthoritiesList(client, companyId)
+    api.accounting.getTaxAuthoritiesList({})
   ]);
 
   return {

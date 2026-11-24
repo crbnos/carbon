@@ -398,9 +398,17 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
           await sql`INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES (${employee}, ${f.companyId}, 'employee')`.execute(
             trx
           );
-          await sql`INSERT INTO "userPermission" (id, permissions) VALUES (${employee}, ${JSON.stringify({ production_update: [f.companyId] })}::jsonb)`.execute(
-            trx
-          );
+          await trx
+            .insertInto("permission")
+            .values({
+              companyId: f.companyId,
+              userId: employee,
+              module: "Production",
+              page: "production.jobs",
+              level: "Edit",
+              createdBy: USER
+            })
+            .execute();
           await sql`SELECT set_config('request.jwt.claims', ${JSON.stringify({ sub: employee, role: "authenticated" })}, true)`.execute(
             trx
           );
@@ -507,13 +515,17 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
           await sql`INSERT INTO "userToCompany" ("userId","companyId",role) VALUES (${employee},${f.companyId},'employee')`.execute(
             trx
           );
-          const permissions = {
-            production_view: [f.companyId],
-            production_update: [f.companyId]
-          };
-          await sql`INSERT INTO "userPermission" (id,permissions) VALUES (${employee},${JSON.stringify(permissions)}::jsonb)`.execute(
-            trx
-          );
+          await trx
+            .insertInto("permission")
+            .values({
+              companyId: f.companyId,
+              userId: employee,
+              module: "Production",
+              page: "production.jobs",
+              level: "Edit",
+              createdBy: USER
+            })
+            .execute();
           await sql`SELECT set_config('request.jwt.claims', ${JSON.stringify({ sub: employee, role: "authenticated" })}, true)`.execute(
             trx
           );

@@ -150,10 +150,10 @@ export function AuditLogFeed({
     path.to.authenticatedRoot
   );
   const auditLogEnabled = useResolved(rootRouteData?.auditLogEnabled, false);
-  const { can } = usePermissions();
+  const { has } = usePermissions();
   // /api/audit-log requires settings view and answers anyone else with a
   // redirect, which a fetcher follows — off the page the user is on.
-  const canViewHistory = can("view", "settings");
+  const canViewHistory = has({ "settings.auditLogs": "View" });
 
   useEffect(() => {
     if (
@@ -265,7 +265,7 @@ export function AuditLogFeed({
             </Trans>
           </p>
         </div>
-        {can("update", "settings") ? (
+        {has({ "settings.auditLogs": "Edit" }) ? (
           <Button variant="secondary" leftIcon={<LuSettings />} asChild>
             <Link to={path.to.auditLog}>
               <Trans>Enable in Settings</Trans>

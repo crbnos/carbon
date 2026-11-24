@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getJobReceiptHolds,
@@ -16,9 +16,7 @@ import { getDatabaseClient } from "~/services/database.server";
  * users see this receipt without requiring access to the entire ledger.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "production"
-  });
+  const { companyId } = await authorize(request, { "production.jobs": "View" });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");

@@ -2,14 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { salesReturnOrderFromAssetsValidator } from "~/modules/sales/sales.models";
-import { getCustomerAssets } from "~/modules/service/service.service";
-import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 /**
@@ -17,8 +14,8 @@ import { path } from "~/utils/path";
  * serial. `onReturn` lists the assets already on this RMA.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
+  const { api, client, companyId } = await authorize(request, {
+    "sales.returns": "View"
   });
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -28,7 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const offsetParam = Number(url.searchParams.get("offset"));
   const search = url.searchParams.get("search")?.trim() || null;
 
-  const [order, lines, timeZone] = await Promise.all([
+  const [order, lines] = await Promise.all([
     client
       .from("salesReturnOrder")
       .select("customerId")
@@ -40,18 +37,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .select("customerAssetId")
       .eq("salesReturnOrderId", id)
       .eq("companyId", companyId)
-      .not("customerAssetId", "is", null),
-    getCompanyTimeZone(client, companyId)
+      .not("customerAssetId", "is", null)
   ]);
   const customerId = order.data?.customerId;
   if (!customerId) {
     return { assets: [], count: 0, onReturn: [] as string[] };
   }
 
-  const assets = await getCustomerAssets(client, companyId, {
+  // The service function reads the company's today for the warranty status.
+  const assets = await api.service.getCustomerAssets({
     search,
     customerId,
-    today: datetime.today(timeZone).toString(),
     limit:
       Number.isFinite(limitParam) && limitParam > 0
         ? Math.min(limitParam, 100)
@@ -63,8 +59,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    assets: assets.data ?? [],
-    count: assets.count ?? 0,
+    assets: assets.data?.rows ?? [],
+    count: assets.data?.count ?? 0,
     onReturn: (lines.data ?? []).flatMap((line) =>
       line.customerAssetId ? [line.customerAssetId] : []
     )
@@ -78,7 +74,7 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const orderId = input.params.id;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.createReturnOrderLinesFromAssets({
     salesReturnOrderId: orderId,
     customerAssetIds: input.data.customerAssetIds

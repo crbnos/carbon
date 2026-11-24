@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,23 +11,18 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { departmentValidator } from "~/modules/people/people.models";
-import {
-  getDepartment,
-  upsertDepartment
-} from "~/modules/people/people.service";
+import { upsertDepartment } from "~/modules/people/people.service";
 import { DepartmentForm } from "~/modules/people/ui/Departments";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "people"
-  });
+  const { api } = await authorize(request, { "people.departments": "View" });
 
   const { departmentId } = params;
   if (!departmentId) throw notFound("Department ID was not found");
 
-  const department = await getDepartment(client, departmentId);
+  const department = await api.people.getDepartment({ departmentId });
 
   if (department.error) {
     throw redirect(
@@ -43,8 +38,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    create: "people"
+  const { client, userId } = await authorize(request, {
+    "people.departments": "Create"
   });
 
   const formData = await request.formData();

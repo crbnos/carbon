@@ -2107,6 +2107,9 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     records: records.data ?? []
   });
 
+  const issuedById = new Map(
+    materials.data.map((m) => [m.id, m.quantityIssued ?? 0])
+  );
   const failures: string[] = [];
   for (const issue of issues) {
     const issued = await erpPosting(
@@ -2118,7 +2121,11 @@ export async function backflushUntrackedMaterialsOnStepRecord(
         itemId: issue.itemId,
         materialId: issue.materialId,
         quantity: issue.quantity,
-        adjustmentType: "Negative Adjmt."
+        adjustmentType: "Negative Adjmt.",
+        // quantityIssued was read with no lock: the ERP issues only what
+        // still reaches the step's target under the material's lock.
+        maxQuantityIssued:
+          (issuedById.get(issue.materialId) ?? 0) + issue.quantity
       }
     );
     if (issued.error) failures.push(issued.error.message || issue.itemId);

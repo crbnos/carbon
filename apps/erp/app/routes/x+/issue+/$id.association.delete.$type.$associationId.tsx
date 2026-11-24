@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -18,16 +17,16 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
+  const { client, api } = await authorize(request, {
+    "quality.issues": "Full"
+  });
 
   const { id, type, associationId } = params;
   if (!id) throw new Error("Could not find id");
   if (!type) throw new Error("Could not find type");
   if (!associationId) throw new Error("Could not find associationId");
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "quality"
-  });
-  const issue = await getIssue(viewClient, id);
+  const issue = await getIssue(client, id);
   await requireUnlocked({
     request,
     isLocked: isIssueLocked(issue.data?.status),
@@ -40,7 +39,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error(`Invalid type: ${type}`);
   }
 
-  const api = await carbon(request);
   const deletion = await api.quality.deleteIssueAssociation({
     type: type as (typeof nonConformanceAssociationType)[number],
     associationId

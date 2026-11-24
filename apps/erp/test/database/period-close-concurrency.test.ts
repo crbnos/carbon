@@ -8,7 +8,8 @@ import { expect } from "vitest";
 import {
   closeAccountingPeriod,
   postJournalEntry,
-  reopenAccountingPeriod
+  reopenAccountingPeriod,
+  unlockAccountingPeriod
 } from "../../app/modules/accounting/accounting.service";
 import { postgrestTest } from "./fixtures/local-supabase";
 import { paymentFixture } from "./fixtures/payment";
@@ -398,6 +399,98 @@ postgrestTest(
     }
   }
 );
+
+postgrestTest(
+  "an unlock that read the period Locked refuses when a close commits before its update",
+  async (client) => {
+    const f = await paymentFixture();
+    const writer = await f.connect();
+    const monitor = await f.connect();
+    const held = signal();
+    const release = signal();
+    let writing: Promise<void> | undefined;
+    let closing: ReturnType<typeof closeAccountingPeriod> | undefined;
+    let unlocking: ReturnType<typeof unlockAccountingPeriod> | undefined;
+    try {
+      const args = await prepareClose(f);
+      const pid = async (db: Kysely<KyselyDatabase>) =>
+        (await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(db))
+          .rows[0]!.pid;
+      const writerPid = await pid(writer);
+      const closePid = await pid(f.db);
+
+      writing = writer.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("accountingPeriod")
+          .select("id")
+          .where("id", "=", args.periodId)
+          .where("companyId", "=", f.companyId)
+          .forShare()
+          .executeTakeFirstOrThrow();
+        held.resolve();
+        await release.promise;
+      });
+      void writing.catch(() => {});
+      await Promise.race([held.promise, writing]);
+      closing = closeAccountingPeriod(client, f.db, args);
+      await waitForBlockedConnection(monitor, writerPid, closePid);
+
+      unlocking = unlockAccountingPeriod(client, args);
+      void unlocking.catch(() => {});
+      await waitForUnlockQueued(monitor, args.periodId, closePid);
+
+      release.resolve();
+      await writing;
+      expect(await closing).toEqual({
+        data: { id: args.periodId },
+        error: null
+      });
+      // A refusal carries only a message; a database error would also carry its code.
+      expect(await unlocking).toEqual({
+        data: null,
+        error: { message: expect.any(String) }
+      });
+      expect(
+        await f.db
+          .selectFrom("accountingPeriod")
+          .select(["closeStatus", "lockedBy"])
+          .where("id", "=", args.periodId)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow()
+      ).toEqual({ closeStatus: "Closed", lockedBy: "system" });
+    } finally {
+      release.resolve();
+      await writing?.catch(() => {});
+      await closing?.catch(() => {});
+      await unlocking?.catch(() => {});
+      await writer.destroy();
+      await monitor.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+/** The unlock's update runs on a PostgREST backend: wait until one is queued on the period row behind the close. */
+async function waitForUnlockQueued(
+  db: Kysely<KyselyDatabase>,
+  periodId: string,
+  closePid: number
+) {
+  const deadline = performance.now() + 15_000;
+  while (performance.now() < deadline) {
+    const { rows } = await sql<{ queued: boolean }>`
+      SELECT EXISTS (
+        SELECT 1 FROM pg_stat_activity
+        WHERE pid <> ${closePid}
+          AND cardinality(pg_blocking_pids(pid)) > 0
+          AND query ILIKE '%UPDATE "public"."accountingPeriod"%'
+      ) AS queued
+    `.execute(db);
+    if (rows[0]?.queued) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error(`Expected the unlock of ${periodId} to wait for the period row`);
+}
 
 for (const failedCheck of [
   { table: "shipmentFixedAssetLine", key: "shipped-not-invoiced" },

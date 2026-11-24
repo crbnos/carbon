@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
@@ -14,7 +14,7 @@ import { path } from "~/utils/path";
  * are; a fetcher posting to them never loads this route.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requirePermissions(request, { view: "projects" });
+  await authorize(request, { "projects.projects": "View" });
   const { projectId, elementId } = params;
   if (!projectId) throw new Error("Could not find projectId");
   if (!elementId) throw new Error("Could not find elementId");

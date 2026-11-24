@@ -51,9 +51,7 @@ export function SelectedItemProperties({
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   useEffect(() => {
     if (isTopLevel || !selectedItemId || !selectedItemType) return;
-    fetcher.load(
-      `${path.to.itemProperties(selectedItemId)}?type=${selectedItemType}`
-    );
+    fetcher.load(path.to.itemProperties(selectedItemId));
   }, [selectedItemId, selectedItemType, isTopLevel]);
 
   const filesPromise = useMemo(

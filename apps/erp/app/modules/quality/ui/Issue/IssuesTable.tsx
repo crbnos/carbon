@@ -329,7 +329,7 @@ const IssuesTable = memo((props: IssuesTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "quality")}
+            disabled={!permissions.has({ "quality.issues": "Edit" })}
             onClick={() => {
               navigate(`${path.to.issue(row.id!)}`);
             }}
@@ -340,7 +340,7 @@ const IssuesTable = memo((props: IssuesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "quality")}
+            disabled={!permissions.has({ "quality.issues": "Full" })}
             onClick={() => {
               flushSync(() => {
                 setSelectedIssue(row);
@@ -365,7 +365,7 @@ const IssuesTable = memo((props: IssuesTableProps) => {
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "quality") && (
+          permissions.has({ "quality.issues": "Create" }) && (
             <New label={t`Issue`} to={path.to.newIssue} />
           )
         }

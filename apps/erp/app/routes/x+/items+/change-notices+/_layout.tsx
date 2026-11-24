@@ -13,8 +13,7 @@ export const meta = moduleMeta("Change Notices");
 
 export const handle: Handle = {
   breadcrumb: msg`Change Notices`,
-  to: path.to.changeNotices,
-  module: "items"
+  to: path.to.changeNotices
 };
 
 export default function ChangeNoticesRoute() {

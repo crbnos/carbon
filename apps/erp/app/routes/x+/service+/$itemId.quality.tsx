@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -12,7 +12,6 @@ import { data, useLoaderData, useParams } from "react-router";
 import invariant from "tiny-invariant";
 import { itemInspectionDocumentAssignmentValidator } from "~/modules/quality/quality.models";
 import {
-  getInspectionDocumentsForItem,
   getItemInspectionDocumentAssignments,
   upsertItemInspectionDocumentAssignment
 } from "~/modules/quality/quality.service";
@@ -21,14 +20,14 @@ import ItemQualityView from "~/modules/quality/ui/Item/ItemQualityView";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
+  const { client, companyId, api } = await authorize(request, {
+    "parts.services": "View"
   });
   const { itemId } = params;
   invariant(itemId, "itemId is required");
 
   const [documents, assignments] = await Promise.all([
-    getInspectionDocumentsForItem(client, itemId, companyId),
+    api.quality.getInspectionDocumentsForItem({ itemId }),
     getItemInspectionDocumentAssignments(client, itemId, companyId)
   ]);
 
@@ -40,8 +39,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
+  const { client, companyId, userId } = await authorize(request, {
+    "quality.inspectionPlans": "Edit"
   });
   const { itemId } = params;
   invariant(itemId, "itemId is required");

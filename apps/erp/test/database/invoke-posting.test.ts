@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Runs against the local database (SUPABASE_DB_URL); skipped without one.
+// Runs against the local database (SUPABASE_DB_URL) and the PostgREST `crbn up`
+// started; skipped without them.
 
 import { createHash } from "node:crypto";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
@@ -13,10 +14,16 @@ import {
   databaseTest
 } from "./fixtures/local-database";
 import { createClient } from "@supabase/supabase-js";
-import { expect } from "vitest";
+import { sql } from "kysely";
+import { expect, vi } from "vitest";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 
-class Rollback extends Error {}
+// An API key is authenticated through the auth package's service-role
+// client, so that client reads the local stack.
+vi.mock("@carbon/env", async (importOriginal) => {
+  const { localSupabaseEnv } = await import("./fixtures/local-supabase");
+  return { ...(await importOriginal<object>()), ...localSupabaseEnv() };
+});
 
 type Scratch = {
   db: Kysely<KyselyDatabase>;
@@ -26,9 +33,16 @@ type Scratch = {
   keyClient: ReturnType<typeof createClient<Database>>;
 };
 
-/** A company, its group and an API key holding `scopes`, all rolled back. */
+/** A grant of the scratch key: a module and its level, or one page of it. */
+type KeyGrant = { module: string; page?: string; level: string };
+
+/**
+ * A company, its group and an API key holding `grants`, deleted afterwards.
+ * Committed: the key is authenticated through PostgREST, which cannot see
+ * an open transaction.
+ */
 async function withScratch(
-  scopes: (companyId: string) => Record<string, string[]>,
+  grants: KeyGrant[],
   fn: (s: Scratch) => Promise<void>
 ) {
   const db = await connectLocalTestDatabase();
@@ -52,29 +66,49 @@ async function withScratch(
           timezone: "America/New_York"
         })
         .execute();
-      await trx
+      const key = await trx
         .insertInto("apiKey")
         .values({
           name: prefix,
           companyId,
           createdBy: "system",
           keyHash: createHash("sha256").update(rawKey).digest("hex"),
-          scopes: JSON.stringify(scopes(companyId))
+          scopes: JSON.stringify({})
         })
-        .execute();
-      await fn({
-        db: trx,
-        companyId,
-        groupId,
-        keyClient: createClient<Database>("http://localhost:54321", "anon", {
-          global: { headers: { "carbon-key": rawKey } }
-        })
-      });
-      throw new Rollback();
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      if (grants.length) {
+        await trx
+          .insertInto("permission")
+          .values(
+            grants.map((grant) => ({
+              companyId,
+              apiKeyId: key.id,
+              module: grant.module,
+              page: grant.page ?? null,
+              level: grant.level,
+              createdBy: "system"
+            })) as never
+          )
+          .execute();
+      }
     });
-  } catch (err) {
-    if (!(err instanceof Rollback)) throw err;
+    await fn({
+      db,
+      companyId,
+      groupId,
+      keyClient: createClient<Database>("http://localhost:54321", "anon", {
+        global: { headers: { "carbon-key": rawKey } }
+      })
+    });
   } finally {
+    await db.transaction().execute(async (trx) => {
+      await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+      await trx.deleteFrom("permission").where("companyId", "=", companyId).execute();
+      await trx.deleteFrom("apiKey").where("companyId", "=", companyId).execute();
+      await trx.deleteFrom("company").where("id", "=", companyId).execute();
+      await trx.deleteFrom("companyGroup").where("id", "=", groupId).execute();
+    });
     await db.destroy();
   }
 }
@@ -87,14 +121,14 @@ const whoRan = async (ctx: ServiceContext) => ({
 
 databaseTest("refuses a caller whose key lacks the posting's permission", () =>
   withScratch(
-    () => ({}),
+    [],
     async ({ db, companyId, keyClient }) => {
       const result = await invokePosting(
         { db, companyId, userId: "system", client: keyClient },
         "test-posting",
         {},
         whoRan,
-        { as: { update: "inventory" } }
+        { as: { "inventory.quantities": "Edit" } }
       );
       expect(result.data).toBeNull();
       expect(result.error).toMatchObject({ status: 403 });
@@ -104,14 +138,14 @@ databaseTest("refuses a caller whose key lacks the posting's permission", () =>
 
 databaseTest("runs as the system once the caller holds the permission", () =>
   withScratch(
-    (companyId) => ({ inventory_update: [companyId] }),
+    [{ module: "Inventory", level: "Edit" }],
     async ({ db, companyId, groupId, keyClient }) => {
       const result = await invokePosting(
         { db, companyId, userId: "system", client: keyClient },
         "test-posting",
         {},
         whoRan,
-        { as: { update: "inventory" } }
+        { as: { "inventory.quantities": "Edit" } }
       );
       // The group is read from the company when the handles carry none.
       expect(result).toEqual({ data: { actor: "system", groupId }, error: null });
@@ -121,14 +155,19 @@ databaseTest("runs as the system once the caller holds the permission", () =>
 
 databaseTest("refuses a keyed value with no rule as invalid input", () =>
   withScratch(
-    (companyId) => ({ inventory_create: [companyId] }),
+    [{ module: "Inventory", level: "Create" }],
     async ({ db, companyId, keyClient }) => {
       const result = await invokePosting(
         { db, companyId, userId: "system", client: keyClient },
         "test-posting",
         { mode: "constructor" },
         whoRan,
-        { as: { by: "mode", rules: { scan: { create: "inventory" } } } }
+        {
+          as: {
+            by: "mode",
+            rules: { scan: { "inventory.kanbans": "Create" } }
+          }
+        }
       );
       expect(result.error).toMatchObject({
         status: 400,
@@ -140,7 +179,7 @@ databaseTest("refuses a keyed value with no rule as invalid input", () =>
 
 databaseTest("runs handles without a client as the system", () =>
   withScratch(
-    () => ({}),
+    [],
     async ({ db, companyId, groupId }) => {
       const result = await invokePosting(
         { db, companyId, userId: "system" },
@@ -155,7 +194,7 @@ databaseTest("runs handles without a client as the system", () =>
 
 databaseTest("refuses to run a caller's client with no permission to check", () =>
   withScratch(
-    () => ({}),
+    [],
     async ({ db, companyId, keyClient }) => {
       await expect(
         invokePosting(

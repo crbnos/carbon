@@ -157,35 +157,34 @@ export function rewriteStoragePath(
 }
 
 /**
- * Additional tables skipped in `reseed` mode — memberships, invites and
- * integration state belong to the source company's users, not to a copy.
- * The importing company already has its admin membership from onboarding.
- * (Tables whose PK is keyed by a user/employee FK — employeeJob, customer/
- * supplierAccount — are skipped automatically via `isUserScopedIdentityTable`,
- * so they don't need listing here.)
+ * The company's access and identity: memberships, employees, roles, every
+ * grant (`permission`: roles, people and API keys), invites and integration
+ * state. They belong to the source company's users.
+ *
+ * In `reseed` mode they are skipped: none of those users come along, so a copy
+ * grants nothing, and the importing company already has its admin membership
+ * from onboarding. (Tables whose PK is keyed by a user/employee FK —
+ * employeeJob, customer/supplierAccount — are skipped automatically via
+ * `isUserScopedIdentityTable`, so they don't need listing here.)
+ *
+ * An in-place restore must not wipe or reload them: wiping them mid-restore
+ * would lock the user out of the company they're restoring. The backup still
+ * carries them; the company's live access stays exactly as it was.
  */
-export const RESEED_SKIPPED_TABLES = [
+const ACCESS_TABLES = [
   "userToCompany",
   "employee",
   "employeeType",
+  // TRANSITIONAL(#1958): the old grant table, until it is dropped.
   "employeeTypePermission",
+  "permission",
   "invite",
   "externalIntegrationMapping"
 ];
 
-/**
- * Tables an in-place restore must NOT wipe or reload — the caller's own access
- * and identity. Wiping these mid-restore would lock the user out of the company
- * they're restoring. The backup still carries them; they're simply left as-is.
- */
-export const IN_PLACE_SKIPPED_TABLES = new Set([
-  "userToCompany",
-  "employee",
-  "employeeType",
-  "employeeTypePermission",
-  "invite",
-  "externalIntegrationMapping"
-]);
+export const RESEED_SKIPPED_TABLES = [...ACCESS_TABLES];
+
+export const IN_PLACE_SKIPPED_TABLES = new Set(ACCESS_TABLES);
 
 /** Integration key for the in-place restore marker (holds the snapshot path). */
 export const RESTORE_INTEGRATION = "company-restore";

@@ -11,6 +11,7 @@ import {
   heldStockMovedByCount,
   insertReceiptPutAway,
   inspectionHoldAdjustmentRefusal,
+  issueMaterial,
   pickUntrackedStockTransferLines,
   postInventoryAdjustment,
   postReceipt,
@@ -486,7 +487,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
   );
 
   databaseTest(
-    "a putaway pick takes no more than is still in its unit; an ordinary pick is unchanged",
+    "a putaway pick takes no more than is still in its unit; an ordinary pick no more than its From unit holds",
     async () => {
       const { receiptId, lotId } = await receiveInto("put");
       await seed(f, (trx) =>
@@ -558,16 +559,29 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           createdBy: USER
         })
         .execute();
-      expect(
-        await withGuard(() =>
+      // An ordinary pick is checked too: 2 from a unit holding 1 is refused.
+      const pickOrdinary = () =>
+        withGuard(() =>
           pickUntrackedStockTransferLines(f.db, {
             stockTransferId: ordinary.id,
             companyId: f.companyId,
             userId: USER
           })
-        )
-      ).toHaveLength(1);
-      expect(await untrackedAt(unitOf("put"))).toBe(-1);
+        );
+      await expect(pickOrdinary()).rejects.toThrow(
+        /Only 1 of .* is in .*, and the pick needs 2/
+      );
+      expect(await untrackedAt(unitOf("put"))).toBe(1);
+
+      // What the unit holds is picked.
+      await f.db
+        .updateTable("stockTransferLine")
+        .set({ quantity: 1 })
+        .where("stockTransferId", "=", ordinary.id)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(await pickOrdinary()).toHaveLength(1);
+      expect(await untrackedAt(unitOf("put"))).toBe(0);
     }
   );
 
@@ -1686,7 +1700,20 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         expect(await holds()).toEqual([
           { trackedEntityId: unit, issueId: other }
         ]);
-        expect(await unitStatus(unit)).toBe("Reserved");
+        // Use As Is accepts the WIP serial. The second issue still blocks posting.
+        expect(await unitStatus(unit)).toBe("Available");
+        const completion = await invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "jobOperationSerialComplete",
+            trackedEntityId: unit,
+            quantity: 1,
+            jobOperationId: job.operationId
+          },
+          issueMaterial
+        );
+        expect(completion.error?.message).toContain("on hold for issue");
         const stockMovements = () => f.db.selectFrom("itemLedger")
           .select("id").where("trackedEntityId", "=", unit).execute();
         expect(await stockMovements()).toEqual([]);

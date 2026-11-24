@@ -477,7 +477,7 @@ const PurchaseOrdersTable = memo(
             <DropdownMenuGroup>
               <DropdownMenuItem
                 disabled={
-                  !permissions.can("delete", "purchasing") ||
+                  !permissions.has({ "purchasing.purchaseOrders": "Full" }) ||
                   // Every matching row: the server deletes the Draft and
                   // Planned orders and skips the rest.
                   (!scope?.allMatching &&
@@ -505,7 +505,7 @@ const PurchaseOrdersTable = memo(
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("view", "purchasing")}
+            disabled={!permissions.has({ "purchasing.purchaseOrders": "View" })}
             onClick={() => edit(row)}
           >
             <MenuIcon icon={<LuPencil />} />
@@ -514,7 +514,10 @@ const PurchaseOrdersTable = memo(
 
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.duplicate}
-            disabled={!permissions.can("create", "purchasing") || !row.id}
+            disabled={
+              !permissions.has({ "purchasing.purchaseOrders": "Create" }) ||
+              !row.id
+            }
             onClick={() => {
               if (!row.id) return;
               fetcher.submit(null, {
@@ -531,9 +534,7 @@ const PurchaseOrdersTable = memo(
             disabled={
               !row.id ||
               !["Draft", "Planned"].includes(row.status ?? "") ||
-              !permissions.can("view", "purchasing") ||
-              !permissions.can("create", "purchasing") ||
-              !permissions.can("update", "purchasing")
+              !permissions.has({ "purchasing.purchaseOrders": "Edit" })
             }
             onClick={() => {
               if (!row.id) return;
@@ -549,7 +550,7 @@ const PurchaseOrdersTable = memo(
             disabled={
               !["To Receive", "To Receive and Invoice"].includes(
                 row.status ?? ""
-              ) || !permissions.can("update", "inventory")
+              ) || !permissions.has({ "inventory.receipts": "Edit" })
             }
             onClick={() => {
               receive(row);
@@ -561,7 +562,7 @@ const PurchaseOrdersTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
-              !permissions.can("delete", "purchasing") ||
+              !permissions.has({ "purchasing.purchaseOrders": "Full" }) ||
               !["Draft", "Planned"].includes(row.status ?? "")
             }
             destructive
@@ -608,7 +609,7 @@ const PurchaseOrdersTable = memo(
             updatedAt: false
           }}
           primaryAction={
-            permissions.can("create", "purchasing") && (
+            permissions.has({ "purchasing.purchaseOrders": "Create" }) && (
               <New label={t`Purchase Order`} to={path.to.newPurchaseOrder} />
             )
           }

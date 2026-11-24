@@ -133,7 +133,7 @@ const LeaseProperties = () => {
 
   if (!lease) return null;
 
-  const canEdit = permissions.can("update", "purchasing");
+  const canEdit = permissions.has({ "purchasing.leases": "Edit" });
   const timingLabel = (value: string) =>
     value === "Advance" ? t`Advance` : t`Arrears`;
 

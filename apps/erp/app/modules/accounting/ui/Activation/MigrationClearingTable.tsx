@@ -27,6 +27,7 @@ import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { Link } from "react-router";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
+import { accountingActivationGate } from "../../accounting.models";
 import {
   accountLabel,
   activationStepPath,
@@ -74,7 +75,7 @@ export default function MigrationClearingTable({
   const formatter = useCurrencyFormatter();
   const accountsById = useAccountsById();
   const permissions = usePermissions();
-  const canEdit = permissions.can("update", "accounting");
+  const canEdit = permissions.has(accountingActivationGate("Edit"));
   const action = activationStepPath("trial-balance", cutoverDate);
   const ignore = useAction();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());

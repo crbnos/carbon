@@ -2,16 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  getPurchaseOrder,
-  getSupplier
-} from "~/modules/purchasing/purchasing.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "api-purchase-order-finalize");
@@ -22,8 +18,8 @@ const logger = getLogger("erp", "api-purchase-order-finalize");
  * the PO page would default to — the supplier's own, else the company's.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { companyId, api } = await authorize(request, {
+    "purchasing.purchaseOrders": "View"
   });
 
   const { id } = params;
@@ -34,7 +30,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const purchaseOrder = await getPurchaseOrder(client, id);
+  const purchaseOrder = await api.purchasing.getPurchaseOrder({
+    purchaseOrderId: id
+  });
   if (purchaseOrder.error || purchaseOrder.data?.companyId !== companyId) {
     logger.error("Failed to read the purchase order to finalize", {
       companyId,
@@ -49,7 +47,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [supplier, companySettings] = await Promise.all([
     purchaseOrder.data.supplierId
-      ? getSupplier(client, purchaseOrder.data.supplierId)
+      ? api.purchasing.getSupplier({
+          supplierId: purchaseOrder.data.supplierId
+        })
       : null,
     getCompanySettings(getCarbonServiceRole(), companyId)
   ]);

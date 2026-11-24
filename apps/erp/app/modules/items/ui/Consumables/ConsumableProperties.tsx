@@ -372,7 +372,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
           id={itemId}
           table="item"
           value={assignee ?? ""}
-          isReadOnly={!permissions.can("update", "parts")}
+          isReadOnly={!permissions.has({ "parts.consumables": "Edit" })}
         />
       </VStack> */}
 

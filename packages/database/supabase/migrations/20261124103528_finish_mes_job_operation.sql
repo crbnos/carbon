@@ -1,6 +1,6 @@
 -- Finish can close timers and receive the job from its operation status trigger.
 -- Take the same job lock as receipt and terminal production/scrap before that update.
-CREATE FUNCTION public.finish_mes_job_operation(
+CREATE OR REPLACE FUNCTION public.finish_mes_job_operation(
   p_job_operation_id text, p_company_id text, p_user_id text
 ) RETURNS TABLE(id text, "jobId" text)
 LANGUAGE plpgsql SECURITY INVOKER SET search_path TO 'public' AS $$

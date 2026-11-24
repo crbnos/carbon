@@ -1,5 +1,5 @@
--- The splitting write still runs under the caller's RLS. Read exclusions as the owner:
--- the caller may have inventory_update without quality_view or inventory_view.
+-- The split runs under the caller's RLS. Read exclusions as the owner because
+-- an integration can call this RPC without access to issues or the stock ledger.
 CREATE OR REPLACE FUNCTION util.lock_serial_split_exclusions(
   p_job_id text, p_make_method_id text, p_company_id text
 ) RETURNS text[] LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$

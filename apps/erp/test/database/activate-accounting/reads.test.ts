@@ -20,7 +20,7 @@ import { REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION } from "@carbon/database/acco
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import { type Insertable, sql } from "kysely";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest
@@ -35,6 +35,14 @@ import {
 } from "../fixtures/activation";
 import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
+
+// The posting's funds gate reads the purchase orders through the service-role
+// client, which a posting run from handles builds from `@carbon/env`.
+vi.mock("@carbon/env", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...(await import("../fixtures/local-supabase")).localServiceRoleEnv()
+}));
+
 const USER = "system";
 const TIME_ZONE = "America/New_York";
 

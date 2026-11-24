@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,10 +11,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useSearchParams } from "react-router";
 import { groupAccountValidator } from "~/modules/accounting/accounting.models";
-import {
-  getGroupAccounts,
-  upsertAccount
-} from "~/modules/accounting/accounting.service";
+import { upsertAccount } from "~/modules/accounting/accounting.service";
 import type {
   AccountClass,
   AccountIncomeBalance
@@ -23,11 +20,11 @@ import { GroupAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
-    create: "accounting"
+  const { api } = await authorize(request, {
+    "accounting.chartOfAccounts": "Create"
   });
 
-  const groupAccounts = await getGroupAccounts(client, companyGroupId);
+  const groupAccounts = await api.accounting.getGroupAccounts({});
 
   return {
     groupAccounts: groupAccounts.data ?? []
@@ -36,8 +33,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
-    create: "accounting"
+  const { client, companyGroupId, userId } = await authorize(request, {
+    "accounting.chartOfAccounts": "Create"
   });
 
   const formData = await request.formData();

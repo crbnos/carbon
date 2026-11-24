@@ -278,7 +278,9 @@ const SupplierQuoteLineForm = ({
                     )}
                     {isEditing &&
                       !isLocked &&
-                      permissions.can("update", "purchasing") && (
+                      permissions.has({
+                        "purchasing.supplierQuotes": "Edit"
+                      }) && (
                         <CardAction>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -482,8 +484,12 @@ const SupplierQuoteLineForm = ({
                     isDisabled={
                       isLocked ||
                       (isEditing
-                        ? !permissions.can("update", "purchasing")
-                        : !permissions.can("create", "purchasing"))
+                        ? !permissions.has({
+                            "purchasing.supplierQuotes": "Edit"
+                          })
+                        : !permissions.has({
+                            "purchasing.supplierQuotes": "Create"
+                          }))
                     }
                   >
                     <Trans>Save</Trans>

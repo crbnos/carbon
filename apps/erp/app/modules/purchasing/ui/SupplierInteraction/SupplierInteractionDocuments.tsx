@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { type PageId, pageOfTable } from "@carbon/database/access";
 import {
   convertKbToString,
   downloadUrl,
@@ -48,6 +49,20 @@ import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
 const logger = getLogger("erp", "supplierinteractiondocuments");
+
+/** The page that owns each supplier interaction document's table; its level gates the files. */
+export const SUPPLIER_INTERACTION_PAGES: Record<
+  | "Supplier Quote"
+  | "Purchase Order"
+  | "Purchase Invoice"
+  | "Purchasing Request for Quote",
+  PageId
+> = {
+  "Purchasing Request for Quote": pageOfTable("purchasingRfq"),
+  "Supplier Quote": pageOfTable("supplierQuote"),
+  "Purchase Order": pageOfTable("purchaseOrder"),
+  "Purchase Invoice": pageOfTable("purchaseInvoice")
+};
 
 type SupplierInteractionDocumentsProps = {
   attachments: FileObject[];
@@ -235,7 +250,9 @@ export const useSupplierInteractionDocuments = ({
   const revalidator = useRevalidator();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "purchasing"); // TODO: or is document owner
+  const canDelete = permissions.has({
+    [SUPPLIER_INTERACTION_PAGES[type]]: "Full"
+  }); // TODO: or is document owner
 
   const getPath = useCallback(
     (attachment: { name: string }) => {
@@ -354,7 +371,9 @@ const SupplierInteractionDocumentForm = (
 
   return (
     <File
-      isDisabled={!permissions.can("update", "purchasing")}
+      isDisabled={
+        !permissions.has({ [SUPPLIER_INTERACTION_PAGES[props.type]]: "Edit" })
+      }
       leftIcon={<LuUpload />}
       onChange={uploadFiles}
       multiple

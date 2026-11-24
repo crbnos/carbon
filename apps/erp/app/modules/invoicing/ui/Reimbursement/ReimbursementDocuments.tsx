@@ -37,7 +37,7 @@ const ReimbursementDocuments = () => {
   const reimbursement = routeData?.reimbursement;
   if (!reimbursement) return null;
 
-  const employee = permissions.can("view", "people")
+  const employee = permissions.has({ "people.employees": "View" })
     ? people.find((person) => person.id === reimbursement.employeeId)
     : undefined;
 
@@ -52,7 +52,7 @@ const ReimbursementDocuments = () => {
 
   const journal = routeData?.journal;
   const journalRow =
-    journal && permissions.can("view", "accounting") ? (
+    journal && permissions.has({ "accounting.journalEntries": "View" }) ? (
       <RelatedDocument
         to={path.to.journalEntry(journal.id)}
         icon={<LuBookOpen />}

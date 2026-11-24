@@ -16,7 +16,7 @@ import {
  * Data for the wall-mounted work center displays (`/display/:workCenterId/*`).
  *
  * These loaders run against the service-role client: `maintenanceSchedule` RLS
- * requires `resources_view`, which shop-floor operators typically lack, and the
+ * requires View on Schedules (Resources), which shop-floor operators typically lack, and the
  * "upcoming maintenance" rows would silently read zero for exactly the audience
  * this feature exists for. Every query is therefore scoped by `companyId` in
  * application code, and `getDisplayWorkCenter` must be called first to prove the

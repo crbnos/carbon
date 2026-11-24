@@ -174,8 +174,10 @@ const SalesReturnOrderLineForm = ({
     initialValues.returnType ?? "Return to Stock"
   );
   const [quantity, setQuantity] = useState<number>(initialValues.quantity ?? 1);
+  // Starts at the form default: a different value marks the field touched,
+  // and the line then prompts Unsaved changes with nothing changed.
   const [customerAssetId, setCustomerAssetId] = useState(
-    initialValues.customerAssetId ?? ""
+    initialValues.customerAssetId
   );
   const isServiceLine = isServiceReturnLine(returnType);
 
@@ -381,8 +383,8 @@ const SalesReturnOrderLineForm = ({
   };
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.returns": "Edit" })
+    : !permissions.has({ "sales.returns": "Create" });
 
   // Once the return is confirmed, the line's item, quantity, price, and
   // restocking fee are locked on the server (they set the credit basis and are
@@ -576,7 +578,7 @@ const SalesReturnOrderLineForm = ({
                         // Not isLocked: full receipt auto-completes the RMA,
                         // and disposition happens after goods arrive.
                         status === "Cancelled" ||
-                        !permissions.can("update", "sales") ||
+                        !permissions.has({ "sales.returns": "Edit" }) ||
                         dispositionFetcher.state !== "idle"
                       }
                     >
@@ -618,7 +620,7 @@ const SalesReturnOrderLineForm = ({
                       isLoading={receivingFetcher.state !== "idle"}
                       isDisabled={
                         receivingFetcher.state !== "idle" ||
-                        !permissions.can("update", "sales")
+                        !permissions.has({ "sales.returns": "Edit" })
                       }
                       onClick={onToggleReceiving}
                     >

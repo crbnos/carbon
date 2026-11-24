@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import { Loading } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -70,9 +70,7 @@ async function handleKanbanStart({
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    role: "employee"
-  });
+  const { client, companyId } = await authorize(request, {});
 
   const { id } = params;
   if (!id) throw notFound("id not found");

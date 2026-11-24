@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -17,21 +16,20 @@ import {
   useParams
 } from "react-router";
 import { projectBaselineValidator } from "~/modules/projects/projects.models";
-import { getProjectBaselines } from "~/modules/projects/projects.service";
 import BaselinesList from "~/modules/projects/ui/Baselines/BaselinesList";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-baselines");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
-  const baselines = await getProjectBaselines(client, projectId, companyId);
+  const baselines = await api.projects.getProjectBaselines({ projectId });
   if (baselines.error) {
     logger.error("Failed to load baselines", {
       companyId,
@@ -61,7 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.projects.createProjectBaseline({
     ...validation.data,
     projectId

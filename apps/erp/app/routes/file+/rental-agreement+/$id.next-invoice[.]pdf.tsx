@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   loadUnsavedSalesInvoiceDocument,
@@ -11,25 +11,24 @@ import {
 import { datetime, getPreferenceHeaders, round } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { computeInvoiceDateDue } from "~/modules/invoicing/invoicing.service";
-import {
-  getRentalAgreement,
-  getRentalNextInvoice
-} from "~/modules/sales/sales.service";
+import { getRentalNextInvoice } from "~/modules/sales/sales.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 /** The invoice the next billing run will draft for an agreement, as a PDF.
  *  Nothing is saved: the invoice is planned in memory and rendered. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    { view: ["sales", "invoicing"] }
-  );
+  const { api, client, companyId, companyGroupId } = await authorize(request, {
+    "sales.rentalAgreements": "View",
+    "invoicing.salesInvoices": "View"
+  });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const agreement = await getRentalAgreement(client, id, companyId);
+  const agreement = await api.sales.getRentalAgreement({
+    rentalAgreementId: id
+  });
   if (agreement.error || agreement.data?.companyId !== companyId) {
     throw new Response("The rental agreement could not be found.", {
       status: 404
