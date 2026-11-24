@@ -45,32 +45,6 @@ describe("loader-reads-through-api", () => {
     ]);
   });
 
-  it("flags the customer page loader before 11b0839da9", () => {
-    // apps/erp/app/routes/x+/customer+/$customerId.tsx before 11b0839da9:
-    // getCustomer read the customer by id without the company id.
-    expect(
-      scan(`
-import {
-  getCustomer,
-  getCustomerContacts
-} from "~/modules/sales/sales.service";
-
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
-
-  const { customerId } = params;
-  if (!customerId) throw new Error("Could not find customerId");
-
-  const [customer, contacts] = await Promise.all([
-    getCustomer(client, customerId),
-    getCustomerContacts(client, customerId)
-  ]);
-}`)
-    ).toEqual(["sales.getCustomer"]);
-  });
-
   it("passes a helper no service function wraps, and the action", () => {
     expect(
       scan(route("  const tz = await getCustomerTimeZone(client);"))

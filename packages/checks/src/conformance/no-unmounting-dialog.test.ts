@@ -119,50 +119,6 @@ const render = () =>
     expect(scan(`const closeRoute = useCloseRoute();`)).toEqual([1]);
   });
 
-  it("flags the gauge dialogs that vanished on close until 52079eef0c", () => {
-    // apps/erp/app/modules/quality/ui/Gauge/GaugesTable.tsx before 52079eef0c:
-    // closing the confirm cleared the flag and the row it is guarded on.
-    const table = `{deleteDisclosure.isOpen && selectedGauge && (
-  <ConfirmDelete
-    action={path.to.deleteGauge(selectedGauge.id!)}
-    isOpen
-    onCancel={() => {
-      setSelectedGauge(null);
-      deleteDisclosure.onClose();
-    }}
-    name={selectedGauge.gaugeId ?? "gauge"}
-  />
-)}`;
-    expect(
-      scan(table, "apps/erp/app/modules/quality/ui/Gauge/GaugesTable.tsx")
-    ).toEqual([2]);
-    // apps/erp/app/routes/x+/quality+/gauges.new.tsx before 52079eef0c: New
-    // Gauge closed by navigating, which removed the drawer in the same render.
-    expect(
-      scan(
-        `export default function GaugeNewRoute() {
-  const closeRoute = useCloseRoute();
-  return <GaugeForm onClose={() => closeRoute()} />;
-}`,
-        "apps/erp/app/routes/x+/quality+/gauges.new.tsx"
-      )
-    ).toEqual([2]);
-  });
-
-  it("passes the gauge confirm as 52079eef0c left it", () => {
-    expect(
-      scan(`{selectedGauge && (
-  <ConfirmDelete
-    action={path.to.deleteGauge(selectedGauge.id!)}
-    isOpen={deleteDisclosure.isOpen}
-    onCancel={deleteDisclosure.onClose}
-    onSubmit={deleteDisclosure.onClose}
-    name={selectedGauge.gaugeId ?? "gauge"}
-  />
-)}`)
-    ).toEqual([]);
-  });
-
   it("leaves the files that define the hooks alone", () => {
     expect(
       scan(

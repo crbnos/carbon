@@ -16,8 +16,7 @@ export const noRawOrSearch: ConformanceCheck = {
   provenance: {
     deprecates: ".or(`name.ilike.%${search}%,…`)",
     replacedBy: '.or(searchFilter(["name", …], search)) from "@carbon/utils"',
-    since: "2026-10-19",
-    incidents: ["cfd5b2f781"]
+    since: "2026-10-19"
   },
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];

@@ -18,8 +18,7 @@ export const noNoopOpenChange: ConformanceCheck = {
     deprecates: "onOpenChange={() => {}} on a Modal or Drawer",
     replacedBy:
       "leaving onOpenChange off, which also removes the close button (@carbon/react)",
-    since: "2026-10-04",
-    incidents: ["b0437fbfe4"]
+    since: "2026-10-04"
   },
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];

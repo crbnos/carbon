@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Provenance, SourceFile, Violation } from "../check";
+import type { SourceFile, Violation } from "../check";
 
 // A bare import (`import "./x"`) runs a file for what it does, not for what it
 // exports. In a package whose package.json says `"sideEffects": false`, or
@@ -12,15 +12,6 @@ import type { Provenance, SourceFile, Violation } from "../check";
 // registerCarbon", and `z.config({ jitless: true })` never ran in either app.
 // Typecheck, tests and the dev server (which does not tree-shake) cannot see it.
 export const SIDE_EFFECT_IMPORT_DECLARED = "side-effect-import-declared";
-
-// Exported on its own because the check runs as a cross-file `find*`: the
-// provenance meta-test reads it.
-export const SIDE_EFFECT_IMPORT_DECLARED_PROVENANCE: Provenance = {
-  deprecates:
-    'a bare import (`import "./zod.client"`) of a file the package\'s "sideEffects" does not list',
-  replacedBy: 'the file listed in the package.json "sideEffects" array',
-  incidents: ["6984e529d8"]
-};
 
 export type SideEffectPackage = {
   /** Repo-relative package directory, e.g. `apps/erp`. */

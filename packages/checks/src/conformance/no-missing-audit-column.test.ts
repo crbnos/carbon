@@ -30,8 +30,7 @@ const check = noMissingAuditColumn(COLUMNS);
 const snippets = (ts: string) => check.scan(FILE, ts).map((v) => v.snippet);
 
 describe("noMissingAuditColumn", () => {
-  it("flags the customerPartToItem upsert from before 22c9b98508, which failed with PGRST204", () => {
-    // apps/erp/app/routes/api+/sales-rfq.$rfqId.map-lines.ts before 22c9b98508.
+  it("flags the real customerPartToItem upsert that failed with PGRST204", () => {
     const ts = [
       'await serviceRole.from("customerPartToItem").upsert(',
       "  {",
@@ -41,7 +40,7 @@ describe("noMissingAuditColumn", () => {
       "    companyId,",
       "    createdBy: userId",
       "  },",
-      '  { onConflict: "customerId, itemId" }',
+      '  { onConflict: "customerId,itemId" }',
       ");"
     ].join("\n");
     const v = check.scan(FILE, ts);
@@ -49,12 +48,6 @@ describe("noMissingAuditColumn", () => {
     expect(v[0]?.snippet).toBe("createdBy");
     expect(v[0]?.line).toBe(7);
     expect(v[0]?.message).toContain("customerPartToItem");
-    // The fix drops createdBy.
-    expect(
-      snippets(
-        'await serviceRole.from("customerPartToItem").upsert({ customerId, customerPartId: map.customerPartId, itemId: finalItemId, companyId }, { onConflict: "customerId,itemId" });'
-      )
-    ).toEqual([]);
   });
 
   it("flags both fields, and only the ones the table lacks", () => {

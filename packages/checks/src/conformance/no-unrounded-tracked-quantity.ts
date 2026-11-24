@@ -155,8 +155,7 @@ export const noUnroundedTrackedQuantity: ConformanceCheck = {
       'inline unrounded arithmetic in .updateTable("trackedEntity").set({ quantity }) and raw ===/!==/< split gates on trackedEntity.quantity',
     replacedBy:
       "round() / settleQuantity() (@carbon/utils entity-drain.ts) at the write, isFullDraw() (@carbon/utils batch-split.ts) at the gate",
-    since: "2026-09-23",
-    incidents: ["6173be9268"]
+    since: "2026-09-23"
   },
   scan(file: string, contents: string): Violation[] {
     if (EXCLUDED_FILES.has(file)) return [];

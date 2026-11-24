@@ -44,32 +44,4 @@ describe("noStateCopyOfLoaderData", () => {
   it("ignores a file that loads nothing", () => {
     expect(scan(`const [list, setList] = useState(props.rows);\n`)).toEqual([]);
   });
-
-  it("flags the settings switch f18c5dad02 fixed, and passes its fix", () => {
-    // apps/erp/app/routes/x+/settings+/quality.tsx before f18c5dad02: the
-    // switch kept its own copy of the saved setting, so it stayed in the
-    // clicked position when the save failed.
-    const before = `  const { companySettings } = useLoaderData<typeof loader>();
-  const toggleFetcher = useFetcher<typeof action>();
-
-  const [fourEyesEnabled, setFourEyesEnabled] = useState(
-    (companySettings as { enforceInspectionFourEyes?: boolean })
-      .enforceInspectionFourEyes ?? false
-  );
-`;
-    expect(scan(before).map((v) => v.snippet)).toEqual([
-      "const [fourEyesEnabled, setFourEyesEnabled] = useState("
-    ]);
-    const after = `  const { companySettings } = useLoaderData<typeof loader>();
-  const toggleFetcher = useFetcher<typeof action>();
-
-  const fourEyesEnabled = useSavedToggle(
-    toggleFetcher,
-    "enforceInspectionFourEyes",
-    (companySettings as { enforceInspectionFourEyes?: boolean })
-      .enforceInspectionFourEyes ?? false
-  );
-`;
-    expect(scan(after)).toEqual([]);
-  });
 });

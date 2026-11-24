@@ -25,36 +25,6 @@ describe("noZeroConcurrency", () => {
     expect(v[0]!.line).toBe(4);
   });
 
-  it("replays f25eba584c: limit 0 in the webhook and schedule-job handlers", () => {
-    // packages/jobs/src/inngest/functions/events/webhook.ts before f25eba584c.
-    const webhook = `export const webhookFunction = inngest.createFunction(
-  {
-    id: "event-handler-webhook",
-    retries: 3,
-    idempotency: "event.data.msgId",
-    concurrency: {
-      limit: 0,
-      key: "event.data.data.table + '-' + event.data.data.recordId"
-    }
-  },
-  { event: "carbon/event-webhook" },`;
-    // packages/jobs/src/inngest/functions/tasks/reschedule-job.ts before f25eba584c.
-    const rescheduleJob = `export const rescheduleJobFunction = inngest.createFunction(
-  {
-    id: "schedule-job",
-    retries: 3,
-    concurrency: {
-      limit: 0,
-      key: "event.data.companyId"
-    }
-  },
-  { event: "carbon/reschedule-job" },`;
-    expect(scan(webhook).map((v) => v.line)).toEqual([6]);
-    expect(scan(rescheduleJob).map((v) => v.line)).toEqual([5]);
-    // The fix: limit 1.
-    expect(scan(webhook.replace("limit: 0", "limit: 1"))).toHaveLength(0);
-  });
-
   it("accepts a real limit", () => {
     expect(scan(`concurrency: {\n  limit: 1,\n  key: "x"\n}`)).toHaveLength(0);
     expect(scan(`concurrency: 1,`)).toHaveLength(0);

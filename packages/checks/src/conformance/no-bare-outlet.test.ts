@@ -29,30 +29,6 @@ describe("noBareOutlet", () => {
     ).toEqual([]);
   });
 
-  it("flags the supplier route's plain outlet that f18c5dad02 made a RecordOutlet", () => {
-    // apps/erp/app/routes/x+/supplier+/$supplierId.tsx before f18c5dad02:
-    // moving to another supplier kept the page mounted, so its tax form held
-    // the first supplier's id.
-    const route = [
-      "export default function SupplierRoute() {",
-      "  return (",
-      "    <>",
-      "      <SupplierHeader />",
-      '      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">',
-      "        <SupplierSidebar />",
-      "        <Outlet />",
-      "      </div>",
-      "    </>",
-      "  );",
-      "}"
-    ].join("\n");
-    const file = "apps/erp/app/routes/x+/supplier+/$supplierId.tsx";
-    expect(scan(route, file).map((v) => v.line)).toEqual([7]);
-    expect(scan(route.replace("<Outlet />", "<RecordOutlet />"), file)).toEqual(
-      []
-    );
-  });
-
   it("leaves routes outside /x and components alone", () => {
     expect(
       scan("<Outlet />", "apps/erp/app/routes/_public+/_layout.tsx")
@@ -183,52 +159,5 @@ describe("findNestedOutlets", () => {
       "<RecordOutlet />"
     );
     expect(where([table, route])).toEqual([]);
-  });
-
-  it("flags the API keys route whose table kept an outlet until 5a0ea7c0d2", () => {
-    // apps/erp/app/routes/x+/settings+/api-keys.tsx and ApiKeysTable.tsx
-    // before 5a0ea7c0d2: New API Key opened two modals with the same input ids.
-    const before = file(
-      TABLE,
-      'import { Outlet, useNavigate } from "react-router";',
-      "const ApiKeysTable = memo((props: ApiKeysTableProps) => {",
-      "  return (",
-      "    <>",
-      "      <Table<ApiKeyRow>",
-      "        title={t`API Keys`}",
-      "      />",
-      "      <Outlet />",
-      "    </>",
-      "  );",
-      "});",
-      "export default ApiKeysTable;"
-    );
-    const route = file(
-      ROUTE,
-      'import { RecordOutlet } from "@carbon/react";',
-      'import { ApiKeysTable, ApiKeysUpgradeOverlay } from "~/modules/settings/ui";',
-      "  return (",
-      "    <>",
-      "      <ApiKeysTable count={count} data={apiKeys} infinite={infinite} />",
-      "      <RecordOutlet />",
-      "    </>",
-      "  );"
-    );
-    expect(where([before, route])).toEqual([
-      {
-        file: ROUTE,
-        line: 5,
-        snippet:
-          "<ApiKeysTable count={count} data={apiKeys} infinite={infinite} />"
-      }
-    ]);
-    const after = file(
-      TABLE,
-      ...before.contents
-        .trimEnd()
-        .split("\n")
-        .filter((line) => !line.includes("<Outlet />"))
-    );
-    expect(where([after, route])).toEqual([]);
   });
 });

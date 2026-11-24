@@ -142,8 +142,7 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
     deprecates:
       'a Kysely write keyed by id alone (e.g. updateQuoteLineOrder\'s `.where("id", "=", id)`), reachable cross-tenant through the public API\'s superuser `db`',
     replacedBy:
-      '.where("companyId", "=", companyId) on every updateTable/deleteFrom; drag-sorts go through updateSortOrder in modules/shared/sort-order.ts',
-    incidents: ["9ddb3bc295"]
+      '.where("companyId", "=", companyId) on every updateTable/deleteFrom; drag-sorts go through updateSortOrder in modules/shared/sort-order.ts'
   },
   scan(file, contents) {
     if (!SCOPED_PREFIXES.some((prefix) => file.startsWith(prefix))) return [];

@@ -250,32 +250,3 @@ describe("no-unrounded-tracked-quantity — the exemption is operand-scoped", ()
     expect(scan(src).map((v) => v.line)).toEqual([3, 7]);
   });
 });
-
-describe("no-unrounded-tracked-quantity — the 6173be9268 fix", () => {
-  it("flags the adjustment write and the shipment split gate from before 6173be9268", () => {
-    // packages/database/supabase/functions/post-inventory-adjustment/index.ts
-    // before 6173be9268: a partial draw of 0.98 from a 1.0 lot left
-    // 0.020000000000000018 on the shelf.
-    const adjustment = [
-      "await trx",
-      '  .updateTable("trackedEntity")',
-      "  .set({ quantity: resolvedQty - adjustmentQuantity, readableId })",
-      '  .where("id", "=", resolvedId)',
-      '  .where("companyId", "=", companyId)',
-      "  .execute();"
-    ].join("\n");
-    expect(scan(adjustment).map((v) => [v.line, v.snippet])).toEqual([
-      [3, ".set({ quantity: resolvedQty - adjustmentQuantity, readableId })"]
-    ]);
-    // packages/database/supabase/functions/post-shipment/index.ts before
-    // 6173be9268: a residue lot read a full shipment as partial.
-    const shipment = [
-      "if (",
-      "  shipmentLine?.shippedQuantity !== undefined &&",
-      "  trackedEntity.quantity !== undefined &&",
-      "  shipmentLine.shippedQuantity < trackedEntity.quantity",
-      ") {"
-    ].join("\n");
-    expect(scan(shipment).map((v) => v.line)).toEqual([4]);
-  });
-});

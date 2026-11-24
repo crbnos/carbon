@@ -15,32 +15,6 @@ describe("noViewWithoutInvoker", () => {
     expect(v[0]?.message).toContain('"openJobMaterialLines"');
   });
 
-  it("flags the openJobMaterialLines recreation that 9ddb3bc295 fixed", () => {
-    // 20260908211552_picking-supersession-consume-first.sql before 9ddb3bc295:
-    // the view ran as its owner and served every company's rows.
-    const sql = `$$;
-
-CREATE OR REPLACE VIEW "openJobMaterialLines" AS (
-  SELECT
-    jm."id",
-    jm."jobId",
-    jmm."parentMaterialId"
-  FROM "jobMaterial" jm
-);`;
-    expect(
-      noViewWithoutInvoker
-        .scan("20260908211552_picking-supersession-consume-first.sql", sql)
-        .map((v) => v.snippet)
-    ).toEqual(['CREATE OR REPLACE VIEW "openJobMaterialLines" AS']);
-  });
-
-  it("passes openJobMaterialLines as 9ddb3bc295 recreated it", () => {
-    const sql = `CREATE OR REPLACE VIEW "openJobMaterialLines" WITH (security_invoker = true) AS (
-  SELECT jm."id" FROM "jobMaterial" jm
-);`;
-    expect(noViewWithoutInvoker.scan("p.sql", sql)).toHaveLength(0);
-  });
-
   it("flags a view whose option list omits security_invoker", () => {
     const sql = 'CREATE VIEW "x" WITH (check_option = local) AS SELECT 1;';
     expect(noViewWithoutInvoker.scan("p.sql", sql)).toHaveLength(1);

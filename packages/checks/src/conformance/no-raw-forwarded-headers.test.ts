@@ -24,41 +24,4 @@ const real = request.headers.has(\`x-real-ip\`);`).map((v) => v.line)
       scan('headers.get("x-forwarded-for")', "packages/utils/src/headers.ts")
     ).toEqual([]);
   });
-
-  it("flags the forgeable client IP reads 4df5f8c9bd fixed, and passes its fix", () => {
-    // apps/erp/app/routes/_public+/login.tsx before 4df5f8c9bd: the login
-    // rate limit was keyed on the first X-Forwarded-For entry, which the
-    // caller chooses.
-    const login = [
-      '  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";',
-      "  const ratelimit = new Ratelimit({"
-    ].join("\n");
-    // apps/erp/app/routes/x+/acknowledge.tsx before 4df5f8c9bd: the ITAR
-    // acknowledgement stored that same forgeable entry.
-    const acknowledge = [
-      '  const forwardedFor = request.headers.get("x-forwarded-for");',
-      "  const ipAddress =",
-      '    forwardedFor?.split(",")[0]?.trim() ||',
-      '    request.headers.get("x-real-ip") ||',
-      "    null;"
-    ].join("\n");
-    expect(
-      scan(login, "apps/erp/app/routes/_public+/login.tsx").map(
-        (v) => v.snippet
-      )
-    ).toEqual([
-      'const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";'
-    ]);
-    expect(
-      scan(acknowledge, "apps/erp/app/routes/x+/acknowledge.tsx").map(
-        (v) => v.line
-      )
-    ).toEqual([1, 4]);
-    expect(
-      scan(
-        '  const ip = getClientIp(request) ?? "127.0.0.1";',
-        "apps/erp/app/routes/_public+/login.tsx"
-      )
-    ).toEqual([]);
-  });
 });

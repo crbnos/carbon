@@ -15,8 +15,7 @@ const scan = (contents: string) =>
 const snippets = (contents: string) => scan(contents).map((v) => v.snippet);
 
 describe("noSilentTestPass", () => {
-  it("flags the cancel-job wrapper from before 78c72afe13, whose five cases passed unrun", () => {
-    // apps/erp/test/database/cancel-job.test.ts before 78c72afe13.
+  it("flags the cancel-job wrapper as it was on main", () => {
     const source = `const caller = hasLocalDatabase ? localServiceRoleClient() : null;
 const cancelTest = (name: string, fn: () => Promise<void>) =>
   databaseTest(name, async () => {
@@ -37,7 +36,7 @@ cancelTest("a Ready job is cancelled", async () => {
     ]);
   });
 
-  it("accepts the 78c72afe13 fix, the same wrapper once it skips", () => {
+  it("accepts the same wrapper once it skips", () => {
     expect(
       scan(`const caller = hasLocalDatabase ? localServiceRoleClient() : null;
 const cancelTest = (name: string, fn: () => Promise<void>) =>

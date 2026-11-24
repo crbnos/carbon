@@ -3,12 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import ts from "typescript5";
-import type {
-  ConformanceCheck,
-  Provenance,
-  SourceFile,
-  Violation
-} from "../check";
+import type { ConformanceCheck, SourceFile, Violation } from "../check";
 
 const ROUTES = /^apps\/erp\/app\/routes\//;
 const SERVER_FILE =
@@ -52,14 +47,6 @@ function loaderBody(source: ts.SourceFile): ts.Node | undefined {
 
 export const LOADER_READS_THROUGH_API = "loader-reads-through-api";
 
-export const LOADER_READS_THROUGH_API_PROVENANCE: Provenance = {
-  deprecates:
-    "a loader that calls a `.service` building block a service function wraps",
-  replacedBy: "`api.<module>.<fn>(input)` from `authorize(request, gate)`",
-  since: "2026-10-18",
-  incidents: ["11b0839da9"]
-};
-
 /**
  * An ERP route loader reads through the service functions
  * (`api.<module>.<fn>(input)`, `const { api } = await authorize(request, gate)`), never by calling a
@@ -71,7 +58,12 @@ export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
     id: LOADER_READS_THROUGH_API,
     description:
       "An ERP route loader calls a wrapped building block through its service function, not directly",
-    provenance: LOADER_READS_THROUGH_API_PROVENANCE,
+    provenance: {
+      deprecates:
+        "a loader that calls a `.service` building block a service function wraps",
+      replacedBy: "`api.<module>.<fn>(input)` from `authorize(request, gate)`",
+      since: "2026-10-18"
+    },
     scan(file: string, contents: string): Violation[] {
       if (!ROUTES.test(file) || !contents.includes(".service")) return [];
       const source = ts.createSourceFile(

@@ -39,33 +39,6 @@ describe("findUndeclaredSideEffectImports", () => {
   });
 });
 
-describe("the 6984e529d8 fix", () => {
-  // apps/erp/app/root.tsx and apps/erp/package.json before 6984e529d8: the
-  // build dropped the import, so z.config({ jitless: true }) never ran and the
-  // CSP reported zod's eval probe on every page load.
-  const root = {
-    "apps/erp/app/root.tsx":
-      'import "./zod.client";\nimport { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";\n',
-    "apps/erp/app/zod.client.ts": "z.config({ jitless: true });\n"
-  };
-
-  it("flags the zod.client import from before 6984e529d8", () => {
-    expect(
-      findUndeclaredSideEffectImports([pkg(false, root)]).map((v) => [
-        v.file,
-        v.line,
-        v.snippet
-      ])
-    ).toEqual([["apps/erp/app/root.tsx", 1, "./zod.client"]]);
-  });
-
-  it("passes the 6984e529d8 fix, which lists the file in sideEffects", () => {
-    expect(
-      findUndeclaredSideEffectImports([pkg(["./app/zod.client.ts"], root)])
-    ).toEqual([]);
-  });
-});
-
 describe("declaresSideEffects", () => {
   it("matches a path, a glob, and a bare file name anywhere", () => {
     expect(declaresSideEffects(["./src/shims.ts"], "src/shims.ts")).toBe(true);

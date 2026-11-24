@@ -2,18 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Provenance, SourceFile, Violation } from "../check";
+import type { SourceFile, Violation } from "../check";
 
 export const DOCUMENT_SEQUENCE_SYNCED = "document-sequence-synced";
-
-export const DOCUMENT_SEQUENCE_SYNCED_PROVENANCE: Provenance = {
-  deprecates:
-    "a document counter that a caller-supplied number (MCP, the API, a typed ID) leaves behind",
-  replacedBy:
-    "the sync_advance_document_sequence interceptor on every numbered table, or an EXEMPT_COUNTERS entry",
-  since: "b091e313b6",
-  incidents: ["b091e313b6"]
-};
 
 export const SEED_DATA_FILE = "packages/database/src/seed-data.ts";
 export const ATTACHMENTS_FILE =

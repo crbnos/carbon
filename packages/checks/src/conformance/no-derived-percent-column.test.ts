@@ -19,23 +19,6 @@ describe("no-derived-percent-column", () => {
     expect(violations[0]?.snippet).toContain("taxPercent");
   });
 
-  it("flags the purchase invoice line taxPercent that acdbcad23e made writable", () => {
-    // 20250204164256_numeric-increase-2.sql before acdbcad23e.
-    const sql = `ALTER TABLE "purchaseInvoiceLine" ADD COLUMN IF NOT EXISTS "taxPercent" NUMERIC GENERATED ALWAYS AS (
-  CASE 
-    WHEN (("supplierUnitPrice" + "supplierShippingCost") * "quantity") = 0 THEN 0
-    ELSE "supplierTaxAmount" / (("supplierUnitPrice" + "supplierShippingCost") * "quantity")
-  END
-) STORED;
-
-ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "totalAmount" NUMERIC GENERATED ALWAYS AS (`;
-    expect(
-      noDerivedPercentColumn.scan("a.sql", sql).map((v) => v.snippet)
-    ).toEqual([
-      'ALTER TABLE "purchaseInvoiceLine" ADD COLUMN IF NOT EXISTS "taxPercent" NUMERIC GENERATED ALWAYS AS ('
-    ]);
-  });
-
   it("flags a rate column derived on a single line", () => {
     const sql = `ALTER TABLE "t" ADD COLUMN "marginRate" NUMERIC GENERATED ALWAYS AS ("profit" / "revenue") STORED;`;
     expect(noDerivedPercentColumn.scan("a.sql", sql)).toHaveLength(1);

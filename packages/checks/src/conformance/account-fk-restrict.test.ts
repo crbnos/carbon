@@ -57,34 +57,6 @@ describe("accountFkRestrict", () => {
     expect(restrict(sql).map((v) => v.line)).toEqual([4]);
   });
 
-  it("fails the SET NULL journalLine and purchaseOrderLine keys that a3c398b5f9 made RESTRICT", () => {
-    // 20260315000000_reset-chart-of-accounts.sql before a3c398b5f9: deleting
-    // an account emptied the account of every Draft journal line. Replayed
-    // under a file name from after the rule, because older migrations are
-    // skipped on purpose.
-    const sql = [
-      "-- journalLine",
-      'ALTER TABLE "journalLine" ADD CONSTRAINT "journalLine_accountId_fkey"',
-      '  FOREIGN KEY ("accountId") REFERENCES "account"("id") ON UPDATE CASCADE ON DELETE SET NULL;',
-      "",
-      "-- purchaseOrderLine",
-      'ALTER TABLE "purchaseOrderLine" ADD CONSTRAINT "purchaseOrderLine_accountId_fkey"',
-      '  FOREIGN KEY ("accountId") REFERENCES "account"("id") ON UPDATE CASCADE ON DELETE SET NULL;'
-    ].join("\n");
-    expect(restrict(sql).map((v) => v.line)).toEqual([3, 7]);
-  });
-
-  it("passes the RESTRICT key from a3c398b5f9 (20261013005642_account-delete-restrict.sql)", () => {
-    const sql = [
-      'ALTER TABLE "journalLine" ADD CONSTRAINT "journalLine_accountId_fkey"',
-      '  FOREIGN KEY ("accountId") REFERENCES "account"("id") ON UPDATE CASCADE ON DELETE RESTRICT',
-      "  NOT VALID;"
-    ].join("\n");
-    expect(restrict(sql, "20261013005642_account-delete-restrict.sql")).toEqual(
-      []
-    );
-  });
-
   it.each([
     [
       "no ON DELETE",

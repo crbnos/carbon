@@ -17,8 +17,7 @@ export const edgeFunctionAuthorizesCaller: ConformanceCheck = {
     "Every edge function authorizes its caller in-function (requireCaller / requireServiceRole).",
   provenance: {
     deprecates: "relying on verify_jwt, which accepts the published anon key",
-    replacedBy: "requireCaller / requireServiceRole",
-    incidents: ["c02a11cfc6"]
+    replacedBy: "requireCaller / requireServiceRole"
   },
   scan(file, contents) {
     const name = file.split("/").pop() ?? file;

@@ -46,8 +46,7 @@ export const noInlineFractionDigits: ConformanceCheck = {
       "inline minimumFractionDigits/maximumFractionDigits at call sites",
     replacedBy:
       "moneyFormatOptions + the PERCENT_FORMAT / PERCENT_POINTS_FORMAT / SCALE_FORMAT constants and INPUT_FORMAT from @carbon/utils",
-    since: "2026-08-11",
-    incidents: ["acdbcad23e"]
+    since: "2026-08-11"
   },
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];

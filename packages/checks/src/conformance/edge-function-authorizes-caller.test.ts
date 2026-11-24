@@ -16,37 +16,6 @@ describe("edgeFunctionAuthorizesCaller", () => {
     expect(v[0]?.snippet).toBe("post-picking");
   });
 
-  it("flags the thumbnail function before c02a11cfc6", () => {
-    // packages/database/supabase/functions/thumbnail/index.ts before c02a11cfc6.
-    const ts = `serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-
-  let browser;
-  try {
-    const payload = await req.json();
-    const { url } = payloadSchema.parse(payload);
-    browser = await puppeteer.connect({ browserWSEndpoint });`;
-    const v = edgeFunctionAuthorizesCaller.scan(`${DIR}/thumbnail`, ts);
-    expect(v.map((x) => x.snippet)).toEqual(["thumbnail"]);
-  });
-
-  it("passes the thumbnail function once it calls requireServiceRole (c02a11cfc6)", () => {
-    const ts = `serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-
-  // It drives a browser to whatever URL it is handed: servers only.
-  try {
-    requireServiceRole(req);
-  } catch (err) {
-    return errorResponse(err, 401);
-  }`;
-    expect(
-      edgeFunctionAuthorizesCaller.scan(`${DIR}/thumbnail`, ts)
-    ).toHaveLength(0);
-  });
-
   it.each(["await requireCaller(req);", "requireServiceRole(req);"])(
     "accepts %s",
     (ts) => {

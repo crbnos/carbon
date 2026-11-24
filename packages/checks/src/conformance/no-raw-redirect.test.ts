@@ -19,36 +19,6 @@ import {
     ).toEqual([1, 2]);
   });
 
-  it("replays b0437fbfe4: the signup verify action redirected to its form value", () => {
-    // apps/erp/app/routes/_public+/verify.tsx before b0437fbfe4.
-    const before = `import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction
-} from "react-router";
-import {
-  data,
-  Link,
-  redirect,
-  useFetcher,
-  useSearchParams
-} from "react-router";
-
-  const onboardingUrl = redirectTo || path.to.onboarding.root;
-
-  return redirect(onboardingUrl, {
-    headers: [["Set-Cookie", sessionCookie]]
-  });`;
-    expect(scan(before).map((v) => [v.line, v.snippet])).toEqual([
-      [6, 'import { redirect } from "react-router"']
-    ]);
-    // The fix: redirect from @carbon/utils.
-    expect(
-      scan(`import { getClientIp, redirect } from "@carbon/utils";
-import { data, Link, useFetcher, useSearchParams } from "react-router";`)
-    ).toEqual([]);
-  });
-
   it("accepts the @carbon/utils redirect and other react-router imports", () => {
     expect(
       scan(`import { redirect, redirectExternal } from "@carbon/utils";

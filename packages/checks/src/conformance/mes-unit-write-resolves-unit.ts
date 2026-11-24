@@ -225,8 +225,7 @@ export const mesUnitWriteResolvesUnit: ConformanceCheck = {
       "an MES route that checks (or picks) the serial unit it writes on its own",
     replacedBy:
       "`resolveWorkUnit` in apps/mes/app/services/work-unit.server.ts",
-    since: "2026-11-18",
-    incidents: ["f27d5fe481"]
+    since: "2026-11-18"
   },
   scan(file: string, contents: string): Violation[] {
     if (!SCOPE.test(file) || file === RESOLVER) return [];

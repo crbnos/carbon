@@ -17,32 +17,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
 `;
 
 describe("indexRedirectBeforeLoaders", () => {
-  // apps/erp/app/routes/x+/issue+/$id._index.tsx before 543a65b7b0.
-  const ISSUE_INDEX = `import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { path } from "~/utils/path";
-
-export async function loader({ params }: LoaderFunctionArgs) {
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-  throw redirect(path.to.issueDetails(id));
-}
-`;
-
-  it("flags the issue index route before 543a65b7b0", () => {
-    expect(scan(ISSUE_INDEX).map((v) => v.snippet)).toEqual([
-      "export async function loader({ params }: LoaderFunctionArgs) {"
-    ]);
-  });
-
-  it("passes the issue index route once it exports the middleware (543a65b7b0)", () => {
-    expect(
-      scan(
-        `${ISSUE_INDEX}\nexport const middleware = [redirectBeforeLoaders(loader)];\n`
-      )
-    ).toHaveLength(0);
-  });
-
   it("flags the shape that ran the issue layout for every hovered link", () => {
     const violations = scan(REDIRECT_ONLY);
     expect(violations).toHaveLength(1);

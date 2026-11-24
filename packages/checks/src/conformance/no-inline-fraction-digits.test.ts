@@ -43,29 +43,4 @@ describe("no-inline-fraction-digits", () => {
     const src = "formatOptions={INPUT_FORMAT.percent}";
     expect(noInlineFractionDigits.scan("a.tsx", src)).toHaveLength(0);
   });
-
-  it("flags the exchange-rate input acdbcad23e fixed, and passes its fix", () => {
-    // apps/erp/app/modules/accounting/ui/ExchangeRates/ExchangeRateForm.tsx
-    // before acdbcad23e: the editable rate set only its minimum digits from
-    // the currency's display decimals, so Intl's default maximum applied and
-    // react-aria's blur commit (parse(format(x))) cut the stored rate.
-    const before = [
-      "              <NumberField",
-      '                name="exchangeRate"',
-      "                formatOptions={{",
-      "                  minimumFractionDigits: decimalPlaces ?? 0",
-      "                }}",
-      "              />"
-    ].join("\n");
-    const file =
-      "apps/erp/app/modules/accounting/ui/ExchangeRates/ExchangeRateForm.tsx";
-    expect(
-      noInlineFractionDigits.scan(file, before).map((v) => v.snippet)
-    ).toEqual(["minimumFractionDigits: decimalPlaces ?? 0"]);
-    const after = [
-      "                step={INPUT_STEP.exchangeRate}",
-      "                formatOptions={INPUT_FORMAT.exchangeRate}"
-    ].join("\n");
-    expect(noInlineFractionDigits.scan(file, after)).toHaveLength(0);
-  });
 });

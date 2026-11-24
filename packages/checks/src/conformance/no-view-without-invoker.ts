@@ -44,8 +44,7 @@ export const noViewWithoutInvoker: ConformanceCheck = {
   provenance: {
     deprecates: 'CREATE OR REPLACE VIEW "x" AS',
     replacedBy: 'CREATE OR REPLACE VIEW "x" WITH (security_invoker = true) AS',
-    since: "20260926093417_open-job-material-lines-invoker.sql",
-    incidents: ["9ddb3bc295"]
+    since: "20260926093417_open-job-material-lines-invoker.sql"
   },
   scan(file, contents) {
     const violations: Violation[] = [];
