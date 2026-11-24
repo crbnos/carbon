@@ -84,7 +84,10 @@ export function legacySalesInvoices(db: Db, { companyId, cutoverDate }: Args) {
       "invoice.invoiceId",
       "invoice.customerId",
       "invoice.customerReference",
-      "invoice.postingDate"
+      "invoice.currencyCode",
+      "invoice.exchangeRate",
+      "invoice.postingDate",
+      "invoice.dateIssued"
     ])
     .where("invoice.companyId", "=", companyId)
     .where("invoice.status", "not in", [...NOT_POSTED])
@@ -173,8 +176,10 @@ export function legacyPurchaseInvoices(
       "invoice.invoiceId",
       "invoice.supplierId",
       "invoice.supplierReference",
+      "invoice.currencyCode",
       "invoice.exchangeRate",
       "invoice.postingDate",
+      "invoice.dateIssued",
       "invoice.createdAt"
     ])
     .where("invoice.companyId", "=", companyId)

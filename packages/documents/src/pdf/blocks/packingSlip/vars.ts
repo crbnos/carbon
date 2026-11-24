@@ -4,7 +4,8 @@
 
 import { formatDate } from "@carbon/utils";
 import type { MergeToken, RowVars } from "../../../template";
-import { addressVars, companyVars, str } from "../textVars";
+import { formatLinePartNumber } from "../../../utils/part-number";
+import { addressVars, companyVars, linePartNumberVars, str } from "../textVars";
 import type { PackingSlipData, PackingSlipRentalUnit } from "./types";
 
 /** Merge-field variable map for a Packing Slip. */
@@ -58,10 +59,23 @@ export function buildPackingSlipVars(
  */
 export function buildPackingSlipLineVars(
   line: PackingSlipData["shipmentLines"][number],
-  serialBatch: string[]
+  serialBatch: string[],
+  data: Pick<PackingSlipData, "partNumberDisplayDraft">
 ): RowVars<"packingSlip", "line"> {
+  const parts = {
+    ours: line.itemReadableId,
+    theirs: line.customerPartId,
+    theirsRevision: line.customerPartRevision
+  };
   return {
-    "line.item": str(line.itemReadableId),
+    // The part numbers per the line's display choice.
+    "line.item": formatLinePartNumber(
+      "packingSlip",
+      parts,
+      line.partNumberDisplay,
+      data.partNumberDisplayDraft
+    ),
+    ...linePartNumberVars(parts),
     "line.description": str(line.description),
     "line.shippedQuantity": str(line.shippedQuantity),
     "line.orderQuantity": str(line.orderQuantity),

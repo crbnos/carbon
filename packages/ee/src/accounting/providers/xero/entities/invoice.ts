@@ -17,6 +17,7 @@ import {
   hasSalesRevenueComponent,
   hasServiceRevenueComponent,
   isServiceRevenueComponent,
+  type SalesDocumentComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
@@ -28,12 +29,16 @@ import {
 import {
   type Accounting,
   BaseEntitySyncer,
-  type ShouldSyncContext
+  type BatchSyncResult,
+  type ShouldSyncContext,
+  type SyncResult
 } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
-import { parseDotnetDate, type Xero } from "../models";
+import { parseDotnetDate, toXeroDateString, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 import { assertXeroMoneyPrecision } from "../serialize";
+import { resolveXeroTaxType, XeroTaxContextLoader } from "../tax";
+import { mergeBatchResults, pushXeroVoids } from "./void";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "invoice"
@@ -82,6 +87,11 @@ export function buildXeroSalesInvoiceLines(args: {
   /** The Service Revenue account code; a service job's components. */
   serviceAccountCode: string | null;
   shippingAccountCode: string | null;
+  /** The component's Xero `TaxType` on its account (`resolveXeroTaxType`). */
+  resolveTaxType: (
+    component: SalesDocumentComponent,
+    accountCode: string
+  ) => string;
 }): Xero.InvoiceLineItem[] {
   assertXeroMoneyPrecision(
     args.document.subtotal,
@@ -126,7 +136,7 @@ export function buildXeroSalesInvoiceLines(args: {
       UnitAmount: component.netAmount,
       LineAmount: component.netAmount,
       TaxAmount: component.taxAmount,
-      TaxType: component.taxPercent !== 0 ? "OUTPUT" : "NONE",
+      TaxType: args.resolveTaxType(component, accountCode),
       // No `ItemCode`. Xero lines are already account-coded, so the item was
       // pure subledger detail — and carrying it meant mirroring Carbon's whole
       // manufacturing parts catalog into Xero Items. The item name stays in
@@ -142,9 +152,43 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
   "UpdatedDateUTC"
 > {
   private accountCodesPromise?: ReturnType<typeof loadAccountCodesById>;
+  private readonly taxContext = new XeroTaxContextLoader(
+    this.database,
+    { companyId: this.companyId, integration: this.provider.id },
+    this.provider as XeroProvider
+  );
 
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
+  }
+
+  // A synced invoice voided in Carbon is voided in Xero, not pushed again.
+  async pushToAccounting(entityId: string): Promise<SyncResult> {
+    if (this.config.enabled) {
+      const voids = await this.pushVoids([entityId]);
+      if (voids.results[0]) return voids.results[0];
+    }
+    return super.pushToAccounting(entityId);
+  }
+
+  async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
+    if (!this.config.enabled) return super.pushBatchToAccounting(entityIds);
+    const voids = await this.pushVoids(entityIds);
+    const rest =
+      voids.remaining.length > 0
+        ? await super.pushBatchToAccounting(voids.remaining)
+        : null;
+    return mergeBatchResults(voids.results, rest);
+  }
+
+  private pushVoids(entityIds: string[]) {
+    return pushXeroVoids({
+      database: this.database,
+      companyId: this.companyId,
+      provider: this.xeroProvider,
+      entityType: "invoice",
+      entityIds
+    });
   }
 
   /**
@@ -343,13 +387,30 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     const shippingAccountCode = hasShipping
       ? await this.getShippingAccountCode(local)
       : null;
+    const taxContext = await this.taxContext.forLines(
+      "sales",
+      document.components
+    );
     const lineItems = buildXeroSalesInvoiceLines({
       document,
       salesAccountCode,
       serviceAccountCode,
-      shippingAccountCode
+      shippingAccountCode,
+      resolveTaxType: (component, accountCode) =>
+        resolveXeroTaxType({
+          context: taxContext,
+          documentId: local.id,
+          direction: "sales",
+          taxCodeId: component.taxCodeId,
+          taxPercent: component.taxPercent,
+          taxAmount: component.taxAmount,
+          netAmount: component.netAmount,
+          decimalPlaces: document.decimalPlaces,
+          accountCode
+        })
     });
-    // All currency/account/component requirements are checked before dependency writes.
+    // All currency/account/component/tax requirements are checked before
+    // dependency writes, so an UNMAPPED_TAX_CODES Warning provisions nothing.
     const existingRemoteId = await this.getRemoteId(local.id);
     const customerRemoteId = await this.ensureDependencySynced(
       "customer",
@@ -421,8 +482,8 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
 
     return {
       status: XERO_TO_CARBON_STATUS[remote.Status],
-      dateIssued: remote.Date ?? null,
-      dateDue: remote.DueDate ?? null,
+      dateIssued: toXeroDateString(remote.Date),
+      dateDue: toXeroDateString(remote.DueDate),
       customerReference: remote.Reference ?? null,
       subtotal: remote.SubTotal ?? 0,
       totalTax: remote.TotalTax ?? 0,
@@ -575,6 +636,12 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       if (!SYNCABLE_STATUSES.includes(context.localEntity.status)) {
         return `Invoice must be posted before syncing (current status: ${context.localEntity.status})`;
       }
+    }
+
+    // Carbon owns sales invoices: one raised in Xero is not imported. Skipped,
+    // not Failed, since nothing went wrong.
+    if (context.direction === "pull" && context.isFirstSync) {
+      return "Sales invoices are raised in Carbon; an invoice created in Xero is not imported";
     }
 
     return true;

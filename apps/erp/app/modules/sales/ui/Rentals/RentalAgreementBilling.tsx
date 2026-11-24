@@ -12,7 +12,12 @@ import {
   LuCalendarDays,
   LuRepeat
 } from "react-icons/lu";
-import { NumberControlled, PaymentTerm, Select } from "~/components/Form";
+import {
+  NumberControlled,
+  PaymentTerm,
+  Select,
+  TaxCode
+} from "~/components/Form";
 import { SetupSection, TermForm } from "~/components/Setup";
 import { useCurrencyDecimals, usePermissions, useSettings } from "~/hooks";
 import {
@@ -20,6 +25,7 @@ import {
   type rentalBillingCycles,
   type rentalBillingTimings
 } from "../../sales.models";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import { useRentalTermSave } from "./RentalSetupSteps";
 import type { RentalAgreement } from "./types";
 
@@ -84,6 +90,7 @@ const RentalAgreementBilling = ({
   };
   const companyLabel =
     invoiceAutomationLabels[companySettings.invoiceAutomation];
+  const invoiceAutomationHint = useInvoiceAutomationHint();
 
   return (
     <>
@@ -218,6 +225,17 @@ const RentalAgreementBilling = ({
               }
             />
           </TermForm>
+          <TermForm name="taxCodeId" value={rentalAgreement.taxCodeId}>
+            <TaxCode
+              name="taxCodeId"
+              label={t`Tax Code`}
+              helperText={t`Sets the tax percent to the code's rate`}
+              isReadOnly={isDisabled}
+              onChange={(option) =>
+                onChange("taxCodeId", option?.value ?? null)
+              }
+            />
+          </TermForm>
           <TermForm name="taxPercent" value={rentalAgreement.taxPercent}>
             <NumberControlled
               name="taxPercent"
@@ -256,7 +274,10 @@ const RentalAgreementBilling = ({
               label={t`Invoicing`}
               helperText={
                 contactEmail
-                  ? t`What happens to an invoice once it is created`
+                  ? invoiceAutomationHint(
+                      rentalAgreement.invoiceAutomation ??
+                        companySettings.invoiceAutomation
+                    )
                   : t`Add a contact with an email to send invoices`
               }
               isReadOnly={!permissions.can("update", "sales")}

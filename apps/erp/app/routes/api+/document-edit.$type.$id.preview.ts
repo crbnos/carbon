@@ -7,6 +7,7 @@ import {
   documentSettingsSchema,
   editToPrint
 } from "@carbon/documents/template";
+import { isPartNumberDisplay } from "@carbon/documents/utils";
 import {
   getCompanyTemplate,
   getDocumentEdit
@@ -33,11 +34,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { companyId, documentType, documentId } = key;
   const formData = await request.formData();
 
+  const draft = parseDraft(formData);
   const toPrint = await editToPrint({
     documentType,
     locked: record.locked,
     isDownload: formData.get("intent") === "download",
-    draft: parseDraft(formData),
+    // A pick the save would refuse is not printed either.
+    draft:
+      draft && record.partNumbersLocked
+        ? { ...draft, partNumberDisplay: undefined }
+        : draft,
     readSaved: () => getDocumentEdit(client, key),
     readTemplate: () => getCompanyTemplate(client, key)
   });
@@ -80,11 +86,17 @@ function parseDraft(formData: FormData) {
       postedNotes === null
         ? undefined
         : notesSchema.parse(JSON.parse(String(postedNotes)));
+    // Sent only when the user picked one: `undefined` prints each line's own.
+    const postedDisplay = formData.get("partNumberDisplay");
+    if (postedDisplay !== null && !isPartNumberDisplay(postedDisplay)) {
+      return null;
+    }
     return blocks.success && settings.success
       ? {
           blocks: blocks.data,
           settings: settings.data,
-          notes: notes as JSONContent | null | undefined
+          notes: notes as JSONContent | null | undefined,
+          partNumberDisplay: postedDisplay ?? undefined
         }
       : null;
   } catch {
