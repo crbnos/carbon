@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ActionFunctionArgs } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
 import { action as complete } from "../routes/x+/inspection-lot.$id.complete-passed";
 import { action as disposition } from "../routes/x+/inspection-lot.$id.disposition";
@@ -99,13 +98,18 @@ it.each(["unsampled", "Pending"])(
       const body = new FormData();
       body.set("operationId", "op");
       if (route === disposition) body.set("decision", "Accept");
+      const action = route === disposition ? "disposition" : "complete-passed";
+      const url = new URL(`/x/inspection-lot/lot/${action}`, "http://mes.test");
       const response = await route({
         params: { id: "lot" },
-        request: new Request("http://mes.test/x/inspection-lot/lot", {
+        url,
+        pattern: `/x/inspection-lot/:id/${action}`,
+        context: {},
+        request: new Request(url, {
           method: "POST",
           body
         })
-      } as ActionFunctionArgs).catch((response: unknown) => response);
+      }).catch((response: unknown) => response);
       expect(response).toBeInstanceOf(Response);
       expect((response as Response).status).toBe(302);
     };

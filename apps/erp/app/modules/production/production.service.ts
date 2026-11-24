@@ -28805,12 +28805,12 @@ async function lockBatchJobs(
     .execute();
 }
 
-// A serial member submits quantities, with no lot/serial id. If Quality is
-// holding part of its run, a quantity can identify the output unambiguously
+// A serial member submits quantities, with no lot/serial id. If serials are
+// held or already received, a quantity identifies the output unambiguously
 // only when it covers all remaining eligible single units. Record those ids
 // before the production trigger runs. The batch activity also lets a retry
 // finish the run while leaving this operation open for its held siblings.
-async function recordBatchSerialsWithHeldSiblings(
+async function recordEligibleBatchSerials(
   trx: Transaction<KyselyDatabase>,
   ctx: { batchId: string; companyId: string; userId: string },
   members: {
@@ -29214,7 +29214,7 @@ async function completeBatch(
       operations.map((o: any) => o.id)
     );
 
-    partialOperations = await recordBatchSerialsWithHeldSiblings(
+    partialOperations = await recordEligibleBatchSerials(
       trx,
       { companyId, userId, batchId },
       members
