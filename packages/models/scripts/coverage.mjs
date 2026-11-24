@@ -24,7 +24,9 @@ export function writeCoverage(coverage) {
  * The source an entry covers: a top-level function or const, from its
  * declaration to the closing brace at column 0, or, for an entry that is not
  * an identifier, every line holding it (a statement inside a function too
- * large to cover whole). Null when it is gone.
+ * large to cover whole). Null when it is gone. The closing brace stands alone
+ * on its line: `}): Promise<…> {` ends a multi-line parameter list, not the
+ * body.
  */
 function covered(source, entry) {
   const lines = source.split("\n");
@@ -37,7 +39,7 @@ function covered(source, entry) {
   );
   const start = lines.findIndex((line) => declaration.test(line));
   if (start < 0) return null;
-  const end = lines.findIndex((line, i) => i > start && /^}/.test(line));
+  const end = lines.findIndex((line, i) => i > start && /^};?\s*$/.test(line));
   return lines.slice(start, end < 0 ? undefined : end + 1).join("\n");
 }
 
