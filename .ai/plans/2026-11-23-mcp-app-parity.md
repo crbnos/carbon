@@ -218,7 +218,7 @@ Carbon records these actions against the person who did them. An API key acts as
 - [x] G-19 `sales_createContractLine` failed with a generic error when `billingMethod` was left out (the schema has it optional; the form defaults it to Fixed). The operation now defaults it to Fixed.
 - [x] G-20 `production_getDemandProjections` took required `periodIds`, and no tool lists periods. `periodIds` is now optional (left out: the form's 52 weeks from the location's today), and every row carries `weekStart`. Periods were read as the system while `period` read only for the `authenticated` role; since PR #2344 they are read as the caller.
 - [x] G-21 Published `projects_getIndirectPools`, `projects_getIndirectPool` (with its accounts), `projects_getIndirectRates`, `projects_getIndirectRateRuns` (`view: accounting`) and `projects_runFinalTrueUp`. `projects_setIndirectRate` answers `{ ids }`, not a list.
-- [x] G-22 `invoicing_updatePurchaseInvoiceField` (and its route) gated on `update: sales` while its panel enables the fields on `update: invoicing` and the table's RLS needs `invoicing_update`. It now gates on `update: invoicing`. `updateSalesInvoiceField` keeps `update: sales`: its panel and route agree on it.
+- [x] G-22 `invoicing_updatePurchaseInvoiceField` (and its route) gated on `update: sales` while its panel enables the fields on `update: invoicing` and the table's RLS needs `invoicing_update`. It now gates on `update: invoicing`. `invoicing_updateSalesInvoiceField` and its panel gate on `update: invoicing` too, the policy its RLS needs (changed in the review fixes).
 
 ## Decisions (found while fixing G-2 to G-16; approved 2026-11-24)
 

@@ -374,8 +374,8 @@ How they behave:
 - A failure after the main write (seeding a payment's applications, applying or posting a
   reimbursement payout, the lines of an adjusting entry) keeps the write and returns
   `warning`.
-- The `*Field` operations require `update: sales` for both invoice kinds, as the
-  properties panels' routes always did.
+- The `*Field` operations require `update: invoicing` for both invoice kinds: the
+  properties panels enable their fields on it, and the tables' RLS asks for it.
 
 ## Related Modules
 
