@@ -18,8 +18,10 @@ for how a model is written.
 | Model | Promise | Code (`coverage.json`) | Database test of the counterexample | Bounds |
 |---|---|---|---|---|
 | `accounting-period` | No period is Closed after an open one; only a Closed period has a balance snapshot and `closedAt`; status moves only Open ↔ Locked → Closed → Open | `accounting.service.ts`: `lockAccountingPeriod`, `unlockAccountingPeriod`, `setPeriodCloseStatus`, `lockPeriodLifecycle`, `closeAccountingPeriod`, `reopenAccountingPeriod` | `apps/erp/test/database/period-close-concurrency.test.ts` | every valid start × every 3 operations on 3 periods |
+| `document-posting` | A receipt, shipment or purchase invoice is posted at most once, voided at most once, never Posted after Voided, and its ledger nets to its posted state (none unless Posted) | `shared.service.ts`: `assertPostable`, `lockPostable`; `inventory.service.ts`: `lockPostedReceipt`, `lockPostedShipment`, and the lines that call `lockPostable` / `lockPostedReceipt` / `lockPostedShipment` and reset a failed post from Pending (the posts and voids sit inside `postReceipt` / `postShipment`, too large to cover whole); `invoicing.service.ts`: the same lines in `postPurchaseInvoice`; `inventory.server.ts` / `invoicing.server.ts`: the claim and return-to-Draft lines of the post operations | `apps/erp/test/database/document-posting-concurrency.test.ts` | every start (Draft, Pending, Posted, Voided) × every multiset of up to 3 posts, retries, voids, failing posts and posts failing after commit |
 | `invoice-void` | A voided invoice nets to zero on every account; an invoice is reversed at most once | `invoicing.service.ts`: `changeInvoiceLineAccount`, `readInvoiceLinePosition`, and the lines holding "invoice is already voided" (the void branches sit inside `postSalesInvoice` / `postPurchaseInvoice`, too large to cover whole); `shared.service.ts`: `documentJournalLines` | `apps/erp/test/database/invoice-line-account-void.test.ts` | every sequence of up to 4 voids and line account changes, sales and purchase |
 | `job-material-issue` | An automatic issue (operation completion, MES step backflush, job backflush) never takes more than the unit still needs; `quantityIssued` counts every unit that left the bin; a FIFO / LIFO cost layer is never relieved below zero or past its quantity, in every strict backflush setting | `inventory.service.ts`: `issueJobOperationMaterials`, and the lines holding `maxQuantityIssued === undefined` and `round(maxQuantityIssued) - previouslyIssued` (the step issue's cap; the step issue sits inside `issueMaterial`, too large to cover whole); `shared.service.ts`: `lockUntrackedDraws`, `calculateCOGS`; `apps/mes/app/services/operations.service.ts`: `backflushUntrackedMaterialsOnStepRecord` (the backflush is SQL, `backflush_job_materials`, redefined by each new migration: it is not fingerprinted, and a change to it is caught only by `verify`) | `apps/erp/test/database/job-material-issue-concurrency.test.ts`, `apps/erp/test/database/backflush-cost-layer-concurrency.test.ts` | every multiset of up to 3 completions, step issues, step backflushes, job backflushes and other consumers of the layer, under strict backflush off, on, and on with negative stock allowed, with and without a cost layer |
+| `order-line-counters` | An order line's counter (`quantityInvoiced`, `quantityReceived`, `quantitySent`, `quantityShipped`, the transfer quantities) is the sum over the documents posted into it, its `*Complete` flag follows the counter, and two writers of one line never deadlock | `shared.service.ts`: `ORDER_LINE_COUNTERS`, `lockOrderLines`, `lockOrderLinesAsRead`; the lines holding `lockOrderLines(` and "changed while this" in `inventory.service.ts` and `invoicing.service.ts` (the posts and voids sit inside `postReceipt`, `postShipment`, `postSalesInvoice` and `postPurchaseInvoice`, too large to cover whole); `restoreSalesOrderInvoiced`, `restorePurchaseOrderInvoiced`, `restorePurchaseOrderReceived`, `shortClosePurchaseOrderLine`, `createSalesReturnOrderCredit` | `apps/erp/test/database/order-line-counters-concurrency.test.ts` | every mix of a void of the posted document (read before its transaction, or under the lock) and posts of two drafts (line first or order first) on one line |
 
 `coverage.json` is the record: each model's file, the functions it covers, the
 database tests, a hash of each covered function as it read when the model was
@@ -33,7 +35,11 @@ close checklist's contents, anything a single request gets wrong without
 another one running. Liveness (that a waiting request eventually runs) is not
 checked; deadlock is. An edit elsewhere inside `postSalesInvoice` or
 `postPurchaseInvoice` (a moved `FOR UPDATE`) does not trip `touched`; the
-invoice-void database tests catch it when `verify` runs.
+invoice-void database tests catch it when `verify` runs. The same holds for
+`postReceipt`, `postShipment` and `postPurchaseInvoice` and the
+document-posting database tests. The rental and customer contract branches
+of `postShipment` / `postReceipt` lock the document in their own helpers and
+are not modelled.
 
 **Why not TLA+:** CI has no Java or TLC, and the checks must run on every pull
 request. The explorer (`packages/models/src/explore.ts`) runs in the existing
@@ -68,10 +74,14 @@ Expected when healthy:
 ```
 accounting-period model: ok (Tests  5 passed (5))
 accounting-period database: ok (Tests  6 passed (6))
+document-posting model: ok (Tests  11 passed (11))
+document-posting database: ok (Tests  15 passed (15))
 invoice-void model: ok (Tests  7 passed (7))
 invoice-void database: ok (Tests  6 passed (6))
 job-material-issue model: ok (Tests  12 passed (12))
 job-material-issue database: ok (Tests  5 passed (5))
+order-line-counters model: ok (Tests  5 passed (5))
+order-line-counters database: ok (Tests  3 passed (3))
 ```
 
 `SUPABASE_DB_URL must name the local database` → no local database: run
