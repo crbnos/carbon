@@ -997,7 +997,7 @@ export async function getMaintenanceDispatches(
 ) {
   let query = client
     .from("maintenanceDispatch")
-    .select(`*`, { count: LIST_COUNT })
+    .select(`*`, { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1005,9 +1005,7 @@ export async function getMaintenanceDispatches(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, MAINTENANCE_DISPATCHES_PAGING);
   }
 
   return query;

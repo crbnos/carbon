@@ -788,3 +788,19 @@ triggers: ["<VStack className=\"w-full\"","flex-1 min-w-0"]
 **Rule:** A flex child that should fill the remaining space gets `flex-1 min-w-0`, never `w-full`; its fixed-size siblings get `shrink-0`. `min-w-0` is required twice over — it is what lets `flex-1` shrink at all (a flex item's default `min-width: auto` floors it at its content width) and what lets a descendant's `truncate` clip at the container edge. Note `@carbon/react`'s `VStack` ships `w-full` in its base variant, so dropping the className is not enough — pass `className="flex-1 min-w-0"` explicitly. Separately, `truncate` is inert on `Heading`: its base `text-balance` resets `text-wrap-mode`, so the `whitespace-nowrap` half of `truncate` never lands.
 
 **Applies to:** `apps/erp/app/routes/share+/{quote,supplier-quote,purchasing-rfq}.$id.tsx`, `apps/erp/app/modules/{sales,purchasing,invoicing}/ui/**` line-item summaries and drawers, `packages/react/src/VStack.tsx`, `packages/react/src/Heading.tsx`; any flex row pairing a fixed-size element with a growing text column.
+
+## A controlled field's starting value must equal its form default
+
+```scope
+id: a-controlled-field-s-starting-value-must-equal-its-form-defau
+paths: ["packages/form/src/components/**"]
+triggers: ["useControllableValue", "SelectControlled", "NumberControlled", "<Combobox"]
+```
+
+**Context:** An RMA line with no customer asset showed Unsaved changes on leaving, with nothing changed. The first diagnosis blamed the Disposition list, a bare Radix Select outside the form's state.
+
+**Problem:** The route passed `customerAssetId: line.customerAssetId ?? undefined` as the form default, and the form seeded its `useState` with `initialValues.customerAssetId ?? ""`. On mount, `Combobox` (`@carbon/form`) calls `setValue` with any value prop that is not null or undefined; `useControllableValue` marks the field touched when that value differs from the default by `!==`, so `""` against `undefined` touched it. `Submit` blocks navigation while any field is touched.
+
+**Rule:** Seed the state a controlled field reads (`Combobox`, `SelectControlled`, `NumberControlled`, `Item`, `TaxCode`) from the same value the form gets as its default: `useState(initialValues.x)`, or the same `?? ""` in both places. A caller that leaves a field out gets `undefined` as its default, so a state fallback such as `?? "Return to Stock"` needs the same value in that caller's defaults. To find the field behind a false Unsaved changes prompt, read each controlled field's starting value against its default, not the fields that look interactive.
+
+**Applies to:** Every `ValidatedForm` whose controlled fields read component state, and every route or modal that builds its `initialValues`.

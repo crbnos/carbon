@@ -486,3 +486,19 @@ triggers: ["getCurrentAccountingPeriod","getAccountingPeriodForDate","getNextSeq
 **Rule:** Any lazily-created singleton that reads outside the transaction and writes inside it must be resolved BEFORE the transaction opens, once, when a flow writes for N records in one transaction. For the accounting period that is `await getCurrentAccountingPeriod(client, companyId, db, companyToday.toString())` ahead of `db.transaction()`, guarded on `accountingEnabled`.
 
 **Applies to:** `getCurrentAccountingPeriod` / `getAccountingPeriodForDate` in any multi-record edge-function transaction; the same shape applies to `getNextSequence` and any other get-or-create helper straddling the transaction boundary.
+
+## A UI hint for a posting's refusal calls the posting's rule, at every entry point
+
+```scope
+id: a-ui-hint-for-a-posting-s-refusal-calls-the-posting-s-rule-at
+paths: ["apps/erp/app/modules/projects/**"]
+triggers: ["projectExpenseRefusal", "chargeCostRefusal", "loadProjectPostingContexts", "costTreatmentEffectiveFrom"]
+```
+
+**Context:** Charge cost on the element page posts an expense entry, and `postProjectExpense` refuses one whose treatment on the entry date is Capitalize.
+
+**Problem:** The first write-up disabled the action on the project's treatment. The treatment resolves per element: the element, then its ancestors whose override is in effect on the date, then the project. A project-level check would refuse an element that expenses its own cost and offer the action on a capital element under an Expense project. The action also opened from a third place, the plan card's Charge button, beside the two menus the write-up named.
+
+**Rule:** Move the posting's check into a pure function of the posting context and the date. The posting refuses with it, and the loader calls it on the context the posting loads (`loadProjectPostingContexts`), never on a copy of the rule. Before gating an action, grep its opener (`charging.open`) for every entry point and give each the same disabled state and reason. Disable the action only when no input the user can still change (the entry date) makes it post, and keep the server refusal for the inputs that are refused: a dated override (`costTreatmentEffectiveFrom`) leaves the dates before it open, so a today-only check would block entries the posting accepts.
+
+**Applies to:** `projectExpenseRefusal` / `getChargeCostRefusal`, and any action the UI disables with a reason the server decides by cost treatment or date.

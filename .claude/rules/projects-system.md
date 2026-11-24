@@ -355,8 +355,9 @@ matches. The CLIN reads its jobs by this column (`apps/erp/app/modules/sales/AGE
   Statistical project: `indirectCostAccount`, no ledger row) / Cr
   `employeeReimbursementsPayableAccount`, else `payablesAccount` (the same fallback a
   reimbursement has; a reversal credits what its original credited). A Capitalize
-  project is refused. The shared `postProjectJournal` (`projects/project-journal.ts`) posts
-  it.
+  treatment on the entry date is refused (`projectExpenseRefusal`, `project-posting.ts`,
+  on `resolveProjectTreatment`); a reversal is not. The shared `postProjectJournal`
+  (`projects/project-journal.ts`) posts it.
 - **Billable items.** `projectBillableItem` is what a charge will bill. A
   Contract project under a Time & Materials contract line writes them (`buildContractBillableItem`;
   project billing, below). `projectElement.fixedPrice` bills a node's whole subtree as
@@ -912,6 +913,14 @@ checks the budget (source `purchase`: Block refuses, Warn flashes), then `addPro
 (`projects.service.ts`) inserts a `projectExpenseEntry` and posts it through
 `post-project-expense` (Dr the project account / Cr the employee payable, one Other Direct ledger row). An
 entry that does not post is deleted again, so a refusal leaves nothing behind.
+`getProjectElementPage` returns `chargeCostRefusal`: `projectExpenseRefusalOnEveryDate`
+on the posting's own context (`loadProjectPostingContexts`), set only when no entry date
+can post. While it is set, the ⋯ menu, the Actual tab's Charge menu and the plan cards'
+**Charge** button show Charge cost disabled with it as the tooltip. The modal's date is
+free. Only an element override has an effective date (`costTreatmentEffectiveFrom`; no
+ERP screen or operation writes it), so only then do some dates post and others not: the
+action stays enabled, the posting refuses a Capitalize date, and the modal shows the
+refusal.
 
 The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,
 pure, tested) gives a box to each parent that has matching descendants. Dagre places the
