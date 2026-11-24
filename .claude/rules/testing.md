@@ -37,7 +37,6 @@ regression guard.
 | A decision, calculation, parser, plan | **Pure core** test next to the code (`foo.ts` → `foo.test.ts`) | every `pnpm test` |
 | Anything whose truth is in Postgres: posting, RLS, triggers, RPC results, ordering | **Database test**: `apps/erp/test/database/**` (vitest + `databaseTest`) or `packages/database/supabase/tests/*.test.sql` | local database only |
 | A structural rule across many files ("every migration…", "no file imports…") | **Conformance check** in `packages/checks` | `pnpm test` (`@carbon/checks`) |
-| Two requests, a retry or a job interleaving: locks, status changes, read-then-write | **Formal model** in `packages/models` (every interleaving), plus one database test of its counterexample | `pnpm test` (`@carbon/models`) |
 | A user flow across pages | **Browser playbook** via `/test`, cached in `.ai/playbooks/` | by hand / agents |
 | "My change works" | **Scratch** | never committed |
 

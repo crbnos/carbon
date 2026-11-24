@@ -55,7 +55,6 @@ in root-cause, BLOCKED in fix) always surface to the human.
 | `debugging-difficult-bugs` | Temporary JSONL runtime instrumentation | log-backed root cause |
 | `fix` | End-to-end bug-fix pipeline; diagnoses via /root-cause, implements the minimal fix + red→green regression test, verifies, commits on explicit ask | ready-to-commit change (+ run record) |
 | `check-and-commit` | Gate suite, then commit specific files | conventional commit |
-| `formal-verification` | Check a change against the protocol models in `packages/models`; tell a real bug from a modelling error; move the confirmation; choose what to model next | verdict + updated `coverage.json`, or a target proposal |
 | `self-review` | Review your own branch before/at PR time | Must fix / Risks / Suggestions |
 | `conductor` | Autonomous doer→gate→judge loop to a gated PR (no mid-loop human input) | PR + ledger |
 | `improve` | Senior-advisor audit; plans for other agents to execute | `.ai/plans/improve/` |
