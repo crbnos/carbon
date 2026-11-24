@@ -23424,90 +23424,8 @@ export async function postShipment(
                 return acc;
               }, {}) ?? {};
 
-            const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
-              [];
-            const locationId = shipmentHeader.locationId;
-
-            // Create reversing item ledger entries for purchase order void
-            for await (const shipmentLine of shipmentLines.data) {
-              const itemTrackingType =
-                items.data.find((item) => item.id === shipmentLine.itemId)
-                  ?.itemTrackingType ?? "Inventory";
-
-              const shippedQuantity =
-                isNaN(shipmentLine.shippedQuantity) ||
-                shipmentLine.shippedQuantity == null
-                  ? 0
-                  : shipmentLine.shippedQuantity;
-
-              if (itemTrackingType === "Inventory" && shippedQuantity !== 0) {
-                // Create negative adjustment to remove inventory that was added during posting
-                itemLedgerInserts.push({
-                  postingDate: today,
-                  itemId: shipmentLine.itemId,
-                  quantity: round(-shippedQuantity), // Negative to remove inventory
-                  locationId: shipmentLine.locationId ?? locationId,
-                  storageUnitId: shipmentLine.storageUnitId,
-                  entryType: "Negative Adjmt.",
-                  documentType: "Purchase Receipt",
-                  documentId: shipmentHeader.id ?? undefined,
-                  externalDocumentId: undefined,
-                  createdBy: userId,
-                  companyId
-                });
-              }
-
-              if (shipmentLine.requiresBatchTracking) {
-                itemLedgerInserts.push({
-                  postingDate: today,
-                  itemId: shipmentLine.itemId,
-                  quantity: round(-shippedQuantity), // Negative to remove inventory
-                  locationId: shipmentLine.locationId ?? locationId,
-                  storageUnitId: shipmentLine.storageUnitId,
-                  entryType: "Negative Adjmt.",
-                  documentType: "Purchase Receipt",
-                  documentId: shipmentHeader.id ?? undefined,
-                  trackedEntityId: shipmentLineTracking.data?.find(
-                    (tracking) =>
-                      (
-                        tracking.attributes as
-                          | TrackedEntityAttributes
-                          | undefined
-                      )?.["Shipment Line"] === shipmentLine.id
-                  )?.id,
-                  externalDocumentId: undefined,
-                  createdBy: userId,
-                  companyId
-                });
-              }
-
-              if (shipmentLine.requiresSerialTracking) {
-                const lineTracking = shipmentLineTracking.data?.filter(
-                  (tracking) =>
-                    (
-                      tracking.attributes as TrackedEntityAttributes | undefined
-                    )?.["Shipment Line"] === shipmentLine.id
-                );
-
-                lineTracking?.forEach((tracking) => {
-                  itemLedgerInserts.push({
-                    postingDate: today,
-                    itemId: shipmentLine.itemId,
-                    quantity: -1, // Negative to remove inventory
-                    locationId: shipmentLine.locationId ?? locationId,
-                    storageUnitId: shipmentLine.storageUnitId,
-                    entryType: "Negative Adjmt.",
-                    documentType: "Purchase Receipt",
-                    documentId: shipmentHeader.id ?? undefined,
-                    trackedEntityId: tracking.id,
-                    externalDocumentId: undefined,
-                    createdBy: userId,
-                    companyId
-                  });
-                });
-              }
-            }
-
+            // The post books no stock movement for a purchase order
+            // (outside processing) shipment, so the void reverses none.
             await db.transaction().execute(async (trx) => {
               await lockPostedShipment(trx, companyId, shipmentId);
               // Update purchase order lines to reverse shipped quantities
@@ -23520,15 +23438,6 @@ export async function postShipment(
                   data
                 }))
               );
-
-              // Create reversing item ledger entries
-              if (itemLedgerInserts.length > 0) {
-                await trx
-                  .insertInto("itemLedger")
-                  .values(itemLedgerInserts)
-                  .returning(["id"])
-                  .execute();
-              }
 
               // Update shipment status to Voided
               await trx

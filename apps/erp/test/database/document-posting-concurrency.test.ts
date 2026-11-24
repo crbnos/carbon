@@ -743,3 +743,39 @@ it.skipIf(!client)(
   },
   60_000
 );
+
+// A purchase order shipment sends parts out for outside processing and books
+// no stock movement, so its void has none to reverse.
+databaseTest(
+  "voiding a purchase order shipment moves no stock, as its post moved none",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 30);
+      const shipmentId = await draftPurchaseOrderShipment(f, "void-stock");
+      unwrap(await shipmentPosting("post", shipmentId)(handlesOf(f.ctx)));
+      const afterPost = await effectOf(f, "shipment", shipmentId);
+
+      unwrap(await shipmentPosting("void", shipmentId)(handlesOf(f.ctx)));
+
+      const line = await f.db
+        .selectFrom("purchaseOrderLine")
+        .innerJoin("shipmentLine", "shipmentLine.lineId", "purchaseOrderLine.id")
+        .select("purchaseOrderLine.quantityShipped")
+        .where("shipmentLine.shipmentId", "=", shipmentId)
+        .where("purchaseOrderLine.companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect({
+        afterPost,
+        afterVoid: await effectOf(f, "shipment", shipmentId),
+        quantityShipped: Number(line.quantityShipped)
+      }).toEqual({
+        afterPost: { status: "Posted", stock: 0, journalLines: 0 },
+        afterVoid: { status: "Voided", stock: 0, journalLines: 0 },
+        quantityShipped: 0
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
