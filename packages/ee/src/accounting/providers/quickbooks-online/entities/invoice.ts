@@ -24,6 +24,7 @@ import {
   requirePostedServiceRevenueAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
+import { getTaxCodeMappings } from "../../../core/tax-mapping";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -32,8 +33,9 @@ import {
 import { parseQboDate, type Qbo } from "../models";
 import type { QboProvider } from "../provider";
 import {
+  isQboUsCompany,
   loadQboInvoiceTaxCatalog,
-  type QboInvoiceTaxCatalog,
+  QboTaxContext,
   resolveQboInvoiceTax
 } from "./invoice-tax";
 import type { QboItemSyncer } from "./item";
@@ -154,7 +156,14 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
   Qbo.Invoice,
   QboWriteOmit
 > {
-  private taxCatalogPromise?: Promise<QboInvoiceTaxCatalog>;
+  private readonly taxContext = new QboTaxContext({
+    catalog: () => loadQboInvoiceTaxCatalog(this.qboProvider),
+    mappings: () =>
+      getTaxCodeMappings(this.database, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      })
+  });
   private shippingAccountRefsPromise?: ReturnType<
     typeof loadQboAccountRefsById
   >;
@@ -328,31 +337,15 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     const remoteExchangeRate = 1 / local.exchangeRate;
     if (!Number.isFinite(remoteExchangeRate))
       throw new Error("QuickBooks exchange rate must be finite");
-    let catalog: QboInvoiceTaxCatalog;
-    try {
-      this.taxCatalogPromise ??= loadQboInvoiceTaxCatalog(
-        this.qboProvider
-      ).catch((error) => {
-        this.taxCatalogPromise = undefined;
-        throw error;
-      });
-      catalog = await this.taxCatalogPromise;
-    } catch (error) {
-      throw new JournalEntrySyncError({
-        errorCode: "UNMAPPED_TAX_CODES",
-        warning: true,
-        message: `Cannot read QuickBooks tax configuration: ${error instanceof Error ? error.message : String(error)}`,
-        metadata: {
-          invoiceId: local.id,
-          requestedRates: [
-            ...new Set(document.components.map((line) => line.taxPercent))
-          ],
-          candidateTaxCodeIds: [],
-          reason: "Tax catalog unavailable"
-        }
-      });
-    }
-    const tax = resolveQboInvoiceTax({ document, catalog });
+    const catalog = await this.taxContext.catalog(local.id);
+    // A component with a Carbon tax code goes out with its mapped QuickBooks
+    // code; the mappings are read only when the invoice has one.
+    const mappings = document.components.some(
+      (component) => component.taxCodeId
+    )
+      ? await this.taxContext.mappings(local.id)
+      : undefined;
+    const tax = resolveQboInvoiceTax({ document, catalog, mappings });
     const hasShipping = document.components.some(
       (line) => line.kind === "LineShipping" || line.kind === "HeaderShipping"
     );
@@ -413,7 +406,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       CustomerRef: { value: customerRemoteId },
       CurrencyRef: { value: document.currencyCode },
       ExchangeRate: remoteExchangeRate,
-      ...(catalog.country.toUpperCase() === "US"
+      ...(isQboUsCompany(catalog)
         ? {}
         : { GlobalTaxCalculation: "TaxExcluded" as const }),
       TxnTaxDetail: tax.txnTaxDetail,

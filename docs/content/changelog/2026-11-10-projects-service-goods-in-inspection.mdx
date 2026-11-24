@@ -1,0 +1,123 @@
+---
+title: "Projects and service jobs, goods-in inspection, document editing, and themes"
+description: "Projects, service jobs and DCAA timekeeping, goods-in inspection holds, and editable documents. Plus corrections, approvals that hold, and themes."
+date: "2026-11-10"
+tags: ["projects", "quality", "documents", "purchasing", "accounting"]
+image: "/changelog/2026-11-10-projects-service-goods-in-inspection.svg"
+---
+
+Project work had no home in Carbon, and received parts reached the shelf before Quality saw them. This release adds Projects and Service jobs, holds received parts until Quality passes them, and lets you reword any printed document.
+
+<Callout type="warn" title="Two changes to know">
+`Inventory → Receiving` is gone. Find a delivery's order in `Purchasing → Purchase Orders`, where **Receive** opens the order's Draft receipt instead of starting another.
+
+Self-hosted installs now run Postgres 17, with Envoy as the gateway and Supavisor as the pool. `./deploy.sh deploy` refuses a Postgres 15 volume until you move it with the dump and restore in [Upgrade to Postgres 17](https://github.com/crbnos/carbon/blob/main/contrib/deploying/simple-docker-caddy/README.md#upgrade-to-postgres-17).
+</Callout>
+
+## Projects and My Time
+
+[Projects](/docs/reference/projects) plans work as a tree of elements with WBS codes, a baseline and [change requests](/docs/reference/projects#baselines-and-change-requests). Jobs, purchase order lines, time and material issues [charge a project](/docs/reference/projects#charge-numbers), and its Costs page rolls up plan, budget, committed and actual cost. `Projects → My Time` records a week of hours by charge number, in the ERP or the MES.
+
+## Service jobs and customer assets
+
+A [service job](/docs/reference/service-jobs#where-a-job-comes-from) opens from an RMA receipt, from the office, or from the MES. Its coverage (Billable, Warranty or Contract) decides where cost posts. `Service → Schedule` assigns jobs to technicians by day. Shipping a serial unit creates a [customer asset](/docs/reference/customer-assets#how-an-asset-is-created) with its labor and parts warranty dates.
+
+## Government contracting
+
+Turn on **Use DCAA controls** in `Settings → Projects` for daily timekeeping, reasons for late entries, certified timesheets and approved labor transfers. [Government contracting](/docs/reference/government-contracting) also adds unallowable cost, CLIN and ACRN funding, and audit reports under `Projects → Reports`. Indirect rates, earned value, stop-work orders and contract financing are available on the Business plan.
+
+## Goods-in inspection hold
+
+A part with a receipt inspection plan is now received into the location's inspection storage unit, and stays there until Quality decides its lot. Choose the units on the **Goods-in storage** card in `Settings → Quality`. **Put Away** on the [receipt](/docs/reference/receipts#parts-that-need-inspection) then moves passed stock to the shelf.
+
+## Manual inspections and plan versions
+
+A [manual inspection](/docs/reference/inspections#manual-inspections) holds chosen serials or batches until they are accepted or rejected. Inspection plans now have versions, parameters and work instructions, which inspectors see in the ERP and the MES. A reading out of tolerance turns red as it is typed, and **Pass all** or a paste from Excel fills a large batch.
+
+## Corrections for failed units
+
+A make method can define corrections: short routings that only failing units run, set off by an inspection result or a measurement outside its limits. When an operator records that result in the MES, Carbon offers the correction for that unit. Rework operations now apply only to the units sent into them.
+
+## Edit any document
+
+In `Settings → Document Templates`, [click any word](/docs/reference/document-templates#editing-a-template), label or value in the preview to reword or hide it. **Edit document** on a record changes how that one record prints, with **Reset to template** to undo it. [Money and quantities](/docs/reference/document-templates#figures-stay-what-the-record-says) always print from the record.
+
+## Purchase order approvals that hold
+
+Receipts and invoices are refused unless the purchase order is released and within its [approved](/docs/reference/approvals#the-decision) amount, in the app, the API and workflows. A released order can now be edited. An edit past the approved amount sends it back to Needs Approval, and a rejection restores the last approved version. Approval rules are available on the Business plan.
+
+## Trial balance and supplier prepayments
+
+- The [Trial Balance](/docs/reference/financial-reports#the-three-statements) is one flat list with gross debits and credits, and shows the year-end close into Retained Earnings.
+- The [General Ledger](/docs/reference/financial-reports#general-ledger) has a Purchase Order column and a column per dimension.
+- Hold a [supplier prepayment](/docs/reference/accounting-workflows#prepay-the-purchase-order) against a purchase order, and refund what is left of it.
+- The [period-close checklist](/docs/reference/period-close#reviewing-uninvoiced-shipments) warns about uninvoiced shipments.
+
+## Onshape assembly push
+
+An [assembly push](/docs/integrations/cad#push-an-assembly) can export each part's STEP model and drawing PDFs onto its item, picked row by row. The review follows Onshape's tree and lists the BOM lines added, removed or changed. Choose which property supplies the [Part ID, revision and BOM columns](/docs/integrations/cad#fields). Available on the Business plan.
+
+## Your own theme and navigation
+
+`Account → Appearance` has gradient and solid [themes](/docs/reference/account#theme-language-and-attributes), or a color of your own. In **Customize**, [hide or reorder](/docs/reference/account#customize-your-navigation) sub-modules, and the layout follows you to every device. Lists remember their filters, sorts and columns, with **Reset** to clear them.
+
+<Accordion title="Improvements">
+
+- [Search](/docs/reference/purchase-orders#lines-and-search) orders, quotes and invoices by anything on their lines, such as a part number or a customer's part number.
+- Expanding a row in an order, quote or invoice list loads its lines faster, one line per item.
+- PO pages, parts lists and MES operation pages load faster.
+- Every company gets standard metric and imperial [units of measure](/docs/reference/items#units-of-measure). Turn them on or off in `Items → Units`.
+- Sourcing can be edited on Buy and Make components, from the BOM line or the component.
+- Stock transfers start from the stock on hand, and any storage unit at the location can be the destination.
+- [Count](/docs/reference/inventory-count#counting) serial and batch tracked parts by scan, with a CSV export and import of units.
+- Goods-in storage units can be nettable or non-nettable.
+- [Sense](/docs/integrations/oee#install-sense) sends machine state by webhook, within about a minute.
+- RFQs and supplier quotes can send each line's CAD model and files, set in `Settings → Purchasing`.
+- Purchase order lines show their Required, Promised and Received [dates](/docs/reference/purchase-orders#dates), editable in place. Requested Date is now Required Date.
+- Duplicate a purchase order line.
+- Purchase order line descriptions take line breaks and print in full.
+- The Purchase Invoices list shows each invoice's purchase orders.
+- Supplier and customer contacts no longer need an email.
+- Digital quotes have a Download PDF button.
+- Rental agreements list several contacts, with one primary.
+- A gauge's manufacturer is free text.
+- A kanban Complete scan skips the unit prompt when the job makes one unit.
+- The MES shows the current location under the company name.
+- MES reference photos show at working size and can be zoomed.
+- On a phone, every modal and drawer opens as a bottom sheet, and drags work on touch screens.
+- Toasts can be closed or expanded over an open dialog.
+- Tabs and ⌘K open instantly, and the menu icon pulses when clicked.
+- Record pages are titled after the record, and screen readers can drive the ERP and MES.
+- API id inputs name the operation that lists their values.
+- Single-tenant deployments can set each [API key's requests per minute](/docs/building/api-keys#scopes-and-rate-limit), and upload large files in 24 MiB chunks.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- Issues and shipments take untracked stock from the bin that holds it, and a repeated completion no longer issues material twice.
+- A tracking type change is refused while it would strand stock or a running job.
+- Counts include consumed units that still hold stock, leave out non-inventory items, and post when a unit's quantity drifted below its ledger.
+- Email fails instead of going out from Carbon's shared address, and Gmail's daily limit raises an alert.
+- The customer portal no longer serves CAD files, hides unconfirmed orders, and can expire.
+- Purchase order PDFs show the supplier's part number.
+- PDF list bullets stay on the same page as their text.
+- Stop Receiving works only on released purchase orders.
+- Paid purchase invoices show as Paid on their order and receipt.
+- AR and AP aging CSV exports are no longer blank.
+- The quote-to-order confirm step scrolls, keeps notification edits, and converts with Email set up.
+- Draft quotes show a Draft badge.
+- Serviced RMA units can ship back, and My Time saves hours to a project with no job.
+- An Active rental agreement page no longer fails to load.
+- The demand forecast chart's Y axis is readable.
+- The jobs tooltip on a sales order line no longer clips the status badge.
+- The MES schedule board keeps the ERP's dispatch order.
+- A brief sign-in outage, or a deploy restarting services, no longer signs you out.
+- Settings and Customize no longer jump when the menu expands.
+- Modals and drawers animate as they close, and cannot submit twice.
+- Table scrollbars no longer jump.
+- [Backups](/docs/platform/backups#restore-in-place) include folders of more than 1,000 files, and a restore no longer fails on text pasted from Word or a PDF.
+- A restore from another company keeps its payments and customer, supplier and type groups, and no longer fails on an inspection of a deleted operation.
+- Enterprise sign-in follows the sign-up setting, and the first self-hosted account can add companies.
+
+</Accordion>

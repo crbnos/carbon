@@ -724,6 +724,12 @@ export const Constants = {
         "Outside Processing",
       ],
       parameterSource: ["Manual", "Sum", "Min", "Max", "Formula", "Item"],
+      partNumberDisplay: [
+        "Ours First",
+        "Theirs First",
+        "Theirs Only",
+        "Ours Only",
+      ],
       payableLineType: [
         "Comment",
         "G/L Account",
@@ -1148,6 +1154,7 @@ export const Constants = {
         "Excluded",
       ],
       tableViewType: ["Public", "Private"],
+      taxCalculationType: ["Normal", "Reverse Charge"],
       taxDepreciationMethod: ["Straight Line", "Declining Balance", "MACRS"],
       taxExemptionReason: [
         "Resale",
@@ -1160,6 +1167,16 @@ export const Constants = {
         "Educational",
         "Religious",
         "Other",
+      ],
+      taxLedgerSource: ["Sales", "Purchase"],
+      taxReportingCategory: [
+        "Standard",
+        "Reduced",
+        "Zero-Rated",
+        "Exempt",
+        "Reverse Charge",
+        "Export",
+        "Out of Scope",
       ],
       testCaseVerdict: ["Not Run", "Pass", "Fail", "Inconclusive"],
       timekeepingControls: ["Standard", "DCAA"],

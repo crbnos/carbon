@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { resolveDate, resolveTimestamp } from "../dates.ts";
-import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
+import {
+  anyNonConformanceTypeId,
+  bootstrapIdByName
+} from "../helpers/bootstrap-lookup.ts";
 import {
   deriveSampleStatus,
   inspectionPlan,
@@ -61,12 +64,7 @@ export async function runTier7(ctx: Ctx): Promise<void> {
     });
   }
 
-  // Grab the first nonConformanceType available for this company
-  const nct = await one<{ id: string }>(
-    client,
-    `SELECT id FROM "nonConformanceType" WHERE "companyId" = $1 LIMIT 1`,
-    [companyId]
-  );
+  const nct = { id: await anyNonConformanceTypeId(ctx) };
 
   const ncrIds: string[] = [];
   for (const [index, spec] of data.nonConformances.entries()) {

@@ -245,6 +245,7 @@ export async function renderPurchaseOrderPdf(
         thumbnails={thumbnails}
         template={templateConfig}
         sections={sections}
+        partNumberDisplayDraft={edit?.partNumberDisplay}
       />
     )
   );

@@ -57,7 +57,13 @@ note: policies({
 - `group(module)` — group-shared rows by `companyGroupId`.
 - Pieces for `policies({...})`: `inCompany`, `inGroup`, `viaParent`, `exists` (optionally
   `sameCompany`), `through`, `throughIndexed`, `member`, `owner`, `portal.customer/supplier`,
-  `authenticated`, `isNull`/`isNotNull`, `where<"table">(eb => …)`, `or`, `and`.
+  `authenticated`, `apiKey`, `isNull`/`isNotNull`, `where<"table">(eb => …)`, `or`, `and`.
+- `authenticated` never admits an API key: its request runs as `anon` with no
+  `auth.uid()`. `apiKey` is a valid, unexpired key of any company. Reference data with no
+  company that the API reads (`attributeDataType`, `country`, `currencyCode`,
+  `customFieldTable`, `exchangeRate`, `industry`, `integration`, `period`, `webhookTable`)
+  uses `referenceData` = `or(authenticated, apiKey)` in the manifest. `config`, `plan`,
+  `scriptRun` and `ssoReservedDomain` stay `authenticated` only: no API read needs them.
 - `through` renders `col IN (SELECT …)`; `throughIndexed` renders
   `col = ANY (COALESCE((SELECT array_agg(…) …), '{}'))`. Postgres evaluates the array once and
   can use the column's index for it, where an `IN` subquery branch of an `OR` forces a scan of

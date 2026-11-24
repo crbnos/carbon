@@ -57,6 +57,7 @@ import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
 import { path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
 import type {
@@ -96,6 +97,10 @@ const QuoteHeader = () => {
   const finalizeModal = useDisclosure();
   const convertToOrderModal = useDisclosure();
   const shareModal = useDisclosure();
+  // With Digital Quotes off the share link opens nothing, so it is not offered.
+  const externalLinkId = useCompanySettings()?.digitalQuoteEnabled
+    ? routeData?.quote.externalLinkId
+    : null;
   const createRevisionModal = useDisclosure();
   const deleteQuoteModal = useDisclosure();
   const [asRevision, setAsRevision] = useState(false);
@@ -205,8 +210,7 @@ const QuoteHeader = () => {
         onToggleProperties={toggleProperties}
         actions={
           <>
-            {routeData?.quote.externalLinkId &&
-            routeData?.quote.status === "Sent" ? (
+            {externalLinkId && routeData?.quote.status === "Sent" ? (
               <RecordAction slot="overflow">
                 <Button
                   onClick={shareModal.onOpen}
@@ -229,13 +233,11 @@ const QuoteHeader = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    {routeData?.quote.externalLinkId && (
+                    {externalLinkId && (
                       <DropdownMenuItem asChild>
                         <a
                           target="_blank"
-                          href={path.to.externalQuote(
-                            routeData.quote.externalLinkId
-                          )}
+                          href={path.to.externalQuote(externalLinkId)}
                           rel="noreferrer"
                         >
                           <DropdownMenuIcon icon={<LuExternalLink />} />

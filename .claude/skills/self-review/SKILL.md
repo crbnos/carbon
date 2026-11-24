@@ -41,6 +41,9 @@ Actively hunt for:
 
 Call out **missing** work, not just flaws in what's present.
 
+Then run `.claude/rules/write-time-checklist.md` over every hunk. Each "no" is
+a finding with `file:line`.
+
 ## Step 3: Docs freshness
 
 For every package or module directory the diff touches:

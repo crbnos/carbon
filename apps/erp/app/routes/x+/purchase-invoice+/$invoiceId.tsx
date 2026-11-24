@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   ActionFunctionArgs,
@@ -17,7 +17,10 @@ import type {
 import { useLoaderData, useParams } from "react-router";
 import { DocumentForceDeleteBanner } from "~/components/ForceDelete/DocumentForceDelete";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
+import {
+  getCurrencyByCode,
+  resolveLineTaxes
+} from "~/modules/accounting/accounting.service";
 import {
   getCompanyHasOpenCredits,
   getDocumentForceDeleteData,
@@ -33,6 +36,7 @@ import {
   getSupplierInteraction,
   getSupplierInteractionDocuments
 } from "~/modules/purchasing/purchasing.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
@@ -87,12 +91,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // The tax a new line takes: the supplier's code (or bare percent), on the
+  // invoice's date.
+  const taxDate =
+    purchaseInvoice.data?.dateIssued ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
   const [
     supplier,
     interaction,
     orgHasCredits,
     currency,
     rampMapping,
+    resolvedTax,
     forceDelete
   ] = await Promise.all([
     purchaseInvoice.data?.supplierId
@@ -117,6 +127,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .eq("entityType", "bill")
       .eq("entityId", invoiceId)
       .maybeSingle(),
+    resolveLineTaxes(client, companyId, {
+      source: "purchase",
+      supplierId: purchaseInvoice.data?.supplierId,
+      date: taxDate
+    }),
     // The Admin force-delete override (`force-delete+`).
     getDocumentForceDeleteData(getCarbonServiceRole(), getDatabaseClient(), {
       companyId,
@@ -140,6 +155,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     supplier: supplier?.data ?? null,
     orgHasCredits,
     rampMapping: rampMapping?.data ?? null,
+    resolvedTax: resolvedTax.data,
+    taxDate,
     ...forceDelete
   };
 }

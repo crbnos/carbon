@@ -198,6 +198,7 @@ export async function renderDocumentWithEdit(
     case "salesInvoice": {
       const { pdfProps, fileName } = await loadSalesInvoiceDocument({
         client,
+        taxClient: getCarbonServiceRole(),
         companyId,
         companyGroupId,
         invoiceId: id,

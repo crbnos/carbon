@@ -2,8 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { deriveRate } from "@carbon/utils";
 import {
   CREDIT_REASON_ITEM_ENTITY_TYPE,
   resolveCreditReasonItem
@@ -15,6 +15,7 @@ import {
 } from "../../../core/external-mapping";
 import { MEMO_INCREASER_SKIP_REASON } from "../../../core/models";
 import { JournalEntrySyncError } from "../../../core/posting";
+import { getTaxCodeMappings } from "../../../core/tax-mapping";
 import { BaseEntitySyncer, type ShouldSyncContext } from "../../../core/types";
 import { withTriggersDisabled } from "../../../core/utils";
 import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
@@ -24,6 +25,21 @@ import {
   type QboProvider,
   toQboExchangeRate
 } from "../provider";
+import {
+  isQboUsCompany,
+  loadQboInvoiceTaxCatalog,
+  type QboInvoiceTaxCatalog,
+  type QboTaxCodeMappings,
+  QboTaxContext,
+  resolveQboInvoiceTax
+} from "./invoice-tax";
+import {
+  loadQboMemoSources,
+  type QboMemoSettlementRow,
+  type QboMemoSource,
+  qboMemoHasTax,
+  qboMemoNetAmount
+} from "./memo-source";
 import {
   buildQboDocNumberFields,
   loadQboAccountRefsById,
@@ -59,50 +75,54 @@ import {
  * a malformed push.
  */
 
-/** A settlement that applies this memo to an open document. */
-export type QboMemoSettlementRow = {
-  id: string;
-  /**
-   * Exact source-document principal, in the MEMO's own currency — the amount a
-   * QBO application must carry. `appliedAmount` is BASE currency
-   * (`.claude/rules/numeric-precision.md`), so sending it against a foreign
-   * credit memo over-applies by the exchange rate.
-   */
-  sourceAmount: number | null;
-  appliedAmount: number;
-  appliedDate: string;
-  targetSalesInvoiceId: string | null;
-  targetPurchaseInvoiceId: string | null;
-  targetMemoId: string | null;
-  discountAmount: number;
-  writeOffAmount: number;
-  sourceExchangeRate: number;
-  targetExchangeRate: number;
+/** How a credit memo's tax goes out: the line at net with its code. */
+export type QboCreditMemoTax = {
+  netAmount: number;
+  lineTaxCodeRef: Qbo.Ref;
+  txnTaxDetail: Qbo.TxnTaxDetail | undefined;
+  /** Outside the US the line is net of tax. */
+  globalTaxCalculation: "TaxExcluded" | undefined;
 };
 
 /**
- * The Carbon `memo` header as both memo syncers read it. Shared shape, owned
- * here because `vendor-credit.ts` is the only other reader — the QBO barrel
- * `export *`s both files, so the type must be declared exactly once.
+ * The tax of a customer memo with tax: one line at net with the mapped sales
+ * code (US: the `TAX`/`NON` marker and the transaction code), resolved and
+ * checked exactly as an invoice component is. Pure — exported for tests.
  */
-export type QboMemoSource = {
-  id: string;
-  memoId: string;
-  direction: Database["public"]["Enums"]["memoDirection"];
-  status: Database["public"]["Enums"]["memoStatus"];
-  customerId: string | null;
-  supplierId: string | null;
-  memoDate: string;
-  postingDate: string | null;
-  currencyCode: string;
-  exchangeRate: number;
-  amount: number;
-  reasonAccount: string | null;
-  reference: string | null;
-  notes: string | null;
-  updatedAt: string;
-  settlements: QboMemoSettlementRow[];
-};
+export function resolveQboCreditMemoTax(args: {
+  memo: QboMemoSource;
+  catalog: QboInvoiceTaxCatalog;
+  mappings: QboTaxCodeMappings | undefined;
+}): QboCreditMemoTax {
+  const { memo } = args;
+  const { netAmount, decimalPlaces } = qboMemoNetAmount(memo);
+  const tax = resolveQboInvoiceTax({
+    document: {
+      invoiceId: memo.id,
+      decimalPlaces,
+      totalTax: memo.taxAmount,
+      components: [
+        {
+          id: memo.id,
+          taxPercent: deriveRate(memo.taxAmount, netAmount),
+          taxAmount: memo.taxAmount,
+          netAmount,
+          taxCodeId: memo.taxCodeId
+        }
+      ]
+    },
+    catalog: args.catalog,
+    mappings: args.mappings
+  });
+  return {
+    netAmount,
+    lineTaxCodeRef: tax.lineTaxCodeRefs.get(memo.id)!,
+    txnTaxDetail: tax.txnTaxDetail,
+    globalTaxCalculation: isQboUsCompany(args.catalog)
+      ? undefined
+      : "TaxExcluded"
+  };
+}
 
 /**
  * The one reason string every provider's memo syncer uses for the deferred
@@ -368,15 +388,18 @@ export async function resolveQboCreditReasonItemRef(args: {
  * ONE line, carrying the memo's whole amount against the credit-reason item.
  * `Qty: 1` + `UnitPrice: amount` keeps QBO's own `Amount = Qty × UnitPrice`
  * arithmetic exact, and `Amount` is set explicitly because `TotalAmt` is
- * system-calculated from the lines.
+ * system-calculated from the lines. A memo with tax sends the line at net
+ * with its tax code, and the tax in `TxnTaxDetail`.
  */
 export function buildQboCreditMemoPayload(args: {
   memo: QboMemoSource;
   customerRef: Qbo.Ref;
   reasonItemRef: Qbo.Ref;
   baseCurrencyCode: string;
+  tax?: QboCreditMemoTax;
 }): QboCreatePayload<Qbo.CreditMemo> {
-  const { memo } = args;
+  const { memo, tax } = args;
+  const lineAmount = tax ? tax.netAmount : memo.amount;
   const docNumber = buildQboDocNumberFields(
     memo.memoId,
     memo.reference ? `Ref ${memo.reference}` : undefined
@@ -390,149 +413,25 @@ export function buildQboCreditMemoPayload(args: {
     CustomerRef: args.customerRef,
     // QBO quotes company base per document currency, reciprocal to Carbon.
     ...qboMemoCurrencyFields(memo, args.baseCurrencyCode),
+    ...(tax?.globalTaxCalculation
+      ? { GlobalTaxCalculation: tax.globalTaxCalculation }
+      : {}),
+    ...(tax?.txnTaxDetail ? { TxnTaxDetail: tax.txnTaxDetail } : {}),
     Line: [
       {
-        Amount: memo.amount,
+        Amount: lineAmount,
         ...(description ? { Description: description } : {}),
         DetailType: "SalesItemLineDetail",
         SalesItemLineDetail: {
           // Without this ItemRef, QBO silently ignores `Amount`.
           ItemRef: args.reasonItemRef,
           Qty: 1,
-          UnitPrice: memo.amount
+          UnitPrice: lineAmount,
+          ...(tax ? { TaxCodeRef: tax.lineTaxCodeRef } : {})
         }
       }
     ]
   };
-}
-
-/**
- * Load Carbon memo headers + their settlements for one party side. Shared by
- * both memo syncers (`party` selects the non-null party column).
- */
-export async function loadQboMemoSources(
-  database: Kysely<KyselyDatabase>,
-  args: { companyId: string; ids: string[]; party: "customer" | "supplier" }
-): Promise<Map<string, QboMemoSource>> {
-  if (args.ids.length === 0) return new Map();
-
-  const rows = await database
-    .selectFrom("memo")
-    .select([
-      "id",
-      "memoId",
-      "direction",
-      "status",
-      "customerId",
-      "supplierId",
-      "memoDate",
-      "postingDate",
-      "currencyCode",
-      "exchangeRate",
-      "amount",
-      "reasonAccount",
-      "reference",
-      "notes",
-      "postedAt",
-      "createdAt",
-      "updatedAt"
-    ])
-    .where("id", "in", args.ids)
-    .where("companyId", "=", args.companyId)
-    .where(
-      args.party === "customer" ? "customerId" : "supplierId",
-      "is not",
-      null
-    )
-    .execute();
-
-  if (rows.length === 0) return new Map();
-
-  const settlementRows = await database
-    .selectFrom("invoiceSettlement")
-    .select([
-      "id",
-      "memoId",
-      "sourceAmount",
-      "appliedAmount",
-      "appliedDate",
-      "targetSalesInvoiceId",
-      "targetPurchaseInvoiceId",
-      "targetMemoId",
-      "discountAmount",
-      "writeOffAmount",
-      "sourceExchangeRate",
-      "targetExchangeRate"
-    ])
-    .where(
-      "memoId",
-      "in",
-      rows.map((row) => row.id)
-    )
-    .where("companyId", "=", args.companyId)
-    .execute();
-
-  const settlementsByMemo = new Map<string, QboMemoSettlementRow[]>();
-  for (const row of settlementRows) {
-    if (!row.memoId) continue;
-    const existing = settlementsByMemo.get(row.memoId) ?? [];
-    existing.push({
-      id: row.id,
-      sourceAmount: row.sourceAmount === null ? null : Number(row.sourceAmount),
-      appliedAmount: Number(row.appliedAmount) || 0,
-      appliedDate: toDateString(row.appliedDate),
-      targetSalesInvoiceId: row.targetSalesInvoiceId,
-      targetPurchaseInvoiceId: row.targetPurchaseInvoiceId,
-      targetMemoId: row.targetMemoId,
-      discountAmount: Number(row.discountAmount) || 0,
-      writeOffAmount: Number(row.writeOffAmount) || 0,
-      sourceExchangeRate: Number(row.sourceExchangeRate) || 1,
-      targetExchangeRate: Number(row.targetExchangeRate) || 1
-    });
-    settlementsByMemo.set(row.memoId, existing);
-  }
-
-  const result = new Map<string, QboMemoSource>();
-  for (const row of rows) {
-    result.set(row.id, {
-      id: row.id,
-      memoId: row.memoId,
-      direction: row.direction,
-      status: row.status,
-      customerId: row.customerId,
-      supplierId: row.supplierId,
-      memoDate: toDateString(row.memoDate),
-      postingDate: row.postingDate ? toDateString(row.postingDate) : null,
-      currencyCode: row.currencyCode,
-      exchangeRate: Number(row.exchangeRate) || 1,
-      amount: Number(row.amount) || 0,
-      reasonAccount: row.reasonAccount,
-      reference: row.reference,
-      notes: row.notes,
-      // A settlement never bumps memo.updatedAt, so the fallback chain must be
-      // STABLE — `new Date()` here would defeat the base syncer's
-      // already-synced bailout and re-push every drain.
-      updatedAt: toTimestampString(
-        row.updatedAt ?? row.postedAt ?? row.createdAt
-      ),
-      settlements: (settlementsByMemo.get(row.id) ?? []).sort((a, b) =>
-        a.id.localeCompare(b.id)
-      )
-    });
-  }
-
-  return result;
-}
-
-/** Kysely's pg driver returns DATE columns as JS Dates; QBO wants YYYY-MM-DD. */
-function toDateString(value: string | Date): string {
-  return value instanceof Date
-    ? value.toISOString().slice(0, 10)
-    : value.slice(0, 10);
-}
-
-function toTimestampString(value: string | Date): string {
-  return value instanceof Date ? value.toISOString() : value;
 }
 
 /**
@@ -556,6 +455,14 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
 > {
   private accountRefsByIdPromise?: Promise<Map<string, Qbo.Ref>>;
   private baseCurrencyCodePromise?: Promise<string>;
+  private readonly taxContext = new QboTaxContext({
+    catalog: () => loadQboInvoiceTaxCatalog(this.qboProvider),
+    mappings: () =>
+      getTaxCodeMappings(this.database, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      })
+  });
   private remoteMetaById = new Map<
     string,
     { syncToken?: string; lastUpdatedTime?: string }
@@ -565,6 +472,19 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
 
   private get qboProvider(): QboProvider {
     return this.provider as QboProvider;
+  }
+
+  /** The memo's tax, resolved before any dependency is pushed; undefined for
+   *  a memo without tax, which goes out as before. */
+  private async resolveTax(
+    local: QboMemoSource
+  ): Promise<QboCreditMemoTax | undefined> {
+    if (!qboMemoHasTax(local)) return undefined;
+    const catalog = await this.taxContext.catalog(local.id);
+    const mappings = local.taxCodeId
+      ? await this.taxContext.mappings(local.id)
+      : undefined;
+    return resolveQboCreditMemoTax({ memo: local, catalog, mappings });
   }
 
   private rememberRemoteEntity(
@@ -703,6 +623,8 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
       );
     }
 
+    const tax = await this.resolveTax(local);
+
     // JIT dependency: customer before the document
     let customerRemoteId = await this.mappingService.getExternalId(
       "customer",
@@ -727,7 +649,8 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
       memo: local,
       customerRef: { value: customerRemoteId },
       reasonItemRef,
-      baseCurrencyCode: await this.getBaseCurrencyCode()
+      baseCurrencyCode: await this.getBaseCurrencyCode(),
+      tax
     });
   }
 

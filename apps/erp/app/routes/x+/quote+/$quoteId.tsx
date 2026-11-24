@@ -28,7 +28,8 @@ import {
   getQuoteMethodTrees,
   getQuotePayment,
   getQuoteShipment,
-  getSalesOrderLines
+  getSalesOrderLines,
+  resolveSalesDocumentTaxes
 } from "~/modules/sales/sales.service";
 import {
   getQuoteLinePricesByQuoteId,
@@ -120,15 +121,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const [customer, opportunity, presentationExchangeRate, supplierPriceMap] =
-    await Promise.all([
-      getCustomer(client, quote.data?.customerId ?? ""),
-      getOpportunity(client, quote.data?.opportunityId),
-      quote.data?.currencyCode
-        ? getExchangeRate(client, companyId, quote.data.currencyCode)
-        : null,
-      getSupplierPriceBreaksForItems(client, Array.from(buyItemIds))
-    ]);
+  const [
+    customer,
+    opportunity,
+    presentationExchangeRate,
+    supplierPriceMap,
+    tax
+  ] = await Promise.all([
+    getCustomer(client, quote.data?.customerId ?? ""),
+    getOpportunity(client, quote.data?.opportunityId),
+    quote.data?.currencyCode
+      ? getExchangeRate(client, companyId, quote.data.currencyCode)
+      : null,
+    getSupplierPriceBreaksForItems(client, Array.from(buyItemIds)),
+    resolveSalesDocumentTaxes(client, companyId, {
+      document: "quote",
+      documentId: quoteId
+    })
+  ]);
 
   if (opportunity.error) {
     throw new Error(
@@ -207,7 +217,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     exchangeRate,
     salesOrderLines: salesOrderLines?.data ?? null,
     defaultCc,
-    supplierPriceMap
+    supplierPriceMap,
+    // The tax a new line opens with (customer, ship-to, no item).
+    resolvedTax: tax.data
+      ? {
+          taxCodeId: tax.data.document.taxCodeId,
+          taxPercent: tax.data.document.taxPercent
+        }
+      : null,
+    // The date the line forms read a picked code's rate on.
+    taxDate: tax.data?.date ?? null
   };
 }
 

@@ -922,7 +922,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     salesContactId: { kind: "primitive", of: "string" },
     defaultCc: { kind: "list", of: { kind: "primitive", of: "string" } },
     intercompanyCompanyId: { kind: "primitive", of: "string" },
-    readableId: { kind: "primitive", of: "string" }
+    readableId: { kind: "primitive", of: "string" },
+    partNumberDisplay: { kind: "primitive", of: "string" }
   },
   group: {
     id: { kind: "primitive", of: "string" },
@@ -958,7 +959,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     sourcingType: { kind: "primitive", of: "string" },
     mpn: { kind: "primitive", of: "string" },
     revisionStatus: { kind: "primitive", of: "string" },
-    changeOrderId: { kind: "primitive", of: "string" }
+    changeOrderId: { kind: "primitive", of: "string" },
+    taxable: { kind: "primitive", of: "boolean" }
   },
   job: {
     id: { kind: "primitive", of: "string" },
@@ -1327,7 +1329,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     supplierStatus: { kind: "primitive", of: "string" },
     intercompanyCompanyId: { kind: "primitive", of: "string" },
     readableId: { kind: "primitive", of: "string" },
-    supplierStageId: { kind: "primitive", of: "string" }
+    supplierStageId: { kind: "primitive", of: "string" },
+    partNumberDisplay: { kind: "primitive", of: "string" }
   },
   user: {
     id: { kind: "primitive", of: "string" },
@@ -1353,6 +1356,14 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
   string,
   Record<string, readonly string[]>
 > = {
+  customer: {
+    partNumberDisplay: [
+      "Ours First",
+      "Theirs First",
+      "Theirs Only",
+      "Ours Only"
+    ]
+  },
   item: {
     type: ["Part", "Material", "Tool", "Service", "Consumable", "Fixture"],
     replenishmentSystem: ["Buy", "Make", "Buy and Make"],
@@ -1544,5 +1555,13 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
     ],
     status: ["Draft", "Pending", "Posted", "Voided"]
   },
-  supplier: { supplierStatus: ["Active", "Inactive", "Pending", "Rejected"] }
+  supplier: {
+    supplierStatus: ["Active", "Inactive", "Pending", "Rejected"],
+    partNumberDisplay: [
+      "Ours First",
+      "Theirs First",
+      "Theirs Only",
+      "Ours Only"
+    ]
+  }
 };

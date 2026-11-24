@@ -894,7 +894,13 @@ export function getSyncOperationCloseDecision(
   }
 
   if (syncResult.status === "skipped") {
-    if (syncResult.remoteId) {
+    // A skipped push that names its remote copy is already represented; a
+    // skipped pull is only when it is linked to a Carbon record (a pull always
+    // carries the remote id, even when nothing was imported).
+    if (
+      syncResult.remoteId &&
+      (operation.direction === "push-to-accounting" || syncResult.localId)
+    ) {
       return { outcome: "completed", externalId: syncResult.remoteId };
     }
     return {

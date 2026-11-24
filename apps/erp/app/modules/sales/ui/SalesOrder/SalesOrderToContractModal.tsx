@@ -393,6 +393,12 @@ const SalesOrderToContractBody = ({
                 })}
               </VStack>
             </div>
+            <p className="text-xs text-muted-foreground">
+              <Trans>
+                Each line starts as One-time. Set it to Recurring for a service
+                billed every period.
+              </Trans>
+            </p>
           </VStack>
         </VStack>
       </ModalBody>
