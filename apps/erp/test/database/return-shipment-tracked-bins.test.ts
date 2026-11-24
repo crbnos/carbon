@@ -20,8 +20,15 @@ import {
   unwrap
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
-import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
-import { postShipment } from "../../app/modules/inventory/inventory.service";
+import {
+  connectLocalTestDatabase,
+  databaseTest,
+  hasLocalDatabase
+} from "./fixtures/local-database";
+import {
+  postShipment,
+  trackedShipmentSourceBins
+} from "../../app/modules/inventory/inventory.service";
 import {
   invokeCreate,
   invokePosting
@@ -359,6 +366,68 @@ describe.skipIf(!hasLocalDatabase)("return shipment tracked bins", () => {
       expect(result.error?.status).toBe(400);
       expect(result.error?.message).toMatch(/SN-pro-empty has no stock/);
       expect(await onHand([serial])).toEqual({});
+    }
+  );
+
+  // The bins are read before the posting transaction: a stock transfer that
+  // moves the unit in between must not leave the shipment booking the old bin.
+  databaseTest(
+    "a shipment refuses a serial that moved after its bin was read, and holds the unit while it posts",
+    async () => {
+      const serial = await unitIn("race", {
+        itemId: serialItemId,
+        quantity: 1,
+        status: "Available"
+      });
+      const read = () =>
+        trackedShipmentSourceBins(f.db, {
+          units: [{ id: serial, readableId: "SN-race" }],
+          locationIds: [f.locationId],
+          companyId: f.companyId
+        });
+
+      const unmoved = await read();
+      expect(unmoved(serial, f.locationId, 1)).toBe(moved);
+      const other = await connectLocalTestDatabase();
+      try {
+        await f.db.transaction().execute(async (trx) => {
+          await unmoved.confirm(trx);
+          // A stock transfer pick takes the same row lock before it moves it.
+          await expect(
+            sql`SELECT id FROM "trackedEntity" WHERE id = ${serial} FOR UPDATE NOWAIT`.execute(
+              other
+            )
+          ).rejects.toMatchObject({ code: "55P03" });
+        });
+      } finally {
+        await other.destroy();
+      }
+
+      const stale = await read();
+      expect(stale(serial, f.locationId, 1)).toBe(moved);
+      await seed(f, (trx) =>
+        trx
+          .insertInto("itemLedger")
+          .values(
+            [
+              [moved, -1],
+              [received, 1]
+            ].map(([storageUnitId, quantity]) => ({
+              itemId: serialItemId,
+              trackedEntityId: serial,
+              quantity: quantity as number,
+              locationId: f.locationId,
+              storageUnitId: storageUnitId as string,
+              entryType: "Transfer" as const,
+              companyId: f.companyId,
+              createdBy: USER
+            }))
+          )
+          .execute()
+      );
+      await expect(
+        f.db.transaction().execute((trx) => stale.confirm(trx))
+      ).rejects.toMatchObject({ status: 400 });
     }
   );
 

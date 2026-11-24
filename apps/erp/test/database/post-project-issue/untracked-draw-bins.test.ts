@@ -9,12 +9,19 @@
 // serial or batch is taken from the bin it is in. A Return with no bin goes
 // back to the bins the issues drew from.
 
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { postProjectIssue } from "../../../app/modules/projects/projects.service";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import {
+  invokePosting,
+  lockUntrackedDraws
+} from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-import { databaseTest } from "../fixtures/local-database";
+import {
+  connectLocalTestDatabase,
+  databaseTest
+} from "../fixtures/local-database";
 import {
   PROJECT_TEST_USER,
   projectPostingFixture
@@ -469,6 +476,193 @@ databaseTest(
       expect(await onHandIn(f, itemId, bin("A"))).toEqual(4);
       expect(await onHandIn(f, itemId, bin("B"))).toEqual(0);
     } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an issue whose quantity rounds to 0 is refused and books nothing",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { itemId, locationId } = await itemWithBins(
+        f,
+        "rounds-to-zero",
+        { A: true },
+        [{ unit: "A", quantity: 5 }]
+      );
+      const refused = await post(f, {
+        itemId,
+        locationId,
+        quantity: 0.000001,
+        direction: "Issue"
+      });
+      expect(refused.error?.status).toEqual(400);
+      expect(await issueRows(f, itemId)).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an issue with no storage unit does not take an inactive pick method default",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { itemId, locationId, bin } = await itemWithBins(
+        f,
+        "inactive-default",
+        { A: true, D: true },
+        [
+          { unit: "A", quantity: 5 },
+          { unit: "D", quantity: 2 }
+        ]
+      );
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .updateTable("storageUnit")
+          .set({ active: false })
+          .where("id", "=", bin("D"))
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await trx
+          .insertInto("pickMethod")
+          .values({
+            itemId,
+            locationId,
+            defaultStorageUnitId: bin("D"),
+            companyId: f.companyId,
+            createdBy: PROJECT_TEST_USER
+          })
+          .onConflict((oc) =>
+            oc
+              .columns(["itemId", "locationId"])
+              .doUpdateSet({ defaultStorageUnitId: bin("D") })
+          )
+          .execute();
+      });
+
+      const issued = await post(f, {
+        itemId,
+        locationId,
+        quantity: 3,
+        direction: "Issue"
+      });
+      expect(issued.error).toBeNull();
+      expect(await issueRows(f, itemId)).toEqual([[bin("A"), -3, null]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+async function backendPid(db: Kysely<KyselyDatabase>) {
+  const { rows } = await sql<{
+    pid: number;
+  }>`SELECT pg_backend_pid() AS pid`.execute(db);
+  return rows[0]!.pid;
+}
+
+async function waitForBlockedConnection(
+  db: Kysely<KyselyDatabase>,
+  blockerPid: number,
+  waitingPid: number
+) {
+  const deadline = performance.now() + 15_000;
+  while (performance.now() < deadline) {
+    const { rows } = await sql<{ blocked: boolean }>`
+      SELECT EXISTS (
+        SELECT 1 FROM pg_stat_activity
+        WHERE ${blockerPid} = ANY(pg_blocking_pids(pid))
+          AND pid = ${waitingPid}
+      ) AS blocked
+    `.execute(db);
+    if (rows[0]?.blocked) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error("Expected database connection to wait for the held lock");
+}
+
+// Two Returns that read the same outstanding issues would both give back to
+// the newest bin; the draw lock makes the second read the first's row.
+databaseTest(
+  "a return with no storage unit waits on the item's draw lock before it reads the issues",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    const holder = await connectLocalTestDatabase();
+    const monitor = await connectLocalTestDatabase();
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let holding: Promise<void> | undefined;
+    try {
+      const { itemId, locationId, bin } = await itemWithBins(
+        f,
+        "return-lock",
+        { A: true, B: true },
+        [
+          { unit: "A", quantity: 5 },
+          { unit: "B", quantity: 5 }
+        ]
+      );
+      for (const [unit, quantity] of [
+        ["A", 3],
+        ["B", 2]
+      ] as const) {
+        const issued = await post(f, {
+          itemId,
+          locationId,
+          quantity,
+          direction: "Issue",
+          storageUnitId: bin(unit)
+        });
+        expect(issued.error).toBeNull();
+      }
+
+      const holderPid = await backendPid(holder);
+      const returnPid = await backendPid(f.db);
+      let held!: () => void;
+      const isHeld = new Promise<void>((resolve) => {
+        held = resolve;
+      });
+      holding = holder.transaction().execute(async (trx) => {
+        await lockUntrackedDraws(trx, {
+          companyId: f.companyId,
+          locationId,
+          itemIds: [itemId]
+        });
+        held();
+        await released;
+      });
+      void holding.catch(() => {});
+      await Promise.race([isHeld, holding]);
+
+      const returning = post(f, {
+        itemId,
+        locationId,
+        quantity: 2,
+        direction: "Return"
+      });
+      void returning.catch(() => {});
+      await waitForBlockedConnection(monitor, holderPid, returnPid);
+
+      release();
+      await holding;
+      expect((await returning).error).toBeNull();
+      expect(await issueRows(f, itemId)).toEqual([
+        [bin("A"), -3, null],
+        [bin("B"), -2, null],
+        [bin("B"), 2, null]
+      ]);
+    } finally {
+      release();
+      await holding?.catch(() => {});
+      await holder.destroy();
+      await monitor.destroy();
       await f.cleanup();
     }
   }

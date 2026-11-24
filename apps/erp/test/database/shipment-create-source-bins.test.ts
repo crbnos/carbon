@@ -32,6 +32,8 @@ describe.skipIf(!hasLocalDatabase)("shipment create source bins", () => {
   let binB: string;
   let quarantine: string;
   let otherBin: string;
+  // An empty bin at the From location, for a line that names its bin.
+  let otherEmptyBin: string;
 
   beforeAll(async () => {
     f = await alwaysPostFixture();
@@ -39,6 +41,7 @@ describe.skipIf(!hasLocalDatabase)("shipment create source bins", () => {
     binB = `${f.prefix}-b`;
     quarantine = `${f.prefix}-q`;
     otherBin = `${f.prefix}-other`;
+    otherEmptyBin = `${f.prefix}-other-empty`;
     await seed(f, (trx) =>
       trx
         .insertInto("storageUnit")
@@ -59,13 +62,13 @@ describe.skipIf(!hasLocalDatabase)("shipment create source bins", () => {
             companyId: f.companyId,
             createdBy: USER
           },
-          {
-            id: otherBin,
-            name: otherBin,
+          ...[otherBin, otherEmptyBin].map((id) => ({
+            id,
+            name: id,
             locationId: f.otherLocationId,
             companyId: f.companyId,
             createdBy: USER
-          }
+          }))
         ])
         .execute()
     );
@@ -398,9 +401,9 @@ describe.skipIf(!hasLocalDatabase)("shipment create source bins", () => {
     ]);
     expect(
       await shipWarehouseTransfer("named", [
-        { itemId: item, quantity: 3, fromStorageUnitId: binA }
+        { itemId: item, quantity: 3, fromStorageUnitId: otherEmptyBin }
       ])
-    ).toEqual([binA]);
+    ).toEqual([otherEmptyBin]);
   });
 
   databaseTest(
