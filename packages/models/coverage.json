@@ -72,6 +72,17 @@
         "lockedStatus.get("
       ]
     },
-    "databaseTests": ["test/database/make-method-version-concurrency.test.ts"]
+    "databaseTests": ["test/database/make-method-version-concurrency.test.ts"],
+    "fingerprints": {
+      "apps/erp/app/modules/shared/shared.service.ts#lockItemMakeMethods": "6e595baec70bdeac",
+      "apps/erp/app/modules/shared/shared.service.ts#lockItemMakeMethods(": "6c8393a05f24f999",
+      "apps/erp/app/modules/shared/shared.service.ts#methodImportLock": "9385fbd41ca0f9e4",
+      "apps/erp/app/modules/shared/shared.service.ts#status: locked.status,": "e74cbd2f4b0730c2",
+      "apps/erp/app/modules/items/items.service.ts#lockItemMakeMethods(": "1306b42705cb92d9",
+      "apps/erp/app/modules/items/items.service.ts#createMakeMethodVersion": "ead44eef86eb78d6",
+      "apps/erp/app/modules/items/items.service.ts#chooseSyncMethod": "748e4df2f73bf1ca",
+      "apps/erp/app/modules/items/items.service.ts#lockedStatus.get(": "2cdbaaf8dc8f7c1c"
+    },
+    "confirmedAt": "df2cd3f908"
   }
 }
