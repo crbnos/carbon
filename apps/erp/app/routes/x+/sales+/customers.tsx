@@ -42,19 +42,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       // Once the company has a tax code, count the customers still taxed by
       // the legacy bare percent: a percent above zero and no tax code.
-      const customersWithoutTaxCode = taxCodes.data?.length
-        ? ((
-            await client
-              .from("customer")
-              .select("id, customerTax!inner(taxCodeId)", {
-                count: "exact",
-                head: true
-              })
-              .eq("companyId", companyId)
-              .gt("taxPercent", 0)
-              .is("customerTax.taxCodeId", null)
-          ).count ?? 0)
-        : 0;
+      let customersWithoutTaxCode = 0;
+      if (taxCodes.data?.length) {
+        const untaxed = await client
+          .from("customer")
+          .select("id, customerTax!inner(taxCodeId)", {
+            count: "exact",
+            head: true
+          })
+          .eq("companyId", companyId)
+          .gt("taxPercent", 0)
+          .is("customerTax.taxCodeId", null);
+        if (untaxed.error) throw untaxed.error;
+        customersWithoutTaxCode = untaxed.count ?? 0;
+      }
 
       return {
         customerStatuses: customerStatuses.data ?? [],

@@ -40,19 +40,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       // Once the company has a tax code, count the suppliers still taxed by
       // the legacy bare percent: a percent above zero and no tax code.
-      const suppliersWithoutTaxCode = taxCodes.data?.length
-        ? ((
-            await client
-              .from("supplier")
-              .select("id, supplierTax!inner(taxCodeId)", {
-                count: "exact",
-                head: true
-              })
-              .eq("companyId", companyId)
-              .gt("taxPercent", 0)
-              .is("supplierTax.taxCodeId", null)
-          ).count ?? 0)
-        : 0;
+      let suppliersWithoutTaxCode = 0;
+      if (taxCodes.data?.length) {
+        const untaxed = await client
+          .from("supplier")
+          .select("id, supplierTax!inner(taxCodeId)", {
+            count: "exact",
+            head: true
+          })
+          .eq("companyId", companyId)
+          .gt("taxPercent", 0)
+          .is("supplierTax.taxCodeId", null);
+        if (untaxed.error) throw untaxed.error;
+        suppliersWithoutTaxCode = untaxed.count ?? 0;
+      }
 
       return { tags: tags.data ?? [], suppliersWithoutTaxCode };
     },
