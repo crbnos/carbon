@@ -45,11 +45,21 @@
     "model": "src/job-material-issue.ts",
     "code": {
       "apps/erp/app/modules/inventory/inventory.service.ts": [
-        "issueJobOperationMaterials"
+        "issueJobOperationMaterials",
+        "maxQuantityIssued"
       ],
-      "apps/erp/app/modules/shared/shared.service.ts": ["lockUntrackedDraws"]
+      "apps/erp/app/modules/shared/shared.service.ts": [
+        "lockUntrackedDraws",
+        "calculateCOGS"
+      ],
+      "apps/mes/app/services/operations.service.ts": [
+        "backflushUntrackedMaterialsOnStepRecord"
+      ]
     },
-    "databaseTests": ["test/database/job-material-issue-concurrency.test.ts"],
+    "databaseTests": [
+      "test/database/job-material-issue-concurrency.test.ts",
+      "test/database/backflush-cost-layer-concurrency.test.ts"
+    ],
     "fingerprints": {
       "apps/erp/app/modules/inventory/inventory.service.ts#issueJobOperationMaterials": "45fccb4a95d9fa8f",
       "apps/erp/app/modules/shared/shared.service.ts#lockUntrackedDraws": "2d415c24e162df87"
