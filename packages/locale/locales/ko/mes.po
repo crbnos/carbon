@@ -970,6 +970,9 @@ msgstr "기본값"
 msgid "Delete"
 msgstr "삭제"
 
+msgid "Delete {name}"
+msgstr "{name} 삭제"
+
 msgid "Delete {stepLabel}"
 msgstr "{stepLabel} 삭제"
 
@@ -1924,6 +1927,9 @@ msgstr "새 레코드"
 msgid "New Service Job"
 msgstr "새 서비스 작업 지시"
 
+msgid "New Version"
+msgstr "새 버전"
+
 msgid "Newest first"
 msgstr "최신순"
 
@@ -1984,6 +1990,9 @@ msgstr "국가를 찾을 수 없습니다."
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "일련번호 {0}을 가진 고객 자산이 없습니다. 고객을 선택하세요."
+
+msgid "No data yet"
+msgstr "아직 데이터가 없습니다"
 
 msgid "No default bin"
 msgstr "기본 빈 없음"
@@ -3848,6 +3857,9 @@ msgstr "검증 실패"
 msgid "Verify"
 msgstr "확인"
 
+msgid "Versions"
+msgstr "버전"
+
 msgid "View"
 msgstr "보기"
 
@@ -3934,6 +3946,9 @@ msgstr "귀하의 {processName} 자격이 {expiredDate}에 만료됨되었습니
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "아직 회사에 속하지 않은 계정입니다. Carbon ERP에서 온보딩을 완료해 주시기 바랍니다."
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "첫 레코드를 만들거나 가져오면 여기에 데이터가 표시됩니다"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."

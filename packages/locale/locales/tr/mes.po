@@ -970,6 +970,9 @@ msgstr "Varsayılan"
 msgid "Delete"
 msgstr "Sil"
 
+msgid "Delete {name}"
+msgstr "{name} sil"
+
 msgid "Delete {stepLabel}"
 msgstr "{stepLabel} sil"
 
@@ -1924,6 +1927,9 @@ msgstr "Yeni Kayıt"
 msgid "New Service Job"
 msgstr "Yeni Hizmet İşi"
 
+msgid "New Version"
+msgstr "Yeni Sürüm"
+
 msgid "Newest first"
 msgstr "En yeniden önce"
 
@@ -1984,6 +1990,9 @@ msgstr "Ülke bulunamadı."
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "Hiçbir müşteri varlığı {0} seri numarasına sahip değil. Müşteri seçin."
+
+msgid "No data yet"
+msgstr "Henüz veri yok"
 
 msgid "No default bin"
 msgstr "Varsayılan göz yok"
@@ -3848,6 +3857,9 @@ msgstr "Doğrulama başarısız"
 msgid "Verify"
 msgstr "Doğrula"
 
+msgid "Versions"
+msgstr "Sürümler"
+
 msgid "View"
 msgstr "Görüntüle"
 
@@ -3934,6 +3946,9 @@ msgstr "{processName} yetkinliğinizin süresi {expiredDate}'de doldu."
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Hesabınız henüz bir şirkete ait değildir. Devam etmek için Carbon ERP'de yerleşimi tamamlayın."
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "İlk kayıtlarınızı oluşturduğunuzda veya içe aktardığınızda verileriniz burada görünecek"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."

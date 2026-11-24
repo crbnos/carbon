@@ -970,6 +970,9 @@ msgstr "デフォルト"
 msgid "Delete"
 msgstr "削除"
 
+msgid "Delete {name}"
+msgstr "{name}を削除"
+
 msgid "Delete {stepLabel}"
 msgstr "{stepLabel}を削除"
 
@@ -1924,6 +1927,9 @@ msgstr "新規レコード"
 msgid "New Service Job"
 msgstr "新規外注サービス"
 
+msgid "New Version"
+msgstr "新しいバージョン"
+
 msgid "Newest first"
 msgstr "最新順"
 
@@ -1984,6 +1990,9 @@ msgstr "国が見つかりません。"
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "シリアル{0}を持つ得意先資産がありません。得意先を選択してください。"
+
+msgid "No data yet"
+msgstr "データはまだありません"
 
 msgid "No default bin"
 msgstr "既定のビンがありません"
@@ -3848,6 +3857,9 @@ msgstr "検証に失敗しました"
 msgid "Verify"
 msgstr "確認"
 
+msgid "Versions"
+msgstr "バージョン"
+
 msgid "View"
 msgstr "表示"
 
@@ -3934,6 +3946,9 @@ msgstr "あなたの{processName}資格は{expiredDate}に期限切れになり�
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "あなたのアカウントはまだ会社に属していません。継続するには、Carbon ERP でオンボーディングを完了してください。"
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "最初のレコードを作成またはインポートすると、ここにデータが表示されます"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"

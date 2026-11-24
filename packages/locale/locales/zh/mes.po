@@ -970,6 +970,9 @@ msgstr "默认"
 msgid "Delete"
 msgstr "删除"
 
+msgid "Delete {name}"
+msgstr "删除 {name}"
+
 msgid "Delete {stepLabel}"
 msgstr "删除{stepLabel}"
 
@@ -1924,6 +1927,9 @@ msgstr "新记录"
 msgid "New Service Job"
 msgstr "新服务工单"
 
+msgid "New Version"
+msgstr "新版本"
+
 msgid "Newest first"
 msgstr "最新优先"
 
@@ -1984,6 +1990,9 @@ msgstr "未找到国家。"
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "没有客户资产具有序列号{0}。选择客户。"
+
+msgid "No data yet"
+msgstr "暂无数据"
 
 msgid "No default bin"
 msgstr "无默认料箱"
@@ -3848,6 +3857,9 @@ msgstr "验证失败"
 msgid "Verify"
 msgstr "验证"
 
+msgid "Versions"
+msgstr "版本"
+
 msgid "View"
 msgstr "查看"
 
@@ -3934,6 +3946,9 @@ msgstr "您的{processName}资格已于{expiredDate}过期。"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "您的账户尚未属于任何公司。完成 Carbon ERP 入职流程以继续。"
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "创建或导入第一批记录后，数据将显示在此处"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"

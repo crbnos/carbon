@@ -1112,7 +1112,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** `space-x-*` / `space-y-*` are structural (`:not(:last-child)`) — never use them on a container whose children a component may add to at runtime; use `gap-*`, which only applies between elements that generate boxes and so ignores `display:none`. When a component renders extra DOM next to its main element (React Router prefetch links, portals, measurement nodes), isolate it in a `display: contents` wrapper so it can't perturb the caller's layout. To diagnose "impossible" width changes, diff every computed property between states and count child nodes — a node-count delta with no style delta means injected DOM, not CSS.
 
-**Applies to:** `apps/erp/app/components/Hyperlink.tsx`; `packages/react/src/{HStack,VStack}.tsx` (still `space-x-*`/`space-y-*`, ~2,500 call sites); any `PrefetchLink` (`@carbon/react`, which injects the same tags on press) or `<Link prefetch>` placed directly inside a `space-*` container.
+**Applies to:** `packages/react/src/Hyperlink.tsx` (the ERP's `Hyperlink`); `packages/react/src/{HStack,VStack}.tsx` (still `space-x-*`/`space-y-*`, ~2,500 call sites); any `PrefetchLink` (`@carbon/react`, which injects the same tags on press) or `<Link prefetch>` placed directly inside a `space-*` container.
 
 ## A list-query benchmark that omits the ORDER BY measures a query the app never runs
 

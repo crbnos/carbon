@@ -2807,6 +2807,9 @@ importers:
       '@carbon/logger':
         specifier: workspace:*
         version: link:../logger
+      '@carbon/query':
+        specifier: workspace:*
+        version: link:../query
       '@carbon/react':
         specifier: workspace:*
         version: link:../react

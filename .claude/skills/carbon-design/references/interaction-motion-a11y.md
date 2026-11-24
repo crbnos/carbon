@@ -17,7 +17,7 @@
 | Drag & drop | dnd-kit with **`KeyboardSensor` always**, pointer `activationConstraint: { distance: 8 }`, `TouchSensor` on touch boards, translated screen-reader announcements, `dropAnimation={null}` | `apps/erp/app/components/LineReorder/ReorderableLineList.tsx`, `apps/mes/app/components/Kanban/Kanban.tsx` |
 | Reorder document lines | explicit edit mode: draft order, Save/Cancel bar, Esc cancels, Save disabled until dirty | `apps/erp/app/components/LineReorder/` |
 | Reorder BoM/BoP | live reorder + throttled (~1s) save | `apps/erp/app/modules/items/ui/Item/BillOfMaterial.tsx` |
-| Hover-revealed actions (ERP only) | `opacity-0 group-hover:opacity-100` **plus** `focus-visible:opacity-100` / `group-focus-within:opacity-100`; named groups (`group/row`) | `apps/erp/app/components/Hyperlink.tsx` |
+| Hover-revealed actions (ERP only) | `opacity-0 group-hover:opacity-100` **plus** `focus-visible:opacity-100` / `group-focus-within:opacity-100`; named groups (`group/row`) | `packages/react/src/Hyperlink.tsx` |
 | Context menus | same items as the ⋮ menu, via `Menu`/`MenuItem` (`Table renderContextMenu`) | `packages/react/src/Menu.tsx` |
 | Optimistic UI | read pending `fetcher.formData` and render it as truth; no React `useOptimistic` | `apps/erp/app/components/Assignee.tsx` |
 | Autosave | only on property/grid/toggle surfaces (`forms.md` §7) | `apps/erp/app/modules/quality/ui/Issue/IssueProperties.tsx` |
