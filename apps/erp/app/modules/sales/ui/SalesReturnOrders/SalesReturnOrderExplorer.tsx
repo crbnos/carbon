@@ -124,7 +124,8 @@ export default function SalesReturnOrderExplorer() {
     quantity: 1,
     unitOfMeasureCode: "",
     unitPrice: 0,
-    restockFeePercent: 0
+    restockFeePercent: 0,
+    returnType: "Return to Stock" as const
   };
 
   const onDeleteLine = (line: SalesReturnOrderLine) => {
