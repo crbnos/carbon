@@ -652,7 +652,10 @@ export type OpeningStockSpec = {
 
 export type TrackedStockSpec = {
   item: string;
-  /** When set, tier 03 writes the opening ledger of this item at this shelf per lot. */
+  /**
+   * When set, tier 03 writes the opening ledger of this item at this shelf per
+   * lot. Every openingStock shelf of the item needs one (validator-enforced).
+   */
   shelf?: string;
   entities: Array<{
     readableId: string;

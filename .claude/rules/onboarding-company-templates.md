@@ -337,6 +337,8 @@ The validator checks them:
 - `operation` names a `bop` order of the same method.
 - A tracked shelf's lots (On Hold, Rejected and Scrapped included) sum to the `openingStock` at that
   shelf, and a Scrapped lot on it is scrapped from that same shelf.
+- A Batch or Serial item's `openingStock` sits only on shelves its `onHandTracked` entries name;
+  tier 03 would write any other row untracked, stock no lot or serial owns.
 - `replenishmentLevel` is on a Transfer kanban, and it is an integer of 0 or more.
 - `serials` is on a Serial item, has one entry per unit, and repeats no serial and no other seeded
   tracked-entity id (`onHandTracked`, a receipt `lotNumber`, `genealogyInputs`, the

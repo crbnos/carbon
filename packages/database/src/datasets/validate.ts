@@ -2084,10 +2084,28 @@ export function batchProperties(ctx: ValidationCtx): void {
 
 export function openingStock(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
-  const { trackingByItem } = ix;
+  const { trackingByItem, isTracked } = ix;
+  const trackedShelves = new Set(
+    dataset.inventory.onHandTracked.flatMap((tracked) =>
+      tracked.shelf === undefined
+        ? []
+        : [onHandKey(tracked.item, tracked.shelf)]
+    )
+  );
   for (const stock of dataset.inventory.openingStock) {
+    const where = `inventory.openingStock "${stock.item}"`;
     need("item", "inventory.openingStock", stock.item);
-    need("shelf", `inventory.openingStock "${stock.item}"`, stock.shelf);
+    need("shelf", where, stock.shelf);
+    // Tier 03 writes an untracked ledger row for any (item, shelf) that no
+    // tracked shelf covers, and no lot or serial owns that stock.
+    if (
+      isTracked(stock.item) &&
+      !trackedShelves.has(onHandKey(stock.item, stock.shelf))
+    ) {
+      fail(
+        `${where}: ${trackingByItem.get(stock.item)}-tracked stock at "${stock.shelf}" has no inventory.onHandTracked entry with that shelf`
+      );
+    }
   }
 
   for (const shelfLife of dataset.inventory.shelfLives) {
