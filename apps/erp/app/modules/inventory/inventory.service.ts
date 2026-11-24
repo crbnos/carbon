@@ -14760,6 +14760,28 @@ export async function lockPostedReceipt(
   }
 }
 
+/**
+ * The first statement of a shipment void's transaction: the status read
+ * before it is stale, so two voids sent at once would both reverse the
+ * shipment. The second waits here, then sees Voided and refuses.
+ */
+export async function lockPostedShipment(
+  trx: VoidGuardDb,
+  companyId: string,
+  shipmentId: string
+): Promise<void> {
+  const shipment = await trx
+    .selectFrom("shipment")
+    .select("status")
+    .where("id", "=", shipmentId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (shipment?.status !== "Posted") {
+    throw new InvalidInputError("Can only void posted shipments");
+  }
+}
+
 async function refusingHeldStock<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run();
@@ -23079,6 +23101,7 @@ export async function postShipment(
                 : null;
 
             await db.transaction().execute(async (trx) => {
+              await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               await fixedAssetWrites.apply(trx, companyId);
               // Update sales order lines to reverse shipped quantities
@@ -23486,6 +23509,7 @@ export async function postShipment(
             }
 
             await db.transaction().execute(async (trx) => {
+              await lockPostedShipment(trx, companyId, shipmentId);
               // Update purchase order lines to reverse shipped quantities
               await updateRowsById(
                 trx,
@@ -23691,6 +23715,7 @@ export async function postShipment(
             }
 
             await db.transaction().execute(async (trx) => {
+              await lockPostedShipment(trx, companyId, shipmentId);
               // Update warehouse transfer lines
               await updateRowsById(
                 trx,
@@ -23785,6 +23810,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
+              await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               const reversingItemLedger = (originalItemLedger.data ?? []).map(
                 (entry) => ({
@@ -24170,6 +24196,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
+              await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               const reversingItemLedger = (originalItemLedger.data ?? [])
                 .filter((entry) => !isWriteOffRestore(entry))
