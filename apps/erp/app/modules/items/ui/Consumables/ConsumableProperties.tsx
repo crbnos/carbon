@@ -51,6 +51,7 @@ import {
   FileBadge,
   ItemDescription,
   SourcingTypeProperty,
+  TaxableProperty,
   useIsComponentOfBuyAndMake
 } from "../Item";
 
@@ -96,6 +97,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
   // When `data` is injected (subassembly context), this hook won't match a
   // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     consumableSummary: ConsumableSummary;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -179,6 +181,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
         | "itemPostingGroupId"
         | "consumableId"
         | "active"
+        | "taxable"
         | "mpn"
         | "unitOfMeasureCode",
       value: string | null
@@ -546,6 +549,11 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
           }}
         />
       </ValidatedForm>
+      <TaxableProperty
+        itemId={itemId}
+        taxable={routeDataFromRoute?.taxable}
+        onChange={(value) => onUpdate("taxable", value)}
+      />
       {routeData?.consumableSummary?.replenishmentSystem?.includes("Buy") && (
         <ValidatedForm
           defaultValues={{

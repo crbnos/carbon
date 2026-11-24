@@ -16,7 +16,6 @@ import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
-  CustomerLocation,
   CustomFormFields,
   Hidden,
   Input,
@@ -24,6 +23,7 @@ import {
   Number,
   Select,
   ShippingMethod,
+  ShipTo,
   Submit
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
@@ -122,11 +122,16 @@ const SalesInvoiceShipmentForm = forwardRef<
               isReadOnly={isCustomer}
               isClearable
             />
-            <CustomerLocation
+            <ShipTo
               name="customerLocationId"
-              label={t`Ship To`}
-              customer={routeData?.salesInvoice?.customerId ?? undefined}
-              isClearable
+              customerId={routeData?.salesInvoice?.customerId ?? undefined}
+              recalculateTaxesAction={path.to.salesInvoiceRecalculateTaxes(
+                invoiceId
+              )}
+              recalculateTaxesText={t`Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs.`}
+              canRecalculateTaxes={
+                permissions.can("update", "invoicing") && isEditable
+              }
             />
             <ShippingMethod
               name="shippingMethodId"

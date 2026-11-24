@@ -340,6 +340,28 @@ describe("planPurchaseOrderRestore", () => {
     ).toEqual({ restorable: false });
   });
 
+  it("puts back the tax code with its rate and amount", () => {
+    const plan = planPurchaseOrderRestore(
+      {
+        ...version,
+        lines: [
+          {
+            id: "l1",
+            taxCodeId: "vat20",
+            taxPercent: 0.2,
+            supplierTaxAmount: 16
+          }
+        ]
+      },
+      [line()]
+    );
+    expect(plan.restorable && plan.updates[0]!.data).toEqual({
+      taxCodeId: "vat20",
+      taxPercent: 0.2,
+      supplierTaxAmount: 16
+    });
+  });
+
   it("writes only the columns a version may restore", () => {
     const plan = planPurchaseOrderRestore(
       {

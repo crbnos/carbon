@@ -10,6 +10,23 @@ export function getAccessorKey<T>(columnDef: ColumnDef<T, unknown>) {
     : undefined;
 }
 
+/** Every Enter is "Enter": the number pad's has its own `code`, a virtual
+ *  keyboard's can have none, and both still submit a surrounding form. */
+export function gridKeyCode(event: { code: string; key: string }) {
+  return event.key === "Enter" ? "Enter" : event.code;
+}
+
+/** Tab and Enter commit an open editor, which may stop them first: react-aria's
+ *  NumberField stops Enter, and the form then submits without the value. */
+export function takesKeyFromEditor(
+  event: { code: string; key: string; isComposing: boolean },
+  isEditing: boolean
+) {
+  if (!isEditing || event.isComposing) return false;
+  const code = gridKeyCode(event);
+  return code === "Tab" || code === "Enter";
+}
+
 export function updateNestedProperty(
   obj: object,
   path: string | string[],
