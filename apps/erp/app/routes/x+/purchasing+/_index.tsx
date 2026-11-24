@@ -7,6 +7,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type { ApprovalRequest } from "@carbon/ee/approvals";
 import { getPendingApprovalsForApprover } from "@carbon/ee/approvals.server";
+import { getLogger } from "@carbon/logger";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -88,6 +89,8 @@ import { SupplierQuoteStatus } from "~/modules/purchasing/ui/SupplierQuote";
 import type { loader as kpiLoader } from "~/routes/api+/purchasing.kpi.$key";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "purchasing", "dashboard");
 
 const OPEN_SUPPLIER_QUOTE_STATUSES = ["Active"] as const;
 // The purchaseInvoices view's statuses: it derives Partially Paid, Paid and
@@ -196,6 +199,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       })
       .in("status", OPEN_INVOICE_STATUSES)
       .eq("companyId", companyId)
+      .order("createdAt", { ascending: false })
+      .order("id", { ascending: false })
       .limit(10),
     client
       .from("supplierQuote")
@@ -243,6 +248,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .in("id", approvalDocumentForceDeleteIds)
       : { data: [], error: null }
   ]);
+
+  // A failed count must not read as "no open invoices".
+  if (openPurchaseInvoices.error) {
+    logger.error("Failed to load open purchase invoices", {
+      companyId,
+      error: openPurchaseInvoices.error
+    });
+    throw new Response("Failed to load open purchase invoices", {
+      status: 500
+    });
+  }
 
   const assignedToMePromise = getPurchasingDocumentsAssignedToMe(
     client,

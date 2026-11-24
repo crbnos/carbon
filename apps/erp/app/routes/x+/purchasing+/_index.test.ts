@@ -16,7 +16,9 @@ vi.mock("@carbon/ee/approvals.server", () => ({
   getPendingApprovalsForApprover: async () => ({ data: [], error: null })
 }));
 
-it("counts open purchase invoices by the view's status, as the card's link filters the list", async () => {
+/** Runs the loader over PostgREST answered by `respond`, and records every
+ *  request it sends. */
+async function loadDashboard(respond: (url: URL) => Response) {
   const requests: URL[] = [];
   const client = createClient<Database>("http://purchasing.test", "key", {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -24,7 +26,7 @@ it("counts open purchase invoices by the view's status, as the card's link filte
       fetch: async (input) => {
         const url = new URL(String(input));
         requests.push(url);
-        return Response.json([], { headers: { "content-range": "0-0/3" } });
+        return respond(url);
       }
     }
   });
@@ -34,19 +36,28 @@ it("counts open purchase invoices by the view's status, as the card's link filte
     companyId: "company-a"
   } as Awaited<ReturnType<typeof requirePermissions>>);
 
-  const data = await loader({
+  const result = loader({
     request: new Request("http://localhost/x/purchasing"),
     params: {},
     context: {}
   } as unknown as Parameters<typeof loader>[0]);
+  return { result, requests };
+}
 
-  const invoiceReads = requests.filter((url) =>
-    url.pathname.endsWith("/purchaseInvoices")
+const isInvoiceRead = (url: URL) => url.pathname.endsWith("/purchaseInvoices");
+
+it("counts open purchase invoices by the view's status, as the card's link filters the list", async () => {
+  const { result, requests } = await loadDashboard(() =>
+    Response.json([], { headers: { "content-range": "0-0/3" } })
   );
+  const data = await result;
+
+  const invoiceReads = requests.filter(isInvoiceRead);
   expect(invoiceReads).toHaveLength(1);
-  const statuses = invoiceReads[0]!.searchParams.get("status");
+  const params = invoiceReads[0]!.searchParams;
   expect(
-    statuses
+    params
+      .get("status")
       ?.replace(/^in\.\((.*)\)$/, "$1")
       .split(",")
       .sort()
@@ -58,5 +69,17 @@ it("counts open purchase invoices by the view's status, as the card's link filte
     "Pending",
     "Return"
   ]);
+  // The newest ten, so a recent draft is not cut by older open bills.
+  expect(params.get("order")).toBe("createdAt.desc,id.desc");
   expect(data.openPurchaseInvoices.count).toBe(3);
+});
+
+it("fails the page instead of showing no open invoices when the count read fails", async () => {
+  const { result } = await loadDashboard((url) =>
+    isInvoiceRead(url)
+      ? Response.json({ message: "statement timeout" }, { status: 500 })
+      : Response.json([])
+  );
+
+  await expect(result).rejects.toMatchObject({ status: 500 });
 });

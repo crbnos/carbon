@@ -1,6 +1,10 @@
 -- A voided invoice owes nothing: its balance reads 0, as a paid one does.
 -- Until now both views kept its unsettled total as the balance, which the
 -- invoice lists, their Balance totals and the CSV/Excel exports showed.
+--
+-- The line totals also match the invoice's company, as the settlement and
+-- purchase order joins already do: the line's foreign key is on "invoiceId"
+-- alone, so it does not stop a line of another company naming the invoice.
 
 -- Forked from 20261119231547_sales-invoice-shipping-tax.sql, the newest
 -- definition. CREATE OR REPLACE, not DROP: the columns are unchanged, and the
@@ -100,6 +104,7 @@ CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN (
     SELECT
       sil."invoiceId",
+      sil."companyId",
       MIN(CASE
         WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
         ELSE i."thumbnailPath"
@@ -132,8 +137,8 @@ CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
     LEFT JOIN "item" i
       ON i."id" = sil."itemId"
     LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
-    GROUP BY sil."invoiceId"
-  ) sil ON sil."invoiceId" = si."id"
+    GROUP BY sil."invoiceId", sil."companyId"
+  ) sil ON sil."invoiceId" = si."id" AND sil."companyId" = si."companyId"
   LEFT JOIN "salesInvoiceShipment" ss ON ss."id" = si."id"
   LEFT JOIN "paymentTerm" pt ON pt."id" = si."paymentTermId"
   LEFT JOIN "customer" c ON c."id" = si."customerId"
@@ -253,6 +258,7 @@ CREATE OR REPLACE VIEW "purchaseInvoices" WITH(SECURITY_INVOKER=true) AS
       ON i."id" = pol."itemId"
     LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
     WHERE pol."invoiceId" = pi."id"
+      AND pol."companyId" = pi."companyId"
   ) pl ON true
   LEFT JOIN "paymentTerm" pt ON pt."id" = pi."paymentTermId"
   LEFT JOIN "purchaseInvoiceDelivery" pid ON pid."id" = pi."id"

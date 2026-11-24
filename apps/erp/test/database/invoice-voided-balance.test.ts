@@ -21,6 +21,11 @@ import {
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
 
+/** NUMERIC reads as a string; a NULL balance stays null so it fails `0`. */
+function amount(value: unknown) {
+  return value === null ? null : Number(value);
+}
+
 async function salesListRow(f: Fixture, invoiceId: string) {
   const row = await f.db
     .selectFrom("salesInvoices")
@@ -28,7 +33,7 @@ async function salesListRow(f: Fixture, invoiceId: string) {
     .where("id", "=", invoiceId)
     .where("companyId", "=", f.companyId)
     .executeTakeFirstOrThrow();
-  return { status: row.status, balance: Number(row.balance) };
+  return { status: row.status, balance: amount(row.balance) };
 }
 
 async function purchaseListRow(f: Fixture, invoiceId: string) {
@@ -38,7 +43,7 @@ async function purchaseListRow(f: Fixture, invoiceId: string) {
     .where("id", "=", invoiceId)
     .where("companyId", "=", f.companyId)
     .executeTakeFirstOrThrow();
-  return { status: row.status, balance: Number(row.balance) };
+  return { status: row.status, balance: amount(row.balance) };
 }
 
 databaseTest("a voided sales invoice has no balance", async () => {
