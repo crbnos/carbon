@@ -11,7 +11,10 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { postReceipt } from "../../app/modules/inventory/inventory.service";
-import { postSalesInvoice } from "../../app/modules/invoicing/invoicing.service";
+import {
+  postPurchaseInvoice,
+  postSalesInvoice
+} from "../../app/modules/invoicing/invoicing.service";
 import {
   invokeCreate,
   invokePosting
@@ -33,11 +36,13 @@ import {
 } from "./fixtures/local-database";
 import {
   deadlocked,
+  outcomeOf,
   race,
   raceRounds,
   raceTimeout
 } from "./fixtures/race";
 import { serviceReturnFixture } from "./fixtures/service-return";
+import { operationContext, postgrestTest } from "./fixtures/local-supabase";
 
 async function backendPid(db: Kysely<KyselyDatabase>) {
   const { rows } = await sql<{
@@ -414,6 +419,219 @@ databaseTest(
       await voider.destroy();
       await holder.destroy();
       await monitor.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+/** A Draft invoice of `quantity` of the part on the purchase order line. */
+async function draftPurchaseOrderInvoice(
+  f: Fixture,
+  purchaseOrderId: string,
+  purchaseOrderLineId: string,
+  quantity: number
+) {
+  const invoiceId = `${f.prefix}-purchase-invoice`;
+  await seed(f, async (trx) => {
+    const interaction = await trx
+      .insertInto("supplierInteraction")
+      .values({ supplierId: f.supplierId, companyId: f.companyId })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await trx
+      .insertInto("purchaseInvoice")
+      .values({
+        id: invoiceId,
+        invoiceId: "PI-1",
+        supplierId: f.supplierId,
+        supplierInteractionId: interaction.id,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        status: "Draft",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("purchaseInvoiceDelivery")
+      .values({ id: invoiceId, companyId: f.companyId })
+      .execute();
+    await trx
+      .insertInto("purchaseInvoiceLine")
+      .values({
+        invoiceId,
+        invoiceLineType: "Part",
+        itemId: f.partId,
+        purchaseOrderId,
+        purchaseOrderLineId,
+        quantity,
+        supplierUnitPrice: 10,
+        exchangeRate: 1,
+        conversionFactor: 1,
+        inventoryUnitOfMeasureCode: "EA",
+        purchaseUnitOfMeasureCode: "EA",
+        locationId: f.locationId,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  return invoiceId;
+}
+
+// Before 9359b57e9e a purchase invoice post locked the order, then wrote its
+// line; a receipt post wrote the line, then the order. A third connection
+// holds the order, so the invoice post waits on it and the receipt post
+// writes the line before it waits on it too; released, the invoice post takes
+// the order and waits on the line the receipt post holds.
+// The invoice post's funds gate reads the order through PostgREST.
+postgrestTest(
+  "a purchase invoice post and a receipt post on one purchase order line at once do not deadlock, and the line counts both",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    const invoicer = await connectLocalTestDatabase();
+    const receiver = await connectLocalTestDatabase();
+    const holder = await connectLocalTestDatabase();
+    const monitor = await connectLocalTestDatabase();
+    let release!: () => void;
+    const released = new Promise<void>((done) => {
+      release = done;
+    });
+    let holdingLock: Promise<void> | undefined;
+    const running: Promise<unknown>[] = [];
+    try {
+      const purchaseOrderId = `${f.prefix}-po-race`;
+      const receiptId = await draftReceiptFromPurchaseOrder(f, "race");
+      await f.db
+        .updateTable("receiptLine")
+        .set({ receivedQuantity: 4 })
+        .where("receiptId", "=", receiptId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const line = await f.db
+        .selectFrom("purchaseOrderLine")
+        .select("id")
+        .where("purchaseOrderId", "=", purchaseOrderId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const invoiceId = await draftPurchaseOrderInvoice(
+        f,
+        purchaseOrderId,
+        line.id,
+        3
+      );
+      const [holderPid, invoicePid, receiptPid] = await Promise.all(
+        [holder, invoicer, receiver].map(backendPid)
+      );
+
+      let held!: () => void;
+      const holding = new Promise<void>((done) => {
+        held = done;
+      });
+      holdingLock = holder.transaction().execute(async (trx) => {
+        await sql`SELECT 1 FROM "purchaseOrder" WHERE id = ${purchaseOrderId} FOR NO KEY UPDATE`.execute(
+          trx
+        );
+        held();
+        await released;
+      });
+      void holdingLock.catch(() => {});
+      await Promise.race([holding, holdingLock]);
+
+      const invoicing = outcomeOf(() =>
+        invokePosting(
+          operationContext(f, client, USER, invoicer),
+          "post-purchase-invoice",
+          { type: "post", invoiceId },
+          postPurchaseInvoice
+        )
+      );
+      running.push(invoicing);
+      await waitUntilWaiting(monitor, [invoicePid], [holderPid]);
+
+      const receiving = outcomeOf(() =>
+        invokePosting(
+          handlesOf({ db: receiver, companyId: f.companyId, userId: USER }),
+          "post-receipt",
+          { type: "post", receiptId },
+          postReceipt
+        )
+      );
+      running.push(receiving);
+      await waitUntilWaiting(monitor, [receiptPid]);
+
+      release();
+      await holdingLock;
+      const outcomes = { invoice: await invoicing, receipt: await receiving };
+      expect(deadlocked(outcomes)).toEqual([]);
+      // The invoice post took the order first. A receipt post that read the
+      // line before the invoice wrote it is refused, to be posted again.
+      expect(outcomes.invoice.ok).toBe(true);
+      if (!outcomes.receipt.ok) {
+        expect(
+          (
+            await invokePosting(
+              handlesOf(f.ctx),
+              "post-receipt",
+              { type: "post", receiptId },
+              postReceipt
+            )
+          ).error
+        ).toBeNull();
+      }
+
+      const [counters, received, invoiced] = await Promise.all([
+        f.db
+          .selectFrom("purchaseOrderLine")
+          .select(["quantityReceived", "quantityInvoiced"])
+          .where("id", "=", line.id)
+          .executeTakeFirstOrThrow(),
+        f.db
+          .selectFrom("receiptLine")
+          .innerJoin("receipt", "receipt.id", "receiptLine.receiptId")
+          .select((eb) =>
+            eb.fn.sum<string>("receiptLine.receivedQuantity").as("quantity")
+          )
+          .where("receiptLine.lineId", "=", line.id)
+          .where("receipt.status", "=", "Posted")
+          .executeTakeFirstOrThrow(),
+        f.db
+          .selectFrom("purchaseInvoiceLine")
+          .innerJoin(
+            "purchaseInvoice",
+            "purchaseInvoice.id",
+            "purchaseInvoiceLine.invoiceId"
+          )
+          .select((eb) =>
+            eb.fn.sum<string>("purchaseInvoiceLine.quantity").as("quantity")
+          )
+          .where("purchaseInvoiceLine.purchaseOrderLineId", "=", line.id)
+          .where("purchaseInvoice.status", "not in", [
+            "Draft",
+            "Pending",
+            "Voided"
+          ])
+          .executeTakeFirstOrThrow()
+      ]);
+      expect({
+        quantityReceived: Number(counters.quantityReceived),
+        quantityInvoiced: Number(counters.quantityInvoiced),
+        posted: {
+          received: Number(received.quantity ?? 0),
+          invoiced: Number(invoiced.quantity ?? 0)
+        }
+      }).toEqual({
+        quantityReceived: 4,
+        quantityInvoiced: 3,
+        posted: { received: 4, invoiced: 3 }
+      });
+    } finally {
+      release();
+      await holdingLock?.catch(() => {});
+      await Promise.allSettled(running);
+      for (const db of [invoicer, receiver, holder, monitor]) {
+        await db.destroy();
+      }
       await f.cleanup();
     }
   }
