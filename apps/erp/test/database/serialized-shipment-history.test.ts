@@ -2,18 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { loadPackingSlipDocument } from "@carbon/lib/packing-slip-document.server";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { expect } from "vitest";
 import {
   assignReceiptReturnEntity,
-  assignShipmentLineEntity
+  assignShipmentLineEntity,
+  getShipmentTracking
 } from "../../app/modules/inventory/inventory.server";
 import {
-  getShipmentLines,
   postReceipt,
   postShipment
 } from "../../app/modules/inventory/inventory.service";
-import { getShipmentTracking } from "../../app/modules/inventory/inventory.utils";
 import { setSalesReturnOrderLineDisposition } from "../../app/modules/sales/sales.server";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
@@ -77,31 +77,29 @@ postgrestTest(
         ).error
       ).toBeNull();
       const draft = await createPackedShipment(f, f.assemblyId, "resale");
-      const read = async (shipmentId: string, posted: boolean) => {
-        const lines = await getShipmentLines(client, shipmentId);
-        expect(lines.error).toBeNull();
-        const tracking = await getShipmentTracking(
-          client,
-          shipmentId,
-          f.companyId,
-          posted ? (lines.data ?? []) : undefined
-        );
+      const read = async (shipmentId: string) => {
+        const tracking = await getShipmentTracking(ctx, { shipmentId });
         expect(tracking.error).toBeNull();
-        return Object.fromEntries(
-          (tracking.data ?? []).map((unit) => {
+        const slip = await loadPackingSlipDocument({
+          client, serviceRole: client, companyId: f.companyId, shipmentId, locale: "en"
+        });
+        const byLine = (units: typeof slip.pdfProps.trackedEntities) =>
+          Object.fromEntries(units.map((unit) => {
             const tags = unit.attributes as TrackedEntityAttributes;
             return [
               tags["Shipment Line"],
               [unit.id, unit.readableId, tags["Shipment Line Index"]]
             ];
-          })
-        );
+          }));
+        const saved = byLine(tracking.data ?? []);
+        expect(byLine(slip.pdfProps.trackedEntities)).toEqual(saved);
+        return saved;
       };
       const original = {
         [sale.shipmentLineId]: [cheap!.id, "SN-22", 0],
         [sale.warrantyLineId]: [rich!.id, "SN-40", 0]
       };
-      expect(await read(sale.shipmentId, true)).toEqual(original);
+      expect(await read(sale.shipmentId)).toEqual(original);
       expect(
         (
           await assignShipmentLineEntity(ctx, {
@@ -113,10 +111,10 @@ postgrestTest(
           })
         ).error
       ).toBeNull();
-      expect(await read(draft.shipmentId, false)).toEqual({
+      expect(await read(draft.shipmentId)).toEqual({
         [draft.shipmentLineId]: [cheap!.id, "SN-22", 0]
       });
-      expect(await read(sale.shipmentId, true)).toEqual(original);
+      expect(await read(sale.shipmentId)).toEqual(original);
       const debits = await f.db
         .selectFrom("itemLedger")
         .select(["documentLineId", "trackedEntityId"])
@@ -142,7 +140,7 @@ postgrestTest(
         .where("documentId", "=", sale.shipmentId)
         .where("documentType", "=", "Sales Shipment")
         .execute();
-      expect(await read(sale.shipmentId, true)).toEqual(original);
+      expect(await read(sale.shipmentId)).toEqual(original);
       // Lose both legacy tags: neither same-SKU line can claim either debit.
       await f.db
         .updateTable("trackedEntity")
@@ -150,7 +148,7 @@ postgrestTest(
         .where("companyId", "=", f.companyId)
         .where("id", "=", rich!.id)
         .execute();
-      expect(await read(sale.shipmentId, true)).toEqual({});
+      expect(await read(sale.shipmentId)).toEqual({});
     } finally {
       await f.cleanup();
     }
@@ -216,14 +214,7 @@ postgrestTest(
           units.map((u) => u.id)
         )
         .execute();
-      const lines = await getShipmentLines(client, sale.shipmentId);
-      expect(lines.error).toBeNull();
-      const tracking = await getShipmentTracking(
-        client,
-        sale.shipmentId,
-        f.companyId,
-        lines.data ?? []
-      );
+      const tracking = await getShipmentTracking(ctx, { shipmentId: sale.shipmentId });
       expect(tracking.error).toBeNull();
       expect(
         tracking.data?.map((u) => [

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { getShipmentTracking } from "@carbon/database/shipment-tracking";
 import type {
   getBatchProperties,
   getInventoryCountGroupSummaries,
@@ -27,10 +28,7 @@ import type {
   getWarehouseTransfers,
   PickingListLiveBin
 } from "./inventory.service";
-import type {
-  getReceiptTracking,
-  getShipmentTracking
-} from "./inventory.utils";
+import type { getReceiptTracking } from "./inventory.utils";
 
 export type BatchProperty = NonNullable<
   Awaited<ReturnType<typeof getBatchProperties>>["data"]

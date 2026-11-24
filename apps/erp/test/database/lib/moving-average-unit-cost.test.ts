@@ -85,4 +85,33 @@ describe("movingAverageUnitCost", () => {
       movingAverageUnitCost({ onHand: 0, unitCost: 15, quantity: 0, value: 8 })
     ).toBe(15);
   });
+
+  it("reverses all of a return's value at the precision of the stored rate", () => {
+    const change = {
+      onHand: 3,
+      unitCost: 33.33333,
+      value: -100,
+      reversingSalesReturn: true
+    };
+    expect(movingAverageUnitCost({ ...change, quantity: -3 })).toBe(33.33333);
+    expect(movingAverageUnitCost({ ...change, quantity: -2 })).toBe(0);
+    expect(() =>
+      movingAverageUnitCost({ ...change, quantity: -3, value: -100.0001 })
+    ).toThrow(/no stock/);
+    expect(() =>
+      movingAverageUnitCost({ ...change, quantity: -2, value: -100.0001 })
+    ).toThrow(/negative Average cost/);
+  });
+
+  it("retains the established rate when voiding into negative on-hand", () => {
+    expect(
+      movingAverageUnitCost({
+        onHand: -1,
+        unitCost: 12,
+        quantity: -1,
+        value: -20,
+        reversingSalesReturn: true
+      })
+    ).toBe(12);
+  });
 });

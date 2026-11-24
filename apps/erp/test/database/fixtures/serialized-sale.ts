@@ -18,18 +18,17 @@ import { handlesOf } from "./handles";
 import { confirmPackoutCommand, createPairedJob } from "./paired-job";
 import { createPackedShipment } from "./packout-shipment";
 
-export async function stockSerials(f: Fixture) {
+export async function stockSerials(f: Fixture, costs?: number[]) {
   await f.db
     .updateTable("item")
     .set({ itemTrackingType: "Serial" })
     .where("companyId", "=", f.companyId)
     .where("id", "=", f.assemblyId)
     .execute();
-  const serials = [40, 22].map((cost) => ({
-    cost,
-    id: f.prefix + "-sn-" + cost,
-    readableId: "SN-" + cost
-  }));
+  const serials = (costs ?? [40, 22]).map((cost, index) => {
+    const label = costs ? index : cost;
+    return { cost, id: f.prefix + "-sn-" + label, readableId: "SN-" + label };
+  });
   const common = { itemId: f.assemblyId, companyId: f.companyId, quantity: 1 };
   await f.db
     .insertInto("trackedEntity")
@@ -81,7 +80,7 @@ export async function packSerials(
   sources: Awaited<ReturnType<typeof stockSerials>>,
   afterFirstReceipt?: (itemId: string, outputId: string) => Promise<void>
 ) {
-  const job = await createPairedJob(f, f.assemblyId, 2);
+  const job = await createPairedJob(f, f.assemblyId, sources.length);
   await f.db
     .updateTable("itemCost")
     .set({ costingMethod: method, standardCost: 15 })

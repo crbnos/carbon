@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ShipmentTrackingAttributes } from "@carbon/database/shipment-tracking";
 import { z } from "zod";
 import { isThemeName } from "./themes";
 
@@ -49,7 +50,7 @@ export function normalizePlanId(planId: string | null | undefined): Plan {
 export type PickPartial<T, K extends keyof T> = Omit<T, K> &
   Partial<Pick<T, K>>;
 
-export interface TrackedEntityAttributes {
+export interface TrackedEntityAttributes extends ShipmentTrackingAttributes {
   "Batch Number"?: string;
   Customer?: string;
   "Fixed Asset"?: string;
@@ -67,9 +68,6 @@ export interface TrackedEntityAttributes {
   "Sales Order Line"?: string;
   Supplier?: string;
   "Serial Number"?: string;
-  "Shipment Line Index"?: number;
-  "Shipment Line"?: string;
-  Shipment?: string;
   "Split Entity ID"?: string;
   "Split From Entity ID"?: string;
   "Merged From Entity IDs"?: string[];

@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getShipmentTracking } from "@carbon/database/shipment-tracking";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -18,7 +19,6 @@ import {
   getShipmentLines,
   getShipmentRelatedItems
 } from "~/modules/inventory/inventory.service";
-import { getShipmentTracking } from "~/modules/inventory/inventory.utils";
 import type { RentalShipmentLine } from "~/modules/inventory/types";
 import {
   ShipmentDocuments,
@@ -67,14 +67,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.shipments);
   }
 
+  if (shipmentLines.error)
+    throw new Error("Failed to load shipment lines", {
+      cause: shipmentLines.error
+    });
+
   const shipmentLineTracking = await getShipmentTracking(
     client,
     shipmentId,
     companyId,
-    shipment.data.sourceDocument === "Sales Order" &&
-      ["Posted", "Voided"].includes(shipment.data.status ?? "")
-      ? (shipmentLines.data ?? [])
-      : undefined
+    { shipment: shipment.data, lines: shipmentLines.data }
   );
   if (shipmentLineTracking.error)
     throw new Error("Failed to load shipment tracking", {

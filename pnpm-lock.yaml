@@ -3128,6 +3128,9 @@ importers:
 
   packages/lib:
     dependencies:
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
       '@carbon/documents':
         specifier: workspace:*
         version: link:../documents
@@ -3171,9 +3174,6 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../notifications

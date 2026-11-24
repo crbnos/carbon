@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { getTaggedShipmentTracking } from "@carbon/database/shipment-tracking";
 import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Alert,
@@ -35,10 +36,7 @@ import { DateTime } from "~/components";
 import { useCompanyToday, useSettings, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import {
-  getShipmentTracking,
-  serialLineShortfalls
-} from "../../inventory.utils";
+import { serialLineShortfalls } from "../../inventory.utils";
 import type { Shipment, ShipmentLine } from "../../types";
 import { isShippable } from "./ShipmentLines";
 
@@ -149,7 +147,7 @@ const ShipmentPostBody = ({
       return;
     }
 
-    const shipmentLineTracking = await getShipmentTracking(
+    const shipmentLineTracking = await getTaggedShipmentTracking(
       carbon,
       shipmentId,
       companyId

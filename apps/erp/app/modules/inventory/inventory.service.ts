@@ -2088,10 +2088,14 @@ export async function getShipmentLines(
   client: SupabaseClient<Database>,
   shipmentId: string
 ) {
-  return client
-    .from("shipmentLines")
-    .select("*, fulfillment(*, job(*))")
-    .eq("shipmentId", shipmentId);
+  return fetchAllRecords(() =>
+    client
+      .from("shipmentLines")
+      .select("*, fulfillment(*, job(*))")
+      .eq("shipmentId", shipmentId)
+      .order("createdAt")
+      .order("id")
+  );
 }
 
 export async function getShipmentLinesWithDetails(
@@ -14919,8 +14923,31 @@ export async function assertReceivedStockOnHand(
   }
 }
 
-/** A later return of the same serial can refill the original bin. Lock the
- * unit as shipment posting does, then check which document last moved it. */
+/** A stock sale and an RMA void must agree on which Average balance the
+ * sale relieves. Take the transaction locks in key order for mixed orders,
+ * before either writer takes cost layers or posts quantity. Ordinary sales
+ * share locks; only a return void needs to exclude a competing sale. */
+async function lockAverageSalesReturnItems(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  itemIds: string[],
+  posting: "sale" | "return void"
+): Promise<void> {
+  if (itemIds.length === 0) return;
+  const lock =
+    posting === "sale"
+      ? sql`pg_advisory_xact_lock_shared`
+      : sql`pg_advisory_xact_lock`;
+  await sql`SELECT ${lock}(k) FROM (
+    SELECT DISTINCT hashtextextended('sales-return-average:' || "companyId" || ':' || "itemId", 0) AS k
+    FROM "itemCost"
+    WHERE "companyId" = ${companyId} AND "itemId" = ANY(${itemIds}::text[]) AND "costingMethod" = 'Average'
+    ORDER BY k
+  ) AS locks`.execute(trx);
+}
+
+/** A later return can refill the original bin with the same serial. Only
+ * fully reversed bin transfers may intervene between this receipt and its void. */
 async function assertLatestSerialReturn(
   trx: Transaction<KyselyDatabase>,
   companyId: string,
@@ -14936,25 +14963,43 @@ async function assertLatestSerialReturn(
     .orderBy("id")
     .forUpdate()
     .execute();
-  const latest = await trx
-    .selectFrom("itemLedger")
-    .distinctOn("trackedEntityId")
-    .select(["documentId", "documentType", "quantity"])
-    .where("companyId", "=", companyId)
-    .where("trackedEntityId", "=", sql<string>`ANY(${serialIds}::text[])`)
-    .where("quantity", "!=", 0)
-    .orderBy("trackedEntityId")
-    .orderBy("entryNumber", "desc")
-    .execute();
-  if (
-    latest.length !== serialIds.length ||
-    latest.some(
-      (row) =>
-        row.documentType !== "Sales Return Receipt" ||
-        row.documentId !== receiptId ||
-        row.quantity <= 0
+  const interveningMove = await trx
+    .selectFrom("itemLedger as receipt")
+    .innerJoin("itemLedger as move", (join) =>
+      join
+        .onRef("move.companyId", "=", "receipt.companyId")
+        .onRef("move.trackedEntityId", "=", "receipt.trackedEntityId")
+        .onRef("move.entryNumber", ">", "receipt.entryNumber")
     )
-  ) {
+    .select("move.trackedEntityId")
+    .where("receipt.companyId", "=", companyId)
+    .where("receipt.documentType", "=", "Sales Return Receipt")
+    .where("receipt.documentId", "=", receiptId)
+    .where("receipt.trackedEntityId", "=", sql<string>`ANY(${serialIds}::text[])`)
+    .where("receipt.quantity", ">", 0)
+    .where("move.quantity", "!=", 0)
+    // A pick and its unpick net to zero in each bin of the same transfer.
+    // A sale and a later return are separate custody events even at net zero.
+    .groupBy([
+      "move.trackedEntityId",
+      "move.documentType",
+      "move.documentId",
+      "move.entryType",
+      "move.itemId",
+      "move.locationId",
+      "move.storageUnitId",
+      "move.projectId"
+    ])
+    .having((eb) =>
+      eb.or([
+        eb("move.documentType", "is distinct from", "Direct Transfer"),
+        eb("move.entryType", "is distinct from", "Transfer"),
+        eb(eb.fn.sum("move.quantity"), "!=", 0)
+      ])
+    )
+    .limit(1)
+    .executeTakeFirst();
+  if (interveningMove) {
     throw new InvalidInputError(RECEIPT_VOID_STOCK_MOVED_ERROR);
   }
 }
@@ -15515,6 +15560,12 @@ export async function postReceipt(
               receiptId,
               serialIds
             );
+            await lockAverageSalesReturnItems(
+              trx,
+              companyId,
+              reversingItemLedger.map((row) => row.itemId),
+              "return void"
+            );
             await assertReceivedStockOnHand(
               trx,
               companyId,
@@ -15543,6 +15594,7 @@ export async function postReceipt(
             // balance before its reversing item ledger rows are written.
             await applyAverageCostChanges(trx, {
               companyId,
+              reversingSalesReturn: true,
               changes: receiptLayers.flatMap((row) =>
                 row.itemId
                   ? [
@@ -21017,6 +21069,15 @@ export async function postShipment(
                 }
               }
 
+              const quantitiesToRelieve =
+                shippedQuantityByItem(journalShipmentLines);
+              await lockAverageSalesReturnItems(
+                trx,
+                companyId,
+                [...quantitiesToRelieve.keys()],
+                "sale"
+              );
+
               // A sales order ships common stock only (Projects Phase 2a).
               await assertEntitiesInCommonStock(
                 trx,
@@ -21370,9 +21431,7 @@ export async function postShipment(
               // Relieve each item's cost, then write the journal.
               const serialCostByLine = new Map<string, number>();
               const relievedCostByItem = new Map<string, number>();
-              for (const [itemId, quantity] of shippedQuantityByItem(
-                journalShipmentLines
-              )) {
+              for (const [itemId, quantity] of quantitiesToRelieve) {
                 const leaving = leavingTrackedEntityIds(
                   itemLedgerInserts,
                   itemId

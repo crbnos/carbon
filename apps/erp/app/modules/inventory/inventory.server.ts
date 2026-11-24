@@ -12,6 +12,7 @@ import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import * as materialRequests from "@carbon/database/material-request";
 import { syncReceiptBatchQuantities } from "@carbon/database/receipt-batch-numbers";
+import { getShipmentTracking as readShipmentTracking } from "@carbon/database/shipment-tracking";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   dedupeViolations,
@@ -52,7 +53,10 @@ import {
   updatePurchasedPrices,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
-import { recordSalesRuleOutcome } from "~/modules/sales/sales.service";
+import {
+  customerHeldReturnUnitIds,
+  recordSalesRuleOutcome
+} from "~/modules/sales/sales.service";
 import {
   getCompanySettings,
   getNextSequence
@@ -1289,19 +1293,18 @@ export const assignReceiptReturnEntity = defineServiceFn({
       .eq("id", orderLine.data.salesReturnOrderId)
       .eq("companyId", companyId)
       .maybeSingle();
-    const shipmentId = attributes.Shipment;
-    const shippedToCustomer =
-      returnOrder.data?.customerId && typeof shipmentId === "string"
-        ? await client
-            .from("shipment")
-            .select("id")
-            .eq("id", shipmentId)
-            .eq("companyId", companyId)
-            .eq("customerId", returnOrder.data.customerId)
-            .eq("status", "Posted")
-            .maybeSingle()
-        : { data: null };
-    if (!shippedToCustomer.data) {
+    const customerId = returnOrder.data?.customerId;
+    const eligible =
+      customerId && orderLine.data.itemId
+        ? await customerHeldReturnUnitIds(
+            ctx.asSystem.pg,
+            companyId,
+            customerId,
+            orderLine.data.itemId,
+            [trackedEntityId]
+          )
+        : null;
+    if (!eligible?.has(trackedEntityId)) {
       return ctx.error("rule", "Entity was not shipped to this customer");
     }
 
@@ -5967,9 +5970,9 @@ export const getShipmentTracking = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await utils.getShipmentTracking(
+      await readShipmentTracking(
         ctx.asCaller.supabase,
-        input.shipmentId as never,
+        input.shipmentId,
         ctx.company.id
       )
     );

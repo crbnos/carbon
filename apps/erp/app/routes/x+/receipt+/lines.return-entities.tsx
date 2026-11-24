@@ -6,6 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales/sales.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "receipt", "return-entities");
 
@@ -51,6 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     customerId && itemId
       ? getShippedTrackedEntitiesForCustomer(
           client,
+          getDatabaseClient(),
           companyId,
           customerId,
           itemId

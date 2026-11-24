@@ -17665,17 +17665,36 @@ export function movingAverageUnitCost({
   onHand,
   unitCost,
   quantity,
-  value
+  value,
+  reversingSalesReturn = false
 }: {
   onHand: number;
   unitCost: number;
   quantity: number;
   value: number;
+  reversingSalesReturn?: boolean;
 }): number {
   const held = Math.max(onHand, 0);
   const after = held + quantity;
+  const remainingValue = held * unitCost + value;
+  if (reversingSalesReturn && held > 0 && quantity < 0) {
+    // Compare at the precision of the stored rate: three units received for
+    // 100 carry a rate of 33.33333, even when all 100 can be reversed.
+    const reversesAllValue = equals(round(-value / held), unitCost);
+    if (equals(after, 0) && !reversesAllValue) {
+      throw new InvalidInputError(
+        "Cannot void this return: its booked cost would leave Average inventory value with no stock. Reverse the intervening stock movements first."
+      );
+    }
+    if (after > EPSILON && round(remainingValue / after) < 0) {
+      if (reversesAllValue) return 0;
+      throw new InvalidInputError(
+        "Cannot void this return: its booked cost would leave the remaining stock at a negative Average cost. Reverse the intervening stock movements first."
+      );
+    }
+  }
   if (after <= EPSILON) return unitCost;
-  return (held * unitCost + value) / after;
+  return remainingValue / after;
 }
 
 /** Units and value a posting moves at their own cost, per item. */
@@ -17694,7 +17713,15 @@ export type AverageCostChange = {
  */
 export async function applyAverageCostChanges(
   trx: Transaction<DB>,
-  { companyId, changes }: { companyId: string; changes: AverageCostChange[] }
+  {
+    companyId,
+    changes,
+    reversingSalesReturn
+  }: {
+    companyId: string;
+    changes: AverageCostChange[];
+    reversingSalesReturn?: boolean;
+  }
 ): Promise<void> {
   const byItem = new Map<string, { quantity: number; value: number }>();
   for (const change of changes) {
@@ -17739,7 +17766,8 @@ export async function applyAverageCostChanges(
         onHand: onHandByItem.get(row.itemId) ?? 0,
         unitCost,
         quantity: change.quantity,
-        value: change.value
+        value: change.value,
+        reversingSalesReturn
       })
     );
     return equals(next, unitCost) ? [] : [{ itemId: row.itemId, next }];

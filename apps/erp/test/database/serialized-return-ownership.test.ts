@@ -7,11 +7,15 @@ import {
   assignReceiptReturnEntity,
   assignShipmentLineEntity
 } from "../../app/modules/inventory/inventory.server";
-import { postReceipt } from "../../app/modules/inventory/inventory.service";
+import {
+  postReceipt,
+  postStockTransfer
+} from "../../app/modules/inventory/inventory.service";
 import { setSalesReturnOrderLineDisposition } from "../../app/modules/sales/sales.server";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
+  type Fixture,
   stampCutover,
   unwrap,
   USER
@@ -26,6 +30,53 @@ import {
   createLinkedSerialReturn,
   stockSerials
 } from "./fixtures/serialized-sale";
+
+function postReturn(f: Fixture, receiptId: string, type: "post" | "void") {
+  return invokePosting(
+    handlesOf(f.ctx),
+    "post-receipt",
+    { receiptId, type },
+    postReceipt
+  ).then(unwrap);
+}
+
+async function sellAndReturn(
+  f: Fixture,
+  ctx: ReturnType<typeof operationContext>,
+  serialId: string,
+  suffix: string
+) {
+  const shipment = await createPackedShipment(f, f.assemblyId, suffix);
+  expect(
+    (
+      await assignShipmentLineEntity(ctx, {
+        shipmentId: shipment.shipmentId,
+        shipmentLineId: shipment.shipmentLineId,
+        trackingType: "serial",
+        trackedEntityId: serialId,
+        index: 0
+      })
+    ).error
+  ).toBeNull();
+  await postPackedShipment(f, shipment, f.assemblyId, serialId);
+  const rma = await createLinkedSerialReturn(
+    f,
+    f.assemblyId,
+    shipment.shipmentLineId
+  );
+  expect(
+    (
+      await assignReceiptReturnEntity(ctx, {
+        receiptId: rma.receiptId,
+        receiptLineId: rma.receiptLineId,
+        trackedEntityId: serialId,
+        index: 0
+      })
+    ).error
+  ).toBeNull();
+  await postReturn(f, rma.receiptId, "post");
+  return rma;
+}
 
 for (const method of ["FIFO", "LIFO", "Average", "Standard"] as const) {
   postgrestTest(
@@ -43,46 +94,7 @@ for (const method of ["FIFO", "LIFO", "Average", "Standard"] as const) {
           .where("itemId", "=", itemId)
           .execute();
         const ctx = operationContext(f, client, USER);
-        const post = (receiptId: string, type: "post" | "void") =>
-          invokePosting(
-            handlesOf(f.ctx),
-            "post-receipt",
-            { receiptId, type },
-            postReceipt
-          ).then(unwrap);
-        const sellAndReturn = async (suffix: string) => {
-          const shipment = await createPackedShipment(f, itemId, suffix);
-          expect(
-            (
-              await assignShipmentLineEntity(ctx, {
-                shipmentId: shipment.shipmentId,
-                shipmentLineId: shipment.shipmentLineId,
-                trackingType: "serial",
-                trackedEntityId: serialId,
-                index: 0
-              })
-            ).error
-          ).toBeNull();
-          await postPackedShipment(f, shipment, itemId, serialId);
-          const rma = await createLinkedSerialReturn(
-            f,
-            itemId,
-            shipment.shipmentLineId
-          );
-          expect(
-            (
-              await assignReceiptReturnEntity(ctx, {
-                receiptId: rma.receiptId,
-                receiptLineId: rma.receiptLineId,
-                trackedEntityId: serialId,
-                index: 0
-              })
-            ).error
-          ).toBeNull();
-          await post(rma.receiptId, "post");
-          return rma;
-        };
-        const first = await sellAndReturn("first");
+        const first = await sellAndReturn(f, ctx, serialId, "first");
         expect(
           (
             await setSalesReturnOrderLineDisposition(ctx, {
@@ -91,7 +103,7 @@ for (const method of ["FIFO", "LIFO", "Average", "Standard"] as const) {
             })
           ).error
         ).toBeNull();
-        const second = await sellAndReturn("second");
+        const second = await sellAndReturn(f, ctx, serialId, "second");
         const ids = [first.receiptId, second.receiptId];
         const snapshot = async () => {
           const receipts = await f.db
@@ -173,12 +185,12 @@ for (const method of ["FIFO", "LIFO", "Average", "Standard"] as const) {
           attributes: { Receipt: second.receiptId }
         });
         // A different return currently holds the same physical unit in the same bin.
-        await expect(post(first.receiptId, "void")).rejects.toThrow(
+        await expect(postReturn(f, first.receiptId, "void")).rejects.toThrow(
           /moved|consumed/
         );
         expect(await snapshot()).toEqual(before);
 
-        await post(second.receiptId, "void");
+        await postReturn(f, second.receiptId, "void");
         const after = await snapshot();
         expect(after.receipts).toEqual(
           expect.arrayContaining([
@@ -232,3 +244,81 @@ for (const method of ["FIFO", "LIFO", "Average", "Standard"] as const) {
     }
   );
 }
+
+postgrestTest(
+  "a current return can be voided after the clerk unpicks its serial back to the receiving bin",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      await stampCutover(f);
+      const ctx = operationContext(f, client, USER);
+      const serialId = (await stockSerials(f))[0]!.id;
+      const rma = await sellAndReturn(f, ctx, serialId, "bin-pick");
+      expect(
+        (
+          await setSalesReturnOrderLineDisposition(ctx, {
+            lineId: rma.returnLineId,
+            disposition: "Use As Is"
+          })
+        ).error
+      ).toBeNull();
+
+      const company = { companyId: f.companyId, createdBy: USER };
+      const bin = await f.db
+        .insertInto("storageUnit")
+        .values({ ...company, name: "Destination", locationId: f.locationId })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const transfer = await f.db
+        .insertInto("stockTransfer")
+        .values({
+          ...company,
+          stockTransferId: f.prefix,
+          status: "Released",
+          locationId: f.locationId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const line = await f.db
+        .insertInto("stockTransferLine")
+        .values({
+          ...company,
+          stockTransferId: transfer.id,
+          itemId: f.assemblyId,
+          quantity: 1,
+          requiresSerialTracking: true,
+          toStorageUnitId: bin.id
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const pick = {
+        stockTransferId: transfer.id,
+        stockTransferLineId: line.id,
+        trackedEntityId: serialId,
+        locationId: f.locationId
+      };
+      await postStockTransfer(ctx, { ...pick, type: "serial" });
+      await expect(postReturn(f, rma.receiptId, "void")).rejects.toThrow(
+        /stock.*moved/i
+      );
+      await postStockTransfer(ctx, { ...pick, type: "unpickSerial" });
+      await postReturn(f, rma.receiptId, "void");
+      const movements = await f.db
+        .selectFrom("itemLedger")
+        .select(["documentId", "quantity"])
+        .where("companyId", "=", f.companyId)
+        .where("trackedEntityId", "=", serialId)
+        .orderBy("entryNumber")
+        .execute();
+      expect(movements.at(-1)).toEqual({
+        documentId: rma.receiptId,
+        quantity: -1
+      });
+      expect(
+        movements.reduce((sum, row) => sum + Number(row.quantity), 0)
+      ).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
