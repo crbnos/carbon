@@ -5273,3 +5273,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A controlled field's starting value must equal its form default
+
+**Context:** An RMA line with no customer asset showed Unsaved changes on leaving, with nothing changed. The first diagnosis blamed the Disposition list, a bare Radix Select outside the form's state.
+
+**Problem:** The route passed `customerAssetId: line.customerAssetId ?? undefined` as the form default, and the form seeded its `useState` with `initialValues.customerAssetId ?? ""`. On mount, `Combobox` (`@carbon/form`) calls `setValue` with any value prop that is not null or undefined; `useControllableValue` marks the field touched when that value differs from the default by `!==`, so `""` against `undefined` touched it. `Submit` blocks navigation while any field is touched.
+
+**Rule:** Seed the state a controlled field reads (`Combobox`, `SelectControlled`, `NumberControlled`, `Item`, `TaxCode`) from the same value the form gets as its default: `useState(initialValues.x)`, or the same `?? ""` in both places. A caller that leaves a field out gets `undefined` as its default, so a state fallback such as `?? "Return to Stock"` needs the same value in that caller's defaults. To find the field behind a false Unsaved changes prompt, read each controlled field's starting value against its default, not the fields that look interactive.
+
+**Applies to:** Every `ValidatedForm` whose controlled fields read component state, and every route or modal that builds its `initialValues`.
