@@ -28,9 +28,38 @@ export const blockEditSchema = z.object({
   hide: z.array(z.string()).optional(),
   show: z.array(z.string()).optional(),
   visible: z.boolean().optional(),
-  /** The Terms block's own rich text for this document. */
-  content: z.any().optional()
+  /**
+   * A block's own printed fields for this document (`OWN_EDIT_FIELDS`). Null
+   * clears the template's: the Terms block then prints the company's terms.
+   */
+  content: z.any().optional(),
+  title: z.string().nullable().optional(),
+  rows: z
+    .array(z.object({ label: z.string(), value: z.string() }))
+    .nullable()
+    .optional(),
+  label: z.string().nullable().optional(),
+  value: z.string().nullable().optional()
 });
+
+type OwnEditField = "content" | "title" | "rows" | "label" | "value";
+
+/** The fields a block prints from its own settings, which one document can change. */
+const OWN_EDIT_FIELDS: Partial<
+  Record<DocumentBlock["type"], readonly OwnEditField[]>
+> = {
+  terms: ["content"],
+  richText: ["title", "content"],
+  keyValue: ["title", "rows"],
+  field: ["label", "value"],
+  customField: ["label", "value"]
+};
+
+export function ownEditFields(
+  type: DocumentBlock["type"]
+): readonly OwnEditField[] {
+  return OWN_EDIT_FIELDS[type] ?? [];
+}
 
 export const documentEditSchema = z.object({
   /** Keyed by the template's block id (a built-in block's id is its type). */
@@ -142,14 +171,15 @@ export function applyDocumentEdit<
       const block = forPrinting(original, edit);
       const change = edit.blocks[block.id];
       if (!change) return block;
-      const next = {
+      const next: Record<string, unknown> = {
         ...block,
         text: { ...block.text, ...change.text },
         hidden: hiddenWith(block.hidden, change),
         visible: change.visible ?? block.visible
       };
-      if (block.type === "terms" && change.content !== undefined) {
-        return { ...next, content: change.content ?? undefined };
+      for (const field of ownEditFields(block.type)) {
+        if (change[field] !== undefined)
+          next[field] = change[field] ?? undefined;
       }
       return next as DocumentBlock;
     }),
@@ -220,14 +250,18 @@ export function diffDocumentEdit(
     );
     if (text) change.text = text;
     if (block.visible !== after.visible) change.visible = after.visible;
-    if (
-      block.type === "terms" &&
-      after.type === "terms" &&
-      JSON.stringify(block.content ?? null) !==
-        JSON.stringify(after.content ?? null)
-    ) {
-      // Null: the template's terms are cleared here, and the company's print.
-      change.content = after.content ?? null;
+    if (after.type === block.type) {
+      const before = block as Record<string, unknown>;
+      const edited = after as Record<string, unknown>;
+      for (const field of ownEditFields(block.type)) {
+        if (
+          JSON.stringify(before[field] ?? null) !==
+          JSON.stringify(edited[field] ?? null)
+        ) {
+          // Null: the template's is cleared here (Terms then prints the company's).
+          (change as Record<string, unknown>)[field] = edited[field] ?? null;
+        }
+      }
     }
     if (Object.keys(change).length > 0) blocks[block.id] = change;
   }
@@ -272,15 +306,23 @@ export function validateDocumentEdit(
     settings: printed.settings
   }).filter(({ blockId, code, field }) => {
     if (code === "valueLocked") return true;
-    const change =
-      blockId === "document" ? edit.settings : edit.blocks[blockId];
+    if (blockId === "document") {
+      return (
+        edit.settings.text?.[field] !== undefined ||
+        edit.settings.hide?.includes(field) === true
+      );
+    }
+    const change = edit.blocks[blockId];
+    if (!change) return false;
+    // An own field's problem is named by the field, or by a piece of it ("rows.0.label").
+    const type = printed.blocks.find((b) => b.id === blockId)?.type;
+    const own = type
+      ? ownEditFields(type).find((f) => f === field.split(".")[0])
+      : undefined;
     return (
-      change?.text?.[field] !== undefined ||
-      change?.hide?.includes(field) === true ||
-      (field === "content" &&
-        change !== undefined &&
-        "content" in change &&
-        change.content !== undefined)
+      change.text?.[field] !== undefined ||
+      change.hide?.includes(field) === true ||
+      (own !== undefined && change[own] !== undefined)
     );
   });
 }

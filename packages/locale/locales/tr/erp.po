@@ -17424,6 +17424,10 @@ msgstr "Tüm MRP planlarını görmek için boş bırakın veya 0 girin."
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
 
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "“{0}” özel alanını yazdırmak için Değer'i boş bırakın."
+
 msgid "Left item"
 msgstr "Sol öğe"
 
@@ -32256,6 +32260,9 @@ msgstr "İş akışı bildiriminin işaret ettiği kayıt, bir kimlik ve türü 
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "Bir ödeme veya notu bir faturaya uygulayan ve uygulanan, iskonto ve kayıttan düşme tutarlarını taşıyan kayıt."
+
+msgid "The record's value"
+msgstr "Kaydın değeri"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "İzlenen varlıkların kaydedilmiş soy ağacı — hangi girdilerin hangi çıktıları üretmek için tüketildiği, mal kabul ile sevkiyat arasında."

@@ -17424,6 +17424,10 @@ msgstr "Lascia vuoto, oppure inserisci 0, per mostrare tutto quello che l'MRP pi
 msgid "Leave this page"
 msgstr "Lascia questa pagina"
 
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "Lascia vuoto Valore per stampare il campo personalizzato “{0}”."
+
 msgid "Left item"
 msgstr "Elemento sinistro"
 
@@ -32256,6 +32260,9 @@ msgstr "Il record a cui una notifica del flusso di lavoro punta, denominato come
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "Il record che applica un pagamento o una nota a una fattura, portando gli importi applicati, di sconto e di stralcio."
+
+msgid "The record's value"
+msgstr "Il valore del record"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "La genealogia registrata delle entità monitorate - quali input sono stati consumati per produrre quali output, dalla ricezione alla spedizione."
