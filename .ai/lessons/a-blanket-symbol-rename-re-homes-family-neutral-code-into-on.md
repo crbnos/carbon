@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/utils/src/rules.ts", "packages/utils/src/rule-filters.ts", "packages/ee/src/rules/**"]
+triggers: ["ItemFilter", "ruleAppliesToItem", "SalesRule"]
 promoted: null
 ---
 # A blanket symbol rename re-homes family-neutral code into one family

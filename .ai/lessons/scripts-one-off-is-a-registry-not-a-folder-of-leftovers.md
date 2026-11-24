@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["scripts/one-off/**", "ci/src/one-off-scripts.ts"]
+triggers: ["readdirSync"]
 promoted: null
 ---
 # `scripts/one-off/` is a registry, not a folder of leftovers

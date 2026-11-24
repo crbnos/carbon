@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/components/Table/utils.ts"]
+triggers: ["buildColumnMaps", "exportValue"]
 promoted: null
 ---
 # A server export mapping cannot add a column the browser omitted

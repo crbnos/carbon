@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/documents/src/utils/*.ts", "packages/documents/src/pdf/blocks/**", "packages/documents/src/email/*Email.tsx"]
+triggers: ["getLineTotal", "getLineSubtotal", "getLineTaxableSubtotal"]
 promoted: null
 ---
 # Document totals helpers guarded on truthy qty/price silently drop shipping- or tax-only lines

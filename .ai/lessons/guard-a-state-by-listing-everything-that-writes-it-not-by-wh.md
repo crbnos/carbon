@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["status: \"Ready\"", "SET status = 'Ready'", "updateJobStatus"]
 promoted: null
 ---
 # Guard a state by listing everything that writes it, not by who calls the check

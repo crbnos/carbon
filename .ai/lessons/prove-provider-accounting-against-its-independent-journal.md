@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/accounting/providers/rillet/**"]
+triggers: ["Rillet", "rillet"]
 promoted: null
 ---
 # Prove provider accounting against its independent journal

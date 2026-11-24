@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/utils/src/object.ts", "apps/erp/app/modules/*/*.service.ts", "apps/mes/app/services/*.service.ts"]
+triggers: ["unchecked(", "RejectExcessProperties"]
 promoted: null
 ---
 # A cast that silences excess-property errors hides failed writes

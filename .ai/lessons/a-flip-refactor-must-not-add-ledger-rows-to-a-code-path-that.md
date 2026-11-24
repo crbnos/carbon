@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/inventory.service.ts"]
+triggers: ["buildBatchSplitRecords", "Batch Split"]
 promoted: null
 ---
 # A flip/refactor must not add ledger rows to a code path that deliberately posted none

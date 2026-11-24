@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/hooks/useRevalidator.ts"]
+triggers: ["revalidate()", "shouldRevalidate", "useRevalidator"]
 promoted: null
 ---
 # A revalidation during the navigation after a save loses the save

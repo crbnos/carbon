@@ -1,5 +1,5 @@
 ---
-paths: []
+paths: ["apps/erp/app/routes/api+/v1+/lib/*.server.ts"]
 triggers: []
 promoted: null
 ---

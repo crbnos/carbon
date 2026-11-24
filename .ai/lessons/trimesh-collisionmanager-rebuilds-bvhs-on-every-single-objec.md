@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["crates/planner/src/**"]
+triggers: ["_contacts_at", "_self_exempt"]
 promoted: null
 ---
 # trimesh CollisionManager rebuilds BVHs on every single-object query

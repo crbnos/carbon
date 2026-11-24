@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: [".ai/specs/*.md"]
+triggers: ["postingGroup", "PostingGroup", "posting group"]
 promoted: null
 ---
 # Posting-group-style matrices are a rejected pattern

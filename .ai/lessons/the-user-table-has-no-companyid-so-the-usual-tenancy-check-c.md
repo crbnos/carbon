@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/workflows/actions/update.ts"]
+triggers: ["userToCompany", "existsInCompany", "selectInCompany"]
 promoted: null
 ---
 # The `user` table has no `companyId`, so the usual tenancy check cannot be applied to it

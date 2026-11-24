@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/ramp/**"]
+triggers: ["externalIntegrationMapping", "pg_advisory_xact_lock"]
 promoted: null
 ---
 # An external mapping must be committed with the Draft it makes idempotent

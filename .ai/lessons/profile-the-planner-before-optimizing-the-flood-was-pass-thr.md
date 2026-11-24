@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["crates/planner/src/**"]
+triggers: ["path_blockers", "contacts_at"]
 promoted: null
 ---
 # Profile the planner before optimizing — the flood was pass-through, not self-collision

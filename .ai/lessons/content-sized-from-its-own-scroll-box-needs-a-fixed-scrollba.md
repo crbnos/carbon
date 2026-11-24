@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["useResizeObserver"]
 promoted: null
 ---
 # Content sized from its own scroll box needs a fixed scrollbar

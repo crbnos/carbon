@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/utils/src/themes.ts", "apps/*/app/services/theme.server.ts", "apps/erp/app/components/MeshGradientBackground.tsx"]
+triggers: ["SeasonalTheme", "seasonalThemes", "resolveTheme("]
 promoted: null
 ---
 # A temporary override lives in the thing it overrides, not in its callers

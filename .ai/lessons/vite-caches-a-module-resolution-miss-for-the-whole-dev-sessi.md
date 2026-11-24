@@ -1,5 +1,5 @@
 ---
-paths: []
+paths: ["apps/erp/app/components/**", "apps/mes/app/components/**"]
 triggers: []
 promoted: null
 ---

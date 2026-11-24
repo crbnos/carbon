@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/workflows/catalog/**", "packages/database/src/audit.config.ts"]
+triggers: ["buildCatalog", "fkDisplayRegistry", "snapshotFields"]
 promoted: null
 ---
 # A generated catalog must key entity refs off the schema, not off a hand-written hint

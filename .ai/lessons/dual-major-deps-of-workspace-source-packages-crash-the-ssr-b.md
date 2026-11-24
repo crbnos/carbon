@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/vite.config.ts", "apps/mes/vite.config.ts", "packages/viewer/package.json"]
+triggers: ["noExternal", "zustand", "@react-three/fiber"]
 promoted: null
 ---
 # Dual-major deps of workspace source packages crash the SSR bundle when the shared dep is externalized

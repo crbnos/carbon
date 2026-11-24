@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["getSalesOrderInvoicePaymentsByIds", "invoiceSummary", "sourceAmount"]
 promoted: null
 ---
 # Sales-order Paid Amount uses invoice-target principal

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/components/JobOperation/components/IssueMaterialModal.tsx"]
+triggers: ["pickedAllocation", "suggestedAllocation", "pickingListLineTrackedEntity"]
 promoted: null
 ---
 # A mutually-exclusive primary/fallback branch breaks when the primary source can be legitimately empty

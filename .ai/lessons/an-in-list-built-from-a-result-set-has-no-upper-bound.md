@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/production/production.service.ts", "apps/erp/app/routes/x+/purchasing+/planning*.tsx", "apps/erp/app/routes/x+/production+/planning*.tsx"]
+triggers: ["getPlanningActions", "fetchAllByIds", {"text": ".in(\"id\"", "minCount": 2}]
 promoted: null
 ---
 # An `.in()` list built from a result set has no upper bound

@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["modelUpload", "model-optimize"]
 promoted: null
 ---
 # An event sent at commit races every write the caller makes after the insert

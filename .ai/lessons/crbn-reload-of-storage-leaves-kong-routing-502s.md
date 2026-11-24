@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/dev/src/commands/reload.ts"]
+triggers: ["crbn reload", "/storage/v1/"]
 promoted: null
 ---
 # crbn reload of storage leaves Kong routing 502s

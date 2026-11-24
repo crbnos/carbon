@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/event-system/handlers/*.sql", "packages/database/src/event-system/functions/*.sql"]
+triggers: ["must be owner", "OWNER TO postgres"]
 promoted: null
 ---
 # A new table handler's generated migration fails locally with "must be owner"

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["scripts/git-hooks/pre-commit", "packages/locale/locales/*/*.po"]
+triggers: ["lingui:check", "lingui extract"]
 promoted: null
 ---
 # The pre-commit Lingui extract reads the working tree, not the commit

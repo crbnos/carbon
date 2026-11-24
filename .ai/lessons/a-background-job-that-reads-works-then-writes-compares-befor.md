@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/tasks/sales-order-delivery-date-check.ts"]
+triggers: ["check-sales-order-delivery-dates", "IS NOT DISTINCT FROM"]
 promoted: null
 ---
 # A background job that reads, works, then writes compares before it writes

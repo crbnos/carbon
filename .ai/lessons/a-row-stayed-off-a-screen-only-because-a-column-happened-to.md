@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["get_active_job_operations_by_location", "get_batchable_operations", "normalizeOperationSourceIds", "assertEligible"]
 promoted: null
 ---
 # A row stayed off a screen only because a column happened to be null

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/kv/src/**"]
+triggers: ["@carbon/kv", "withResilience", "\"NX\""]
 promoted: null
 ---
 # `@carbon/kv` answers null for a miss and for an outage

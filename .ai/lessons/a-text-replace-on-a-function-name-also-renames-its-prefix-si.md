@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json"]
+triggers: ["ts-morph", "tool-manifest.digest.json"]
 promoted: null
 ---
 # A text replace on a function name also renames its prefix siblings

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/index.ts"]
+triggers: ["inngest.createFunction"]
 promoted: null
 ---
 # Inngest dev: an event fired before its function's first registration wedges the run

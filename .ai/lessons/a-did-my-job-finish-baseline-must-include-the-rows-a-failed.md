@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/settings+/backups.tsx"]
+triggers: ["knownBackupNames", "runningExport", "failedIsStale"]
 promoted: null
 ---
 # A "did my job finish?" baseline must include the rows a FAILED run left behind

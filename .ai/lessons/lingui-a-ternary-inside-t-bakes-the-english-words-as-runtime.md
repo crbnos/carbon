@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["=== 1 ? \"", "<Plural", "plural("]
 promoted: null
 ---
 # Lingui: a ternary inside t`` bakes the English words as runtime values

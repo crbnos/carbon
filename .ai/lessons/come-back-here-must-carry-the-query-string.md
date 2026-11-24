@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/auth/src/utils/http.ts", "apps/*/app/routes/**/login*.tsx", "apps/*/app/routes/**/callback.tsx"]
+triggers: ["getCurrentPath", "makeRedirectToFromHere", "redirectTo="]
 promoted: null
 ---
 # "Come back here" must carry the query string

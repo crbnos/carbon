@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/documents/src/template/texts/**"]
+triggers: ["documentTemplate", "documentEdit"]
 promoted: null
 ---
 # A catalog default holding a variable changes what a stored word means

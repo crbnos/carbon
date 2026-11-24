@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["isolation: \"worktree\"", "git merge-base"]
 promoted: null
 ---
 # An `isolation: "worktree"` subagent forks from `main`, not the parent's current branch

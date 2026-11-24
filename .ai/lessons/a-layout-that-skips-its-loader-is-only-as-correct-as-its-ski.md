@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/*/app/routes/**/_layout.tsx", "packages/utils/src/revalidate.ts"]
+triggers: ["export const shouldRevalidate"]
 promoted: null
 ---
 # A layout that skips its loader is only as correct as its skip rule

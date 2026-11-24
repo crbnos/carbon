@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/ramp/lib/webhook.ts", "apps/erp/app/routes/api+/webhook.*.ts"]
+triggers: ["verifyRampWebhookSignature", "createHmac", "timingSafeEqual"]
 promoted: null
 ---
 # Authenticate webhook challenges before acting on them

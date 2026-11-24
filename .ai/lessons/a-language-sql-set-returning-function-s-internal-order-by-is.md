@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/services/allocation.ts"]
+triggers: ["get_available_tracked_entities", "sortLotsByPickMethod", "RETURNS SETOF", "RETURNS TABLE"]
 promoted: null
 ---
 # A LANGUAGE sql set-returning function's internal ORDER BY is not guaranteed through PostgREST

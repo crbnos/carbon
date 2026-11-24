@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/audit.config.ts", "packages/database/src/event-system/attachments.ts"]
+triggers: ["auditConfig", "syncAuditSubscriptions"]
 promoted: null
 ---
 # An entity in `audit.config.ts` records nothing until its tables have `events: true`

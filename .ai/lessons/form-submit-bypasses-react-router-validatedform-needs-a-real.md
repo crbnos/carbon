@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/form/src/components/InputOTP.tsx", "packages/form/src/ValidatedForm.tsx"]
+triggers: [".submit()", "requestSubmit("]
 promoted: null
 ---
 # `form.submit()` bypasses React Router; `ValidatedForm` needs a real submitter

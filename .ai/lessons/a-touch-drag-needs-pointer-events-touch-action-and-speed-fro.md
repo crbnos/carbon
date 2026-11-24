@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/utils/drag.ts", "apps/erp/app/utils/drag-sensors.ts", "packages/config/tailwind/theme.css"]
+triggers: ["onMouseDown", "PointerSensor", "TouchSensor", "dragControls", "usePaneResize", "touch-none"]
 promoted: null
 ---
 # A touch drag needs pointer events, `touch-action`, and speed from the moves

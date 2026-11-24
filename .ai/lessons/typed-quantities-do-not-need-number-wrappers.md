@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: [{ text: "Number(", minCount: 3 }]
 promoted: null
 ---
 # Typed quantities do not need Number wrappers

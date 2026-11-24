@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["app.sync_in_progress", "app.dataset_apply", "app.backup_load"]
 promoted: null
 ---
 # A trigger that fills a default skips only a backup load

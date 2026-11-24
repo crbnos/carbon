@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/accounting-cutover/**"]
+triggers: ["settledFromCutoverIds"]
 promoted: null
 ---
 # An item left out at the accounting cutover must close in its own sub-ledger

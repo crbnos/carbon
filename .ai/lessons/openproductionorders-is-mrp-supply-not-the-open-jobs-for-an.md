@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/items/ui/Item/ItemBuildable.tsx"]
+triggers: ["openProductionOrders"]
 promoted: null
 ---
 # `openProductionOrders` is MRP supply, not "the open jobs for an item"

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/services/*.service.ts"]
+triggers: ["await import(", "internal-call"]
 promoted: null
 ---
 # A dynamic `.server` import fails the client build too

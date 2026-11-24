@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["attributes->>", "attributes ->>"]
 promoted: null
 ---
 # Demo-seeded attributes can make a dead query look alive

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/scripts/**", "packages/database/src/seed-*.ts", "packages/database/src/check-*.ts", "ci/src/**"]
+triggers: ["does not provide an export named", "\"type\": \"module\""]
 promoted: null
 ---
 # Bare-tsx scripts: isolate the import chain, never flip a shared package's `type`

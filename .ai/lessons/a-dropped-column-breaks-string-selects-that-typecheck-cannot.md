@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["DROP COLUMN", "RENAME COLUMN", "drop column", "rename column"]
 promoted: null
 ---
 # A dropped column breaks string selects that typecheck cannot see

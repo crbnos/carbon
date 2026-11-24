@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/projects/project-posting.ts", "apps/erp/app/modules/invoicing/project-charges.ts"]
+triggers: ["resolveProjectLineCharges", "loadInvoiceProjectCharges", "isUnallowableCharge", "projectLedger"]
 promoted: null
 ---
 # A project account replacing a line's account must not lose that account's meaning

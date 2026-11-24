@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/_public+/callback.tsx", "apps/mes/app/routes/_public+/callback.tsx", "packages/auth/src/services/self-signup.server.ts"]
+triggers: ["isSelfSignupBlockedForEmail", "signInWithOAuth"]
 promoted: null
 ---
 # OAuth signup bypasses app-level email gates — GoTrue provisions before your code runs

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/mrp-engine.ts", "packages/planning/src/mrp/mrp.ts"]
+triggers: ["consumeFirstRedirect", "explodeBom", "settleConsumeFirstLines", "loadSupersessionRedirect", "Consume First"]
 promoted: null
 ---
 # Consume First is one rule for bought and made parts (2026-09-16)

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/*.sql"]
+triggers: ["SECURITY DEFINER", "security definer", "net.http_post", "REVOKE EXECUTE"]
 promoted: null
 ---
 # A public SECURITY DEFINER function that calls net.http_post is a remote-DoS surface — put it in an internal schema

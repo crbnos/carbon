@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/event-system/handlers/sync_advance_document_sequence.sql", "apps/erp/app/components/Form/SequenceOrCustomId.tsx"]
+triggers: ["get_next_sequence", "SequenceOrCustomId", "document_sequence_pattern", "sync_advance_document_sequence"]
 promoted: null
 ---
 # A caller-supplied document number used to leave the counter behind

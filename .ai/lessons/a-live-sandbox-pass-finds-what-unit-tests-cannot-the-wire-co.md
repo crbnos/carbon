@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/ramp/**"]
+triggers: ["toRampGlAccountPayload", "buildSyncConfirmBody", "successful_syncs", "ensureRampConnection"]
 promoted: null
 ---
 # A live sandbox pass finds what unit tests cannot: the wire contract

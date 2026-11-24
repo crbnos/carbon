@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/sales-posting-amounts.ts"]
+triggers: ["calculateSalesIntercompanyAmount", "generate_intercompany_matches", "intercompanyTransaction"]
 promoted: null
 ---
 # Two halves of an intercompany trade must round at the same scale

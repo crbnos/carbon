@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/production/production.service.ts", "apps/erp/app/modules/sales/sales.service.ts"]
+triggers: ["externalLink", "quoteToQuote", "deleteQuote"]
 promoted: null
 ---
 # A new row reusing a readable id must qualify it — `externalLink` is UNIQUE per document

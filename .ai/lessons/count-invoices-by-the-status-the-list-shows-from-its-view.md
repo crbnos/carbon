@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/*/ui/**/*Dashboard*"]
+triggers: ["baseStatus", "from(\"purchaseInvoice\")", "from(\"salesInvoice\")"]
 promoted: null
 ---
 # Count invoices by the status the list shows, from its view

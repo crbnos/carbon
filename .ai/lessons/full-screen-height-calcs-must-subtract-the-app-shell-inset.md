@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/_layout.tsx", "apps/erp/app/components/Layout/Panels.tsx", "apps/erp/app/components/Layout/Navigation/CollapsibleSidebar.tsx"]
+triggers: ["100dvh", "--topbar-height", "--content-inset"]
 promoted: null
 ---
 # Full-screen height calcs must subtract the app-shell inset

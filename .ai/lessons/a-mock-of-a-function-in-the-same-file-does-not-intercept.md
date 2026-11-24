@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/test/**", "apps/erp/app/modules/**/*.test.ts"]
+triggers: ["vi.mock(", "vi.spyOn("]
 promoted: null
 ---
 # A mock of a function in the same file does not intercept

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/services/erp.ts", "packages/api/src/postings.ts"]
+triggers: ["MES_POSTINGS", "ErpPostingInput"]
 promoted: null
 ---
 # Type a cross-app call by what the receiver accepts

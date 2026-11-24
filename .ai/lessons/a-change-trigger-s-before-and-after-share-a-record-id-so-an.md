@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/workflows/engine/loader.ts", "packages/ee/src/workflows/runtime/**"]
+triggers: ["triggerOutputs", "EntityCache", "RuntimeValue"]
 promoted: null
 ---
 # A change trigger's `before` and `after` share a record id, so an id-keyed cache collapses them

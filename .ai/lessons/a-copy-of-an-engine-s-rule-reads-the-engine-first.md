@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/planning/src/mrp/bom-children.ts", "packages/planning/src/mrp/mrp.ts"]
+triggers: ["bomChildren", "methodCorrectionId", "WITH RECURSIVE"]
 promoted: null
 ---
 # A copy of an engine's rule reads the engine first

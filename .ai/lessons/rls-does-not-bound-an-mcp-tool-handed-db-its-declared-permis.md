@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/api+/v1+/lib/base.server.ts", "apps/erp/app/routes/api+/mcp+/_index.ts", "apps/erp/test/mcp-tool-permissions.test.ts"]
+triggers: ["scopesFromPermissions", "asSystem.pg"]
 promoted: null
 ---
 # RLS does not bound an MCP tool handed `db`; its declared permission is the only gate

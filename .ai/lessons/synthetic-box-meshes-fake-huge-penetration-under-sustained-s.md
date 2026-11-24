@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["crates/planner/tests/**"]
+triggers: ["trimesh"]
 promoted: null
 ---
 # Synthetic box meshes fake huge penetration under sustained sliding contact

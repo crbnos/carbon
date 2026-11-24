@@ -1,5 +1,5 @@
 ---
-paths: []
+paths: [".ai/specs/2026-09-07-accounting-posting-corrections.md"]
 triggers: []
 promoted: null
 ---

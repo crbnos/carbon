@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["user.email", "git rebase", "force-with-lease"]
 promoted: null
 ---
 # A PR's CLA check counts every commit author on the branch, including copies of main's commits

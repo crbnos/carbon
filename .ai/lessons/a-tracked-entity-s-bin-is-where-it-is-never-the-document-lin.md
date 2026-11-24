@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/shared/shared.service.ts"]
+triggers: ["resolveTrackedEntityBin", "getTrackedEntityBins", "p_filter_storage_unit", "assertInSourceBin"]
 promoted: null
 ---
 # A tracked entity's bin is where it IS, never the document line's bin — and "no storage unit" is a bin

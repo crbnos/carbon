@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/**/_layout.tsx", "apps/mes/app/routes/x+/**/_layout.tsx"]
+triggers: ["shouldRevalidate", "defaultShouldRevalidate", "useResolved"]
 promoted: null
 ---
 # Single fetch re-runs every matched loader on every navigation

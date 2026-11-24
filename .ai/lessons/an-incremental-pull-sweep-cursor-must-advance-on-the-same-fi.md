@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/integrations/*-pull-sweep*.ts"]
+triggers: ["pullWindowStart", "CURSOR_LOOKBACK_SECONDS"]
 promoted: null
 ---
 # An incremental pull-sweep cursor must advance on the SAME field the query filters on

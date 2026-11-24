@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/components/Table/Table.tsx", "apps/erp/app/components/Grid/Grid.tsx", "apps/erp/app/components/Editable/**"]
+triggers: ["useMovingCellRef", "onKeyDownCapture", "setSelectedCell"]
 promoted: null
 ---
 # Inline-editable table cells commit on blur — the container must own navigation keys in the capture phase

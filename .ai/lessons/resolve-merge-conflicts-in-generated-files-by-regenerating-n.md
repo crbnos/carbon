@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/types.ts", "packages/database/src/swagger-docs-schema.ts"]
+triggers: ["<<<<<<<", "generate:types", "generate:swagger"]
 promoted: null
 ---
 # Resolve merge conflicts in GENERATED files by regenerating, not by hand-editing the markers

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/test/*.test.ts", "apps/erp/app/modules/**/*.test.ts"]
+triggers: ["importOriginal"]
 promoted: null
 ---
 # A module first loaded inside a `vi.mock` factory binds the unmocked module

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/*+/$itemId.purchasing.$supplierPartId.delete.tsx"]
+triggers: ["TS2589"]
 promoted: null
 ---
 # `@ts-expect-error TS2589` on Supabase joined-selects is fragile — flips "used/unused" as files are added

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/events/queue.ts"]
+triggers: ["debounce:"]
 promoted: null
 ---
 # The local Inngest dev server (v1.19.4) can't handle `debounce` — it errors on every debounce item

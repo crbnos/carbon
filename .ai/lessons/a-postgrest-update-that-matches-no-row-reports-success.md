@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/items/items.service.ts"]
+triggers: [".update(", "resolveTypedItem", "updateTypedItem"]
 promoted: null
 ---
 # A PostgREST update that matches no row reports success

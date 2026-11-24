@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/auth/src/lib/supabase/client.ts", "apps/erp/app/routes/x+/quote+/$quoteId.duplicate.tsx"]
+triggers: ["functions.invoke", "storageReadFetch"]
 promoted: null
 ---
 # Retrying a 5xx from a non-idempotent Edge Function multiplies its side effects

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/event-system/handlers/sync_item_tracking_type_change.sql"]
+triggers: ["itemTrackingType", "sync_item_tracking_type_change", "setItemTrackingType"]
 promoted: null
 ---
 # A rule about a column belongs where every writer of that column passes

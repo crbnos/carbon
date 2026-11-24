@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/Form/FormLabel.tsx", "packages/react/src/Form/FormError.tsx", "apps/erp/app/modules/*/ui/**/*Form.tsx"]
+triggers: ["<FormLabel", "<FormError", "useFormControlContext"]
 promoted: null
 ---
 # A bare FormLabel outside FormControl 500s the whole route

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/form/src/ValidatedForm.tsx"]
+triggers: ["<ValidatedForm", "validator("]
 promoted: null
 ---
 # ValidatedForm needs the validator, not the raw schema

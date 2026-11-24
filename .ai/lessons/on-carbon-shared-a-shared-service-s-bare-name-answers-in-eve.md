@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/dev/docker/envoy/cds.template.yaml", "packages/dev/docker/docker-compose.dev.yml"]
+triggers: ["carbon-shared", "local-edge-runtime", "container_name"]
 promoted: null
 ---
 # On carbon-shared, a shared service's bare name answers in every worktree

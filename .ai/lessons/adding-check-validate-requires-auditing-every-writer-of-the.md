@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["VALIDATE CONSTRAINT", "NOT VALID"]
 promoted: null
 ---
 # Adding CHECK + VALIDATE requires auditing every WRITER of the column and pre-cleaning data in the same migration

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/tests/authz-*.test.sql"]
+triggers: ["pg_temp.allows"]
 promoted: null
 ---
 # `pg_temp.allows` cannot see a policy's role list

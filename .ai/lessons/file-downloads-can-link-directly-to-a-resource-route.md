@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/reports+/*aging*"]
+triggers: ["withCsvExport", "csvExportHref", "serverExport"]
 promoted: null
 ---
 # File downloads can link directly to a resource route

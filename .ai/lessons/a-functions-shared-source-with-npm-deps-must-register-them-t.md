@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/files/src/media/image-pipeline.ts", "packages/database/supabase/functions/deno.json"]
+triggers: ["libheif-js", "@jsquash/"]
 promoted: null
 ---
 # A functions/shared source with npm deps must register them twice

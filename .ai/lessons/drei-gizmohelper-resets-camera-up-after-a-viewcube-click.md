@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/viewer/src/useBuildFrame.ts", "packages/viewer/src/orientation.ts"]
+triggers: ["GizmoHelper", "camera.up"]
 promoted: null
 ---
 # drei GizmoHelper resets camera.up after a viewcube click

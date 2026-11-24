@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/types.ts", "apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json"]
+triggers: ["git checkout --", "generate:types"]
 promoted: null
 ---
 # Never `git checkout` a generated file to undo a local patch — the user may have regenerated it

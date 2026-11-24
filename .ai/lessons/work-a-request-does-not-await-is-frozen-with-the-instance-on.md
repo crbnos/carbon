@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/entry.server.tsx", "apps/mes/app/entry.server.tsx", "packages/lib/src/telemetry/capture.ts", "packages/stripe/src/stripe.server.ts"]
+triggers: ["async.background", "onBackground", "waitUntil"]
 promoted: null
 ---
 # Work a request does not await is frozen with the instance on Vercel

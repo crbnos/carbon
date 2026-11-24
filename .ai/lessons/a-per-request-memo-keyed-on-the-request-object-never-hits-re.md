@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/logger/src/context.server.ts", "packages/auth/src/services/auth.server.ts", "packages/auth/src/services/users.server.ts"]
+triggers: ["WeakMap<Request", "oncePerRequest", "oncePerRead", "requestContextMiddleware"]
 promoted: null
 ---
 # A per-request memo keyed on the `Request` object never hits — React Router doesn't share one across loaders

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["scripts/restore-database.sh"]
+triggers: ["schema_migrations", "pg_restore"]
 promoted: null
 ---
 # The migration ledger must travel with the schema it describes

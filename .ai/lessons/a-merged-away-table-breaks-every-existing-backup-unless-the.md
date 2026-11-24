@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/backups/renames.ts", "packages/jobs/manifests/schema.json", ".claude/rules/workflow-database-migration.md"]
+triggers: ["DROP TABLE", "RENAME TO", "TABLE_RENAMES"]
 promoted: null
 ---
 # A merged-away table breaks every existing backup unless the rename map and schema manifest move with it

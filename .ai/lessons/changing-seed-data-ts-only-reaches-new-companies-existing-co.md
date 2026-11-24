@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/seed-data.ts", "packages/database/src/seed-dev.ts"]
+triggers: ["periodCloseTaskDefinition", "seedCompany", "seed-data"]
 promoted: null
 ---
 # Changing `seed.data.ts` only reaches NEW companies — existing companies need a reconciling migration

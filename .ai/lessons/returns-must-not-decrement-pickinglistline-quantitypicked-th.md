@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["quantityPicked", "quantityReturned", "update_picking_list_status", "returnPickedRemainder"]
 promoted: null
 ---
 # Returns must not decrement pickingListLine.quantityPicked — the status trigger demotes terminal headers

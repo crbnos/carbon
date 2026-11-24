@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/accounting/core/sales-document-components.ts", "packages/database/src/sales-posting-amounts.ts", "packages/ee/src/accounting/core/document-costing.ts"]
+triggers: ["distributeRoundingResidual", "residual"]
 promoted: null
 ---
 # Apportion a document total, never concentrate its rounding residual

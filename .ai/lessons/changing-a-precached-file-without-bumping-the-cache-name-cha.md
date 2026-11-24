@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/*/public/offline.html", "apps/*/public/service-worker.js"]
+triggers: ["OFFLINE_CACHE", "SHELL_CACHE"]
 promoted: null
 ---
 # Changing a precached file without bumping the cache name changes nothing

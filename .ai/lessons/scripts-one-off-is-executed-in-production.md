@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["scripts/one-off/**"]
+triggers: ["scriptRun"]
 promoted: null
 ---
 # `scripts/one-off/` is executed in production

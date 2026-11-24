@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/components/Hyperlink.tsx", "packages/react/src/HStack.tsx", "packages/react/src/VStack.tsx", "packages/react/src/PrefetchLink.tsx"]
+triggers: ["prefetch=\"intent\"", "PrefetchLink"]
 promoted: null
 ---
 # `space-x-*` gives a phantom margin when a component injects sibling nodes

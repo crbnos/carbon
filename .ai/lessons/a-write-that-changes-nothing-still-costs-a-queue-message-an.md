@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/planning/src/scheduling/*.ts", "packages/database/src/event-system/functions/dispatch_event_batch.sql"]
+triggers: ["dispatch_event_batch", "is distinct from", "IS DISTINCT FROM"]
 promoted: null
 ---
 # A write that changes nothing still costs a queue message, an Inngest event and a function run

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/utils/generatedAvatar.ts", "apps/*/vite.config.ts"]
+triggers: ["type: \"json\"", "ssrNoExternal"]
 promoted: null
 ---
 # A JSON import attribute fixes the server and breaks the browser

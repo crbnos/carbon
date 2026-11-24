@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["requireNoLines", "\"Cashback\""]
 promoted: null
 ---
 # Header-only financial documents must reject persisted detail

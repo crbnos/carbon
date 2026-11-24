@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/shared/shared.service.ts"]
+triggers: ["postingCaller", "authorizePostingCaller", "requireCaller"]
 promoted: null
 ---
 # Bind authorization to the authenticated subject

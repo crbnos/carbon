@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/scripts/check-backups.ts", "scripts/generate-mcp.ts", "scripts/git-hooks/**"]
+triggers: ["GIT_DIR", "git add", "GIT_WORK_TREE"]
 promoted: null
 ---
 # A git hook exports GIT_DIR, so any git run from a subdirectory gets the wrong work tree

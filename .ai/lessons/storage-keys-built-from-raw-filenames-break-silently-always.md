@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/share+/customer.$id.$.tsx", "apps/erp/app/utils/supabase.ts", "apps/mes/app/components/JobOperation/components/Step.tsx"]
+triggers: [".upload(", "stripSpecialCharacters", "parseJobFilePath"]
 promoted: null
 ---
 # Storage keys built from raw filenames break silently — always sanitize, and the portal share route regex is a hidden contract with every upload path shape

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/utils/src/payment-funding.ts"]
+triggers: ["invoiceSettlement", "sourceAmount"]
 promoted: null
 ---
 # A nullable column added by migration needs a reader that tolerates NULL

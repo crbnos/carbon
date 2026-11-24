@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/*.sql"]
+triggers: ["schema_migrations"]
 promoted: null
 ---
 # A migration file created while migrations are running is recorded as applied — empty

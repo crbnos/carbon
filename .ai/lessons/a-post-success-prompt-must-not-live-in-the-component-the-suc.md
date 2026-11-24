@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/components/JobOperation/**"]
+triggers: ["BatchCompleteModal"]
 promoted: null
 ---
 # A post-success prompt must not live in the component the success unmounts

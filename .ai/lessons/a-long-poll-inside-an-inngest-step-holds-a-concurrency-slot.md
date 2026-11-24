@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/tasks/assembler-client.ts"]
+triggers: ["runAssemblerJob", "step.waitForEvent", "?wait="]
 promoted: null
 ---
 # A long poll inside an Inngest step holds a concurrency slot for its whole wait

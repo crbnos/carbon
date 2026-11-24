@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["role=\"button\"", "useKeyWithClickEvents", "noStaticElementInteractions", "isBareKeyForAnotherControl", "tabIndex={0}"]
 promoted: null
 ---
 # A clickable row made keyboard-reachable must not wrap its own controls

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["crates/optimize/src/lib.rs", "crates/optimize/src/codec.rs", "packages/viewer/src/useAssembly.ts"]
+triggers: ["byteStride", "EXT_meshopt_compression", "MeshoptDecoder", "ViewData"]
 promoted: null
 ---
 # meshopt vertex codec requires a stride that is a multiple of 4 — i16 VEC3 normals break it

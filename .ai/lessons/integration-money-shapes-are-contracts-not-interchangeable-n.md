@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/ramp/**"]
+triggers: ["fromMinorUnits", "currency_code", "entity_amount"]
 promoted: null
 ---
 # Integration money shapes are contracts, not interchangeable numbers

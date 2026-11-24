@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/*/*.models.ts", "apps/mes/app/services/models.ts"]
+triggers: [".refine("]
 promoted: null
 ---
 # A zod `.refine` that returns an object instead of a boolean silently disables the check

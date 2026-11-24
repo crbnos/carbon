@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/shared/shared.models.ts"]
+triggers: ["optionalTiptapDoc", "optionalPlainTextDoc", "toTiptapDoc", "TiptapText("]
 promoted: null
 ---
 # A field edited in a plain textarea must not read its text as Markdown

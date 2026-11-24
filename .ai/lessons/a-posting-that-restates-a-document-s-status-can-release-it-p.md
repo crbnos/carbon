@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/purchasing/purchasing.service.ts", "apps/erp/app/modules/invoicing/invoicing.service.ts"]
+triggers: ["PURCHASE_ORDER_RELEASED_STATUSES"]
 promoted: null
 ---
 # A posting that restates a document's status can release it past its approval

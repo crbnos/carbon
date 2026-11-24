@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/tasks/company-restore.ts"]
+triggers: ["session_replication_role", "wipeAndLoad", "CHANGE_LOGGED_TABLES", "REALTIME_TABLES"]
 promoted: null
 ---
 # A restore told the change log but not the open tabs

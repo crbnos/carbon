@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/*/vite.config.ts", "apps/*/app/ssr-shims/**", "packages/dev/vite.js"]
+triggers: ["clientOnlyAlias", "unpdf/pdfjs", "resolve.alias"]
 promoted: null
 ---
 # A `resolve.alias` stub reaches the server bundle too

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/20260807011742_lateralize-order-list-views.sql", "packages/database/supabase/migrations/20260806235710_perf-list-query-indexes.sql", "apps/erp/app/utils/query.ts"]
+triggers: ["JOIN LATERAL", "EXPLAIN ANALYZE"]
 promoted: null
 ---
 # A list-query benchmark that omits the ORDER BY measures a query the app never runs

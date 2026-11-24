@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/planning/src/scheduling/apply-work-center-selections.ts", "packages/planning/src/scheduling/run-overlay.ts", "packages/planning/src/scheduling/scheduling-engine.ts"]
+triggers: ["applyWorkCenterSelections", "placementWrites", "buildWrites"]
 promoted: null
 ---
 # A scheduler decision is only stored when every write-back guard agrees

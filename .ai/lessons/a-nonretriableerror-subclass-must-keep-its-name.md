@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/**"]
+triggers: ["NonRetriableError", "RetryAfterError", "AssemblerJobError"]
 promoted: null
 ---
 # A `NonRetriableError` subclass must keep its name

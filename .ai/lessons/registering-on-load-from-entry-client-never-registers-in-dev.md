@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/*/app/entry.client.tsx"]
+triggers: ["addEventListener(\"load\"", "serviceWorker.register"]
 promoted: null
 ---
 # Registering on `load` from entry.client never registers in dev

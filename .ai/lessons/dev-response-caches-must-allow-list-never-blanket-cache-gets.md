@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/onshape/lib/client.ts"]
+triggers: ["DEV_CACHEABLE_PATHS", "ONSHAPE_DEV_CACHE"]
 promoted: null
 ---
 # Dev response caches must allow-list, never blanket-cache GETs

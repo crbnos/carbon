@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/ui/Receipts/ReceiptLines.tsx"]
+triggers: ["setReceiptLineSerial", "saveReceiptSerialBox", "planReceiptSerialRelease", "receiptLineSplit"]
 promoted: null
 ---
 # What a document posts must be what its form shows

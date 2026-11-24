@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/datasets/tiers/09-accounting.ts"]
+triggers: ["from(\"account\")", "FROM account", "FROM \"account\"", "selectFrom(\"account\")"]
 promoted: null
 ---
 # `account` is scoped by `companyGroupId`, not `companyId`

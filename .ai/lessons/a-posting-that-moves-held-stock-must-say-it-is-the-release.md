@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/tasks/company-restore.ts", "packages/jobs/src/inngest/functions/tasks/company-import.ts"]
+triggers: ["withInspectionRelease", "setInspectionRelease", "app.sync_in_progress", "app.inspection_release", "check_inspection_hold"]
 promoted: null
 ---
 # A posting that moves held stock must say it is the release

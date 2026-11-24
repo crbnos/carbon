@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["turbo.json", "apps/*/turbo.json", "packages/*/turbo.json", "apps/erp/test/mcp-manifest-cache-inputs.test.ts"]
+triggers: ["generate:mcp", "\"inputs\""]
 promoted: null
 ---
 # A cached generator's inputs are everything it executes, not everything it parses

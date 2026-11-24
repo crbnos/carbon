@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/purchase-order+/*.tsx"]
+triggers: ["path.to.purchaseOrder(", "rootShouldRevalidate"]
 promoted: null
 ---
 # A fetcher action that redirects to a record's index loses its toast

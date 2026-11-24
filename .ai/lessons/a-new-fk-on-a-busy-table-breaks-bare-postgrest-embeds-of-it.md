@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["TS2589", "ALTER TABLE \"salesInvoiceLine\"", "ALTER TABLE \"salesOrderLine\"", "ALTER TABLE \"jobMaterial\"", "_fkey("]
 promoted: null
 ---
 # A new FK on a busy table breaks bare PostgREST embeds of it (TS2589)

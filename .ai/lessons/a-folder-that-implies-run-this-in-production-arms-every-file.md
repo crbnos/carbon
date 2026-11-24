@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["ci/src/one-off-scripts.ts", "scripts/one-off/**"]
+triggers: ["discoverOneOffScripts", "SCRIPT_FILENAME"]
 promoted: null
 ---
 # A folder that implies "run this in production" arms every file dropped into it

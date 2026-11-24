@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["CREATE OR REPLACE FUNCTION", "complete_job_to_inventory", "backflush_job_materials"]
 promoted: null
 ---
 # A function redefinition forked from an old copy reverts every migration between

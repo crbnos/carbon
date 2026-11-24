@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/*/*.server.ts"]
+triggers: ["defineServiceFn", "z.preprocess", "z.coerce", "z.any()", "databaseRefusal"]
 promoted: null
 ---
 # A form validator is not an API contract

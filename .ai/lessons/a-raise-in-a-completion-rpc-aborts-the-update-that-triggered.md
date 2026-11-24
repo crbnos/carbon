@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["complete_job_to_inventory", "sync_finish_job_operation", "attach_event_trigger"]
 promoted: null
 ---
 # A RAISE in a completion RPC aborts the UPDATE that triggered it

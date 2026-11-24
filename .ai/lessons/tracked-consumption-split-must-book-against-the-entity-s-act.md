@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/inventory.service.ts", "packages/utils/src/resolve-tracked-entity-bin.ts"]
+triggers: ["resolveTrackedEntityBin", "trackedEntitiesToOperation", "unconsumeTrackedEntities", "trackedEntityId"]
 promoted: null
 ---
 # Tracked consumption/split must book against the entity's ACTUAL bin, not an arbitrary ledger row

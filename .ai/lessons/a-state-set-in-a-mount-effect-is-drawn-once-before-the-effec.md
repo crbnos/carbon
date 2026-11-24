@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/components/BoMExplorer/**", "apps/erp/app/components/TreeView/**"]
+triggers: ["useTree(", "collapsedIds", "BoMExplorerProvider"]
 promoted: null
 ---
 # A state set in a mount effect is drawn once before the effect runs

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/viewer/src/MotionPathEditor.tsx"]
+triggers: ["TransformControls", "PivotControls"]
 promoted: null
 ---
 # The three.js rotate gizmo grabs whatever sits under its center

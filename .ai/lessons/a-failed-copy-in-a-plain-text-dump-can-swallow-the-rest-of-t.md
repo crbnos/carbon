@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["scripts/restore-database.sh", "packages/dev/src/commands/restore.ts"]
+triggers: ["ON_ERROR_STOP"]
 promoted: null
 ---
 # A failed COPY in a plain-text dump can swallow the rest of the restore

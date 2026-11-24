@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/inventory.service.ts"]
+triggers: ["lockPostedReceipt", "assertReceivedStockOnHand", "assertNoRejectedUntrackedLot", "settleQuantity"]
 promoted: null
 ---
 # A void reverses only what is still where the posting put it

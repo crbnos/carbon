@@ -1,5 +1,5 @@
 ---
-paths: []
+paths: ["packages/database/supabase/migrations/*.sql"]
 triggers: []
 promoted: null
 ---

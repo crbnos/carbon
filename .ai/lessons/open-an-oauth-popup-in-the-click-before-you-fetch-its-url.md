@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/oauth-popup.ts", "packages/ee/src/integrations/connect.ts"]
+triggers: ["beginOAuthPopup", "startIntegrationConnect", "window.open"]
 promoted: null
 ---
 # Open an OAuth popup in the click, before you fetch its URL

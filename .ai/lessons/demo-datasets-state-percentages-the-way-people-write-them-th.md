@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/datasets/tiers/*"]
+triggers: ["PricingRuleSpec", "discountPercent", "taxPercent"]
 promoted: null
 ---
 # Demo datasets state percentages the way people write them; the tier converts

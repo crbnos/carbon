@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/invoicing/ui/Workbench/ARAPWorkbench.tsx", "apps/erp/app/routes/x+/reports+/ar-aging.tsx", "apps/erp/app/routes/x+/reports+/ap-aging.tsx"]
+triggers: ["ARAPWorkbench"]
 promoted: null
 ---
 # Aging summary tables keep document headers inside the expansion

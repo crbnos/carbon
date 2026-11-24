@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/sales/sales.service.ts"]
+triggers: ["insertInto(\"salesInvoice\")", "insertInto(\"salesOrder\")", "insertInto(\"quote\")", "opportunityId"]
 promoted: null
 ---
 # Every sales invoice needs an opportunity

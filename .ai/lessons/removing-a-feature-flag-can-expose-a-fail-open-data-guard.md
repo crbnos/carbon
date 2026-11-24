@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/inventory.service.ts"]
+triggers: ["accountingEnabled", "accountDefaults?.data"]
 promoted: null
 ---
 # Removing a feature flag can expose a fail-open `?.data` guard

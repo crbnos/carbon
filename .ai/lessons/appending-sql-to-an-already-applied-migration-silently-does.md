@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/*.sql"]
+triggers: [".rpc(", "NOTIFY pgrst"]
 promoted: null
 ---
 # Appending SQL to an already-applied migration silently does nothing

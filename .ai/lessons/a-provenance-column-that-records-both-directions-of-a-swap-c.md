@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/supersession-pick.ts"]
+triggers: ["substitutedFromItemId", "redirectedFromItemId", "resolvePickRule", "get_picking_schedule"]
 promoted: null
 ---
 # A provenance column that records both directions of a swap cannot be trusted first

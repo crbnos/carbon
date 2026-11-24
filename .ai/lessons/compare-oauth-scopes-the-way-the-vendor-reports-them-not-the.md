@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/workflows/integrations/allowlist.ts", "packages/ee/src/integrations/connections.ts"]
+triggers: ["missingScopes", "requiredScopesFor"]
 promoted: null
 ---
 # Compare OAuth scopes the way the vendor REPORTS them, not the way you asked

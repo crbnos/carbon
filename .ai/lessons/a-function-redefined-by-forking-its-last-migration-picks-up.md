@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/event-system/functions/**", "packages/database/src/authz/helpers/**"]
+triggers: ["CREATE OR REPLACE FUNCTION", "create_audit_log_table", "insert_audit_log_batch"]
 promoted: null
 ---
 # A function redefined by forking its last migration picks up whatever that fork did

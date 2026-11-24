@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["plural(", "@lingui/core/macro"]
 promoted: null
 ---
 # Lingui: `plural()` inside a `memo(…)` component calls the global i18n

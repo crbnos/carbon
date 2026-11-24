@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/checks/src/sources/license-files.ts"]
+triggers: ["license-headers"]
 promoted: null
 ---
 # The license-header fixer skips a file that is not staged

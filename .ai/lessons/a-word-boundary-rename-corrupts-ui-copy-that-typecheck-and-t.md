@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/*/ui/*/*Table.tsx", "apps/erp/app/modules/*/types.ts"]
+triggers: ["PartListItem", "MaterialListItem", "ToolListItem"]
 promoted: null
 ---
 # A word-boundary rename corrupts UI copy that typecheck and tests can't see

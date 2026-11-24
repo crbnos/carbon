@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/routes/**"]
+triggers: ["git status --short", "git diff --cached"]
 promoted: null
 ---
 # Review the deployable diff, including new files

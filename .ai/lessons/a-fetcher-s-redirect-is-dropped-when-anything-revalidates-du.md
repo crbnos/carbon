@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/hooks/useRealtime.tsx"]
+triggers: ["revalidate()", "useRevalidator", "useRealtimeRevalidator"]
 promoted: null
 ---
 # A fetcher's redirect is dropped when anything revalidates during the action

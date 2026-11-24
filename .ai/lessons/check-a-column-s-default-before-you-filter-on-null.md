@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["Status\" IS NULL", "optimizeStatus", "net.http_request_queue"]
 promoted: null
 ---
 # Check a column's default before you filter on NULL

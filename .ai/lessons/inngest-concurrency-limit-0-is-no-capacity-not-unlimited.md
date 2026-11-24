@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/checks/src/conformance/no-zero-concurrency.ts"]
+triggers: ["concurrency:"]
 promoted: null
 ---
 # Inngest `concurrency: { limit: 0 }` is no capacity, not unlimited

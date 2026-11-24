@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/share+/supplier-quote.$id.tsx"]
+triggers: ["AnimatePresence", "transitionEnd"]
 promoted: null
 ---
 # Unmounting a collapsed panel throws away the state inside it

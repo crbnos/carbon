@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/inventory.service.ts"]
+triggers: ["postReceipt", "postShipment", "receiptLinesByPurchaseOrderLineId", "trackedEntityUpdates"]
 promoted: null
 ---
 # A skip inside a posting loop does not cover maps built before the loop

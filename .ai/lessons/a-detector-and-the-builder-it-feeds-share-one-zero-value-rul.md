@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/legacy-documents.ts", "apps/erp/app/modules/accounting/accounting.service.ts", "apps/erp/test/database/activate-accounting/**"]
+triggers: ["valueMovement", "LEGACY_DOCUMENT_FAMILIES", "legacySalesInvoices"]
 promoted: null
 ---
 # A detector and the builder it feeds share one zero-value rule

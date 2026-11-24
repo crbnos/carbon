@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["sed -i", "write_text(", "perl -pi"]
 promoted: null
 ---
 # Scripted source patches must assert their anchors

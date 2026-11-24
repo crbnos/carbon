@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/purchasing/purchasing.service.ts"]
+triggers: ["Id(id", "Id(*)", "Id (*)", "purchasingRfqSupplier"]
 promoted: null
 ---
 # Composite (`id, companyId`) FKs break PostgREST `alias:column(...)` embeds

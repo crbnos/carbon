@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/job+/$jobId.complete.tsx"]
+triggers: ["complete_job_to_inventory", "sync_finish_job_operation", "sync_update_job_operation_quantities"]
 promoted: null
 ---
 # Job-completion side effects must live in complete_job_to_inventory, not in route actions

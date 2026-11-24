@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/seed-dev.ts", "packages/dev/src/services/apps.ts"]
+triggers: ["NODE_EXTRA_CA_CERTS", "db:seed:dev", "SELF_SIGNED_CERT_IN_CHAIN"]
 promoted: null
 ---
 # `db:seed:dev` under portless needs the local CA, and a hibernated stack

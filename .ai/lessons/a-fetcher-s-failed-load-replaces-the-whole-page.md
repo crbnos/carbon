@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["fetcher.load("]
 promoted: null
 ---
 # A fetcher's failed load replaces the whole page

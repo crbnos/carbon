@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["CREATE OR REPLACE VIEW"]
 promoted: null
 ---
 # `CREATE OR REPLACE VIEW` cannot reorder columns — DROP + CREATE when `t.*` grows

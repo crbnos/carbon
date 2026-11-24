@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/tsconfig.json", "turbo.json", "apps/erp/turbo.json"]
+triggers: ["tsBuildInfoFile", "\"incremental\""]
 promoted: null
 ---
 # Measure completed typechecks before claiming a speedup

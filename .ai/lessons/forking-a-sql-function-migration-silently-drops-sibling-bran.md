@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/*.sql"]
+triggers: ["CREATE OR REPLACE FUNCTION", "complete_job_to_inventory", "backflush_job_materials", "get_inventory_quantities"]
 promoted: null
 ---
 # Forking a SQL function migration silently drops sibling branches added since your fork base

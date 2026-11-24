@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/functions/**"]
+triggers: ["deno check"]
 promoted: null
 ---
 # Deno edge functions are not deno-check-clean — gate on own-file error deltas, not exit code

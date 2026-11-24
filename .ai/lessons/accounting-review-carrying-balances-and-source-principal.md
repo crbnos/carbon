@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/invoicing/invoicing.service.ts"]
+triggers: ["carryingBase", "controlAmount", "openBalance"]
 promoted: null
 ---
 # Accounting review: carrying balances and source principal

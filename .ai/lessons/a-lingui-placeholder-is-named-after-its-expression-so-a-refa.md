@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/locale/locales/**/*.po"]
+triggers: ["<Plural", "<Trans", "plural(", "lingui:extract"]
 promoted: null
 ---
 # A Lingui placeholder is named after its expression, so a refactor can silently drop translations

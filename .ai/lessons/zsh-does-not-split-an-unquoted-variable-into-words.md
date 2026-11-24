@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["biome check", "git diff --name-only"]
 promoted: null
 ---
 # zsh does not split an unquoted variable into words

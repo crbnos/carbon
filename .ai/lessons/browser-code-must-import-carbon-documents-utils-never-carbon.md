@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/documents/package.json", "packages/documents/src/utils/index.ts", "apps/erp/app/routes/share+/**"]
+triggers: ["@carbon/documents/pdf", "@carbon/documents/utils"]
 promoted: null
 ---
 # Browser code must import `@carbon/documents/utils`, never `@carbon/documents/pdf`

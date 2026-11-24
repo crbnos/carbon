@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/routes/x+/assembly.$operationId.tsx", "apps/mes/app/components/AssemblyView.tsx"]
+triggers: ["currentUnitIndex", "unitIndex"]
 promoted: null
 ---
 # Loader-computed "current unit" must match the component's, or per-unit attribution credits the wrong unit

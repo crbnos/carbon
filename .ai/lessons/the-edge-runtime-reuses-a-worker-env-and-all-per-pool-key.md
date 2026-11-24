@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/dev/docker/edge-main/index.ts"]
+triggers: ["userWorkers.create"]
 promoted: null
 ---
 # The edge runtime reuses a worker, env and all, per pool key

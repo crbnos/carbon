@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: [".ai/playbooks/assembly-sub-assembly-motion-path.md", "apps/erp/app/routes/x+/assembly+/**"]
+triggers: ["agent-browser", "AGENT_BROWSER_SESSION"]
 promoted: null
 ---
 # Browser-testing the 3D assembly page: one session, restart often

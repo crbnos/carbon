@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/shared/imports.models.ts", "apps/erp/app/modules/shared/shared.method-import-append.test.ts"]
+triggers: ["fieldMappings"]
 promoted: null
 ---
 # An import wizard enum Default fills every blank cell before the server sees it

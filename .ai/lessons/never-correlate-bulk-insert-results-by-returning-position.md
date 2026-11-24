@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: [{"text": ".returning(", "minCount": 2}, {"text": "RETURNING", "minCount": 2}]
 promoted: null
 ---
 # Never correlate bulk-insert results by RETURNING position

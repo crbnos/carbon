@@ -1,5 +1,5 @@
 ---
-paths: []
+paths: ["packages/*/package.json"]
 triggers: []
 promoted: null
 ---

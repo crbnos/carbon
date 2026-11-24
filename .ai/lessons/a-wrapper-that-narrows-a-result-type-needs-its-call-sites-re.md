@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/files/src/storage.ts"]
+triggers: ["CompanyBucket", "as FileObject[]"]
 promoted: null
 ---
 # A wrapper that narrows a result type needs its call sites re-read, not re-cast

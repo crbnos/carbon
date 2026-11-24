@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/tests/*.sql"]
+triggers: ["INSERT INTO \"employee\"", "getGroupId", "employeeTypeId"]
 promoted: null
 ---
 # An SQL test that inserts an employee needs the company's root group first

@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["ALTER POLICY", "RENAME VALUE"]
 promoted: null
 ---
 # Permission scope renames are invisible to typecheck

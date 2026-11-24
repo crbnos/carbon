@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/workflows/ui/Builder/**"]
+triggers: ["@xyflow/react", "useUpdateNodeInternals"]
 promoted: null
 ---
 # Never hand-measure React Flow handle positions; and never `stopPropagation` inside a node

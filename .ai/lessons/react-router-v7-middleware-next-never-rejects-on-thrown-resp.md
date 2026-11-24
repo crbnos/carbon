@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/logger/src/middleware.server.ts", "packages/auth/src/middleware/*.ts"]
+triggers: ["await next()", "clientMiddleware", "requestIdMiddleware"]
 promoted: null
 ---
 # React Router v7 middleware `next()` never rejects on thrown Responses/errors

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/integrations/accounting-sync-operations.ts"]
+triggers: ["loadChargePolicyInputs", "DOC_BACKED"]
 promoted: null
 ---
 # A document-backed journal is found through its LINES' document link, never through the document's own journalId

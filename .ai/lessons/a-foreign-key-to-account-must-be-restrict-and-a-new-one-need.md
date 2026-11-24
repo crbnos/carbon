@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/account-import.ts", "packages/database/src/account-import-reads.ts", "apps/erp/test/database/apply-account-import.test.ts"]
+triggers: ["REFERENCES \"account\"", "REFERENCE_POLICY", "applyAccountImport", "repointReferences"]
 promoted: null
 ---
 # A foreign key to `account` must be RESTRICT, and a new one needs a merge policy

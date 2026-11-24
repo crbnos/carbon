@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["getCurrentAccountingPeriod", "getAccountingPeriodForDate", "getNextSequence"]
 promoted: null
 ---
 # Resolve the accounting period BEFORE a transaction that writes for N records

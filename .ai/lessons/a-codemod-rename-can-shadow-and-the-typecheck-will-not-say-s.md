@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["ts-morph", "jscodeshift", "replaceWithText"]
 promoted: null
 ---
 # A codemod rename can shadow, and the typecheck will not say so

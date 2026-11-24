@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/hooks/useAppBadge.ts", "apps/erp/public/service-worker.js"]
+triggers: ["setAppBadge"]
 promoted: null
 ---
 # Chrome on macOS drops an installed app's Dock badge when its window closes

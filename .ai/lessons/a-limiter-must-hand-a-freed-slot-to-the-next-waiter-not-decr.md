@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/utils/src/async.ts"]
+triggers: ["async.limit", "semaphore", "Semaphore"]
 promoted: null
 ---
 # A limiter must hand a freed slot to the next waiter, not decrement and let it race

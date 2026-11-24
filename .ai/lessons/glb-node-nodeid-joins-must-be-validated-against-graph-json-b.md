@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["graph.json", "model.glb", "trimesh"]
 promoted: null
 ---
 # GLB node↔nodeId joins must be validated against graph.json bboxes

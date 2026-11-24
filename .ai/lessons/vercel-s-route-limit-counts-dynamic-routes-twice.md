@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/*/react-router.config.ts"]
+triggers: ["routeIdToServerBundleId"]
 promoted: null
 ---
 # Vercel's route limit counts dynamic routes twice

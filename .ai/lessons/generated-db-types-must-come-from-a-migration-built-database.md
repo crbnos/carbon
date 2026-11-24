@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/types.ts", "packages/dev/src/commands/restore.ts"]
+triggers: ["db:types"]
 promoted: null
 ---
 # Generated DB types must come from a migration-built database, never a restored snapshot

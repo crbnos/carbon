@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/*/*.service.ts"]
+triggers: ["selectFrom(", "updateTable(", "deleteFrom("]
 promoted: null
 ---
 # Multi-tenancy: every query must scope by companyId

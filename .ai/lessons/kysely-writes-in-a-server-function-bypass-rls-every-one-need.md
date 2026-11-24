@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/*/*.service.ts"]
+triggers: [".updateTable(", ".deleteFrom(", "assertAllOperationsClaimed"]
 promoted: null
 ---
 # Kysely writes in a server function bypass RLS — every one needs an explicit companyId, even when it looks batch-scoped

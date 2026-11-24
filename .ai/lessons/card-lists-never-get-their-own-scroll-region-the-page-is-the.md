@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/items/ui/**/BillOf*.tsx", "apps/erp/app/modules/**/JobBillOf*.tsx", "apps/erp/app/modules/**/QuoteBillOf*.tsx"]
+triggers: ["ScrollArea", "max-h-[60dvh]"]
 promoted: null
 ---
 # Card lists never get their own scroll region — the page is the only scroll surface

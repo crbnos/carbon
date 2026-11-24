@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/config/tailwind/theme.css"]
+triggers: ["ease-drawer", "tailwindcss-animate"]
 promoted: null
 ---
 # Check every rule a Tailwind class compiles to, not just the first

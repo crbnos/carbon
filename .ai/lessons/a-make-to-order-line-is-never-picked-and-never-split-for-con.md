@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/job-quantities-engine.ts"]
+triggers: ["get_picking_schedule", "generatePickingList", "itemToJobMakeMethod", "itemToJob", "settleConsumeFirstLines"]
 promoted: null
 ---
 # A Make to Order line is never picked, and never split for Consume First (2026-09-16)

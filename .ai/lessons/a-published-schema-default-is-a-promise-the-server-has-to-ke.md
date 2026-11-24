@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["scripts/lib/input-docs.ts", "packages/api/src/service-fn.server.ts"]
+triggers: [".default("]
 promoted: null
 ---
 # A published schema default is a promise the server has to keep

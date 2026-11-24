@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/planning/src/scheduling/master-data-provider.ts"]
+triggers: ["getLiveReservations", "capacityHoldingJobStatuses", "capacityReservation", "jobOperationBatchId"]
 promoted: null
 ---
 # A reservation class that must outlive job status needs an explicit escape in EVERY snapshot filter

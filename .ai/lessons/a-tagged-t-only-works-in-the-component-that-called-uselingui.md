@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["TemplateStringsArray", "MessageDescriptor) => string"]
 promoted: null
 ---
 # A tagged `t` only works in the component that called `useLingui`

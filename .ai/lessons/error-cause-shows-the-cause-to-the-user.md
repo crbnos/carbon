@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/*/app/routes/_public+/**", "apps/*/app/routes/_auth+/**", "apps/*/app/routes/share+/**", "apps/*/app/routes/api+/login*"]
+triggers: ["flashClientMiddleware"]
 promoted: null
 ---
 # `error(cause, …)` shows the cause to the user

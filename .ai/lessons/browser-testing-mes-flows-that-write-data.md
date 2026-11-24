@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["agent-browser"]
 promoted: null
 ---
 # Browser-testing MES flows that write data

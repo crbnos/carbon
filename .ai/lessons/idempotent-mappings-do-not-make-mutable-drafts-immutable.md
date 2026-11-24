@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/ramp/**"]
+triggers: ["externalIntegrationMapping"]
 promoted: null
 ---
 # Idempotent mappings do not make mutable Drafts immutable

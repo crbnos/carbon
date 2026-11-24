@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["sum(DISTINCT", "SUM(DISTINCT"]
 promoted: null
 ---
 # `sum(DISTINCT expr)` is not a fan-out dedup — it collapses equal values from different rows

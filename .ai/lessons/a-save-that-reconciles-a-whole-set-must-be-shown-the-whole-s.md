@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/production/ui/Schedule/People/*"]
+triggers: ["setPeopleDay", "editorDayRows"]
 promoted: null
 ---
 # A save that reconciles a whole set must be shown the whole set, whatever the page filters

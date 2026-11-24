@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["clearShipmentTags", "liveShipmentTags", "\"Shipment Line\"", "\"Receipt Line\"", "deleteShipmentLine"]
 promoted: null
 ---
 # A tag that points at a line is cleared by every write that removes the line

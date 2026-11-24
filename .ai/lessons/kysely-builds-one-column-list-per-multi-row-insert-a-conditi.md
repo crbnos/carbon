@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: [".values(rows", ".values([", "quoteLineToJob"]
 promoted: null
 ---
 # Kysely builds ONE column list per multi-row insert — a conditionally-set key writes NULL into its siblings

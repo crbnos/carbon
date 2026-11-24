@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["git stash"]
 promoted: null
 ---
 # Never blind-pop a stash in a Conductor worktree — the stash stack is shared/stale

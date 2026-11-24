@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/*/[a-z]*.models.ts", "packages/api/src/errors.ts", "packages/utils/src/errors.ts"]
+triggers: ["getErrorMessage", "itemLedgerTypes"]
 promoted: null
 ---
 # In a bulk API sweep, a 4xx carrying a service's generic fallback string is a finding, not a pass

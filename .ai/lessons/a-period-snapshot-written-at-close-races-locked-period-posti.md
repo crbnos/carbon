@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/20260713235930_*.sql"]
+triggers: ["check_accounting_period_open", "accountingPeriodBalance", "snapshotAccountingPeriodBalances", "closeAccountingPeriod"]
 promoted: null
 ---
 # A period snapshot written at close races Locked-period postings unless the posting guard locks the period row

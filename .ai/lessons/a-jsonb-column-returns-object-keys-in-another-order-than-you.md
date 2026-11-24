@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/issue-sync/maps.ts"]
+triggers: ["hashText", "createHash(", "fingerprint"]
 promoted: null
 ---
 # A JSONB column returns object keys in another order than you wrote them

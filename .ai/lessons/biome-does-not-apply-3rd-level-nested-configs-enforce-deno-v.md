@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["biome.jsonc", "packages/biome.jsonc"]
+triggers: ["noConsole"]
 promoted: null
 ---
 # Biome does not apply 3rd-level nested configs — enforce Deno via an override

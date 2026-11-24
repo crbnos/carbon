@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/BottomSheet.tsx"]
+triggers: ["setPointerCapture", "DRAG_SLOP_PX"]
 promoted: null
 ---
 # Pointer capture taken on press steals the tap's click

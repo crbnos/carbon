@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/supersession-pick.ts", "packages/database/src/supersession-pick.ts"]
+triggers: ["buildConsumeFirstHops", "successorItemId", "parentMaterialId"]
 promoted: null
 ---
 # A helper that models a chain must be tested with a loop (2026-09-16)

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/strict-backflush.ts", "apps/erp/app/modules/shared/strict-backflush.ts"]
+triggers: ["pointJobMaterialAtLineside", "pullFromStorageUnit", "strict-backflush"]
 promoted: null
 ---
 # A pick moves a job material's storage unit to lineside, so the line no longer names its Pull From

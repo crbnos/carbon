@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["docs/content/docs/**", "apps/erp/app/modules/agent/agent.kb.ts", "apps/erp/app/modules/agent/agent.kb.test.ts"]
+triggers: ["READ_BUDGET", "read_doc"]
 promoted: null
 ---
 # A docs heading is read by the in-app agent, and its length counts against a budget

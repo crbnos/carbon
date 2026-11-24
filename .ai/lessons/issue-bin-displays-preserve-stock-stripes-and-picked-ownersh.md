@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/services/inventory.service.ts"]
+triggers: ["excludeLineside", "p_exclude_lineside", "get_issue_tracked_entity_stock"]
 promoted: null
 ---
 # Issue-bin displays preserve stock stripes and picked ownership

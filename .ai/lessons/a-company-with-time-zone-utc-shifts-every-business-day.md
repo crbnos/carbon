@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/datasets/bootstrap.ts"]
+triggers: ["companyTimeZone", "weekBounds", "timesheetWeek", "seedCompanyReferenceData"]
 promoted: null
 ---
 # A company with time zone UTC shifts every business day

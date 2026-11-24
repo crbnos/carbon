@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/strict-backflush.ts"]
+triggers: ["@carbon/database/strict-backflush", "@carbon/database/rows", "inOrder(", "from \"kysely\""]
 promoted: null
 ---
 # A module the browser bundles must not reach the Kysely runtime, even through a helper

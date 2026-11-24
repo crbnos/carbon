@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: [".npmrc", "pnpm-workspace.yaml"]
+triggers: ["virtual-store", "--frozen-lockfile"]
 promoted: null
 ---
 # A global pnpm virtual store breaks this repo's peer dependencies

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/dev/src/stack.ts"]
+triggers: ["localhost:54322", "127.0.0.1:54322", "SUPABASE_DB_PORT", "--db-url"]
 promoted: null
 ---
 # Local database URLs must match Docker's loopback binding

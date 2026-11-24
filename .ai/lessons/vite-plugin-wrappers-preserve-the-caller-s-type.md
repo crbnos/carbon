@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/vitest.config.ts"]
+triggers: ["Plugin[]", "PluginOption"]
 promoted: null
 ---
 # Vite plugin wrappers preserve the caller's type

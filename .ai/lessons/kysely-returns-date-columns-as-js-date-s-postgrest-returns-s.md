@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/client.ts"]
+triggers: ["toPostingDateString", "BaseEntitySyncer", "setTypeParser"]
 promoted: null
 ---
 # Kysely returns `date` columns as JS `Date`s; PostgREST returns strings

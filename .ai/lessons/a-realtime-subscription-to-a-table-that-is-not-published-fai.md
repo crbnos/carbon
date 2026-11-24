@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/query/src/useRealtime.tsx"]
+triggers: ["postgres_changes", "supabase_realtime", "useRealtime", "useChangedRows"]
 promoted: null
 ---
 # A realtime subscription to a table that is not published fails silently

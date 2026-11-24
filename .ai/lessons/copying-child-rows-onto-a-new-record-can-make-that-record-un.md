@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/items/items.service.ts"]
+triggers: ["supplierPartPrice", "copyItemPlanningAndPurchasing", "ON DELETE RESTRICT"]
 promoted: null
 ---
 # Copying child rows onto a new record can make that record undeletable

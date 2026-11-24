@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["\"private\"", "temp-staging", "company-templates", "storage.from("]
 promoted: null
 ---
 # Sweeping storage call sites by one literal misses named-constant buckets

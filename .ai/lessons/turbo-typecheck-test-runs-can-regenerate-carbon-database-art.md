@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/types.ts", "packages/database/src/swagger-docs-schema.ts"]
+triggers: ["turbo run", "generate:types"]
 promoted: null
 ---
 # Turbo typecheck/test runs can regenerate `@carbon/database` artifacts as ride-along churn

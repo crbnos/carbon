@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/items/ui/ChangeNotice/AffectedItemForm.tsx"]
+triggers: [{"text": "<ValidatedForm", "minCount": 2}]
 promoted: null
 ---
 # Twin `ValidatedForm`s at the same JSX slot share one RVF store — controlled-field defaults seed only for whichever branch mounts first

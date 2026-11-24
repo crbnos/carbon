@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/quality/ui/Inspections/InspectionMeasurementGrid.tsx"]
+triggers: ["editableComponents", "EditableNumber", "EditableText", "EditableList"]
 promoted: null
 ---
 # An inline editor built in a memo with changing dependencies drops keystrokes

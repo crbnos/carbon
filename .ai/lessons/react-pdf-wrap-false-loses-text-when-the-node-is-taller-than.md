@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/documents/src/pdf/**"]
+triggers: ["wrap={false}", "minPresenceAhead"]
 promoted: null
 ---
 # react-pdf: `wrap={false}` loses text when the node is taller than the page

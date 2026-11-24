@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/query/src/useRealtime.tsx"]
+triggers: ["carbon.channel(", "useRealtimeChannel", "removeChannel"]
 promoted: null
 ---
 # Two hooks that open the same Realtime topic close each other's channel

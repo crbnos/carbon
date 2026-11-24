@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/20261008211304_reset-accounting.sql", "packages/database/supabase/migrations/20261009004448_accounting-cutover.sql"]
+triggers: ["JE-SEED-", "\"accountingEnabled\" = true"]
 promoted: null
 ---
 # A migration that re-scopes companies uses the company test of the migration it follows

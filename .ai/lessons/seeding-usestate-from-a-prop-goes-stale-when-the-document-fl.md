@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/components/Table/Table.tsx"]
+triggers: ["forceEditMode"]
 promoted: null
 ---
 # Seeding useState from a prop goes stale when the document flips state in place

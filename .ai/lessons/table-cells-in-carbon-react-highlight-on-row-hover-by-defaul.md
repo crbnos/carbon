@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/Table.tsx", "apps/erp/app/modules/production/ui/Schedule/People/PeopleCapacity.tsx"]
+triggers: ["rowSpan", "group-hover:bg-muted"]
 promoted: null
 ---
 # Table cells in @carbon/react highlight on row hover by default

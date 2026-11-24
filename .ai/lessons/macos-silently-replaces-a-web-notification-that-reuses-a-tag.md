@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/public/service-worker.js"]
+triggers: ["showNotification", "getNotifications"]
 promoted: null
 ---
 # macOS silently replaces a web notification that reuses a tag

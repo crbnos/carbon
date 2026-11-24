@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/locale/locales/**/*.po"]
+triggers: ["lingui:extract", "lingui:clean"]
 promoted: null
 ---
 # `.po` catalogs are committed only after `lingui:clean`

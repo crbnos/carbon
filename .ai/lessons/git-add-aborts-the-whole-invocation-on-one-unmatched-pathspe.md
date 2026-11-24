@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: [".claude/skills/check-and-commit/**"]
+triggers: ["git add", "git mv", "git commit"]
 promoted: null
 ---
 # `git add` aborts the whole invocation on one unmatched pathspec

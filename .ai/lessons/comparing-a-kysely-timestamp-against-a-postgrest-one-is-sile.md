@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/integrations/reconcile*.ts", "packages/ee/src/accounting/core/**"]
+triggers: ["instantMs", "lastSyncedAt", "has_any_company_permission", "SECURITY DEFINER", "REVOKE EXECUTE", "assert_company_access"]
 promoted: null
 ---
 # Comparing a Kysely timestamp against a PostgREST one is silently always-false

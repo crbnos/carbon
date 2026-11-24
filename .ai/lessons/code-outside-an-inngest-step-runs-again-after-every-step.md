@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/**"]
+triggers: ["step.sendEvent", "step.run", "NonRetriableError"]
 promoted: null
 ---
 # Code outside an Inngest step runs again after every step

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/picked-consumption.ts"]
+triggers: ["linesideCredit", "get_lineside_credit", "generatePickingList", "get_picking_schedule", "getPickedBudgets"]
 promoted: null
 ---
 # Two readers of the same shelf must share one definition (2026-09-16)

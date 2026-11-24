@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/reports+/aging.server.ts", "apps/erp/app/routes/x+/reports+/a?-aging*"]
+triggers: ["getArOpenByCustomer", "getApOpenBySupplier", "agingCsv"]
 promoted: null
 ---
 # Aging CSV exports must follow open documents

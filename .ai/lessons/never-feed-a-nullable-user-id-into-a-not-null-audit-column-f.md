@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/*.sql", "packages/database/src/event-system/handlers/*.sql"]
+triggers: ["p_new->>'updatedBy'", "NEW.\"updatedBy\"", "p_user_id"]
 promoted: null
 ---
 # Never feed a nullable user id into a NOT NULL audit column from a DB function

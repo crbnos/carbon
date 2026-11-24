@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/types.ts"]
+triggers: ["generate:types", "unidiff-zero"]
 promoted: null
 ---
 # Regenerated DB types carry whatever the local database holds

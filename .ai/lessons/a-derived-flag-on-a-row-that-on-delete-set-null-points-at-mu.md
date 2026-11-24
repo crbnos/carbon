@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/event-system/handlers/*"]
+triggers: ["quantityNonNettable", "effectiveNettable", "refresh_storage_unit_nettable", "storage_unit_release_non_nettable_stock"]
 promoted: null
 ---
 # A derived flag on a row that `ON DELETE SET NULL` points at must be released before the delete

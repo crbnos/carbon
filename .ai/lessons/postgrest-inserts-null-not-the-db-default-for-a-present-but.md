@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/sales/sales.service.ts"]
+triggers: ["upsertSalesOrderLine", "upsertPurchaseOrderLine", "upsertQuoteLine", "upsertSalesInvoiceLine", "upsertPurchaseInvoiceLine", "defaultToNull"]
 promoted: null
 ---
 # PostgREST inserts NULL (not the DB default) for a present-but-`undefined` key spread into an insert

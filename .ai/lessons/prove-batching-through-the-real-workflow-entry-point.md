@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/accounting/core/*.ts"]
+triggers: ["pushBatchToAccounting", "fetchLocalBatch"]
 promoted: null
 ---
 # Prove batching through the real workflow entry point

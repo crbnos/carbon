@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/workflows/ui/Builder/fields/VariableTreeMenu.tsx"]
+triggers: ["ReactRenderer", "@tiptap/suggestion"]
 promoted: null
 ---
 # A dropdown that lives inside an editor popup must own its keys on the document, not take them from its host

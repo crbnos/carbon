@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/utils/src/batch-time-split.ts"]
+triggers: ["export function assert", "export const assert"]
 promoted: null
 ---
 # A tested `assert*` helper that is never imported is worse than none — it reads as a guard that is not there

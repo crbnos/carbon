@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/viewer/src/AssemblyPlayer.tsx", "packages/viewer/src/fallback.ts", "packages/viewer/src/validate-motion.ts", "crates/planner/src/**"]
+triggers: ["displayMotionForStep", "synthesizeFallbackMotion", "assemblyPlanJob"]
 promoted: null
 ---
 # Verify what actually rendered before root-causing a "bad motion" report

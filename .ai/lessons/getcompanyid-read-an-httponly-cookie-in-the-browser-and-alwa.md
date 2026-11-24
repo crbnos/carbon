@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/query/src/cache.ts", "apps/*/app/routes/x+/_layout.tsx"]
+triggers: ["document.cookie", "getCompanyId", "setClientCompanyId"]
 promoted: null
 ---
 # `getCompanyId()` read an httpOnly cookie in the browser and always returned null

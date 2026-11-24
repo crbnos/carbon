@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/logger/src/middleware.server.ts", "packages/logger/src/tracing.server.ts"]
+triggers: ["instrumentations", "requestMiddleware", "timedMiddleware"]
 promoted: null
 ---
 # React Router's instrumentation API can observe a request, not change it

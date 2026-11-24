@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/**/*sweep*.ts", "packages/jobs/src/inngest/functions/**/accounting-reconciliation*.ts", "packages/jobs/src/inngest/functions/**/accounting-consolidation*.ts", "packages/jobs/src/inngest/functions/scheduled/mrp.ts", "packages/jobs/src/inngest/functions/integrations/accounting-auth-failure.ts"]
+triggers: ["runIsolatedCompanyStep", "AccountingAuthError", "cron:"]
 promoted: null
 ---
 # A cron that walks every tenant must isolate each tenant

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["scripts/check-workflow-catalog.ts"]
+triggers: [".generated.ts"]
 promoted: null
 ---
 # Biome drops quotes from valid identifier keys, so a drift check that greps for `"key":` misses them

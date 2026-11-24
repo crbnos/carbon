@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/event-system/handlers/*.sql"]
+triggers: ["CREATE OR REPLACE FUNCTION", "sync_insert_company_related_records"]
 promoted: null
 ---
 # Porting a trigger body: start from its newest definition

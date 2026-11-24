@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["changeInvoiceLineAccount", "postSalesInvoice", "postPurchaseInvoice", "FOR UPDATE", "forUpdate()"]
 promoted: null
 ---
 # A posted document's void and anything that adds lines to its journal take one lock

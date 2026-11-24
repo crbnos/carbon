@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/client.ts", "packages/database/src/sampling.ts", "packages/database/src/quality.ts"]
+triggers: ["lib/database.ts", "supabase/functions/shared"]
 promoted: null
 ---
 # Node-side re-exports from the Deno functions tree must dodge lib/database.ts

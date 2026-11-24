@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/root.tsx", "apps/mes/app/root.tsx", "packages/env/src/index.ts"]
+triggers: ["getBrowserEnv", "window.env"]
 promoted: null
 ---
 # A browser-safe env flag isn't live until the root loader's hand-built `env` also carries it

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/audit.config.ts", "packages/jobs/src/inngest/functions/events/fk-snapshots.ts", "packages/jobs/src/inngest/functions/events/audit.ts"]
+triggers: ["fkDisplayRegistry", "fkDisplayHops", "snapshotFields", "get_foreign_key_map"]
 promoted: null
 ---
 # Audit FK snapshots: constraint-less columns are invisible to schema discovery; junction targets need hops

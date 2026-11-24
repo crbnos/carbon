@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/utils/src/themes.ts", "apps/*/app/services/theme.server.ts"]
+triggers: ["getTheme", "themeColorValidator", "resolveTheme", "seasonalThemes"]
 promoted: null
 ---
 # The theme a page renders is not the theme the user picked

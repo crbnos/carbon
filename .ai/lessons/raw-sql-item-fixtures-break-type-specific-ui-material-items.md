@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/items+/$itemId.properties.tsx"]
+triggers: ["INSERT INTO \"item\"", "get_material_details", "get_part_details", "get_tool_details"]
 promoted: null
 ---
 # Raw-SQL item fixtures break type-specific UI — Material items need a companion `material` row keyed by readableId

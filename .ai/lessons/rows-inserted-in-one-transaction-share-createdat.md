@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["ORDER BY \"createdAt\"", "orderBy(\"createdAt\"", "order(\"createdAt\""]
 promoted: null
 ---
 # Rows inserted in one transaction share `createdAt`

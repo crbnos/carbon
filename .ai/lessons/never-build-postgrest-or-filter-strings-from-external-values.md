@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/api+/integrations.onshape.*"]
+triggers: [".or(`"]
 promoted: null
 ---
 # Never build PostgREST `.or()` filter strings from external values

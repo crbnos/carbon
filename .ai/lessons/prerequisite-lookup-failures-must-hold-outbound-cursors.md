@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/integrations/ramp-sync-outbound.ts"]
+triggers: ["isEmployeeParty", "RampCursors"]
 promoted: null
 ---
 # Prerequisite lookup failures must hold outbound cursors

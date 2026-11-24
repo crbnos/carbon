@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx", "apps/erp/app/routes/x+/inventory+/quantities.tsx"]
+triggers: ["@ts-expect-error", "@ts-ignore", "get_inventory_quantities"]
 promoted: null
 ---
 # A `@ts-expect-error` on generated DB types is evidence of a dropped column, not a type quirk

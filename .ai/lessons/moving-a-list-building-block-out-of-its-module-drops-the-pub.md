@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["scripts/lib/input-docs.ts", "apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json"]
+triggers: ["setGenericQueryFilters", "appliesGenericFilters"]
 promoted: null
 ---
 # Moving a list building block out of its module drops the published tool's filters

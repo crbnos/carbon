@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/checks/src/sources/server-files.ts", "packages/checks/src/conformance/*.ts"]
+triggers: ["maskClientCode", "SERVER_CHECKS", "ConformanceCheck"]
 promoted: null
 ---
 # A conformance check is only as good as its source glob — route modules are server AND client in one file

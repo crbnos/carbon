@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/components/Form/FormLayout.tsx", "apps/erp/app/modules/projects/ui/Projects/ProjectForm.tsx"]
+triggers: ["FormSection", "CollapsibleContent"]
 promoted: null
 ---
 # A collapsed form section keeps its fields mounted

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/components/Form/TaxFields.tsx"]
+triggers: ["formatOptions", "NumberControlled", "EditableNumberCell", "INPUT_FORMAT"]
 promoted: null
 ---
 # react-aria's blur commit makes the input formatter part of arithmetic

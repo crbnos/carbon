@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/integrations/onshape-*.ts"]
+triggers: ["partIds"]
 promoted: null
 ---
 # Onshape individual release assets need the complete source identity

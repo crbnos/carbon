@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/dev/vite.js", "apps/*/vite.config.ts"]
+triggers: ["linguiWithoutIdQuery", "basename(id)"]
 promoted: null
 ---
 # A Vite plugin that reads the file name must drop the query first

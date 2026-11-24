@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/accounting-cutover/open-items.ts"]
+triggers: ["job_wip_balance", "job_receipt_line_references", "complete_job_to_inventory", "closeJob", "attachJob", "getWorkInProgressItems"]
 promoted: null
 ---
 # A job's WIP is not only the lines documented against the job

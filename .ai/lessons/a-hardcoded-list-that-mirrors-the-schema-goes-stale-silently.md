@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/tasks/company-backup*.ts"]
+triggers: ["STORAGE_PATH_COLUMNS", "READABLE_ID_TABLES", "buildIdMaps"]
 promoted: null
 ---
 # A hardcoded list that mirrors the schema goes stale silently, and a restore still reports success

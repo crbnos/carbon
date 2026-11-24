@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/postings.server.ts"]
+triggers: ["@carbon/api/postings.server", "registerPosting", "posting("]
 promoted: null
 ---
 # A rule on a posting belongs in the posting, not in the operation that wraps it

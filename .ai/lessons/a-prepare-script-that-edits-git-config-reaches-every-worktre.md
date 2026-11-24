@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["package.json", "scripts/git-hooks/**"]
+triggers: ["simple-git-hooks", "core.hooksPath", "preserveUnused"]
 promoted: null
 ---
 # A `prepare` script that edits git config reaches every worktree

@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["methodCorrectionId", "get_method_tree", "methodOperation", "methodMaterial"]
 promoted: null
 ---
 # A correction's rows live in the routing and BOM tables

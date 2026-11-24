@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/20260812002453_*.sql"]
+triggers: ["batched_new", "batched_old", "attach_statement_handler", "REFERENCING NEW TABLE"]
 promoted: null
 ---
 # Postgres transition tables are visible ONLY to the function the trigger invokes directly

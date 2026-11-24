@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/items/items.service.ts"]
+triggers: ["createMakeMethodVersion", "copyMakeMethod", "makeMethodToMakeMethod", "ensureDraftMakeMethod", "createChangeNoticeDraftMethod"]
 promoted: null
 ---
 # A header and the get-method copy into it share one transaction

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/share+/quote.$id.tsx", "apps/erp/app/routes/share+/supplier-quote.$id.tsx", "apps/erp/app/routes/share+/purchasing-rfq.$id.tsx", "apps/erp/app/modules/*/ui/**/*Summary.tsx", "packages/react/src/VStack.tsx", "packages/react/src/Heading.tsx"]
+triggers: ["<VStack className=\"w-full\"", "flex-1 min-w-0"]
 promoted: null
 ---
 # `w-full` on a flex item ignores its siblings — use `flex-1 min-w-0`

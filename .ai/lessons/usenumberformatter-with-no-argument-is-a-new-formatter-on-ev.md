@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/**/PurchasingPlanningTable.tsx", "apps/erp/app/modules/**/ProductionPlanningTable.tsx"]
+triggers: ["useNumberFormatter()"]
 promoted: null
 ---
 # `useNumberFormatter()` with no argument is a new formatter on every render

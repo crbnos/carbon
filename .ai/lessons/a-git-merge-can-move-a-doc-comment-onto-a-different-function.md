@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/*/*.service.ts"]
+triggers: ["@mcp ", "generate:mcp"]
 promoted: null
 ---
 # A git merge can move a doc comment onto a different function

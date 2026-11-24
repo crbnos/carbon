@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/tasks/company-backup.ts"]
+triggers: ["createInterface", "node:readline", "deserializeTable"]
 promoted: null
 ---
 # Node 24's readline splits a JSON line at U+2028 and U+2029

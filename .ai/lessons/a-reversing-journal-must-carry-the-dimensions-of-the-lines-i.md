@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["journalLineDimension", "copyJournalLineDimensions", "allocateJournalLineIds"]
 promoted: null
 ---
 # A reversing journal must carry the dimensions of the lines it negates

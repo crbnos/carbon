@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/ramp/entities/bill.ts"]
+triggers: ["createDraftBill"]
 promoted: null
 ---
 # Unverified write contracts need a code-level release gate

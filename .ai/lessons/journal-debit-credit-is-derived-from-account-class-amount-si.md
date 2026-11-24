@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["journalEntries", "totalDebits", "tb-balanced", "journal_posted_immutable", "journalLine"]
 promoted: null
 ---
 # Journal debit/credit is derived from account class + amount sign, not the raw sign

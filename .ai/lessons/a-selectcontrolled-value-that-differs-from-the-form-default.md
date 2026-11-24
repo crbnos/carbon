@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/form/src/components/SelectControlled.tsx"]
+triggers: ["SelectControlled"]
 promoted: null
 ---
 # A `SelectControlled` value that differs from the form default is cleared on mount

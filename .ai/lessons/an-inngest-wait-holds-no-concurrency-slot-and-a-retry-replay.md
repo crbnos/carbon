@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/tasks/assembler-client.ts"]
+triggers: ["step.waitForEvent", "step.sleep", "step.invoke", "runAssemblerJob"]
 promoted: null
 ---
 # An Inngest wait holds no concurrency slot, and a retry replays memoized steps

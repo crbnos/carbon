@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/*/app/root.tsx", "packages/query/src/invalidation.ts"]
+triggers: ["createInvalidationMiddleware"]
 promoted: null
 ---
 # A `.client.ts` module is empty on the server, even for a value a route only calls at load

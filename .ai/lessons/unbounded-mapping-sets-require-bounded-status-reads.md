@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/ramp/**"]
+triggers: ["chunk(", "archivePurchaseOrder"]
 promoted: null
 ---
 # Unbounded mapping sets require bounded status reads

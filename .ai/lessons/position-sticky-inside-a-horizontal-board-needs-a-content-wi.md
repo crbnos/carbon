@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/*/app/**/ColumnCard.tsx", "apps/erp/app/utils/drag-sensors.ts"]
+triggers: ["sticky left-0", "BoardContainer", "MeasuringStrategy"]
 promoted: null
 ---
 # position:sticky inside a horizontal board needs a content-width row and a clamped scroll root

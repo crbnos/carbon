@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/tasks/assembly-plan.ts", "apps/assembler/src/main.rs"]
+triggers: ["createSignedUploadUrl"]
 promoted: null
 ---
 # Don't pre-sign a short-lived upload URL before a long-running operation

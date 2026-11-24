@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/settings/ui/Sequences/*.tsx"]
+triggers: ["{\"%{", "%{yy}"]
 promoted: null
 ---
 # Lingui: a string literal with braces inside `<Trans>` loses its braces

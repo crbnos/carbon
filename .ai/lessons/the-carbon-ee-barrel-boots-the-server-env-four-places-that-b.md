@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/index.ts", "packages/ee/src/sync/**", "packages/jobs/src/inngest/functions/integrations/topology.ts"]
+triggers: ["from \"@carbon/ee\"", "vi.mock(\"@carbon/ee\"", "import(\"@carbon/ee\")"]
 promoted: null
 ---
 # The `@carbon/ee` barrel boots the server env — four places that breaks

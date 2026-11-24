@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/server/app.ts", "apps/mes/server/*.ts"]
+triggers: ["well-known", "pathname.startsWith"]
 promoted: null
 ---
 # A prefix short-circuit in the server entry outranks every route under it

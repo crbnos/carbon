@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/*/*.server.ts", "apps/erp/app/modules/*/*.service.ts", "apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json", "scripts/lib/service-fn-metadata.ts"]
+triggers: ["@mcp", "_PAGING"]
 promoted: null
 ---
 # A constant between `/** @mcp read */` and its function drops the MCP tool

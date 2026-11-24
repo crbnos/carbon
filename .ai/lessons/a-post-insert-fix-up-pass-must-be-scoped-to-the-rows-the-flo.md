@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/production/production.service.ts"]
+triggers: ["itemToJobMakeMethod", "buildConsumeFirstHops", "settleConsumeFirstLine"]
 promoted: null
 ---
 # A post-insert fix-up pass must be scoped to the rows the flow inserted, not to the parent entity

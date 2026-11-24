@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/services/work-unit.server.ts", "apps/mes/app/utils/workUnit.ts", "apps/mes/app/components/JobOperation/**", "apps/mes/app/components/AssemblyView.tsx", "packages/checks/src/conformance/mes-unit-write-resolves-unit.ts"]
+triggers: ["resolveWorkUnit", "useWorkUnit", "serialUnitSelection"]
 promoted: null
 ---
 # A gate on the buttons is not a gate: a rule needs one owner and a list of its writers

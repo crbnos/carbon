@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/reports+/*csv.tsx", "apps/erp/app/routes/x+/reports+/aging.server.ts"]
+triggers: ["agingCsvResponse", "text/csv"]
 promoted: null
 ---
 # Localized CSV exports must translate row values as well as headings

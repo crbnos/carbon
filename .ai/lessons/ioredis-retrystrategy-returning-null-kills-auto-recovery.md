@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/kv/src/client.ts", "packages/kv/src/resilient.ts"]
+triggers: ["retryStrategy", "ioredis"]
 promoted: null
 ---
 # ioredis retryStrategy returning null kills auto-recovery

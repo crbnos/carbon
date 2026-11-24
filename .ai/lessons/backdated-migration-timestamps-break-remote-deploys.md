@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/*.sql", "ci/src/migrations.ts"]
+triggers: ["CREATE OR REPLACE VIEW"]
 promoted: null
 ---
 # Backdated migration timestamps break remote deploys

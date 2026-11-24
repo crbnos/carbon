@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/utils/query.ts"]
+triggers: ["setGenericQueryFilters"]
 promoted: null
 ---
 # `setGenericQueryFilters` erases a query's row type

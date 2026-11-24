@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/*/*.service.ts"]
+triggers: ["itemToJob", { text: ".in(\"", minCount: 3 }]
 promoted: null
 ---
 # Batched PostgREST `.in()` with hundreds of ids blows the gateway URL limit — use Kysely for big id-list reads in edge functions

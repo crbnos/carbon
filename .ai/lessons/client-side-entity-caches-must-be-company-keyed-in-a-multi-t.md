@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/components/RealtimeDataProvider.tsx", "apps/mes/app/components/RealtimeDataProvider.tsx", "apps/erp/app/stores/**"]
+triggers: ["localforage", "indexedDB", "localStorage.setItem"]
 promoted: null
 ---
 # Client-side entity caches must be company-keyed in a multi-tenant app

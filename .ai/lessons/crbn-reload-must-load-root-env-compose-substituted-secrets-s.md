@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/dev/src/commands/reload.ts", "packages/dev/src/commands/up.ts", "packages/dev/src/env.ts"]
+triggers: ["loadEnvFiles", "docker compose", "force-recreate"]
 promoted: null
 ---
 # `crbn reload` must load root `.env` — compose-substituted secrets silently reset

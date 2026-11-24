@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["generateDownloadToken", "FILE_LINK_SECONDS", "expiresInSeconds", "createSignedUrl"]
 promoted: null
 ---
 # A link minted for an API key names its creator, not the key

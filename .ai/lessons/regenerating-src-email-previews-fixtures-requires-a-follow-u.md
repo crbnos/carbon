@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/documents/scripts/generate-notification-previews.mjs", "packages/documents/src/email/previews/*"]
+triggers: ["generate-notification-previews"]
 promoted: null
 ---
 # Regenerating `src/email/previews/` fixtures requires a follow-up biome format pass

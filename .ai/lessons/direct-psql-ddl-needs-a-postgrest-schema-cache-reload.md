@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["NOTIFY pgrst", "psql -c", "PGRST205"]
 promoted: null
 ---
 # Direct psql DDL needs a PostgREST schema-cache reload

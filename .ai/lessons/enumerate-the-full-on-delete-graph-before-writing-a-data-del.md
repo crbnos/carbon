@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/20260812032423_job-material-self-reference-guard.sql"]
+triggers: ["DELETE FROM"]
 promoted: null
 ---
 # Enumerate the full ON DELETE graph before writing a data-deleting migration

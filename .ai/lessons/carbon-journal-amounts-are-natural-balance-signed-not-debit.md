@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/accounting/**"]
+triggers: ["toDebitSignedAmount", "toPostingDateString"]
 promoted: null
 ---
 # Carbon journal amounts are natural-balance-signed, not debit-signed

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["crates/planner/src/**"]
+triggers: ["PENETRATION_TOLERANCE_MM", "MAX_SAMPLE_SPACING_MM"]
 promoted: null
 ---
 # Penetration tolerances must stay far below sample spacing

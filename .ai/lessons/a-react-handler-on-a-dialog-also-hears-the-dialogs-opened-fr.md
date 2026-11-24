@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/utils/dialog.ts"]
+triggers: ["startsSheetDrag", "BottomSheetContent"]
 promoted: null
 ---
 # A React handler on a dialog also hears the dialogs opened from inside it

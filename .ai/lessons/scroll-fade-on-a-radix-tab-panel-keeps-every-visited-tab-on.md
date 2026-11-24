@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/mes/app/components/WorkRecord.tsx"]
+triggers: ["scroll-fade"]
 promoted: null
 ---
 # `scroll-fade` on a Radix tab panel keeps every visited tab on screen

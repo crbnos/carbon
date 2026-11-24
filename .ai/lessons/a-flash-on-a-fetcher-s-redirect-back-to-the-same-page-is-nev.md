@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/receipt+/$receiptId.post.tsx"]
+triggers: ["useRuleViolations"]
 promoted: null
 ---
 # A flash on a fetcher's redirect back to the same page is never shown

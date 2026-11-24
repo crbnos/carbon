@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/Sidebar.tsx", "packages/react/src/NavRail.tsx"]
+triggers: ["document.cookie", "localStorage", "SidebarProvider"]
 promoted: null
 ---
 # A cookie that was only ever written is not a stored preference

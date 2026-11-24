@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/tasks/assembler-client.ts", "packages/jobs/src/inngest/functions/tasks/company-backup.ts"]
+triggers: ["resolveModelSourceBucket", "modelPath", "temp-staging", "copyAssetsToBackup"]
 promoted: null
 ---
 # A service-role job must check that a stored path belongs to the row's company

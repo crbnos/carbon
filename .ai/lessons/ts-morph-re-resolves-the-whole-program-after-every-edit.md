@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["ts-morph"]
 promoted: null
 ---
 # ts-morph re-resolves the whole program after every edit

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/Drawer.tsx", "apps/erp/app/hooks/useDrawerItem*"]
+triggers: ["useDrawerItem", "<Drawer", "DrawerPortal"]
 promoted: null
 ---
 # A drawer rendered as `{item && <Drawer />}` cannot animate closed

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/viewer/src/visibility.ts", "packages/viewer/src/AssemblyPlayer.tsx"]
+triggers: ["visualForComponent", "occluderWeight", "futureMode"]
 promoted: null
 ---
 # "What is drawn" and "what blocks the view" must be derived from one predicate

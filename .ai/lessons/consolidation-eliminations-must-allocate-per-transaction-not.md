@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/tests/intercompany-elimination.test.sql"]
+triggers: ["generateEliminationEntries", "targetJournalLineId"]
 promoted: null
 ---
 # Consolidation eliminations must allocate per transaction, not per company pair

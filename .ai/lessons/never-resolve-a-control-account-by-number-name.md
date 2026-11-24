@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/seed-data.ts"]
+triggers: [".eq(\"number\"", "where(\"number\"", "accountDefault"]
 promoted: null
 ---
 # Never resolve a control account by number/name

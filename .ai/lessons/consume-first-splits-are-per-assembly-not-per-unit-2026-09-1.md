@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/supersession-pick.ts"]
+triggers: ["consumableInWholeAssemblies", "Consume First", "supersessionMode"]
 promoted: null
 ---
 # Consume First splits are per assembly, not per unit (2026-09-15)

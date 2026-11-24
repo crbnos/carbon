@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/inventory.service.ts"]
+triggers: ["Job Consumption", "unissue", "Unissue", "unpick"]
 promoted: null
 ---
 # Reverse inventory from the original ledger sources

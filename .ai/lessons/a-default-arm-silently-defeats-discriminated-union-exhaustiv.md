@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/workflows/definition/nodes.ts"]
+triggers: ["WorkflowNodeType", "z.discriminatedUnion"]
 promoted: null
 ---
 # A `default:` arm silently defeats discriminated-union exhaustiveness

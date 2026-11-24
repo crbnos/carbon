@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/integrations/ramp-sync-reimbursement*.ts"]
+triggers: ["RampReimbursementDraft"]
 promoted: null
 ---
 # Legacy adoption must prove the entire document identity

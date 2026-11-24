@@ -1,5 +1,5 @@
 ---
-paths: []
+paths: [".ai/plans/*.md", ".ai/specs/*.md"]
 triggers: []
 promoted: null
 ---

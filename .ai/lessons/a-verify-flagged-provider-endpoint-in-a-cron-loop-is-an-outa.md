@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/accounting/providers/**"]
+triggers: ["listChanges", "SupportsIncrementalPull", "VERIFY"]
 promoted: null
 ---
 # A VERIFY-flagged provider endpoint in a cron loop is an outage, not a TODO

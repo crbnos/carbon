@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["ON DELETE SET NULL", "ON UPDATE SET NULL", "SET DEFAULT"]
 promoted: null
 ---
 # `ON DELETE SET NULL` on a composite FK nulls every referencing column, not just the pointer

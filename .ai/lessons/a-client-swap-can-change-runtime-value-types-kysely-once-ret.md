@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/sales/sales.service.ts", "packages/database/src/client.ts"]
+triggers: ["upsertQuoteLinePrices", "setTypeParser", "getPostgresClient"]
 promoted: null
 ---
 # A client swap can change runtime value types (Kysely once returned NUMERIC as a string)

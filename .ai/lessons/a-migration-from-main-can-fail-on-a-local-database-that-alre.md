@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/supabase/migrations/20261021004800_*.sql", "packages/database/supabase/migrations/20261021010900_*.sql"]
+triggers: ["get_purchasing_planning", "DROP FUNCTION"]
 promoted: null
 ---
 # A migration from main can fail on a local database that already ran a newer branch migration

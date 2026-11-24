@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/planning/src/scheduling/**"]
+triggers: ["isPlaceholder", "conflictReason", "capacityReservation"]
 promoted: null
 ---
 # A degenerate-input guard on a scheduling surface is a silent-vanish bug, not defensive coding

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/json.ts"]
+triggers: ["priceTrace", "toJsonColumns", "toJson("]
 promoted: null
 ---
 # A JS array bound for a jsonb column must be stringified on the Kysely path

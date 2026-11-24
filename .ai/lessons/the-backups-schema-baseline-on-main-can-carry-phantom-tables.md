@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/manifests/schema.json", "packages/jobs/src/scripts/check-backups.ts", "scripts/git-hooks/pre-commit"]
+triggers: ["CARBON_SKIP_BACKUP_CHECK", "TABLE_RENAMES"]
 promoted: null
 ---
 # The backups schema baseline on main can carry phantom tables from a dirty local DB

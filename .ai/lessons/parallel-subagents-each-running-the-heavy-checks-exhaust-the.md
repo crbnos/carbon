@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/dev/bin/heavy-lock", ".claude/skills/**"]
+triggers: ["heavy-lock", "max-old-space-size", "generate:mcp", "subagent"]
 promoted: null
 ---
 # Parallel subagents each running the heavy checks exhaust the machine

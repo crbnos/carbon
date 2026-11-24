@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["generateEliminationEntries", "isEliminationEntity", "company_today("]
 promoted: null
 ---
 # Dating a synthetic-entity journal with company_today() drops it out of the "as of" report window

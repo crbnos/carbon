@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["await flash(", "flashData(", "flashMiddleware"]
 promoted: null
 ---
 # A flash returned with `data()` from a page loader never shows

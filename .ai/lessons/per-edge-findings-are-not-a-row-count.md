@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/backups/scope.ts"]
+triggers: ["findExportScopeViolations", "excludedRows", "computeScopeExclusions"]
 promoted: null
 ---
 # Per-edge findings are not a row count

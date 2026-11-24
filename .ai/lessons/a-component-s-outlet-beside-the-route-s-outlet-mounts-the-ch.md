@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["<Outlet", "RecordOutlet"]
 promoted: null
 ---
 # A component's outlet beside the route's outlet mounts the child route twice

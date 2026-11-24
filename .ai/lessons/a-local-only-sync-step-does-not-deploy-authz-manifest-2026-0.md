@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/authz/**", "packages/database/supabase/tests/authz-*.sql"]
+triggers: ["WITH CHECK", "authz sync"]
 promoted: null
 ---
 # A local-only sync step does not deploy (authz manifest, 2026-09-27)

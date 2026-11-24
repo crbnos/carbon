@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/workflows/definition/normalize.ts", "packages/documents/src/template/**"]
+triggers: ["formatVersion", "migrateDefinition", "FORMAT_VERSION"]
 promoted: null
 ---
 # A read-time format-migration seam must run before the current-schema parse

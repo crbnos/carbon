@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/event-system/handlers/sync_load_work_center_operation.sql", "packages/database/src/event-system/handlers/sync_unload_work_center_operation.sql"]
+triggers: ["workCenterLoad", "loadedJobOperationId"]
 promoted: null
 ---
 # One fact, one source: a pointer beside its own history lost the order of loads

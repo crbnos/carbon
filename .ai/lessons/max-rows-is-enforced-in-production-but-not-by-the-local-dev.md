@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/planning/src/mrp/mrp.ts", "packages/database/src/fetch-all.ts", "packages/database/supabase/config.toml"]
+triggers: ["fetchAllFromTable", "fetchAllRecords", "select(\"*\")", "max_rows"]
 promoted: null
 ---
 # `max_rows` is enforced in production but not by the local dev stack

@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["git stash", "git checkout --", "git reset --hard"]
 promoted: null
 ---
 # Two sessions in one worktree share every uncommitted file

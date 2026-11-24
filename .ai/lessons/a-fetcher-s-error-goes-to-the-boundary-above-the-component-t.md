@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/ErrorBoundary/**", "packages/auth/src/lib/supabase/provider.tsx", "apps/*/app/routes/**/refresh-session.tsx"]
+triggers: ["isNetworkError", "navigator.onLine", "refresh-session", "setInterval"]
 promoted: null
 ---
 # A fetcher's error goes to the boundary above the component that owns it

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/notifications/notify.ts"]
+triggers: ["step.sendEvent", "EMAIL_CHUNK", "carbon/send-email"]
 promoted: null
 ---
 # One Inngest send carries at most 512 KB, and a rendered email is about 17 KB

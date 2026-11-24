@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["!inner(", "user(email)", ".in(\"user."]
 promoted: null
 ---
 # A PostgREST filter on an embedded column needs `!inner`, or it filters nothing

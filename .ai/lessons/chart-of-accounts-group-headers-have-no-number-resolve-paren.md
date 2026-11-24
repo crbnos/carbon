@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/seed-data.ts"]
+triggers: ["INSERT INTO \"account\"", "parentKey"]
 promoted: null
 ---
 # Chart-of-accounts group headers have no number — resolve parents by name/key

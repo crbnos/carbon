@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/test/database/fixtures/**"]
+triggers: ["SUPABASE_DB_URL", "databaseTest"]
 promoted: null
 ---
 # The root `.env` overrides `.env.local`, so a worktree's DB port is not the default

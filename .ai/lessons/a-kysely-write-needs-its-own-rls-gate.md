@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/authz/**", "packages/checks/src/clobber.ts", "packages/database/src/datasets/wipe.ts"]
+triggers: ["requireMaterialUpdatable", "db: Kysely<KyselyDatabase>", "OBJECT_PATTERNS", "assertWipeable", "authz migration"]
 promoted: null
 ---
 # A Kysely write needs its own RLS gate

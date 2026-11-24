@@ -1,5 +1,5 @@
 ---
-paths: []
+paths: ["**/*.test.ts", "**/*.test.tsx"]
 triggers: []
 promoted: null
 ---

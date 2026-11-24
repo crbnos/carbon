@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/supersession-pick.ts", "packages/planning/src/mrp/mrp.ts"]
+triggers: ["substitutedFromItemId", "redirectedFromItemId", "generatePickingList", "get_picking_schedule"]
 promoted: null
 ---
 # A creation-time swap must be keyed by its provenance column at every later lookup

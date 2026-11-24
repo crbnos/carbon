@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/Button.tsx", "packages/form/src/ValidatedForm.tsx", "packages/auth/src/lib/supabase/client.ts", "packages/jobs/src/inngest/functions/notifications/send-*.ts"]
+triggers: ["type=\"submit\"", "fetcher.submit", "storageReadFetch"]
 promoted: null
 ---
 # A submit button that stays live is a duplicate-write engine

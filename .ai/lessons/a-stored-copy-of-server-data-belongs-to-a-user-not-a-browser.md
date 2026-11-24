@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/query/src/useLiveList.tsx", "packages/query/src/cache.ts"]
+triggers: ["indexedDB", "IndexedDB", "localStorage", "setClientCompanyId"]
 promoted: null
 ---
 # A stored copy of server data belongs to a user, not a browser

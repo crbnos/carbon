@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/utils/src/revalidate.ts", "apps/*/app/root.tsx", "apps/*/app/routes/x+/_layout.tsx", "apps/erp/app/routes/x+/workflow+/$id.tsx"]
+triggers: ["ROOT_ACTION_SAVE", "rootShouldRevalidate", "deferRootActionPost", "defaultShouldRevalidate", "skipPaths"]
 promoted: null
 ---
 # A cookie-only save must not re-run every loader on the page

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/accounting/core/posting.ts", "packages/ee/src/accounting/core/charge-syncer.ts"]
+triggers: ["isDocBackedCharge", "CHARGE_CREDIT_PROVIDERS", "DOC_BACKED", "shouldSync"]
 promoted: null
 ---
 # A per-row document representation must be decided in ONE place the policy and the syncer both read

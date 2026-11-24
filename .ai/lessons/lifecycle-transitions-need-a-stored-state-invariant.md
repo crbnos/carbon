@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["chargeStatus"]
 promoted: null
 ---
 # Lifecycle transitions need a stored state invariant

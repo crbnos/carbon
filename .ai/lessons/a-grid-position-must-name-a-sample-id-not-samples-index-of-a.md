@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/quality/ui/Inspections/InspectionMeasurementGrid.tsx", "apps/mes/app/components/Inspection/InspectionMeasurementMatrix.tsx"]
+triggers: ["placeSamples", "inspectionSample(", "referencedTable"]
 promoted: null
 ---
 # A grid position must name a sample id, not `samples[index]` of a reloaded list

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/shared/shared.service.ts"]
+triggers: ["assertCompanyRecords", "FOREIGN KEY"]
 promoted: null
 ---
 # Single-column FKs on multi-tenant children accept cross-tenant ids

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["crates/planner/src/**", "packages/viewer/src/fallback.ts", "packages/viewer/src/AssemblyPlayer.tsx"]
+triggers: ["generateAssemblyStepsFromPlan", "blockedBy"]
 promoted: null
 ---
 # Never fabricate a "best-effort" motion through geometry

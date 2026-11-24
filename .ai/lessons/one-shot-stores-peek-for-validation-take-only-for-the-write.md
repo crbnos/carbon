@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/onshape/lib/panel-plan-store.ts"]
+triggers: ["GETDEL", "getdel"]
 promoted: null
 ---
 # One-shot stores: peek for validation, take only for the write

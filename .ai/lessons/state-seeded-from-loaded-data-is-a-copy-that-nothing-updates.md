@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["useLoaderData", "useRouteData"]
 promoted: null
 ---
 # State seeded from loaded data is a copy that nothing updates

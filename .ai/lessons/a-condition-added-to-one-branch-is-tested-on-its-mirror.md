@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/planning/src/promising/**"]
+triggers: ["checkDeliveryDates"]
 promoted: null
 ---
 # A condition added to one branch is tested on its mirror

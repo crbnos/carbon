@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/db.ts", "apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx"]
+triggers: [".original as {", ".from(\"account\")", "pool.end()"]
 promoted: null
 ---
 # A cast to an OPTIONAL property silently yields `undefined` on a type that lacks it

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/invoicing/ui/Payment/PaymentForm.tsx", "apps/erp/app/modules/invoicing/ui/Payment/PaymentApplyTable.tsx"]
+triggers: ["SelectControlled", "paymentKind"]
 promoted: null
 ---
 # Seed UI-only controlled fields through the form defaults

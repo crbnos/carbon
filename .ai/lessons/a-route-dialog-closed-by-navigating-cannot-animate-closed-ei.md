@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/Modal.tsx", "packages/react/src/Drawer.tsx"]
+triggers: ["useRouteDialog", "useCloseRoute", "ConfirmDelete", "ModalOverlay"]
 promoted: null
 ---
 # A route dialog closed by navigating cannot animate closed either

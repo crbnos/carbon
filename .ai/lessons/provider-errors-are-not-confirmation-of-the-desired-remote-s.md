@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/ramp/entities/*.ts"]
+triggers: ["RampApiError", "externalIntegrationMapping"]
 promoted: null
 ---
 # Provider errors are not confirmation of the desired remote state

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/planning/src/mrp/planning-actions.ts"]
+triggers: ["generatePlanningActions", "updatePlanningJob", "quantityToReceive", "openProductionOrders", "openPurchaseOrderLines"]
 promoted: null
 ---
 # A supply figure that includes scrap cannot be written back as the order quantity

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/integrations/ramp-sync-bill*.ts"]
+triggers: ["purchaseInvoiceLine", "supplierQuoteLinePrice", "supplierUnitPrice", "GENERATED ALWAYS"]
 promoted: null
 ---
 # A generated column is writable in the Supabase Insert type but rejected at runtime

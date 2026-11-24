@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/NavRail.tsx", "apps/erp/app/components/Layout/Navigation/**"]
+triggers: ["closestCenter", "pointerWithin"]
 promoted: null
 ---
 # The desktop rail can be transparent, and a sortable row can be tall

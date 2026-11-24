@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["crates/optimize/src/lib.rs", "apps/assembler/src/actions/optimize.rs"]
+triggers: ["gltf_to_glb", "DecoderReader", "serde_json::from_slice"]
 promoted: null
 ---
 # Large text `.gltf` with an embedded base64 buffer can't be serde-parsed bounded — stream it into a GLB

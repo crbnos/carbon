@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/reports+/*aging*csv*"]
+triggers: ["aging.server"]
 promoted: null
 ---
 # Export permission must cover enrichment reads

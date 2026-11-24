@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/workflows/catalog/**"]
+triggers: ["labels.generated", ".generated.ts"]
 promoted: null
 ---
 # Lingui's `msg` macro forces generated translatable strings into their own file

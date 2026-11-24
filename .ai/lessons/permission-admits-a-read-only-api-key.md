@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/api/src/permissions.ts"]
+triggers: ["permission: {}", "refuseKeyWithout"]
 promoted: null
 ---
 # `permission: {}` admits a read-only API key

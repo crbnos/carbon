@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: [{"text": ".insert(", "minCount": 2}, {"text": ".update(", "minCount": 2}, {"text": ".upsert(", "minCount": 2}]
 promoted: null
 ---
 # Chained Supabase writes in a route action are not a transaction

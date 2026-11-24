@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/inspection+/$id.reject.tsx", "apps/erp/app/routes/x+/issue+/new.tsx"]
+triggers: ["nonConformanceItemTrackedEntity", { text: ".insert(", minCount: 3 }]
 promoted: null
 ---
 # An unchecked supabase-js insert turns a NOT NULL violation into silence

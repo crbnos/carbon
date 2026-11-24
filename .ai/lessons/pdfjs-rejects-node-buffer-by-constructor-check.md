@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/files/src/pdf/pdf.ts", "packages/files/src/media/image-pipeline.ts"]
+triggers: ["unpdf", "@jsquash", "getDocumentProxy"]
 promoted: null
 ---
 # pdfjs rejects Node Buffer by constructor check

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/inventory/inventory.server.ts"]
+triggers: ["invokePosting", "serverFnFailure"]
 promoted: null
 ---
 # A posting's refusal only reaches the dialog when it is thrown as a 4xx

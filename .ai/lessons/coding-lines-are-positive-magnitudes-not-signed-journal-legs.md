@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["buildChargeJournal", "buildLegacyChargeJournals", "codingLine"]
 promoted: null
 ---
 # Coding lines are positive magnitudes, not signed journal legs

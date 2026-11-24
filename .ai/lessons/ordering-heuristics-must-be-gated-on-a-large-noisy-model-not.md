@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["crates/planner/src/**"]
+triggers: ["removal_priority", "_sandwiched_parts"]
 promoted: null
 ---
 # Ordering heuristics must be gated on a large noisy model, not just the seat rail

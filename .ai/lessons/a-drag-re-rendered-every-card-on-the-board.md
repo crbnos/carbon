@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/production/ui/Schedule/Kanban/**"]
+triggers: ["useSortable", "useSensor("]
 promoted: null
 ---
 # A drag re-rendered every card on the board

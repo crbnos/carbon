@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/reports+/*aging*", "packages/database/src/datasets/**"]
+triggers: ["ar-aging", "ap-aging"]
 promoted: null
 ---
 # Aging report previews need seeded open documents

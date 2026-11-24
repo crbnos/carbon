@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/accounting-cutover.ts", "apps/erp/app/modules/accounting/ui/Activation/MigrationClearingTable.tsx", "apps/erp/app/routes/x+/accounting+/activation.enable.tsx", "apps/erp/app/modules/accounting/accounting.service.ts"]
+triggers: ["MIGRATION_CLEARING_TOLERANCE", "isMigrationClearingZero", "ACTIVATION_CUTOVER_PARAM", "accounting-cutover"]
 promoted: null
 ---
 # A value two layers must agree on lives once, in the client-safe pure module

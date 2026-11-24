@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/Number.tsx", "packages/form/src/components/Number.tsx", "packages/form/src/components/NumberControlled.tsx", "packages/form/src/components/ArrayNumeric.tsx"]
+triggers: ["formatOptions={{", "useStableFormatOptions", "react-aria-components"]
 promoted: null
 ---
 # react-aria compares `formatOptions` by reference — an inline literal wipes half-typed numbers

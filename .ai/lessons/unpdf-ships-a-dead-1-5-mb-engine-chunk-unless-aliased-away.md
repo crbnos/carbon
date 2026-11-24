@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/*/vite.config.ts", "apps/*/app/ssr-shims/unpdf-pdfjs-stub.mjs"]
+triggers: ["unpdf/pdfjs", "definePDFJSModule"]
 promoted: null
 ---
 # unpdf ships a dead 1.5 MB engine chunk unless aliased away

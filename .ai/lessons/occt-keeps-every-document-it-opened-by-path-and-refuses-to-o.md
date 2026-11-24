@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["crates/occt-bridge/src/*.cc", "apps/assembler/src/actions/optimize.rs"]
+triggers: ["read_xbf", "read_pmi", "run_ingest", "TDocStd_Application"]
 promoted: null
 ---
 # OCCT keeps every document it opened by path, and refuses to open it again

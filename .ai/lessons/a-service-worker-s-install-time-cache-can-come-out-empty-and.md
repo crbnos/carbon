@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/public/service-worker.js", "apps/mes/public/service-worker.js"]
+triggers: ["caches.open", "ensureOfflinePage", "fallbackOfflinePage"]
 promoted: null
 ---
 # A service worker's install-time cache can come out empty and stay empty

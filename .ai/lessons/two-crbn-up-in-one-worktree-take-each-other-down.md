@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/dev/src/commands/up.ts"]
+triggers: ["crbn up"]
 promoted: null
 ---
 # Two `crbn up` in one worktree take each other down

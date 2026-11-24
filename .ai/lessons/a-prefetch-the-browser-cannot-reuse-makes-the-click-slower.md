@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/PrefetchLink.tsx", "packages/utils/src/prefetch.ts"]
+triggers: ["prefetch=", "PrefetchPageLinks", "prefetchCacheMiddleware", "Sec-Purpose"]
 promoted: null
 ---
 # A prefetch the browser cannot reuse makes the click slower

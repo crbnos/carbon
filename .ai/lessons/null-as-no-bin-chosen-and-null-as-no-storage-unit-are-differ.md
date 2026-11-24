@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/picked-consumption.ts"]
+triggers: ["planStripedUntrackedDraw", "backflush_job_materials", "IS DISTINCT FROM"]
 promoted: null
 ---
 # `null` as "no bin chosen" and `null` as "no storage unit" are different things

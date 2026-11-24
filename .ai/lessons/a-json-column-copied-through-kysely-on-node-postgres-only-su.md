@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/json.ts", "apps/erp/app/modules/shared/shared.models.ts"]
+triggers: ["toJson(", "toTiptapDoc", "internalNotes", "priceTrace", "additionalCharges", "z.any()"]
 promoted: null
 ---
 # A JSON column copied through Kysely on node-postgres only survives as an object

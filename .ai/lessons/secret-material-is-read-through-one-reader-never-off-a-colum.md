@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["resolveIntegrationSecrets", "readConnectionAccessToken", "resolveConnectionAuth", "access_token", "secretRef"]
 promoted: null
 ---
 # Secret material is read through ONE reader — never off a column

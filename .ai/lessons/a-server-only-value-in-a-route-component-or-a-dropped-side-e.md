@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: [".service\"", "\"sideEffects\"", "LOCK_PERIOD_TASK_NAME"]
 promoted: null
 ---
 # A server-only value in a route component, or a dropped side-effect import, fails only the production build

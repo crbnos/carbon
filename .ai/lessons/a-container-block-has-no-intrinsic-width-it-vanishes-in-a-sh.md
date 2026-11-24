@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/production/ui/Planning/PlanningActionLines.tsx", "apps/erp/app/modules/production/ui/Planning/PlanningOrderGrids.tsx", "packages/react/src/VStack.tsx"]
+triggers: ["@container", "PlanningActionLines"]
 promoted: null
 ---
 # A `@container` block has no intrinsic width — it vanishes in a shrink-to-fit parent

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/utils/src/avatar.ts", "packages/react/src/utils/generatedAvatar.ts", "packages/react/package.json"]
+triggers: ["@dicebear", "GENERATED_AVATAR_STYLES", "STYLE_LOADERS"]
 promoted: null
 ---
 # A generated avatar is a seed, so the library version decides the face

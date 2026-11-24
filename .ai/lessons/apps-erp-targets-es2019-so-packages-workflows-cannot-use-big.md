@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/workflows/**", "packages/workflows-core/src/**"]
+triggers: ["BigInt"]
 promoted: null
 ---
 # `apps/erp` targets ES2019, so `packages/workflows` cannot use BigInt literals

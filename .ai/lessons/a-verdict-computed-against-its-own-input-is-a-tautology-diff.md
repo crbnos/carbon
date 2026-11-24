@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/backups/schema.ts"]
+triggers: ["reportBackupCompatibility", "getCompanyBackups"]
 promoted: null
 ---
 # A verdict computed against its own input is a tautology — diff across time, at read time

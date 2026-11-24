@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["FOREIGN KEY", "PGRST201", "REFERENCES \"workCenter\"", "REFERENCES \"jobOperation\""]
 promoted: null
 ---
 # A second foreign key between two tables breaks every PostgREST embed between them

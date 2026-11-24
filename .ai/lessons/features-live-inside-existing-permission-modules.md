@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/x+/*+/_layout.tsx"]
+triggers: ["ALTER TYPE \"module\""]
 promoted: null
 ---
 # Features live inside existing permission modules

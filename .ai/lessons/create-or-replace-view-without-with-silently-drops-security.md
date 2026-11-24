@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["CREATE OR REPLACE VIEW", "CREATE VIEW", "security_invoker"]
 promoted: null
 ---
 # `CREATE OR REPLACE VIEW` without `WITH (...)` silently drops `security_invoker`

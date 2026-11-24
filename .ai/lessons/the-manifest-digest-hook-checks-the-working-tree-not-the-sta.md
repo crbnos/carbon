@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json", "scripts/git-hooks/pre-commit"]
+triggers: ["check:manifest", "tool-manifest.digest"]
 promoted: null
 ---
 # The manifest-digest hook checks the working tree, not the staged copy

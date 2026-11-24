@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["plural("]
 promoted: null
 ---
 # Lingui `plural()` must be the whole message, with no variables in its branches

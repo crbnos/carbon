@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/Avatar.tsx", "packages/react/src/GeneratedAvatar.tsx", "packages/react/src/NavRail.tsx", "packages/react/src/utils/generatedAvatar*.ts", "packages/react/package.json"]
+triggers: ["@dicebear/core"]
 promoted: null
 ---
 # A library that every page renders must not be imported statically

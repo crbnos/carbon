@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/ee/src/ramp/lib/coding.ts", "packages/ee/src/ramp/lib/custom-single-choice-field.ts"]
+triggers: ["pushCostCenters", "pushChartOfAccounts", "codeSelections", "category_info", "carbon-cost-center"]
 promoted: null
 ---
 # A Ramp custom accounting field is typed OTHER — match it by external id, never by the type enum

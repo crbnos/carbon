@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/routes/api+/integrations.connections.$piece.connect.ts", "apps/erp/app/routes/api+/integrations.connections.callback.ts", "apps/erp/app/routes/api+/integrations.$id.connect.ts"]
+triggers: ["issueOAuthState", "consumeOAuthStateByValue", "oauth-state.server", "createHmac"]
 promoted: null
 ---
 # One OAuth state mechanism: the cookie helper, consumed by value for a shared callback

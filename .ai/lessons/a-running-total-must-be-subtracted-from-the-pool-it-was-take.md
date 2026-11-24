@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/picked-consumption.ts"]
+triggers: ["SharedTakes", "recordSharedTakes", "splitTakeByBin", "getPickedBudgets", "unclaimedRemaining"]
 promoted: null
 ---
 # A running total must be subtracted from the pool it was taken from

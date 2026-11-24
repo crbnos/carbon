@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/invoicing/invoicing.service.ts", "apps/erp/app/modules/invoicing/invoicing.server.ts"]
+triggers: ["decideDocumentForceDelete", "reverseDocumentByJournal", "unapplyForceDeleteSettlements", "rebuildPaymentJournal"]
 promoted: null
 ---
 # A force delete treats the void's refusal as a fallback, not a stop

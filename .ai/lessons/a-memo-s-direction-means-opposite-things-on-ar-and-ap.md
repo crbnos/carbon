@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/purchasing/purchasing.service.ts", "apps/erp/app/modules/sales/sales.service.ts", "apps/erp/app/modules/invoicing/invoicing.service.ts"]
+triggers: ["buildMemoJournal", "createPurchaseReturnOrderCredit", "createSalesReturnOrderCredit", "debitMemo", "direction: \"Credit\""]
 promoted: null
 ---
 # A memo's `direction` means OPPOSITE things on AR and AP

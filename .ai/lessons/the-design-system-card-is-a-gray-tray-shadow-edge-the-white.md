@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/Card.tsx", "packages/onboarding/src/ui/primitives/Section.tsx"]
+triggers: ["<CardContent", "dark:bg-card"]
 promoted: null
 ---
 # The design-system `Card` is a gray tray + shadow edge — the white surface is `CardContent`, and a tint on the shell needs a `dark:` variant

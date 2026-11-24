@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/**"]
+triggers: ["step.run("]
 promoted: null
 ---
 # A new key in an Inngest step's return breaks runs in flight at deploy

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["scripts/lib/service-ast.ts"]
+triggers: ["memberName", "Object.hasOwn"]
 promoted: null
 ---
 # A lookup table keyed by source text must be a `Map`

@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/event-system/handlers/*membership*"]
+triggers: ["CREATE UNIQUE INDEX", "uq_membership", "NULLS NOT DISTINCT"]
 promoted: null
 ---
 # A unique index over a nullable column never deduplicated, and adding a real one breaks silent writers

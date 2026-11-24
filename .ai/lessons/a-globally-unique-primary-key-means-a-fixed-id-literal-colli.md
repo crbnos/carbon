@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/datasets/tiers/**", "packages/database/supabase/migrations/20241030005037_external-links.sql"]
+triggers: ["externalLink", "insertInto(\"period\")", "from(\"period\")"]
 promoted: null
 ---
 # A globally-unique primary key means a fixed id literal collides across companies

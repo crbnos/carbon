@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/database/src/datasets/**"]
+triggers: ["PARENT_CHECK_TABLES"]
 promoted: null
 ---
 # Re-applying demo data runs code a first apply never reaches

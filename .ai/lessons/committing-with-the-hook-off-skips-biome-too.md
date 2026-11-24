@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["scripts/git-hooks/**"]
+triggers: ["core.hooksPath", "--no-verify"]
 promoted: null
 ---
 # Committing with the hook off skips Biome too

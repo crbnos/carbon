@@ -1,5 +1,5 @@
 ---
-paths: []
+paths: ["packages/viewer/**", "crates/planner/src/**"]
 triggers: []
 promoted: null
 ---

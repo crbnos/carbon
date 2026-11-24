@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/public/service-worker.js", "apps/mes/public/service-worker.js"]
+triggers: ["notificationclick", "clients.matchAll", "openWindow"]
 promoted: null
 ---
 # A notification click on an uncontrolled tab opens nothing

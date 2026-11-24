@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/integrations/ramp-sync-*.ts"]
+triggers: ["rampBillPaymentRoute", "payment_method"]
 promoted: null
 ---
 # Financial discriminators require explicit verified allowlists

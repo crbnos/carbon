@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["crates/planner/src/fasteners.rs", "crates/planner/src/pipeline.rs", "crates/planner/src/pipeline2.rs", "crates/planner/src/greedy.rs"]
+triggers: ["fastener_name_re", "classify_fasteners", "removal_priority", "reselect_base"]
 promoted: null
 ---
 # Name-only fastener classification: "pin" and spec suffixes mark structure as hardware

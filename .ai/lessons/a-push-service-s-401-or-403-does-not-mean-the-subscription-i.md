@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/jobs/src/inngest/functions/notifications/push-outcome.ts", "packages/jobs/src/inngest/functions/notifications/send-push.ts"]
+triggers: ["pushDeliveryOutcome", "web-push"]
 promoted: null
 ---
 # A push service's 401 or 403 does not mean the subscription is dead

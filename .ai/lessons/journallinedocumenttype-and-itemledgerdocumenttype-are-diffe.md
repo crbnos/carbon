@@ -1,6 +1,6 @@
 ---
 paths: []
-triggers: []
+triggers: ["journalLineDocumentType", "itemLedgerDocumentType", "bookAdjustment", "valueMovement"]
 promoted: null
 ---
 # journalLineDocumentType and itemLedgerDocumentType are different enums with near-identical value sets

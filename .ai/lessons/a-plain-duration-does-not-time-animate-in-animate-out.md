@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["packages/react/src/Modal.tsx", "packages/react/src/Drawer.tsx", "packages/react/src/BottomSheet.tsx"]
+triggers: ["animate-in", "animate-out"]
 promoted: null
 ---
 # A plain `duration-*` does not time `animate-in` / `animate-out`

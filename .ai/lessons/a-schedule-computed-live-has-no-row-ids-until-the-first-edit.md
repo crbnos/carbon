@@ -1,6 +1,6 @@
 ---
-paths: []
-triggers: []
+paths: ["apps/erp/app/modules/sales/ui/Contracts/ContractInvoiceGrid.tsx", "apps/erp/app/modules/sales/ui/Contracts/ContractAmountsModal.tsx", "apps/erp/app/modules/sales/ui/Contracts/ContractRevenueGrid.tsx", "packages/database/src/contract-schedule.ts"]
+triggers: ["planned:", "customerContractInvoice", "edit-schedule"]
 promoted: null
 ---
 # A schedule computed live has no row ids until the first edit writes it
