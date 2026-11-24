@@ -20617,6 +20617,7 @@ export async function postShipment(
                 : null;
 
             await db.transaction().execute(async (trx) => {
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               await fixedAssetWrites.apply(trx, companyId);
               await updateRowsById(
@@ -21163,6 +21164,7 @@ export async function postShipment(
               }, {}) ?? {};
 
             await db.transaction().execute(async (trx) => {
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await updateRowsById(
                 trx,
                 "purchaseOrderLine",
@@ -21477,6 +21479,7 @@ export async function postShipment(
             }
 
             await db.transaction().execute(async (trx) => {
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               // Update warehouse transfer lines
               await updateRowsById(
                 trx,
@@ -21749,22 +21752,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
-              // Double-post guard: serialize on the shipment row — a second
-              // concurrent post waits here, then sees Posted and aborts, so
-              // ledger rows and journals can never double.
-              const lockedShipment = await trx
-                .selectFrom("shipment")
-                .select(["status"])
-                .where("id", "=", shipmentId)
-                .forUpdate()
-                .executeTakeFirstOrThrow();
-              if (
-                lockedShipment.status === "Posted" ||
-                lockedShipment.status === "Voided"
-              ) {
-                throw new Error(`Shipment is already ${lockedShipment.status}`);
-              }
-
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
               const returnedItems: ReturnShipmentItem[] = [];
@@ -22306,22 +22294,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
-              // Double-post guard: serialize on the shipment row — a second
-              // concurrent post waits here, then sees Posted and aborts, so
-              // ledger rows, journals, and quantityShipped can never double.
-              const lockedShipment = await trx
-                .selectFrom("shipment")
-                .select(["status"])
-                .where("id", "=", shipmentId)
-                .forUpdate()
-                .executeTakeFirstOrThrow();
-              if (
-                lockedShipment.status === "Posted" ||
-                lockedShipment.status === "Voided"
-              ) {
-                throw new Error(`Shipment is already ${lockedShipment.status}`);
-              }
-
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
               // cancelPurchaseReturnOrder locks this same order row — re-check
@@ -24524,12 +24497,14 @@ export async function postShipment(
     // A failed VOID must not touch status: the shipment is still Posted and
     // its ledger/journal rows still stand, so forcing it to Draft would
     // contradict the books and let it be edited and posted a second time.
+    // A failed post resets only from Pending, for the same reason: a second
+    // post refused because the first one won must leave it Posted.
     if (type !== "void") {
       await updateRows(
         db,
         "shipment",
         { status: "Draft" },
-        { id: shipmentId, companyId }
+        { id: shipmentId, companyId, status: "Pending" }
       );
     }
     throw err;
