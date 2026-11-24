@@ -2,6 +2,8 @@
 paths:
   - "packages/query/**"
   - "apps/erp/app/routes/api+/**"
+  - "apps/erp/app/modules/**/ui/**"
+  - "apps/mes/app/components/**"
 ---
 
 # Client cache: `cachedClientLoader` and the invalidation middleware
@@ -84,6 +86,31 @@ Do not write `useFetcher()` + `fetcher.load(url)` in a mount effect for an
 `api+` list: it is one request per component, shows no cached value, and never
 refetches after a save. Keep `useFetcher` for a load that happens on an event
 (a search box, a drill-down click) or that calls a third party.
+
+## A component that loads its own data
+
+A drawer, panel or card that reads data does not start an async read in
+`useEffect` with the browser's Supabase client (`(async () => { await
+carbon.from(…) })()` or `.then(…)`). Such a read has no error state when it
+rejects, and needs a read counter, version bumps and skip flags to stay
+current. Put the read in an `api+` route and read it with `useLoaderQuery`.
+Copy `api+/production.planned-orders.ts` and `DrawerPlannedOrders`:
+
+- The loader parses its query with `safeParse` (400), calls
+  `requirePermissions` with the view the page needs, reads as the caller
+  (RLS applies), and logs and throws a 500 when the read fails.
+- The component passes `null` while it must not read (with
+  `keepPreviousData: true` when it stays mounted while it slides out) and
+  renders `query.error`. A router action marks the read stale, so it needs no
+  trigger. After a plain `fetch` it calls `refetch()`; a parent passes a
+  refresh key to a child's read only for such a change. No skip flags, and no
+  counter for a change the router already sees.
+- A local edit is an overlay kept against the answer it edited, never a
+  `useState` copy of the data. Any effect left goes in one named hook.
+
+The "reference lists only" scope above is about caching PAGE loaders with
+`cachedClientLoader`; an `api+` route a component reads is the intended use.
+Older effect reads in the apps are not precedent: convert one when you touch it.
 
 ## The company in the key
 
