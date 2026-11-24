@@ -22,6 +22,7 @@ import {
 } from "./fixtures/local-database";
 import {
   deadlocked,
+  outcomeOf,
   race,
   raceRounds,
   raceTimeout
@@ -269,6 +270,91 @@ databaseTest(
         quantityIssued: 2
       });
     } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+// A step issue locks the job material, then its strict bin; the job's
+// backflush draws under the strict bin lock, then writes the material. A
+// third connection holds the material's item row, so the backflush stops on
+// its ledger row's foreign key check, holding what it has locked, until the
+// step issue waits on it.
+databaseTest(
+  "under strict backflush, a step issue and the job's backflush at once both complete",
+  async () => {
+    const f = await alwaysPostFixture();
+    const backflusher = await connectLocalTestDatabase();
+    const stepper = await connectLocalTestDatabase();
+    const holder = await connectLocalTestDatabase();
+    const monitor = await connectLocalTestDatabase();
+    const held = signal();
+    const release = signal();
+    let holding: Promise<void> | undefined;
+    const running: Promise<unknown>[] = [];
+    try {
+      await setBackflushSettings(f, { strict: true, preventNegative: true });
+      const { item, job } = await materialJob(f);
+      const [holderPid, backflushPid, stepPid] = await Promise.all(
+        [holder, backflusher, stepper].map(backendPid)
+      );
+
+      holding = holder.transaction().execute(async (trx) => {
+        await sql`SELECT 1 FROM "item" WHERE id = ${item} FOR UPDATE`.execute(
+          trx
+        );
+        held.resolve();
+        await release.promise;
+      });
+      void holding.catch(() => {});
+      await Promise.race([held.promise, holding]);
+
+      const backflush = outcomeOf(() =>
+        sql`SELECT backflush_job_materials(${job.jobId}, 1, ${f.companyId}, ${USER})`.execute(
+          backflusher
+        )
+      );
+      running.push(backflush);
+      await waitForBlockedConnection(monitor, holderPid, backflushPid);
+
+      const step = outcomeOf(() =>
+        invokePosting(
+          handlesOf({ ...f.ctx, db: stepper }),
+          "issue",
+          {
+            type: "partToOperation",
+            id: job.operationId,
+            itemId: item,
+            materialId: job.materialId,
+            quantity: 1,
+            adjustmentType: "Negative Adjmt."
+          },
+          issueMaterial
+        )
+      );
+      running.push(step);
+      await waitForBlockedConnection(monitor, backflushPid, stepPid);
+
+      release.resolve();
+      await holding;
+      const outcomes = { backflush: await backflush, step: await step };
+      expect({
+        deadlocked: deadlocked(outcomes),
+        backflush: outcomes.backflush.ok,
+        step: outcomes.step.ok
+      }).toEqual({ deadlocked: [], backflush: true, step: true });
+      // The backflush issued the unit's 2, the step issue its 1 more.
+      expect(await consumedAndIssued(f, item, job.materialId)).toEqual({
+        consumed: -3,
+        quantityIssued: 3
+      });
+    } finally {
+      release.resolve();
+      await holding?.catch(() => {});
+      await Promise.allSettled(running);
+      for (const db of [backflusher, stepper, holder, monitor]) {
+        await db.destroy();
+      }
       await f.cleanup();
     }
   }

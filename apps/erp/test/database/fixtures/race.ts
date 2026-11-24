@@ -126,7 +126,10 @@ export function deadlocked<Name extends string>(
   });
 }
 
-async function outcomeOf(run: () => Promise<unknown>): Promise<Outcome> {
+/** What `run` did: its value, or its refusal or database failure. */
+export async function outcomeOf(
+  run: () => Promise<unknown>
+): Promise<Outcome> {
   try {
     const value = await run();
     const refusal =
