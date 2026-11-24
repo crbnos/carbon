@@ -137,28 +137,25 @@ describe("rules", () => {
 });
 
 describe("lessons", () => {
-  const files = readdirSync(join(root, ".ai/lessons")).filter(
-    (name) => name.endsWith(".md") && name !== "README.md"
-  );
-
-  it("every lesson's frontmatter parses and has at least one path or trigger", () => {
+  it("every lesson has a unique id and at least one path or trigger", () => {
+    const ids = index.lessons.map((l) => l.id);
     const empty = index.lessons
       .filter((l) => l.paths.length === 0 && l.triggers.length === 0)
       .map((l) => l.id);
-    expect({ count: index.lessons.length, empty }).toEqual({
-      count: files.length,
-      empty: []
-    });
+    expect({
+      duplicateIds: ids.filter((id, i) => ids.indexOf(id) !== i),
+      empty
+    }).toEqual({ duplicateIds: [], empty: [] });
   });
 
-  it("no committed lesson is marked promoted: the promoting commit deletes it", () => {
-    const promoted = files.filter((name) => {
-      const { data } = parseFrontmatter(
-        readFileSync(join(root, ".ai/lessons", name), "utf8")
-      );
-      return data.promoted !== null && data.promoted !== undefined;
-    });
-    expect(promoted).toEqual([]);
+  it("every topic file holds at least one lesson", () => {
+    const files = readdirSync(join(root, ".ai/lessons")).filter(
+      (name) => name.endsWith(".md") && name !== "README.md"
+    );
+    const withLessons = new Set(
+      index.lessons.map((l) => l.id.split("#")[0]?.split("/").pop())
+    );
+    expect(files.filter((name) => !withLessons.has(name))).toEqual([]);
   });
 });
 

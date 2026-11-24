@@ -140,12 +140,12 @@ export interface AllowlistEntry {
  *     pitfall 1. Log the JSON of a non-Error, always.
  *  7. The card's "Coming soon" is decided client-side from `window.env`: a new
  *     client id must be in `getBrowserEnv()` AND the root loader's hand-built `env`
- *     object (`.ai/lessons/a-browser-safe-env-flag-isn-t-live-until-the-root-loader-s-h.md`).
+ *     object (`.ai/lessons/routes-and-loaders.md#a-browser-safe-env-flag-isn-t-live-until-the-root-loader-s-h`).
  *  8. `pnpm-workspace.yaml` `minimumReleaseAge` (3 days) refuses a piece version
  *     published this week; pin the previous one and compare the action you expose.
  *  9. A token has ONE reader (`resolveConnectionAuth` / `readConnectionAccessToken`).
  *     Reading it off a column or `metadata` returns `undefined` silently — Slack DMs
- *     went dark for weeks that way (`.ai/lessons/secret-material-is-read-through-one-reader-never-off-a-colum.md` "Secret material is read
+ *     went dark for weeks that way (`.ai/lessons/auth-and-security.md#secret-material-is-read-through-one-reader-never-off-a-colum` "Secret material is read
  *     through ONE reader").
  * 10. `markIntegrationInstalled` inserts-or-reactivates and NEVER rewrites an
  *     existing row's `metadata`; a second account on an installed card must not

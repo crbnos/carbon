@@ -36,21 +36,34 @@ function fixtureRoot(): string {
     ].join("\n")
   );
   writeFileSync(
-    join(root, ".ai/lessons/count-invoices.md"),
+    join(root, ".ai/lessons/sales-purchasing-invoicing.md"),
     [
-      "---",
+      "# Sales, purchasing and invoicing lessons",
+      "",
+      "Quotes, orders and invoices.",
+      "",
+      "## Count invoices from the view",
+      "",
+      "```scope",
+      "id: count-invoices",
       'paths: ["apps/erp/app/modules/*/ui/**/*Dashboard*"]',
       'triggers: ["purchaseInvoices"]',
-      "promoted: null",
-      "---",
-      "# Count invoices from the view",
+      "```",
       "",
       "**Problem:** The card counted the table.",
       "",
       "**Rule:** Count by the view's status,",
       "never the table's.",
       "",
-      "**Applies to:** dashboards."
+      "## Void an invoice once",
+      "",
+      "```scope",
+      "id: void-once",
+      "paths: []",
+      'triggers: [{"text": ".update(", "minCount": 2}]',
+      "```",
+      "",
+      "**Rule:** Claim the status first."
     ].join("\n")
   );
   writeFileSync(join(root, ".ai/lessons/README.md"), "# Lessons\n");
@@ -71,11 +84,18 @@ it("reads each rule's and lesson's scope, title and guidance", () => {
     ],
     lessons: [
       {
-        id: ".ai/lessons/count-invoices.md",
+        id: ".ai/lessons/sales-purchasing-invoicing.md#count-invoices",
         title: "Count invoices from the view",
         paths: ["apps/erp/app/modules/*/ui/**/*Dashboard*"],
         triggers: ["purchaseInvoices"],
         rule: "Count by the view's status, never the table's."
+      },
+      {
+        id: ".ai/lessons/sales-purchasing-invoicing.md#void-once",
+        title: "Void an invoice once",
+        paths: [],
+        triggers: [{ text: ".update(", minCount: 2 }],
+        rule: "Claim the status first."
       }
     ]
   });

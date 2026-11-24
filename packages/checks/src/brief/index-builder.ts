@@ -5,6 +5,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { FILE_SETS, type FileSet } from "./file-sets";
+import { parseLessonFile } from "./lessons";
 import { parseFrontmatter, readScope, type Trigger } from "./scope";
 
 export type RuleEntry = {
@@ -46,15 +47,6 @@ function firstHeading(body: string): string {
   return line ? line.slice(2).trim() : "";
 }
 
-/** The paragraph after `**Rule:**`, joined onto one line. */
-function ruleParagraph(body: string): string {
-  const at = body.indexOf("**Rule:**");
-  if (at === -1) return "";
-  const rest = body.slice(at + "**Rule:**".length);
-  const end = rest.search(/\n\s*\n/);
-  return (end === -1 ? rest : rest.slice(0, end)).replace(/\s+/g, " ").trim();
-}
-
 function markdownFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
@@ -84,17 +76,16 @@ export function buildBriefIndex(root: string): BriefIndex {
     };
   });
 
-  const lessons = markdownFiles(join(root, LESSONS_DIR)).map((name) => {
-    const id = `${LESSONS_DIR}/${name}`;
-    const { data, body } = parseFrontmatter(
-      readFileSync(join(root, id), "utf8")
-    );
-    return {
-      id,
-      title: firstHeading(body),
-      ...readScope(data),
-      rule: ruleParagraph(body)
-    };
+  const lessons = markdownFiles(join(root, LESSONS_DIR)).flatMap((name) => {
+    const file = `${LESSONS_DIR}/${name}`;
+    const { body } = parseFrontmatter(readFileSync(join(root, file), "utf8"));
+    return parseLessonFile(body, file).map((lesson) => ({
+      id: `${file}#${lesson.id}`,
+      title: lesson.title,
+      paths: lesson.paths,
+      triggers: lesson.triggers,
+      rule: lesson.rule
+    }));
   });
 
   const checks = FILE_SETS.flatMap((set) =>

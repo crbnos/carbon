@@ -372,3 +372,4 @@ N/A. No product UI. The agent sees the briefing as text in its context.
   - The sweep writes a report and opens no pull request.
   - Codex gets the same briefing from `pnpm brief`.
   - Open: the weekly sweep has no schedule yet; a human starts it.
+- 2026-11-24: Lessons moved from one file each into 18 topic files (`.ai/lessons/<topic>.md`, list in `.ai/lessons/README.md`), by request of the user. Each lesson is a `## ` section with a fenced `scope` block (`id`, `paths`, `triggers`), parsed by `packages/checks/src/brief/lessons.ts`. A briefing links to `<topic>.md#<id>`. Agents merged 10 duplicate pairs from the triage report (421 lessons to 411) and kept 30 pairs that only overlap. This replaces the "one file per lesson" answer to Q8.

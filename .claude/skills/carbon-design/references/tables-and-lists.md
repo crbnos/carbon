@@ -220,7 +220,7 @@ menu) unless the row is expandable. Report/workbench tables with no openable rec
 
 Inline-edit cells: only editable cells show the selection ring and hover pencil; read-only
 cells go `bg-muted/50` in edit mode; container owns arrow/Tab/Enter in the capture phase
-(`.ai/lessons/inline-editable-table-cells-commit-on-blur-the-container-mus.md`).
+(`.ai/lessons/tables-and-lists.md#inline-editable-table-cells-commit-on-blur-the-container-mus`).
 
 ## 9. Numbers, money, dates, units
 

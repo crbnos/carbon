@@ -1,6 +1,6 @@
 ---
 name: learn
-description: Record one mistake so no agent makes it again — store it as a conformance check if the code text shows it, else a line in the topic's rule, else a scoped lesson in .ai/lessons/ — then mark the worktree's logged failures as handled. Use when the user corrects you, when /fix finds an earlier agent's mistake, for each /self-review Must fix, when the same check fails twice, or when the Stop hook asks. Sweep mode turns the weekly signal report into store changes. Do not use to fix the mistake itself — use /fix.
+description: Record one mistake so no agent makes it again — store it as a conformance check if the code text shows it, else a line in the topic's rule, else a scoped lesson section in its .ai/lessons/<topic>.md file — then mark the worktree's logged failures as handled. Use when the user corrects you, when /fix finds an earlier agent's mistake, for each /self-review Must fix, when the same check fails twice, or when the Stop hook asks. Sweep mode turns the weekly signal report into store changes. Do not use to fix the mistake itself — use /fix.
 ---
 
 # learn — store a mistake where the next agent meets it
@@ -40,7 +40,7 @@ rg -n "<key code token>" .claude/rules .ai/lessons packages/checks/src/conforman
 |---|---|
 | shows in one file's code text (a call, an import, a pattern) | **a) Check** in `packages/checks/src/conformance/` |
 | needs judgment, but belongs to one topic that has a rule | **b) Rule line** in that `.claude/rules/*.md` summary or body |
-| fits neither | **c) Lesson** in `.ai/lessons/<slug>.md` |
+| fits neither | **c) Lesson** section in `.ai/lessons/<topic>.md` |
 
 **a) Check.** Follow `packages/checks/AGENTS.md`. Give the check `triggers`
 that every violation's file contains. Write a test that feeds it the exact
@@ -50,13 +50,14 @@ Existing hits go in the baseline only with a human yes.
 **b) Rule line.** Keep `paths:` unchanged. A `summary:` has at most 5 lines of
 at most 160 characters each, so replace the weakest line if it is full.
 
-**c) Lesson.** Copy the format in `.ai/lessons/README.md`. Give it at least
-one path or one trigger. Each trigger has at least 4 characters. Keep
-`promoted: null`.
+**c) Lesson.** Pick the topic file from the table in `.ai/lessons/README.md`.
+Add a `## ` section in the format shown there: a `scope` block with a unique
+`id`, then Context, Problem, Rule and Applies to. Give it at least one path or
+one trigger. Each trigger has at least 4 characters.
 
-When a check or a rule line now states a whole lesson, delete that lesson file
-in the same commit. 🛑 Never delete a lesson that no stronger store took over.
-That needs a human yes.
+When a check or a rule line now states a whole lesson, delete that lesson's
+section in the same commit. 🛑 Never delete a lesson that no stronger store
+took over. That needs a human yes.
 
 ## Step 4: Prove it
 

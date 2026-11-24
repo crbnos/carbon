@@ -13357,7 +13357,7 @@ export type StockByBin = {
  * the unit's total at the location; `storageUnitId` is the bin with the
  * highest positive net — a picked or transferred unit has rows in more than
  * one bin, so "the first row's bin" would book the consumption against a bin
- * that no longer holds it (see `.ai/lessons/tracked-consumption-split-must-book-against-the-entity-s-act.md`).
+ * that no longer holds it (see `.ai/lessons/inventory-and-traceability.md#tracked-consumption-split-must-book-against-the-entity-s-act`).
  * Falls back to `preferredStorageUnitId` only when no bin nets positive.
  */
 export function resolveCapitalizationStock(

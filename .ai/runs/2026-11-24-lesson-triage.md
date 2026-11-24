@@ -1,5 +1,7 @@
 # Lesson triage, 2026-11-24
 
+> Update: the lessons now live in 18 topic files (`.ai/lessons/<topic>.md`). Each name below is the `id` in a lesson's `scope` block. Group B is done: agents merged the 10 pairs that state the same rule and kept the 30 pairs that only overlap. Groups A and C still wait for a human.
+
 Task 13 of `.ai/plans/2026-11-24-agent-context-briefing.md`. 9 agents added `paths:` and `triggers:` to the 421 lesson files. They deleted no file. Each batch passed the parse check (bad 0).
 
 The agents found 3 groups of lessons. A human decides each deletion (spec Q9). The agents wrote the reasons; this report keeps their words and their file names.

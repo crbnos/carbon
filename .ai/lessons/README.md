@@ -1,41 +1,74 @@
 # Lessons
 
-One file per lesson: a mistake an agent made, and the rule that prevents it.
-`pnpm brief <file>` shows a lesson before an agent edits a file in its scope.
+Mistakes an agent made, and the rule that prevents each one. There is one
+file per topic. `pnpm brief <file>` shows a lesson before an agent edits a
+file in that lesson's scope.
 
-## Format
+## Topic files
 
-```markdown
----
+| File | Covers |
+|---|---|
+| `database-access.md` | Kysely, supabase-js and PostgREST queries, RLS, companyId tenancy, transactions, row locks, generated types |
+| `database-migrations.md` | SQL migrations, triggers, views, functions, constraints, foreign keys, seeds and datasets, schema backups |
+| `accounting-and-posting.md` | Journals, postings, the GL, periods, the cutover, accounting sync providers, revenue recognition, lease accounting |
+| `inventory-and-traceability.md` | The item ledger, bins, lots, serials and tracked entities, picking, backflush, kanban |
+| `production-and-mes.md` | Jobs, operations, work centers, the MES app, OEE, maintenance |
+| `planning-and-scheduling.md` | MRP, the scheduler, demand, supersession, promising |
+| `sales-purchasing-invoicing.md` | Quotes, orders, invoices, memos, payments, contracts, rentals, conversions, totals, voids |
+| `integrations.md` | Ramp, Onshape, Jira and Linear, Stripe, OAuth, webhooks, Activepieces pieces, Slack, email |
+| `workflows.md` | The workflow engine, matcher, catalog, actions and runs |
+| `jobs-and-events.md` | Inngest functions, the event queue, crons, notification delivery |
+| `ui-components-and-forms.md` | `@carbon/react`, ValidatedForm, modals and drawers, the design system, keyboard, accessibility |
+| `routes-and-loaders.md` | React Router routes, loaders and actions, outlets, revalidation, the query cache, realtime, service workers |
+| `tables-and-lists.md` | List tables, paging and infinite scroll, columns, CSV export and import |
+| `dates-numbers-i18n.md` | Time zones, `@internationalized/date`, numeric precision, currency, Lingui |
+| `testing.md` | Vitest, database tests, browser tests, conformance checks as tests |
+| `dev-tooling-and-ci.md` | The crbn CLI, the local stack, git and worktrees, CI, scripts, agents and skills, docs |
+| `files-cad-viewer.md` | Uploads, storage, media, CAD and STEP, the 3D viewer, Rust crates, PDFs and printing |
+| `auth-and-security.md` | Auth, sessions, permissions, API keys, headers, secrets, the MCP and API surface |
+
+Put a new lesson in the topic where a writer of that code needs it. If two
+topics fit, choose the one whose code the mistake was made in.
+
+## Lesson format
+
+Each lesson is one `## ` section. A fenced `scope` block comes first:
+
+````markdown
+## Count invoices by the status the list shows, from its view
+
+```scope
+id: count-invoices-by-the-status-the-list-shows-from-its-view
 paths: ["apps/erp/app/modules/*/ui/**/*Dashboard*"]
-triggers: ["purchaseInvoice", "salesInvoice"]
-promoted: null
----
-# Count invoices by the status the list shows, from its view
+triggers: ["purchaseInvoices", "salesInvoices"]
+```
 
 **Context:** …
+
 **Problem:** …
+
 **Rule:** …
+
 **Applies to:** …
-```
+````
 
 | Field | Meaning |
 |---|---|
-| `paths:` | Globs of the files the lesson applies to. |
-| `triggers:` | Code text that shows the lesson's topic: a string, or `{ text, minCount }`. Each has at least 4 characters. |
-| `promoted:` | Always `null` in a committed file. |
+| `id` | A slug of the title. Unique across all topic files. |
+| `paths` | Globs of the files the lesson applies to. |
+| `triggers` | Code text that shows the topic: a string, or `{"text": ".update(", "minCount": 2}`. Each has at least 4 characters. |
 
-`pnpm brief` selects a lesson when its `paths:` match the file, or when a
-trigger occurs in the file or in the planned edit. Each lesson has at least
-one path or one trigger.
+`pnpm brief` selects a lesson when its `paths` match the file, or when a
+trigger occurs in the file or in the planned edit. It shows the title and the
+**Rule** paragraph. Each lesson has at least one path or one trigger.
 
 ## How a lesson is added and removed
 
 1. `/learn` records a mistake. It chooses a check if the mistake shows in the
-   code text, else a rule line, else a lesson file here.
+   code text, else a rule line, else a lesson section here.
 2. When a check or a rule takes a lesson over, the same commit deletes the
-   lesson file.
+   lesson's section.
 3. A human approves the deletion of a lesson that no stronger store took over.
 
-`packages/checks/src/brief/scopes.test.ts` fails a lesson whose frontmatter
-does not parse or that has no scope.
+`packages/checks/src/brief/scopes.test.ts` fails a lesson that does not
+parse, that has no scope, or whose id repeats.

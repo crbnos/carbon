@@ -241,7 +241,7 @@ export async function getJobOperationBatch(
   // (summed into the work-type toggle), completion pre-fill quantities, the
   // member's job id for the chip / completion table, and the due dates and
   // customers the batch's header summarizes.
-  // @ts-ignore TS2589: the PostgREST select parse crosses the instantiation-depth limit (see .ai/lessons/ts-expect-error-ts2589-on-supabase-joined-selects-is-fragile.md)
+  // @ts-ignore TS2589: the PostgREST select parse crosses the instantiation-depth limit (see .ai/lessons/database-access.md#ts-expect-error-ts2589-on-supabase-joined-selects-is-fragile)
   const operations = await client
     .from("jobOperation")
     .select(

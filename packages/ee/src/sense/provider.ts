@@ -29,7 +29,7 @@ const REQUEST_TIMEOUT_MS = 15_000;
 
 /**
  * The status → state allowlist. An unknown status fails the station rather
- * than being guessed (`.ai/lessons/financial-discriminators-require-explicit-verified-allowlist.md`).
+ * than being guessed (`.ai/lessons/integrations.md#financial-discriminators-require-explicit-verified-allowlist`).
  */
 const SENSE_STATES: Record<string, MachineState> = {
   Active: "Running",
