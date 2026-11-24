@@ -237,6 +237,7 @@ import {
   journalLineDimensionRows,
   leavingTrackedEntityIds,
   loadTaxCodesInForce,
+  lockPostable,
   lockUntrackedDraws,
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
@@ -17172,6 +17173,7 @@ export async function postReceipt(
         );
 
         await db.transaction().execute(async (trx) => {
+          await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           await lockOutsideProcessingJobs(trx, companyId, outsideLineIds);
           if (!isOutsideProcessing) {
@@ -18283,24 +18285,8 @@ export async function postReceipt(
             : null;
 
         await db.transaction().execute(async (trx) => {
+          await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-          // Double-post guard: serialize on the receipt row — a second
-          // concurrent post waits here, then sees Posted and aborts, so
-          // ledger rows, journals, and quantityReceived can never double.
-          const lockedReceipt = await trx
-            .selectFrom("receipt")
-            .select(["status"])
-            .where("id", "=", receiptId)
-            .forUpdate()
-            .executeTakeFirstOrThrow();
-          if (
-            lockedReceipt.status === "Posted" ||
-            lockedReceipt.status === "Voided"
-          ) {
-            throw new InvalidInputError(
-              `Receipt is already ${lockedReceipt.status}`
-            );
-          }
 
           // cancelSalesReturnOrder locks this same order row — re-check the
           // status under the lock so a cancel committed after our
@@ -18707,6 +18693,7 @@ export async function postReceipt(
             : null;
 
         await db.transaction().execute(async (trx) => {
+          await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           // Update warehouse transfer lines
           await updateRowsById(
@@ -18870,13 +18857,15 @@ export async function postReceipt(
 
     return { success: true };
   } catch (err) {
-    // A failed VOID leaves the receipt Posted: its rows still stand.
+    // A failed VOID leaves the receipt Posted: its rows still stand. Only
+    // from Pending: a second post refused because the first one won must
+    // leave it Posted.
     if (type !== "void") {
       await updateRows(
         db,
         "receipt",
         { status: "Draft" },
-        { id: receiptId, companyId }
+        { id: receiptId, companyId, status: "Pending" }
       );
     }
     throw err;
