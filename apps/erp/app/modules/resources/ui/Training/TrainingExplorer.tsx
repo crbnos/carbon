@@ -45,7 +45,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "motion/react";
 import { Reorder, useDragControls } from "motion/react";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuArrowRightLeft,
@@ -532,6 +532,7 @@ function TrainingQuestionFormBody({
   const [correctBoolean, setCorrectBoolean] = useState(
     initialValues.correctBoolean ?? false
   );
+  const correctBooleanId = useId();
   const [matchingPairs, setMatchingPairs] = useState<
     Array<{ left: string; right: string }>
   >(() => {
@@ -655,10 +656,13 @@ function TrainingQuestionFormBody({
               <HStack>
                 <Switch
                   aria-label={t`Correct Answer`}
+                  aria-describedby={correctBooleanId}
                   checked={correctBoolean}
                   onCheckedChange={setCorrectBoolean}
                 />
-                <span>{correctBoolean ? "True" : "False"}</span>
+                <span id={correctBooleanId}>
+                  {correctBoolean ? "True" : "False"}
+                </span>
               </HStack>
             </VStack>
           )}
