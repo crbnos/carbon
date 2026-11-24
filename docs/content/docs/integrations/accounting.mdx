@@ -39,7 +39,8 @@ Xero and QuickBooks Online use **OAuth**. Rillet uses a per-company **API key**.
   ### Turn on sync
 
   Turn on the **Sync** switch at the top of the integration. It stays locked until every account marked
-  **Required** on the Account Mapping tab is mapped. Turning it off later pauses the sync again; a reconnect
+  **Required** on the Account Mapping tab is mapped. For Xero and QuickBooks Online, every tax code in use
+  must also have a provider rate on the **Tax Rates** tab. Turning it off later pauses the sync again; a reconnect
   to the same organization keeps it where it was.
   </Step>
   <Step>
@@ -64,11 +65,12 @@ The QuickBooks Online card reads **Not Configured** and cannot be installed. On 
 
 ## Configure the sync
 
-An accounting integration has four tabs beyond the basic connection settings.
+An accounting integration has these tabs beyond the basic connection settings. **Tax Rates** shows for Xero and QuickBooks Online only.
 
 <FieldTable>
   <Field name="Account Mapping">Map each Carbon posting account to a code in the provider's chart of accounts. Posted journals push using the mapped provider account. Use **Suggest with AI** or **Match by code** to fill the map, then resolve anything left unmapped.</Field>
   <Field name="Dimensions">Map Carbon dimensions to the provider's tracking slots. Xero and QuickBooks expose two slots. Rillet sends every dimension on each line and provisions the matching fields automatically, so the slot editor does not apply to it.</Field>
+  <Field name="Tax Rates">Map each <Term>tax code</Term> to a provider tax rate, once for sales and once for purchases (see below).</Field>
   <Field name="Posting Sync">Choose how posted journals reach the ledger (see below).</Field>
   <Field name="Sync Activity">Watch every sync operation and retry the ones that failed (see below).</Field>
 </FieldTable>
@@ -80,6 +82,24 @@ The **Posting Sync** tab controls three things:
   <Field name="AR / AP representation">How receivables and payables reach the ledger. Each is either **Documents** (push the invoice or bill itself) or **Off — handled outside the sync**.</Field>
   <Field name="Books lock date">A manual date before which Carbon will not push new entries, so a closed period stays closed.</Field>
 </FieldTable>
+
+### Tax rates
+
+The **Tax Rates** tab lists **Unmapped tax codes** first: codes that customers, suppliers or documents use, with no provider rate for that use. **Tax codes** below it lists every other code: active codes, and retired codes that documents still use. Pick a **Sales** and a **Purchase** rate for each code, then select **Save**. Several codes can share one provider rate. **Match by rate** proposes a rate when one provider rate has the code's percentage. When several do, it skips capital-goods rates and prefers the standard sales or purchase rate. It skips retired codes and codes with no rate in force today, such as a code that starts next month. Map those by hand.
+
+On Xero, the first row is **No tax code (exempt or non-taxable)**. It sets the rate for lines with no tax code and no tax: exempt customers, non-taxable items, and shipping on a code that does not tax shipping. On a bill, it also covers the untaxed header freight on a fully recoverable code. Map it to a rate that keeps these amounts on the VAT return, such as zero-rated or exempt. The row is optional and never holds the sync off. Until it is mapped, these lines go out as "No VAT", and the tab warns that they stay off the VAT return. A company with no tax codes always sends these lines as "No VAT", as before.
+
+Each pushed line sends Carbon's own tax amount with the mapped rate. A line with no code but a tax percent goes out with the one provider rate of that percentage. If several match, Carbon uses the standard rate and never a capital-goods rate.
+
+A **Reverse Charge** code charges no tax on a sale, so map its sales use to a 0% rate, such as zero-rated EC sales. Carbon refuses any other rate. Its purchase documents (bills, purchase orders and supplier credits) go out with no tax, so the code needs no purchase rate.
+
+<Callout type="warn" title="A rate that does not fit stops the document">
+Before each push, Carbon checks three things. The line's tax must be the mapped rate's percentage of the net, to one minor unit. The mapped rate must still be active in the ledger: a rate archived there shows **Archived in the provider. Re-map it.** on the tab. On Xero, the rate must apply to the line's account type (for example, a liability account). Carbon knows the account type only through the integration's account mapping. On a purchase order or quote, it checks only when the mapping names the same Xero code the line sends. If a check fails, or the code has no mapping, the document waits in **Sync Activity** as a warning. Fix the mapping, then **Retry**. Nothing reaches the ledger until the tax resolves.
+</Callout>
+
+On a bill, only the recoverable share of the tax goes out at the mapped rate, on the net the supplier charged it on. Each line keeps its own tax, to one minor unit of its net times the rate, so a large line never takes on the rounding of small ones. The rest of a partly recoverable line goes out as a second line with no tax, on the same account. Supplier credits split the same way. Rillet receives bills as before: the recoverable tax goes as an account line.
+
+A purchase order goes to Xero in the order's currency: the supplier's unit price, tax and shipping. Each line's shipping goes out as a line of its own, with its share of the line's tax.
 
 ## Watch it run
 

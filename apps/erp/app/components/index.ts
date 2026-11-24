@@ -8,6 +8,7 @@ import Avatar from "./Avatar";
 import AvatarMenu from "./AvatarMenu";
 import { BreadcrumbItem, BreadcrumbLink, Breadcrumbs } from "./Breadcrumb";
 import CadModel from "./CadModel";
+import { ChartSeriesLegend, useHiddenSeries } from "./ChartSeriesLegend";
 import Contact from "./Contact";
 import CustomerAvatar from "./CustomerAvatar";
 import { DateSelect } from "./DateSelect";
@@ -71,6 +72,7 @@ export {
   BreadcrumbLink,
   Breadcrumbs,
   CadModel,
+  ChartSeriesLegend,
   Contact,
   CustomerAvatar,
   DateSelect,
@@ -123,6 +125,7 @@ export {
   Table,
   TimeTypeIcon,
   TrackingTypeIcon,
+  useHiddenSeries,
   useOptimisticAssignment,
   VersionMenu
 };

@@ -42,7 +42,7 @@ import { formatDate } from "@carbon/utils";
 import { today } from "@internationalized/date";
 import { msg, plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
+import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { Suspense, useMemo, useState } from "react";
 import {
@@ -66,6 +66,7 @@ import {
   Cell,
   ComposedChart,
   Label,
+  LabelList,
   Line,
   Pie,
   PieChart,
@@ -73,10 +74,21 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { DateSelect, Empty, Hyperlink, MetricCard } from "~/components";
+import {
+  ChartSeriesLegend,
+  DateSelect,
+  Empty,
+  Hyperlink,
+  MetricCard,
+  useHiddenSeries
+} from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { QualityKPIs } from "~/modules/quality/quality.models";
 import { getIssueTypesList } from "~/modules/quality/quality.service";
+import {
+  type IssueTrendSeries,
+  issueTrendAxis
+} from "~/modules/quality/quality.utils";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { loader as kpiLoader } from "~/routes/api+/quality.kpi.$key";
@@ -236,6 +248,8 @@ function getPriorityVariant(priority: string | null) {
   }
 }
 
+const countLabel = (value: number) => (value > 0 ? value : "");
+
 // --- Component ---
 
 export default function QualityDashboard() {
@@ -251,6 +265,7 @@ export default function QualityDashboard() {
 
   const { t } = useLingui();
   const { locale } = useLocale();
+  const numberFormatter = useNumberFormatter();
   const { isPhone } = useViewport();
 
   const localizedChartConfig = useMemo(
@@ -309,6 +324,11 @@ export default function QualityDashboard() {
     const start = end.add({ months: -1 });
     return { start, end };
   });
+  const {
+    hiddenSeries: hiddenTrendSeries,
+    isShown: isTrendSeriesShown,
+    toggleSeries: toggleTrendSeries
+  } = useHiddenSeries<IssueTrendSeries>();
 
   const selectedChartData =
     QualityKPIs.find((c) => c.key === selectedChart) || QualityKPIs[0];
@@ -383,6 +403,12 @@ export default function QualityDashboard() {
   // Target: prefer meta value from API, fall back to loader value
   const effectiveTarget =
     (kpiFetcher.data as any)?.meta?.qualityIssueTarget ?? qualityIssueTarget;
+  const hasTarget = effectiveTarget > 0;
+  const trendAxis = issueTrendAxis(
+    chartData as any[],
+    effectiveTarget,
+    hiddenTrendSeries
+  );
 
   const sumOf = (key: string) =>
     (chartData as any[]).reduce((s, d) => s + (Number(d[key]) || 0), 0);
@@ -503,67 +529,104 @@ export default function QualityDashboard() {
         <CardContent className="flex-col gap-4">
           <div className="h-[30dvw] md:h-[23dvw] min-h-[300px] max-md:h-[200px] max-md:min-h-0">
             {selectedChart === "weeklyTracking" && (
-              <ChartContainer
-                config={localizedChartConfig}
-                aria-label={t`Issues opened and closed by week`}
-                summary={weeklySummary}
-                className="w-full h-full"
-              >
-                <ComposedChart data={chartData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="week"
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v) => formatWeekLabel(v, locale)}
-                    minTickGap={32}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    // Phones: the 200pt chart would drop a tick; keep all five like desktop.
-                    {...(isPhone ? { interval: 0 } : {})}
-                  />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        labelFormatter={(v) => formatWeekLabel(v, locale)}
-                      />
-                    }
-                  />
-                  <ChartLegend
-                    payload={weeklyLegendPayload}
-                    content={<ChartLegendContent />}
-                  />
-                  {effectiveTarget > 0 && (
-                    <ReferenceLine
-                      y={effectiveTarget}
-                      stroke="hsl(var(--destructive))"
-                      strokeDasharray="3 3"
-                      label={{
-                        value: t`Target`,
-                        position: "insideTopLeft",
-                        fill: "hsl(var(--destructive))",
-                        fontSize: 12
-                      }}
+              <>
+                {/* Not role="img": the legend inside holds series toggles. */}
+                <p className="sr-only">{weeklySummary}</p>
+                <ChartContainer
+                  config={localizedChartConfig}
+                  role="group"
+                  aria-label={t`Issues opened and closed by week`}
+                  className="w-full h-full"
+                >
+                  <ComposedChart data={chartData}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="week"
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => formatWeekLabel(v, locale)}
+                      minTickGap={32}
                     />
-                  )}
-                  <Bar
-                    dataKey="opened"
-                    fill="var(--color-opened)"
-                    maxBarSize={48}
-                    radius={2}
-                    isAnimationActive={false}
-                  />
-                  <Bar
-                    dataKey="closed"
-                    fill="var(--color-closed)"
-                    maxBarSize={48}
-                    radius={2}
-                    isAnimationActive={false}
-                  />
-                </ComposedChart>
-              </ChartContainer>
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      domain={[0, trendAxis.niceMax]}
+                      ticks={trendAxis.ticks}
+                      // Phones: the 200pt chart would drop a tick; keep every tick like desktop.
+                      {...(isPhone ? { interval: 0 } : {})}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={(v) => formatWeekLabel(v, locale)}
+                        />
+                      }
+                    />
+                    <ChartLegend
+                      payload={weeklyLegendPayload}
+                      content={
+                        <ChartSeriesLegend
+                          config={localizedChartConfig}
+                          hiddenSeries={hiddenTrendSeries}
+                          onToggle={toggleTrendSeries}
+                          disabledSeries={hasTarget ? [] : ["target"]}
+                        />
+                      }
+                    />
+                    {hasTarget && isTrendSeriesShown("target") && (
+                      <ReferenceLine
+                        y={effectiveTarget}
+                        stroke="hsl(var(--destructive))"
+                        strokeDasharray="3 3"
+                        label={{
+                          value: t`Target (${numberFormatter.format(effectiveTarget)})`,
+                          position: "insideTopLeft",
+                          fill: "hsl(var(--destructive))",
+                          fontSize: 12
+                        }}
+                      />
+                    )}
+                    {isTrendSeriesShown("opened") && (
+                      <Bar
+                        dataKey="opened"
+                        fill="var(--color-opened)"
+                        maxBarSize={48}
+                        radius={2}
+                        isAnimationActive={false}
+                      >
+                        {trendAxis.showCounts && (
+                          <LabelList
+                            dataKey="opened"
+                            position="top"
+                            formatter={countLabel}
+                            className="fill-foreground"
+                            fontSize={12}
+                          />
+                        )}
+                      </Bar>
+                    )}
+                    {isTrendSeriesShown("closed") && (
+                      <Bar
+                        dataKey="closed"
+                        fill="var(--color-closed)"
+                        maxBarSize={48}
+                        radius={2}
+                        isAnimationActive={false}
+                      >
+                        {trendAxis.showCounts && (
+                          <LabelList
+                            dataKey="closed"
+                            position="top"
+                            formatter={countLabel}
+                            className="fill-foreground"
+                            fontSize={12}
+                          />
+                        )}
+                      </Bar>
+                    )}
+                  </ComposedChart>
+                </ChartContainer>
+              </>
             )}
 
             {selectedChart === "statusDistribution" && (

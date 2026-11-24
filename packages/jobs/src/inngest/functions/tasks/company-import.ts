@@ -304,6 +304,9 @@ export const companyImportFunction = inngest.createFunction(
           );
         }
         await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
+        // The triggers that fill a document line's part number display choice
+        // leave a backup's values as they are, also when replica mode is off.
+        await sql`SET LOCAL app.backup_load = 'on'`.execute(trx);
 
         const ledger: LedgerRow[] = [];
 

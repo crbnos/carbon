@@ -71,12 +71,14 @@ const MaintenanceDispatchesTable = memo(
     const [people] = usePeople();
 
     const locationOptions = useMemo(
-      () =>
-        locations.map((location) => ({
+      () => [
+        { value: "all", label: t`All Locations` },
+        ...locations.map((location) => ({
           value: location.id,
           label: location.name
-        })),
-      [locations]
+        }))
+      ],
+      [locations, t]
     );
 
     const getLocationPath = (locId: string) => {

@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { SAMPLE_TAX_CODE } from "./samples";
+
 /** Sample data for previewing the Quote template. Cast `any`. */
 export const SAMPLE_QUOTE = {
   company: {
@@ -42,10 +44,14 @@ export const SAMPLE_QUOTE = {
       id: "line-1",
       status: "Active",
       itemReadableId: "WIDGET-100",
+      customerPartId: "C-100",
+      customerPartRevision: "3",
+      partNumberDisplay: "Ours First",
       description: "Precision Widget, anodized",
       quantity: [10],
       unitPricePrecision: 2,
       taxPercent: 0.06,
+      taxCodeId: SAMPLE_TAX_CODE.id,
       additionalCharges: {},
       externalNotes: {}
     },
@@ -57,6 +63,7 @@ export const SAMPLE_QUOTE = {
       quantity: [4],
       unitPricePrecision: 2,
       taxPercent: 0.06,
+      taxCodeId: SAMPLE_TAX_CODE.id,
       additionalCharges: {},
       externalNotes: {}
     },
@@ -72,6 +79,7 @@ export const SAMPLE_QUOTE = {
       quantity: [2],
       unitPricePrecision: 2,
       taxPercent: 0.06,
+      taxCodeId: SAMPLE_TAX_CODE.id,
       additionalCharges: {},
       externalNotes: {}
     }
@@ -125,6 +133,8 @@ export const SAMPLE_QUOTE = {
       }
     ]
   },
+  taxCodes: [SAMPLE_TAX_CODE],
+  taxDate: "2026-06-01",
   thumbnails: {},
   locale: "en-US"
 } as any;

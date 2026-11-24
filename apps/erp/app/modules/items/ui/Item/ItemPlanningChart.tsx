@@ -54,11 +54,18 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { DateTime, Empty, Hyperlink } from "~/components";
+import {
+  ChartSeriesLegend,
+  DateTime,
+  Empty,
+  Hyperlink,
+  useHiddenSeries
+} from "~/components";
 import { useQuantityFormatter } from "~/hooks";
 import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
+import { niceAxis } from "~/utils/chart";
 import { path } from "~/utils/path";
 import { DemandForecastSourcesPopover } from "./DemandForecastSourcesPopover";
 import { PlannedOrderDetailsPopover } from "./PlannedOrderDetailsPopover";
@@ -109,48 +116,6 @@ type SeriesKey =
   | "demand"
   | "demandForecast";
 
-// Round a value to a "nice" number (1/2/5 × 10^n) so axis steps land on
-// human-friendly intervals instead of arbitrary fractions of the data range.
-function niceNum(value: number, round: boolean) {
-  const exponent = Math.floor(Math.log10(value));
-  const fraction = value / 10 ** exponent;
-  let niceFraction: number;
-  if (round) {
-    if (fraction < 1.5) niceFraction = 1;
-    else if (fraction < 3) niceFraction = 2;
-    else if (fraction < 7) niceFraction = 5;
-    else niceFraction = 10;
-  } else {
-    if (fraction <= 1) niceFraction = 1;
-    else if (fraction <= 2) niceFraction = 2;
-    else if (fraction <= 5) niceFraction = 5;
-    else niceFraction = 10;
-  }
-  return niceFraction * 10 ** exponent;
-}
-
-// Build evenly-spaced, round Y-axis ticks (and matching domain bounds) that
-// cover [min,max] and always include 0. Steps are >=1 since quantities are whole.
-function niceAxis(min: number, max: number, tickCount = 6) {
-  let lo = min;
-  let hi = max;
-  if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo === hi) {
-    lo = Math.min(0, lo || 0);
-    hi = Math.max(1, hi || 1);
-  }
-  const step = Math.max(
-    1,
-    niceNum((hi - lo) / Math.max(1, tickCount - 1), true)
-  );
-  const niceMin = Math.floor(lo / step) * step;
-  const niceMax = Math.ceil(hi / step) * step;
-  const ticks: number[] = [];
-  for (let v = niceMin; v <= niceMax + step / 2; v += step) {
-    ticks.push(Math.round(v));
-  }
-  return { niceMin, niceMax, ticks };
-}
-
 export const ItemPlanningChart = ({
   compact = false,
   itemId,
@@ -182,17 +147,7 @@ export const ItemPlanningChart = ({
   );
   const isFetching = forecastFetcher.isFetching || !forecastFetcher.data;
   const [searchTerm, setSearchTerm] = useState("");
-  const [hiddenSeries, setHiddenSeries] = useState<Set<SeriesKey>>(
-    () => new Set()
-  );
-  const isShown = (key: SeriesKey) => !hiddenSeries.has(key);
-  const toggleSeries = (key: SeriesKey) =>
-    setHiddenSeries((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+  const { hiddenSeries, isShown, toggleSeries } = useHiddenSeries<SeriesKey>();
 
   const dateFormatter = useDateFormatter({
     month: "short",
@@ -822,7 +777,7 @@ export const ItemPlanningChart = ({
                   />
                   <ChartLegend
                     content={
-                      <PlanningChartLegend
+                      <ChartSeriesLegend
                         config={chartConfig}
                         hiddenSeries={hiddenSeries}
                         onToggle={toggleSeries}
@@ -1000,65 +955,6 @@ export const ItemPlanningChart = ({
     </>
   );
 };
-
-// Legend that distinguishes line series (Projected on hand, Safety stock) from
-// bar series with a line vs. square glyph, so "the line" maps to something.
-function PlanningChartLegend({
-  payload,
-  config,
-  hiddenSeries,
-  onToggle,
-  disabledSeries
-}: {
-  payload?: Array<{ dataKey: SeriesKey; type?: string; color?: string }>;
-  config: ChartConfig;
-  hiddenSeries: Set<SeriesKey>;
-  onToggle: (key: SeriesKey) => void;
-  disabledSeries: SeriesKey[];
-}) {
-  if (!payload?.length) return null;
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 pt-3 text-xs text-muted-foreground">
-      {payload.map((item) => {
-        const shown = !hiddenSeries.has(item.dataKey);
-        return (
-          <button
-            key={item.dataKey}
-            type="button"
-            aria-pressed={shown}
-            disabled={disabledSeries.includes(item.dataKey)}
-            onClick={() => onToggle(item.dataKey)}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-1.5 py-0.5 transition-colors",
-              "hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              "disabled:pointer-events-none disabled:opacity-50",
-              !shown && "text-muted-foreground/60 line-through"
-            )}
-          >
-            {item.type === "line" ? (
-              <span
-                className="h-[3px] w-3.5 shrink-0 rounded-full border"
-                style={{
-                  borderColor: item.color,
-                  backgroundColor: shown ? item.color : "transparent"
-                }}
-              />
-            ) : (
-              <span
-                className="size-2.5 shrink-0 rounded-[2px] border"
-                style={{
-                  borderColor: item.color,
-                  backgroundColor: shown ? item.color : "transparent"
-                }}
-              />
-            )}
-            <span>{config[item.dataKey]?.label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 function ChartHelpContent() {
   const { t } = useLingui();

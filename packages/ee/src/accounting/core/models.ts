@@ -1073,26 +1073,65 @@ export function isAccountingSyncEnabled(metadata: unknown): boolean {
  * where it was — an expired grant must not pause an integration that was
  * live. A first connection, or one to a different organization, starts off.
  */
-export function syncEnabledOnConnect(
-  existingMetadata: unknown,
-  organizationId: string
-): boolean {
-  if (!existingMetadata || typeof existingMetadata !== "object") return false;
+/** The provider organization (Xero tenant, QBO realm) a stored integration is connected to. */
+export function connectedOrganizationId(
+  existingMetadata: unknown
+): string | undefined {
+  if (!existingMetadata || typeof existingMetadata !== "object") return;
   const credentials = (existingMetadata as { credentials?: unknown })
     .credentials as Record<string, unknown> | undefined;
   const providerMetadata = credentials?.providerMetadata as
     | Record<string, unknown>
     | undefined;
   // Legacy rows kept the organization id directly on credentials.
-  const previousOrganizationId =
+  const id =
     providerMetadata?.tenantId ??
     providerMetadata?.realmId ??
     credentials?.tenantId ??
     credentials?.realmId;
+  return typeof id === "string" ? id : undefined;
+}
+
+export function syncEnabledOnConnect(
+  existingMetadata: unknown,
+  organizationId: string
+): boolean {
   return (
-    previousOrganizationId === organizationId &&
+    connectedOrganizationId(existingMetadata) === organizationId &&
     isAccountingSyncEnabled(existingMetadata)
   );
+}
+
+/**
+ * The integration metadata an OAuth (re)connection saves. A reconnect to the
+ * SAME organization keeps every stored setting (posting families, pull cursor,
+ * dimension slots, sync config) and only swaps the credentials; a new
+ * organization starts from the defaults with sync off.
+ */
+export function metadataOnConnect(
+  existingMetadata: unknown,
+  organizationId: string,
+  credentials: Record<string, unknown>
+): Record<string, unknown> {
+  const sameOrganization =
+    connectedOrganizationId(existingMetadata) === organizationId;
+  const previous =
+    sameOrganization && existingMetadata && typeof existingMetadata === "object"
+      ? (existingMetadata as Record<string, unknown>)
+      : {};
+  const previousSettings =
+    previous.settings && typeof previous.settings === "object"
+      ? (previous.settings as Record<string, unknown>)
+      : {};
+  return {
+    ...previous,
+    syncConfig: previous.syncConfig ?? DEFAULT_SYNC_CONFIG,
+    settings: {
+      ...previousSettings,
+      syncEnabled: syncEnabledOnConnect(existingMetadata, organizationId)
+    },
+    credentials
+  };
 }
 
 // /********************************************************\
@@ -1351,6 +1390,12 @@ export const SalesInvoiceLineSchema = z.object({
   addOnCost: z.number().default(0),
   nonTaxableAddOnCost: z.number().default(0),
   taxPercent: z.number(),
+  // The Carbon tax code, for the provider tax-rate mapping. Absent on a
+  // legacy line and on lines mapped back from a provider.
+  taxCodeId: withNullable(z.string()).optional(),
+  // The line's code taxes delivery charges: its share of header shipping
+  // joins its tax base, as post-sales-invoice taxes it.
+  taxesShipping: z.boolean().optional(),
   // Merchandise net of the line discount, in base currency.
   lineAmount: z.number(),
   // The service job a line bills. Its revenue posts to Service Revenue, not

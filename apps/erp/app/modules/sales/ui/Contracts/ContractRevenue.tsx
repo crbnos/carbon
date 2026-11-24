@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   IconButton,
@@ -102,6 +103,7 @@ const ContractRevenue = ({
           <CardTitle>
             <Trans>Revenue</Trans>
           </CardTitle>
+          <RevenueByCalendarMonth />
         </CardHeader>
         <CardContent>
           <VStack spacing={8} className="w-full">
@@ -176,6 +178,7 @@ const ContractRevenue = ({
         <CardTitle>
           <Trans>Revenue</Trans>
         </CardTitle>
+        <RevenueByCalendarMonth />
       </CardHeader>
       <CardContent>
         {lines.length === 0 ? (
@@ -618,3 +621,17 @@ function useProjectNames(lines: ContractLine[]): Record<string, string> {
 }
 
 export default ContractRevenue;
+
+// Revenue is earned per calendar month while invoices bill whole billing
+// periods, so without this a part month reads as a mistake.
+function RevenueByCalendarMonth() {
+  return (
+    <CardDescription>
+      <Trans>
+        Revenue is counted per calendar month, so a month the contract starts or
+        ends part-way through gets part of it. Invoices still bill the full
+        amount of each billing period.
+      </Trans>
+    </CardDescription>
+  );
+}

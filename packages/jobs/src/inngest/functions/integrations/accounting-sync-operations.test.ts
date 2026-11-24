@@ -1476,6 +1476,31 @@ describe("getSyncOperationCloseDecision", () => {
     expect(decision).toEqual({ outcome: "completed", externalId: "remote-1" });
   });
 
+  it("records Skipped for a pull that imported nothing, though it names the remote record", () => {
+    // A pull always carries the remote id; only a linked Carbon record makes it Completed.
+    const decision = getSyncOperationCloseDecision(pullOp, {
+      status: "skipped",
+      action: "none",
+      remoteId: "xero-invoice-1",
+      error: "Not imported"
+    });
+    expect(decision).toEqual({ outcome: "skipped", reason: "Not imported" });
+  });
+
+  it("completes a skipped pull of a record already linked in Carbon", () => {
+    const decision = getSyncOperationCloseDecision(pullOp, {
+      status: "skipped",
+      action: "none",
+      localId: "si_1",
+      remoteId: "xero-invoice-1",
+      error: "Carbon is System of Record"
+    });
+    expect(decision).toEqual({
+      outcome: "completed",
+      externalId: "xero-invoice-1"
+    });
+  });
+
   it("records Skipped (not Completed) for a no-op with nothing behind it", () => {
     // The observed false-green failure mode: a shouldSync gate ("Bill must
     // be posted…") closing as Completed with no external mapping.
