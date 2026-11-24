@@ -58,7 +58,7 @@ A user can belong to multiple companies and switch between them with the company
   <Field name="maintenanceGenerateInAdvance / maintenanceAdvanceDays" type="boolean / number">Whether preventive maintenance is generated ahead of time, and by how many days (1–90).</Field>
   <Field name="samplingStandard" type="enum">The default inspection sampling standard.</Field>
   <Field name="enforceInspectionFourEyes" type="boolean">Requires a second person to sign off inspections.</Field>
-  <Field name="holdUnitsWithOpenIssues" type="boolean">Holds serial units with linked open issues and keeps a serial marked Scrap or Return to Supplier out of production and job receipts after closure (default off). Edited from **Settings → Quality**. See [units on hold](/docs/reference/mes#units-on-hold-for-a-quality-issue).</Field>
+  <Field name="holdUnitsWithOpenIssues" type="boolean">Applies only to serial-tracked items (default off). A linked open issue holds the affected unit. A serial marked Scrap or Return to Supplier stays out of production and job receipts after the issue closes. Edited from **Settings → Quality**. See [units on hold](/docs/reference/mes#units-on-hold-for-a-quality-issue).</Field>
   <Field name="qualityIssueTarget" type="number">The quality issue target used in reporting.</Field>
   <Field name="assetTaxDepreciationEnabled / assetTaxRate" type="boolean / number">Whether a separate tax-depreciation schedule is tracked for fixed assets, and its rate.</Field>
   <Field name="showCustomerReadableId / showSupplierReadableId" type="boolean">Whether customer/supplier readable ids are surfaced in the UI.</Field>
