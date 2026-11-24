@@ -39,18 +39,17 @@ is true and the `unitQualityHold` view finds an open issue linked to it, or
 a closed issue whose material row dispositions that particular serial Scrap or
 Return to Supplier. Closing an accepted issue clears its hold.
 
-**One server check.** Every MES write of a serial unit already goes through
-`resolveWorkUnit` (`apps/mes/app/services/work-unit.server.ts`; the
-`mes-unit-write-resolves-unit` check fails a writer that skips it). It now
-reads the holds of the units still to do (`readUnitHolds`) and treats a unit on
-hold as not open:
+**Enforcement.** MES unit actions use `resolveWorkUnit` to check the selected
+serial. Batch output, material consumption, rework dispatch and inventory
+receipt also check the affected serials where they post their writes. An
+explicit selection stays bound to that serial through posting.
 
 | Write | A unit on hold |
 |---|---|
-| complete, scrap, rework, step record, complete all steps, issue material, item scan, traveler claim | refused: "This unit is on hold for issue <number>" |
+| complete, scrap, rework or correction dispatch, step record, complete all steps, issue material, item scan, traveler claim | refused: "This unit is on hold for issue <number>" |
 | kanban start and complete scans | skipped for the next open unit; refused when only units on hold are left |
 | timer start | starts without naming the unit |
-| quality issue, correction, unconsume, part scrap (`member`) | allowed |
+| quality issue, unconsume, part scrap (`member`) | allowed |
 
 A failed read of the holds refuses the write.
 
@@ -62,28 +61,30 @@ stays on screen with a banner listing its open issues. The picker lists units
 on hold after the open ones, with the issue number, and still opens when only
 units on hold are left.
 
-**Receipt to stock.** A completion names no unit: finishing the last operation
-by hand, the ERP's Complete and a batch completion all end in
+**Receipt to stock.** Finishing the last operation by hand, the ERP Complete dialog and a batch completion all end in
 `complete_job_to_inventory`, which chose the units to receive by status and
 serial number alone. A unit on hold could be received in place of a finished
 one. With the setting on, the function leaves a unit on hold out of the units
 it receives, and the completion quantity stops short of the units on hold. A
 later completion can receive the unit if Quality accepts it. The Complete
-dialog leaves those units out of its preview. An inspection lot's decision
-leaves them out of the units it completes.
+dialog leaves those units out of its preview. If eligibility changes which
+serials would be posted, Submit asks the operator to review the new selection.
+Inspection counts only eligible passed serials and can complete a previously
+held passed serial after release, even after the lot closes.
 
 ## Data
 
 One column: `companySettings.holdUnitsWithOpenIssues BOOLEAN NOT NULL DEFAULT
 false`. No new table. `complete_job_to_inventory` is redefined with the rule
-(`20261124052513_rejected_serial_disposition.sql`); with the setting off it behaves as
-before.
+in `20261124065150_close_quality_hold_write_paths.sql`. The setting controls
+serial holds. Separately, closing a job WIP issue as Scrap or Return to
+Supplier only deducts finished stock when the unit entered inventory.
 
 ## Not in scope
 
 - A production override. Quality owns the disposition.
-- Batch step records. Serial rework and correction dispatch check closed rejecting dispositions in the posting transaction.
-- Batches. A lot is one tracked entity and uses the same link table, so the
+- Batch step records. Serial rework and correction dispatch check all blocking issues in the posting transaction.
+- Partial lot holds. A lot is one tracked entity and uses the same link table, so the
   same rule would hold the whole lot. A partial defect would first be split
   into its own lot (`subdivideBatchEntity`), and only that lot held.
 - Live refresh when the issue closes. The screen shows it on its next load.

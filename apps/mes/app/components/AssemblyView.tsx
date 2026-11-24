@@ -143,7 +143,7 @@ import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { holdingIssues, isUnitOnHold, type UnitHolds } from "~/utils/unitHold";
 import { deriveUnits } from "~/utils/units";
-import { shownRecordIndex } from "~/utils/workUnit";
+import { operationUnits, shownRecordIndex } from "~/utils/workUnit";
 
 const log = getLogger("mes", "assembly-view");
 
@@ -886,14 +886,18 @@ export function AssemblyView({
   // A rework or correction copy works only the units sent into it: page through
   // those, but key step records by each unit's place in the full axis, as the
   // operation view and the ERP do. With no scope the two are the same.
-  const scopedAxis = axisEntities
-    .map((entity, axisIndex) => ({ entity, axisIndex }))
-    .filter(({ entity }) => entity.inOperationScope !== false);
-  const axisIndexOf = (position: number) =>
-    scopedAxis[position]?.axisIndex ?? position;
-  const units = deriveUnits(
+  const navigableEntities = operationUnits(
+    axisEntities,
     unitCount,
-    scopedAxis.map(({ entity }) => entity)
+    navigatesByEntity ? { operationId, holds: unitHolds } : undefined
+  );
+  const axisIndexOf = (position: number) => {
+    const entity = navigableEntities[position];
+    return entity ? axisEntities.indexOf(entity) : position;
+  };
+  const units = deriveUnits(
+    Math.max(unitCount, navigableEntities.length),
+    navigableEntities
   );
   // The tracked entities within the navigable set (for the serial picker; empty when
   // the parent is untracked).
@@ -967,7 +971,6 @@ export function AssemblyView({
   const reviewEntity = navigatesByEntity ? workUnit.unit : currentEntity;
   // The Issue dialog opens on a finished unit too, for Unconsume only.
   const issueDialogBlocked = writesBlocked && !reviewEntity;
-  const canCompleteUnit = !workUnit.requiresPick || workUnit.unitIsOpen;
   const canPickUnit = workUnit.canPick;
   const askForUnit = () => {
     toast.info(t`Select a unit first`);
@@ -1885,7 +1888,7 @@ export function AssemblyView({
                 <Trans>No unit selected</Trans>
               ) : (
                 <>
-                  Unit {Math.min(currentUnitIndex + 1, unitCount)} / {unitCount}
+                  Unit {currentUnitIndex + 1} / {units.length}
                 </>
               )}
             </Badge>
@@ -1982,7 +1985,7 @@ export function AssemblyView({
       {operation ? (
         <button
           type="button"
-          disabled={abilityBlocked || !canCompleteUnit}
+          disabled={abilityBlocked || writesBlocked}
           onClick={completeModal.onOpen}
           className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 max-md:hidden md:gap-2 md:px-4"
         >
@@ -2862,7 +2865,7 @@ export function AssemblyView({
             <Button
               size="lg"
               leftIcon={<LuCheck />}
-              isDisabled={abilityBlocked || !canCompleteUnit}
+              isDisabled={abilityBlocked || writesBlocked}
               onClick={completeModal.onOpen}
               className="h-12 flex-1"
             >
@@ -2919,7 +2922,7 @@ export function AssemblyView({
         onClose={needMaterialModal.onClose}
       />
 
-      {operation && completeModal.openCount > 0 && (
+      {operation && !writesBlocked && completeModal.openCount > 0 && (
         <QuantityModal
           key={`complete-${completeModal.openCount}`}
           open={completeModal.isOpen}
@@ -2981,6 +2984,7 @@ export function AssemblyView({
           jobId={jobId}
           isOpen={reworkModal.isOpen}
           onClose={reworkModal.onClose}
+          unitHolds={unitHolds}
           trackedEntities={trackedEntities as never}
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}

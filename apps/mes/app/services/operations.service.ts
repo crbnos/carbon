@@ -45,6 +45,7 @@ import {
   requiredScanMessage,
   requiredScanShortfall
 } from "~/utils/trackedMaterials";
+import { completedAtOperation } from "~/utils/workUnit";
 import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
   batchStepRecordsValidator,
@@ -2543,12 +2544,11 @@ export function isSerialEntityIncompleteForOperation(
   entity: SerialEntityForSelection,
   jobOperationId: string
 ): boolean {
-  const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
   // Scrapped is terminal like Consumed — a scrapped unit is never a work
   // candidate; its replacement is the spawned Reserved entity.
   return (
     entity.inOperationScope !== false &&
-    !(`Operation ${jobOperationId}` in attributes) &&
+    !completedAtOperation(entity.attributes, jobOperationId) &&
     entity.status !== "Consumed" &&
     entity.status !== "Scrapped"
   );

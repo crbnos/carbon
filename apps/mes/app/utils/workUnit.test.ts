@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  completedAtOperation,
   initialWorkUnitState,
   operationUnits,
   pickEvent,
@@ -206,6 +207,14 @@ describe("serialUnitSelection for a part that is not serial", () => {
     expect(selection.noUnitHeld).toBe(false);
     expect(selection.writesBlocked).toBe(false);
     expect(selection.pickerOpen).toBe(false);
+  });
+});
+
+describe("serial completion markers", () => {
+  it("recognizes index zero and accepts old scalar, array and null attributes", () => {
+    expect(completedAtOperation({ "Operation op": 0 }, "op")).toBe(true);
+    for (const legacy of ["legacy", false, 7, [], null])
+      expect(completedAtOperation(legacy, "op")).toBe(false);
   });
 });
 

@@ -30,7 +30,10 @@ import {
 } from "~/services/operations.service";
 import { autoPrintOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
-import { resolveWorkUnit } from "~/services/work-unit.server";
+import {
+  resolveWorkUnit,
+  SELECT_UNIT_FIRST
+} from "~/services/work-unit.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
@@ -107,6 +110,21 @@ export async function completeOperationQuantity(
     return data(
       {},
       await flash(request, { ...error(null, work.message), flash: "error" })
+    );
+  }
+  // A serial Complete form describes the unit the operator was viewing. A
+  // stale or empty selection must not silently complete its only eligible sibling.
+  if (
+    work.kind === "unit" &&
+    work.via !== "named" &&
+    validation.data.trackingType === "Serial"
+  ) {
+    return data(
+      {},
+      await flash(request, {
+        ...error(null, SELECT_UNIT_FIRST),
+        flash: "error"
+      })
     );
   }
   const trackingType =

@@ -311,7 +311,10 @@ export const JobOperation = ({
   const isSerialOperation = !!parentIsSerial && !isBatched;
   const units = operationUnits(
     trackedEntities,
-    originalOperation.operationQuantity
+    originalOperation.operationQuantity,
+    isSerialOperation
+      ? { operationId: originalOperation.id, holds: unitHolds }
+      : undefined
   );
   // A unit on hold for an open quality issue is not open here: no work names
   // it and the screen moves past it, as the server does (`resolveWorkUnit`).
@@ -405,9 +408,7 @@ export const JobOperation = ({
   // The "N of M" heading counts only the units this operation works: a
   // correction or rework operation works the units sent into it.
   const unitPosition = Math.max(
-    trackedEntities
-      .filter((entity) => entity.inOperationScope !== false)
-      .findIndex((entity) => entity.id === shownUnitId),
+    units.findIndex((entity) => entity.id === shownUnitId),
     0
   );
 
@@ -1947,9 +1948,11 @@ export const JobOperation = ({
                                                     ) : (
                                                       <Trans>
                                                         {unitPosition + 1} of{" "}
-                                                        {
-                                                          operation.operationQuantity
-                                                        }
+                                                        {Math.max(
+                                                          units.length,
+                                                          operation.operationQuantity ??
+                                                            0
+                                                        )}
                                                       </Trans>
                                                     )}
                                                   </Heading>
@@ -3159,11 +3162,8 @@ export const JobOperation = ({
           jobId={job.id!}
           isOpen={reworkModal.isOpen}
           onClose={reworkModal.onClose}
-          trackedEntities={trackedEntities.filter(
-            // A scoped (rework or correction) operation sends on only its
-            // own units.
-            (entity) => entity.inOperationScope !== false
-          )}
+          unitHolds={unitHolds}
+          trackedEntities={trackedEntities}
           parentIsSerial={parentIsSerial}
           parentIsBatch={parentIsBatch}
           returnFocusRef={actionsSheetOpenerRef}

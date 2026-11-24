@@ -144,7 +144,7 @@ is the one on the operator's screen. Spec:
   hold for issue <number>"; "the next unit" and "the one left" skip it; with
   only units on hold left the answer is "Every unit left at this operation is
   on hold". A timer drops it like any unit not open. `member` writes (quality
-  issue, correction, unconsume, part scrap) still name it. A failed read
+  issue, unconsume, part scrap) still name it. A failed read
   refuses.
 - **The screens:** both loaders read `readScreenUnitHolds` in the first wave
   (chained on the units and make method reads; a failed read shows none, like
@@ -156,16 +156,15 @@ is the one on the operator's screen. Spec:
   `SerialSelectorModal` lists units on hold after the open ones with a badge,
   and the Issue dialog's notice reads "This unit is on hold" (`parentOnHold`).
   The operation loader's first-operation redirect skips a unit on hold.
-- **Receipt to stock:** a completion names no unit (`finish`, the ERP's
-  Complete, a batch completion), so `complete_job_to_inventory`
-  (`20261124052513_rejected_serial_disposition.sql`) leaves a unit on hold out of
+- **Receipt to stock:** a manual operation finish names no unit. The ERP checks the exact displayed serials when it submits a named receipt with quality holds enabled. In both paths, `complete_job_to_inventory`
+  (`20261124065150_close_quality_hold_write_paths.sql`) leaves a unit on hold out of
   the units it receives and stops the completion quantity short of them. A
   later completion can receive the unit once Quality accepts it and its other holds clear. Pinned by
   `apps/erp/test/database/job-receipt-unit-hold.test.ts`.
 - **Inspection lots:** `getInspectionOutcomeState` (`quality.server.ts`) reads
-  the holds, and `entityEligible` leaves a unit on hold out of the units a
-  lot's decision completes.
-- **Dispatch:** rework and correction postings refuse units with a closed rejecting disposition.
+  the holds. The inspection preview and disposition use the same eligible units.
+  A passed sample on an accepted or partially accepted serial lot can complete once its hold clears.
+- **Dispatch:** rework and correction postings that credit the source operation refuse any held serial.
 - **Not gated:** batch step records and `finish` itself (it names no unit; the
   receipt above is what keeps the unit out of stock).
 - **After the issue closes:** `unitQualityHold` keeps only serials linked to a
@@ -463,8 +462,9 @@ new one has to be reviewed.
 pure `serialUnitSelection` and `workUnitReducer` (`~/utils/workUnit`, tested),
 the same for `JobOperation` and `AssemblyView`.
 
-- **The units** are `operationUnits`: those in the operation's scope, capped to
-  its quantity. Both views use the same list, and so does the server for
+- **The units** are `operationUnits`. Completed serials consume operation capacity.
+  A serial on quality hold stays viewable and leaves a place for an eligible replacement.
+  Each serial keeps its original axis position for step records. Both views use the same list, and so does the server for
   "next" and "the one left". The loaders read it with
   `getTrackedEntitiesForOperation`, which pages through the same reader as
   `getOperationUnitAxis` (same order), so the screens and the server agree

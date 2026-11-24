@@ -226,6 +226,23 @@ describe("Log completed (complete route)", () => {
     expect(fake.calls.map((call) => call.table)).toEqual(GATE_READS);
   });
 
+  it("refuses the empty serial from a stale first-Assembly Complete form even with one eligible sibling", async () => {
+    const fake = floor({ later: false, extra: onHold("u2") });
+    const response = await completeOperationQuantity(deps(fake), {
+      ...caller,
+      permissions: {},
+      request: post("/x/complete", {
+        jobOperationId: op,
+        quantity: "1",
+        trackingType: "Serial",
+        trackedEntityId: ""
+      })
+    });
+    expect(await toast(response)).toBe(SELECT_UNIT_FIRST);
+    expect(fake.posts).toEqual([]);
+    expect(fake.writes()).toEqual([]);
+  });
+
   it("refuses a unit on hold for an open quality issue", async () => {
     const fake = floor({ extra: onHold("u2") });
     await completeOperationQuantity(deps(fake), {

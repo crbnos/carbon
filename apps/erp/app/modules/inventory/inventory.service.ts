@@ -30368,17 +30368,12 @@ async function consumeTrackedEntitiesIntoOperation(
     ? itemLedgers.filter((row) => row.locationId === job.locationId)
     : itemLedgers;
 
-  // Get parent tracked entity details
-  const parentTrackedEntity = await trx
-    .selectFrom("trackedEntity")
-    .where("id", "=", parentTrackedEntityId)
-    .where("companyId", "=", companyId)
-    .select(["id", "sourceDocumentId", "quantity", "attributes", "status"])
-    .executeTakeFirst();
-
-  if (!parentTrackedEntity) {
-    throw new NotFoundError("Parent tracked entity not found");
-  }
+  const parentTrackedEntity = await lockProductionOutputForPosting(
+    trx,
+    companyId,
+    parentTrackedEntityId,
+    jobMaterial.jobMakeMethodId
+  );
 
   // Create tracked activity
   const activityId = nanoid();
@@ -30673,6 +30668,90 @@ async function consumeTrackedEntitiesIntoOperation(
   return { splitEntities, warning: expiredWarning };
 }
 
+// These postings accept both lots and serials. Decide from the output's own
+// method (or the item's tracking when the method is missing). Taking the
+// unit lock before reading its holds orders a posting against Quality close.
+export async function lockProductionOutputsForPosting(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  trackedEntityIds: string[],
+  jobMakeMethodId?: string | null
+) {
+  const ids = [...new Set(trackedEntityIds)];
+  if (ids.length === 0) return [];
+  const entities = await trx
+    .selectFrom("trackedEntity as unit")
+    .leftJoin("jobMakeMethod as method", (join) =>
+      join
+        .onRef("method.companyId", "=", "unit.companyId")
+        .on(
+          "method.id",
+          "=",
+          sql<string>`COALESCE(unit.attributes->>'Job Make Method', ${jobMakeMethodId ?? null}::text)`
+        )
+    )
+    .leftJoin("item", (join) =>
+      join
+        .onRef("item.id", "=", "unit.itemId")
+        .onRef("item.companyId", "=", "unit.companyId")
+    )
+    .select([
+      "unit.id",
+      "unit.status",
+      "unit.readableId",
+      "unit.quantity",
+      "method.requiresSerialTracking",
+      "item.itemTrackingType"
+    ])
+    .where("unit.id", "in", ids)
+    .where("unit.companyId", "=", companyId)
+    .orderBy("unit.id")
+    .forUpdate("unit")
+    .execute();
+  if (entities.length !== ids.length)
+    throw new NotFoundError("Tracked entity not found");
+  const serialIds = entities
+    .filter(
+      (entity) =>
+        entity.requiresSerialTracking ?? entity.itemTrackingType === "Serial"
+    )
+    .map((entity) => entity.id);
+  if (serialIds.length > 0) {
+    await assertSerialsOffQualityHold(trx, companyId, serialIds);
+  }
+  return entities;
+}
+
+async function lockProductionOutputForPosting(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  trackedEntityId: string,
+  jobMakeMethodId?: string | null
+) {
+  const [entity] = await lockProductionOutputsForPosting(
+    trx,
+    companyId,
+    [trackedEntityId],
+    jobMakeMethodId
+  );
+  return entity!;
+}
+
+async function batchOutputQuantity(
+  trx: Transaction<KyselyDatabase>,
+  jobOperationId: string,
+  companyId: string
+) {
+  const recorded = await trx
+    .selectFrom("productionQuantity")
+    .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+    .where("jobOperationId", "=", jobOperationId)
+    .where("companyId", "=", companyId)
+    .where("type", "=", "Production")
+    .executeTakeFirstOrThrow();
+  return Number(recorded.quantity ?? 0);
+}
+
 // The Produce half of a batch-tracked operation completion — the activity +
 // entity flip EXTRACTED from jobOperationBatchComplete, so the batch-operations
 // Phase 2 (jobOperationBatchOutput) can finalize a member's output WITHOUT that
@@ -30682,32 +30761,22 @@ async function produceBatchOutput(
   trx: Transaction<KyselyDatabase>,
   {
     jobOperationId,
-    trackedEntityId,
+    entity,
     producedQuantity,
     totalQuantity,
     companyId,
     userId
   }: {
     jobOperationId: string;
-    trackedEntityId: string;
+    entity: { id: string; status: string };
     producedQuantity: number;
     totalQuantity: number;
     companyId: string;
     userId: string;
   }
 ) {
-  const trackedEntity = await trx
-    .selectFrom("trackedEntity")
-    .where("id", "=", trackedEntityId)
-    .where("companyId", "=", companyId)
-    .selectAll()
-    .executeTakeFirst();
-
-  if (!trackedEntity) {
-    throw new NotFoundError("Tracked entity not found");
-  }
-
-  if (trackedEntity.status !== "Consumed") {
+  const trackedEntityId = entity.id;
+  if (entity.status !== "Consumed") {
     const activityId = nanoid();
     await trx
       .insertInto("trackedActivity")
@@ -31284,15 +31353,15 @@ async function loadScrapAccountingContext(
   };
 }
 
-async function assertSerialOffQualityHold(
+export async function assertSerialsOffQualityHold(
   trx: Transaction<KyselyDatabase>,
   companyId: string,
-  trackedEntityId: string
+  trackedEntityIds: string[]
 ) {
   const hold = await trx
     .selectFrom("unitQualityHold")
     .select(["issueNumber", "disposition"])
-    .where("trackedEntityId", "=", trackedEntityId)
+    .where("trackedEntityId", "in", trackedEntityIds)
     .where("companyId", "=", companyId)
     .orderBy("issueNumber")
     .executeTakeFirst();
@@ -31359,23 +31428,22 @@ export async function issueMaterial(
       const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
       await assertProductionQuantityLinks(db, companyId, row);
 
-      const [jobOperation, productionQuantities] = await inOrder([
-        () => single(db, "jobOperation", { id: row.jobOperationId, companyId }),
-        () =>
-          many(db, "productionQuantity", {
-            jobOperationId: row.jobOperationId,
-            companyId,
-            type: "Production"
-          })
-      ]);
-
-      if (!jobOperation.data || !jobOperation.data.jobMakeMethodId) {
-        throw new NotFoundError("Job operation not found");
-      }
+      const jobOperation = await single(db, "jobOperation", {
+        id: row.jobOperationId,
+        companyId
+      });
+      const makeMethodId = jobOperation.data?.jobMakeMethodId;
+      if (!makeMethodId) throw new NotFoundError("Job operation not found");
 
       const accountingBatch = await loadConsumeAccountingContext(db, companyId);
 
       await db.transaction().execute(async (trx) => {
+        const entity = await lockProductionOutputForPosting(
+          trx,
+          companyId,
+          trackedEntityId,
+          makeMethodId
+        );
         // Provisional before the company's accounting cutover, Posted after it.
         const postingStatus = await journalPostingStatus(trx, companyId);
         await trx
@@ -31388,17 +31456,16 @@ export async function issueMaterial(
           })
           .executeTakeFirst();
 
-        const previousProductionQuantities =
-          productionQuantities?.data?.reduce((acc, curr) => {
-            const quantity = Number(curr.quantity);
-            return acc + quantity;
-          }, 0) ?? 0;
-
+        const totalQuantity = await batchOutputQuantity(
+          trx,
+          row.jobOperationId,
+          companyId
+        );
         await produceBatchOutput(trx, {
           jobOperationId: row.jobOperationId,
-          trackedEntityId,
+          entity,
           producedQuantity: row.quantity,
-          totalQuantity: previousProductionQuantities + row.quantity,
+          totalQuantity,
           companyId,
           userId
         });
@@ -31429,53 +31496,29 @@ export async function issueMaterial(
         userId
       } = validatedPayload;
 
-      const [entity, productionQuantities] = await inOrder([
-        () =>
-          single(
-            db,
-            "trackedEntity",
-            { id: trackedEntityId, companyId },
-            { columns: ["id", "status", "readableId"] }
-          ),
-        () =>
-          many(
-            db,
-            "productionQuantity",
-            { jobOperationId, companyId, type: "Production" },
-            { columns: ["quantity"] }
-          )
-      ]);
-      if (entity.error || !entity.data) {
-        throw new NotFoundError("Tracked entity not found");
-      }
-
-      // Resume no-op: a prior attempt already produced this member's output.
-      if (entity.data.status === "Available") {
-        return { success: true, created: false };
-      }
-
-      // An Available lot must carry a number. Batch creation plans it (the
-      // entity's readableId, or the merged lot passed as readableId); this is
-      // the backstop for direct calls and for batches planned before that.
-      if (!readableId && !entity.data.readableId) {
-        throw new Error(
-          `Operation ${jobOperationId} produces a batch-tracked item — its batch number is required`
+      const created = await db.transaction().execute(async (trx) => {
+        const entity = await lockProductionOutputForPosting(
+          trx,
+          companyId,
+          trackedEntityId
         );
-      }
-
-      const totalQuantity =
-        productionQuantities.data?.reduce(
-          (acc: number, curr: { quantity: number | string | null }) =>
-            acc + Number(curr.quantity),
-          0
-        ) ?? 0;
-      if (totalQuantity <= 0) {
-        throw new Error(
-          "No recorded production quantity for this operation — complete the batch first"
+        // A retry of a completed output has nothing to write.
+        if (entity.status === "Available") return false;
+        if (!readableId && !entity.readableId) {
+          throw new Error(
+            `Operation ${jobOperationId} produces a batch-tracked item — its batch number is required`
+          );
+        }
+        const totalQuantity = await batchOutputQuantity(
+          trx,
+          jobOperationId,
+          companyId
         );
-      }
-
-      await db.transaction().execute(async (trx) => {
+        if (totalQuantity <= 0) {
+          throw new Error(
+            "No recorded production quantity for this operation — complete the batch first"
+          );
+        }
         if (readableId) {
           await trx
             .updateTable("trackedEntity")
@@ -31486,15 +31529,16 @@ export async function issueMaterial(
         }
         await produceBatchOutput(trx, {
           jobOperationId,
-          trackedEntityId,
+          entity,
           producedQuantity: quantity,
           totalQuantity,
           companyId,
           userId
         });
+        return true;
       });
 
-      return { success: true, created: true };
+      return { success: true, created };
     }
     case "jobOperationSerialComplete": {
       const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
@@ -31596,7 +31640,7 @@ export async function issueMaterial(
         if (!trackedEntity) {
           throw new NotFoundError("Tracked entity not found");
         }
-        await assertSerialOffQualityHold(trx, companyId, trackedEntityId);
+        await assertSerialsOffQualityHold(trx, companyId, [trackedEntityId]);
         // A unit completes once per operation; a second production row would
         // issue the material of a unit never made.
         if (
@@ -32012,7 +32056,7 @@ export async function issueMaterial(
             .forUpdate()
             .executeTakeFirst();
           if (!entity) throw new NotFoundError("Tracked entity not found");
-          await assertSerialOffQualityHold(trx, companyId, scrapEntityId);
+          await assertSerialsOffQualityHold(trx, companyId, [scrapEntityId]);
           if (entity.status === "Consumed" || entity.status === "Scrapped") {
             throw new Error("Tracked entity is not in progress");
           }
@@ -33869,10 +33913,20 @@ export async function issueMaterial(
         }
 
         const members = await trx
-          .selectFrom("jobOperation")
-          .select(["id", "jobId", "jobMakeMethodId"])
-          .where("jobOperationBatchId", "=", batchId)
-          .where("companyId", "=", companyId)
+          .selectFrom("jobOperation as op")
+          .leftJoin("jobMakeMethod as method", (join) =>
+            join
+              .onRef("method.id", "=", "op.jobMakeMethodId")
+              .onRef("method.companyId", "=", "op.companyId")
+          )
+          .select([
+            "op.id",
+            "op.jobId",
+            "op.jobMakeMethodId",
+            "method.requiresSerialTracking"
+          ])
+          .where("op.jobOperationBatchId", "=", batchId)
+          .where("op.companyId", "=", companyId)
           .execute();
         if (members.length === 0) {
           throw new Error("Batch has no member operations");
@@ -33995,6 +34049,23 @@ export async function issueMaterial(
             // run's dead entity can be the oldest match — it must not absorb
             // this member's consumption.
             .where("status", "not in", ["Consumed", "Scrapped", "Rejected"])
+            .$if(!!member.requiresSerialTracking, (query) =>
+              query.where((eb) =>
+                eb.not(
+                  eb.exists(
+                    eb
+                      .selectFrom("unitQualityHold as hold")
+                      .select("hold.trackedEntityId")
+                      .whereRef("hold.trackedEntityId", "=", "trackedEntity.id")
+                      .whereRef(
+                        "hold.companyId",
+                        "=",
+                        "trackedEntity.companyId"
+                      )
+                  )
+                )
+              )
+            )
             // Deterministic among tied `createdAt` (bulk-minted serials).
             .orderBy("createdAt", "asc")
             .orderBy("readableId", "asc")
@@ -34002,7 +34073,7 @@ export async function issueMaterial(
             .executeTakeFirst();
           if (!parent) {
             throw new Error(
-              `No tracked entity found for job operation ${member.id} — release the member job before picking to the batch`
+              `No eligible output unit for job operation ${member.id}. Check the job release and unit quality holds before picking to the batch.`
             );
           }
 

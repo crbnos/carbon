@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { fetchAllRecords } from "@carbon/database";
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -115,6 +116,7 @@ import {
   getFinishedUnreceivedQuantity,
   getSerialCompleteChoice,
   type JobReceiptSnapshot,
+  type JobSerialUnit,
   type SerialCompleteChoice
 } from "./job-complete-logic";
 import {
@@ -646,6 +648,7 @@ const JobHeader = () => {
       />
       {completeModal.openCount > 0 && (
         <JobCompleteModal
+          consumeToProject={!!projectCharge?.consumeToProject}
           key={`completeModal-${completeModal.openCount}`}
           open={completeModal.isOpen}
           job={routeData?.job}
@@ -1499,11 +1502,13 @@ function ReceiptHoldList({ holds }: { holds: JobReceiptSnapshot["holds"] }) {
 }
 
 function JobCompleteModal({
+  consumeToProject,
   open = true,
   job,
   onClose,
   fetcher
 }: {
+  consumeToProject: boolean;
   open?: boolean;
   job?: Job;
   fetcher: FetcherWithComponents<unknown>;
@@ -1523,10 +1528,9 @@ function JobCompleteModal({
   const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
   // How the quantity is chosen for a serial job: the serials a completion
   // takes, units numbered as they are received, or locked.
-  // Units a serial completion leaves out: on hold for an open quality issue.
-  const [unitsOnHold, setUnitsOnHold] = useState<JobReceiptSnapshot["holds"]>(
-    []
-  );
+  const [receiptSnapshot, setReceiptSnapshot] =
+    useState<JobReceiptSnapshot | null>(null);
+  const unitsOnHold = receiptSnapshot?.holds ?? [];
   const [serialChoice, setSerialChoice] = useState<SerialCompleteChoice>({
     mode: "locked"
   });
@@ -1542,6 +1546,10 @@ function JobCompleteModal({
   // Refreshed when the dialog opens, since the route's job may be stale.
   const [priorReceivedQuantity, setPriorReceivedQuantity] = useState<number>(
     job?.quantityReceivedToInventory ?? 0
+  );
+  const previewUnits = receivableSerials?.slice(
+    0,
+    Math.max(quantityComplete - priorReceivedQuantity, 0)
   );
   // complete_job_to_inventory refuses a stocked job below what it received.
   const minimumQuantityComplete =
@@ -1610,19 +1618,18 @@ function JobCompleteModal({
       makeMethod.data?.requiresSerialTracking ||
       makeMethod.data?.requiresBatchTracking
     ) {
-      const trackedEntities = await carbon
-        .from("trackedEntity")
-        .select("*")
-        .eq("attributes->>Job Make Method", makeMethod.data?.id!)
-        .eq("companyId", company.id)
-        // Unit-axis order — see getTrackedEntitiesByMakeMethodId.
-        .order("createdAt", { ascending: true })
-        .order("readableId", { ascending: true })
-        .order("id", { ascending: true });
-
-      const holds = receipts?.holds ?? [];
-      const onHoldEntityIds = new Set(holds.map((unit) => unit.id));
-      setUnitsOnHold(holds);
+      const trackedEntities = await fetchAllRecords<JobSerialUnit>(() =>
+        carbon
+          .from("trackedEntity")
+          .select("id, readableId, quantity, createdAt, status")
+          .eq("attributes->>Job Make Method", makeMethod.data!.id)
+          .eq("companyId", company.id)
+          .order("readableId", { ascending: true, nullsFirst: false })
+          .order("createdAt")
+          .order("id")
+      );
+      const onHoldEntityIds = new Set(receipts?.holds.map((unit) => unit.id));
+      setReceiptSnapshot(receipts);
       if (trackedEntities.data?.length) {
         const eligibleEntities = trackedEntities.data.filter(
           (entity) => !onHoldEntityIds.has(entity.id)
@@ -1643,17 +1650,15 @@ function JobCompleteModal({
         // the dialog could offer a unit the job already received.
         const choice = makeMethod.data?.requiresSerialTracking
           ? getSerialCompleteChoice({
-              trackedEntities: eligibleEntities,
+              trackedEntities: trackedEntities.data,
+              heldUnitIds: onHoldEntityIds,
               receivedEntityIds: receipts ? receivedEntityIds : null,
               issuedEntityIds,
               // complete_job_to_inventory numbers what the completion takes
               // whenever the item has a sequence. A failed read keeps the
               // quantity locked.
               hasSerialSequence: !serialSequence.error && !!serialSequence.data,
-              jobQuantity: Math.max(
-                (job?.quantity ?? 0) - onHoldEntityIds.size,
-                0
-              )
+              jobQuantity: job?.quantity ?? 0
             })
           : ({ mode: "locked" } as const);
 
@@ -1674,10 +1679,7 @@ function JobCompleteModal({
                 receivedEntityIds,
                 issuedEntityIds
               ),
-              jobQuantity: Math.max(
-                (job?.quantity ?? 0) - onHoldEntityIds.size,
-                0
-              ),
+              jobQuantity: job?.quantity ?? 0,
               priorReceivedQuantity: currentReceivedQuantity,
               receivableSerialCount: receivableCount
             })
@@ -1768,6 +1770,15 @@ function JobCompleteModal({
                   : t`This job will be received to inventory. It will no longer be available on the shop floor.`}
               </ModalDescription>
             </ModalHeader>
+            {receiptSnapshot?.qualityHoldsEnabled &&
+              previewUnits &&
+              !consumeToProject &&
+              job.itemTrackingType !== "Non-Inventory" && (
+                <Hidden
+                  name="expectedUnitIds"
+                  value={JSON.stringify(previewUnits.map((unit) => unit.id))}
+                />
+              )}
             <Hidden name="salesOrderId" />
             <Hidden name="salesOrderLineId" />
             <Hidden name="leftoverAction" value={leftoverAction} />
@@ -1878,14 +1889,8 @@ function JobCompleteModal({
                         <Trans>Serial numbers received</Trans>
                       </span>
                       <span className="text-sm">
-                        {receivableSerials
-                          .slice(
-                            0,
-                            Math.max(
-                              quantityComplete - priorReceivedQuantity,
-                              0
-                            )
-                          )
+                        {previewUnits
+                          ?.map((unit) => unit.readableId)
                           .join(", ")}
                       </span>
                     </VStack>

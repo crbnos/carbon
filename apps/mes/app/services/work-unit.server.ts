@@ -226,7 +226,10 @@ export function decideWorkUnit({
   const { isFirstOperation } = facts;
   // The units the operation works, as the screens list them (scope, then
   // quantity). A named unit is checked against the whole axis.
-  const worked = operationUnits(units, facts.operationQuantity);
+  const worked = operationUnits(units, facts.operationQuantity, {
+    operationId,
+    holds: onHold
+  });
   const open = worked.filter(isOpen);
   const sole = open.length === 1 ? open[0] : undefined;
   const take = (unit: Unit, via: "named" | "advanced" | "sole"): WorkUnit => ({
@@ -269,6 +272,11 @@ export function decideWorkUnit({
     }
     if (mode !== "member" && !isOpen(named)) {
       return refuse(true, DONE_HERE);
+    }
+    // A released serial can move outside the working set after its replacement
+    // completed the last outstanding unit. A stale scan must not reopen it.
+    if (mode !== "member" && !worked.includes(named) && open.length === 0) {
+      return mode === "optional" ? timerUnit() : refuse(false, ALL_DONE);
     }
     return take(named, "named");
   }
@@ -365,11 +373,7 @@ export async function resolveWorkUnit({
     facts.serial && mode !== "member"
       ? await readUnitHolds(client, {
           companyId,
-          unitIds: units.data
-            .filter((unit) =>
-              isSerialEntityIncompleteForOperation(unit, operationId)
-            )
-            .map((unit) => unit.id)
+          unitIds: units.data.map((unit) => unit.id)
         })
       : { data: {}, error: null };
   if (holds.error) {

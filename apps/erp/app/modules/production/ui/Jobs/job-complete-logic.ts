@@ -20,6 +20,7 @@ export type JobSerialUnit = {
 
 /** What a job has received to inventory, from api+/production.job.$jobId.receipts. */
 export type JobReceiptSnapshot = {
+  qualityHoldsEnabled: boolean;
   quantityReceivedToInventory: number;
   trackedEntityIds: string[];
   holds: Awaited<
@@ -69,7 +70,7 @@ export function getReceivableSerialUnits(
   trackedEntities: JobSerialUnit[],
   receivedEntityIds: ReadonlySet<string> = new Set(),
   issuedEntityIds: ReadonlySet<string> = new Set()
-): string[] | null {
+): JobSerialUnit[] | null {
   const receivable = trackedEntities.filter((entity) =>
     isUnreceived(entity, receivedEntityIds, issuedEntityIds)
   );
@@ -93,13 +94,9 @@ export function getReceivableSerialUnits(
         ? 1
         : 2;
 
-  return [...receivable]
-    .sort(
-      (a, b) =>
-        statusRank(a) - statusRank(b) ||
-        a.readableId!.localeCompare(b.readableId!)
-    )
-    .map((entity) => entity.readableId as string);
+  // Preserve the database's serial-number, creation-time and ID order for
+  // ties. Browser locale collation can disagree with the receipt SQL.
+  return receivable.sort((a, b) => statusRank(a) - statusRank(b));
 }
 
 /**
@@ -119,18 +116,20 @@ export function getReceivableSerialUnits(
  *   read.
  */
 export type SerialCompleteChoice =
-  | { mode: "serials"; serials: string[] }
+  | { mode: "serials"; serials: JobSerialUnit[] }
   | { mode: "numberOnReceipt"; receivableCount: number }
   | { mode: "locked" };
 
 export function getSerialCompleteChoice({
   trackedEntities,
+  heldUnitIds,
   receivedEntityIds,
   issuedEntityIds,
   hasSerialSequence,
   jobQuantity
 }: {
   trackedEntities: JobSerialUnit[];
+  heldUnitIds?: ReadonlySet<string>;
   /** Null when the job's receipts could not be read. */
   receivedEntityIds: ReadonlySet<string> | null;
   issuedEntityIds: ReadonlySet<string>;
@@ -157,8 +156,10 @@ export function getSerialCompleteChoice({
       )
     : 0;
 
+  // A held seed still accounts for every unit on it when computing missing rows.
+  const eligible = trackedEntities.filter((unit) => !heldUnitIds?.has(unit.id));
   const serials = getReceivableSerialUnits(
-    trackedEntities,
+    eligible,
     receivedEntityIds,
     issuedEntityIds
   );
@@ -167,7 +168,7 @@ export function getSerialCompleteChoice({
   if (!hasSerialSequence) return { mode: "locked" };
 
   const receivableCount =
-    trackedEntities
+    eligible
       .filter((entity) =>
         isUnreceived(entity, receivedEntityIds, issuedEntityIds)
       )

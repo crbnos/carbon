@@ -3459,7 +3459,8 @@ export async function getJobReceiptHolds(
     .where("method.companyId", "=", companyId)
     .where("method.parentMaterialId", "is", null)
     .where("method.requiresSerialTracking", "=", true)
-    .where("unit.quantity", "=", 1)
+    .where("unit.quantity", ">", 0)
+    .where(sql<boolean>`NOT ("unit".attributes ? 'Fixed Asset')`)
     .where("unit.status", "!=", "Scrapped")
     .where((eb) =>
       eb.or([
@@ -3475,16 +3476,20 @@ export async function getJobReceiptHolds(
       ])
     )
     .where((eb) =>
-      eb.not(
-        eb.exists(
-          eb
-            .selectFrom("itemLedger as receipt")
-            .select("receipt.id")
-            .whereRef("receipt.trackedEntityId", "=", "unit.id")
-            .whereRef("receipt.companyId", "=", "method.companyId")
-            .whereRef("receipt.documentId", "=", "method.jobId")
-            .where("receipt.documentType", "=", "Job Receipt")
-        )
+      eb(
+        "unit.quantity",
+        ">",
+        eb
+          .selectFrom("itemLedger as receipt")
+          .select((qb) =>
+            qb.fn
+              .coalesce(qb.fn.sum<number>("receipt.quantity"), qb.lit(0))
+              .as("received")
+          )
+          .whereRef("receipt.trackedEntityId", "=", "unit.id")
+          .whereRef("receipt.companyId", "=", "method.companyId")
+          .whereRef("receipt.documentId", "=", "method.jobId")
+          .where("receipt.documentType", "=", "Job Receipt")
       )
     )
     .groupBy(["unit.id", "unit.readableId"])
@@ -27668,6 +27673,7 @@ export async function triggerRework(
   const result = await db.transaction().execute(async (trx) => {
     await assertUnitsOfMakeMethod(trx, {
       trackedEntityIds: body.trackedEntityIds ?? [],
+      quantity: body.quantity,
       jobMakeMethodId: operations.find(
         (operation) => operation.id === body.triggeredAtJobOperationId
       )?.jobMakeMethodId,
@@ -27700,9 +27706,10 @@ export async function triggerRework(
  * another job would leave an operation no unit of this job can complete.
  */
 async function assertUnitsOfMakeMethod(
-  db: Kysely<KyselyDatabase>,
+  db: Transaction<KyselyDatabase>,
   args: {
     trackedEntityIds: string[];
+    quantity: number;
     jobMakeMethodId: string | null | undefined;
     /** The operation the units are sent on from; its scope, if it has one. */
     jobOperationId?: string;
@@ -27710,6 +27717,30 @@ async function assertUnitsOfMakeMethod(
   }
 ) {
   const ids = [...new Set(args.trackedEntityIds)];
+  const requiresHeldUnitCheck =
+    args.jobMakeMethodId &&
+    (await db
+      .selectFrom("jobMakeMethod as method")
+      .innerJoin(
+        "companySettings as settings",
+        "settings.id",
+        "method.companyId"
+      )
+      .select("method.id")
+      .where("method.id", "=", args.jobMakeMethodId)
+      .where("method.companyId", "=", args.companyId)
+      .where("method.requiresSerialTracking", "=", true)
+      .where("settings.holdUnitsWithOpenIssues", "=", true)
+      .executeTakeFirst());
+  if (
+    requiresHeldUnitCheck &&
+    (ids.length !== args.quantity ||
+      ids.length !== args.trackedEntityIds.length)
+  ) {
+    throw new InvalidInputError(
+      "Select one serial unit for each unit sent to rework"
+    );
+  }
   if (ids.length === 0) return;
   const units = args.jobMakeMethodId
     ? await db
@@ -27727,23 +27758,15 @@ async function assertUnitsOfMakeMethod(
       "A unit is not a unit of this operation's part on this job"
     );
   }
-  // Quality may send an open issue to correction. A finished Scrap/Return
-  // decision excludes that serial from a newly dispatched rework route.
-  const rejected = await db
-    .selectFrom("unitQualityHold as hold")
-    .innerJoin("jobMakeMethod as method", "method.companyId", "hold.companyId")
-    .select(["hold.issueNumber", "hold.disposition"])
-    .where("method.id", "=", args.jobMakeMethodId!)
-    .where("method.requiresSerialTracking", "=", true)
-    .where("hold.companyId", "=", args.companyId)
-    .where("hold.trackedEntityId", "in", ids)
-    .where("hold.disposition", "is not", null)
-    .orderBy("hold.issueNumber")
-    .executeTakeFirst();
-  if (rejected)
-    throw new InvalidInputError(
-      `Quality rejected this unit: ${rejected.issueNumber} (${rejected.disposition})`
+  // Dispatch credits the source operation immediately, including a correction
+  // requested during inspection. Check each selected unit before that credit.
+  if (requiresHeldUnitCheck) {
+    await inventoryPostings.assertSerialsOffQualityHold(
+      db,
+      args.companyId,
+      ids
     );
+  }
   // A rework or correction operation works only the units sent into it, so
   // only those units can be sent on from it.
   if (args.jobOperationId) {
@@ -27854,6 +27877,7 @@ export async function triggerCorrection(
   const result = await db.transaction().execute(async (trx) => {
     await assertUnitsOfMakeMethod(trx, {
       trackedEntityIds,
+      quantity: input.quantity,
       jobMakeMethodId: triggeringOperation.jobMakeMethodId,
       jobOperationId: triggeringOperation.id,
       companyId
@@ -28801,6 +28825,20 @@ async function completeBatch(
     // "resume" if the batch is already Completing (a prior phase-2 step failed);
     // "slice" if Active; throws for a terminal status.
     const phase = planBatchCompletion(batch.status);
+
+    // A member can name the serial its output belongs to. Check before
+    // phase 1 commits any quantity, timer split or status transition.
+    const outputIds = members.flatMap((member) =>
+      member.trackedEntityId &&
+      (member.quantity > 0 || (member.scrapQuantity ?? 0) > 0)
+        ? [member.trackedEntityId]
+        : []
+    );
+    await inventoryPostings.lockProductionOutputsForPosting(
+      trx,
+      companyId,
+      outputIds
+    );
 
     if (phase === "resume") {
       // The payload must cover EXACTLY the batch's membership — phase 2 flips

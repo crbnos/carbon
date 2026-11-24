@@ -63,6 +63,7 @@ import {
   isIssueLocked,
   issueAssociationValidator,
   issueValidator,
+  nonConformanceAssociationType,
   nonConformanceStatus,
   nonConformanceTaskStatus,
   qualityDocumentStatus,
@@ -220,7 +221,8 @@ export const createIssue = defineServiceFn({
     if (input.jobOperationId) {
       await service.linkJobOperationLot(ctx, {
         nonConformanceId: issueId,
-        jobOperationId: input.jobOperationId
+        jobOperationId: input.jobOperationId,
+        trackedEntityIds
       });
     }
 
@@ -2584,14 +2586,19 @@ export const deleteIssue = defineServiceFn({
  * @mcp destructive
  */
 export const deleteIssueAssociation = defineServiceFn({
-  input: z.looseObject({ type: z.string(), associationId: z.string() }),
+  input: z.looseObject({
+    type: z.enum(nonConformanceAssociationType),
+    associationId: z.string()
+  }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return await service.deleteIssueAssociation(
-      ctx.asCaller.supabase,
-      input.type as never,
-      input.associationId as never
+    const result = await service.deleteIssueAssociation(
+      ctx,
+      input.type,
+      input.associationId
     );
+    if (result.error) return ctx.error("rule", result.error.message);
+    return result;
   }
 });
 

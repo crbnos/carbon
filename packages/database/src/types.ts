@@ -109273,6 +109273,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      complete_job_to_inventory_previewed: {
+        Args: {
+          p_company_id: string
+          p_expected_unit_ids: string[]
+          p_job_id: string
+          p_location_id?: string
+          p_quantity_complete: number
+          p_storage_unit_id?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       create_audit_log_table: {
         Args: { p_company_id: string }
         Returns: undefined

@@ -26,10 +26,10 @@ import {
   checkStrictBackflush,
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
-  getSerialCompletionCandidates,
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
+import { getSerialCompletionCandidates } from "~/utils/inspectionOutcome";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 

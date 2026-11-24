@@ -45,6 +45,7 @@ import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
+import { operationUnits } from "~/utils/workUnit";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -327,13 +328,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // A rework or correction copy works only the units sent into it, so the
   // navigable units are those; each keeps its place in the full axis, which
   // keys its step records and issue stamps (AssemblyView does the same).
-  const scopedAxis = isParentTracked
-    ? allEntities
-        .map((entity, axisIndex) => ({ entity, axisIndex }))
-        .filter(({ entity }) => entity.inOperationScope !== false)
-        .slice(0, opQty)
+  const navEntities = isParentTracked
+    ? operationUnits(
+        allEntities,
+        opQty,
+        jobMakeMethod?.data?.requiresSerialTracking
+          ? { operationId, holds: unitHolds }
+          : undefined
+      )
     : [];
-  const navEntities = scopedAxis.map(({ entity }) => entity);
   const unitParam = Number.parseInt(url.searchParams.get("unit") ?? "", 10);
   const entityIndex = trackedEntityId
     ? navEntities.findIndex((te) => te.id === trackedEntityId)
@@ -369,7 +372,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiresSerialTracking:
       jobMakeMethod?.data?.requiresSerialTracking ?? false,
     requiresBatchTracking: jobMakeMethod?.data?.requiresBatchTracking ?? false,
-    unitIndex: scopedAxis[unitIndex]?.axisIndex ?? unitIndex
+    unitIndex: navEntities[unitIndex]
+      ? allEntities.indexOf(navEntities[unitIndex])
+      : unitIndex
   });
 
   return {

@@ -110,9 +110,9 @@ msgstr "Visualizzazione della manutenzione di {0}"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} di {1}"
 

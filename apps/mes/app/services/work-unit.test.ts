@@ -282,6 +282,47 @@ describe("decideWorkUnit with a unit on hold", () => {
     message: "This unit is on hold for issue NCR-1"
   };
 
+  it("keeps a Reserved replacement selectable after ordinary MES scrap with quality holds off", () => {
+    const args = {
+      facts: facts({ operationQuantity: 1 }),
+      units: [unit("scrapped", { status: "Scrapped" }), unit("replacement")]
+    };
+    expect(decide(args)).toMatchObject({
+      kind: "unit",
+      unitId: "replacement",
+      unitIndex: 1
+    });
+  });
+
+  it("selects an appended Reserved replacement without changing its step-record index", () => {
+    const units = [
+      unit("u1", { done: true }),
+      unit("u2", { done: true }),
+      unit("u3"),
+      unit("u4", { done: true }),
+      unit("replacement")
+    ];
+    const args = {
+      units,
+      onHold: { u3: [issue("NCR-3")] },
+      facts: facts({ operationQuantity: 4 })
+    };
+    expect(decide(args)).toMatchObject({
+      kind: "unit",
+      unitId: "replacement",
+      unitIndex: 4,
+      via: "sole"
+    });
+    expect(
+      decide({ ...args, requestedUnitId: "replacement", mode: "claim" })
+    ).toMatchObject({ kind: "unit", unitId: "replacement" });
+    units[4] = unit("replacement", { done: true });
+    expect(decide({ ...args, onHold: {} })).toMatchObject({ kind: "refuse" });
+    expect(
+      decide({ ...args, onHold: {}, requestedUnitId: "u3" })
+    ).toMatchObject({ kind: "refuse" });
+  });
+
   it("refuses every write that needs the unit open, with the issue number", () => {
     for (const mode of ["require", "advance", "start"] as const) {
       expect(decide({ onHold, requestedUnitId: "u2", mode })).toEqual(refused);

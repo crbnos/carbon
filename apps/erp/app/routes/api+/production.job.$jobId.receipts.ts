@@ -36,8 +36,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .execute(async (db) => {
       const job = await getJobReceiptSnapshot(db, jobId, companyId);
       if (!job) return { receipts: null };
+      const settings = await db
+        .selectFrom("companySettings")
+        .select("holdUnitsWithOpenIssues")
+        .where("id", "=", companyId)
+        .executeTakeFirst();
       return {
         receipts: {
+          qualityHoldsEnabled: settings?.holdUnitsWithOpenIssues ?? false,
           quantityReceivedToInventory: job.quantityReceivedToInventory ?? 0,
           trackedEntityIds: job.trackedEntityIds,
           issuedTrackedEntityIds: job.issuedTrackedEntityIds,

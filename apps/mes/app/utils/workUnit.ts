@@ -17,17 +17,56 @@
 // names it, and it is never the next unit or the one left. A unit the
 // operator picked stays on screen when it goes on hold, so they see why.
 
-type UnitLike = { id: string; inOperationScope?: boolean };
+import { isUnitOnHold, type UnitHolds } from "./unitHold";
 
-/** The units an operation works, in axis order: those in its scope, capped to its quantity. */
+type UnitLike = {
+  id: string;
+  inOperationScope?: boolean;
+  attributes?: unknown;
+  status?: string | null;
+};
+
+/** The marker records the unit index, including index zero. Legacy scalar
+ * attributes carry no operation marker. */
+export function completedAtOperation(
+  attributes: unknown,
+  operationId: string
+): boolean {
+  return (
+    attributes !== null &&
+    typeof attributes === "object" &&
+    Object.prototype.hasOwnProperty.call(attributes, `Operation ${operationId}`)
+  );
+}
+
+/** Keep the step-record order. Completed units consume capacity. A blocked
+ * serial remains visible for review and leaves its place available to a replacement. */
 export function operationUnits<T extends UnitLike>(
   entities: T[],
-  unitCount: number | null | undefined
+  unitCount: number | null | undefined,
+  quality?: { operationId: string; holds: UnitHolds | undefined }
 ): T[] {
   const inScope = entities.filter(
     (entity) => entity.inOperationScope !== false
   );
-  return unitCount && unitCount > 0 ? inScope.slice(0, unitCount) : inScope;
+  if (!unitCount || unitCount <= 0 || inScope.length <= unitCount)
+    return inScope;
+  if (!quality) return inScope.slice(0, unitCount);
+  const completedHere = (unit: T) =>
+    completedAtOperation(unit.attributes, quality.operationId);
+  let remaining = unitCount - inScope.filter(completedHere).length;
+  return inScope.filter((unit) => {
+    if (
+      completedHere(unit) ||
+      isUnitOnHold(quality.holds, unit.id) ||
+      unit.status === "Consumed" ||
+      unit.status === "Scrapped"
+    )
+      return true;
+    if (remaining <= 0) return false;
+    remaining--;
+    return true;
+  });
 }
 
 export type WorkUnitState = {

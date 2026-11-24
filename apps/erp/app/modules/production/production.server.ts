@@ -982,26 +982,36 @@ export const closeJob = defineServiceFn({
 export const completeJob = defineServiceFn({
   input: z.object({
     jobId: z.string(),
+    expectedUnitIds: z.array(z.string()).optional(),
     quantityComplete: z.number().min(0),
     locationId: z.string().optional(),
     storageUnitId: z.string().optional()
   }),
   permission: { update: "production" },
 
-  async run(ctx, { jobId, quantityComplete, locationId, storageUnitId }) {
+  async run(
+    ctx,
+    { jobId, quantityComplete, locationId, storageUnitId, expectedUnitIds }
+  ) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
     // It must NOT write job.quantityShipped: that column is advanced only by
     // post-shipment, and the shipment builder ships quantityComplete less it.
-    const rpc = await ctx.asCaller.supabase.rpc("complete_job_to_inventory", {
+    const args = {
       p_job_id: jobId,
       p_quantity_complete: quantityComplete,
       p_storage_unit_id: storageUnitId,
       p_location_id: locationId,
       p_company_id: companyId,
       p_user_id: userId
-    });
+    };
+    const rpc = expectedUnitIds
+      ? await ctx.asCaller.supabase.rpc("complete_job_to_inventory_previewed", {
+          ...args,
+          p_expected_unit_ids: expectedUnitIds
+        })
+      : await ctx.asCaller.supabase.rpc("complete_job_to_inventory", args);
     if (rpc.error) {
       return ctx.error(
         "rule",

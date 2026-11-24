@@ -18,7 +18,7 @@ import {
   searchFilter
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
@@ -178,143 +178,79 @@ export async function deleteIssue(
       .from("nonConformance")
       .delete()
       .eq("id", nonConformanceId)
+      .neq("status", "Closed")
       .select("id")
   );
 }
 
+const issueAssociationTables = {
+  items: "nonConformanceItem",
+  customers: "nonConformanceCustomer",
+  suppliers: "nonConformanceSupplier",
+  jobOperations: "nonConformanceJobOperation",
+  purchaseOrderLines: "nonConformancePurchaseOrderLine",
+  salesOrderLines: "nonConformanceSalesOrderLine",
+  shipmentLines: "nonConformanceShipmentLine",
+  receiptLines: "nonConformanceReceiptLine",
+  salesReturnOrderLines: "nonConformanceSalesReturnOrderLine",
+  purchaseReturnOrderLines: "nonConformancePurchaseReturnOrderLine",
+  trackedEntities: "nonConformanceTrackedEntity",
+  inspections: "nonConformanceInspection"
+} as const;
+
 export async function deleteIssueAssociation(
-  client: SupabaseClient<Database>,
-  type: string,
+  ctx: ServiceContext,
+  type: keyof typeof issueAssociationTables,
   associationId: string
-) {
-  switch (type) {
-    case "items":
-      return await requireAffected(
-        client
-          .from("nonConformanceItem")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    case "customers":
-      return await requireAffected(
-        client
-          .from("nonConformanceCustomer")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    case "suppliers":
-      return await requireAffected(
-        client
-          .from("nonConformanceSupplier")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    case "jobOperations":
-      return await requireAffected(
-        client
-          .from("nonConformanceJobOperation")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    case "purchaseOrderLines":
-      return await requireAffected(
-        client
-          .from("nonConformancePurchaseOrderLine")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    case "salesOrderLines":
-      return await requireAffected(
-        client
-          .from("nonConformanceSalesOrderLine")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    case "shipmentLines":
-      return await requireAffected(
-        client
-          .from("nonConformanceShipmentLine")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    case "receiptLines":
-      return await requireAffected(
-        client
-          .from("nonConformanceReceiptLine")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    case "salesReturnOrderLines":
-      return await requireAffected(
-        client
-          .from("nonConformanceSalesReturnOrderLine")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    case "purchaseReturnOrderLines": {
-      // This association row carries the per-quantity coverage that reduces
-      // closeIssue's write-off. Deleting it after the linked return line has
-      // shipped would make closeIssue write the same goods off AGAIN (the
-      // return shipment already relieved inventory) — double relief for
-      // untracked stock. Cancel or void the return instead.
-      const association = await client
-        .from("nonConformancePurchaseReturnOrderLine")
-        .select("id, purchaseReturnOrderLine(quantityShipped)")
-        .eq("id", associationId)
-        .maybeSingle();
-      if (association.error) return association;
-      const shipped = Number(
-        (
-          association.data?.purchaseReturnOrderLine as {
-            quantityShipped: number | null;
-          } | null
-        )?.quantityShipped ?? 0
-      );
-      if (shipped > 0) {
-        return {
-          data: null,
-          error: {
-            message:
-              "Cannot remove this supplier-return link: quantity has already shipped against it, and the Issue's write-off depends on that coverage. Void the return shipment first."
-          } as PostgrestError
-        };
+): Promise<Result<{ id: string }[]>> {
+  const table = issueAssociationTables[type];
+  const companyId = ctx.company.id;
+  return withTransaction(ctx.asSystem.pg, async (trx) => {
+    const association = await trx
+      .selectFrom(table)
+      .select("nonConformanceId")
+      .where("id", "=", associationId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!association) return errResult("Issue association not found");
+    const { status } = await lockIssueDispositions(trx, {
+      nonConformanceId: association.nonConformanceId,
+      companyId
+    });
+    if (status === "Closed")
+      return errResult("Cannot modify a closed issue. Reopen it first.");
+
+    if (type === "purchaseReturnOrderLines") {
+      // The close uses this shipped quantity to avoid writing off stock twice.
+      const line = await trx
+        .selectFrom("nonConformancePurchaseReturnOrderLine as link")
+        .innerJoin("purchaseReturnOrderLine as line", (join) =>
+          join
+            .onRef("line.id", "=", "link.purchaseReturnOrderLineId")
+            .onRef("line.companyId", "=", "link.companyId")
+        )
+        .select("line.quantityShipped")
+        .where("link.id", "=", associationId)
+        .where("link.companyId", "=", companyId)
+        .forUpdate("line")
+        .executeTakeFirst();
+      if (Number(line?.quantityShipped ?? 0) > 0) {
+        return errResult(
+          "Cannot remove this supplier-return link: quantity has already shipped against it, and the Issue's write-off depends on that coverage. Void the return shipment first."
+        );
       }
-      return await requireAffected(
-        client
-          .from("nonConformancePurchaseReturnOrderLine")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
     }
-    case "trackedEntities":
-      return await requireAffected(
-        client
-          .from("nonConformanceTrackedEntity")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    case "inspections":
-      return await requireAffected(
-        (client as any)
-          .from("nonConformanceInspection")
-          .delete()
-          .eq("id", associationId)
-          .select("id")
-      );
-    default:
-      throw new Error(`Invalid type: ${type}`);
-  }
+    const removed = await trx
+      .deleteFrom(table)
+      .where("id", "=", associationId)
+      .where("companyId", "=", companyId)
+      .where("nonConformanceId", "=", association.nonConformanceId)
+      .returning("id")
+      .execute();
+    return removed.length
+      ? { data: removed, error: null }
+      : errResult("Issue association not found");
+  });
 }
 
 export async function deleteIssueType(
@@ -4686,6 +4622,7 @@ type DispositionLink = {
   trackedEntityId: string;
   quantity: number;
   trackedEntityStatus: string | null;
+  sourceDocument: string | null;
 };
 
 type DispositionRow = {
@@ -4720,7 +4657,8 @@ export async function closeIssue(
           trackedEntityId,
           trackedEntity(
             id,
-            status
+            status,
+            sourceDocument
           )
         )
       `
@@ -4742,7 +4680,8 @@ export async function closeIssue(
       id: link.id,
       trackedEntityId: link.trackedEntityId,
       quantity: Number(link.quantity ?? 0),
-      trackedEntityStatus: link.trackedEntity?.status ?? null
+      trackedEntityStatus: link.trackedEntity?.status ?? null,
+      sourceDocument: link.trackedEntity?.sourceDocument ?? null
     }))
   }));
 
@@ -5077,6 +5016,9 @@ export async function closeIssue(
             continue;
           }
           if (!entityStock.stocked.has(link.trackedEntityId)) {
+            // Job output has no finished-stock balance until its first receipt.
+            // Rejecting WIP still records the disposition and genealogy below.
+            if (link.sourceDocument === "Job") continue;
             movements.push({
               itemId: row.itemId,
               locationId,
@@ -5235,7 +5177,8 @@ export async function closeIssue(
           "link.id as id",
           "link.trackedEntityId as trackedEntityId",
           "link.quantity as quantity",
-          "te.status as trackedEntityStatus"
+          "te.status as trackedEntityStatus",
+          "te.sourceDocument as sourceDocument"
         ])
         .where("link.nonConformanceId", "=", nonConformanceId)
         .where("link.companyId", "=", companyId)
@@ -5248,7 +5191,8 @@ export async function closeIssue(
           id: link.id,
           trackedEntityId: link.trackedEntityId,
           quantity: Number(link.quantity ?? 0),
-          trackedEntityStatus: link.trackedEntityStatus ?? null
+          trackedEntityStatus: link.trackedEntityStatus ?? null,
+          sourceDocument: link.sourceDocument
         });
         linksByItem.set(link.nonConformanceItemId, arr);
       }
@@ -5312,7 +5256,10 @@ export async function closeIssue(
       }
       const linkKey = (links: DispositionLink[]) =>
         links
-          .map((l) => `${l.trackedEntityId}:${round(l.quantity)}`)
+          .map(
+            (l) =>
+              `${l.trackedEntityId}:${round(l.quantity)}:${l.sourceDocument}`
+          )
           .sort()
           .join(",");
       const lots = await readLinkedLotStates(trx, companyId, nonConformanceId, {
@@ -5566,6 +5513,21 @@ export async function closeIssue(
               .set({ status: "Available" })
               .where("id", "in", idsToFlip)
               .where("companyId", "=", companyId)
+              .where((eb) =>
+                eb.not(
+                  eb.exists(
+                    eb
+                      .selectFrom("unitQualityHold as hold")
+                      .select("hold.trackedEntityId")
+                      .whereRef("hold.trackedEntityId", "=", "trackedEntity.id")
+                      .whereRef(
+                        "hold.companyId",
+                        "=",
+                        "trackedEntity.companyId"
+                      )
+                  )
+                )
+              )
               .execute();
           }
           continue;
@@ -6167,8 +6129,13 @@ export async function linkJobOperationLot(
   ctx: ServiceContext,
   {
     nonConformanceId,
-    jobOperationId
-  }: { nonConformanceId: string; jobOperationId: string }
+    jobOperationId,
+    trackedEntityIds
+  }: {
+    nonConformanceId: string;
+    jobOperationId: string;
+    trackedEntityIds?: string[];
+  }
 ) {
   const client = ctx.asSystem.supabase;
   const companyId = ctx.company.id;
@@ -6192,11 +6159,14 @@ export async function linkJobOperationLot(
   const itemId = makeMethod.data?.itemId ?? null;
   if (!itemId) return;
 
-  const entities = await client
+  const query = client
     .from("trackedEntity")
     .select("id, quantity")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
     .eq("companyId", companyId);
+  const entities = await (trackedEntityIds?.length
+    ? query.in("id", trackedEntityIds)
+    : query);
   const lotEntities = (entities.data ?? []) as {
     id: string;
     quantity: number | null;

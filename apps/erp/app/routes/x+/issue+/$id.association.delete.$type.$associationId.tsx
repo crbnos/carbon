@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,18 +12,12 @@ import {
   isIssueLocked,
   nonConformanceAssociationType
 } from "~/modules/quality/quality.models";
-import {
-  deleteIssueAssociation,
-  getIssue
-} from "~/modules/quality/quality.service";
+import { getIssue } from "~/modules/quality/quality.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
-    delete: "quality"
-  });
 
   const { id, type, associationId } = params;
   if (!id) throw new Error("Could not find id");
@@ -45,7 +40,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error(`Invalid type: ${type}`);
   }
 
-  const deletion = await deleteIssueAssociation(client, type, associationId);
+  const api = await carbon(request);
+  const deletion = await api.quality.deleteIssueAssociation({
+    type: type as (typeof nonConformanceAssociationType)[number],
+    associationId
+  });
 
   if (deletion.error) {
     throw redirect(

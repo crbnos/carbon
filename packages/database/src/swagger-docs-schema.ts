@@ -135254,6 +135254,74 @@ export default {
         tags: ["(rpc) sync_verify_integration"]
       }
     },
+    "/rpc/complete_job_to_inventory_previewed": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_expected_unit_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_quantity_complete: {
+                  format: "numeric",
+                  type: "number"
+                },
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_job_id",
+                "p_quantity_complete",
+                "p_company_id",
+                "p_user_id",
+                "p_expected_unit_ids"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) complete_job_to_inventory_previewed"]
+      }
+    },
     "/rpc/sync_insert_job_make_method": {
       post: {
         parameters: [

@@ -41,6 +41,7 @@ import type { OperationWithDetails } from "~/services/types";
 import { readScreenUnitHolds } from "~/services/unit-hold.server";
 import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 import { recordMeta } from "~/utils/meta";
+import { operationUnits } from "~/utils/workUnit";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -430,7 +431,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     trackedEntities?.data.length > 0
   ) {
     // A unit on hold for an open quality issue is not the next unit.
-    const nextTrackedEntity = trackedEntities?.data.find(
+    const nextTrackedEntity = operationUnits(
+      trackedEntities.data,
+      op.operationQuantity,
+      jobMakeMethod?.data?.requiresSerialTracking
+        ? { operationId, holds: unitHolds }
+        : undefined
+    ).find(
       (entity) =>
         isSerialEntityIncompleteForOperation(entity, operationId) &&
         !isUnitOnHold(unitHolds, entity.id)

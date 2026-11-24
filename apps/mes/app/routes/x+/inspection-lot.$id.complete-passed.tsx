@@ -18,10 +18,13 @@ import {
   checkRequiredScans,
   checkStrictBackflush,
   getInspectionOutcomeState,
-  getSerialCompletionCandidates,
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
+import {
+  canPostPassedSamples,
+  getSerialCompletionCandidates
+} from "~/utils/inspectionOutcome";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
@@ -100,7 +103,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (refusal) {
     return fail(null, refusal);
   }
-  if (["Passed", "Failed", "Partial"].includes(state.inspection.status)) {
+  if (
+    !canPostPassedSamples(state.inspection.status, state.requiresSerialTracking)
+  ) {
     return fail(null, "Inspection is closed — the disposition already ran");
   }
 

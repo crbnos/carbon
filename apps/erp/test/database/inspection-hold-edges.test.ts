@@ -37,6 +37,7 @@ import {
   USER,
   unwrap
 } from "./fixtures/always-post";
+import { holdUnits, serialJob } from "./fixtures/job-unit-hold";
 import { handlesOf } from "./fixtures/handles";
 import {
   connectLocalTestDatabase,
@@ -1592,7 +1593,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     60_000
   );
 
-  const createIssueFor = async (item: string, units: string[]) => {
+  const createIssueFor = async (item: string, units: string[], jobOperationId?: string) => {
     const type = await f.db
       .selectFrom("nonConformanceType")
       .select("id")
@@ -1607,7 +1608,8 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         nonConformanceTypeId: type.id,
         openDate: f.today,
         items: [item],
-        trackedEntityIds: units
+        trackedEntityIds: units,
+        jobOperationId
       })
     );
     expect(created.error).toBeNull();
@@ -1640,6 +1642,68 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     ).status;
 
   it.skipIf(!client)(
+    "filing an operation issue on one reserved serial leaves siblings free and preserves another issue's hold on acceptance",
+    async () => {
+      await ensureIssueType();
+      const job = await serialJob(f, 4);
+      const unit = `${f.prefix}-unit-3`;
+      await holdUnits(f, true);
+      try {
+        await f.db
+          .updateTable("trackedEntity")
+          .set({ status: "Reserved" })
+          .where("id", "=", unit)
+          .execute();
+        const issueId = await createIssueFor(
+          f.assemblyId,
+          [unit],
+          job.operationId
+        );
+        const holds = () =>
+          f.db
+            .selectFrom("unitQualityHold")
+            .select(["trackedEntityId", "issueId"])
+            .where("companyId", "=", f.companyId)
+            .where(
+              "trackedEntityId",
+              "in",
+              [1, 2, 3, 4].map((n) => `${f.prefix}-unit-${n}`)
+            )
+            .execute();
+        expect(await holds()).toEqual([{ trackedEntityId: unit, issueId }]);
+        const other = await createIssueFor(f.assemblyId, [unit], job.operationId);
+        await f.db
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Use As Is" })
+          .where("nonConformanceId", "=", issueId)
+          .execute();
+        const result = await closeIssue(client!, f.db, {
+          nonConformanceId: issueId,
+          companyId: f.companyId,
+          userId: USER
+        });
+        expect(result.error).toBeNull();
+        expect(await holds()).toEqual([
+          { trackedEntityId: unit, issueId: other }
+        ]);
+        expect(await unitStatus(unit)).toBe("Reserved");
+        const stockMovements = () => f.db.selectFrom("itemLedger")
+          .select("id").where("trackedEntityId", "=", unit).execute();
+        expect(await stockMovements()).toEqual([]);
+
+        // Disabling the MES hold does not create inventory for Quality to relieve.
+        await holdUnits(f, false);
+        expect((await scrapAndClose(other)).error).toBeNull();
+        expect(await unitStatus(unit)).toBe("Rejected");
+        expect(await stockMovements()).toEqual([]);
+      } finally {
+        await holdUnits(f, false);
+      }
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
     "an issue created for a serial unit links it to the item's row, so its Scrap writes the unit off",
     async () => {
       await ensureIssueType();
@@ -1656,6 +1720,27 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       const closed = await scrapAndClose(issueId);
       expect(closed.error).toBeNull();
       expect(await unitStatus(unit)).toBe("Rejected");
+      const itemRow = await f.db
+        .selectFrom("nonConformanceItem")
+        .select("id")
+        .where("nonConformanceId", "=", issueId)
+        .executeTakeFirstOrThrow();
+      const removed = await quality.deleteIssueAssociation(stackContext(), {
+        type: "items",
+        associationId: itemRow.id
+      });
+      expect(removed.error?.message).toContain("closed issue");
+      expect(
+        (await quality.deleteIssue(stackContext(), { nonConformanceId: issueId }))
+          .error
+      ).toBeTruthy();
+      expect(
+        await f.db
+          .selectFrom("nonConformanceItemTrackedEntity")
+          .select("trackedEntityId")
+          .where("nonConformanceItemId", "=", itemRow.id)
+          .execute()
+      ).toEqual([{ trackedEntityId: unit }]);
       expect(
         (
           await f.db
