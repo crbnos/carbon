@@ -174,8 +174,10 @@ const SalesReturnOrderLineForm = ({
     initialValues.returnType ?? "Return to Stock"
   );
   const [quantity, setQuantity] = useState<number>(initialValues.quantity ?? 1);
+  // Starts at the form default: a different value marks the field touched,
+  // and the line then prompts Unsaved changes with nothing changed.
   const [customerAssetId, setCustomerAssetId] = useState(
-    initialValues.customerAssetId ?? ""
+    initialValues.customerAssetId
   );
   const isServiceLine = isServiceReturnLine(returnType);
 
