@@ -11258,6 +11258,30 @@ export async function syncMakeMethod(
         await db
           .transaction()
           .execute(async (trx: Transaction<KyselyDatabase>) => {
+            // The statuses read above are read again under the lock, which
+            // an activation also takes: a version activated or archived
+            // since then is not written into.
+            const lockedStatus = new Map(
+              (
+                await sharedPostings.lockItemMakeMethods(trx, {
+                  itemIds: [
+                    topLevelItemId,
+                    ...existingMakeMethodsByItemId.keys()
+                  ],
+                  companyId
+                })
+              ).map((method) => [method.id, method.status])
+            );
+            if (lockedStatus.get(activeMakeMethodId) !== "Draft") {
+              throw new ServerFnError(
+                `${topLevelItem.data?.readableIdWithRevision ?? "This item"}: its make method version changed while the sync ran. Sync again.`,
+                409
+              );
+            }
+            for (const method of existingMakeMethodsByItemId.values()) {
+              method.status = lockedStatus.get(method.id) ?? method.status;
+            }
+
             // If we created a new draft for the top-level, copy operations from the active version
             if (topLevelSourceMakeMethodId) {
               await copyMakeMethodOperations(

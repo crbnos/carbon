@@ -7,18 +7,26 @@
 // below is the one the comment names. Runs against the local database; skips
 // without one.
 
+import { createServiceContext } from "@carbon/api/service-fn.server";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { sql } from "kysely";
 import { expect } from "vitest";
+import { syncMakeMethod } from "../../app/modules/items/items.service";
 import {
   convertDocument,
   invokePosting
 } from "../../app/modules/shared/shared.service";
-import { alwaysPostFixture, type Fixture, seed, USER } from "./fixtures/always-post";
+import {
+  alwaysPostFixture,
+  type Fixture,
+  seed,
+  USER
+} from "./fixtures/always-post";
 import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
+import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 function signal() {
   let resolve!: () => void;
@@ -49,6 +57,29 @@ async function waitForBlockedConnection(
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
   throw new Error("Expected database connection to wait for the held lock");
+}
+
+// Resolves once `running` settles or its connection waits on a lock.
+async function waitForSettledOrBlocked(
+  db: Kysely<KyselyDatabase>,
+  running: Promise<unknown>,
+  waitingPid: number
+) {
+  let settled = false;
+  const settle = () => {
+    settled = true;
+  };
+  void running.then(settle, settle);
+  const deadline = performance.now() + 15_000;
+  while (performance.now() < deadline) {
+    if (settled) return;
+    const { rows } = await sql<{ blocked: boolean }>`
+      SELECT cardinality(pg_blocking_pids(${waitingPid})) > 0 AS blocked
+    `.execute(db);
+    if (rows[0]?.blocked) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error("Expected the write to finish or to wait for a lock");
 }
 
 /** The assembly's trigger-made v1 set Active, and Drafts v2 and v3. */
@@ -170,6 +201,144 @@ databaseTest(
       await holder.destroy();
       await first.destroy();
       await second.destroy();
+      await monitor.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+async function billOfMaterial(f: Fixture, makeMethodId: string) {
+  const lines = await f.db
+    .selectFrom("methodMaterial")
+    .select(["itemId", "quantity"])
+    .where("makeMethodId", "=", makeMethodId)
+    .where("companyId", "=", f.companyId)
+    .execute();
+  return lines.map((line) => ({
+    itemId: line.itemId,
+    quantity: Number(line.quantity)
+  }));
+}
+
+// The sync reads its make method's status through PostgREST.
+const system = localServiceRoleClient();
+
+databaseTest(
+  "an Onshape sync into a Draft does not change it once it is Active",
+  async () => {
+    if (!system) return;
+    const f = await alwaysPostFixture();
+    const holder = await connectLocalTestDatabase();
+    const syncing = await connectLocalTestDatabase();
+    const activating = await connectLocalTestDatabase();
+    const monitor = await connectLocalTestDatabase();
+    const held = signal();
+    const release = signal();
+    let holding: Promise<void> | undefined;
+    const running: Promise<unknown>[] = [];
+    try {
+      const draft = await f.db
+        .selectFrom("makeMethod")
+        .select("id")
+        .where("itemId", "=", f.assemblyId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const line = await f.db
+        .insertInto("methodMaterial")
+        .values({
+          makeMethodId: draft.id,
+          itemId: f.partId,
+          itemType: "Part",
+          quantity: 2,
+          unitOfMeasureCode: "EA",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const syncPid = await backendPid(syncing);
+      const activationPid = await backendPid(activating);
+
+      // Holds the Draft's BOM line, which the sync deletes first.
+      holding = holder.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("methodMaterial")
+          .select("id")
+          .where("id", "=", line.id)
+          .where("companyId", "=", f.companyId)
+          .forUpdate()
+          .execute();
+        held.resolve();
+        await release.promise;
+      });
+      void holding.catch(() => {});
+      await Promise.race([held.promise, holding]);
+
+      const sync = syncMakeMethod(
+        createServiceContext({
+          actor: { type: "system", onBehalfOf: USER },
+          company: { id: f.companyId, groupId: f.groupId },
+          caller: system,
+          system: () => system,
+          pg: () => syncing,
+          kv: () => {
+            throw new Error("The sync reads no cache");
+          }
+        }),
+        {
+          type: "onshape",
+          makeMethodId: draft.id,
+          data: [
+            {
+              index: "1",
+              id: f.partId,
+              name: "Bracket",
+              quantity: 3,
+              replenishmentSystem: "Buy",
+              defaultMethodType: "Pull from Inventory",
+              data: {}
+            }
+          ]
+        }
+      );
+      running.push(sync);
+      void sync.catch(() => {});
+      await waitForBlockedConnection(monitor, syncPid);
+
+      // The BOM the version has when it becomes Active is the one it keeps.
+      let activeBillOfMaterial: Awaited<ReturnType<typeof billOfMaterial>> =
+        [];
+      const activation = activate(f, activating, draft.id).then(
+        async (result) => {
+          activeBillOfMaterial = await billOfMaterial(f, draft.id);
+          return result;
+        }
+      );
+      running.push(activation);
+      void activation.catch(() => {});
+      await waitForSettledOrBlocked(monitor, activation, activationPid);
+
+      release.resolve();
+      await holding;
+      await sync;
+      expect((await activation).error).toBeNull();
+
+      expect({
+        status: (await statuses(f, { draft: draft.id })).draft,
+        activeBillOfMaterial,
+        billOfMaterial: await billOfMaterial(f, draft.id)
+      }).toEqual({
+        status: "Active",
+        activeBillOfMaterial: [{ itemId: f.partId, quantity: 3 }],
+        billOfMaterial: [{ itemId: f.partId, quantity: 3 }]
+      });
+    } finally {
+      release.resolve();
+      await holding?.catch(() => {});
+      await Promise.allSettled(running);
+      await holder.destroy();
+      await syncing.destroy();
+      await activating.destroy();
       await monitor.destroy();
       await f.cleanup();
     }
