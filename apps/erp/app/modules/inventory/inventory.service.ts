@@ -30678,23 +30678,22 @@ async function consumeTrackedEntitiesIntoOperation(
 
   // Only update if we didn't create a new jobMaterial (in which case it's already set)
   if (actualMaterialId === materialId) {
-    const currentQuantityIssued = round(
-      Number(jobMaterial?.quantityIssued) || 0
-    );
-    const newQuantityIssued = round(currentQuantityIssued + totalChildQuantity);
-
-    await trx
+    // Added to the row, not to the read above: a batch member or a confirmed
+    // over-issue reads the material unlocked, and a write of that read would
+    // drop an issue that committed since.
+    const updated = await trx
       .updateTable("jobMaterial")
-      .set({
-        quantityIssued: newQuantityIssued
-      })
+      .set((eb) => ({
+        quantityIssued: sql<number>`coalesce(${eb.ref("quantityIssued")}, 0) + ${totalChildQuantity}`
+      }))
       .where("id", "=", actualMaterialId!)
       .where("companyId", "=", companyId)
-      .execute();
+      .returning("quantityIssued")
+      .executeTakeFirst();
 
     logger.info("Job material quantity updated", {
       materialId: actualMaterialId,
-      newQuantityIssued
+      newQuantityIssued: updated?.quantityIssued
     });
   }
 
