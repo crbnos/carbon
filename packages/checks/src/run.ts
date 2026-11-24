@@ -13,6 +13,7 @@ import type {
   StructureCheck,
   Violation
 } from "./check";
+import { counterWriteRelative } from "./conformance/counter-write-relative";
 import {
   DEPLOYMENTS_SET_REQUIRED_ENV,
   findDeploymentEnvGaps
@@ -99,6 +100,7 @@ import {
   findStampColumnMismatches,
   STAMP_MATCHES_COLUMNS
 } from "./conformance/stamp-matches-columns";
+import { statusWriteGuarded } from "./conformance/status-write-guarded";
 import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 import { testReadsSource } from "./conformance/test-reads-source";
 import {
@@ -108,7 +110,10 @@ import {
   loadListSources,
   loadScheduledConstantSources
 } from "./sources/cross-file";
-import { loadDbTableColumns } from "./sources/db-columns";
+import {
+  loadDbTableColumns,
+  loadDbTableColumnTypes
+} from "./sources/db-columns";
 import { loadDocumentSequenceSources } from "./sources/document-sequences";
 import { loadEdgeFunctions } from "./sources/edge-functions";
 import { loadLicenseFiles } from "./sources/license-files";
@@ -231,6 +236,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
   const migrations = loadSqlFiles(migrationsDir(root));
   const listSources = loadListSources(root);
   const eventSources = loadEventFunctionSources(root);
+  const columnTypes = loadDbTableColumnTypes(root);
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
@@ -238,12 +244,15 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ]),
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
-    // noMissingAuditColumn needs the real column list, so it is built from the
-    // generated types here rather than sitting in TS_CHECKS — the same shape as
-    // noAuthzDdlInMigrations above, which keeps every `scan` pure.
+    // noMissingAuditColumn, statusWriteGuarded and counterWriteRelative need
+    // the real columns, so they are built from the generated types here rather
+    // than sitting in TS_CHECKS — the same shape as noAuthzDdlInMigrations
+    // above, which keeps every `scan` pure.
     ...scanAll(loadTypescriptFiles(root), [
       ...TS_CHECKS,
-      noMissingAuditColumn(loadDbTableColumns(root))
+      noMissingAuditColumn(loadDbTableColumns(root)),
+      statusWriteGuarded(columnTypes),
+      counterWriteRelative(columnTypes)
     ]),
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders,

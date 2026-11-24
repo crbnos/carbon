@@ -10,6 +10,10 @@ export type {
   Violation
 } from "./check";
 export { findClobbers, objectRefs } from "./clobber";
+export {
+  COUNTER_COLUMNS,
+  counterWriteRelative
+} from "./conformance/counter-write-relative";
 export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 export { journalStatusFilter } from "./conformance/journal-status-filter";
@@ -37,6 +41,10 @@ export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 export { routeActionShape } from "./conformance/route-action-shape";
 export { serviceFnFile } from "./conformance/service-fn-file";
 export { spdxLicenseHeader } from "./conformance/spdx-license-header";
+export {
+  statusColumns,
+  statusWriteGuarded
+} from "./conformance/status-write-guarded";
 export { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 export { testReadsSource } from "./conformance/test-reads-source";
 export {
@@ -68,7 +76,10 @@ export {
   TEST_CHECKS,
   TS_CHECKS
 } from "./run";
-export { loadDbTableColumns } from "./sources/db-columns";
+export {
+  loadDbTableColumns,
+  loadDbTableColumnTypes
+} from "./sources/db-columns";
 export { loadEdgeFunctions } from "./sources/edge-functions";
 export {
   listLicenseCandidates,
