@@ -23872,6 +23872,9 @@ msgstr "Druck"
 msgid "Prints as"
 msgstr "Wird gedruckt als"
 
+msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
+msgstr ""
+
 msgid "Priorities"
 msgstr "Prioritäten"
 
