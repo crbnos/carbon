@@ -377,7 +377,7 @@ export class QboVendorSyncer extends QboEntitySyncer<
       if (!existingRemoteId) {
         const created = await this.qboProvider.createVendor(
           data,
-          this.createKey(localId)
+          this.editableCreateKey(localId, data)
         );
         this.rememberRemoteEntity(created);
         return created.Id;

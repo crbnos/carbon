@@ -564,6 +564,19 @@ export abstract class BaseEntitySyncer<
   }
 
   /**
+   * The create key of a record a person can edit between attempts (customer,
+   * vendor, item, purchase order): keyed by what is sent too, so a retry that
+   * carries an edit is not answered with an older create's replayed response,
+   * which would then be linked as the edited version.
+   */
+  protected editableCreateKey(
+    localId: string,
+    payload: unknown
+  ): RemoteCreateKey {
+    return this.createKey(`${localId}:${JSON.stringify(payload)}`);
+  }
+
+  /**
    * Save the link between a Carbon ID and a Remote ID.
    * Default implementation uses the external integration mapping table.
    * Can be overridden by subclasses for custom behavior.

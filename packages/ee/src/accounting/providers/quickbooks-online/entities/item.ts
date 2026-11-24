@@ -574,7 +574,7 @@ export class QboItemSyncer extends QboEntitySyncer<Accounting.Item, Qbo.Item> {
       if (!existingRemoteId) {
         const created = await this.qboProvider.createItem(
           data,
-          this.createKey(localId)
+          this.editableCreateKey(localId, data)
         );
         this.rememberRemoteEntity(created);
         return created.Id;
