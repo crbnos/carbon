@@ -92797,6 +92797,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspection.acceptedQuantity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspection.acceptedUnitIds"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -92955,6 +92958,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspection.acceptedQuantity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspection.acceptedUnitIds"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -93065,6 +93071,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspection.acceptedQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.acceptedUnitIds"
           },
           {
             $ref: "#/parameters/body.inspection"
@@ -186760,6 +186769,13 @@ export default {
         acceptedQuantity: {
           format: "numeric",
           type: "number"
+        },
+        acceptedUnitIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -250743,6 +250759,12 @@ export default {
     },
     "rowFilter.inspection.acceptedQuantity": {
       name: "acceptedQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.acceptedUnitIds": {
+      name: "acceptedUnitIds",
       required: false,
       in: "query",
       type: "string"
