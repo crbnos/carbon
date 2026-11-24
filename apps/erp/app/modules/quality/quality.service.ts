@@ -2841,6 +2841,110 @@ const trackedEntityBinsKey = (read: {
   readKey([...read.stocked].sort()) +
   readKey([...read.jobOutputs].sort());
 
+/**
+ * Sets Available the serial units in stock that an earlier close accepted
+ * (Use As Is or Rework) but left held because another issue was open on them.
+ * An issue that names a unit only at its header has no disposition to replay,
+ * so its close releases the unit here, once no issue (`unitQualityHold`) and
+ * no open inspection lot holds it. The acceptance must be the unit's latest
+ * disposition and no lot may have decided the unit since. This issue must
+ * have linked the unit before the acceptance, or the unit has not moved
+ * since: a unit released and then held again for another reason (a return)
+ * stays held. The caller has locked the units. Returns the released ids.
+ */
+async function releaseAcceptedUnits(
+  trx: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    nonConformanceId: string;
+    trackedEntityIds: string[];
+  }
+): Promise<string[]> {
+  const { companyId, nonConformanceId, trackedEntityIds } = args;
+  if (trackedEntityIds.length === 0) return [];
+  const candidates = await sql<{ id: string }>`
+    SELECT te.id
+    FROM "trackedEntity" te
+    INNER JOIN "item" i ON i.id = te."itemId" AND i."companyId" = te."companyId"
+    CROSS JOIN LATERAL (
+      SELECT a."createdAt", a.attributes->>'Disposition' AS disposition
+      FROM "trackedActivityInput" ai
+      INNER JOIN "trackedActivity" a
+        ON a.id = ai."trackedActivityId" AND a."companyId" = ai."companyId"
+      WHERE ai."trackedEntityId" = te.id
+        AND ai."companyId" = te."companyId"
+        AND a.type = 'Disposition'
+        AND a."sourceDocument" = 'Non-Conformance'
+      ORDER BY a."createdAt" DESC, a.id DESC
+      LIMIT 1
+    ) accepted
+    WHERE te.id = ANY(${trackedEntityIds}::text[])
+      AND te."companyId" = ${companyId}
+      AND te.status IN ('On Hold', 'Rejected')
+      AND i."itemTrackingType" = 'Serial'
+      AND accepted.disposition IN ('Use As Is', 'Rework')
+      AND NOT EXISTS (
+        SELECT 1 FROM "unitQualityHold" held
+        WHERE held."trackedEntityId" = te.id
+          AND held."companyId" = te."companyId"
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM "inspection" lot
+        WHERE lot."companyId" = te."companyId"
+          AND (
+            lot.status IN ('Pending', 'In Progress')
+            OR lot."dispositionedAt" > accepted."createdAt"
+          )
+          AND (
+            (
+              lot."sourceDocument" = 'Receipt'
+              AND lot."sourceDocumentLineId" = te.attributes->>'Receipt Line'
+            )
+            OR EXISTS (
+              SELECT 1 FROM "inspectionTrackedEntity" member
+              WHERE member."inspectionId" = lot.id
+                AND member."companyId" = lot."companyId"
+                AND member."trackedEntityId" = te.id
+            )
+          )
+      )
+      AND (
+        EXISTS (
+          SELECT 1 FROM "nonConformanceTrackedEntity" link
+          WHERE link."nonConformanceId" = ${nonConformanceId}
+            AND link."companyId" = te."companyId"
+            AND link."trackedEntityId" = te.id
+            AND link."createdAt" < accepted."createdAt"
+        )
+        OR NOT EXISTS (
+          SELECT 1 FROM "itemLedger" ledger
+          WHERE ledger."trackedEntityId" = te.id
+            AND ledger."companyId" = te."companyId"
+            AND ledger."createdAt" > accepted."createdAt"
+        )
+      )
+    ORDER BY te.id
+  `.execute(trx);
+  const ids = candidates.rows.map((row) => row.id);
+  if (ids.length === 0) return [];
+  // As the accepting close: job work in progress took its disposition then,
+  // and a unit with no stock left stays as it is.
+  const stock = await readTrackedEntityBins(trx, companyId, ids);
+  const releasable = ids.filter((id) =>
+    stock.stocked.has(id) ? stock.bins.has(id) : !stock.jobOutputs.has(id)
+  );
+  if (releasable.length === 0) return [];
+  const released = await trx
+    .updateTable("trackedEntity")
+    .set({ status: "Available" })
+    .where("id", "in", releasable)
+    .where("companyId", "=", companyId)
+    .where("status", "in", ["On Hold", "Rejected"])
+    .returning("id")
+    .execute();
+  return released.map((row) => row.id);
+}
+
 async function readLinkedLotStates(
   handle: Kysely<KyselyDatabase>,
   companyId: string,
@@ -5302,15 +5406,39 @@ export async function closeIssue(
       ) {
         throw new Error("Disposition changed while closing; please retry.");
       }
-      if (linkedEntityIds.length > 0) {
+      // A unit the issue names only at its header takes no disposition, but
+      // its close can release one an earlier close accepted. Locking it with
+      // the dispositioned units, in one order, runs two closes on one unit one
+      // after the other, so the second reads the first's outcome.
+      const dispositionedIds = new Set(
+        linkRows.map((link) => link.trackedEntityId)
+      );
+      const headerOnlyIds = [
+        ...new Set(
+          (
+            await trx
+              .selectFrom("nonConformanceTrackedEntity")
+              .select("trackedEntityId")
+              .where("nonConformanceId", "=", nonConformanceId)
+              .where("companyId", "=", companyId)
+              .execute()
+          ).map((link) => link.trackedEntityId)
+        )
+      ].filter((id) => !dispositionedIds.has(id));
+      const lockedEntityIds = [
+        ...new Set([...linkedEntityIds, ...headerOnlyIds])
+      ];
+      if (lockedEntityIds.length > 0) {
         await trx
           .selectFrom("trackedEntity")
           .select("id")
-          .where("id", "in", linkedEntityIds)
+          .where("id", "in", lockedEntityIds)
           .where("companyId", "=", companyId)
           .orderBy("id")
           .forUpdate()
           .execute();
+      }
+      if (linkedEntityIds.length > 0) {
         const fresh = await readTrackedEntityBins(
           trx,
           companyId,
@@ -5535,10 +5663,11 @@ export async function closeIssue(
             })
             .map((l) => l.trackedEntityId);
           if (idsToFlip.length > 0) {
-            // Record a WIP unit's accepted disposition even if a second issue
-            // still gates production. A header-only close has no material
-            // disposition to replay. Stock already in inventory retains its
-            // physical hold until Quality can release it.
+            // A WIP unit takes its accepted disposition even while another
+            // issue is open on it: the open issue still gates production. A
+            // unit in stock keeps its status while another issue holds it;
+            // the last of those issues to close releases it, whatever its
+            // link (`releaseAcceptedUnits` for a header-only one).
             const wipIds = idsToFlip.filter(
               (id) =>
                 entityStock.jobOutputs.has(id) && !entityStock.stocked.has(id)
@@ -5605,6 +5734,13 @@ export async function closeIssue(
           }
         }
       }
+
+      // Reads the issue as Closed, so its own hold no longer counts.
+      await releaseAcceptedUnits(trx, {
+        companyId,
+        nonConformanceId,
+        trackedEntityIds: headerOnlyIds
+      });
 
       return { id: updated.id, closedNow: true };
     });
@@ -6166,6 +6302,21 @@ export async function linkIssueTrackedEntities(
 }
 
 /**
+ * The output units of a job operation that its new issue links. Naming some
+ * of them narrows the issue to those units, so their siblings stay free. The
+ * other entities an issue can name (a component lot, a purchased part) are
+ * not the operation's output, so they leave its whole output on the issue.
+ */
+export function operationLotEntities<T extends { id: string }>(
+  outputs: T[],
+  namedIds: readonly string[] = []
+): T[] {
+  const named = new Set(namedIds);
+  const namedOutputs = outputs.filter((unit) => named.has(unit.id));
+  return namedOutputs.length > 0 ? namedOutputs : outputs;
+}
+
+/**
  * Links the lot a job operation's make method produced to a new issue: the
  * issue-level tracked-entity links, then the item's disposition row (found
  * or created) under the issue lock every link writer shares. Failures are
@@ -6205,18 +6356,19 @@ export async function linkJobOperationLot(
   const itemId = makeMethod.data?.itemId ?? null;
   if (!itemId) return;
 
-  const query = client
+  const entities = await client
     .from("trackedEntity")
     .select("id, quantity")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
     .eq("companyId", companyId);
-  const entities = await (trackedEntityIds?.length
-    ? query.in("id", trackedEntityIds)
-    : query);
-  const lotEntities = (entities.data ?? []) as {
-    id: string;
-    quantity: number | null;
-  }[];
+  if (entities.error) {
+    logger.error("Issue creation step failed", { error: entities.error });
+    return;
+  }
+  const lotEntities = operationLotEntities(
+    (entities.data ?? []) as { id: string; quantity: number | null }[],
+    trackedEntityIds
+  );
   if (lotEntities.length === 0) return;
 
   const entityIds = lotEntities.map((e) => e.id);

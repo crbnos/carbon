@@ -39,7 +39,7 @@ in the migrations — **newest wins**; core tables created in
   An issue that is not `Closed` and is linked to a serial unit
   (through its header or a material disposition row) puts that unit on hold in the MES when
   `companySettings.holdUnitsWithOpenIssues` is on (Settings → Quality); see
-  `mes-job-operation-ui.md` → Quality hold. After closure, the serials on Scrap and Return to Supplier disposition rows remain blocked by `unitQualityHold`.
+  `mes-job-operation-ui.md` → Quality hold. After closure, the serials on Scrap and Return to Supplier disposition rows remain blocked by `unitQualityHold`. The last issue to close releases a stocked serial an earlier close accepted (Use As Is or Rework) but left On Hold because this issue still held it, header-only link included (`releaseAcceptedUnits`, `quality.service.ts`); it does not release a unit an open lot holds or one held again since. An issue that names a job operation links the operation's output units it names, or every output unit when it names none of them (`operationLotEntities`).
 - **Task status** (`nonConformanceTaskStatus`): `Pending`, `In Progress`,
   `Completed`, `Skipped`. Tasks start `Pending`; they do **not** auto-start.
 - **Source** (`nonConformanceSource`): `Internal`, `External`.

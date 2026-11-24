@@ -16,17 +16,20 @@ import {
   USER
 } from "./fixtures/always-post";
 import { systemServiceOf } from "./fixtures/handles";
-import { holdUnits, raiseIssueOnUnit } from "./fixtures/job-unit-hold";
+import {
+  holdUnits,
+  raiseIssueOnUnit,
+  serialJob
+} from "./fixtures/job-unit-hold";
 import { postgrestTest } from "./fixtures/local-supabase";
 
-async function reject(
+/** Puts the unit on a disposition row of the issue, and starts the issue. */
+async function addDisposition(
   f: Fixture,
-  client: SupabaseClient<Database>,
+  issue: string,
   unit: string,
-  issueNumber: number,
-  disposition: "Scrap" | "Return to Supplier"
+  disposition: "Scrap" | "Return to Supplier" | "Use As Is"
 ) {
-  const issue = await raiseIssueOnUnit(f, unit, issueNumber);
   await seed(f, async (trx) => {
     await trx
       .updateTable("nonConformance")
@@ -58,24 +61,144 @@ async function reject(
       })
       .execute();
   });
-  expect(
-    (
-      await closeIssue(client, f.db, {
-        nonConformanceId: issue,
+}
+
+function close(
+  f: Fixture,
+  client: SupabaseClient<Database>,
+  nonConformanceId: string
+) {
+  return closeIssue(client, f.db, {
+    nonConformanceId,
+    companyId: f.companyId,
+    userId: USER
+  });
+}
+
+async function statusOf(f: Fixture, unit: string) {
+  const row = await f.db
+    .selectFrom("trackedEntity")
+    .select("status")
+    .where("id", "=", unit)
+    .where("companyId", "=", f.companyId)
+    .executeTakeFirstOrThrow();
+  return row.status;
+}
+
+async function reject(
+  f: Fixture,
+  client: SupabaseClient<Database>,
+  unit: string,
+  issueNumber: number,
+  disposition: "Scrap" | "Return to Supplier"
+) {
+  const issue = await raiseIssueOnUnit(f, unit, issueNumber);
+  await addDisposition(f, issue, unit, disposition);
+  expect((await close(f, client, issue)).error).toBeNull();
+  expect(await statusOf(f, unit)).toBe("Rejected");
+}
+
+/** A received, Rejected serial of the job's item: in stock, so not job WIP. */
+async function rejectedStockedSerial(f: Fixture) {
+  await serialJob(f, 1);
+  const unit = `${f.prefix}-unit-1`;
+  await seed(f, async (trx) => {
+    await trx
+      .insertInto("itemLedger")
+      .values({
+        entryType: "Positive Adjmt.",
+        itemId: f.assemblyId,
+        locationId: f.locationId,
+        trackedEntityId: unit,
+        quantity: 1,
         companyId: f.companyId,
-        userId: USER
+        createdBy: USER
       })
-    ).error
-  ).toBeNull();
-  expect(
-    await f.db
-      .selectFrom("trackedEntity")
-      .select("status")
+      .execute();
+    await trx
+      .updateTable("trackedEntity")
+      .set({ status: "Rejected" })
       .where("id", "=", unit)
       .where("companyId", "=", f.companyId)
-      .executeTakeFirstOrThrow()
-  ).toEqual({ status: "Rejected" });
+      .execute();
+  });
+  return unit;
 }
+
+postgrestTest(
+  "the last issue to close releases a stocked serial that an earlier close accepted",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      await holdUnits(f, true);
+      const unit = await rejectedStockedSerial(f);
+      const accepting = await raiseIssueOnUnit(f, unit, 1);
+      await addDisposition(f, accepting, unit, "Use As Is");
+      const headerOnly = [
+        await raiseIssueOnUnit(f, unit, 2),
+        await raiseIssueOnUnit(f, unit, 3)
+      ];
+
+      // The open issues keep the unit in stock held.
+      expect((await close(f, client, accepting)).error).toBeNull();
+      expect(await statusOf(f, unit)).toBe("Rejected");
+      expect((await close(f, client, headerOnly[0])).error).toBeNull();
+      expect(await statusOf(f, unit)).toBe("Rejected");
+      // The last one names the unit only at its header and still releases it.
+      expect((await close(f, client, headerOnly[1])).error).toBeNull();
+      expect(await statusOf(f, unit)).toBe("Available");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "an issue raised after a serial's release leaves it held when the serial was rejected again",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      await holdUnits(f, true);
+      const unit = await rejectedStockedSerial(f);
+      const accepting = await raiseIssueOnUnit(f, unit, 1);
+      await addDisposition(f, accepting, unit, "Use As Is");
+      expect((await close(f, client, accepting)).error).toBeNull();
+      expect(await statusOf(f, unit)).toBe("Available");
+
+      // Shipped and returned: the return holds it, not the earlier acceptance.
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("itemLedger")
+          .values(
+            [-1, 1].map((quantity) => ({
+              entryType:
+                quantity < 0
+                  ? ("Negative Adjmt." as const)
+                  : ("Positive Adjmt." as const),
+              itemId: f.assemblyId,
+              locationId: f.locationId,
+              trackedEntityId: unit,
+              quantity,
+              companyId: f.companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+        await trx
+          .updateTable("trackedEntity")
+          .set({ status: "Rejected" })
+          .where("id", "=", unit)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+      const later = await raiseIssueOnUnit(f, unit, 2);
+      expect((await close(f, client, later)).error).toBeNull();
+      expect(await statusOf(f, unit)).toBe("Rejected");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
 
 for (const disposition of ["Scrap", "Return to Supplier"] as const) {
   for (const holdsEnabled of [false, true]) {

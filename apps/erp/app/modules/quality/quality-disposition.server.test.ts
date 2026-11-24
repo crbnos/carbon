@@ -115,6 +115,7 @@ const db = {
 
 import {
   linkEntitiesToIssueItemRow,
+  operationLotEntities,
   updateIssueItemQuantity
 } from "./quality.service";
 
@@ -329,4 +330,21 @@ describe("linkEntitiesToIssueItemRow", () => {
 
     expect(itemRow().quantity).toBe(0);
   });
+});
+
+describe("operationLotEntities", () => {
+  const outputs = [{ id: "sn-1" }, { id: "sn-2" }, { id: "sn-3" }];
+
+  it("links only the output units the issue names", () => {
+    expect(operationLotEntities(outputs, ["sn-2", "component-lot"])).toEqual([
+      { id: "sn-2" }
+    ]);
+  });
+
+  it.each([[[]], [["component-lot", "purchased-serial"]]])(
+    "links the whole output when the issue names none of its units (%j)",
+    (named) => {
+      expect(operationLotEntities(outputs, named)).toEqual(outputs);
+    }
+  );
 });
