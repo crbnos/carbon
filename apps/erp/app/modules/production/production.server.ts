@@ -4067,9 +4067,9 @@ export const movePerson = defineServiceFn({
  *
  * @remarks
  * A move onto a day where that person already works the same work center
- * merges the two (hours add). Refused when the person is absent that day, or
- * already works another work center in that shift. The work center is
- * rescheduled.
+ * merges the two (hours add); onto a day where they work another work center,
+ * their day is split across both. Refused when the person is absent that day.
+ * The work center is rescheduled.
  *
  * @mcp
  */
@@ -4096,12 +4096,7 @@ export const movePersonCell = defineServiceFn({
     );
     if (moved instanceof CarbonError) return moved;
     if ("refused" in moved) {
-      return moved.refused === "absent"
-        ? ctx.error("rule", "This person is absent that day.")
-        : ctx.error(
-            "conflict",
-            "This person already works another work center that day. Open the day to split their hours."
-          );
+      return ctx.error("rule", "This person is absent that day.");
     }
     await service.notifyPeopleChange(ctx, "People assignment moved", [
       moved.workCenterId
