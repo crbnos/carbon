@@ -4037,7 +4037,7 @@ export async function updateJobStatus(
       status
     });
     if (moment === "production.jobReleased") {
-      await raiseMoment(moment, {
+      await raiseMoment("production.jobReleased", {
         outputs: { job: { id }, releasedBy: { id: updatedBy } },
         companyId,
         actorId: updatedBy
@@ -4051,7 +4051,7 @@ export async function updateJobStatus(
         source
       });
     } else if (moment === "production.jobHeld") {
-      await raiseMoment(moment, {
+      await raiseMoment("production.jobHeld", {
         outputs: { job: { id }, heldBy: { id: updatedBy } },
         companyId,
         actorId: updatedBy
