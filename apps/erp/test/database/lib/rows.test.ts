@@ -11,6 +11,7 @@ import {
   selectRows,
   updateRows
 } from "@carbon/database/rows";
+import { sql } from "kysely";
 import { expect } from "vitest";
 import {
   connectLocalTestDatabase,
@@ -176,18 +177,37 @@ databaseTest(
   "a filter value shaped like a comparison is a value, not SQL",
   async () => {
     const db = await connectLocalTestDatabase();
+    class Rollback extends Error {}
     try {
-      const everyone = await selectRows(db, "company", {});
-      expect(everyone).not.toHaveLength(0);
-      // If the object's `op` reached the statement this would match every row.
-      const lookalike = { op: "= name OR TRUE --", value: "x" } as never;
-      const matched = await selectRows(db, "company", {
-        name: lookalike
-      }).catch(() => []);
-      expect(matched).toEqual([]);
-      expect(
-        (await selectRows(db, "company", { id: neq("no-such-company") })).length
-      ).toBe(everyone.length);
+      // One snapshot, holding a company of its own: other tests create and
+      // delete companies meanwhile.
+      await db
+        .transaction()
+        .setIsolationLevel("repeatable read")
+        .execute(async (trx) => {
+          await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+          await trx
+            .insertInto("company")
+            .values({
+              id: `rows-${crypto.randomUUID()}`,
+              name: "Rows",
+              baseCurrencyCode: "USD"
+            })
+            .execute();
+          const everyone = await selectRows(trx, "company", {});
+          // If the object's `op` reached the statement this would match every row.
+          const lookalike = { op: "= name OR TRUE --", value: "x" } as never;
+          expect(await selectRows(trx, "company", { name: lookalike })).toEqual(
+            []
+          );
+          expect(
+            (await selectRows(trx, "company", { id: neq("no-such-company") }))
+              .length
+          ).toBe(everyone.length);
+          throw new Rollback();
+        });
+    } catch (error) {
+      if (!(error instanceof Rollback)) throw error;
     } finally {
       await db.destroy();
     }

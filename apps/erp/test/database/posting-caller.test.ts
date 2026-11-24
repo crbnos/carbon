@@ -44,6 +44,63 @@ const authorize = (
   required: Parameters<typeof authorizePostingCaller>[2]
 ) => authorizePostingCaller(ctx, ctx.caller, required);
 
+class Rollback extends Error {}
+
+/**
+ * A member of a company of their own. Built here rather than read from
+ * whatever the database holds: a freshly migrated one has no users.
+ */
+const newMember = () => {
+  const prefix = `posting-caller-${crypto.randomUUID()}`;
+  return { prefix, companyId: `${prefix}-company`, userId: `${prefix}-user` };
+};
+
+async function insertMember(
+  db: Kysely<KyselyDatabase>,
+  member: { prefix: string; companyId: string; userId: string }
+) {
+  const { prefix, companyId, userId } = member;
+  await sql`SET LOCAL session_replication_role = replica`.execute(db);
+  await db
+    .insertInto("user")
+    .values({ id: userId, email: `${prefix}@example.com` })
+    .execute();
+  await db
+    .insertInto("companyGroup")
+    .values({ id: `${prefix}-group`, name: prefix, createdBy: userId })
+    .execute();
+  await db
+    .insertInto("company")
+    .values({
+      id: companyId,
+      name: prefix,
+      companyGroupId: `${prefix}-group`,
+      baseCurrencyCode: "USD"
+    })
+    .execute();
+  await db
+    .insertInto("userToCompany")
+    .values({ userId, companyId, role: "employee" })
+    .execute();
+  await sql`SET LOCAL session_replication_role = origin`.execute(db);
+}
+
+/** Deletes a committed member and every row the test wrote for it. */
+async function deleteMember(
+  db: Kysely<KyselyDatabase>,
+  member: { prefix: string; companyId: string; userId: string }
+) {
+  await db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+    await sql`DELETE FROM "permission" WHERE "companyId" = ${member.companyId}`.execute(trx);
+    await sql`DELETE FROM "apiKey" WHERE "companyId" = ${member.companyId}`.execute(trx);
+    await sql`DELETE FROM "userToCompany" WHERE "companyId" = ${member.companyId}`.execute(trx);
+    await sql`DELETE FROM "company" WHERE "id" = ${member.companyId}`.execute(trx);
+    await sql`DELETE FROM "companyGroup" WHERE "id" = ${`${member.prefix}-group`}`.execute(trx);
+    await sql`DELETE FROM "user" WHERE "id" = ${member.userId}`.execute(trx);
+  });
+}
+
 const fields = {
   db: {} as Kysely<KyselyDatabase>,
   companyId: "co1",
@@ -103,33 +160,33 @@ describe("postingCredential", () => {
 
 describe("authorizePostingCaller (API key)", () => {
   /**
-   * Runs `fn` with a context for a real `apiKey` row, then deletes it. The key
-   * is committed: the caller check reads it the way `authorize` does, through
-   * its own client.
+   * Runs `fn` with a context for a real `apiKey` row of a member's own
+   * company, then deletes them both. They are committed: the caller check
+   * reads the key the way `authorize` does, through its own client.
    */
   async function withApiKey(
     row: { expiresAt: string | null; grant?: { module: string; level: string } },
     fn: (ctx: Caller, companyId: string) => Promise<void>
   ) {
     const db = await connectLocalTestDatabase();
-    const owner = await sql<{ companyId: string; userId: string }>`
-      SELECT "companyId", "userId" FROM "userToCompany" LIMIT 1
-    `.execute(db);
-    const { companyId, userId } = owner.rows[0]!;
-    const rawKey = `crbn_test_${Date.now()}`;
-    const key = await db
-      .insertInto("apiKey")
-      .values({
-        name: "authorize test",
-        companyId,
-        createdBy: userId,
-        keyHash: createHash("sha256").update(rawKey).digest("hex"),
-        scopes: JSON.stringify({}),
-        expiresAt: row.expiresAt
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
+    const { companyId, userId, prefix } = newMember();
+    const rawKey = `crbn_test_${crypto.randomUUID()}`;
     try {
+      await db.transaction().execute(async (trx) => {
+        await insertMember(trx, { companyId, userId, prefix });
+      });
+      const key = await db
+        .insertInto("apiKey")
+        .values({
+          name: "authorize test",
+          companyId,
+          createdBy: userId,
+          keyHash: createHash("sha256").update(rawKey).digest("hex"),
+          scopes: JSON.stringify({}),
+          expiresAt: row.expiresAt
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
       if (row.grant) {
         await sql`
           INSERT INTO "permission" ("companyId", "apiKeyId", "module", "level", "createdBy")
@@ -151,10 +208,7 @@ describe("authorizePostingCaller (API key)", () => {
         companyId
       );
     } finally {
-      await sql`DELETE FROM "permission" WHERE "apiKeyId" = ${key.id}`.execute(
-        db
-      );
-      await db.deleteFrom("apiKey").where("id", "=", key.id).execute();
+      await deleteMember(db, { companyId, userId, prefix });
       await db.destroy();
     }
   }
@@ -165,7 +219,7 @@ describe("authorizePostingCaller (API key)", () => {
       await expect(authorize(ctx, "employee")).rejects.toMatchObject({
         status: 403
       });
-      // The creator of a real company holds this; the key does not.
+      // The key's creator could hold this; the key does not.
       await expect(
         authorize(ctx, { "inventory.receipts": "View" })
       ).rejects.toMatchObject({ status: 403 });
@@ -221,7 +275,11 @@ describe("authorizePostingCaller (user)", () => {
       }
     }) as unknown as SupabaseClient<Database>;
 
-  /** Runs `fn` with a real employee of a real company. */
+  /**
+   * Runs `fn` with an employee of a company of their own who holds Edit on
+   * the Inventory module, and rolls it all back. `held` is a page that grant
+   * covers.
+   */
   async function withEmployee(
     fn: (
       fields: { db: Kysely<KyselyDatabase>; companyId: string; userId: string },
@@ -229,27 +287,24 @@ describe("authorizePostingCaller (user)", () => {
     ) => Promise<void>
   ) {
     const db = await connectLocalTestDatabase();
+    const member = newMember();
     try {
-      const { rows } = await sql<{
-        companyId: string;
-        userId: string;
-        claims: Record<string, unknown>;
-      }>`
-        SELECT "companyId", "userId", get_claims("userId", "companyId") AS claims
-        FROM "userToCompany" WHERE "role" = 'employee' LIMIT 20
-      `.execute(db);
-      for (const { companyId, userId, claims } of rows) {
-        const held = Object.entries(
-          claimsFor(claims, companyId).permissions
-        ).find(
-          ([page, permission]) =>
-            pageById(page) && permission.update.includes(companyId)
+      await db.transaction().execute(async (trx) => {
+        await insertMember(trx, member);
+        await sql`
+          INSERT INTO "permission" ("companyId", "userId", "module", "level", "createdBy")
+          VALUES (${member.companyId}, ${member.userId}, 'Inventory', 'Edit', ${member.userId})
+        `.execute(trx);
+        const held = "inventory.receipts";
+        expect(pageById(held)).toBeTruthy();
+        await fn(
+          { db: trx, companyId: member.companyId, userId: member.userId },
+          held
         );
-        if (held) {
-          return await fn({ db, companyId, userId }, held[0]);
-        }
-      }
-      throw new Error("No employee with Edit on a page to test with");
+        throw new Rollback();
+      });
+    } catch (err) {
+      if (!(err instanceof Rollback)) throw err;
     } finally {
       await db.destroy();
     }
