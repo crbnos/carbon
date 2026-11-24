@@ -14,6 +14,10 @@ import type {
   Violation
 } from "./check";
 import {
+  accountFkClassified,
+  accountFkRestrict
+} from "./conformance/account-fk-restrict";
+import {
   DEPLOYMENTS_SET_REQUIRED_ENV,
   findDeploymentEnvGaps
 } from "./conformance/deployments-set-required-env";
@@ -103,6 +107,7 @@ import {
 import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 import { testReadsSource } from "./conformance/test-reads-source";
 import {
+  loadAccountReferencePolicy,
   loadDeploymentEnvSources,
   loadEventFunctionSources,
   loadIntegrationConfigs,
@@ -135,7 +140,8 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noRequiredColumnWithoutDefault,
   noViewWithoutInvoker,
   noForeignKeyWithoutOnDelete,
-  journalStatusFilter
+  journalStatusFilter,
+  accountFkRestrict
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */
@@ -237,7 +243,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
-      noAuthzDdlInMigrations(loadManagedFunctions(root))
+      noAuthzDdlInMigrations(loadManagedFunctions(root)),
+      accountFkClassified(loadAccountReferencePolicy(root))
     ]),
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
