@@ -63,6 +63,12 @@ export const salesInvoiceTexts = {
       default: "Shipping Terms: {invoice.shippingTerms}"
     },
     { key: "incoterm", kind: "field", default: "Incoterm: {invoice.incoterm}" },
+    // The seller's own tax number: its registration, else its tax ID.
+    {
+      key: "sellerTaxId",
+      kind: "field",
+      default: "Seller Tax ID: {invoice.sellerTaxId}"
+    },
     { key: "shipTo", kind: "heading", default: "Ship To" },
     ...addressTexts("shipTo")
   ],
@@ -113,6 +119,12 @@ export const salesInvoiceTexts = {
     { key: "shipping", kind: "text", default: "Shipping ({invoice.currency})" },
     valueOf("shippingValue", "{invoice.shipping}", "shipping"),
     { key: "taxValue", kind: "value", default: "{invoice.tax}" },
+    {
+      key: "taxComponent",
+      kind: "text",
+      default: "{tax.name} {tax.rate} on {tax.base} ({invoice.currency})",
+      row: "tax"
+    },
     { key: "total", kind: "text", default: "Total ({invoice.currency})" },
     valueOf("totalValue", "{invoice.total}", "total")
   ],

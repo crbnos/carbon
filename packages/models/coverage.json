@@ -22,6 +22,57 @@
     },
     "confirmedAt": "ca0691d725"
   },
+  "document-posting": {
+    "model": "src/document-posting.ts",
+    "code": {
+      "apps/erp/app/modules/shared/shared.service.ts": [
+        "assertPostable",
+        "lockPostable"
+      ],
+      "apps/erp/app/modules/inventory/inventory.service.ts": [
+        "lockPostedReceipt",
+        "lockPostedShipment",
+        "await lockPostable(trx, \"receipt\", receiptId, companyId);",
+        "await lockPostable(trx, \"shipment\", shipmentId, companyId);",
+        "await lockPostedReceipt(trx, companyId, receiptId);",
+        "await lockPostedShipment(trx, companyId, shipmentId);",
+        "{ id: receiptId, companyId, status: \"Pending\" }",
+        "{ id: shipmentId, companyId, status: \"Pending\" }"
+      ],
+      "apps/erp/app/modules/invoicing/invoicing.service.ts": [
+        "await lockPostable(trx, \"purchaseInvoice\", invoiceId, companyId);",
+        "{ id: invoiceId, companyId, status: \"Pending\" }"
+      ],
+      "apps/erp/app/modules/inventory/inventory.server.ts": [
+        ".in(\"status\", [\"Draft\", \"Pending\"])",
+        ".eq(\"status\", \"Pending\");"
+      ],
+      "apps/erp/app/modules/invoicing/invoicing.server.ts": [
+        ".eq(\"status\", \"Draft\")",
+        ".eq(\"status\", \"Pending\");"
+      ]
+    },
+    "databaseTests": ["test/database/document-posting-concurrency.test.ts"],
+    "fingerprints": {
+      "apps/erp/app/modules/shared/shared.service.ts#assertPostable": "6edb6edcffb6eca8",
+      "apps/erp/app/modules/shared/shared.service.ts#lockPostable": "57b441c686aae6d6",
+      "apps/erp/app/modules/inventory/inventory.service.ts#lockPostedReceipt": "26ffcec0a39950da",
+      "apps/erp/app/modules/inventory/inventory.service.ts#lockPostedShipment": "b2fe8ecf69ca376c",
+      "apps/erp/app/modules/inventory/inventory.service.ts#await lockPostable(trx, \"receipt\", receiptId, companyId);": "b26f9118a525d314",
+      "apps/erp/app/modules/inventory/inventory.service.ts#await lockPostable(trx, \"shipment\", shipmentId, companyId);": "623e3523e96d37dd",
+      "apps/erp/app/modules/inventory/inventory.service.ts#await lockPostedReceipt(trx, companyId, receiptId);": "96475573c69f18a3",
+      "apps/erp/app/modules/inventory/inventory.service.ts#await lockPostedShipment(trx, companyId, shipmentId);": "108fdc57598e5589",
+      "apps/erp/app/modules/inventory/inventory.service.ts#{ id: receiptId, companyId, status: \"Pending\" }": "569fe1585d0fba39",
+      "apps/erp/app/modules/inventory/inventory.service.ts#{ id: shipmentId, companyId, status: \"Pending\" }": "9c9c194693b4364b",
+      "apps/erp/app/modules/invoicing/invoicing.service.ts#await lockPostable(trx, \"purchaseInvoice\", invoiceId, companyId);": "86fa555218b99e16",
+      "apps/erp/app/modules/invoicing/invoicing.service.ts#{ id: invoiceId, companyId, status: \"Pending\" }": "745aefedfab7b2d2",
+      "apps/erp/app/modules/inventory/inventory.server.ts#.in(\"status\", [\"Draft\", \"Pending\"])": "e19c2eb92f6a860b",
+      "apps/erp/app/modules/inventory/inventory.server.ts#.eq(\"status\", \"Pending\");": "972ed93e88585eb7",
+      "apps/erp/app/modules/invoicing/invoicing.server.ts#.eq(\"status\", \"Draft\")": "53c0a375370e9bf2",
+      "apps/erp/app/modules/invoicing/invoicing.server.ts#.eq(\"status\", \"Pending\");": "972ed93e88585eb7"
+    },
+    "confirmedAt": "e79436720a"
+  },
   "invoice-void": {
     "model": "src/invoice-void.ts",
     "code": {

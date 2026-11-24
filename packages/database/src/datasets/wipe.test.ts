@@ -57,3 +57,35 @@ describe("assertWipeable", () => {
     );
   });
 });
+
+describe("wipeCompanyBusinessData", () => {
+  it("deletes the tax subledger with the documents whose journals it voids", async () => {
+    const queries: string[] = [];
+    const client = {
+      query: async (sql: string) => {
+        queries.push(sql);
+        if (sql.includes("intercompanyCompanyId"))
+          return { rows: [{ count: 0 }] };
+        if (sql.includes("count(*) AS count")) return { rows: [{ count: 0 }] };
+        if (sql.includes("FROM information_schema.tables")) {
+          return {
+            rows: ["journal", "taxLedger", "memo"].map((table_name) => ({
+              table_name
+            }))
+          };
+        }
+        return { rows: [] };
+      }
+    } as unknown as PoolClient;
+    await wipeCompanyBusinessData({
+      client,
+      companyId: "co_1",
+      anchor: "2026-11-20",
+      userId: "u"
+    } as unknown as Ctx);
+    expect(queries).toContain('DELETE FROM "taxLedger" WHERE "companyId" = $1');
+    expect(queries).not.toContain(
+      'DELETE FROM "journal" WHERE "companyId" = $1'
+    );
+  });
+});

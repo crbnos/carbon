@@ -235,8 +235,10 @@ import {
   type JournalLineDimensionValues,
   journalLineDimensionRows,
   leavingTrackedEntityIds,
+  loadTaxCodesInForce,
   lockOrderLines,
   lockOrderLinesAsRead,
+  lockPostable,
   lockUntrackedDraws,
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
@@ -14759,6 +14761,28 @@ export async function lockPostedReceipt(
   }
 }
 
+/**
+ * The first statement of a shipment void's transaction: the status read
+ * before it is stale, so two voids sent at once would both reverse the
+ * shipment. The second waits here, then sees Voided and refuses.
+ */
+export async function lockPostedShipment(
+  trx: VoidGuardDb,
+  companyId: string,
+  shipmentId: string
+): Promise<void> {
+  const shipment = await trx
+    .selectFrom("shipment")
+    .select("status")
+    .where("id", "=", shipmentId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (shipment?.status !== "Posted") {
+    throw new InvalidInputError("Can only void posted shipments");
+  }
+}
+
 async function refusingHeldStock<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run();
@@ -16084,6 +16108,20 @@ export async function postReceipt(
         if (purchaseOrderDelivery.error)
           throw new Error("Failed to fetch purchase order delivery");
 
+        // The draft took no recoverable split for a code with no rate on the
+        // order's tax point; posting refuses it, as the invoice does.
+        const receivedLineIds = new Set(
+          receiptLines.data.map((line) => line.lineId)
+        );
+        await loadTaxCodesInForce(db, {
+          companyId,
+          taxCodeIds: purchaseOrderLines.data
+            .filter((line) => receivedLineIds.has(line.id))
+            .map((line) => line.taxCodeId),
+          taxPointDate: purchaseOrder.data.orderDate ?? today,
+          document: "purchase order"
+        });
+
         // supplierShippingCost is a supplier-currency amount and the order's
         // exchangeRate is foreign-units-per-base, so supplier -> base is
         // DIVIDE. It is mixed into base line costs below and becomes the
@@ -17165,6 +17203,7 @@ export async function postReceipt(
         );
 
         await db.transaction().execute(async (trx) => {
+          await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           await lockOrderLinesAsRead(
             trx,
@@ -18283,24 +18322,8 @@ export async function postReceipt(
             : null;
 
         await db.transaction().execute(async (trx) => {
+          await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-          // Double-post guard: serialize on the receipt row — a second
-          // concurrent post waits here, then sees Posted and aborts, so
-          // ledger rows, journals, and quantityReceived can never double.
-          const lockedReceipt = await trx
-            .selectFrom("receipt")
-            .select(["status"])
-            .where("id", "=", receiptId)
-            .forUpdate()
-            .executeTakeFirstOrThrow();
-          if (
-            lockedReceipt.status === "Posted" ||
-            lockedReceipt.status === "Voided"
-          ) {
-            throw new InvalidInputError(
-              `Receipt is already ${lockedReceipt.status}`
-            );
-          }
 
           // cancelSalesReturnOrder locks this same order row — re-check the
           // status under the lock so a cancel committed after our
@@ -18717,6 +18740,7 @@ export async function postReceipt(
             : null;
 
         await db.transaction().execute(async (trx) => {
+          await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           // Every line of the transfer: its status is set from them.
           await lockOrderLinesAsRead(
@@ -18888,13 +18912,15 @@ export async function postReceipt(
 
     return { success: true };
   } catch (err) {
-    // A failed VOID leaves the receipt Posted: its rows still stand.
+    // A failed VOID leaves the receipt Posted: its rows still stand. Only
+    // from Pending: a second post refused because the first one won must
+    // leave it Posted.
     if (type !== "void") {
       await updateRows(
         db,
         "receipt",
         { status: "Draft" },
-        { id: receiptId, companyId }
+        { id: receiptId, companyId, status: "Pending" }
       );
     }
     throw err;
@@ -20649,6 +20675,7 @@ export async function postShipment(
               (line) => line.id in salesOrderLineUpdates
             );
             await db.transaction().execute(async (trx) => {
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               await lockOrderLinesAsRead(
                 trx,
@@ -21202,6 +21229,7 @@ export async function postShipment(
               }, {}) ?? {};
 
             await db.transaction().execute(async (trx) => {
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await lockOrderLinesAsRead(
                 trx,
                 "purchaseOrderLine",
@@ -21525,6 +21553,7 @@ export async function postShipment(
             }
 
             await db.transaction().execute(async (trx) => {
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               // Every line of the transfer: its status is set from them.
               await lockOrderLinesAsRead(
                 trx,
@@ -21805,22 +21834,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
-              // Double-post guard: serialize on the shipment row — a second
-              // concurrent post waits here, then sees Posted and aborts, so
-              // ledger rows and journals can never double.
-              const lockedShipment = await trx
-                .selectFrom("shipment")
-                .select(["status"])
-                .where("id", "=", shipmentId)
-                .forUpdate()
-                .executeTakeFirstOrThrow();
-              if (
-                lockedShipment.status === "Posted" ||
-                lockedShipment.status === "Voided"
-              ) {
-                throw new Error(`Shipment is already ${lockedShipment.status}`);
-              }
-
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
               const returnedItems: ReturnShipmentItem[] = [];
@@ -22367,22 +22381,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
-              // Double-post guard: serialize on the shipment row — a second
-              // concurrent post waits here, then sees Posted and aborts, so
-              // ledger rows, journals, and quantityShipped can never double.
-              const lockedShipment = await trx
-                .selectFrom("shipment")
-                .select(["status"])
-                .where("id", "=", shipmentId)
-                .forUpdate()
-                .executeTakeFirstOrThrow();
-              if (
-                lockedShipment.status === "Posted" ||
-                lockedShipment.status === "Voided"
-              ) {
-                throw new Error(`Shipment is already ${lockedShipment.status}`);
-              }
-
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
               // cancelPurchaseReturnOrder locks this same order row — re-check
@@ -23181,6 +23180,7 @@ export async function postShipment(
               (line) => line.id in salesOrderLineUpdates
             );
             await db.transaction().execute(async (trx) => {
+              await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               await lockOrderLinesAsRead(
                 trx,
@@ -23510,91 +23510,10 @@ export async function postShipment(
                 return acc;
               }, {}) ?? {};
 
-            const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
-              [];
-            const locationId = shipmentHeader.locationId;
-
-            // Create reversing item ledger entries for purchase order void
-            for await (const shipmentLine of shipmentLines.data) {
-              const itemTrackingType =
-                items.data.find((item) => item.id === shipmentLine.itemId)
-                  ?.itemTrackingType ?? "Inventory";
-
-              const shippedQuantity =
-                isNaN(shipmentLine.shippedQuantity) ||
-                shipmentLine.shippedQuantity == null
-                  ? 0
-                  : shipmentLine.shippedQuantity;
-
-              if (itemTrackingType === "Inventory" && shippedQuantity !== 0) {
-                // Create negative adjustment to remove inventory that was added during posting
-                itemLedgerInserts.push({
-                  postingDate: today,
-                  itemId: shipmentLine.itemId,
-                  quantity: round(-shippedQuantity), // Negative to remove inventory
-                  locationId: shipmentLine.locationId ?? locationId,
-                  storageUnitId: shipmentLine.storageUnitId,
-                  entryType: "Negative Adjmt.",
-                  documentType: "Purchase Receipt",
-                  documentId: shipmentHeader.id ?? undefined,
-                  externalDocumentId: undefined,
-                  createdBy: userId,
-                  companyId
-                });
-              }
-
-              if (shipmentLine.requiresBatchTracking) {
-                itemLedgerInserts.push({
-                  postingDate: today,
-                  itemId: shipmentLine.itemId,
-                  quantity: round(-shippedQuantity), // Negative to remove inventory
-                  locationId: shipmentLine.locationId ?? locationId,
-                  storageUnitId: shipmentLine.storageUnitId,
-                  entryType: "Negative Adjmt.",
-                  documentType: "Purchase Receipt",
-                  documentId: shipmentHeader.id ?? undefined,
-                  trackedEntityId: shipmentLineTracking.data?.find(
-                    (tracking) =>
-                      (
-                        tracking.attributes as
-                          | TrackedEntityAttributes
-                          | undefined
-                      )?.["Shipment Line"] === shipmentLine.id
-                  )?.id,
-                  externalDocumentId: undefined,
-                  createdBy: userId,
-                  companyId
-                });
-              }
-
-              if (shipmentLine.requiresSerialTracking) {
-                const lineTracking = shipmentLineTracking.data?.filter(
-                  (tracking) =>
-                    (
-                      tracking.attributes as TrackedEntityAttributes | undefined
-                    )?.["Shipment Line"] === shipmentLine.id
-                );
-
-                lineTracking?.forEach((tracking) => {
-                  itemLedgerInserts.push({
-                    postingDate: today,
-                    itemId: shipmentLine.itemId,
-                    quantity: -1, // Negative to remove inventory
-                    locationId: shipmentLine.locationId ?? locationId,
-                    storageUnitId: shipmentLine.storageUnitId,
-                    entryType: "Negative Adjmt.",
-                    documentType: "Purchase Receipt",
-                    documentId: shipmentHeader.id ?? undefined,
-                    trackedEntityId: tracking.id,
-                    externalDocumentId: undefined,
-                    createdBy: userId,
-                    companyId
-                  });
-                });
-              }
-            }
-
+            // The post books no stock movement for a purchase order
+            // (outside processing) shipment, so the void reverses none.
             await db.transaction().execute(async (trx) => {
+              await lockPostedShipment(trx, companyId, shipmentId);
               await lockOrderLinesAsRead(
                 trx,
                 "purchaseOrderLine",
@@ -23614,15 +23533,6 @@ export async function postShipment(
                   data
                 }))
               );
-
-              // Create reversing item ledger entries
-              if (itemLedgerInserts.length > 0) {
-                await trx
-                  .insertInto("itemLedger")
-                  .values(itemLedgerInserts)
-                  .returning(["id"])
-                  .execute();
-              }
 
               // Update shipment status to Voided
               await trx
@@ -23809,6 +23719,7 @@ export async function postShipment(
             }
 
             await db.transaction().execute(async (trx) => {
+              await lockPostedShipment(trx, companyId, shipmentId);
               // Every line of the transfer: its status is set from them.
               await lockOrderLinesAsRead(
                 trx,
@@ -23911,6 +23822,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
+              await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               const reversingItemLedger = (originalItemLedger.data ?? []).map(
                 (entry) => ({
@@ -24290,6 +24202,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
+              await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               // The order before its lines, as a post takes them; the
               // quantities come off the lines as they read under the lock.
@@ -24621,12 +24534,14 @@ export async function postShipment(
     // A failed VOID must not touch status: the shipment is still Posted and
     // its ledger/journal rows still stand, so forcing it to Draft would
     // contradict the books and let it be edited and posted a second time.
+    // A failed post resets only from Pending, for the same reason: a second
+    // post refused because the first one won must leave it Posted.
     if (type !== "void") {
       await updateRows(
         db,
         "shipment",
         { status: "Draft" },
-        { id: shipmentId, companyId }
+        { id: shipmentId, companyId, status: "Pending" }
       );
     }
     throw err;

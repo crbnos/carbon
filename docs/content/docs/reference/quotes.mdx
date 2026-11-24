@@ -11,7 +11,7 @@ Quote lines support quantity breaks, and the selected price carries into the ord
 
 <FieldTable>
   <Field name="Customer" type="reference">Who the offer is for.</Field>
-  <Field name="Lines" type="list">The items quoted, each with quantity-break pricing.</Field>
+  <Field name="Lines" type="list">The items quoted, each with quantity-break pricing and a **"Tax Code"** that sets its **"Tax Percent"**. The code comes from the ship-to location or the customer ([which code a line takes](/docs/reference/accounting#which-code-a-line-takes)).</Field>
   <Field name="Revision" type="number">Bumped as the quote is reworked, so history isn't overwritten.</Field>
   <Field name="Expiration" type="date">When the offer lapses.</Field>
   <Field name="Status" type="enum">Where the quote is in its lifecycle (below).</Field>
@@ -40,6 +40,8 @@ From that page the customer **accepts** — entering their name and email, picki
 <Callout type="note" title="The link is the only credential">
 There is no account or password behind the link — whoever holds the URL can open the quote. Send it to the right person and don't post it anywhere public. Both actions are gated on status: only a **Sent** quote can be answered, and once the `expirationDate` passes the page shows an expired state and the buttons are gone.
 </Callout>
+
+The link works only while **Digital Quotes** is on (Settings → Sales). Turn it off and every quote link, its PDF download and accept/reject stop working: the page shows that the quote was not found, and the quote has no Share button.
 
 A companion [customer portal](/docs/reference/customer-portal) then shows the buyer live order and job status as the work proceeds.
 
