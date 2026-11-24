@@ -410,7 +410,7 @@
     {"name":"invoicing_sendSalesInvoice","classification":"WRITE","schema":"79cd487d4e95","response":"79cd487d4e95","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updateMemo","classification":"WRITE","schema":"cfbbab15fa1d","response":"1e0d0fa1a854","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updatePayment","classification":"WRITE","schema":"dda8f2509364","response":"1a922c685a61","permission":"invoicing:update","paginates":false},
-    {"name":"invoicing_updatePaymentRequest","classification":"WRITE","schema":"5ea994b05ff6","response":"81f1082927e0","permission":"invoicing:update","paginates":false},
+    {"name":"invoicing_updatePaymentRequest","classification":"WRITE","schema":"f5a556e04a63","response":"81f1082927e0","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updatePurchaseInvoice","classification":"WRITE","schema":"7febdebe7d47","response":"3797626bd17e","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updatePurchaseInvoiceExchangeRate","classification":"WRITE","schema":"222e5249c015","response":"8394fbabd845","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_updatePurchaseInvoiceLine","classification":"WRITE","schema":"af2868954730","response":"3797626bd17e","permission":"invoicing:update","paginates":false},

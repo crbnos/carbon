@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Badge,
@@ -19,13 +18,6 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
   Table,
   Tbody,
   Td,
@@ -34,50 +26,24 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { useState } from "react";
 import { LuEllipsisVertical, LuPlus } from "react-icons/lu";
 import { DateTime, Empty } from "~/components";
-import {
-  DatePicker,
-  Hidden,
-  Number as NumberField,
-  Select,
-  Submit,
-  TextArea
-} from "~/components/Form";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import {
   canTransitionPaymentRequest,
-  type PaymentRequestStatus,
-  paymentRequestValidator
+  type PaymentRequestStatus
 } from "~/modules/invoicing/invoicing.models";
+import type {
+  PaymentRequestRow,
+  PaymentRequestsData,
+  PaymentRequestTarget
+} from "~/modules/invoicing/types";
 import type { action as paymentRequestAction } from "~/routes/x+/payment-request";
 import { path } from "~/utils/path";
-
-export type PaymentRequestRow = {
-  id: string;
-  requestNumber: number;
-  status: PaymentRequestStatus;
-  amount: string | number | null;
-  dueDate: string | null;
-  description: string | null;
-  isAutomatic: boolean;
-  paymentId: string | null;
-};
-
-/** What `getPaymentRequestsForDocument` returns. The card computes none of it. */
-export type PaymentRequestsData = {
-  requests: PaymentRequestRow[];
-  openBalance: number;
-  requested: number;
-  planned: number;
-  allowance: number;
-};
-
-type Target = { purchaseInvoiceId: string } | { purchaseOrderId: string };
+import PaymentRequestFigure from "./PaymentRequestFigure";
+import PaymentRequestForm from "./PaymentRequestForm";
 
 const statusColor: Record<
   PaymentRequestStatus,
@@ -97,7 +63,7 @@ export default function PaymentRequests({
   variant = "invoice"
 }: {
   data: PaymentRequestsData;
-  target: Target;
+  target: PaymentRequestTarget;
   currencyCode: string;
   variant?: "invoice" | "order";
 }) {
@@ -163,14 +129,17 @@ export default function PaymentRequests({
       </HStack>
       <CardContent className="flex flex-col gap-4">
         <HStack spacing={6} className="text-sm">
-          <Figure
+          <PaymentRequestFigure
             label={
               variant === "order" ? t`Unpaid order total` : t`Open balance`
             }
             value={formatter.format(data.openBalance)}
           />
-          <Figure label={t`Planned`} value={formatter.format(data.planned)} />
-          <Figure
+          <PaymentRequestFigure
+            label={t`Planned`}
+            value={formatter.format(data.planned)}
+          />
+          <PaymentRequestFigure
             label={t`Still to request`}
             value={formatter.format(data.allowance)}
           />
@@ -304,117 +273,5 @@ export default function PaymentRequests({
         />
       )}
     </Card>
-  );
-}
-
-function Figure({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col">
-      <span className="text-muted-foreground text-xs">{label}</span>
-      <span className="tabular-nums font-medium">{value}</span>
-    </div>
-  );
-}
-
-function PaymentRequestForm({
-  request,
-  target,
-  currencyCode,
-  allowance,
-  onClose
-}: {
-  request: PaymentRequestRow | null;
-  target: Target;
-  currencyCode: string;
-  /** From the API; the operation refuses a larger amount all the same. */
-  allowance: number;
-  onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const formatter = useCurrencyFormatter({ currency: currencyCode });
-  // One key per opened form: a double submit creates one request.
-  const [idempotencyKey] = useState(() => nanoid());
-  const fetcher = useAction<typeof paymentRequestAction>({
-    onSuccess: () => {
-      toast.success(request ? t`Request updated` : t`Request added`);
-      onClose();
-    }
-  });
-
-  return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.paymentRequestAction}
-          validator={paymentRequestValidator}
-          fetcher={fetcher}
-          defaultValues={{
-            id: request?.id,
-            ...target,
-            amount:
-              request?.amount == null ? undefined : Number(request.amount),
-            dueDate: request?.dueDate ?? undefined,
-            description: request?.description ?? undefined,
-            status:
-              request?.status === "Ready"
-                ? ("Ready" as const)
-                : ("Planned" as const)
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              {request ? (
-                <Trans>Edit request {request.requestNumber}</Trans>
-              ) : (
-                <Trans>Add payment request</Trans>
-              )}
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Up to {formatter.format(allowance)} can still be requested.
-              </Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody className="flex flex-col gap-4">
-            <Hidden name="intent" value="save" />
-            <Hidden name="id" />
-            {"purchaseInvoiceId" in target ? (
-              <Hidden name="purchaseInvoiceId" />
-            ) : (
-              <Hidden name="purchaseOrderId" />
-            )}
-            {!request && (
-              <Hidden name="idempotencyKey" value={idempotencyKey} />
-            )}
-            <NumberField
-              name="amount"
-              label={t`Amount`}
-              formatOptions={INPUT_FORMAT.money(currencyCode, 2)}
-            />
-            <DatePicker name="dueDate" label={t`Due date`} />
-            <Select
-              name="status"
-              label={t`Status`}
-              options={[
-                { value: "Planned", label: t`Planned: expected, not yet due` },
-                { value: "Ready", label: t`Ready: due, send to Ramp` }
-              ]}
-            />
-            <TextArea name="description" label={t`Description`} />
-          </ModalBody>
-          <ModalFooter>
-            <HStack>
-              <Button type="button" variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Submit withBlocker={false}>
-                <Trans>Save</Trans>
-              </Submit>
-            </HStack>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
   );
 }

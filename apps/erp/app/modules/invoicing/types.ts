@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type {
+  PaymentRequestStatus,
   purchaseInvoiceLineType,
   purchaseInvoiceStatusType
 } from "./invoicing.models";
@@ -62,3 +63,27 @@ export type SalesInvoiceLineType =
 
 export type SalesInvoiceStatus =
   Database["public"]["Enums"]["salesInvoiceStatus"];
+
+export type PaymentRequestRow = {
+  id: string;
+  requestNumber: number;
+  status: PaymentRequestStatus;
+  amount: string | number | null;
+  dueDate: string | null;
+  description: string | null;
+  isAutomatic: boolean;
+  paymentId: string | null;
+};
+
+/** What `getPaymentRequestsForDocument` returns. The card computes none of it. */
+export type PaymentRequestsData = {
+  requests: PaymentRequestRow[];
+  openBalance: number;
+  requested: number;
+  planned: number;
+  allowance: number;
+};
+
+export type PaymentRequestTarget =
+  | { purchaseInvoiceId: string }
+  | { purchaseOrderId: string };

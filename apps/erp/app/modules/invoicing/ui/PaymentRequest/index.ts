@@ -7,5 +7,5 @@ import PaymentRequests from "./PaymentRequests";
 export type {
   PaymentRequestRow,
   PaymentRequestsData
-} from "./PaymentRequests";
+} from "../../types";
 export { PaymentRequests };
