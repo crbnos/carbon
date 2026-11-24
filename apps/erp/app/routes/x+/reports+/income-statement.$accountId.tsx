@@ -5,7 +5,7 @@
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { datetime, defaultReportRange, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
@@ -13,6 +13,7 @@ import {
   getAccountLedgerPage
 } from "~/modules/accounting/accounting.service";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -30,8 +31,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const companiesParam = searchParams.get("companies");
-  const startDate = searchParams.get("startDate") || null;
-  const endDate = searchParams.get("endDate") || null;
+  const endDateParam = searchParams.get("endDate") || null;
+  // The report's own default range, so a row opened with no dates in the URL
+  // shows the same window.
+  const range = defaultReportRange(
+    endDateParam ??
+      datetime.today(await getCompanyTimeZone(client, companyId)).toString()
+  );
+  const startDate = searchParams.get("startDate") || range.startDate;
+  const endDate = endDateParam ?? range.endDate;
   const isConsolidated = companiesParam === "all";
   const selectedCompanyId = isConsolidated
     ? null
