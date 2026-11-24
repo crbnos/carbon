@@ -8,7 +8,7 @@ import type { SourceFile } from "../check";
 
 // Directories the numeric-precision checks cover: everywhere app code does
 // arithmetic or builds number formatters.
-const TYPESCRIPT_ROOTS = [
+export const TYPESCRIPT_ROOTS = [
   "apps/erp/app/components",
   "apps/erp/app/hooks",
   "apps/erp/app/modules",
