@@ -2769,7 +2769,38 @@ async function readTrackedEntityBins(
     }[]
   >();
   const stocked = new Set<string>();
-  if (entityIds.length === 0) return { bins, stocked };
+  const jobOutputs = new Set<string>();
+  if (entityIds.length === 0) return { bins, stocked, jobOutputs };
+  // Job creation and release use Item as the source and identify their output
+  // by its job and make method. Older units also use Job as their source.
+  const outputs = await handle
+    .selectFrom("trackedEntity as te")
+    .select("te.id")
+    .where("te.companyId", "=", companyId)
+    .where("te.id", "in", entityIds)
+    .where((eb) =>
+      eb.or([
+        eb("te.sourceDocument", "=", "Job"),
+        eb.and([
+          eb("te.sourceDocument", "=", "Item"),
+          eb.exists(
+            eb
+              .selectFrom("jobMakeMethod as method")
+              .select("method.id")
+              .whereRef("method.companyId", "=", "te.companyId")
+              .whereRef("method.itemId", "=", "te.itemId")
+              .where(
+                "method.id",
+                "=",
+                sql<string>`te.attributes->>'Job Make Method'`
+              )
+              .where("method.jobId", "=", sql<string>`te.attributes->>'Job'`)
+          )
+        ])
+      ])
+    )
+    .execute();
+  for (const output of outputs) jobOutputs.add(output.id);
   const balances = await handle
     .selectFrom("itemLedger")
     .select([
@@ -2798,13 +2829,17 @@ async function readTrackedEntityBins(
     });
     bins.set(balance.trackedEntityId, list);
   }
-  return { bins, stocked };
+  return { bins, stocked, jobOutputs };
 }
 
 const trackedEntityBinsKey = (read: {
   bins: Map<string, unknown>;
   stocked: Set<string>;
-}) => readKey(read.bins) + readKey([...read.stocked].sort());
+  jobOutputs: Set<string>;
+}) =>
+  readKey(read.bins) +
+  readKey([...read.stocked].sort()) +
+  readKey([...read.jobOutputs].sort());
 
 async function readLinkedLotStates(
   handle: Kysely<KyselyDatabase>,
@@ -4622,7 +4657,6 @@ type DispositionLink = {
   trackedEntityId: string;
   quantity: number;
   trackedEntityStatus: string | null;
-  sourceDocument: string | null;
 };
 
 type DispositionRow = {
@@ -4657,8 +4691,7 @@ export async function closeIssue(
           trackedEntityId,
           trackedEntity(
             id,
-            status,
-            sourceDocument
+            status
           )
         )
       `
@@ -4680,8 +4713,7 @@ export async function closeIssue(
       id: link.id,
       trackedEntityId: link.trackedEntityId,
       quantity: Number(link.quantity ?? 0),
-      trackedEntityStatus: link.trackedEntity?.status ?? null,
-      sourceDocument: link.trackedEntity?.sourceDocument ?? null
+      trackedEntityStatus: link.trackedEntity?.status ?? null
     }))
   }));
 
@@ -5018,7 +5050,7 @@ export async function closeIssue(
           if (!entityStock.stocked.has(link.trackedEntityId)) {
             // Job output has no finished-stock balance until its first receipt.
             // Rejecting WIP still records the disposition and genealogy below.
-            if (link.sourceDocument === "Job") continue;
+            if (entityStock.jobOutputs.has(link.trackedEntityId)) continue;
             movements.push({
               itemId: row.itemId,
               locationId,
@@ -5177,8 +5209,7 @@ export async function closeIssue(
           "link.id as id",
           "link.trackedEntityId as trackedEntityId",
           "link.quantity as quantity",
-          "te.status as trackedEntityStatus",
-          "te.sourceDocument as sourceDocument"
+          "te.status as trackedEntityStatus"
         ])
         .where("link.nonConformanceId", "=", nonConformanceId)
         .where("link.companyId", "=", companyId)
@@ -5191,8 +5222,7 @@ export async function closeIssue(
           id: link.id,
           trackedEntityId: link.trackedEntityId,
           quantity: Number(link.quantity ?? 0),
-          trackedEntityStatus: link.trackedEntityStatus ?? null,
-          sourceDocument: link.sourceDocument
+          trackedEntityStatus: link.trackedEntityStatus ?? null
         });
         linksByItem.set(link.nonConformanceItemId, arr);
       }
@@ -5256,10 +5286,7 @@ export async function closeIssue(
       }
       const linkKey = (links: DispositionLink[]) =>
         links
-          .map(
-            (l) =>
-              `${l.trackedEntityId}:${round(l.quantity)}:${l.sourceDocument}`
-          )
+          .map((l) => `${l.trackedEntityId}:${round(l.quantity)}`)
           .sort()
           .join(",");
       const lots = await readLinkedLotStates(trx, companyId, nonConformanceId, {

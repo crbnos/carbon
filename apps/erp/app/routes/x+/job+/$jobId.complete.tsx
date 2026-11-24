@@ -21,14 +21,20 @@ export async function action(args: ActionFunctionArgs) {
     params: ["jobId"]
   });
   if ("invalid" in input) return input.invalid;
-  const { quantityComplete, locationId, storageUnitId, expectedUnitIds } =
-    input.data;
+  const {
+    quantityComplete,
+    locationId,
+    storageUnitId,
+    expectedUnitIds,
+    expectedReceiptPreview
+  } = input.data;
   const api = await carbon(args.request);
   return api.production.completeJob({
     jobId: input.params.jobId,
     quantityComplete,
     locationId,
     storageUnitId,
-    expectedUnitIds
+    expectedUnitIds,
+    expectedReceiptPreview
   });
 }

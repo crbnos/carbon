@@ -22,6 +22,7 @@ import {
   completeJob,
   releaseCheckedJobs
 } from "../../app/modules/production/production.server";
+import { closeIssue } from "../../app/modules/quality/quality.service";
 import { assignJobSerialNumbers } from "../../app/modules/production/production.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
@@ -36,6 +37,7 @@ import {
 } from "./fixtures/always-post";
 import { connectLocalTestDatabase } from "./fixtures/local-database";
 import { handlesOf } from "./fixtures/handles";
+import { holdUnits, raiseIssueOnUnit } from "./fixtures/job-unit-hold";
 import { hasLocalDatabase } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
@@ -1015,6 +1017,180 @@ describe.skipIf(!client)("serial number timing", () => {
       await f.cleanup();
     }
   }, 60_000);
+
+  it("releases a held serial seed intact and numbers eligible units", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "jobRelease");
+      await holdUnits(f, true);
+      // Both seeds come from the job insert, with the production make method
+      // and Item source. Nothing has been received or individually numbered.
+      const heldJob = await jobFixture(f, "held-seed", 2);
+      const peerJob = await jobFixture(f, "good-seed", 2);
+      const singleton = await jobFixture(f, "one-held-unit", 1);
+      const rows = (jobId: string) =>
+        f.db
+          .selectFrom("trackedEntity")
+          .select(["id", "readableId", "quantity", "status"])
+          .where("companyId", "=", f.companyId)
+          .where(sql<boolean>`attributes->>'Job' = ${jobId}`)
+          .orderBy("readableId")
+          .execute();
+      const before = await rows(heldJob.jobId);
+      expect(before).toEqual([
+        expect.objectContaining({
+          readableId: null,
+          quantity: 2,
+          status: "Reserved"
+        })
+      ]);
+      const seedId = before[0]!.id;
+      const issueId = await raiseIssueOnUnit(f, seedId, 1);
+      const issueItem = await f.db
+        .insertInto("nonConformanceItem")
+        .values({
+          nonConformanceId: issueId,
+          itemId: f.assemblyId,
+          quantity: 2,
+          disposition: "Use As Is",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await f.db
+        .insertInto("nonConformanceItemTrackedEntity")
+        .values({
+          nonConformanceId: issueId,
+          nonConformanceItemId: issueItem.id,
+          trackedEntityId: seedId,
+          quantity: 2,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+
+      const single = (await rows(singleton.jobId))[0]!;
+      await raiseIssueOnUnit(f, single.id, 2);
+      const releaseIds = [heldJob.jobId, peerJob.jobId, singleton.jobId];
+      const released = await releaseCheckedJobs(contextFor(f), {
+        jobIds: releaseIds,
+        purchaseOrdersBySupplierId: {}
+      });
+      expect(released.error).toBeNull();
+      expect(released.data?.failure).toBeNull();
+      expect(released.data?.releasedJobIds).toEqual(releaseIds);
+      expect(await rows(heldJob.jobId)).toEqual(before);
+      expect((await rows(peerJob.jobId)).map((row) => row.readableId)).toEqual([
+        "SN-001",
+        "SN-002"
+      ]);
+      // Numbering a single unit preserves the exact entity covered by its issue.
+      expect(await rows(singleton.jobId)).toEqual([
+        { ...single, readableId: "SN-003" }
+      ]);
+      expect(await drawn(f)).toBe(3);
+      await expect(
+        completeToInventory(f.db, {
+          jobId: heldJob.jobId,
+          quantityComplete: 2,
+          companyId: f.companyId
+        })
+      ).rejects.toThrow(/no unit to receive/i);
+      expect(await receivedUnits(f, heldJob.jobId)).toEqual([]);
+      expect(await rows(heldJob.jobId)).toEqual(before);
+
+      const releasedByQuality = await closeIssue(client!, f.db, {
+        nonConformanceId: issueId,
+        companyId: f.companyId,
+        userId: USER
+      });
+      expect(releasedByQuality.error).toBeNull();
+      await completeToInventory(f.db, {
+        jobId: heldJob.jobId,
+        quantityComplete: 2,
+        companyId: f.companyId
+      });
+      expect(await receivedUnits(f, heldJob.jobId)).toEqual([
+        { readableId: "SN-004", quantity: 1 },
+        { readableId: "SN-005", quantity: 1 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }, 60_000);
+
+  it("observes a quality link committed while release numbering waits for the seed", async () => {
+    const f = await alwaysPostFixture();
+    const numbering = await connectLocalTestDatabase();
+    let assignment: Promise<boolean> | undefined;
+    try {
+      await serialSetup(f, "jobRelease");
+      await holdUnits(f, true);
+      const job = await jobFixture(f, "concurrent-hold", 2);
+      const unit = await f.db
+        .selectFrom("trackedEntity")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where(sql<boolean>`attributes->>'Job' = ${job.jobId}`)
+        .executeTakeFirstOrThrow();
+      const issueId = await raiseIssueOnUnit(f, unit.id, 1);
+      await f.db
+        .deleteFrom("nonConformanceTrackedEntity")
+        .where("nonConformanceId", "=", issueId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const {
+        rows: [connection]
+      } = await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+        numbering
+      );
+      await f.db.transaction().execute(async (trx) => {
+        // The FK takes a key-share lock on the unit until the issue link commits.
+        await trx
+          .insertInto("nonConformanceTrackedEntity")
+          .values({
+            nonConformanceId: issueId,
+            trackedEntityId: unit.id,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        assignment = assignJobSerialNumbers(client!, numbering, {
+          jobId: job.jobId,
+          itemId: f.assemblyId,
+          companyId: f.companyId,
+          userId: USER,
+          at: "jobRelease"
+        });
+        await expect
+          .poll(async () => {
+            const { rows } = await sql<{
+              waiting: boolean;
+            }>`SELECT pg_backend_pid() = ANY(pg_blocking_pids(${connection!.pid})) AS waiting`.execute(
+              trx
+            );
+            return rows[0]!.waiting;
+          })
+          .toBe(true);
+      });
+      expect(await assignment).toBe(true);
+      expect(await drawn(f)).toBe(0);
+      expect(
+        await f.db
+          .selectFrom("trackedEntity")
+          .select(["quantity", "readableId"])
+          .where("companyId", "=", f.companyId)
+          .where("id", "=", unit.id)
+          .execute()
+      ).toEqual([{ quantity: 2, readableId: null }]);
+    } finally {
+      await assignment;
+      await numbering.destroy();
+      await f.cleanup();
+    }
+  });
 
   it("follows an item's own timing before the company's", async () => {
     const f = await alwaysPostFixture();

@@ -109254,6 +109254,19 @@ export type Database = {
         Returns: undefined
       }
       company_today: { Args: { p_company_id: string }; Returns: string }
+      complete_job_from_receipt_preview: {
+        Args: {
+          p_company_id: string
+          p_expected_preview: string
+          p_expected_unit_ids?: string[]
+          p_job_id: string
+          p_location_id?: string
+          p_quantity_complete: number
+          p_storage_unit_id?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       complete_job_remaining_quantities: {
         Args: {
           p_job_id: string

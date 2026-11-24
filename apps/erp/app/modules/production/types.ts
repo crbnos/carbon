@@ -346,3 +346,35 @@ export type AssemblyUnit = NonNullable<
 export type AssemblyComponentMapping = NonNullable<
   Awaited<ReturnType<typeof getAssemblyComponentMappings>>["data"]
 >[number];
+
+export type JobSerialUnit = {
+  id: string;
+  status: string;
+  quantity: number;
+  readableId: string | null;
+  createdAt: string;
+};
+
+/** Fields used by the dialog from util.job_receipt_preview_state. */
+export type JobReceiptTracking = {
+  itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+  itemId: string;
+  consumeToProject: boolean;
+  fixedAssetId: string | null;
+  fixedAssetClassId: string | null;
+  salesOrderId: string | null;
+  salesOrderLineId: string | null;
+  locationId: string | null;
+  storageUnitId: string | null;
+  quantity: number;
+  quantityReceived: number;
+  requiresSerialTracking: boolean;
+  requiresBatchTracking: boolean;
+  sequenceId: string | null;
+  trackedEntities: (JobSerialUnit & {
+    held: boolean;
+    issued: boolean;
+    received: number | null;
+    fixedAsset: boolean;
+  })[];
+};

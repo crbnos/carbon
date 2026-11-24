@@ -7863,7 +7863,7 @@ msgstr "完成日期"
 msgid "Completed Qty"
 msgstr "已完成数量"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "完成至固定资产类别 {0}"
 
@@ -8930,6 +8930,9 @@ msgstr "无法加载工序"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "无法加载不计入MRP的存储单元。部分标记可能缺失。"
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr ""
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "无法加载在 {workCenterName} 上运行的内容。"
@@ -30507,7 +30510,7 @@ msgstr "疑似故障模式"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "将成本扫入资产 {0}"
 
@@ -36346,15 +36349,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "您只能看到此密钥一次。请妥善保管。"
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "您完成了 {leftoverQuantity} 个以上 \n"
-"                        {0}，比 \n"
-"                        订购数量 {1} 多。您想 \n"
-"                        用多余的零件怎么办？"
+msgstr ""
 
 msgid "You do not have permission to do this"
 msgstr "您没有权限执行此操作"

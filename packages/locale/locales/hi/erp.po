@@ -7863,7 +7863,7 @@ msgstr "पूर्ण तारीख"
 msgid "Completed Qty"
 msgstr "पूर्ण मात्रा"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "अचल संपत्ति वर्ग {0} को पूर्ण करता है"
 
@@ -8930,6 +8930,9 @@ msgstr "ऑपरेशन लोड नहीं कर सके"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "MRP से बाहर स्टोरेज यूनिट लोड नहीं हो सकीं। कुछ मार्कर गायब हो सकते हैं।"
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr ""
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName} पर चलने वाले डेटा को लोड नहीं कर सके।"
@@ -30507,7 +30510,7 @@ msgstr "संदिग्ध विफलता मोड"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "लागत को संपत्ति {0} में स्वीप करता है"
 
@@ -36346,15 +36349,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "आप इस कुंजी को केवल एक बार देख सकते हैं। इसे सुरक्षित रूप से संग्रहीत करें।"
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "आप {leftoverQuantity} अधिक \n"
-"                        {0} को {1} की ऑर्डर की गई \n"
-"                        मात्रा से पूरा कर चुके हैं। आप अतिरिक्त पार्ट्स के साथ \n"
-"                        क्या करना चाहेंगे?"
+msgstr ""
 
 msgid "You do not have permission to do this"
 msgstr "आपके पास यह करने की अनुमति नहीं है"

@@ -7863,7 +7863,7 @@ msgstr "Completed Date"
 msgid "Completed Qty"
 msgstr "Completed Qty"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "Completes to fixed asset class {0}"
 
@@ -8930,6 +8930,9 @@ msgstr "Could not load operations"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr "Could not load the receipt preview. Reopen the Complete dialog to try again."
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Could not load what ran on {workCenterName}."
@@ -30507,7 +30510,7 @@ msgstr "Suspected Failure Mode"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "Sweeps cost to asset {0}"
 
@@ -36346,14 +36349,13 @@ msgid "You can only see this key once. Store it safely."
 msgstr "You can only see this key once. Store it safely."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
 msgstr "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
 
 msgid "You do not have permission to do this"

@@ -76,6 +76,14 @@ export async function raiseIssue(
   number: number,
   issueNumber = number
 ) {
+  return raiseIssueOnUnit(f, `${f.prefix}-unit-${number}`, issueNumber);
+}
+
+export async function raiseIssueOnUnit(
+  f: Fixture,
+  trackedEntityId: string,
+  issueNumber: number
+) {
   const issueId = `${f.prefix}-issue-${issueNumber}`;
   await seed(f, async (trx) => {
     await trx
@@ -105,7 +113,7 @@ export async function raiseIssue(
       .insertInto("nonConformanceTrackedEntity")
       .values({
         nonConformanceId: issueId,
-        trackedEntityId: `${f.prefix}-unit-${number}`,
+        trackedEntityId,
         companyId: f.companyId,
         createdBy: USER
       })

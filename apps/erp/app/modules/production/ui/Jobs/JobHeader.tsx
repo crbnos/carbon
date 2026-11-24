@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { fetchAllRecords } from "@carbon/database";
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -114,9 +113,10 @@ import {
   getDefaultSerialCompleteQuantity,
   getFinishedQuantity,
   getFinishedUnreceivedQuantity,
+  getReceiptConfirmation,
   getSerialCompleteChoice,
   type JobReceiptSnapshot,
-  type JobSerialUnit,
+  receiptHasTrackedOutput,
   type SerialCompleteChoice
 } from "./job-complete-logic";
 import {
@@ -648,7 +648,6 @@ const JobHeader = () => {
       />
       {completeModal.openCount > 0 && (
         <JobCompleteModal
-          consumeToProject={!!projectCharge?.consumeToProject}
           key={`completeModal-${completeModal.openCount}`}
           open={completeModal.isOpen}
           job={routeData?.job}
@@ -1467,18 +1466,21 @@ function JobExpediteModal({
 }
 
 // What the job has received as of now, from api+/production.job.$jobId.receipts.
-// Null when it cannot be read; the dialog then keeps the quantity locked rather
-// than offering units it cannot prove are unreceived.
+// A failed or incomplete read disables submission until the dialog reopens.
 async function getJobReceipts(
   jobId: string
 ): Promise<JobReceiptSnapshot | null> {
   try {
-    const response = await fetch(path.to.api.jobReceipts(jobId));
+    const response = await fetch(path.to.api.jobReceipts(jobId), {
+      cache: "no-store"
+    });
     if (!response.ok) return null;
     const body = (await response.json()) as {
       receipts: JobReceiptSnapshot | null;
     };
-    return body.receipts;
+    return body.receipts?.tracking && body.receipts.receiptPreview
+      ? body.receipts
+      : null;
   } catch {
     return null;
   }
@@ -1502,20 +1504,17 @@ function ReceiptHoldList({ holds }: { holds: JobReceiptSnapshot["holds"] }) {
 }
 
 function JobCompleteModal({
-  consumeToProject,
   open = true,
   job,
   onClose,
   fetcher
 }: {
-  consumeToProject: boolean;
   open?: boolean;
   job?: Job;
   fetcher: FetcherWithComponents<unknown>;
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
-  const { company } = useUser();
   const [loading, setLoading] = useState(true);
   const { t } = useLingui();
   const [defaultStorageUnitId, setDefaultStorageUnitId] = useState<
@@ -1551,9 +1550,11 @@ function JobCompleteModal({
     0,
     Math.max(quantityComplete - priorReceivedQuantity, 0)
   );
-  // complete_job_to_inventory refuses a stocked job below what it received.
+  const tracking = receiptSnapshot?.tracking;
+  const receivesOutput = receiptHasTrackedOutput(tracking);
+  const confirmation = getReceiptConfirmation(receiptSnapshot, previewUnits);
   const minimumQuantityComplete =
-    job?.itemTrackingType !== "Non-Inventory" ? priorReceivedQuantity : 0;
+    tracking?.itemTrackingType !== "Non-Inventory" ? priorReceivedQuantity : 0;
 
   // Leftover handling state
   const [leftoverAction, setLeftoverAction] = useState<
@@ -1563,13 +1564,14 @@ function JobCompleteModal({
   const [leftoverReceiveQuantity, setLeftoverReceiveQuantity] =
     useState<number>(0);
 
-  const makeToOrder = !!job?.salesOrderId && !!job?.salesOrderLineId;
-  // Make to Asset: the completion capitalises the job (class) or sweeps its
-  // cost onto an asset under construction, so nothing is received to a bin
-  // and the location pickers are meaningless. The hidden inputs stay so
-  // jobCompleteValidator still sees both fields.
-  const completesToFixedAsset = !!(job?.fixedAssetClassId || job?.fixedAssetId);
-  const leftoverQuantity = Math.max(0, quantityComplete - (job?.quantity ?? 0));
+  const makeToOrder = !!tracking?.salesOrderId && !!tracking.salesOrderLineId;
+  const completesToFixedAsset = !!(
+    tracking?.fixedAssetClassId || tracking?.fixedAssetId
+  );
+  const receivesToInventory =
+    receivesOutput && !completesToFixedAsset && !makeToOrder;
+  const jobQuantity = tracking?.quantity ?? 0;
+  const leftoverQuantity = Math.max(0, quantityComplete - jobQuantity);
   const hasLeftover = leftoverQuantity > 0;
   // Serial units are received one at a time; the database refuses a fraction.
   const hasFractionalSerialQuantity =
@@ -1579,66 +1581,41 @@ function JobCompleteModal({
 
   const getJobData = async () => {
     if (!carbon) return;
-
-    const [pickMethod, makeMethod, receipts, serialSequence] =
-      await Promise.all([
-        carbon
+    const receipts = await getJobReceipts(job?.id!);
+    const tracking = receipts?.tracking;
+    const pickMethod = tracking?.locationId
+      ? await carbon
           .from("pickMethod")
-          .select("*")
-          .eq("locationId", job?.locationId!)
-          .eq("itemId", job?.itemId!)
-          .single(),
-        carbon
-          .from("jobMakeMethod")
-          .select("*")
-          .eq("jobId", job?.id!)
-          .eq("companyId", company.id)
-          .is("parentMaterialId", null)
-          .single(),
-        getJobReceipts(job?.id!),
-        carbon
-          .from("itemSerialSequence")
-          .select("id")
-          .eq("itemId", job?.itemId!)
-          .eq("companyId", company.id)
+          .select("defaultStorageUnitId")
+          .eq("locationId", tracking.locationId)
+          .eq("itemId", tracking.itemId)
           .maybeSingle()
-      ]);
-
-    // Read now rather than from the job route: a receipt may have been made
-    // since the page loaded. When the read fails, fall back to the route's job
-    // and leave the quantity locked below — offering units that may already be
-    // received is the one thing this must not do. complete_job_to_inventory
-    // enforces both regardless.
+      : null;
+    setReceiptSnapshot(receipts);
     const currentReceivedQuantity =
       receipts?.quantityReceivedToInventory ??
       job?.quantityReceivedToInventory ??
       0;
-
     if (
-      makeMethod.data?.requiresSerialTracking ||
-      makeMethod.data?.requiresBatchTracking
+      receipts &&
+      tracking &&
+      (tracking.requiresSerialTracking || tracking.requiresBatchTracking)
     ) {
-      const trackedEntities = await fetchAllRecords<JobSerialUnit>(() =>
-        carbon
-          .from("trackedEntity")
-          .select("id, readableId, quantity, createdAt, status")
-          .eq("attributes->>Job Make Method", makeMethod.data!.id)
-          .eq("companyId", company.id)
-          .order("readableId", { ascending: true, nullsFirst: false })
-          .order("createdAt")
-          .order("id")
+      const trackedEntities = tracking.trackedEntities;
+      const onHoldEntityIds = new Set(
+        trackedEntities.filter((unit) => unit.held).map((unit) => unit.id)
       );
-      const onHoldEntityIds = new Set(receipts?.holds.map((unit) => unit.id));
-      setReceiptSnapshot(receipts);
-      if (trackedEntities.data?.length) {
-        const eligibleEntities = trackedEntities.data.filter(
+      if (trackedEntities.length || tracking.requiresSerialTracking) {
+        const eligibleEntities = trackedEntities.filter(
           (entity) => !onHoldEntityIds.has(entity.id)
         );
-        const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
+        const receivedEntityIds = new Set(receipts.trackedEntityIds);
         // Only a serial completion to inventory receives issued units.
         const issuedEntityIds = new Set(
-          makeMethod.data?.requiresSerialTracking && !completesToFixedAsset
-            ? (receipts?.issuedTrackedEntityIds ?? [])
+          tracking.requiresSerialTracking &&
+            !tracking.fixedAssetClassId &&
+            !tracking.fixedAssetId
+            ? receipts.issuedTrackedEntityIds
             : []
         );
         const availableQuantity = getFinishedQuantity(
@@ -1646,19 +1623,14 @@ function JobCompleteModal({
           issuedEntityIds
         );
 
-        // Only unlock the quantity when the receipts are known: without them
-        // the dialog could offer a unit the job already received.
-        const choice = makeMethod.data?.requiresSerialTracking
+        const choice = tracking.requiresSerialTracking
           ? getSerialCompleteChoice({
-              trackedEntities: trackedEntities.data,
+              trackedEntities,
               heldUnitIds: onHoldEntityIds,
-              receivedEntityIds: receipts ? receivedEntityIds : null,
+              receivedEntityIds,
               issuedEntityIds,
-              // complete_job_to_inventory numbers what the completion takes
-              // whenever the item has a sequence. A failed read keeps the
-              // quantity locked.
-              hasSerialSequence: !serialSequence.error && !!serialSequence.data,
-              jobQuantity: job?.quantity ?? 0
+              hasSerialSequence: !!tracking.sequenceId,
+              jobQuantity: tracking.quantity
             })
           : ({ mode: "locked" } as const);
 
@@ -1679,7 +1651,7 @@ function JobCompleteModal({
                 receivedEntityIds,
                 issuedEntityIds
               ),
-              jobQuantity: job?.quantity ?? 0,
+              jobQuantity: tracking.quantity,
               priorReceivedQuantity: currentReceivedQuantity,
               receivableSerialCount: receivableCount
             })
@@ -1695,7 +1667,7 @@ function JobCompleteModal({
 
     flushSync(() => {
       setDefaultStorageUnitId(
-        pickMethod.data?.defaultStorageUnitId ?? undefined
+        pickMethod?.data?.defaultStorageUnitId ?? undefined
       );
     });
 
@@ -1747,12 +1719,12 @@ function JobCompleteModal({
             validator={jobCompleteValidator}
             onSubmit={onClose}
             defaultValues={{
-              quantityComplete: job.quantity ?? 0,
-              salesOrderId: job.salesOrderId ?? undefined,
-              salesOrderLineId: job.salesOrderLineId ?? undefined,
-              locationId: job.locationId ?? undefined,
+              quantityComplete: jobQuantity,
+              salesOrderId: tracking?.salesOrderId ?? undefined,
+              salesOrderLineId: tracking?.salesOrderLineId ?? undefined,
+              locationId: tracking?.locationId ?? undefined,
               storageUnitId:
-                job.storageUnitId ?? defaultStorageUnitId ?? undefined
+                tracking?.storageUnitId ?? defaultStorageUnitId ?? undefined
             }}
             fetcher={fetcher}
           >
@@ -1760,25 +1732,30 @@ function JobCompleteModal({
               {/* A job that completes to a fixed asset never enters
                   inventory, so it reads like a make to order job. */}
               <ModalTitle>
-                {makeToOrder || completesToFixedAsset
+                {!receivesToInventory
                   ? t`Complete Job`
                   : t`Receive ${job.jobId} to Inventory`}
               </ModalTitle>
               <ModalDescription>
-                {makeToOrder || completesToFixedAsset
+                {!receivesToInventory
                   ? t`This job will no longer be available on the shop floor.`
                   : t`This job will be received to inventory. It will no longer be available on the shop floor.`}
               </ModalDescription>
             </ModalHeader>
-            {receiptSnapshot?.qualityHoldsEnabled &&
-              previewUnits &&
-              !consumeToProject &&
-              job.itemTrackingType !== "Non-Inventory" && (
+            {confirmation && (
+              <>
                 <Hidden
-                  name="expectedUnitIds"
-                  value={JSON.stringify(previewUnits.map((unit) => unit.id))}
+                  name="expectedReceiptPreview"
+                  value={confirmation.expectedReceiptPreview}
                 />
-              )}
+                {confirmation.expectedUnitIds && (
+                  <Hidden
+                    name="expectedUnitIds"
+                    value={JSON.stringify(confirmation.expectedUnitIds)}
+                  />
+                )}
+              </>
+            )}
             <Hidden name="salesOrderId" />
             <Hidden name="salesOrderLineId" />
             <Hidden name="leftoverAction" value={leftoverAction} />
@@ -1790,7 +1767,7 @@ function JobCompleteModal({
               name="leftoverReceiveQuantity"
               value={leftoverReceiveQuantity.toString()}
             />
-            {(makeToOrder || completesToFixedAsset) && (
+            {!receivesToInventory && (
               <>
                 <Hidden name="locationId" />
                 <Hidden name="storageUnitId" />
@@ -1798,14 +1775,25 @@ function JobCompleteModal({
             )}
             <ModalBody>
               <VStack spacing={4}>
+                {!receiptSnapshot && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>
+                        Could not load the receipt preview. Reopen the Complete
+                        dialog to try again.
+                      </Trans>
+                    </AlertTitle>
+                  </Alert>
+                )}
                 {completesToFixedAsset ? (
                   <p className="text-sm text-muted-foreground">
-                    {job.fixedAssetClassId
-                      ? t`Completes to fixed asset class ${job.fixedAssetClassId}`
-                      : t`Sweeps cost to asset ${job.fixedAssetId ?? ""}`}
+                    {tracking?.fixedAssetClassId
+                      ? t`Completes to fixed asset class ${tracking?.fixedAssetClassId}`
+                      : t`Sweeps cost to asset ${tracking?.fixedAssetId ?? ""}`}
                   </p>
                 ) : (
-                  !makeToOrder && (
+                  receivesToInventory && (
                     <>
                       <Location
                         name="locationId"
@@ -1814,7 +1802,7 @@ function JobCompleteModal({
                       />
                       <StorageUnit
                         name="storageUnitId"
-                        locationId={job.locationId ?? undefined}
+                        locationId={tracking?.locationId ?? undefined}
                         label={t`Storage Unit`}
                       />
                     </>
@@ -1859,7 +1847,8 @@ function JobCompleteModal({
                     </Alert>
                   )}
 
-                {serialChoice.mode === "numberOnReceipt" &&
+                {receivesOutput &&
+                  serialChoice.mode === "numberOnReceipt" &&
                   quantityComplete > priorReceivedQuantity &&
                   !hasFractionalSerialQuantity && (
                     <span className="text-sm text-muted-foreground w-full">
@@ -1881,7 +1870,8 @@ function JobCompleteModal({
                   </Alert>
                 )}
 
-                {receivableSerials &&
+                {receivesOutput &&
+                  receivableSerials &&
                   quantityComplete > priorReceivedQuantity &&
                   !hasFractionalSerialQuantity && (
                     <VStack spacing={1} className="w-full">
@@ -1906,7 +1896,7 @@ function JobCompleteModal({
                       <AlertDescription>
                         {t`You completed ${leftoverQuantity} more 
                         ${leftoverQuantity === 1 ? "part" : "parts"} than the
-                        ordered quantity of ${job.quantity}. What would you like
+                        ordered quantity of ${jobQuantity}. What would you like
                         to do with the extra parts?`}
                       </AlertDescription>
                     </Alert>
@@ -2037,12 +2027,13 @@ function JobCompleteModal({
               <Button
                 type="submit"
                 isDisabled={
+                  !receiptSnapshot ||
                   (unitsOnHold.length > 0 &&
                     quantityComplete <= priorReceivedQuantity) ||
                   (hasLeftover && !leftoverAction) ||
                   // Completing a stocked item at zero receives nothing and
                   // consumes nothing; the database refuses it as well.
-                  (job.itemTrackingType !== "Non-Inventory" &&
+                  (tracking?.itemTrackingType !== "Non-Inventory" &&
                     !(quantityComplete > 0)) ||
                   hasFractionalSerialQuantity
                 }

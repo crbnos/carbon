@@ -61,14 +61,13 @@ stays on screen with a banner listing its open issues. The picker lists units
 on hold after the open ones, with the issue number, and still opens when only
 units on hold are left.
 
-**Receipt to stock.** Finishing the last operation by hand, the ERP Complete dialog and a batch completion all end in
-`complete_job_to_inventory`, which chose the units to receive by status and
-serial number alone. A unit on hold could be received in place of a finished
-one. With the setting on, the function leaves a unit on hold out of the units
-it receives, and the completion quantity stops short of the units on hold. A
-later completion can receive the unit if Quality accepts it. The Complete
-dialog leaves those units out of its preview. If eligibility changes which
-serials would be posted, Submit asks the operator to review the new selection.
+**Receipt to stock.** A final operation that records specific serials receives
+those worked units. A manual finish with no unit records receives only the
+eligible quantity. Releasing a job leaves its held multi-unit seed intact so
+a new serial cannot escape the hold. ERP binds a serial receipt to the units
+and exclusions shown when the dialog opened. If eligibility changes, Submit
+asks the operator to review the updated selection, including when numbering
+is deferred. The confirmation applies with either hold setting.
 Inspection counts only eligible passed serials and can complete a previously
 held passed serial after release, even after the lot closes.
 
@@ -76,9 +75,12 @@ held passed serial after release, even after the lot closes.
 
 One column: `companySettings.holdUnitsWithOpenIssues BOOLEAN NOT NULL DEFAULT
 false`. No new table. `complete_job_to_inventory` is redefined with the rule
-in `20261124065150_close_quality_hold_write_paths.sql`. The setting controls
+in `20261124065150_close_quality_hold_write_paths.sql`; the shared posting body
+moved to `util.receive_job_output` in `20261124075228_automatic_receipt_for_worked_serials.sql`. The setting controls
 serial holds. Separately, closing a job WIP issue as Scrap or Return to
-Supplier only deducts finished stock when the unit entered inventory.
+Supplier only deducts finished stock when the unit entered inventory. Normal
+job outputs have an Item source and identify the job and make method in their
+attributes.
 
 ## Not in scope
 

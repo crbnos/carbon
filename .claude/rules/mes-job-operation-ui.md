@@ -156,11 +156,13 @@ is the one on the operator's screen. Spec:
   `SerialSelectorModal` lists units on hold after the open ones with a badge,
   and the Issue dialog's notice reads "This unit is on hold" (`parentOnHold`).
   The operation loader's first-operation redirect skips a unit on hold.
-- **Receipt to stock:** a manual operation finish names no unit. The ERP checks the exact displayed serials when it submits a named receipt with quality holds enabled. In both paths, `complete_job_to_inventory`
-  (`20261124065150_close_quality_hold_write_paths.sql`) leaves a unit on hold out of
-  the units it receives and stops the completion quantity short of them. A
-  later completion can receive the unit once Quality accepts it and its other holds clear. Pinned by
-  `apps/erp/test/database/job-receipt-unit-hold.test.ts`.
+- **Receipt to stock:** the final operation uses its serial completion markers
+  to receive the units worked. A manual finish without unit-specific work can
+  receive an eligible quantity. The ERP Complete dialog binds its confirmation
+  to the preview, including deferred numbering, under either hold setting.
+  The receipt excludes held serials and Quality can release an accepted unit
+  once its other holds clear. See `job-receipt-unit-hold.test.ts` and
+  `job-receipt-preview.test.ts` in the ERP database tests.
 - **Inspection lots:** `getInspectionOutcomeState` (`quality.server.ts`) reads
   the holds. The inspection preview and disposition use the same eligible units.
   A passed sample on an accepted or partially accepted serial lot can complete once its hold clears.

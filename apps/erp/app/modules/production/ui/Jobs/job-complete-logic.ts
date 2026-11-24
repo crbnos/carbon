@@ -10,17 +10,15 @@
 // works on the units the job has not received yet, so the dialog and the
 // database always agree on which units a completion takes.
 
-export type JobSerialUnit = {
-  id: string;
-  status: string;
-  quantity: number;
-  readableId: string | null;
-  createdAt: string;
-};
+import type { JobReceiptTracking, JobSerialUnit } from "../../types";
+
+export type { JobSerialUnit } from "../../types";
 
 /** What a job has received to inventory, from api+/production.job.$jobId.receipts. */
 export type JobReceiptSnapshot = {
   qualityHoldsEnabled: boolean;
+  receiptPreview: string;
+  tracking: JobReceiptTracking;
   quantityReceivedToInventory: number;
   trackedEntityIds: string[];
   holds: Awaited<
@@ -29,6 +27,29 @@ export type JobReceiptSnapshot = {
   /** The job's Consumed units that were booked out of stock (issued or shipped). */
   issuedTrackedEntityIds: string[];
 };
+
+export function receiptHasTrackedOutput(tracking?: JobReceiptTracking) {
+  return (
+    !!tracking &&
+    !tracking.consumeToProject &&
+    tracking.itemTrackingType !== "Non-Inventory"
+  );
+}
+
+/** Values submitted by the serial receipt dialog. Deferred units have a
+ * confirmation too, even when the receipt itself will assign their numbers. */
+export function getReceiptConfirmation(
+  preview: Pick<JobReceiptSnapshot, "receiptPreview" | "tracking"> | null,
+  namedUnits?: Pick<JobSerialUnit, "id">[]
+) {
+  if (!preview?.tracking.requiresSerialTracking) return null;
+  return {
+    expectedReceiptPreview: preview.receiptPreview,
+    expectedUnitIds: receiptHasTrackedOutput(preview.tracking)
+      ? namedUnits?.map((unit) => unit.id)
+      : undefined
+  };
+}
 
 const NON_RECEIVABLE_SERIAL_STATUSES = ["Consumed", "Rejected", "Scrapped"];
 

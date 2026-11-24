@@ -7863,7 +7863,7 @@ msgstr "Дата завершения"
 msgid "Completed Qty"
 msgstr "Завершённое кол-во"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "Завершается в класс основных средств {0}"
 
@@ -8930,6 +8930,9 @@ msgstr "Не удалось загрузить операции"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "Не удалось загрузить единицы хранения, не учитываемые в MRP. Некоторые отметки могут отсутствовать."
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr ""
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Не удалось загрузить то, что выполнялось на {workCenterName}."
@@ -30507,7 +30510,7 @@ msgstr "Предполагаемый режим отказа"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "Переносит стоимость на актив {0}"
 
@@ -36346,12 +36349,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "Вы можете увидеть этот ключ только один раз. Сохраните его в безопасном месте."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "Вы завершили {leftoverQuantity} больше {0}, чем заказанное количество {1}. Что вы хотите сделать с дополнительными деталями?"
+msgstr ""
 
 msgid "You do not have permission to do this"
 msgstr "У вас нет права доступа для выполнения этого"

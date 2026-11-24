@@ -7863,7 +7863,7 @@ msgstr "완료일"
 msgid "Completed Qty"
 msgstr "완료 수량"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "고정자산 클래스 {0}으로 완료됨"
 
@@ -8930,6 +8930,9 @@ msgstr "공정을 로드할 수 없습니다"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "MRP 제외 보관 단위를 불러오지 못했습니다. 일부 표시가 누락될 수 있습니다."
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr ""
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName}에서 실행된 항목을 로드할 수 없습니다."
@@ -30507,7 +30510,7 @@ msgstr "의심되는 고장 모드"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "원가를 자산 {0}로 이관"
 
@@ -36346,12 +36349,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "이 키는 한 번만 확인할 수 있습니다. 안전하게 보관하세요."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "발주 수량 {1}보다 {0} {leftoverQuantity}개를 더 완료했습니다. 초과 부품을 어떻게 하시겠습니까?"
+msgstr ""
 
 msgid "You do not have permission to do this"
 msgstr "이를 수행할 권한이 없습니다"

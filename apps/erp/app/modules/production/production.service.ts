@@ -280,7 +280,8 @@ import type {
   ItemShortfall,
   Job,
   JobMaterialPurchaseOrderLine,
-  JobMaterialSupplyJobLine
+  JobMaterialSupplyJobLine,
+  JobReceiptTracking
 } from "./types";
 import {
   makeMethodsMissingOperations,
@@ -3419,6 +3420,39 @@ export async function getJobTrackedEntitiesPreview(
     count: first.count ?? first.data?.length ?? 0,
     lastReadableId: last.data?.[0]?.readableId ?? null,
     error: first.error ?? last.error
+  };
+}
+
+/** Materialize the state once so the candidate rows and confirmation identify
+ * the same receipt. The route reads the ledger and hold explanations alongside
+ * it in a repeatable-read transaction. */
+export async function getJobReceiptPreview(
+  db: Kysely<KyselyDatabase>,
+  jobId: string,
+  companyId: string
+) {
+  const result = await sql<{
+    tracking: JobReceiptTracking;
+    receiptPreview: string;
+  }>`
+    WITH preview AS MATERIALIZED (
+      SELECT util.job_receipt_preview_state(${jobId}, ${companyId}) AS state
+    )
+    SELECT state AS tracking, md5(state::text) AS "receiptPreview"
+    FROM preview WHERE state IS NOT NULL
+  `.execute(db);
+  const preview = result.rows[0];
+  if (!preview) return undefined;
+  const { trackedEntities, quantityReceived } = preview.tracking;
+  return {
+    ...preview,
+    quantityReceivedToInventory: quantityReceived,
+    trackedEntityIds: trackedEntities
+      .filter((unit) => unit.received !== null || unit.fixedAsset)
+      .map((unit) => unit.id),
+    issuedTrackedEntityIds: trackedEntities
+      .filter((unit) => unit.issued && unit.quantity === 1)
+      .map((unit) => unit.id)
   };
 }
 
@@ -14921,7 +14955,8 @@ export async function assignSerialNumbers(
       .where(sql<boolean>`attributes->>'Job Material' IS NULL`)
       .where(sql<boolean>`attributes->>'Split Entity ID' IS NULL`)
       .where(sql<boolean>`attributes->>'Split From Entity ID' IS NULL`)
-      .orderBy("createdAt", "asc")
+      .orderBy("id")
+      // Use the receipt's lock order when the job already has several units.
       // Lock the seed row for the duration of the transaction so concurrent
       // runs for the same job serialize here: the second waits, then sees
       // the readableId the first assigned and no-ops the idempotency guard
@@ -14938,6 +14973,22 @@ export async function assignSerialNumbers(
     const count =
       trackingType === "Batch" ? 1 : Math.round(Number(job.quantity));
     if (count < 1) return { assigned: 0 };
+
+    // The issue identifies the seed itself. Splitting it would leave its
+    // children outside that hold. Read after acquiring the row lock so a
+    // concurrent Quality decision is visible before any numbers are drawn.
+    if (
+      trackingType === "Serial" &&
+      (count > 1 || Number(seed.quantity) !== 1)
+    ) {
+      const hold = await trx
+        .selectFrom("unitQualityHold")
+        .select("issueId")
+        .where("companyId", "=", companyId)
+        .where("trackedEntityId", "=", seed.id)
+        .executeTakeFirst();
+      if (hold) return { assigned: 0 };
+    }
 
     // 7. Atomically reserve + format the next `count` serial numbers.
     const serials = await getNextSerialNumbers(trx, {

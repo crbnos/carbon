@@ -38,6 +38,8 @@
   "function-redefinition-keeps-changes::20261113014205_line-feed-first-operation-stripes.sql::get_line_feed_shortages drops 20261112235022_line-feed-last-operation.sql",
   "function-redefinition-keeps-changes::20261124052513_rejected_serial_disposition.sql::complete_job_to_inventory drops 20261124035931_unit-hold-job-receipt.sql",
   "function-redefinition-keeps-changes::20261124065150_close_quality_hold_write_paths.sql::complete_job_to_inventory drops 20261124052513_rejected_serial_disposition.sql",
+  "function-redefinition-keeps-changes::20261124075228_automatic_receipt_for_worked_serials.sql::complete_job_to_inventory drops 20261124065150_close_quality_hold_write_paths.sql",
+  "function-redefinition-keeps-changes::20261124075523_auto_receive_worked_serials.sql::sync_finish_job_operation drops 20261117211601_finish-job-operation-new-quantity.sql",
   "list-select-covers-columns::apps/erp/app/modules/projects/projects.service.ts::PROJECT_BASELINE_LIST_COLUMNS",
   "list-select-covers-columns::apps/erp/app/modules/projects/projects.service.ts::PROJECT_BASELINE_LIST_COLUMNS has no PROJECT_BASELINE_PAGING",
   "list-select-covers-columns::apps/erp/app/modules/projects/projects.service.ts::PROJECT_CHANGE_REQUEST_LIST_COLUMNS",
