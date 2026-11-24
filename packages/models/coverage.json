@@ -112,6 +112,33 @@
     },
     "databaseTests": [
       "packages/jobs/src/inngest/functions/integrations/accounting-sync-retries.database.test.ts"
-    ]
+    ],
+    "fingerprints": {
+      "packages/ee/src/accounting/core/operations.ts#updateHeldOperation": "bb12bc860cca5229",
+      "packages/ee/src/accounting/core/operations.ts#completeOperation": "42490e53862dffea",
+      "packages/ee/src/accounting/core/operations.ts#failOperation": "615b40593ef0b852",
+      "packages/ee/src/accounting/core/operations.ts#skipOperation": "1dc08185da587f6f",
+      "packages/ee/src/accounting/core/operations.ts#updateOperationMetadata": "e283ca5ce82f4ece",
+      "packages/ee/src/accounting/core/operations.ts#claimPendingOperations": "19cd37750db3459b",
+      "packages/ee/src/accounting/core/create-key.ts#remoteCreateKey": "0a255edcbd160ca0",
+      "packages/ee/src/accounting/core/types.ts#getPushedVersion": "ed542c66a180d7b2",
+      "packages/ee/src/accounting/core/types.ts#getPushedVersion(localEntity)": "1997bdea41062f3f",
+      "packages/ee/src/accounting/core/types.ts#return this.createKey(`${localId}:${JSON.stringify(payload)}`);": "732aa494cc130bfd",
+      "packages/ee/src/accounting/core/external-mapping.ts#m.options?.lastSyncedAt instanceof Date": "8e6197acae7d9c0a",
+      "packages/ee/src/accounting/providers/quickbooks-online/entities/shared.ts#getPushedVersion(localEntity)": "1997bdea41062f3f",
+      "packages/ee/src/accounting/providers/rillet/entities/shared.ts#getPushedVersion(localEntity)": "1997bdea41062f3f",
+      "packages/ee/src/accounting/providers/quickbooks-online/provider.ts#buildQboRequestId": "7f226064effbf12b",
+      "packages/ee/src/accounting/providers/quickbooks-online/provider.ts#toQboRequestId": "3698af9411f7b7c9",
+      "packages/ee/src/accounting/providers/xero/provider.ts#\"Idempotency-Key\": key": "c853136fa365642d",
+      "packages/ee/src/accounting/providers/xero/entities/journal-entry.ts#getXeroJournalNarrations": "e5392ee82123b05a",
+      "packages/ee/src/accounting/providers/xero/entities/journal-entry.ts#this.xeroProvider.recoverManualJournal(": "0c9ac9b6555095fd",
+      "packages/ee/src/accounting/providers/xero/entities/invoice.ts#this.xeroProvider.recoverInvoice({": "1953ef8b4cbe6720",
+      "packages/ee/src/accounting/providers/xero/entities/bill.ts#this.xeroProvider.recoverInvoice({": "1953ef8b4cbe6720",
+      "packages/ee/src/accounting/providers/xero/entities/payment.ts#this.xeroProvider.recoverPayment(": "d97a8e3cdc0ba48b",
+      "packages/jobs/src/inngest/functions/integrations/accounting-sync-operations.ts#drainSyncOperations": "70776bd61839e160",
+      "packages/jobs/src/inngest/functions/integrations/accounting-consolidation.ts#readConsolidationPush": "23daf1f85605914b",
+      "packages/jobs/src/inngest/functions/integrations/accounting-consolidation.ts#consolidateIntegration": "3949028d97ca3002"
+    },
+    "confirmedAt": "3c4f9c30ae"
   }
 }
