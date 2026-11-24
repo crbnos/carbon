@@ -1903,7 +1903,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
   );
 
   it.skipIf(!client)(
-    "a unit never in stock stays an association, and on a row its Scrap keeps the older rule",
+    "never-stocked job WIP is linked to the issue and a row-level Scrap rejects it without a stock movement",
     async () => {
       await ensureIssueType();
       const item = `${f.prefix}-item-ci-wip`;
@@ -1980,9 +1980,15 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       const closed = await scrapAndClose(issueId);
       expect(closed.error).toBeNull();
       expect(closed.data?.warning).toBeUndefined();
-      expect(await nonConformanceWriteOffs(unit)).toEqual([
-        { quantity: -1, locationId: f.locationId, storageUnitId: null }
-      ]);
+      expect(await unitStatus(unit)).toBe("Rejected");
+      expect(
+        await f.db
+          .selectFrom("itemLedger")
+          .select("quantity")
+          .where("companyId", "=", f.companyId)
+          .where("itemId", "=", item)
+          .execute()
+      ).toEqual([]);
     },
     60_000
   );
