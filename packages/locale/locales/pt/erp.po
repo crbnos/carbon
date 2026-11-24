@@ -17424,6 +17424,10 @@ msgstr "Deixe vazio ou digite 0 para mostrar tudo que o MRP planeja."
 msgid "Leave this page"
 msgstr "Sair desta página"
 
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "Deixe Valor vazio para imprimir o campo personalizado “{0}”."
+
 msgid "Left item"
 msgstr "Item esquerdo"
 
@@ -32256,6 +32260,9 @@ msgstr "O registro para o qual uma notificação de fluxo de trabalho aponta, no
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "O registro que aplica um pagamento ou memorando a uma fatura, contendo os valores aplicado, desconto e baixa contábil."
+
+msgid "The record's value"
+msgstr "O valor do registro"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "A genealogia registrada de entidades rastreadas - quais entradas foram consumidas para produzir quais saídas, recebimento até remessa."

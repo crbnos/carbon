@@ -25,7 +25,8 @@ import {
   DEFAULT_SUMMARY_OPTIONS,
   getMergeFields,
   getTextEntries,
-  HEADER_TEXT_KEYS
+  HEADER_TEXT_KEYS,
+  ownEditFields
 } from "@carbon/documents/template";
 import {
   isPartNumberDisplay,
@@ -101,7 +102,7 @@ function appendText(content: JSONContent, text: string): JSONContent {
 
 export function BlockConfig() {
   const { blocks, sections, selectedId, documentType } = useDocumentTemplate();
-  // One record's document: only its words, Terms and Notes, never the layout.
+  // One record's document: only its words and printed content, never the layout.
   const isDocument = useEditorStore((s) => s.document !== null);
 
   if (selectedId === HEADER_LOGO_ID) {
@@ -199,14 +200,22 @@ export function BlockConfig() {
         )}
       </div>
 
-      {isDocument && block.type === "terms" && (
+      {isDocument && ownEditFields(block.type).length > 0 && (
         <RememberedSection
-          id="document:terms"
-          title={<Trans>Terms</Trans>}
+          id={`document:${block.type}`}
+          title={
+            block.type === "terms" ? (
+              <Trans>Terms</Trans>
+            ) : (
+              <Trans>Content</Trans>
+            )
+          }
           className="-mx-3 border-t"
         >
           <ReadOnlyWhenLocked>
-            <TermsConfig block={block} />
+            <div className="flex flex-col gap-4">
+              <BlockOptions block={block} />
+            </div>
           </ReadOnlyWhenLocked>
         </RememberedSection>
       )}
@@ -594,7 +603,9 @@ function FooterSettings() {
 }
 
 function CustomFieldConfig({ block }: { block: CustomFieldBlock }) {
+  const { t } = useLingui();
   const { updateBlock, customFields } = useDocumentTemplate();
+  const isDocument = useEditorStore((s) => s.document !== null);
   const field = customFields.find((f) => f.id === block.fieldId);
 
   return (
@@ -608,9 +619,27 @@ function CustomFieldConfig({ block }: { block: CustomFieldBlock }) {
           onChange={(e) => updateBlock(block.id, { label: e.target.value })}
         />
       </div>
+      {isDocument && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="cf-value">
+            <Trans>Value</Trans>
+          </Label>
+          <Input
+            id="cf-value"
+            value={block.value ?? ""}
+            placeholder={t`The record's value`}
+            // Empty prints the record's value again.
+            onChange={(e) =>
+              updateBlock(block.id, { value: e.target.value || undefined })
+            }
+          />
+        </div>
+      )}
       <p className="text-xs text-muted-foreground">
         {field
-          ? `Value comes from the “${field.name}” custom field.`
+          ? isDocument
+            ? t`Leave Value empty to print the “${field.name}” custom field.`
+            : `Value comes from the “${field.name}” custom field.`
           : "This custom field no longer exists. Remove the block."}
       </p>
     </div>

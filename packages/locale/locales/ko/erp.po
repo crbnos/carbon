@@ -17424,6 +17424,10 @@ msgstr "MRP가 계획한 모든 것을 표시하려면 공란으로 두거나 0�
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
 
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "“{0}” 사용자 지정 필드를 인쇄하려면 값을 비워 두세요."
+
 msgid "Left item"
 msgstr "왼쪽 품목"
 
@@ -32256,6 +32260,9 @@ msgstr "워크플로우 알림이 가리키는 기록이며, id와 종류로 이
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "송장에 지불 또는 메모를 적용하는 레코드로, 적용, 할인 및 대손 처리 금액을 포함합니다."
+
+msgid "The record's value"
+msgstr "레코드의 값"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "추적 개체의 기록된 계보입니다 — 입고부터 출하까지, 어떤 투입물이 소비되어 어떤 산출물을 만들었는지를 나타냅니다."

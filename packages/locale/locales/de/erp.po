@@ -17424,6 +17424,10 @@ msgstr "Leer lassen oder 0 eingeben, um alles anzuzeigen, das MRP plant."
 msgid "Leave this page"
 msgstr "Diese Seite verlassen"
 
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "Lassen Sie Wert leer, um das benutzerdefinierte Feld „{0}“ zu drucken."
+
 msgid "Left item"
 msgstr "Linkes Element"
 
@@ -32256,6 +32260,9 @@ msgstr "Der Datensatz, auf den eine Workflow-Benachrichtigung verweist, benannt 
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "Der Datensatz, der eine Zahlung oder einen Vermerk auf eine Rechnung anwendet und die angewendete, Rabatt- und Ausbuchung-Beträge trägt."
+
+msgid "The record's value"
+msgstr "Der Wert des Datensatzes"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "Die aufgezeichnete Genealogie der verfolgten Einheiten – welche Eingaben wurden verbraucht, um welche Ausgaben zu produzieren, Beleg bis Lieferung."

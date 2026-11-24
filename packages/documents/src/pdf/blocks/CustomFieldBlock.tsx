@@ -13,7 +13,7 @@ function formatValue(raw: unknown): string {
   return String(raw);
 }
 
-/** Extension block — doc-agnostic. Takes the record's `customFields` map. */
+/** Extension block — doc-agnostic. Takes the record's `customFields` map; a document's own value wins. */
 export function CustomFieldBlock({
   block,
   customFields
@@ -22,7 +22,7 @@ export function CustomFieldBlock({
   customFields: Record<string, unknown>;
 }) {
   const tw = useTw();
-  const value = formatValue(customFields[block.fieldId]);
+  const value = block.value || formatValue(customFields[block.fieldId]);
 
   return (
     <View style={tw("border border-gray-200 mb-4")}>
