@@ -166,10 +166,10 @@ export const LIFECYCLE_RFQS: LifecycleRfqSpec[] = [
 export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
-    log: "purchase order 1 — To Receive (Meridian)",
+    log: "purchase order 1 — To Receive and Invoice, receipt in draft (Meridian)",
     supplier: "Meridian Magnetics",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -346,
     lines: [
       { item: "MAG-NDFB-45", purchaseQuantity: 480, supplierUnitPrice: 18.5 },
@@ -194,10 +194,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order 2 — To Invoice (Ironwood Fasteners)",
+    log: "purchase order 2 — To Receive and Invoice, invoice in draft (Ironwood Fasteners)",
     supplier: "Ironwood Fasteners",
     purchaseOrderType: "Purchase",
-    status: "To Invoice",
+    status: "To Receive and Invoice",
     orderDateOffset: -363,
     lines: [
       { item: "FST-M6-SS", purchaseQuantity: 900, supplierUnitPrice: 0.42 }
@@ -376,10 +376,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — To Receive with a voided receipt (Ironwood)",
+    log: "purchase order — To Receive and Invoice with a voided receipt (Ironwood)",
     supplier: "Ironwood Fasteners",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -21,
     lines: [
       { item: "FST-M10-SS", purchaseQuantity: 200, supplierUnitPrice: 1.15 }
@@ -400,10 +400,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice open (Summit 6308 bearings)",
+    log: "purchase order — To Receive, invoice open (Summit 6308 bearings)",
     supplier: "Summit Bearing Supply",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -30,
     lines: [
       { item: "BRG-6308-C3", purchaseQuantity: 20, supplierUnitPrice: 26.8 }
@@ -422,10 +422,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice overdue (Lakeland shaft bar)",
+    log: "purchase order — To Receive, invoice overdue (Lakeland shaft bar)",
     supplier: "Lakeland Electrical Steel",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -60,
     lines: [
       { item: "MAT-STL-4140", purchaseQuantity: 200, supplierUnitPrice: 2.7 }
@@ -444,10 +444,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice partially paid (Copperline)",
+    log: "purchase order — To Receive, invoice partially paid (Copperline)",
     supplier: "Copperline Wire Works",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -55,
     lines: [
       { item: "TRM-BLK-6P", purchaseQuantity: 40, supplierUnitPrice: 8.9 }
@@ -493,7 +493,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     assignee: "self",
     supplier: "Maumee Contract Machining",
     purchaseOrderType: "Outside Processing",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -9,
     lines: [{ item: "SHF-9000", purchaseQuantity: 4, supplierUnitPrice: 48 }]
   },
@@ -504,7 +504,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ref: "po:eur",
     supplier: "Euromag Ferrite Werke GmbH",
     purchaseOrderType: "Purchase",
-    status: "To Invoice",
+    status: "To Receive and Invoice",
     orderDateOffset: -18,
     currencyCode: "EUR",
     exchangeRate: 0.92,

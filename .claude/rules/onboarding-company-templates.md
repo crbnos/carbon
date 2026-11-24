@@ -518,6 +518,15 @@ in the same tier. Conventions, each mirroring the real code path:
   allocation (validator: Paid = fully settled, Partially Paid = strictly between, others
   unsettled). Draft payments are unapplied and unjournaled. Memos tie to their invoice
   through a zero-cash Posted payment's credit settlement (`memoId` + `appliedViaPaymentId`).
+- **Order and return lines carry what their postings set.** Tier 05 writes each direct
+  PO line's `quantityReceived` / `receivedComplete` (from its Posted receipt) and
+  `quantityInvoiced` / `invoicedComplete` (from its invoice, unless Draft or Voided) with
+  `helpers/purchase-order-lines.ts`. A To Receive and Invoice, To Receive, To Invoice or
+  Completed order must have the status `getPurchaseOrderStatus`
+  (`@carbon/database/purchase-order-status`) derives from those lines: To Receive is
+  invoiced and not received, To Invoice received and not invoiced. The validator's
+  `purchasing` rule checks it. Tier 04 disposes a Completed RMA's Return to Stock line
+  `Use As Is`, since `getSalesReturnOrderStatus` reads a Pending line as unresolved.
 - **Journals carry the adopted period's `accountingPeriodId`**. A Reversed manual entry
   is inserted Posted then flipped with `reversedById` (the one UPDATE the trigger allows).
   On re-apply the wipe voids every journal of a document it is about to delete (see the
@@ -770,7 +779,8 @@ balances; invoice status agrees with its settlements (Paid fully settled, Partia
 strictly between, others unsettled); the EUR rate is in the "EUR per 1 USD" direction
 (0.5–1, "is it inverted?"); document chronology and the period-offset floors; planning
 horizon; assembly `componentNodeIds` exist in the bundled `graph.json`; inspection sample
-statuses equal what the engine's rules derive.
+statuses equal what the engine's rules derive; a purchase order's receipt-and-invoice status
+equals what its lines derive.
 
 ### Layer 2 — apply and roll back (needs the database)
 
@@ -811,6 +821,11 @@ Today only satellite has them: the Projects Phase 3 planning group (`planningGro
 `projectElementMaterial`, `projectPeg`), the Phase 5b indirect rates (`indirectPool`,
 `indirectPoolAccount`, `indirectRate`) and ORBSEC Block 2's earned value baseline
 (`projectBaseline`, `ProjectSpec.baseline`, tier 09 `seedProjectBaseline`).
+
+Then `findStatusMismatches` (`verify.ts`) reads the seeded rows back: a purchase order in a
+receipt-and-invoice status must equal `getPurchaseOrderStatus` over its lines' flags, and a
+Completed RMA must have no Pending Return to Stock line. It catches a tier that stops writing
+the line flags the validator assumes.
 
 Tier `ctx.log` lines are buffered per dataset and printed (the last 12) only when that
 dataset fails, so the error is placed inside the tier sequence without drowning a green run.

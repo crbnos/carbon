@@ -42,7 +42,10 @@ imported by BOTH tier 09 and the validator so the two derive identical lines),
 `postSalesInvoices`, `postPurchaseInvoices`, `postMemos`, `postPayment` — they read the seeded
 rows back, insert the journal via `nextJournalEntryId`, and set `journalId`),
 `inspection.ts` (pure sampling-plan / sample-status math shared by tier 07 AND the validator,
-so seeded sample statuses equal what the engine derives) and `bootstrap-lookup.ts`
+so seeded sample statuses equal what the engine derives), `purchase-order-lines.ts`
+(`purchaseOrderLineCounts` — the received / invoiced counts and complete flags a PO line's
+receipt and invoice postings write, which tier 05 inserts — and `derivedPurchaseOrderStatus`,
+which the validator holds a receipt-and-invoice status to) and `bootstrap-lookup.ts`
 (`bootstrapIdByName` — a bootstrap lookup row by name, cached in `ctx.refs.misc`, never module
 scope, which would leak across the drift check's scratch companies).
 

@@ -163,10 +163,10 @@ export const LIFECYCLE_RFQS: LifecycleRfqSpec[] = [
 export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
-    log: "purchase order 1 — To Receive (Northgate)",
+    log: "purchase order 1 — To Receive and Invoice, receipt in draft (Northgate)",
     supplier: "Northgate Electronics",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -346,
     lines: [
       { item: "ENC-ABS-19", purchaseQuantity: 12, supplierUnitPrice: 240 },
@@ -191,10 +191,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order 2 — To Invoice (Precision Fasteners)",
+    log: "purchase order 2 — To Receive and Invoice, invoice in draft (Precision Fasteners)",
     supplier: "Precision Fasteners Co",
     purchaseOrderType: "Purchase",
-    status: "To Invoice",
+    status: "To Receive and Invoice",
     orderDateOffset: -363,
     lines: [
       { item: "FST-M8-SS", purchaseQuantity: 500, supplierUnitPrice: 0.85 }
@@ -373,10 +373,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — To Receive with a voided receipt (Precision Fasteners)",
+    log: "purchase order — To Receive and Invoice with a voided receipt (Precision Fasteners)",
     supplier: "Precision Fasteners Co",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -21,
     lines: [
       { item: "FST-M5-SS", purchaseQuantity: 200, supplierUnitPrice: 0.55 }
@@ -397,10 +397,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice open (Northgate force sensor)",
+    log: "purchase order — To Receive, invoice open (Northgate force sensor)",
     supplier: "Northgate Electronics",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -30,
     lines: [
       { item: "SNS-FT-6AX", purchaseQuantity: 1, supplierUnitPrice: 3400 }
@@ -419,10 +419,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice overdue (Ironbark steel sheet)",
+    log: "purchase order — To Receive, invoice overdue (Ironbark steel sheet)",
     supplier: "Ironbark Metals",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -60,
     lines: [
       { item: "MAT-STEEL-SHT", purchaseQuantity: 100, supplierUnitPrice: 1.95 }
@@ -441,10 +441,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice partially paid (Kestrel Gen2 drives)",
+    log: "purchase order — To Receive, invoice partially paid (Kestrel Gen2 drives)",
     supplier: "Kestrel Motion",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -55,
     lines: [
       { item: "DRV-SRV-400G2", purchaseQuantity: 10, supplierUnitPrice: 460 }
@@ -490,7 +490,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     assignee: "self",
     supplier: "Kappa Contract Machining",
     purchaseOrderType: "Outside Processing",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -9,
     lines: [
       { item: "ARM-BASE-001", purchaseQuantity: 2, supplierUnitPrice: 180 }
@@ -503,7 +503,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ref: "po:eur",
     supplier: "Schwarzwald Antriebstechnik GmbH",
     purchaseOrderType: "Purchase",
-    status: "To Invoice",
+    status: "To Receive and Invoice",
     orderDateOffset: -18,
     currencyCode: "EUR",
     exchangeRate: 0.92,

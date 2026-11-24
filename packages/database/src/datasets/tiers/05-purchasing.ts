@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { resolveDate, resolveTimestamp } from "../dates.ts";
+import { purchaseOrderLineCounts } from "../helpers/purchase-order-lines.ts";
 import { seedReturnCredit } from "../helpers/return-credit.ts";
 import { insertId, insertRow, need, nextSequence, one, RICH } from "../sql.ts";
 import type { Ctx } from "../types.ts";
@@ -78,11 +79,21 @@ export async function runTier5(ctx: Ctx): Promise<void> {
       companyId
     });
 
-    // A receipt line points at the PO line for the same item.
+    // A receipt line points at the PO line for the same item. Each line
+    // carries the counts its receipt and invoice postings would have written.
     const lineIdByItem: Record<string, string> = {};
+    const countsByItem = purchaseOrderLineCounts(spec);
+    const receivedDate =
+      spec.receipt?.status === "Posted" &&
+      spec.receipt.postedOffset !== undefined
+        ? resolveDate(ctx.anchor, spec.receipt.postedOffset)
+        : undefined;
     for (const line of spec.lines) {
       const item = need(ctx.refs.items, line.item);
+      const counts = need(countsByItem, line.item);
       lineIdByItem[line.item] = await insertId(ctx, "purchaseOrderLine", {
+        ...counts,
+        receivedDate: counts.quantityReceived > 0 ? receivedDate : undefined,
         purchaseOrderId: poId,
         purchaseOrderLineType: "Part",
         itemId: item.id,

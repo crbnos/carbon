@@ -17,6 +17,7 @@
  */
 
 import type { PoolClient } from "pg";
+import { getPurchaseOrderStatus } from "../purchase-order-status.ts";
 import { seedCompanyReferenceData } from "./bootstrap.ts";
 import { COVERAGE_SCOPES, coverageFloorsFor } from "./coverage.ts";
 import { applyDatasetTiers } from "./index.ts";
@@ -130,6 +131,55 @@ export async function findMissingExchangeRates(
 }
 
 /**
+ * Seeded statuses the app would restate from the lines the tiers wrote: a
+ * purchase order's, and a Completed RMA's with a stock line not yet disposed.
+ */
+export async function findStatusMismatches(
+  client: PoolClient,
+  companyId: string
+): Promise<string[]> {
+  const orders = await client.query<{
+    purchaseOrderId: string;
+    status: string;
+    lines: Parameters<typeof getPurchaseOrderStatus>[0];
+  }>(
+    `SELECT po."purchaseOrderId", po.status,
+       json_agg(json_build_object(
+         'purchaseOrderLineType', pol."purchaseOrderLineType",
+         'receivedComplete', pol."receivedComplete",
+         'invoicedComplete', pol."invoicedComplete")) AS lines
+     FROM "purchaseOrder" po
+     JOIN "purchaseOrderLine" pol
+       ON pol."purchaseOrderId" = po.id AND pol."companyId" = po."companyId"
+     WHERE po."companyId" = $1
+       AND po.status IN ('To Receive and Invoice', 'To Receive', 'To Invoice', 'Completed')
+     GROUP BY po.id, po."purchaseOrderId", po.status`,
+    [companyId]
+  );
+  const mismatches = orders.rows.flatMap((order) => {
+    const { status } = getPurchaseOrderStatus(order.lines);
+    return status === order.status
+      ? []
+      : [`${order.purchaseOrderId}: ${order.status}, its lines say ${status}`];
+  });
+  const returns = await client.query<{ salesReturnOrderId: string }>(
+    `SELECT DISTINCT r."salesReturnOrderId"
+     FROM "salesReturnOrder" r
+     JOIN "salesReturnOrderLine" l
+       ON l."salesReturnOrderId" = r.id AND l."companyId" = r."companyId"
+     WHERE r."companyId" = $1 AND r.status = 'Completed'
+       AND l."returnType" = 'Return to Stock' AND l.disposition = 'Pending'`,
+    [companyId]
+  );
+  return [
+    ...mismatches,
+    ...returns.rows.map(
+      (r) => `${r.salesReturnOrderId}: Completed with a Pending stock line`
+    )
+  ];
+}
+
+/**
  * Apply one dataset to a throwaway company and roll the whole thing back.
  * Returns the failure rather than throwing it, so one broken dataset does not
  * hide the state of the other three.
@@ -183,6 +233,16 @@ export async function verifyDataset(
         key,
         ok: false,
         error: `seeded documents the app cannot add lines to:\n      ${missingRates.join("\n      ")}`,
+        durationMs: performance.now() - startedAt
+      };
+    }
+
+    const mismatches = await findStatusMismatches(client, companyId);
+    if (mismatches.length > 0) {
+      return {
+        key,
+        ok: false,
+        error: `seeded statuses the app would not derive:\n      ${mismatches.join("\n      ")}`,
         durationMs: performance.now() - startedAt
       };
     }

@@ -166,10 +166,10 @@ export const LIFECYCLE_RFQS: LifecycleRfqSpec[] = [
 export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
-    log: "purchase order 1 — To Receive (Midway Bearing & Seal)",
+    log: "purchase order 1 — To Receive and Invoice, receipt in draft (Midway Bearing & Seal)",
     supplier: "Midway Bearing & Seal",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -196,
     lines: [
       { item: "BRG-DBL-6205", purchaseQuantity: 24, supplierUnitPrice: 12.4 },
@@ -194,10 +194,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order 2 — To Invoice (Fastline Industrial Supply)",
+    log: "purchase order 2 — To Receive and Invoice, invoice in draft (Fastline Industrial Supply)",
     supplier: "Fastline Industrial Supply",
     purchaseOrderType: "Purchase",
-    status: "To Invoice",
+    status: "To Receive and Invoice",
     orderDateOffset: -203,
     lines: [
       { item: "HW-SHCS-M6", purchaseQuantity: 1000, supplierUnitPrice: 0.42 }
@@ -380,10 +380,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — To Receive with a voided receipt (Fastline inserts)",
+    log: "purchase order — To Receive and Invoice with a voided receipt (Fastline inserts)",
     supplier: "Fastline Industrial Supply",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -21,
     lines: [
       { item: "INS-HELI-M6", purchaseQuantity: 200, supplierUnitPrice: 0.68 }
@@ -404,10 +404,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice open (Fastline cap screws)",
+    log: "purchase order — To Receive, invoice open (Fastline cap screws)",
     supplier: "Fastline Industrial Supply",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -32,
     lines: [
       { item: "HW-SHCS-M10", purchaseQuantity: 300, supplierUnitPrice: 1.1 }
@@ -426,10 +426,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice overdue (Rock River 5052 sheet)",
+    log: "purchase order — To Receive, invoice overdue (Rock River 5052 sheet)",
     supplier: "Rock River Metals",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -60,
     lines: [
       { item: "MAT-AL5052-SHT", purchaseQuantity: 150, supplierUnitPrice: 2.95 }
@@ -450,10 +450,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice partially paid (Midway O-rings)",
+    log: "purchase order — To Receive, invoice partially paid (Midway O-rings)",
     supplier: "Midway Bearing & Seal",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -55,
     lines: [
       {
@@ -505,7 +505,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     assignee: "self",
     supplier: "Forge Heat Treating",
     purchaseOrderType: "Outside Processing",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -9,
     lines: [
       { item: "MCH-SHAFT-DR", purchaseQuantity: 12, supplierUnitPrice: 36 }
@@ -518,7 +518,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ref: "po:bavaria-eur",
     supplier: "Bavaria Werkzeugstahl GmbH",
     purchaseOrderType: "Purchase",
-    status: "To Invoice",
+    status: "To Receive and Invoice",
     orderDateOffset: -17,
     currencyCode: "EUR",
     exchangeRate: 0.92,

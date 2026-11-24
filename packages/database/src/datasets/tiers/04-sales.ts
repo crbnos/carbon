@@ -565,6 +565,12 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           lineNumber: index + 1,
           quantity: line.quantity,
           quantityReceived: received ? line.quantity : 0,
+          // Completed needs every restocked line disposed; Use As Is is the
+          // disposition that keeps the stock its receipt booked.
+          disposition:
+            spec.status === "Completed" && !isServiceLine(line)
+              ? "Use As Is"
+              : undefined,
           returnReasonId,
           unitOfMeasureCode: "EA",
           unitPrice: line.unitPrice,

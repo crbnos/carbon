@@ -1325,6 +1325,7 @@ export type PurchaseOrderSpec =
       ref?: string;
       supplier: string;
       purchaseOrderType: string;
+      /** A receipt-and-invoice status is the one its receipt and invoice give (validator-enforced). */
       status: string;
       orderDateOffset: DayOffset;
       /** Omitted = base. EUR is pinned to exactly one direct, childless, unpaid PO. */
