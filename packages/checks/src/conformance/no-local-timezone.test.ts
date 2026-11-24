@@ -77,6 +77,8 @@ export async function getWeeklyHoursForEmployees(
         .map((v) => [v.line, v.snippet])
     ).toEqual([
       [1, "new Date().getDay("],
+      [15, "now.getDay("],
+      [17, "now.getDate("],
       [18, ".setHours(0, 0, 0, 0)"]
     ]);
     // The fix: the company calendar.
@@ -84,6 +86,21 @@ export async function getWeeklyHoursForEmployees(
   const dayName = dayNames[getDayOfWeek(today(tz), "en-US")];
   const monday = startOfWeek(today(tz), "en-GB").toDate(tz);`;
     expect(noLocalTimezone.scan("f.ts", after)).toHaveLength(0);
+  });
+
+  it("flags a date part of now read through a local", () => {
+    const ts = `const now = new Date();
+const dow = now.getDay();
+const at = now.toISOString();`;
+    expect(
+      noLocalTimezone.scan("f.ts", ts).map((v) => [v.line, v.snippet])
+    ).toEqual([[2, "now.getDay("]]);
+  });
+
+  it("leaves a local set from another instant alone", () => {
+    const ts = `const when = new Date(row.createdAt);
+const y = when.getFullYear();`;
+    expect(noLocalTimezone.scan("f.ts", ts)).toHaveLength(0);
   });
 
   it("allows full-instant timestamps", () => {

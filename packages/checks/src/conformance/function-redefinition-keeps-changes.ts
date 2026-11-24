@@ -2,13 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { SourceFile, Violation } from "../check";
+import type { Provenance, SourceFile, Violation } from "../check";
 
 export const FUNCTION_REDEFINITION_KEEPS_CHANGES =
   "function-redefinition-keeps-changes";
 
-/** Migrations before this one are history; only a new redefinition is checked. */
-export const CHECKED_SINCE = "20261016000000";
+export const FUNCTION_REDEFINITION_KEEPS_CHANGES_PROVENANCE: Provenance = {
+  deprecates:
+    "a CREATE OR REPLACE FUNCTION forked from an older definition, which silently undoes the migrations between them",
+  replacedBy:
+    "start the redefinition from the newest definition of the function",
+  incidents: ["6907343728"]
+};
+
+/**
+ * Migrations before this one are history; only a new redefinition is checked.
+ * It is the migration of the bug the check exists for, so the check covers it.
+ */
+export const CHECKED_SINCE = "20261014171619";
 
 /** Fewer dropped lines than this is a deliberate edit, not a lost change. */
 const MIN_DROPPED = 2;

@@ -196,6 +196,21 @@ WHERE j."status" IN ('Posted', 'Reversed')
     expect(journalStatusFilter.scan("a.ts", ts)).toHaveLength(0);
   });
 
+  it("replays c0cf421500: the account ledger's not-Draft read of the journalLines view", () => {
+    // apps/erp/app/modules/accounting/accounting.service.ts before c0cf421500.
+    // The view carries each line's journal status, so the filter let
+    // Provisional and Superseded journals into the account ledger.
+    const ts = `let query = client
+    .from("journalLines" as any)
+    .select("*", { count: "exact" })
+    .eq("accountId", args.accountId)
+    .neq("status", "Draft")
+    .gte("postingDate", args.startDate);`;
+    expect(
+      journalStatusFilter.scan("accounting.service.ts", ts).map((v) => v.line)
+    ).toEqual([5]);
+  });
+
   it("does not take journalLine for journal", () => {
     const sql = `SELECT * FROM "journalLine" jl WHERE jl.status <> 'Draft';`;
     expect(

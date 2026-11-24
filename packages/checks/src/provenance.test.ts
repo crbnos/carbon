@@ -26,7 +26,6 @@ const CONFORMANCE = join(__dirname, "conformance");
 const UNPROVEN_CHECKS = new Set([
   "deployments-set-required-env",
   "event-ignored-columns",
-  "function-redefinition-keeps-changes",
   "list-select-covers-columns",
   "module-shape",
   "moved-tables-covered",
@@ -55,7 +54,7 @@ const UNPROVEN_CHECKS = new Set([
 
 // The size the list was frozen at. Lower it when a check leaves; raising it
 // lets an unproven check in, which is what this test exists to stop.
-const UNPROVEN_CEILING = 27;
+const UNPROVEN_CEILING = 26;
 
 /** Every check `run.ts` registers: one `./conformance/<id>` module each. */
 function registeredChecks(): string[] {
