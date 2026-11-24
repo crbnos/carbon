@@ -30,6 +30,7 @@ SUPABASE_DB_URL=… pnpm --filter @carbon/models confirm <model>   # verify, the
 | `accounting-period.ts` | lock, unlock, close and reopen of accounting periods | `lockAccountingPeriod`, `unlockAccountingPeriod`, `closeAccountingPeriod`, `reopenAccountingPeriod` (`apps/erp/app/modules/accounting/accounting.service.ts`) |
 | `invoice-void.ts` | voiding a posted sales or purchase invoice against a line account change, and against another void | the `void` branch of `postSalesInvoice` / `postPurchaseInvoice`, `changeInvoiceLineAccount` (`apps/erp/app/modules/invoicing/invoicing.service.ts`) |
 | `job-material-issue.ts` | issuing an untracked job material: operation completion, step issue and the job's backflush | `issueJobOperationMaterials`, the `partToOperation` case of `issueMaterial` (`apps/erp/app/modules/inventory/inventory.service.ts`), `backflush_job_materials` (SQL) |
+| `make-method-versions.ts` | the Draft / Active / Archived status of one item's make method versions: activation, the method import, the Onshape sync, a new version that sets its source Active | the `methodVersionToActive` case of `convertDocument`, `writeGroup`, `lockItemMakeMethods` (`apps/erp/app/modules/shared/shared.service.ts`), `syncMakeMethod`, `createMakeMethodVersion` (`apps/erp/app/modules/items/items.service.ts`) |
 
 ## Always
 

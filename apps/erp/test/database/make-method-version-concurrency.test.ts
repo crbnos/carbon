@@ -2,16 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Writers of one item's make method versions running at the same time. A
-// held row lock makes each one wait at its first write, so every interleaving
-// below is the one the comment names. Runs against the local database; skips
-// without one.
+// The writers of one item's make method version statuses, the
+// counterexamples of packages/models/src/make-method-versions.ts on the real
+// code. In a race, a held row lock makes a writer wait at its first write, so
+// the interleaving is the one the test names. Runs against the local
+// database; skips without one.
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { syncMakeMethod } from "../../app/modules/items/items.service";
+import {
+  createMakeMethodVersion,
+  syncMakeMethod
+} from "../../app/modules/items/items.service";
 import {
   convertDocument,
   invokePosting
@@ -221,7 +225,7 @@ async function billOfMaterial(f: Fixture, makeMethodId: string) {
   }));
 }
 
-// The sync reads its make method's status through PostgREST.
+// The sync and a new version read the make method through PostgREST.
 const system = localServiceRoleClient();
 
 databaseTest(
@@ -453,6 +457,54 @@ databaseTest(
       await importing.destroy();
       await activating.destroy();
       await monitor.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+// The New Version dialog offers to set the source Active when it is the
+// item's only version; one activated since then must stay the only Active.
+databaseTest(
+  "a new version leaves its Draft source Draft when another version is Active",
+  async () => {
+    if (!system) return;
+    const f = await alwaysPostFixture();
+    try {
+      const source = await f.db
+        .selectFrom("makeMethod")
+        .select("id")
+        .where("itemId", "=", f.assemblyId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const active = await f.db
+        .insertInto("makeMethod")
+        .values({
+          itemId: f.assemblyId,
+          version: 3,
+          status: "Active",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const result = await createMakeMethodVersion(system, f.db, {
+        copyFromId: source.id,
+        version: 2,
+        activate: true,
+        companyId: f.companyId,
+        createdBy: USER
+      });
+
+      expect(result.error).toBeNull();
+      expect(
+        await statuses(f, {
+          source: source.id,
+          created: result.data?.id ?? "",
+          active: active.id
+        })
+      ).toEqual({ source: "Draft", created: "Draft", active: "Active" });
+    } finally {
       await f.cleanup();
     }
   }

@@ -55,5 +55,23 @@
       "apps/erp/app/modules/shared/shared.service.ts#lockUntrackedDraws": "2d415c24e162df87"
     },
     "confirmedAt": "d917e22ed7"
+  },
+  "make-method-versions": {
+    "model": "src/make-method-versions.ts",
+    "code": {
+      "apps/erp/app/modules/shared/shared.service.ts": [
+        "lockItemMakeMethods",
+        "lockItemMakeMethods(",
+        "methodImportLock",
+        "status: locked.status,"
+      ],
+      "apps/erp/app/modules/items/items.service.ts": [
+        "lockItemMakeMethods(",
+        "createMakeMethodVersion",
+        "chooseSyncMethod",
+        "lockedStatus.get("
+      ]
+    },
+    "databaseTests": ["test/database/make-method-version-concurrency.test.ts"]
   }
 }
