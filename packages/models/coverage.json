@@ -55,5 +55,33 @@
       "apps/erp/app/modules/shared/shared.service.ts#lockUntrackedDraws": "2d415c24e162df87"
     },
     "confirmedAt": "d917e22ed7"
+  },
+  "order-line-counters": {
+    "model": "src/order-line-counters.ts",
+    "code": {
+      "apps/erp/app/modules/shared/shared.service.ts": [
+        "ORDER_LINE_COUNTERS",
+        "lockOrderLines",
+        "lockOrderLinesAsRead"
+      ],
+      "apps/erp/app/modules/inventory/inventory.service.ts": [
+        "lockOrderLines(",
+        "changed while this"
+      ],
+      "apps/erp/app/modules/invoicing/invoicing.service.ts": [
+        "lockOrderLines(",
+        "changed while this",
+        "restoreSalesOrderInvoiced",
+        "restorePurchaseOrderInvoiced"
+      ],
+      "apps/erp/app/modules/purchasing/purchasing.service.ts": [
+        "restorePurchaseOrderReceived",
+        "shortClosePurchaseOrderLine"
+      ],
+      "apps/erp/app/modules/sales/sales.service.ts": [
+        "createSalesReturnOrderCredit"
+      ]
+    },
+    "databaseTests": ["test/database/order-line-counters-concurrency.test.ts"]
   }
 }

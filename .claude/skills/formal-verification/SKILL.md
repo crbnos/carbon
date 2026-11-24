@@ -20,6 +20,7 @@ for how a model is written.
 | `accounting-period` | No period is Closed after an open one; only a Closed period has a balance snapshot and `closedAt`; status moves only Open ↔ Locked → Closed → Open | `accounting.service.ts`: `lockAccountingPeriod`, `unlockAccountingPeriod`, `setPeriodCloseStatus`, `lockPeriodLifecycle`, `closeAccountingPeriod`, `reopenAccountingPeriod` | `apps/erp/test/database/period-close-concurrency.test.ts` | every valid start × every 3 operations on 3 periods |
 | `invoice-void` | A voided invoice nets to zero on every account; an invoice is reversed at most once | `invoicing.service.ts`: `changeInvoiceLineAccount`, `readInvoiceLinePosition`, and the lines holding "invoice is already voided" (the void branches sit inside `postSalesInvoice` / `postPurchaseInvoice`, too large to cover whole); `shared.service.ts`: `documentJournalLines` | `apps/erp/test/database/invoice-line-account-void.test.ts` | every sequence of up to 4 voids and line account changes, sales and purchase |
 | `job-material-issue` | An automatic issue (operation completion, job backflush) never takes more than the unit still needs; `quantityIssued` counts every unit that left the bin | `inventory.service.ts`: `issueJobOperationMaterials`; `shared.service.ts`: `lockUntrackedDraws` (the step issue sits inside `issueMaterial` and the backflush in SQL, `backflush_job_materials`: neither is fingerprinted, and a change to either is caught only by `verify`) | `apps/erp/test/database/job-material-issue-concurrency.test.ts` | every sequence of up to 3 completions, step issues and job backflushes of one unit |
+| `order-line-counters` | An order line's counter (`quantityInvoiced`, `quantityReceived`, `quantitySent`, `quantityShipped`, the transfer quantities) is the sum over the documents posted into it, its `*Complete` flag follows the counter, and two writers of one line never deadlock | `shared.service.ts`: `ORDER_LINE_COUNTERS`, `lockOrderLines`, `lockOrderLinesAsRead`; the lines holding `lockOrderLines(` and "changed while this" in `inventory.service.ts` and `invoicing.service.ts` (the posts and voids sit inside `postReceipt`, `postShipment`, `postSalesInvoice` and `postPurchaseInvoice`, too large to cover whole); `restoreSalesOrderInvoiced`, `restorePurchaseOrderInvoiced`, `restorePurchaseOrderReceived`, `shortClosePurchaseOrderLine`, `createSalesReturnOrderCredit` | `apps/erp/test/database/order-line-counters-concurrency.test.ts` | every mix of a void of the posted document (read before its transaction, or under the lock) and posts of two drafts (line first or order first) on one line |
 
 `coverage.json` is the record: each model's file, the functions it covers, the
 database tests, a hash of each covered function as it read when the model was
@@ -72,6 +73,8 @@ invoice-void model: ok (Tests  7 passed (7))
 invoice-void database: ok (Tests  6 passed (6))
 job-material-issue model: ok (Tests  5 passed (5))
 job-material-issue database: ok (Tests  1 passed (1))
+order-line-counters model: ok (Tests  5 passed (5))
+order-line-counters database: ok (Tests  3 passed (3))
 ```
 
 `SUPABASE_DB_URL must name the local database` → no local database: run
