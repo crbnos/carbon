@@ -781,9 +781,9 @@ Provider specifics that are easy to get wrong:
 
 - **Xero `Reference` is ACCREC-ONLY.** On an ACCPAY the value the UI shows as "Reference"
   is `InvoiceNumber`, and a `Reference` sent on an ACCPAY is silently dropped. So the
-  deterministic create-recovery key rides `InvoiceNumber` and recovery reads back
-  `Type=="ACCPAY" AND InvoiceNumber==…` — the same shape the credit-note syncer uses for
-  `CreditNoteNumber`. Using `Reference` looks right and passes unit tests while recovering
+  reimbursement syncer's deterministic create-recovery key rides `InvoiceNumber` and its
+  recovery reads back `Type=="ACCPAY" AND InvoiceNumber==…` — the same shape the
+  credit-note syncer uses for `CreditNoteNumber`. Using `Reference` looks right and passes unit tests while recovering
   nothing after a lost create response, which duplicates the document on retry.
 - **Xero cannot segregate the payable.** Its AP control account is an org-level system
   account with no per-document override, so `validateReimbursementAccountMapping` takes
