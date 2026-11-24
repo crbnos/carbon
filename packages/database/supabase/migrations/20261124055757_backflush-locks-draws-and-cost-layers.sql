@@ -3,6 +3,12 @@
 -- (issueJobOperationMaterials) does. Under strict backflush it took only the
 -- strict locks, or none without "Prevent negative stock", so a completion
 -- that had read quantityIssued under the draw locks issued the material again.
+--
+-- It also locks the FIFO / LIFO cost layers it relieves, in calculateCOGS's
+-- order, before it reads them. It read them unlocked and decremented them
+-- relatively, so a layer a concurrent consumer had relieved and not yet
+-- committed was relieved twice and its remaining quantity went below zero.
+--
 -- Forked from 20261106213428_backflush-skips-non-inventory.sql.
 
 CREATE OR REPLACE FUNCTION public.backflush_job_materials(p_job_id text, p_quantity_complete numeric, p_company_id text, p_user_id text)
@@ -760,6 +766,40 @@ BEGIN
 
     ELSIF v_material_costing_method IN ('FIFO', 'LIFO') THEN
       v_remaining_to_consume := v_bf_quantities[i];
+
+      -- Lock the stripe's open layers, then their open children, in the order
+      -- calculateCOGS locks them, so the two never deadlock. The loop below
+      -- then reads them under the lock: a consumer that relieved a layer and
+      -- had not committed made it relieve the same units again, below zero.
+      PERFORM 1
+      FROM "costLedger"
+      WHERE "itemId" = v_bf_item_ids[i]
+        AND "companyId" = p_company_id
+        AND "remainingQuantity" > 0
+        AND adjustment = false
+        AND "appliesToCostLedgerId" IS NULL
+        AND ("documentType" IS NULL OR "documentType" <> 'Purchase Order')
+        AND "projectId" IS NOT DISTINCT FROM v_bf_project_ids[i]
+      ORDER BY "postingDate", "createdAt"
+      FOR UPDATE;
+
+      PERFORM 1
+      FROM "costLedger"
+      WHERE "companyId" = p_company_id
+        AND "remainingQuantity" > 0
+        AND "appliesToCostLedgerId" IN (
+          SELECT id
+          FROM "costLedger"
+          WHERE "itemId" = v_bf_item_ids[i]
+            AND "companyId" = p_company_id
+            AND "remainingQuantity" > 0
+            AND adjustment = false
+            AND "appliesToCostLedgerId" IS NULL
+            AND ("documentType" IS NULL OR "documentType" <> 'Purchase Order')
+            AND "projectId" IS NOT DISTINCT FROM v_bf_project_ids[i]
+        )
+      ORDER BY "createdAt"
+      FOR UPDATE;
 
       FOR v_cost_layer IN
         SELECT id, quantity, cost, "remainingQuantity", "trackedEntityId"
