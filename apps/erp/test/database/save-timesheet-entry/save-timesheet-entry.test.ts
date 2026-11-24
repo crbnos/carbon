@@ -15,7 +15,11 @@ import {
 } from "../../../app/modules/projects/projects.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-import { databaseTest } from "../fixtures/local-database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  connectLocalTestDatabase,
+  databaseTest
+} from "../fixtures/local-database";
 import {
   PROJECT_TEST_USER,
   projectPostingFixture
@@ -1022,6 +1026,96 @@ databaseTest("The job is part of a cell's key", async () => {
     expect(Number((await f.entry(shop.data!.entryId!)).hours)).toEqual(2);
     expect(Number((await f.entry(plain.data!.entryId!)).hours)).toEqual(3);
   } finally {
+    await f.cleanup();
+  }
+});
+
+/** Waits until `count` connections are queued behind `blockerPid`, directly or
+ *  behind another waiter. */
+async function waitForBlockedConnections(
+  db: Kysely<KyselyDatabase>,
+  blockerPid: number,
+  count: number
+) {
+  const deadline = performance.now() + 15_000;
+  while (performance.now() < deadline) {
+    const { rows } = await sql<{ blocked: number }>`
+      WITH RECURSIVE waiting AS (
+        SELECT ${blockerPid}::int AS pid
+        UNION
+        SELECT a.pid FROM pg_stat_activity a, waiting w
+        WHERE w.pid = ANY(pg_blocking_pids(a.pid))
+      )
+      SELECT count(*)::int - 1 AS blocked FROM waiting
+    `.execute(db);
+    if ((rows[0]?.blocked ?? 0) >= count) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error(`Expected ${count} connections to wait for the held lock`);
+}
+
+databaseTest("two saves of one empty cell at once write one entry", async () => {
+  const f = await timesheetFixture("Standard");
+  const blocker = await connectLocalTestDatabase();
+  const first = await connectLocalTestDatabase();
+  const second = await connectLocalTestDatabase();
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let holding: Promise<void> | undefined;
+  try {
+    const {
+      rows: [blockerPid]
+    } = await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+      blocker
+    );
+    // Holding the project makes each save's insert wait on its foreign key,
+    // so both have looked for the cell before either writes it.
+    let held!: () => void;
+    const isHeld = new Promise<void>((resolve) => {
+      held = resolve;
+    });
+    holding = blocker.transaction().execute(async (trx) => {
+      await trx
+        .selectFrom("project")
+        .select("id")
+        .where("id", "=", f.projectId)
+        .forUpdate()
+        .executeTakeFirstOrThrow();
+      held();
+      await released;
+    });
+    await isHeld;
+
+    const saves = [first, second].map((db) =>
+      invokePosting(
+        handlesOf({ ...f.ctx, db }),
+        "save-timesheet-entry",
+        { ...f.cell, entryDate: day(-5), hours: 6 },
+        saveTimesheetEntry
+      )
+    );
+    await waitForBlockedConnections(f.db, blockerPid!.pid, 2);
+    release();
+    await holding;
+    const results = await Promise.all(saves);
+
+    expect(results.map((result) => result.error)).toEqual([null, null]);
+    const entries = await f.db
+      .selectFrom("timesheetEntry")
+      .select("hours")
+      .where("companyId", "=", f.companyId)
+      .where("employeeId", "=", f.cell.employeeId)
+      .where("entryDate", "=", day(-5))
+      .execute();
+    expect(entries.map((entry) => Number(entry.hours))).toEqual([6]);
+  } finally {
+    release();
+    await holding?.catch(() => {});
+    await blocker.destroy();
+    await first.destroy();
+    await second.destroy();
     await f.cleanup();
   }
 });
