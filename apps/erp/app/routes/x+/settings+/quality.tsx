@@ -369,17 +369,10 @@ export default function QualitySettingsRoute() {
                   )}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  {holdEnabled ? (
-                    <Trans>
-                      The shop floor refuses work on the unit until the issue is
-                      closed. Other units of the job are not affected.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Enable to stop work on a serial unit until its issue is
-                      closed.
-                    </Trans>
-                  )}
+                  <Trans>
+                    When enabled, units marked Scrap or Return to Supplier stay
+                    blocked after the issue closes.
+                  </Trans>
                 </span>
               </VStack>
               <Switch

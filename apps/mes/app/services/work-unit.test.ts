@@ -392,21 +392,22 @@ describe("resolveWorkUnit", () => {
   ) => ({
     ...tables(true),
     companySettings: [{ id: "co", holdUnitsWithOpenIssues: over.on ?? true }],
-    nonConformanceTrackedEntity: [
-      {
-        trackedEntityId: over.unitId ?? "u2",
-        companyId: "co",
-        nonConformance: {
-          id: "nc_1",
-          nonConformanceId: "NCR-1",
-          name: "Cracked housing",
-          description: null,
-          status: over.status ?? "Registered",
-          createdAt: "2026-01-01T00:00:00Z",
-          nonConformanceType: { name: "Defect" }
-        }
-      }
-    ]
+    unitQualityHold:
+      over.status === "Closed"
+        ? []
+        : [
+            {
+              trackedEntityId: over.unitId ?? "u2",
+              companyId: "co",
+              issueId: "nc_1",
+              issueNumber: "NCR-1",
+              name: "Cracked housing",
+              description: null,
+              status: over.status ?? "Registered",
+              createdAt: "2026-01-01T00:00:00Z",
+              issueType: "Defect"
+            }
+          ]
   });
   const resolve = (
     client: ReturnType<typeof fakeClient>["client"],
@@ -439,7 +440,7 @@ describe("resolveWorkUnit", () => {
       unitId: "u2"
     });
     expect(fake.calls.map((call) => call.table)).not.toContain(
-      "nonConformanceTrackedEntity"
+      "unitQualityHold"
     );
     expect(await resolve(fakeClient(tables(true)).client)).toMatchObject({
       kind: "unit",

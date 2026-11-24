@@ -31284,6 +31284,26 @@ async function loadScrapAccountingContext(
   };
 }
 
+async function assertSerialOffQualityHold(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  trackedEntityId: string
+) {
+  const hold = await trx
+    .selectFrom("unitQualityHold")
+    .select(["issueNumber", "disposition"])
+    .where("trackedEntityId", "=", trackedEntityId)
+    .where("companyId", "=", companyId)
+    .orderBy("issueNumber")
+    .executeTakeFirst();
+  if (hold) {
+    const reason = hold.disposition ? ` (${hold.disposition})` : "";
+    throw new InvalidInputError(
+      `This unit is on hold for issue ${hold.issueNumber}${reason}`
+    );
+  }
+}
+
 export async function issueMaterial(
   ctx: ServiceContext,
   raw: z.input<typeof issueInput>
@@ -31570,11 +31590,13 @@ export async function issueMaterial(
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
           .selectAll()
+          .forUpdate()
           .executeTakeFirst();
 
         if (!trackedEntity) {
           throw new NotFoundError("Tracked entity not found");
         }
+        await assertSerialOffQualityHold(trx, companyId, trackedEntityId);
         // A unit completes once per operation; a second production row would
         // issue the material of a unit never made.
         if (
@@ -31990,6 +32012,7 @@ export async function issueMaterial(
             .forUpdate()
             .executeTakeFirst();
           if (!entity) throw new NotFoundError("Tracked entity not found");
+          await assertSerialOffQualityHold(trx, companyId, scrapEntityId);
           if (entity.status === "Consumed" || entity.status === "Scrapped") {
             throw new Error("Tracked entity is not in progress");
           }

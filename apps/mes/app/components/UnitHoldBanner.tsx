@@ -31,16 +31,20 @@ export function UnitHoldBanner({
       </AlertTitle>
       <AlertDescription>
         <span className="text-pretty">
-          <Trans>
-            Work on this unit waits until quality closes every issue below.
-            Other units are not affected.
-          </Trans>
+          {issues.some((issue) => issue.disposition) ? (
+            <Trans>Quality rejected this unit for production.</Trans>
+          ) : (
+            <Trans>
+              Work on this unit waits until quality closes every issue below.
+              Other units are not affected.
+            </Trans>
+          )}
         </span>
         <ul className="mt-2 flex flex-col gap-2">
           {issues.map((issue) => (
             <li key={issue.id} className="flex flex-col">
               <span className="font-medium">
-                {[issue.readableId, issue.type, issue.status]
+                {[issue.readableId, issue.type, issue.status, issue.disposition]
                   .filter(Boolean)
                   .join(" · ")}
               </span>

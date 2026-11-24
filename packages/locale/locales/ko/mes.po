@@ -2637,6 +2637,9 @@ msgstr "품질 이슈"
 msgid "Quality issue created"
 msgstr "품질 이슈가 생성되었습니다"
 
+msgid "Quality rejected this unit for production."
+msgstr "품질 부서에서 이 단위를 생산에 사용할 수 없다고 판정했습니다."
+
 msgid "Quantity"
 msgstr "수량"
 

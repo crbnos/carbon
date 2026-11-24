@@ -621,9 +621,11 @@ const JobHeader = () => {
           </AlertTitle>
           <AlertDescription>
             <ReceiptHoldList holds={routeData.receiptHolds} />
-            <Trans>
-              After Quality releases a unit, reopen the job to receive it.
-            </Trans>
+            {routeData.receiptHolds.some((unit) => !unit.rejected) && (
+              <Trans>
+                After Quality releases a unit, reopen the job to receive it.
+              </Trans>
+            )}
           </AlertDescription>
         </Alert>
       )}
@@ -1860,10 +1862,7 @@ function JobCompleteModal({
                   <Alert variant="warning">
                     <LuTriangleAlert />
                     <AlertTitle>
-                      <Trans>
-                        Units on hold for an open quality issue are not
-                        received.
-                      </Trans>
+                      <Trans>Units excluded from this receipt</Trans>
                     </AlertTitle>
                     <AlertDescription>
                       <ReceiptHoldList holds={unitsOnHold} />

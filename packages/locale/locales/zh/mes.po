@@ -2637,6 +2637,9 @@ msgstr "质量问题"
 msgid "Quality issue created"
 msgstr "质量问题已创建"
 
+msgid "Quality rejected this unit for production."
+msgstr "质量部门已判定此件产品不可用于生产。"
+
 msgid "Quantity"
 msgstr "数量"
 

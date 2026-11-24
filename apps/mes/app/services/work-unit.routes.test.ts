@@ -83,21 +83,20 @@ const GATE_READS = [
 ];
 
 /** Unit `unitId` has an open quality issue, and the company holds such units. */
-const onHold = (unitId: string) => ({
+const onHold = (unitId: string, disposition?: string) => ({
   companySettings: [{ id: "co", holdUnitsWithOpenIssues: true }],
-  nonConformanceTrackedEntity: [
+  unitQualityHold: [
     {
       trackedEntityId: unitId,
       companyId: "co",
-      nonConformance: {
-        id: "nc_1",
-        nonConformanceId: "NCR-1",
-        name: "Cracked housing",
-        description: null,
-        status: "Registered",
-        createdAt: "2026-01-01T00:00:00Z",
-        nonConformanceType: { name: "Defect" }
-      }
+      issueId: "nc_1",
+      issueNumber: "NCR-1",
+      name: "Cracked housing",
+      description: null,
+      status: disposition ? "Closed" : "Registered",
+      disposition,
+      createdAt: "2026-01-01T00:00:00Z",
+      issueType: "Defect"
     }
   ]
 });
@@ -240,6 +239,24 @@ describe("Log completed (complete route)", () => {
     });
     expect(fake.writes()).toEqual([]);
   });
+
+  it.each(["Scrap", "Return to Supplier"])(
+    "refuses a serial dispositioned %s",
+    async (disposition) => {
+      const fake = floor({ extra: onHold("u2", disposition) });
+      const response = await completeOperationQuantity(deps(fake), {
+        ...caller,
+        permissions: {},
+        request: post("/x/complete", {
+          jobOperationId: op,
+          quantity: "1",
+          trackedEntityId: "u2"
+        })
+      });
+      expect(await toast(response)).toContain(disposition);
+      expect(fake.writes()).toEqual([]);
+    }
+  );
 
   it("refuses a unit already complete here", async () => {
     const fake = floor();

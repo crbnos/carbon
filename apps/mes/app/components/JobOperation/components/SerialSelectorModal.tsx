@@ -28,7 +28,11 @@ import { useState } from "react";
 import { LuCheck, LuList, LuQrCode, LuX } from "react-icons/lu";
 import type { TrackedEntity } from "~/services/types";
 import { parseTravelerCode } from "~/utils/traveler";
-import { holdingIssues, type UnitHolds } from "~/utils/unitHold";
+import {
+  holdingIssueLabel,
+  holdingIssues,
+  type UnitHolds
+} from "~/utils/unitHold";
 
 /** The unit a typed or pasted value names: its id, its serial, or its label's traveler link. */
 function findEntity(entities: TrackedEntity[], value: string) {
@@ -134,7 +138,7 @@ function SerialSelectorBody({
                 ) : (
                   scannable.map((entity) => {
                     const issueNumbers = holdingIssues(unitHolds, entity.id)
-                      .map((issue) => issue.readableId)
+                      .map(holdingIssueLabel)
                       .join(", ");
                     return (
                       <HStack

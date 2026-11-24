@@ -24396,6 +24396,78 @@ export default {
         tags: ["inventoryCountLines"]
       }
     },
+    "/unitQualityHold": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.unitQualityHold.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unitQualityHold.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unitQualityHold.issueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unitQualityHold.issueNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unitQualityHold.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unitQualityHold.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unitQualityHold.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unitQualityHold.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unitQualityHold.issueType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unitQualityHold.disposition"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/unitQualityHold"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["unitQualityHold"]
+      }
+    },
     "/supplierPart": {
       get: {
         parameters: [
@@ -154345,6 +154417,67 @@ export default {
       },
       type: "object"
     },
+    unitQualityHold: {
+      properties: {
+        companyId: {
+          format: "text",
+          type: "string"
+        },
+        trackedEntityId: {
+          format: "text",
+          type: "string"
+        },
+        issueId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        issueNumber: {
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          enum: ["Registered", "In Progress", "Closed"],
+          format: 'public."nonConformanceStatus"',
+          type: "string"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        issueType: {
+          format: "text",
+          type: "string"
+        },
+        disposition: {
+          enum: [
+            "Conditional Acceptance",
+            "Deviation Accepted",
+            "Hold",
+            "No Action Required",
+            "Pending",
+            "Quarantine",
+            "Repair",
+            "Return to Supplier",
+            "Rework",
+            "Scrap",
+            "Use As Is",
+            "Return to Customer"
+          ],
+          format: "public.disposition",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     supplierPart: {
       required: [
         "id",
@@ -214692,6 +214825,75 @@ export default {
     },
     "rowFilter.inventoryCountLines.projectName": {
       name: "projectName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.unitQualityHold": {
+      name: "unitQualityHold",
+      description: "unitQualityHold",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/unitQualityHold"
+      }
+    },
+    "rowFilter.unitQualityHold.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unitQualityHold.trackedEntityId": {
+      name: "trackedEntityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unitQualityHold.issueId": {
+      name: "issueId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unitQualityHold.issueNumber": {
+      name: "issueNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unitQualityHold.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unitQualityHold.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unitQualityHold.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unitQualityHold.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unitQualityHold.issueType": {
+      name: "issueType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unitQualityHold.disposition": {
+      name: "disposition",
       required: false,
       in: "query",
       type: "string"

@@ -12586,9 +12586,6 @@ msgstr "अपने डेटा में परिवर्तन ट्र�
 msgid "Enable to start tracking work shifts."
 msgstr "कार्य शिफ्ट को ट्रैक करना शुरू करने के लिए सक्षम करें।"
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "सक्षम करने पर, सीरियल नंबर वाली इकाई पर काम तब तक रुका रहता है जब तक उसकी समस्या बंद नहीं होती।"
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "पोस्ट की गई क्रय प्राप्तियों से पार्ट लीड टाइम अपडेट करने के लिए सक्षम करें।"
 
@@ -32329,9 +32326,6 @@ msgstr "वह शेल्फ और बिन जहां स्टॉक भ
 msgid "The shop cannot finish this by {promised}."
 msgstr "शॉप {promised} तक यह पूरा नहीं कर सकती।"
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "समस्या बंद होने तक शॉप फ्लोर उस इकाई पर काम स्वीकार नहीं करता। जॉब की अन्य इकाइयों पर कोई असर नहीं पड़ता।"
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "दुकान की आपूर्ति और उपभोग्य सामग्री जो आप हाथ में रखते हैं"
 
@@ -34255,6 +34249,9 @@ msgstr "इकाइयाँ"
 msgid "Units don't match"
 msgstr "इकाइयाँ मेल नहीं खातीं"
 
+msgid "Units excluded from this receipt"
+msgstr "इस प्राप्ति से बाहर रखी गई इकाइयाँ"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "मूल मुद्रा की इकाइयाँ प्रति इस मुद्रा की एक इकाई; पोस्टिंग पर राशि का अनुवाद करने के लिए उपयोग किया जाता है।"
 
@@ -34263,9 +34260,6 @@ msgstr "माप की इकाइयाँ"
 
 msgid "Units of measure"
 msgstr "माप की इकाइयाँ"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "खुली गुणवत्ता समस्या के कारण होल्ड पर रखी इकाइयां प्राप्त नहीं की जातीं।"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "एक ऑपरेशन पर अपूरणीय के रूप में रिपोर्ट की गई इकाइयाँ, एक कारण के साथ — पुनः कार्य का विकल्प।"
@@ -35716,6 +35710,9 @@ msgstr "जब आस्थगित, संचित और पट्टा-ब
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "जब किराये के समझौते या अनुबंध की प्रत्येक बिलिंग अवधि बिलिंग के लिए आती है: अग्रिम में इसके पहले दिन, अवधि का उपयोग करने से पहले, या बकाया इसके अंतिम दिन, इसे अर्जित करने के बाद।"
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "यह विकल्प चालू होने पर स्क्रैप या आपूर्तिकर्ता को वापसी के लिए चिह्नित इकाइयाँ समस्या बंद होने के बाद भी अवरुद्ध रहती हैं।"
 
 msgid "When expired stock is used"
 msgstr "जब समाप्त हो चुका स्टॉक उपयोग किया जाता है"

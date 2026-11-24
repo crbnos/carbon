@@ -12586,9 +12586,6 @@ msgstr "Включите, чтобы начать отслеживание из�
 msgid "Enable to start tracking work shifts."
 msgstr "Включите для начала отслеживания рабочих смен."
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "Включите, чтобы остановить работу над единицей с серийным номером до закрытия её проблемы."
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Включите обновление сроков поставки деталей из проведенных поступлений от поставщиков."
 
@@ -32329,9 +32326,6 @@ msgstr "Полки и ячейки, где физически располага
 msgid "The shop cannot finish this by {promised}."
 msgstr "Цех не сможет завершить это к {promised}."
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "Цех отклоняет работу над единицей, пока проблема не закрыта. Остальные единицы задания не затрагиваются."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Расходные материалы и товары, которые вы держите под рукой"
 
@@ -34255,6 +34249,9 @@ msgstr "Единицы"
 msgid "Units don't match"
 msgstr "Единицы измерения не совпадают"
 
+msgid "Units excluded from this receipt"
+msgstr "Изделия, исключённые из этой приёмки"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Единицы базовой валюты за одну единицу этой валюты; используется для преобразования сумм при проведении"
 
@@ -34263,9 +34260,6 @@ msgstr "единицы измерения"
 
 msgid "Units of measure"
 msgstr "Единицы измерения"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "Единицы, приостановленные из-за открытой проблемы качества, не принимаются на склад."
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Единицы, объявленные неремонтируемыми на операции с указанием причины — альтернатива доработке"
@@ -35716,6 +35710,9 @@ msgstr "Отложенная выручка, накопленная выручк
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "Когда каждый период договора аренды или договора подлежит выставлению счетов: Авансово в первый день, до использования периода, или В рассрочку в последний день, после его начисления."
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "При включённой настройке изделия, назначенные к списанию или возврату поставщику, остаются заблокированными после закрытия проблемы."
 
 msgid "When expired stock is used"
 msgstr "Когда используется Запас с истекшим сроком"

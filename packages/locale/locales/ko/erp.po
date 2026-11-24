@@ -12586,9 +12586,6 @@ msgstr "데이터 변경 사항 추적을 시작하려면 활성화하세요."
 msgid "Enable to start tracking work shifts."
 msgstr "작업 교대조 추적을 시작하려면 활성화하세요."
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "활성화하면 이슈가 종결될 때까지 시리얼 번호 유닛의 작업을 중지합니다."
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "전기된 구매 입고에서 부품 리드타임을 업데이트하려면 활성화합니다."
 
@@ -32329,9 +32326,6 @@ msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
 msgid "The shop cannot finish this by {promised}."
 msgstr "생산 현장에서 {promised}까지 완료할 수 없습니다."
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "이슈가 종결될 때까지 현장에서 해당 유닛의 작업을 거부합니다. 작업의 다른 유닛은 영향을 받지 않습니다."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "보유하고 있는 공장 소모품 및 소모재"
 
@@ -34255,6 +34249,9 @@ msgstr "단위"
 msgid "Units don't match"
 msgstr "단위가 일치하지 않습니다"
 
+msgid "Units excluded from this receipt"
+msgstr "이 입고에서 제외된 단위"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "이 통화 1단위당 기준 통화 단위 수로, 전기 시 금액 환산에 사용됩니다."
 
@@ -34263,9 +34260,6 @@ msgstr "측정 단위"
 
 msgid "Units of measure"
 msgstr "측정 단위"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "미결 품질 이슈로 보류 중인 유닛은 입고되지 않습니다."
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "공정작업에서 사유와 함께 회복 불가로 보고된 수량으로, 재작업의 대안입니다."
@@ -35716,6 +35710,9 @@ msgstr "이연, 발생 및 임차료 이자 매출이 인식될 때"
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "임차료 계약 또는 계약의 각 청구 기간이 송장 발급 시 도래할 때: 기간이 사용되기 전 첫 날에 선급하거나, 이익이 발생한 후 마지막 날에 후급합니다."
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "이 설정을 켜면 폐기 또는 공급업체 반품으로 판정된 단위는 이슈가 종료된 후에도 차단됩니다."
 
 msgid "When expired stock is used"
 msgstr "만료된 재고가 사용될 때"

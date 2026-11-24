@@ -2637,6 +2637,9 @@ msgstr "Kalite Sorunu"
 msgid "Quality issue created"
 msgstr "Kalite sorunu oluşturuldu"
 
+msgid "Quality rejected this unit for production."
+msgstr "Kalite birimi bu ürünü üretim için reddetti."
+
 msgid "Quantity"
 msgstr "Miktar"
 

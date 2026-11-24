@@ -12586,9 +12586,6 @@ msgstr "Verilerinizi izlemeye başlamak için etkinleştirin."
 msgid "Enable to start tracking work shifts."
 msgstr "Çalışma vardiyalarını izlemeye başlamak için etkinleştir."
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "Seri numaralı bir birimdeki işi, sorunu kapatılana kadar durdurmak için etkinleştirin."
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Parça tedarik sürelerini muhasebeleştirilmiş mal kabul belgelerinden güncellemek için etkinleştirin."
 
@@ -32329,9 +32326,6 @@ msgstr "Stoğun fiziksel olarak bulunduğu raflar ve gözler"
 msgid "The shop cannot finish this by {promised}."
 msgstr "Atölye bunu {promised} tarihine kadar tamamlayamaz."
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "Atölye, sorun kapatılana kadar birim üzerindeki işi reddeder. İşin diğer birimleri etkilenmez."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Elinizdeki tezgâh malzemeleri ve sarf malzemeleri"
 
@@ -34255,6 +34249,9 @@ msgstr "Birimler"
 msgid "Units don't match"
 msgstr "Birimler eşleşmiyor"
 
+msgid "Units excluded from this receipt"
+msgstr "Bu stok girişine dahil edilmeyen birimler"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Bu paranın bir biriminin temel para cinsinden kaç birim olduğunu gösterir; muhasebeleştirme sırasında tutarları çevirmek için kullanılır."
 
@@ -34263,9 +34260,6 @@ msgstr "ölçü birimleri"
 
 msgid "Units of measure"
 msgstr "Ölçü birimleri"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "Açık bir kalite sorunu nedeniyle askıda olan birimler teslim alınmaz."
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Bir işlemde kurtarılamaz olarak raporlanan birimler, bir nedenle — yeniden işlem için bir alternatif."
@@ -35716,6 +35710,9 @@ msgstr "Ertelenen, tahakkuk eden ve kira faiz hasılat muhasebeleştirilecek"
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "Bir kiralama sözleşmesinin veya sözleşmenin her bir faturalama döneminin faturalaması için vadesi geldiğinde: İlk gün önceden (dönem kullanılmadan önce) veya son gün sonradan (kazanıldıktan sonra)."
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "Bu ayar açıkken hurdaya ayrılan veya tedarikçiye iade edilecek birimler, sorun kapatıldıktan sonra da engelli kalır."
 
 msgid "When expired stock is used"
 msgstr "Süresi dolmuş Stok kullanıldığında"

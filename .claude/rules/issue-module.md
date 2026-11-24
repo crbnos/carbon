@@ -39,7 +39,7 @@ in the migrations — **newest wins**; core tables created in
   An issue that is not `Closed` and is linked to a serial unit
   (`nonConformanceTrackedEntity`) puts that unit on hold in the MES when
   `companySettings.holdUnitsWithOpenIssues` is on (Settings → Quality); see
-  `mes-job-operation-ui.md` → Quality hold.
+  `mes-job-operation-ui.md` → Quality hold. After closure, the serials on Scrap and Return to Supplier disposition rows remain blocked by `unitQualityHold`.
 - **Task status** (`nonConformanceTaskStatus`): `Pending`, `In Progress`,
   `Completed`, `Skipped`. Tasks start `Pending`; they do **not** auto-start.
 - **Source** (`nonConformanceSource`): `Internal`, `External`.

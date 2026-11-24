@@ -2,17 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// A serial unit is on hold while an issue that is not Closed is linked to it
-// (`nonConformanceTrackedEntity`) and the company has turned the rule on
-// (`companySettings.holdUnitsWithOpenIssues`). Nothing is stored: closing the
-// issue releases the unit, reopening it holds the unit again.
-//
-// "On hold", never "held": a held unit is the one on the operator's screen
-// (`resolveWorkUnit`'s `heldUnitId`).
-
-import type { Database } from "@carbon/database";
+import { type Database, fetchAllByIds } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
-import { chunkArray } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { UnitHolds } from "~/utils/unitHold";
 
@@ -20,14 +11,7 @@ const log = getLogger("mes", "unit-hold");
 
 type Client = SupabaseClient<Database>;
 
-/** PostgREST's URL carries the ids: a longer list is read in parts. */
-const UNIT_IDS_PER_READ = 100;
-
-/**
- * The open issues that hold each of `unitIds`, oldest first. A unit with none
- * has no key. Empty when the company has not turned the rule on: one read of
- * its settings and nothing else.
- */
+/** Open issues and closed rejecting dispositions, by serial in display order. */
 export async function readUnitHolds(
   client: Client,
   args: { companyId: string; unitIds: string[] }
@@ -46,45 +30,34 @@ export async function readUnitHolds(
     return { data: {}, error: null };
   }
 
-  const reads = await Promise.all(
-    chunkArray(unitIds, UNIT_IDS_PER_READ).map((ids) =>
-      client
-        .from("nonConformanceTrackedEntity")
-        .select(
-          "trackedEntityId, nonConformance!inner(id, nonConformanceId, name, description, status, createdAt, nonConformanceType(name))"
-        )
-        .in("trackedEntityId", ids)
-        .eq("companyId", args.companyId)
-        .neq("nonConformance.status", "Closed")
-    )
+  const read = await fetchAllByIds<
+    Database["public"]["Views"]["unitQualityHold"]["Row"]
+  >(unitIds, (ids) =>
+    client
+      .from("unitQualityHold")
+      .select("*")
+      .in("trackedEntityId", ids)
+      .eq("companyId", args.companyId)
+      .order("trackedEntityId")
+      .order("createdAt")
+      .order("issueNumber")
+      .order("issueId")
   );
-
+  if (read.error) return { data: null, error: read.error };
   const holds: UnitHolds = {};
-  for (const read of reads) {
-    if (read.error) return { data: null, error: read.error };
-    for (const row of read.data ?? []) {
-      const issue = row.nonConformance;
-      // Restated here: the status filter above is on an embedded table.
-      if (!issue || issue.status === "Closed") continue;
-      const issues = holds[row.trackedEntityId] ?? [];
-      issues.push({
-        id: issue.id,
-        readableId: issue.nonConformanceId,
-        name: issue.name,
-        description: issue.description,
-        type: issue.nonConformanceType?.name ?? null,
-        status: issue.status,
-        createdAt: issue.createdAt
-      });
-      holds[row.trackedEntityId] = issues;
-    }
-  }
-  for (const issues of Object.values(holds)) {
-    issues.sort(
-      (a, b) =>
-        a.createdAt.localeCompare(b.createdAt) ||
-        a.readableId.localeCompare(b.readableId)
-    );
+  for (const row of read.data) {
+    // These columns come from non-null base columns; the generated view type
+    // marks all columns nullable.
+    (holds[row.trackedEntityId!] ??= []).push({
+      id: row.issueId!,
+      readableId: row.issueNumber!,
+      name: row.name!,
+      type: row.issueType,
+      description: row.description,
+      status: row.status!,
+      createdAt: row.createdAt!,
+      ...(row.disposition ? { disposition: row.disposition } : {})
+    });
   }
   return { data: holds, error: null };
 }

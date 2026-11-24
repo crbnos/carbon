@@ -12586,9 +12586,6 @@ msgstr "Enable to start tracking changes to your data."
 msgid "Enable to start tracking work shifts."
 msgstr "Enable to start tracking work shifts."
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "Enable to stop work on a serial unit until its issue is closed."
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Enable to update part lead times from posted purchase receipts."
 
@@ -32329,9 +32326,6 @@ msgstr "The shelves and bins where stock physically sits"
 msgid "The shop cannot finish this by {promised}."
 msgstr "The shop cannot finish this by {promised}."
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "The shop supplies and consumables you keep on hand"
 
@@ -34255,6 +34249,9 @@ msgstr "Units"
 msgid "Units don't match"
 msgstr "Units don't match"
 
+msgid "Units excluded from this receipt"
+msgstr "Units excluded from this receipt"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Units of base currency per one unit of this currency; used to translate amounts on posting."
 
@@ -34263,9 +34260,6 @@ msgstr "units of measure"
 
 msgid "Units of measure"
 msgstr "Units of measure"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "Units on hold for an open quality issue are not received."
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
@@ -35716,6 +35710,9 @@ msgstr "When deferred, accrued and lease-interest revenue will be recognized"
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
 
 msgid "When expired stock is used"
 msgstr "When expired stock is used"

@@ -12586,9 +12586,6 @@ msgstr "Włącz, aby rozpocząć śledzenie zmian w Twoich danych."
 msgid "Enable to start tracking work shifts."
 msgstr "Włącz, aby rozpocząć śledzenie zmian pracy."
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "Włącz, aby wstrzymać pracę nad jednostką z numerem seryjnym do czasu zamknięcia jej problemu."
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Włącz, aby zaktualizować czasy realizacji części z zaksięgowanych przyjęć zakupów."
 
@@ -32329,9 +32326,6 @@ msgstr "Półki i pojemniki, gdzie fizycznie znajduje się zapas"
 msgid "The shop cannot finish this by {promised}."
 msgstr "Warsztat nie zdąży tego zakończyć do {promised}."
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "Hala odmawia pracy nad jednostką do czasu zamknięcia problemu. Pozostałe jednostki zlecenia nie są objęte wstrzymaniem."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Materiały eksploatacyjne i zużywalne, które masz pod ręką"
 
@@ -34255,6 +34249,9 @@ msgstr "Jednostki"
 msgid "Units don't match"
 msgstr "Jednostki nie są zgodne"
 
+msgid "Units excluded from this receipt"
+msgstr "Jednostki wyłączone z tego przyjęcia"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Jednostki waluty bazowej na jedną jednostkę tej waluty; używane do tłumaczenia kwot podczas księgowania."
 
@@ -34263,9 +34260,6 @@ msgstr "jednostki miary"
 
 msgid "Units of measure"
 msgstr "Jednostki miary"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "Jednostki wstrzymane z powodu otwartego problemu jakościowego nie są przyjmowane."
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Sztuki zgłoszone jako nie do odzyskania na operacji, z podaniem przyczyny — alternatywa dla poprawki."
@@ -35716,6 +35710,9 @@ msgstr "Gdy przychody opóźnione, naliczone i z odsetek leasingowych będą uj�
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "Kiedy każdy okres rozliczeniowy umowy wynajmu lub kontraktu przypada do fakturowania: Zaliczka w pierwszy dzień, przed wykorzystaniem okresu, lub Zaległości w ostatni dzień, po jego wykonaniu."
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "Po włączeniu tej opcji jednostki przeznaczone do złomowania lub zwrotu do dostawcy pozostają zablokowane po zamknięciu zgłoszenia."
 
 msgid "When expired stock is used"
 msgstr "Gdy używany jest wygasły zapas"

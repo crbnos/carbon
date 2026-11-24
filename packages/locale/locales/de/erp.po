@@ -12586,9 +12586,6 @@ msgstr "Aktivieren Sie diese Option, um Änderungen an Ihren Daten zu verfolgen.
 msgid "Enable to start tracking work shifts."
 msgstr "Aktivieren Sie die Nachverfolgung von Schichten."
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "Aktivieren, um die Arbeit an einer Einheit mit Seriennummer anzuhalten, bis ihr Problem geschlossen ist."
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Aktivieren, um Beschaffungszeiten von Teilen aus gebuchten Wareneingängen zu aktualisieren."
 
@@ -32329,9 +32326,6 @@ msgstr "Die Regale und Lagerplätze, an denen Bestand physisch sitzt"
 msgid "The shop cannot finish this by {promised}."
 msgstr "Die Werkstatt kann dies nicht bis {promised} fertigstellen."
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "Die Fertigung lehnt Arbeit an der Einheit ab, bis das Problem geschlossen ist. Andere Einheiten des Auftrags sind nicht betroffen."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Die Werkstattbedarf und Verbrauchsmaterialien, die Sie bereithalten"
 
@@ -34255,6 +34249,9 @@ msgstr "Einheiten"
 msgid "Units don't match"
 msgstr "Einheiten stimmen nicht überein"
 
+msgid "Units excluded from this receipt"
+msgstr "Von diesem Zugang ausgeschlossene Einheiten"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Einheiten der Basiswährung pro einer Einheit dieser Währung; wird verwendet, um Beträge bei der Buchung umzuwandeln."
 
@@ -34263,9 +34260,6 @@ msgstr "Maßeinheiten"
 
 msgid "Units of measure"
 msgstr "Maßeinheiten"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "Einheiten, die wegen eines offenen Qualitätsproblems angehalten sind, werden nicht eingebucht."
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Einheiten, die bei einer Operation mit einem Grund als nicht behebbar gemeldet werden — die Alternative zu Nacharbeiten."
@@ -35716,6 +35710,9 @@ msgstr "Wenn aufgeschobene, aufgelaufene und Mieterlöse erfasst werden"
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "Wenn jeder Abrechnungszeitraum einer Mietvereinbarung oder eines Vertrags zur Fakturierung fällig wird: Im Voraus am ersten Tag, bevor der Zeitraum genutzt wird, oder Im Nachhinein am letzten Tag, nachdem er verdient ist."
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "Wenn diese Einstellung aktiviert ist, bleiben Einheiten mit der Entscheidung „Verschrotten“ oder „Rücksendung an Lieferanten“ nach Abschluss der Meldung gesperrt."
 
 msgid "When expired stock is used"
 msgstr "Wenn abgelaufene Bestände verwendet werden"

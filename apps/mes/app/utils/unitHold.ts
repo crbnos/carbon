@@ -8,7 +8,7 @@
 
 import type { Database } from "@carbon/database";
 
-/** An open issue linked to a unit. */
+/** An open issue or a closed disposition that excludes this serial. */
 export type HoldingIssue = {
   id: string;
   /** The issue number the operator and quality both see. */
@@ -18,6 +18,7 @@ export type HoldingIssue = {
   /** The issue type's name. */
   type: string | null;
   status: Database["public"]["Enums"]["nonConformanceStatus"];
+  disposition?: Database["public"]["Enums"]["disposition"];
   createdAt: string;
 };
 
@@ -39,9 +40,16 @@ export function isUnitOnHold(
   return holdingIssues(holds, unitId).length > 0;
 }
 
+/** The shop-floor reason, including the material decision on closed issues. */
+export function holdingIssueLabel(issue: HoldingIssue): string {
+  return issue.disposition
+    ? `${issue.readableId} (${issue.disposition})`
+    : issue.readableId;
+}
+
 /** The server's refusal of work on a unit on hold. Names every issue. */
 export function unitOnHoldMessage(issues: HoldingIssue[]): string {
-  const numbers = issues.map((issue) => issue.readableId).join(", ");
+  const numbers = issues.map(holdingIssueLabel).join(", ");
   return issues.length > 1
     ? `This unit is on hold for issues ${numbers}`
     : `This unit is on hold for issue ${numbers}`;

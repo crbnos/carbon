@@ -12586,9 +12586,6 @@ msgstr "Abilita per iniziare a tracciare le modifiche ai tuoi dati."
 msgid "Enable to start tracking work shifts."
 msgstr "Abilita per iniziare a tracciare i turni di lavoro."
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "Attiva per fermare il lavoro su un'unità con numero di serie finché il suo problema non viene chiuso."
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Attiva per aggiornare i lead time dei componenti dalle entrate merci registrate."
 
@@ -32329,9 +32326,6 @@ msgstr "Gli scaffali e i contenitori dove il magazzino si trova fisicamente"
 msgid "The shop cannot finish this by {promised}."
 msgstr "L'officina non può terminare questo entro {promised}."
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "L'officina rifiuta il lavoro sull'unità finché il problema non viene chiuso. Le altre unità del lavoro non sono interessate."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "I materiali di consumo e le forniture che tieni a portata di mano"
 
@@ -34255,6 +34249,9 @@ msgstr "Unità"
 msgid "Units don't match"
 msgstr "Le unità non corrispondono"
 
+msgid "Units excluded from this receipt"
+msgstr "Unità escluse da questa ricezione"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Unità di valuta base per una unità di questa valuta; utilizzato per tradurre gli importi al momento della registrazione."
 
@@ -34263,9 +34260,6 @@ msgstr "unità di misura"
 
 msgid "Units of measure"
 msgstr "Unità di misura"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "Le unità in sospeso per un problema di qualità aperto non vengono ricevute."
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Unità segnalate come non recuperabili in un'operazione, con un motivo — l'alternativa al rilavorazione."
@@ -35716,6 +35710,9 @@ msgstr "Quando verranno riconosciuti i ricavi differiti, accumulati e di interes
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "Quando ogni periodo di fatturazione di un accordo di noleggio o di un contratto è dovuto per la fatturazione: Anticipato il primo giorno, prima che il periodo sia utilizzato, oppure Arretrato l'ultimo giorno, dopo che è maturato."
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "Se attiva, le unità destinate allo scarto o al reso al fornitore restano bloccate dopo la chiusura della segnalazione."
 
 msgid "When expired stock is used"
 msgstr "Quando viene utilizzato stock scaduto"

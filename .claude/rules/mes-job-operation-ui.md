@@ -131,13 +131,12 @@ lands on the bare resource route.
 
 With `companySettings.holdUnitsWithOpenIssues` on (Settings → Quality, default
 off), a serial unit is **on hold** while an issue that is not `Closed` links it
-in `nonConformanceTrackedEntity`. Nothing is stored: closing the issue releases
-the unit and reopening it holds it again. "On hold", never "held": a held unit
+in `nonConformanceTrackedEntity`. The hold follows the issue and its per-serial disposition. "On hold", never "held": a held unit
 is the one on the operator's screen. Spec:
 `.ai/specs/implemented/2026-11-23-unit-quality-hold.md`.
 
 - **One reader:** `readUnitHolds` (`services/unit-hold.server.ts`) returns
-  `UnitHolds` (`~/utils/unitHold`): the open issues per unit, oldest first. With
+  `UnitHolds` (`~/utils/unitHold`): the blocking issues and dispositions per unit, oldest first. With
   the setting off it reads the settings row and nothing else.
 - **The server:** `resolveWorkUnit` reads the holds of the units still to do
   (not in `member` mode, never for a lot) and `decideWorkUnit` treats a unit on
@@ -159,20 +158,20 @@ is the one on the operator's screen. Spec:
   The operation loader's first-operation redirect skips a unit on hold.
 - **Receipt to stock:** a completion names no unit (`finish`, the ERP's
   Complete, a batch completion), so `complete_job_to_inventory`
-  (`20261124035931_unit-hold-job-receipt.sql`) leaves a unit on hold out of
+  (`20261124052513_rejected_serial_disposition.sql`) leaves a unit on hold out of
   the units it receives and stops the completion quantity short of them. A
-  later completion receives the unit once its issue is closed. Pinned by
+  later completion can receive the unit once Quality accepts it and its other holds clear. Pinned by
   `apps/erp/test/database/job-receipt-unit-hold.test.ts`.
 - **Inspection lots:** `getInspectionOutcomeState` (`quality.server.ts`) reads
   the holds, and `entityEligible` leaves a unit on hold out of the units a
   lot's decision completes.
-- **Not gated:** `trigger-rework` (it sends units to rework and completes
-  none), batch step records, and `finish` itself (it names no unit; the
+- **Dispatch:** rework and correction postings refuse units with a closed rejecting disposition.
+- **Not gated:** batch step records and `finish` itself (it names no unit; the
   receipt above is what keeps the unit out of stock).
-- **After the issue closes:** the hold is gone whatever the disposition. A
-  Scrap or Return to Supplier sets the unit `Rejected`, and nothing in the
-  MES stops work on a `Rejected` unit; its next completion sets it back to
-  `Available`. That is unchanged by the hold.
+- **After the issue closes:** `unitQualityHold` keeps only serials linked to a
+  Scrap or Return to Supplier disposition row blocked. The serial completion and scrap
+  postings check the view under the tracked entity lock before recording output.
+  Other serials on the same issue follow their own dispositions.
 
 ## Batch mode (operation batching)
 

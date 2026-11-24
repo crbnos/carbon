@@ -3430,7 +3430,6 @@ export async function getJobReceiptHolds(
 ) {
   return db
     .selectFrom("jobMakeMethod as method")
-    .innerJoin("companySettings as settings", "settings.id", "method.companyId")
     .innerJoin("trackedEntity as unit", (join) =>
       join
         .onRef("unit.companyId", "=", "method.companyId")
@@ -3442,31 +3441,26 @@ export async function getJobReceiptHolds(
           )
         )
     )
-    .innerJoin("nonConformanceTrackedEntity as link", (join) =>
+    .innerJoin("unitQualityHold as hold", (join) =>
       join
-        .onRef("link.trackedEntityId", "=", "unit.id")
-        .onRef("link.companyId", "=", "unit.companyId")
-    )
-    .innerJoin("nonConformance as issue", (join) =>
-      join
-        .onRef("issue.id", "=", "link.nonConformanceId")
-        .onRef("issue.companyId", "=", "link.companyId")
+        .onRef("hold.trackedEntityId", "=", "unit.id")
+        .onRef("hold.companyId", "=", "unit.companyId")
     )
     .select(["unit.id", "unit.readableId as serial"])
-    .select((eb) =>
-      eb.fn
-        .agg<string[]>("array_agg", ["issue.nonConformanceId"])
-        .distinct()
-        .orderBy("issue.nonConformanceId")
-        .as("issues")
-    )
+    .select([
+      sql<
+        string[]
+      >`array_agg(DISTINCT concat_ws(' · ', hold."issueNumber", hold.disposition) ORDER BY concat_ws(' · ', hold."issueNumber", hold.disposition))`.as(
+        "issues"
+      ),
+      sql<boolean>`bool_or(hold.disposition IS NOT NULL)`.as("rejected")
+    ])
     .where("method.jobId", "=", jobId)
     .where("method.companyId", "=", companyId)
     .where("method.parentMaterialId", "is", null)
     .where("method.requiresSerialTracking", "=", true)
-    .where("settings.holdUnitsWithOpenIssues", "=", true)
     .where("unit.quantity", "=", 1)
-    .where("unit.status", "not in", ["Rejected", "Scrapped"])
+    .where("unit.status", "!=", "Scrapped")
     .where((eb) =>
       eb.or([
         eb("unit.status", "!=", "Consumed"),
@@ -3480,7 +3474,6 @@ export async function getJobReceiptHolds(
         )
       ])
     )
-    .where("issue.status", "!=", "Closed")
     .where((eb) =>
       eb.not(
         eb.exists(
@@ -27655,14 +27648,6 @@ export async function triggerRework(
     body.companyId,
     "Tracked entity"
   );
-  await assertUnitsOfMakeMethod(db, {
-    trackedEntityIds: body.trackedEntityIds ?? [],
-    jobMakeMethodId: operations.find(
-      (operation) => operation.id === body.triggeredAtJobOperationId
-    )?.jobMakeMethodId,
-    jobOperationId: body.triggeredAtJobOperationId,
-    companyId: body.companyId
-  });
 
   // Written as productionQuantity.inspectionId, whose FK accepts any company's
   // inspection.
@@ -27681,6 +27666,14 @@ export async function triggerRework(
   });
 
   const result = await db.transaction().execute(async (trx) => {
+    await assertUnitsOfMakeMethod(trx, {
+      trackedEntityIds: body.trackedEntityIds ?? [],
+      jobMakeMethodId: operations.find(
+        (operation) => operation.id === body.triggeredAtJobOperationId
+      )?.jobMakeMethodId,
+      jobOperationId: body.triggeredAtJobOperationId,
+      companyId: body.companyId
+    });
     return await cloneReworkOperations(trx, body);
   });
 
@@ -27725,6 +27718,8 @@ async function assertUnitsOfMakeMethod(
         .where("id", "in", ids)
         .where("companyId", "=", args.companyId)
         .where(sql`"attributes"->>'Job Make Method'`, "=", args.jobMakeMethodId)
+        .orderBy("id")
+        .forUpdate()
         .execute()
     : [];
   if (units.length !== ids.length) {
@@ -27732,6 +27727,23 @@ async function assertUnitsOfMakeMethod(
       "A unit is not a unit of this operation's part on this job"
     );
   }
+  // Quality may send an open issue to correction. A finished Scrap/Return
+  // decision excludes that serial from a newly dispatched rework route.
+  const rejected = await db
+    .selectFrom("unitQualityHold as hold")
+    .innerJoin("jobMakeMethod as method", "method.companyId", "hold.companyId")
+    .select(["hold.issueNumber", "hold.disposition"])
+    .where("method.id", "=", args.jobMakeMethodId!)
+    .where("method.requiresSerialTracking", "=", true)
+    .where("hold.companyId", "=", args.companyId)
+    .where("hold.trackedEntityId", "in", ids)
+    .where("hold.disposition", "is not", null)
+    .orderBy("hold.issueNumber")
+    .executeTakeFirst();
+  if (rejected)
+    throw new InvalidInputError(
+      `Quality rejected this unit: ${rejected.issueNumber} (${rejected.disposition})`
+    );
   // A rework or correction operation works only the units sent into it, so
   // only those units can be sent on from it.
   if (args.jobOperationId) {
@@ -27825,12 +27837,6 @@ export async function triggerCorrection(
     companyId,
     "Tracked entity"
   );
-  await assertUnitsOfMakeMethod(db, {
-    trackedEntityIds,
-    jobMakeMethodId: triggeringOperation.jobMakeMethodId,
-    jobOperationId: triggeringOperation.id,
-    companyId
-  });
   await assertCompanyRecords(
     db,
     "inspection",
@@ -27846,6 +27852,12 @@ export async function triggerCorrection(
   }
 
   const result = await db.transaction().execute(async (trx) => {
+    await assertUnitsOfMakeMethod(trx, {
+      trackedEntityIds,
+      jobMakeMethodId: triggeringOperation.jobMakeMethodId,
+      jobOperationId: triggeringOperation.id,
+      companyId
+    });
     // Two operators who confirm at the same moment must not both pass the
     // limit: lock the correction, then count the uses under the lock.
     await trx

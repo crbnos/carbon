@@ -12586,9 +12586,6 @@ msgstr "Activez pour commencer à suivre les modifications de vos données."
 msgid "Enable to start tracking work shifts."
 msgstr "Activez pour commencer à suivre les équipes de travail."
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "Activez pour arrêter le travail sur une unité sérialisée jusqu'à la clôture de son problème."
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Activez pour mettre à jour les délais d'approvisionnement des pièces à partir des réceptions d'achat comptabilisées."
 
@@ -32329,9 +32326,6 @@ msgstr "Les étagères et casiers où le stock se trouve physiquement"
 msgid "The shop cannot finish this by {promised}."
 msgstr "L'atelier ne peut pas terminer ceci d'ici {promised}."
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "L'atelier refuse le travail sur l'unité jusqu'à la clôture du problème. Les autres unités de la tâche ne sont pas concernées."
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Les fournitures de magasin et les consommables que vous gardez à portée de main"
 
@@ -34255,6 +34249,9 @@ msgstr "Unités"
 msgid "Units don't match"
 msgstr "Les unités ne correspondent pas"
 
+msgid "Units excluded from this receipt"
+msgstr "Unités exclues de cette réception"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Unités de devise de base par une unité de cette devise ; utilisé pour traduire les montants lors de la comptabilisation."
 
@@ -34263,9 +34260,6 @@ msgstr "unités de mesure"
 
 msgid "Units of measure"
 msgstr "Unités de mesure"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "Les unités suspendues pour un problème qualité ouvert ne sont pas réceptionnées."
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Unités signalées comme irrécupérables à une opération, avec un motif — l'alternative à la retouche."
@@ -35716,6 +35710,9 @@ msgstr "Quand reportés, les revenus engagés et les revenus d'intérêts de loc
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "Pour chaque période de facturation d'un accord de location ou d'un contrat qui arrive à échéance : Facturation anticipée le premier jour, avant l'utilisation de la période, ou Facturation à terme le dernier jour, après qu'elle soit gagnée."
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "Lorsque cette option est activée, les unités destinées au rebut ou au retour fournisseur restent bloquées après la clôture du problème."
 
 msgid "When expired stock is used"
 msgstr "Lorsque du stock expiré est utilisé"

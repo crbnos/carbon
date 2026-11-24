@@ -2637,6 +2637,9 @@ msgstr "品質問題"
 msgid "Quality issue created"
 msgstr "品質問題が作成されました"
 
+msgid "Quality rejected this unit for production."
+msgstr "品質部門がこのユニットを生産に使用できないと判定しました。"
+
 msgid "Quantity"
 msgstr "数量"
 

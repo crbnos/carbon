@@ -6195,6 +6195,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "changeOrder_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "changeOrder_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -37898,6 +37905,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "maintenanceDispatch_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "maintenanceDispatch_procedureId_fkey"
             columns: ["procedureId"]
             isOneToOne: false
@@ -43557,6 +43571,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceActionTask_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceActionTask_supplierId_fkey"
             columns: ["supplierId", "companyId"]
             isOneToOne: false
@@ -43786,6 +43807,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceApprovalTask_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceApprovalTask_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -43953,6 +43981,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceCustomer_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceCustomer_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -44101,6 +44136,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceInboundInspection_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceInboundInspection_updatedBy_fkey"
@@ -44297,6 +44339,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceItem_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceItem_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -44447,6 +44496,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nciTrackedEntity_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nciTrackedEntity_nonConformanceItemId_fkey"
@@ -44664,6 +44720,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceJobOperation_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceJobOperation_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -44814,6 +44877,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformancePurchaseOrderLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformancePurchaseOrderLine_purchaseOrderId_fkey"
@@ -45034,6 +45104,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformancePurchaseReturnOrderLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformancePurchaseReturnOrderLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -45184,6 +45261,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceReceiptLine_receiptId_fkey"
@@ -45548,6 +45632,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceReviewer_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceReviewer_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -45698,6 +45789,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceSalesOrderLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceSalesOrderLine_salesOrderId_fkey"
@@ -45894,6 +45992,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceSalesReturnOrderLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceSalesReturnOrderLine_salesReturnOrderLineId_fkey"
             columns: ["salesReturnOrderLineId", "companyId"]
             isOneToOne: false
@@ -46051,6 +46156,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceShipmentLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceShipmentLine_shipmentId_fkey"
@@ -46230,6 +46342,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceSupplier_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceSupplier_supplierId_fkey"
             columns: ["supplierId", "companyId"]
             isOneToOne: false
@@ -46395,6 +46514,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "nonConformanceTrackedEntity_trackedEntityId_fkey"
@@ -90171,6 +90297,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "maintenanceDispatch_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "maintenanceDispatch_suspectedFailureModeId_fkey"
             columns: ["suspectedFailureModeId"]
             isOneToOne: false
@@ -90847,6 +90980,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "nonConformance"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "changeOrder_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
           },
           {
             foreignKeyName: "changeOrder_updatedBy_fkey"
@@ -101695,6 +101835,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceActionTask_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "unitQualityHold"
+            referencedColumns: ["issueId"]
+          },
+          {
             foreignKeyName: "nonConformanceActionTask_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -108527,6 +108674,21 @@ export type Database = {
             referencedColumns: ["id", "companyId"]
           }
         ]
+      }
+      unitQualityHold: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          description: string | null
+          disposition: Database["public"]["Enums"]["disposition"] | null
+          issueId: string | null
+          issueNumber: string | null
+          issueType: string | null
+          name: string | null
+          status: Database["public"]["Enums"]["nonConformanceStatus"] | null
+          trackedEntityId: string | null
+        }
+        Relationships: []
       }
       userDefaults: {
         Row: {

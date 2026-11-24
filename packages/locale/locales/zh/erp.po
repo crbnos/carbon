@@ -12586,9 +12586,6 @@ msgstr "启用以开始跟踪您的数据变化。"
 msgid "Enable to start tracking work shifts."
 msgstr "启用以开始跟踪工作班次。"
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "启用后，带序列号的单元在其问题关闭之前停止作业。"
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "启用以从已过账的采购收货更新零件提前期。"
 
@@ -32329,9 +32326,6 @@ msgstr "库存实际存放的货架和料箱"
 msgid "The shop cannot finish this by {promised}."
 msgstr "车间无法在 {promised} 前完成。"
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "在问题关闭之前，车间拒绝对该单元进行作业。作业单中的其他单元不受影响。"
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "你随时拥有的耗材和消耗品"
 
@@ -34255,6 +34249,9 @@ msgstr "单位"
 msgid "Units don't match"
 msgstr "单位不一致"
 
+msgid "Units excluded from this receipt"
+msgstr "本次入库排除的产品"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "基础货币单位对该货币一个单位的比率;用于过账时金额的转换。"
 
@@ -34263,9 +34260,6 @@ msgstr "计量单位"
 
 msgid "Units of measure"
 msgstr "计量单位"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "因未关闭的质量问题而搁置的单元不会入库。"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替代方案。"
@@ -35716,6 +35710,9 @@ msgstr "当递延收入、应计收入和租赁利息收入被确认时"
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "当租赁协议或合同的每个计费期到期开票时：可选择在第一天（期间使用前）的提前开票方式，或在最后一天（期间应得后）的后付开票方式。"
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "启用后，判定为报废或退回供应商的产品在问题关闭后仍会被阻止使用。"
 
 msgid "When expired stock is used"
 msgstr "当使用已过期库存时"

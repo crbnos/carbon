@@ -12586,9 +12586,6 @@ msgstr "データへの変更の追跡を開始するには有効にしてくだ
 msgid "Enable to start tracking work shifts."
 msgstr "作業シフトの追跡を開始するには有効にしてください。"
 
-msgid "Enable to stop work on a serial unit until its issue is closed."
-msgstr "有効にすると、問題がクローズされるまでシリアル番号付きユニットの作業を止めます。"
-
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "転記済の購買入荷から部品のリードタイムを更新するために有効にします。"
 
@@ -32329,9 +32326,6 @@ msgstr "在庫が物理的に置かれている棚とビン。"
 msgid "The shop cannot finish this by {promised}."
 msgstr "工場では{promised}までに完了できません。"
 
-msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
-msgstr "問題がクローズされるまで、現場ではそのユニットの作業を受け付けません。ジョブの他のユニットには影響しません。"
-
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "手元に保管する店舗用品と消耗品"
 
@@ -34255,6 +34249,9 @@ msgstr "単位"
 msgid "Units don't match"
 msgstr "単位が一致しません"
 
+msgid "Units excluded from this receipt"
+msgstr "今回の入庫から除外されるユニット"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "この通貨の1単位あたりの基軸通貨の単位数。転記時の金額変換に使用します。"
 
@@ -34263,9 +34260,6 @@ msgstr "測定単位"
 
 msgid "Units of measure"
 msgstr "測定単位"
-
-msgid "Units on hold for an open quality issue are not received."
-msgstr "未解決の品質問題で保留中のユニットは入庫されません。"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "工程で回復不可能として報告された単位数（理由付き）。手直しの代替案です。"
@@ -35716,6 +35710,9 @@ msgstr "繰延収益、見越収益およびリース利息収益が認識され
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "レンタル契約または契約の各請求期間が請求期日に到達したとき：期間が使用される前にその初日に前払い請求するか、期間が獲得された後にその最終日に後払い請求するかを選択してください。"
+
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "有効にすると、廃棄または仕入先への返品と判定されたユニットは、問題のクローズ後もブロックされます。"
 
 msgid "When expired stock is used"
 msgstr "期限切れの在庫が使用される場合"

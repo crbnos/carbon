@@ -13,19 +13,17 @@ const link = (
 ) => ({
   trackedEntityId,
   companyId: over.companyId ?? "co",
-  nonConformance: {
-    id: `nc_${readableId}`,
-    nonConformanceId: readableId,
-    name: "Cracked housing",
-    description: "Found at final test",
-    status: over.status ?? "Registered",
-    createdAt: over.createdAt ?? "2026-01-02T00:00:00Z",
-    nonConformanceType: { name: "Defect" }
-  }
+  issueId: `nc_${readableId}`,
+  issueNumber: readableId,
+  name: "Cracked housing",
+  description: "Found at final test",
+  status: over.status ?? "Registered",
+  createdAt: over.createdAt ?? "2026-01-02T00:00:00Z",
+  issueType: "Defect"
 });
 const tables = (on: boolean, links: ReturnType<typeof link>[]) => ({
   companySettings: [{ id: "co", holdUnitsWithOpenIssues: on }],
-  nonConformanceTrackedEntity: links
+  unitQualityHold: links
 });
 
 describe("readUnitHolds", () => {
@@ -40,11 +38,9 @@ describe("readUnitHolds", () => {
   it("gives each unit its open issues, oldest first", async () => {
     const fake = fakeClient(
       tables(true, [
-        link("u1", "NCR-2"),
         link("u1", "NCR-1", { createdAt: "2026-01-01T00:00:00Z" }),
-        link("u1", "NCR-3", { status: "Closed" }),
+        link("u1", "NCR-2"),
         link("u2", "NCR-4", { status: "In Progress" }),
-        link("u3", "NCR-5", { status: "Closed" }),
         link("u9", "NCR-6")
       ])
     );
@@ -71,22 +67,16 @@ describe("readUnitHolds", () => {
     ]);
   });
 
-  it("reads the company's links only, and only open issues", async () => {
+  it("scopes the hold view to the requested company and serials", async () => {
     const fake = fakeClient(
       tables(true, [link("u1", "NCR-1", { companyId: "other" })])
     );
     expect(
       await readUnitHolds(fake.client, { companyId: "co", unitIds: ["u1"] })
     ).toEqual({ data: {}, error: null });
-    const read = fake.calls.find(
-      (call) => call.table === "nonConformanceTrackedEntity"
-    );
+    const read = fake.calls.find((call) => call.table === "unitQualityHold");
     expect(read?.filters).toContainEqual(["companyId", "co"]);
     expect(read?.filters).toContainEqual(["trackedEntityId", ["u1"]]);
-    expect(read?.filters).toContainEqual([
-      "nonConformance.status",
-      "neq.Closed"
-    ]);
   });
 
   it("reads a long list of units in parts, each id once", async () => {
@@ -98,7 +88,7 @@ describe("readUnitHolds", () => {
     });
     expect(Object.keys(holds.data ?? {})).toEqual(["u249"]);
     const sizes = fake.calls
-      .filter((call) => call.table === "nonConformanceTrackedEntity")
+      .filter((call) => call.table === "unitQualityHold")
       .map((call) => (call.filters[0]?.[1] as string[]).length);
     expect(sizes).toEqual([100, 100, 50]);
   });

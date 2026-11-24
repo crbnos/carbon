@@ -2637,6 +2637,9 @@ msgstr "Problème de qualité"
 msgid "Quality issue created"
 msgstr "Problème de qualité créé"
 
+msgid "Quality rejected this unit for production."
+msgstr "Le service qualité a refusé cette unité pour la production."
+
 msgid "Quantity"
 msgstr "Quantité"
 

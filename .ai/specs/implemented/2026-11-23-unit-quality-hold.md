@@ -9,17 +9,19 @@ A company can turn on **Issues: Hold Units** (Settings → Quality, off by
 default). With it on, a serial unit is on hold on the shop floor while an issue
 that is not Closed is linked to it. The MES refuses work that needs the unit
 open and tells the operator which issue holds it. Other units of the job keep
-moving. Closing the issue releases the unit.
+moving. Closing the issue keeps serials marked Scrap or Return to Supplier blocked.
 
 ## Overview diagram
 
 ```mermaid
 flowchart LR
-    A["Operator raises an issue on a unit"] --> B["Issue links the unit\n(nonConformanceTrackedEntity)"]
-    B --> C{"Setting on and\nissue not Closed?"}:::new
-    C -- yes --> D["Unit is on hold:\nresolveWorkUnit refuses work"]:::new
-    C -- no --> E["Unit is open"]
-    D --> F["Quality closes the issue"] --> E
+    A["MES or job receipt checks the serial"] --> B{"Issues: Hold Units enabled?"}
+    B -- no --> E["Eligible for production"]
+    B -- yes --> C{"Any linked open issue?"}
+    C -- yes --> D["On hold"]:::new
+    C -- no --> F{"Closed issue with Scrap or Return to Supplier on this serial?"}
+    F -- yes --> D
+    F -- no --> E
     classDef new stroke-dasharray:4 3
 ```
 
@@ -33,10 +35,9 @@ checking. Holding the whole job is too coarse: the other units are good.
 ## Proposed Solution
 
 **The rule.** A unit is on hold when `companySettings.holdUnitsWithOpenIssues`
-is true and a `nonConformanceTrackedEntity` row links it to an issue whose
-status is not `Closed`. The hold is derived on every read. No status is stored,
-so there is nothing to keep in step: closing or deleting the issue releases the
-unit, and reopening it holds the unit again.
+is true and the `unitQualityHold` view finds an open issue linked to it, or
+a closed issue whose material row dispositions that particular serial Scrap or
+Return to Supplier. Closing an accepted issue clears its hold.
 
 **One server check.** Every MES write of a serial unit already goes through
 `resolveWorkUnit` (`apps/mes/app/services/work-unit.server.ts`; the
@@ -67,7 +68,7 @@ by hand, the ERP's Complete and a batch completion all end in
 serial number alone. A unit on hold could be received in place of a finished
 one. With the setting on, the function leaves a unit on hold out of the units
 it receives, and the completion quantity stops short of the units on hold. A
-later completion receives the unit once its issue is closed. The Complete
+later completion can receive the unit if Quality accepts it. The Complete
 dialog leaves those units out of its preview. An inspection lot's decision
 leaves them out of the units it completes.
 
@@ -75,17 +76,13 @@ leaves them out of the units it completes.
 
 One column: `companySettings.holdUnitsWithOpenIssues BOOLEAN NOT NULL DEFAULT
 false`. No new table. `complete_job_to_inventory` is redefined with the rule
-(`20261124035931_unit-hold-job-receipt.sql`); with the setting off it behaves as
+(`20261124052513_rejected_serial_disposition.sql`); with the setting off it behaves as
 before.
 
 ## Not in scope
 
-- An override. Closing the issue is the release.
-- `trigger-rework` and batch step records, which do not use
-  `resolveWorkUnit` and complete no unit.
-- What the unit does after its issue closes. A Scrap or Return to Supplier
-  disposition sets the unit `Rejected`, and the MES does not stop work on a
-  `Rejected` unit. That is unchanged.
+- A production override. Quality owns the disposition.
+- Batch step records. Serial rework and correction dispatch check closed rejecting dispositions in the posting transaction.
 - Batches. A lot is one tracked entity and uses the same link table, so the
   same rule would hold the whole lot. A partial defect would first be split
   into its own lot (`subdivideBatchEntity`), and only that lot held.
