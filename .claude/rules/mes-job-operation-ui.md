@@ -91,7 +91,10 @@ redirects kinds it does not serve (no loops).
   mirrors (`complete.tsx` `willBeFinished`, `InspectionView`/`quality.server`
   `opRemaining`) also dropped the scrap term.
 - **Scrap approval** (`.ai/specs/2026-10-24-scrap-approval.md`): the operation
-  scrap route, the component scrap route, `batch.$batchId.complete.tsx`
+  scrap route, the component scrap route, the Scrap parts route
+  (`scrap-parts.$operationId.tsx`: the parts summed under one approval, one
+  `scrapRequest` per line; a resent request whose idempotency key already
+  booked posts without asking), `batch.$batchId.complete.tsx`
   (when a member scraps) and `inspection-lot.$id.disposition.tsx` (when the
   disposition scraps; `DispositionModal` holds the step) wrap their posting in
   `postScrapWithApproval`

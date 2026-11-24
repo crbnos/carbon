@@ -4,7 +4,8 @@
 
 // Pure decisions behind `scrap.server.ts`, testable without a database.
 
-import { equals } from "@carbon/utils";
+import { equals, round } from "@carbon/utils";
+import type { ScrapPartLine } from "./types";
 
 /**
  * The cost one unit of a material writes off, by the item's costing method,
@@ -97,6 +98,55 @@ export function operationScrapUnitValue(args: {
         valueOf(kit.materials.filter(isBackflushed)),
     own
   );
+}
+
+/**
+ * The item each part line of a `parts` scrap writes off, read against what the
+ * operation lists, as the scrapJobPart posting reads it: an untracked part by
+ * item among its material's parts, a tracked one by the serial or batch used
+ * on its material. Throws on a line the operation does not list, so the value
+ * never leaves a part out.
+ */
+export function resolveScrapPartLines(
+  materials: {
+    id: string;
+    parts: { itemId: string }[];
+    tracked: { trackedEntityId: string; itemId: string }[];
+  }[],
+  lines: ScrapPartLine[]
+): {
+  materialId: string;
+  itemId: string;
+  trackedEntityId: string | null;
+  quantity: number;
+}[] {
+  const materialById = new Map(materials.map((m) => [m.id, m]));
+  return lines.map((line) => {
+    const material = materialById.get(line.materialId);
+    if ("trackedEntityId" in line) {
+      const entity = material?.tracked.find(
+        (e) => e.trackedEntityId === line.trackedEntityId
+      );
+      if (!entity) {
+        throw new Error("This serial or batch was not used at this operation");
+      }
+      return {
+        materialId: line.materialId,
+        itemId: entity.itemId,
+        trackedEntityId: entity.trackedEntityId,
+        quantity: round(line.quantity)
+      };
+    }
+    if (!material?.parts.some((p) => p.itemId === line.itemId)) {
+      throw new Error("This part cannot be scrapped at this operation");
+    }
+    return {
+      materialId: line.materialId,
+      itemId: line.itemId,
+      trackedEntityId: null,
+      quantity: round(line.quantity)
+    };
+  });
 }
 
 /**

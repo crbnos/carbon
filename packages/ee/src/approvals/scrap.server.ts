@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { getScrappableParts } from "@carbon/database/scrappable-parts";
 import { getLogger } from "@carbon/logger";
 import { datetime, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -14,6 +15,7 @@ import {
   batchScrapApprovalReuse,
   materialUnitCost,
   operationScrapUnitValue,
+  resolveScrapPartLines,
   scrapApproverRefusal,
   sumBatchScrap
 } from "./scrap";
@@ -278,7 +280,7 @@ async function requireCompanyEntity(
 export async function describeScrap(
   db: Kysely<KyselyDatabase>,
   companyId: string,
-  subject: ScrapSubject
+  subject: Exclude<ScrapSubject, { type: "parts" }>
 ): Promise<ScrapDescription> {
   if (subject.type === "operation") {
     const [values] = await Promise.all([
@@ -382,6 +384,46 @@ export async function describeScrap(
     quantity: total.quantity,
     estimatedValue: round(total.value)
   };
+}
+
+/**
+ * `describeScrap` for any subject, as the scraps an approval records: one for
+ * a single scrap, one per line for the parts scrapped at an operation (each at
+ * its item's cost times its quantity, against the parts the operation lists,
+ * the read the scrapJobPart posting checks its lines with). Throws when the
+ * operation is not this company's or a line is not one it lists.
+ */
+export async function describeScraps(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  subject: ScrapSubject
+): Promise<ScrapDescription[]> {
+  if (subject.type !== "parts") {
+    return [await describeScrap(db, companyId, subject)];
+  }
+  const operation = await getScrappableParts(db, {
+    companyId,
+    jobOperationId: subject.jobOperationId
+  });
+  if (!operation) throw new Error("Job operation not found");
+  const lines = resolveScrapPartLines(operation.materials, subject.lines);
+  const costs = await unitCosts(
+    db,
+    companyId,
+    lines.map((line) => line.itemId)
+  );
+  return lines.map((line) => ({
+    jobId: operation.jobId,
+    jobOperationId: subject.jobOperationId,
+    jobOperationBatchId: null,
+    jobMaterialId: line.materialId,
+    trackedEntityId: line.trackedEntityId,
+    itemId: line.itemId,
+    scrapReasonId: subject.scrapReasonId ?? null,
+    notes: subject.notes ?? null,
+    quantity: line.quantity,
+    estimatedValue: round((costs.get(line.itemId) ?? 0) * line.quantity)
+  }));
 }
 
 type StockScrap = {

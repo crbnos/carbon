@@ -9,6 +9,7 @@ import {
   failedScrapPostingSettlement,
   materialUnitCost,
   operationScrapUnitValue,
+  resolveScrapPartLines,
   type ScrapValuationMaterial,
   scrapApproverRefusal,
   scrapWriteFailure,
@@ -342,5 +343,78 @@ describe("stockScrapSettlement", () => {
         ["item-a"]
       )
     ).toEqual({ written: ["scr-a"], refused: ["scr-b", "scr-c"] });
+  });
+});
+
+describe("resolveScrapPartLines", () => {
+  const materials = [
+    {
+      id: "mat-bolt",
+      parts: [{ itemId: "bolt" }],
+      tracked: []
+    },
+    {
+      id: "mat-kit",
+      parts: [{ itemId: "washer" }, { itemId: "nut" }],
+      tracked: [{ trackedEntityId: "sn-1", itemId: "sensor" }]
+    }
+  ];
+
+  it("names each line's item: the part's own, or the serial's", () => {
+    expect(
+      resolveScrapPartLines(materials, [
+        { materialId: "mat-bolt", itemId: "bolt", quantity: 3 },
+        { materialId: "mat-kit", itemId: "nut", quantity: 2 },
+        { materialId: "mat-kit", trackedEntityId: "sn-1", quantity: 1 }
+      ])
+    ).toEqual([
+      {
+        materialId: "mat-bolt",
+        itemId: "bolt",
+        trackedEntityId: null,
+        quantity: 3
+      },
+      {
+        materialId: "mat-kit",
+        itemId: "nut",
+        trackedEntityId: null,
+        quantity: 2
+      },
+      {
+        materialId: "mat-kit",
+        itemId: "sensor",
+        trackedEntityId: "sn-1",
+        quantity: 1
+      }
+    ]);
+  });
+
+  it("rounds each quantity at the internal scale", () => {
+    expect(
+      resolveScrapPartLines(materials, [
+        { materialId: "mat-bolt", itemId: "bolt", quantity: 0.1 + 0.2 }
+      ])[0]!.quantity
+    ).toBe(0.3);
+  });
+
+  it("refuses a part its material does not list, so no line goes unvalued", () => {
+    expect(() =>
+      resolveScrapPartLines(materials, [
+        { materialId: "mat-bolt", itemId: "nut", quantity: 1 }
+      ])
+    ).toThrow("This part cannot be scrapped at this operation");
+    expect(() =>
+      resolveScrapPartLines(materials, [
+        { materialId: "mat-other", itemId: "bolt", quantity: 1 }
+      ])
+    ).toThrow("This part cannot be scrapped at this operation");
+  });
+
+  it("refuses a serial or batch not used on its material", () => {
+    expect(() =>
+      resolveScrapPartLines(materials, [
+        { materialId: "mat-bolt", trackedEntityId: "sn-1", quantity: 1 }
+      ])
+    ).toThrow("This serial or batch was not used at this operation");
   });
 });

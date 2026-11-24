@@ -66,6 +66,9 @@ The approver is on the floor, so the sign-off happens in the same request as the
      still planned, and the materials of its kitted Make to Order children), plus every non
      Make to Order material of the earlier operations, times the scrap quantity.
    - Component scrap: the cost of the scrapped entity's item, times its quantity.
+   - Scrap parts (parts ruined at an operation and replaced from the shelf): each line's item
+     cost times its quantity, summed. One approval covers the sum; each line is recorded as
+     its own `scrapRequest`, as issue completion records each item.
    - Batch completion: the members' scrap, summed.
 3. If no enabled rule exists, or the value is under every tier, the scrap posts as before.
    Carbon reads no PINs and writes no record.
@@ -116,7 +119,7 @@ The approver is on the floor, so the sign-off happens in the same request as the
 | Order of writes | Record, then post, then mark posted | Every posted scrap that needed approval has a record. A crash leaves a record with `postedAt` null, never an unrecorded scrap. |
 | Approver PIN | The console PIN (`employeePin`) | Reuses the bcrypt table. Set Console PIN on Users → Employees now also shows when a scrap rule is enabled, with console mode off. |
 | PIN guessing | The console pin-in budgets, shared | A guess at either surface counts at both: 5 per person and 30 per terminal in 15 minutes. |
-| Paths in scope | MES operation scrap, component scrap, batch completion with scrap, inspection disposition and an untracked receipt lot's Reject; ERP job quantities, Scrap inventory adjustments, issue completion and Reject Lot | Issue completion writes off its Scrap rows, a Partial receipt lot's held remainder included, valued together. The sales return scrap belongs to sales. |
+| Paths in scope | MES operation scrap, component scrap, Scrap parts, batch completion with scrap, inspection disposition and an untracked receipt lot's Reject; ERP job quantities, Scrap inventory adjustments, issue completion and Reject Lot | Issue completion writes off its Scrap rows, a Partial receipt lot's held remainder included, valued together. The sales return scrap belongs to sales. |
 | Entitlement | `APPROVAL_RULES` (Business and Partner plans) | `getApprovalRuleByAmount` reads no rule without it. |
 | What the approver signs | The value they were shown (`approvedValue`), checked again on the server | Without it an operator could raise the quantity after the PIN went in, and a top-tier approver's authority would cover any value. |
 | Ambiguous posting failures | Keep the record, unconfirmed | A timeout after the commit must not leave a posted scrap with no approval. The list shows the row as Not confirmed. |
@@ -158,14 +161,14 @@ CREATE TABLE "scrapRequest" (
 ## API / Service Changes
 
 - `@carbon/ee/approvals/scrap.server`: `hasScrapApprovalRules`, `findBatchScrapApproval`, `describeScrap`,
-  `getScrapApprovalRequirement`, `authorizeScrapApprover`, `recordScrapApproval`,
+  `describeScraps`, `getScrapApprovalRequirement`, `authorizeScrapApprover`, `recordScrapApproval`,
   `markScrapApprovalPosted`, `discardScrapApproval`, `getScrapApprovals`. Pure decisions in
   `approvals/scrap.ts`.
 - `@carbon/ee/console.server`: `employeesWithPin`.
 - MES: `services/scrap-approval.server.ts` (`postScrapWithApproval`) and
   `services/pin-limits.server.ts` (the budgets shared with console pin-in). Routes:
   `x+/scrap.tsx`, `x+/entity+/$materialId.$trackedEntityId.scrap.tsx`,
-  `x+/batch.$batchId.complete.tsx`.
+  `x+/scrap-parts.$operationId.tsx`, `x+/batch.$batchId.complete.tsx`.
 - ERP: `approveErpScrap` and `settleErpScrapApproval` in `production.service.ts`, called by
   `createProductionQuantity`, `updateProductionQuantity` and `adjustInventory`;
   `approveErpStockScraps` and `settleErpScrapApprovals` for `completeIssue`, through the
@@ -205,6 +208,8 @@ CREATE TABLE "scrapRequest" (
 - [ ] A Scrap inventory adjustment: a non-approver and an API key are refused; an approver
       records it with an approval.
 - [ ] An inspection disposition that scraps asks for the PIN before the lot closes.
+- [ ] Scrap parts with a rule on: the parts' summed value meets the tiers, one PIN approves
+      them, and each part line is recorded as its own scrap.
 - [ ] A rule on: an API client that writes a Scrap row or changes Qty. Scrapped directly is
       refused. No rule: the write works.
 

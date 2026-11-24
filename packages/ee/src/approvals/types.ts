@@ -79,7 +79,7 @@ export type DocumentApprovalState = {
 
 export type ApprovalStatus = Database["public"]["Enums"]["approvalStatus"];
 
-/** What is scrapped, as a scrap route describes it to `describeScrap`. */
+/** What is scrapped, as a scrap route describes it to `describeScraps`. */
 export type ScrapSubject =
   | {
       type: "operation";
@@ -109,7 +109,21 @@ export type ScrapSubject =
       trackedEntityId?: string | null;
       scrapReasonId?: string | null;
       notes?: string | null;
+    }
+  | {
+      // Parts ruined at an operation and replaced from the shelf (MES Scrap
+      // parts): one scrap per line, under one approval of their summed value.
+      type: "parts";
+      jobOperationId: string;
+      lines: ScrapPartLine[];
+      scrapReasonId?: string | null;
+      notes?: string | null;
     };
+
+/** One part line of a `parts` scrap: untracked by item, tracked by the serial or batch used. */
+export type ScrapPartLine =
+  | { materialId: string; itemId: string; quantity: number }
+  | { materialId: string; trackedEntityId: string; quantity: number };
 
 /** The `scrapRequest` a scrap would be recorded as, with its estimated value. */
 export type ScrapDescription = {

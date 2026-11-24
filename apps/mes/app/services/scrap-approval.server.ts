@@ -7,17 +7,17 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ScrapApprovalPrompt, ScrapSubject } from "@carbon/ee/approvals";
 import {
   authorizeScrapApprover,
-  describeScrap,
+  describeScraps,
   discardScrapApproval,
   failedScrapPostingSettlement,
   getScrapApprovalRequirement,
   hasScrapApprovalRules,
   markScrapApprovalPosted,
-  recordScrapApproval
+  recordScrapApprovals
 } from "@carbon/ee/approvals/scrap.server";
 import { verifyEmployeePin } from "@carbon/ee/console.server";
 import { getLogger } from "@carbon/logger";
-import { equals, getClientIp } from "@carbon/utils";
+import { equals, getClientIp, round } from "@carbon/utils";
 import { getDatabaseClient } from "~/services/database.server";
 import {
   GENERIC_PIN_ERROR,
@@ -60,6 +60,10 @@ export type ScrapApprovalOutcome<T> =
  * 5. A scrap approved before (`alreadyApproved`, a resumed batch completion)
  *    posts without asking, and marks the record it names posted once the
  *    posting succeeds.
+ *
+ * Parts scrapped together (a `parts` subject) are one approval of their
+ * summed value, recorded as one scrap per line and settled together: the
+ * posting books them in one transaction.
  */
 export async function postScrapWithApproval<T>(args: {
   request: Request;
@@ -106,17 +110,17 @@ export async function postScrapWithApproval<T>(args: {
     return { status: "posted", data: posted.data };
   };
 
-  const markPosted = (scrapRequestId: string) =>
+  const markPosted = (scrapRequestIds: string[]) =>
     markScrapApprovalPosted(db, {
       companyId,
-      scrapRequestIds: [scrapRequestId],
+      scrapRequestIds,
       userId
     }).catch((error) => {
       // The scrap posted and its approval is recorded; only the posted mark
       // is missing, which the list shows as not confirmed.
       logger.error("Failed to mark a scrap approval posted", {
         companyId,
-        scrapRequestId,
+        scrapRequestIds,
         error
       });
     });
@@ -127,13 +131,13 @@ export async function postScrapWithApproval<T>(args: {
   ): Promise<ScrapApprovalOutcome<T>> => {
     const outcome = await postAsBefore();
     if (outcome.status === "posted" && scrapRequestId) {
-      await markPosted(scrapRequestId);
+      await markPosted([scrapRequestId]);
     }
     return outcome;
   };
 
   let requirement: Awaited<ReturnType<typeof getScrapApprovalRequirement>>;
-  let scrap: Awaited<ReturnType<typeof describeScrap>>;
+  let scraps: Awaited<ReturnType<typeof describeScraps>>;
   try {
     if (!(await hasScrapApprovalRules(serviceRole, companyId))) {
       return postAsBefore();
@@ -144,11 +148,13 @@ export async function postScrapWithApproval<T>(args: {
     if (approvedBefore) {
       return postApprovedBefore(approvedBefore.scrapRequestId);
     }
-    scrap = await describeScrap(db, companyId, args.subject);
+    scraps = await describeScraps(db, companyId, args.subject);
     requirement = await getScrapApprovalRequirement(serviceRole, db, {
       companyId,
       recordedBy: userId,
-      estimatedValue: scrap.estimatedValue
+      estimatedValue: round(
+        scraps.reduce((sum, scrap) => sum + scrap.estimatedValue, 0)
+      )
     });
   } catch (error) {
     // Fail closed: an unknown answer must not let the scrap through.
@@ -166,8 +172,10 @@ export async function postScrapWithApproval<T>(args: {
   // Under every tier too, the posting scraps the quantity that was valued, a
   // zero included, so stock restored since is refused rather than scrapped
   // unapproved. Nothing to scrap asks no approver.
-  const valued = { quantity: scrap.quantity };
-  if (!requirement.required || scrap.quantity <= 0) {
+  const valued = {
+    quantity: scraps.reduce((sum, scrap) => sum + scrap.quantity, 0)
+  };
+  if (!requirement.required || valued.quantity <= 0) {
     return postAsBefore(valued);
   }
 
@@ -240,14 +248,15 @@ export async function postScrapWithApproval<T>(args: {
   }
   if (pinError) return prompt(pinError);
 
-  let recorded: Awaited<ReturnType<typeof recordScrapApproval>>;
+  let scrapRequestIds: string[];
   try {
-    recorded = await recordScrapApproval(db, {
+    const recorded = await recordScrapApprovals(db, {
       companyId,
-      scrap,
+      scraps,
       recordedBy: userId,
       approvedBy: approverId
     });
+    scrapRequestIds = recorded.map((record) => record.scrapRequestId);
   } catch (error) {
     logger.error("Failed to record a scrap approval", { companyId, error });
     return {
@@ -270,7 +279,7 @@ export async function postScrapWithApproval<T>(args: {
       } catch (error) {
         logger.error("Could not read whether a failed scrap posted", {
           companyId,
-          scrapRequestId: recorded.scrapRequestId,
+          scrapRequestIds,
           error
         });
         committed = "unknown";
@@ -281,15 +290,15 @@ export async function postScrapWithApproval<T>(args: {
       committed
     });
     if (settlement === "mark posted") {
-      await markPosted(recorded.scrapRequestId);
+      await markPosted(scrapRequestIds);
     } else if (settlement === "discard") {
       await discardScrapApproval(db, {
         companyId,
-        scrapRequestIds: [recorded.scrapRequestId]
+        scrapRequestIds
       }).catch((error) => {
         logger.error("Failed to remove the approval of a refused scrap", {
           companyId,
-          scrapRequestId: recorded.scrapRequestId,
+          scrapRequestIds,
           error
         });
       });
@@ -299,7 +308,7 @@ export async function postScrapWithApproval<T>(args: {
       // with no approval.
       logger.warning("Scrap posting failed without a refusal; approval kept", {
         companyId,
-        scrapRequestId: recorded.scrapRequestId,
+        scrapRequestIds,
         status: posted.error.status
       });
     }
@@ -310,7 +319,7 @@ export async function postScrapWithApproval<T>(args: {
     };
   }
 
-  await markPosted(recorded.scrapRequestId);
+  await markPosted(scrapRequestIds);
   return { status: "posted", data: posted.data };
 }
 

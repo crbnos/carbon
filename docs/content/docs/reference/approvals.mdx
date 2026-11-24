@@ -76,7 +76,8 @@ as usual and the approval is recorded with it.
 
 - **Value**: the material in the scrapped units: the materials the operation consumes (kitted sub-assemblies
   included, once per kit in the unit) and those of the operations before it, times the quantity scrapped. For a scrapped component it is
-  that component's cost, and for stock scrapped by an inventory adjustment the item's cost times the quantity. A
+  that component's cost, for parts scrapped and replaced from the shelf each part's cost times its count, added
+  together, and for stock scrapped by an inventory adjustment the item's cost times the quantity. A
   standard-cost item counts at its standard cost, any other at its unit cost (its standard cost when the unit
   cost is 0). Labor and overhead are not counted. The scrap journal can write off less: it stops at the job's
   planned material, and a batch completion posts no scrap journal.
@@ -84,7 +85,8 @@ as usual and the approval is recorded with it.
   PIN clears the PIN, and the new value is shown again.
 - **Who may approve**: the approvers of the matched tier and every higher tier who have a console PIN. The person
   logging the scrap cannot approve it. Set a PIN from **Users → Employees → Set Console PIN**.
-- **Paths**: scrapping a unit on an operation, scrapping a component, completing a batch with scrap, and
+- **Paths**: scrapping a unit on an operation, scrapping a component, scrapping parts and replacing them from the
+  shelf (**Scrap parts**), completing a batch with scrap, and
   scrapping units when rejecting or partly accepting a job operation's inspection lot, and rejecting a receipt lot of
   untracked stock, which writes the lot off. Scrap typed in on a job's
   **Quantities**, a **Scrap** inventory adjustment, and completing an issue whose **Scrap** rows write off stock

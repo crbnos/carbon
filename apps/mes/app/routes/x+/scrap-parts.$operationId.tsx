@@ -13,8 +13,9 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
-import { scrapPartsValidator } from "~/services/models";
+import { scrapApproverValidator, scrapPartsValidator } from "~/services/models";
 import { abilityBlockRefusal } from "~/services/operations.service";
+import { postScrapWithApproval } from "~/services/scrap-approval.server";
 
 /** The parts an operator can scrap at an operation and replace from the shelf. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -31,13 +32,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId, sessionUserId } = await requirePermissions(
+    request,
+    {}
+  );
   const { operationId } = params;
   if (!operationId) throw new Response("Missing operation", { status: 400 });
 
-  const validation = await validator(scrapPartsValidator).validate(
-    await request.formData()
-  );
+  const formData = await request.formData();
+  const validation = await validator(scrapPartsValidator).validate(formData);
   if (validation.error) return validationError(validation.error);
 
   const refusal = await abilityBlockRefusal(getCarbonServiceRole(), {
@@ -49,23 +52,81 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false, message: refusal }, { status: 403 });
   }
 
-  const posted = await erpPosting(
-    "issue",
-    { companyId, userId },
-    { type: "scrapJobPart", ...validation.data, jobOperationId: operationId }
-  );
-  if (posted.error) {
+  const { lines, scrapReasonId, notes, idempotencyKey } = validation.data;
+  // The posting books a key once: a key with rows is a scrap that posted.
+  const booked = () => scrapPartsBooked(companyId, idempotencyKey);
+  const approver = await validator(scrapApproverValidator).validate(formData);
+  const outcome = await postScrapWithApproval({
+    request,
+    companyId,
+    userId,
+    sessionUserId,
+    subject: {
+      type: "parts",
+      jobOperationId: operationId,
+      lines,
+      scrapReasonId,
+      notes
+    },
+    approver: approver.error ? {} : approver.data,
+    // The lines are the quantities valued: the posting scraps exactly them.
+    post: () =>
+      erpPosting(
+        "issue",
+        { companyId, userId },
+        {
+          type: "scrapJobPart",
+          ...validation.data,
+          jobOperationId: operationId
+        }
+      ),
+    // A resent request of a scrap that posted books nothing, so it asks for
+    // no approval and records none.
+    alreadyApproved: async () =>
+      (await booked()) ? { scrapRequestId: null } : null,
+    postedDespiteError: booked
+  });
+
+  if (outcome.status === "approval-required") {
+    return { scrapApproval: outcome.prompt };
+  }
+
+  if (outcome.status === "refused") {
+    const status = refusedStatus(outcome.error);
     return data(
       {
         success: false,
         message:
-          posted.error.status < 500
-            ? posted.error.message
+          status < 500 && outcome.message
+            ? outcome.message
             : "Failed to scrap the parts"
       },
-      { status: posted.error.status }
+      { status }
     );
   }
 
   return { success: true, message: "Scrapped" };
+}
+
+/** Whether the scrapJobPart posting booked this idempotency key. */
+async function scrapPartsBooked(
+  companyId: string,
+  idempotencyKey: string
+): Promise<boolean> {
+  const row = await getDatabaseClient()
+    .selectFrom("jobMaterialScrap")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("idempotencyKey", "=", idempotencyKey)
+    .executeTakeFirst();
+  return !!row;
+}
+
+/** The posting's own status, else 400: a check that refused without one. */
+function refusedStatus(error: unknown): number {
+  const status =
+    error && typeof error === "object" && "status" in error
+      ? (error as { status?: unknown }).status
+      : undefined;
+  return typeof status === "number" ? status : 400;
 }

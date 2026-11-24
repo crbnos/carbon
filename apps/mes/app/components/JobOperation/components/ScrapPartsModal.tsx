@@ -35,6 +35,7 @@ import ItemThumbnail from "~/components/ItemThumbnail";
 import type { loader } from "~/routes/x+/scrap-parts.$operationId";
 import { scrapPartsValidator } from "~/services/models";
 import { path } from "~/utils/path";
+import { ScrapApprovalStep, useScrapApproval } from "./ScrapApproval";
 import { useScrapReasons } from "./ScrapReason";
 
 type Replacement = "Shelf" | "Water Spider";
@@ -134,9 +135,15 @@ function ScrapPartsForm({
     parts[0] && isFocused(parts[0]) && parts[0].tracked.length === 0
       ? parts[0].key
       : null;
+  // A scrap approval rule answers the first submit with the approvers; the
+  // dialog stays open for the approver's PIN and sends the same form again.
+  const approval = useScrapApproval();
   const countOf = (key: string) => counts[key] ?? (key === startKey ? 1 : 0);
-  const setCount = (key: string, value: number) =>
+  const setCount = (key: string, value: number) => {
+    // The approver signs the value shown: new counts are valued again.
+    approval.reset();
     setCounts((prev) => ({ ...prev, [key]: Math.max(0, value) }));
+  };
 
   // Untracked parts by count; tracked ones by the serial or batch used.
   const lines = parts.flatMap((part) => [
@@ -174,7 +181,8 @@ function ScrapPartsForm({
     : reasons;
 
   const action = useAction<{ success: boolean; message: string }>({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (approval.settle(data)) return;
       if (reasonId) remember(LAST_REASON, reasonId);
       toast.success(
         [
@@ -188,7 +196,10 @@ function ScrapPartsForm({
       );
       onClose();
     },
-    onError: (data) => toast.error(data.message)
+    onError: (data) => {
+      approval.settle(data);
+      toast.error(data.message);
+    }
   });
 
   return (
@@ -284,6 +295,10 @@ function ScrapPartsForm({
               ))}
             </div>
           </fieldset>
+          <ScrapApprovalStep
+            approval={approval}
+            isSubmitting={action.isPending}
+          />
         </VStack>
       </ModalBody>
       <ModalFooter>
@@ -296,10 +311,18 @@ function ScrapPartsForm({
           size="lg"
           isLoading={action.isPending}
           isDisabled={
-            action.isPending || total === 0 || !reasonId || !replacement
+            action.isPending ||
+            total === 0 ||
+            !reasonId ||
+            !replacement ||
+            approval.isIncomplete
           }
         >
-          <Trans>Scrap {total}</Trans>
+          {approval.prompt ? (
+            <Trans>Approve and Scrap</Trans>
+          ) : (
+            <Trans>Scrap {total}</Trans>
+          )}
         </Button>
       </ModalFooter>
     </ValidatedForm>
