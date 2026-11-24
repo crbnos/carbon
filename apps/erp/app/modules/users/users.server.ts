@@ -18,7 +18,7 @@ import {
   upsertEmployeeTypePermissions
 } from "@carbon/ee/permissions.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
-import { batchTrigger } from "@carbon/jobs";
+import { batchTrigger, refreshResentInvite } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import {
@@ -30,7 +30,6 @@ import {
   requireAffected,
   requiresItarEntityCertification
 } from "@carbon/utils";
-import { nanoid } from "nanoid";
 import { z } from "zod";
 import {
   refuseKeyWithout,
@@ -343,40 +342,24 @@ export const resendInvites = defineServiceFn({
       return ctx.error("internal", "Failed to load company or user");
     }
 
-    const existingInvite = await serviceRole
-      .from("invite")
-      .select("createdBy")
-      .eq("email", user.data.email)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (existingInvite.error || !existingInvite.data) {
+    // An acceptance since the check above fails the refresh: no new code,
+    // no email.
+    const refreshed = await refreshResentInvite(serviceRole, {
+      userId,
+      email: user.data.email,
+      companyId
+    });
+    if ("failure" in refreshed) {
       return ctx.error(
-        "notFound",
-        "No invite record found for user",
-        existingInvite.error
+        refreshed.failure === "accepted" ? "rule" : refreshed.failure,
+        refreshed.message
       );
-    }
-
-    const refreshed = await serviceRole
-      .from("invite")
-      .update({
-        code: nanoid(),
-        acceptedAt: null,
-        revokedAt: null,
-        createdAt: datetime.timestamp()
-      })
-      .eq("email", user.data.email)
-      .eq("companyId", companyId)
-      .select("code")
-      .single();
-    if (refreshed.error || !refreshed.data) {
-      return ctx.error("internal", "Failed to refresh invite", refreshed.error);
     }
 
     const inviter = await serviceRole
       .from("user")
       .select("email, fullName")
-      .eq("id", existingInvite.data.createdBy)
+      .eq("id", refreshed.createdBy)
       .single();
 
     await service.sendInviteEmail(ctx, {
@@ -386,7 +369,7 @@ export const resendInvites = defineServiceFn({
         fullName: inviter.data?.fullName ?? null
       },
       email: user.data.email,
-      code: refreshed.data.code,
+      code: refreshed.code,
       name: user.data.fullName ?? ""
     });
     return { queued: false };
@@ -401,9 +384,10 @@ export const resendInvites = defineServiceFn({
  * Revoke Invite does. Only a pending invite is revoked: every user must have
  * an invite here that is neither accepted nor revoked, and no membership in
  * the company (an active account is deactivated with users_deactivateUsers).
- * One user is deactivated at once (and, on Cloud, the subscription's seat
- * count updated); several are deactivated by a job. Then every pending
- * invite of theirs here is marked revoked, and each revocation is written to
+ * Every invite still pending is marked revoked first, and only its user is
+ * deactivated: an invite accepted in the meantime is left alone. One user is
+ * deactivated at once (and, on Cloud, the subscription's seat count
+ * updated); several are deactivated by a job. Each revocation is written to
  * the audit log when the company keeps one. Returns how many invites were
  * revoked.
  *
@@ -422,40 +406,13 @@ export const revokeInvites = defineServiceFn({
     const serviceRole = ctx.asSystem.supabase;
     const { ip, userAgent } = ctx.origin;
 
-    // The pending invite ids are read before deactivating: deactivateUser
-    // stamps the invite revoked itself.
     const pending = await service.refuseUnlessPendingInvites(ctx, userIds);
     if (pending.error) return pending.error;
     const { users, inviteIds } = pending.data;
 
-    if (users.length === 1) {
-      const deactivated = await deactivateUser(
-        serviceRole,
-        users[0].id,
-        companyId,
-        actorId,
-        ip
-      );
-      if (!deactivated.success) {
-        return ctx.error(
-          "internal",
-          "Failed to deactivate user",
-          deactivated.message
-        );
-      }
-      if (CarbonEdition === Edition.Cloud) {
-        await updateSubscriptionQuantityForCompany(companyId);
-      }
-    } else {
-      await batchTrigger(
-        "user-admin",
-        users.map(({ id }) => ({
-          payload: { id, type: "deactivate" as const, companyId, actorId, ip }
-        }))
-      );
-    }
-
-    // An invite accepted since it was read is not stamped revoked.
+    // The revoke is the write that decides: it stamps only invites still
+    // pending, and an acceptance needs `revokedAt` null, so an invite accepted
+    // since the check is not revoked, and its account is not deactivated.
     const revokedAt = datetime.timestamp();
     const revoked = await serviceRole
       .from("invite")
@@ -463,9 +420,59 @@ export const revokeInvites = defineServiceFn({
       .in("id", inviteIds)
       .eq("companyId", companyId)
       .is("acceptedAt", null)
-      .select("id");
+      .is("revokedAt", null)
+      .select("id, email");
     if (revoked.error) {
       return ctx.error("internal", "Failed to revoke invites", revoked.error);
+    }
+    const revokedEmails = new Set(revoked.data.map((invite) => invite.email));
+    const revokedUsers = users.filter((user) => revokedEmails.has(user.email));
+
+    // A deactivation that fails gives the invites back, as pending.
+    const unrevoke = async (cause: unknown, message: string) => {
+      const restored = await serviceRole
+        .from("invite")
+        .update({ revokedAt: null })
+        .in(
+          "id",
+          revoked.data.map((invite) => invite.id)
+        )
+        .eq("companyId", companyId)
+        .eq("revokedAt", revokedAt);
+      if (restored.error) {
+        logger.error("Failed to restore revoked invites", {
+          companyId,
+          error: restored.error
+        });
+      }
+      return ctx.error("internal", message, cause);
+    };
+
+    if (revokedUsers.length === 1) {
+      const deactivated = await deactivateUser(
+        serviceRole,
+        revokedUsers[0].id,
+        companyId,
+        actorId,
+        ip
+      );
+      if (!deactivated.success) {
+        return unrevoke(deactivated.message, "Failed to deactivate user");
+      }
+      if (CarbonEdition === Edition.Cloud) {
+        await updateSubscriptionQuantityForCompany(companyId);
+      }
+    } else if (revokedUsers.length > 1) {
+      try {
+        await batchTrigger(
+          "user-admin",
+          revokedUsers.map(({ id }) => ({
+            payload: { id, type: "deactivate" as const, companyId, actorId, ip }
+          }))
+        );
+      } catch (err) {
+        return unrevoke(err, "Failed to deactivate users");
+      }
     }
 
     // Best effort: a company without audit logging has no audit log table.

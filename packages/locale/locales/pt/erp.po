@@ -13846,9 +13846,6 @@ msgstr "Falha ao atualizar propriedade de lote"
 msgid "Failed to update category markups"
 msgstr "Falha ao atualizar marcações de categoria"
 
-msgid "Failed to update configuration parameter"
-msgstr "Falha ao atualizar parâmetro de configuração"
-
 msgid "Failed to update count"
 msgstr "Falha ao atualizar contagem"
 

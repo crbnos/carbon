@@ -240,4 +240,75 @@ describe("setting an invoice header field", () => {
     expect(result.error).toMatchObject({ category: "validation" });
     expect(writes).toEqual([]);
   });
+
+  // The ownership reads run as the system, the writes as the caller.
+  const withReferences = () => {
+    const tables: Record<string, Record<string, unknown>[]> = invoices();
+    for (const table of [
+      "customer",
+      "customerContact",
+      "customerLocation",
+      "supplier",
+      "supplierContact",
+      "supplierLocation",
+      "paymentTerm",
+      "location"
+    ]) {
+      tables[table] = [
+        { id: "foreign", companyId: "company-2" },
+        { id: "own", companyId: "company-1" }
+      ];
+    }
+    const fake = filteringSupabase(tables);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        userId: "user-1",
+        permissions: invoicingUpdate
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: fake.client,
+      system: () => fake.client,
+      pg: unreachable,
+      kv: unreachable
+    });
+    return { ...fake, ctx };
+  };
+
+  it.each([
+    ["sales", "customerId"],
+    ["sales", "invoiceCustomerId"],
+    ["sales", "invoiceCustomerContactId"],
+    ["sales", "invoiceCustomerLocationId"],
+    ["sales", "paymentTermId"],
+    ["sales", "locationId"],
+    ["purchase", "supplierId"],
+    ["purchase", "invoiceSupplierId"],
+    ["purchase", "invoiceSupplierContactId"],
+    ["purchase", "invoiceSupplierLocationId"],
+    ["purchase", "paymentTermId"]
+  ] as const)("refuses another company's row for a %s invoice's %s, before any write", async (kind, field) => {
+    const { ctx, writes } = withReferences();
+    const input = { ids: ["inv-1"], field, value: "foreign" } as never;
+    const result =
+      kind === "sales"
+        ? await updateSalesInvoiceField(ctx, input)
+        : await updatePurchaseInvoiceField(ctx, input);
+    expect(result.error).toMatchObject({ category: "notFound" });
+    expect(writes).toEqual([]);
+  });
+
+  it("clears the ship-to and sets the customer when the customer is the company's", async () => {
+    const { ctx, writes } = withReferences();
+    const result = await updateSalesInvoiceField(ctx, {
+      ids: ["inv-1"],
+      field: "customerId",
+      value: "own"
+    });
+    expect(result).toEqual({ data: { ids: ["inv-1"] }, error: null });
+    expect(writes.map(({ table, op }) => [table, op])).toEqual([
+      ["salesInvoiceShipment", "update"],
+      ["salesInvoice", "update"]
+    ]);
+  });
 });

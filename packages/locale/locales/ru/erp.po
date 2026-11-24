@@ -13846,9 +13846,6 @@ msgstr "Не удалось обновить свойство партии"
 msgid "Failed to update category markups"
 msgstr "Не удалось обновить наценки по категориям"
 
-msgid "Failed to update configuration parameter"
-msgstr "Ошибка при обновлении параметра конфигурации"
-
 msgid "Failed to update count"
 msgstr "Ошибка обновления подсчета"
 

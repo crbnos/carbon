@@ -22,7 +22,6 @@ import {
   datetime,
   fiscalYearAndPeriodFor,
   formatDate,
-  MONTH_NUMBER,
   redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -33,7 +32,7 @@ import { data, useFetcher, useLoaderData, useNavigate } from "react-router";
 import { generateFiscalYearPeriodsValidator } from "~/modules/accounting/accounting.models";
 import {
   createFiscalYearPeriods,
-  getFiscalYearSettings
+  getFiscalStartMonth
 } from "~/modules/accounting/accounting.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
@@ -50,10 +49,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  const settings = await getFiscalYearSettings(client, companyId);
-  const startMonth = settings.data?.startMonth
-    ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
-    : 1;
+  // The month the action generates from, so the preview shows that year.
+  const fiscalStart = await getFiscalStartMonth(companyId);
+  if (fiscalStart.error) {
+    throw redirect(
+      path.to.accountingPeriods,
+      await flash(
+        request,
+        error(fiscalStart.error, "Failed to load the fiscal year settings", {
+          companyId
+        })
+      )
+    );
+  }
+  const startMonth = fiscalStart.data;
   const companyToday = datetime.today(
     await getCompanyTimeZone(client, companyId)
   );

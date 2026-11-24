@@ -6776,9 +6776,10 @@ const demandProjectionInput = z.object({
  * Needs demand forecasting (the FORECAST feature). A projection is a weekly
  * quantity the planning run counts as demand. A week is named by its start
  * date, a Sunday, among the 52 weeks from this week on in the company's time
- * zone or in the location's (the two can differ by a week). Only weeks above
- * 0 are written, and at least one must be. A week the item already has is
- * overwritten.
+ * zone or in the location's (the two can differ by a week). The week before
+ * them is skipped and not written: a form left open over a week boundary
+ * still sends it. Only weeks above 0 are written, and at least one must be.
+ * A week the item already has is overwritten.
  *
  * @param itemId - The item.
  * @param locationId - The location.
@@ -6816,7 +6817,8 @@ export const createDemandProjections = defineServiceFn({
  * Needs demand forecasting (the FORECAST feature). Every week sent is
  * written: 0 removes its projection. Weeks not sent keep their quantity. A
  * week is named by its start date, a Sunday, among the weeks a create takes
- * (see `createDemandProjections`).
+ * (see `createDemandProjections`); the week before them is skipped, as a
+ * create skips it.
  *
  * @param itemId - The item.
  * @param locationId - The location.

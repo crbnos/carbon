@@ -376,6 +376,11 @@ How they behave:
   `warning`.
 - The `*Field` operations require `update: invoicing` for both invoice kinds: the
   properties panels enable their fields on it, and the tables' RLS asks for it.
+  An id they write (customer, supplier, contact, location, payment term) must name a row
+  of the company, checked with the service role before any write
+  (`INVOICE_FIELD_REFERENCES` and `partyCurrency`, `invoicing.service.ts`): most of
+  these foreign keys name the id alone. A new sales invoice customer is checked before
+  its ship-to is cleared.
 
 ## Related Modules
 

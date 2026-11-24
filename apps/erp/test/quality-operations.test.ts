@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
 import {
-  createGaugeCalibrationRecord,
   createIssue,
   createIssueWorkflow,
   createRisk,
@@ -13,13 +13,13 @@ import {
   saveInspectionDocument,
   setIssueStatus,
   updateGauge,
-  updateGaugeCalibrationRecord,
   updateIssueField,
   updateIssueItemField,
   updateIssueWorkflow,
   updateQualityDocumentField,
   updateRisk
 } from "../app/modules/quality/quality.server";
+import { gaugeCalibrationPatch } from "../app/modules/quality/quality.service";
 
 const quality = {
   quality: {
@@ -239,150 +239,71 @@ describe("saving an inspection plan", () => {
   });
 });
 
-describe("calibration records", () => {
-  const calibration = {
-    gaugeId: "gauge-1",
-    dateCalibrated: "2026-10-01",
-    calibrationAttempts: []
+// The record and the gauge are saved in one transaction through Kysely; the
+// saves, their locks and refusals are tested against the database
+// (`test/database/gauge-calibration-record.test.ts`). This is the decision
+// what a calibration does to its gauge.
+describe("gaugeCalibrationPatch", () => {
+  const today = parseDate("2026-11-25");
+  const gauge = {
+    lastCalibrationDate: "2026-06-01",
+    calibrationIntervalInMonths: 6,
+    lastCalibrationStatus: "Out-of-Calibration" as const
   };
 
-  const contradicted = {
-    ...calibration,
-    requiresRepair: true,
-    inspectionStatus: "Pass"
-  } as const;
-
-  it.each([
-    ["create", (ctx: never) => createGaugeCalibrationRecord(ctx, contradicted)],
-    [
-      "update",
-      (ctx: never) =>
-        updateGaugeCalibrationRecord(ctx, { ...contradicted, id: "gcr-1" })
-    ]
-  ])(
-    "%s refuses a Pass on a calibration that requires repair, before any write",
-    async (_name, save) => {
-      const { ctx, writes } = contextWith({
-        gaugeCalibrationRecord: {
-          requiresAction: false,
-          requiresAdjustment: false,
-          requiresRepair: false
-        }
-      });
-      const result = await save(ctx as never);
-      expect(result.error?.category).toBe("validation");
-      expect(writes).toEqual([]);
-    }
-  );
-
-  it("a create saves the flags left out as false, with the result they decide", async () => {
-    const { ctx, written } = contextWith({
-      gauge: { lastCalibrationDate: "2026-11-01", calibrationIntervalInMonths: 6 }
-    });
-    const result = await createGaugeCalibrationRecord(ctx, {
-      ...calibration,
-      inspectionStatus: "Pass"
-    });
-    expect(result.error).toBeNull();
-    const [inserted] = written.find(
-      (write) => write.table === "gaugeCalibrationRecord"
-    )?.values as unknown[];
-    expect(inserted).toMatchObject({
-      requiresAction: false,
-      requiresAdjustment: false,
-      requiresRepair: false,
-      inspectionStatus: "Pass"
-    });
-  });
-
-  it.each([
-    ["2020-01-01", "Out-of-Calibration"],
-    ["2999-01-01", "In-Calibration"]
-  ])(
-    "a Pass calibrated on %s sets the gauge %s, from its next calibration date",
-    async (dateCalibrated, status) => {
-      const { ctx, written } = contextWith({
-        gauge: { lastCalibrationDate: null, calibrationIntervalInMonths: 6 }
-      });
-      const result = await createGaugeCalibrationRecord(ctx, {
-        ...calibration,
-        dateCalibrated
-      });
-      expect(result.error).toBeNull();
-      expect(
-        written.find((write) => write.table === "gauge")?.values
-      ).toMatchObject({
-        gaugeCalibrationStatus: status,
-        lastCalibrationDate: dateCalibrated
-      });
-    }
-  );
-});
-
-describe("updating a calibration record", () => {
-  const record = {
-    id: "gcr-1",
-    gaugeId: "gauge-1",
-    dateCalibrated: "2026-10-01",
-    calibrationAttempts: []
-  };
-  const gauge = { lastCalibrationDate: null, calibrationIntervalInMonths: 6 };
-
-  it("answers the record's id", async () => {
-    const { ctx } = contextWith({
-      gauge,
-      gaugeCalibrationRecord: [{ id: "gcr-1" }]
-    });
-    const result = await updateGaugeCalibrationRecord(ctx, record);
-    expect(result).toEqual({ data: { id: "gcr-1" }, error: null });
-  });
-
-  it("refuses an id that matches no record, and leaves the gauge alone", async () => {
-    const { ctx, writes } = contextWith({ gauge, gaugeCalibrationRecord: [] });
-    const result = await updateGaugeCalibrationRecord(ctx, record);
-    expect(result.error).not.toBeNull();
-    expect(writes).not.toContain("update:gauge");
-  });
-
-  const requiresRepair = {
-    requiresAction: false,
-    requiresAdjustment: false,
-    requiresRepair: true
-  };
-
-  it("keeps the stored flags left out, and the Fail they decide", async () => {
-    const { ctx, written } = contextWith({
-      gauge,
-      gaugeCalibrationRecord: requiresRepair
-    });
-    const result = await updateGaugeCalibrationRecord(ctx, {
-      ...record,
-      temperature: 21
-    });
-    expect(result.error).toBeNull();
+  it("leaves the gauge alone for a calibration older than its last", () => {
     expect(
-      written.find((write) => write.table === "gaugeCalibrationRecord")?.values
+      gaugeCalibrationPatch(
+        gauge,
+        { dateCalibrated: "2026-05-31", inspectionStatus: "Pass" },
+        today
+      )
+    ).toBeNull();
+  });
+
+  it("moves the gauge's dates on a Pass, and resets its notified status", () => {
+    expect(
+      gaugeCalibrationPatch(
+        gauge,
+        { dateCalibrated: "2026-06-01", inspectionStatus: "Pass" },
+        today
+      )
+    ).toEqual({
+      gaugeCalibrationStatus: "In-Calibration",
+      lastCalibrationDate: "2026-06-01",
+      nextCalibrationDate: "2026-12-01",
+      lastCalibrationStatus: "In-Calibration"
+    });
+  });
+
+  // Six months after 2026-01-15 is 2026-07-15, before today.
+  it("puts a Pass whose next date has passed out of calibration", () => {
+    expect(
+      gaugeCalibrationPatch(
+        { ...gauge, lastCalibrationDate: null },
+        { dateCalibrated: "2026-01-15", inspectionStatus: "Pass" },
+        today
+      )
     ).toMatchObject({
-      requiresRepair: true,
-      inspectionStatus: "Fail",
-      temperature: 21
+      gaugeCalibrationStatus: "Out-of-Calibration",
+      nextCalibrationDate: "2026-07-15",
+      lastCalibrationStatus: "In-Calibration"
     });
-    expect(
-      written.find((write) => write.table === "gauge")?.values
-    ).toMatchObject({ gaugeCalibrationStatus: "Out-of-Calibration" });
   });
 
-  it("refuses a Pass on a record whose stored flags require repair, before any write", async () => {
-    const { ctx, writes } = contextWith({
-      gauge,
-      gaugeCalibrationRecord: requiresRepair
+  it("puts a Fail out of calibration and keeps the notified status", () => {
+    expect(
+      gaugeCalibrationPatch(
+        { ...gauge, lastCalibrationStatus: "In-Calibration" },
+        { dateCalibrated: "2026-11-01", inspectionStatus: "Fail" },
+        today
+      )
+    ).toEqual({
+      gaugeCalibrationStatus: "Out-of-Calibration",
+      lastCalibrationDate: "2026-11-01",
+      nextCalibrationDate: "2027-05-01",
+      lastCalibrationStatus: "In-Calibration"
     });
-    const result = await updateGaugeCalibrationRecord(ctx, {
-      ...record,
-      inspectionStatus: "Pass"
-    });
-    expect(result.error?.category).toBe("validation");
-    expect(writes).toEqual([]);
   });
 });
 

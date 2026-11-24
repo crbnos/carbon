@@ -919,7 +919,8 @@ describe("custom field definitions and serial sequences", () => {
       kv: () => ({}) as never
     });
     const writes = () => sent.filter((request) => request.method !== "GET");
-    return { ctx, writes };
+    const reads = () => sent.filter((request) => request.method === "GET");
+    return { ctx, reads, writes };
   }
 
   // PostgREST's answer to `.single()` when the write matched no row.
@@ -954,6 +955,23 @@ describe("custom field definitions and serial sequences", () => {
     expect(insert?.body).toEqual([
       { ...sequence, companyId: "company-1", createdBy: "user-1" }
     ]);
+  });
+
+  // The sequence's item reference is not company-scoped in the database.
+  it("refuses a serial sequence for an item that is not the company's", async () => {
+    const { ctx, reads, writes } = postgrest(() => ({ body: [] }));
+
+    const result = await createItemSerialSequence(ctx, {
+      ...sequence,
+      itemId: "item-other"
+    });
+
+    expect(result.error?.category).toBe("notFound");
+    expect(writes()).toEqual([]);
+    const [owned] = reads();
+    expect(owned?.url.pathname).toBe("/rest/v1/item");
+    expect(owned?.url.searchParams.get("id")).toBe("eq.item-other");
+    expect(owned?.url.searchParams.get("companyId")).toBe("eq.company-1");
   });
 
   it("updates a serial sequence only on its own item", async () => {
@@ -1007,6 +1025,38 @@ describe("custom field definitions and serial sequences", () => {
     expect(update?.url.searchParams.get("id")).toBe("eq.field-1");
     expect(update?.url.searchParams.get("companyId")).toBe("eq.company-1");
     expect(update?.body).toMatchObject({ name: "Hue" });
+  });
+
+  // The merged definition is validated, but a field left out is not written:
+  // a change saved since the read keeps its value.
+  it("writes only the custom field definition fields sent", async () => {
+    const { ctx, writes } = postgrest((method) =>
+      method === "GET"
+        ? {
+            body: {
+              name: "Color",
+              table: "part",
+              dataTypeId: DataType.List,
+              listOptions: ["Red"],
+              tags: ["paint"],
+              required: true
+            }
+          }
+        : { body: [{ id: "field-1" }] }
+    );
+
+    const renamed = await updateCustomField(ctx, { id: "field-1", name: "Hue" });
+    const listed = await updateCustomField(ctx, {
+      id: "field-1",
+      listOptions: ["Red", "Blue"]
+    });
+
+    expect(renamed.error).toBeNull();
+    expect(listed.error).toBeNull();
+    expect(writes().map((write) => write.body)).toEqual([
+      { name: "Hue", updatedBy: "user-1" },
+      { listOptions: ["Red", "Blue"], updatedBy: "user-1" }
+    ]);
   });
 
   // Row-level security updates a custom field only with update: settings.

@@ -3854,15 +3854,37 @@ export async function reopenAccountingPeriod(
   }
 }
 
+/**
+ * The month (1–12) a company's fiscal year starts, for generating its
+ * periods. Read as the system, as `getReportFiscalStartMonth` reads it:
+ * `fiscalYearSettings` needs settings view, which `create: accounting` does
+ * not give, and RLS would hide the row. A failed read is returned, never
+ * read as January; a company with no row starts in January.
+ */
+export async function getFiscalStartMonth(
+  companyId: string,
+  system: SupabaseClient<Database> = getCarbonServiceRole()
+) {
+  const settings = await system
+    .from("fiscalYearSettings")
+    .select("startMonth")
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (settings.error) return { data: null, error: settings.error };
+  return {
+    data: MONTH_NUMBER[settings.data?.startMonth ?? "January"] ?? 1,
+    error: null
+  };
+}
+
 export async function createFiscalYearPeriods(
   client: SupabaseClient<Database>,
-  args: { companyId: string; fiscalYear: number; userId: string }
+  args: { companyId: string; fiscalYear: number; userId: string },
+  system: SupabaseClient<Database> = getCarbonServiceRole()
 ) {
-  // A failed read, or a row RLS hides (settings view), must not start the
-  // year in January.
-  const settings = await getFiscalYearSettings(client, args.companyId);
-  if (settings.error) return { data: null, error: settings.error };
-  const startMonth = MONTH_NUMBER[settings.data.startMonth] ?? 1;
+  const fiscalStart = await getFiscalStartMonth(args.companyId, system);
+  if (fiscalStart.error) return { data: null, error: fiscalStart.error };
+  const startMonth = fiscalStart.data;
 
   const existing = await client
     .from("accountingPeriod")

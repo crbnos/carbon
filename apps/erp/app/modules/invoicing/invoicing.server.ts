@@ -130,8 +130,9 @@ const salesInvoiceFields = [
  * customer changes; the customer and the invoice customer cannot be
  * cleared. A new issue date or payment term recomputes the due date, so it
  * takes one invoice at a time. A new currency brings today's exchange rate.
- * An empty value clears any other field. Refused when none of the invoices
- * is the company's.
+ * An empty value clears any other field. A customer, contact, location or
+ * payment term must be the company's. Refused when none of the invoices is
+ * the company's.
  *
  * @param ids - The sales invoices to change. See invoicing_getSalesInvoices.
  * @param field - The field to set.
@@ -183,6 +184,10 @@ export const updateSalesInvoiceField = defineServiceFn({
     if (field === "customerId") {
       // The panel's customer field is required, as the column is.
       if (!value) return ctx.error("validation", "Customer is required");
+      // Before the ship-to is cleared: a customer the write would refuse
+      // must not leave the invoices without their ship-to.
+      const refused = await refuseUnlessOwned(ctx, "customer", { id: value });
+      if (refused) return refused;
       // A ship-to is one of the old customer's locations, so a customer
       // change clears it (sales rules would otherwise evaluate an address
       // that is not the new customer's).
@@ -1080,7 +1085,8 @@ const purchaseInvoiceFields = [
  * and address; the invoice supplier cannot be cleared. A new issue date or
  * payment term recomputes the due date, so it takes one invoice at a time.
  * A new currency brings today's exchange rate. An empty value clears any
- * other field. Refused when none of the invoices is the company's.
+ * other field. A supplier, contact, location or payment term must be the
+ * company's. Refused when none of the invoices is the company's.
  *
  * @param ids - The purchase invoices to change. See invoicing_getPurchaseInvoices.
  * @param field - The field to set.

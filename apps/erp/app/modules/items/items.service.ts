@@ -160,6 +160,7 @@ import {
   type MaterialPropertyLookups,
   type MaterialPropertyValues,
   materialItemUpdateFields,
+  newMaterialRevisions,
   noMaterialProperties,
   resolveMaterialProperties,
   sentFields,
@@ -655,48 +656,104 @@ export async function deleteSupplierPart(
   );
 }
 
+/**
+ * Deletes a configuration parameter group of the company. Its parameters move
+ * to the same item's Ungrouped group in the same transaction, so a refused or
+ * failed move leaves the group and its parameters as they were. The Ungrouped
+ * group itself is refused, as its Delete menu item is disabled.
+ */
 export async function deleteConfigurationParameterGroup(
   client: SupabaseClient<Database>,
-  id: string
-) {
-  // Get any parameters that belong to this group
-  const { data: parameters } = await client
-    .from("configurationParameter")
-    .select("id")
-    .eq("configurationParameterGroupId", id);
-
-  if (parameters && parameters.length > 0) {
-    // The ungrouped group of the same item: every configurable item has its
-    // own, so an unscoped `.single()` matched several rows and moved nothing.
-    const { data: group } = await client
-      .from("configurationParameterGroup")
-      .select("itemId")
-      .eq("id", id)
-      .maybeSingle();
-    const { data: ungrouped } = group
-      ? await client
-          .from("configurationParameterGroup")
-          .select("id")
-          .eq("itemId", group.itemId)
-          .eq("isUngrouped", true)
-          .maybeSingle()
-      : { data: null };
-
-    if (ungrouped) {
-      // Update all parameters to use the ungrouped group
-      await client
-        .from("configurationParameter")
-        .update({ configurationParameterGroupId: ungrouped.id })
-        .eq("configurationParameterGroupId", id);
-    }
-  }
-  return requireAffected(
-    client
-      .from("configurationParameterGroup")
-      .delete()
-      .eq("id", id)
-      .select("id")
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+): Promise<
+  { data: { id: string }[]; error: null } | { data: null; error: ServiceError }
+> {
+  const { id, companyId } = args;
+  // Kysely bypasses RLS: the group's DELETE policy asks for parts_delete. The
+  // move is part of the delete, so it needs no more.
+  const permitted = await requireCompanyPermission(
+    client,
+    companyId,
+    "parts_delete"
   );
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  type Outcome = { refusal: string } | { deleted: { id: string }[] };
+  try {
+    const outcome = await db
+      .transaction()
+      .execute(async (trx): Promise<Outcome> => {
+        // The lock holds off a parameter added to the group meanwhile.
+        const group = await trx
+          .selectFrom("configurationParameterGroup")
+          .select(["itemId", "isUngrouped"])
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!group) {
+          return { refusal: "Configuration parameter group not found" };
+        }
+        if (group.isUngrouped) {
+          return { refusal: "The Ungrouped group cannot be deleted" };
+        }
+
+        const parameters = await trx
+          .selectFrom("configurationParameter")
+          .select("id")
+          .where("configurationParameterGroupId", "=", id)
+          .where("companyId", "=", companyId)
+          .execute();
+        if (parameters.length > 0) {
+          // Every configurable item has its own Ungrouped group.
+          const ungrouped = await trx
+            .selectFrom("configurationParameterGroup")
+            .select("id")
+            .where("itemId", "=", group.itemId)
+            .where("companyId", "=", companyId)
+            .where("isUngrouped", "=", true)
+            .executeTakeFirst();
+          if (!ungrouped) {
+            return {
+              refusal:
+                "The item has no Ungrouped group to move this group's parameters to"
+            };
+          }
+          await trx
+            .updateTable("configurationParameter")
+            .set({ configurationParameterGroupId: ungrouped.id })
+            .where("configurationParameterGroupId", "=", id)
+            .where("itemId", "=", group.itemId)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+
+        const deleted = await trx
+          .deleteFrom("configurationParameterGroup")
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .returning("id")
+          .execute();
+        if (deleted.length !== 1) {
+          throw new Error(
+            `Configuration parameter group ${id} was not deleted`
+          );
+        }
+        return { deleted };
+      });
+    if ("refusal" in outcome) {
+      return { data: null, error: ruleError(outcome.refusal) };
+    }
+    return { data: outcome.deleted, error: null };
+  } catch (error) {
+    logger.error("Failed to delete the configuration parameter group", {
+      companyId,
+      id,
+      error
+    });
+    return { data: null, error: writeError(error) };
+  }
 }
 
 // An item delete cascades to its supplier parts, and a price break restricts
@@ -2805,6 +2862,8 @@ export async function upsertConfigurationParameter(
           })
         )
         .eq("id", configurationParameter.id)
+        .eq("itemId", data.itemId)
+        .eq("companyId", data.companyId)
         .select("id")
     );
   }
@@ -2813,7 +2872,11 @@ export async function upsertConfigurationParameter(
   const existingGroups = await client
     .from("configurationParameterGroup")
     .select("id, isUngrouped, sortOrder")
-    .eq("itemId", data.itemId);
+    .eq("itemId", data.itemId)
+    .eq("companyId", data.companyId);
+  if (existingGroups.error) {
+    return { data: null, error: existingGroups.error };
+  }
 
   const ungroupedGroup = existingGroups.data?.find(
     (group) => group.isUngrouped
@@ -2860,8 +2923,8 @@ export async function upsertConfigurationParameterGroup(
   }
 ) {
   const { itemId, ...data } = configurationParameterGroup;
-  // A group of another item, or one RLS hides, matches no row: `.single()`
-  // refuses it.
+  // A group of another item or company, or one RLS hides, matches no row:
+  // `.single()` refuses it.
   if (configurationParameterGroup.id) {
     return client
       .from("configurationParameterGroup")
@@ -2870,6 +2933,7 @@ export async function upsertConfigurationParameterGroup(
       })
       .eq("id", configurationParameterGroup.id)
       .eq("itemId", itemId)
+      .eq("companyId", data.companyId)
       .select("id")
       .single();
   }
@@ -2877,7 +2941,11 @@ export async function upsertConfigurationParameterGroup(
   const existingGroups = await client
     .from("configurationParameterGroup")
     .select("id, isUngrouped, sortOrder")
-    .eq("itemId", itemId);
+    .eq("itemId", itemId)
+    .eq("companyId", data.companyId);
+  if (existingGroups.error) {
+    return { data: null, error: existingGroups.error };
+  }
 
   const maxSortOrder =
     existingGroups.data?.reduce(
@@ -3666,6 +3734,7 @@ export async function upsertConsumable(
           })
         )
         .eq("itemId", itemId)
+        .eq("companyId", consumable.companyId)
     ]);
 
     if (consumableInsert.error) return consumableInsert;
@@ -3946,6 +4015,7 @@ export async function upsertPart(
           })
         )
         .eq("itemId", itemId)
+        .eq("companyId", part.companyId)
     ]);
 
     if (partInsert.error) return partInsert;
@@ -3959,7 +4029,8 @@ export async function upsertPart(
       const itemReplenishmentInsert = await client
         .from("itemReplenishment")
         .update({ lotSize: part.lotSize })
-        .eq("itemId", itemId);
+        .eq("itemId", itemId)
+        .eq("companyId", part.companyId);
 
       if (itemReplenishmentInsert.error) return itemReplenishmentInsert;
     }
@@ -5907,7 +5978,7 @@ export async function upsertMaterial(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in material) return insertMaterial(client, material);
+  if ("createdBy" in material) return insertMaterial(client, db, material);
 
   const generatedIds = await materialIdsAreGenerated(
     client,
@@ -6071,30 +6142,34 @@ export async function upsertMaterial(
 }
 
 /**
- * Creates a material, with one revision per entry of `sizes`. With generated
- * material IDs on, its ID and name are derived from the properties sent.
- * Returns the new material's row in the `materials` view.
+ * Creates a material, with one revision per distinct size in `sizes` (none:
+ * the initial revision). With generated material IDs on, its ID and name are
+ * derived from the properties sent; `accepted` is the pair the caller already
+ * checked, and a derived pair that differs is refused. The item revisions,
+ * their item cost and the material row are written in one transaction; the
+ * pick method and shelf life after it, as an update writes them. Returns the
+ * new material's row in the `materials` view.
  */
 export async function insertMaterial(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   material: z.infer<typeof materialValidator> & {
     companyId: string;
     createdBy: string;
     customFields?: Json;
     sizes?: string[];
-  }
+  },
+  accepted?: { readableId: string; name: string }
 ): Promise<{
   data: Database["public"]["Views"]["materials"]["Row"] | null;
   error: ServiceError | null;
 }> {
-  const generatedIds = await materialIdsAreGenerated(
-    client,
-    material.companyId
-  );
+  const { companyId, createdBy } = material;
+  const generatedIds = await materialIdsAreGenerated(client, companyId);
   if (generatedIds.error) return { data: null, error: generatedIds.error };
 
   const plan = await planMaterialPropertyChanges(client, {
-    companyId: material.companyId,
+    companyId,
     current: noMaterialProperties,
     changes: sentMaterialProperties(material),
     generatedIds: generatedIds.data
@@ -6108,10 +6183,22 @@ export async function insertMaterial(
   }
   const readableId = plan.data.generated?.readableId ?? material.id;
   const name = plan.data.generated?.name ?? material.name;
+  // A property renamed since the caller's check would save another identity.
+  if (
+    accepted &&
+    (accepted.readableId !== readableId || accepted.name !== name)
+  ) {
+    return {
+      data: null,
+      error: ruleError(
+        `The material's properties now make it ${readableId}, named ${name}. Send the call again`
+      )
+    };
+  }
 
   // An existing id would take the new item rows as extra revisions and
   // overwrite its material row; sizes on an update add revisions instead.
-  const taken = await materialIdIsTaken(client, readableId, material.companyId);
+  const taken = await materialIdIsTaken(client, readableId, companyId);
   if (taken.error) return { data: null, error: taken.error };
   if (taken.data) {
     return {
@@ -6120,111 +6207,108 @@ export async function insertMaterial(
     };
   }
 
-  // Collect every newly-created item id across the sizes / no-sizes
-  // branches so the shelf-life policy can be applied uniformly.
-  const newItemIds: string[] = [];
+  const costUpdate: { itemPostingGroupId?: string | null; unitCost?: number } =
+    {};
+  if (material.postingGroupId) {
+    costUpdate.itemPostingGroupId = material.postingGroupId;
+  }
+  if (typeof material.unitCost === "number") {
+    costUpdate.unitCost = material.unitCost;
+  }
 
-  if (material.sizes) {
-    const itemInserts = await Promise.all(
-      material.sizes.map((size) =>
-        client
-          .from("item")
-          .insert({
+  // Kysely bypasses RLS: the item INSERT policy asks for parts_create.
+  const permitted = await requireCompanyPermission(
+    client,
+    companyId,
+    "parts_create"
+  );
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  // The item revisions, their cost and the material row land together, so a
+  // failed write leaves no item holding the ID against a retry.
+  let newItemIds: string[];
+  try {
+    newItemIds = await db.transaction().execute(async (trx) => {
+      const items = await trx
+        .insertInto("item")
+        .values(
+          newMaterialRevisions(material.sizes).map((revision) => ({
             readableId,
             name,
             description: material.description,
             mpn: material.mpn,
-            type: "Material",
+            type: "Material" as const,
             replenishmentSystem: material.replenishmentSystem,
             defaultMethodType: material.defaultMethodType,
             itemTrackingType: material.itemTrackingType,
             unitOfMeasureCode: material.unitOfMeasureCode,
             active: true,
-            revision: size,
-            companyId: material.companyId,
-            createdBy: material.createdBy
-          })
-          .select("id")
-          .single()
-      )
-    );
+            revision,
+            companyId,
+            createdBy
+          }))
+        )
+        .returning("id")
+        .execute();
+      const ids = items.map((item) => item.id);
 
-    const hasErrors = itemInserts.some((insert) => insert.error);
-    if (hasErrors) {
-      const firstError = itemInserts.find((insert) => insert.error);
-      return { data: null, error: firstError!.error };
-    }
-    for (const insert of itemInserts) {
-      if (insert.data?.id) newItemIds.push(insert.data.id);
-    }
-    const itemCostUpdate = await Promise.all(
-      itemInserts.map((insert) =>
-        client
-          .from("itemCost")
-          .update(
-            sanitize({
-              itemPostingGroupId: material.postingGroupId,
-              unitCost: material.unitCost
-            })
-          )
-          .eq("itemId", insert.data?.id ?? "")
-      )
-    );
-    if (itemCostUpdate.some((update) => update.error)) {
-      logger.error("Failed to update item cost", {
-        error: itemCostUpdate.find((update) => update.error)?.error
-      });
-    }
-  } else {
-    const itemInsert = await client
-      .from("item")
-      .insert({
-        readableId,
-        name,
-        description: material.description,
-        mpn: material.mpn,
-        type: "Material",
-        replenishmentSystem: material.replenishmentSystem,
-        defaultMethodType: material.defaultMethodType,
-        itemTrackingType: material.itemTrackingType,
-        unitOfMeasureCode: material.unitOfMeasureCode,
-        active: true,
-        companyId: material.companyId,
-        createdBy: material.createdBy
-      })
-      .select("id")
-      .single();
-    if (itemInsert.error) return { data: null, error: itemInsert.error };
-    const itemId = itemInsert.data?.id;
-    if (itemId) newItemIds.push(itemId);
-    const itemCostUpdate = await client
-      .from("itemCost")
-      .update(
-        sanitize({
-          itemPostingGroupId: material.postingGroupId,
-          unitCost: material.unitCost
-        })
-      )
-      .eq("itemId", itemId);
-    if (itemCostUpdate.error) {
-      logger.error("Failed to update item cost", {
-        error: itemCostUpdate.error
-      });
-    }
+      // The item insert trigger creates each revision's itemCost row, so this
+      // updates it; a cost that is not saved fails the create.
+      if (Object.keys(costUpdate).length > 0) {
+        const cost = await trx
+          .updateTable("itemCost")
+          .set({
+            ...costUpdate,
+            updatedBy: createdBy,
+            updatedAt: datetime.timestamp()
+          })
+          .where("itemId", "in", ids)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (Number(cost.numUpdatedRows) !== ids.length) {
+          throw new MaterialRuleViolation(
+            `Item cost for ${readableId} not found`
+          );
+        }
+      }
+
+      // A row left by the material's deleted items is taken over, as the
+      // upsert before this did.
+      const properties = {
+        ...plan.data.next,
+        createdBy,
+        customFields: toJson(material.customFields)
+      };
+      await trx
+        .insertInto("material")
+        .values({ id: readableId, companyId, ...properties })
+        .onConflict((oc) =>
+          oc.columns(["id", "companyId"]).doUpdateSet(properties)
+        )
+        .execute();
+      return ids;
+    });
+  } catch (error) {
+    logger.error("Failed to create material", {
+      companyId,
+      readableId,
+      error
+    });
+    return { data: null, error: materialWriteError(error) };
   }
 
   for (const itemId of newItemIds) {
     const pickMethod = await upsertItemDefaultPickMethod(client, {
       itemId,
-      userId: material.createdBy,
+      userId: createdBy,
       storageUnitId: material.defaultStorageUnitId
     });
     if (pickMethod.error) return { data: null, error: pickMethod.error };
 
     const shelfLife = await upsertItemShelfLife(client, {
       itemId,
-      userId: material.createdBy,
-      companyId: material.companyId,
+      userId: createdBy,
+      companyId,
       mode: material.shelfLifeMode,
       days: material.shelfLifeDays,
       triggerProcessId: material.shelfLifeTriggerProcessId,
@@ -6234,23 +6318,11 @@ export async function insertMaterial(
     if (shelfLife.error) return { data: null, error: shelfLife.error };
   }
 
-  const materialInsert = await client.from("material").upsert({
-    id: readableId,
-    ...plan.data.next,
-    companyId: material.companyId,
-    createdBy: material.createdBy,
-    customFields: material.customFields
-  });
-
-  if (materialInsert.error) {
-    return { data: null, error: materialInsert.error };
-  }
-
   const newMaterial = await client
     .from("materials")
     .select("*")
     .eq("readableId", readableId)
-    .eq("companyId", material.companyId);
+    .eq("companyId", companyId);
 
   return {
     data: newMaterial.data?.[0] ?? null,
@@ -6902,6 +6974,7 @@ export async function upsertTool(
           })
         )
         .eq("itemId", itemId)
+        .eq("companyId", tool.companyId)
     ]);
 
     if (toolInsert.error) return toolInsert;

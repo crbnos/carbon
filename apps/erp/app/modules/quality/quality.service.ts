@@ -17,13 +17,15 @@ import {
   round,
   searchFilter
 } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
+import { type CalendarDate, parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import {
+  calibrationFlags,
+  calibrationInspectionStatusRefusal,
   compareInspectionFeatures,
   gaugeCalibrationStatusFromDates,
   receiptLotIssueType,
@@ -1649,6 +1651,59 @@ export async function updateGauge(
   return { data: { id: result.data.id! }, error: null };
 }
 
+/**
+ * The gauge columns a calibration sets when it is the gauge's latest (no
+ * later calibration is recorded), else null. A Pass whose next calibration
+ * date has already gone by is out of calibration, as the gauge form decides
+ * it from the same dates; a Pass also resets `lastCalibrationStatus`, so the
+ * nightly check notifies again when the gauge next goes out of calibration.
+ */
+export function gaugeCalibrationPatch(
+  gauge: {
+    lastCalibrationDate: string | null;
+    calibrationIntervalInMonths: number;
+    lastCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
+  },
+  calibration: {
+    dateCalibrated: string;
+    inspectionStatus: (typeof inspectionStatus)[number];
+  },
+  today: CalendarDate
+) {
+  const dateCalibrated = parseDate(calibration.dateCalibrated);
+  if (
+    gauge.lastCalibrationDate &&
+    parseDate(gauge.lastCalibrationDate).compare(dateCalibrated) > 0
+  ) {
+    return null;
+  }
+  const nextCalibrationDate = dateCalibrated
+    .add({ months: gauge.calibrationIntervalInMonths })
+    .toString();
+  const passed = calibration.inspectionStatus === "Pass";
+  return {
+    gaugeCalibrationStatus: passed
+      ? gaugeCalibrationStatusFromDates(
+          {
+            lastCalibrationDate: calibration.dateCalibrated,
+            nextCalibrationDate
+          },
+          today
+        )
+      : ("Out-of-Calibration" as const),
+    lastCalibrationDate: calibration.dateCalibrated,
+    nextCalibrationDate,
+    lastCalibrationStatus: passed
+      ? ("In-Calibration" as const)
+      : gauge.lastCalibrationStatus
+  };
+}
+
+/**
+ * The calibration form's save (`x+/quality+/calibrations.*`): through the
+ * caller's client, so its writes are not one transaction. The published
+ * operations use `saveGaugeCalibrationRecord`.
+ */
 export async function upsertGaugeCalibrationRecord(
   client: SupabaseClient<Database>,
   gaugeCalibrationRecord:
@@ -1666,6 +1721,7 @@ export async function upsertGaugeCalibrationRecord(
         customFields?: Json;
       })
 ) {
+  const { companyId } = gaugeCalibrationRecord;
   const userId =
     "updatedBy" in gaugeCalibrationRecord
       ? gaugeCalibrationRecord.updatedBy
@@ -1674,6 +1730,7 @@ export async function upsertGaugeCalibrationRecord(
     .from("gauge")
     .select("*")
     .eq("id", gaugeCalibrationRecord.gaugeId)
+    .eq("companyId", companyId)
     .single();
 
   if (gauge.error) return gauge;
@@ -1693,52 +1750,28 @@ export async function upsertGaugeCalibrationRecord(
               })
             )
             .eq("id", gaugeCalibrationRecord.id)
+            .eq("companyId", companyId)
             .select("id")
         )
       : null;
   if (updated?.error) return updated;
 
-  if (
-    !gauge.data?.lastCalibrationDate ||
-    parseDate(gauge.data.lastCalibrationDate) <=
-      parseDate(gaugeCalibrationRecord.dateCalibrated)
-  ) {
-    const nextCalibrationDate = parseDate(gaugeCalibrationRecord.dateCalibrated)
-      .add({
-        months: gauge.data.calibrationIntervalInMonths
-      })
-      .toString();
-    // A Pass whose next date has already gone by is out of calibration, as
-    // the gauge form decides it from the same dates.
-    const gaugeStatus =
-      gaugeCalibrationRecord.inspectionStatus === "Pass"
-        ? gaugeCalibrationStatusFromDates(
-            {
-              lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
-              nextCalibrationDate
-            },
-            datetime.today(
-              await getCompanyTimeZone(client, gaugeCalibrationRecord.companyId)
-            )
-          )
-        : "Out-of-Calibration";
-
+  const patch = gaugeCalibrationPatch(
+    gauge.data,
+    gaugeCalibrationRecord,
+    datetime.today(await getCompanyTimeZone(client, companyId))
+  );
+  if (patch) {
     const update = await requireAffected(
       client
         .from("gauge")
         .update({
-          gaugeCalibrationStatus: gaugeStatus,
-          lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
-          nextCalibrationDate: nextCalibrationDate,
-          // Reset lastCalibrationStatus when gauge passes calibration to allow future notifications
-          lastCalibrationStatus:
-            gaugeCalibrationRecord.inspectionStatus === "Pass"
-              ? "In-Calibration"
-              : gauge.data.lastCalibrationStatus,
+          ...patch,
           updatedBy: userId,
           updatedAt: datetime.timestamp()
         })
         .eq("id", gaugeCalibrationRecord.gaugeId)
+        .eq("companyId", companyId)
         .select("id")
     );
 
@@ -1757,6 +1790,174 @@ export async function upsertGaugeCalibrationRecord(
       .single();
   }
   return updated ?? { data: null, error: null };
+}
+
+/** A calibration record's fields, as its operations take them. */
+export type GaugeCalibrationRecordFields = {
+  gaugeId: string;
+  supplierId?: string;
+  dateCalibrated: string;
+  requiresAction?: boolean;
+  requiresAdjustment?: boolean;
+  requiresRepair?: boolean;
+  temperature?: number;
+  humidity?: number;
+  approvedBy?: string;
+  measurementStandard?: string;
+  calibrationAttempts: { reference: number; actual: number }[];
+  notes?: unknown;
+  inspectionStatus?: (typeof inspectionStatus)[number];
+  customFields?: unknown;
+};
+
+/**
+ * Saves a calibration record and, when it is the gauge's latest, the gauge's
+ * dates and status (`gaugeCalibrationPatch`), in one transaction. An update
+ * locks the record and keeps a flag left out at its stored value, so the
+ * result and the gauge follow the flags the record holds when it is written.
+ * A create saves a flag left out as false. The gauge row is locked too, so
+ * two calibrations of one gauge cannot leave it with the earlier one's dates.
+ * Refused, writing nothing: a record or gauge that is not the company's, an
+ * `inspectionStatus` that contradicts the flags, and a change to the gauge
+ * when `mayUpdateGauge` is false.
+ */
+export async function saveGaugeCalibrationRecord(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    today: CalendarDate;
+    /** Whether the caller may change the gauge (`update: quality`). */
+    mayUpdateGauge: boolean;
+    /** The record to change; left out, a record is created. */
+    id?: string;
+    record: GaugeCalibrationRecordFields;
+  }
+): Promise<
+  | { id: string }
+  | { refused: "notFound" | "validation" | "forbidden"; message: string }
+> {
+  const { companyId, userId, record } = args;
+  return withTransaction(db, async (trx) => {
+    const stored = args.id
+      ? await trx
+          .selectFrom("gaugeCalibrationRecord")
+          .select(["requiresAction", "requiresAdjustment", "requiresRepair"])
+          .where("id", "=", args.id)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst()
+      : undefined;
+    if (args.id && !stored) {
+      return {
+        refused: "notFound" as const,
+        message: "Calibration record not found"
+      };
+    }
+
+    const { inspectionStatus: decided, ...flags } = calibrationFlags({
+      requiresAction: record.requiresAction ?? stored?.requiresAction,
+      requiresAdjustment:
+        record.requiresAdjustment ?? stored?.requiresAdjustment,
+      requiresRepair: record.requiresRepair ?? stored?.requiresRepair
+    });
+    const contradiction = calibrationInspectionStatusRefusal({
+      ...flags,
+      inspectionStatus: record.inspectionStatus
+    });
+    if (contradiction) {
+      return { refused: "validation" as const, message: contradiction };
+    }
+
+    const gauge = await trx
+      .selectFrom("gauge")
+      .select([
+        "lastCalibrationDate",
+        "calibrationIntervalInMonths",
+        "lastCalibrationStatus"
+      ])
+      .where("id", "=", record.gaugeId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!gauge) {
+      return { refused: "notFound" as const, message: "Gauge not found" };
+    }
+    const patch = gaugeCalibrationPatch(
+      gauge,
+      { dateCalibrated: record.dateCalibrated, inspectionStatus: decided },
+      args.today
+    );
+    if (patch && !args.mayUpdateGauge) {
+      return {
+        refused: "forbidden" as const,
+        message:
+          "The gauge's latest calibration changes the gauge, which needs update on quality"
+      };
+    }
+
+    // A field left out (undefined) is not written. The JSON columns are sent
+    // as text: node-postgres would send an array as a Postgres array.
+    const columns = {
+      gaugeId: record.gaugeId,
+      dateCalibrated: record.dateCalibrated,
+      supplierId: record.supplierId,
+      temperature: record.temperature,
+      humidity: record.humidity,
+      approvedBy: record.approvedBy,
+      measurementStandard: record.measurementStandard,
+      ...flags,
+      inspectionStatus: decided,
+      calibrationAttempts: JSON.stringify(record.calibrationAttempts),
+      notes:
+        record.notes === undefined ? undefined : JSON.stringify(record.notes),
+      customFields:
+        record.customFields === undefined
+          ? undefined
+          : JSON.stringify(record.customFields)
+    };
+
+    let id: string;
+    if (args.id) {
+      await trx
+        .updateTable("gaugeCalibrationRecord")
+        .set({
+          ...columns,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", args.id)
+        .where("companyId", "=", companyId)
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      id = args.id;
+    } else {
+      // As the form saves it: a reading of 0 is no reading.
+      const inserted = await trx
+        .insertInto("gaugeCalibrationRecord")
+        .values({
+          ...columns,
+          temperature: columns.temperature || undefined,
+          humidity: columns.humidity || undefined,
+          companyId,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      id = inserted.id;
+    }
+
+    if (patch) {
+      await trx
+        .updateTable("gauge")
+        .set({ ...patch, updatedBy: userId, updatedAt: datetime.timestamp() })
+        .where("id", "=", record.gaugeId)
+        .where("companyId", "=", companyId)
+        .returning("id")
+        .executeTakeFirstOrThrow();
+    }
+    return { id };
+  });
 }
 
 export async function upsertGaugeType(

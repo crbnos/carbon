@@ -1471,8 +1471,10 @@ export type DemandProjectionRow = {
 
 /**
  * The demand projection rows for the weeks sent, each week named by its start
- * date among `formWeeks`, the weeks the forecast forms show. A week outside
- * them is refused, and so is a week sent twice.
+ * date among `formWeeks`, the weeks the forecast forms show. The week before
+ * the first one is skipped, not written: a form left open over a week
+ * boundary still shows it, and its other weeks must save. Any other week
+ * outside them is refused, and so is a week sent twice.
  */
 export function demandProjectionRows(
   formWeeks: { id: string; startDate: string }[],
@@ -1484,9 +1486,14 @@ export function demandProjectionRows(
   author: { companyId: string; userId: string }
 ): { rows: DemandProjectionRow[] } | { refusal: string } {
   const periodByStart = new Map(formWeeks.map((p) => [p.startDate, p.id]));
+  const passedWeek = formWeeks[0]
+    ? parseDate(formWeeks[0].startDate).subtract({ weeks: 1 }).toString()
+    : null;
   const outside = input.weeks
     .map((week) => week.weekStart)
-    .filter((weekStart) => !periodByStart.has(weekStart));
+    .filter(
+      (weekStart) => !periodByStart.has(weekStart) && weekStart !== passedWeek
+    );
   if (outside.length > 0) {
     const first = formWeeks[0]?.startDate;
     const last = formWeeks[formWeeks.length - 1]?.startDate;
@@ -1502,16 +1509,22 @@ export function demandProjectionRows(
     };
   }
   return {
-    rows: input.weeks.map((week) => ({
-      itemId: input.itemId,
-      locationId: input.locationId,
-      periodId: periodByStart.get(week.weekStart)!,
-      weekStart: week.weekStart,
-      forecastQuantity: week.quantity,
-      companyId: author.companyId,
-      createdBy: author.userId,
-      updatedBy: author.userId
-    }))
+    rows: input.weeks.flatMap((week) => {
+      const periodId = periodByStart.get(week.weekStart);
+      if (!periodId) return [];
+      return [
+        {
+          itemId: input.itemId,
+          locationId: input.locationId,
+          periodId,
+          weekStart: week.weekStart,
+          forecastQuantity: week.quantity,
+          companyId: author.companyId,
+          createdBy: author.userId,
+          updatedBy: author.userId
+        }
+      ];
+    })
   };
 }
 

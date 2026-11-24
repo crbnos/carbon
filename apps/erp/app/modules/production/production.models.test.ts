@@ -124,6 +124,35 @@ describe("demandProjectionRows", () => {
     }
   );
 
+  // A form opened before Sunday still posts the week that has just passed.
+  it("skips the week before the first and writes the rest", () => {
+    expect(
+      plan([
+        { weekStart: "2026-11-15", quantity: 3 },
+        { weekStart: "2026-11-22", quantity: 5 }
+      ])
+    ).toEqual({
+      rows: [
+        {
+          itemId: "item-1",
+          locationId: "loc-1",
+          periodId: "p-1",
+          weekStart: "2026-11-22",
+          forecastQuantity: 5,
+          companyId: "company-1",
+          createdBy: "user-1",
+          updatedBy: "user-1"
+        }
+      ]
+    });
+  });
+
+  it("refuses a week two weeks before the first", () => {
+    expect(plan([{ weekStart: "2026-11-08", quantity: 1 }])).toHaveProperty(
+      "refusal"
+    );
+  });
+
   it("refuses a week sent twice", () => {
     expect(
       plan([

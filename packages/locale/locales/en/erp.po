@@ -13846,9 +13846,6 @@ msgstr "Failed to update batch property"
 msgid "Failed to update category markups"
 msgstr "Failed to update category markups"
 
-msgid "Failed to update configuration parameter"
-msgstr "Failed to update configuration parameter"
-
 msgid "Failed to update count"
 msgstr "Failed to update count"
 

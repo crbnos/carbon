@@ -1287,10 +1287,11 @@ export const stopMaintenanceEvent = defineServiceFn({
  * @remarks
  * Refused when the dispatch is Completed or Cancelled, or the item is not the
  * company's. A serial or batch part names the tracked entities it takes in
- * `children`, each with a quantity more than 0; any other part takes
- * `quantity` (more than 0) from inventory at the dispatch's location. The
- * stock leaves inventory through the `issue` posting, whose refusal is
- * returned as it is.
+ * `children`, each with a quantity more than 0, in stock at the dispatch's
+ * location: each draw must fit in the one storage unit there that holds most
+ * of that serial or lot. Any other part takes `quantity` (more than 0) from
+ * inventory at the dispatch's location. The stock leaves inventory through the
+ * `issue` posting, whose refusal is returned as it is.
  *
  * @returns The new part's id (`id`), with the dispatch and the item.
  *

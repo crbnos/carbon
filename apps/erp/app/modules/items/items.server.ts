@@ -2008,6 +2008,11 @@ export const deleteSupplierPart = defineServiceFn({
 /**
  * Delete configuration parameter group
  *
+ * @remarks
+ * As the group's Delete menu item does: the group's parameters move to the
+ * item's Ungrouped group, in the same transaction as the delete. The Ungrouped
+ * group itself cannot be deleted.
+ *
  * @mcp destructive
  */
 export const deleteConfigurationParameterGroup = defineServiceFn({
@@ -2018,7 +2023,8 @@ export const deleteConfigurationParameterGroup = defineServiceFn({
       ctx,
       await service.deleteConfigurationParameterGroup(
         ctx.asCaller.supabase,
-        input.id as never
+        ctx.asSystem.pg,
+        { id: input.id, companyId: ctx.company.id }
       )
     );
   }
@@ -4062,6 +4068,12 @@ export const updateRevision = defineServiceFn({
 /**
  * Upsert configuration parameter
  *
+ * @remarks
+ * As the configuration card's Add Parameter and parameter edit forms do:
+ * without `id` it adds a parameter to the item's Ungrouped group; with `id`
+ * it saves that parameter of the item. Editing needs parts update, adding
+ * parts create as well.
+ *
  * @mcp
  */
 export const upsertConfigurationParameter = defineServiceFn({
@@ -4082,14 +4094,26 @@ export const upsertConfigurationParameter = defineServiceFn({
     configurationParameterGroupId: z.string().optional(),
     materialFormFilterId: z.string().optional()
   }),
-  permission: { create: "parts", update: "parts" },
+  // The card's route gate; an add inserts, which also needs create.
+  permission: { update: "parts" },
   async run(ctx, input) {
+    if (!input.id && !ctx.can({ create: "parts" })) {
+      return ctx.error(
+        "forbidden",
+        "Adding a parameter needs permission to create parts"
+      );
+    }
+    // The insert policy checks only the parameter's company, and the item key
+    // only that the item exists.
+    const owned = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
+    if (owned) return owned;
     return unwrap(
       ctx,
-      await service.upsertConfigurationParameter(
-        ctx.asCaller.supabase,
-        payload(ctx, input).withUser().forUpsert() as never
-      )
+      await service.upsertConfigurationParameter(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      } as never)
     );
   }
 });
@@ -4122,6 +4146,10 @@ export const upsertConfigurationParameterGroup = defineServiceFn({
         "Adding a group needs permission to create parts"
       );
     }
+    // The insert policy checks only the group's company, and the item key
+    // only that the item exists.
+    const owned = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
+    if (owned) return owned;
     return unwrap(
       ctx,
       await service.upsertConfigurationParameterGroup(ctx.asCaller.supabase, {
@@ -5675,15 +5703,18 @@ export const createMaterial = defineServiceFn({
       return ctx.error(identity.refusal, identity.message);
     }
 
+    // The create derives the pair again and refuses one that changed since.
     const created = unwrap(
       ctx,
       await service.insertMaterial(
         client,
+        ctx.asSystem.pg,
         payload(ctx, {
           ...input,
           id: identity.readableId,
           name: identity.name
-        }).forCreate() as never
+        }).forCreate() as never,
+        identity
       )
     );
     if (created instanceof CarbonError) return created;
@@ -5715,7 +5746,8 @@ export const updateMaterial = defineServiceFn({
   input: z
     .looseObject({
       id: z.string().min(1).max(255),
-      readableId: z.string().optional(),
+      // An empty one would read as left out and save nothing.
+      readableId: z.string().min(1).optional(),
       name: z.string().min(1).max(255).optional().describe(itemNameNote),
       description: z.string().optional().describe(itemDescriptionNote),
       mpn: z.string().optional(),

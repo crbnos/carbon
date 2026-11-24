@@ -3779,9 +3779,9 @@ export const postInventoryCount = defineServiceFn({
  *
  * @remarks
  * A positive or negative adjustment, a set quantity, a scrap (with its scrap
- * reason) or an unscrap of a Scrapped tracked entity. It writes the ledger
- * entry, updates the tracked entity, maintains cost layers and posts the
- * journal in one transaction. Stock held for inspection is refused first.
+ * reason) or an unscrap of a Scrapped tracked entity of the item. It writes
+ * the ledger entry, updates the tracked entity, maintains cost layers and
+ * posts the journal in one transaction. Stock held for inspection is refused first.
  * Then storage rules run on the `inventoryAdjustment` surface and, when a
  * storage unit is named, on `pick`
  * (a decrease or scrap) or `place` (an increase or unscrap): a blocking rule
@@ -3798,7 +3798,8 @@ export const postInventoryCount = defineServiceFn({
  * takes the one numbered `readableId` in `storageUnitId` (with no number,
  * stock with no number in the unit, else the unit's only serial or lot); a
  * scrap, and a move to another storage unit (`originalStorageUnitId`), need
- * `trackedEntityId`. A serial item moves one unit at a time.
+ * `trackedEntityId`. A serial item moves one unit at a time, and an increase
+ * that would give a serial more than one unit is refused.
  *
  * The posting date is today in the company's time zone; there is no other.
  * An increase is valued at the item's current cost: its standard cost

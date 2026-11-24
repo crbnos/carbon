@@ -269,6 +269,7 @@ import {
 import { parseAbsolute, parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type Insertable, type Selectable, sql } from "kysely";
+import isEqual from "lodash/isEqual";
 import { nanoid } from "nanoid";
 import { data } from "react-router";
 import { extract as tarExtract } from "tar-stream";
@@ -794,7 +795,8 @@ export function unwritableCustomFieldKeys(
  * The custom field keys a save may not write: the unwritable ones, unless
  * every record already holds that value. The properties panel posts the whole
  * stored map with one value changed, so a deleted field's value, or one stored
- * in another shape, goes back unchanged and is kept.
+ * in another shape, goes back unchanged and is kept. Values compare as JSON:
+ * an object's members in any order, an array's items in theirs.
  */
 export function refusedCustomFieldKeys(
   sent: Record<string, unknown>,
@@ -804,9 +806,7 @@ export function refusedCustomFieldKeys(
   return unwritableCustomFieldKeys(sent, fields).filter(
     (key) =>
       stored.length === 0 ||
-      stored.some(
-        (values) => JSON.stringify(values?.[key]) !== JSON.stringify(sent[key])
-      )
+      stored.some((values) => !isEqual(values?.[key], sent[key]))
   );
 }
 
@@ -3349,7 +3349,14 @@ export async function upsertCustomField(
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof customFieldValidator>, "id"> & {
+    // An update writes only the fields it is given: its table and data type
+    // never change.
+    | (Partial<
+        Pick<
+          z.infer<typeof customFieldValidator>,
+          "name" | "listOptions" | "tags" | "required"
+        >
+      > & {
         id: string;
         companyId: string;
         updatedBy: string;

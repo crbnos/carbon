@@ -79,11 +79,7 @@ import type {
   InspectionSaveFeaturesPayload
 } from "./quality.service";
 import * as service from "./quality.service";
-import {
-  calibrationFlags,
-  calibrationInspectionStatusRefusal,
-  gaugeCalibrationStatusFromDates
-} from "./quality.utils";
+import { gaugeCalibrationStatusFromDates } from "./quality.utils";
 
 const logger = getLogger("erp", "quality");
 
@@ -3689,7 +3685,8 @@ const gaugeCalibrationRecordInput = z.object({
  * In-Calibration unless its next calibration date has already passed. A Pass
  * also resets the gauge's last notified status (`lastCalibrationStatus`) to
  * In-Calibration, so the nightly check notifies again when it next goes out
- * of calibration. A flag left out is false, as an unticked box on the form.
+ * of calibration. Changing the gauge also needs update on quality, as the
+ * form's save does. A flag left out is false, as an unticked box on the form.
  *
  * @param inspectionStatus - Fail when the calibration requires action, adjustment or repair, else Pass, as the form decides it. Leave it out; a value that contradicts the flags is refused.
  *
@@ -3699,18 +3696,17 @@ export const createGaugeCalibrationRecord = defineServiceFn({
   input: gaugeCalibrationRecordInput,
   permission: { create: "quality" },
   async run(ctx, input) {
-    const refusal = calibrationInspectionStatusRefusal(input);
-    if (refusal) return ctx.error("validation", refusal);
-    return unwrap(
-      ctx,
-      await service.upsertGaugeCalibrationRecord(
-        ctx.asCaller.supabase,
-        payload(ctx, {
-          ...input,
-          ...calibrationFlags(input)
-        }).forCreate() as never
-      )
-    );
+    const saved = await service.saveGaugeCalibrationRecord(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      today: datetime.today(
+        await getCompanyTimeZone(ctx.asSystem.pg, ctx.company.id)
+      ),
+      // The form's save changes the gauge under its row policy, update.
+      mayUpdateGauge: ctx.can({ update: "quality" }),
+      record: input
+    });
+    return "refused" in saved ? ctx.error(saved.refused, saved.message) : saved;
   }
 });
 
@@ -3720,7 +3716,7 @@ export const createGaugeCalibrationRecord = defineServiceFn({
  * @remarks
  * Saves a calibration as the calibration form does, with the gauge updates of
  * quality_createGaugeCalibrationRecord. A field left out keeps its value; the
- * result is decided from the flags after the save.
+ * result is decided from the flags the record holds when it is saved.
  *
  * @param inspectionStatus - Fail when the calibration requires action, adjustment or repair, else Pass, as the form decides it. Leave it out; a value that contradicts the flags is refused.
  *
@@ -3732,44 +3728,18 @@ export const updateGaugeCalibrationRecord = defineServiceFn({
   }),
   // The route gated on create; the write runs under the update policy.
   permission: { create: "quality", update: "quality" },
-  async run(ctx, input) {
-    const stored = await ctx.asCaller.supabase
-      .from("gaugeCalibrationRecord")
-      .select("requiresAction, requiresAdjustment, requiresRepair")
-      .eq("id", input.id)
-      .eq("companyId", ctx.company.id)
-      .maybeSingle();
-    if (stored.error) {
-      return ctx.error(
-        "internal",
-        "Failed to load the calibration record",
-        stored.error
-      );
-    }
-    if (!stored.data) {
-      return ctx.error("notFound", "Calibration record not found");
-    }
-    const record = {
-      ...input,
-      requiresAction: input.requiresAction ?? stored.data.requiresAction,
-      requiresAdjustment:
-        input.requiresAdjustment ?? stored.data.requiresAdjustment,
-      requiresRepair: input.requiresRepair ?? stored.data.requiresRepair
-    };
-    const refusal = calibrationInspectionStatusRefusal(record);
-    if (refusal) return ctx.error("validation", refusal);
-    const updated = unwrap(
-      ctx,
-      await service.upsertGaugeCalibrationRecord(
-        ctx.asCaller.supabase,
-        payload(ctx, {
-          ...record,
-          ...calibrationFlags(record)
-        }).forUpdate() as never
-      )
-    );
-    if (updated instanceof CarbonError) return updated;
-    return { id: input.id };
+  async run(ctx, { id, ...input }) {
+    const saved = await service.saveGaugeCalibrationRecord(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      today: datetime.today(
+        await getCompanyTimeZone(ctx.asSystem.pg, ctx.company.id)
+      ),
+      mayUpdateGauge: true,
+      id,
+      record: input
+    });
+    return "refused" in saved ? ctx.error(saved.refused, saved.message) : saved;
   }
 });
 

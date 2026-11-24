@@ -67,13 +67,21 @@ RLS lets authenticated users read global rows and employees read their company's
 ## Item linkage (important)
 
 A material is an `item` of `type = 'Material'`. `material.id` is set to the item's `readableId`,
-**not** the item's `id`. Creating a material inserts the `item` row(s) first then the `material` row
-with the shared id — see `upsertMaterial` in
-`apps/erp/app/modules/items/items.service.ts` (the readable id is `material.id`, or the id derived
-from the properties when `companySettings.materialGeneratedIds` is on, then
-`client.from("material").upsert({ id: readableId, ... })`). Because the join is on `readableId`,
-one material can have multiple item **revisions** (and per-size item rows); the `materials` view
-de-dupes to the latest item per `(readableId, companyId)` and aggregates the revisions.
+**not** the item's `id`. Creating a material (`insertMaterial` in
+`apps/erp/app/modules/items/items.service.ts`, behind `upsertMaterial`'s create branch and
+`createMaterial`) writes the `item` row(s), their `itemCost` and the `material` row with the shared
+id in ONE Kysely transaction, gated by `assert_company_access(companyId, 'parts_create')` through
+the caller's client. The readable id is `material.id`, or the id derived from the properties when
+`companySettings.materialGeneratedIds` is on; `createMaterial` passes the pair it checked first
+and the create refuses a derived pair that differs. Each distinct size is one item revision
+(`newMaterialRevisions`, `material-properties.ts`: a repeated or blank size is dropped, and no
+size is the initial revision `0`). A requested item group or unit cost that is not saved
+(`itemCost` row count short) fails and rolls back the whole create. The `material` row is an
+insert `ON CONFLICT (id, "companyId") DO UPDATE`: no code deletes it when its items are deleted,
+so a re-created ID takes over the row left behind. The pick method and shelf life are written
+after the commit, as on update. Because the join is on `readableId`, one material can have
+multiple item **revisions** (and per-size item rows); the `materials` view de-dupes to the latest
+item per `(readableId, companyId)` and aggregates the revisions.
 
 `getMaterial` calls the **`get_material_details(item_id)`** RPC (defined/revised in the
 `20250721101110` and `20250725140205_material-details.sql` migrations). There is also
@@ -99,7 +107,8 @@ the service loads the rows they read and writes what they decide.
   time. Clearing a substance or form that is set is refused. Create requires both.
 - Writes go through Kysely in one transaction (`writeMaterialIdentity`): the material row and, on
   a rename, every revision's item row; `upsertMaterial` adds the item row, custom fields and
-  itemCost to the same transaction. Kysely bypasses RLS, so `requireMaterialUpdatable` first runs
+  itemCost to the same transaction. A create has its own transaction (`insertMaterial`, see "Item
+  linkage"). Kysely bypasses RLS, so `requireMaterialUpdatable` first runs
   an UPDATE through the caller's client (material's policy is parts_update in the company, which
   also grants the item and itemCost rows). A taken readable id is refused on rename and on create.
 - `upsertMaterial` updates write only the keys present on the payload (a present-but-undefined key,
@@ -111,7 +120,7 @@ the service loads the rows they read and writes what they decide.
   as the panel's name field does. `generatedMaterialUpdateRefusal` refuses a `readableId` other
   than the one the material ends up with (the panel has no ID field there), and a `name` that
   differs from a derived one. `active` is never touched; `postingGroupId`/`unitCost` go to
-  `itemCost`; `readableId` renames when ids are hand-typed; `sizes` adds a revision per new size
+  `itemCost`; `readableId` renames when ids are hand-typed (`updateMaterial` refuses an empty one, which would read as left out); `sizes` adds a revision per new size
   via `createRevision` after the transaction, refused before any write while the material is open
   in a change notice. The pick method and shelf life are also written after the transaction, so a
   failure there leaves the transaction's writes in place. An update by readable id is refused when

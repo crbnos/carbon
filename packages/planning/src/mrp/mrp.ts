@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { randomUUID } from "node:crypto";
-import { type Database, getCompanyTimeZone } from "@carbon/database";
+import {
+  type Database,
+  getCompanyTimeZone,
+  PERIOD_LOCK_KEY
+} from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import type { MethodType } from "@carbon/database/mrp-engine";
@@ -777,16 +781,31 @@ async function getOrCreateDemandPeriods(
     }));
   }
 
-  const existingPeriodMap = new Map(
-    existingPeriods.map((p) => [toIsoDate(p.startDate)!, p])
-  );
-
-  const periodsToCreate = periods.filter(
-    (period) => !existingPeriodMap.has(period.startDate)
-  );
-
-  const created = await db.transaction().execute(async (trx) => {
-    return await trx
+  // `period` is shared by every company with no unique key on a week: the
+  // missing weeks are read again and inserted under the one period lock, so a
+  // concurrent run or planning screen does not insert the same week.
+  const { existing, created } = await db.transaction().execute(async (trx) => {
+    await sql`SELECT pg_advisory_xact_lock(${PERIOD_LOCK_KEY}::bigint)`.execute(
+      trx
+    );
+    const existing = await trx
+      .selectFrom("period")
+      .selectAll()
+      .where(
+        "startDate",
+        "in",
+        periods.map((p) => p.startDate)
+      )
+      .where("periodType", "=", periodType)
+      .execute();
+    const existingStartDates = new Set(
+      existing.map((p) => toIsoDate(p.startDate)!)
+    );
+    const periodsToCreate = periods.filter(
+      (period) => !existingStartDates.has(period.startDate)
+    );
+    if (periodsToCreate.length === 0) return { existing, created: [] };
+    const created = await trx
       .insertInto("period")
       .values(
         periodsToCreate.map((period) => ({
@@ -798,9 +817,10 @@ async function getOrCreateDemandPeriods(
       )
       .returningAll()
       .execute();
+    return { existing, created };
   });
 
-  return [...existingPeriods, ...created].map((p) => ({
+  return [...existing, ...created].map((p) => ({
     id: p.id,
     // pg returns DATE columns as JS Date objects; normalize to "YYYY-MM-DD"
     startDate: parseDate(toIsoDate(p.startDate)!),

@@ -14,6 +14,7 @@ import {
   deleteSalesRule,
   unassignSalesRule,
   updateContractLine,
+  updateQuoteField,
   updateSalesOrderField,
   updateSalesReturnOrderField,
   updateSalesRule
@@ -47,6 +48,19 @@ function contextFor(client: unknown) {
 }
 
 describe("clearing a document's customer", () => {
+  it.each([null, ""])("is refused on a quote, whose customer is required (%j)", async (value) => {
+    const { client, writes } = filteringSupabase({
+      quote: [{ id: "q-1", companyId: "company-1", status: "Draft" }]
+    });
+    const quote = await updateQuoteField(contextFor(client), {
+      ids: ["q-1"],
+      field: "customerId",
+      value
+    });
+    expect(quote.error).toMatchObject({ category: "validation" });
+    expect(writes).toEqual([]);
+  });
+
   it("is refused on sales orders and return orders, whose customer is required", async () => {
     const { client, writes } = filteringSupabase({
       salesOrder: [{ id: "so-1", companyId: "company-1", status: "Draft" }],

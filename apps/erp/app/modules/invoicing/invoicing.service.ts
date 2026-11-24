@@ -6337,9 +6337,26 @@ export function updatedInvoices(ctx: ServiceContext, rows: { id: string }[]) {
 }
 
 /**
+ * The id fields `writeInvoiceField` takes, and the table each names. Their
+ * foreign keys name the id alone, so they accept another company's row.
+ */
+const INVOICE_FIELD_REFERENCES: Partial<
+  Record<string, Parameters<typeof refuseUnlessOwned>[1]>
+> = {
+  paymentTermId: "paymentTerm",
+  locationId: "location",
+  invoiceCustomerContactId: "customerContact",
+  invoiceCustomerLocationId: "customerLocation",
+  invoiceSupplierContactId: "supplierContact",
+  invoiceSupplierLocationId: "supplierLocation",
+  supplierId: "supplier"
+};
+
+/**
  * Write one field on invoices of either kind. A new issue date or payment
  * term recomputes the due date, so it takes one invoice; a new currency
- * brings today's exchange rate; an empty value clears the field.
+ * brings today's exchange rate; an empty value clears the field. An id must
+ * name a row of this company.
  */
 export async function writeInvoiceField(
   ctx: ServiceContext,
@@ -6350,14 +6367,23 @@ export async function writeInvoiceField(
   const companyId = ctx.company.id;
   let changes: Record<string, unknown> = { [field]: value || null };
 
+  // Each invoice's due date follows its own issue date and term.
+  if (
+    (field === "dateIssued" || field === "paymentTermId") &&
+    ids.length !== 1
+  ) {
+    return ctx.error(
+      "validation",
+      "Set the issue date or payment term on one invoice at a time"
+    );
+  }
+  const reference = INVOICE_FIELD_REFERENCES[field];
+  if (value && reference) {
+    const refused = await refuseUnlessOwned(ctx, reference, { id: value });
+    if (refused) return refused;
+  }
+
   if (field === "dateIssued" || field === "paymentTermId") {
-    // Each invoice's due date follows its own issue date and term.
-    if (ids.length !== 1) {
-      return ctx.error(
-        "validation",
-        "Set the issue date or payment term on one invoice at a time"
-      );
-    }
     const invoice = await client
       .from(table as "salesInvoice")
       .select("dateIssued, paymentTermId")
@@ -6407,19 +6433,24 @@ export async function writeInvoiceField(
   return updatedInvoices(ctx, update.data);
 }
 
-/** A party's currency at today's rate, or null when it has none. */
+/**
+ * A party's currency at today's rate, or null when it has none. Refused when
+ * the party is not this company's.
+ */
 export async function partyCurrency(
   ctx: ServiceContext,
   table: "customer" | "supplier",
   id: string
 ) {
   const client = ctx.asCaller.supabase;
-  const party = await client
+  // Read as the system: the write is gated on invoicing, and the party tables
+  // need sales or purchasing view, which would hide the party.
+  const party = await ctx.asSystem.supabase
     .from(table as "customer")
     .select("currencyCode")
     .eq("id", id)
     .eq("companyId", ctx.company.id)
-    .single();
+    .maybeSingle();
   if (party.error) {
     return ctx.error(
       "internal",
@@ -6427,6 +6458,7 @@ export async function partyCurrency(
       party.error
     );
   }
+  if (!party.data) return ctx.error("notFound", `The ${table} was not found`);
   if (!party.data.currencyCode) return null;
   const rate = await getExchangeRate(
     client,

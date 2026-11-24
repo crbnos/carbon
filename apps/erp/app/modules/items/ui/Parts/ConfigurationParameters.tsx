@@ -33,7 +33,6 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -117,13 +116,9 @@ export default function ConfigurationParametersForm({
 
   const materialShapeOptions = useShape();
   const submit = useSubmit();
-  const fetcher = useAction<typeof configurationParameterAction>({
-    onError: (data) => {
-      if (data?.success === false) {
-        toastError(t`Failed to update configuration parameter`, data.error);
-      }
-    }
-  });
+  // The parameter and group routes answer the service's `{ data, error }`,
+  // which useAction toasts when it fails.
+  const fetcher = useAction<typeof configurationParameterAction>();
 
   const groupDisclosure = useDisclosure();
   const deleteGroupDisclosure = useDisclosure();

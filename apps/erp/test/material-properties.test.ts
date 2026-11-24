@@ -12,6 +12,7 @@ import {
   type MaterialPropertyLookups,
   type MaterialPropertyValues,
   newMaterialIdentity,
+  newMaterialRevisions,
   noMaterialProperties,
   resolveMaterialProperties,
   sentMaterialProperties
@@ -246,6 +247,18 @@ describe("newMaterialIdentity", () => {
     expect(newMaterialIdentity(null, { id: "AL-SHEET" })).toMatchObject({
       refusal: "validation"
     });
+  });
+});
+
+describe("newMaterialRevisions", () => {
+  it.each([
+    [undefined, ["0"]],
+    [[], ["0"]],
+    [[""], ["0"]],
+    [["A", "A"], ["A"]],
+    [["A", "", "B", "A"], ["A", "B"]]
+  ])("makes %o one revision per distinct size: %o", (sizes, revisions) => {
+    expect(newMaterialRevisions(sizes)).toEqual(revisions);
   });
 });
 

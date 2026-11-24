@@ -148,6 +148,7 @@ import {
   resolvePick,
   resolveReturnUnitCost,
   resolveTrackedEntityBin,
+  resolveTrackedEntityBins,
   round,
   searchFilter,
   settleQuantity,
@@ -24708,6 +24709,25 @@ async function currentEntityStatus(
   return row.status;
 }
 
+// A serial is one unit on the ledger. Call under the entity's row lock, so a
+// concurrent adjustment's rows are counted.
+async function refuseSerialAboveOneUnit(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  trackedEntityId: string,
+  increase: number
+): Promise<void> {
+  const row = await trx
+    .selectFrom("itemLedger")
+    .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+    .where("trackedEntityId", "=", trackedEntityId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (round(Number(row?.quantity ?? 0) + increase) > 1) {
+    throw new InvalidInputError("Serial items can only have a quantity of 1");
+  }
+}
+
 // The single write path for manual inventory adjustments (ERP quantities page,
 // MES shop floor). Ports the former app-side insertManualInventoryAdjustment
 // semantics — Set Quantity resolution, storage-unit transfers, serial/batch
@@ -24993,7 +25013,7 @@ export async function postInventoryAdjustment(
   // is not the lot to adjust here: an increase would insert its id again and
   // fail, and a decrease or scrap would land on other stock. The quantities
   // page only sends a row of this item at this location, or a new id. An
-  // unscrap resolves its location from the scrap, so it is not checked.
+  // unscrap resolves its location from the scrap; its branch checks the item.
   if (
     namesExistingEntity &&
     lotRows.length === 0 &&
@@ -25397,13 +25417,19 @@ export async function postInventoryAdjustment(
       );
 
       if (trackedEntityId) {
+        // Locked: a second unscrap waits, then finds it Available.
         const entity = await trx
           .selectFrom("trackedEntity")
-          .select(["id", "quantity", "status"])
+          .select(["id", "quantity", "status", "itemId", "sourceDocumentId"])
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
+          .forUpdate()
           .executeTakeFirst();
         if (!entity) throw new InvalidInputError("Tracked entity not found");
+        // The restored quantity is booked against `itemId`.
+        if ((entity.itemId ?? entity.sourceDocumentId) !== itemId) {
+          throw new InvalidInputError("The tracked entity is not of this item");
+        }
         if (entity.status !== "Scrapped") {
           throw new InvalidInputError(
             "Only scrapped tracked entities can be unscrapped"
@@ -25434,6 +25460,7 @@ export async function postInventoryAdjustment(
               // Scrap movements (same filters as the fallback below) — an
               // unrelated ledger id must not drive the restored bin/cost.
               .where("trackedEntityId", "=", trackedEntityId)
+              .where("itemId", "=", itemId)
               .where("documentType", "=", "Scrap")
               .where("quantity", "<", 0)
               .executeTakeFirst()
@@ -25450,6 +25477,7 @@ export async function postInventoryAdjustment(
             ])
             .where("trackedEntityId", "=", trackedEntityId)
             .where("companyId", "=", companyId)
+            .where("itemId", "=", itemId)
             .where("documentType", "=", "Scrap")
             .where("quantity", "<", 0)
             .orderBy("createdAt", "desc")
@@ -25805,6 +25833,20 @@ export async function postInventoryAdjustment(
 
     if (trackedEntityId) {
       if (namesLot) {
+        // Locked before the serial balance is read.
+        const status = await currentEntityStatus(
+          trx,
+          trackedEntityId,
+          companyId
+        );
+        if (item.itemTrackingType === "Serial" && signedQuantity > 0) {
+          await refuseSerialAboveOneUnit(
+            trx,
+            companyId,
+            trackedEntityId,
+            signedQuantity
+          );
+        }
         // Draining a lot to zero Consumes it (a Set Quantity to 0 or a full
         // negative adjustment); above zero its status is untouched. This path
         // takes an arbitrary trackedEntityId from the payload, so it is the
@@ -25812,7 +25854,7 @@ export async function postInventoryAdjustment(
         // Settled on the lot's total, so stock in another bin keeps it open.
         const entityUpdate: Record<string, unknown> = settleQuantity({
           quantity: lotOnHandAfter(trackedEntityId, signedQuantity),
-          status: await currentEntityStatus(trx, trackedEntityId, companyId)
+          status
         });
         if (readableId !== undefined && readableId !== null) {
           entityUpdate.readableId = readableId;
@@ -29428,6 +29470,47 @@ function roundedChildTotal(children: { quantity: number | string }[]): number {
   return round(
     children.reduce((sum, child) => sum + round(Number(child.quantity)), 0)
   );
+}
+
+// A maintenance or service job draw takes a lot only where it is in stock:
+// at the draw's location, from the unit there holding most of it, and no more
+// than that unit holds. Returns the unit a draw books in.
+function trackedDrawBin(
+  ledgers: Array<{
+    trackedEntityId: string | null;
+    locationId: string | null;
+    storageUnitId: string | null;
+    quantity: number | string | null;
+  }>,
+  entities: Array<{ id: string; readableId: string | null; quantity: number }>,
+  children: { trackedEntityId: string; quantity: number }[],
+  locationId: string | null
+) {
+  const requested = new Map(
+    children.map((c) => [c.trackedEntityId, c.quantity])
+  );
+  assertEntitiesAtLocation(
+    ledgers,
+    entities.map((e) => ({
+      id: e.id,
+      readableId: e.readableId,
+      quantity: Math.min(Number(e.quantity), requested.get(e.id) ?? Infinity)
+    })),
+    locationId
+  );
+  const bins = resolveTrackedEntityBins(
+    locationId ? ledgers.filter((l) => l.locationId === locationId) : ledgers
+  );
+  return (entity: { id: string; readableId: string | null }, draw: number) => {
+    const held = bins.get(entity.id);
+    const heldQuantity = round(held?.quantity ?? 0);
+    if (!held || heldQuantity < draw) {
+      throw new InvalidInputError(
+        `${entity.readableId ?? "The selected lot"} has ${heldQuantity} in one storage unit at this location. Draw no more than that, or move the rest into that storage unit first.`
+      );
+    }
+    return held.storageUnitId;
+  };
 }
 
 // The production-event and inspection links a completion/scrap payload carries
@@ -34945,11 +35028,8 @@ export async function issueMaterial(
             throw new NotFoundError("Item not found");
           }
 
-          // Calculate total quantity from children
-          const totalQuantity = children.reduce(
-            (sum, child) => sum + Number(child.quantity),
-            0
-          );
+          // The sum of the rounded draws the allocations book.
+          const totalQuantity = roundedChildTotal(children);
 
           // Create the dispatch item
           const dispatchItem = await trx
@@ -34965,7 +35045,7 @@ export async function issueMaterial(
             .returning(["id"])
             .executeTakeFirstOrThrow();
 
-          // Get tracked entities
+          // Locked before the ledger read, so a concurrent draw waits.
           const trackedEntities = await trx
             .selectFrom("trackedEntity")
             .where(
@@ -34975,6 +35055,8 @@ export async function issueMaterial(
             )
             .where("companyId", "=", companyId)
             .selectAll()
+            .orderBy("id")
+            .forUpdate()
             .execute();
 
           // Get item ledgers for these tracked entities
@@ -35037,6 +35119,13 @@ export async function issueMaterial(
             [null]
           );
 
+          const binFor = trackedDrawBin(
+            itemLedgers,
+            trackedEntities,
+            children,
+            locationId
+          );
+
           const maintenanceDispatchItemId = dispatchItem.id;
 
           // Create tracked activity
@@ -35095,13 +35184,7 @@ export async function issueMaterial(
             const fullDraw = isFullDraw(entityQuantity, child.quantity);
             const quantity = fullDraw ? entityQuantity : round(child.quantity);
 
-            // Book against the entity's ACTUAL bin (net on-hand), not an
-            // arbitrary first ledger row — aligns with the job-consumption
-            // path above.
-            const entityBin = resolveTrackedEntityBin(
-              itemLedgers,
-              trackedEntityId
-            );
+            const entityBin = binFor(trackedEntity, quantity);
 
             // Partial consume → split: the lineside entity keeps its id and
             // is decremented; a NEW child entity carries the consumed
@@ -35894,11 +35977,8 @@ export async function issueMaterial(
           throw new NotFoundError("Item not found");
         }
 
-        // Calculate total quantity from children
-        const totalQuantity = children.reduce(
-          (sum, child) => sum + Number(child.quantity),
-          0
-        );
+        // The sum of the rounded draws the ledger books.
+        const totalQuantity = roundedChildTotal(children);
 
         // The job's part line; its unit cost is set once the units are valued.
         const jobItem = await trx
@@ -35916,7 +35996,7 @@ export async function issueMaterial(
           .returning(["id"])
           .executeTakeFirstOrThrow();
 
-        // Get tracked entities
+        // Locked before the ledger read, so a concurrent draw waits.
         const trackedEntities = await trx
           .selectFrom("trackedEntity")
           .where(
@@ -35926,6 +36006,8 @@ export async function issueMaterial(
           )
           .where("companyId", "=", companyId)
           .selectAll()
+          .orderBy("id")
+          .forUpdate()
           .execute();
 
         // Get item ledgers for these tracked entities
@@ -35988,6 +36070,13 @@ export async function issueMaterial(
           [null]
         );
 
+        const binFor = trackedDrawBin(
+          itemLedgers,
+          trackedEntities,
+          children,
+          locationId
+        );
+
         const serviceJobItemId = jobItem.id;
 
         // Create tracked activity
@@ -36039,13 +36128,7 @@ export async function issueMaterial(
           const fullDraw = isFullDraw(entityQuantity, child.quantity);
           const quantity = fullDraw ? entityQuantity : round(child.quantity);
 
-          // Book against the entity's ACTUAL bin (net on-hand), not an
-          // arbitrary first ledger row — aligns with the job-consumption
-          // path above.
-          const entityBin = resolveTrackedEntityBin(
-            itemLedgers,
-            trackedEntityId
-          );
+          const entityBin = binFor(trackedEntity, quantity);
 
           // Partial consume → split: the lineside entity keeps its id and
           // is decremented; a NEW child entity carries the consumed

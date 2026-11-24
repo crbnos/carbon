@@ -179,11 +179,13 @@ type Row = Record<string, unknown>;
 /**
  * The service-role client over in-memory tables: `select` / `update` /
  * `delete` with the `eq`, `in` and `is` filters the operations use, and the
- * RPCs they call (answering `rpcResults[name]`, else 1).
+ * RPCs they call (answering `rpcResults[name]`, else 1). `afterRead` runs
+ * after each read has its rows: what another request commits in between.
  */
 function memoryClient(
   tables: Record<string, Row[]>,
-  rpcResults: Record<string, unknown> = {}
+  rpcResults: Record<string, unknown> = {},
+  afterRead: (table: string) => void = () => undefined
 ) {
   const rpcs: { name: string; args: Row }[] = [];
   const from = (table: string) => {
@@ -200,7 +202,9 @@ function memoryClient(
           (row) => !rows.includes(row)
         );
       }
-      return { data: rows.map((row) => ({ ...row })), error: null };
+      const data = rows.map((row) => ({ ...row }));
+      if (!patch && !remove) afterRead(table);
+      return { data, error: null };
     };
     const query = {
       select: () => query,
@@ -259,9 +263,10 @@ function requestContext(
   permissions: Record<string, Record<string, string[]>>,
   tables: Record<string, Row[]> = {},
   rpcResults: Record<string, unknown> = {},
-  pg: Kysely<KyselyDatabase> | null = null
+  pg: Kysely<KyselyDatabase> | null = null,
+  afterRead?: (table: string) => void
 ) {
-  const system = memoryClient(tables, rpcResults);
+  const system = memoryClient(tables, rpcResults, afterRead);
   const ctx = createServiceContext({
     actor: { type: "user", userId: "usr_admin", permissions },
     company: { id: COMPANY, groupId: "grp_1" },
@@ -307,6 +312,36 @@ function recordingDatabase(results: unknown[][]) {
   const statements = () =>
     sent.map((query) => ({ sql: query.sql, parameters: query.parameters }));
   return { db, statements };
+}
+
+/**
+ * The person accepts their invite right after the first read of `table`, as
+ * `acceptInvite` commits it: the invite stamped accepted, the membership
+ * added and the employee active, together.
+ */
+function acceptsAfterReading(
+  tables: Record<string, Row[]>,
+  userId: string,
+  table: string
+) {
+  let accepted = false;
+  return (read: string) => {
+    if (accepted || read !== table) return;
+    accepted = true;
+    const invite = tables.invite?.find(
+      (row) => row.email === `${userId}@example.com`
+    );
+    Object.assign(invite ?? {}, {
+      acceptedAt: "2026-11-24T10:00:00.000000+00:00"
+    });
+    tables.userToCompany = [
+      ...(tables.userToCompany ?? []),
+      { userId, companyId: COMPANY, role: "employee" }
+    ];
+    for (const employee of tables.employee ?? []) {
+      if (employee.id === userId) employee.active = true;
+    }
+  };
 }
 
 /** People invited to COMPANY as employees, not yet accepted. */
@@ -456,9 +491,7 @@ describe("revoking an invite", () => {
     expect(result.error?.category).toBe("forbidden");
   });
 
-  // deactivateUser stamps the invite revoked itself, so the invite ids are
-  // read before it, or the revocation (and its audit record) finds none.
-  it("revokes one user's invite after deactivating them", async () => {
+  it("revokes one user's invite and deactivates them", async () => {
     queued.length = 0;
     const tables = invitedEmployees(["usr_1"]);
     const { ctx, rpcs } = requestContext(
@@ -475,6 +508,64 @@ describe("revoking an invite", () => {
         (entry) => entry.entityId
       )
     ).toEqual(["inv_usr_1"]);
+  });
+
+  // The revoke is decided at its write: an acceptance after the check keeps
+  // the account active and the invite accepted.
+  it("leaves an invite accepted after the check, and its account, alone", async () => {
+    queued.length = 0;
+    const tables = invitedEmployees(["usr_1"]);
+    const { ctx } = requestContext(
+      { users: { delete: [COMPANY] } },
+      tables,
+      {},
+      null,
+      acceptsAfterReading(tables, "usr_1", "userToCompany")
+    );
+
+    const result = await revokeInvites(ctx, { userIds: ["usr_1"] });
+
+    expect(result).toEqual({ data: { revoked: 0 }, error: null });
+    expect(tables.userToCompany).toEqual([
+      { userId: "usr_1", companyId: COMPANY, role: "employee" }
+    ]);
+    expect(tables.employee).toEqual([
+      { id: "usr_1", companyId: COMPANY, active: true }
+    ]);
+    expect(tables.invite?.[0]?.revokedAt).toBeUndefined();
+  });
+
+  it("queues a deactivation only for the invites it revoked", async () => {
+    queued.length = 0;
+    const tables = invitedEmployees(["usr_1", "usr_2", "usr_3"]);
+    const { ctx } = requestContext(
+      { users: { delete: [COMPANY] } },
+      tables,
+      {},
+      null,
+      acceptsAfterReading(tables, "usr_1", "userToCompany")
+    );
+
+    const result = await revokeInvites(ctx, {
+      userIds: ["usr_1", "usr_2", "usr_3"]
+    });
+
+    expect(result).toEqual({ data: { revoked: 2 }, error: null });
+    expect(queued).toEqual([
+      {
+        name: "user-admin",
+        events: ["usr_2", "usr_3"].map((id) => ({
+          payload: {
+            id,
+            type: "deactivate",
+            companyId: COMPANY,
+            actorId: "usr_admin",
+            ip: "203.0.113.9"
+          }
+        }))
+      }
+    ]);
+    expect(tables.invite?.[0]?.revokedAt).toBeUndefined();
   });
 
   it("refuses a user who has an account in the company", async () => {
@@ -699,6 +790,30 @@ describe("sending an invite again", () => {
     );
     expect(result.error?.category).toBe("rule");
     expect(queued).toEqual([]);
+  });
+
+  // The single resend refreshes the invite only while the person has no
+  // account: an acceptance after the check gets no new code and no email.
+  it("refuses an invite accepted after the check and keeps its code", async () => {
+    const tables = invitedEmployees(["usr_1"], {
+      company: [{ id: COMPANY, name: "Acme" }]
+    });
+    Object.assign(tables.invite?.[0] ?? {}, { code: "code-sent" });
+    const { ctx } = requestContext(
+      { users: { create: [COMPANY] } },
+      tables,
+      {},
+      null,
+      acceptsAfterReading(tables, "usr_1", "company")
+    );
+
+    const result = await resendInvites(ctx, { userIds: ["usr_1"] });
+
+    expect(result.error?.category).toBe("rule");
+    expect(tables.invite?.[0]).toMatchObject({
+      code: "code-sent",
+      acceptedAt: "2026-11-24T10:00:00.000000+00:00"
+    });
   });
 
   it("refuses a user with no invite in the company", async () => {

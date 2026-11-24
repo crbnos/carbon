@@ -97,6 +97,7 @@ import {
   formatDateTimeInZone,
   isUniqueViolation,
   NOT_APPLIED_CODE,
+  pick,
   requireAffected,
   unchecked
 } from "@carbon/utils";
@@ -111,7 +112,8 @@ import {
   invalidateCompanyTimeZone,
   invokePosting,
   isActiveCompanyEmployee,
-  refuseKeyWithout
+  refuseKeyWithout,
+  refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
@@ -3766,9 +3768,14 @@ export const updateCustomField = defineServiceFn({
     if (!field.success) {
       return ctx.error("validation", z.prettifyError(field.error));
     }
+    // The merged definition is only validated: the write takes the fields
+    // sent, so a field left out keeps what is stored when it runs, not the
+    // value read above.
+    const sent = (["name", "listOptions", "tags", "required"] as const).filter(
+      (key) => changes[key] !== undefined
+    );
     const updated = await service.upsertCustomField(ctx.asCaller.supabase, {
-      ...field.data,
-      required: field.data.required ?? false,
+      ...pick(field.data, sent),
       id,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
@@ -4072,6 +4079,10 @@ export const createItemSerialSequence = defineServiceFn({
   }),
   permission: { create: "settings" },
   async run(ctx, input) {
+    // The item reference is not company-scoped in the database, and the
+    // insert policy checks only the sequence's own company.
+    const refused = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertItemSerialSequence(ctx.asCaller.supabase, {

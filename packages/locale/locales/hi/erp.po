@@ -13846,9 +13846,6 @@ msgstr "बैच गुण अपडेट करने में विफल"
 msgid "Failed to update category markups"
 msgstr "श्रेणी मार्कअप अपडेट करने में विफल"
 
-msgid "Failed to update configuration parameter"
-msgstr "कॉन्फ़िगरेशन पैरामीटर अपडेट करने में विफल"
-
 msgid "Failed to update count"
 msgstr "गणना अपडेट करने में विफल"
 

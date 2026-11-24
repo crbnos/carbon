@@ -235,6 +235,18 @@ export function generateMaterialIdentity(
   };
 }
 
+/**
+ * The revisions a new material is created with: one per distinct size, a blank
+ * size left out, as an update adds sizes; with no size, the initial revision.
+ * A size listed twice would otherwise fail its second insert.
+ */
+export function newMaterialRevisions(
+  sizes: readonly string[] | undefined
+): string[] {
+  const distinct = [...new Set(sizes ?? [])].filter(Boolean);
+  return distinct.length > 0 ? distinct : ["0"];
+}
+
 export type NewMaterialIdentity =
   | { readableId: string; name: string }
   | { refusal: "validation" | "rule"; message: string };

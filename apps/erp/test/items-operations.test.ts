@@ -24,12 +24,15 @@ import {
 import {
   addItemPredecessor,
   createConsumable,
+  createPart,
   createTool,
   setChangeNoticeStatus,
   setItemActive,
   setItemPostingGroup,
   setItemSourcing,
   updateConsumable,
+  upsertConfigurationParameter,
+  upsertConfigurationParameterGroup,
   updateItem,
   updateItemPlanning,
   updateMaterial,
@@ -46,10 +49,12 @@ type Write = {
 };
 
 /** A Supabase client that answers every read of a table with `reads[table]`
- *  and records each write. A table it has no answer for reads as null. */
+ *  and records each write. A table it has no answer for reads as null. An
+ *  insert answers the row `inserted[table]` stands for, as `.select()` would. */
 function fakeClient(
   reads: Record<string, unknown> = {},
-  writeErrors: Record<string, unknown> = {}
+  writeErrors: Record<string, unknown> = {},
+  inserted: Record<string, unknown> = {}
 ) {
   const writes: Write[] = [];
   const client = {
@@ -59,7 +64,9 @@ function fakeClient(
       const answer = () => {
         if (write) {
           writes.push({ table, ...write, filters });
-          return { data: null, error: writeErrors[table] ?? null };
+          const error = writeErrors[table] ?? null;
+          const row = write.op === "insert" ? inserted[table] : undefined;
+          return { data: error ? null : (row ?? null), error };
         }
         return { data: reads[table] ?? null, error: null };
       };
@@ -89,6 +96,10 @@ function fakeClient(
           filters.push([column, value]);
           return chain;
         },
+        match: (columns: Record<string, unknown>) => {
+          filters.push(...Object.entries(columns));
+          return chain;
+        },
         or: () => chain,
         limit: () => chain,
         order: () => chain,
@@ -111,8 +122,13 @@ function contextFor(
   caller: unknown,
   {
     system = unreachable,
-    pg = () => ({})
-  }: { system?: () => unknown; pg?: () => unknown } = {}
+    pg = () => ({}),
+    actions = ["view", "create", "update", "delete"]
+  }: {
+    system?: () => unknown;
+    pg?: () => unknown;
+    actions?: ("view" | "create" | "update" | "delete")[];
+  } = {}
 ) {
   return createServiceContext({
     actor: {
@@ -120,10 +136,10 @@ function contextFor(
       userId: "user-1",
       permissions: {
         parts: {
-          view: ["company-1"],
-          create: ["company-1"],
-          update: ["company-1"],
-          delete: ["company-1"]
+          view: actions.includes("view") ? ["company-1"] : [],
+          create: actions.includes("create") ? ["company-1"] : [],
+          update: actions.includes("update") ? ["company-1"] : [],
+          delete: actions.includes("delete") ? ["company-1"] : []
         }
       }
     },
@@ -291,13 +307,27 @@ describe("item creates", () => {
       "createTool",
       "tools",
       (ctx: any) => createTool(ctx, { ...item, revision: "0" })
+    ],
+    [
+      "createPart",
+      "parts",
+      (ctx: any) => createPart(ctx, { ...item, revision: "0" })
     ]
-  ])("%s answers the new item's id, as createPart does", async (_name, view, create) => {
-    const { client } = fakeClient({ [view]: { id: "i1", readableId: "C-100" } });
+  ])("%s answers the new item's id and costs only that item of the company", async (_name, view, create) => {
+    const { client, writes } = fakeClient(
+      { [view]: { id: "i1", readableId: "C-100" } },
+      {},
+      { item: { id: "i1" } }
+    );
 
     const result = await create(contextFor(client));
 
     expect(result).toEqual({ data: { id: "i1" }, error: null });
+    const cost = writes.find((write) => write.table === "itemCost");
+    expect(cost?.filters).toEqual([
+      ["itemId", "i1"],
+      ["companyId", "company-1"]
+    ]);
   });
 
   it.each([
@@ -359,6 +389,20 @@ describe("updateMaterial under generated material IDs", () => {
     expect(itemUpdate?.parameters).toContain("Plate offcuts");
   });
 
+  it("refuses an empty readable id instead of reading it as left out", async () => {
+    const { client, writes } = fakeClient(reads);
+    const { pg, statements } = recordingPg();
+
+    const result = await updateMaterial(contextFor(client, { pg: () => pg }), {
+      ...material,
+      readableId: ""
+    });
+
+    expect(result.error).toMatchObject({ category: "validation" });
+    expect(writes).toEqual([]);
+    expect(statements).toEqual([]);
+  });
+
   it("refuses a name the property change does not derive, before any write", async () => {
     const { client, writes } = fakeClient(reads);
     const { pg, statements } = recordingPg();
@@ -372,6 +416,105 @@ describe("updateMaterial under generated material IDs", () => {
     expect(result.error).toMatchObject({ category: "rule" });
     expect(writes).toEqual([]);
     expect(statements).toEqual([]);
+  });
+});
+
+describe("upsertConfigurationParameter", () => {
+  const parameter = {
+    itemId: "i1",
+    key: "width",
+    label: "Width",
+    dataType: "numeric"
+  } as const;
+
+  it("refuses a parameter for an item of another company, and writes nothing", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: null });
+
+    const result = await upsertConfigurationParameter(
+      contextFor(client, { system: () => system.client }),
+      { ...parameter, itemId: "other-item" }
+    );
+
+    expect(result.error).toMatchObject({ category: "notFound" });
+    expect(writes).toEqual([]);
+  });
+
+  it("refuses an add without permission to create parts, as the card's route did", async () => {
+    const { client, writes } = fakeClient();
+
+    const result = await upsertConfigurationParameter(
+      contextFor(client, { actions: ["view", "update"] }),
+      parameter
+    );
+
+    expect(result.error).toMatchObject({ category: "forbidden" });
+    expect(writes).toEqual([]);
+  });
+
+  it("saves an edit with update alone, only on the company's item", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: { id: "i1" } });
+
+    const result = await upsertConfigurationParameter(
+      contextFor(client, {
+        system: () => system.client,
+        actions: ["view", "update"]
+      }),
+      { ...parameter, id: "p1" }
+    );
+
+    expect(result.error).toBeNull();
+    expect(writes).toMatchObject([
+      {
+        table: "configurationParameter",
+        op: "update",
+        filters: [
+          ["id", "p1"],
+          ["itemId", "i1"],
+          ["companyId", "company-1"]
+        ]
+      }
+    ]);
+  });
+});
+
+describe("upsertConfigurationParameterGroup", () => {
+  it("refuses a group for an item of another company, and writes nothing", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: null });
+
+    const result = await upsertConfigurationParameterGroup(
+      contextFor(client, { system: () => system.client }),
+      { itemId: "other-item", name: "Size" }
+    );
+
+    expect(result.error).toMatchObject({ category: "notFound" });
+    expect(writes).toEqual([]);
+  });
+
+  it("renames a group only of the company's item", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: { id: "i1" } });
+
+    const result = await upsertConfigurationParameterGroup(
+      contextFor(client, { system: () => system.client }),
+      { itemId: "i1", id: "g1", name: "Size" }
+    );
+
+    expect(result.error).toBeNull();
+    expect(writes).toEqual([
+      {
+        table: "configurationParameterGroup",
+        op: "update",
+        values: { name: "Size" },
+        filters: [
+          ["id", "g1"],
+          ["itemId", "i1"],
+          ["companyId", "company-1"]
+        ]
+      }
+    ]);
   });
 });
 

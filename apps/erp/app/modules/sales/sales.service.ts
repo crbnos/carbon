@@ -10886,6 +10886,9 @@ export async function getCustomerContractStatuses(
 
 /** A refusal shaped like a PostgREST error, so every caller's existing
  *  `result.error` handling (routes, MCP dispatch) reports it unchanged. */
+/** `upsertContractLine` refused a write whose read is out of date. */
+export const CONTRACT_LINE_CHANGED = "CONTRACT_LINE_CHANGED";
+
 function contractRefusal(code: string, message: string) {
   return {
     data: null,
@@ -11213,6 +11216,10 @@ export async function upsertContractLine(
         taxCodeId?: string | null;
         id: string;
         updatedBy: string;
+        /** The line's `updatedAt` when the caller read the values it did not
+         *  change. Sent, the write is refused (`CONTRACT_LINE_CHANGED`)
+         *  once another save has changed the line since that read. */
+        expectedUpdatedAt?: string | null;
       })
 ) {
   let companyId: string;
@@ -11391,7 +11398,7 @@ export async function upsertContractLine(
       fundedAmount: _fundedAmount,
       ...rest
     } = values;
-    return client
+    const update = client
       .from("customerContractLine")
       .update({
         ...(fundedByActions.data ? rest : values),
@@ -11399,9 +11406,26 @@ export async function upsertContractLine(
         updatedAt: datetime.timestamp()
       })
       .eq("id", line.id)
-      .eq("companyId", companyId)
+      .eq("companyId", companyId);
+    if (line.expectedUpdatedAt === undefined) {
+      return update.select("id").single();
+    }
+    // The values it did not change came from that read: a save in between
+    // would be overwritten with them.
+    const written = await (line.expectedUpdatedAt === null
+      ? update.is("updatedAt", null)
+      : update.eq("updatedAt", line.expectedUpdatedAt)
+    )
       .select("id")
-      .single();
+      .maybeSingle();
+    if (written.error) return { data: null, error: written.error };
+    if (!written.data) {
+      return contractRefusal(
+        CONTRACT_LINE_CHANGED,
+        "The line changed after it was read. Read it again and send the change."
+      );
+    }
+    return { data: written.data, error: null };
   }
 
   return client
@@ -22527,6 +22551,21 @@ async function editSchedule(
     }
     await deleteEmptyPlannedInvoices(trx, scope, contract.id);
 
+    // A Draft with no stored row reads as unedited: the page and Confirm
+    // would plan the lines again and bring back what the edit removed.
+    const kept = await trx
+      .selectFrom("customerContractInvoiceLine")
+      .select("id")
+      .where("customerContractId", "=", contract.id)
+      .where("companyId", "=", companyId)
+      .limit(1)
+      .executeTakeFirst();
+    if (!kept) {
+      throw new InvalidInputError(
+        "The schedule must keep at least one invoice. Reset the schedule to plan it from the lines again."
+      );
+    }
+
     return { customerContractId: contract.id };
   });
 }
@@ -25373,17 +25412,21 @@ export async function plannedContractSchedule(
     .maybeSingle();
   if (contract.error) return { data: null, error: contract.error };
   if (!contract.data) return { data: null, error: null };
-  // In `loadLines`' order, the order `editSchedule` plans in.
-  const lines = await client
-    .from("customerContractLine")
-    .select(
-      "id, revenueType, quantity, rate, rateUnit, discountPercent, startDate, endDate, billingMethod, amendsLineId"
-    )
-    .eq("customerContractId", customerContractId)
-    .eq("companyId", ctx.company.id)
-    .order("sortOrder", { ascending: true })
-    .order("startDate", { ascending: true })
-    .order("id", { ascending: true });
+  // Every line, in `loadLines`' order: the order `editSchedule` plans in.
+  const lines = await fetchAllFromTable<
+    Parameters<typeof toLineTerms>[0][number]
+  >(
+    client,
+    "customerContractLine",
+    "id, revenueType, quantity, rate, rateUnit, discountPercent, startDate, endDate, billingMethod, amendsLineId",
+    (query) =>
+      query
+        .eq("customerContractId", customerContractId)
+        .eq("companyId", ctx.company.id)
+        .order("sortOrder", { ascending: true })
+        .order("startDate", { ascending: true })
+        .order("id", { ascending: true })
+  );
   if (lines.error) return { data: null, error: lines.error };
   const terms = toTerms(contract.data);
   const planned = planInvoiceSchedule(

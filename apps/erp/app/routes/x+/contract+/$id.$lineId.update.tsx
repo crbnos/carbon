@@ -14,6 +14,7 @@ import {
   mergeContractLineChanges
 } from "~/modules/sales/sales.models";
 import {
+  CONTRACT_LINE_CHANGED,
   getContract,
   getContractLine,
   projectRevenueRefusal,
@@ -139,8 +140,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     taxCodeId: values.taxCodeId ?? null,
     customerContractId: id,
     id: lineId,
-    updatedBy: userId
+    updatedBy: userId,
+    // Every other field was taken from `line`: a save since then is refused,
+    // not overwritten.
+    expectedUpdatedAt: line.updatedAt
   });
+  if (update.error?.code === CONTRACT_LINE_CHANGED) {
+    logger.warning("contract line changed since it was read", {
+      companyId,
+      lineId,
+      field
+    });
+    return data({ error: update.error.message }, { status: 409 });
+  }
   if (update.error) {
     logger.error("contract line update failed", {
       companyId,

@@ -17,9 +17,17 @@ import {
   insertProjectLedgerRows
 } from "../../../app/modules/projects/project-posting";
 import {
+  contractLineFormValues,
+  customerContractLineValidator,
+  mergeContractLineChanges
+} from "../../../app/modules/sales/sales.models";
+import {
+  CONTRACT_LINE_CHANGED,
   type ContractCancellationResult,
   createContractInvoices,
-  postCustomerContract
+  getContractLine,
+  postCustomerContract,
+  upsertContractLine
 } from "../../../app/modules/sales/sales.service";
 import * as sales from "../../../app/modules/sales/sales.server";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
@@ -3430,6 +3438,176 @@ postgrestTest(
 
       expect(active.error).toMatchObject({ category: "validation" });
       expect(missing.error).toMatchObject({ category: "notFound" });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a schedule edit that would leave no invoice is refused, and one that leaves another goes through",
+  async (client) => {
+    const f = await contractFixture();
+    try {
+      const ctx = operationContext(f, client, USER);
+      const single = await f.addRecurringContract({
+        key: "one-invoice",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31"
+      });
+      const edit = (
+        customerContractId: string,
+        edit: Parameters<typeof sales.editContractSchedule>[1]["edit"]
+      ) => sales.editContractSchedule(ctx, { customerContractId, edit });
+
+      // Left with nothing stored, the Draft would read as unedited and plan
+      // the deleted invoice again.
+      for (const emptying of [
+        {
+          intent: "delete",
+          customerContractInvoiceId: "planned:2026-01-01"
+        },
+        {
+          intent: "setAmount",
+          customerContractInvoiceId: "planned:2026-01-01",
+          customerContractLineId: single.lineId,
+          amount: 0
+        }
+      ] as const) {
+        const refused = await edit(single.contractId, emptying);
+        expect(refused.error).toMatchObject({ category: "validation" });
+        expect(
+          await plannedInvoices(f.db, f.companyId, single.contractId)
+        ).toEqual([]);
+      }
+
+      const two = await f.addRecurringContract({
+        key: "two-invoices",
+        startDate: "2026-01-01",
+        endDate: "2026-02-28"
+      });
+      const deleted = await edit(two.contractId, {
+        intent: "delete",
+        customerContractInvoiceId: "planned:2026-01-01"
+      });
+      expect(deleted.error).toBeNull();
+      expect(
+        (await plannedInvoices(f.db, f.companyId, two.contractId)).map(
+          (invoice) => [invoice.invoiceDate, invoice.total]
+        )
+      ).toEqual([["2026-02-01", 100]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a contract line write that merged its other fields from a read is refused once another save changed the line",
+  async (client) => {
+    const f = await contractFixture();
+    try {
+      const rate = async () =>
+        Number(
+          (
+            await f.db
+              .selectFrom("customerContractLine")
+              .select("rate")
+              .where("id", "=", f.seatsLineId)
+              .where("companyId", "=", f.companyId)
+              .executeTakeFirstOrThrow()
+          ).rate
+        );
+      const read = await getContractLine(client, f.seatsLineId, f.companyId);
+      expect(read.error).toBeNull();
+
+      // Another save sets the rate after the read.
+      await f.db
+        .updateTable("customerContractLine")
+        .set({ rate: 55, updatedBy: USER, updatedAt: "2026-11-24T10:00:00Z" })
+        .where("id", "=", f.seatsLineId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const { id: _id, ...line } = customerContractLineValidator.parse(
+        mergeContractLineChanges(contractLineFormValues(read.data!), {
+          description: "Seats"
+        })
+      );
+      const stale = await upsertContractLine(client, {
+        ...line,
+        taxCodeId: line.taxCodeId ?? null,
+        customerContractId: f.contractId,
+        id: f.seatsLineId,
+        updatedBy: USER,
+        expectedUpdatedAt: read.data!.updatedAt
+      });
+      expect(stale.error?.code).toBe(CONTRACT_LINE_CHANGED);
+      expect(await rate()).toBe(55);
+
+      // The operation reads the line it merges into, so it keeps that rate.
+      const saved = await sales.updateContractLine(
+        operationContext(f, client, USER),
+        {
+          id: f.seatsLineId,
+          customerContractId: f.contractId,
+          description: "Seats"
+        }
+      );
+      expect(saved.error).toBeNull();
+      expect(await rate()).toBe(55);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "an unedited Draft's planned schedule reads every line past the API's row cap",
+  async (client) => {
+    const f = await contractFixture();
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "many-lines",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31"
+      });
+      const line = await f.db
+        .selectFrom("customerContractLine")
+        .selectAll()
+        .where("id", "=", lineId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      // 1,000 more one-month lines: 1,001 rows on the one January invoice.
+      await f.db
+        .insertInto("customerContractLine")
+        .values(
+          Array.from({ length: 1000 }, (_, index) => ({
+            id: `${lineId}-${index}`,
+            customerContractId: contractId,
+            revenueType: line.revenueType,
+            itemId: line.itemId,
+            quantity: 1,
+            rate: 100,
+            rateUnit: line.rateUnit,
+            startDate: "2026-01-01",
+            companyId: f.companyId,
+            createdBy: USER
+          }))
+        )
+        .execute();
+
+      const schedule = await sales.getContractInvoiceSchedule(
+        operationContext(f, client, USER),
+        { customerContractId: contractId }
+      );
+      expect(schedule.error).toBeNull();
+      expect(
+        schedule.data!.planned!.map((invoice) => [
+          invoice.invoiceDate,
+          invoice.rows.length
+        ])
+      ).toEqual([["2026-01-01", 1001]]);
     } finally {
       await f.cleanup();
     }

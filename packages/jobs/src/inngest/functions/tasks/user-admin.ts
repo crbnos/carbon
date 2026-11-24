@@ -13,6 +13,7 @@ import { Edition } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { render } from "react-email";
 import { sendCompanyEmail } from "../../../email/company-email";
+import { refreshResentInvite } from "../../../invite-refresh";
 import { inngest } from "../../client";
 
 export const userAdminFunction = inngest.createFunction(
@@ -61,46 +62,28 @@ export const userAdminFunction = inngest.createFunction(
             throw new Error("Failed to load company or user");
           }
 
-          const existingInvite = await serviceRole
-            .from("invite")
-            .select("createdBy")
-            .eq("email", user.data.email)
-            .eq("companyId", companyId)
-            .maybeSingle();
-
-          if (existingInvite.error || !existingInvite.data) {
-            return {
-              success: false,
-              message: "No invite record found for user"
-            };
-          }
-
-          const newCode = nanoid();
-          const refreshed = await serviceRole
-            .from("invite")
-            .update({ code: newCode, acceptedAt: null, revokedAt: null })
-            .eq("email", user.data.email)
-            .eq("companyId", companyId)
-            .select("code")
-            .single();
-
-          if (refreshed.error || !refreshed.data) {
-            return {
-              success: false,
-              message: "Failed to refresh invite"
-            };
+          // The request checked the invite was re-sendable; an acceptance
+          // while this waited in the queue fails the refresh, and no email
+          // goes out.
+          const refreshed = await refreshResentInvite(serviceRole, {
+            userId,
+            email: user.data.email,
+            companyId
+          });
+          if ("failure" in refreshed) {
+            return { success: false, message: refreshed.message };
           }
 
           const inviter = await serviceRole
             .from("user")
             .select("email, fullName")
-            .eq("id", existingInvite.data.createdBy)
+            .eq("id", refreshed.createdBy)
             .single();
 
           const inviteLink = await getSsoAwareInviteLink(
             serviceRole,
             user.data.email,
-            refreshed.data.code,
+            refreshed.code,
             companyId
           );
 

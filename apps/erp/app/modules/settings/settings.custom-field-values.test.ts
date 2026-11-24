@@ -97,6 +97,27 @@ describe("refusedCustomFieldKeys", () => {
     ).toEqual([]);
   });
 
+  // A JSONB read returns object members in its own order.
+  it("keeps a held object sent with its members in another order", () => {
+    expect(
+      refusedCustomFieldKeys(
+        { retired: { b: 2, a: 1 } },
+        [field(DataType.Boolean)],
+        [{ retired: { a: 1, b: 2 } }]
+      )
+    ).toEqual([]);
+  });
+
+  it("refuses a held array sent with its items in another order", () => {
+    expect(
+      refusedCustomFieldKeys(
+        { retired: [2, 1] },
+        [field(DataType.Boolean)],
+        [{ retired: [1, 2] }]
+      )
+    ).toEqual(["retired"]);
+  });
+
   it("refuses a value one record does not hold", () => {
     expect(
       refusedCustomFieldKeys(

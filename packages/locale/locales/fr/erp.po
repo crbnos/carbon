@@ -13846,9 +13846,6 @@ msgstr "Échec de la mise à jour de la propriété du lot de production"
 msgid "Failed to update category markups"
 msgstr "Échec de la mise à jour des majorations de catégorie"
 
-msgid "Failed to update configuration parameter"
-msgstr "Échec de la mise à jour du paramètre de configuration"
-
 msgid "Failed to update count"
 msgstr "Impossible de mettre à jour le nombre"
 

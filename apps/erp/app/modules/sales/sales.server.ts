@@ -812,12 +812,12 @@ const quoteFields = [
  *
  * @remarks
  * Refused when any of the quotes is locked. A new customer on a single quote
- * brings its currency. A new currency brings today's exchange rate. An empty
- * value clears the field.
+ * brings its currency. A new currency brings today's exchange rate. The
+ * customer cannot be cleared. An empty value clears any other field.
  *
  * @param ids - The quotes to change. See sales_getQuotes.
  * @param field - The field to set.
- * @param value - The new value: an id, text or a date (YYYY-MM-DD). Empty or null clears the field.
+ * @param value - The new value: an id, text or a date (YYYY-MM-DD). Empty or null clears the field, except `customerId`, which is required.
  *
  * @mcp
  */
@@ -844,8 +844,10 @@ export const updateQuoteField = defineServiceFn({
       [field]: value || null
     };
     if (field === "customerId") {
-      changes = { customerId: value ?? undefined } as typeof changes;
-      if (value && ids.length === 1) {
+      // The panel's customer field is required, as the column is.
+      if (!value) return ctx.error("validation", "Customer is required");
+      changes = { customerId: value };
+      if (ids.length === 1) {
         const customer = await client
           .from("customer")
           .select("currencyCode")
@@ -1449,7 +1451,11 @@ export const convertQuote = defineServiceFn({
  *
  * Not published: no page calls it, and it leaves the line unpriced by the
  * pricing rules. The quote line form saves a configuration through
- * `updateQuoteLine` (`sales_updateQuoteLine`), which reprices the line.
+ * `updateQuoteLine` (`sales_updateQuoteLine`), which prices only the
+ * quantity breaks it adds; a retained break keeps its old price. Repricing
+ * is a separate step: `repriceQuoteLineFromRules` for the configuration
+ * prices, `copyItemMethodToQuoteLine` for the configured method and its
+ * cost.
  */
 export const configureQuoteLine = defineServiceFn({
   input: z.object({
@@ -2038,7 +2044,7 @@ const salesOrderFields = [
  *
  * @param ids - The sales orders to change. See sales_getSalesOrders.
  * @param field - The field to set.
- * @param value - The new value: an id, text, a number or a date (YYYY-MM-DD). Empty or null clears the field.
+ * @param value - The new value: an id, text, a number or a date (YYYY-MM-DD). Empty or null clears the field, except `customerId`, which is required.
  *
  * @mcp
  */
@@ -11441,8 +11447,10 @@ export const getContractInvoiceSchedule = defineServiceFn({
  * (0 removes it), `addInvoice`, or `delete` an invoice. Only Planned invoices
  * change. The first edit stores the schedule. Money only moves: what a line
  * no longer invoices is its residual, shown on the contract until it is
- * placed again or the schedule is reset. An invoice or row of an unedited
- * Draft is named by its `ref` from sales_getContractInvoiceSchedule.
+ * placed again or the schedule is reset. An edit that would leave the
+ * schedule with no invoice is refused: reset it instead. An invoice or row
+ * of an unedited Draft is named by its `ref` from
+ * sales_getContractInvoiceSchedule.
  *
  * @param customerContractId - The Draft contract. See sales_getContracts.
  * @param edit - The edit, by `intent`.
@@ -11613,7 +11621,8 @@ export const createContractLine = defineServiceFn({
  * funding and tax code included. Switching to One-time drops the rate unit;
  * switching to Recurring with none takes the contract's billing frequency.
  * The whole line is then checked as the line form checks it. On a service
- * contract the item must be a Service item.
+ * contract the item must be a Service item. Refused as a conflict when
+ * another save changed the line while this one ran; read it again and resend.
  *
  * @param id - The line to change. See sales_getContractLines.
  * @param customerContractId - The line's Draft contract.
@@ -11697,16 +11706,20 @@ export const updateContractLine = defineServiceFn({
       [line]
     );
     if (upgrade) return ctx.error("entitlement", upgrade);
-    return unwrap(
-      ctx,
-      await service.upsertContractLine(client, {
-        ...line,
-        taxCodeId: line.taxCodeId ?? null,
-        customerContractId,
-        id,
-        updatedBy: ctx.auditUserId
-      })
-    );
+    const saved = await service.upsertContractLine(client, {
+      ...line,
+      taxCodeId: line.taxCodeId ?? null,
+      customerContractId,
+      id,
+      updatedBy: ctx.auditUserId,
+      // Every field left out was taken from `stored`.
+      expectedUpdatedAt: stored.data.updatedAt
+    });
+    const refusal = saved.error as { code?: string; message: string } | null;
+    if (refusal?.code === service.CONTRACT_LINE_CHANGED) {
+      return ctx.error("conflict", refusal.message);
+    }
+    return unwrap(ctx, saved);
   }
 });
 

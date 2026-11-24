@@ -3129,7 +3129,8 @@ export const createFiscalYearPeriods = defineServiceFn({
       ctx,
       await service.createFiscalYearPeriods(
         ctx.asCaller.supabase,
-        payload(ctx, input).withUser().forUpsert() as never
+        payload(ctx, input).withUser().forUpsert() as never,
+        ctx.asSystem.supabase
       )
     );
     if (created instanceof CarbonError) return created;

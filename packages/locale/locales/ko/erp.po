@@ -13846,9 +13846,6 @@ msgstr "배치 속성을 업데이트하지 못했습니다"
 msgid "Failed to update category markups"
 msgstr "카테고리 마크업을 업데이트하지 못했습니다"
 
-msgid "Failed to update configuration parameter"
-msgstr "설정 파라미터를 업데이트하지 못했습니다"
-
 msgid "Failed to update count"
 msgstr "카운트를 업데이트하지 못했습니다"
 

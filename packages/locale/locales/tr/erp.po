@@ -13846,9 +13846,6 @@ msgstr "Toplu özelliği güncelleme başarısız oldu"
 msgid "Failed to update category markups"
 msgstr "Kategori eklemeleri güncellenemedi"
 
-msgid "Failed to update configuration parameter"
-msgstr "Yapılandırma parametresi güncellenemedi"
-
 msgid "Failed to update count"
 msgstr "Sayı güncelleme başarısız"
 

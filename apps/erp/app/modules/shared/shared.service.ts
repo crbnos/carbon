@@ -43,15 +43,17 @@ import {
   getLocationOwnTimeZone,
   isKysely,
   type Json,
+  PERIOD_LOCK_KEY,
   getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
-import type {
-  KyselyDatabase as DB,
-  Kysely,
-  KyselyDatabase,
-  KyselyTx
+import {
+  type KyselyDatabase as DB,
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
 } from "@carbon/database/client";
 import {
   type ContractPosition,
@@ -1394,50 +1396,50 @@ export async function getOrCreatePeriods(
     currentStart = periodEnd.add({ days: 1 });
   }
 
-  // Check which periods already exist
-  const existingPeriods = await db
-    .selectFrom("period")
-    .selectAll()
-    .where(
-      "startDate",
-      "in",
-      ranges.map((r) => r.startDate)
-    )
-    .where("periodType", "=", "Week")
-    .orderBy("startDate")
-    .execute();
+  const startDates = ranges.map((r) => r.startDate);
+  const readWeeks = (handle: Kysely<KyselyDatabase>) =>
+    handle
+      .selectFrom("period")
+      .selectAll()
+      .where("startDate", "in", startDates)
+      .where("periodType", "=", "Week")
+      .orderBy("startDate")
+      .execute();
 
+  const existingPeriods = await readWeeks(db);
   if (existingPeriods.length === ranges.length) {
     return existingPeriods.map(toPlainPeriod);
   }
 
-  // Find missing periods
-  const existingStartDates = new Set(
-    existingPeriods.map((p) => dateToString(p.startDate))
-  );
-
-  const periodsToCreate = ranges.filter(
-    (r) => !existingStartDates.has(r.startDate)
-  );
-
-  // Create missing periods in a transaction
-  const created = await db.transaction().execute(async (trx) => {
-    return await trx
+  // `period` is shared by every company and has no unique key on a week, so
+  // the missing weeks are read again and inserted under one lock: a call that
+  // waits for it reads the weeks the first one inserted.
+  const periods = await withTransaction(db, async (trx) => {
+    await sql`SELECT pg_advisory_xact_lock(${PERIOD_LOCK_KEY}::bigint)`.execute(
+      trx
+    );
+    const existing = await readWeeks(trx);
+    const existingStartDates = new Set(
+      existing.map((p) => dateToString(p.startDate))
+    );
+    const missing = ranges.filter((r) => !existingStartDates.has(r.startDate));
+    if (missing.length === 0) return existing;
+    const created = await trx
       .insertInto("period")
       .values(
-        periodsToCreate.map((p) => ({
+        missing.map((p) => ({
           startDate: p.startDate,
           endDate: p.endDate,
-          periodType: "Week" as const,
-          createdAt: new Date().toISOString()
+          periodType: "Week" as const
         }))
       )
       .returningAll()
       .execute();
+    return [...existing, ...created];
   });
 
   // In week order: callers pair the i-th period with the i-th week column.
-  return [...existingPeriods, ...created]
+  return periods
     .map(toPlainPeriod)
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
 }

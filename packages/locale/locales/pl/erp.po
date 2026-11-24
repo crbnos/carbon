@@ -13846,9 +13846,6 @@ msgstr "Nie udało się zaktualizować właściwości partii"
 msgid "Failed to update category markups"
 msgstr "Nie udało się zaktualizować narzutów kategorii"
 
-msgid "Failed to update configuration parameter"
-msgstr "Nie udało się zaktualizować parametru konfiguracji"
-
 msgid "Failed to update count"
 msgstr "Nie udało się zaktualizować liczenia"
 

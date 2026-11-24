@@ -13846,9 +13846,6 @@ msgstr "バッチプロパティの更新に失敗しました"
 msgid "Failed to update category markups"
 msgstr "カテゴリマークアップの更新に失敗しました"
 
-msgid "Failed to update configuration parameter"
-msgstr "設定パラメータの更新に失敗しました"
-
 msgid "Failed to update count"
 msgstr "カウントの更新に失敗しました"
 

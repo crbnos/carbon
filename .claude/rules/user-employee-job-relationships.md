@@ -117,11 +117,13 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   (`apps/erp/app/modules/shared/shared.service.ts`), which fails closed on a read error.
 - **Revoke Invite deactivates, so it takes only pending invites.** `revokeInvites`
   (`users.server.ts`, gate `delete: users`, as the Employees, Customers and Suppliers lists show
-  Revoke Invite only with `users_delete`) deactivates each user before it marks the invite
-  revoked. `refuseUnlessPendingInvites` (`users.service.ts`) refuses unless every user has an
-  invite in the company with `acceptedAt` and `revokedAt` NULL and no `userToCompany` row there,
-  the rows those lists offer the action on, and returns the pending invite ids, read before
-  `deactivateUser` stamps them revoked. An active account goes through Deactivate instead.
+  Revoke Invite only with `users_delete`) first stamps `revokedAt` on the invites still pending
+  (`acceptedAt` and `revokedAt` NULL), then deactivates only the users whose invite it stamped,
+  directly for one and by job for several; a failed deactivation or queue send clears the stamp.
+  `refuseUnlessPendingInvites` (`users.service.ts`) refuses unless every user has a pending
+  invite in the company and no `userToCompany` row there, the rows those lists offer the action
+  on. `acceptInvite` and the SSO migration require `revokedAt IS NULL` under the invite's row
+  lock, so no acceptance lands after the stamp. An active account goes through Deactivate instead.
 - An API key inviting an employee (`inviteEmployee`) also needs `users_update` and `people_create`
   (`refuseKeyWithout`), the two the first-time insert needs under RLS and the re-add checks
   (`canReAddDeactivatedEmployee`). The re-add reads the key creator's claims, not the key's scopes,

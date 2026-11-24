@@ -2495,9 +2495,9 @@ export function refuseUnlessCan(
  * Revoking deactivates the user, so it takes only what the Employees,
  * Customers and Suppliers lists offer Revoke Invite on: an invite here that is
  * neither accepted nor revoked, and no membership in the company (an active
- * account is deactivated instead). The invite ids are read here, before
- * `deactivateUser` stamps them revoked. At most 100 users: the operation's
- * input caps it.
+ * account is deactivated instead). The operation then revokes these invites
+ * where they are still pending, and deactivates only those users. At most 100
+ * users: the operation's input caps it.
  */
 export async function refuseUnlessPendingInvites(
   ctx: ServiceContext,
