@@ -49,6 +49,7 @@ import {
   wrappedBuildingBlocks
 } from "./conformance/loader-reads-through-api";
 import { mesUnitWriteResolvesUnit } from "./conformance/mes-unit-write-resolves-unit";
+import { migrationReplaySafe } from "./conformance/migration-replay-safe";
 import { moduleShape } from "./conformance/module-shape";
 import {
   findMovedTableGaps,
@@ -186,6 +187,7 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noViewWithoutInvoker,
   noForeignKeyWithoutOnDelete,
   journalStatusFilter,
+  migrationReplaySafe,
   accountFkRestrict
 ];
 
