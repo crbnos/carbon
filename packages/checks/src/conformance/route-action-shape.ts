@@ -26,6 +26,17 @@ export const routeActionShape: ConformanceCheck = {
       "one `defineServiceFn` per operation, called through `carbon(request)`",
     since: "2026-10-15"
   },
+  triggers: [
+    ".insert(",
+    ".upsert(",
+    ".update(",
+    ".delete(",
+    ".insertInto(",
+    ".updateTable(",
+    ".deleteFrom(",
+    "invokePosting",
+    "invokeCreate("
+  ],
   scan(file: string, contents: string): Violation[] {
     if (!ROUTES.test(file)) return [];
     const violations: Violation[] = [];

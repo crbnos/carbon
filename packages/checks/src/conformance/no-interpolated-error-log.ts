@@ -19,6 +19,7 @@ export const noInterpolatedErrorLog: ConformanceCheck = {
     replacedBy: 'logger.error("… {value}", { value })',
     since: "2026-10-04"
   },
+  triggers: ["og.error(", "ogger.error(", "og.fatal(", "ogger.fatal("],
   scan(file: string, contents: string): Violation[] {
     return [...contents.matchAll(INTERPOLATED)].map((match) => {
       const line = contents.slice(0, match.index).split("\n").length;

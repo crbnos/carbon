@@ -186,6 +186,15 @@ export const noUnmountingDialog: ConformanceCheck = {
       "`<Dialog open={x.isOpen} />`, and useRouteDialog() for a route dialog (@carbon/react)",
     since: "2026-11-06"
   },
+  triggers: [
+    "Modal",
+    "Drawer",
+    "Dialog",
+    "Confirm",
+    "Delete",
+    'type="modal"',
+    "useCloseRoute"
+  ],
   scan(file: string, contents: string): Violation[] {
     if (!file.endsWith(".tsx") || file.startsWith(EXCLUDED_PREFIX)) return [];
     const violations: Violation[] = [];

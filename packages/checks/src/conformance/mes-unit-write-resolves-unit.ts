@@ -227,6 +227,17 @@ export const mesUnitWriteResolvesUnit: ConformanceCheck = {
       "`resolveWorkUnit` in apps/mes/app/services/work-unit.server.ts",
     since: "2026-11-18"
   },
+  triggers: [
+    ...UNIT_POSTING_TYPES,
+    ...UNIT_WRITE_CALLS,
+    ...UNIT_TABLES.split("|"),
+    "trigger-rework",
+    "trigger-correction",
+    "isSerialEntityIncompleteForOperation",
+    "getNextIncompleteSerialEntity",
+    '"issue"',
+    "'issue'"
+  ],
   scan(file: string, contents: string): Violation[] {
     if (!SCOPE.test(file) || file === RESOLVER) return [];
     const { writes, picks, resolving } = analyze(file, contents);

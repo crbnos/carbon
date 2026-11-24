@@ -23,6 +23,7 @@ export const noBareOutlet: ConformanceCheck = {
     replacedBy: '<RecordOutlet /> from "@carbon/react"',
     since: "2026-10-06"
   },
+  triggers: ["<Outlet"],
   scan(file: string, contents: string): Violation[] {
     if (!ROUTES.test(file)) return [];
     const violations: Violation[] = [];

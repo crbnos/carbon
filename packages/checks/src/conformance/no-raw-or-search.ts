@@ -18,6 +18,7 @@ export const noRawOrSearch: ConformanceCheck = {
     replacedBy: '.or(searchFilter(["name", …], search)) from "@carbon/utils"',
     since: "2026-10-19"
   },
+  triggers: [".ilike."],
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     for (const match of contents.matchAll(RAW_OR_SEARCH)) {

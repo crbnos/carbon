@@ -253,6 +253,7 @@ export function noMissingAuditColumn(
       replacedBy: "writing only the columns the table has",
       since: "PGRST204 on items_upsertItemCustomerPart"
     },
+    triggers: ["createdBy", "updatedBy"],
     scan(file, contents) {
       const violations: Violation[] = [];
       TARGET_RE.lastIndex = 0;

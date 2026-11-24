@@ -40,6 +40,8 @@ export const serviceFnFile: ConformanceCheck = {
     replacedBy:
       "defineServiceFn consts in <module>.server.ts, building blocks in <module>.service.ts"
   },
+  // triggers: not guaranteed — the check fires on any non-service statement; a module server file defines service functions.
+  triggers: ["defineServiceFn"],
   scan(file, contents) {
     const match = SERVER_FILE.exec(file);
     if (!match) return [];

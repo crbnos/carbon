@@ -48,6 +48,7 @@ export const noInlineFractionDigits: ConformanceCheck = {
       "moneyFormatOptions + the PERCENT_FORMAT / PERCENT_POINTS_FORMAT / SCALE_FORMAT constants and INPUT_FORMAT from @carbon/utils",
     since: "2026-08-11"
   },
+  triggers: ["FractionDigits", '"currency"', "'currency'"],
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     const digitsExcluded = EXCLUDED_FILES.has(file);

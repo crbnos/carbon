@@ -43,6 +43,7 @@ export const noRequiredColumnWithoutDefault: ConformanceCheck = {
     deprecates: 'ADD COLUMN "x" TEXT NOT NULL',
     replacedBy: "ADD COLUMN \"x\" TEXT NOT NULL DEFAULT ''"
   },
+  triggers: ["COLUMN", "column"],
   scan(file, contents) {
     const violations: Violation[] = [];
     for (const m of contents.matchAll(REQUIRED_COLUMN_NO_DEFAULT)) {

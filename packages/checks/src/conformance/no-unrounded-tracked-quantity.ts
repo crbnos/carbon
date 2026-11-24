@@ -157,6 +157,7 @@ export const noUnroundedTrackedQuantity: ConformanceCheck = {
       "round() / settleQuantity() (@carbon/utils entity-drain.ts) at the write, isFullDraw() (@carbon/utils batch-split.ts) at the gate",
     since: "2026-09-23"
   },
+  triggers: ["trackedEntity", ".quantity"],
   scan(file: string, contents: string): Violation[] {
     if (EXCLUDED_FILES.has(file)) return [];
     const violations: Violation[] = [];

@@ -185,6 +185,7 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
     replacedBy:
       '.where("companyId", "=", companyId) on every updateTable/deleteFrom; drag-sorts go through updateSortOrder in modules/shared/sort-order.ts'
   },
+  triggers: [".updateTable", ".deleteFrom", "updateRows", "deleteRows"],
   scan(file, contents) {
     if (!SCOPED_PREFIXES.some((prefix) => file.startsWith(prefix))) return [];
     if (!/\.updateTable|\.deleteFrom|updateRows|deleteRows/.test(contents)) {

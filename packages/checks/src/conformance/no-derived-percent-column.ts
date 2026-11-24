@@ -23,6 +23,7 @@ export const noDerivedPercentColumn: ConformanceCheck = {
       "writable percent columns; amounts derive via applyRate in @carbon/utils",
     since: "2026-08-11"
   },
+  triggers: ["GENERATED", "generated"],
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     const lines = contents.split("\n");

@@ -55,6 +55,7 @@ export const noViewWithoutInvoker: ConformanceCheck = {
     replacedBy: 'CREATE OR REPLACE VIEW "x" WITH (security_invoker = true) AS',
     since: "20260926093417_open-job-material-lines-invoker.sql"
   },
+  triggers: ["VIEW", "view"],
   scan(file, contents) {
     const violations: Violation[] = [];
     const sql = stripComments(contents);

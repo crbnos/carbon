@@ -53,6 +53,7 @@ export const noLocalTimezone: ConformanceCheck = {
     replacedBy: "@carbon/utils datetime + company/location timezone",
     since: "20260805020925_company-timezone.sql"
   },
+  triggers: ["getLocalTimeZone", ".toISOString()", "new Date()", ".setHours("],
   scan(file, contents) {
     const violations: Violation[] = [];
     contents.split("\n").forEach((text, i) => {

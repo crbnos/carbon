@@ -126,6 +126,7 @@ export const noDefaultOnEffects: ConformanceCheck = {
       "`.prefault()` when the default must be parsed; a verified output-typed literal otherwise",
     since: "2026-09-05"
   },
+  triggers: [".default"],
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     // Scan the masked source so comments and string literals can neither fake

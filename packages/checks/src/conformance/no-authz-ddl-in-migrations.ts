@@ -98,6 +98,15 @@ export const noAuthzDdlInMigrations = (
       "packages/database/src/authz (manifest.ts + helpers/*.sql) and packages/database/src/event-system/functions/*.sql",
     since: SINCE
   },
+  // triggers: not guaranteed — the patterns ignore case; lowercase "function" is in 65% of files, and migrations write FUNCTION.
+  triggers: [
+    "POLICY",
+    "policy",
+    "FUNCTION",
+    "attach_event_trigger",
+    "attach_statement_handler",
+    "set_event_triggers"
+  ],
   scan(file, contents) {
     const timestamp = /^(\d{14})_/.exec(file)?.[1];
     if (

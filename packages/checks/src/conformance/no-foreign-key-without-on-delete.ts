@@ -26,6 +26,7 @@ export const noForeignKeyWithoutOnDelete: ConformanceCheck = {
     deprecates: "REFERENCES t(id) with no ON DELETE clause",
     replacedBy: "REFERENCES t(id) ON DELETE CASCADE | SET NULL | RESTRICT"
   },
+  triggers: ["REFERENCES", "references"],
   scan(file, contents) {
     const base = file.split("/").pop() ?? file;
     if (base <= CUTOFF) return [];

@@ -26,6 +26,13 @@ export const noRawForwardedHeaders: ConformanceCheck = {
       "getClientIp, getRequestProtocol, getRequestHost, getRequestOrigin (@carbon/utils)",
     since: "2026-09-28"
   },
+  triggers: [
+    "x-forwarded-",
+    "X-Forwarded-",
+    "x-real-ip",
+    "X-Real-IP",
+    "X-Real-Ip"
+  ],
   scan(file: string, contents: string): Violation[] {
     if (file === HELPERS) return [];
     const violations: Violation[] = [];

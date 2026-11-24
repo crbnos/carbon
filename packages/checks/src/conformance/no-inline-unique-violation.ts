@@ -23,6 +23,7 @@ export const noInlineUniqueViolation: ConformanceCheck = {
     deprecates: 'error.code === "23505"',
     replacedBy: "isUniqueViolation(error) from @carbon/utils"
   },
+  triggers: ["23505"],
   scan(file, contents) {
     if (EXEMPT_FILES.has(file)) return [];
     const violations: Violation[] = [];

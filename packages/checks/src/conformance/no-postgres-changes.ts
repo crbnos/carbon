@@ -24,6 +24,7 @@ export const noPostgresChanges: ConformanceCheck = {
       "handle.realtime on the route, or useRealtime / useChangedRows / useTableChanges (@carbon/query)",
     since: "2026-10-05"
   },
+  triggers: ["postgres_changes"],
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     for (const match of contents.matchAll(POSTGRES_CHANGES)) {

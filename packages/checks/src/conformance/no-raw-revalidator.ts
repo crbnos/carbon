@@ -22,6 +22,7 @@ export const noRawRevalidator: ConformanceCheck = {
     replacedBy: 'import { useRevalidator } from "@carbon/query"',
     since: "2026-10-06"
   },
+  triggers: ["useRevalidator"],
   scan(file: string, contents: string): Violation[] {
     if (file === DEFINITION) return [];
     const violations: Violation[] = [];

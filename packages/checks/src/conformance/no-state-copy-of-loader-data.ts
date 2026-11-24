@@ -62,6 +62,7 @@ export const noStateCopyOfLoaderData: ConformanceCheck = {
       "a value computed during render, or a component keyed on what it drafts",
     since: "2026-10-06"
   },
+  triggers: ["useLoaderData", "useRouteData", "useRouteLoaderData"],
   scan(file: string, contents: string): Violation[] {
     if (!file.endsWith(".tsx")) return [];
     const names = [...contents.matchAll(SOURCE)].flatMap((match) =>

@@ -188,6 +188,7 @@ export const journalStatusFilter: ConformanceCheck = {
       "GL_JOURNAL_STATUSES, DOCUMENT_JOURNAL_STATUSES or OPEN_ITEM_JOURNAL_STATUSES from @carbon/database/accounting-posting",
     since: SINCE_MIGRATION
   },
+  triggers: ["journal", "Journal", "JOURNAL"],
   scan(file: string, contents: string): Violation[] {
     if (!contents.includes("Draft") || !/journal/i.test(contents)) return [];
     if (file.endsWith(".sql")) {

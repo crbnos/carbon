@@ -50,6 +50,15 @@ export const noDbClientInService: ConformanceCheck = {
     replacedBy:
       "a `db: Kysely<KyselyDatabase>` argument: ctx.asSystem.pg (or its transaction) from the service function, getDatabaseClient() from a route"
   },
+  triggers: [
+    "getProcessPool",
+    "getPostgresConnectionPool",
+    "getPostgresClient",
+    "new Pool",
+    "PostgresDriver",
+    "getDatabaseClient",
+    "getJobDatabaseClient"
+  ],
   scan(file, contents) {
     // Only `*.service.ts`. A `.server.ts` is the sanctioned home for a DB
     // client, and route actions legitimately call `getDatabaseClient()`.

@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Trigger } from "./brief/scope";
+
 /** A source file handed to a check: any text file, SQL or TypeScript. */
 export type SourceFile = { file: string; contents: string };
 
@@ -31,6 +33,8 @@ export type ConformanceCheck = {
     /** Migration/commit that flipped the standard, if known. */
     since?: string;
   };
+  /** Code text that shows the check's topic. brief lists the check when one occurs. */
+  triggers: Trigger[];
   scan(file: string, contents: string): Violation[];
 };
 

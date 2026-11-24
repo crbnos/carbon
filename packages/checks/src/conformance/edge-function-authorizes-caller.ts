@@ -19,6 +19,8 @@ export const edgeFunctionAuthorizesCaller: ConformanceCheck = {
     deprecates: "relying on verify_jwt, which accepts the published anon key",
     replacedBy: "requireCaller / requireServiceRole"
   },
+  // triggers: not guaranteed — the check fires on an absent call; a function's entry point calls serve( or Deno.serve(.
+  triggers: ["serve("],
   scan(file, contents) {
     const name = file.split("/").pop() ?? file;
     if (AUTH_CALL.test(contents)) return [];

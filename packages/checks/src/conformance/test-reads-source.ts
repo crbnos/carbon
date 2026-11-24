@@ -110,6 +110,7 @@ export const testReadsSource: ConformanceCheck = {
       "behaviour tests, database tests, or a packages/checks conformance check (.claude/rules/testing.md)",
     since: "2026-10-25"
   },
+  triggers: ["readFile", "readdir", "?raw", "import.meta.glob"],
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     const report = (index: number, snippet: string) =>

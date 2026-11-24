@@ -66,6 +66,7 @@ export const noIntegrationIdBranching: ConformanceCheck = {
       "providerRole + getIntegrationsByRole/getIntegrationIdsByRole (@carbon/ee) or IntegrationTopology",
     since: "20260924133915_integration-provider-role.sql"
   },
+  triggers: INTEGRATION_IDS.flatMap((id) => [`"${id}"`, `'${id}'`]),
   scan(file: string, contents: string): Violation[] {
     if (EXCLUDED.some((pattern) => pattern.test(file))) return [];
 

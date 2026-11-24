@@ -165,6 +165,7 @@ export const noUnguardedSubmit: ConformanceCheck = {
       "<Submit> from @carbon/form, or isDisabled/isLoading bound to the fetcher's state",
     since: "2026-09-30"
   },
+  triggers: ['"submit"', "'submit'"],
   scan(file: string, contents: string): Violation[] {
     if (!file.endsWith(".tsx")) return [];
     if (EXCLUDED_FILES.has(file)) return [];

@@ -21,6 +21,7 @@ export const noRawRedirect: ConformanceCheck = {
     replacedBy: "redirect, redirectExternal (@carbon/utils)",
     since: "2026-10-04"
   },
+  triggers: ["react-router"],
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     for (const match of contents.matchAll(RAW_IMPORT)) {

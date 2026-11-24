@@ -25,6 +25,7 @@ export const noZeroConcurrency: ConformanceCheck = {
     deprecates: "concurrency: { limit: 0 }",
     replacedBy: "concurrency: { limit: 1 }"
   },
+  triggers: ["concurrency"],
   scan(file, contents) {
     const violations: Violation[] = [];
     for (const m of contents.matchAll(ZERO_CONCURRENCY)) {

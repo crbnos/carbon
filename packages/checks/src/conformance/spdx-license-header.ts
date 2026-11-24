@@ -36,6 +36,8 @@ export const spdxLicenseHeader: ConformanceCheck = {
     replacedBy: `${LICENSE_HEADERS.agpl[0]} / ${LICENSE_HEADERS.commercial[0]}`,
     since: "2026-09-30"
   },
+  // triggers: none — the check fires on an absent header, and the header text is in 79% of files.
+  triggers: [],
   scan(file: string, contents: string): Violation[] {
     const classification = classifyFile(file, contents);
     if ("excluded" in classification) return [];

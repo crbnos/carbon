@@ -20,6 +20,7 @@ export const noNoopOpenChange: ConformanceCheck = {
       "leaving onOpenChange off, which also removes the close button (@carbon/react)",
     since: "2026-10-04"
   },
+  triggers: ["onOpenChange="],
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     for (const match of contents.matchAll(NOOP_HANDLER)) {

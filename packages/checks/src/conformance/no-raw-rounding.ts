@@ -26,6 +26,7 @@ export const noRawRounding: ConformanceCheck = {
     replacedBy: "round/scrapAllowance/applyRate/deriveRate from @carbon/utils",
     since: "2026-08-11"
   },
+  triggers: ["Math.round(", "Math.ceil(", "Math.floor(", ".toFixed("],
   scan(file: string, contents: string): Violation[] {
     if (EXCLUDED_FILES.has(file)) return [];
     const violations: Violation[] = [];

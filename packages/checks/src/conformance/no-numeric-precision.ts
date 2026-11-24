@@ -14,6 +14,7 @@ export const noNumericPrecision: ConformanceCheck = {
     deprecates: "NUMERIC(x,y)",
     replacedBy: "NUMERIC"
   },
+  triggers: ["NUMERIC", "numeric"],
   scan(file, contents) {
     const violations: Violation[] = [];
     contents.split("\n").forEach((text, i) => {

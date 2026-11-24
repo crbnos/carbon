@@ -28,6 +28,7 @@ export const indexRedirectBeforeLoaders: ConformanceCheck = {
       "export const middleware = [redirectBeforeLoaders(loader)] (@carbon/utils)",
     since: "2026-10-02"
   },
+  triggers: ["redirect"],
   scan(file: string, contents: string): Violation[] {
     if (!INDEX_ROUTE.test(file)) return [];
     const loader = LOADER.exec(contents);

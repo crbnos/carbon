@@ -106,6 +106,7 @@ export const noServerCodeInClient: ConformanceCheck = {
     replacedBy:
       "the client-safe function in <module>.utils.ts, or data from the route's loader"
   },
+  triggers: ['.service"', '.server"', '.pdf"'],
   scan(file, contents) {
     if (ROUTE_FILE.test(file)) return scanRoute(file, contents);
     if (!CLIENT_FILE.test(file)) return [];

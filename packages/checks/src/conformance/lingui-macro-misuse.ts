@@ -24,6 +24,7 @@ export const linguiMacroMisuse: ConformanceCheck = {
       "useLingui().t or <Trans> from @lingui/react/macro (.claude/rules/i18n-lingui-system.md)",
     since: "2026-10-25"
   },
+  triggers: ["@lingui/core/macro", "msg`", "msg("],
   scan(file: string, contents: string): Violation[] {
     const at = (index = 0) => contents.slice(0, index).split("\n").length;
     return [

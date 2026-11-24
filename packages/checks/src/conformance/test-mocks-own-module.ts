@@ -20,6 +20,7 @@ export const testMocksOwnModule: ConformanceCheck = {
       "a pure function tested by value, or a database test (.claude/rules/testing.md)",
     since: "2026-10-25"
   },
+  triggers: ["vi.mock(", "vi.doMock("],
   scan(file: string, contents: string): Violation[] {
     return [...contents.matchAll(OWN_MODULE_MOCK)].map((match) => ({
       file,
