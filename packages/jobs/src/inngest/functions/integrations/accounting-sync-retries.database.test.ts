@@ -225,8 +225,15 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
   );
   const companies: string[] = [];
   let fake: FakeXero;
+  let consolidateIntegration: typeof import("./accounting-consolidation")["consolidateIntegration"];
 
   beforeAll(async () => {
+    // The consolidation module builds its service-role and Redis clients at
+    // import, from the local stack's environment.
+    process.env.SUPABASE_URL ??= `http://localhost:${env.PORT_API}`;
+    for (const [name, value] of Object.entries(env))
+      process.env[name] ??= value;
+    ({ consolidateIntegration } = await import("./accounting-consolidation"));
     vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(typeof input === "string" ? input : input.toString());
       return url.hostname === "api.xero.com"
@@ -546,5 +553,54 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
 
     await drain(scope);
     expect(fake.contacts.map((c) => c.Name)).toEqual(["After"]);
+  });
+
+  it("a consolidation that died after creating the day's summary journal does not create a second one", async () => {
+    const scope = await company({
+      sourceTypes: {
+        "Transfer Receipt": { enabled: true, granularity: "daily-summary" }
+      }
+    });
+    const members = [
+      await postedJournal(scope, "day-1"),
+      await postedJournal(scope, "day-2")
+    ];
+    const ops = [];
+    for (const journalId of members) {
+      ops.push(
+        await enqueue(scope.companyId, "journalEntry", journalId, {
+          granularity: "daily-summary"
+        })
+      );
+    }
+    const consolidate = () =>
+      consolidateIntegration({
+        client,
+        database: db,
+        companyId: scope.companyId,
+        providerId: ProviderID.XERO,
+        integrationMetadata: scope.metadata,
+        provider: scope.provider,
+        createdBy: "system"
+      });
+
+    fake.next("hold");
+    const died = consolidate();
+    await fake.heldCreate();
+
+    await age(scope.companyId, 24 * 60);
+    await consolidate();
+    fake.release(500);
+    await died;
+
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+    for (const op of ops) {
+      expect(await operation(scope.companyId, op.id)).toMatchObject({
+        status: "Completed",
+        externalId: "ManualJournals-1"
+      });
+    }
   });
 });

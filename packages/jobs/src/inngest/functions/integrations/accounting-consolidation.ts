@@ -29,6 +29,7 @@ import {
   type SyncContext,
   SyncFactory,
   type SyncOperation,
+  updateOperationMetadata,
   type XeroProvider
 } from "@carbon/ee/accounting";
 import { getLogger } from "@carbon/logger";
@@ -102,6 +103,24 @@ const MAX_CLAIM_ITERATIONS = 25;
 const PRESCAN_LIMIT = 500;
 
 const JOURNAL_ID_CHUNK_SIZE = 300;
+
+/** The summary push a marker recorded before its create: the Narration sent and the journals in it. */
+function readConsolidationPush(
+  metadata: SyncOperation["metadata"]
+): { narration: string; journalIds: string[] } | null {
+  const push = (metadata as { push?: unknown } | null)?.push as
+    | { narration?: unknown; journalIds?: unknown }
+    | undefined;
+  if (typeof push?.narration !== "string" || !Array.isArray(push.journalIds)) {
+    return null;
+  }
+  return {
+    narration: push.narration,
+    journalIds: push.journalIds.filter(
+      (id): id is string => typeof id === "string"
+    )
+  };
+}
 
 type ConsolidationSummary = {
   claimed: number;
@@ -614,6 +633,51 @@ export async function consolidateIntegration(args: {
     const memberJournalIds = members.map(({ journal }) => journal.id);
 
     try {
+      // A run that died after its create may have left the summary in Xero
+      // without closing anything here: find it by the push it recorded.
+      const previousPush = readConsolidationPush(marker.metadata);
+      const previousJournal = previousPush
+        ? await provider.recoverManualJournal([previousPush.narration])
+        : null;
+      if (previousPush && previousJournal) {
+        const booked = new Set(previousPush.journalIds);
+        const late: SyncOperation[] = [];
+        for (const { operation, journal } of members) {
+          if (!booked.has(journal.id)) {
+            late.push(operation);
+            continue;
+          }
+          summary.membersCompleted++;
+          await completeOperation(client, {
+            id: operation.id,
+            companyId: operation.companyId,
+            attemptCount: operation.attemptCount,
+            externalId: previousJournal.ManualJournalID,
+            metadata: {
+              ...(operation.metadata ?? {}),
+              consolidatedInto: batchKey
+            }
+          });
+        }
+        await completeOperation(client, {
+          id: marker.id,
+          companyId: marker.companyId,
+          attemptCount: marker.attemptCount,
+          externalId: previousJournal.ManualJournalID,
+          metadata: {
+            ...(marker.metadata ?? {}),
+            consolidation: true,
+            postingDate: date,
+            journalIds: previousPush.journalIds,
+            journalCount: previousPush.journalIds.length
+          }
+        });
+        // Not in the summary already booked: they go out on their own, as
+        // members arriving after a Completed marker do.
+        await pushIndividually(late);
+        continue;
+      }
+
       const aggregate = aggregateJournalEntriesForDate({
         batchId: batchKey,
         companyId,
@@ -647,6 +711,26 @@ export async function consolidateIntegration(args: {
         const narration = preflight.redatedFromDate
           ? `${aggregate.narration} | original date ${preflight.redatedFromDate}`
           : aggregate.narration;
+
+        // Recorded before the create, so a run that dies after it can find
+        // the summary it made (above); the failure path keeps it too.
+        const recorded = await updateOperationMetadata(client, {
+          id: marker.id,
+          companyId: marker.companyId,
+          attemptCount: marker.attemptCount,
+          metadata: {
+            ...(marker.metadata ?? {}),
+            push: { narration, journalIds: memberJournalIds }
+          }
+        });
+        if (recorded.error || !recorded.data) {
+          logger.warning(
+            "The consolidation marker was taken over by a newer run; leaving its batch to it",
+            { companyId, providerId, batchKey, error: recorded.error }
+          );
+          continue;
+        }
+        marker = recorded.data;
 
         const { ManualJournalID: _unmapped, ...journal } = payload;
         const created = await provider.createManualJournal(
