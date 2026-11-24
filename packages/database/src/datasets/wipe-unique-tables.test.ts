@@ -21,6 +21,17 @@ import { resolveCheckUserId } from "./verify.ts";
 const url = process.env.SUPABASE_DB_URL;
 const dataset = DATASETS.satellite;
 
+// A rolled-back wipe still takes its locks, so never point these at a remote
+// database.
+const hasLocalDatabase = (() => {
+  if (!url) return false;
+  try {
+    return ["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+})();
+
 /**
  * Seeds `seed`'s rows into a fresh company, runs the wipe Settings → Demo Data
  * runs before its tiers, and returns how many rows of `table` are left.
@@ -182,7 +193,7 @@ async function seedScrapOfTwoLots(ctx: Ctx): Promise<void> {
   }
 }
 
-describe.skipIf(!url)(
+describe.skipIf(!hasLocalDatabase)(
   "re-applying demo data over rows a unique index keys on a foreign key",
   () => {
     // Nulling the foreign key would give these rows the same index key, so they
