@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import type { ConformanceCheck, Provenance, Violation } from "../check";
 import { blankComments } from "./no-unscoped-kysely-write";
 import {
   chainCalls,
@@ -156,6 +156,17 @@ function rereadUnderNamedLock(
 
 export const COUNTER_WRITE_RELATIVE = "counter-write-relative";
 
+// Exported on its own because the check is built from the generated types:
+// the provenance meta-test reads it without building the check.
+export const COUNTER_WRITE_RELATIVE_PROVENANCE: Provenance = {
+  deprecates:
+    "writing a counter as a JavaScript total of an earlier read (issueJobOperationMaterials' `quantityIssued: material.quantityIssued + quantityToIssue`)",
+  replacedBy:
+    'a relative SQL write (sql`"quantityIssued" + delta`), or a FOR UPDATE row lock taken before the counter is read',
+  since: "ca513209d8, f92d1b24fa",
+  incidents: ["ca513209d8", "f92d1b24fa"]
+};
+
 export function counterWriteRelative(
   columnTypes: Map<string, Map<string, string>>
 ): ConformanceCheck {
@@ -163,13 +174,7 @@ export function counterWriteRelative(
     id: COUNTER_WRITE_RELATIVE,
     description:
       "A running total is added to in SQL, or read under the row lock — an absolute value computed in JavaScript from an earlier read loses or doubles a concurrent writer's change.",
-    provenance: {
-      deprecates:
-        "writing a counter as a JavaScript total of an earlier read (issueJobOperationMaterials' `quantityIssued: material.quantityIssued + quantityToIssue`)",
-      replacedBy:
-        'a relative SQL write (sql`"quantityIssued" + delta`), or a FOR UPDATE row lock taken before the counter is read',
-      since: "ca513209d8, f92d1b24fa"
-    },
+    provenance: COUNTER_WRITE_RELATIVE_PROVENANCE,
     scan(file, contents) {
       if (!/\.updateTable|\.update\s*\(|updateRows/.test(contents)) return [];
       const text = blankComments(contents);

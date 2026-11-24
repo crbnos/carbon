@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import type { ConformanceCheck, Provenance, Violation } from "../check";
 import { blankComments } from "./no-unscoped-kysely-write";
 import {
   locksBefore,
@@ -108,6 +108,17 @@ const AUDIT_COLUMNS = new Set([
 
 export const STATUS_WRITE_GUARDED = "status-write-guarded";
 
+// Exported on its own because the check is built from the generated types:
+// the provenance meta-test reads it without building the check.
+export const STATUS_WRITE_GUARDED_PROVENANCE: Provenance = {
+  deprecates:
+    "reading a row's status, checking it in code, then updating the status by id alone (lockAccountingPeriod, the convert edge function's quote → Ordered, the invoice void, the receipt post)",
+  replacedBy:
+    'a guarded UPDATE (`.eq("status", <expected>)`) that refuses when no row changed, or a FOR UPDATE row lock and a re-check before the UPDATE',
+  since: "de82a88cc6",
+  incidents: ["de82a88cc6", "2c9ef0dd8f"]
+};
+
 export function statusWriteGuarded(
   columnTypes: Map<string, Map<string, string>>
 ): ConformanceCheck {
@@ -116,13 +127,7 @@ export function statusWriteGuarded(
     id: STATUS_WRITE_GUARDED,
     description:
       "An UPDATE that sets a lifecycle status column carries a predicate on that column, or runs after the function locked the row — a status checked in code and written by id alone overwrites a concurrent change.",
-    provenance: {
-      deprecates:
-        "reading a row's status, checking it in code, then updating the status by id alone (lockAccountingPeriod, the convert edge function's quote → Ordered, the invoice void, the receipt post)",
-      replacedBy:
-        'a guarded UPDATE (`.eq("status", <expected>)`) that refuses when no row changed, or a FOR UPDATE row lock and a re-check before the UPDATE',
-      since: "de82a88cc6"
-    },
+    provenance: STATUS_WRITE_GUARDED_PROVENANCE,
     scan(file, contents) {
       if (!/\.updateTable|\.update\s*\(|updateRows/.test(contents)) return [];
       const text = blankComments(contents);
