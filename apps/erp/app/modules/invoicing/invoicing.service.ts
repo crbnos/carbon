@@ -9689,6 +9689,34 @@ export const postSalesInvoicePermission = {
   update: "invoicing"
 } satisfies PermissionRule<z.output<typeof postSalesInvoiceInput>>;
 
+export const SALES_INVOICE_SETTLED_VOID_ERROR =
+  "Cannot void a sales invoice with payments applied. Reverse the payment first.";
+export const PURCHASE_INVOICE_SETTLED_VOID_ERROR =
+  "Cannot void a purchase invoice with payments applied. Reverse the payment first.";
+
+/** Refuses the void of an invoice that a posted payment or memo settles, so
+ *  no settlement is left against a voided invoice. Paid and Partially Paid
+ *  exist only in the invoice views, derived from the settlements: payment
+ *  posting never writes them to the invoice. Read under the invoice lock,
+ *  which payment posting also takes. */
+async function refuseVoidOfSettledInvoice(
+  trx: Kysely<KyselyDatabase>,
+  view: "salesInvoices" | "purchaseInvoices",
+  companyId: string,
+  invoiceId: string,
+  message: string
+): Promise<void> {
+  const invoice = await trx
+    .selectFrom(view)
+    .select("status")
+    .where("id", "=", invoiceId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (invoice?.status === "Paid" || invoice?.status === "Partially Paid") {
+    throw new InvalidInputError(message);
+  }
+}
+
 /** Posts or voids a sales invoice: its ledger, cost and journal rows, atomically. */
 export async function postSalesInvoice(
   ctx: ServiceContext,
@@ -11348,6 +11376,13 @@ export async function postSalesInvoice(
             .where("companyId", "=", companyId)
             .forUpdate()
             .execute();
+          await refuseVoidOfSettledInvoice(
+            trx,
+            "salesInvoices",
+            companyId,
+            invoiceId,
+            SALES_INVOICE_SETTLED_VOID_ERROR
+          );
           const journalEntries = await documentJournalLines(trx, companyId, {
             documentId: invoiceId,
             documentType: "Invoice"
@@ -17724,15 +17759,6 @@ export async function postPurchaseInvoice(
         PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR
       );
 
-      if (
-        invoice.data.status === "Paid" ||
-        invoice.data.status === "Partially Paid"
-      ) {
-        throw new Error(
-          "Cannot void a purchase invoice with payments applied. Reverse the payment first."
-        );
-      }
-
       const [originalItemLedger, postedJournalLines, originalCostLedger] =
         await inOrder([
           () => many(db, "itemLedger", { documentId: invoiceId, companyId }),
@@ -18115,6 +18141,13 @@ export async function postPurchaseInvoice(
           .where("companyId", "=", companyId)
           .forUpdate()
           .execute();
+        await refuseVoidOfSettledInvoice(
+          trx,
+          "purchaseInvoices",
+          companyId,
+          invoiceId,
+          PURCHASE_INVOICE_SETTLED_VOID_ERROR
+        );
         const originalJournalLines = await documentJournalLines(
           trx,
           companyId,

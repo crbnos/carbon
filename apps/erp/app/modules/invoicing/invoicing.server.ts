@@ -1304,8 +1304,10 @@ export const voidPurchaseInvoice = defineServiceFn({
   permission: { update: "invoicing" },
 
   async run(ctx, { invoiceId }) {
+    // The view: Paid and Partially Paid are derived from the settlements,
+    // never written to the invoice.
     const invoice = await ctx.asCaller.supabase
-      .from("purchaseInvoice")
+      .from("purchaseInvoices")
       .select("status, postingDate")
       .eq("id", invoiceId)
       .eq("companyId", ctx.company.id)
