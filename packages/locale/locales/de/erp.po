@@ -4431,6 +4431,9 @@ msgstr "Gilt für alle Arbeitsplätze"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Gilt für Merkmale ohne eigene Regel und für die Charge, wenn dieser Plan eine Prüfung durchführt."
 
+msgid "Applies to invoices drafted from now on"
+msgstr ""
+
 msgid "Applies to Projects"
 msgstr "Gilt für Projekte"
 
@@ -7116,6 +7119,9 @@ msgstr "Berechnet auf jeder Mietrechnungsposition"
 
 msgid "Charges"
 msgstr "Belastungen"
+
+msgid "Charges invoice"
+msgstr ""
 
 msgid "Charging"
 msgstr "Belastung"
@@ -11482,6 +11488,9 @@ msgstr "Täglich werden Entwürfe von Eingangsrechnungen für fällige Zahlungen
 msgid "Draft Request"
 msgstr "Anfrage im Entwurf"
 
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Entwirft eine Gutschrift für die bereits fakturierte Zeit nach dem Enddatum."
 
@@ -11783,6 +11792,9 @@ msgstr "Jede Zeile ist ein Link aus den Daten dieses Unternehmens zu einer Zeile
 
 msgid "Each line shows its item ID and revision."
 msgstr "Jede Position zeigt ihre Artikel-ID und Revision."
+
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
 
 msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
 msgstr "Jede Position übernimmt den Steuercode und Steuersatz, den ihr Artikel am Ausstellungsdatum an der Lieferadresse der Rechnung hat. Dabei wird ein Steuercode überschrieben, den Sie in einer Position entfernt haben. Miet- und Vertragspositionen behalten ihren Steuercode."
@@ -15329,8 +15341,8 @@ msgstr "So sieht Carbon in diesem Browser aus."
 msgid "How coverage is worked out"
 msgstr "Wie die Abdeckung berechnet wird"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "Wie jede Position ihre Umsatzerlöse verdient: verteilt nach Tag oder gleichmäßig pro Monat, ab Inbetriebnahme oder ihrem Startdatum."
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Wie die Miete jeder Einheit in Perioden aufgeteilt wird und wann in einer Periode sie fakturiert wird."
@@ -16409,6 +16421,9 @@ msgstr "Rechnungen"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Rechnungen und Eingangsrechnungen werden synchronisiert, nachdem Sie die Buchhaltung aktiviert haben"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Rechnungen werden jeden Tag automatisch für fällige Posten erstellt. Verwenden Sie dies, um fällige Posten sofort in Rechnung zu stellen — z. B. nach dem Hinzufügen einer Gebühr. Rechnungen folgen dann der Rechnungseinstellung dieser Vereinbarung."
 
@@ -16432,6 +16447,15 @@ msgstr "Rechnungen werden automatisch entworfen, gebucht und per E-Mail versende
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "Rechnungen werden automatisch entworfen, gebucht und über Stripe versendet."
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "Rechnungen werden an den Stripe-Kunden versendet, der bereits mit dem Abrechnungskunden verknüpft ist."
@@ -20310,6 +20334,9 @@ msgstr "Keine Mitarbeiter gefunden"
 msgid "No end"
 msgstr "Kein Ende"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "Keine Angebotslinien"
 
@@ -21001,6 +21028,9 @@ msgstr "Keine nicht gebuchten Dokumente mit Datum vor dem Übergangsdatum"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Keine nicht gestarteten, nicht gechargten Arbeitsgänge auf diesem Verfahren an diesem Standort."
 
+msgid "No upcoming invoice."
+msgstr ""
+
 msgid "No value"
 msgstr "Kein Wert"
 
@@ -21670,14 +21700,14 @@ msgstr "Eine Zahlung alle drei Monate."
 msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 msgstr "Ein Steuersatz innerhalb eines Steuercodes, wie z.B. ein Landessteuersatz oder ein Stadtsteuersatz, mit einer eigenen Steuerbehörde, Erstattungssatz und Gültigkeitsdaten."
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "Eine Zeile pro Merkmal"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "Eine Zeile pro Rechnung, eine Spalte pro Position. Ändern Sie ein Datum oder einen Betrag, fügen Sie eine Rechnung hinzu oder löschen Sie eine."
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "Eine Zeile pro Monat, eine Spalte pro Position. Jede Position erfasst genau das, was ihre Rechnungen abrechnen."
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "Eine Zeile pro Teil"
@@ -22046,9 +22076,6 @@ msgstr "Workflow öffnen"
 
 msgid "Open-ended"
 msgstr "Offen"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "Offen: der Wert der bisherigen geplanten Rechnungen."
 
 msgid "Opened"
 msgstr "Geöffnet"
@@ -23687,6 +23714,9 @@ msgstr "Vorschau"
 msgid "Preview failed: {error}"
 msgstr "Vorschau fehlgeschlagen: {error}"
 
+msgid "Preview PDF"
+msgstr ""
+
 msgid "Preview Quantity"
 msgstr "Vorschaumenge"
 
@@ -23871,6 +23901,9 @@ msgstr "Druck"
 
 msgid "Prints as"
 msgstr "Wird gedruckt als"
+
+msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
+msgstr ""
 
 msgid "Priorities"
 msgstr "Prioritäten"
@@ -25834,6 +25867,9 @@ msgstr "Erneuerungsaufschlag (%)"
 msgid "Rent"
 msgstr "Miete"
 
+msgid "Rent invoice"
+msgstr ""
+
 msgid "Rental"
 msgstr "Vermietung"
 
@@ -26624,6 +26660,9 @@ msgstr "Umsatzerlöse-Sachkonto für Betriebsmieterlöse, die linear über den M
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Umsatzerlöse, die fakturiert werden, bevor sie verdient werden, als Verbindlichkeit gehalten und vom Abgrenzungslauf als Umsatzerlöse freigegeben, wenn die Serviceperiode verstreicht."
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "Der Umsatzerlös wird in der Vorschau angezeigt, sobald der Vertrag Positionen hat."
@@ -35528,12 +35567,6 @@ msgstr "Welche Zahlung jeder Periode für dieses Anlagegut im ersten Jahr ist"
 
 msgid "What employees read or watch before the questions"
 msgstr "Was Mitarbeiter vor den Fragen lesen oder ansehen"
-
-msgid "What happens to an invoice once it is created"
-msgstr "Was mit einer Rechnung geschieht, nachdem sie erstellt wird"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "Was mit einer Rechnung geschieht, wenn sie als Entwurf erstellt wird."
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "Was mit Rechnungen geschieht, die täglich automatisch aus Mietverträgen und Verträgen erstellt werden. Rechnungen mit Mietgebühren, Gutschriften, Neuabrechnungen stornierter Rechnungen oder Regelverletzungen warten immer auf Überprüfung."

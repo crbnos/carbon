@@ -189,6 +189,14 @@ export function BlockConfig() {
             <Trans>Reorder or show/hide it from the list.</Trans>
           </p>
         )}
+        {block.type === "notes" && !isDocument && (
+          <p className="text-xs text-muted-foreground">
+            <Trans>
+              Prints each document's own notes. The preview shows sample notes.
+              Edit them on the document itself.
+            </Trans>
+          </p>
+        )}
       </div>
 
       {isDocument && block.type === "terms" && (

@@ -503,7 +503,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Problem:** Editable cells (`~/components/Editable/*`) persist via the input's native `onBlur`, but three things prevent that blur from ever firing on keyboard navigation: (1) the Table's key handler `preventDefault()`s Tab/Enter, so the browser never moves focus; (2) React unmounts the still-focused input when the selection moves, and browsers fire no blur on a removed element; (3) react-aria's NumberField swallows Enter entirely (`onKeyDownEnter` commits internally without `continuePropagation()`) and consumes ArrowUp/Down as spinbutton steps, so a bubble-phase table handler never sees those keys. Blurring at the input level without navigating drops `document.activeElement` to `body`, after which the table wrapper hears no further keys.
 
-**Rule:** The table container owns the Excel keyboard model: attach the handler with `onKeyDownCapture` (so it beats react-aria to Enter/arrows), `stopPropagation()` for handled keys while editing, blur `document.activeElement` to commit *before* `setSelectedCell`, and let the roving-tabindex cell ref (`useMovingCellRef`) refocus the newly selected cell. Skip events targeting portaled overlays (`[data-radix-popper-content-wrapper]`, `[role=menu|listbox|dialog]`) — those own their keys. Editors must keep blur as their *single* commit path (no keydown commits — they double-fire the mutation, as `EditableText` did in Grid).
+**Rule:** The table container owns the Excel keyboard model: attach the handler with `onKeyDownCapture` (so it beats react-aria to Enter/arrows), `stopPropagation()` for handled keys while editing, blur `document.activeElement` to commit *before* `setSelectedCell`, and let the roving-tabindex cell ref (`useMovingCellRef`) refocus the newly selected cell. Skip events targeting portaled overlays (`[data-radix-popper-content-wrapper]`, `[role=menu|listbox|dialog]`) — those own their keys. Editors must keep blur as their *single* commit path (no keydown commits — they double-fire the mutation, as `EditableText` did in Grid). Match Enter by `key`, not `code`: the number pad's Enter has `code` `NumpadEnter`, and react-aria's commit and the browser's implicit form submission both still treat it as Enter (`gridKeyCode`). `Grid` takes only Tab and Enter in the capture phase, and only while a cell is being edited (`takesKeyFromEditor`); every other key stays in the bubble phase, so a combobox list still selects on Enter before the grid moves on. Until it did, Enter in a Grid number cell inside a form submitted the form without the typed value.
 
 **Applies to:** `apps/erp/app/components/Table/Table.tsx`, `apps/erp/app/components/Grid/Grid.tsx`, `apps/erp/app/components/Editable/*`, any future inline-editable cell editor.
 
@@ -5273,6 +5273,43 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A component's outlet beside the route's outlet mounts the child route twice
+
+- **Context:** List tables and record cards (`ApiKeysTable`, `WebhooksTable`, `SupplierProcesses`) rendered their own `<Outlet />` for their New/Edit drawers. #1855 then gave every route under `/x` a `<RecordOutlet />`, and these routes kept both.
+- **Problem:** Both outlets render the same child route, so New API Key opened two modals with the same `id="name"` input. Each Radix modal set `aria-hidden` on everything outside itself, so each hid the other: screen readers and `getByRole` found no Name field, checkbox or Save button, while a sighted user saw one dialog. The per-file `no-bare-outlet` scan reads routes only, so it did not see the component's outlet.
+- **Rule:** One outlet per route. A component rendered by a route that has `RecordOutlet` has no outlet of its own; adding `RecordOutlet` to a route whose table still renders `Outlet` means removing the table's. `findNestedOutlets` (`no-bare-outlet`) flags the pair across files.
+- **Applies to:** every component in `modules/*/ui/` or `components/` that renders `Outlet`, and every route that renders one.
+
+## Count invoices by the status the list shows, from its view
+
+**Context:** The purchasing dashboard's Open Purchase Invoices card counted `purchaseInvoice` rows by status, and its link opens the Purchase Invoices list filtered on the same statuses.
+
+**Problem:** The list reads the `purchaseInvoices` view, which derives `Partially Paid`, `Paid` and `Overdue` from settlements and the due date. The table stores the posted status (`Open`, or `Submitted` on sales) and keeps it once the invoice is paid. Counting the table missed every posted bill, and adding `Open` to the table filter would have counted paid bills too.
+
+**Rule:** Count, filter or badge invoices by status from `salesInvoices` / `purchaseInvoices`, the views the lists read. Read the table's `status` (the views' `baseStatus`) only for a rule about the stored state, such as whether the invoice is posted.
+
+**Applies to:** dashboards, KPIs and cards that count sales or purchase invoices by status.
+
+## A feature that lets a record repeat must widen the key that forbade it
+
+**Context:** Split hours (`20260731192616_people-split-hours.sql`) let one person's shift be dealt across several `peopleAssignment` rows, one per station. The table's unique key, added a week earlier (`peopleAssignment_person_day_key`), allowed one row per person, date and shift.
+
+**Problem:** The day editor, the free-hours drag and the matrix move each write a second row for the same shift, so each failed with a duplicate-key error. Later code treated the key as the rule: the matrix move refused the case (`"taken"`), and comments explained the refusal by the index, so the stale key spread instead of being fixed.
+
+**Rule:** When a feature lets a record hold several rows where it held one, find the unique keys over that record in the newest migrations and widen them in the same change. A refusal whose only reason is a unique index is a sign the index is stale: check it against the feature it contradicts before adding the refusal.
+
+**Applies to:** Any migration that relaxes a one-row-per-X rule, and any service code that refuses an action because a unique index would reject it.
+
+## A controlled field's starting value must equal its form default
+
+**Context:** An RMA line with no customer asset showed Unsaved changes on leaving, with nothing changed. The first diagnosis blamed the Disposition list, a bare Radix Select outside the form's state.
+
+**Problem:** The route passed `customerAssetId: line.customerAssetId ?? undefined` as the form default, and the form seeded its `useState` with `initialValues.customerAssetId ?? ""`. On mount, `Combobox` (`@carbon/form`) calls `setValue` with any value prop that is not null or undefined; `useControllableValue` marks the field touched when that value differs from the default by `!==`, so `""` against `undefined` touched it. `Submit` blocks navigation while any field is touched.
+
+**Rule:** Seed the state a controlled field reads (`Combobox`, `SelectControlled`, `NumberControlled`, `Item`, `TaxCode`) from the same value the form gets as its default: `useState(initialValues.x)`, or the same `?? ""` in both places. A caller that leaves a field out gets `undefined` as its default, so a state fallback such as `?? "Return to Stock"` needs the same value in that caller's defaults. To find the field behind a false Unsaved changes prompt, read each controlled field's starting value against its default, not the fields that look interactive.
+
+**Applies to:** Every `ValidatedForm` whose controlled fields read component state, and every route or modal that builds its `initialValues`.
 
 ## A UI hint for a posting's refusal calls the posting's rule, at every entry point
 
