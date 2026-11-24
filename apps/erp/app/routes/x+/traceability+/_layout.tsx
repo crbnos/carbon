@@ -16,7 +16,6 @@ export const meta = moduleMeta("Traceability");
 export const handle: Handle = {
   breadcrumb: msg`Inventory`,
   to: path.to.inventory,
-  module: "inventory",
   boardSidebar: InventorySections
 };
 

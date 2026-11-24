@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { cancelPendingApprovals } from "@carbon/ee/approvals/document.server";
@@ -18,8 +18,8 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "change-notice-delete");
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    delete: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.changeNotices": "Full"
   });
 
   const { id } = params;

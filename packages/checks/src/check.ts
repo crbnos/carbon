@@ -19,6 +19,21 @@ export type Violation = {
   message: string;
 };
 
+/** Provenance: the transition event that retired the old pattern (spec §5.7). */
+export type Provenance = {
+  deprecates: string;
+  replacedBy: string;
+  /** Migration/commit that flipped the standard, if known. */
+  since?: string;
+  /**
+   * The commit sha(s) of the past fix(es) the check encodes. The check's test
+   * file names each sha in a case that replays the parent revision's code and
+   * expects a finding, so the check is shown to catch the bug it exists for.
+   * Enforced by `provenance.test.ts`.
+   */
+  incidents?: string[];
+};
+
 /**
  * A conformance check forbids a single deprecated pattern.
  * `scan` is PURE: same (file, contents) in → same violations out. No I/O.
@@ -26,13 +41,7 @@ export type Violation = {
 export type ConformanceCheck = {
   id: string;
   description: string;
-  /** Provenance: the transition event that retired the old pattern (spec §5.7). */
-  provenance: {
-    deprecates: string;
-    replacedBy: string;
-    /** Migration/commit that flipped the standard, if known. */
-    since?: string;
-  };
+  provenance: Provenance;
   /** Code text that shows the check's topic. brief lists the check when one occurs. */
   triggers: Trigger[];
   scan(file: string, contents: string): Violation[];
@@ -48,6 +57,6 @@ export type ModuleDir = { name: string; dir: string; entries: string[] };
 export type StructureCheck = {
   id: string;
   description: string;
-  provenance: { deprecates: string; replacedBy: string; since?: string };
+  provenance: Provenance;
   inspect(module: ModuleDir): Violation[];
 };

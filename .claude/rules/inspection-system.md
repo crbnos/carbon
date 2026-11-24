@@ -756,7 +756,8 @@ upload, the same `generateHTML` read-only render.
   line (`receiptLineId` set, untracked) beyond the untracked on-hand left at
   its source unit is refused inside the pick's transaction
   (`putAwayPickShortfall`, single pick and Pick All); an ordinary transfer
-  pick is not checked. A Put Away with a line that has no To storage unit is
+  pick is refused when its From unit holds less than it picks
+  (`untrackedPickShortfall`, `inventory-system.md` → Live bins). A Put Away with a line that has no To storage unit is
   created Draft (one transfer per line location), so stores can set it and release the transfer (a Put Away
   line's item, From unit and quantity stay fixed, and Release refuses a blank To);
   `assertPutAwayHasToUnit` refuses picking such a line, and Pick All leaves it

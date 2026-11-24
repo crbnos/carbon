@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -19,7 +19,7 @@ import {
   isSalesRfqLocked,
   salesRfqValidator
 } from "~/modules/sales/sales.models";
-import { getSalesRFQ, upsertSalesRFQ } from "~/modules/sales/sales.service";
+import { getSalesRFQ } from "~/modules/sales/sales.service";
 import type {
   Opportunity,
   SalesRFQ,
@@ -35,14 +35,12 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.rfqs": "View" });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const rfq = await getSalesRFQ(client, rfqId);
+  const rfq = await api.sales.getSalesRFQ({ id: rfqId });
   if (rfq.error) {
     throw redirect(
       path.to.salesRfqs,
@@ -62,8 +60,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { rfqId: id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+  const { client: viewClient } = await authorize(request, {
+    "sales.rfqs": "View"
   });
 
   const rfq = await getSalesRFQ(viewClient, id);
@@ -74,9 +72,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
-    update: "sales"
-  });
+  const { api } = await authorize(request, { "sales.rfqs": "Edit" });
 
   const formData = await request.formData();
   const validation = await validator(salesRfqValidator).validate(formData);
@@ -88,12 +84,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { rfqId, ...d } = validation.data;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const update = await upsertSalesRFQ(client, {
+  // The service function moves a new customer onto the opportunity (owned by
+  // Sales → Quotes) as the system, after its own RFQ permission.
+  const update = await api.sales.updateSalesRFQ({
     id,
     rfqId,
     ...d,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
+    customFields: setCustomFields(formData)
   });
   if (update.error) {
     throw redirect(

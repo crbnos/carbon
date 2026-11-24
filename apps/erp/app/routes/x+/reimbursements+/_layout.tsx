@@ -15,8 +15,7 @@ export const meta = moduleMeta("Reimbursements");
 
 export const handle: Handle = {
   breadcrumb: msg`Invoicing`,
-  to: path.to.invoicing,
-  module: "invoicing"
+  to: path.to.invoicing
 };
 
 export default function ReimbursementsLayout() {

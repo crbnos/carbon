@@ -34,7 +34,7 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
 
 Every action below makes ONE call to an operation in
 `apps/erp/app/modules/inventory/inventory.server.ts` (`api.inventory.<name>` through
-`carbon(request)`; the names are flat, such as `createShipment`, `updateReceipt`,
+`authorize(request)`; the names are flat, such as `createShipment`, `updateReceipt`,
 `setReceiptLineBatch`); the logic described here lives in that operation, so the API and MCP
 run the same checks. The route only parses the form, and takes the document id from the URL.
 
@@ -274,11 +274,14 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
   quantity is less than the entity's — same `buildBatchSplitRecords` mechanism as SO). SO path: COGS
   `journalLine`s via `calculateCOGS` + `costLedger`, negative `itemLedger`, advances SO line
   `quantitySent`/`sentComplete` and SO `status`, updates `job.quantityShipped`/status for Job
-  fulfillment, and **splits** batch tracked entities when shipped qty < entity qty. A serial or
-  batch is taken from the bin it actually holds stock in (`getTrackedEntityBins`, null = no
+  fulfillment, and **splits** batch tracked entities when shipped qty < entity qty. In the SO,
+  Sales Return Order and Purchase Return Order paths a serial or batch is taken from the bin it
+  actually holds stock in (`trackedShipmentSourceBins` over `getTrackedEntityBins`, null = no
   storage unit), not `shipmentLine.storageUnitId`; the split is booked in that same bin, a unit
-  with no stock anywhere refuses the post, and the void restores each unit to the bin its posting
-  used.
+  with no stock anywhere refuses the post (400), and the void restores each unit to the bin its
+  posting used. An untracked return line gets its bin at create (`returnShipmentSourceBinChooser`:
+  held units first, see `inventory-system.md`), as an untracked warehouse transfer line with no
+  From bin does (`shipmentSourceBinChooser`).
   The shipment journal lines (SO pairs, fixed asset sale lines, return pairs) are built
   by pure builders in `inventory.service.ts` (`buildSalesShipmentJournal`, `buildReturnShipmentJournal`) from facts the posting gathers; the
   accounting cutover's legacy backfill (`activateAccounting`, `accounting.service.ts`) calls

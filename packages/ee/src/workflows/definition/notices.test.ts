@@ -25,7 +25,7 @@ const STEP: CatalogIntegration = {
   },
   outputs: {},
   batchable: false,
-  permission: { module: "workflows", action: "update" },
+  permission: { "workflows.workflows": "Edit" },
   piece: { name: "gmail", action: "send" }
 };
 

@@ -3,29 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteCostCenter,
-  getCostCenter
-} from "~/modules/accounting/accounting.service";
+import { deleteCostCenter } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "accounting.costCenters": "View"
   });
 
   const { costCenterId } = params;
   if (!costCenterId) throw notFound("costCenterId not found");
 
-  const costCenter = await getCostCenter(client, costCenterId);
+  const costCenter = await api.accounting.getCostCenter({ costCenterId });
   if (costCenter.error) {
     throw redirect(
       path.to.costCenters,
@@ -39,8 +35,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "accounting"
+  const { client } = await authorize(request, {
+    "accounting.costCenters": "Full"
   });
 
   const { costCenterId } = params;

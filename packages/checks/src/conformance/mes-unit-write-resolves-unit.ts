@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ConformanceCheck, Violation } from "../check";
+import { blankComments } from "../sources/comments";
 import { maskCommentsAndStrings } from "./no-default-on-effects";
-import { blankComments } from "./no-unscoped-kysely-write";
 
 // On a later operation of a serial part, a write names the unit the operator
 // picked or scanned, never one the server chose. `resolveWorkUnit`

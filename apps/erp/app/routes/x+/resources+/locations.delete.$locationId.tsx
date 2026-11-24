@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,22 +11,16 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteLocation,
-  getLocation
-} from "~/modules/resources/resources.service";
+import { deleteLocation } from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "resources.locations": "View" });
 
   const { locationId } = params;
   if (!locationId) throw notFound("locationId not found");
 
-  const location = await getLocation(client, locationId);
+  const location = await api.resources.getLocation({ locationId });
   if (location.error) {
     throw redirect(
       path.to.locations,
@@ -40,8 +34,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "resources"
+  const { client } = await authorize(request, {
+    "resources.locations": "Full"
   });
 
   const { locationId } = params;

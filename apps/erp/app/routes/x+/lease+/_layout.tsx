@@ -12,8 +12,7 @@ export const meta = moduleMeta("Lease");
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,
-  to: path.to.purchasing,
-  module: "purchasing"
+  to: path.to.purchasing
 };
 
 export default function LeaseRoute() {

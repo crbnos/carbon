@@ -49,7 +49,7 @@ const JournalEntryHeader = () => {
   // A run's journal is reversed through its run (Reverse Run), not here.
   const canReverse =
     isPosted &&
-    permissions.can("create", "accounting") &&
+    permissions.has({ "accounting.journalEntries": "Create" }) &&
     !RUN_JOURNAL_SOURCES[journalEntry.sourceType ?? ""];
 
   return (
@@ -102,7 +102,7 @@ const JournalEntryHeader = () => {
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
-                    !permissions.can("delete", "accounting") ||
+                    !permissions.has({ "accounting.journalEntries": "Full" }) ||
                     !permissions.is("employee")
                   }
                   destructive
@@ -117,7 +117,7 @@ const JournalEntryHeader = () => {
         }
         actions={
           isDraft &&
-          permissions.can("update", "accounting") && (
+          permissions.has({ "accounting.journalEntries": "Edit" }) && (
             <>
               {/* Both submit the lines form below by its id. */}
               <Button

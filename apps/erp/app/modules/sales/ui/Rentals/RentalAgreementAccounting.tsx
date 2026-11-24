@@ -62,7 +62,8 @@ const RentalAgreementAccounting = ({
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { save } = useRentalTermSave(id);
   const isDisabled =
-    rentalAgreement.status !== "Draft" || !permissions.can("update", "sales");
+    rentalAgreement.status !== "Draft" ||
+    !permissions.has({ "sales.rentalAgreements": "Edit" });
   const hasEndDate = !!rentalAgreement.endDate;
   const hasPurchaseOption = (rentalAgreement.purchaseOptionAmount ?? 0) > 0;
 

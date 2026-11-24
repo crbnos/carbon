@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
 import { Badge, Button } from "@carbon/react";
@@ -38,8 +38,8 @@ const noRequests = {
 };
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId } = await authorize(request, {
+    "inventory.pickingLists": "View"
   });
   const locationId = context.get(userContext)?.locationId;
   if (!locationId) return { ...noRequests, noLocation: true };

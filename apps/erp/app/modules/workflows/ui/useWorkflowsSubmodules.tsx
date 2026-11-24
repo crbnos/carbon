@@ -7,6 +7,7 @@ import { LuHistory, LuWorkflow } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function useWorkflowsSubmodules() {
@@ -22,39 +23,22 @@ export default function useWorkflowsSubmodules() {
           name: t`Workflows`,
           to: path.to.workflows,
           icon: <LuWorkflow />,
-          table: "workflow",
-          isActive: (pathname: string) =>
-            pathname === path.to.workflows ||
-            (pathname.startsWith(`${path.to.workflows}/`) &&
-              !pathname.startsWith(`${path.to.workflowRuns}`))
+          table: "workflow"
         },
         {
           name: t`Runs`,
           to: path.to.workflowRuns,
           icon: <LuHistory />,
-          table: "workflowRun",
-          isActive: (pathname: string) =>
-            pathname === path.to.workflowRuns ||
-            pathname.startsWith(`${path.to.workflowRuns}/`)
+          table: "workflowRun"
         }
       ]
     }
   ];
 
   return {
-    groups: workflowsRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) =>
-          route.role ? permissions.is(route.role) : true
-        );
-
-        return filteredRoutes.length > 0;
-      })
-      .map((group) => ({
-        ...group,
-        routes: group.routes
-          .filter((route) => (route.role ? permissions.is(route.role) : true))
-          .map(addSavedViewsToRoutes)
-      }))
+    groups: visibleGroups(workflowsRoutes, permissions).map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes)
+    }))
   };
 }

@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -12,17 +12,16 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { getTaxCode } from "~/modules/accounting/accounting.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "accounting"
+  const { api } = await authorize(request, {
+    "accounting.taxCodes": "View"
   });
   const { taxCodeId } = params;
   if (!taxCodeId) throw notFound("taxCodeId not found");
 
-  const taxCode = await getTaxCode(client, taxCodeId);
+  const taxCode = await api.accounting.getTaxCode({ taxCodeId });
   if (taxCode.error) {
     throw redirect(
       `${path.to.taxCodes}?${getParams(request)}`,
@@ -36,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["taxCodeId"] });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.accounting.deleteTaxCode({
     taxCodeId: input.params.taxCodeId
   });

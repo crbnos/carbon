@@ -94,8 +94,8 @@ export default function SalesRuleForm({
 
   const isEditing = !!initialValues.id;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.salesRules": "Edit" })
+    : !permissions.has({ "sales.salesRules": "Create" });
 
   const conditionAstInitial: ConditionAst = (initialValues.conditionAst as
     | ConditionAst

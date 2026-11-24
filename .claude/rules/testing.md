@@ -88,7 +88,7 @@ a user sees had changed:
 | What you are protecting | Home | Runs |
 |---|---|---|
 | A decision, calculation, parser, plan | **Pure core** test next to the code (`foo.ts` → `foo.test.ts`) | every `pnpm test` |
-| Anything whose truth is in Postgres: posting, RLS, triggers, RPC results, ordering | **Database test**: `apps/erp/test/database/**` (vitest + `databaseTest`) or `packages/database/supabase/tests/*.test.sql` | local database only |
+| Anything whose truth is in Postgres: posting, RLS, triggers, RPC results, ordering | **Database test**: `apps/erp/test/database/**` (vitest + `databaseTest`) or `packages/database/supabase/tests/*.test.sql` | the vitest ones: CI's Database tests job (`database-tests.yml`) and the local database. The `.test.sql` ones: the local database only |
 | A structural rule across many files ("every migration…", "no file imports…") | **Conformance check** in `packages/checks` | `pnpm test` (`@carbon/checks`) |
 | A user flow across pages | **Browser playbook** via `/test`, cached in `.ai/playbooks/` | by hand / agents |
 | "My change works" | **Scratch** | never committed |
@@ -223,7 +223,25 @@ Interaction belongs in a browser playbook.
   hand-building a company, item and location in each file.
 - Never gate on an opt-in env var (`RUN_X_DB_TESTS`) nobody sets. Gate on the
   database being present, as `databaseTest` does.
+- Build every row a test needs, users and permissions too. CI runs the suite
+  on a freshly migrated database that holds no seed data.
+- The test role (`postgres`) does not own the tables: it can create a
+  trigger on one but never drop or disable it. To fail a write part-way
+  through an operation, use `withRefusedWrites` (`fixtures/local-database.ts`).
+  DDL on a shared table also blocks every test running at the same time, and
+  PostgREST's schema reload behind it stalls their PostgREST calls.
+- Test files run in parallel against one database. Assert on your own
+  company's rows; a count over a whole table changes under you.
+- A posting run from handles (`invokePosting(handlesOf(…))`) builds its
+  service-role client from `@carbon/env`, which the unit-test config stubs.
+  If the posting reads through PostgREST (the purchase order funds gate),
+  mock `@carbon/env` with `localServiceRoleEnv()` (`fixtures/local-supabase.ts`).
 - Run: `SUPABASE_DB_URL=… pnpm --filter erp exec vitest run test/database/<file>`.
+- CI: the Database tests workflow (`.github/workflows/database-tests.yml`)
+  runs the whole suite on every pull request that changes `apps/erp` or a
+  package. It migrates an empty database (`crbn migrate`), starts PostgREST
+  (`crbn up --no-apps --no-migrate`), and fails when a test fails or when the
+  database or PostgREST is missing, so the suite cannot skip unseen.
 
 ## Bug fixes
 
@@ -244,5 +262,11 @@ Delete it or move it to the seam. Don't edit it until it passes again.
 
 - `test-reads-source`: a test reading `.sql`, `.ts` or `.tsx` files as text
 - `test-mocks-own-module`: `vi.mock` / `vi.doMock` of a relative or `~/` path
+- `no-silent-test-pass`: a bare `return` guarded by a missing-value test
+  (`if (!client) return;`, `== null`, `.length === 0`) at the top of a test
+  case's callback, which reports the case passed without running it. Use
+  `it.skipIf(!client)(…)`, `databaseTest` or `postgrestTest`, or assert the
+  value exists. Hooks may still return early: the cases they set up skip.
 
-Existing cases sit in the baseline. Don't add new ones.
+Existing cases of the first two sit in the baseline. Don't add new ones.
+`no-silent-test-pass` has no baseline.

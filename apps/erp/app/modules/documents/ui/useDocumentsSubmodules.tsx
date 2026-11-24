@@ -10,11 +10,14 @@ import {
   LuPin,
   LuTrash
 } from "react-icons/lu";
+import { usePermissions } from "~/hooks";
 import type { Route } from "~/types";
+import { visibleRoutes } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function useDocumentsSubmodules() {
   const { t } = useLingui();
+  const permissions = usePermissions();
 
   const documentsRoutes: Route[] = [
     {
@@ -48,5 +51,7 @@ export default function useDocumentsSubmodules() {
     }
   ];
 
-  return { links: documentsRoutes };
+  return {
+    links: visibleRoutes(documentsRoutes, permissions)
+  };
 }

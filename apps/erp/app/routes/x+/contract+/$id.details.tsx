@@ -2,18 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { getProjectContractRevenue } from "~/modules/projects/projects.service";
-import {
-  draftContractSetupPath,
-  getContractLineFunding,
-  getContractProjectBillingInvoices
-} from "~/modules/sales/sales.service";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
+import { draftContractSetupPath } from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractAmendments,
@@ -31,14 +28,16 @@ const logger = getLogger("erp", "contract-details");
  *  there — including Create Contract on a sales order and every action that
  *  returns to the contract page. A viewer who cannot edit sees the page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { client, companyId, permissions, api } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    CONTRACT_READ_GATE
+  );
   const { id } = params;
   if (!id) throw new Error("Could not find id");
   const setup = await draftContractSetupPath(client, {
     companyId,
-    userId,
+    permissions,
     id
   });
   if (setup) throw redirect(setup);
@@ -62,11 +61,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .today(await getCompanyTimeZone(client, companyId))
     .toString();
   const [funding, invoices, revenue] = await Promise.all([
-    getContractLineFunding(client, { companyId, lineIds, asOf }),
-    getContractProjectBillingInvoices(client, {
-      companyId,
-      customerContractId: id
-    }),
+    api.sales.getContractLineFunding({ lineIds, asOf }),
+    api.sales.getContractProjectBillingInvoices({ customerContractId: id }),
     getProjectContractRevenue(client, { companyId, lineIds })
   ]);
   if (billingLines.error || funding.error || invoices.error || revenue.error) {

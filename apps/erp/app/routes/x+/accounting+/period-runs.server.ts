@@ -6,7 +6,8 @@
 // (spec `.ai/specs/2026-10-11-lessee-leases.md` §6) — share their list loader
 // and their "New run" action. Each takes the run type.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { RunType } from "@carbon/database/run-type";
 import { runLabelSentence } from "@carbon/database/run-type";
 import { validator } from "@carbon/form";
@@ -56,7 +57,7 @@ export async function loadPeriodRuns(request: Request, type: RunType) {
 export async function createPeriodRun(args: ActionFunctionArgs, type: RunType) {
   const input = await validator(newRunForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.accounting.createRevenueRecognitionRun({
     type,
     periodEnd: input.data.periodEnd || undefined

@@ -11,6 +11,7 @@ import {
   selectRows,
   updateRows
 } from "@carbon/database/rows";
+import { sql } from "kysely";
 import { expect } from "vitest";
 import {
   connectLocalTestDatabase,
@@ -29,7 +30,8 @@ databaseTest(
         .limit(2)
         .execute();
       const ids = companies.map((company) => company.id);
-      if (ids.length === 0) return;
+      // With no company every assertion below would hold of nothing.
+      expect(ids).not.toHaveLength(0);
 
       type Row = Record<string, unknown> & { id: string; location: Row[] };
       const rows = await selectRows<"company", Row>(
@@ -87,12 +89,14 @@ databaseTest(
     const db = await connectLocalTestDatabase();
     const rollback = new Error("rollback");
     try {
-      const owner = await db
-        .selectFrom("userToCompany")
-        .select(["companyId", "userId"])
+      // The system user, not a member: a database with no users has no member
+      // row.
+      const { id: companyId } = await db
+        .selectFrom("company")
+        .select("id")
         .limit(1)
-        .executeTakeFirst();
-      if (!owner) return;
+        .executeTakeFirstOrThrow();
+      const owner = { companyId, userId: "system" };
       await db
         .transaction()
         .execute(async (trx) => {
@@ -173,18 +177,37 @@ databaseTest(
   "a filter value shaped like a comparison is a value, not SQL",
   async () => {
     const db = await connectLocalTestDatabase();
+    class Rollback extends Error {}
     try {
-      const everyone = await selectRows(db, "company", {});
-      if (everyone.length === 0) return;
-      // If the object's `op` reached the statement this would match every row.
-      const lookalike = { op: "= name OR TRUE --", value: "x" } as never;
-      const matched = await selectRows(db, "company", {
-        name: lookalike
-      }).catch(() => []);
-      expect(matched).toEqual([]);
-      expect(
-        (await selectRows(db, "company", { id: neq("no-such-company") })).length
-      ).toBe(everyone.length);
+      // One snapshot, holding a company of its own: other tests create and
+      // delete companies meanwhile.
+      await db
+        .transaction()
+        .setIsolationLevel("repeatable read")
+        .execute(async (trx) => {
+          await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+          await trx
+            .insertInto("company")
+            .values({
+              id: `rows-${crypto.randomUUID()}`,
+              name: "Rows",
+              baseCurrencyCode: "USD"
+            })
+            .execute();
+          const everyone = await selectRows(trx, "company", {});
+          // If the object's `op` reached the statement this would match every row.
+          const lookalike = { op: "= name OR TRUE --", value: "x" } as never;
+          expect(await selectRows(trx, "company", { name: lookalike })).toEqual(
+            []
+          );
+          expect(
+            (await selectRows(trx, "company", { id: neq("no-such-company") }))
+              .length
+          ).toBe(everyone.length);
+          throw new Rollback();
+        });
+    } catch (error) {
+      if (!(error instanceof Rollback)) throw error;
     } finally {
       await db.destroy();
     }

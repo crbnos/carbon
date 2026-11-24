@@ -78,7 +78,9 @@ const TaxAuthoritiesTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "accounting")}
+              disabled={
+                !permissions.has({ "accounting.taxAuthorities": "Edit" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.taxAuthority(row.id)}?${params.toString()}`
@@ -90,7 +92,9 @@ const TaxAuthoritiesTable = memo(
             </MenuItem>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
-              disabled={!permissions.can("delete", "accounting")}
+              disabled={
+                !permissions.has({ "accounting.taxAuthorities": "Full" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.deleteTaxAuthority(row.id)}?${params.toString()}`
@@ -112,7 +116,7 @@ const TaxAuthoritiesTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ "accounting.taxAuthorities": "Create" }) && (
             <New label={t`Tax Authority`} to={`new?${params.toString()}`} />
           )
         }

@@ -164,7 +164,7 @@ const TrainingProperties = () => {
           name: z.string()
         })}
         className="w-full"
-        isReadOnly={!permissions.can("update", "people")}
+        isReadOnly={!permissions.has({ "resources.training": "Edit" })}
       >
         <InputControlled
           label={t`Name`}
@@ -186,7 +186,7 @@ const TrainingProperties = () => {
         table="training"
         value={assignee ?? ""}
         variant="inline"
-        isReadOnly={!permissions.can("update", "resources")}
+        isReadOnly={!permissions.has({ "resources.training": "Edit" })}
       />
 
       <ValidatedForm
@@ -301,7 +301,7 @@ const TrainingProperties = () => {
             onChange={(value) => {
               onUpdate("grantsAbilityId", value?.value ?? null);
             }}
-            isReadOnly={!permissions.can("update", "people")}
+            isReadOnly={!permissions.has({ "resources.training": "Edit" })}
           />
         </span>
       </ValidatedForm>

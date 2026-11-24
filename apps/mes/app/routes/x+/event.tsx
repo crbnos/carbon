@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { holdsGate } from "@carbon/database/access";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -30,21 +31,16 @@ export async function action(args: ActionFunctionArgs) {
 
 async function startOrEnd({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId, permissions } = await authorize(
+    request,
+    {}
+  );
   return productionEventAction(
     {
       client,
       serviceRole: getCarbonServiceRole(),
       db: getDatabaseClient,
-      permitted: async (permission) => {
-        try {
-          await requirePermissions(request, permission);
-          return true;
-        } catch (thrown) {
-          if (thrown instanceof Response) return false;
-          throw thrown;
-        }
-      },
+      permitted: async (gate) => holdsGate(permissions, gate, companyId),
       numberUnit: assignSerialNumberOnFirstTouch
     },
     { request, companyId, userId }

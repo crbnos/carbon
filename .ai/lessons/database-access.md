@@ -70,7 +70,7 @@ triggers: [{"text":".insert(","minCount":2},{"text":".update(","minCount":2},{"t
 
 **Problem:** Every statement was its own PostgREST request (about 34 ms each), and a failure partway left quotes without lines or half a price list while the action still reported success. The checks that made the write safe (every line priced, the RFQ still Draft) lived in the route, so the API tool for the same operation skipped them.
 
-**Rule:** Check a multi-table write's preconditions inside its transaction, on a locked read of the document (`forUpdate()`), so a double submit and every other caller get the same answer. The route keeps only what is about the request: the form, the flash, the email. The rest is in `AGENTS.md` (Never: chained Supabase-client writes) and the `route-action-shape` check.
+**Rule:** Check a multi-table write's preconditions inside its transaction, on a locked read of the document (`forUpdate()`), so a double submit and every other caller get the same answer. The route keeps only what is about the request: the form, the flash, the email. The rest is in `AGENTS.md` (Never: chained Supabase-client writes), the `route-action-shape` check and `.claude/rules/concurrency.md` ("Lock, then read").
 
 **Applies to:** any route action with more than one write; `finalizePurchasingRfq` and `finalizeSupplierQuote` in `apps/erp/app/modules/purchasing/purchasing.service.ts`.
 
@@ -202,7 +202,7 @@ triggers: ["requireMaterialUpdatable","db: Kysely<KyselyDatabase>","OBJECT_PATTE
 item row and `itemCost` in one Kysely transaction.
 
 **Problem:** Kysely connects as the Postgres role and bypasses RLS, so a caller
-without `parts_update` in the company, or naming another company's material,
+without Edit on the item's page in the company, or naming another company's material,
 would still write.
 
 **Rule:** In ANY service, not only materials: before a Kysely transaction on
@@ -405,7 +405,7 @@ ids.
 ```scope
 id: comparing-a-kysely-timestamp-against-a-postgrest-one-is-sile
 paths: ["packages/jobs/src/inngest/functions/integrations/reconcile*.ts","packages/ee/src/accounting/core/**"]
-triggers: ["instantMs","lastSyncedAt","has_any_company_permission"]
+triggers: ["instantMs","lastSyncedAt"]
 ```
 
 **Context:** "Why does this one vendor resync every 30 minutes?" — the v5 reconciler's
@@ -434,7 +434,13 @@ strings into a comparison bug passes forever.
 read — `jobs/…/integrations/reconcile*.ts` above all; `packages/ee/src/accounting/core/**`
 syncers (`syncInstant` in `charge-syncer.ts` is the pattern that got it right).
 
----
+## A policy on a table with no companyId must tie the row to a company
+
+```scope
+id: a-policy-on-a-table-with-no-companyid-must-tie-the-row-to-a
+paths: ["packages/database/src/authz/manifest.ts"]
+triggers: ["custom(","qual = 'true'"]
+```
 
 **Context:** A security report: any signed-in user could read, create, update and delete every
 `public."user"` row through PostgREST. The policy was `FOR ALL USING
@@ -446,16 +452,17 @@ ANYWHERE?" It never relates the row to a company, so any policy built on it alon
 cross-tenant. A table with no `companyId` (`user`) cannot use the standard four-policy template,
 so the shortcut looked reasonable.
 
-**Rule:** Never gate a policy on `has_any_company_permission`. Every policy must connect the ROW
-to a company in `get_companies_with_employee_role()` or
-`get_companies_with_employee_permission(...)`. For tables without `companyId`, go through a
-membership table (`userToCompany`, `employee`, …), as `20260924153817` does. When a global
+**Rule:** Every policy must connect the ROW to a company in `get_companies_with_employee_role()`
+or `get_companies_with_employee_permission(...)`, never ask only whether the caller holds a
+permission somewhere (`has_any_company_permission`, since dropped, did that). For tables without
+`companyId`, go through a membership table (`userToCompany`, `employee`, …), as the `user` rule in
+`src/authz/manifest.ts` does. When a global
 row is shared by several tenants, also pin the columns no single tenant owns (a BEFORE UPDATE
 guard on `current_user IN ('anon','authenticated')`), and revoke INSERT/DELETE from the API
 roles when only the server writes them. Also check `pg_policies` for `qual = 'true'`.
 
-**Applies to:** `packages/database/supabase/migrations/**` RLS on global tables (`user`,
-`userPermission`, `group`), and any review of an RLS helper.
+**Applies to:** the manifest rules of global tables (`user`, `userPermission`, `group`), and any
+review of an RLS helper.
 
 ---
 

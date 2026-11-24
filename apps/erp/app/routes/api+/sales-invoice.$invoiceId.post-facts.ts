@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fetchAllRecords } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
@@ -29,10 +29,9 @@ const answer = (body: SalesInvoicePostFactsResponse) => Response.json(body);
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Employees only: the service-role read below is for the invoice screen,
-  // not for an API key. `role` is not checked for a key, so the caller is.
-  const { client, companyId, caller } = await requirePermissions(request, {
-    view: "invoicing",
-    role: "employee"
+  // not for an API key, so the caller is checked.
+  const { client, companyId, caller } = await authorize(request, {
+    "invoicing.salesInvoices": "View"
   });
   if (caller !== "session") {
     throw new Response("Forbidden", { status: 403 });

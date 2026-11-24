@@ -50,7 +50,7 @@ triggers: ["excludeLineside","p_exclude_lineside","get_issue_tracked_entity_stoc
 
 **Applies to:** Issue-location reads, stock availability badges, and any query that merges warehouse and picked lineside stock.
 
-## Tracked consumption/split must book against the entity's ACTUAL bin, not an arbitrary ledger row
+## Tracked consumption/split must book against the entity's ACTUAL bin, not an arbitrary ledger row (and a reversal against the row it reverses)
 
 ```scope
 id: tracked-consumption-split-must-book-against-the-entity-s-act
@@ -62,9 +62,11 @@ triggers: ["resolveTrackedEntityBin","trackedEntitiesToOperation","unconsumeTrac
 
 **Problem:** For a tracked entity that has moved between bins (pick/transfer), "which bin holds the stock" is NOT the first ledger row — it's the bin whose net on-hand is positive. Picking any row's `storageUnitId` silently misplaces consumption and breaks any downstream feature that reasons about physical location (e.g. returning lineside remainder to source).
 
-**Rule:** Every movement row for a tracked entity, not only consumption and split, resolves the storage unit from net on-hand per bin (`resolveTrackedEntityBin`, `packages/utils/src/resolve-tracked-entity-bin.ts`). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths. The rest (consumption and split rows book at the entity's on-hand bin) is in `.claude/rules/traceability-model.md`.
+**Rule:** Every movement row for a tracked entity, not only consumption and split, resolves the storage unit from net on-hand per bin (`resolveTrackedEntityBin`, `packages/utils/src/resolve-tracked-entity-bin.ts`). Scope such a fix to the path you can verify; don't blanket-replace untested paths. The rest (consumption and split rows book at the entity's on-hand bin) is in `.claude/rules/traceability-model.md`.
 
-**Applies to:** `issueMaterial` (`apps/erp/app/modules/inventory/inventory.service.ts`) and any posting inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
+A reversal is different: once a unit is consumed, no bin nets positive, so `resolveTrackedEntityBin` has nothing to find. A put-back (unconsume, unissue, unpick, a void) books against the row it reverses. Read the entity's ledger with `.where("companyId", …)` and `.orderBy("createdAt", "desc")` and take the newest row of the entry type being reversed (for unconsume: the newest negative `Consumption` row). Take its bin and its `projectId` from that one row. `createdBy` is a user id, not a time: ordering by it, then taking the first row, returned a unit consumed from bin B to the bin it was received into (`unconsumeTrackedEntities`, fixed 2026-11-24, pinned by `apps/erp/test/database/unconsume-tracked-bin.test.ts`).
+
+**Applies to:** `issueMaterial` (`apps/erp/app/modules/inventory/inventory.service.ts`) and any posting inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins, or reversing one.
 
 ## Two readers of the same shelf must share one definition (2026-09-16)
 
@@ -274,3 +276,41 @@ triggers: ["Job Consumption","unissue","Unissue","unpick"]
 **Rule:** Resolve stock after the draw lock for every pick, record its source per line, and reverse outstanding quantities by their original bin and stripe. Find the rows to reverse by document and item, not by a tag only some writers set: the job-completion backflush writes `Job Consumption` rows with no `documentLineId`. A refusal the person can act on is an `InvalidInputError`; a plain `Error` reads as a 500 and its text is withheld.
 
 **Applies to:** Picking transfers, unpick, job consumption, and unissue.
+
+## A stock-out with no bin chosen takes the bin that holds the stock, never NULL
+
+```scope
+id: a-stock-out-with-no-bin-chosen-takes-the-bin-that-holds-the-s
+paths: ["apps/erp/app/modules/projects/projects.service.ts", "apps/erp/app/modules/inventory/inventory.service.ts", "apps/erp/app/modules/invoicing/invoicing.service.ts", "apps/erp/app/modules/quality/quality.service.ts", "apps/erp/app/modules/shared/shared.service.ts"]
+triggers: ["planUntrackedDraw", "planHeldUntrackedDraw", "shipmentSourceBinChooser", "chooseHeldStockBin"]
+```
+
+**Context:** Project Issue with the Storage Unit left empty counted only stock with no bin and booked the issue at "no storage unit". "No bin" went negative while named bins held the parts. The same gap sat in the maintenance spare-part issue, the direct sales invoice, the warehouse transfer shipment, the return shipments and the NCR close. A stock transfer pick also never checked that its From bin still held the stock.
+
+**Problem:** Each posting had written its own "which bin" rule, and an empty bin field quietly meant "no storage unit". Job issue and sales order shipments had been fixed to choose a bin from stock. The other paths were never brought into line, because nothing tied them to one rule.
+
+**Rule:** A posting that takes untracked stock out with no bin chosen calls a shared rule. Never default to NULL and never take "the first ledger row".
+1. Ordinary stock (issue, consumption, sale, transfer out): `planUntrackedDraw` (`shared.service.ts`), or `shipmentSourceBinChooser` when a document line names one bin. The nettable default comes first, then bins with stock, fullest first. Quarantine and lineside units are never guessed.
+2. Nonconforming or returned stock (NCR Scrap, Return to Supplier, return shipments): `planHeldUntrackedDraw` / `chooseHeldStockBin`. Held units (quarantine, MRB, rejected) come first.
+3. A serial or batch row posts at the bin the unit holds stock in (`getTrackedEntityBins`, `resolveTrackedEntityBin`).
+4. A pick or move from a named bin checks that the bin still holds the quantity.
+
+A new stock-out path names which rule it follows in its code comment and has a database test with stock only in a named bin.
+
+**Applies to:** every writer of a negative `itemLedger` row: `projects.service.ts`, `inventory.service.ts`, `invoicing.service.ts`, `quality.service.ts`, `shared.service.ts` (`createDocument`). See `.claude/rules/inventory-system.md` → "An untracked draw takes stock from the bins that hold it".
+
+## A guessed bin must leave stock an open inspection lot holds
+
+```scope
+id: a-guessed-bin-must-leave-stock-an-open-inspection-lot-holds
+paths: ["apps/erp/app/modules/shared/shared.service.ts"]
+triggers: ["planUntrackedDraw", "planHeldUntrackedDraw", "getUntrackedBinStock", "inspectionHolds"]
+```
+
+**Context:** The fix that made empty-bin stock-outs take a bin from stock read each bin's raw on-hand. A code review found that an NCR close, a return shipment and a Project Issue could now pick a quarantine or goods-in unit whose stock an open receipt lot holds. The hold guard (`check_inspection_hold`) then refused the whole posting. Before the fix the same posting succeeded at "no storage unit".
+
+**Problem:** A bin guess has two failure modes, not one: it can take the wrong bin, and it can take stock that is not free. Capping the bin at its free stock was not enough either: the planner then put a real shortfall back onto that capped bin (the first bin drawn).
+
+**Rule:** A path that guesses a bin reads stock net of inspection holds (`getUntrackedBinStock` with `inspectionHolds`) and runs its plan through `keepInspectionHeldStock`. When you change where a posting takes stock from, list every guard that can refuse that write (the hold guard, Prevent negative stock, `assertPickSourceNettable`) and test the case where the new bin trips it. A fix that turns a posting that used to succeed into a refusal is a regression, even if the old result was wrong.
+
+**Applies to:** `planUntrackedDraw`, `planHeldUntrackedDraw`, the shipment bin choosers, and any new writer of a negative untracked `itemLedger` row.

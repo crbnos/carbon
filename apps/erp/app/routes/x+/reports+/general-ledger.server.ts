@@ -7,15 +7,12 @@
 // filters and sorts.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { datetime, defaultReportRange, redirect } from "@carbon/utils";
 import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
-import {
-  getCompaniesInGroup,
-  getFiscalYearSettings
-} from "~/modules/accounting/accounting.service";
+import { getFiscalYearSettings } from "~/modules/accounting/accounting.service";
 import { months } from "~/modules/shared/shared.models";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
@@ -24,13 +21,9 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "reports-general-ledger");
 
 export async function resolveGeneralLedgerRequest(request: Request) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting",
-      role: "employee"
-    }
-  );
+  const { api, client, companyId, companyGroupId } = await authorize(request, {
+    "accounting.reporting": "View"
+  });
 
   const url = new URL(request.url);
   const searchParams = url.searchParams;
@@ -47,7 +40,8 @@ export async function resolveGeneralLedgerRequest(request: Request) {
   const endDateParam = parsed.success ? (parsed.data.endDate ?? null) : null;
 
   const [companies, fiscalYearSettings] = await Promise.all([
-    getCompaniesInGroup(client, companyGroupId),
+    api.accounting.getCompaniesInGroup({}),
+    // Direct: the report needs the fiscal year without the Fiscal Year page.
     getFiscalYearSettings(client, companyId)
   ]);
   if (companies.error) {
@@ -87,6 +81,7 @@ export async function resolveGeneralLedgerRequest(request: Request) {
     getGenericQueryFilters(searchParams);
 
   return {
+    api,
     client,
     companies: companiesList,
     selectedCompany,

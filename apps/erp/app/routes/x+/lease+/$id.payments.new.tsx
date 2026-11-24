@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -16,8 +16,8 @@ import { path, requestReferrer } from "~/utils/path";
  *  step). `upsertLeasePayment` refuses a lease that is not a Draft. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "purchasing"
+  const { client, companyId, userId } = await authorize(request, {
+    "purchasing.leases": "Create"
   });
 
   const { id } = params;

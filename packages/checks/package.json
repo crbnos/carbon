@@ -11,6 +11,7 @@
     "brief": "tsx src/scripts/brief.ts",
     "clean": "rimraf .turbo node_modules dist",
     "clobbers": "tsx src/scripts/check-clobbers.ts",
+    "guarded-code": "tsx src/scripts/guarded-code.ts",
     "invariants": "tsx src/scripts/run-invariants.ts",
     "learn:log-gate": "tsx src/scripts/log-gate-failure.ts",
     "learn:mark": "tsx src/scripts/learn-mark.ts",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
     "@carbon/ee": "workspace:*",
     "@carbon/env": "workspace:*",
     "@types/node": "^22",

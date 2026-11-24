@@ -79,7 +79,7 @@ const ProjectHeader = () => {
   const [stoppingWork, setStoppingWork] = useState(false);
 
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "projects");
+  const canUpdate = permissions.has({ "projects.projects": "Edit" });
   const statusFetcher = useFetcher<{}>();
   const templateFetcher = useFetcher<{}>();
   const resumeFetcher = useFetcher<{}>();
@@ -170,7 +170,9 @@ const ProjectHeader = () => {
       )}
       {canPlaceInService && (
         <DropdownMenuItem
-          disabled={!canUpdate || !permissions.can("create", "accounting")}
+          disabled={
+            !canUpdate || !permissions.has({ "accounting.assets": "Create" })
+          }
           onClick={placeModal.onOpen}
         >
           <DropdownMenuIcon icon={<LuBuilding2 />} />
@@ -204,7 +206,7 @@ const ProjectHeader = () => {
         </Link>
       </DropdownMenuItem>
       <DropdownMenuItem
-        disabled={!permissions.can("create", "projects")}
+        disabled={!permissions.has({ "projects.projects": "Create" })}
         asChild
       >
         <Link to={`${path.to.newProject}?copyFrom=${projectId}`}>

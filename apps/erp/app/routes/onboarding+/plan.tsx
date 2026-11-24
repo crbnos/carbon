@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonEdition, getUser } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { requireCompanyOwner } from "@carbon/auth/company.server";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
@@ -25,7 +26,7 @@ import { useMemo } from "react";
 import { LuMoveLeft, LuPhoneCall } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { Form, useFetcher, useLoaderData } from "react-router";
-import { getCompany, getPlans } from "~/modules/settings/settings.service";
+import { getCompany } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "plan");
@@ -85,7 +86,7 @@ function usePlans() {
 }
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { companyId, api } = await authorize(request);
   if (CarbonEdition !== Edition.Cloud) {
     throw redirect(path.to.authenticatedRoot);
   }
@@ -95,7 +96,7 @@ export async function loader({ request }: ActionFunctionArgs) {
   }
 
   const [plans, usedFreeTrial] = await Promise.all([
-    getPlans(client),
+    api.settings.getPlans({}),
     hasUsedFreeTrial(companyId)
   ]);
 
@@ -112,7 +113,8 @@ export async function loader({ request }: ActionFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request);
+  await requireCompanyOwner({ companyId, userId });
   const formData = await request.formData();
   const planId = String(formData.get("planId"));
 

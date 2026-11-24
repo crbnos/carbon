@@ -75,8 +75,10 @@ game opens only from **Play while you wait**.
 
 **Every change to `offline.html` bumps both offline caches** (ERP `OFFLINE_CACHE`,
 MES `SHELL_CACHE`): the worker saves the page only when it installs, and installs
-only when its own file changes. `apps/{erp,mes}/app/utils/offline-page.test.ts` pin
-the page's sha256 to the cache name, so a change without a bump fails.
+only when its own file changes. The `offline-page-cache-bumped` check in
+`packages/checks` pins the page's sha256 to both cache names (`OFFLINE_PAGE`), so a
+change without a bump, or a page changed in one app only, fails `pnpm test`. Its
+message names the cache names to bump to and the new sha256 to pin.
 
 ## App icon badge
 

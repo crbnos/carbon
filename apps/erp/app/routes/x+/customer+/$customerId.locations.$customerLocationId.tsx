@@ -9,7 +9,7 @@ import {
   notFound,
   success
 } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -17,24 +17,19 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { customerLocationValidator } from "~/modules/sales/sales.models";
-import {
-  getCustomerLocation,
-  updateCustomerLocation
-} from "~/modules/sales/sales.service";
+import { updateCustomerLocation } from "~/modules/sales/sales.service";
 import { CustomerLocationForm } from "~/modules/sales/ui/Customer";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.customers": "View" });
 
   const { customerId, customerLocationId } = params;
   if (!customerId) throw notFound("customerId not found");
   if (!customerLocationId) throw notFound("customerLocationId not found");
 
-  const location = await getCustomerLocation(client, customerLocationId);
+  const location = await api.sales.getCustomerLocation({ customerLocationId });
   if (location.error) {
     throw redirect(
       path.to.customerLocations(customerId),
@@ -52,9 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
-    update: "sales"
-  });
+  const { client } = await authorize(request, { "sales.customers": "Edit" });
 
   const { customerId, customerLocationId } = params;
   if (!customerId) throw notFound("customerId not found");

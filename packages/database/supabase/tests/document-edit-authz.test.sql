@@ -36,11 +36,12 @@ BEGIN
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
     (sales, company_a, 'employee'), (invoicing, company_a, 'employee'),
     (plain, company_a, 'employee'), (other, company_b, 'employee');
-  INSERT INTO "userPermission" (id, permissions) VALUES
-    (sales, jsonb_build_object('sales_view', jsonb_build_array(company_a), 'sales_update', jsonb_build_array(company_a))),
-    (invoicing, jsonb_build_object('invoicing_view', jsonb_build_array(company_a), 'invoicing_update', jsonb_build_array(company_a))),
-    (plain, '{}'::jsonb),
-    (other, jsonb_build_object('sales_view', jsonb_build_array(company_b), 'invoicing_view', jsonb_build_array(company_b)));
+  -- Module grants: each covers every page of its module.
+  INSERT INTO permission ("companyId", "userId", module, level, "createdBy") VALUES
+    (company_a, sales, 'Sales', 'Edit', 'system'),
+    (company_a, invoicing, 'Invoicing', 'Edit', 'system'),
+    (company_b, other, 'Sales', 'View', 'system'),
+    (company_b, other, 'Invoicing', 'View', 'system');
   INSERT INTO "documentEdit" ("companyId", "documentType", "documentId", "createdBy") VALUES
     (company_a, 'salesInvoice', 'invoice', 'system'),
     (company_a, 'quote', 'quote', 'system'),

@@ -68,8 +68,8 @@ export default function CustomerAssetPage({
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "service");
-  const canViewSales = permissions.can("view", "sales");
+  const canUpdate = permissions.has({ "service.customerAssets": "Edit" });
+  const canViewSales = permissions.has({ "sales.returns": "View" });
   const coverageLabels = useCoverageLabels();
   const returnTypeLabels = {
     "Return to Stock": t`Return to Stock`,
@@ -107,7 +107,7 @@ export default function CustomerAssetPage({
           actions={
             <Button
               leftIcon={<LuWrench />}
-              isDisabled={!permissions.can("create", "service")}
+              isDisabled={!permissions.has({ "service.jobs": "Create" })}
               onClick={() =>
                 navigate(
                   `${path.to.newServiceJob}?customerId=${asset.customerId}&customerAssetId=${asset.id}`

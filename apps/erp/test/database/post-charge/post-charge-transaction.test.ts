@@ -6,7 +6,7 @@ import { sql } from "kysely";
 import { expect } from "vitest";
 import { allocateJournalLineIds } from "~/modules/shared/shared.service";
 import { postChargeTransaction } from "../../../app/modules/accounting/accounting.service";
-import { databaseTest } from "../fixtures/local-database";
+import { databaseTest, withRefusedWrites } from "../fixtures/local-database";
 import { chargeFixture } from "../fixtures/post-charge";
 import { projectPostingFixture } from "../fixtures/project-posting";
 
@@ -195,38 +195,19 @@ databaseTest(
   "a failure after journal creation rolls the entire post back",
   async () => {
     const f = await chargeFixture();
-    let unrelated: Awaited<ReturnType<typeof chargeFixture>> | undefined;
-    const triggerName = `test_fail_post_${f.lineId.replaceAll("-", "_")}`;
-    const functionName = triggerName;
     try {
-      unrelated = await chargeFixture();
-      await sql`
-      CREATE FUNCTION ${sql.id("public", functionName)}()
-      RETURNS trigger
-      LANGUAGE plpgsql
-      AS $function$
-      BEGIN
-        IF NEW.status = 'Posted'
-           AND NEW."companyId" = TG_ARGV[0]
-           AND NEW.id = TG_ARGV[1] THEN
-          RAISE EXCEPTION 'forced mid-transaction failure';
-        END IF;
-        RETURN NEW;
-      END;
-      $function$;
-      CREATE TRIGGER ${sql.id(triggerName)}
-        BEFORE UPDATE ON public."charge"
-        FOR EACH ROW
-        EXECUTE FUNCTION ${sql.id("public", functionName)}(${sql.lit(
-          f.companyId
-        )}, ${sql.lit(f.chargeId)});
-    `.execute(f.db);
-
-      // Failure injection must never affect other companies sharing this DB.
-      await postChargeTransaction(unrelated.db, unrelated.args);
-      await expect(
-        (() => postChargeTransaction(f.db, f.args))()
-      ).rejects.toThrow("forced mid-transaction failure");
+      // The charge's own Posted update is refused, after its journal is written.
+      await withRefusedWrites(
+        f.db,
+        "charge",
+        sql`"companyId" = ${sql.lit(f.companyId)} AND "id" = ${sql.lit(
+          f.chargeId
+        )} AND "status" = 'Posted'`,
+        () =>
+          expect(postChargeTransaction(f.db, f.args)).rejects.toMatchObject({
+            code: "44000"
+          })
+      );
       const header = await f.db
         .selectFrom("charge")
         .select(["status", "journalId"])
@@ -251,18 +232,7 @@ databaseTest(
           .execute()
       ).toEqual([]);
     } finally {
-      try {
-        await sql`
-          DROP TRIGGER IF EXISTS ${sql.id(triggerName)} ON public."charge";
-          DROP FUNCTION IF EXISTS ${sql.id("public", functionName)}();
-        `.execute(f.db);
-      } finally {
-        try {
-          await unrelated?.cleanup();
-        } finally {
-          await f.cleanup();
-        }
-      }
+      await f.cleanup();
     }
   }
 );

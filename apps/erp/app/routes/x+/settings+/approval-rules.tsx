@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getApprovalRules } from "@carbon/ee/approvals.server";
@@ -26,9 +26,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "settings.approvalRules": "View"
   });
 
   const serviceRole = getCarbonServiceRole();

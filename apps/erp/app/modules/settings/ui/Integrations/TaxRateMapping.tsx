@@ -136,8 +136,10 @@ export function TaxRateMapping({
     [noTaxCodeId, taxCodes, t]
   );
   const stale = useMemo(() => new Set(staleMappingKeys), [staleMappingKeys]);
+  const isStale = (taxCodeId: string, direction: TaxDirection) =>
+    stale.has(mappingKey(taxCodeId, direction));
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "settings");
+  const canUpdate = permissions.has({ "settings.integrations": "Edit" });
   const percentFormatter = usePercentFormatter();
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
 
@@ -192,8 +194,8 @@ export function TaxRateMapping({
       code={code}
       isFallback={code.id === noTaxCodeId}
       stale={{
-        sales: stale.has(mappingKey(code.id, "sales")),
-        purchase: stale.has(mappingKey(code.id, "purchase"))
+        sales: isStale(code.id, "sales"),
+        purchase: isStale(code.id, "purchase")
       }}
       formatRate={formatRate}
       sales={mappingsByKey.get(mappingKey(code.id, "sales")) ?? null}

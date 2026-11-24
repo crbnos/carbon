@@ -189,7 +189,9 @@ const TaxRegistrationsTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "accounting")}
+              disabled={
+                !permissions.has({ "accounting.taxRegistrations": "Edit" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.taxRegistration(row.id)}?${params.toString()}`
@@ -201,7 +203,9 @@ const TaxRegistrationsTable = memo(
             </MenuItem>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
-              disabled={!permissions.can("delete", "accounting")}
+              disabled={
+                !permissions.has({ "accounting.taxRegistrations": "Full" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.deleteTaxRegistration(row.id)}?${params.toString()}`
@@ -223,7 +227,7 @@ const TaxRegistrationsTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ "accounting.taxRegistrations": "Create" }) && (
             <New label={t`Tax Registration`} to={`new?${params.toString()}`} />
           )
         }

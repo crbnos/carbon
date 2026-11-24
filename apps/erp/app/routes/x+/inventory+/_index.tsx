@@ -2,11 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { redirect, redirectBeforeLoaders } from "@carbon/utils";
-import { path } from "~/utils/path";
+import { redirectBeforeLoaders } from "@carbon/utils";
+import { moduleIndexLoader } from "~/utils/nav.server";
 
-export async function loader() {
-  throw redirect(path.to.inventory);
-}
+export const loader = moduleIndexLoader("inventory");
 
 export const middleware = [redirectBeforeLoaders(loader)];

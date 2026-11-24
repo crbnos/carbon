@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
   getEarnedValue,
@@ -17,11 +17,6 @@ import {
   buildProjectCostFigures,
   preproductionActual
 } from "~/modules/projects/projects.models";
-import {
-  getProjectBurdenSummary,
-  getProjectCostSummary,
-  getProjectElementCosts
-} from "~/modules/projects/projects.service";
 import type { ProjectBurdenPoolRow } from "~/modules/projects/ui/Costs/ProjectBurdenByPool.ee";
 import type { ProjectCostRow } from "~/modules/projects/ui/Costs/ProjectCostsTree";
 import ProjectCostsTree from "~/modules/projects/ui/Costs/ProjectCostsTree";
@@ -36,17 +31,17 @@ import { getDatabaseClient } from "~/services/database.server";
 const logger = getLogger("erp", "project-costs");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, client, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
   const [elements, costSummary, burdenSummary] = await Promise.all([
-    getProjectElementCosts(client, projectId, companyId),
-    getProjectCostSummary(client, projectId, companyId),
-    getProjectBurdenSummary(client, projectId, companyId)
+    api.projects.getProjectElementCosts({ projectId }),
+    api.projects.getProjectCostSummary({ projectId }),
+    api.projects.getProjectBurdenSummary({ projectId })
   ]);
 
   if (elements.error) {

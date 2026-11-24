@@ -184,7 +184,7 @@ triggers: ["permission: {}","refuseKeyWithout"]
 company membership (`permission: {}`).
 
 **Problem:** For an API key, membership means any scope in the company. Publishing these
-operations let a key with only `sales_view` write time and post labor cost under the name of
+operations let a key with only View on a sales page write time and post labor cost under the name of
 the person who created the key. The manifest shows no permission, so nothing looks wrong.
 
 **Rule:** Before you tag an operation `@mcp`, ask what its gate means for a key, not only for
@@ -228,33 +228,17 @@ triggers: ["resolveModelSourceBucket","modelPath","temp-staging","copyAssetsToBa
 
 ```scope
 id: features-live-inside-existing-permission-modules
-paths: ["apps/erp/app/routes/x+/*+/_layout.tsx"]
+paths: ["apps/erp/app/routes/x+/*+/_layout.tsx","packages/database/src/access/pages/*.ts"]
 triggers: ["ALTER TYPE \"module\""]
 ```
 
 **Context:** Building a new feature that belongs to an existing domain (e.g., assembly instructions within production).
 
-**Problem:** Creating a standalone module enum value / permission family (`Assembly` module with `assembly_*` permissions) for something that is really part of an existing domain. Assembly instructions belong to **production**, governed by `production_<view|create|update|delete>`.
+**Problem:** Creating a standalone module enum value (an `Assembly` module) for something that is really part of an existing domain. Assembly instructions belong to **production**.
 
-**Rule:** Don't invent a new module/permission family for a feature that fits an existing domain. Add a sub-link in the existing sidebar group (like Procedures) and a full-screen editor in its own route tree (`x+/assembly+/$id`, `handle.module: "production"`, mirroring `x+/procedure+/`). Pattern: list route under `x+/<module>+/<plural>.tsx`, full-screen editor in a sibling `x+/<singular>+/` tree whose `_layout.tsx` declares the parent module. Module folder = permission module = nav module.
+**Rule:** Don't invent a new module for a feature that fits an existing domain. Add a page to that module's page file (`packages/database/src/access/pages/<module>.ts`), and list in its `paths` both the list URL and the editor tree (`production.assemblies`: `/x/production/assemblies`, `/x/assembly/`). Add a sub-link in the module's sidebar group (like Procedures) and a full-screen editor in its own route tree (`x+/assembly+/$id`, mirroring `x+/procedure+/`). Module folder = page module = nav module. The rest is in the `route-gate-names-page` check (a route's gate names the page its URL maps to).
 
 **Applies to:** New features under `apps/erp/app/routes/x+/`, `apps/erp/app/modules/`.
-
-## Permission scope renames are invisible to typecheck
-
-```scope
-id: permission-scope-renames-are-invisible-to-typecheck
-paths: []
-triggers: ["ALTER POLICY","RENAME VALUE"]
-```
-
-**Context:** Renaming DB RLS policies (e.g., `plm_*` → `production_*`) as part of a module rename.
-
-**Problem:** The app layer's `requirePermissions()` and `permissions.can()` calls use string literals like `"plm"`. These are invisible to TypeScript's type checker and linter — the rename passes all automated checks but 403s every route at runtime.
-
-**Rule:** When renaming permission scopes, grep the ENTIRE codebase for all string literal references, not just the DB layer. Check `requirePermissions`, `permissions.can`, `usePermissions`, route loaders, and any conditional UI gating.
-
-**Applies to:** Any permission or scope rename, `apps/erp/app/routes/`, `apps/erp/app/modules/`.
 
 ## Secret material is read through ONE reader — never off a column
 

@@ -1085,3 +1085,22 @@ triggers: ["check:manifest","tool-manifest.digest"]
 **Rule:** Never leave a regenerated `tool-manifest.digest.json` unstaged on the assumption that it is drift. Run `pnpm --silent check:manifest` with the committed copy restored; when it fails, the regenerated digest belongs in the commit.
 
 **Applies to:** `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`, `scripts/git-hooks/pre-commit`.
+
+## Parallel agents on one rule need the shared helper first
+
+```scope
+id: parallel-agents-on-one-rule-need-the-shared-helper-first
+paths: [".claude/skills/conductor/**", ".claude/skills/execute/**"]
+triggers: ["subagent", "Agent tool"]
+```
+
+**Context:** One PR fixed eight stock-out paths with five parallel subagents. The draw rule had a shared helper before the fan-out, and every agent used it. The return rule ("back to the bins the issues drew from") and the shipment line bin chooser had no helper, so the agents wrote the return rule three times and made a near copy of the chooser. The copies already differed: one broke ties by `entryNumber` and the others did not.
+
+**Problem:** A subagent sees only its own path and writes the rule inline. Nobody compares the copies until review, and by then they have drifted apart.
+
+**Rule:** Before fanning out work that applies one rule in several places, list every rule the paths share (draw, return, line bin, refusal message). Write each rule as a pure tested helper first, and name it in every agent's brief. Review the agents' diffs side by side for logic that repeats. Also check the small edits each agent made:
+- A new helper inserted between a function and its doc comment moves the comment onto the wrong function.
+- Two arrays matched by position silently break when someone adds a row; have each entry hold its own row instead.
+- A scripted multi-site edit can corrupt brackets; run the typecheck right after it.
+
+**Applies to:** Multi-path fixes run through the Agent tool or `/conductor`.

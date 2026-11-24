@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { Button, RecordOutlet, useDisclosure } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -29,8 +29,8 @@ import { path } from "~/utils/path";
 /** The setup wizard is for a Draft: once activated, a lease is worked on
  *  from its page and changed with Modify. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "purchasing"
+  const { client, companyId } = await authorize(request, {
+    "purchasing.leases": "Edit"
   });
 
   const { id } = params;
@@ -148,7 +148,8 @@ export default function LeaseSetupRoute() {
                   <Button
                     leftIcon={<LuPlay />}
                     isDisabled={
-                      !isReady || !permissions.can("update", "purchasing")
+                      !isReady ||
+                      !permissions.has({ "purchasing.leases": "Edit" })
                     }
                     onClick={activate.onOpen}
                   >

@@ -9,7 +9,7 @@ import {
   notFound,
   success
 } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -17,24 +17,21 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { supplierLocationValidator } from "~/modules/purchasing/purchasing.models";
-import {
-  getSupplierLocation,
-  updateSupplierLocation
-} from "~/modules/purchasing/purchasing.service";
+import { updateSupplierLocation } from "~/modules/purchasing/purchasing.service";
 import SupplierLocationForm from "~/modules/purchasing/ui/Supplier/SupplierLocationForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.suppliers": "View" });
 
   const { supplierId, supplierLocationId } = params;
   if (!supplierId) throw notFound("supplierId not found");
   if (!supplierLocationId) throw notFound("supplierLocationId not found");
 
-  const location = await getSupplierLocation(client, supplierLocationId);
+  const location = await api.purchasing.getSupplierLocation({
+    supplierContactId: supplierLocationId
+  });
   if (location.error) {
     throw redirect(
       path.to.supplierLocations(supplierId),
@@ -52,8 +49,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
-    update: "purchasing"
+  const { client } = await authorize(request, {
+    "purchasing.suppliers": "Edit"
   });
 
   const { supplierId, supplierLocationId } = params;

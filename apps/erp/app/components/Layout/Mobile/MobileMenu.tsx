@@ -36,8 +36,8 @@ import {
 } from "~/hooks/useImplementationNavItem";
 import { useModuleLinks } from "~/hooks/useModuleSubmodules";
 import { useAllModules, useSettingsModule } from "~/hooks/useModules";
+import { moduleOfMatches } from "~/utils/nav";
 import { path } from "~/utils/path";
-import { getModule } from "~/utils/submodule-visibility";
 import { AddCompanyModal } from "../Navigation/AddCompanyModal";
 import { useCompactModuleSidebar } from "../Navigation/CollapsibleSidebar";
 import {
@@ -53,25 +53,15 @@ import {
 type Finder = "companies" | "modules";
 
 /**
- * The module the page belongs to: by its URL, else by a route's
- * `handle.module` (a record's page lives outside its module's URL). Hidden
- * modules count, so the switcher still names where you are.
+ * The module the page belongs to (`moduleOfMatches`). Hidden modules count,
+ * so the switcher still names where you are.
  */
 function useCurrentModule() {
-  const { pathname } = useLocation();
-  const matches = useMatches();
+  const key = moduleOfMatches(useMatches());
   const modules = useAllModules();
   const settingsModule = useSettingsModule();
   const all = settingsModule ? [...modules, settingsModule] : modules;
-
-  const segment = getModule(pathname);
-  const byPath = all.find((m) => getModule(m.to) === segment);
-  if (byPath) return byPath;
-
-  const handled = matches
-    .map((match) => (match.handle as { module?: string } | undefined)?.module)
-    .filter((m): m is string => typeof m === "string");
-  return all.find((m) => handled.includes(getModule(m.to))) ?? null;
+  return all.find((m) => m.key === key) ?? null;
 }
 
 /** A panel row with an icon tile, as the desktop rail draws modules. */
@@ -104,6 +94,7 @@ function ModuleRows({ currentKey }: { currentKey: string | null }) {
   const modules = useModuleLinks();
   const settingsModule = useSettingsModule();
   const isHome = pathname === path.to.authenticatedRoot;
+  const isGetStarted = moduleOfMatches(useMatches()) === "get-started";
 
   const row = (
     key: string,
@@ -136,13 +127,7 @@ function ModuleRows({ currentKey }: { currentKey: string | null }) {
           {(data) => {
             const item = getImplementationNavItem(data, i18n);
             return item
-              ? row(
-                  "get-started",
-                  item.to,
-                  item.icon,
-                  item.name,
-                  getModule(pathname) === getModule(item.to)
-                )
+              ? row("get-started", item.to, item.icon, item.name, isGetStarted)
               : null;
           }}
         </ImplementationData>

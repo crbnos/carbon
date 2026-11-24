@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { CompanyRole, Gate } from "@carbon/database/access";
 import type { ValidationErrorResponseData } from "@carbon/form";
 import type { FileObject } from "@supabase/storage-js";
 import type { ReactElement, ReactNode } from "react";
@@ -16,7 +17,6 @@ export type Action = {
 
 export type Authenticated<T = {}> = T & {
   role?: Role;
-  permission?: string;
   internal?: boolean;
 };
 
@@ -79,7 +79,7 @@ export type Result = {
   message?: string;
 };
 
-export type Role = "employee" | "customer" | "supplier";
+export type Role = CompanyRole;
 
 export type Route<T = {}> = T & {
   name: string;
@@ -93,9 +93,11 @@ export type Route<T = {}> = T & {
     to: string;
     sortOrder: number;
   }[];
-  q?: string; // TODO: this is dumb
+  q?: string;
   table?: string;
-  /** When present, overrides the default pathname-includes active check. */
+  /** What the entry shows behind, when it is not View on the page of `to`. */
+  gate?: Gate;
+  /** When present, overrides the default check (`routeOwnsUrl`). */
   isActive?: (pathname: string) => boolean;
   /** A count shown at the right of the link when it is above 0 (items waiting). */
   count?: number;

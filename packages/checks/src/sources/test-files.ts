@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceFile } from "../check";
+import { SHARED_TEST_FIXTURES_DIR } from "../conformance/no-silent-test-pass";
 
 // packages/checks is left out: it is the one package whose tests read source
 // and migration text, by design.
@@ -45,4 +46,14 @@ export function loadTestFiles(root: string): SourceFile[] {
       file: path,
       contents: readFileSync(join(root, path), "utf8")
     }));
+}
+
+export function loadSharedTestFixtures(root: string): SourceFile[] {
+  return readdirSync(join(root, SHARED_TEST_FIXTURES_DIR))
+    .filter((name) => /\.tsx?$/.test(name))
+    .sort()
+    .map((name) => {
+      const file = `${SHARED_TEST_FIXTURES_DIR}/${name}`;
+      return { file, contents: readFileSync(join(root, file), "utf8") };
+    });
 }
