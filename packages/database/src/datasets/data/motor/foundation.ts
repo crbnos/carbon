@@ -63,7 +63,11 @@ export const PROCESSES = [
     factor: "Hours/Piece",
     type: "Inspection"
   },
-  { name: "Outside Processing", factor: "Total Hours", type: "Process" }
+  {
+    name: "Outside Processing",
+    factor: "Total Hours",
+    type: "Outside Processing"
+  }
 ];
 
 export const WORK_CENTERS = [

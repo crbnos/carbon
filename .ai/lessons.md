@@ -5273,3 +5273,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A seeded status the app derives must be the derivation of the seeded lines
+
+**Context:** The demo datasets wrote each purchase order's status as authored, and tier 05 never set a line's `receivedComplete` / `invoicedComplete`. The authors read "To Receive" as "awaiting delivery" and "Completed" as "billed".
+
+**Problem:** `getPurchaseOrderStatus` reads "To Receive" as invoiced and not received, and "To Invoice" as received and not invoiced. Eight or nine orders per dataset disagreed with their lines, and the first receipt or invoice a user posted restated the order to a status nobody had seen. A Completed RMA's restocked line also stayed Pending, which `getSalesReturnOrderStatus` reads as unresolved.
+
+**Rule:** When the app derives a document's status from its lines, seed the lines' flags as the postings write them and check the stored status against the app's own function. If `@carbon/database` cannot import it, move it into `@carbon/database` and let `@carbon/utils` re-export it, rather than restating the rule.
+
+**Applies to:** `packages/database/src/datasets/` (tiers, `validate.ts`, `verify.ts`), any document whose status a posting recomputes.

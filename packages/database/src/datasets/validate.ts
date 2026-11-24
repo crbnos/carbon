@@ -48,6 +48,7 @@ import {
   signedNet,
   voidJournal
 } from "./helpers/posting-journals.ts";
+import { derivedPurchaseOrderStatus } from "./helpers/purchase-order-lines.ts";
 import { datasetUnitOfMeasureCodes } from "./helpers/units-of-measure.ts";
 import { allItemSpecs, extensionTableFor } from "./item-tables.ts";
 import { RULE_FIELDS, type RuleValueKind } from "./rule-fields.ts";
@@ -3952,6 +3953,15 @@ export function returnOrders(ctx: ValidationCtx): void {
   }
 }
 
+// The statuses receipts and invoices move an order through; the others are
+// set by hand (finalize, approval, Close).
+const DERIVED_PURCHASE_ORDER_STATUSES = new Set([
+  "To Receive and Invoice",
+  "To Receive",
+  "To Invoice",
+  "Completed"
+]);
+
 export function purchasing(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
   const f = dataset.foundation;
@@ -4087,6 +4097,14 @@ export function purchasing(ctx: ValidationCtx): void {
   for (const [index, po] of p.purchaseOrders.entries()) {
     const where = `purchasing.purchaseOrders[${index}]`;
     seenPurchasing.purchaseOrder.add(po.status);
+    if (DERIVED_PURCHASE_ORDER_STATUSES.has(po.status)) {
+      const derived = derivedPurchaseOrderStatus(po);
+      if (po.status !== derived) {
+        fail(
+          `${where}: status "${po.status}", but its receipt and invoice make it "${derived}"`
+        );
+      }
+    }
     if (po.source !== "direct") continue;
 
     needActiveSupplier(where, po.supplier);
@@ -4122,9 +4140,9 @@ export function purchasing(ctx: ValidationCtx): void {
             `${where}: the EUR order must stay childless — receipts and invoices are settled in base currency by design`
           );
         }
-        if (po.status !== "To Invoice" && po.status !== "Draft") {
+        if (po.status !== "To Receive and Invoice" && po.status !== "Draft") {
           fail(
-            `${where}: the EUR order must be unpaid ("To Invoice" or "Draft"), got "${po.status}"`
+            `${where}: the EUR order must be unpaid ("To Receive and Invoice" or "Draft"), got "${po.status}"`
           );
         }
       }

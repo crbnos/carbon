@@ -165,10 +165,10 @@ export const LIFECYCLE_RFQS: LifecycleRfqSpec[] = [
 export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
-    log: "purchase order 1 — To Receive (Sentry)",
+    log: "purchase order 1 — To Receive and Invoice, receipt in draft (Sentry)",
     supplier: "Sentry Propulsion Systems",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -346,
     lines: [
       { item: "BAT-SMART-11AH", purchaseQuantity: 6, supplierUnitPrice: 1696 },
@@ -193,10 +193,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order 2 — To Invoice (MilSpec)",
+    log: "purchase order 2 — To Receive and Invoice, invoice in draft (MilSpec)",
     supplier: "MilSpec Fastener Supply",
     purchaseOrderType: "Purchase",
-    status: "To Invoice",
+    status: "To Receive and Invoice",
     orderDateOffset: -363,
     lines: [
       { item: "FST-M3-TI", purchaseQuantity: 500, supplierUnitPrice: 2.5 }
@@ -373,10 +373,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — To Receive with a voided receipt (MilSpec)",
+    log: "purchase order — To Receive and Invoice with a voided receipt (MilSpec)",
     supplier: "MilSpec Fastener Supply",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -21,
     lines: [
       { item: "FST-M3-TI", purchaseQuantity: 250, supplierUnitPrice: 2.5 }
@@ -397,10 +397,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice open (Meshline Tactical Systems EO/IR gimbal)",
+    log: "purchase order — To Receive, invoice open (Meshline Tactical Systems EO/IR gimbal)",
     supplier: "Meshline Tactical Systems",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -30,
     lines: [
       { item: "GMB-EOIR-640", purchaseQuantity: 1, supplierUnitPrice: 28000 }
@@ -419,10 +419,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice overdue (Ridgeline Composites)",
+    log: "purchase order — To Receive, invoice overdue (Ridgeline Composites)",
     supplier: "Ridgeline Composites",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -60,
     lines: [
       { item: "MAT-CF-PREPREG", purchaseQuantity: 2, supplierUnitPrice: 320 }
@@ -441,10 +441,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice partially paid (Vanguard Electronics Supply)",
+    log: "purchase order — To Receive, invoice partially paid (Vanguard Electronics Supply)",
     supplier: "Vanguard Electronics Supply",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -55,
     lines: [
       { item: "PCB-BARE-R3", purchaseQuantity: 40, supplierUnitPrice: 82 }
@@ -490,7 +490,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     assignee: "self",
     supplier: "Redstone Precision Machining",
     purchaseOrderType: "Outside Processing",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -9,
     lines: [{ item: "AFR-100", purchaseQuantity: 2, supplierUnitPrice: 240 }]
   },
@@ -501,7 +501,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ref: "po:eur",
     supplier: "Rheinland Precision Bearings GmbH",
     purchaseOrderType: "Purchase",
-    status: "To Invoice",
+    status: "To Receive and Invoice",
     orderDateOffset: -18,
     currencyCode: "EUR",
     exchangeRate: 0.92,

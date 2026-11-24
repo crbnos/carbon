@@ -162,10 +162,10 @@ export const LIFECYCLE_RFQS: LifecycleRfqSpec[] = [
 export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
-    log: "purchase order 1 — To Receive (PropTech)",
+    log: "purchase order 1 — To Receive and Invoice, receipt in draft (PropTech)",
     supplier: "PropTech Solutions",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -346,
     lines: [
       { item: "BAT-LIION-48V", purchaseQuantity: 6, supplierUnitPrice: 2200 },
@@ -190,10 +190,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order 2 — To Invoice (SpaceGrade)",
+    log: "purchase order 2 — To Receive and Invoice, invoice in draft (SpaceGrade)",
     supplier: "SpaceGrade Fasteners",
     purchaseOrderType: "Purchase",
-    status: "To Invoice",
+    status: "To Receive and Invoice",
     orderDateOffset: -363,
     lines: [
       { item: "FST-M4-TI", purchaseQuantity: 500, supplierUnitPrice: 2.5 }
@@ -370,10 +370,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — To Receive with a voided receipt (SpaceGrade)",
+    log: "purchase order — To Receive and Invoice with a voided receipt (SpaceGrade)",
     supplier: "SpaceGrade Fasteners",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -21,
     lines: [
       { item: "FST-M4-TI", purchaseQuantity: 250, supplierUnitPrice: 2.5 }
@@ -394,10 +394,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice open (Deep Space RF star tracker)",
+    log: "purchase order — To Receive, invoice open (Deep Space RF star tracker)",
     supplier: "Deep Space RF",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -30,
     lines: [{ item: "ST-050", purchaseQuantity: 1, supplierUnitPrice: 28000 }],
     invoice: {
@@ -441,20 +441,20 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — To Receive, star trackers on order for the Star Tracker group",
+    log: "purchase order — To Receive and Invoice, star trackers on order for the Star Tracker group",
     ref: "po:st-group-open",
     supplier: "Deep Space RF",
     purchaseOrderType: "Purchase",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -6,
     lines: [{ item: "ST-050", purchaseQuantity: 2, supplierUnitPrice: 28000 }]
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice overdue (Orbital Composites)",
+    log: "purchase order — To Receive, invoice overdue (Orbital Composites)",
     supplier: "Orbital Composites",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -60,
     lines: [
       { item: "MAT-CF-LAM", purchaseQuantity: 2, supplierUnitPrice: 320 }
@@ -473,10 +473,10 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   },
   {
     source: "direct",
-    log: "purchase order — Completed, invoice partially paid (CelestialElex)",
+    log: "purchase order — To Receive, invoice partially paid (CelestialElex)",
     supplier: "CelestialElex",
     purchaseOrderType: "Purchase",
-    status: "Completed",
+    status: "To Receive",
     orderDateOffset: -55,
     lines: [
       { item: "PCB-BARE-REV3", purchaseQuantity: 40, supplierUnitPrice: 82 }
@@ -522,7 +522,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     assignee: "self",
     supplier: "AstroMill Machining",
     purchaseOrderType: "Outside Processing",
-    status: "To Receive",
+    status: "To Receive and Invoice",
     orderDateOffset: -9,
     lines: [
       { item: "BUS-STR-001", purchaseQuantity: 2, supplierUnitPrice: 240 }
@@ -535,7 +535,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ref: "po:eur",
     supplier: "Rheinland Precision Bearings GmbH",
     purchaseOrderType: "Purchase",
-    status: "To Invoice",
+    status: "To Receive and Invoice",
     orderDateOffset: -18,
     currencyCode: "EUR",
     exchangeRate: 0.92,

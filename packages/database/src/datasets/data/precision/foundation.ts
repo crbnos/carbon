@@ -56,7 +56,11 @@ export const PROCESSES = [
   { name: "Mechanical Assembly", factor: "Hours/Piece", type: "Assembly" },
   // A job shop sends work out mid-routing — anodize, heat treat, passivation —
   // so outside processing is a routing step here, not an afterthought.
-  { name: "Outside Processing", factor: "Total Hours", type: "Process" },
+  {
+    name: "Outside Processing",
+    factor: "Total Hours",
+    type: "Outside Processing"
+  },
   { name: "Final Inspection", factor: "Hours/Piece", type: "Inspection" }
 ];
 

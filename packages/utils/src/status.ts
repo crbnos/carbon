@@ -60,43 +60,7 @@ export const getSalesOrderStatus = (
   return { status, allInvoiced, allShipped };
 };
 
-type PurchaseOrderLine = Pick<
-  Database["public"]["Tables"]["purchaseOrderLine"]["Row"],
-  "purchaseOrderLineType" | "receivedComplete" | "invoicedComplete"
->;
-
-export const getPurchaseOrderStatus = (
-  lines: Array<{
-    purchaseOrderLineType: PurchaseOrderLine["purchaseOrderLineType"] | null;
-    invoicedComplete: PurchaseOrderLine["invoicedComplete"] | null;
-    receivedComplete: PurchaseOrderLine["receivedComplete"] | null;
-  }>
-) => {
-  const allInvoices = lines.every(
-    (line) => line.purchaseOrderLineType === "Comment" || line.invoicedComplete
-  );
-
-  const allLinesReceived = lines.every(
-    (line) =>
-      line.purchaseOrderLineType === "Comment" ||
-      line.purchaseOrderLineType === "G/L Account" ||
-      // Services are never received — they can't block receipt completeness
-      line.purchaseOrderLineType === "Service" ||
-      line.receivedComplete
-  );
-
-  let status: Database["public"]["Tables"]["purchaseOrder"]["Row"]["status"] =
-    "To Receive and Invoice";
-  if (allInvoices && allLinesReceived) {
-    status = "Completed";
-  } else if (allInvoices) {
-    status = "To Receive";
-  } else if (allLinesReceived) {
-    status = "To Invoice";
-  }
-
-  return { status, allInvoices, allLinesReceived };
-};
+export { getPurchaseOrderStatus } from "@carbon/database/purchase-order-status";
 
 const isReturnLineSettled = (line: {
   quantity: number | string | null;

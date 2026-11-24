@@ -51,7 +51,11 @@ export const PROCESSES = [
   { name: "Robot Integration", factor: "Hours/Piece", type: "Assembly" },
   { name: "Burn-In Test", factor: "Total Hours", type: "Inspection" },
   { name: "Final Inspection", factor: "Hours/Piece", type: "Inspection" },
-  { name: "Outside Processing", factor: "Total Hours", type: "Process" }
+  {
+    name: "Outside Processing",
+    factor: "Total Hours",
+    type: "Outside Processing"
+  }
 ];
 
 export const WORK_CENTERS = [
