@@ -7983,10 +7983,18 @@ export async function postProjectIssue(
       cost: round(bookedRows.reduce((sum, row) => sum + row.cost, 0))
     };
     // A unit with no cost would charge the project nothing: the item needs a
-    // cost first. The throw rolls the whole issue back.
+    // cost first. The throw rolls the whole issue back. FIFO / LIFO cost the
+    // issue from the stock's own layers, so a Unit Cost set after stock came
+    // in at 0 does not reach it.
     if (isIssue && booked.cost <= 0) {
+      const { costingMethod, unitCost } = itemCostResult.data;
+      const stockAtZero =
+        (costingMethod === "FIFO" || costingMethod === "LIFO") &&
+        Number(unitCost ?? 0) > 0;
       throw new InvalidInputError(
-        `${itemLabel} has no cost. Set its unit cost before you issue it.`
+        stockAtZero
+          ? `${itemLabel} has no cost: its stock on hand came in at no cost and keeps that cost, even with a Unit Cost set.`
+          : `${itemLabel} has no cost. Set Unit Cost on the item's Accounting tab (Costing & Posting), then issue it.`
       );
     }
 

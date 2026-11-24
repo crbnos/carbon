@@ -102,7 +102,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
           <Submit isDisabled={!permissions.can("update", "parts")}>
             <Trans>Save</Trans>
           </Submit>
-          {replenishmentSystem === "Make" && (
+          {replenishmentSystem !== "Buy" && (
             <Button variant="secondary" onClick={recalculateModal.onOpen}>
               <Trans>Recalculate</Trans>
             </Button>
