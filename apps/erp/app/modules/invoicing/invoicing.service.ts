@@ -285,6 +285,7 @@ import {
   loadTaxCodes,
   loadTaxCodesInForce,
   lockContractPositions,
+  lockPostable,
   negateDocumentTaxLedger,
   PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   partyDimensionValues,
@@ -11341,13 +11342,16 @@ export async function postSalesInvoice(
           // Locked before the journal is read, as a line account change locks
           // it before it adds lines: those are reversed with the rest, never
           // left on a voided invoice.
-          await trx
+          const locked = await trx
             .selectFrom("salesInvoice")
-            .select("id")
+            .select("status")
             .where("id", "=", invoiceId)
             .where("companyId", "=", companyId)
             .forUpdate()
-            .execute();
+            .executeTakeFirst();
+          if (locked?.status === "Voided") {
+            throw new InvalidInputError("Sales invoice is already voided");
+          }
           const journalEntries = await documentJournalLines(trx, companyId, {
             documentId: invoiceId,
             documentType: "Invoice"
@@ -18108,13 +18112,16 @@ export async function postPurchaseInvoice(
         // Locked before the journal is read, as a line account change locks
         // it before it adds lines: those are reversed with the rest, never
         // left on a voided invoice.
-        await trx
+        const locked = await trx
           .selectFrom("purchaseInvoice")
-          .select("id")
+          .select("status")
           .where("id", "=", invoiceId)
           .where("companyId", "=", companyId)
           .forUpdate()
-          .execute();
+          .executeTakeFirst();
+        if (locked?.status === "Voided") {
+          throw new InvalidInputError("Purchase invoice is already voided");
+        }
         const originalJournalLines = await documentJournalLines(
           trx,
           companyId,
@@ -19427,6 +19434,7 @@ export async function postPurchaseInvoice(
       .filter((id): id is string => Boolean(id));
 
     await db.transaction().execute(async (trx) => {
+      await lockPostable(trx, "purchaseInvoice", invoiceId, companyId);
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
       // The gate above ran before this transaction. Lock the invoice's orders
@@ -19996,13 +20004,15 @@ export async function postPurchaseInvoice(
       receiptIds: createdReceiptIds
     };
   } catch (err) {
-    // A failed VOID leaves the invoice Posted: its rows still stand.
+    // A failed VOID leaves the invoice Posted: its rows still stand. Only
+    // from Pending: a second post refused because the first one won must
+    // leave it Open.
     if (type !== "void") {
       await updateRows(
         db,
         "purchaseInvoice",
         { status: "Draft" },
-        { id: invoiceId, companyId }
+        { id: invoiceId, companyId, status: "Pending" }
       );
     }
     throw err;
