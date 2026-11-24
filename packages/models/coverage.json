@@ -146,8 +146,8 @@
       "apps/erp/app/modules/invoicing/invoicing.service.ts#restorePurchaseOrderInvoiced": "cb953901309324d6",
       "apps/erp/app/modules/purchasing/purchasing.service.ts#restorePurchaseOrderReceived": "5dab48f98aa953d5",
       "apps/erp/app/modules/purchasing/purchasing.service.ts#shortClosePurchaseOrderLine": "3be8868893196d68",
-      "apps/erp/app/modules/sales/sales.service.ts#createSalesReturnOrderCredit": "e5d583519a0d4a7c"
+      "apps/erp/app/modules/sales/sales.service.ts#createSalesReturnOrderCredit": "563faaae8e8db8f3"
     },
-    "confirmedAt": "ff4342721c"
+    "confirmedAt": "30b7e9f1e5"
   }
 }
