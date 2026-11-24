@@ -32490,7 +32490,6 @@ export async function issueMaterial(
         quantity,
         materialId,
         jobOperationStepId,
-        stepRecord,
         adjustmentType,
         refuseOverIssue
       } = validatedPayload;
@@ -32510,18 +32509,6 @@ export async function issueMaterial(
       await db.transaction().execute(async (trx) => {
         // Provisional before the company's accounting cutover, Posted after it.
         const postingStatus = await journalPostingStatus(trx, companyId);
-        if (stepRecord) {
-          // The final MES completion and ERP receipt also take the job first.
-          await trx
-            .selectFrom("jobOperation as op")
-            .innerJoin("job", "job.id", "op.jobId")
-            .select("job.id")
-            .where("op.id", "=", id)
-            .where("op.companyId", "=", companyId)
-            .where("job.companyId", "=", companyId)
-            .forUpdate("job")
-            .executeTakeFirstOrThrow();
-        }
         // The issue modal lists every material of the job, so the material
         // may belong to another operation.
         const materialOwner = materialId
@@ -32558,12 +32545,6 @@ export async function issueMaterial(
           (operation) => operation.id === id
         );
         if (!jobOperation) throw new NotFoundError("Job operation not found");
-        if (stepRecord) {
-          await sql`SELECT util.lock_step_record_unit(${companyId}, ${stepRecord.jobOperationStepId},
-            ${stepRecord.index}, ${id}, ${stepRecord.trackedEntityId ?? null})`.execute(
-            trx
-          );
-        }
         if (materialOwner && materialOwner.jobId !== jobOperation.jobId) {
           throw new InvalidInputError(
             "The material is not on this operation's job"

@@ -77,7 +77,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     (record) =>
       backflushUntrackedMaterialsOnStepRecord(serviceRole, {
         jobOperationStepId: record.jobOperationStepId,
-        index: 0,
         companyId,
         userId
       }),
