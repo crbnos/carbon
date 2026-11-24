@@ -5,6 +5,7 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { getAccountMappings } from "../../../core/account-mapping";
+import type { RemoteCreateKey } from "../../../core/create-key";
 import {
   buildDimensionValueMappingEntityId,
   buildDimensionValueMappingLookup,
@@ -128,6 +129,26 @@ export function getXeroJournalNarrations(
   return original
     ? [base, `${base}${XERO_REDATED_NARRATION}${original}`]
     : [base];
+}
+
+/**
+ * Create the journal in Xero once. Its Narration names it, so an attempt whose
+ * create reached Xero but whose link never did finds that journal here and
+ * returns it; Xero's six-minute `Idempotency-Key` covers only a quick retry.
+ */
+export async function createManualJournalOnce(
+  provider: XeroProvider,
+  data: Omit<Xero.ManualJournal, "UpdatedDateUTC">,
+  key: RemoteCreateKey
+): Promise<string> {
+  const recovered = await provider.recoverManualJournal(
+    getXeroJournalNarrations(data.Narration, data.Date)
+  );
+  if (recovered) return recovered.ManualJournalID;
+
+  const { ManualJournalID: _unmapped, ...journal } = data;
+  const created = await provider.createManualJournal(journal, key);
+  return created.ManualJournalID;
 }
 
 export function mapJournalEntryToManualJournal(args: {
@@ -710,19 +731,11 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
     data: Omit<Xero.ManualJournal, "UpdatedDateUTC">,
     localId: string
   ): Promise<string> {
-    // The journal's Narration names it, so an attempt whose create reached
-    // Xero but whose link never did finds that journal here.
-    const recovered = await this.xeroProvider.recoverManualJournal(
-      getXeroJournalNarrations(data.Narration, data.Date)
-    );
-    if (recovered) return recovered.ManualJournalID;
-
-    const { ManualJournalID: _unmapped, ...journal } = data;
-    const created = await this.xeroProvider.createManualJournal(
-      journal,
+    return createManualJournalOnce(
+      this.xeroProvider,
+      data,
       this.createKey(localId)
     );
-    return created.ManualJournalID;
   }
 
   protected async upsertRemoteBatch(

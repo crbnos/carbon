@@ -91,13 +91,15 @@
       ],
       "packages/ee/src/accounting/providers/xero/entities/journal-entry.ts": [
         "getXeroJournalNarrations",
-        "this.xeroProvider.recoverManualJournal("
+        "createManualJournalOnce"
       ],
       "packages/ee/src/accounting/providers/xero/entities/invoice.ts": [
-        "this.xeroProvider.recoverInvoice({"
+        "this.xeroProvider.recoverInvoice({",
+        "if (recovered) return recovered;"
       ],
       "packages/ee/src/accounting/providers/xero/entities/bill.ts": [
-        "this.xeroProvider.recoverInvoice({"
+        "this.xeroProvider.recoverInvoice({",
+        "if (recovered) return recovered;"
       ],
       "packages/ee/src/accounting/providers/xero/entities/payment.ts": [
         "this.xeroProvider.recoverPayment("
