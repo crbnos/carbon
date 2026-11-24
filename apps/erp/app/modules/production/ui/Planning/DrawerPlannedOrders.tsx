@@ -80,7 +80,10 @@ function useDrawerPlannedOrders(args: {
 }) {
   const { url, refreshKey } = args;
   const query = useLoaderQuery<typeof plannedOrdersLoader>(url, {
-    staleTime: RefreshRate.High
+    staleTime: RefreshRate.High,
+    // the drawer remounts per item, so this only keeps the list on screen
+    // while a closed drawer slides out
+    keepPreviousData: true
   });
   const { refetch } = query;
   const lastRefreshKey = useRef(refreshKey);

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { useRevalidator } from "@carbon/query";
+import { RefreshRate, useLoaderQuery, useRevalidator } from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -74,6 +74,7 @@ import {
 import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
+import type { loader as openLinesLoader } from "~/routes/api+/purchasing.planning-open-lines";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { path } from "~/utils/path";
 import type {
@@ -98,6 +99,22 @@ type OpenPurchaseOrder = PlannedOrder & {
   receivedOffset: number;
   loadedQuantity: number;
 };
+
+/**
+ * The item's open PO lines at the location, read through
+ * `api+/purchasing.planning-open-lines`. Every change that moves them here
+ * (an Apply, an order placed, a PO reopened or finalized) posts through a
+ * router fetcher, and the root invalidation middleware marks the read stale.
+ * A line edited in the drawer posts with a plain fetch and refetches itself.
+ */
+function useDrawerOpenPurchaseOrderLines(url: string | null) {
+  return useLoaderQuery<typeof openLinesLoader>(url, {
+    staleTime: RefreshRate.High,
+    // the drawer remounts per item, so this only keeps the list on screen
+    // while a closed drawer slides out
+    keepPreviousData: true
+  });
+}
 
 type PurchasingPlanningOrderDrawerProps = {
   /**
@@ -125,9 +142,6 @@ type PurchasingPlanningOrderDrawerProps = {
   actions: PlanningAction[];
   /** Apply / dismiss / reopen / assign, owned by the grid (one fetcher). */
   actionHandlers: PlanningActionHandlers;
-  /** Bumped when a purchase order was reopened or finalized from the page:
-   *  the open orders are re-read, since no action of theirs changed. */
-  ordersVersion?: number;
   periods: { id: string; startDate: string; endDate: string }[];
   selectedItem: PurchasingPlanningItem;
   selectedSupplier: string;
@@ -159,7 +173,6 @@ export const PurchasingPlanningOrderDrawer = memo(
     onTimeFenceChange,
     actions,
     actionHandlers,
-    ordersVersion = 0,
     setOrders,
     onSuggestionsStale,
     draftVersion = 0,
@@ -187,18 +200,6 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     const [activeTab, setActiveTab] = useState("ordering");
 
-    // ── Open orders: the item's existing PO lines ───────────────────────────
-    // Held here, not in the grid's draft list: a cell edit on one of these is
-    // SAVED (onSaveOpenOrder), where a suggested order is a draft until Order
-    // is pressed. `null` while loading, an Error when the read failed.
-    const [openOrders, setOpenOrders] = useState<
-      OpenPurchaseOrder[] | null | Error
-    >(null);
-
-    // Re-read when the item's actions change: applying one rewrites its line.
-    const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
-    // ...and after an order that left the drawer open placed new lines.
-    const [openLinesVersion, setOpenLinesVersion] = useState(0);
     // Bumped when the rows are re-read, to close any cell editor left open.
     const [suggestionsVersion, setSuggestionsVersion] = useState(0);
     const submittedOrders = useRef<PlannedOrder[]>([]);
@@ -214,108 +215,85 @@ export const PurchasingPlanningOrderDrawer = memo(
       [onPlannedOrdersLoaded, selectedItem]
     );
 
-    // Only while open: the drawer stays mounted on its last item so it can
-    // slide out, and that item's actions change with every Apply on the grid.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: actionsKey stands in for `actions`; periods are fixed for the page
-    useEffect(() => {
-      if (!isOpen || !carbon || !selectedItem.id) return;
-      let isCurrent = true;
+    // ── Open orders: the item's existing PO lines ───────────────────────────
+    // Not in the grid's draft list: a cell edit on one of these is SAVED
+    // (onSaveOpenOrder), where a suggested order is a draft until Order is
+    // pressed. Only while open: the drawer stays mounted on its last item so
+    // it can slide out.
+    const openLinesQuery = useDrawerOpenPurchaseOrderLines(
+      isOpen && selectedItem.id
+        ? path.to.api.planningOpenPurchaseLines({
+            itemId: selectedItem.id,
+            locationId
+          })
+        : null
+    );
 
-      (async () => {
-        const lines = await carbon
-          .from("openPurchaseOrderLines")
-          .select("*")
-          .eq("itemId", selectedItem.id)
-          // this page's location only: the rows are editable and charted here
-          .eq("locationId", locationId)
-          .in("status", [
-            "To Review",
-            "Needs Approval",
-            "Planned",
-            "To Receive",
-            "To Receive and Invoice",
-            "To Invoice"
-          ]);
-        if (!isCurrent) return;
-        if (lines.error) {
-          setOpenOrders(new Error(lines.error.message));
-          return;
-        }
+    // A cell's saved edit, shown until the read that follows it lands. Kept
+    // against the answer it edited, so a newer answer replaces it.
+    const [openOrderEdits, setOpenOrderEdits] = useState<{
+      of: unknown;
+      byId: Map<string, { quantity: number; dueDate: string | null }>;
+    } | null>(null);
 
-        // The view reports the quantity in INVENTORY units; the cell edits the
-        // line's own purchase quantity, so read that and its factor too.
-        const lineIds = (lines.data ?? []).flatMap((line) =>
-          line.id ? [line.id] : []
-        );
-        const details =
-          lineIds.length > 0
-            ? await carbon
-                .from("purchaseOrderLine")
-                .select(
-                  "id, purchaseQuantity, quantityToReceive, quantityReceived, conversionFactor"
-                )
-                .in("id", lineIds)
-            : { data: [], error: null };
-        if (!isCurrent) return;
-        if (details.error) {
-          setOpenOrders(new Error(details.error.message));
-          return;
-        }
-        const detailById = new Map(
-          (details.data ?? []).map((detail) => [detail.id, detail])
-        );
+    // `null` while loading, an Error when the read failed.
+    const openOrders = useMemo<OpenPurchaseOrder[] | null | Error>(() => {
+      if (openLinesQuery.error) {
+        return openLinesQuery.error instanceof Error
+          ? openLinesQuery.error
+          : new Error(String(openLinesQuery.error));
+      }
+      const answer = openLinesQuery.data;
+      if (!answer) return null;
+      const editById =
+        openOrderEdits?.of === answer ? openOrderEdits.byId : null;
+      const detailById = new Map(
+        answer.details.map((detail) => [detail.id, detail])
+      );
 
-        setOpenOrders(
-          (lines.data ?? [])
-            .flatMap((line): OpenPurchaseOrder[] => {
-              if (!line.id) return [];
-              const detail = detailById.get(line.id);
-              const isLocked = isPurchaseOrderLocked(line.status);
-              // purchase units: what is still to come on a sent line, the
-              // ordered quantity on one that can still be changed
-              const quantity = Number(
-                (isLocked
-                  ? detail?.quantityToReceive
-                  : detail?.purchaseQuantity) ?? 0
-              );
-              return [
-                {
-                  existingId: line.purchaseOrderId ?? undefined,
-                  existingLineId: line.id,
-                  existingReadableId: line.purchaseOrderReadableId ?? undefined,
-                  // inventory units, as the chart's supply rows are
-                  existingQuantity:
-                    line.status === "Draft" ? 0 : (line.quantityToReceive ?? 0),
-                  existingStatus: line.status ?? undefined,
-                  startDate: line.orderDate ?? null,
-                  dueDate: line.dueDate ?? null,
-                  quantity,
-                  loadedQuantity: quantity,
-                  receivedOffset: isLocked
-                    ? 0
-                    : Number(detail?.quantityReceived ?? 0),
-                  periodId: periodIdFor(periods, line.dueDate),
-                  supplierId: line.supplierId ?? undefined,
-                  conversionFactor: Number(detail?.conversionFactor ?? 1) || 1
-                }
-              ];
-            })
-            .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
-        );
-      })();
-
-      return () => {
-        isCurrent = false;
-      };
-    }, [
-      isOpen,
-      carbon,
-      selectedItem.id,
-      locationId,
-      actionsKey,
-      ordersVersion,
-      openLinesVersion
-    ]);
+      return (
+        answer.lines
+          .flatMap((line): OpenPurchaseOrder[] => {
+            if (!line.id) return [];
+            const detail = detailById.get(line.id);
+            const isLocked = isPurchaseOrderLocked(line.status);
+            // purchase units: what is still to come on a sent line, the
+            // ordered quantity on one that can still be changed
+            const quantity = Number(
+              (isLocked
+                ? detail?.quantityToReceive
+                : detail?.purchaseQuantity) ?? 0
+            );
+            return [
+              {
+                existingId: line.purchaseOrderId ?? undefined,
+                existingLineId: line.id,
+                existingReadableId: line.purchaseOrderReadableId ?? undefined,
+                // inventory units, as the chart's supply rows are
+                existingQuantity:
+                  line.status === "Draft" ? 0 : (line.quantityToReceive ?? 0),
+                existingStatus: line.status ?? undefined,
+                startDate: line.orderDate ?? null,
+                dueDate: line.dueDate ?? null,
+                quantity,
+                loadedQuantity: quantity,
+                receivedOffset: isLocked
+                  ? 0
+                  : Number(detail?.quantityReceived ?? 0),
+                periodId: periodIdFor(periods, line.dueDate),
+                supplierId: line.supplierId ?? undefined,
+                conversionFactor: Number(detail?.conversionFactor ?? 1) || 1
+              }
+            ];
+          })
+          .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
+          // an edit stays on its row: it moves on the read that follows it
+          .map((order) => {
+            const edit = editById?.get(order.existingLineId);
+            return edit ? { ...order, ...edit } : order;
+          })
+      );
+    }, [openLinesQuery.data, openLinesQuery.error, openOrderEdits, periods]);
 
     // An action on a planned order sits on its row in the Planned Orders grid.
     const lineActions = useMemo(
@@ -388,22 +366,27 @@ export const PurchasingPlanningOrderDrawer = memo(
       return rows;
     }, [openOrders, lineActions]);
 
-    const onOpenOrdersChange = useCallback((rows: OpenOrderRow[]) => {
-      setOpenOrders((previous) =>
-        Array.isArray(previous)
-          ? previous.map((order) => {
-              const row = rows.find((r) => r.id === order.existingLineId);
-              return row && row.quantity !== null
-                ? { ...order, quantity: row.quantity, dueDate: row.dueDate }
-                : order;
-            })
-          : previous
-      );
-    }, []);
+    const openLinesAnswer = openLinesQuery.data;
+    const onOpenOrdersChange = useCallback(
+      (rows: OpenOrderRow[]) => {
+        if (!openLinesAnswer) return;
+        const byId = new Map<
+          string,
+          { quantity: number; dueDate: string | null }
+        >();
+        for (const row of rows) {
+          if (row.quantity === null) continue;
+          byId.set(row.id, { quantity: row.quantity, dueDate: row.dueDate });
+        }
+        setOpenOrderEdits({ of: openLinesAnswer, byId });
+      },
+      [openLinesAnswer]
+    );
 
     // One cell, one field, one request. The route re-reads the line under the
     // company and refuses a PO that has been sent, so a stale row here cannot
     // edit a committed order.
+    const { refetch: refetchOpenLines } = openLinesQuery;
     const onSaveOpenOrder = useCallback(
       async (
         row: OpenOrderRow,
@@ -425,9 +408,10 @@ export const PurchasingPlanningOrderDrawer = memo(
             message?: string;
           } | null;
           if (response.ok && result?.success) {
-            // A plain fetch bypasses the router: refresh the grid row behind
-            // the drawer, which otherwise shows the old value until the next
-            // navigation.
+            // A plain fetch bypasses the router's invalidation: read the open
+            // lines again, and refresh the grid row behind the drawer, which
+            // otherwise shows the old value until the next navigation.
+            void refetchOpenLines();
             void revalidate();
             return true;
           }
@@ -441,7 +425,7 @@ export const PurchasingPlanningOrderDrawer = memo(
           return false;
         }
       },
-      [locationId, revalidate, t]
+      [locationId, refetchOpenLines, revalidate, t]
     );
 
     const renderOpenOrderStatus = useCallback(
@@ -678,10 +662,8 @@ export const PurchasingPlanningOrderDrawer = memo(
           );
         }
 
-        if (refused.length > 0 || errors.length > 0) {
-          setOpenLinesVersion((version) => version + 1);
-          return;
-        }
+        // the router's invalidation reads the open lines again
+        if (refused.length > 0 || errors.length > 0) return;
         onClose();
       }
     }, [fetcher.state, fetcher.data]);
@@ -940,7 +922,6 @@ export const PurchasingPlanningOrderDrawer = memo(
                       todayIso={locationToday}
                       actions={actions}
                       actionHandlers={actionHandlers}
-                      refreshKey={openLinesVersion}
                       onOrdersLoaded={onPlannedOrdersRead}
                       onReplanned={reseedSuggestions}
                     />

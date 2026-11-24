@@ -17,6 +17,8 @@ paths:
   - "apps/erp/app/routes/x+/{production,purchasing}+/planning*.tsx"
   - "apps/erp/app/routes/x+/settings+/planning.tsx"
   - "apps/erp/app/routes/api+/production.planned-orders.ts"
+  - "apps/erp/app/routes/api+/production.planning-open-jobs.ts"
+  - "apps/erp/app/routes/api+/purchasing.planning-open-lines.ts"
   - "apps/erp/app/modules/production/production.service.ts"
   - "apps/erp/app/modules/production/production.server.ts"
   - "apps/erp/app/modules/purchasing/purchasing.service.ts"
@@ -1262,8 +1264,14 @@ never offered a Cancel, Defer or Expedite.
     created ASAP, while a date the planner types clears it). The drawers pass `resetKey`, bumped when the rows are re-seeded, so
     a cell editor left open cannot show one row's value on another.
   - **Open Orders / Open Jobs** (`OpenOrdersGrid`) — existing PO lines / jobs
-    at the page's location (both drawer reads filter on `locationId`, and
-    `updateLine` / `updateJob` refuse another location's record with 409).
+    at the page's location. Each drawer reads them with `useLoaderQuery` from
+    an `api+` route (`api+/purchasing.planning-open-lines.ts`, which also
+    reads each line's purchase quantity and factor; `api+/production.planning-open-jobs.ts`),
+    as the caller, filtered on `locationId`; the drawer maps the rows to its
+    weeks. A router action (Apply, an order placed, a PO reopened or
+    finalized, Recalculate) marks the reads stale; the production drawer's
+    `openJobsVersion` refetches after its plain-`fetch` Plan and Release.
+    `updateLine` / `updateJob` refuse another location's record with 409.
     A cell edit SAVES that one field (optimistic, reverted with a toast on
     failure) through `planning.update`'s `updateLine` / `updateJob` action,
     which re-reads the record under the company and refuses a committed record

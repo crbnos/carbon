@@ -338,6 +338,13 @@ export const path = {
         locationId: string;
         orderType: "Make" | "Buy";
       }) => `${api}/production/planned-orders?${new URLSearchParams(args)}`,
+      planningOpenJobs: (args: { itemId: string; locationId: string }) =>
+        `${api}/production/planning-open-jobs?${new URLSearchParams(args)}`,
+      planningOpenPurchaseLines: (args: {
+        itemId: string;
+        locationId: string;
+      }) =>
+        `${api}/purchasing/planning-open-lines?${new URLSearchParams(args)}`,
       procedures: `${api}/production/procedures`,
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>

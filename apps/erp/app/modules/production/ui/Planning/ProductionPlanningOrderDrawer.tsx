@@ -2,8 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCarbon } from "@carbon/auth";
-import { useAction, useRevalidator } from "@carbon/query";
+import {
+  RefreshRate,
+  useAction,
+  useLoaderQuery,
+  useRevalidator
+} from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -52,6 +56,7 @@ import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-ord
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
+import type { loader as openJobsLoader } from "~/routes/api+/production.planning-open-jobs";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
@@ -64,6 +69,31 @@ type OpenProductionOrder = ProductionOrder & {
   existingId: string;
   loadedQuantity: number;
 };
+
+/**
+ * The item's open make-to-stock jobs at the location, read through
+ * `api+/production.planning-open-jobs`. Any action through the router marks
+ * the read stale (the root invalidation middleware), so it follows an Apply
+ * and an order placed. `refreshKey` reads again after a change the router
+ * does not see (Plan and Release are plain fetches).
+ */
+function useDrawerOpenJobs(args: { url: string | null; refreshKey: number }) {
+  const { url, refreshKey } = args;
+  const query = useLoaderQuery<typeof openJobsLoader>(url, {
+    staleTime: RefreshRate.High,
+    // the drawer remounts per item, so this only keeps the list on screen
+    // while a closed drawer slides out
+    keepPreviousData: true
+  });
+  const { refetch } = query;
+  const lastRefreshKey = useRef(refreshKey);
+  useEffect(() => {
+    if (refreshKey === lastRefreshKey.current) return;
+    lastRefreshKey.current = refreshKey;
+    if (url) void refetch();
+  }, [refreshKey, url, refetch]);
+  return query;
+}
 
 type ProductionPlanningOrderDrawerProps = {
   /**
@@ -186,7 +216,6 @@ export const ProductionPlanningOrderDrawer = memo(
     const fenceLabel = timeFenceDate
       ? formatDate(timeFenceDate, undefined, locale)
       : null;
-    const { carbon } = useCarbon();
 
     // ── Open jobs: the item's existing make-to-stock jobs ───────────────────
     // Held here, not in the grid's draft list: a cell edit on one of these is
@@ -195,65 +224,56 @@ export const ProductionPlanningOrderDrawer = memo(
     //
     // Released jobs (Ready / In Progress / Paused) are listed too, read-only:
     // MRP raises actions on them, and an action needs its job's row to sit on.
-    const [openJobs, setOpenJobs] = useState<
-      OpenProductionOrder[] | null | Error
-    >(null);
-
-    // Re-read when the item's actions change: applying one rewrites its job.
-    const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
-    // ...and after a Draft job is planned here, which changes its status.
+    //
+    // Bumped after a Draft job is planned or released here, or an order is
+    // placed, to read the list again.
     const [openJobsVersion, setOpenJobsVersion] = useState(0);
 
     // Only while open: the drawer stays mounted on its last item so it can
-    // slide out, and that item's actions change with every Apply on the grid.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: actionsKey stands in for `actions`; periods are fixed for the page
-    useEffect(() => {
-      if (!isOpen || !carbon || !row.id) return;
-      let isCurrent = true;
+    // slide out.
+    const openJobsQuery = useDrawerOpenJobs({
+      url:
+        isOpen && row.id
+          ? path.to.api.planningOpenJobs({ itemId: row.id, locationId })
+          : null,
+      refreshKey: openJobsVersion
+    });
 
-      (async () => {
-        const jobs = await carbon
-          .from("job")
-          .select(
-            "id, jobId, status, quantity, startDate, dueDate, deadlineType"
-          )
-          .eq("itemId", row.id)
-          // this page's location only: the rows are editable and charted here
-          .eq("locationId", locationId)
-          .is("salesOrderId", null)
-          .is("salesOrderLineId", null)
-          .in("status", ["Draft", "Planned", "Ready", "In Progress", "Paused"]);
-        if (!isCurrent) return;
-        if (jobs.error) {
-          setOpenJobs(new Error(jobs.error.message));
-          return;
-        }
+    // A cell's saved edit, shown until the read that follows it lands. Kept
+    // against the answer it edited, so a newer answer replaces it.
+    const [openJobEdits, setOpenJobEdits] = useState<{
+      of: unknown;
+      byId: Map<string, { quantity: number; dueDate: string | null }>;
+    } | null>(null);
 
-        setOpenJobs(
-          (jobs.data ?? [])
-            .map(
-              (job): OpenProductionOrder => ({
-                existingId: job.id,
-                existingReadableId: job.jobId,
-                // a Draft job is not supply yet, so all of it is new to the chart
-                existingQuantity: job.status === "Draft" ? 0 : job.quantity,
-                existingStatus: job.status,
-                startDate: job.startDate ?? null,
-                dueDate: job.dueDate ?? null,
-                quantity: job.quantity,
-                loadedQuantity: job.quantity,
-                isASAP: job.deadlineType === "ASAP",
-                periodId: periodIdFor(periods, job.dueDate)
-              })
-            )
-            .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
-        );
-      })();
-
-      return () => {
-        isCurrent = false;
-      };
-    }, [isOpen, carbon, row.id, locationId, actionsKey, openJobsVersion]);
+    const openJobs = useMemo<OpenProductionOrder[] | null | Error>(() => {
+      if (openJobsQuery.error) {
+        return openJobsQuery.error instanceof Error
+          ? openJobsQuery.error
+          : new Error(String(openJobsQuery.error));
+      }
+      if (!openJobsQuery.data) return null;
+      const byId =
+        openJobEdits?.of === openJobsQuery.data ? openJobEdits.byId : null;
+      return openJobsQuery.data.jobs
+        .map((job): OpenProductionOrder => {
+          const edit = byId?.get(job.id);
+          return {
+            existingId: job.id,
+            existingReadableId: job.jobId,
+            // a Draft job is not supply yet, so all of it is new to the chart
+            existingQuantity: job.status === "Draft" ? 0 : job.quantity,
+            existingStatus: job.status,
+            startDate: job.startDate ?? null,
+            dueDate: edit ? edit.dueDate : (job.dueDate ?? null),
+            quantity: edit ? edit.quantity : job.quantity,
+            loadedQuantity: job.quantity,
+            isASAP: job.deadlineType === "ASAP",
+            periodId: periodIdFor(periods, job.dueDate)
+          };
+        })
+        .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
+    }, [openJobsQuery.data, openJobsQuery.error, openJobEdits, periods]);
 
     const onPlannedOrdersRead = useCallback(
       (plannedOrders: DrawerPlannedOrder[]) =>
@@ -309,22 +329,25 @@ export const ProductionPlanningOrderDrawer = memo(
       return rows;
     }, [openJobs, jobActions]);
 
-    const onOpenJobsChange = useCallback((rows: OpenOrderRow[]) => {
-      setOpenJobs((previous) =>
-        Array.isArray(previous)
-          ? previous.map((job) => {
-              const updated = rows.find((r) => r.id === job.existingId);
-              return updated && updated.quantity !== null
-                ? {
-                    ...job,
-                    quantity: updated.quantity,
-                    dueDate: updated.dueDate
-                  }
-                : job;
-            })
-          : previous
-      );
-    }, []);
+    const openJobsData = openJobsQuery.data;
+    const onOpenJobsChange = useCallback(
+      (rows: OpenOrderRow[]) => {
+        if (!openJobsData) return;
+        const byId = new Map<
+          string,
+          { quantity: number; dueDate: string | null }
+        >();
+        for (const updated of rows) {
+          if (updated.quantity === null) continue;
+          byId.set(updated.id, {
+            quantity: updated.quantity,
+            dueDate: updated.dueDate
+          });
+        }
+        setOpenJobEdits({ of: openJobsData, byId });
+      },
+      [openJobsData]
+    );
 
     // One cell, one field, one request. The route re-reads the job under the
     // company and refuses one that has been released, so a stale row here

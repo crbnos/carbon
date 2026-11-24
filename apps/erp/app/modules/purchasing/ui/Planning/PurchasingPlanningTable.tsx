@@ -248,8 +248,7 @@ const PlanningTable = memo(
     const {
       purchaseOrderMenuItems,
       finalizePurchaseOrder,
-      purchaseOrderDialogs,
-      ordersVersion
+      purchaseOrderDialogs
     } = usePurchaseOrderPlanningCommands();
     // Releasing a planned PO is finalizing it: the Release button opens the
     // same modal as the ⋯ Finalize item.
@@ -1145,7 +1144,6 @@ const PlanningTable = memo(
             onTimeFenceChange={onSelectedFenceChange}
             actions={selectedActions}
             actionHandlers={actionHandlers}
-            ordersVersion={ordersVersion}
             setOrders={setOrders}
             onSuggestionsStale={dropOrders}
             draftVersion={draftVersion}
