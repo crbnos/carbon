@@ -22,7 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # These jobs run the pull request's code, so the token is not left in
-      # .git/config for it to read; nothing here talks to git afterwards.
+      # .git/config for it to read. The one later git call (Guarded code's
+      # fetch of the base branch) reads the public repo, so needs no token.
       - &checkout
         uses: actions/checkout@v7
         with:
@@ -65,6 +66,18 @@ jobs:
         run: |
           pnpm --filter @carbon/config build
           pnpm --filter @carbon/checks exec vitest run src/run.test.ts
+      # A warning, never a failure: when the pull request changes a
+      # race-protected function (packages/checks/guarded-code.json), it names
+      # the database tests that prove its fix. The checkout is one commit
+      # deep, so the base branch is fetched to diff against.
+      - name: Guarded code
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags --depth=200 origin "$BASE_REF"
+          pnpm --filter @carbon/checks guarded-code "origin/$BASE_REF"
       - name: Lingui
         if: ${{ !cancelled() }}
         run: pnpm run lingui:check
