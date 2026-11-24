@@ -22,7 +22,7 @@
 - [x] Task 14: Write the lesson honesty tests
 - [x] Task 15: Write the signal inbox
 - [x] Task 16: Log gate failures and refused edits
-- [ ] Task 17: Write the Stop and UserPromptSubmit hooks
+- [x] Task 17: Write the Stop and UserPromptSubmit hooks
 - [ ] Task 18: Write the `/learn` skill
 - [ ] Task 19: Write the weekly sweep script
 - [ ] Task 20: Wire the skills and the AGENTS.md files
