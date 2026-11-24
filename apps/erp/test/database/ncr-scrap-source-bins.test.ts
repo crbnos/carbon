@@ -319,4 +319,44 @@ describe.skipIf(!hasLocalDatabase)("NCR scrap source bins", () => {
       ]);
     }
   );
+
+  postgrestTest(
+    "books a shortfall at no storage unit, not on stock an open lot holds",
+    async (client) => {
+      // Quarantine holds 4, an open lot holds 2 of them: 2 are free.
+      const itemId = await itemWithStock("lot-short", [
+        { storageUnitId: quarantine, quantity: 4 }
+      ]);
+      await seed(f, (trx) =>
+        trx
+          .insertInto("inspection")
+          .values({
+            inspectionId: `${f.prefix}-INS-LOT-SHORT`,
+            itemId,
+            lotSize: 2,
+            samplingStandard: "ANSI_Z1_4",
+            samplingPlanType: "All",
+            sampleSize: 2,
+            acceptanceNumber: 0,
+            rejectionNumber: 1,
+            sourceDocument: "Receipt",
+            sourceDocumentId: `${f.prefix}-receipt-lot-short`,
+            sourceDocumentLineId: `${f.prefix}-line-lot-short`,
+            storageUnitId: quarantine,
+            status: "Pending",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      const issueId = await issueWith("lot-short", [
+        { itemId, disposition: "Scrap", quantity: 5 }
+      ]);
+      expect((await close(client, issueId)).error).toBeNull();
+      expect(await writeOffs(issueId)).toEqual([
+        { storageUnitId: null, projectId: null, quantity: -3 },
+        { storageUnitId: quarantine, projectId: null, quantity: -2 }
+      ]);
+    }
+  );
 });

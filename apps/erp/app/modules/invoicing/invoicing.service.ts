@@ -8367,6 +8367,8 @@ export function isDirectItemLine(line: SalesInvoiceLine): boolean {
 
 /** An untracked direct invoice line that takes stock out. */
 type DirectStockDraw = {
+  /** The line's ledger row; its bin is set once the bin is chosen. */
+  ledger: Database["public"]["Tables"]["itemLedger"]["Insert"];
   lineId: string;
   itemId: string;
   locationId: string | null;
@@ -8405,11 +8407,14 @@ async function directInvoiceSourceBins(
         .map((draw) => draw.itemId)
     });
   }
+  // A negative line puts stock back: it keeps the bin it names.
+  const outgoing = draws.filter((draw) => draw.quantity > 0);
   const choose = await sharedPostings.shipmentSourceBinChooser(trx, {
     companyId,
-    lines: draws.filter((draw) => !draw.storageUnitId)
+    lines: outgoing.filter((draw) => !draw.storageUnitId),
+    inspectionHolds: "all"
   });
-  for (const draw of draws) bins.set(draw.lineId, choose(draw));
+  for (const draw of outgoing) bins.set(draw.lineId, choose(draw));
   return bins;
 }
 
@@ -9895,8 +9900,8 @@ export async function postSalesInvoice(
           "shipmentId"
         >[] = [];
 
-        // The untracked lines that take stock out, index-parallel to
-        // itemLedgerInserts: their bins are chosen inside the transaction.
+        // The untracked lines that take stock out, each with its ledger row:
+        // their bins are chosen inside the transaction.
         const directStockDraws: DirectStockDraw[] = [];
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
@@ -10543,25 +10548,29 @@ export async function postSalesInvoice(
             items.data.find((item) => item.id === invoiceLine.itemId)
               ?.itemTrackingType ?? "Inventory";
           if (itemTrackingType === "Inventory") {
+            const ledger: Database["public"]["Tables"]["itemLedger"]["Insert"] =
+              {
+                postingDate: today,
+                itemId: invoiceLine.itemId!,
+                quantity: round(-invoiceLine.quantity),
+                locationId: invoiceLine.locationId,
+                storageUnitId: invoiceLine.storageUnitId,
+                entryType: "Negative Adjmt.",
+                documentType: "Sales Shipment",
+                documentId: invoiceHeader.id ?? undefined,
+                externalDocumentId:
+                  invoiceHeader.customerReference ?? undefined,
+                createdBy: userId,
+                companyId
+              };
+            itemLedgerInserts.push(ledger);
             directStockDraws.push({
+              ledger,
               lineId: invoiceLine.id,
               itemId: invoiceLine.itemId!,
               locationId: invoiceLine.locationId,
               storageUnitId: invoiceLine.storageUnitId,
               quantity: invoiceLine.quantity
-            });
-            itemLedgerInserts.push({
-              postingDate: today,
-              itemId: invoiceLine.itemId!,
-              quantity: round(-invoiceLine.quantity),
-              locationId: invoiceLine.locationId,
-              storageUnitId: invoiceLine.storageUnitId,
-              entryType: "Negative Adjmt.",
-              documentType: "Sales Shipment",
-              documentId: invoiceHeader.id ?? undefined,
-              externalDocumentId: invoiceHeader.customerReference ?? undefined,
-              createdBy: userId,
-              companyId
             });
           }
         }
@@ -10622,12 +10631,12 @@ export async function postSalesInvoice(
               line.storageUnitId ?? null
             );
           }
-          itemLedgerInserts.forEach((row, index) => {
-            row.storageUnitId = sourceBinOf(
-              directStockDraws[index]!.lineId,
-              row.storageUnitId ?? null
+          for (const draw of directStockDraws) {
+            draw.ledger.storageUnitId = sourceBinOf(
+              draw.lineId,
+              draw.ledger.storageUnitId ?? null
             );
-          });
+          }
 
           if (shipmentLineInserts.length > 0) {
             const shipmentLinesGroupedByLocationId = shipmentLineInserts.reduce<

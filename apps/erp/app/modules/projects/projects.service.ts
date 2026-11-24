@@ -46,6 +46,7 @@ import type {
 import { fetchAll } from "@carbon/database/fetch-all";
 import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { toJson } from "@carbon/database/json";
+import { planReturnToDrawnBins } from "@carbon/database/picked-consumption";
 import { completedAtForGroup } from "@carbon/database/project-plan";
 import { inOrder, rpcRows, single } from "@carbon/database/rows";
 import { getStrictBackflushSettings } from "@carbon/database/strict-backflush";
@@ -118,8 +119,6 @@ import {
   buildJournalLineDimensions,
   calculateCOGS,
   createAdjustmentJournal,
-  getNettableDefaultStorageUnitId,
-  getUntrackedBinStock,
   invokePosting,
   planUntrackedDraw,
   resolveAccountingPeriod
@@ -7577,40 +7576,12 @@ async function planProjectIssueDraw(
     storageUnitId: null,
     stripes
   });
-  if (args.refuseShort) {
-    // What the planner may draw (read under its lock): nettable bins and no
-    // storage unit, and the item's default bin.
-    const preferred = await getNettableDefaultStorageUnitId(
-      trx,
-      itemId,
-      locationId,
-      companyId
+  if (args.refuseShort && planned.available < round(quantity)) {
+    throw new InvalidInputError(
+      `${args.itemLabel} has ${planned.available} on hand in the storage units it can be taken from, not ${quantity}. Prevent negative stock is on.`
     );
-    const bins =
-      (
-        await getUntrackedBinStock(trx, {
-          companyId,
-          itemIds: [itemId],
-          locationId,
-          stripes
-        })
-      ).get(itemId) ?? [];
-    const onHand = round(
-      bins
-        .filter(
-          (bin) =>
-            bin.nettable ||
-            (bin.storageUnitId !== null && bin.storageUnitId === preferred)
-        )
-        .reduce((sum, bin) => sum + Math.max(0, bin.quantity), 0)
-    );
-    if (onHand < round(quantity)) {
-      throw new InvalidInputError(
-        `${args.itemLabel} has ${onHand} on hand in the storage units it can be taken from, not ${quantity}. Prevent negative stock is on.`
-      );
-    }
   }
-  return planned.map((draw) => ({
+  return planned.draws.map((draw) => ({
     stripe: draw.projectId,
     storageUnitId: draw.storageUnitId,
     quantity: draw.quantity
@@ -7635,41 +7606,30 @@ async function planProjectReturn(
     stripe: string | null;
   }
 ): Promise<ProjectIssueDraw[]> {
-  const { stripe } = args;
-  const issued = (
-    await trx
-      .selectFrom("itemLedger")
-      .select([
-        "storageUnitId",
-        (eb) => eb.fn.sum<number>("quantity").as("balance"),
-        sql<number | null>`max("entryNumber") filter (where "quantity" < 0)`.as(
-          "latestDraw"
-        )
-      ])
-      .where("companyId", "=", args.companyId)
-      .where("documentType", "=", "Project Issue")
-      .where("documentId", "=", args.projectId)
-      .where("itemId", "=", args.itemId)
-      .where("locationId", "=", args.locationId)
-      .where("trackedEntityId", "is not distinct from", args.trackedEntityId)
-      .groupBy("storageUnitId")
-      .execute()
-  ).sort((a, b) => Number(b.latestDraw ?? -1) - Number(a.latestDraw ?? -1));
-  let left = round(args.quantity);
-  const draws: ProjectIssueDraw[] = [];
-  for (const bin of issued) {
-    if (left <= 0) break;
-    const take = round(Math.min(left, Math.max(0, -Number(bin.balance))));
-    if (take <= 0) continue;
-    draws.push({ stripe, storageUnitId: bin.storageUnitId, quantity: take });
-    left = round(left - take);
-  }
-  if (left > 0) {
-    const noBin = draws.find((draw) => draw.storageUnitId === null);
-    if (noBin) noBin.quantity = round(noBin.quantity + left);
-    else draws.push({ stripe, storageUnitId: null, quantity: left });
-  }
-  return draws;
+  const rows = await trx
+    .selectFrom("itemLedger")
+    .select(["storageUnitId", "quantity", "entryNumber"])
+    .where("companyId", "=", args.companyId)
+    .where("documentType", "=", "Project Issue")
+    .where("documentId", "=", args.projectId)
+    .where("itemId", "=", args.itemId)
+    .where("locationId", "=", args.locationId)
+    .where("trackedEntityId", "is not distinct from", args.trackedEntityId)
+    .execute();
+  return planReturnToDrawnBins({
+    rows: rows.map((row) => ({
+      storageUnitId: row.storageUnitId,
+      quantity: Number(row.quantity),
+      order: Number(row.entryNumber)
+    })),
+    quantity: args.quantity,
+    fallback: { storageUnitId: null, projectId: args.stripe },
+    stripe: args.stripe
+  }).map((draw) => ({
+    stripe: draw.projectId,
+    storageUnitId: draw.storageUnitId,
+    quantity: draw.quantity
+  }));
 }
 
 /**

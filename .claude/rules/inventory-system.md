@@ -430,6 +430,18 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   | Sales and Purchase Return Order shipment lines (`createDocument`) | 2, one bin per line | `shipment-create-source-bins.test.ts` |
   | NCR close, untracked Scrap / Return to Supplier not from an inspection (`closeIssue`, `planHeldWriteOffBins`); stock an open lot holds is left alone | 2 | `ncr-scrap-source-bins.test.ts` |
 
+  Every guess on this list reads stock net of what open inspection lots hold in a unit
+  (`getUntrackedBinStock` with `inspectionHolds`: "all", or "openLots" for a supplier
+  return, which may ship a Partial lot's remainder), and a planned shortfall never lands
+  on such a unit (`keepInspectionHeldStock` moves it to no storage unit). The hold guard
+  refuses any posting that takes a unit below what its lots hold, so without this a guess
+  turns a posting that used to succeed into a refusal. The job backflush, which the SQL
+  backflush mirrors, does not pass it yet. A return of drawn stock (Project Issue Return,
+  maintenance un-issue, service job part return) goes back through
+  `planReturnToDrawnBins`: the bins the document's rows drew from, newest first, each up
+  to what it still has out. A purchase return puts an inspection write-off back in the
+  line's bin before it ships from it, so the two net there.
+
   A serial or batch row posts at the bin the unit holds stock in: sales order and return
   shipments (`trackedShipmentSourceBins`), Project Issue, and job consumption
   (`resolveTrackedEntityBin`). A reversal books against the row it reverses (an Unconsume

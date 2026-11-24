@@ -79,6 +79,7 @@ import {
   type BinStock,
   chooseHeldStockBin,
   chooseSourceBin,
+  keepInspectionHeldStock,
   planHeldStockDraw,
   planStripedUntrackedDraw,
   type StripedBinDraw,
@@ -14151,7 +14152,8 @@ export async function createDocument(
             .map((line) => ({
               itemId: line.itemId,
               locationId: line.locationId ?? null
-            }))
+            })),
+          inspectionHolds: "all"
         });
 
         await trx
@@ -14440,7 +14442,8 @@ export async function createDocument(
                 itemId: line.itemId,
                 locationId: line.locationId ?? null,
                 stripe: null
-              }))
+              })),
+            inspectionHolds: "all"
           }
         );
 
@@ -14675,54 +14678,10 @@ export async function createDocument(
           ? projectId
           : null;
       };
-      // A line whose stock an inspection reject wrote off keeps no bin: the
-      // posting puts that write-off back at no storage unit and ships the
-      // line from the bin it names, so the two must be the same bin.
-      const writtenOffReturnLineIds =
-        untrackedReturnLines.length > 0
-          ? new Set(
-              (
-                await db
-                  .selectFrom("nonConformancePurchaseReturnOrderLine as link")
-                  .innerJoin("nonConformanceInspection as ncrLot", (join) =>
-                    join
-                      .onRef(
-                        "ncrLot.nonConformanceId",
-                        "=",
-                        "link.nonConformanceId"
-                      )
-                      .onRef("ncrLot.companyId", "=", "link.companyId")
-                  )
-                  .innerJoin("purchaseReturnOrderLine as line", (join) =>
-                    join
-                      .onRef("line.id", "=", "link.purchaseReturnOrderLineId")
-                      .onRef("line.companyId", "=", "link.companyId")
-                  )
-                  .innerJoin("itemLedger as writeOff", (join) =>
-                    join
-                      .onRef("writeOff.documentId", "=", "ncrLot.inspectionId")
-                      .onRef("writeOff.companyId", "=", "link.companyId")
-                      .onRef("writeOff.itemId", "=", "line.itemId")
-                  )
-                  .select("link.purchaseReturnOrderLineId")
-                  .distinct()
-                  .where("link.companyId", "=", companyId)
-                  .where(
-                    "link.purchaseReturnOrderLineId",
-                    "in",
-                    untrackedReturnLines.map((d) => d.id)
-                  )
-                  .where("writeOff.documentType", "=", "Inbound Inspection")
-                  .where("writeOff.quantity", "<", 0)
-                  .execute()
-              ).map((row) => row.purchaseReturnOrderLineId)
-            )
-          : new Set<string>();
-      const binLineIds = new Set(
-        untrackedReturnLines
-          .filter((d) => !writtenOffReturnLineIds.has(d.id))
-          .map((d) => d.id)
-      );
+      // Every untracked line takes a bin, a line an inspection reject wrote
+      // off included: the posting puts the write-off back in the line's bin
+      // before it ships from it.
+      const binLineIds = new Set(untrackedReturnLines.map((d) => d.id));
 
       const result = await db.transaction().execute(async (trx) => {
         const shipmentId = await getNextSequence(trx, "shipment", companyId);
@@ -14784,7 +14743,8 @@ export async function createDocument(
                 itemId: line.itemId,
                 locationId: line.locationId ?? null,
                 stripe: returnLineStripe(line.lineId)
-              }))
+              })),
+            inspectionHolds: "openLots"
           }
         );
 
@@ -18891,6 +18851,14 @@ export async function lockUntrackedDraws(
 // Each item's untracked on-hand per bin and stripe at a location. `nettable`:
 // a guess may take from it (active, nettable, not lineside; no storage unit
 // always is).
+//
+// `inspectionHolds`: a unit's stock is net of what open inspection lots hold
+// there (`inspection_held_quantity`; "openLots" leaves out a Partial lot's
+// remainder, as a supplier return does), taken off the common stripe first,
+// and the unit is marked `inspectionHeld`. The hold guard refuses any draw
+// that takes a unit below what its lots hold, so a guess must not count that
+// stock. Every path that guesses a bin passes it; the job backflush, which
+// the SQL backflush mirrors, does not yet.
 export async function getUntrackedBinStock(
   trx: Kysely<DB>,
   args: {
@@ -18898,6 +18866,7 @@ export async function getUntrackedBinStock(
     itemIds: string[];
     locationId: string;
     stripes: readonly StockStripe[];
+    inspectionHolds?: "all" | "openLots";
   }
 ): Promise<Map<string, BinStock[]>> {
   const bins = new Map<string, BinStock[]>();
@@ -18955,7 +18924,67 @@ export async function getUntrackedBinStock(
     });
     bins.set(row.itemId, list);
   }
+  if (args.inspectionHolds) {
+    await deductInspectionHolds(trx, {
+      companyId: args.companyId,
+      bins,
+      openLotsOnly: args.inspectionHolds === "openLots"
+    });
+  }
   return bins;
+}
+
+// Takes what open inspection lots hold in each unit off that unit's stock
+// (common stripe first), in one read over every (item, unit) with stock.
+async function deductInspectionHolds(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    bins: Map<string, BinStock[]>;
+    openLotsOnly: boolean;
+  }
+): Promise<void> {
+  const pairs = [...args.bins].flatMap(([itemId, list]) =>
+    pluckUnique(
+      list.filter((bin) => bin.storageUnitId !== null && bin.quantity > 0),
+      (bin) => bin.storageUnitId as string
+    ).map((storageUnitId) => ({ itemId, storageUnitId }))
+  );
+  if (pairs.length === 0) return;
+  const { rows } = await sql<{
+    itemId: string;
+    storageUnitId: string;
+    free: number;
+  }>`
+    SELECT p."itemId", p."storageUnitId",
+      public.inspection_untracked_on_hand(${args.companyId}, p."itemId", p."storageUnitId")
+        - public.inspection_held_quantity(${args.companyId}, p."itemId", p."storageUnitId", ${args.openLotsOnly}) AS "free"
+    FROM unnest(
+      ${pairs.map((p) => p.itemId)}::text[],
+      ${pairs.map((p) => p.storageUnitId)}::text[]
+    ) AS p("itemId", "storageUnitId")
+    WHERE public.inspection_held_quantity(${args.companyId}, p."itemId", p."storageUnitId", ${args.openLotsOnly}) > 0
+  `.execute(trx);
+  for (const row of rows) {
+    const unitBins = (args.bins.get(row.itemId) ?? [])
+      .filter((bin) => bin.storageUnitId === row.storageUnitId)
+      .sort(
+        (a, b) =>
+          Number((a.projectId ?? null) !== null) -
+          Number((b.projectId ?? null) !== null)
+      );
+    let excess = round(
+      unitBins.reduce((sum, bin) => sum + Math.max(0, bin.quantity), 0) -
+        Math.max(0, Number(row.free))
+    );
+    for (const bin of unitBins) {
+      bin.inspectionHeld = true;
+      if (excess <= 0) continue;
+      const take = Math.min(excess, Math.max(0, bin.quantity));
+      bin.quantity = round(bin.quantity - take);
+      excess = round(excess - take);
+    }
+  }
 }
 
 /**
@@ -18977,7 +19006,7 @@ export async function planUntrackedDraw(
     storageUnitId: string | null;
     stripes: readonly StockStripe[];
   }
-): Promise<StripedBinDraw[]> {
+): Promise<{ draws: StripedBinDraw[]; available: number }> {
   await lockUntrackedDraws(trx, {
     companyId: args.companyId,
     locationId: args.locationId,
@@ -18997,15 +19026,32 @@ export async function planUntrackedDraw(
         companyId: args.companyId,
         itemIds: [args.itemId],
         locationId: args.locationId,
-        stripes: args.stripes
+        stripes: args.stripes,
+        inspectionHolds: "all"
       })
     ).get(args.itemId) ?? [];
-  return planStripedUntrackedDraw({
-    bins,
-    stripes: args.stripes,
-    preferredStorageUnitId,
-    quantity: args.quantity
-  });
+  const draws = keepInspectionHeldStock(
+    planStripedUntrackedDraw({
+      bins,
+      stripes: args.stripes,
+      preferredStorageUnitId,
+      quantity: args.quantity
+    }),
+    bins
+  );
+  // What the plan may draw: nettable bins and no storage unit, and the
+  // preferred bin even when it is not nettable.
+  const available = round(
+    bins
+      .filter(
+        (bin) =>
+          bin.nettable ||
+          (bin.storageUnitId !== null &&
+            bin.storageUnitId === preferredStorageUnitId)
+      )
+      .reduce((sum, bin) => sum + Math.max(0, bin.quantity), 0)
+  );
+  return { draws, available };
 }
 
 /**
@@ -19036,14 +19082,18 @@ export async function planHeldUntrackedDraw(
         companyId: args.companyId,
         itemIds: [args.itemId],
         locationId: args.locationId,
-        stripes: [args.stripe]
+        stripes: [args.stripe],
+        inspectionHolds: "all"
       })
     ).get(args.itemId) ?? [];
-  return planHeldStockDraw({
-    bins,
-    preferredStorageUnitId: args.storageUnitId,
-    quantity: args.quantity
-  }).map((draw) => ({ ...draw, projectId: args.stripe }));
+  return keepInspectionHeldStock(
+    planHeldStockDraw({
+      bins,
+      preferredStorageUnitId: args.storageUnitId,
+      quantity: args.quantity
+    }).map((draw) => ({ ...draw, projectId: args.stripe })),
+    bins
+  );
 }
 
 /**
@@ -19052,12 +19102,14 @@ export async function planHeldUntrackedDraw(
  * so a user's choice never changes silently. A line with no bin takes one that
  * holds the stock (`chooseSourceBin`). Lines are planned in order, so two lines
  * of one item do not count the same stock. Shipments draw common stock only.
+ * With `inspectionHolds`, stock open inspection lots hold is not counted.
  */
 export async function shipmentSourceBinChooser(
   db: Kysely<DB>,
   args: {
     companyId: string;
     lines: { itemId: string; locationId: string | null }[];
+    inspectionHolds?: "all" | "openLots";
   }
 ): Promise<
   (line: {
@@ -19067,57 +19119,13 @@ export async function shipmentSourceBinChooser(
     quantity: number;
   }) => string | null
 > {
-  const locationIds = [
-    ...new Set(
-      args.lines
-        .map((line) => line.locationId)
-        .filter((id): id is string => !!id)
-    )
-  ];
-  const stockByLocation = new Map<string, Map<string, BinStock[]>>();
-  for (const locationId of locationIds) {
-    stockByLocation.set(
-      locationId,
-      await getUntrackedBinStock(db, {
-        companyId: args.companyId,
-        itemIds: [
-          ...new Set(
-            args.lines
-              .filter((line) => line.locationId === locationId)
-              .map((line) => line.itemId)
-          )
-        ],
-        locationId,
-        stripes: [null]
-      })
-    );
-  }
-  const assigned = new Map<string, number>();
-  const key = (itemId: string, locationId: string, bin: string | null) =>
-    `${locationId}\u0000${itemId}\u0000${bin ?? ""}`;
-
-  return (line) => {
-    if (!line.locationId) return line.storageUnitId;
-    const locationId = line.locationId;
-    const chosen =
-      line.storageUnitId ??
-      chooseSourceBin({
-        bins: (stockByLocation.get(locationId)?.get(line.itemId) ?? []).map(
-          (bin) => ({
-            ...bin,
-            quantity:
-              bin.quantity -
-              (assigned.get(key(line.itemId, locationId, bin.storageUnitId)) ??
-                0)
-          })
-        ),
-        preferredStorageUnitId: null,
-        quantity: line.quantity
-      });
-    const k = key(line.itemId, locationId, chosen);
-    assigned.set(k, (assigned.get(k) ?? 0) + line.quantity);
-    return chosen;
-  };
+  const choose = await lineBinChooser(db, {
+    companyId: args.companyId,
+    lines: args.lines.map((line) => ({ ...line, stripe: null })),
+    inspectionHolds: args.inspectionHolds,
+    pick: chooseSourceBin
+  });
+  return (line) => choose({ ...line, stripe: null });
 }
 
 /**
@@ -19126,7 +19134,9 @@ export async function shipmentSourceBinChooser(
  * (quarantine, MRB, rejected), so a line with no bin takes a held unit that
  * holds the stock first, then another bin, fullest first
  * (`chooseHeldStockBin`). A bin the line names is kept. Each line draws one
- * stripe: the stripe its posting draws. Lines are planned in order, so two
+ * stripe: the stripe its posting draws. Stock open inspection lots hold
+ * (`inspectionHolds`: "openLots" for a supplier return, which may ship a
+ * Partial lot's remainder) is not counted. Lines are planned in order, so two
  * lines of one item do not count the same stock.
  */
 export async function returnShipmentSourceBinChooser(
@@ -19134,6 +19144,25 @@ export async function returnShipmentSourceBinChooser(
   args: {
     companyId: string;
     lines: { itemId: string; locationId: string | null; stripe: StockStripe }[];
+    inspectionHolds: "all" | "openLots";
+  }
+) {
+  return lineBinChooser(db, { ...args, pick: chooseHeldStockBin });
+}
+
+// The shared body of the line bin choosers: one stock read per location, then
+// each line in order, less what earlier lines of the item already took.
+async function lineBinChooser(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    lines: { itemId: string; locationId: string | null; stripe: StockStripe }[];
+    inspectionHolds?: "all" | "openLots";
+    pick: (args: {
+      bins: readonly BinStock[];
+      preferredStorageUnitId: string | null;
+      quantity: number;
+    }) => string | null;
   }
 ): Promise<
   (line: {
@@ -19144,13 +19173,12 @@ export async function returnShipmentSourceBinChooser(
     quantity: number;
   }) => string | null
 > {
-  const locationIds = [
-    ...new Set(
-      args.lines
-        .map((line) => line.locationId)
-        .filter((id): id is string => !!id)
-    )
-  ];
+  const locationIds = pluckUnique(
+    args.lines.filter((line) => !!line.locationId),
+    (line) => line.locationId as string
+  );
+  // One read per location: getUntrackedBinStock reads one location, and a
+  // shipment has one or two.
   const stockByLocation = new Map<string, Map<string, BinStock[]>>();
   for (const locationId of locationIds) {
     const lines = args.lines.filter((line) => line.locationId === locationId);
@@ -19158,9 +19186,10 @@ export async function returnShipmentSourceBinChooser(
       locationId,
       await getUntrackedBinStock(db, {
         companyId: args.companyId,
-        itemIds: [...new Set(lines.map((line) => line.itemId))],
+        itemIds: pluckUnique(lines, (line) => line.itemId),
         locationId,
-        stripes: [...new Set(lines.map((line) => line.stripe ?? null))]
+        stripes: [...new Set(lines.map((line) => line.stripe ?? null))],
+        inspectionHolds: args.inspectionHolds
       })
     );
   }
@@ -19178,7 +19207,7 @@ export async function returnShipmentSourceBinChooser(
     const stripe = line.stripe ?? null;
     const chosen =
       line.storageUnitId ??
-      chooseHeldStockBin({
+      args.pick({
         bins: (stockByLocation.get(locationId)?.get(line.itemId) ?? [])
           .filter((bin) => (bin.projectId ?? null) === stripe)
           .map((bin) => ({

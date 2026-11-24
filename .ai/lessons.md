@@ -5338,3 +5338,26 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 A new stock-out path names which rule it follows in its code comment and has a database test with stock only in a named bin.
 
 **Applies to:** every writer of a negative `itemLedger` row: `projects.service.ts`, `inventory.service.ts`, `invoicing.service.ts`, `quality.service.ts`, `shared.service.ts` (`createDocument`). See `.claude/rules/inventory-system.md` → "An untracked draw takes stock from the bins that hold it".
+
+## A guessed bin must leave stock an open inspection lot holds
+
+**Context:** The fix that made empty-bin stock-outs take a bin from stock read each bin's raw on-hand. A code review found that an NCR close, a return shipment and a Project Issue could now pick a quarantine or goods-in unit whose stock an open receipt lot holds. The hold guard (`check_inspection_hold`) then refused the whole posting. Before the fix the same posting succeeded at "no storage unit".
+
+**Problem:** A bin guess has two failure modes, not one: it can take the wrong bin, and it can take stock that is not free. Capping the bin at its free stock was not enough either: the planner then put a real shortfall back onto that capped bin (the first bin drawn).
+
+**Rule:** A path that guesses a bin reads stock net of inspection holds (`getUntrackedBinStock` with `inspectionHolds`) and runs its plan through `keepInspectionHeldStock`. When you change where a posting takes stock from, list every guard that can refuse that write (the hold guard, Prevent negative stock, `assertPickSourceNettable`) and test the case where the new bin trips it. A fix that turns a posting that used to succeed into a refusal is a regression, even if the old result was wrong.
+
+**Applies to:** `planUntrackedDraw`, `planHeldUntrackedDraw`, the shipment bin choosers, and any new writer of a negative untracked `itemLedger` row.
+
+## Parallel agents on one rule need the shared helper first
+
+**Context:** One PR fixed eight stock-out paths with five parallel subagents. The draw rule had a shared helper before the fan-out, and every agent used it. The return rule ("back to the bins the issues drew from") and the shipment line bin chooser had no helper, so the agents wrote the return rule three times and made a near copy of the chooser. The copies already differed: one broke ties by `entryNumber` and the others did not.
+
+**Problem:** A subagent sees only its own path and writes the rule inline. Nobody compares the copies until review, and by then they have drifted apart.
+
+**Rule:** Before fanning out work that applies one rule in several places, list every rule the paths share (draw, return, line bin, refusal message). Write each rule as a pure tested helper first, and name it in every agent's brief. Review the agents' diffs side by side for logic that repeats. Also check the small edits each agent made:
+- A new helper inserted between a function and its doc comment moves the comment onto the wrong function.
+- Two arrays matched by position silently break when someone adds a row; have each entry hold its own row instead.
+- A scripted multi-site edit can corrupt brackets; run the typecheck right after it.
+
+**Applies to:** Multi-path fixes run through the Agent tool or `/conductor`.

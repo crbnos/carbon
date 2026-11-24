@@ -11,7 +11,11 @@
 // (quarantine, rejected) first: returned and rejected stock is set aside there.
 
 import { afterAll, beforeAll, describe, expect } from "vitest";
-import { invokeCreate } from "../../app/modules/shared/shared.service";
+import { postShipment } from "../../app/modules/inventory/inventory.service";
+import {
+  invokeCreate,
+  invokePosting
+} from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
   type Fixture,
@@ -220,7 +224,110 @@ describe.skipIf(!hasLocalDatabase)("shipment create source bins", () => {
         locationId: f.locationId
       })
     ) as { id: string };
+    lastShipmentId = shipment.id;
     return shipmentLineBins(shipment.id);
+  };
+  let lastShipmentId = "";
+
+  /**
+   * A Failed receipt lot of `quantity` written off in quarantine, its NCR
+   * linked to the return line, as an inspection reject leaves it.
+   */
+  const writeOffLot = (
+    key: string,
+    item: string,
+    returnLineId: string,
+    quantity: number
+  ) => {
+    const inspectionId = `${f.prefix}-lot-${key}`;
+    const ncrId = `${f.prefix}-ncr-${key}`;
+    return seed(f, async (trx) => {
+            const type = await trx
+              .insertInto("nonConformanceType")
+              .values({
+                name: `${f.prefix} ${key}`,
+                companyId: f.companyId,
+                createdBy: USER
+              })
+              .returning("id")
+              .executeTakeFirstOrThrow();
+            await trx
+              .insertInto("nonConformance")
+              .values({
+                id: ncrId,
+                nonConformanceId: `NCR-${f.prefix}-${key}`,
+                name: "Rejected at receipt",
+                source: "Internal",
+                locationId: f.locationId,
+                nonConformanceTypeId: type.id,
+                openDate: f.today,
+                companyId: f.companyId,
+                createdBy: USER
+              })
+              .execute();
+            await trx
+              .insertInto("inspection")
+              .values({
+                id: inspectionId,
+                inspectionId: `${f.prefix}-INS-${key}`,
+                itemId: item,
+                lotSize: quantity,
+                samplingStandard: "ANSI_Z1_4",
+                samplingPlanType: "All",
+                sampleSize: quantity,
+                acceptanceNumber: 0,
+                rejectionNumber: 1,
+                sourceDocument: "Receipt",
+                sourceDocumentId: `${f.prefix}-receipt-${key}`,
+                sourceDocumentLineId: `${f.prefix}-receipt-line-${key}`,
+                storageUnitId: quarantine,
+                status: "Failed",
+                companyId: f.companyId,
+                createdBy: USER
+              })
+              .execute();
+            await trx
+              .insertInto("nonConformanceInspection")
+              .values({
+                nonConformanceId: ncrId,
+                inspectionId,
+                companyId: f.companyId,
+                createdBy: USER
+              })
+              .execute();
+            await trx
+              .insertInto("nonConformancePurchaseReturnOrderLine")
+              .values({
+                nonConformanceId: ncrId,
+                purchaseReturnOrderId: `${f.prefix}-pro-${key}`,
+                purchaseReturnOrderLineId: returnLineId,
+                purchaseReturnOrderReadableId: `PRO-${key}`,
+                quantity,
+                companyId: f.companyId,
+                createdBy: USER
+              })
+              .execute();
+            // The reject received the lot into quarantine and wrote it off there.
+            await trx
+              .insertInto("itemLedger")
+              .values(
+                [quantity, -quantity].map((rowQuantity) => ({
+                  entryType:
+                    rowQuantity > 0
+                      ? ("Positive Adjmt." as const)
+                      : ("Negative Adjmt." as const),
+                  documentType: "Inbound Inspection" as const,
+                  documentId: inspectionId,
+                  itemId: item,
+                  locationId: f.locationId,
+                  storageUnitId: quarantine,
+                  quantity: rowQuantity,
+                  companyId: f.companyId,
+                  createdBy: USER
+                }))
+              )
+              .execute();
+          });
   };
 
   const shipSalesReturn = async (
@@ -328,6 +435,43 @@ describe.skipIf(!hasLocalDatabase)("shipment create source bins", () => {
   );
 
   databaseTest(
+    "a purchase return line skips held stock another receipt's open lot holds",
+    async () => {
+      const item = await newItem("pro-lot-held");
+      await stock(item, [
+        { storageUnitId: quarantine, quantity: 10 },
+        { storageUnitId: binA, quantity: 3 }
+      ]);
+      // An open lot of another receipt holds all 10 in quarantine.
+      await seed(f, (trx) =>
+        trx
+          .insertInto("inspection")
+          .values({
+            inspectionId: `${f.prefix}-INS-PRO-HELD`,
+            itemId: item,
+            lotSize: 10,
+            samplingStandard: "ANSI_Z1_4",
+            samplingPlanType: "All",
+            sampleSize: 10,
+            acceptanceNumber: 0,
+            rejectionNumber: 1,
+            sourceDocument: "Receipt",
+            sourceDocumentId: `${f.prefix}-receipt-pro-held`,
+            sourceDocumentLineId: `${f.prefix}-line-pro-held`,
+            storageUnitId: quarantine,
+            status: "Pending",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      expect(
+        await shipPurchaseReturn("lot-held", [{ itemId: item, quantity: 3 }])
+      ).toEqual([binA]);
+    }
+  );
+
+  databaseTest(
     "a purchase return line short in every held unit takes a bin that covers it",
     async () => {
       const item = await newItem("pro-short");
@@ -425,107 +569,57 @@ describe.skipIf(!hasLocalDatabase)("shipment create source bins", () => {
   );
 
   databaseTest(
-    "a purchase return line whose stock an inspection reject wrote off names no bin",
+    "a purchase return line whose stock an inspection reject wrote off takes a bin like any other line",
     async () => {
       const item = await newItem("pro-write-off");
-      const inspectionId = `${f.prefix}-lot-write-off`;
-      const ncrId = `${f.prefix}-ncr-write-off`;
       await stock(item, [{ storageUnitId: binA, quantity: 20 }]);
       const bins = await shipPurchaseReturn(
         "write-off",
         [{ itemId: item, quantity: 2 }],
         (returnLineIds) =>
-          seed(f, async (trx) => {
-            const type = await trx
-              .insertInto("nonConformanceType")
-              .values({
-                name: `${f.prefix} write-off`,
-                companyId: f.companyId,
-                createdBy: USER
-              })
-              .returning("id")
-              .executeTakeFirstOrThrow();
-            await trx
-              .insertInto("nonConformance")
-              .values({
-                id: ncrId,
-                nonConformanceId: `NCR-${f.prefix}`,
-                name: "Rejected at receipt",
-                source: "Internal",
-                locationId: f.locationId,
-                nonConformanceTypeId: type.id,
-                openDate: f.today,
-                companyId: f.companyId,
-                createdBy: USER
-              })
-              .execute();
-            await trx
-              .insertInto("inspection")
-              .values({
-                id: inspectionId,
-                inspectionId: `${f.prefix}-INS-WO`,
-                itemId: item,
-                lotSize: 2,
-                samplingStandard: "ANSI_Z1_4",
-                samplingPlanType: "All",
-                sampleSize: 2,
-                acceptanceNumber: 0,
-                rejectionNumber: 1,
-                sourceDocument: "Receipt",
-                sourceDocumentId: `${f.prefix}-receipt-wo`,
-                sourceDocumentLineId: `${f.prefix}-receipt-line-wo`,
-                storageUnitId: quarantine,
-                status: "Failed",
-                companyId: f.companyId,
-                createdBy: USER
-              })
-              .execute();
-            await trx
-              .insertInto("nonConformanceInspection")
-              .values({
-                nonConformanceId: ncrId,
-                inspectionId,
-                companyId: f.companyId,
-                createdBy: USER
-              })
-              .execute();
-            await trx
-              .insertInto("nonConformancePurchaseReturnOrderLine")
-              .values({
-                nonConformanceId: ncrId,
-                purchaseReturnOrderId: `${f.prefix}-pro-write-off`,
-                purchaseReturnOrderLineId: returnLineIds[0]!,
-                purchaseReturnOrderReadableId: "PRO-write-off",
-                quantity: 2,
-                companyId: f.companyId,
-                createdBy: USER
-              })
-              .execute();
-            // The reject received 2 into quarantine and wrote them off there.
-            await trx
-              .insertInto("itemLedger")
-              .values(
-                [2, -2].map((quantity) => ({
-                  entryType:
-                    quantity > 0
-                      ? ("Positive Adjmt." as const)
-                      : ("Negative Adjmt." as const),
-                  documentType: "Inbound Inspection" as const,
-                  documentId: inspectionId,
-                  itemId: item,
-                  locationId: f.locationId,
-                  storageUnitId: quarantine,
-                  quantity,
-                  companyId: f.companyId,
-                  createdBy: USER
-                }))
-              )
-              .execute();
-          })
+          writeOffLot("write-off", item, returnLineIds[0]!, 2)
       );
-      // The post puts the write-off back at no storage unit and ships from
-      // the line's bin: both must be no storage unit, or they never net.
-      expect(bins).toEqual([null]);
+      // The post puts the write-off back in the line's bin and ships from
+      // it, so the two net in that bin.
+      expect(bins).toEqual([binA]);
+    }
+  );
+
+  databaseTest(
+    "a partly written-off purchase return line posts the write-off back in its bin and ships from it",
+    async () => {
+      const item = await newItem("pro-partial-wo");
+      await stock(item, [{ storageUnitId: binA, quantity: 6 }]);
+      const bins = await shipPurchaseReturn(
+        "partial-wo",
+        [{ itemId: item, quantity: 10 }],
+        (returnLineIds) =>
+          writeOffLot("partial-wo", item, returnLineIds[0]!, 4)
+      );
+      expect(bins).toEqual([binA]);
+
+      unwrap(
+        await invokePosting(
+          handlesOf(f.ctx),
+          "post-shipment",
+          { type: "post", shipmentId: lastShipmentId },
+          postShipment
+        )
+      );
+      // 4 put back and 10 shipped in A: A, quarantine and no bin all end at 0.
+      const rows = await f.db
+        .selectFrom("itemLedger")
+        .select([
+          "storageUnitId",
+          (eb) => eb.fn.sum<number>("quantity").as("quantity")
+        ])
+        .where("itemId", "=", item)
+        .where("companyId", "=", f.companyId)
+        .groupBy("storageUnitId")
+        .execute();
+      expect(
+        rows.filter((row) => Math.abs(Number(row.quantity)) > 1e-9)
+      ).toEqual([]);
     }
   );
 

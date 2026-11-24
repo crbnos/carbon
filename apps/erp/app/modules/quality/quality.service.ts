@@ -46,7 +46,10 @@ import {
   journalPostingStatus,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
-import { planHeldStockDraw } from "@carbon/database/picked-consumption";
+import {
+  keepInspectionHeldStock,
+  planHeldStockDraw
+} from "@carbon/database/picked-consumption";
 import * as engine from "@carbon/database/quality";
 import {
   errResult,
@@ -4749,57 +4752,30 @@ async function planHeldWriteOffBins(
   }
   const itemIds = [...quantityByItem.keys()];
   await lockUntrackedDraws(trx, { companyId, locationId, itemIds });
+  // Net of what open inspection lots hold in each unit: the hold guard would
+  // refuse a write-off that takes a lot's stock, so the close would fail.
   const binsByItem = await getUntrackedBinStock(trx, {
     companyId,
     itemIds,
     locationId,
-    stripes: [null]
+    stripes: [null],
+    inspectionHolds: "all"
   });
-
-  // What an open or Partial inspection lot holds in a unit is not free.
-  const units = [...binsByItem].flatMap(([itemId, bins]) =>
-    bins
-      .filter((bin) => bin.storageUnitId !== null && bin.quantity > EPSILON)
-      .map((bin) => ({ itemId, storageUnitId: bin.storageUnitId as string }))
-  );
-  const free = new Map<string, number>();
-  if (units.length > 0) {
-    const { rows } = await sql<{
-      itemId: string;
-      storageUnitId: string;
-      free: number;
-    }>`
-      SELECT u."itemId", u."storageUnitId",
-        public.inspection_untracked_on_hand(${companyId}, u."itemId", u."storageUnitId")
-          - public.inspection_held_quantity(${companyId}, u."itemId", u."storageUnitId") AS "free"
-      FROM unnest(
-        ${units.map((u) => u.itemId)}::text[],
-        ${units.map((u) => u.storageUnitId)}::text[]
-      ) AS u("itemId", "storageUnitId")
-    `.execute(trx);
-    for (const row of rows) {
-      free.set(`${row.itemId}\u0000${row.storageUnitId}`, Number(row.free));
-    }
-  }
-
   const drawsByItem = new Map(
-    itemIds.map((itemId) => [
-      itemId,
-      planHeldStockDraw({
-        bins: (binsByItem.get(itemId) ?? []).map((bin) => {
-          if (bin.storageUnitId === null) return bin;
-          const unitFree = free.get(`${itemId}\u0000${bin.storageUnitId}`);
-          return unitFree === undefined
-            ? bin
-            : {
-                ...bin,
-                quantity: Math.max(0, Math.min(bin.quantity, unitFree))
-              };
-        }),
-        preferredStorageUnitId: null,
-        quantity: quantityByItem.get(itemId) ?? 0
-      })
-    ])
+    itemIds.map((itemId) => {
+      const bins = binsByItem.get(itemId) ?? [];
+      return [
+        itemId,
+        keepInspectionHeldStock(
+          planHeldStockDraw({
+            bins,
+            preferredStorageUnitId: null,
+            quantity: quantityByItem.get(itemId) ?? 0
+          }).map((draw) => ({ ...draw, projectId: null })),
+          bins
+        )
+      ];
+    })
   );
 
   const planned: DispositionMovement[] = [];

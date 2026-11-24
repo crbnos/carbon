@@ -8,11 +8,13 @@ import {
   type BinStock,
   chooseHeldStockBin,
   chooseSourceBin,
+  keepInspectionHeldStock,
   linesideCredit,
   orderOldFirst,
   type PickedBudget,
   pickFactor,
   planHeldStockDraw,
+  planReturnToDrawnBins,
   planStripedUntrackedDraw,
   recordSharedTakes,
   type SharedTakes,
@@ -659,4 +661,78 @@ it("chooseHeldStockBin keeps the preferred bin when nothing holds stock", () => 
       quantity: 3
     })
   ).toBe("R");
+});
+
+it("keepInspectionHeldStock moves a shortfall off a unit a lot holds stock in", () => {
+  const bins = [
+    {
+      storageUnitId: "Q",
+      quantity: 4,
+      nettable: false,
+      held: true,
+      inspectionHeld: true
+    }
+  ];
+  expect(
+    keepInspectionHeldStock(
+      [{ storageUnitId: "Q", projectId: null, quantity: 10 }],
+      bins
+    )
+  ).toEqual([
+    { storageUnitId: "Q", projectId: null, quantity: 4 },
+    { storageUnitId: null, projectId: null, quantity: 6 }
+  ]);
+});
+
+it("keepInspectionHeldStock leaves a shortfall on a bin no lot holds", () => {
+  expect(
+    keepInspectionHeldStock(
+      [{ storageUnitId: "A", projectId: null, quantity: 10 }],
+      [bin("A", 4)]
+    )
+  ).toEqual([{ storageUnitId: "A", projectId: null, quantity: 10 }]);
+});
+
+it("planReturnToDrawnBins returns to the newest draw first, up to what it has out", () => {
+  expect(
+    planReturnToDrawnBins({
+      rows: [
+        { storageUnitId: "A", quantity: -3, order: 1 },
+        { storageUnitId: "B", quantity: -2, order: 2 },
+        { storageUnitId: "B", quantity: 1, order: 3 }
+      ],
+      quantity: 3,
+      fallback: { storageUnitId: null, projectId: null }
+    })
+  ).toEqual([
+    { storageUnitId: "B", projectId: null, quantity: 1 },
+    { storageUnitId: "A", projectId: null, quantity: 2 }
+  ]);
+});
+
+it("planReturnToDrawnBins puts what no bin has out on the fallback", () => {
+  expect(
+    planReturnToDrawnBins({
+      rows: [{ storageUnitId: "A", quantity: -1, order: 1 }],
+      quantity: 3,
+      fallback: { storageUnitId: "F", projectId: null }
+    })
+  ).toEqual([
+    { storageUnitId: "A", projectId: null, quantity: 1 },
+    { storageUnitId: "F", projectId: null, quantity: 2 }
+  ]);
+});
+
+it("planReturnToDrawnBins books one stripe when given one", () => {
+  expect(
+    planReturnToDrawnBins({
+      rows: [
+        { storageUnitId: "A", projectId: "P", quantity: -1, order: 1 },
+        { storageUnitId: "A", projectId: null, quantity: -1, order: 2 }
+      ],
+      quantity: 2,
+      fallback: { storageUnitId: null, projectId: null },
+      stripe: "P"
+    })
+  ).toEqual([{ storageUnitId: "A", projectId: "P", quantity: 2 }]);
 });

@@ -66,10 +66,10 @@ import {
   type LinesideClaim,
   linesideCredit,
   orderOldFirst,
+  planReturnToDrawnBins,
   planStripedUntrackedDraw,
   recordSharedTakes,
   type SharedTakes,
-  type StripedBinDraw,
   splitTakeByBin
 } from "@carbon/database/picked-consumption";
 import {
@@ -19870,7 +19870,6 @@ export const postShipmentPermission = {
   update: "inventory"
 } satisfies PermissionRule<z.output<typeof postShipmentInput>>;
 
-/** Posts or voids a shipment: stock, tracked entities, COGS and journal rows. */
 /**
  * The bin each serial or batch of a shipment leaves from: the one it holds
  * stock in at the line's location (`getTrackedEntityBins`, null = no storage
@@ -19915,6 +19914,7 @@ async function trackedShipmentSourceBins(
   };
 }
 
+/** Posts or voids a shipment: stock, tracked entities, COGS and journal rows. */
 export async function postShipment(
   ctx: ServiceContext,
   raw: z.input<typeof postShipmentInput>
@@ -22273,6 +22273,7 @@ export async function postShipment(
               itemId: string;
               quantity: number;
               locationId: string | null;
+              storageUnitId: string | null;
               unitCost: number | null;
             }[] = [];
             // A serial or batch goes back from the bin it holds stock in (a
@@ -22342,11 +22343,18 @@ export async function postShipment(
                     })
                   );
                   if (restore > 0) {
+                    const restoreLocationId =
+                      writeOff.locationId ?? shipmentLine.locationId;
                     writeOffRestores.push({
                       itemId: shipmentLine.itemId,
                       quantity: restore,
-                      locationId:
-                        writeOff.locationId ?? shipmentLine.locationId,
+                      locationId: restoreLocationId,
+                      // Put back in the bin the line ships from, so the
+                      // shipment relieves those units in that same bin.
+                      storageUnitId:
+                        restoreLocationId === shipmentLine.locationId
+                          ? (shipmentLine.storageUnitId ?? null)
+                          : null,
                       unitCost: writeOff.unitCost
                     });
                   }
@@ -22471,8 +22479,9 @@ export async function postShipment(
               }
 
               // Put back what the inspection reject wrote off, at the write-off's
-              // own cost (Dr Inventory / Cr Scrap) and where it was written off,
-              // so the shipment below relieves those units once. The value rows
+              // own cost (Dr Inventory / Cr Scrap), at the location it was
+              // written off and in the bin the line ships from, so the
+              // shipment below relieves those units once. The value rows
               // stay under this shipment: a void reverses the restore with it.
               for (const restore of writeOffRestores) {
                 const item = items.data.find((i) => i.id === restore.itemId);
@@ -22482,7 +22491,7 @@ export async function postShipment(
                     itemId: restore.itemId,
                     quantity: restore.quantity,
                     locationId: restore.locationId,
-                    storageUnitId: null,
+                    storageUnitId: restore.storageUnitId,
                     trackedEntityId: null,
                     entryType: "Positive Adjmt.",
                     documentType: "Purchase Return Shipment",
@@ -34814,14 +34823,16 @@ export async function issueMaterial(
           // A dispatch with no location books at no storage unit.
           const draws =
             locationId && round(quantity) > 0
-              ? await planUntrackedDraw(trx, {
-                  companyId,
-                  locationId,
-                  itemId,
-                  quantity,
-                  storageUnitId: null,
-                  stripes: [null]
-                })
+              ? (
+                  await planUntrackedDraw(trx, {
+                    companyId,
+                    locationId,
+                    itemId,
+                    quantity,
+                    storageUnitId: null,
+                    stripes: [null]
+                  })
+                ).draws
               : [{ storageUnitId: null, projectId: null, quantity }];
 
           await trx
@@ -35656,38 +35667,18 @@ export async function issueMaterial(
               .where("documentType", "=", "Maintenance Consumption")
               .where("companyId", "=", companyId)
               .where("trackedEntityId", "is", null)
-              .where("quantity", "<", 0)
-              .orderBy("createdAt", "desc")
-              .orderBy("entryNumber", "desc")
-              .select(["storageUnitId", "projectId", "quantity"])
+              .select(["storageUnitId", "projectId", "quantity", "entryNumber"])
               .execute();
-            const returns: StripedBinDraw[] = [];
-            let left = round(quantity);
-            for (const row of consumed) {
-              if (left <= 0) break;
-              const take = round(Math.min(left, -Number(row.quantity)));
-              if (take <= 0) continue;
-              const same = returns.find(
-                (r) =>
-                  r.storageUnitId === row.storageUnitId &&
-                  r.projectId === (row.projectId ?? null)
-              );
-              if (same) same.quantity = round(same.quantity + take);
-              else
-                returns.push({
-                  storageUnitId: row.storageUnitId,
-                  projectId: row.projectId ?? null,
-                  quantity: take
-                });
-              left = round(left - take);
-            }
-            if (left > 0) {
-              returns.push({
-                storageUnitId: null,
-                projectId: null,
-                quantity: left
-              });
-            }
+            const returns = planReturnToDrawnBins({
+              rows: consumed.map((row) => ({
+                storageUnitId: row.storageUnitId,
+                projectId: row.projectId,
+                quantity: Number(row.quantity),
+                order: Number(row.entryNumber)
+              })),
+              quantity,
+              fallback: { storageUnitId: null, projectId: null }
+            });
 
             await trx
               .insertInto("itemLedger")
@@ -35781,14 +35772,16 @@ export async function issueMaterial(
         // The line names the first bin drawn.
         const draws =
           round(quantity) > 0
-            ? await planUntrackedDraw(trx, {
-                companyId,
-                locationId: job.locationId,
-                itemId,
-                quantity,
-                storageUnitId: null,
-                stripes: [null]
-              })
+            ? (
+                await planUntrackedDraw(trx, {
+                  companyId,
+                  locationId: job.locationId,
+                  itemId,
+                  quantity,
+                  storageUnitId: null,
+                  stripes: [null]
+                })
+              ).draws
             : [{ storageUnitId: null, projectId: null, quantity }];
         const storageUnitId = draws[0]?.storageUnitId ?? null;
 
@@ -36294,12 +36287,18 @@ export async function issueMaterial(
           // The line's own movements, newest first: what is still issued.
           trx
             .selectFrom("itemLedger")
-            .select(["trackedEntityId", "storageUnitId", "quantity"])
+            .select([
+              "trackedEntityId",
+              "storageUnitId",
+              "quantity",
+              "entryNumber"
+            ])
             .where("documentType", "=", "Service Job Consumption")
             .where("documentId", "=", job.id)
             .where("documentLineId", "=", serviceJobItemId)
             .where("companyId", "=", companyId)
             .orderBy("createdAt", "desc")
+            .orderBy("entryNumber", "desc")
             .execute()
         ]);
 
@@ -36442,33 +36441,21 @@ export async function issueMaterial(
           // Back to the bins the line's issues drew from, newest draw
           // first, each up to what it still has out; the rest to the line's
           // bin.
-          const outByBin = new Map<string | null, number>();
-          for (const row of ledger) {
-            if (row.trackedEntityId) continue;
-            outByBin.set(
-              row.storageUnitId,
-              round(
-                (outByBin.get(row.storageUnitId) ?? 0) - Number(row.quantity)
-              )
-            );
-          }
-          let left = round(back);
-          const returns: { storageUnitId: string | null; quantity: number }[] =
-            [];
-          for (const [binId, out] of outByBin) {
-            if (left <= EPSILON) break;
-            const take = round(Math.min(left, out));
-            if (take <= EPSILON) continue;
-            returns.push({ storageUnitId: binId, quantity: take });
-            left = round(left - take);
-          }
-          if (left > EPSILON) {
-            returns.push({
+          const returns = planReturnToDrawnBins({
+            rows: ledger
+              .filter((row) => !row.trackedEntityId)
+              .map((row) => ({
+                storageUnitId: row.storageUnitId,
+                quantity: Number(row.quantity),
+                order: Number(row.entryNumber)
+              })),
+            quantity: back,
+            fallback: {
               storageUnitId:
                 jobItem.storageUnitId ?? ledger[0]?.storageUnitId ?? null,
-              quantity: left
-            });
-          }
+              projectId: null
+            }
+          });
           for (const ret of returns) {
             itemLedgerInserts.push({
               entryType: "Consumption",
