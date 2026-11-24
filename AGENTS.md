@@ -93,6 +93,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Working with the database package | `packages/database/AGENTS.md` |
 | **Server & Services** | |
 | Writing service functions | `.claude/rules/conventions-services.md` + `.claude/rules/module-files.md` |
+| Concurrency: a status change, a running total, a row lock, a side effect in a transaction, a retried external create | `.claude/rules/concurrency.md` |
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
 | Account settings modal (ERP, MES, starter) | `packages/account/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
