@@ -81,7 +81,6 @@ import {
   updateRowsById
 } from "@carbon/database/rows";
 import {
-  assignSerialNumberIfMissing,
   getNextRevisionSequence,
   getNextSequence,
   getNextSerialNumbers,
@@ -28805,11 +28804,199 @@ async function lockBatchJobs(
     .execute();
 }
 
+/**
+ * The first member of the run whose job is already Completed, Closed or
+ * Cancelled, when the company holds units with open issues. A held company's
+ * job can be Completed with serials still to receive, and crediting its
+ * operation would mark them worked with no receipt to take them. Without
+ * holds the batch completes as it always has: sync_finish_job_operation skips
+ * the receipt of a finished job.
+ */
+export function findClosedBatchJob(
+  jobs: { status: string; jobId: string; operationId: string }[],
+  memberIds: string[],
+  holdUnitsWithOpenIssues: boolean
+) {
+  if (!holdUnitsWithOpenIssues) return undefined;
+  const included = new Set(memberIds);
+  return jobs.find(
+    (job) =>
+      included.has(job.operationId) &&
+      ["Completed", "Closed", "Cancelled"].includes(job.status)
+  );
+}
+
+type BatchSerialUnit = {
+  id: string;
+  quantity: number;
+  status: Database["public"]["Enums"]["trackedEntityStatus"];
+  attributes: unknown;
+  received: boolean;
+};
+
+type BatchSerialHold = {
+  trackedEntityId: string | null;
+  issueNumber: string | null;
+  // Set only when a closed issue dispositioned the unit Scrap or Return to
+  // Supplier. An open issue's hold has none.
+  disposition: string | null;
+};
+
+/**
+ * Which serials of one batch member the submitted quantity completes. Null
+ * when no unit is held, received or worked: the quantity then posts as it does
+ * for an untracked member. Throws when the quantity cannot name its units.
+ */
+export function planBatchSerialRun(args: {
+  operation: {
+    id: string;
+    targetQuantity: number | null;
+    operationQuantity: number | null;
+    quantityComplete: number | null;
+    quantityReworked: number | null;
+  };
+  member: { quantity: number; scrapQuantity?: number };
+  /** The operation's units, in lock order. */
+  units: BatchSerialUnit[];
+  outputs: { trackedEntityId: string; single: boolean }[];
+  /** The holds on those units, by issue number. */
+  holds: BatchSerialHold[];
+}) {
+  const { operation: op, member, units, outputs, holds } = args;
+  const marker = `Operation ${op.id}`;
+  // Pre-marker Complete and Produce activities are also worked-unit evidence
+  // for final receipt. Each output must identify a single unit exactly once.
+  const worked = new Set(
+    units
+      .filter(
+        (unit) => marker in ((unit.attributes as Record<string, unknown>) ?? {})
+      )
+      .map((unit) => unit.id)
+  );
+  const scopedIds = new Set(units.map((unit) => unit.id));
+  const ambiguousHistory = () =>
+    new InvalidInputError(
+      "Earlier production does not identify one serial for each completed unit. Review this operation's production and traceability before completing the batch."
+    );
+  for (const output of outputs) {
+    if (!output.single || !scopedIds.has(output.trackedEntityId))
+      throw ambiguousHistory();
+    worked.add(output.trackedEntityId);
+  }
+  if (!units.length) return null;
+  const hasReceived = units.some((u) => u.received);
+  if (!holds.length && !hasReceived && !worked.size) return null;
+  if (worked.size !== (op.quantityComplete ?? 0)) throw ambiguousHistory();
+  const held = new Set(holds.map((h) => h.trackedEntityId));
+  const openIssue = new Set(
+    holds.filter((h) => h.disposition === null).map((h) => h.trackedEntityId)
+  );
+  const disposed = new Set(
+    holds.filter((h) => h.disposition !== null).map((h) => h.trackedEntityId)
+  );
+  // The units this operation may still work after this run. A closed Scrap or
+  // Return to Supplier disposition blocks a unit for good, and a Rejected unit
+  // comes back only through an open issue's Use As Is or Rework. Receipt never
+  // takes either, so neither keeps the operation open.
+  const remaining = units.filter(
+    (u) =>
+      !u.received &&
+      u.status !== "Consumed" &&
+      u.status !== "Scrapped" &&
+      !worked.has(u.id) &&
+      !disposed.has(u.id) &&
+      (u.status !== "Rejected" || openIssue.has(u.id))
+  );
+  const eligible = remaining.filter(
+    (u) =>
+      !held.has(u.id) &&
+      u.quantity === 1 &&
+      (u.status === "Reserved" || u.status === "Available")
+  );
+  // The quantity trigger closes this operation at its target. Existing
+  // quantity-only credits cannot be attributed to any more serials than
+  // the operation has left to run.
+  const target = op.targetQuantity || op.operationQuantity;
+  const balance =
+    target == null
+      ? Infinity
+      : target - (op.quantityComplete ?? 0) - (op.quantityReworked ?? 0);
+  if (
+    !eligible.length ||
+    member.quantity !== eligible.length ||
+    member.quantity > balance ||
+    member.scrapQuantity
+  ) {
+    throw new InvalidInputError(
+      (holds[0]
+        ? `Serial units are on hold for issue ${holds[0].issueNumber}. `
+        : hasReceived
+          ? "Serials on this job have already been received. "
+          : "Serials have already completed this operation. ") +
+        (eligible.length && eligible.length <= balance
+          ? `Enter ${eligible.length} with zero scrap to complete all eligible serials. For a smaller run, leave this operation out of the batch and complete the serials individually.`
+          : "Review the remaining units before completing this operation.")
+    );
+  }
+  return {
+    eligibleIds: eligible.map((u) => u.id),
+    partial: remaining.length > eligible.length && member.quantity < balance,
+    workedCount: worked.size
+  };
+}
+
+/**
+ * The serial number draws for units numbered at their first touch, in the
+ * order the units are completed. One draw takes a run of consecutive units of
+ * one item and location: `get_next_serial_numbers` returns a count's numbers
+ * in sequence order, so the units get the numbers one draw per unit gave them.
+ */
+export function planSerialNumberDraws(
+  units: {
+    id: string;
+    itemId: string | null;
+    readableId: string | null;
+    locationCode: string | null;
+    locationName: string | null;
+  }[]
+) {
+  const draws: {
+    itemId: string;
+    locationCode: string | null;
+    locationName: string | null;
+    trackedEntityIds: string[];
+  }[] = [];
+  const planned = new Set<string>();
+  for (const unit of units) {
+    // A unit an earlier member already numbers draws nothing more.
+    if (unit.readableId || !unit.itemId || planned.has(unit.id)) continue;
+    planned.add(unit.id);
+    const last = draws.at(-1);
+    if (
+      last?.itemId === unit.itemId &&
+      last.locationCode === unit.locationCode &&
+      last.locationName === unit.locationName
+    ) {
+      last.trackedEntityIds.push(unit.id);
+    } else {
+      draws.push({
+        itemId: unit.itemId,
+        locationCode: unit.locationCode,
+        locationName: unit.locationName,
+        trackedEntityIds: [unit.id]
+      });
+    }
+  }
+  return draws;
+}
+
 // A serial member submits quantities, with no lot/serial id. If serials are
 // held, already worked or received, a quantity identifies the output unambiguously
 // only when it covers all remaining eligible single units. Record those ids
 // before the production trigger runs. The batch activity also lets a retry
 // finish the run while leaving this operation open for its held siblings.
+// The caller runs it only for a company that holds units with open issues.
+// Every read and write covers all serial members at once.
 async function recordEligibleBatchSerials(
   trx: Transaction<KyselyDatabase>,
   ctx: { batchId: string; companyId: string; userId: string },
@@ -28823,7 +29010,6 @@ async function recordEligibleBatchSerials(
   const serialOperations = await trx
     .selectFrom("jobOperation as op")
     .innerJoin("jobMakeMethod as m", "m.id", "op.jobMakeMethodId")
-    .innerJoin("companySettings as cs", "cs.id", "op.companyId")
     .select([
       "op.id",
       "op.jobId",
@@ -28841,187 +29027,309 @@ async function recordEligibleBatchSerials(
       members.map((m) => m.jobOperationId)
     )
     .where("m.requiresSerialTracking", "=", true)
-    .where("cs.holdUnitsWithOpenIssues", "=", true)
     .orderBy("op.id")
     .forUpdate("op")
     .execute();
-  const partialOperations: string[] = [];
+  if (!serialOperations.length) return [];
+  const operationIds = serialOperations.map((op) => op.id);
+
+  // Lock every member's units in one statement, member by member and each
+  // member's units by id: the order the members took when they ran one
+  // after another. A rework operation sees only the units sent into it.
+  const unitRows = await trx
+    .selectFrom("jobOperation as op")
+    .innerJoin("trackedEntity as unit", (join) =>
+      join
+        .onRef("unit.companyId", "=", "op.companyId")
+        .on((eb) =>
+          eb(
+            sql<string>`"unit".attributes->>'Job Make Method'`,
+            "=",
+            eb.ref("op.jobMakeMethodId")
+          )
+        )
+    )
+    .select([
+      "op.id as operationId",
+      "unit.id",
+      "unit.quantity",
+      "unit.status",
+      "unit.attributes",
+      "unit.readableId",
+      "unit.itemId"
+    ])
+    .where("op.companyId", "=", companyId)
+    .where("unit.companyId", "=", companyId)
+    .where("op.id", "in", operationIds)
+    .where((eb) =>
+      eb.or([
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom("jobOperationTrackedEntity as scope")
+              .select("scope.trackedEntityId")
+              .where("scope.companyId", "=", companyId)
+              .whereRef("scope.jobOperationId", "=", "op.id")
+          )
+        ),
+        eb.exists(
+          eb
+            .selectFrom("jobOperationTrackedEntity as scope")
+            .select("scope.trackedEntityId")
+            .where("scope.companyId", "=", companyId)
+            .whereRef("scope.jobOperationId", "=", "op.id")
+            .whereRef("scope.trackedEntityId", "=", "unit.id")
+        )
+      ])
+    )
+    .orderBy("op.id")
+    .orderBy("unit.id")
+    .forUpdate("unit")
+    .execute();
+  const unitIds = [...new Set(unitRows.map((unit) => unit.id))];
+
+  // The jobs are locked, and a receipt locks its job first, so nothing is
+  // received between the unit locks and this read.
+  const received = new Map<string, Set<string>>();
+  const jobIds = [...new Set(serialOperations.map((op) => op.jobId))];
+  const receivedRows = await sql<{ jobId: string; trackedEntityId: string }>`
+    SELECT member_job.id AS "jobId", received.id AS "trackedEntityId"
+    FROM unnest(${jobIds}::text[]) AS member_job(id)
+    CROSS JOIN LATERAL util.received_job_serials(member_job.id, ${companyId}) AS received(id)
+  `.execute(trx);
+  for (const row of receivedRows.rows) {
+    const ids = received.get(row.jobId) ?? new Set<string>();
+    ids.add(row.trackedEntityId);
+    received.set(row.jobId, ids);
+  }
+
+  // inventory's getOperationSerialOutputs, for every member at once.
+  const outputRows = await trx
+    .selectFrom("trackedActivity as a")
+    .innerJoin("trackedActivityOutput as output", (join) =>
+      join
+        .onRef("output.trackedActivityId", "=", "a.id")
+        .onRef("output.companyId", "=", "a.companyId")
+    )
+    .select([
+      "a.sourceDocumentId as operationId",
+      "output.trackedEntityId",
+      sql<boolean>`count(*) = 1 AND sum(output.quantity) = 1`.as("single")
+    ])
+    .where("a.companyId", "=", companyId)
+    .where("a.sourceDocument", "=", "Job Operation")
+    .where("a.sourceDocumentId", "in", operationIds)
+    .where("a.type", "in", ["Complete", "Produce"])
+    .groupBy(["a.sourceDocumentId", "output.trackedEntityId"])
+    .execute();
+
+  // Read after acquiring the locks, so an issue link which committed
+  // while the posting waited is visible in this statement's snapshot.
+  const holdRows = unitIds.length
+    ? await trx
+        .selectFrom("unitQualityHold")
+        .select(["trackedEntityId", "issueNumber", "disposition"])
+        .where("companyId", "=", companyId)
+        .where("trackedEntityId", "in", unitIds)
+        .orderBy("issueNumber")
+        .execute()
+    : [];
+
   const submitted = new Map(
     members.map((member) => [member.jobOperationId, member])
   );
-  for (const op of serialOperations) {
-    const member = submitted.get(op.id)!;
-    const marker = `Operation ${op.id}`;
-    const scope = trx
-      .selectFrom("jobOperationTrackedEntity as scope")
-      .select("scope.trackedEntityId")
-      .where("scope.companyId", "=", companyId)
-      .where("scope.jobOperationId", "=", op.id);
-    const units = await trx
-      .selectFrom("trackedEntity")
-      .select(["id", "quantity", "status", "attributes"])
-      .select(
-        sql<boolean>`id IN (SELECT * FROM util.received_job_serials(${op.jobId}, ${companyId}))`.as(
-          "received"
-        )
+  const unitsByOperation = Map.groupBy(unitRows, (unit) => unit.operationId);
+  const runs = serialOperations.flatMap((op) => {
+    const units = unitsByOperation.get(op.id) ?? [];
+    const ids = new Set(units.map((unit) => unit.id));
+    const plan = planBatchSerialRun({
+      operation: op,
+      member: submitted.get(op.id)!,
+      units: units.map((unit) => ({
+        ...unit,
+        received: received.get(op.jobId)?.has(unit.id) ?? false
+      })),
+      outputs: outputRows.filter((output) => output.operationId === op.id),
+      holds: holdRows.filter(
+        (hold) => hold.trackedEntityId && ids.has(hold.trackedEntityId)
       )
-      .where("companyId", "=", companyId)
-      .where(sql<string>`attributes->>'Job Make Method'`, "=", op.methodId)
-      .where((eb) => eb.or([eb.not(eb.exists(scope)), eb("id", "in", scope)]))
-      .orderBy("id")
-      .forUpdate()
-      .execute();
-    // Pre-marker Complete and Produce activities are also worked-unit evidence
-    // for final receipt. Each output must identify a single unit exactly once.
-    const outputs = await inventoryPostings.getOperationSerialOutputs(
-      trx,
+    });
+    return plan ? [{ op, ...plan }] : [];
+  });
+  if (!runs.length) return [];
+
+  // First-touch numbering, in the order the members complete their units.
+  const unitById = new Map(unitRows.map((unit) => [unit.id, unit]));
+  const toNumber = runs.flatMap((run) =>
+    run.eligibleIds.map((id) => {
+      const unit = unitById.get(id)!;
+      const job = (unit.attributes as Record<string, unknown> | null)?.Job;
+      return { ...unit, job: typeof job === "string" ? job : null };
+    })
+  );
+  const numberedJobIds = [
+    ...new Set(
+      toNumber.flatMap((unit) =>
+        !unit.readableId && unit.itemId && unit.job ? [unit.job] : []
+      )
+    )
+  ];
+  const locations = new Map(
+    (numberedJobIds.length
+      ? await trx
+          .selectFrom("job")
+          .innerJoin("location", "location.id", "job.locationId")
+          .select(["job.id", "location.code", "location.name"])
+          .where("job.id", "in", numberedJobIds)
+          .where("job.companyId", "=", companyId)
+          .execute()
+      : []
+    ).map((job) => [job.id, job])
+  );
+  const draws = planSerialNumberDraws(
+    toNumber.map((unit) => {
+      const location = unit.job ? locations.get(unit.job) : undefined;
+      return {
+        ...unit,
+        locationCode: location?.code ?? null,
+        locationName: location?.name ?? null
+      };
+    })
+  );
+  // One allocator call per run of one item and location, not per unit.
+  const serials = new Map<string, string>();
+  for (const draw of draws) {
+    const numbers = await getNextSerialNumbers(trx, {
+      itemId: draw.itemId,
       companyId,
-      op.id
-    );
-    const worked = new Set(
-      units
-        .filter(
-          (unit) =>
-            marker in ((unit.attributes as Record<string, unknown>) ?? {})
-        )
-        .map((unit) => unit.id)
-    );
-    const scopedIds = new Set(units.map((unit) => unit.id));
-    const ambiguousHistory = () =>
-      new InvalidInputError(
-        "Earlier production does not identify one serial for each completed unit. Review this operation's production and traceability before completing the batch."
-      );
-    for (const output of outputs) {
-      if (!output.single || !scopedIds.has(output.trackedEntityId))
-        throw ambiguousHistory();
-      worked.add(output.trackedEntityId);
+      count: draw.trackedEntityIds.length,
+      locationCode: draw.locationCode,
+      locationName: draw.locationName
+    });
+    draw.trackedEntityIds.forEach((id, index) => {
+      if (numbers[index]) serials.set(id, numbers[index]);
+    });
+  }
+
+  // Step records use zero-based positions in the whole make method, even
+  // for a rework operation scoped to just a few of the serials. Freeze the
+  // output positions before first-touch numbering can change a tie break.
+  // A member sees the numbers members before it in this run drew, as it did
+  // when each member numbered its units before the next one read.
+  const numberedBy = new Map<string, number>();
+  runs.forEach((run, index) => {
+    for (const id of run.eligibleIds) {
+      if (serials.has(id) && !numberedBy.has(id)) numberedBy.set(id, index);
     }
-    if (!units.length) continue;
-    // Read after acquiring the locks, so an issue link which committed
-    // while the posting waited is visible in this statement's snapshot.
-    const holds = await trx
-      .selectFrom("unitQualityHold")
-      .select(["trackedEntityId", "issueNumber"])
-      .where("companyId", "=", companyId)
-      .where(
-        "trackedEntityId",
-        "in",
-        units.map((u) => u.id)
-      )
-      .orderBy("issueNumber")
-      .execute();
-    const hasReceived = units.some((u) => u.received);
-    if (!holds.length && !hasReceived && !worked.size) continue;
-    if (worked.size !== (op.quantityComplete ?? 0)) throw ambiguousHistory();
-    const remaining = units.filter(
-      (u) =>
-        !u.received &&
-        u.status !== "Consumed" &&
-        u.status !== "Scrapped" &&
-        !worked.has(u.id)
-    );
-    const held = new Set(holds.map((h) => h.trackedEntityId));
-    const eligible = remaining.filter(
-      (u) =>
-        !held.has(u.id) &&
-        u.quantity === 1 &&
-        (u.status === "Reserved" || u.status === "Available")
-    );
-    // The quantity trigger closes this operation at its target. Existing
-    // quantity-only credits cannot be attributed to any more serials than
-    // the operation has left to run.
-    const target = op.targetQuantity || op.operationQuantity;
-    const balance =
-      target == null
-        ? Infinity
-        : target - (op.quantityComplete ?? 0) - (op.quantityReworked ?? 0);
-    if (
-      !eligible.length ||
-      member.quantity !== eligible.length ||
-      member.quantity > balance ||
-      member.scrapQuantity
-    ) {
-      throw new InvalidInputError(
-        (holds[0]
-          ? `Serial units are on hold for issue ${holds[0].issueNumber}. `
-          : hasReceived
-            ? "Serials on this job have already been received. "
-            : "Serials have already completed this operation. ") +
-          (eligible.length && eligible.length <= balance
-            ? `Enter ${eligible.length} with zero scrap to complete all eligible serials. For a smaller run, leave this operation out of the batch and complete the serials individually.`
-            : "Review the remaining units before completing this operation.")
-      );
-    }
-    const partial =
-      remaining.length > eligible.length && member.quantity < balance;
-    // Step records use zero-based positions in the whole make method, even
-    // for a rework operation scoped to just a few of the serials. Freeze the
-    // output positions before first-touch numbering can change a tie break.
-    const axis = await trx
-      .selectFrom("trackedEntity")
-      .select("id")
-      .where("companyId", "=", companyId)
-      .where(sql<string>`attributes->>'Job Make Method'`, "=", op.methodId)
-      .orderBy("createdAt")
-      .orderBy("readableId")
-      .orderBy("id")
-      .execute();
-    const outputIds = new Set(eligible.map((unit) => unit.id));
-    const outputUnitIndices = Object.fromEntries(
-      axis.flatMap((unit, index) =>
-        outputIds.has(unit.id) ? [[unit.id, index]] : []
-      )
-    );
-    const activity = await trx
-      .insertInto("trackedActivity")
-      .values({
-        type: "Produce",
-        sourceDocument: "Job Operation",
-        sourceDocumentId: op.id,
-        attributes: {
-          Job: op.jobId,
-          "Job Operation": op.id,
-          "Job Operation Batch": batchId,
-          "Output Unit Indices": outputUnitIndices,
-          "Partial Operation": partial
-        },
-        companyId,
-        createdBy: userId
+  });
+  const axisRows = await sql<{
+    operationId: string;
+    trackedEntityId: string;
+    position: number;
+  }>`
+    SELECT op.id AS "operationId", unit.id AS "trackedEntityId",
+      (row_number() OVER (
+        PARTITION BY op.id
+        ORDER BY unit."createdAt", COALESCE(drawn."readableId", unit."readableId"), unit.id
+      ) - 1)::integer AS "position"
+    FROM jsonb_to_recordset(${JSON.stringify(
+      runs.map((run, index) => ({
+        id: run.op.id,
+        methodId: run.op.methodId,
+        run: index
+      }))
+    )}::jsonb) AS op(id text, "methodId" text, run integer)
+    JOIN "trackedEntity" unit
+      ON unit."companyId" = ${companyId}
+      AND unit.attributes->>'Job Make Method' = op."methodId"
+    LEFT JOIN jsonb_to_recordset(${JSON.stringify(
+      [...numberedBy].map(([id, run]) => ({
+        id,
+        readableId: serials.get(id),
+        run
+      }))
+    )}::jsonb) AS drawn(id text, "readableId" text, run integer)
+      ON drawn.id = unit.id AND drawn.run < op.run
+  `.execute(trx);
+
+  const activities = await trx
+    .insertInto("trackedActivity")
+    .values(
+      runs.map((run) => {
+        const outputIds = new Set(run.eligibleIds);
+        return {
+          type: "Produce",
+          sourceDocument: "Job Operation",
+          sourceDocumentId: run.op.id,
+          attributes: {
+            Job: run.op.jobId,
+            "Job Operation": run.op.id,
+            "Job Operation Batch": batchId,
+            "Output Unit Indices": Object.fromEntries(
+              axisRows.rows.flatMap((row) =>
+                row.operationId === run.op.id &&
+                outputIds.has(row.trackedEntityId)
+                  ? [[row.trackedEntityId, row.position] as const]
+                  : []
+              )
+            ),
+            "Partial Operation": run.partial
+          },
+          companyId,
+          createdBy: userId
+        };
       })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-    await trx
-      .insertInto("trackedActivityOutput")
-      .values(
-        eligible.map((u) => ({
-          trackedActivityId: activity.id,
-          trackedEntityId: u.id,
+    )
+    .returning(["id", "sourceDocumentId"])
+    .execute();
+  const activityByOperation = new Map(
+    activities.map((activity) => [activity.sourceDocumentId, activity.id])
+  );
+  await trx
+    .insertInto("trackedActivityOutput")
+    .values(
+      runs.flatMap((run) =>
+        run.eligibleIds.map((id) => ({
+          trackedActivityId: activityByOperation.get(run.op.id)!,
+          trackedEntityId: id,
           quantity: 1,
           companyId,
           createdBy: userId
         }))
       )
-      .execute();
-    if (partial) partialOperations.push(op.id);
-    let completedUnits = worked.size;
-    for (const unit of eligible) {
-      completedUnits++;
-      await assignSerialNumberIfMissing(trx, {
-        trackedEntityId: unit.id,
-        companyId
+    )
+    .execute();
+
+  // One row per unit: a unit two members complete carries both markers.
+  const markers = new Map<string, Record<string, number>>();
+  for (const run of runs) {
+    run.eligibleIds.forEach((id, index) => {
+      markers.set(id, {
+        ...markers.get(id),
+        [`Operation ${run.op.id}`]: run.workedCount + index + 1
       });
-      await trx
-        .updateTable("trackedEntity")
-        .set({
-          status: "Available",
-          attributes: sql`attributes || jsonb_build_object(${marker}::text, ${completedUnits}::int)`
-        })
-        .where("id", "=", unit.id)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
+    });
   }
-  return partialOperations;
+  const unitUpdates = [...markers].map(([id, marker]) => ({
+    id,
+    markers: marker,
+    readableId: serials.get(id) ?? null
+  }));
+  const updated = await sql<{ id: string }>`
+    UPDATE "trackedEntity" AS unit
+    SET status = 'Available',
+      attributes = unit.attributes || r.markers,
+      "readableId" = COALESCE(r."readableId", unit."readableId")
+    FROM jsonb_to_recordset(${JSON.stringify(unitUpdates)}::jsonb)
+      AS r(id text, markers jsonb, "readableId" text)
+    WHERE unit.id = r.id AND unit."companyId" = ${companyId}
+    RETURNING unit.id
+  `.execute(trx);
+  if (updated.rows.length !== unitUpdates.length) {
+    throw new Error("A completed serial unit was not found");
+  }
+
+  return runs.flatMap((run) => (run.partial ? [run.op.id] : []));
 }
 
 // Two-phase, resumable batch completion.
@@ -29129,18 +29437,22 @@ async function completeBatch(
     const phase = planBatchCompletion(batch.status);
 
     const jobs = await lockBatchJobs(trx, batchId, companyId);
-    if (phase === "slice") {
-      const included = new Set(memberIds);
-      const closed = jobs.find(
-        (job) =>
-          included.has(job.operationId) &&
-          ["Completed", "Closed", "Cancelled"].includes(job.status)
+    // The closed-job refusal and the serial recording apply only to a company
+    // that holds units; every other company completes the batch as before.
+    const settings =
+      phase === "slice"
+        ? await trx
+            .selectFrom("companySettings")
+            .select("holdUnitsWithOpenIssues")
+            .where("id", "=", companyId)
+            .executeTakeFirst()
+        : undefined;
+    const holdUnits = settings?.holdUnitsWithOpenIssues === true;
+    const closed = findClosedBatchJob(jobs, memberIds, holdUnits);
+    if (closed)
+      throw new InvalidInputError(
+        `Job ${closed.jobId} is ${closed.status}. Review the batch before completing it.`
       );
-      if (closed)
-        throw new InvalidInputError(
-          `Job ${closed.jobId} is ${closed.status}. Review the batch before completing it.`
-        );
-    }
 
     // A member can name the serial its output belongs to. Check before
     // phase 1 commits any quantity, timer split or status transition.
@@ -29281,11 +29593,13 @@ async function completeBatch(
       operations.map((o: any) => o.id)
     );
 
-    partialOperations = await recordEligibleBatchSerials(
-      trx,
-      { companyId, userId, batchId },
-      members
-    );
+    partialOperations = holdUnits
+      ? await recordEligibleBatchSerials(
+          trx,
+          { companyId, userId, batchId },
+          members
+        )
+      : [];
 
     // Detach "not in this run" members inside the same transaction: back to the
     // schedule un-run — no time slice, no quantities, and phase 2's batch-wide

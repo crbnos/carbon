@@ -2,14 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import { describe, expect, it } from "vitest";
 import {
   buildAssemblyToolStepLinks,
   computeStepTimings,
+  findClosedBatchJob,
   maxToolQuantityByItem,
   planAssemblyStepMarkerRemap,
   planAssemblyStepMarkerSync,
-  planOrphanStepAdoption
+  planBatchSerialRun,
+  planOrphanStepAdoption,
+  planSerialNumberDraws
 } from "./production.service";
 
 describe("planAssemblyStepMarkerSync", () => {
@@ -338,5 +342,196 @@ describe("computeStepTimings", () => {
       ["c", 0]
     ]);
     expect(steps[1].averageSeconds).toBeNull();
+  });
+});
+
+describe("findClosedBatchJob", () => {
+  const jobs = [
+    { status: "In Progress", jobId: "J-1", operationId: "op_1" },
+    { status: "Completed", jobId: "J-2", operationId: "op_2" },
+    { status: "Cancelled", jobId: "J-3", operationId: "op_3" }
+  ];
+
+  it("completes a batch with a finished job when the company does not hold units", () => {
+    expect(
+      findClosedBatchJob(jobs, ["op_1", "op_2", "op_3"], false)
+    ).toBeUndefined();
+  });
+
+  it("refuses the run's finished job when the company holds units, and ignores an excluded member's", () => {
+    expect(findClosedBatchJob(jobs, ["op_1", "op_2"], true)).toEqual(jobs[1]);
+    expect(findClosedBatchJob(jobs, ["op_1"], true)).toBeUndefined();
+  });
+});
+
+describe("planBatchSerialRun", () => {
+  type Run = Parameters<typeof planBatchSerialRun>[0];
+  type Unit = Run["units"][number];
+  const unit = (id: string, overrides: Partial<Unit> = {}): Unit => ({
+    id,
+    quantity: 1,
+    status: "Reserved",
+    attributes: {},
+    received: false,
+    ...overrides
+  });
+  // A member of four serials; the run completes three of them.
+  const base = (overrides: Partial<Run> = {}): Run => ({
+    operation: {
+      id: "op_1",
+      targetQuantity: 4,
+      operationQuantity: 4,
+      quantityComplete: 0,
+      quantityReworked: 0
+    },
+    member: { quantity: 3 },
+    units: [unit("u1"), unit("u2"), unit("u3"), unit("u4")],
+    outputs: [],
+    holds: [],
+    ...overrides
+  });
+
+  it("closes the operation when the unit left was scrapped by a closed issue", () => {
+    expect(
+      planBatchSerialRun(
+        base({
+          units: [
+            unit("u1"),
+            unit("u2"),
+            unit("u3"),
+            unit("u4", { status: "Rejected" })
+          ],
+          holds: [
+            {
+              trackedEntityId: "u4",
+              issueNumber: "NCR-1",
+              disposition: "Scrap"
+            }
+          ]
+        })
+      )
+    ).toEqual({
+      eligibleIds: ["u1", "u2", "u3"],
+      partial: false,
+      workedCount: 0
+    });
+  });
+
+  it("closes the operation when a Rejected unit has no open issue to accept it", () => {
+    // u1 was received earlier, so the run must name its units.
+    expect(
+      planBatchSerialRun(
+        base({
+          member: { quantity: 2 },
+          units: [
+            unit("u1", { received: true }),
+            unit("u2"),
+            unit("u3"),
+            unit("u4", { status: "Rejected" })
+          ]
+        })
+      )
+    ).toEqual({ eligibleIds: ["u2", "u3"], partial: false, workedCount: 0 });
+  });
+
+  it.each([
+    ["an open issue holds", "Available"],
+    ["an open issue may still accept a Rejected", "Rejected"]
+  ] as const)("keeps the operation open for a unit %s", (_label, status) => {
+    expect(
+      planBatchSerialRun(
+        base({
+          units: [unit("u1"), unit("u2"), unit("u3"), unit("u4", { status })],
+          holds: [
+            { trackedEntityId: "u4", issueNumber: "NCR-2", disposition: null }
+          ]
+        })
+      )?.partial
+    ).toBe(true);
+  });
+
+  it("keeps the operation open for units still on the unsplit seed", () => {
+    expect(
+      planBatchSerialRun(
+        base({
+          operation: { ...base().operation, quantityComplete: 1 },
+          member: { quantity: 1 },
+          units: [
+            unit("u1", {
+              status: "Available",
+              attributes: { "Operation op_1": 1 }
+            }),
+            unit("u2"),
+            unit("seed", { quantity: 2 })
+          ]
+        })
+      )
+    ).toEqual({ eligibleIds: ["u2"], partial: true, workedCount: 1 });
+  });
+
+  it("leaves a run with nothing held, received or worked to the quantity posting", () => {
+    expect(planBatchSerialRun(base())).toBeNull();
+  });
+
+  it("refuses a quantity that does not cover every eligible unit", () => {
+    expect(() =>
+      planBatchSerialRun(
+        base({
+          member: { quantity: 2 },
+          holds: [
+            { trackedEntityId: "u4", issueNumber: "NCR-2", disposition: null }
+          ]
+        })
+      )
+    ).toThrow(InvalidInputError);
+  });
+});
+
+describe("planSerialNumberDraws", () => {
+  const unit = (
+    id: string,
+    itemId: string | null,
+    locationCode: string | null,
+    readableId: string | null = null
+  ) => ({ id, itemId, readableId, locationCode, locationName: null });
+
+  it("draws once per run of one item and location, in completion order", () => {
+    expect(
+      planSerialNumberDraws([
+        unit("a", "item_1", "NYC"),
+        unit("b", "item_1", "NYC", "SN-9"),
+        unit("c", "item_1", "NYC"),
+        unit("a", "item_1", "NYC"),
+        unit("d", null, "NYC"),
+        unit("e", "item_2", "NYC"),
+        unit("f", "item_1", "BOS"),
+        unit("g", "item_1", "NYC")
+      ])
+    ).toEqual([
+      {
+        itemId: "item_1",
+        locationCode: "NYC",
+        locationName: null,
+        trackedEntityIds: ["a", "c"]
+      },
+      {
+        itemId: "item_2",
+        locationCode: "NYC",
+        locationName: null,
+        trackedEntityIds: ["e"]
+      },
+      {
+        itemId: "item_1",
+        locationCode: "BOS",
+        locationName: null,
+        trackedEntityIds: ["f"]
+      },
+      {
+        itemId: "item_1",
+        locationCode: "NYC",
+        locationName: null,
+        trackedEntityIds: ["g"]
+      }
+    ]);
   });
 });
