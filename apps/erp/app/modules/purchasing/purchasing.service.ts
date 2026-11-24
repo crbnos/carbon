@@ -4328,21 +4328,23 @@ async function settlementDecimals(
     currencyCode: string | null;
   }
 ): Promise<number | null> {
-  const currencyCode =
-    args.currencyCode ??
-    (
-      await client
-        .from("company")
-        .select("baseCurrencyCode")
-        .eq("id", args.companyId)
-        .single()
-    ).data?.baseCurrencyCode;
+  let currencyCode = args.currencyCode;
+  if (!currencyCode) {
+    const company = await client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", args.companyId)
+      .single();
+    if (company.error) throw company.error;
+    currencyCode = company.data.baseCurrencyCode;
+  }
   if (!currencyCode) return null;
   const currency = await getCurrencyByCode(
     client,
     args.companyGroupId,
     currencyCode
   );
+  if (currency.error) throw currency.error;
   return currency.data?.decimalPlaces ?? null;
 }
 
