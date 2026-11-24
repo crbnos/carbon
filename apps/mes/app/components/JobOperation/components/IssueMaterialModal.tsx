@@ -54,6 +54,7 @@ import {
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
+import { nanoid } from "nanoid";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuCheck,
@@ -76,13 +77,20 @@ import { issueValidator } from "~/services/models";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { findScannedUnit, parseTravelerCode } from "~/utils/traveler";
+import { captureIssueSerial, parseTravelerCode } from "~/utils/traveler";
 import { ShortStockBadge } from "./Materials";
 import { ScrapEntityModal } from "./ScrapEntityModal";
 import type { ScrappableEntity } from "./ScrapTab";
 import { ScrapTab } from "./ScrapTab";
 
 type TrackingType = "Serial" | "Batch" | "Inventory" | "Non-Inventory" | null;
+
+type SerialSelection = {
+  index: number;
+  id: string;
+  observedId?: string;
+  expectedSerial?: string;
+};
 
 interface ItemDetails {
   id: string;
@@ -441,7 +449,7 @@ function IssueMaterialBody({
 
   // Serial numbers selection state
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<
-    Array<{ index: number; id: string }>
+    SerialSelection[]
   >(
     // A batch material's quantity can be fractional (4.5 plate x 3 units), and
     // Array() throws "Invalid array length" on a non-integer.
@@ -450,46 +458,51 @@ function IssueMaterialBody({
       .map((_, index) => ({ index, id: "" }))
   );
   // A sole usable serial is unambiguous: with one unit to issue and one unit
-  // on the shelf there is nothing to choose, so it is selected (derived, as
-  // for a sole batch below).
+  // on the shelf there is nothing to choose. Snapshot it like any selection.
   // Not once the requirement is met: the modal is then opened to take a unit
   // back, and a pre-filled lot would be one tap from issuing a second one.
   const stillNeeded =
     !material ||
     (material.quantityIssued ?? 0) <
       (material.quantity ?? material.estimatedQuantity ?? Infinity);
-  const issueSerialNumbers = useMemo(
-    () =>
+  const observeSerial = useCallback(
+    (index: number, id: string): SerialSelection => ({
+      index,
+      id,
+      ...captureIssueSerial(serialNumbers?.data ?? [], id)
+    }),
+    [serialNumbers?.data]
+  );
+  useEffect(() => {
+    if (
       !isScanning &&
       stillNeeded &&
       (batchId || parentId) &&
       serialOptions.length === 1 &&
       selectedSerialNumbers.length === 1 &&
       !selectedSerialNumbers[0].id
-        ? [{ index: 0, id: serialOptions[0].value }]
-        : selectedSerialNumbers,
-    [
-      isScanning,
-      stillNeeded,
-      batchId,
-      parentId,
-      serialOptions,
-      selectedSerialNumbers
-    ]
-  );
-  const scanRows = loadingSerialStock ? [] : issueSerialNumbers;
-  const resolveIssueSerial = useCallback(
-    (value: string) =>
-      findScannedUnit(serialNumbers?.data ?? [], value)?.id ?? value,
-    [serialNumbers?.data]
-  );
+    ) {
+      setSelectedSerialNumbers([observeSerial(0, serialOptions[0].value)]);
+    }
+  }, [
+    isScanning,
+    stillNeeded,
+    batchId,
+    parentId,
+    serialOptions,
+    selectedSerialNumbers,
+    observeSerial
+  ]);
+  const scanRows = loadingSerialStock ? [] : selectedSerialNumbers;
+  // Preserve the piece and label identified by the original scan even if
+  // another station changes which piece bears that label before submission.
   const resolvedIssueSerials = useMemo(
     () =>
-      issueSerialNumbers.map((row) => ({
+      selectedSerialNumbers.map((row) => ({
         ...row,
-        id: resolveIssueSerial(row.id)
+        id: row.observedId ?? row.id
       })),
-    [issueSerialNumbers, resolveIssueSerial]
+    [selectedSerialNumbers]
   );
   const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
   const [scrapEntityTarget, setScrapEntityTarget] = useState<{
@@ -710,7 +723,7 @@ function IssueMaterialBody({
       if (!lots.length) return;
       setSelectedSerialNumbers((prev) =>
         prev.map((row, i) =>
-          lots[i] ? { ...row, id: lots[i].trackedEntityId } : row
+          lots[i] ? observeSerial(row.index, lots[i].trackedEntityId) : row
         )
       );
       setActiveTab("select");
@@ -740,7 +753,7 @@ function IssueMaterialBody({
         { index: 0, id: "", quantity: initialQuantity }
       ]);
       setSelectedSerialNumbers((rows) =>
-        rows.map((row) => ({ ...row, id: "" }))
+        rows.map(({ index }) => ({ index, id: "" }))
       );
       setBatchErrors({});
       setSerialErrors({});
@@ -831,7 +844,7 @@ function IssueMaterialBody({
     (value: string, index: number) => {
       if (!value) return "Serial number is required";
       const isDuplicate = selectedSerialNumbers.some(
-        (sn, i) => resolveIssueSerial(sn.id) === value && i !== index
+        (sn, i) => (sn.observedId ?? sn.id) === value && i !== index
       );
       if (isDuplicate) return "Duplicate serial number";
       const isValid = serialOptions.some((opt) => opt.value === value);
@@ -842,12 +855,7 @@ function IssueMaterialBody({
       }
       return null;
     },
-    [
-      selectedSerialNumbers,
-      serialOptions,
-      serialNumbers?.data,
-      resolveIssueSerial
-    ]
+    [selectedSerialNumbers, serialOptions, serialNumbers?.data]
   );
 
   const validateBatchNumber = useCallback(
@@ -872,16 +880,13 @@ function IssueMaterialBody({
   );
 
   // Update functions for serial numbers
-  const updateSerialNumber = useCallback(
-    (serialNumber: { index: number; id: string }) => {
-      setSelectedSerialNumbers((prev) => {
-        const newSerialNumbers = [...prev];
-        newSerialNumbers[serialNumber.index] = serialNumber;
-        return newSerialNumbers;
-      });
-    },
-    []
-  );
+  const updateSerialNumber = useCallback((serialNumber: SerialSelection) => {
+    setSelectedSerialNumbers((prev) => {
+      const newSerialNumbers = [...prev];
+      newSerialNumbers[serialNumber.index] = serialNumber;
+      return newSerialNumbers;
+    });
+  }, []);
 
   const addSerialNumber = useCallback(() => {
     setSelectedSerialNumbers((prev) => {
@@ -901,9 +906,9 @@ function IssueMaterialBody({
       const next = fromSuggestion
         ? serialOptions.find((o) => o.value === fromSuggestion.trackedEntityId)
         : serialOptions.find((o) => !used.has(o.value) && !o.isExpired);
-      return [...prev, { index: prev.length, id: next?.value ?? "" }];
+      return [...prev, observeSerial(prev.length, next?.value ?? "")];
     });
-  }, [serialOptions, seedAllocation, canSeedSuggestion]);
+  }, [serialOptions, seedAllocation, canSeedSuggestion, observeSerial]);
 
   const removeSerialNumber = useCallback((indexToRemove: number) => {
     setSelectedSerialNumbers((prev) => {
@@ -1124,6 +1129,7 @@ function IssueMaterialBody({
           : {};
       // Per-unit/per-step attribution context (assembly view only).
       const contextFields = {
+        issueId: nanoid(),
         ...(jobOperationStepId ? { jobOperationStepId } : {}),
         ...(unitNumber !== undefined ? { unitNumber } : {})
       };
@@ -1133,6 +1139,7 @@ function IssueMaterialBody({
             jobOperationId: operationId,
             parentTrackedEntityId: parentId,
             children: resolvedIssueSerials.map((sn) => ({
+              expectedSerial: sn.expectedSerial,
               trackedEntityId: sn.id,
               quantity: 1
             })),
@@ -1145,6 +1152,7 @@ function IssueMaterialBody({
             itemId: selectedItemId,
             parentTrackedEntityId: parentId,
             children: resolvedIssueSerials.map((sn) => ({
+              expectedSerial: sn.expectedSerial,
               trackedEntityId: sn.id,
               quantity: 1
             })),
@@ -1782,10 +1790,10 @@ function IssueMaterialBody({
                                     const newSerialNumbers = [
                                       ...selectedSerialNumbers
                                     ];
-                                    newSerialNumbers[index] = {
+                                    newSerialNumbers[index] = observeSerial(
                                       index,
-                                      id: newValue
-                                    };
+                                      newValue
+                                    );
                                     setSelectedSerialNumbers(newSerialNumbers);
                                   }}
                                   onKeyDown={(e) => {
@@ -1798,10 +1806,8 @@ function IssueMaterialBody({
                                         handleSubmitSerial();
                                     }
                                   }}
-                                  onBlur={(e) => {
-                                    const newValue = resolveIssueSerial(
-                                      e.target.value
-                                    );
+                                  onBlur={() => {
+                                    const newValue = sn.observedId ?? sn.id;
                                     const error = validateSerialNumber(
                                       newValue,
                                       index
@@ -1817,6 +1823,7 @@ function IssueMaterialBody({
                                     });
                                     if (!error) {
                                       updateSerialNumber({
+                                        ...sn,
                                         index,
                                         id: newValue
                                       });
@@ -1881,7 +1888,7 @@ function IssueMaterialBody({
 
                   <TabsContent value="select">
                     <div className="flex flex-col gap-4">
-                      {issueSerialNumbers.map((sn, index) => (
+                      {selectedSerialNumbers.map((sn, index) => (
                         <div
                           key={`${index}-serial-select`}
                           className="flex flex-col gap-1"
@@ -1896,10 +1903,10 @@ function IssueMaterialBody({
                                   const newSerialNumbers = [
                                     ...selectedSerialNumbers
                                   ];
-                                  newSerialNumbers[index] = {
+                                  newSerialNumbers[index] = observeSerial(
                                     index,
-                                    id: value
-                                  };
+                                    value
+                                  );
                                   setSelectedSerialNumbers(newSerialNumbers);
                                   const error = validateSerialNumber(
                                     value,

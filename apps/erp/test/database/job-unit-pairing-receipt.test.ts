@@ -18,14 +18,17 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
-import { createPairedJob } from "./fixtures/paired-job";
+import { confirmPackoutCommand, createPairedJob } from "./fixtures/paired-job";
 import { receiveProductionPair } from "./fixtures/packout-production";
 import { shipPackedUnit } from "./fixtures/packout-shipment";
 
-function post(f: Fixture, input: Parameters<typeof issueMaterial>[1]) {
-  return invokePosting(handlesOf(f.ctx), "issue", input, issueMaterial).then(
-    unwrap
-  );
+async function post(f: Fixture, input: Parameters<typeof issueMaterial>[1]) {
+  return invokePosting(
+    handlesOf(f.ctx),
+    "issue",
+    await confirmPackoutCommand(f, input),
+    issueMaterial
+  ).then(unwrap);
 }
 
 databaseTest(
@@ -60,7 +63,7 @@ databaseTest(
         });
       const receive = (quantity: number) =>
         sql<{ completed: boolean }>`SELECT receive_job_to_inventory(
-      ${job.jobId}, ${quantity}::numeric, ${f.companyId}, ${USER}) AS completed`.execute(
+      ${job.jobId}, ${quantity}::numeric, ${f.companyId}, ${USER}, p_expected_serials => ARRAY[${production.second.serial}]::text[]) AS completed`.execute(
           f.db
         );
       const finish = () =>
@@ -138,6 +141,11 @@ databaseTest(
         f.companyId
       );
       expect(snapshot?.pairedSerials).toEqual([production.second.serial]);
+      await expect(
+        sql`SELECT receive_job_to_inventory(${job.jobId}, 1, ${f.companyId}, ${USER})`.execute(
+          f.db
+        )
+      ).rejects.toThrow(/confirm the packed serials/);
       // A stale dialog showed the corrected-away serial. Refusing its receipt
       // must also roll back the ledger row for the different serial now ready.
       await expect(

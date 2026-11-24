@@ -19,6 +19,7 @@ import {
   checkStrictBackflush,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
+  inspectionPairingsMatch,
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
@@ -107,8 +108,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (state.requiresSerialTracking) {
     const candidates = getSerialCompletionCandidates(state, {
       includePending: false,
-      includeSampleless: false
+      includeSampleless: false,
+      pairings: validation.data.pairings
     });
+    if (
+      !inspectionPairingsMatch(
+        state,
+        candidates.map((candidate) => candidate.trackedEntityId),
+        validation.data.pairings
+      )
+    ) {
+      return fail(
+        null,
+        "A packed component has changed. Reopen the inspection and confirm the units."
+      );
+    }
     if (candidates.length === 0) {
       return fail(null, "No passed units to complete");
     }

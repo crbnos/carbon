@@ -176,9 +176,9 @@ export async function getUnitConsumption(
       client
         .from("trackedActivity")
         .select(
-          "id, attributes, trackedActivityOutput!inner(trackedEntityId), trackedActivityInput(trackedEntityId, quantity, trackedEntity(status, itemId))"
+          "id, type, attributes, trackedActivityOutput!inner(trackedEntityId), trackedActivityInput(trackedEntityId, quantity, trackedEntity(status, itemId))"
         )
-        .eq("type", "Consume")
+        .in("type", ["Consume", "Scrap"])
         .eq("companyId", args.companyId)
         .in("trackedActivityOutput.trackedEntityId", batch)
         .order("id")
@@ -233,7 +233,11 @@ export async function getUnitConsumption(
           materialId,
           input.trackedEntityId
         );
-        net.set(k, (net.get(k) ?? 0) + Number(input.quantity ?? 0));
+        const quantity = Number(input.quantity ?? 0);
+        net.set(
+          k,
+          (net.get(k) ?? 0) + (activity.type === "Scrap" ? -quantity : quantity)
+        );
       }
     }
   }
@@ -763,6 +767,9 @@ export async function scanTraveler(
     locationId: string | null;
     employeeId: string | null;
     trackedEntityId: string;
+    issueId?: string;
+    expectedSerial?: string;
+    confirmedChoice?: boolean;
     at?: TravelerScanAt & {
       jobOperationStepId?: string;
       unitNumber?: number;
@@ -784,6 +791,20 @@ export async function scanTraveler(
       return { resolution, claimed: null, error: null };
     }
     const claim = resolution.options[0]!;
+    if (
+      args.confirmedChoice &&
+      (resolution.unit.id !== args.trackedEntityId ||
+        resolution.unit.readableId !== args.expectedSerial ||
+        claim.parentTrackedEntityId !== args.at?.trackedEntityId ||
+        claim.operationId !== args.at?.operationId)
+    ) {
+      return {
+        resolution: null,
+        claimed: null,
+        error:
+          "The chosen production or sales unit has changed. Refresh and choose again."
+      };
+    }
     // Step attribution belongs to the unit on screen only.
     const sameUnit = args.at?.trackedEntityId === claim.parentTrackedEntityId;
     const issued = await issueTravelerUnit(client, {
@@ -791,6 +812,11 @@ export async function scanTraveler(
       userId: args.userId,
       // The unit the label travels with now: a kit's chamber, not the kit.
       trackedEntityId: resolution.unit.id,
+      issueId: args.issueId,
+      expectedSerial:
+        resolution.unit.id === args.trackedEntityId
+          ? args.expectedSerial
+          : (resolution.unit.readableId ?? undefined),
       claim,
       heldUnitId:
         args.at?.operationId === claim.operationId
@@ -819,6 +845,8 @@ export async function issueTravelerUnit(
     companyId: string;
     userId: string;
     trackedEntityId: string;
+    issueId?: string;
+    expectedSerial?: string;
     claim: TravelerClaim;
     /** The unit on the screen the scan was made on, at the claim's operation. */
     heldUnitId: string | null;
@@ -866,11 +894,16 @@ export async function issueTravelerUnit(
     { companyId, userId },
     {
       type: "trackedEntitiesToOperation",
+      issueId: args.issueId,
       materialId: resolved.materialId,
       jobOperationId: claim.operationId,
       parentTrackedEntityId: claim.parentTrackedEntityId,
       children: [
-        { trackedEntityId: args.trackedEntityId, quantity: resolved.quantity }
+        {
+          trackedEntityId: args.trackedEntityId,
+          quantity: resolved.quantity,
+          expectedSerial: args.expectedSerial
+        }
       ],
       jobOperationStepId: args.jobOperationStepId,
       unitNumber: args.unitNumber,

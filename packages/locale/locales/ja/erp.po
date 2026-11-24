@@ -13714,6 +13714,9 @@ msgstr "アイテムの詳細の読み込みに失敗しました"
 msgid "Failed to load job operations"
 msgstr "指図工程を読み込めませんでした"
 
+msgid "Failed to load job receipts"
+msgstr "製造指図の入庫記録を読み込めませんでした"
+
 msgid "Failed to load jobs"
 msgstr "製造指図を読み込めませんでした"
 
@@ -27454,6 +27457,9 @@ msgstr "ラベルをスキャンするか、アイテムIDまたはトラッキ�
 
 msgid "Scan a serial, batch or item number"
 msgstr "シリアル番号、バッチ番号または品目番号をスキャンしてください"
+
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "一意のシリアル番号をスキャンするか、一覧からユニットを選択してください。"
 
 msgid "Scan or choose a batch number"
 msgstr "バッチ番号をスキャンまたは選択"

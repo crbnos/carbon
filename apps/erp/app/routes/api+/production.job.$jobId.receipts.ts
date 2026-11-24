@@ -16,8 +16,7 @@ import { getDatabaseClient } from "~/services/database.server";
  * offer received units again, or miss units issued before the job was received.
  *
  * A query failure throws rather than answering `null`: the dialog's fallback is
- * to lock the quantity, and a permanent failure that looks like a transient one
- * is the harder bug to find.
+ * to require a successful refresh before it submits a receipt.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {

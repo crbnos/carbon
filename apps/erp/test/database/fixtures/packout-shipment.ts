@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { sql } from "kysely";
 import { expect } from "vitest";
-import { postShipment } from "../../../app/modules/inventory/inventory.service";
+import {
+  assignShipmentSerial,
+  postShipment
+} from "../../../app/modules/inventory/inventory.service";
 import {
   invokeCreate,
   invokePosting
@@ -13,7 +15,7 @@ import { type Fixture, seed, USER, unwrap } from "./always-post";
 import { handlesOf } from "./handles";
 
 /** Ship an existing packed serial from common stock on a stock sales order. */
-export async function shipPackedUnit(
+export async function createPackedShipment(
   f: Fixture,
   itemId: string,
   trackedEntityId: string
@@ -71,36 +73,57 @@ export async function shipPackedUnit(
     .executeTakeFirstOrThrow();
   expect(line.requiresSerialTracking).toBe(true);
 
-  // The ERP picker tags the selected unit via PostgREST. Set its slot here
-  // so this fixture exercises both real postings on PostgreSQL alone.
-  await f.db
-    .updateTable("trackedEntity")
-    .set({
-      attributes: sql`coalesce(attributes, '{}'::jsonb) || ${JSON.stringify({
-        Shipment: shipment.id,
-        "Shipment Line": line.id,
-        "Shipment Line Index": 0
-      })}::jsonb`
-    })
-    .where("companyId", "=", f.companyId)
-    .where("id", "=", trackedEntityId)
-    .where("itemId", "=", itemId)
-    .where("status", "=", "Available")
-    .returning("id")
-    .executeTakeFirstOrThrow();
+  return { salesOrderId, shipmentId: shipment.id, shipmentLineId: line.id };
+}
 
+export async function shipPackedUnit(
+  f: Fixture,
+  itemId: string,
+  trackedEntityId: string
+) {
+  const draft = await createPackedShipment(f, itemId, trackedEntityId);
+  const refusal = await assignShipmentSerial(
+    f.db,
+    f.companyId,
+    {
+      shipmentId: draft.shipmentId,
+      shipmentLineId: draft.shipmentLineId,
+      trackedEntityId,
+      index: 0
+    },
+    {
+      itemId,
+      status: "Available",
+      receiptId: undefined,
+      sourceDocument: "Sales Order",
+      sourceDocumentId: draft.salesOrderId,
+      supplierId: null
+    }
+  );
+  expect(refusal).toBeNull();
+  return postPackedShipment(f, draft, itemId, trackedEntityId);
+}
+
+export async function postPackedShipment(
+  f: Fixture,
+  draft: { salesOrderId: string; shipmentId: string },
+  itemId: string,
+  trackedEntityId: string
+) {
+  const { salesOrderId, shipmentId } = draft;
+  const handles = handlesOf(f.ctx);
   unwrap(
     await invokePosting(
       handles,
       "post-shipment",
-      { type: "post", shipmentId: shipment.id },
+      { type: "post", shipmentId },
       postShipment
     )
   );
   const posted = await f.db
     .selectFrom("shipment")
     .select("status")
-    .where("id", "=", shipment.id)
+    .where("id", "=", shipmentId)
     .where("companyId", "=", f.companyId)
     .executeTakeFirstOrThrow();
   expect(posted.status).toBe("Posted");
@@ -109,10 +132,10 @@ export async function shipPackedUnit(
     .select(["itemId", "trackedEntityId", "quantity"])
     .where("companyId", "=", f.companyId)
     .where("documentType", "=", "Sales Shipment")
-    .where("documentId", "=", shipment.id)
+    .where("documentId", "=", shipmentId)
     .execute();
   expect(
     shipped.map((row) => ({ ...row, quantity: Number(row.quantity) }))
   ).toEqual([{ itemId, trackedEntityId, quantity: -1 }]);
-  return { salesOrderId, shipmentId: shipment.id };
+  return { salesOrderId, shipmentId };
 }

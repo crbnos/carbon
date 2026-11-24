@@ -13714,6 +13714,9 @@ msgstr "Fehler beim Laden der Artikeldetails"
 msgid "Failed to load job operations"
 msgstr "Auftragsvorgänge konnten nicht geladen werden"
 
+msgid "Failed to load job receipts"
+msgstr "Auftragseingänge konnten nicht geladen werden"
+
 msgid "Failed to load jobs"
 msgstr "Fertigungsaufträge konnten nicht geladen werden"
 
@@ -27454,6 +27457,9 @@ msgstr "Scannen Sie ein Etikett oder suchen Sie nach Artikel-ID oder Tracking-ID
 
 msgid "Scan a serial, batch or item number"
 msgstr "Scannen Sie eine Serien-, Los- oder Artikelnummer"
+
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Scannen Sie eine eindeutige Seriennummer oder wählen Sie eine Einheit aus der Liste."
 
 msgid "Scan or choose a batch number"
 msgstr "Scannieren oder wählen Sie eine Chargennummer"

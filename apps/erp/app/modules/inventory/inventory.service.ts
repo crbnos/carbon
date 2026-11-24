@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { SCALE } from "@carbon/database/precision";
 import {
   InvalidInputError,
   NotFoundError,
@@ -320,6 +321,7 @@ import {
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
   inventoryCountGroupId,
+  isShippableEntityStatus,
   liveShipmentTags,
   serialLineShortfalls,
   serialShortfallMessage,
@@ -2202,6 +2204,147 @@ export async function getRentalReceiptLines(
       .order("createdAt")
       .order("id")
   );
+}
+
+/** Older stock serials identify their SKU through Item provenance. */
+function shipmentTrackedItemId(unit: {
+  itemId: string | null;
+  sourceDocument: string | null;
+  sourceDocumentId: string | null;
+}) {
+  return (
+    unit.itemId ??
+    (unit.sourceDocument === "Item" ? unit.sourceDocumentId : null)
+  );
+}
+
+/** Change one slot in a draft serial shipment against the occupant the clerk saw. */
+export async function assignShipmentSerial(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  input: {
+    shipmentId: string;
+    shipmentLineId: string;
+    trackedEntityId: string;
+    index: number;
+    expectedTrackedEntityId?: string | null;
+  },
+  observed: {
+    itemId: string | null;
+    status: string;
+    receiptId: unknown;
+    sourceDocument: string | null;
+    sourceDocumentId: string | null;
+    supplierId: string | null;
+  }
+): Promise<string | null> {
+  return db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("shipment as doc")
+      .innerJoin("shipmentLine as line", (join) =>
+        join
+          .onRef("line.shipmentId", "=", "doc.id")
+          .onRef("line.companyId", "=", "doc.companyId")
+      )
+      .select([
+        "doc.status",
+        "doc.sourceDocument",
+        "doc.sourceDocumentId",
+        "doc.supplierId",
+        "line.itemId",
+        "line.shippedQuantity",
+        "line.requiresSerialTracking"
+      ])
+      .where("doc.companyId", "=", companyId)
+      .where("doc.id", "=", input.shipmentId)
+      .where("line.id", "=", input.shipmentLineId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (
+      !line ||
+      line.status !== "Draft" ||
+      !line.requiresSerialTracking ||
+      input.index < 0 ||
+      input.index >= (line.shippedQuantity ?? 0) ||
+      line.sourceDocument !== observed.sourceDocument ||
+      line.sourceDocumentId !== observed.sourceDocumentId ||
+      line.supplierId !== observed.supplierId
+    ) {
+      return "This shipment line changed. Refresh it before choosing a serial.";
+    }
+    const slot = sql<boolean>`attributes->>'Shipment Line' = ${input.shipmentLineId} AND attributes->>'Shipment Line Index' = ${String(input.index)}`;
+    const rows = await trx
+      .selectFrom("trackedEntity")
+      .select([
+        "id",
+        "itemId",
+        "sourceDocument",
+        "sourceDocumentId",
+        "status",
+        "attributes",
+        slot.as("inSlot")
+      ])
+      .where("companyId", "=", companyId)
+      .where((eb) => eb.or([eb("id", "=", input.trackedEntityId), slot]))
+      .orderBy("id")
+      .forUpdate()
+      .execute();
+    const selected = rows.find((row) => row.id === input.trackedEntityId);
+    const itemId = selected && shipmentTrackedItemId(selected);
+    const attributes = (selected?.attributes ?? {}) as Record<string, unknown>;
+    if (
+      !selected ||
+      !itemId ||
+      itemId !== line.itemId ||
+      selected.itemId !== observed.itemId ||
+      selected.status !== observed.status ||
+      attributes.Receipt !== observed.receiptId
+    ) {
+      return "This unit changed. Refresh the shipment and choose an available serial.";
+    }
+    const occupants = rows.filter((row) => row.inSlot);
+    if (occupants.length > 1)
+      return "Multiple units occupy this serial slot. Correct the shipment before posting.";
+    const currentId = occupants[0]?.id ?? null;
+    if (currentId === selected.id) return null;
+    if (currentId !== (input.expectedTrackedEntityId ?? null)) {
+      return "Another pick changed this serial slot. Review the current selection before replacing it.";
+    }
+    if (
+      attributes.Shipment &&
+      (attributes.Shipment !== input.shipmentId ||
+        attributes["Shipment Line"] !== input.shipmentLineId ||
+        attributes["Shipment Line Index"] != null)
+    ) {
+      return "This serial is already assigned to another shipment slot.";
+    }
+    if (currentId) {
+      await trx
+        .updateTable("trackedEntity")
+        .set({
+          attributes: sql`attributes - 'Shipment' - 'Shipment Line' - 'Shipment Line Index'`
+        })
+        .where("companyId", "=", companyId)
+        .where("id", "=", currentId)
+        .where(slot)
+        .returning("id")
+        .executeTakeFirstOrThrow();
+    }
+    await trx
+      .updateTable("trackedEntity")
+      .set({
+        attributes: sql`coalesce(attributes, '{}'::jsonb) || ${JSON.stringify({
+          Shipment: input.shipmentId,
+          "Shipment Line": input.shipmentLineId,
+          "Shipment Line Index": input.index
+        })}::jsonb`
+      })
+      .where("companyId", "=", companyId)
+      .where("id", "=", selected.id)
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    return null;
+  });
 }
 
 export async function getShipmentLineTracking(
@@ -19934,13 +20077,6 @@ export async function postShipment(
             if (!shipmentHeader.sourceDocumentId)
               throw new Error("Shipment has no sourceDocumentId");
 
-            // A sales order ships common stock only (Projects Phase 2a).
-            await assertEntitiesInCommonStock(
-              db,
-              companyId,
-              shipmentLineTracking.data ?? []
-            );
-
             const [salesOrder, salesOrderLines, salesOrderDelivery] =
               await inOrder([
                 () =>
@@ -20082,50 +20218,16 @@ export async function postShipment(
               Database["public"]["Tables"]["job"]["Update"]
             > = {};
 
-            const serialNumbersConsumed: string[] = [];
+            const selectedSerials = new Map<
+              string,
+              {
+                itemId: string | null;
+                lineId: string;
+                index: number | undefined;
+              }
+            >();
 
             const locationId = shipmentHeader.locationId;
-
-            // A serial or batch leaves the bin it actually holds stock in; the
-            // line's bin is only a default. A unit whose bin cannot cover the
-            // quantity is refused rather than driving that bin negative.
-            const trackedEntityBins = await getTrackedEntityBins(db, {
-              trackedEntityIds: (shipmentLineTracking.data ?? []).map(
-                (tracking) => tracking.id
-              ),
-              locationIds: [
-                ...new Set(
-                  shipmentLines.data.flatMap(
-                    (line) => line.locationId ?? locationId ?? []
-                  )
-                )
-              ],
-              companyId
-            });
-            const sourceBin = (
-              trackedEntityId: string | undefined,
-              lineLocationId: string | null,
-              quantity: number
-            ): string | null => {
-              const bin =
-                trackedEntityId && lineLocationId
-                  ? trackedEntityBins(trackedEntityId, lineLocationId)
-                  : undefined;
-              if (!bin || round(bin.quantity) < round(quantity)) {
-                const readableId =
-                  shipmentLineTracking.data?.find(
-                    (tracking) => tracking.id === trackedEntityId
-                  )?.readableId ??
-                  trackedEntityId ??
-                  "A tracked item";
-                throw new Error(
-                  bin
-                    ? `${readableId} has only ${round(bin.quantity)} in one storage unit, ${round(quantity)} needed. Move it into one storage unit first`
-                    : `${readableId} has no stock to ship at this location`
-                );
-              }
-              return bin.storageUnitId;
-            };
 
             for await (const shipmentLine of shipmentLines.data) {
               if (
@@ -20273,16 +20375,12 @@ export async function postShipment(
                       tracking.attributes as TrackedEntityAttributes | undefined
                     )?.["Shipment Line"] === shipmentLine.id
                 )?.id;
+                if (!batchId) throw new Error("Select a tracked batch to ship");
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: shipmentLine.itemId,
                   quantity: round(-shippedQuantity),
                   locationId: shipmentLine.locationId ?? locationId,
-                  storageUnitId: sourceBin(
-                    batchId,
-                    shipmentLine.locationId ?? locationId,
-                    shippedQuantity
-                  ),
                   entryType: "Negative Adjmt.",
                   documentType: "Sales Shipment",
                   documentId: shipmentHeader.id ?? undefined,
@@ -20307,11 +20405,6 @@ export async function postShipment(
                     itemId: shipmentLine.itemId,
                     quantity: -1,
                     locationId: shipmentLine.locationId ?? locationId,
-                    storageUnitId: sourceBin(
-                      tracking.id,
-                      shipmentLine.locationId ?? locationId,
-                      1
-                    ),
                     entryType: "Negative Adjmt.",
                     documentType: "Sales Shipment",
                     documentId: shipmentHeader.id ?? undefined,
@@ -20322,7 +20415,13 @@ export async function postShipment(
                   });
 
                   if (tracking.id) {
-                    serialNumbersConsumed.push(tracking.id);
+                    selectedSerials.set(tracking.id, {
+                      itemId: shipmentLine.itemId,
+                      lineId: shipmentLine.id,
+                      index: (
+                        tracking.attributes as TrackedEntityAttributes | null
+                      )?.["Shipment Line Index"]
+                    });
                   }
                 });
               }
@@ -20629,6 +20728,115 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              if (selectedSerials.size > 0) {
+                // Draft assignments and competing issues lock the same records.
+                // Recheck the clerk's selected unit and slot after either writer.
+                const header = await trx
+                  .selectFrom("shipment")
+                  .select("status")
+                  .where("id", "=", shipmentId)
+                  .where("companyId", "=", companyId)
+                  .forUpdate()
+                  .executeTakeFirstOrThrow();
+                if (!["Draft", "Pending"].includes(header.status ?? "")) {
+                  throw new ServerFnError(
+                    `Cannot post: it is already ${header.status}`,
+                    409
+                  );
+                }
+                const locked = await trx
+                  .selectFrom("trackedEntity")
+                  .select([
+                    "id",
+                    "attributes",
+                    "itemId",
+                    "sourceDocument",
+                    "sourceDocumentId",
+                    "status"
+                  ])
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", [...selectedSerials.keys()])
+                  .orderBy("id")
+                  .forUpdate()
+                  .execute();
+                const sameSelection = locked.every((unit) => {
+                  const expected = selectedSerials.get(unit.id);
+                  const tags =
+                    unit.attributes as TrackedEntityAttributes | null;
+                  return (
+                    expected &&
+                    isShippableEntityStatus("Sales Order", unit.status) &&
+                    shipmentTrackedItemId(unit) === expected.itemId &&
+                    tags?.Shipment === shipmentId &&
+                    tags["Shipment Line"] === expected.lineId &&
+                    tags["Shipment Line Index"] === expected.index
+                  );
+                });
+                if (locked.length !== selectedSerials.size || !sameSelection) {
+                  throw new ServerFnError(
+                    "A selected serial or shipment slot changed. Refresh the shipment before posting.",
+                    409
+                  );
+                }
+              }
+
+              // A sales order ships common stock only (Projects Phase 2a).
+              await assertEntitiesInCommonStock(
+                trx,
+                companyId,
+                shipmentLineTracking.data ?? []
+              );
+
+              // A serial or batch leaves the bin it actually holds stock in; the
+              // line's bin is only a default. A unit whose bin cannot cover the
+              // quantity is refused rather than driving that bin negative.
+              const trackedEntityBins = await getTrackedEntityBins(trx, {
+                trackedEntityIds: (shipmentLineTracking.data ?? []).map(
+                  (tracking) => tracking.id
+                ),
+                locationIds: [
+                  ...new Set(
+                    shipmentLines.data.flatMap(
+                      (line) => line.locationId ?? locationId ?? []
+                    )
+                  )
+                ],
+                companyId
+              });
+              const sourceBin = (
+                trackedEntityId: string | undefined,
+                lineLocationId: string | null,
+                quantity: number
+              ): string | null => {
+                const bin =
+                  trackedEntityId && lineLocationId
+                    ? trackedEntityBins(trackedEntityId, lineLocationId)
+                    : undefined;
+                if (!bin || round(bin.quantity) < round(quantity)) {
+                  const readableId =
+                    shipmentLineTracking.data?.find(
+                      (tracking) => tracking.id === trackedEntityId
+                    )?.readableId ??
+                    trackedEntityId ??
+                    "A tracked item";
+                  throw new Error(
+                    bin
+                      ? `${readableId} has only ${round(bin.quantity)} in one storage unit, ${round(quantity)} needed. Move it into one storage unit first`
+                      : `${readableId} has no stock to ship at this location`
+                  );
+                }
+                return bin.storageUnitId;
+              };
+
+              for (const movement of itemLedgerInserts) {
+                if (movement.trackedEntityId) {
+                  movement.storageUnitId = sourceBin(
+                    movement.trackedEntityId,
+                    movement.locationId ?? null,
+                    -Number(movement.quantity)
+                  );
+                }
+              }
               await fixedAssetWrites.apply(trx, companyId);
               await updateRowsById(
                 trx,
@@ -20904,7 +21112,7 @@ export async function postShipment(
                 companyId,
                 userId,
                 shipmentId,
-                trackedEntityIds: serialNumbersConsumed,
+                trackedEntityIds: [...selectedSerials.keys()],
                 customerId: salesOrder.data.customerId,
                 customerLocationId: salesOrderDelivery.data.dropShipment
                   ? salesOrderDelivery.data.customerLocationId
@@ -24540,7 +24748,7 @@ export async function postShipment(
         db,
         "shipment",
         { status: "Draft" },
-        { id: shipmentId, companyId }
+        { id: shipmentId, companyId, status: "Pending" }
       );
     }
     throw err;
@@ -25315,9 +25523,10 @@ export async function postInventoryAdjustment(
       if (trackedEntityId) {
         const entity = await trx
           .selectFrom("trackedEntity")
-          .select(["id", "quantity", "status"])
+          .select(["id", "quantity", "status", "itemId", "attributes"])
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
+          .forUpdate()
           .executeTakeFirst();
         if (!entity) throw new InvalidInputError("Tracked entity not found");
         if (entity.status !== "Scrapped") {
@@ -25332,29 +25541,104 @@ export async function postInventoryAdjustment(
           );
         }
 
+        if (entity.itemId && entity.itemId !== itemId) {
+          throw new InvalidInputError(
+            "The scrapped unit belongs to a different item."
+          );
+        }
+        const scrapActivity = await trx
+          .selectFrom("trackedActivity as scrap")
+          .innerJoin(
+            "trackedActivityInput as input",
+            "input.trackedActivityId",
+            "scrap.id"
+          )
+          .select(["scrap.sourceDocument", "scrap.attributes"])
+          .where("input.companyId", "=", companyId)
+          .where("input.trackedEntityId", "=", trackedEntityId)
+          .where("scrap.companyId", "=", companyId)
+          .where("scrap.type", "=", "Scrap")
+          .orderBy("scrap.createdAt", "desc")
+          .orderBy("scrap.id", "desc")
+          .executeTakeFirst();
+        const jobId = (entity.attributes as TrackedEntityAttributes | null)?.Job;
+        if (jobId && scrapActivity?.sourceDocument === "Job Operation") {
+          const unreceived = await sql`
+          SELECT 1 FROM job j
+          WHERE j.id = ${jobId} AND j."companyId" = ${companyId}
+            AND j."itemId" = ${itemId} AND job_requires_serial_pairing(j.id, j."companyId")
+            AND NOT EXISTS (
+              SELECT 1 FROM "itemLedger" il WHERE il."companyId" = j."companyId"
+                AND il."documentId" = j.id AND il."trackedEntityId" = ${trackedEntityId}
+                AND il."documentType" = 'Job Receipt' AND il.quantity > 0
+            )
+        `.execute(trx);
+          if (unreceived.rows.length)
+            throw new InvalidInputError(
+              "This pack-out unit was scrapped on the job before receipt. Complete its replacement on the job."
+            );
+        }
+        const attributes = scrapActivity?.attributes as Record<
+          string,
+          unknown
+        > | null;
+        const packedCostEntry = attributes?.["Packed Component Cost Entry"];
+        const packedIssue =
+          typeof packedCostEntry === "string"
+            ? await trx
+                .selectFrom("costLedger")
+                .select(["cost", "documentId"])
+                .where("companyId", "=", companyId)
+                .where("id", "=", packedCostEntry)
+                .where("documentType", "=", "Job Consumption")
+                .where("itemId", "=", itemId)
+                .where("trackedEntityId", "=", trackedEntityId)
+                .executeTakeFirstOrThrow()
+            : null;
         // The original scrap movement: explicit id from the payload, else
         // the entity's newest negative Scrap row.
-        let scrapMovement = unscrapOfItemLedgerId
-          ? await trx
-              .selectFrom("itemLedger")
-              .select([
-                "id",
-                "storageUnitId",
-                "locationId",
-                "scrapReasonId",
-                "projectId"
-              ])
-              .where("id", "=", unscrapOfItemLedgerId)
-              .where("companyId", "=", companyId)
-              // Constrain a caller-supplied id to THIS entity's own negative
-              // Scrap movements (same filters as the fallback below) — an
-              // unrelated ledger id must not drive the restored bin/cost.
-              .where("trackedEntityId", "=", trackedEntityId)
-              .where("documentType", "=", "Scrap")
-              .where("quantity", "<", 0)
-              .executeTakeFirst()
-          : undefined;
-        if (!scrapMovement) {
+        let scrapMovement =
+          !packedIssue && unscrapOfItemLedgerId
+            ? await trx
+                .selectFrom("itemLedger")
+                .select([
+                  "id",
+                  "storageUnitId",
+                  "locationId",
+                  "scrapReasonId",
+                  "projectId"
+                ])
+                .where("id", "=", unscrapOfItemLedgerId)
+                .where("companyId", "=", companyId)
+                // Constrain a caller-supplied id to THIS entity's own negative
+                // Scrap movements (same filters as the fallback below) — an
+                // unrelated ledger id must not drive the restored bin/cost.
+                .where("trackedEntityId", "=", trackedEntityId)
+                .where("documentType", "=", "Scrap")
+                .where("quantity", "<", 0)
+                .executeTakeFirst()
+            : undefined;
+        if (packedIssue) {
+          // The original negative stock movement was its issue to the job.
+          // Scrapping a fitted component moved only WIP, not stock.
+          scrapMovement = await trx
+            .selectFrom("itemLedger")
+            .select([
+              "id",
+              "storageUnitId",
+              "locationId",
+              "scrapReasonId",
+              "projectId"
+            ])
+            .where("companyId", "=", companyId)
+            .where("documentType", "=", "Job Consumption")
+            .where("documentId", "=", packedIssue.documentId!)
+            .where("trackedEntityId", "=", trackedEntityId)
+            .where("itemId", "=", itemId)
+            .where("quantity", "<", 0)
+            .orderBy("entryNumber", "desc")
+            .executeTakeFirstOrThrow();
+        } else if (!scrapMovement) {
           scrapMovement = await trx
             .selectFrom("itemLedger")
             .select([
@@ -25376,7 +25660,12 @@ export async function postInventoryAdjustment(
         // is never mis-classified — the operator no longer re-enters it. Fall
         // back to any payload reason, then null (untracked/legacy rows).
         const resolvedScrapReasonId =
-          scrapMovement?.scrapReasonId ?? scrapReasonId ?? null;
+          (typeof attributes?.["Scrap Reason"] === "string"
+            ? attributes["Scrap Reason"]
+            : null) ??
+          scrapMovement?.scrapReasonId ??
+          scrapReasonId ??
+          null;
         const accountingForTrackedUnscrap = {
           ...accountingForUnscrap,
           extraDimensions: [
@@ -25391,12 +25680,11 @@ export async function postInventoryAdjustment(
             { entityType: "Employee", valueId: userId }
           ]
         };
-
         // Reverse at the ORIGINAL scrapped cost when the scrap movement's
         // cost rows are resolvable (costLedger.documentId = the scrap
         // itemLedger id — bookAdjustment's linkage); else current cost.
-        let fixedUnitCost: number | undefined;
-        if (scrapMovement) {
+        let fixedUnitCost: number | undefined = packedIssue ? -Number(packedIssue.cost) : undefined;
+        if (!packedIssue && scrapMovement) {
           const costRows = await trx
             .selectFrom("costLedger")
             .select(["quantity", "cost"])
@@ -25417,7 +25705,9 @@ export async function postInventoryAdjustment(
           .set({ status: "Available" })
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
-          .execute();
+          .where("status", "=", "Scrapped")
+          .returning("id")
+          .executeTakeFirstOrThrow();
 
         const unscrapActivityId = nanoid();
         await trx
@@ -29087,18 +29377,15 @@ async function createMaterialWipEntries(
       });
       cost = cogsResult.totalCost;
     } else if (ledger.trackedEntityId) {
-      // A corrected pack-out returns this one serialized piece at the cost
-      // originally issued, including after repeated issue/return cycles.
-      const booked = await trx
-        .selectFrom("costLedger")
-        .select((eb) => eb.fn.sum<number>("cost").as("amount"))
-        .where("companyId", "=", companyId)
-        .where("itemId", "=", ledger.itemId)
-        .where("documentType", "=", "Job Consumption")
-        .where("documentId", "=", jobId)
-        .where("trackedEntityId", "=", ledger.trackedEntityId)
-        .executeTakeFirstOrThrow();
-      cost = -Number(booked.amount ?? 0);
+      // A recovered piece may have been issued more than once. Only its
+      // current issue is being reversed.
+      const issue = await packedComponentIssue(
+        trx,
+        companyId,
+        jobId,
+        ledger.trackedEntityId
+      );
+      cost = -Number(issue.cost);
     } else {
       // A return to a consume-to-project job takes back what the project paid
       // (as a Project Issue return does), whatever the item costs today.
@@ -29121,7 +29408,7 @@ async function createMaterialWipEntries(
     // A zero-value returned piece still owns one FIFO/LIFO unit. It has
     // no journal amount, but its next issue must consume the restored layer.
     const returnsPackedUnit = !isConsumption && !!ledger.trackedEntityId;
-    if (cost > 0 || returnsPackedUnit) {
+    if (cost > 0 || ledger.trackedEntityId) {
       await trx
         .insertInto("costLedger")
         .values({
@@ -30016,13 +30303,13 @@ async function assertTravelerRequirementOpen(
 
   const consumed = await sql<{ quantity: number | null }>`
     WITH "fitted" AS (
-      SELECT tai."trackedEntityId", SUM(tai."quantity") AS "quantity"
+      SELECT tai."trackedEntityId", SUM(CASE WHEN ta.type = 'Scrap' THEN -tai.quantity ELSE tai.quantity END) AS "quantity"
       FROM "trackedActivity" ta
       JOIN "trackedActivityOutput" tao
         ON tao."trackedActivityId" = ta."id"
       JOIN "trackedActivityInput" tai
         ON tai."trackedActivityId" = ta."id"
-      WHERE ta."type" = 'Consume'
+      WHERE ta."type" IN ('Consume', 'Scrap')
         AND ta."companyId" = ${companyId}
         AND tao."trackedEntityId" = ${parentTrackedEntityId}
         AND ta."attributes"->>'Job Material' = ${jobMaterial.id}
@@ -30243,7 +30530,12 @@ async function bindJobUnit(
     materialId?: string;
     operationId?: string;
     outputId: string;
-    children: { trackedEntityId: string; quantity: number }[];
+    issueId?: string;
+    children: {
+      trackedEntityId: string;
+      quantity: number;
+      expectedSerial?: string;
+    }[];
   }
 ): Promise<"issue" | "already issued"> {
   const { companyId, userId, materialId, operationId, outputId, children } =
@@ -30256,11 +30548,12 @@ async function bindJobUnit(
     plannedMaterialId: string;
     sourceItem: string;
     salesItem: string;
+    target: number;
     locationId: string | null;
     operationId: string | null;
   }>`
     SELECT j.id AS "jobId", mm.id AS "makeMethodId", m.id AS "plannedMaterialId", m."itemId" AS "sourceItem",
-      j."itemId" AS "salesItem", j."locationId", m."jobOperationId" AS "operationId"
+      j."itemId" AS "salesItem", j.quantity AS target, j."locationId", m."jobOperationId" AS "operationId"
     FROM "jobMaterial" m
     JOIN "jobMakeMethod" mm ON mm.id=m."jobMakeMethodId" AND mm."companyId"=m."companyId" AND mm."parentMaterialId" IS NULL
     JOIN job j ON j.id=mm."jobId" AND j."companyId"=m."companyId" AND j.id=m."jobId"
@@ -30274,7 +30567,31 @@ async function bindJobUnit(
       AND job_requires_serial_pairing(j.id,j."companyId")
     FOR UPDATE OF j
   `.execute(trx);
-  if (!plan) return "issue";
+  if (!plan) {
+    // A carton lot may be the first fitted material. Give its selected sales
+    // output a physical identity before the Consume activity refers to it.
+    const {
+      rows: [seed]
+    } = await sql<{ quantity: number }>`
+    SELECT output.quantity FROM job j
+    JOIN "trackedEntity" output ON output.attributes->>'Job' = j.id
+      AND output."companyId" = j."companyId" AND output."itemId" = j."itemId"
+    JOIN "jobMakeMethod" mm ON mm.id = output.attributes->>'Job Make Method'
+      AND mm."jobId" = j.id AND mm."companyId" = j."companyId" AND mm."parentMaterialId" IS NULL
+    WHERE output.id = ${outputId} AND j."companyId" = ${companyId} AND output.quantity > 1
+      AND job_requires_serial_pairing(j.id, j."companyId")
+    FOR UPDATE OF j, output
+  `.execute(trx);
+    if (seed)
+      await separateUnstartedPieces(
+        trx,
+        companyId,
+        userId,
+        outputId,
+        Number(seed.quantity)
+      );
+    return "issue";
+  }
   if (materialId !== plan.plannedMaterialId) {
     throw new InvalidInputError(
       "Issue this production part against the planned pack-out material."
@@ -30290,6 +30607,33 @@ async function bindJobUnit(
     throw new InvalidInputError(
       "Scan one whole unit of the planned production part on its pack-out operation."
     );
+  if (!args.issueId || !child.expectedSerial) {
+    throw new InvalidInputError(
+      "Refresh the pack-out material and scan the production serial to confirm this issue."
+    );
+  }
+  // The scan command is the identity of the binding it created. Retain it
+  // after release so a delayed copy cannot fit a returned component again.
+  const pairingId = `jup_${args.issueId}`;
+  const previous = await trx
+    .selectFrom("jobUnitPairing")
+    .select(["sourceId", "outputId", "jobMaterialId", "serial", "releasedAt"])
+    .where("companyId", "=", companyId)
+    .where("id", "=", pairingId)
+    .executeTakeFirst();
+  if (previous) {
+    if (
+      !previous.releasedAt &&
+      previous.sourceId === child.trackedEntityId &&
+      previous.outputId === outputId &&
+      previous.jobMaterialId === materialId &&
+      previous.serial === child.expectedSerial
+    )
+      return "already issued";
+    throw new InvalidInputError(
+      "This scan has already been used. Refresh the unit before issuing."
+    );
+  }
   const active = await trx
     .selectFrom("jobUnitPairing")
     .select(["id", "sourceId", "outputId", "jobMaterialId"])
@@ -30303,13 +30647,6 @@ async function bindJobUnit(
     )
     .execute();
   if (active.length) {
-    if (
-      active.length === 1 &&
-      active[0]!.sourceId === child.trackedEntityId &&
-      active[0]!.outputId === outputId &&
-      active[0]!.jobMaterialId === materialId
-    )
-      return "already issued";
     throw new InvalidInputError(
       "This unit already has a packed component or the component belongs to another sales unit. Correct the existing scan first."
     );
@@ -30338,6 +30675,11 @@ async function bindJobUnit(
     throw new InvalidInputError(
       "Scan an available, individually numbered unit of the exact planned production part."
     );
+  if (source.readableId !== child.expectedSerial) {
+    throw new InvalidInputError(
+      "The production serial has changed. Refresh the material and scan its label again."
+    );
+  }
   const attributes = output.attributes as Record<string, unknown> | null;
   if (
     output.itemId !== plan.salesItem ||
@@ -30372,6 +30714,20 @@ async function bindJobUnit(
   ) {
     throw new InvalidInputError(
       "Expected exactly one stocked production unit at the pack-out location."
+    );
+  }
+  // A scrap allowance or replacement can leave extra blank output IDs. The
+  // job lock serializes this check with other scans, receipts and corrections.
+  const fitted = await trx
+    .selectFrom("jobUnitPairing")
+    .select((eb) => eb.fn.countAll<number>().as("count"))
+    .where("companyId", "=", companyId)
+    .where("jobId", "=", plan.jobId)
+    .where("releasedAt", "is", null)
+    .executeTakeFirstOrThrow();
+  if (Number(fitted.count) >= Number(plan.target)) {
+    throw new InvalidInputError(
+      "All planned sales units already have a component. Correct an existing scan or increase the job quantity."
     );
   }
   const serial = source.readableId;
@@ -30418,6 +30774,7 @@ async function bindJobUnit(
     .insertInto("jobUnitPairing")
     .values({
       companyId,
+      id: pairingId,
       jobId: plan.jobId,
       jobMaterialId: materialId,
       sourceId: child.trackedEntityId,
@@ -30515,6 +30872,23 @@ async function releaseJobUnit(
       );
   }
   await assertNoReceipt(trx, companyId, pair.outputId);
+  if (!scrapOutput) {
+    const logged = await sql`SELECT 1 FROM "trackedActivityOutput" o
+      JOIN "trackedActivity" a ON a.id = o."trackedActivityId" AND a."companyId" = o."companyId"
+      JOIN "jobMaterial" m ON m.id = ${pair.jobMaterialId} AND m."companyId" = o."companyId"
+      WHERE o."companyId" = ${companyId} AND o."trackedEntityId" = ${pair.outputId}
+        AND a.type = 'Complete' AND a."sourceDocument" = 'Job Operation'
+        AND a.attributes->>'Job' = ${pair.jobId}
+        AND (a.attributes->>'Job Unit Pairing' = ${pair.id} OR
+          (NOT (a.attributes ? 'Job Unit Pairing') AND
+            (m."jobOperationId" IS NULL OR m."jobOperationId" = a."sourceDocumentId")))
+      LIMIT 1`.execute(trx);
+    if (logged.rows.length) {
+      throw new InvalidInputError(
+        "This sales unit has been logged complete. Its fitted component cannot be removed."
+      );
+    }
+  }
   await trx
     .updateTable("jobUnitPairing")
     .set({ releasedAt: sql`now()`, updatedBy: userId, updatedAt: sql`now()` })
@@ -30543,6 +30917,7 @@ async function consumeTrackedEntitiesIntoOperation(
   trx: Transaction<KyselyDatabase>,
   {
     materialId,
+    issueId,
     jobOperationId,
     itemId,
     parentTrackedEntityId,
@@ -30562,10 +30937,15 @@ async function consumeTrackedEntitiesIntoOperation(
     dimensionMap: dimensionMapTracked
   }: {
     materialId?: string;
+    issueId?: string;
     jobOperationId?: string;
     itemId?: string;
     parentTrackedEntityId: string;
-    children: { trackedEntityId: string; quantity: number }[];
+    children: {
+      trackedEntityId: string;
+      quantity: number;
+      expectedSerial?: string;
+    }[];
     jobOperationStepId?: string;
     unitNumber?: number;
     overrideExpired?: boolean;
@@ -30603,6 +30983,7 @@ async function consumeTrackedEntitiesIntoOperation(
       companyId,
       userId,
       materialId,
+      issueId,
       operationId: jobOperationId,
       outputId: parentTrackedEntityId,
       children
@@ -31163,23 +31544,19 @@ async function consumeTrackedEntitiesIntoOperation(
 
   // Only update if we didn't create a new jobMaterial (in which case it's already set)
   if (actualMaterialId === materialId) {
-    const currentQuantityIssued = round(
-      Number(jobMaterial?.quantityIssued) || 0
-    );
-    const newQuantityIssued = round(currentQuantityIssued + totalChildQuantity);
-
-    await trx
+    const updated = await trx
       .updateTable("jobMaterial")
       .set({
-        quantityIssued: newQuantityIssued
+        quantityIssued: sql`round(COALESCE("quantityIssued", 0) + ${totalChildQuantity}::numeric, ${SCALE}::int)`
       })
       .where("id", "=", actualMaterialId!)
       .where("companyId", "=", companyId)
-      .execute();
+      .returning("quantityIssued")
+      .executeTakeFirstOrThrow();
 
     logger.info("Job material quantity updated", {
       materialId: actualMaterialId,
-      newQuantityIssued
+      newQuantityIssued: updated.quantityIssued
     });
   }
 
@@ -31350,6 +31727,26 @@ export async function dryRunJobOperationIssues(
   }
 }
 
+async function packedComponentIssue(
+  trx: KyselyTx,
+  companyId: string,
+  jobId: string,
+  sourceId: string
+) {
+  // Each paired component is one whole unit. Include zero-valued issues so
+  // a newer zero cannot accidentally pick up an older issue’s positive cost.
+  return trx
+    .selectFrom("costLedger")
+    .select(["id", "cost", "itemId", "documentId"])
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", "Job Consumption")
+    .where("documentId", "=", jobId)
+    .where("trackedEntityId", "=", sourceId)
+    .where("quantity", "<", 0)
+    .orderBy("entryNumber", "desc")
+    .executeTakeFirstOrThrow();
+}
+
 /**
  * Scrap a serial or batch that was consumed at an operation: split off the
  * scrapped quantity of a batch, mark it Scrapped under a Scrap activity (its
@@ -31382,7 +31779,7 @@ async function scrapConsumedEntity(
   }
 ) {
   const { companyId, userId, entity, quantity, item, operation } = args;
-  await releaseJobUnit(trx, {
+  const releasedSource = await releaseJobUnit(trx, {
     companyId,
     userId,
     sourceId: entity.trackedEntityId,
@@ -31390,6 +31787,9 @@ async function scrapConsumedEntity(
     materialId: args.materialId,
     quantity
   });
+  const issue = releasedSource
+    ? await packedComponentIssue(trx, companyId, operation.jobId, releasedSource)
+    : null;
   const current = await trx
     .selectFrom("trackedEntity")
     .selectAll()
@@ -31484,6 +31884,7 @@ async function scrapConsumedEntity(
       attributes: {
         Job: operation.jobId,
         "Job Material": args.materialId,
+        ...(issue && { "Packed Component Cost Entry": issue.id }),
         "Scrap Reason": args.scrapReasonId,
         Employee: userId
       },
@@ -31522,7 +31923,7 @@ async function scrapConsumedEntity(
     itemId: item.id,
     itemReadableId: item.readableIdWithRevision ?? "",
     itemPostingGroupId: args.itemPostingGroupId,
-    unitCost: args.unitCost,
+    unitCost: issue ? -Number(issue.cost) : args.unitCost,
     quantity,
     scrapReasonId: args.scrapReasonId,
     workCenterId: operation.workCenterId,
@@ -31998,7 +32399,8 @@ export async function issueMaterial(
       return { success: true, created: true };
     }
     case "jobOperationSerialComplete": {
-      const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
+      const { trackedEntityId, companyId, userId, pairingId, ...row } =
+        validatedPayload;
       await assertProductionQuantityLinks(db, companyId, row);
 
       const jobOperation = await single(db, "jobOperation", {
@@ -32102,6 +32504,21 @@ export async function issueMaterial(
         if (!trackedEntity) {
           throw new NotFoundError("Tracked entity not found");
         }
+        if (pairedJob) {
+          const active = await trx
+            .selectFrom("jobUnitPairing")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("jobId", "=", jobOperation.data.jobId)
+            .where("outputId", "=", trackedEntityId)
+            .where("releasedAt", "is", null)
+            .executeTakeFirst();
+          if (active?.id !== pairingId) {
+            throw new InvalidInputError(
+              "The packed component has changed. Refresh and confirm the unit before logging it complete."
+            );
+          }
+        }
         // A unit completes once per operation; a second production row would
         // issue the material of a unit never made.
         if (
@@ -32177,6 +32594,7 @@ export async function issueMaterial(
                 Job: jobOperation.data.jobId,
                 "Job Operation": row.jobOperationId,
                 Employee: userId,
+                ...(pairingId ? { "Job Unit Pairing": pairingId } : {}),
                 Unit: completedUnitIndex
               },
               companyId,
@@ -33958,7 +34376,7 @@ export async function issueMaterial(
         await assertPostingStatusUnchanged(trx, companyId, postingStatusScrap);
         const material = jobMaterial.data!;
         await lockPairedJob(trx, companyId, material.jobId!);
-        await releaseJobUnit(trx, {
+        const releasedSource = await releaseJobUnit(trx, {
           companyId,
           userId,
           materialId,
@@ -33974,6 +34392,9 @@ export async function issueMaterial(
           .executeTakeFirstOrThrow();
         if (entity.status === "Scrapped")
           throw new Error("Tracked entity has already been scrapped");
+        const issue = releasedSource
+          ? await packedComponentIssue(trx, companyId, material.jobId!, releasedSource)
+          : null;
         const quantity = Number(entity.quantity);
 
         const job = await trx
@@ -34003,6 +34424,7 @@ export async function issueMaterial(
               Job: job?.id!,
               "Job Make Method": material.jobMakeMethodId!,
               "Job Material": material.id!,
+              ...(issue && { "Packed Component Cost Entry": issue.id }),
               "Scrap Reason": scrapReasonId,
               Employee: userId
             },
@@ -34044,7 +34466,7 @@ export async function issueMaterial(
           .where("companyId", "=", companyId)
           .execute();
 
-        const consumedItemId = entity.sourceDocumentId ?? material.itemId!;
+        const consumedItemId = entity.itemId ?? material.itemId!;
         const [itemRow, itemCostRow] = await Promise.all([
           trx
             .selectFrom("item")
@@ -34168,7 +34590,7 @@ export async function issueMaterial(
             itemId: consumedItemId,
             itemReadableId: item?.readableIdWithRevision ?? "",
             itemPostingGroupId: resolvedItemCost.itemPostingGroupId,
-            unitCost: resolvedItemCost.unitCost,
+            unitCost: issue ? -Number(issue.cost) : resolvedItemCost.unitCost,
             quantity,
             scrapReasonId,
             workCenterId: scrapWorkCenterId,
@@ -34185,17 +34607,11 @@ export async function issueMaterial(
 
           // Reopen the requirement — the consumed part is gone, so the
           // assembly needs a replacement issued.
-          const currentQuantityIssued = round(
-            Number(material.quantityIssued) || 0
-          );
           await trx
             .updateTable("jobMaterial")
-            .set({
-              quantityIssued: Math.max(
-                0,
-                round(currentQuantityIssued - round(quantity))
-              )
-            })
+            .set((eb) => ({
+              quantityIssued: sql<number>`greatest(0, ${eb.ref("quantityIssued")} - ${round(quantity)})`
+            }))
             .where("id", "=", materialId)
             .where("companyId", "=", companyId)
             .execute();
@@ -34348,6 +34764,7 @@ export async function issueMaterial(
           materialId,
           jobOperationId,
           itemId,
+          issueId: validatedPayload.issueId,
           parentTrackedEntityId,
           children,
           jobOperationStepId,
@@ -35040,17 +35457,12 @@ export async function issueMaterial(
 
         const totalChildQuantity = roundedChildTotal(children);
 
-        const currentQuantityIssued = round(
-          Number(jobMaterial?.quantityIssued) || 0
-        );
-        const newQuantityIssued = round(
-          currentQuantityIssued - totalChildQuantity
-        );
-
+        // Apply the return against the current total under the material row
+        // lock. A different unit's issue may have committed while we waited.
         await trx
           .updateTable("jobMaterial")
           .set({
-            quantityIssued: newQuantityIssued
+            quantityIssued: sql`round(COALESCE("quantityIssued", 0) - ${totalChildQuantity}::numeric, ${SCALE}::int)`
           })
           .where("id", "=", materialId)
           .where("companyId", "=", companyId)

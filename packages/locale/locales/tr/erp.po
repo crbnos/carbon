@@ -13714,6 +13714,9 @@ msgstr "Ürün detayları yüklenemedi"
 msgid "Failed to load job operations"
 msgstr "İş emri operasyonları yüklenemedi"
 
+msgid "Failed to load job receipts"
+msgstr "İş emrinin stok girişleri yüklenemedi"
+
 msgid "Failed to load jobs"
 msgstr "İş emirleri yüklenemedi"
 
@@ -27454,6 +27457,9 @@ msgstr "Bir etiketi tarayın veya ürün kimliği veya takip kimliği ile arama 
 
 msgid "Scan a serial, batch or item number"
 msgstr "Bir seri numarası, parti numarası veya stok kartı numarası tarayın"
+
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Benzersiz bir seri numarası tarayın veya listeden bir birim seçin."
 
 msgid "Scan or choose a batch number"
 msgstr "Toplu iş numarasını tarayın veya seçin"

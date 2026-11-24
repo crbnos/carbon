@@ -63,7 +63,8 @@ export function QuantityModal({
   requireTrackedMaterialsIssued = false,
   setupProductionEvent,
   trackedEntityId,
-  trackedEntityReadableId,
+  trackedEntityReadableId: currentSerial,
+  pairingId,
   type,
   returnFocusRef,
   open = true,
@@ -87,6 +88,7 @@ export function QuantityModal({
   // Serial parents: the selected unit's serial number, shown in the scrap
   // confirmation and the completion title so the operator knows which unit it is.
   trackedEntityReadableId?: string;
+  pairingId?: string;
   type: "scrap" | "rework" | "complete" | "finish";
   // Where focus goes on close when the control that opened the modal is gone
   // (an item in a sheet that closed as the modal opened).
@@ -94,6 +96,14 @@ export function QuantityModal({
   open?: boolean;
   onClose: () => void;
 }) {
+  // Each opening mounts a fresh dialog. A remote correction while it is open
+  // cannot substitute a different physical component under the confirmation.
+  const [viewedUnit] = useState(() => ({
+    id: trackedEntityId,
+    serial: currentSerial,
+    pairingId
+  }));
+  const trackedEntityReadableId = viewedUnit.serial;
   const { t } = useLingui();
   const numberFormatter = useNumberFormatter(QUANTITY_FORMAT_OPTIONS);
   // The modal opens from state, not a DialogTrigger, so Radix has no trigger
@@ -213,7 +223,7 @@ export function QuantityModal({
           defaultValues={{
             // @ts-expect-error
             trackedEntityId:
-              parentIsSerial || parentIsBatch ? trackedEntityId : undefined,
+              parentIsSerial || parentIsBatch ? viewedUnit.id : undefined,
             jobOperationId: operation.id,
             quantity: type === "finish" ? undefined : 0,
             setupProductionEventId: setupProductionEvent?.id,
@@ -235,6 +245,9 @@ export function QuantityModal({
           </ModalHeader>
           <ModalBody>
             <Hidden name="trackedEntityId" />
+            {type === "complete" && viewedUnit.pairingId && (
+              <Hidden name="pairingId" value={viewedUnit.pairingId} />
+            )}
             <Hidden
               name="trackingType"
               value={

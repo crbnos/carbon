@@ -158,6 +158,7 @@ import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/durations";
 import {
   isKanbanCompleteScan,
+  kanbanCompleteHref,
   kanbanCompleteTarget,
   soleUnitId
 } from "~/utils/kanban";
@@ -766,9 +767,7 @@ export const JobOperation = ({
       if (target.action === "select") return askForUnit();
       const endPath = path.to.endOperation(operation.id);
       return completeFetcher.load(
-        target.trackedEntityId
-          ? `${endPath}?trackedEntityId=${target.trackedEntityId}`
-          : endPath
+        kanbanCompleteHref(endPath, target.trackedEntityId, trackedEntities)
       );
     },
     inTextFields: true,
@@ -3183,6 +3182,7 @@ export const JobOperation = ({
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
                   trackedEntityReadableId={heldUnit?.readableId ?? undefined}
+                  pairingId={heldUnit?.pairingId}
                   isFirstOpenOperation={isFirstOpenOperation}
                   requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
                   returnFocusRef={actionsSheetOpenerRef}

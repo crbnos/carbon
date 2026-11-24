@@ -42,6 +42,18 @@ export function findScannedUnit<
   return matches.length === 1 ? matches[0] : undefined;
 }
 
+/** Capture what a scan or selection identified while that stock list was on screen. */
+export function captureIssueSerial(
+  stock: readonly { id: string | null; readableId: string | null }[],
+  value: string
+) {
+  const unit = findScannedUnit(stock, value);
+  return {
+    observedId: unit?.id ?? undefined,
+    expectedSerial: unit?.readableId ?? undefined
+  };
+}
+
 /**
  * Which of a unit's open operations a traveler scan opens. The operator's work
  * center wins; without a match, the next operations in routing order. Two or

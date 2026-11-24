@@ -13714,6 +13714,9 @@ msgstr "Nie udało się załadować szczegółów artykułu"
 msgid "Failed to load job operations"
 msgstr "Nie udało się załadować operacji zleceń"
 
+msgid "Failed to load job receipts"
+msgstr "Nie udało się wczytać przyjęć ze zlecenia"
+
 msgid "Failed to load jobs"
 msgstr "Nie udało się załadować zleceń produkcyjnych"
 
@@ -27454,6 +27457,9 @@ msgstr "Skanuj etykietę lub wyszukaj po ID artykułu lub ID śledzenia."
 
 msgid "Scan a serial, batch or item number"
 msgstr "Skanuj numer seryjny, partii lub artykułu"
+
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Zeskanuj unikatowy numer seryjny lub wybierz sztukę z listy."
 
 msgid "Scan or choose a batch number"
 msgstr "Zeskanuj lub wybierz numer partii"

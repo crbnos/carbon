@@ -974,7 +974,8 @@ export const closeJob = defineServiceFn({
  * rules; its message says what to fix (a `rule` error). Units it takes that
  * have no serial number yet (a deferred serial number timing) are numbered by
  * the same function, so a refused completion spends no numbers. A
- * paired pack-out job stays open on a partial receipt. Once the job finishes,
+ * paired pack-out job requires the selected `expectedSerials` from the job receipt
+ * snapshot and stays open on a partial receipt. Once the job finishes,
  * picked material the job did not consume is returned to the warehouse; a
  * failure there leaves the job completed and is returned as `warning`.
  *

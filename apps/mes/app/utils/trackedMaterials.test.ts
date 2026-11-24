@@ -162,6 +162,23 @@ describe("netTrackedInputs", () => {
     ).toEqual(["chamber"]);
   });
 
+  it("keeps recovered scrap out of its former unit until a fresh issue", () => {
+    const issued = {
+      id: "A",
+      status: "Available",
+      activityAttributes: { "Job Material": "part" }
+    };
+    const scrap = {
+      ...issued,
+      activityAttributes: { "Job Material": "part", "Scrap Reason": "damage" }
+    };
+    expect(netTrackedInputs([issued, scrap], [])).toEqual([]);
+    const reissued = { ...issued, status: "Consumed" };
+    expect(netTrackedInputs([reissued, scrap, reissued], [])).toEqual([
+      reissued
+    ]);
+  });
+
   it("keeps an input consumed again after it was given back", () => {
     const inputs = [
       { id: "chamber", status: "Consumed" },

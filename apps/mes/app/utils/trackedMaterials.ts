@@ -94,21 +94,29 @@ export function firstOpenOperationIds(
  * `inputs`). With no outputs every live input counts.
  */
 export function netTrackedInputs<
-  T extends { id: string; status?: string | null }
+  T extends { id: string; status?: string | null; activityAttributes?: unknown }
 >(inputs: T[], outputs: { id: string }[]): T[] {
   const live = inputs.filter((input) => input.status !== "Scrapped");
-  if (outputs.length === 0) return live;
 
   const inputCounts = new Map<string, number>();
-  for (const input of live) {
-    inputCounts.set(input.id, (inputCounts.get(input.id) ?? 0) + 1);
-  }
+  const fitted = live.filter((input) => {
+    // A material scrap has its component on the input side of the activity,
+    // just like Consume. It removes a fit even if the unit is later recovered.
+    const attrs = input.activityAttributes as Record<string, unknown> | null;
+    const scrapped = !!attrs?.["Scrap Reason"] && !!attrs["Job Material"];
+    inputCounts.set(
+      input.id,
+      (inputCounts.get(input.id) ?? 0) + (scrapped ? -1 : 1)
+    );
+    return !scrapped;
+  });
+  if (!outputs.length && fitted.length === live.length) return live;
   const outputCounts = new Map<string, number>();
   for (const output of outputs) {
     outputCounts.set(output.id, (outputCounts.get(output.id) ?? 0) + 1);
   }
   const included = new Set<string>();
-  return live.filter((input) => {
+  return fitted.filter((input) => {
     if (included.has(input.id)) return false;
     if ((inputCounts.get(input.id) ?? 0) <= (outputCounts.get(input.id) ?? 0)) {
       return false;

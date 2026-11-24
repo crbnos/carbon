@@ -2329,7 +2329,8 @@ export const updateShipmentFixedAssetLine = defineServiceFn({
  * posting ships it. The entity must be the line's item and Available (On
  * Hold or Available for a return-to-customer shipment, and then it must have
  * come back on a receipt of that return order). A batch must hold at least `quantity`.
- * Whatever entity held the slot before is cleared once the new one is set.
+ * For a serial replacement, pass the saved slot occupant in expectedTrackedEntityId.
+ * An omitted or null occupant means the slot was empty.
  *
  * @mcp
  */
@@ -2347,6 +2348,7 @@ export const assignShipmentLineEntity = defineServiceFn({
       shipmentId: z.string(),
       shipmentLineId: z.string(),
       trackedEntityId: z.string(),
+      expectedTrackedEntityId: z.string().min(1).nullable().optional(),
       index: z.number().int().min(0)
     })
   ]),
@@ -2496,6 +2498,23 @@ export const assignShipmentLineEntity = defineServiceFn({
       return ctx.error("rule", "Batch has insufficient quantity");
     }
 
+    if (input.trackingType === "serial") {
+      const conflict = await service.assignShipmentSerial(
+        ctx.asSystem.pg,
+        companyId,
+        input,
+        {
+          itemId: entity.data.itemId,
+          status: entity.data.status,
+          receiptId: attributes.Receipt,
+          sourceDocument: shipment.data.sourceDocument,
+          sourceDocumentId: shipment.data.sourceDocumentId,
+          supplierId: shipment.data.supplierId
+        }
+      );
+      return conflict ? ctx.error("conflict", conflict) : { trackedEntityId };
+    }
+
     const serviceRole = ctx.asSystem.supabase;
     const updated = await serviceRole
       .from("trackedEntity")
@@ -2503,10 +2522,7 @@ export const assignShipmentLineEntity = defineServiceFn({
         attributes: {
           ...attributes,
           "Shipment Line": shipmentLineId,
-          Shipment: shipmentId,
-          ...(input.trackingType === "serial"
-            ? { "Shipment Line Index": input.index }
-            : {})
+          Shipment: shipmentId
         } as Json
       })
       .eq("id", trackedEntityId)
@@ -2530,18 +2546,12 @@ export const assignShipmentLineEntity = defineServiceFn({
 
     // Only now is the slot's previous entity cleared: for a batch any other
     // entity on the line, for a serial the one at this index.
-    let staleQuery = serviceRole
+    const staleQuery = serviceRole
       .from("trackedEntity")
       .select("id, attributes")
       .eq("companyId", companyId)
       .eq("attributes ->> Shipment Line", shipmentLineId)
       .neq("id", trackedEntityId);
-    if (input.trackingType === "serial") {
-      staleQuery = staleQuery.eq(
-        "attributes ->> Shipment Line Index",
-        String(input.index)
-      );
-    }
     const stale = await staleQuery;
     await Promise.all(
       (stale.data ?? []).map((row) => {

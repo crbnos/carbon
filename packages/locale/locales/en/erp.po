@@ -13714,6 +13714,9 @@ msgstr "Failed to load item details"
 msgid "Failed to load job operations"
 msgstr "Failed to load job operations"
 
+msgid "Failed to load job receipts"
+msgstr "Failed to load job receipts"
+
 msgid "Failed to load jobs"
 msgstr "Failed to load jobs"
 
@@ -27454,6 +27457,9 @@ msgstr "Scan a label or search by item ID or tracking ID."
 
 msgid "Scan a serial, batch or item number"
 msgstr "Scan a serial, batch or item number"
+
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Scan a unique serial number or select a unit from the list."
 
 msgid "Scan or choose a batch number"
 msgstr "Scan or choose a batch number"

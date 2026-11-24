@@ -1451,8 +1451,7 @@ function JobExpediteModal({
 }
 
 // What the job has received as of now, from api+/production.job.$jobId.receipts.
-// Null when it cannot be read; the dialog then keeps the quantity locked rather
-// than offering units it cannot prove are unreceived.
+// A missing snapshot has no safe default: it also determines the receipt mode.
 async function getJobReceipts(
   jobId: string
 ): Promise<JobReceiptSnapshot | null> {
@@ -1462,7 +1461,11 @@ async function getJobReceipts(
     const body = (await response.json()) as {
       receipts: JobReceiptSnapshot | null;
     };
-    return body.receipts;
+    return body.receipts &&
+      (body.receipts.pairedSerials === null ||
+        Array.isArray(body.receipts.pairedSerials))
+      ? body.receipts
+      : null;
   } catch {
     return null;
   }
@@ -1481,7 +1484,9 @@ function JobCompleteModal({
 }) {
   const { carbon } = useCarbon();
   const { company } = useUser();
-  const [loading, setLoading] = useState(true);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "failed">(
+    "loading"
+  );
   const { t } = useLingui();
   const [defaultStorageUnitId, setDefaultStorageUnitId] = useState<
     string | undefined
@@ -1537,7 +1542,11 @@ function JobCompleteModal({
     !Number.isInteger(quantityComplete);
 
   const getJobData = async () => {
-    if (!carbon) return;
+    setLoadState("loading");
+    if (!carbon) {
+      setLoadState("failed");
+      return;
+    }
 
     const [pickMethod, makeMethod, receipts, serialSequence] =
       await Promise.all([
@@ -1563,18 +1572,13 @@ function JobCompleteModal({
           .maybeSingle()
       ]);
 
-    // Read now rather than from the job route: a receipt may have been made
-    // since the page loaded. When the read fails, fall back to the route's job
-    // and leave the quantity locked below — offering units that may already be
-    // received is the one thing this must not do. complete_job_to_inventory
-    // enforces both regardless.
-    const currentReceivedQuantity =
-      receipts?.quantityReceivedToInventory ??
-      job?.quantityReceivedToInventory ??
-      0;
-
-    setPairedReceipt(receipts?.pairedSerials != null);
-    if (receipts?.pairedSerials != null) {
+    if (!receipts) {
+      setLoadState("failed");
+      return;
+    }
+    const currentReceivedQuantity = receipts.quantityReceivedToInventory;
+    setPairedReceipt(receipts.pairedSerials !== null);
+    if (receipts.pairedSerials !== null) {
       setSerialChoice({ mode: "serials", serials: receipts.pairedSerials });
       setHasTrackedQuantity(false);
       setQuantityComplete(
@@ -1595,11 +1599,11 @@ function JobCompleteModal({
         .order("id", { ascending: true });
 
       if (trackedEntities.data?.length) {
-        const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
+        const receivedEntityIds = new Set(receipts.trackedEntityIds);
         // Only a serial completion to inventory receives issued units.
         const issuedEntityIds = new Set(
           makeMethod.data?.requiresSerialTracking && !completesToFixedAsset
-            ? (receipts?.issuedTrackedEntityIds ?? [])
+            ? receipts.issuedTrackedEntityIds
             : []
         );
         const availableQuantity = getFinishedQuantity(
@@ -1612,7 +1616,7 @@ function JobCompleteModal({
         const choice = makeMethod.data?.requiresSerialTracking
           ? getSerialCompleteChoice({
               trackedEntities: trackedEntities.data,
-              receivedEntityIds: receipts ? receivedEntityIds : null,
+              receivedEntityIds,
               issuedEntityIds,
               // complete_job_to_inventory numbers what the completion takes
               // whenever the item has a sequence. A failed read keeps the
@@ -1659,12 +1663,12 @@ function JobCompleteModal({
       );
     });
 
-    setLoading(false);
+    setLoadState("ready");
   };
 
   useMount(() => {
     if (!job || !open) return;
-    getJobData();
+    getJobData().catch(() => setLoadState("failed"));
   });
 
   // Update leftover quantities when action changes
@@ -1694,12 +1698,30 @@ function JobCompleteModal({
   return (
     <Modal open={open} onOpenChange={onClose}>
       <ModalContent size={hasLeftover ? "large" : "medium"}>
-        {loading ? (
+        {loadState === "loading" ? (
           <ModalBody>
             <div className="flex flex-col h-[118px] w-full items-center justify-center gap-2">
               <Spinner className="size-8" />
             </div>
           </ModalBody>
+        ) : loadState === "failed" ? (
+          <>
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Failed to load job receipts</Trans>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalFooter>
+              <Button variant="secondary" onClick={onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                onClick={() => getJobData().catch(() => setLoadState("failed"))}
+              >
+                <Trans>Retry</Trans>
+              </Button>
+            </ModalFooter>
+          </>
         ) : (
           <ValidatedForm
             method="post"

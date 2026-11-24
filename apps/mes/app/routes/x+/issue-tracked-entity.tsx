@@ -93,6 +93,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       : {
           type: "trackedEntitiesToOperation",
+          issueId: validation.data.issueId,
           materialId,
           jobOperationId,
           itemId,

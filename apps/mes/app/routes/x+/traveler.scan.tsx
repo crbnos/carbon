@@ -17,6 +17,8 @@ import { path, TRAVELER_PARAM } from "~/utils/path";
 import { parseTravelerCode } from "~/utils/traveler";
 
 const scanValidator = z.object({
+  issueId: z.string().min(1).max(100).optional(),
+  expectedSerial: z.string().optional(),
   /** A traveler link, or a raw id or readable id from an older label. */
   code: z.string().refine((value) => value.trim().length > 0),
   /** The operation page the scan was made on, and the unit on screen. */
@@ -53,7 +55,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   if (!parsed.success) {
     return reply(400, null, "Invalid scan");
   }
-  const { code, operationId, ...screen } = parsed.data;
+  const { code, operationId, issueId, expectedSerial, ...screen } = parsed.data;
 
   const client = getCarbonServiceRole();
   const found = await findTrackedEntityByCode(client, {
@@ -80,6 +82,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
     locationId: locationId ?? null,
     employeeId: effectiveUserId ?? userId,
     trackedEntityId: found.entity.id,
+    issueId,
+    expectedSerial: expectedSerial ?? found.entity.readableId ?? undefined,
+    confirmedChoice: expectedSerial !== undefined,
     at: operationId ? { operationId, ...screen } : undefined
   });
   if (scan.resolution === null) {

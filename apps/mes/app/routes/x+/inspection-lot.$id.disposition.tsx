@@ -27,6 +27,7 @@ import {
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
+  inspectionPairingsMatch,
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
@@ -145,6 +146,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Serial allocation checks: ids must be this lot's WIP, still open at this
   // operation, and each unit allocated to exactly one outcome.
   let completionCandidates: {
+    pairingId?: string;
     trackedEntityId: string;
     inspectionSampleId: string | null;
   }[] = [];
@@ -180,14 +182,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
       completionCandidates = getSerialCompletionCandidates(state, {
         includePending: true,
         includeSampleless: true,
+        pairings: validation.data.pairings,
         excludeEntityIds: failedEntityIds
       });
     } else if (decision === "Partial") {
       completionCandidates = getSerialCompletionCandidates(state, {
         includePending: false,
         includeSampleless: false,
+        pairings: validation.data.pairings,
         excludeEntityIds: allocated
       });
+    }
+    const selected = [
+      ...allocated,
+      ...completionCandidates.map((candidate) => candidate.trackedEntityId)
+    ];
+    if (!inspectionPairingsMatch(state, selected, validation.data.pairings)) {
+      return fail(
+        null,
+        "A packed component has changed. Reopen the inspection and confirm the units."
+      );
     }
     completionQuantity = completionCandidates.length;
   } else {

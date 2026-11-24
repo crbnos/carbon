@@ -15,36 +15,43 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
-import { createPairedJob } from "./fixtures/paired-job";
+import { confirmPackoutCommand, createPairedJob } from "./fixtures/paired-job";
 import { receiveProductionPair } from "./fixtures/packout-production";
 
 type Job = Awaited<ReturnType<typeof createPairedJob>>;
 
-function issue(f: Fixture, job: Job, sourceId: string, outputId = job.unitId) {
+async function issue(
+  f: Fixture,
+  job: Job,
+  sourceId: string,
+  outputId = job.unitId,
+  issueId?: string
+) {
   return invokePosting(
     handlesOf(f.ctx),
     "issue",
-    {
+    await confirmPackoutCommand(f, {
       type: "trackedEntitiesToOperation",
       materialId: job.materialId,
       jobOperationId: job.operationId,
       parentTrackedEntityId: outputId,
       children: [{ trackedEntityId: sourceId, quantity: 1 }],
+      issueId,
       allowOverIssue: true
-    },
+    }),
     issueMaterial
   );
 }
-function complete(f: Fixture, job: Job) {
+async function complete(f: Fixture, job: Job) {
   return invokePosting(
     handlesOf(f.ctx),
     "issue",
-    {
+    await confirmPackoutCommand(f, {
       type: "jobOperationSerialComplete",
       jobOperationId: job.operationId,
       trackedEntityId: job.unitId,
       quantity: 1
-    },
+    }),
     issueMaterial
   );
 }
@@ -104,8 +111,14 @@ databaseTest(
       await rejectSource();
       await changeSource().set({ attributes: original.attributes }).execute();
 
-      expect((await issue(f, job, production.first.id!)).error).toBeNull();
-      expect((await issue(f, job, production.first.id!)).error).toBeNull();
+      const scan = crypto.randomUUID();
+      expect(
+        (await issue(f, job, production.first.id!, job.unitId, scan)).error
+      ).toBeNull();
+      expect(
+        (await issue(f, job, production.first.id!, job.unitId, scan)).error
+      ).toBeNull();
+
       expect((await issue(f, job, production.second.id!)).error).toBeTruthy();
       const offPlan = await invokePosting(
         handlesOf(f.ctx),
@@ -132,6 +145,23 @@ databaseTest(
         { id: job.unitId, quantity: 1, readableId: production.first.serial },
         { id: expect.any(String), quantity: 1, readableId: null }
       ]);
+      // A reduced target leaves a legitimate reserved spare on this job.
+      await f.db
+        .updateTable("job")
+        .set({ quantity: 1 })
+        .where("id", "=", job.jobId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        (await issue(f, job, production.second.id!, units[1]!.id!)).error
+          ?.message
+      ).toContain("All planned sales units");
+      await f.db
+        .updateTable("job")
+        .set({ quantity: 2 })
+        .where("id", "=", job.jobId)
+        .where("companyId", "=", f.companyId)
+        .execute();
       expect(
         (await issue(f, job, production.first.id!, units[1]!.id!)).error
       ).toBeTruthy();
@@ -375,6 +405,235 @@ databaseTest(
       expect(reported).toEqual([{ quantity: 1 }]);
     } finally {
       await editor.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a delayed scan or completion cannot act on a renamed, returned, or replaced component",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const {
+        productionItemId,
+        first: a,
+        second: b
+      } = await receiveProductionPair(f);
+      const job = await createPairedJob(f, productionItemId);
+      type Command = Parameters<typeof issueMaterial>[1];
+      const post = (input: Command) =>
+        invokePosting(handlesOf(f.ctx), "issue", input, issueMaterial);
+      const scan = (id: string) =>
+        confirmPackoutCommand(f, {
+          type: "trackedEntitiesToOperation",
+          materialId: job.materialId,
+          jobOperationId: job.operationId,
+          parentTrackedEntityId: job.unitId,
+          children: [{ trackedEntityId: id, quantity: 1 }]
+        });
+      const log = () =>
+        confirmPackoutCommand(f, {
+          type: "jobOperationSerialComplete",
+          jobOperationId: job.operationId,
+          trackedEntityId: job.unitId,
+          quantity: 1
+        });
+      const back = (id: string, pairingId: string) =>
+        post({
+          type: "unconsumeTrackedEntities",
+          pairingId,
+          materialId: job.materialId,
+          parentTrackedEntityId: job.unitId,
+          children: [{ trackedEntityId: id, quantity: 1 }]
+        });
+      const oldLabel = await scan(a.id!);
+      await f.db
+        .updateTable("trackedEntity")
+        .set({ readableId: "RELABELED" })
+        .where("id", "=", a.id!)
+        .where("companyId", "=", f.companyId)
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      expect((await post(oldLabel)).error?.message).toContain(
+        "serial has changed"
+      );
+      const firstScan = await scan(a.id!);
+      expect((await post(firstScan)).error).toBeNull();
+      expect((await post(firstScan)).error).toBeNull();
+      const delayedLog = await log();
+      const pairA = await f.db
+        .selectFrom("jobUnitPairing")
+        .select("id")
+        .where("sourceId", "=", a.id!)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect((await back(a.id!, pairA.id!)).error).toBeNull();
+      expect((await post(firstScan)).error?.message).toContain(
+        "already been used"
+      );
+      expect((await post(await scan(b.id!))).error).toBeNull();
+      expect((await post(delayedLog)).error?.message).toContain(
+        "component has changed"
+      );
+      const quantities = () =>
+        f.db
+          .selectFrom("productionQuantity")
+          .select("quantity")
+          .where("companyId", "=", f.companyId)
+          .where("jobOperationId", "=", job.operationId)
+          .execute();
+      expect(await quantities()).toEqual([]);
+      const freshLog = await log();
+      expect((await post(freshLog)).error).toBeNull();
+      expect((await post(delayedLog)).error?.message).toContain(
+        "component has changed"
+      );
+      expect((await post(freshLog)).error).toBeNull();
+      const pairB = await f.db
+        .selectFrom("jobUnitPairing")
+        .select("id")
+        .where("sourceId", "=", b.id!)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect((await back(b.id!, pairB.id!)).error?.message).toContain(
+        "logged complete"
+      );
+      const output = await f.db
+        .selectFrom("trackedEntity")
+        .select(["readableId", "status"])
+        .where("id", "=", job.unitId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(output).toEqual({ readableId: b.serial, status: "Available" });
+      expect(await quantities()).toHaveLength(1);
+      const posted = await f.db
+        .selectFrom("itemLedger")
+        .select(["trackedEntityId", "quantity"])
+        .where("documentId", "=", job.jobId)
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", productionItemId)
+        .orderBy("entryNumber")
+        .execute();
+      expect(
+        posted.map((row) => [row.trackedEntityId, Number(row.quantity)])
+      ).toEqual([
+        [a.id, -1],
+        [a.id, 1],
+        [b.id, -1]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "returning one packed component preserves a concurrent issue on the same material line",
+  async () => {
+    const f = await alwaysPostFixture();
+    const peer = await connectLocalTestDatabase();
+    const observer = await connectLocalTestDatabase();
+    const pending: Promise<Awaited<ReturnType<typeof issue>>>[] = [];
+    try {
+      await sql`SELECT set_config('app.sync_in_progress','false',false)`.execute(
+        peer
+      );
+      const {
+        productionItemId,
+        first: a,
+        second: b
+      } = await receiveProductionPair(f);
+      const job = await createPairedJob(f, productionItemId);
+      expect((await issue(f, job, a.id!)).error).toBeNull();
+      const blank = await f.db
+        .selectFrom("trackedEntity")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", job.salesItemId)
+        .where(sql<boolean>`attributes->>'Job' = ${job.jobId}`)
+        .where("readableId", "is", null)
+        .executeTakeFirstOrThrow();
+      const scan = await confirmPackoutCommand(f, {
+        type: "trackedEntitiesToOperation",
+        materialId: job.materialId,
+        jobOperationId: job.operationId,
+        parentTrackedEntityId: blank.id!,
+        children: [{ trackedEntityId: b.id!, quantity: 1 }]
+      });
+      const pid = async (db: Fixture["db"]) =>
+        (await sql<{ id: number }>`SELECT pg_backend_pid() AS id`.execute(db))
+          .rows[0]!.id;
+      const [issuer, receiver, blocker] = await Promise.all([
+        pid(f.db),
+        pid(peer),
+        pid(observer)
+      ]);
+      await observer.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("trackedEntity")
+          .select("id")
+          .where("companyId", "=", f.companyId)
+          .where("id", "=", b.id!)
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+        const waits = async (waiting: number, holding: number) =>
+          (
+            await sql<{
+              v: boolean;
+            }>`SELECT ${holding}::int = ANY(pg_blocking_pids(${waiting})) AS v`.execute(
+              trx
+            )
+          ).rows[0]!.v;
+        pending.push(
+          invokePosting(handlesOf(f.ctx), "issue", scan, issueMaterial)
+        );
+        await expect.poll(() => waits(issuer, blocker)).toBe(true);
+        pending.push(
+          invokePosting(
+            handlesOf({ ...f.ctx, db: peer }),
+            "issue",
+            {
+              type: "unconsumeTrackedEntities",
+              materialId: job.materialId,
+              parentTrackedEntityId: job.unitId,
+              children: [{ trackedEntityId: a.id!, quantity: 1 }]
+            },
+            issueMaterial
+          )
+        );
+        await expect.poll(() => waits(receiver, issuer)).toBe(true);
+      });
+      expect(
+        (await Promise.all(pending)).map((result) => result.error)
+      ).toEqual([null, null]);
+      const material = await f.db
+        .selectFrom("jobMaterial")
+        .select("quantityIssued")
+        .where("id", "=", job.materialId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(material.quantityIssued)).toBe(1);
+      const active = await f.db
+        .selectFrom("jobUnitPairing")
+        .select("sourceId")
+        .where("jobId", "=", job.jobId)
+        .where("companyId", "=", f.companyId)
+        .where("releasedAt", "is", null)
+        .execute();
+      expect(active).toEqual([{ sourceId: b.id }]);
+      const ledger = await f.db
+        .selectFrom("itemLedger")
+        .select((eb) => eb.fn.sum("quantity").as("net"))
+        .where("companyId", "=", f.companyId)
+        .where("documentId", "=", job.jobId)
+        .where("itemId", "=", productionItemId)
+        .executeTakeFirstOrThrow();
+      expect(Number(ledger.net)).toBe(-1);
+    } finally {
+      await Promise.allSettled(pending);
+      await observer.destroy();
+      await peer.destroy();
       await f.cleanup();
     }
   }

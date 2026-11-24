@@ -13714,6 +13714,9 @@ msgstr "Не удалось загрузить детали товара"
 msgid "Failed to load job operations"
 msgstr "Ошибка при загрузке операций заказа"
 
+msgid "Failed to load job receipts"
+msgstr "Не удалось загрузить данные о приёмке по производственному заказу"
+
 msgid "Failed to load jobs"
 msgstr "Не удалось загрузить производственные заказы"
 
@@ -27454,6 +27457,9 @@ msgstr "Отсканируйте этикетку или выполните по
 
 msgid "Scan a serial, batch or item number"
 msgstr "Отсканируйте серийный номер, номер серии или номенклатуру"
+
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Отсканируйте уникальный серийный номер или выберите единицу из списка."
 
 msgid "Scan or choose a batch number"
 msgstr "Сканировать или выбрать номер серии"

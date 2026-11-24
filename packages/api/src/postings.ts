@@ -67,6 +67,7 @@ export const issueInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("jobOperationSerialComplete"),
+    pairingId: z.string().optional(),
     trackedEntityId: z.string(),
     quantity: z.number(),
     jobOperationId: z.string(),
@@ -163,6 +164,7 @@ export const issueInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("trackedEntitiesToOperation"),
+    issueId: z.string().min(1).max(100).optional(),
     materialId: z.string().optional(),
     jobOperationId: z.string().optional(),
     itemId: z.string().optional(),
@@ -170,6 +172,7 @@ export const issueInput = z.discriminatedUnion("type", [
     children: z.array(
       z.object({
         trackedEntityId: z.string(),
+        expectedSerial: z.string().optional(),
         quantity: z.number()
       })
     ),

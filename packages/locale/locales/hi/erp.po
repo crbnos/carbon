@@ -13714,6 +13714,9 @@ msgstr "आइटम विवरण लोड करने में विफ�
 msgid "Failed to load job operations"
 msgstr "जॉब ऑपरेशन लोड करने में विफल"
 
+msgid "Failed to load job receipts"
+msgstr "जॉब की प्राप्तियाँ लोड नहीं हो सकीं"
+
 msgid "Failed to load jobs"
 msgstr "जॉब लोड करने में विफल"
 
@@ -27454,6 +27457,9 @@ msgstr "एक लेबल स्कैन करें या आइटम ID 
 
 msgid "Scan a serial, batch or item number"
 msgstr "एक सीरियल, बैच या आइटम नंबर स्कैन करें"
+
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "एक विशिष्ट सीरियल नंबर स्कैन करें या सूची से एक इकाई चुनें।"
 
 msgid "Scan or choose a batch number"
 msgstr "बैच नंबर स्कैन करें या चुनें"

@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   batchScanQuantity,
+  captureIssueSerial,
   decideTravelerClaim,
   findScannedUnit,
   isUnitInOperationScope,
@@ -47,6 +48,23 @@ describe("findScannedUnit", () => {
       findScannedUnit(duplicated, "https://labels.test/x/traveler/one")
     ).toBe(stock[0]);
     expect(findScannedUnit(duplicated, "three")).toBe(duplicated[2]);
+  });
+});
+
+it("keeps the same physical id and exact label when a later refresh moves the label to another piece", () => {
+  const stock = [
+    { id: "one", readableId: " SN " },
+    { id: "two", readableId: "SN" }
+  ];
+  const typed = captureIssueSerial(stock, " SN ");
+  const selected = captureIssueSerial(stock, "one");
+  stock[0]!.readableId = "RENAMED";
+  stock[1]!.readableId = " SN ";
+  expect(typed).toEqual({ observedId: "one", expectedSerial: " SN " });
+  expect(selected).toEqual(typed);
+  expect(captureIssueSerial(stock, " SN ")).toEqual({
+    observedId: "two",
+    expectedSerial: " SN "
   });
 });
 

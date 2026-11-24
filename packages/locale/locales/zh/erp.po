@@ -13714,6 +13714,9 @@ msgstr "加载项目详情失败"
 msgid "Failed to load job operations"
 msgstr "加载工单工序失败"
 
+msgid "Failed to load job receipts"
+msgstr "无法加载工单入库记录"
+
 msgid "Failed to load jobs"
 msgstr "加载工单失败"
 
@@ -27454,6 +27457,9 @@ msgstr "扫码或按物料ID或追踪ID搜索。"
 
 msgid "Scan a serial, batch or item number"
 msgstr "扫码序列号、生产批次或物料编号"
+
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "请扫描唯一的序列号，或从列表中选择单件。"
 
 msgid "Scan or choose a batch number"
 msgstr "扫码或选择一个生产批次号"

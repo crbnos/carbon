@@ -14,7 +14,7 @@ AS $function$
       AND mm."parentMaterialId" IS NULL AND jo.status <> 'Canceled'
   ), terminal AS (
     -- Parallel terminal operations each see the unit. A rework branch
-    -- applies to the units sent through it, in addition to the base routing.
+    -- applies only to the units sent through it.
     SELECT op.*
     FROM operations op
     WHERE NOT EXISTS (
@@ -49,6 +49,16 @@ AS $function$
           AND activity.type = 'Complete' AND activity."sourceDocument" = 'Job Operation'
           AND activity."sourceDocumentId" = t.id AND activity.attributes->>'Job' = p_job_id
       )
+      -- Diverting this unit to rework at this operation replaces its original
+      -- completion. The scoped branch terminal must itself pass this check.
+      AND NOT EXISTS (
+        SELECT 1 FROM "rework" rw
+        JOIN terminal replacement ON replacement."reworkId" = rw.id
+        JOIN "jobOperationTrackedEntity" scope ON scope."jobOperationId" = replacement.id
+        WHERE rw."jobId" = p_job_id AND rw."companyId" = p_company_id
+          AND rw."triggeredAtJobOperationId" = t.id
+          AND scope."companyId" = p_company_id AND scope."trackedEntityId" = output.id
+      )
     )
     AND NOT EXISTS (
       SELECT 1 FROM "itemLedger" il
@@ -58,33 +68,41 @@ AS $function$
   ORDER BY pair.serial, output.id
 $function$;
 
--- Count physical output pieces scrapped on this job. Scrapping a component,
--- recording rework, or scrapping a previously received piece does not reduce
--- the number that the pack-out operation must account for.
+-- Count only scrap that can stand in for unfinished demand. When another
+-- source has already been fitted to a replacement, its output still has to
+-- finish. Both Finish and ERP use this count, while holding the job lock.
 CREATE OR REPLACE FUNCTION public.job_scrapped_paired_output_count(p_job_id text, p_company_id text)
 RETURNS integer
 LANGUAGE sql STABLE SECURITY INVOKER
 SET search_path = public
 AS $function$
-  SELECT count(*)::integer
-  FROM "trackedEntity" unit
-  JOIN "job" j ON j.id = p_job_id AND j."companyId" = p_company_id AND j."itemId" = unit."itemId"
-  JOIN "jobMakeMethod" mm ON mm.id = unit.attributes->>'Job Make Method' AND mm."companyId" = j."companyId"
-    AND mm."jobId" = j.id AND mm."parentMaterialId" IS NULL
-  WHERE unit."companyId" = p_company_id AND unit.attributes->>'Job' = p_job_id
-    AND unit.quantity = 1 AND unit.status = 'Scrapped'
-    AND EXISTS (
-      SELECT 1 FROM "trackedActivityInput" ai
-      JOIN "trackedActivity" activity ON activity.id = ai."trackedActivityId" AND activity."companyId" = ai."companyId"
-      JOIN "jobOperation" op ON op.id = activity."sourceDocumentId" AND op."companyId" = activity."companyId"
-      WHERE ai."trackedEntityId" = unit.id AND ai."companyId" = p_company_id
-        AND activity.type = 'Scrap' AND activity."sourceDocument" = 'Job Operation' AND op."jobId" = p_job_id
-    )
-    AND NOT EXISTS (
-      SELECT 1 FROM "itemLedger" il
-      WHERE il."companyId" = p_company_id AND il."trackedEntityId" = unit.id
-        AND il."documentType" = 'Job Receipt' AND il."documentId" = p_job_id
-    )
+  WITH physical_scrap AS (
+    SELECT count(*) AS quantity
+    FROM "trackedEntity" unit
+    JOIN "job" j ON j.id = p_job_id AND j."companyId" = p_company_id AND j."itemId" = unit."itemId"
+    JOIN "jobMakeMethod" mm ON mm.id = unit.attributes->>'Job Make Method' AND mm."companyId" = j."companyId"
+      AND mm."jobId" = j.id AND mm."parentMaterialId" IS NULL
+    WHERE unit."companyId" = p_company_id AND unit.attributes->>'Job' = p_job_id
+      AND unit.quantity = 1 AND unit.status = 'Scrapped'
+      AND EXISTS (
+        SELECT 1 FROM "trackedActivityInput" ai
+        JOIN "trackedActivity" activity ON activity.id = ai."trackedActivityId" AND activity."companyId" = ai."companyId"
+        JOIN "jobOperation" op ON op.id = activity."sourceDocumentId" AND op."companyId" = activity."companyId"
+        WHERE ai."trackedEntityId" = unit.id AND ai."companyId" = p_company_id
+          AND activity.type = 'Scrap' AND activity."sourceDocument" = 'Job Operation' AND op."jobId" = p_job_id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM "itemLedger" il
+        WHERE il."companyId" = p_company_id AND il."trackedEntityId" = unit.id
+          AND il."documentType" = 'Job Receipt' AND il."documentId" = p_job_id
+      )
+  )
+  SELECT LEAST(physical_scrap.quantity, GREATEST(0, j.quantity - (
+    SELECT count(*) FROM "jobUnitPairing" p
+    WHERE p."jobId" = j.id AND p."companyId" = j."companyId" AND p."releasedAt" IS NULL
+  )))::integer
+  FROM physical_scrap CROSS JOIN job j
+  WHERE j.id = p_job_id AND j."companyId" = p_company_id
 $function$;
 
 REVOKE ALL ON FUNCTION public.job_receivable_paired_units(text, text) FROM PUBLIC, anon;
@@ -161,6 +179,7 @@ DECLARE
   v_backflush_quantity NUMERIC;
   v_scrapped_outputs INTEGER;
   v_selected_source_cost NUMERIC;
+  v_unit_source_costs NUMERIC[];
   v_pending_source_cost NUMERIC;
   v_receipt_backflush_cost NUMERIC;
   v_issued_units_received NUMERIC := 0;
@@ -1429,25 +1448,72 @@ BEGIN
   -- to finished goods; it stays in WIP for the close.
   v_accumulated_wip_cost := job_wip_balance(p_job_id, p_company_id);
 
-  IF v_partial_paired_receipt THEN
-    -- Source issues already in WIP for a later box must remain there. Post
-    -- the selected sources' actual booked cost, plus this receipt's share of
-    -- other accumulated job costs. The final receipt sweeps rounding residue.
-    SELECT COALESCE(-SUM(cl.cost) FILTER (WHERE p."outputId" = ANY(v_serial_unit_ids)), 0),
-           COALESCE(-SUM(cl.cost), 0)
-    INTO v_selected_source_cost, v_pending_source_cost
-    FROM "jobUnitPairing" p
-    JOIN "costLedger" cl ON cl."trackedEntityId" = p."sourceId" AND cl."companyId" = p."companyId"
-      AND cl."documentId" = p."jobId" AND cl."documentType" = 'Job Consumption'
-    WHERE p."jobId" = p_job_id AND p."companyId" = p_company_id AND p."releasedAt" IS NULL
-      AND (p."outputId" = ANY(v_serial_unit_ids) OR NOT EXISTS (
-        SELECT 1 FROM "itemLedger" il
-        WHERE il."trackedEntityId" = p."outputId" AND il."companyId" = p_company_id
-          AND il."documentId" = p_job_id AND il."documentType" = 'Job Receipt'
-      ));
-    v_accumulated_wip_cost := ROUND(v_selected_source_cost + v_receipt_backflush_cost
-      + (v_accumulated_wip_cost - v_pending_source_cost - v_receipt_backflush_cost)
-      * v_quantity_received_to_inventory / (v_planned_quantity - v_scrapped_outputs - COALESCE(v_prior_quantity_received, 0)), 5);
+  IF v_paired AND v_quantity_received_to_inventory > 0 THEN
+    -- The latest issue is the cost of the current binding. Earlier issues
+    -- of the same source may have been reversed or scrapped and recovered.
+    WITH pending AS (
+      SELECT p."outputId", selected.ord, COALESCE(-issue.cost, 0) AS source_cost
+      FROM "jobUnitPairing" p
+      LEFT JOIN unnest(v_serial_unit_ids) WITH ORDINALITY selected(id, ord) ON selected.id = p."outputId"
+      LEFT JOIN LATERAL (
+        SELECT cl.cost FROM "costLedger" cl
+        WHERE cl."trackedEntityId" = p."sourceId" AND cl."companyId" = p."companyId"
+          AND cl."documentId" = p."jobId" AND cl."documentType" = 'Job Consumption'
+          AND cl.quantity < 0 AND NOT cl.adjustment
+        ORDER BY cl."entryNumber" DESC LIMIT 1
+      ) issue ON true
+      WHERE p."jobId" = p_job_id AND p."companyId" = p_company_id AND p."releasedAt" IS NULL
+        AND (selected.ord IS NOT NULL OR NOT EXISTS (
+          SELECT 1 FROM "itemLedger" il
+          WHERE il."trackedEntityId" = p."outputId" AND il."companyId" = p_company_id
+            AND il."documentId" = p_job_id AND il."documentType" = 'Job Receipt'
+        ))
+    )
+    SELECT SUM(source_cost) FILTER (WHERE ord IS NOT NULL), SUM(source_cost),
+           array_agg(source_cost ORDER BY ord) FILTER (WHERE ord IS NOT NULL)
+    INTO v_selected_source_cost, v_pending_source_cost, v_unit_source_costs
+    FROM pending;
+
+    IF v_partial_paired_receipt THEN
+      -- Leave the cost of the other sources in WIP. Shared job expenses are
+      -- apportioned across the good pieces still expected, with this receipt's
+      -- incremental backflush charged to its own pieces.
+      v_accumulated_wip_cost := ROUND(v_selected_source_cost + v_receipt_backflush_cost
+        + (v_accumulated_wip_cost - v_pending_source_cost - v_receipt_backflush_cost)
+        * v_quantity_received_to_inventory / (v_planned_quantity - v_scrapped_outputs - COALESCE(v_prior_quantity_received, 0)), 5);
+    END IF;
+
+    -- Open one quantity-one layer in the same project stripe as its physical
+    -- receipt. Even a free unit needs a layer, or its shipment would relieve
+    -- another serial's cost. Round cumulative allocations so their differences
+    -- sum to the exact amount transferred from WIP.
+    WITH costs AS (
+      SELECT unit.id, unit.ord, receipt."projectId",
+             SUM(unit.source_cost) OVER (ORDER BY unit.ord) AS source_total
+      FROM unnest(v_serial_unit_ids, v_unit_source_costs) WITH ORDINALITY unit(id, source_cost, ord)
+      JOIN "itemLedger" receipt ON receipt."trackedEntityId" = unit.id
+        AND receipt."documentId" = p_job_id AND receipt."documentType" = 'Job Receipt'
+        AND receipt."companyId" = p_company_id
+    ), allocations AS (
+      SELECT *, CASE
+        WHEN v_accumulated_wip_cost <= 0 THEN 0
+        -- A credit against shared WIP reduces the units in proportion to
+        -- their source values, without making a cheap unit's layer negative.
+        WHEN v_accumulated_wip_cost < v_selected_source_cost THEN
+          ROUND(v_accumulated_wip_cost * source_total / v_selected_source_cost, 5)
+        ELSE source_total + ROUND((v_accumulated_wip_cost - v_selected_source_cost)
+          * ord / v_quantity_received_to_inventory, 5)
+      END AS cumulative_cost
+      FROM costs
+    )
+    INSERT INTO "costLedger" (
+      "itemLedgerType", "costLedgerType", adjustment, "documentType", "documentId", "itemId",
+      "trackedEntityId", quantity, cost, "remainingQuantity", "projectId", "companyId"
+    )
+    SELECT 'Output', 'Direct Cost', false, 'Job Receipt', p_job_id, v_item_id,
+           id, 1, cumulative_cost - lag(cumulative_cost, 1, 0::numeric) OVER (ORDER BY ord),
+           1, "projectId", p_company_id
+    FROM allocations ORDER BY ord;
   END IF;
 
   IF v_accumulated_wip_cost <= 0 THEN
@@ -1565,7 +1631,7 @@ BEGIN
   -- One Output layer per stripe of the receipt rows above, each at the job's
   -- unit cost; the last stripe takes the rounding rest. The unit cost already
   -- carries the scrap cost, so scrap spreads over the stripes by quantity.
-  IF v_item_tracking_type IS DISTINCT FROM 'Non-Inventory' AND v_asset_target IS NULL THEN
+  IF NOT v_paired AND v_item_tracking_type IS DISTINCT FROM 'Non-Inventory' AND v_asset_target IS NULL THEN
     v_layer_cost_left := v_accumulated_wip_cost;
     FOR v_stripe_index IN 1..array_length(v_stripe_project_ids, 1) LOOP
       v_layer_cost := CASE

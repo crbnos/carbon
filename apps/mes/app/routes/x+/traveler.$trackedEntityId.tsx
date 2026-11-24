@@ -204,6 +204,7 @@ function ClaimChooser({
     setPending(true);
     const result = await postTravelerScan({
       code: unit.id,
+      expectedSerial: unit.readableId,
       operationId: selected.operationId,
       trackedEntityId: selected.parentTrackedEntityId
     });

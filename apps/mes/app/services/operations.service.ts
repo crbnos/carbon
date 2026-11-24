@@ -2574,7 +2574,22 @@ export async function getTrackedEntitiesForOperation(
   client: SupabaseClient<Database>,
   args: { operationId: string; jobMakeMethodId: string; companyId: string }
 ) {
-  return readOperationUnits<TrackedEntityRow>(client, args, "*");
+  const result = await readOperationUnits<
+    TrackedEntityRow & { pairings: { id: string }[] }
+  >(
+    client,
+    args,
+    "*, pairings:jobUnitPairing!jobUnitPairing_outputId_fkey(id)",
+    true
+  );
+  return {
+    ...result,
+    data:
+      result.data?.map(({ pairings, ...unit }) => ({
+        ...unit,
+        pairingId: pairings?.[0]?.id
+      })) ?? null
+  };
 }
 
 /**
@@ -2594,19 +2609,21 @@ export async function getOperationUnitAxis(
 async function readOperationUnits<T extends { id: string }>(
   client: SupabaseClient<Database>,
   args: { operationId: string; jobMakeMethodId: string; companyId: string },
-  columns: string
+  columns: string,
+  includeActivePair = false
 ) {
   const [entities, scope] = await Promise.all([
-    fetchAll<T>(() =>
-      client
+    fetchAll<T>(() => {
+      const query = client
         .from("trackedEntity")
         .select(columns)
         .eq("attributes->>Job Make Method", args.jobMakeMethodId)
         .eq("companyId", args.companyId)
         .order("createdAt", { ascending: true })
         .order("readableId", { ascending: true })
-        .order("id", { ascending: true })
-    ),
+        .order("id", { ascending: true });
+      return includeActivePair ? query.is("pairings.releasedAt", null) : query;
+    }),
     fetchAll<{ trackedEntityId: string }>(() =>
       client
         .from("jobOperationTrackedEntity")
@@ -3286,28 +3303,31 @@ export async function insertReworkQuantity(
     createdBy: string;
   }
 ) {
-  const {
-    trackedEntityId: _trackedEntityId,
-    trackingType: _trackingType,
-    ...insert
-  } = data;
-
   return client
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...insert,
+        ...withoutTracking(data),
         type: "Rework" as const
       })
     )
     .select("*");
 }
 
-// The tracked entity is recorded by the issue path, not on productionQuantity.
+// The issue posting owns physical tracking and the confirmed source pairing.
 function withoutTracking<
-  T extends { trackedEntityId?: unknown; trackingType?: unknown }
->(data: T): Omit<T, "trackedEntityId" | "trackingType"> {
-  const { trackedEntityId: _entity, trackingType: _tracking, ...rest } = data;
+  T extends {
+    trackedEntityId?: unknown;
+    trackingType?: unknown;
+    pairingId?: unknown;
+  }
+>(data: T): Omit<T, "trackedEntityId" | "trackingType" | "pairingId"> {
+  const {
+    trackedEntityId: _entity,
+    trackingType: _tracking,
+    pairingId: _pairing,
+    ...rest
+  } = data;
   return rest;
 }
 

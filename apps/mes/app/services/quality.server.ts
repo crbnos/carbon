@@ -290,7 +290,12 @@ export type InspectionOutcomeState = {
   opRemaining: number;
   // Serial only: the make method's WIP entities and the eligibility test
   // (not Consumed, not Rejected, not already completed at this operation).
-  entities: { id: string; status: string | null; attributes: unknown }[];
+  entities: {
+    id: string;
+    status: string | null;
+    attributes: unknown;
+    pairingId?: string;
+  }[];
   entityEligible: (entityId: string) => boolean;
 };
 
@@ -413,6 +418,7 @@ export async function getInspectionOutcomeState(
     id: e.id,
     status: e.status,
     attributes: e.attributes,
+    pairingId: e.pairingId,
     inOperationScope: e.inOperationScope
   }));
   const opAttrKey = `Operation ${jobOperationId}`;
@@ -453,6 +459,18 @@ export async function getInspectionOutcomeState(
   };
 }
 
+/** Compare each selected inspection outcome to the binding shown on the floor. */
+export function inspectionPairingsMatch(
+  state: InspectionOutcomeState,
+  ids: Iterable<string>,
+  expected: Record<string, string> | undefined
+): boolean {
+  const current = new Map(
+    state.entities.map((unit) => [unit.id, unit.pairingId])
+  );
+  return Array.from(ids).every((id) => expected?.[id] === current.get(id));
+}
+
 // The serial units a completion pass may post, in ascending sample order:
 // sampled units whose sample isn't linked yet, then (optionally) sample-less
 // eligible units. Verdict-driven double-posting is impossible — the sample
@@ -467,9 +485,11 @@ export function getSerialCompletionCandidates(
     // Accept sweeps un-sampled eligible units; Partial/complete-passed don't.
     includeSampleless: boolean;
     excludeEntityIds?: Set<string>;
+    pairings?: Record<string, string>;
   }
-): { trackedEntityId: string; inspectionSampleId: string | null }[] {
+) {
   const candidates: {
+    pairingId?: string;
     trackedEntityId: string;
     inspectionSampleId: string | null;
   }[] = [];
@@ -486,6 +506,7 @@ export function getSerialCompletionCandidates(
     if (opts.excludeEntityIds?.has(sample.trackedEntityId)) continue;
     candidates.push({
       trackedEntityId: sample.trackedEntityId,
+      pairingId: opts.pairings?.[sample.trackedEntityId],
       inspectionSampleId: sample.id
     });
   }
@@ -494,7 +515,11 @@ export function getSerialCompletionCandidates(
       if (sampledEntityIds.has(entity.id)) continue;
       if (!state.entityEligible(entity.id)) continue;
       if (opts.excludeEntityIds?.has(entity.id)) continue;
-      candidates.push({ trackedEntityId: entity.id, inspectionSampleId: null });
+      candidates.push({
+        trackedEntityId: entity.id,
+        pairingId: opts.pairings?.[entity.id],
+        inspectionSampleId: null
+      });
     }
   }
   return candidates;
@@ -507,6 +532,7 @@ export async function postSerialCompletions(
   serviceRole: ServiceRole,
   args: {
     candidates: {
+      pairingId?: string;
       trackedEntityId: string;
       inspectionSampleId: string | null;
     }[];
@@ -530,6 +556,7 @@ export async function postSerialCompletions(
       {
         type: "jobOperationSerialComplete",
         trackedEntityId: candidate.trackedEntityId,
+        pairingId: candidate.pairingId,
         quantity: 1,
         jobOperationId: args.jobOperationId,
         inspectionId: args.inspectionId,

@@ -13714,6 +13714,9 @@ msgstr "Impossible de charger les détails de l'article"
 msgid "Failed to load job operations"
 msgstr "Échec du chargement des opérations d'OF"
 
+msgid "Failed to load job receipts"
+msgstr "Impossible de charger les réceptions de l’ordre de fabrication"
+
 msgid "Failed to load jobs"
 msgstr "Échec du chargement des ordres de fabrication"
 
@@ -27454,6 +27457,9 @@ msgstr "Scannez une étiquette ou recherchez par ID d'article ou ID de suivi."
 
 msgid "Scan a serial, batch or item number"
 msgstr "Scannez un numéro de série, un lot de production ou un article"
+
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Scannez un numéro de série unique ou sélectionnez une unité dans la liste."
 
 msgid "Scan or choose a batch number"
 msgstr "Scannez ou choisissez un numéro de lot"

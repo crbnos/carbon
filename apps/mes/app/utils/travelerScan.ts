@@ -2,11 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { nanoid } from "nanoid";
 import type { TravelerScanResponse } from "~/routes/x+/traveler.scan";
 import { path } from "~/utils/path";
 
 export type TravelerScanRequest = {
   code: string;
+  expectedSerial?: string;
   operationId?: string;
   trackedEntityId?: string;
   jobOperationStepId?: string;
@@ -24,7 +26,7 @@ export async function postTravelerScan(
     const response = await fetch(path.to.travelerScan, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+      body: JSON.stringify({ ...body, issueId: nanoid() })
     });
     const result = (await response.json()) as TravelerScanResponse;
     return { ...result, status: response.status };

@@ -135,6 +135,7 @@ import type {
 import { parseItemCode } from "~/utils/itemScan";
 import {
   isKanbanCompleteScan,
+  kanbanCompleteHref,
   kanbanCompleteTarget,
   soleUnitId
 } from "~/utils/kanban";
@@ -339,6 +340,7 @@ type Props = {
     attributes?: unknown;
     /** False when this rework or correction copy does not work the unit. */
     inOperationScope?: boolean;
+    pairingId?: string;
   }[];
   trackedEntityId: string | null;
   materials: { materials?: any[]; trackedInputs?: any[] } | null;
@@ -646,9 +648,7 @@ export function AssemblyView({
       if (target.action === "select") return askForUnit();
       const endPath = path.to.endOperation(operationId);
       return completeFetcher.load(
-        target.trackedEntityId
-          ? `${endPath}?trackedEntityId=${target.trackedEntityId}`
-          : endPath
+        kanbanCompleteHref(endPath, target.trackedEntityId, trackedEntities)
       );
     },
     inTextFields: true,
@@ -1601,6 +1601,7 @@ export function AssemblyView({
     if (requiresSerialTracking) fd.set("trackingType", "Serial");
     else if (requiresBatchTracking) fd.set("trackingType", "Batch");
     if (isTracked && workEntity?.id) fd.set("trackedEntityId", workEntity.id);
+    if (workEntity?.pairingId) fd.set("pairingId", workEntity.pairingId);
     // Link the open production events so the completion is attributed to them.
     const setup = openByType("Setup");
     const labor = openByType("Labor");
@@ -2909,6 +2910,7 @@ export function AssemblyView({
           parentIsBatch={requiresBatchTracking}
           trackedEntityId={workEntity?.id ?? ""}
           trackedEntityReadableId={workEntity?.readableId ?? undefined}
+          pairingId={workEntity?.pairingId}
           setupProductionEvent={openByType("Setup")}
           laborProductionEvent={openByType("Labor")}
           machineProductionEvent={openByType("Machine")}
