@@ -1095,3 +1095,91 @@ for (const disposition of ["Scrap", "Return to Supplier"] as const) {
     }
   );
 }
+
+
+for (const decision of ["Use As Is", "Scrap", "Return to Supplier"] as const) {
+  postgrestTest(
+    `closing the final header-only issue preserves the serial's ${decision} decision`,
+    async (client) => {
+      const f = await alwaysPostFixture();
+      try {
+        await stockPart(f, 20);
+        const job = await serialJob(f, 1);
+        await holdUnits(f, true);
+        const unitId = `${f.prefix}-unit-1`;
+        const materialIssue = await raiseIssue(f, 1);
+        const headerIssue = await raiseIssue(f, 1, 2);
+        await seed(f, async (trx) => {
+          await trx
+            .updateTable("trackedEntity")
+            .set({ status: "Rejected" })
+            .where("id", "=", unitId)
+            .execute();
+          const row = await trx
+            .insertInto("nonConformanceItem")
+            .values({
+              nonConformanceId: materialIssue,
+              itemId: f.assemblyId,
+              disposition: decision,
+              quantity: 1,
+              companyId: f.companyId,
+              createdBy: USER
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          await trx
+            .insertInto("nonConformanceItemTrackedEntity")
+            .values({
+              nonConformanceItemId: row.id,
+              nonConformanceId: materialIssue,
+              trackedEntityId: unitId,
+              quantity: 1,
+              companyId: f.companyId,
+              createdBy: USER
+            })
+            .execute();
+        });
+        const close = (nonConformanceId: string) =>
+          dispositionIssue(client, f.db, {
+            nonConformanceId,
+            companyId: f.companyId,
+            userId: USER
+          });
+        expect((await close(materialIssue)).error).toBeNull();
+        const work = () =>
+          postSerial(f, "jobOperationSerialComplete", job.operationId, 1);
+        expect((await work()).error?.message).toMatch(/NCR-/);
+        await expect(completeToInventory(f, job.jobId, 1)).rejects.toThrow(
+          /quality issue/
+        );
+        expect(await received(f, job.jobId)).toEqual([]);
+
+        expect((await close(headerIssue)).error).toBeNull();
+        const unit = await f.db
+          .selectFrom("trackedEntity")
+          .select("status")
+          .where("id", "=", unitId)
+          .executeTakeFirstOrThrow();
+        if (decision === "Use As Is") {
+          expect(unit.status).toBe("Available");
+          expect((await work()).error).toBeNull();
+          await completeToInventory(f, job.jobId, 1);
+          await completeToInventory(f, job.jobId, 1);
+          expect(await received(f, job.jobId)).toEqual(["SN-001"]);
+          expect(
+            (await jobQuantities(f, job.jobId)).quantityReceivedToInventory
+          ).toBe(1);
+        } else {
+          expect(unit.status).toBe("Rejected");
+          expect((await work()).error?.message).toContain(decision);
+          await expect(completeToInventory(f, job.jobId, 1)).rejects.toThrow(
+            /quality issue/
+          );
+          expect(await received(f, job.jobId)).toEqual([]);
+        }
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}

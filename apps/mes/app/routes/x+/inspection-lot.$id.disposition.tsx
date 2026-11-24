@@ -149,6 +149,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     inspectionSampleId: string | null;
   }[] = [];
   let completionQuantity = 0;
+  let acceptedUnitIds: string[] | undefined;
   const scrapTotal = state.requiresSerialTracking
     ? scrapEntityIds.length
     : (validation.data.scrapQuantity ?? 0);
@@ -177,11 +178,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
     if (decision === "Accept") {
-      completionCandidates = getSerialCompletionCandidates(state, {
-        includePending: true,
-        includeSampleless: true,
-        excludeEntityIds: failedEntityIds
-      });
+      const accepted = getSerialCompletionCandidates(
+        { ...state, entityEligible: (id) => state.entityEligible(id, true) },
+        {
+          includePending: true,
+          includeSampleless: true,
+          excludeEntityIds: failedEntityIds
+        }
+      );
+      acceptedUnitIds = accepted.map((unit) => unit.trackedEntityId);
+      completionCandidates = accepted.filter((unit) =>
+        state.entityEligible(unit.trackedEntityId)
+      );
     } else if (decision === "Partial") {
       completionCandidates = getSerialCompletionCandidates(state, {
         includePending: false,
@@ -257,6 +265,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     decision,
     companyId,
     dispositionedBy: userId,
+    acceptedUnitIds,
+    requireSource: "Job Operation",
     requireOpen: true
   });
   if (dispositionResult.error) {

@@ -251,3 +251,61 @@ export function getDefaultSerialCompleteQuantity({
       : Math.max(jobQuantity - priorReceivedQuantity, 0);
   return priorReceivedQuantity + Math.min(newUnits, receivableSerialCount);
 }
+
+/** Quantity and serial selection when the operator opens Complete. */
+export function getTrackedReceiptQuantity(
+  receipts: Pick<
+    JobReceiptSnapshot,
+    | "tracking"
+    | "trackedEntityIds"
+    | "issuedTrackedEntityIds"
+    | "quantityReceivedToInventory"
+  >
+): { choice: SerialCompleteChoice; quantity: number } | null {
+  const { tracking } = receipts;
+  const { trackedEntities } = tracking;
+  if (!tracking.requiresSerialTracking) {
+    if (!tracking.requiresBatchTracking || !trackedEntities.length) return null;
+    return {
+      choice: { mode: "locked" },
+      quantity: getFinishedQuantity(trackedEntities)
+    };
+  }
+  const heldUnitIds = new Set(
+    trackedEntities.filter((unit) => unit.held).map((unit) => unit.id)
+  );
+  const eligible = trackedEntities.filter((unit) => !heldUnitIds.has(unit.id));
+  const receivedEntityIds = new Set(receipts.trackedEntityIds);
+  const issuedEntityIds = new Set(
+    tracking.fixedAssetClassId || tracking.fixedAssetId
+      ? []
+      : receipts.issuedTrackedEntityIds
+  );
+  const choice = getSerialCompleteChoice({
+    trackedEntities,
+    heldUnitIds,
+    receivedEntityIds,
+    issuedEntityIds,
+    hasSerialSequence: !!tracking.sequenceId,
+    jobQuantity: tracking.quantity
+  });
+  return {
+    choice,
+    quantity:
+      choice.mode === "locked"
+        ? getFinishedQuantity(eligible, issuedEntityIds)
+        : getDefaultSerialCompleteQuantity({
+            finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
+              eligible,
+              receivedEntityIds,
+              issuedEntityIds
+            ),
+            jobQuantity: tracking.quantity,
+            priorReceivedQuantity: receipts.quantityReceivedToInventory,
+            receivableSerialCount:
+              choice.mode === "serials"
+                ? choice.serials.length
+                : choice.receivableCount
+          })
+  };
+}

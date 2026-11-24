@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { sql } from "kysely";
 import { expect } from "vitest";
 import { issueMaterial } from "../../app/modules/inventory/inventory.service";
 import {
@@ -461,6 +462,274 @@ databaseTest(
           .where("jobOperationId", "=", job.operationId)
           .execute()
       ).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+async function activeSerialBatch(f: Fixture, quantity: number) {
+  const job = await serialJob(f, quantity);
+  await stockPart(f, 10);
+  const batchId = `${f.prefix}-batch`;
+  await attachBatch(f, job.operationId, batchId);
+  await seed(f, async (trx) => {
+    const op = await trx
+      .updateTable("jobOperation")
+      .set({
+        quantityComplete: 0,
+        quantityReworked: 0,
+        quantityScrapped: 0,
+        targetQuantity: quantity,
+        operationQuantity: quantity,
+        status: "In Progress"
+      })
+      .where("id", "=", job.operationId)
+      .returning("processId")
+      .executeTakeFirstOrThrow();
+    const final = await trx
+      .insertInto("jobOperation")
+      .values({
+        jobId: job.jobId,
+        jobMakeMethodId: job.makeMethodId,
+        processId: op.processId,
+        description: "Final inspection",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await trx
+      .insertInto("jobOperationDependency")
+      .values({
+        operationId: final.id,
+        dependsOnId: job.operationId,
+        jobId: job.jobId,
+        companyId: f.companyId
+      })
+      .execute();
+  });
+  await holdUnits(f, true);
+  const issueId = await raiseIssue(f, 1);
+  await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(
+    f.db
+  );
+  // Exactly what batch.$batchId.complete sends for a serial member.
+  const submit = (produced: number) =>
+    invokePosting(
+      handlesOf(f.ctx),
+      "batch-operations",
+      {
+        type: "complete",
+        batchId,
+        members: [
+          {
+            jobOperationId: job.operationId,
+            quantity: produced,
+            scrapQuantity: 0,
+            trackedEntityId: null,
+            batchNumber: null,
+            excluded: false
+          }
+        ]
+      },
+      batchOperation
+    );
+  return { ...job, batchId, issueId, submit };
+}
+
+databaseTest(
+  "a process batch refuses its only held serial before any production or material issue",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await activeSerialBatch(f, 1);
+      const op = f.db
+        .selectFrom("jobOperation")
+        .select([
+          "status",
+          "quantityComplete",
+          "quantityScrapped",
+          "jobOperationBatchId"
+        ])
+        .where("id", "=", job.operationId);
+      const mat = f.db
+        .selectFrom("jobMaterial")
+        .select("quantityIssued")
+        .where("id", "=", job.materialId);
+      const before = await op.executeTakeFirstOrThrow();
+      const issued = await mat.executeTakeFirstOrThrow();
+      expect((await job.submit(1)).error?.message).toContain("NCR-1");
+      expect(await op.executeTakeFirstOrThrow()).toEqual(before);
+      expect(await mat.executeTakeFirstOrThrow()).toEqual(issued);
+      expect(
+        await f.db
+          .selectFrom("jobOperationBatch")
+          .select("status")
+          .where("id", "=", job.batchId)
+          .executeTakeFirst()
+      ).toEqual({ status: "Active" });
+      expect(
+        await f.db
+          .selectFrom("productionQuantity")
+          .select("id")
+          .where("jobOperationId", "=", job.operationId)
+          .execute()
+      ).toEqual([]);
+      expect(
+        await f.db
+          .selectFrom("itemLedger")
+          .select("id")
+          .where("documentId", "=", job.jobId)
+          .execute()
+      ).toEqual([]);
+
+      await holdUnits(f, false);
+      expect((await job.submit(1)).error).toBeNull();
+      expect(await op.executeTakeFirstOrThrow()).toMatchObject({
+        status: "Done",
+        quantityComplete: 1
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a mixed process batch credits its eligible serial and returns the operation to the floor for its held sibling",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await activeSerialBatch(f, 2);
+      expect((await job.submit(2)).error?.message).toContain("NCR-1");
+      // Material posting needs the company's posting accounts in phase two.
+      // Release A between that failure and the operator's retry.
+      const accounts = await f.db
+        .deleteFrom("accountDefault")
+        .where("companyId", "=", f.companyId)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      expect((await job.submit(1)).error?.message).toMatch(/issue materials/i);
+      const batch = f.db
+        .selectFrom("jobOperationBatch")
+        .select("status")
+        .where("id", "=", job.batchId);
+      expect(await batch.executeTakeFirst()).toEqual({ status: "Completing" });
+      await seed(f, async (trx) => {
+        await trx.insertInto("accountDefault").values(accounts).execute();
+        await trx
+          .updateTable("nonConformance")
+          .set({ status: "Closed" })
+          .where("id", "=", job.issueId)
+          .execute();
+      });
+      expect((await job.submit(2)).error?.message).toMatch(/already recorded/i);
+      expect((await job.submit(1)).error).toBeNull();
+      const op = f.db
+        .selectFrom("jobOperation")
+        .select(["status", "quantityComplete", "jobOperationBatchId"])
+        .where("id", "=", job.operationId);
+      expect(await op.executeTakeFirstOrThrow()).toEqual({
+        status: "In Progress",
+        quantityComplete: 1,
+        jobOperationBatchId: null
+      });
+      const marked = () =>
+        f.db
+          .selectFrom("trackedEntity")
+          .select("readableId")
+          .where("companyId", "=", f.companyId)
+          .where(sql<boolean>`attributes ? ${"Operation " + job.operationId}`)
+          .orderBy("readableId")
+          .execute();
+      expect(await marked()).toEqual([{ readableId: "SN-002" }]);
+      expect(await batch.executeTakeFirst()).toEqual({ status: "Completed" });
+      expect(
+        await f.db
+          .selectFrom("itemLedger")
+          .select("quantity")
+          .where("documentId", "=", job.jobId)
+          .where("documentType", "=", "Job Consumption")
+          .execute()
+      ).toEqual([{ quantity: -2 }]);
+      const finish = () =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "jobOperationSerialComplete",
+            trackedEntityId: `${f.prefix}-unit-1`,
+            quantity: 1,
+            jobOperationId: job.operationId
+          },
+          issueMaterial
+        );
+      expect((await finish()).error).toBeNull();
+      expect((await finish()).error?.message).toMatch(/already complete/i);
+      expect(await marked()).toEqual([
+        { readableId: "SN-001" },
+        { readableId: "SN-002" }
+      ]);
+      expect(await op.executeTakeFirstOrThrow()).toMatchObject({
+        status: "Done",
+        quantityComplete: 2
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an active process batch cannot credit a job that ERP completed or reuse its received serial after reopen",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await activeSerialBatch(f, 2);
+      await sql`SELECT complete_job_to_inventory(
+        p_job_id := ${job.jobId}, p_quantity_complete := 1,
+        p_company_id := ${f.companyId}, p_user_id := ${USER}
+      )`.execute(f.db);
+      const ledger = f.db
+        .selectFrom("itemLedger")
+        .select(["documentType", "trackedEntityId", "quantity"])
+        .where("documentId", "=", job.jobId)
+        .orderBy("documentType");
+      const afterReceipt = await ledger.execute();
+      expect(
+        afterReceipt.filter((row) => row.documentType === "Job Receipt")
+      ).toEqual([
+        {
+          documentType: "Job Receipt",
+          trackedEntityId: `${f.prefix}-unit-2`,
+          quantity: 1
+        }
+      ]);
+      expect((await job.submit(1)).error?.message).toMatch(/is Completed/);
+      await seed(f, (trx) =>
+        trx
+          .updateTable("job")
+          .set({ status: "In Progress" })
+          .where("id", "=", job.jobId)
+          .execute()
+      );
+      expect((await job.submit(1)).error?.message).toMatch(/NCR-1/);
+      expect(
+        await f.db
+          .selectFrom("productionQuantity")
+          .select("id")
+          .where("jobOperationId", "=", job.operationId)
+          .execute()
+      ).toEqual([]);
+      expect(await ledger.execute()).toEqual(afterReceipt);
+      expect(
+        await f.db
+          .selectFrom("jobOperationBatch")
+          .select("status")
+          .where("id", "=", job.batchId)
+          .executeTakeFirst()
+      ).toEqual({ status: "Active" });
     } finally {
       await f.cleanup();
     }

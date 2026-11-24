@@ -2031,7 +2031,13 @@ export async function getJobMaterialsByOperationId(
  */
 export async function backflushUntrackedMaterialsOnStepRecord(
   client: SupabaseClient<Database>,
-  args: { jobOperationStepId: string; companyId: string; userId: string }
+  args: {
+    jobOperationStepId: string;
+    index: number;
+    trackedEntityId?: string;
+    companyId: string;
+    userId: string;
+  }
 ) {
   const step = await client
     .from("jobOperationStep")
@@ -2120,6 +2126,11 @@ export async function backflushUntrackedMaterialsOnStepRecord(
       {
         id: operationId,
         type: "partToOperation",
+        stepRecord: {
+          jobOperationStepId: args.jobOperationStepId,
+          index: args.index,
+          trackedEntityId: args.trackedEntityId
+        },
         itemId: issue.itemId,
         materialId: issue.materialId,
         quantity: issue.quantity,
@@ -3209,6 +3220,7 @@ export async function completeAllStepsForUnit(
   args: {
     operationId: string;
     index: number;
+    trackedEntityId?: string;
     companyId: string;
     createdBy: string;
   }
@@ -3253,6 +3265,8 @@ export async function completeAllStepsForUnit(
   // issuable, matching the per-step record path.
   const backflush = await backflushUntrackedMaterialsOnStepRecord(client, {
     jobOperationStepId: missing[0].id,
+    index: args.index,
+    trackedEntityId: args.trackedEntityId,
     companyId: args.companyId,
     userId: args.createdBy
   });

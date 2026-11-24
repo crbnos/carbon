@@ -24884,6 +24884,7 @@ export type Database = {
         Row: {
           acceptanceNumber: number
           acceptedQuantity: number | null
+          acceptedUnitIds: string[] | null
           aql: number | null
           assignee: string | null
           codeLetter: string | null
@@ -24919,6 +24920,7 @@ export type Database = {
         Insert: {
           acceptanceNumber: number
           acceptedQuantity?: number | null
+          acceptedUnitIds?: string[] | null
           aql?: number | null
           assignee?: string | null
           codeLetter?: string | null
@@ -24956,6 +24958,7 @@ export type Database = {
         Update: {
           acceptanceNumber?: number
           acceptedQuantity?: number | null
+          acceptedUnitIds?: string[] | null
           aql?: number | null
           assignee?: string | null
           codeLetter?: string | null

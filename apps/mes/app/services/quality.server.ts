@@ -291,7 +291,7 @@ export type InspectionOutcomeState = {
   // (not Consumed, not Rejected, not on hold for an open quality issue, not
   // already completed at this operation).
   entities: { id: string; status: string | null; attributes: unknown }[];
-  entityEligible: (entityId: string) => boolean;
+  entityEligible: (entityId: string, includeHeld?: boolean) => boolean;
 };
 
 export async function getInspectionOutcomeState(
@@ -442,10 +442,11 @@ export async function getInspectionOutcomeState(
     };
   }
   const unitHolds = holds.data;
-  const entityEligible = (entityId: string) => {
+  const entityEligible = (entityId: string, includeHeld = false) => {
     const entity = entityById.get(entityId);
     return (
-      !!entity && inspectionEntityEligible(entity, jobOperationId, unitHolds)
+      !!entity &&
+      inspectionEntityEligible(entity, jobOperationId, unitHolds, includeHeld)
     );
   };
 

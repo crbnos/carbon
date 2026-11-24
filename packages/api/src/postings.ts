@@ -102,6 +102,14 @@ export const issueInput = z.discriminatedUnion("type", [
     // Assembly view: when issuing an unplanned part (no materialId), scope the new
     // jobMaterial to this step so it surfaces on that step in the operator view.
     jobOperationStepId: z.string().optional(),
+    // Step backflush follows the committed record; recheck its unit at posting.
+    stepRecord: z
+      .object({
+        jobOperationStepId: z.string(),
+        index: z.number().int().nonnegative(),
+        trackedEntityId: z.string().optional()
+      })
+      .optional(),
     // An item scan: refuse an issue that takes the material above what the
     // job requires. The check runs under the material's lock.
     refuseOverIssue: z.boolean().optional()

@@ -107,6 +107,8 @@ export async function recordStep(
   // blocks the record; the part just stays manually issuable.
   const backflush = await backflushUntrackedMaterialsOnStepRecord(serviceRole, {
     jobOperationStepId: record.jobOperationStepId,
+    index,
+    trackedEntityId: work?.kind === "unit" ? work.unitId : undefined,
     companyId,
     userId
   });
@@ -177,6 +179,7 @@ export async function completeAllSteps(
   const result = await completeAllStepsForUnit(deps.client, {
     operationId,
     index: unitIndex,
+    trackedEntityId: work.kind === "unit" ? work.unitId : undefined,
     companyId,
     createdBy: userId
   });

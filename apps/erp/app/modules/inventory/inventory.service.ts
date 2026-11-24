@@ -31497,6 +31497,28 @@ export async function issueMaterial(
         .executeTakeFirst();
       if (!jobOperation) throw new NotFoundError("Job operation not found");
 
+      // Final production can trigger a job receipt in this transaction. Both
+      // MES and a manual receipt take the job before any of its units.
+      const lockJob = async (trx: Transaction<KyselyDatabase>) => {
+        const job = await trx
+          .selectFrom("job")
+          .select(["status", "quantityReceivedToInventory"])
+          .where("id", "=", jobOperation.jobId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+        if (
+          job.status === "Completed" ||
+          job.status === "Closed" ||
+          job.status === "Cancelled"
+        ) {
+          throw new InvalidInputError(
+            `The job is already ${job.status.toLowerCase()}. Reload the operation.`
+          );
+        }
+        return job;
+      };
+
       if (
         row.type === "jobOperationBatchComplete" &&
         !jobOperation.requiresSerialTracking
@@ -31507,6 +31529,7 @@ export async function issueMaterial(
         );
 
         await db.transaction().execute(async (trx) => {
+          await lockJob(trx);
           const entity = await lockProductionOutputForPosting(
             trx,
             companyId,
@@ -31628,6 +31651,7 @@ export async function issueMaterial(
 
       let newEntityId: string | undefined;
       await db.transaction().execute(async (trx) => {
+        const job = await lockJob(trx);
         // Provisional before the company's accounting cutover, Posted after it.
         const postingStatus = await journalPostingStatus(trx, companyId);
         // A resent completion of this unit waits here for the first.
@@ -31651,6 +31675,31 @@ export async function issueMaterial(
           throw new NotFoundError("Tracked entity not found");
         }
         await assertSerialsOffQualityHold(trx, companyId, [trackedEntityId]);
+        // A manual receipt can complete the routing without a per-unit
+        // operation marker. Reopening the job leaves that receipt in place.
+        if (
+          (job.quantityReceivedToInventory ?? 0) > 0 &&
+          trackedEntity.quantity === 1
+        ) {
+          const priorReceipt = await sql`
+            SELECT 1 FROM util.received_job_serials(${jobOperation.jobId}, ${companyId}) AS received(id)
+            WHERE received.id = ${trackedEntityId}
+              -- A historic bulk seed receipt cannot identify the individual
+              -- serials. Final receipt reconciles its entire worked set.
+              AND NOT EXISTS (
+                SELECT 1 FROM "itemLedger" il
+                WHERE il."companyId" = ${companyId} AND il."documentId" = ${jobOperation.jobId}
+                  AND il."documentType" = 'Job Receipt' AND il."trackedEntityId" = received.id
+                HAVING SUM(il.quantity) > 1
+              )
+            LIMIT 1
+          `.execute(trx);
+          if (priorReceipt.rows.length) {
+            throw new InvalidInputError(
+              "This serial has already been received for this job."
+            );
+          }
+        }
         // A unit completes once per operation; a second production row would
         // issue the material of a unit never made.
         if (
@@ -32441,6 +32490,7 @@ export async function issueMaterial(
         quantity,
         materialId,
         jobOperationStepId,
+        stepRecord,
         adjustmentType,
         refuseOverIssue
       } = validatedPayload;
@@ -32460,6 +32510,18 @@ export async function issueMaterial(
       await db.transaction().execute(async (trx) => {
         // Provisional before the company's accounting cutover, Posted after it.
         const postingStatus = await journalPostingStatus(trx, companyId);
+        if (stepRecord) {
+          // The final MES completion and ERP receipt also take the job first.
+          await trx
+            .selectFrom("jobOperation as op")
+            .innerJoin("job", "job.id", "op.jobId")
+            .select("job.id")
+            .where("op.id", "=", id)
+            .where("op.companyId", "=", companyId)
+            .where("job.companyId", "=", companyId)
+            .forUpdate("job")
+            .executeTakeFirstOrThrow();
+        }
         // The issue modal lists every material of the job, so the material
         // may belong to another operation.
         const materialOwner = materialId
@@ -32496,6 +32558,12 @@ export async function issueMaterial(
           (operation) => operation.id === id
         );
         if (!jobOperation) throw new NotFoundError("Job operation not found");
+        if (stepRecord) {
+          await sql`SELECT util.lock_step_record_unit(${companyId}, ${stepRecord.jobOperationStepId},
+            ${stepRecord.index}, ${id}, ${stepRecord.trackedEntityId ?? null})`.execute(
+            trx
+          );
+        }
         if (materialOwner && materialOwner.jobId !== jobOperation.jobId) {
           throw new InvalidInputError(
             "The material is not on this operation's job"

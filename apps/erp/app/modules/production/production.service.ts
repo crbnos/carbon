@@ -71,7 +71,6 @@ import {
   isNull,
   many,
   maybeSingle,
-  neq,
   newIds,
   notNull,
   rpcValue,
@@ -82,6 +81,7 @@ import {
   updateRowsById
 } from "@carbon/database/rows";
 import {
+  assignSerialNumberIfMissing,
   getNextRevisionSequence,
   getNextSequence,
   getNextSerialNumbers,
@@ -28787,6 +28787,196 @@ async function assertMaterialCompatible(
   }
 }
 
+// Both manual receipt and MES serial completion lock the job before its units.
+async function lockBatchJobs(
+  trx: Transaction<KyselyDatabase>,
+  batchId: string,
+  companyId: string
+) {
+  return await trx
+    .selectFrom("job")
+    .innerJoin("jobOperation as member", "member.jobId", "job.id")
+    .select(["job.status", "job.jobId", "member.id as operationId"])
+    .where("job.companyId", "=", companyId)
+    .where("member.companyId", "=", companyId)
+    .where("member.jobOperationBatchId", "=", batchId)
+    .orderBy("job.id")
+    .forUpdate("job")
+    .execute();
+}
+
+// A serial member submits quantities, with no lot/serial id. If Quality is
+// holding part of its run, a quantity can identify the output unambiguously
+// only when it covers all remaining eligible single units. Record those ids
+// before the production trigger runs. The batch activity also lets a retry
+// finish the run while leaving this operation open for its held siblings.
+async function recordBatchSerialsWithHeldSiblings(
+  trx: Transaction<KyselyDatabase>,
+  ctx: { batchId: string; companyId: string; userId: string },
+  members: {
+    jobOperationId: string;
+    quantity: number;
+    scrapQuantity?: number;
+  }[]
+) {
+  const { companyId, batchId, userId } = ctx;
+  const serialOperations = await trx
+    .selectFrom("jobOperation as op")
+    .innerJoin("jobMakeMethod as m", "m.id", "op.jobMakeMethodId")
+    .innerJoin("companySettings as cs", "cs.id", "op.companyId")
+    .select([
+      "op.id",
+      "op.jobId",
+      "op.targetQuantity",
+      "op.operationQuantity",
+      "op.quantityComplete",
+      "op.quantityReworked",
+      "m.id as methodId"
+    ])
+    .where("op.jobOperationBatchId", "=", batchId)
+    .where("op.companyId", "=", companyId)
+    .where(
+      "op.id",
+      "in",
+      members.map((m) => m.jobOperationId)
+    )
+    .where("m.requiresSerialTracking", "=", true)
+    .where("cs.holdUnitsWithOpenIssues", "=", true)
+    .orderBy("op.id")
+    .forUpdate("op")
+    .execute();
+  const partialOperations: string[] = [];
+  const submitted = new Map(
+    members.map((member) => [member.jobOperationId, member])
+  );
+  for (const op of serialOperations) {
+    const member = submitted.get(op.id)!;
+    const marker = `Operation ${op.id}`;
+    const scope = trx
+      .selectFrom("jobOperationTrackedEntity as scope")
+      .select("scope.trackedEntityId")
+      .where("scope.companyId", "=", companyId)
+      .where("scope.jobOperationId", "=", op.id);
+    const units = await trx
+      .selectFrom("trackedEntity")
+      .select(["id", "quantity", "status", "attributes"])
+      .select(
+        sql<boolean>`id IN (SELECT * FROM util.received_job_serials(${op.jobId}, ${companyId}))`.as(
+          "received"
+        )
+      )
+      .where("companyId", "=", companyId)
+      .where(sql<string>`attributes->>'Job Make Method'`, "=", op.methodId)
+      .where((eb) => eb.or([eb.not(eb.exists(scope)), eb("id", "in", scope)]))
+      .orderBy("id")
+      .forUpdate()
+      .execute();
+    const remaining = units.filter(
+      (u) =>
+        !u.received &&
+        u.status !== "Consumed" &&
+        u.status !== "Scrapped" &&
+        !(marker in ((u.attributes as Record<string, unknown>) ?? {}))
+    );
+    if (!units.length) continue;
+    // Read after acquiring the locks, so an issue link which committed
+    // while the posting waited is visible in this statement's snapshot.
+    const holds = await trx
+      .selectFrom("unitQualityHold")
+      .select(["trackedEntityId", "issueNumber"])
+      .where("companyId", "=", companyId)
+      .where(
+        "trackedEntityId",
+        "in",
+        units.map((u) => u.id)
+      )
+      .orderBy("issueNumber")
+      .execute();
+    if (!holds.length && !units.some((u) => u.received)) continue;
+    const held = new Set(holds.map((h) => h.trackedEntityId));
+    const eligible = remaining.filter(
+      (u) =>
+        !held.has(u.id) &&
+        u.quantity === 1 &&
+        (u.status === "Reserved" || u.status === "Available")
+    );
+    // The quantity trigger closes this operation at its target. Existing
+    // quantity-only credits cannot be attributed to any more serials than
+    // the operation has left to run.
+    const target = op.targetQuantity || op.operationQuantity;
+    const balance =
+      target == null
+        ? Infinity
+        : target - (op.quantityComplete ?? 0) - (op.quantityReworked ?? 0);
+    if (
+      !eligible.length ||
+      member.quantity !== eligible.length ||
+      member.quantity > balance ||
+      member.scrapQuantity
+    ) {
+      throw new InvalidInputError(
+        (holds[0]
+          ? `Serial units are on hold for issue ${holds[0].issueNumber}. `
+          : "Serials on this job have already been received. ") +
+          (eligible.length && eligible.length <= balance
+            ? `Enter ${eligible.length} with zero scrap to complete all eligible serials. For a smaller run, leave this operation out of the batch and complete the serials individually.`
+            : "Review the remaining units before completing this operation.")
+      );
+    }
+    const partial =
+      remaining.length > eligible.length && member.quantity < balance;
+    const activity = await trx
+      .insertInto("trackedActivity")
+      .values({
+        type: "Produce",
+        sourceDocument: "Job Operation",
+        sourceDocumentId: op.id,
+        attributes: {
+          Job: op.jobId,
+          "Job Operation Batch": batchId,
+          "Partial Operation": partial
+        },
+        companyId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await trx
+      .insertInto("trackedActivityOutput")
+      .values(
+        eligible.map((u) => ({
+          trackedActivityId: activity.id,
+          trackedEntityId: u.id,
+          quantity: 1,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+    if (partial) partialOperations.push(op.id);
+    let completedUnits = units.filter(
+      (u) => marker in ((u.attributes as Record<string, unknown>) ?? {})
+    ).length;
+    for (const unit of eligible) {
+      completedUnits++;
+      await assignSerialNumberIfMissing(trx, {
+        trackedEntityId: unit.id,
+        companyId
+      });
+      await trx
+        .updateTable("trackedEntity")
+        .set({
+          status: "Available",
+          attributes: sql`attributes || jsonb_build_object(${marker}::text, ${completedUnits}::int)`
+        })
+        .where("id", "=", unit.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+  }
+  return partialOperations;
+}
+
 // Two-phase, resumable batch completion.
 //
 // Phase 1 (one Kysely transaction, runs once): FOR UPDATE the batch row to
@@ -28848,6 +29038,8 @@ async function completeBatch(
   // inside the transaction: freshly sliced on the first attempt, re-loaded on resume.
   let glEvents: { id: string; postedToGL: boolean }[] = [];
 
+  let partialOperations: string[] = [];
+
   // Strict backflush: refuse before phase 1 writes, since phase 2 issues after
   // it commits. Every member is checked in one dry run, so members sharing a
   // bin are held to their combined demand. A completed batch skips this, so a
@@ -28888,6 +29080,20 @@ async function completeBatch(
     // "resume" if the batch is already Completing (a prior phase-2 step failed);
     // "slice" if Active; throws for a terminal status.
     const phase = planBatchCompletion(batch.status);
+
+    const jobs = await lockBatchJobs(trx, batchId, companyId);
+    if (phase === "slice") {
+      const included = new Set(memberIds);
+      const closed = jobs.find(
+        (job) =>
+          included.has(job.operationId) &&
+          ["Completed", "Closed", "Cancelled"].includes(job.status)
+      );
+      if (closed)
+        throw new InvalidInputError(
+          `Job ${closed.jobId} is ${closed.status}. Review the batch before completing it.`
+        );
+    }
 
     // A member can name the serial its output belongs to. Check before
     // phase 1 commits any quantity, timer split or status transition.
@@ -28964,6 +29170,18 @@ async function completeBatch(
         );
       }
 
+      const partial = await trx
+        .selectFrom("trackedActivity")
+        .select("sourceDocumentId")
+        .where("companyId", "=", companyId)
+        .where("sourceDocument", "=", "Job Operation")
+        .where("sourceDocumentId", "in", memberIds)
+        .where("type", "=", "Produce")
+        .where(sql<string>`attributes->>'Job Operation Batch'`, "=", batchId)
+        .where(sql<boolean>`attributes @> '{"Partial Operation":true}'::jsonb`)
+        .execute();
+      partialOperations = partial.map((a) => a.sourceDocumentId!);
+
       const existing = await trx
         .selectFrom("productionEvent")
         .select(["id", "postedToGL"])
@@ -28994,6 +29212,12 @@ async function completeBatch(
     assertBatchCompletionMembership(
       [...memberIds, ...excludedIds],
       operations.map((o: any) => o.id)
+    );
+
+    partialOperations = await recordBatchSerialsWithHeldSiblings(
+      trx,
+      { companyId, userId, batchId },
+      members
     );
 
     // Detach "not in this run" members inside the same transaction: back to the
@@ -29236,17 +29460,22 @@ async function completeBatch(
     outputTrackedEntityIds.push(m.trackedEntityId);
   }
 
-  // Flip members Done — sync_finish_job_operation readies each member job's next
-  // operation and completes the job independently. Skip already-Done so a resume
-  // does not re-fire the trigger.
-  const done = await updateRows(
-    db,
-    "jobOperation",
-    { status: "Done", updatedBy: userId },
-    { jobOperationBatchId: batchId, companyId, status: neq("Done") }
-  );
-  if (done.error) {
-    throw new Error(`Failed to finish batch operations: ${done.error.message}`);
+  // A partial operation stays open for its held units. Preserve membership
+  // until GL posts so a resume sees exactly the operations in the original run.
+  const partialIds = new Set(partialOperations);
+  const finished = memberIds.filter((id) => !partialIds.has(id));
+  if (finished.length) {
+    await db.transaction().execute(async (trx) => {
+      await lockBatchJobs(trx, batchId, companyId);
+      await trx
+        .updateTable("jobOperation")
+        .set({ status: "Done", updatedBy: userId })
+        .where("id", "in", finished)
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .where("status", "!=", "Done")
+        .execute();
+    });
   }
 
   // Post GL per sliced event; skip events a prior attempt already posted, and
@@ -29273,18 +29502,26 @@ async function completeBatch(
     }
   }
 
-  // Finalize: Completing -> Completed now that every phase-2 effect succeeded.
-  const finalized = await updateRows(
-    db,
-    "jobOperationBatch",
-    { status: "Completed", updatedBy: userId, updatedAt: now },
-    { id: batchId, companyId, status: "Completing" }
-  );
-  if (finalized.error) {
-    throw new Error(
-      `Failed to finalize batch completion: ${finalized.error.message}`
-    );
-  }
+  // Finalize membership and batch status in one transaction. A retry
+  // cannot see a Completing batch with its partial members already detached.
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("jobOperationBatch")
+      .set({ status: "Completed", updatedBy: userId, updatedAt: now })
+      .where("id", "=", batchId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Completing")
+      .execute();
+    if (partialOperations.length) {
+      await trx
+        .updateTable("jobOperation")
+        .set({ jobOperationBatchId: null, updatedBy: userId })
+        .where("companyId", "=", companyId)
+        .where("jobOperationBatchId", "=", batchId)
+        .where("id", "in", partialOperations)
+        .execute();
+    }
+  });
 
   return {
     completed: members.length,

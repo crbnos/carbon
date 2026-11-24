@@ -5,7 +5,8 @@
 import { isUnitOnHold, type UnitHolds } from "./unitHold";
 import { completedAtOperation } from "./workUnit";
 
-/** Inspection can complete a serial only once, when it is in scope and cleared for production. */
+/** A held WIP serial can be covered by the acceptance decision but must clear
+ * its hold and any physical rejection before it can post. */
 export function inspectionEntityEligible(
   entity: {
     id: string;
@@ -14,12 +15,15 @@ export function inspectionEntityEligible(
     inOperationScope?: boolean;
   },
   operationId: string,
-  holds: UnitHolds
+  holds: UnitHolds,
+  includeHeld = false
 ) {
+  const held = isUnitOnHold(holds, entity.id);
   return (
     entity.inOperationScope !== false &&
-    !isUnsampleableEntityStatus(entity.status) &&
-    !isUnitOnHold(holds, entity.id) &&
+    (!isUnsampleableEntityStatus(entity.status) ||
+      (includeHeld && held && entity.status === "Rejected")) &&
+    (includeHeld || !held) &&
     !completedAtOperation(entity.attributes, operationId)
   );
 }
@@ -46,23 +50,25 @@ export type InspectionOutcomeSample = {
   status: string;
 };
 
+type SerialCandidateState = {
+  samples: InspectionOutcomeSample[];
+  linkedSampleIds: Set<string>;
+  entities: { id: string }[];
+  entityEligible: (id: string) => boolean;
+};
+
 // The serial units a completion pass may post, in ascending sample order:
 // sampled units whose sample isn't linked yet, then (optionally) sample-less
 // eligible units. Verdict-driven double-posting is impossible — the sample
 // link's partial UNIQUE index guards sampled units, and the `Operation <opId>`
 // entity attribute (via entityEligible) guards sample-less ones.
 export function getSerialCompletionCandidates(
-  state: {
-    samples: InspectionOutcomeSample[];
-    linkedSampleIds: Set<string>;
-    entities: { id: string }[];
-    entityEligible: (id: string) => boolean;
-  },
+  state: SerialCandidateState,
   opts: {
     // Accept completes Pending-sampled units too (identify-only scans that
     // never failed); progressive complete-passed takes Passed only.
     includePending: boolean;
-    // Accept sweeps un-sampled eligible units; Partial/complete-passed don't.
+    // Accept covers unsampled units as part of the lot decision.
     includeSampleless: boolean;
     excludeEntityIds?: Set<string>;
   }
@@ -96,4 +102,24 @@ export function getSerialCompletionCandidates(
     }
   }
   return candidates;
+}
+
+/** Once Accept closes a sampling-plan lot, its saved decision can complete an
+ * unsampled or identify-only unit. Older lots have only individual verdicts. */
+export function getPostableInspectionUnits(
+  state: SerialCandidateState,
+  inspection: { status: string; acceptedUnitIds: string[] | null }
+) {
+  const accepted =
+    inspection.status === "Passed" && inspection.acceptedUnitIds != null
+      ? new Set(inspection.acceptedUnitIds)
+      : null;
+  return getSerialCompletionCandidates(
+    {
+      ...state,
+      entityEligible: (id) =>
+        (!accepted || accepted.has(id)) && state.entityEligible(id)
+    },
+    { includePending: !!accepted, includeSampleless: !!accepted }
+  );
 }

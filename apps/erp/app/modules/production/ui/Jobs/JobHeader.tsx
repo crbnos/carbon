@@ -110,11 +110,8 @@ import { getJobMethodTree } from "../../production.utils";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
-  getDefaultSerialCompleteQuantity,
-  getFinishedQuantity,
-  getFinishedUnreceivedQuantity,
   getReceiptConfirmation,
-  getSerialCompleteChoice,
+  getTrackedReceiptQuantity,
   type JobReceiptSnapshot,
   receiptHasTrackedOutput,
   type SerialCompleteChoice
@@ -1596,71 +1593,11 @@ function JobCompleteModal({
       receipts?.quantityReceivedToInventory ??
       job?.quantityReceivedToInventory ??
       0;
-    if (
-      receipts &&
-      tracking &&
-      (tracking.requiresSerialTracking || tracking.requiresBatchTracking)
-    ) {
-      const trackedEntities = tracking.trackedEntities;
-      const onHoldEntityIds = new Set(
-        trackedEntities.filter((unit) => unit.held).map((unit) => unit.id)
-      );
-      if (trackedEntities.length || tracking.requiresSerialTracking) {
-        const eligibleEntities = trackedEntities.filter(
-          (entity) => !onHoldEntityIds.has(entity.id)
-        );
-        const receivedEntityIds = new Set(receipts.trackedEntityIds);
-        // Only a serial completion to inventory receives issued units.
-        const issuedEntityIds = new Set(
-          tracking.requiresSerialTracking &&
-            !tracking.fixedAssetClassId &&
-            !tracking.fixedAssetId
-            ? receipts.issuedTrackedEntityIds
-            : []
-        );
-        const availableQuantity = getFinishedQuantity(
-          eligibleEntities,
-          issuedEntityIds
-        );
-
-        const choice = tracking.requiresSerialTracking
-          ? getSerialCompleteChoice({
-              trackedEntities,
-              heldUnitIds: onHoldEntityIds,
-              receivedEntityIds,
-              issuedEntityIds,
-              hasSerialSequence: !!tracking.sequenceId,
-              jobQuantity: tracking.quantity
-            })
-          : ({ mode: "locked" } as const);
-
-        setSerialChoice(choice);
-        if (choice.mode !== "locked") {
-          // Every unit is a numbered serial, or the completion numbers the
-          // units it receives: either way the quantity can be chosen here even
-          // when nothing was finished on the shop floor.
-          const receivableCount =
-            choice.mode === "serials"
-              ? choice.serials.length
-              : choice.receivableCount;
-          setHasTrackedQuantity(false);
-          setQuantityComplete(
-            getDefaultSerialCompleteQuantity({
-              finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
-                eligibleEntities,
-                receivedEntityIds,
-                issuedEntityIds
-              ),
-              jobQuantity: tracking.quantity,
-              priorReceivedQuantity: currentReceivedQuantity,
-              receivableSerialCount: receivableCount
-            })
-          );
-        } else {
-          setQuantityComplete(availableQuantity);
-          setHasTrackedQuantity(true);
-        }
-      }
+    const completion = receipts && getTrackedReceiptQuantity(receipts);
+    if (completion) {
+      setSerialChoice(completion.choice);
+      setHasTrackedQuantity(completion.choice.mode === "locked");
+      setQuantityComplete(completion.quantity);
     }
 
     setPriorReceivedQuantity(currentReceivedQuantity);

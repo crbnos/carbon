@@ -23,7 +23,7 @@ import {
 } from "~/services/quality.server";
 import {
   canPostPassedSamples,
-  getSerialCompletionCandidates
+  getPostableInspectionUnits
 } from "~/utils/inspectionOutcome";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
@@ -110,12 +110,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (state.requiresSerialTracking) {
-    const candidates = getSerialCompletionCandidates(state, {
-      includePending: false,
-      includeSampleless: false
-    });
+    const candidates = getPostableInspectionUnits(state, state.inspection);
     if (candidates.length === 0) {
-      return fail(null, "No passed units to complete");
+      return fail(null, "No eligible units to complete");
     }
     if (candidates.length > state.opRemaining) {
       return fail(

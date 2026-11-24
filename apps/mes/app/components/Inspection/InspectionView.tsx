@@ -70,6 +70,7 @@ import type {
 } from "~/services/types";
 import {
   canPostPassedSamples,
+  getPostableInspectionUnits,
   getSerialCompletionCandidates,
   inspectionEntityEligible
 } from "~/utils/inspectionOutcome";
@@ -274,10 +275,7 @@ export function InspectionView({
     }
   };
   const completablePassed = isSerial
-    ? getSerialCompletionCandidates(candidateState, {
-        includePending: false,
-        includeSampleless: false
-      }).length
+    ? getPostableInspectionUnits(candidateState, inspection).length
     : Math.min(Math.max(0, passes - linkedProductionQuantity), opRemaining);
   const showCompletePassed =
     !abilityBlocked &&
@@ -450,6 +448,7 @@ export function InspectionView({
           <CompletePassedButton
             inspectionId={inspection.id}
             operationId={operationId}
+            accepted={lotClosed && inspection.status === "Passed"}
             count={completablePassed}
             eventIds={eventIds}
             gridBusy={gridBusy}
@@ -565,6 +564,7 @@ export function InspectionView({
               <CompletePassedButton
                 inspectionId={inspection.id}
                 operationId={operationId}
+                accepted={lotClosed && inspection.status === "Passed"}
                 count={completablePassed}
                 eventIds={eventIds}
                 gridBusy={gridBusy}
@@ -863,6 +863,7 @@ function CompletePassedButton({
   inspectionId,
   operationId,
   count,
+  accepted,
   eventIds,
   gridBusy,
   variant = "header"
@@ -870,6 +871,7 @@ function CompletePassedButton({
   inspectionId: string;
   operationId: string;
   count: number;
+  accepted: boolean;
   eventIds: ProductionEventIdFields;
   // A reading still saving could turn a passed unit into a failed one.
   gridBusy: boolean;
@@ -878,7 +880,9 @@ function CompletePassedButton({
   const { t } = useLingui();
   const fetcher = useFetcher();
   const busy = fetcher.state !== "idle" || gridBusy;
-  const label = t`Complete (${count} passed)`;
+  const label = accepted
+    ? `${t`Complete`} (${count})`
+    : t`Complete (${count} passed)`;
 
   if (variant === "bar") {
     return (

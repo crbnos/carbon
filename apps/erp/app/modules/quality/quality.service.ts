@@ -5535,6 +5535,14 @@ export async function closeIssue(
             })
             .map((l) => l.trackedEntityId);
           if (idsToFlip.length > 0) {
+            // Record a WIP unit's accepted disposition even if a second issue
+            // still gates production. A header-only close has no material
+            // disposition to replay. Stock already in inventory retains its
+            // physical hold until Quality can release it.
+            const wipIds = idsToFlip.filter(
+              (id) =>
+                entityStock.jobOutputs.has(id) && !entityStock.stocked.has(id)
+            );
             await trx
               .updateTable("trackedEntity")
               .set({ status: "Available" })
@@ -5545,7 +5553,18 @@ export async function closeIssue(
                   eb.exists(
                     eb
                       .selectFrom("unitQualityHold as hold")
+                      .innerJoin("item", "item.companyId", "hold.companyId")
                       .select("hold.trackedEntityId")
+                      .whereRef("item.id", "=", "trackedEntity.itemId")
+                      .$if(wipIds.length > 0, (query) =>
+                        query.where((eb) =>
+                          eb.or([
+                            eb("hold.status", "=", "Closed"),
+                            eb("hold.trackedEntityId", "not in", wipIds)
+                          ])
+                        )
+                      )
+                      .where("item.itemTrackingType", "=", "Serial")
                       .whereRef("hold.trackedEntityId", "=", "trackedEntity.id")
                       .whereRef(
                         "hold.companyId",

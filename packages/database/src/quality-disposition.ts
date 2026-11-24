@@ -52,6 +52,8 @@ export type InspectionDispositionInput = {
   // Partial on an untracked (Inventory) receipt lot: how much passed. Required
   // there, ignored otherwise.
   acceptedQuantity?: number;
+  // Server-selected WIP serials covered by a MES Accept, including held units.
+  acceptedUnitIds?: string[];
 };
 
 // -------------------------------------------------------------
@@ -290,6 +292,13 @@ export async function dispositionInspection(
           .map((s) => s.trackedEntityId)
           .filter(Boolean)
       );
+      // Sampling writes also lock the lot. A failure recorded after MES read
+      // its units must be reviewed before that selection can be accepted.
+      if (args.acceptedUnitIds?.some((id) => failedEntityIds.has(id))) {
+        throw new Error(
+          "An accepted unit failed inspection. Reload the lot and review its verdicts."
+        );
+      }
       const allLotIds = lotEntities.map((e) => e.id);
       const failures = existingSamples.filter(
         (s) => s.status === "Failed"
@@ -739,6 +748,11 @@ export async function dispositionInspection(
                   dispositionedBy: args.dispositionedBy,
                   dispositionedAt: nowIso
                 }
+              : {}),
+            ...(wasOpen &&
+            inspection.sourceDocument === "Job Operation" &&
+            args.decision === "Accept"
+              ? { acceptedUnitIds: args.acceptedUnitIds }
               : {}),
             ...(acceptedQuantity !== null ? { acceptedQuantity } : {}),
             ...((movedToStorageUnitId ?? legacyHoldUnitId)

@@ -353,3 +353,80 @@ databaseTest(
     expect(await position(outside.data!.id)).toBeNull();
   }
 );
+
+databaseTest(
+  "a job lot saves its accepted serials at close and refuses a newly failed unit",
+  async () => {
+    const { f, units } = await setup();
+    try {
+      const lotId = `${f.prefix}-wip-lot`;
+      const passed = units.entity("SN-1");
+      const unsampled = units.entity("SN-2");
+      const failed = units.entity("SN-3");
+      await seed(f, (trx) =>
+        trx
+          .insertInto("inspection")
+          .values({
+            id: lotId,
+            inspectionId: lotId,
+            sourceDocument: "Job Operation",
+            sourceDocumentId: `${f.prefix}-job`,
+            sourceDocumentLineId: `${f.prefix}-op`,
+            itemId: units.serialItemId,
+            lotSize: 3,
+            samplingStandard: "ANSI_Z1_4",
+            samplingPlanType: "All",
+            sampleSize: 2,
+            acceptanceNumber: 1,
+            rejectionNumber: 2,
+            status: "In Progress",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      for (const [trackedEntityId, status] of [
+        [passed, "Passed"],
+        [failed, "Failed"]
+      ] as const) {
+        const result = await upsertInspectionSample(f.db, {
+          inspectionId: lotId,
+          trackedEntityId,
+          status,
+          companyId: f.companyId,
+          inspectedBy: USER
+        });
+        expect(result.error).toBeNull();
+      }
+      const accept = (acceptedUnitIds: string[]) =>
+        dispositionInspection(f.db, {
+          id: lotId,
+          decision: "Accept",
+          acceptedUnitIds,
+          requireOpen: true,
+          requireSource: "Job Operation",
+          companyId: f.companyId,
+          dispositionedBy: USER
+        });
+      const decision = () =>
+        f.db
+          .selectFrom("inspection")
+          .select(["status", "acceptedUnitIds"])
+          .where("id", "=", lotId)
+          .executeTakeFirstOrThrow();
+      expect((await accept([passed, unsampled, failed])).error).not.toBeNull();
+      expect(await decision()).toEqual({
+        status: "In Progress",
+        acceptedUnitIds: null
+      });
+      expect((await accept([passed, unsampled])).error).toBeNull();
+      expect((await accept([passed])).error).not.toBeNull();
+      expect(await decision()).toEqual({
+        status: "Passed",
+        acceptedUnitIds: [passed, unsampled]
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
