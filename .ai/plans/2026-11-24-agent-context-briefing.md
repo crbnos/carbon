@@ -20,7 +20,7 @@
 - [x] Task 12: Split `.ai/lessons.md` into one file per lesson
 - [x] Task 13: Add scopes to the lessons and write the triage report
 - [x] Task 14: Write the lesson honesty tests
-- [ ] Task 15: Write the signal inbox
+- [x] Task 15: Write the signal inbox
 - [ ] Task 16: Log gate failures and refused edits
 - [ ] Task 17: Write the Stop and UserPromptSubmit hooks
 - [ ] Task 18: Write the `/learn` skill
