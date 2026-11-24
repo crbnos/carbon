@@ -61,8 +61,8 @@ const WebhookForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "parts")
-    : !permissions.can("create", "parts");
+    ? !permissions.has({ "settings.webhooks": "Edit" })
+    : !permissions.has({ "settings.webhooks": "Create" });
 
   return (
     <Drawer
@@ -133,7 +133,7 @@ const WebhookForm = ({
               {isEditing && (
                 <WebhookSigningSecret
                   webhookId={initialValues.id!}
-                  isDisabled={!permissions.can("update", "settings")}
+                  isDisabled={!permissions.has({ "settings.webhooks": "Edit" })}
                 />
               )}
 

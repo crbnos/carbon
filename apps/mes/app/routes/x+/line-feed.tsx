@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { useAction, useRevalidator, useTopic } from "@carbon/query";
 import {
@@ -96,14 +97,17 @@ const emptyLineFeed = {
 } satisfies Names & Record<string, unknown>;
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { client, companyId, permissions } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, permissions } = await authorize(request, {
+    "inventory.pickingLists": "View"
   });
   const locationId = context.get(userContext)?.locationId;
   if (!locationId) return { ...emptyLineFeed, noLocation: true };
   // A hint for the Move buttons; the transfer action checks it again.
-  const canTransfer =
-    permissions.inventory?.create?.includes(companyId) ?? false;
+  const canTransfer = holdsGate(
+    permissions,
+    { "inventory.stockTransfers": "Create" },
+    companyId
+  );
 
   const lineFeed = await getLineFeed(client, { companyId, locationId });
   if (lineFeed.error || !lineFeed.data) {

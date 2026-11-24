@@ -235,21 +235,25 @@ const ContractLineForm = ({
   const isDisabled =
     isLocked ||
     (isEditing
-      ? !permissions.can("update", "sales")
-      : !permissions.can("create", "sales"));
+      ? !permissions.has({ "sales.serviceContracts": "Edit" })
+      : !permissions.has({ "sales.serviceContracts": "Create" }));
   const canDelete =
-    isEditing && !isLocked && permissions.can("delete", "sales");
+    isEditing &&
+    !isLocked &&
+    permissions.has({ "sales.serviceContracts": "Full" });
 
   // A non-taxable item takes no tax.
   const onItemChange = async (itemId: string | undefined) => {
     if (!itemId || !carbon) return;
-    const item = await carbon
+    const { data: item, error } = await carbon
       .from("item")
       .select("taxable")
       .eq("id", itemId)
       .eq("companyId", company.id)
       .maybeSingle();
-    if (item.data?.taxable === false) {
+    // Unread, the item keeps the tax the line already has.
+    if (error) return;
+    if (item?.taxable === false) {
       setTaxCodeId("");
       setTaxPercent(0);
     }

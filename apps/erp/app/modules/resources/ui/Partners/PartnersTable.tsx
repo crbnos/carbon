@@ -119,7 +119,7 @@ const PartnersTable = memo((props: PartnersTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "resources")}
+            disabled={!permissions.has({ "resources.abilities": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deletePartner(
@@ -144,7 +144,7 @@ const PartnersTable = memo((props: PartnersTableProps) => {
       isTruncated={isTruncated}
       columns={columns}
       primaryAction={
-        permissions.can("create", "resources") && (
+        permissions.has({ "resources.abilities": "Create" }) && (
           <New label={t`Partner`} to={`new?${params.toString()}`} />
         )
       }

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { clearConsolePinIn } from "@carbon/auth/console-pin.server";
 import { getLogger } from "@carbon/logger";
@@ -14,7 +14,7 @@ import { endProductionEvents } from "~/services/operations.service";
 const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId, consoleMode } = await requirePermissions(
+  const { client, companyId, userId, consoleMode } = await authorize(
     request,
     {}
   );

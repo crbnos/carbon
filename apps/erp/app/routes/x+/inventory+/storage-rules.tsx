@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -13,10 +13,6 @@ import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import StorageRulesGroups from "~/modules/inventory/ui/StorageRules/StorageRulesGroups";
 import StorageRulesUpgradeOverlay from "~/modules/inventory/ui/StorageRules/StorageRulesUpgradeOverlay";
-import {
-  getEnforcementRuleAssignmentCounts,
-  getEnforcementRules
-} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
@@ -27,16 +23,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "inventory.storageRules": "View"
   });
 
-  const rules = await getEnforcementRules(client, "storage", companyId, {
+  const rules = await api.shared.getEnforcementRules({
     search: null,
     limit: SINGLE_LOAD_LIMIT,
     offset: 0,
-    sorts: []
+    sorts: [],
+    family: "storage"
   });
 
   if (rules.error) {
@@ -46,11 +42,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const ids = (rules.data ?? []).map((r) => r.id);
-  const counts = await getEnforcementRuleAssignmentCounts(client, ids);
+  const ids = (rules.data?.rows ?? []).map((r) => r.id);
+  const counts = await api.shared.getEnforcementRuleAssignmentCounts({
+    ruleIds: ids
+  });
 
   const countsData = (counts.data ?? {}) as Record<string, number>;
-  const rows = (rules.data ?? []).map((r) => ({
+  const rows = (rules.data?.rows ?? []).map((r) => ({
     ...r,
     assignmentCount: countsData[r.id] ?? 0
   }));

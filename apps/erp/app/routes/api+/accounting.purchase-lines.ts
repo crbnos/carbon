@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getPurchaseLinePivotLines } from "~/modules/accounting/accounting.service";
 
 /**
  * Fetcher endpoint for the Purchases pivot drill-through drawer
@@ -21,9 +20,8 @@ import { getPurchaseLinePivotLines } from "~/modules/accounting/accounting.servi
  * - colstart / colend    — period column bounds (period axis)
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { companyId, api } = await authorize(request, {
+    "accounting.reporting": "View"
   });
 
   const searchParams = new URL(request.url).searchParams;
@@ -51,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ? optional("colf")
       : undefined;
 
-  const lines = await getPurchaseLinePivotLines(client, {
+  const lines = await api.accounting.getPurchaseLinePivotLines({
     companyId,
     startDate,
     endDate,

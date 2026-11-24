@@ -2,11 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ExpandedClaims } from "@carbon/database/access";
 import {
   batchCandidates,
   buildCatalogOverlay,
   type CustomFieldDef,
   createWorkflowCatalog,
+  eventGate,
   executorFor,
   FAILURE_HANDLE,
   itemKeyFor,
@@ -39,12 +41,7 @@ import {
 } from "./ledger";
 import { createEntityLoader, type EntityCache, triggerOutputs } from "./loader";
 import { claimRun, finishRun, loadRunContext } from "./log";
-import {
-  getOwnerClient,
-  hasPermission,
-  type OwnerPermissions,
-  readOwnerPermissions
-} from "./owner";
+import { getOwnerClient, ownerRefusal, readOwnerPermissions } from "./owner";
 import {
   advance,
   alreadyExecuted,
@@ -76,6 +73,8 @@ export interface EngineLogger {
 }
 
 const UNPUBLISHED = "This workflow was unpublished before the run started.";
+const VERSION_NOT_PUBLISHED =
+  "This run's version is not the workflow's published version.";
 const NOT_ENTITLED = "Workflows are not enabled for this company's plan.";
 const NO_PERMISSIONS =
   "The permissions for the owner of this workflow could not be read.";
@@ -84,13 +83,6 @@ const TOO_MANY_STEPS = "This workflow ran too many steps.";
 const NOTHING_TO_RUN = "That list was empty, so there was nothing to do.";
 
 const BATCH_CONCURRENCY = 5;
-
-/** The one wording for a lost permission. Exported because the builder's test-run
- * route gates on the same permission before the walk, and two copies would drift. */
-export function noAccess(module: string): string {
-  const area = module.charAt(0).toUpperCase() + module.slice(1);
-  return `The owner of this workflow no longer has access to ${area}.`;
-}
 
 /** The durable ledger: the two run-log tables, with the run's scope folded in. Lives
  * here rather than in `ledger.ts` so that module keeps exporting only free functions. */
@@ -127,7 +119,7 @@ interface NodeArgs {
   node: WorkflowNode;
   sequence: number;
   outputs: Record<string, Record<string, RuntimeValue>>;
-  permissions: OwnerPermissions;
+  permissions: ExpandedClaims;
   catalog: WorkflowCatalog;
   cache: EntityCache;
   companyGroupId: string;
@@ -179,18 +171,12 @@ async function runExecutor(args: NodeArgs): Promise<NodeResult> {
   const executor = executorFor(node);
   if (executor === undefined) return { status: "Failed", error: NOT_AVAILABLE };
 
-  const required = executor.permission(node, catalog);
-  if (
-    required !== undefined &&
-    !hasPermission(
-      args.permissions,
-      required.module,
-      required.action,
-      payload.companyId
-    )
-  ) {
-    return { status: "Failed", error: noAccess(required.module) };
-  }
+  const refused = ownerRefusal(
+    executor.permission(node, catalog),
+    args.permissions,
+    payload.companyId
+  );
+  if (refused !== null) return { status: "Failed", error: refused };
 
   return executor.execute(node, await contextFor(args));
 }
@@ -409,12 +395,24 @@ export async function executeWorkflowRun(params: {
       return { settled: "Skipped" as const };
     }
 
-    if (!context.workflowPublished) {
+    if (context.publishedVersionId === null) {
       await finishRun(db, {
         runId: payload.runId,
         companyId: payload.companyId,
         status: "Skipped",
         statusReason: UNPUBLISHED,
+        startedAt
+      });
+      return { settled: "Skipped" as const };
+    }
+
+    // The run executes as the owner, so only the version the owner published may run.
+    if (context.publishedVersionId !== context.run.workflowVersionId) {
+      await finishRun(db, {
+        runId: payload.runId,
+        companyId: payload.companyId,
+        status: "Skipped",
+        statusReason: VERSION_NOT_PUBLISHED,
         startedAt
       });
       return { settled: "Skipped" as const };
@@ -540,13 +538,13 @@ export async function walkWorkflow(params: {
 
     // Checked explicitly as well as by RLS: RLS alone returns zero rows, which
     // reads as a silent skip rather than a lost permission.
-    const module = catalog.getEvent(payload.eventId)?.permission;
-    if (
-      module !== undefined &&
-      !hasPermission(permissions, module, "view", payload.companyId)
-    ) {
-      return refuse(noAccess(module));
-    }
+    const pages = catalog.getEvent(payload.eventId)?.permission;
+    const refused = ownerRefusal(
+      pages === undefined ? undefined : eventGate(pages),
+      permissions,
+      payload.companyId
+    );
+    if (refused !== null) return refuse(refused);
 
     return { ok: true as const, permissions };
   });

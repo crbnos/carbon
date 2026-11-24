@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
@@ -11,21 +11,17 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteScrapReason,
-  getScrapReason
-} from "~/modules/production/production.service";
+import { deleteScrapReason } from "~/modules/production/production.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "production.scrapReasons": "View"
   });
   const { scrapReasonId } = params;
   if (!scrapReasonId) throw notFound("scrapReasonId not found");
 
-  const scrapReason = await getScrapReason(client, scrapReasonId);
+  const scrapReason = await api.production.getScrapReason({ scrapReasonId });
   if (scrapReason.error) {
     throw redirect(
       `${path.to.customerStatuses}?${getParams(request)}`,
@@ -40,8 +36,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "production"
+  const { client } = await authorize(request, {
+    "production.scrapReasons": "Full"
   });
 
   const { scrapReasonId } = params;

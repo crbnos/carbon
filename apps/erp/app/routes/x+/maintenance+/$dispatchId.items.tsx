@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { Card, CardContent, HStack, VStack } from "@carbon/react";
@@ -21,15 +21,15 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "resources"
+  const { client, userId } = await authorize(request, {
+    "resources.dispatches": "Edit"
   });
 
   const { dispatchId } = params;
   if (!dispatchId) throw new Error("dispatchId not found");
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "resources"
+  const { client: viewClient } = await authorize(request, {
+    "resources.dispatches": "View"
   });
   const dispatch = await viewClient
     .from("maintenanceDispatch")

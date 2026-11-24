@@ -58,8 +58,8 @@ const IssueTypeForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "quality")
-    : !permissions.can("create", "quality");
+    ? !permissions.has({ "quality.issueTypes": "Edit" })
+    : !permissions.has({ "quality.issueTypes": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

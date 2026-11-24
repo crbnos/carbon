@@ -382,7 +382,7 @@ const CustomersTable = memo(
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "sales")}
+            disabled={!permissions.has({ "sales.customers": "Full" })}
             onClick={() => {
               setSelectedCustomer(row);
               deleteModal.onOpen();
@@ -428,7 +428,7 @@ const CustomersTable = memo(
             }
           ]}
           primaryAction={
-            permissions.can("create", "sales") && (
+            permissions.has({ "sales.customers": "Create" }) && (
               <div className="flex items-center gap-2">
                 <Button
                   className="hidden md:inline-flex"

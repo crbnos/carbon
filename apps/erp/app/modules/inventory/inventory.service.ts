@@ -66,6 +66,7 @@ import {
   type LinesideClaim,
   linesideCredit,
   orderOldFirst,
+  planReturnToDrawnBins,
   planStripedUntrackedDraw,
   recordSharedTakes,
   type SharedTakes,
@@ -138,7 +139,6 @@ import {
   equals,
   getErrorMessage,
   groupBy,
-  indexBy,
   indexByMapped,
   isFullDraw,
   isJobLocked,
@@ -237,8 +237,11 @@ import {
   journalLineDimensionRows,
   leavingTrackedEntityIds,
   loadTaxCodesInForce,
+  lockOrderLines,
+  lockOrderLinesAsRead,
   lockPostable,
   lockUntrackedDraws,
+  planUntrackedDraw,
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
   resolveInventoryAccount,
@@ -9350,6 +9353,87 @@ export async function putAwayPickShortfall(
   return `Only ${available} of the ${short.quantity} ${item?.readableIdWithRevision ?? short.itemId} to put away are still in ${unit?.name ?? short.unitId}. Pick what is there.`;
 }
 
+/**
+ * The first untracked pick whose From bin (no storage unit included) holds
+ * less common stock than the picks of its item and bin take together, worded
+ * for the person; null when every bin covers its picks. A pick writes common
+ * stock (`withStripe(…, null)`), so only common stock covers it. Put Away
+ * lines are left to `putAwayPickShortfall`. Locks the draws before it reads,
+ * so two picks cannot both pass on one on-hand.
+ */
+export async function untrackedPickShortfall(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    picks: Array<{
+      receiptLineId: string | null;
+      itemId: string | null;
+      fromStorageUnitId: string | null;
+      quantity: number;
+    }>;
+  }
+): Promise<string | null> {
+  const { companyId, locationId } = args;
+  const key = (itemId: string, unitId: string | null) =>
+    `${itemId}\u0000${unitId ?? ""}`;
+  const byPair = new Map<
+    string,
+    { itemId: string; unitId: string | null; quantity: number }
+  >();
+  for (const pick of args.picks) {
+    if (pick.receiptLineId || !pick.itemId) continue;
+    const k = key(pick.itemId, pick.fromStorageUnitId);
+    const pair = byPair.get(k) ?? {
+      itemId: pick.itemId,
+      unitId: pick.fromStorageUnitId,
+      quantity: 0
+    };
+    pair.quantity = round(pair.quantity + pick.quantity);
+    byPair.set(k, pair);
+  }
+  if (byPair.size === 0) return null;
+  const pairs = [...byPair.values()];
+  const itemIds = pluckUnique(pairs, (pair) => pair.itemId);
+  await lockUntrackedDraws(trx, { companyId, locationId, itemIds });
+  const stock = await getUntrackedBinStock(trx, {
+    companyId,
+    itemIds,
+    locationId,
+    stripes: [null]
+  });
+  const onHand = (pair: { itemId: string; unitId: string | null }) =>
+    round(
+      (stock.get(pair.itemId) ?? [])
+        .filter((bin) => bin.storageUnitId === pair.unitId)
+        .reduce((sum, bin) => sum + bin.quantity, 0)
+    );
+  const short = pairs.find((pair) => pair.quantity - onHand(pair) > EPSILON);
+  if (!short) return null;
+  const [item, unit] = await Promise.all([
+    trx
+      .selectFrom("item")
+      .select("readableIdWithRevision")
+      .where("id", "=", short.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    short.unitId
+      ? trx
+          .selectFrom("storageUnit")
+          .select("name")
+          .where("id", "=", short.unitId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : Promise.resolve(undefined)
+  ]);
+  const available = Math.max(onHand(short), 0);
+  const itemName = item?.readableIdWithRevision ?? short.itemId;
+  const binName = short.unitId
+    ? (unit?.name ?? short.unitId)
+    : "no storage unit";
+  return `Only ${available} of ${itemName} is in ${binName}, and the pick needs ${short.quantity}. The stock may have moved; change the From storage unit.`;
+}
+
 /** A pick the transfer's own state refuses, worded for the person. */
 export class StockTransferPickRefusal extends Error {}
 
@@ -9427,6 +9511,12 @@ export async function pickUntrackedStockTransferLines(
       pickable.map((line) => ({ ...line, quantity: line.remaining }))
     );
     if (shortfall) throw new StockTransferPickRefusal(shortfall);
+    const binShortfall = await untrackedPickShortfall(trx, {
+      companyId,
+      locationId: transfer.locationId,
+      picks: pickable.map((line) => ({ ...line, quantity: line.remaining }))
+    });
+    if (binShortfall) throw new StockTransferPickRefusal(binShortfall);
 
     await trx
       .insertInto("itemLedger")
@@ -10591,7 +10681,7 @@ export type SerialUnitCosts = {
 };
 
 export const previewSerialUnitCostsPermission = {
-  view: "accounting"
+  "accounting.reporting": "View"
 } satisfies PermissionRule<z.output<typeof previewSerialUnitCostsInput>>;
 
 export async function previewSerialUnitCosts(
@@ -10746,7 +10836,7 @@ export type RecostResult = {
 };
 
 export const recostSerialUnitPermission = {
-  update: "accounting"
+  "accounting.reporting": "Edit"
 } satisfies PermissionRule<z.output<typeof recostSerialUnitInput>>;
 
 export async function recostSerialUnit(
@@ -11132,7 +11222,7 @@ export const postInventoryCountInput = z.object({
 });
 
 export const postInventoryCountPermission = {
-  update: "inventory"
+  "inventory.inventoryCount": "Edit"
 } satisfies PermissionRule<z.output<typeof postInventoryCountInput>>;
 
 /** Posts a Pending inventory count: one adjustment per counted variance, atomically. */
@@ -12115,6 +12205,12 @@ export async function postStockTransfer(
           { ...stockTransferLine, quantity: round(quantity) }
         ]);
         if (shortfall) throw new InvalidInputError(shortfall);
+        const binShortfall = await untrackedPickShortfall(trx, {
+          companyId,
+          locationId,
+          picks: [{ ...stockTransferLine, quantity: round(quantity) }]
+        });
+        if (binShortfall) throw new InvalidInputError(binShortfall);
 
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
@@ -13285,7 +13381,7 @@ export const correctStockMovementInput = z.object({
 const MAX_CORRECTION_CHAIN_DEPTH = 100;
 
 export const postStockMovementCorrectionPermission = {
-  update: "inventory"
+  "inventory.movements": "Edit"
 } satisfies PermissionRule<z.output<typeof correctStockMovementInput>>;
 
 export async function postStockMovementCorrection(
@@ -13677,7 +13773,7 @@ export type KanbanReplenishResult = { results: KanbanReplenishOutcome[] };
 
 export const replenishKanbanPermission = {
   by: "mode",
-  rules: { scan: { create: "inventory" }, level: "system" }
+  rules: { scan: { "inventory.kanbans": "Create" }, level: "system" }
 } satisfies PermissionRule<z.output<typeof kanbanReplenishInput>>;
 
 /**
@@ -14943,7 +15039,7 @@ export const postReceiptInput = z.object({
 });
 
 export const postReceiptPermission = {
-  update: "inventory"
+  "inventory.receipts": "Edit"
 } satisfies PermissionRule<z.output<typeof postReceiptInput>>;
 
 /** Posts or voids a receipt: stock, tracked entities, cost layers and journal. */
@@ -15214,29 +15310,21 @@ export async function postReceipt(
           );
         }
 
-        const [originalItemLedger, originalJournalLines, returnLinesVoid] =
-          await inOrder([
-            () =>
-              many(db, "itemLedger", {
-                documentId: receiptId,
-                documentType: "Sales Return Receipt",
-                companyId
-              }),
-            () =>
-              documentJournalLines(db, companyId, {
-                documentId: receiptId,
-                documentType: "Receipt"
-              }),
-            () =>
-              many(db, "salesReturnOrderLine", {
-                salesReturnOrderId,
-                companyId
-              })
-          ]);
+        const [originalItemLedger, originalJournalLines] = await inOrder([
+          () =>
+            many(db, "itemLedger", {
+              documentId: receiptId,
+              documentType: "Sales Return Receipt",
+              companyId
+            }),
+          () =>
+            documentJournalLines(db, companyId, {
+              documentId: receiptId,
+              documentType: "Receipt"
+            })
+        ]);
         if (originalItemLedger.error)
           throw new Error("Failed to fetch original item ledger entries");
-        if (returnLinesVoid.error)
-          throw new Error("Failed to fetch return order lines");
 
         const reversingItemLedger = (originalItemLedger.data ?? []).map(
           (entry) => ({
@@ -15316,6 +15404,14 @@ export async function postReceipt(
                 "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
               );
             }
+            // The order before its lines, as a post takes them; the
+            // quantities come off the lines as they read under the lock.
+            const returnLineById = await lockOrderLines(
+              trx,
+              "salesReturnOrderLine",
+              companyId,
+              [...receivedByLine.keys()]
+            );
 
             await voidServiceJobsForReturn(trx, {
               companyId,
@@ -15374,10 +15470,6 @@ export async function postReceipt(
               .where("companyId", "=", companyId)
               .execute();
 
-            const returnLineById = indexBy(
-              returnLinesVoid.data ?? [],
-              (line) => line.id
-            );
             await updateRowsById(
               trx,
               "salesReturnOrderLine",
@@ -15770,6 +15862,14 @@ export async function postReceipt(
             .execute();
           await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // Every line of the order: its status is set from them.
+          await lockOrderLinesAsRead(
+            trx,
+            "purchaseOrderLine",
+            companyId,
+            purchaseOrderLinesVoid.data,
+            "A purchase order line changed while this receipt was voiding. Void the receipt again."
+          );
           await lockOutsideProcessingJobs(trx, companyId, outsideLineIdsVoid);
           await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
           await removeUnpickedPutAways(trx, companyId, receiptId);
@@ -17193,10 +17293,20 @@ export async function postReceipt(
             (line.quantityReceived ?? 0) * (line.conversionFactor ?? 1)
           ])
         );
+        const receivedLinesRead = purchaseOrderLines.data.filter(
+          (line) => line.id in purchaseOrderLineUpdates
+        );
 
         await db.transaction().execute(async (trx) => {
           await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOrderLinesAsRead(
+            trx,
+            "purchaseOrderLine",
+            companyId,
+            receivedLinesRead,
+            "A purchase order line changed while this receipt was posting. Post the receipt again."
+          );
           await lockOutsideProcessingJobs(trx, companyId, outsideLineIds);
           if (!isOutsideProcessing) {
             const unheld = await unheldInspectedLineRefusal(trx, companyId, {
@@ -18326,6 +18436,16 @@ export async function postReceipt(
             );
           }
 
+          await lockOrderLinesAsRead(
+            trx,
+            "salesReturnOrderLine",
+            companyId,
+            (salesReturnOrderLines.data ?? []).filter(
+              (line) => line.id in returnLineUpdates
+            ),
+            "A return order line changed while this receipt was posting. Post the receipt again."
+          );
+
           // A return type change takes this same lock. Re-read the return
           // types under it, so a line is never posted by the rule of a type
           // it no longer has.
@@ -18717,6 +18837,14 @@ export async function postReceipt(
         await db.transaction().execute(async (trx) => {
           await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // Every line of the transfer: its status is set from them.
+          await lockOrderLinesAsRead(
+            trx,
+            "warehouseTransferLine",
+            companyId,
+            warehouseTransferLines.data,
+            "A warehouse transfer line changed while this receipt was posting. Post the receipt again."
+          );
           // Update warehouse transfer lines
           await updateRowsById(
             trx,
@@ -19772,8 +19900,52 @@ export const postShipmentInput = z.object({
 });
 
 export const postShipmentPermission = {
-  update: "inventory"
+  "inventory.shipments": "Edit"
 } satisfies PermissionRule<z.output<typeof postShipmentInput>>;
+
+/**
+ * The bin each serial or batch of a shipment leaves from: the one it holds
+ * stock in at the line's location (`getTrackedEntityBins`, null = no storage
+ * unit), never the line's bin, which is only a default. A unit whose bin
+ * cannot cover the quantity, or that has no stock there, is refused rather
+ * than driving a bin negative.
+ */
+async function trackedShipmentSourceBins(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    units: { id: string; readableId: string | null }[];
+    locationIds: string[];
+    companyId: string;
+  }
+) {
+  const bins = await getTrackedEntityBins(db, {
+    trackedEntityIds: args.units.map((unit) => unit.id),
+    locationIds: [...new Set(args.locationIds)],
+    companyId: args.companyId
+  });
+  return (
+    trackedEntityId: string | undefined,
+    locationId: string | null,
+    quantity: number
+  ): string | null => {
+    const bin =
+      trackedEntityId && locationId
+        ? bins(trackedEntityId, locationId)
+        : undefined;
+    if (!bin || round(bin.quantity) < round(quantity)) {
+      const readableId =
+        args.units.find((unit) => unit.id === trackedEntityId)?.readableId ??
+        trackedEntityId ??
+        "A tracked item";
+      throw new InvalidInputError(
+        bin
+          ? `${readableId} has only ${round(bin.quantity)} in one storage unit, ${round(quantity)} needed. Move it into one storage unit first`
+          : `${readableId} has no stock to ship at this location`
+      );
+    }
+    return bin.storageUnitId;
+  };
+}
 
 /** Posts or voids a shipment: stock, tracked entities, COGS and journal rows. */
 export async function postShipment(
@@ -20098,45 +20270,14 @@ export async function postShipment(
             const locationId = shipmentHeader.locationId;
 
             // A serial or batch leaves the bin it actually holds stock in; the
-            // line's bin is only a default. A unit whose bin cannot cover the
-            // quantity is refused rather than driving that bin negative.
-            const trackedEntityBins = await getTrackedEntityBins(db, {
-              trackedEntityIds: (shipmentLineTracking.data ?? []).map(
-                (tracking) => tracking.id
+            // line's bin is only a default.
+            const sourceBin = await trackedShipmentSourceBins(db, {
+              units: shipmentLineTracking.data ?? [],
+              locationIds: shipmentLines.data.flatMap(
+                (line) => line.locationId ?? locationId ?? []
               ),
-              locationIds: [
-                ...new Set(
-                  shipmentLines.data.flatMap(
-                    (line) => line.locationId ?? locationId ?? []
-                  )
-                )
-              ],
               companyId
             });
-            const sourceBin = (
-              trackedEntityId: string | undefined,
-              lineLocationId: string | null,
-              quantity: number
-            ): string | null => {
-              const bin =
-                trackedEntityId && lineLocationId
-                  ? trackedEntityBins(trackedEntityId, lineLocationId)
-                  : undefined;
-              if (!bin || round(bin.quantity) < round(quantity)) {
-                const readableId =
-                  shipmentLineTracking.data?.find(
-                    (tracking) => tracking.id === trackedEntityId
-                  )?.readableId ??
-                  trackedEntityId ??
-                  "A tracked item";
-                throw new Error(
-                  bin
-                    ? `${readableId} has only ${round(bin.quantity)} in one storage unit, ${round(quantity)} needed. Move it into one storage unit first`
-                    : `${readableId} has no stock to ship at this location`
-                );
-              }
-              return bin.storageUnitId;
-            };
 
             for await (const shipmentLine of shipmentLines.data) {
               if (
@@ -20638,9 +20779,19 @@ export async function postShipment(
                 ? await getCurrentAccountingPeriod(companyId, db, today)
                 : null;
 
+            const shippedLinesRead = salesOrderLines.data.filter(
+              (line) => line.id in salesOrderLineUpdates
+            );
             await db.transaction().execute(async (trx) => {
               await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              await lockOrderLinesAsRead(
+                trx,
+                "salesOrderLine",
+                companyId,
+                shippedLinesRead,
+                "A sales order line changed while this shipment was posting. Post the shipment again."
+              );
               await fixedAssetWrites.apply(trx, companyId);
               await updateRowsById(
                 trx,
@@ -21187,6 +21338,15 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await lockPostable(trx, "shipment", shipmentId, companyId);
+              await lockOrderLinesAsRead(
+                trx,
+                "purchaseOrderLine",
+                companyId,
+                purchaseOrderLines.data.filter(
+                  (line) => line.id in purchaseOrderLineUpdates
+                ),
+                "A purchase order line changed while this shipment was posting. Post the shipment again."
+              );
               await updateRowsById(
                 trx,
                 "purchaseOrderLine",
@@ -21502,6 +21662,14 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await lockPostable(trx, "shipment", shipmentId, companyId);
+              // Every line of the transfer: its status is set from them.
+              await lockOrderLinesAsRead(
+                trx,
+                "warehouseTransferLine",
+                companyId,
+                warehouseTransferLines.data,
+                "A warehouse transfer line changed while this shipment was posting. Post the shipment again."
+              );
               // Update warehouse transfer lines
               await updateRowsById(
                 trx,
@@ -21659,6 +21827,15 @@ export async function postShipment(
             );
             const serviceUnits: ServiceUnit[] = [];
             const shippedByReturnLine = new Map<string, number>();
+            // A returned serial or batch ships from the bin it holds stock in,
+            // not the line's bin, as a sales order shipment does.
+            const sourceBin = await trackedShipmentSourceBins(db, {
+              units: shipmentLineTracking.data ?? [],
+              locationIds: shipmentLines.data.flatMap(
+                (line) => line.locationId ?? shipmentHeader.locationId ?? []
+              ),
+              companyId
+            });
             for (const shipmentLine of shipmentLines.data) {
               if (!shipmentLine.itemId) continue;
               const shippedQuantity =
@@ -21748,7 +21925,11 @@ export async function postShipment(
                     itemId: shipmentLine.itemId,
                     quantity: round(-(entity.quantity ?? 0)),
                     locationId: shipmentLine.locationId,
-                    storageUnitId: shipmentLine.storageUnitId,
+                    storageUnitId: sourceBin(
+                      entity.id,
+                      shipmentLine.locationId ?? shipmentHeader.locationId,
+                      Number(entity.quantity ?? 0)
+                    ),
                     entryType: "Negative Adjmt.",
                     documentType: "Sales Return Shipment",
                     documentId: shipmentHeader.id ?? undefined,
@@ -21944,6 +22125,11 @@ export async function postShipment(
                   .execute();
               }
 
+              // The return order before its lines, as a receipt takes them:
+              // refreshing the status locks the order next.
+              await lockOrderLines(trx, "salesReturnOrderLine", companyId, [
+                ...shippedByReturnLine.keys()
+              ]);
               await addReturnLineQuantityShipped(trx, {
                 companyId,
                 userId,
@@ -22152,8 +22338,19 @@ export async function postShipment(
               itemId: string;
               quantity: number;
               locationId: string | null;
+              storageUnitId: string | null;
               unitCost: number | null;
             }[] = [];
+            // A serial or batch goes back from the bin it holds stock in (a
+            // unit moved after receipt is no longer in the line's bin), and a
+            // split is booked in that same bin.
+            const sourceBin = await trackedShipmentSourceBins(db, {
+              units: shipmentLineTracking.data ?? [],
+              locationIds: shipmentLines.data.flatMap(
+                (line) => line.locationId ?? shipmentHeader.locationId ?? []
+              ),
+              companyId
+            });
 
             for (const shipmentLine of shipmentLines.data) {
               if (!shipmentLine.itemId || !shipmentLine.lineId) continue;
@@ -22211,11 +22408,18 @@ export async function postShipment(
                     })
                   );
                   if (restore > 0) {
+                    const restoreLocationId =
+                      writeOff.locationId ?? shipmentLine.locationId;
                     writeOffRestores.push({
                       itemId: shipmentLine.itemId,
                       quantity: restore,
-                      locationId:
-                        writeOff.locationId ?? shipmentLine.locationId,
+                      locationId: restoreLocationId,
+                      // Put back in the bin the line ships from, so the
+                      // shipment relieves those units in that same bin.
+                      storageUnitId:
+                        restoreLocationId === shipmentLine.locationId
+                          ? (shipmentLine.storageUnitId ?? null)
+                          : null,
                       unitCost: writeOff.unitCost
                     });
                   }
@@ -22258,13 +22462,18 @@ export async function postShipment(
                   remaining -= draw;
                   const stripe = entityStripes.get(entity.id) ?? null;
                   addShipped(shipmentLine.itemId, stripe, draw);
+                  const entityBin = sourceBin(
+                    entity.id,
+                    shipmentLine.locationId ?? shipmentHeader.locationId,
+                    draw
+                  );
                   const ledgerIndex = itemLedgerInserts.length;
                   itemLedgerInserts.push({
                     postingDate: today,
                     itemId: shipmentLine.itemId,
                     quantity: round(-draw),
                     locationId: shipmentLine.locationId,
-                    storageUnitId: shipmentLine.storageUnitId,
+                    storageUnitId: entityBin,
                     entryType: "Negative Adjmt.",
                     documentType: "Purchase Return Shipment",
                     documentId: shipmentHeader.id ?? undefined,
@@ -22286,7 +22495,7 @@ export async function postShipment(
                     trackedEntitySplits.push({
                       entity,
                       drawQuantity: round(draw),
-                      storageUnitId: shipmentLine.storageUnitId,
+                      storageUnitId: entityBin,
                       itemId: shipmentLine.itemId,
                       ledgerIndex
                     });
@@ -22333,10 +22542,22 @@ export async function postShipment(
                   `Cannot ship against a return order in ${lockedOrder.status} status`
                 );
               }
+              // The write-off restores below follow from what the lines had
+              // shipped when they were read.
+              await lockOrderLinesAsRead(
+                trx,
+                "purchaseReturnOrderLine",
+                companyId,
+                (purchaseReturnOrderLines.data ?? []).filter(
+                  (line) => line.id in returnLineUpdates
+                ),
+                "A return order line changed while this shipment was posting. Post the shipment again."
+              );
 
               // Put back what the inspection reject wrote off, at the write-off's
-              // own cost (Dr Inventory / Cr Scrap) and where it was written off,
-              // so the shipment below relieves those units once. The value rows
+              // own cost (Dr Inventory / Cr Scrap), at the location it was
+              // written off and in the bin the line ships from, so the
+              // shipment below relieves those units once. The value rows
               // stay under this shipment: a void reverses the restore with it.
               for (const restore of writeOffRestores) {
                 const item = items.data.find((i) => i.id === restore.itemId);
@@ -22346,7 +22567,7 @@ export async function postShipment(
                     itemId: restore.itemId,
                     quantity: restore.quantity,
                     locationId: restore.locationId,
-                    storageUnitId: null,
+                    storageUnitId: restore.storageUnitId,
                     trackedEntityId: null,
                     entryType: "Positive Adjmt.",
                     documentType: "Purchase Return Shipment",
@@ -23100,9 +23321,19 @@ export async function postShipment(
                 ? await getCurrentAccountingPeriod(companyId, db, today)
                 : null;
 
+            const shippedLinesRead = (salesOrderLines.data ?? []).filter(
+              (line) => line.id in salesOrderLineUpdates
+            );
             await db.transaction().execute(async (trx) => {
               await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              await lockOrderLinesAsRead(
+                trx,
+                "salesOrderLine",
+                companyId,
+                shippedLinesRead,
+                "A sales order line changed while this shipment was voiding. Void the shipment again."
+              );
               await fixedAssetWrites.apply(trx, companyId);
               // Update sales order lines to reverse shipped quantities
               await updateRowsById(
@@ -23428,6 +23659,15 @@ export async function postShipment(
             // (outside processing) shipment, so the void reverses none.
             await db.transaction().execute(async (trx) => {
               await lockPostedShipment(trx, companyId, shipmentId);
+              await lockOrderLinesAsRead(
+                trx,
+                "purchaseOrderLine",
+                companyId,
+                purchaseOrderLines.data.filter(
+                  (line) => line.id in purchaseOrderLineUpdates
+                ),
+                "A purchase order line changed while this shipment was voiding. Void the shipment again."
+              );
               // Update purchase order lines to reverse shipped quantities
               await updateRowsById(
                 trx,
@@ -23625,6 +23865,14 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await lockPostedShipment(trx, companyId, shipmentId);
+              // Every line of the transfer: its status is set from them.
+              await lockOrderLinesAsRead(
+                trx,
+                "warehouseTransferLine",
+                companyId,
+                warehouseTransferLines.data,
+                "A warehouse transfer line changed while this shipment was voiding. Void the shipment again."
+              );
               // Update warehouse transfer lines
               await updateRowsById(
                 trx,
@@ -23957,6 +24205,11 @@ export async function postShipment(
                 }
               }
 
+              // The return order before its lines, as a receipt takes them:
+              // refreshing the status locks the order next.
+              await lockOrderLines(trx, "salesReturnOrderLine", companyId, [
+                ...shippedByReturnLine.keys()
+              ]);
               await addReturnLineQuantityShipped(trx, {
                 companyId,
                 userId,
@@ -24018,42 +24271,31 @@ export async function postShipment(
             // transaction.
             const postingStatus = await journalPostingStatus(db, companyId);
 
-            const [
-              originalJournalLines,
-              originalItemLedger,
-              returnLinesVoid,
-              originalCostRows
-            ] = await inOrder([
-              () =>
-                documentJournalLines(db, companyId, {
-                  documentId: shipmentId,
-                  documentType: "Return Order"
-                }),
-              () =>
-                many(db, "itemLedger", {
-                  documentId: shipmentId,
-                  documentType: "Purchase Return Shipment",
-                  companyId
-                }),
-              () =>
-                many(db, "purchaseReturnOrderLine", {
-                  purchaseReturnOrderId,
-                  companyId
-                }),
-              () =>
-                many(db, "costLedger", {
-                  documentId: shipmentId,
-                  documentType: "Purchase Return Shipment",
-                  companyId
-                })
-            ]);
+            const [originalJournalLines, originalItemLedger, originalCostRows] =
+              await inOrder([
+                () =>
+                  documentJournalLines(db, companyId, {
+                    documentId: shipmentId,
+                    documentType: "Return Order"
+                  }),
+                () =>
+                  many(db, "itemLedger", {
+                    documentId: shipmentId,
+                    documentType: "Purchase Return Shipment",
+                    companyId
+                  }),
+                () =>
+                  many(db, "costLedger", {
+                    documentId: shipmentId,
+                    documentType: "Purchase Return Shipment",
+                    companyId
+                  })
+              ]);
             // A failed read here must abort: treating data:null as "nothing
             // to reverse" would mark the shipment Voided while its journal
             // and ledger rows stand.
             if (originalItemLedger.error)
               throw new Error("Failed to fetch item ledger rows to reverse");
-            if (returnLinesVoid.error)
-              throw new Error("Failed to fetch return order lines");
             if (originalCostRows.error)
               throw new Error("Failed to fetch cost ledger rows to reverse");
 
@@ -24107,6 +24349,14 @@ export async function postShipment(
               await setInspectionRelease(trx);
               await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              // The order before its lines, as a post takes them; the
+              // quantities come off the lines as they read under the lock.
+              const returnLineById = await lockOrderLines(
+                trx,
+                "purchaseReturnOrderLine",
+                companyId,
+                [...shippedByLine.keys()]
+              );
               const reversingItemLedger = (originalItemLedger.data ?? [])
                 .filter((entry) => !isWriteOffRestore(entry))
                 .map((entry) => ({
@@ -24289,10 +24539,6 @@ export async function postShipment(
                 }
               }
 
-              const returnLineById = indexBy(
-                returnLinesVoid.data ?? [],
-                (line) => line.id
-              );
               await updateRowsById(
                 trx,
                 "purchaseReturnOrderLine",
@@ -24572,7 +24818,7 @@ async function currentEntityStatus(
 // outages surface in monitoring.
 
 export const postInventoryAdjustmentPermission = {
-  update: "inventory"
+  "inventory.quantities": "Edit"
 } satisfies PermissionRule<z.output<typeof postInventoryAdjustmentInput>>;
 
 /** The single write path for manual inventory adjustments; see the note above. */
@@ -30578,23 +30824,22 @@ async function consumeTrackedEntitiesIntoOperation(
 
   // Only update if we didn't create a new jobMaterial (in which case it's already set)
   if (actualMaterialId === materialId) {
-    const currentQuantityIssued = round(
-      Number(jobMaterial?.quantityIssued) || 0
-    );
-    const newQuantityIssued = round(currentQuantityIssued + totalChildQuantity);
-
-    await trx
+    // Added to the row, not to the read above: a batch member or a confirmed
+    // over-issue reads the material unlocked, and a write of that read would
+    // drop an issue that committed since.
+    const updated = await trx
       .updateTable("jobMaterial")
-      .set({
-        quantityIssued: newQuantityIssued
-      })
+      .set((eb) => ({
+        quantityIssued: sql<number>`coalesce(${eb.ref("quantityIssued")}, 0) + ${totalChildQuantity}`
+      }))
       .where("id", "=", actualMaterialId!)
       .where("companyId", "=", companyId)
-      .execute();
+      .returning("quantityIssued")
+      .executeTakeFirst();
 
     logger.info("Job material quantity updated", {
       materialId: actualMaterialId,
-      newQuantityIssued
+      newQuantityIssued: updated?.quantityIssued
     });
   }
 
@@ -30681,28 +30926,28 @@ async function produceBatchOutput(
 export const issueMaterialPermission = {
   by: "type",
   rules: {
-    convertEntity: { update: "inventory" },
+    convertEntity: { "inventory.trackedEntities": "Edit" },
     jobCompleteMakeToOrder: {},
-    jobOperation: { update: "production" },
-    jobOperationBatchComplete: { update: "production" },
-    jobOperationDryRun: { update: "production" },
-    jobOperationBatchOutput: { update: "production" },
-    jobOperationSerialComplete: { update: "production" },
-    jobOperationScrap: { update: "production" },
-    partToOperation: { update: "production" },
-    scrapJobPart: { update: "production" },
-    scrapTrackedEntity: { update: "production" },
-    mergeTrackedEntities: { update: "inventory" },
-    trackedEntitiesToBatch: { update: "production" },
-    trackedEntitiesToOperation: { update: "production" },
-    unconsumeTrackedEntities: { update: "production" },
-    maintenanceDispatchInventory: { update: "resources" },
-    maintenanceDispatchTrackedEntities: { update: "resources" },
-    maintenanceDispatchUnconsume: { update: "resources" },
-    maintenanceDispatchUnissue: { update: "resources" },
-    serviceJobInventory: { update: "service" },
-    serviceJobTrackedEntities: { update: "service" },
-    serviceJobUnconsume: { update: "service" }
+    jobOperation: { "production.jobs": "Edit" },
+    jobOperationBatchComplete: { "production.batches": "Edit" },
+    jobOperationDryRun: { "production.jobs": "Edit" },
+    jobOperationBatchOutput: { "production.batches": "Edit" },
+    jobOperationSerialComplete: { "production.jobs": "Edit" },
+    jobOperationScrap: { "production.jobs": "Edit" },
+    partToOperation: { "production.jobs": "Edit" },
+    scrapJobPart: { "production.jobs": "Edit" },
+    scrapTrackedEntity: { "production.jobs": "Edit" },
+    mergeTrackedEntities: { "inventory.trackedEntities": "Edit" },
+    trackedEntitiesToBatch: { "production.batches": "Edit" },
+    trackedEntitiesToOperation: { "production.jobs": "Edit" },
+    unconsumeTrackedEntities: { "production.jobs": "Edit" },
+    maintenanceDispatchInventory: { "resources.dispatches": "Edit" },
+    maintenanceDispatchTrackedEntities: { "resources.dispatches": "Edit" },
+    maintenanceDispatchUnconsume: { "resources.dispatches": "Edit" },
+    maintenanceDispatchUnissue: { "resources.dispatches": "Edit" },
+    serviceJobInventory: { "service.jobs": "Edit" },
+    serviceJobTrackedEntities: { "service.jobs": "Edit" },
+    serviceJobUnconsume: { "service.jobs": "Edit" }
   }
 } satisfies PermissionRule<z.output<typeof issueInput>>;
 
@@ -32283,7 +32528,8 @@ export async function issueMaterial(
         materialId,
         jobOperationStepId,
         adjustmentType,
-        refuseOverIssue
+        refuseOverIssue,
+        maxQuantityIssued
       } = validatedPayload;
 
       // Written into jobMaterialStep for an unplanned part (no companyId there).
@@ -32603,11 +32849,21 @@ export async function issueMaterial(
               );
             }
           }
+          // A step backflush planned its quantity from an unlocked read: a
+          // completion or another step that issued since has covered part of
+          // it.
+          const consumingQuantity =
+            maxQuantityIssued === undefined
+              ? Number(quantity)
+              : Math.min(
+                  Number(quantity),
+                  Math.max(0, round(maxQuantityIssued) - previouslyIssued)
+                );
           const quantityToIssue = round(
             adjustmentType === "Positive Adjmt."
               ? Number(quantity)
               : adjustmentType === "Negative Adjmt."
-                ? Number(quantity)
+                ? consumingQuantity
                 : round(Number(quantity)) -
                   round(Number(material?.quantityIssued)) // set quantity
           );
@@ -34141,12 +34397,14 @@ export async function issueMaterial(
           .selectAll()
           .execute();
 
+        // Newest first: a unit returns to the bin of its latest consumption.
         const itemLedgers = await trx
           .selectFrom("itemLedger")
           .where("trackedEntityId", "in", [
             ...children.map((child) => child.trackedEntityId)
           ])
-          .orderBy("createdBy", "desc")
+          .where("companyId", "=", companyId)
+          .orderBy("createdAt", "desc")
           .selectAll()
           .execute();
 
@@ -34267,6 +34525,16 @@ export async function issueMaterial(
           });
 
           if (jobMaterial?.methodType !== "Make to Order") {
+            // Back to the bin and stripe the unit's latest consumption drew.
+            // A unit moves between bins after it is received (a pick, a
+            // transfer), so any other row of its history can name a bin it
+            // has already left.
+            const consumption = itemLedgers.find(
+              (itemLedger) =>
+                itemLedger.trackedEntityId === trackedEntityId &&
+                itemLedger.entryType === "Consumption" &&
+                Number(itemLedger.quantity) < 0
+            );
             itemLedgerInserts.push({
               entryType: "Consumption",
               documentType: "Job Consumption",
@@ -34275,21 +34543,9 @@ export async function issueMaterial(
               itemId: trackedEntity.sourceDocumentId,
               quantity: quantity,
               locationId: job?.locationId,
-              // NOTE: unconsume path left on its original bin-selection until
-              // it can be verified; the resolveTrackedEntityBin fix is scoped
-              // to the consumption path (trackedEntitiesToOperation).
-              storageUnitId: itemLedgers.find(
-                (itemLedger) => itemLedger.trackedEntityId === trackedEntityId
-              )?.storageUnitId,
+              storageUnitId: consumption?.storageUnitId ?? null,
               trackedEntityId,
-              // Back to the stripe its consumption drew.
-              projectId:
-                itemLedgers.find(
-                  (itemLedger) =>
-                    itemLedger.trackedEntityId === trackedEntityId &&
-                    itemLedger.entryType === "Consumption" &&
-                    Number(itemLedger.quantity) < 0
-                )?.projectId ?? null,
+              projectId: consumption?.projectId ?? null,
               createdBy: userId
             });
           }
@@ -34673,32 +34929,40 @@ export async function issueMaterial(
           item.itemTrackingType !== "Serial" &&
           item.itemTrackingType !== "Batch"
         ) {
-          // Get storage unit with highest quantity for this item at this location
-          const storageUnitId = locationId
-            ? ((
-                await getStorageUnitWithHighestQuantity(trx, {
-                  companyId,
-                  itemId: itemId,
-                  locationId: locationId,
-                  stripes: [null]
-                })
-              )?.storageUnitId ?? null)
-            : null;
+          // Maintenance draws common stock from the bins that hold it: the
+          // item's nettable default, then the fullest bins, split across them.
+          // A dispatch with no location books at no storage unit.
+          const draws =
+            locationId && round(quantity) > 0
+              ? (
+                  await planUntrackedDraw(trx, {
+                    companyId,
+                    locationId,
+                    itemId,
+                    quantity,
+                    storageUnitId: null,
+                    stripes: [null]
+                  })
+                ).draws
+              : [{ storageUnitId: null, projectId: null, quantity }];
 
           await trx
             .insertInto("itemLedger")
-            .values({
-              entryType: "Consumption",
-              documentType: "Maintenance Consumption",
-              documentId: dispatch.id,
-              documentLineId: dispatchItem.id,
-              companyId,
-              itemId,
-              quantity: -quantity,
-              locationId,
-              storageUnitId,
-              createdBy: userId
-            })
+            .values(
+              draws.map((draw) => ({
+                entryType: "Consumption" as const,
+                documentType: "Maintenance Consumption" as const,
+                documentId: dispatch.id,
+                documentLineId: dispatchItem.id,
+                companyId,
+                itemId,
+                quantity: round(-draw.quantity),
+                locationId,
+                storageUnitId: draw.storageUnitId,
+                projectId: draw.projectId,
+                createdBy: userId
+              }))
+            )
             .execute();
 
           await valueMaintenanceMovements(trx, {
@@ -34711,11 +34975,13 @@ export async function issueMaterial(
 
           // Update pickMethod defaultStorageUnitId if needed
           if (locationId) {
-            await updatePickMethodDefaultStorageUnitIfNeeded(
+            await updatePickMethodDefaultStorageUnits(
               trx,
-              itemId,
-              locationId,
-              storageUnitId,
+              draws.map((draw) => ({
+                itemId,
+                locationId,
+                storageUnitId: draw.storageUnitId
+              })),
               companyId,
               userId
             );
@@ -35503,29 +35769,45 @@ export async function issueMaterial(
           const quantity = Number(dispatchItem.quantity);
 
           if (quantity > 0) {
-            // Find the storage unit from the original consumption ledger entry
-            const originalLedger = await trx
+            // The issue may have drawn from several bins: return to the bins
+            // and stripes its consumption rows drew from, newest first, never
+            // more than was issued. What no row covers goes to no storage unit.
+            const consumed = await trx
               .selectFrom("itemLedger")
               .where("documentLineId", "=", maintenanceDispatchItemId)
               .where("documentType", "=", "Maintenance Consumption")
-              .orderBy("createdAt", "desc")
-              .selectAll()
-              .executeTakeFirst();
+              .where("companyId", "=", companyId)
+              .where("trackedEntityId", "is", null)
+              .select(["storageUnitId", "projectId", "quantity", "entryNumber"])
+              .execute();
+            const returns = planReturnToDrawnBins({
+              rows: consumed.map((row) => ({
+                storageUnitId: row.storageUnitId,
+                projectId: row.projectId,
+                quantity: Number(row.quantity),
+                order: Number(row.entryNumber)
+              })),
+              quantity,
+              fallback: { storageUnitId: null, projectId: null }
+            });
 
             await trx
               .insertInto("itemLedger")
-              .values({
-                entryType: "Consumption",
-                documentType: "Maintenance Consumption",
-                documentId: dispatch.id,
-                documentLineId: maintenanceDispatchItemId,
-                companyId,
-                itemId: dispatchItem.itemId,
-                quantity: quantity, // Positive to return to inventory
-                locationId,
-                storageUnitId: originalLedger?.storageUnitId,
-                createdBy: userId
-              })
+              .values(
+                returns.map((ret) => ({
+                  entryType: "Consumption" as const,
+                  documentType: "Maintenance Consumption" as const,
+                  documentId: dispatch.id,
+                  documentLineId: maintenanceDispatchItemId,
+                  companyId,
+                  itemId: dispatchItem.itemId,
+                  quantity: ret.quantity, // Positive to return to inventory
+                  locationId,
+                  storageUnitId: ret.storageUnitId,
+                  projectId: ret.projectId,
+                  createdBy: userId
+                }))
+              )
               .execute();
 
             await valueMaintenanceMovements(trx, {
@@ -35596,16 +35878,23 @@ export async function issueMaterial(
           );
         }
 
-        // The bin with the most of the item at the job's location.
-        const storageUnitId =
-          (
-            await getStorageUnitWithHighestQuantity(trx, {
-              companyId,
-              itemId,
-              locationId: job.locationId,
-              stripes: [null]
-            })
-          )?.storageUnitId ?? null;
+        // A service job draws common stock from the bins that hold it: the
+        // item's nettable default, then the fullest bins, split across them.
+        // The line names the first bin drawn.
+        const draws =
+          round(quantity) > 0
+            ? (
+                await planUntrackedDraw(trx, {
+                  companyId,
+                  locationId: job.locationId,
+                  itemId,
+                  quantity,
+                  storageUnitId: null,
+                  stripes: [null]
+                })
+              ).draws
+            : [{ storageUnitId: null, projectId: null, quantity }];
+        const storageUnitId = draws[0]?.storageUnitId ?? null;
 
         const jobItem = await trx
           .insertInto("serviceJobItem")
@@ -35625,18 +35914,20 @@ export async function issueMaterial(
 
         await trx
           .insertInto("itemLedger")
-          .values({
-            entryType: "Consumption",
-            documentType: "Service Job Consumption",
-            documentId: job.id,
-            documentLineId: jobItem.id,
-            companyId,
-            itemId,
-            quantity: -quantity,
-            locationId: job.locationId,
-            storageUnitId,
-            createdBy: userId
-          })
+          .values(
+            draws.map((draw) => ({
+              entryType: "Consumption" as const,
+              documentType: "Service Job Consumption" as const,
+              documentId: job.id,
+              documentLineId: jobItem.id,
+              companyId,
+              itemId,
+              quantity: round(-draw.quantity),
+              locationId: job.locationId,
+              storageUnitId: draw.storageUnitId,
+              createdBy: userId
+            }))
+          )
           .execute();
 
         const [cost = 0] = await valueServiceJobMovements(trx, {
@@ -35653,11 +35944,13 @@ export async function issueMaterial(
           .where("companyId", "=", companyId)
           .execute();
 
-        await updatePickMethodDefaultStorageUnitIfNeeded(
+        await updatePickMethodDefaultStorageUnits(
           trx,
-          itemId,
-          job.locationId,
-          storageUnitId,
+          draws.map((draw) => ({
+            itemId,
+            locationId: job.locationId,
+            storageUnitId: draw.storageUnitId
+          })),
           companyId,
           userId
         );
@@ -36105,12 +36398,18 @@ export async function issueMaterial(
           // The line's own movements, newest first: what is still issued.
           trx
             .selectFrom("itemLedger")
-            .select(["trackedEntityId", "storageUnitId", "quantity"])
+            .select([
+              "trackedEntityId",
+              "storageUnitId",
+              "quantity",
+              "entryNumber"
+            ])
             .where("documentType", "=", "Service Job Consumption")
             .where("documentId", "=", job.id)
             .where("documentLineId", "=", serviceJobItemId)
             .where("companyId", "=", companyId)
             .orderBy("createdAt", "desc")
+            .orderBy("entryNumber", "desc")
             .execute()
         ]);
 
@@ -36250,19 +36549,38 @@ export async function issueMaterial(
               `Only ${issued} of this part is issued to the job.`
             );
           }
-          itemLedgerInserts.push({
-            entryType: "Consumption",
-            documentType: "Service Job Consumption",
-            documentId: job.id,
-            documentLineId: serviceJobItemId,
-            companyId,
-            itemId: jobItem.itemId,
+          // Back to the bins the line's issues drew from, newest draw
+          // first, each up to what it still has out; the rest to the line's
+          // bin.
+          const returns = planReturnToDrawnBins({
+            rows: ledger
+              .filter((row) => !row.trackedEntityId)
+              .map((row) => ({
+                storageUnitId: row.storageUnitId,
+                quantity: Number(row.quantity),
+                order: Number(row.entryNumber)
+              })),
             quantity: back,
-            locationId: job.locationId,
-            storageUnitId:
-              jobItem.storageUnitId ?? ledger[0]?.storageUnitId ?? null,
-            createdBy: userId
+            fallback: {
+              storageUnitId:
+                jobItem.storageUnitId ?? ledger[0]?.storageUnitId ?? null,
+              projectId: null
+            }
           });
+          for (const ret of returns) {
+            itemLedgerInserts.push({
+              entryType: "Consumption",
+              documentType: "Service Job Consumption",
+              documentId: job.id,
+              documentLineId: serviceJobItemId,
+              companyId,
+              itemId: jobItem.itemId,
+              quantity: ret.quantity,
+              locationId: job.locationId,
+              storageUnitId: ret.storageUnitId,
+              createdBy: userId
+            });
+          }
           returned = back;
         }
 

@@ -64,7 +64,7 @@ const SupplierTaxForm = ({
   const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId);
   const suggestedName = suggestedTaxCode?.name;
 
-  const isDisabled = !permissions.can("update", "purchasing");
+  const isDisabled = !permissions.has({ "purchasing.suppliers": "Edit" });
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {

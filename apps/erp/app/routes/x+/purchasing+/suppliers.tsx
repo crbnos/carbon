@@ -14,9 +14,7 @@ import { Plural, Trans } from "@lingui/react/macro";
 import { LuInfo } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getTaxCodesList } from "~/modules/accounting/accounting.service";
 import { SuppliersTable } from "~/modules/purchasing/ui/Supplier";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { suppliersList } from "~/utils/list-registry/purchasing.server";
@@ -32,27 +30,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, suppliersList, {
     dataKey: "suppliers",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => {
+    firstPage: async ({ api, client, companyId }) => {
       const [tags, taxCodes] = await Promise.all([
-        getTagsList(client, companyId, "supplier"),
-        getTaxCodesList(client, companyId)
+        api.shared.getTagsList({ table: "supplier" }),
+        api.accounting.getTaxCodesList({})
       ]);
 
       // Once the company has a tax code, count the suppliers still taxed by
       // the legacy bare percent: a percent above zero and no tax code.
-      const suppliersWithoutTaxCode = taxCodes.data?.length
-        ? ((
-            await client
-              .from("supplier")
-              .select("id, supplierTax!inner(taxCodeId)", {
-                count: "exact",
-                head: true
-              })
-              .eq("companyId", companyId)
-              .gt("taxPercent", 0)
-              .is("supplierTax.taxCodeId", null)
-          ).count ?? 0)
-        : 0;
+      let suppliersWithoutTaxCode = 0;
+      if (taxCodes.data?.length) {
+        const untaxed = await client
+          .from("supplier")
+          .select("id, supplierTax!inner(taxCodeId)", {
+            count: "exact",
+            head: true
+          })
+          .eq("companyId", companyId)
+          .gt("taxPercent", 0)
+          .is("supplierTax.taxCodeId", null);
+        if (untaxed.error) throw untaxed.error;
+        suppliersWithoutTaxCode = untaxed.count ?? 0;
+      }
 
       return { tags: tags.data ?? [], suppliersWithoutTaxCode };
     },

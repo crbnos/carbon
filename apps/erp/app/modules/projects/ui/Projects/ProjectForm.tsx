@@ -107,8 +107,8 @@ const ProjectForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const canSave = isEditing
-    ? permissions.can("update", "projects")
-    : permissions.can("create", "projects");
+    ? permissions.has({ "projects.projects": "Edit" })
+    : permissions.has({ "projects.projects": "Create" });
 
   const [name, setName] = useState(initialValues.name ?? "");
   const [identifier, setIdentifier] = useState(initialValues.identifier ?? "");

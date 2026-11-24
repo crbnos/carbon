@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
@@ -11,21 +11,17 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteIssueType,
-  getIssueType
-} from "~/modules/quality/quality.service";
+import { deleteIssueType } from "~/modules/quality/quality.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "quality",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "quality.issueTypes": "View" });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const nonConformanceType = await getIssueType(client, id);
+  const nonConformanceType = await api.quality.getIssueType({
+    nonConformanceTypeId: id
+  });
   if (nonConformanceType.error) {
     throw redirect(
       `${path.to.issueTypes}?${getParams(request)}`,
@@ -40,9 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "quality"
-  });
+  const { client } = await authorize(request, { "quality.issueTypes": "Full" });
 
   const { id } = params;
   if (!id) {

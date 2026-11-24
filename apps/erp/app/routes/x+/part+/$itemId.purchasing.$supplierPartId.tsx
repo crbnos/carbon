@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData, useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -15,8 +14,8 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
+  const { client, companyId } = await authorize(request, {
+    "parts.parts": "View"
   });
 
   const { supplierPartId } = params;
@@ -68,7 +67,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { id: _id, ...supplierPart } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.items.updateSupplierPart({
     ...supplierPart,
     id: input.params.supplierPartId,

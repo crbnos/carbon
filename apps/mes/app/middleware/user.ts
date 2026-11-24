@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   clearConsolePinIn,
   resolveConsolePinIn
@@ -29,7 +29,7 @@ export const userMiddleware: MiddlewareFunction = async (
   next
 ) => {
   const { client, companyId, userId, sessionUserId, consoleMode } =
-    await requirePermissions(request, {});
+    await authorize(request, {});
 
   // The session flag alone is not trusted: console mode is a commercial
   // feature, and the company flag outlives a lapsed entitlement. When the
@@ -70,7 +70,7 @@ export const userMiddleware: MiddlewareFunction = async (
   });
 
   // Pin-in state from the signed cookie, re-validated against the database
-  // (console mode comes from the auth session). `requirePermissions` resolved
+  // (console mode comes from the auth session). `authorize` resolved
   // the same value into `userId`, memoized for this request.
   const pinIn = consoleMode
     ? await resolveConsolePinIn(request, companyId, sessionUserId)

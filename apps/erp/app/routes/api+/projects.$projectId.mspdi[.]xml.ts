@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -22,9 +22,8 @@ const logger = getLogger("erp", "project-mspdi");
  * while 2 elements share a code.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
   const { projectId } = params;
   if (!projectId) {

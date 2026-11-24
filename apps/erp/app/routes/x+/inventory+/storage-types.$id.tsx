@@ -2,29 +2,28 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { storageTypeValidator } from "~/modules/inventory/inventory.models";
-import { getStorageType } from "~/modules/inventory/inventory.service";
+import {
+  storageTypesGate,
+  storageTypeValidator
+} from "~/modules/inventory/inventory.models";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "parts",
-    role: "employee"
-  });
+  const { api } = await authorize(request, storageTypesGate("View"));
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const storageType = await getStorageType(client, id);
+  const storageType = await api.inventory.getStorageType({ id });
 
   return {
     storageType: storageType?.data ?? null
@@ -36,7 +35,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["id"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.inventory.updateStorageType({
     ...input.data,
     id: input.params.id,

@@ -30,7 +30,8 @@ databaseTest(
         .limit(2)
         .execute();
       const ids = companies.map((company) => company.id);
-      if (ids.length === 0) return;
+      // With no company every assertion below would hold of nothing.
+      expect(ids).not.toHaveLength(0);
 
       type Row = Record<string, unknown> & { id: string; location: Row[] };
       const rows = await selectRows<"company", Row>(
@@ -88,12 +89,14 @@ databaseTest(
     const db = await connectLocalTestDatabase();
     const rollback = new Error("rollback");
     try {
-      const owner = await db
-        .selectFrom("userToCompany")
-        .select(["companyId", "userId"])
+      // The system user, not a member: a database with no users has no member
+      // row.
+      const { id: companyId } = await db
+        .selectFrom("company")
+        .select("id")
         .limit(1)
-        .executeTakeFirst();
-      if (!owner) return;
+        .executeTakeFirstOrThrow();
+      const owner = { companyId, userId: "system" };
       await db
         .transaction()
         .execute(async (trx) => {

@@ -15,8 +15,7 @@ export const meta = moduleMeta("Document Templates");
 
 export const handle: Handle = {
   breadcrumb: msg`Templates`,
-  to: path.to.documentTemplates,
-  module: "settings"
+  to: path.to.documentTemplates
 };
 
 export default function TemplatesRoute() {

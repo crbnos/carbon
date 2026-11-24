@@ -6,6 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
+import { clearCompanyAccessCaches } from "../../../backups/access-cache";
 import {
   groupConflictClause,
   rebuildDerivedGroups
@@ -441,6 +442,7 @@ export const companyImportFunction = inngest.createFunction(
         await rebuildDerivedGroups(trx, companyId);
         await refreshReceiptInspectionStatuses(trx, companyId);
       });
+      await clearCompanyAccessCaches(db, companyId);
 
       if (unresolvedRefs.size > 0) {
         logger.warn(

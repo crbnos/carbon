@@ -56,6 +56,7 @@ import {
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM
 } from "~/modules/production/production.models";
+import { applyPlanningActionsPermission } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import {
   isApplyablePlanningAction,
@@ -175,7 +176,10 @@ const ProductionPlanningTable = ({
 
   // ── Planning actions (the MRP worklist) ──────────────────────────────────
   const user = useUser();
-  const canUpdateActions = permissions.can("update", "production");
+  const canUpdateActions = permissions.has({
+    "production.materialPlanning": "Edit"
+  });
+  const canApplyActions = permissions.has(applyPlanningActionsPermission);
   const actionTypeOptions = usePlanningActionTypeOptions("Make");
   const [people] = usePeople();
   const {
@@ -308,7 +312,7 @@ const ProductionPlanningTable = ({
   }, [pageScope]);
 
   const isDisabled =
-    !permissions.can("create", "production") ||
+    !permissions.has({ "production.materialPlanning": "Create" }) ||
     bulkUpdateFetcher.state !== "idle" ||
     mrpFetcher.state !== "idle";
 
@@ -732,7 +736,7 @@ const ProductionPlanningTable = ({
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={
-              !canUpdateActions || applyableIds.length === 0 || isActionsBusy
+              !canApplyActions || applyableIds.length === 0 || isActionsBusy
             }
             onSelect={() =>
               submitActions({
@@ -756,7 +760,7 @@ const ProductionPlanningTable = ({
       bulkUpdateFetcher.state,
       onBulkUpdate,
       visibleActionsByRowKey,
-      canUpdateActions,
+      canApplyActions,
       isActionsBusy,
       submitActions
     ]

@@ -98,7 +98,7 @@ const IssueWorkflowsTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
-              disabled={!permissions.can("update", "quality")}
+              disabled={!permissions.has({ "quality.issueWorkflows": "Edit" })}
               onClick={() => {
                 navigate(`${path.to.issueWorkflow(row.id!)}`);
               }}
@@ -109,7 +109,7 @@ const IssueWorkflowsTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "quality")}
+              disabled={!permissions.has({ "quality.issueWorkflows": "Full" })}
               onClick={() => {
                 flushSync(() => {
                   setSelectedIssueWorkflow(row);
@@ -134,7 +134,7 @@ const IssueWorkflowsTable = memo(
           columns={columns}
           count={count}
           primaryAction={
-            permissions.can("create", "quality") && (
+            permissions.has({ "quality.issueWorkflows": "Create" }) && (
               <New label={t`Issue Workflow`} to={path.to.newIssueWorkflow} />
             )
           }

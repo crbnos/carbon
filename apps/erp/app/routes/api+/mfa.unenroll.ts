@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, RATE_LIMIT, success } from "@carbon/auth";
-import { makeAuthSession, requirePermissions } from "@carbon/auth/auth.server";
+import { authorize, makeAuthSession } from "@carbon/auth/auth.server";
 import { unenrollTotpFactor } from "@carbon/auth/mfa.server";
 import {
   requireAuthSession,
@@ -16,7 +16,7 @@ import { data } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  await requirePermissions(request, {});
+  await authorize(request);
   const authSession = await requireAuthSession(request);
 
   const ip = getClientIp(request) ?? "127.0.0.1";

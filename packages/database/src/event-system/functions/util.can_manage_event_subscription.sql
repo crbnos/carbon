@@ -10,9 +10,9 @@ BEGIN
   END IF;
 
   IF p_handler_type = 'WEBHOOK' THEN
-    RETURN p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings_create'))::text[], ARRAY[]::text[]))
-        OR p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings_update'))::text[], ARRAY[]::text[]))
-        OR p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings_delete'))::text[], ARRAY[]::text[]));
+    RETURN p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings.webhooks_create'))::text[], ARRAY[]::text[]))
+        OR p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings.webhooks_update'))::text[], ARRAY[]::text[]))
+        OR p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings.webhooks_delete'))::text[], ARRAY[]::text[]));
   END IF;
 
   RETURN p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_role())::text[], ARRAY[]::text[]));

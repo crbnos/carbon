@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -13,25 +13,19 @@ import { data, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people/types";
 import { customFieldValidator } from "~/modules/settings/settings.models";
-import {
-  getCustomField,
-  upsertCustomField
-} from "~/modules/settings/settings.service";
+import { upsertCustomField } from "~/modules/settings/settings.service";
 import { CustomFieldForm } from "~/modules/settings/ui";
 import { DataType } from "~/modules/shared/types";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "settings.customFields": "View" });
 
   const { table, id } = params;
   if (!table) throw notFound("Invalid table");
   if (!id) throw new Error("id is not found");
 
-  const customField = await getCustomField(client, id);
+  const customField = await api.settings.getCustomField({ id });
   if (customField.error) {
     throw redirect(
       path.to.customFieldList(table),
@@ -47,8 +41,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    create: "settings"
+  const { client, userId } = await authorize(request, {
+    "settings.customFields": "Create"
   });
 
   const { table } = params;

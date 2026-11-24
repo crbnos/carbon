@@ -154,7 +154,12 @@ Key service functions (verified):
   never its To bin) and follows `itemLedger` changes for its items. When the From bin no
   longer holds what is left to pick, the line shows "Stock at: bin (qty), …", or "Location
   not known" when no bin holds it. The pick still posts from the line's From bin
-  (`postStockTransfer`); the lines are ordered by item id with numbers as numbers.
+  (`postStockTransfer`). An untracked pick is refused when that bin (no storage unit
+  included) holds less common stock than the picks of the item take together
+  (`untrackedPickShortfall`, under the draw lock; single pick, Pick All and the move
+  dialog). A Put Away line keeps its own check (`putAwayPickShortfall`). The lines are
+  ordered by item id with numbers as numbers. Pinned by
+  `apps/erp/test/database/stock-transfer-pick-stock.test.ts`.
 - Pick, unpick and unissue post from the ledger, not from the saved bin (`postPicking`,
   `issueMaterial`). An untracked pick locks the draw (`lockUntrackedDraws`), reads the bins
   again, chooses the source with `chooseSourceBin` and splits it with
@@ -164,7 +169,11 @@ Key service functions (verified):
   line's saved bin. An unissue (`Positive Adjmt.` on a job material) is refused above
   `quantityIssued` and returns stock to the bins and stripes the job's `Job Consumption` rows
   of that item drew from, the operation's own draws first. It reads by job and item, because
-  the job-completion SQL backflush writes no `documentLineId`.
+  the job-completion SQL backflush writes no `documentLineId`. A serial or batch Unconsume
+  (`unconsumeTrackedEntities` in `issueMaterial`) returns each unit to the bin and stripe of
+  its newest negative `Consumption` row (ledger read newest first by `createdAt`), not to any
+  other row of its history: a unit picked or transferred after receipt has rows in bins it
+  has left. Pinned by `apps/erp/test/database/unconsume-tracked-bin.test.ts`.
 - A picking list line's lineside (`toStorageUnitId`) can be empty: a release picking list is
   made before the scheduler gives an operation with only a process its work center. Each pick
   (`inventory`, `serial`, `batch` in `postPicking`) fills it under the line lock
@@ -367,8 +376,8 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   A purchase order (outside processing), rental or contract shipment writes no item ledger row
   and is not checked.
 - **A guessed bin is never non-nettable.** When no bin was chosen, consumption (the
-  completion backflush and manual issue in `issueJobOperationMaterials` / `issueMaterial`,
-  the maintenance spare-part issue) and a new job material (`getStorageUnitId`, and its
+  completion backflush and manual issue in `issueJobOperationMaterials` / `issueMaterial`)
+  and a new job material (`getStorageUnitId`, and its
   set-based twins in get-method) take the item's pick method default only when it is
   nettable (`getNettableDefaultStorageUnitId`, `shared.service.ts`), then fall back to
   `getStorageUnitWithHighestQuantity`, which only considers nettable units;
@@ -393,11 +402,57 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   backflushes issue it with no ledger row and no cost (`20261106213428_backflush-skips-non-inventory.sql`). The bin reads come from `getUntrackedBinStock`
   (`shared.service.ts`, one row per bin and stripe). Before it reads, each path locks every
   (location, item) it draws (`lockUntrackedDraws`, key `untracked-draw:<companyId>:<locationId>:<itemId>`,
-  `untrackedDrawLockKey`; the SQL locks the same keys in the same key-hash order outside strict
-  backflush), so two draws never plan from the same on-hand. A draw records what picked and
+  `untrackedDrawLockKey`; the SQL locks the same keys in the same key-hash order in every mode,
+  before the strict backflush keys, `20261124055757_backflush-draw-lock-in-strict.sql`), so two
+  draws never plan from the same on-hand. The SQL then locks a FIFO / LIFO stripe's open cost
+  layers and their open children in `calculateCOGS`'s order (`postingDate`, `createdAt`;
+  children by `createdAt`) before it reads them (`20261124060450_backflush-locks-cost-layers.sql`).
+  The MES step backflush sends `maxQuantityIssued` (its target), and `partToOperation` issues only
+  what still reaches it under the job material's lock. A draw records what picked and
   lineside budgets already took from a bin before it plans the rest. Pinned by
   `picked-consumption.test.ts`, `apps/erp/test/database/consumption-bins.test.ts` and
   `supabase/tests/backflush-split-across-bins.test.sql`.
+- **Every stock-out with no bin chosen takes its bin from stock, never NULL by default.**
+  An empty bin field must never mean "take it from no storage unit". Each writer of a
+  negative untracked `itemLedger` row follows one of two shared rules
+  (`shared.service.ts`, `@carbon/database/picked-consumption`):
+  1. Ordinary stock: `planUntrackedDraw` (lock, the item's nettable default, then the
+     bins that hold stock, fullest first, split across them, stripe by stripe; never a
+     quarantine or lineside unit), or `shipmentSourceBinChooser` when a document line
+     names one bin.
+  2. Nonconforming or returned stock: `planHeldUntrackedDraw` /
+     `returnShipmentSourceBinChooser` (`planHeldStockDraw` / `chooseHeldStockBin`). Held
+     units (`BinStock.held`: active, non-nettable, not lineside — quarantine, MRB,
+     rejected) come first, then the other bins, fullest first.
+
+  | Path | Rule | Test |
+  |---|---|---|
+  | Project Issue (`postProjectIssue`), and a Return with no bin goes back to the bins the issues drew from | 1 | `post-project-issue/untracked-draw-bins.test.ts` |
+  | Maintenance spare-part issue / un-issue (`maintenanceDispatchInventory`, `maintenanceDispatchUnissue`) | 1, back per row | `maintenance-issue-bins.test.ts` |
+  | Service job part issue / return (`serviceJobInventory`, `serviceJobUnconsume`) | 1, back per bin | `issue/service-job.test.ts` |
+  | Direct sales invoice (`postSalesInvoice`, `directInvoiceSourceBins`); the void reads the posted rows | 1, one bin per line | `sales-invoice-source-bins.test.ts` |
+  | Warehouse transfer shipment line with no From bin (`createDocument`) | 1, one bin per line | `shipment-create-source-bins.test.ts` |
+  | Sales and Purchase Return Order shipment lines (`createDocument`) | 2, one bin per line | `shipment-create-source-bins.test.ts` |
+  | NCR close, untracked Scrap / Return to Supplier not from an inspection (`closeIssue`, `planHeldWriteOffBins`); stock an open lot holds is left alone | 2 | `ncr-scrap-source-bins.test.ts` |
+
+  Every guess on this list reads stock net of what open inspection lots hold in a unit
+  (`getUntrackedBinStock` with `inspectionHolds`: "all", or "openLots" for a supplier
+  return, which may ship a Partial lot's remainder), and a planned shortfall never lands
+  on such a unit (`keepInspectionHeldStock` moves it to no storage unit). The hold guard
+  refuses any posting that takes a unit below what its lots hold, so without this a guess
+  turns a posting that used to succeed into a refusal. The job backflush, which the SQL
+  backflush mirrors, does not pass it yet. A return of drawn stock (Project Issue Return,
+  maintenance un-issue, service job part return) goes back through
+  `planReturnToDrawnBins`: the bins the document's rows drew from, newest first, each up
+  to what it still has out. A purchase return puts an inspection write-off back in the
+  line's bin before it ships from it, so the two net there.
+
+  A serial or batch row posts at the bin the unit holds stock in: sales order and return
+  shipments (`trackedShipmentSourceBins`), Project Issue, and job consumption
+  (`resolveTrackedEntityBin`). A reversal books against the row it reverses (an Unconsume
+  takes the unit's newest negative `Consumption` row). A stock transfer whose From is no
+  storage unit keeps it: moving stock out of no bin is a deliberate re-binning, and the
+  pick check refuses it only when no storage unit is short.
 - **An operation completion issues what its units still need.** `issueJobOperationMaterials`
   reads `quantityComplete + quantityScrapped` under the operation lock and issues
   `min(quantity × units, estimatedQuantity) − quantityIssued`, as `backflush_job_materials` does

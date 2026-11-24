@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getMountIntegration } from "@carbon/ee/mount.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -24,8 +24,8 @@ const PublishRequestSchema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId, userId } = await authorize(request, {
+    "settings.integrations": "Edit"
   });
 
   const parsed = PublishRequestSchema.safeParse({

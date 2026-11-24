@@ -58,8 +58,8 @@ const NoQuoteReasonForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "sales")
-    : !permissions.can("create", "sales");
+    ? !permissions.has({ "sales.noQuoteReasons": "Edit" })
+    : !permissions.has({ "sales.noQuoteReasons": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

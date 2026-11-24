@@ -80,7 +80,8 @@ export default function DepreciationRunsRoute() {
   const periodEnd = pickedPeriodEnd ?? nextPeriodEnd;
 
   const canCreate =
-    permissions.can("create", "accounting") && !hasDraftBlocking;
+    permissions.has({ "accounting.depreciation": "Create" }) &&
+    !hasDraftBlocking;
 
   return (
     <VStack spacing={0} className="h-full">
@@ -89,7 +90,7 @@ export default function DepreciationRunsRoute() {
         count={count}
         infinite={infinite}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ "accounting.depreciation": "Create" }) && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

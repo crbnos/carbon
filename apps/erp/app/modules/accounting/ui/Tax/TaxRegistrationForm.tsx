@@ -64,8 +64,8 @@ const TaxRegistrationForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.has({ "accounting.taxRegistrations": "Edit" })
+    : !permissions.has({ "accounting.taxRegistrations": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

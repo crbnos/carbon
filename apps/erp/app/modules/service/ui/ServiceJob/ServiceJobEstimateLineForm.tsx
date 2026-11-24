@@ -74,7 +74,7 @@ const ServiceJobEstimateLineForm = ({
   const getSalePrice = useItemSalePrice();
 
   const isEditing = !!initialValues.id;
-  const isDisabled = isLocked || !permissions.can("update", "service");
+  const isDisabled = isLocked || !permissions.has({ "service.jobs": "Edit" });
 
   const [lineType, setLineType] = useState<LineType>(
     isEditing && initialValues.itemId ? "Item" : "Labor"

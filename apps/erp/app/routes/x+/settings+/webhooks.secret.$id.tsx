@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
   revealWebhookSigningSecret,
@@ -57,8 +57,8 @@ async function respond(
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId } = await authorize(request, {
+    "settings.webhooks": "Edit"
   });
   const webhookId = params.id;
   if (!webhookId) throw new Error("Could not find id");
@@ -75,8 +75,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId } = await authorize(request, {
+    "settings.webhooks": "Edit"
   });
   const webhookId = params.id;
   if (!webhookId) throw new Error("Could not find id");

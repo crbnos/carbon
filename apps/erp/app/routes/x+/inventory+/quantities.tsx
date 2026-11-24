@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import {
@@ -16,10 +17,7 @@ import { pluckUnique, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  expandStorageUnitIdsWithDescendants,
   getInventoryItems,
-  getStorageTypesList,
-  getStorageUnitsList,
   INVENTORY_ITEMS_PAGING
 } from "~/modules/inventory/inventory.service";
 import type { InventoryItem } from "~/modules/inventory/types";
@@ -29,8 +27,6 @@ import {
   getMaterialSubstancesList
 } from "~/modules/items/items.service";
 import { getStockOwnerProjects } from "~/modules/projects/projects.service";
-import { getLocationsList } from "~/modules/resources/resources.service";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
@@ -45,10 +41,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "inventory",
-    bypassRls: true
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    { "inventory.quantities": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -64,7 +61,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   if (storageUnitFilter?.value) {
     const ids = storageUnitFilter.value.split(",");
-    const expanded = await expandStorageUnitIdsWithDescendants(client, ids);
+    const expanded = dataOrThrow(
+      await api.inventory.expandStorageUnitIdsWithDescendants({
+        storageUnitIds: ids
+      })
+    );
     storageUnitFilter.value = expanded.join(",");
   }
 
@@ -92,7 +93,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     if (locations.error || !locations.data?.length) {
       // `path.to.inventory` *is* this route — redirecting here loops forever.
       // On error bail to the app root; with zero locations (a company that
@@ -132,9 +133,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }),
     isFirstPage ? getMaterialFormsList(client, companyId) : null,
     isFirstPage ? getMaterialSubstancesList(client, companyId) : null,
-    isFirstPage ? getTagsList(client, companyId) : null,
-    isFirstPage ? getStorageTypesList(client, companyId) : null,
-    isFirstPage ? getStorageUnitsList(client, companyId) : null,
+    isFirstPage ? api.shared.getTagsList({}) : null,
+    isFirstPage ? api.inventory.getStorageTypesList({}) : null,
+    isFirstPage ? api.inventory.getStorageUnitsList({}) : null,
     isFirstPage ? getStockOwnerProjects(client, companyId) : null
   ]);
 

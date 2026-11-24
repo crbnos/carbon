@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,24 +11,18 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { itemPostingGroupValidator } from "~/modules/items/items.models";
-import {
-  getItemPostingGroup,
-  upsertItemPostingGroup
-} from "~/modules/items/items.service";
+import { upsertItemPostingGroup } from "~/modules/items/items.service";
 import { ItemPostingGroupForm } from "~/modules/items/ui/ItemPostingGroups";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "parts",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "parts.itemGroups": "View" });
 
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const itemPostingGroup = await getItemPostingGroup(client, groupId);
+  const itemPostingGroup = await api.items.getItemPostingGroup({ id: groupId });
 
   return {
     itemPostingGroup: itemPostingGroup?.data ?? null
@@ -37,8 +31,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, userId } = await authorize(request, {
+    "parts.itemGroups": "Edit"
   });
 
   const { groupId } = params;

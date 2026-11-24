@@ -3,30 +3,24 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { sequenceValidator } from "~/modules/settings/settings.models";
-import {
-  getSequence,
-  updateSequence
-} from "~/modules/settings/settings.service";
+import { updateSequence } from "~/modules/settings/settings.service";
 import { SequenceForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "settings.sequences": "View" });
 
   const { tableId } = params;
   if (!tableId) throw notFound("tableId not found");
 
-  const sequence = await getSequence(client, tableId, companyId);
+  const sequence = await api.settings.getSequence({ table: tableId });
   if (sequence.error) {
     throw redirect(
       path.to.sequences,
@@ -41,8 +35,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId, userId } = await authorize(request, {
+    "settings.sequences": "Edit"
   });
 
   const validation = await validator(sequenceValidator).validate(

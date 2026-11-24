@@ -8,6 +8,7 @@
 import { error, success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import type { PageGate } from "@carbon/database/access";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { validationError, validator } from "@carbon/form";
 import { datetime } from "@carbon/utils";
@@ -31,10 +32,8 @@ export type ProductionEventDeps = {
   client: SupabaseClient<Database>;
   serviceRole: SupabaseClient<Database>;
   db: () => Kysely<KyselyDatabase>;
-  /** Whether the operator holds a permission (a Machine press). */
-  permitted: (
-    permission: { create: "production" } | { update: "production" }
-  ) => Promise<boolean>;
+  /** Whether the operator holds a gate (a Machine press). */
+  permitted: (gate: PageGate) => Promise<boolean>;
   /** Numbers a unit on its first touch (`assignSerialNumberOnFirstTouch`). */
   numberUnit: typeof assignSerialNumberOnFirstTouch;
 };
@@ -83,7 +82,10 @@ export async function productionEventAction(
   if (productionAction === "Start") {
     const machineWorkCenterId =
       d.type === "Machine" ? d.workCenterId : undefined;
-    if (machineWorkCenterId && !(await permitted({ create: "production" }))) {
+    if (
+      machineWorkCenterId &&
+      !(await permitted({ "production.jobs": "Create" }))
+    ) {
       return refused("You do not have permission to start machine time");
     }
 
@@ -228,7 +230,7 @@ export async function productionEventAction(
   if (event.data.endTime) return refused("This event has already ended");
 
   if (event.data.type === "Machine" && event.data.workCenterId) {
-    if (!(await permitted({ update: "production" }))) {
+    if (!(await permitted({ "production.jobs": "Edit" }))) {
       return refused("You do not have permission to end machine time");
     }
     let press: Awaited<ReturnType<typeof endMachineProductionEvent>>;

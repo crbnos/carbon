@@ -115,7 +115,8 @@ const ReceiptHeader = () => {
   const putAwayReadyCount = routeData?.putAwayReadyCount ?? 0;
   const putAwayTransfers = routeData?.putAwayTransfers ?? [];
   const canPutAway =
-    permissions.can("create", "inventory") && permissions.is("employee");
+    permissions.has({ "inventory.stockTransfers": "Create" }) &&
+    permissions.is("employee");
   const putAwayRules = useRuleViolations({
     action: path.to.receiptPutAway(receiptId)
   });
@@ -133,8 +134,9 @@ const ReceiptHeader = () => {
     Boolean(receipt.sourceDocumentId) &&
     !isInvoiced &&
     !isVoided &&
-    permissions.can("view", "invoicing");
-  const canInvoice = isPosted && permissions.can("create", "invoicing");
+    permissions.has({ "invoicing.purchaseInvoices": "View" });
+  const canInvoice =
+    isPosted && permissions.has({ "invoicing.purchaseInvoices": "Create" });
   const isInvoicing =
     navigation.state !== "idle" &&
     navigation.location?.pathname === path.to.newPurchaseInvoice;
@@ -188,7 +190,8 @@ const ReceiptHeader = () => {
               <>
                 <DropdownMenuItem
                   disabled={
-                    isInvoiced || !permissions.can("update", "inventory")
+                    isInvoiced ||
+                    !permissions.has({ "inventory.receipts": "Edit" })
                   }
                   destructive
                   onClick={voidModal.onOpen}
@@ -202,7 +205,7 @@ const ReceiptHeader = () => {
             <DropdownMenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
-                !permissions.can("delete", "inventory") ||
+                !permissions.has({ "inventory.receipts": "Full" }) ||
                 !permissions.is("employee")
               }
               destructive
@@ -213,7 +216,6 @@ const ReceiptHeader = () => {
             </DropdownMenuItem>
             <DocumentForceDeleteMenuItem
               forceDelete={routeData}
-              canDelete={permissions.can("delete", "inventory")}
               onClick={forceDeleteModal.onOpen}
             />
           </>

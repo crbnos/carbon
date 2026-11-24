@@ -4,7 +4,13 @@
 
 export * from "./config/env";
 export * from "./lib/supabase";
-export * from "./services/users";
+export {
+  getClaims,
+  getCompanies,
+  getCompaniesForUser,
+  getUser,
+  readClaimsFresh
+} from "./services/users";
 export * from "./types";
 export * from "./utils/cookie";
 export * from "./utils/dev-bypass";

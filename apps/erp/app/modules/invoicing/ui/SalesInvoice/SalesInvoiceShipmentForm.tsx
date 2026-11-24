@@ -130,7 +130,8 @@ const SalesInvoiceShipmentForm = forwardRef<
               )}
               recalculateTaxesText={t`Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs.`}
               canRecalculateTaxes={
-                permissions.can("update", "invoicing") && isEditable
+                permissions.has({ "invoicing.salesInvoices": "Edit" }) &&
+                isEditable
               }
             />
             <ShippingMethod
@@ -152,7 +153,10 @@ const SalesInvoiceShipmentForm = forwardRef<
         </CardContent>
         <CardFooter>
           <Submit
-            isDisabled={!permissions.can("update", "invoicing") || !isEditable}
+            isDisabled={
+              !permissions.has({ "invoicing.salesInvoices": "Edit" }) ||
+              !isEditable
+            }
           >
             <Trans>Save</Trans>
           </Submit>

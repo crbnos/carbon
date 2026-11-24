@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -19,12 +19,7 @@ import {
   isIssueLocked,
   issueValidator
 } from "~/modules/quality/quality.models";
-import {
-  getIssue,
-  getIssueActionTasks,
-  getIssueReviewers,
-  updateIssue
-} from "~/modules/quality/quality.service";
+import { getIssue, updateIssue } from "~/modules/quality/quality.service";
 import type { IssueAssociationNode } from "~/modules/quality/types";
 import {
   ActionTasksList,
@@ -39,10 +34,11 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality",
-    bypassRls: true
-  });
+  const { client, api } = await authorize(
+    request,
+    { "quality.issues": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -59,22 +55,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     nonConformance: nonConformance.data,
-    actionTasks: getIssueActionTasks(client, id, companyId),
-    reviewers: getIssueReviewers(client, id, companyId)
+    actionTasks: api.quality.getIssueActionTasks({ id }),
+    reviewers: api.quality.getIssueReviewers({ id })
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
+  const { client, companyId, userId } = await authorize(request, {
+    "quality.issues": "Edit"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "quality"
+  const { client: viewClient } = await authorize(request, {
+    "quality.issues": "View"
   });
   const issue = await getIssue(viewClient, id);
   await requireUnlocked({
@@ -200,7 +196,7 @@ export default function IssueDetailsRoute() {
             sourceDocument="Issue"
             sourceDocumentId={id}
             writeBucket="parts"
-            writeBucketPermission="parts"
+            writePage="quality.issues"
           />
         )}
       </DeferredFiles>

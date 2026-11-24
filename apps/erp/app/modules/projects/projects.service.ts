@@ -25,19 +25,18 @@ import type {
 import {
   assertEntitiesInStripes,
   loadDemandStripes,
-  type StripeQuantity,
   splitAcrossStripes,
   trackedEntityStripe
 } from "@carbon/api/stock-stripes";
-import { error, hasPermission } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import {
   type Database,
   getCompanyTimeZone,
   type Json,
   journalReference
 } from "@carbon/database";
+import { holdsGate } from "@carbon/database/access";
 import type {
   KyselyDatabase as DB,
   Kysely,
@@ -47,6 +46,7 @@ import type {
 import { fetchAll } from "@carbon/database/fetch-all";
 import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { toJson } from "@carbon/database/json";
+import { planReturnToDrawnBins } from "@carbon/database/picked-consumption";
 import { completedAtForGroup } from "@carbon/database/project-plan";
 import { inOrder, rpcRows, single } from "@carbon/database/rows";
 import { getStrictBackflushSettings } from "@carbon/database/strict-backflush";
@@ -110,6 +110,10 @@ import { claimPlanningActions } from "~/modules/production/planning-action-claim
 import { insertJob } from "~/modules/production/production.service";
 import { insertPurchaseOrder } from "~/modules/purchasing/purchasing.service";
 import {
+  CONTRACT_READ_GATE,
+  withContractRead
+} from "~/modules/sales/sales.models";
+import {
   allocateJournalLineIds,
   assertCompanyRecords,
   bookAdjustment,
@@ -120,6 +124,7 @@ import {
   calculateCOGS,
   createAdjustmentJournal,
   invokePosting,
+  planUntrackedDraw,
   resolveAccountingPeriod
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
@@ -474,7 +479,7 @@ export async function updateProjectStatus(
 
   if (args.status === "Closed") {
     // Not the caller's client: RLS hides purchase order lines from a user with
-    // no purchasing_view, and that count of 0 would let the close through.
+    // no View on a Purchasing page, and that count of 0 would let the close through.
     const [openLines, openJobs] = await Promise.all([
       db
         .selectFrom("purchaseOrderLine")
@@ -3863,30 +3868,6 @@ export async function timesheetApprovalRefusal(
 }
 
 /**
- * Whether `userId` is the employee's manager (`employeeJob.managerId`): who,
- * besides a user with `update: "projects"`, may open and change another
- * employee's timesheet.
- */
-export async function managesEmployee(
-  client: Client,
-  args: { companyId: string; userId: string; employeeId: string }
-): Promise<boolean> {
-  const job = await client
-    .from("employeeJob")
-    .select("managerId")
-    .eq("id", args.employeeId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (job.error) {
-    logger.error("Failed to load the employee job", {
-      companyId: args.companyId,
-      error: job.error
-    });
-  }
-  return job.data?.managerId === args.userId;
-}
-
-/**
  * Corrects a Posted entry: a Submitted reversal of the original hours and,
  * when `hours` is not 0, a Submitted replacement. Both carry the reason.
  * A replacement on another charge number (`projectId`, `projectElementId`)
@@ -4312,7 +4293,7 @@ export async function getTimesheetApprovalCount(
 /**
  * Lists Submitted entries, grouped by employee and week (Monday). When
  * `ownerId` is set, only entries on projects that user owns are listed;
- * pass null for a user with `projects_update`.
+ * pass null for a user with Edit on Approvals.
  */
 export async function getTimesheetApprovals(
   client: Client,
@@ -5575,7 +5556,7 @@ export function certificationTextHash(text: string): string {
 }
 
 export const submitTimesheetWeekPermission = {
-  update: "projects"
+  "projects.projects": "Edit"
 } satisfies PermissionRule<z.output<typeof submitTimesheetWeekInput>>;
 
 /**
@@ -5796,7 +5777,7 @@ function currentEntry(rows: EntryRow[]): EntryRow | null {
 }
 
 export const saveTimesheetEntryPermission = {
-  update: "projects"
+  "projects.projects": "Edit"
 } satisfies PermissionRule<z.output<typeof saveTimesheetEntryInput>>;
 
 /**
@@ -6434,7 +6415,7 @@ async function writeRevision(
 // post-timesheet
 
 export const postTimesheetPermission = {
-  update: "projects"
+  "projects.projects": "Edit"
 } satisfies PermissionRule<z.output<typeof postTimesheetInput>>;
 
 /**
@@ -7260,7 +7241,7 @@ export type PostProjectExpenseResult = {
 };
 
 export const postProjectExpensePermission = {
-  update: "projects"
+  "projects.projects": "Edit"
 } satisfies PermissionRule<z.output<typeof postProjectExpenseInput>>;
 
 /**
@@ -7537,8 +7518,99 @@ export type PostProjectIssueResult = {
 };
 
 export const postProjectIssuePermission = {
-  update: "inventory"
+  "inventory.quantities": "Edit"
 } satisfies PermissionRule<z.output<typeof postProjectIssueInput>>;
+
+/** One item ledger row of a project issue or return: its bin and stripe. */
+type ProjectIssueDraw = {
+  stripe: string | null;
+  storageUnitId: string | null;
+  quantity: number;
+};
+
+/**
+ * Where an untracked Project Issue with no bin chosen takes its stock:
+ * `planUntrackedDraw` (the item's nettable default, then the bins that hold
+ * it, fullest first, stripe by stripe; never a quarantine or lineside unit).
+ * With `refuseShort` (Prevent negative stock under strict backflush) it
+ * refuses when those bins hold less than the quantity.
+ */
+async function planProjectIssueDraw(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    locationId: string;
+    itemId: string;
+    quantity: number;
+    stripes: (string | null)[];
+    itemLabel: string;
+    refuseShort: boolean;
+  }
+): Promise<ProjectIssueDraw[]> {
+  const { companyId, locationId, itemId, quantity, stripes } = args;
+  const planned = await planUntrackedDraw(trx, {
+    companyId,
+    locationId,
+    itemId,
+    quantity,
+    storageUnitId: null,
+    stripes
+  });
+  if (args.refuseShort && planned.available < round(quantity)) {
+    throw new InvalidInputError(
+      `${args.itemLabel} has ${planned.available} on hand in the storage units it can be taken from, not ${quantity}. Prevent negative stock is on.`
+    );
+  }
+  return planned.draws.map((draw) => ({
+    stripe: draw.projectId,
+    storageUnitId: draw.storageUnitId,
+    quantity: draw.quantity
+  }));
+}
+
+/**
+ * Where a Return with no bin chosen goes back to: the bins the project's
+ * issues of the item (and lot) drew from, newest draw first, each up to what
+ * it still has out. What they do not cover goes to no storage unit, as
+ * before. A Return goes to one stripe: the project's stock, else common.
+ */
+async function planProjectReturn(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    projectId: string;
+    locationId: string;
+    itemId: string;
+    trackedEntityId: string | null;
+    quantity: number;
+    stripe: string | null;
+  }
+): Promise<ProjectIssueDraw[]> {
+  const rows = await trx
+    .selectFrom("itemLedger")
+    .select(["storageUnitId", "quantity", "entryNumber"])
+    .where("companyId", "=", args.companyId)
+    .where("documentType", "=", "Project Issue")
+    .where("documentId", "=", args.projectId)
+    .where("itemId", "=", args.itemId)
+    .where("locationId", "=", args.locationId)
+    .where("trackedEntityId", "is not distinct from", args.trackedEntityId)
+    .execute();
+  return planReturnToDrawnBins({
+    rows: rows.map((row) => ({
+      storageUnitId: row.storageUnitId,
+      quantity: Number(row.quantity),
+      order: Number(row.entryNumber)
+    })),
+    quantity: args.quantity,
+    fallback: { storageUnitId: null, projectId: args.stripe },
+    stripe: args.stripe
+  }).map((draw) => ({
+    stripe: draw.projectId,
+    storageUnitId: draw.storageUnitId,
+    quantity: draw.quantity
+  }));
+}
 
 /**
  * Issues stock to a project (or returns it). The stock leaves (or re-enters)
@@ -7705,9 +7777,14 @@ export async function postProjectIssue(
   // stock first when it has project stock, then common stock. A Return goes
   // back to the first: the project's stock, else common stock.
   const stripes = await loadDemandStripes(db, companyId, projectId);
-  let draws: StripeQuantity[];
+  // Where each row books. Null: a draw with no bin chosen, planned from
+  // stock inside the transaction, under the draw lock.
+  let draws: ProjectIssueDraw[] | null = null;
+  let refuseShortNoBinDraw = false;
   if (!isIssue) {
-    draws = [{ stripe: stripes[0] ?? null, quantity }];
+    if (storageUnitId) {
+      draws = [{ stripe: stripes[0] ?? null, storageUnitId, quantity }];
+    }
   } else if (trackedEntityId) {
     // A tracked entity is drawn from its own stripe, which the project's
     // demand must be allowed to draw.
@@ -7719,11 +7796,27 @@ export async function postProjectIssue(
       })),
       trackedEntityId
     );
-    const source = trackingRows.find(
-      (row) =>
-        row.trackedEntityId === trackedEntityId &&
-        (row.projectId ?? null) === stripe
-    );
+    // With no bin chosen, the lot is taken from the bin that holds it (its
+    // rows net to 0 in a bin it has left).
+    const source = storageUnitId
+      ? trackingRows.find(
+          (row) =>
+            row.trackedEntityId === trackedEntityId &&
+            (row.projectId ?? null) === stripe
+        )
+      : trackingRows
+          .filter(
+            (row) =>
+              row.trackedEntityId === trackedEntityId &&
+              (row.projectId ?? null) === stripe
+          )
+          .reduce<TrackingQuantityRow | undefined>(
+            (best, row) =>
+              !best || Number(row.quantity ?? 0) > Number(best.quantity ?? 0)
+                ? row
+                : best,
+            undefined
+          );
     // A serial or batch is one real unit: it never goes below zero.
     if (round(quantity) > round(source?.quantity ?? 0)) {
       throw new InvalidInputError(
@@ -7746,7 +7839,22 @@ export async function postProjectIssue(
         stripes
       );
     }
-    draws = [{ stripe, quantity }];
+    draws = [
+      {
+        stripe,
+        storageUnitId: storageUnitId ?? source?.storageUnitId ?? null,
+        quantity
+      }
+    ];
+  } else if (!storageUnitId) {
+    // No bin chosen: the draw is planned from the bins that hold the stock
+    // inside the transaction. Read the setting now, as the named-bin path
+    // does.
+    const { strict, preventNegative } = await getStrictBackflushSettings(
+      db,
+      companyId
+    );
+    refuseShortNoBinDraw = strict && preventNegative;
   } else {
     // Untracked stock at the bin, stripe by stripe in draw order.
     // null == undefined — loose equality, as the adjustment path matches.
@@ -7784,16 +7892,25 @@ export async function postProjectIssue(
     // One stripe (no project stock) books the quantity as given; with
     // several, what no stripe covers comes out of the first one.
     if (stripes.length === 1) {
-      draws = [{ stripe: stripes[0] ?? null, quantity }];
+      draws = [{ stripe: stripes[0] ?? null, storageUnitId, quantity }];
     } else {
-      draws = split.draws.map((draw) => ({ ...draw }));
+      const binDraws: ProjectIssueDraw[] = split.draws.map((draw) => ({
+        ...draw,
+        storageUnitId
+      }));
       const shortfall = round(split.remaining);
       if (shortfall > 0) {
         const first = stripes[0] ?? null;
-        const own = draws.find((draw) => draw.stripe === first);
+        const own = binDraws.find((draw) => draw.stripe === first);
         if (own) own.quantity += shortfall;
-        else draws.unshift({ stripe: first, quantity: shortfall });
+        else
+          binDraws.unshift({
+            stripe: first,
+            storageUnitId,
+            quantity: shortfall
+          });
       }
+      draws = binDraws;
     }
   }
 
@@ -7825,6 +7942,28 @@ export async function postProjectIssue(
         "Set Indirect Cost in Account Defaults before you issue to a Statistical project"
       );
     }
+
+    const bookings: ProjectIssueDraw[] =
+      draws ??
+      (isIssue
+        ? await planProjectIssueDraw(trx, {
+            companyId,
+            locationId,
+            itemId,
+            quantity,
+            stripes,
+            itemLabel,
+            refuseShort: refuseShortNoBinDraw
+          })
+        : await planProjectReturn(trx, {
+            companyId,
+            projectId,
+            locationId,
+            itemId,
+            trackedEntityId,
+            quantity,
+            stripe: stripes[0] ?? null
+          }));
 
     if (trackedEntityId) {
       const entity = await trx
@@ -7906,7 +8045,8 @@ export async function postProjectIssue(
           })
         );
 
-    // One adjustment per stripe drawn; the project is charged their sum.
+    // One adjustment per bin and stripe drawn; the project is charged their
+    // sum.
     const bookedRows: {
       itemLedgerId: string;
       offsetJournalLineId: string | null;
@@ -7915,14 +8055,14 @@ export async function postProjectIssue(
       stripe: string | null;
       quantity: number;
     }[] = [];
-    for (const draw of draws) {
+    for (const draw of bookings) {
       const bookedRow = await bookAdjustment(trx, {
         ledger: {
           postingDate,
           itemId,
           quantity: isIssue ? -draw.quantity : draw.quantity,
           locationId,
-          storageUnitId,
+          storageUnitId: draw.storageUnitId,
           trackedEntityId,
           projectId: draw.stripe,
           entryType: isIssue ? "Negative Adjmt." : "Positive Adjmt.",
@@ -8140,7 +8280,7 @@ export type PostProjectStockTransferResult = {
 };
 
 export const postProjectStockTransferPermission = {
-  update: "projects"
+  "projects.projects": "Edit"
 } satisfies PermissionRule<z.output<typeof postProjectStockTransferInput>>;
 
 /**
@@ -14775,33 +14915,34 @@ export async function timesheetBudgetWarning(
 
 /**
  * The Transfer half of a planning Apply, shared by the purchasing and the
- * production planning routes. Creating a project stock transfer needs
- * `update: projects`, the permission of the transfer pages, on top of the
- * route's own. Returns what the route reports: the applied action ids, the
- * transfers created, and one message per action it could not apply.
+ * production planning operations. Creating a project stock transfer needs
+ * Edit on Projects, the permission of the transfer pages, on top of the
+ * operation's own: the caller passes `ctx.can({ "projects.projects": "Edit" })`
+ * as `canEditProjects`. Returns what the operation reports: the applied action
+ * ids, the transfers created, and one message per action it could not apply.
  */
 export async function applyTransferPlanningActions(args: {
   db: Kysely<KyselyDatabase>;
   companyId: string;
   userId: string;
   planningActionIds: string[];
+  canEditProjects: boolean;
 }): Promise<{
   applied: string[];
   transfers: { id: string; projectStockTransferId: string }[];
   errors: string[];
 }> {
-  const { db, companyId, userId, planningActionIds } = args;
+  const { db, companyId, userId, planningActionIds, canEditProjects } = args;
   if (planningActionIds.length === 0) {
     return { applied: [], transfers: [], errors: [] };
   }
-  const claims = await getUserClaims(userId, companyId);
-  if (!hasPermission(claims?.permissions, "projects", "update", companyId)) {
+  if (!canEditProjects) {
     return {
       applied: [],
       transfers: [],
       errors: planningActionIds.map(
         (id) =>
-          `Planning action ${id} creates a project stock transfer, which needs projects permission`
+          `Planning action ${id} creates a project stock transfer, which needs Edit on Projects`
       )
     };
   }
@@ -15342,17 +15483,16 @@ export async function getTimesheetWeekView(
 
 /**
  * The count the Projects sidebar shows on Approvals: the Submitted timesheet
- * entries, for a user who may approve them (`update: projects`). Any other
+ * entries, for a user who may approve them (Edit on Approvals). Any other
  * user, or a failed read, gets 0, so the sidebar shows no count.
  */
-export async function getApprovalCountForUser(
+async function getApprovalCount(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string }
+  args: { companyId: string; permissions: Parameters<typeof holdsGate>[0] }
 ): Promise<number> {
-  const canApprove = hasPermission(
-    (await getUserClaims(args.userId, args.companyId))?.permissions,
-    "projects",
-    "update",
+  const canApprove = holdsGate(
+    args.permissions,
+    { "projects.approvals": "Edit" },
     args.companyId
   );
   if (!canApprove) return 0;
@@ -15369,20 +15509,20 @@ export async function getApprovalCountForUser(
 
 /**
  * The contract billable items that wait for review (Unbilled or On Hold), for
- * a user who may review them (`update: projects` and `view: sales`, what the
+ * a user who may review them (Edit on Approvals and View on Service Contracts, what the
  * Billing tab of Approvals needs). The Projects sidebar shows Approvals while
  * there are any, and adds them to its count. Any other user, or a failed
  * read, gets 0.
  */
-export async function getBillingReviewCountForUser(
+async function getBillingReviewCount(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string }
+  args: { companyId: string; permissions: Parameters<typeof holdsGate>[0] }
 ): Promise<number> {
-  const permissions = (await getUserClaims(args.userId, args.companyId))
-    ?.permissions;
-  const canReview =
-    hasPermission(permissions, "projects", "update", args.companyId) &&
-    hasPermission(permissions, "sales", "view", args.companyId);
+  const canReview = holdsGate(
+    args.permissions,
+    withContractRead({ "projects.approvals": "Edit" }),
+    args.companyId
+  );
   if (!canReview) return 0;
   const result = await client
     .from("projectBillableItem")
@@ -15398,6 +15538,22 @@ export async function getBillingReviewCountForUser(
     return 0;
   }
   return result.count ?? 0;
+}
+
+/**
+ * The counts the Projects sidebar shows on Approvals, for both Projects
+ * layouts: submitted time and the contract billable items that wait for
+ * review.
+ */
+export async function projectsSidebarCounts(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; permissions: Parameters<typeof holdsGate>[0] }
+): Promise<{ approvalCount: number; billingReviewCount: number }> {
+  const [approvalCount, billingReviewCount] = await Promise.all([
+    getApprovalCount(client, args),
+    getBillingReviewCount(client, args)
+  ]);
+  return { approvalCount, billingReviewCount };
 }
 
 // --- Projects → Reports ---------------------------------------------------------
@@ -15536,4 +15692,20 @@ export async function getProjectJobs(
     })),
     error: null
   };
+}
+
+/**
+ * The gate of contract billing: Approvals at `level`, and View on either
+ * contracts list (Service Contracts or Project Contracts), whose contracts it
+ * reads. Checked in the body: a published rule names one page per branch.
+ */
+export function refuseContractBilling(
+  ctx: ServiceContext,
+  level: "View" | "Edit"
+) {
+  const allowed =
+    ctx.can({ "projects.approvals": level }) && ctx.can(CONTRACT_READ_GATE);
+  return allowed
+    ? null
+    : ctx.error("forbidden", "You do not have permission to do this");
 }

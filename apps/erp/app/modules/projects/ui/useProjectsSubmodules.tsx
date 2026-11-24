@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { pageOfUrl } from "@carbon/database/access";
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBriefcaseBusiness,
@@ -16,36 +17,8 @@ import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import { useSettings } from "~/hooks/useSettings";
 import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
-
-// `generatePath` drops a trailing slash, so `path.to.project("")` is
-// "/x/project" — a prefix of "/x/projects" too, which lit Projects on every
-// page of the module. These are the literal record prefixes.
-const projectRecordPrefix = `${path.to.projects.replace(/s$/, "")}/`;
-const stockTransferRecordPrefix = path.to
-  .projectStockTransfer("x")
-  .replace(/x$/, "");
-
-// The Projects entry owns every page under /x/projects except the module's
-// other entries, plus the project workspace and the stock transfers (a
-// transfer opens from a project's Stock page).
-const otherProjectsRoutes = [
-  path.to.projectsBilling,
-  path.to.projectTimesheetApprovals,
-  path.to.projectReports,
-  path.to.laborCategories,
-  path.to.planningGroups
-];
-
-function isProjectsRoute(pathname: string) {
-  if (pathname.startsWith(projectRecordPrefix)) return true;
-  if (pathname.startsWith(stockTransferRecordPrefix)) return true;
-  if (pathname === path.to.projects) return true;
-  return (
-    pathname.startsWith(`${path.to.projects}/`) &&
-    !otherProjectsRoutes.some((route) => pathname.startsWith(route))
-  );
-}
 
 /** The Approvals counts from the projects layouts' loaders, when one is on
  *  screen: submitted time and contract billable items to review. */
@@ -92,14 +65,12 @@ export default function useProjectsSubmodules() {
           name: t`Projects`,
           to: path.to.projects,
           icon: <LuFolderKanban />,
-          table: "project",
-          isActive: isProjectsRoute
+          table: "project"
         },
         {
           name: t`My Time`,
           to: path.to.timesheet,
-          icon: <LuTimer />,
-          isActive: (pathname: string) => pathname.startsWith(path.to.timesheet)
+          icon: <LuTimer />
         },
         ...(showApprovals
           ? [
@@ -114,20 +85,16 @@ export default function useProjectsSubmodules() {
                 count: counts
                   ? counts.approvalCount + counts.billingReviewCount
                   : undefined,
-                // Billing review joins Approvals (it is a review queue too).
+                // `to` may carry `?tab=`: match the page, not the query.
                 isActive: (pathname: string) =>
-                  pathname.startsWith(path.to.projectTimesheetApprovals) ||
-                  pathname.startsWith(path.to.projectsBilling)
+                  pageOfUrl(pathname) === "projects.approvals"
               }
             ]
           : []),
         {
           name: t`Reports`,
           to: path.to.projectReports,
-          icon: <LuFileSpreadsheet />,
-          role: "employee",
-          isActive: (pathname: string) =>
-            pathname.startsWith(path.to.projectReports)
+          icon: <LuFileSpreadsheet />
         }
       ]
     },
@@ -137,34 +104,23 @@ export default function useProjectsSubmodules() {
         {
           name: t`Labor Categories`,
           to: path.to.laborCategories,
-          icon: <LuBriefcaseBusiness />,
-          role: "employee",
-          isActive: (pathname: string) =>
-            pathname.startsWith(path.to.laborCategories)
+          icon: <LuBriefcaseBusiness />
         },
         {
           // Commercial (PLANNING_GROUPS): always listed; a gated company
           // sees the upgrade overlay on the page.
           name: t`Planning Groups`,
           to: path.to.planningGroups,
-          icon: <LuGroup />,
-          role: "employee",
-          isActive: (pathname: string) =>
-            pathname.startsWith(path.to.planningGroups)
+          icon: <LuGroup />
         }
       ]
     }
   ];
 
-  const isVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
-    route.role ? permissions.is(route.role) : true;
-
   return {
-    groups: projectsRoutes
-      .filter((group) => group.routes.some(isVisible))
-      .map((group) => ({
-        ...group,
-        routes: group.routes.filter(isVisible).map(addSavedViewsToRoutes)
-      }))
+    groups: visibleGroups(projectsRoutes, permissions).map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes)
+    }))
   };
 }

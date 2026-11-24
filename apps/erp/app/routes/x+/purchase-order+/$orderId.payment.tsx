@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { purchaseOrderPaymentValidator } from "~/modules/purchasing/purchasing.models";
@@ -26,7 +27,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // The operation refuses an order in approval or finished.
-  const api = await carbon(request);
+  const { api } = await authorize(request, {
+    "purchasing.purchaseOrders": "Edit"
+  });
   const result = await api.purchasing.upsertPurchaseOrderPayment({
     ...validation.data,
     id: orderId,

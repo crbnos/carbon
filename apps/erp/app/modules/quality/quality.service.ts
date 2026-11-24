@@ -46,6 +46,10 @@ import {
   journalPostingStatus,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
+import {
+  keepInspectionHeldStock,
+  planHeldStockDraw
+} from "@carbon/database/picked-consumption";
 import * as engine from "@carbon/database/quality";
 import {
   errResult,
@@ -74,8 +78,10 @@ import {
   getDefaultPostingGroup,
   getExternalLink,
   getLocationTimeZone,
+  getUntrackedBinStock,
   invokeCreate,
-  invokePosting
+  invokePosting,
+  lockUntrackedDraws
 } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
@@ -103,8 +109,6 @@ import {
   type BalloonRegionAnalysis,
   balloonRegionAnalysisResultSchema,
   type inspectionDispositionValidator,
-  type inspectionMeasurementValidator,
-  type inspectionSampleValidator,
   type inspectionSaveAnchorsPayloadValidator,
   type inspectionSaveBalloonsGeometryPayloadValidator,
   type inspectionSaveBalloonsPayloadValidator,
@@ -1725,6 +1729,134 @@ export async function upsertGaugeCalibrationRecord(
       })
     )
     .eq("id", gaugeCalibrationRecord.id);
+}
+
+type GaugeCalibrationRecordFields = Omit<
+  z.infer<typeof gaugeCalibrationRecordValidator>,
+  "id"
+> & {
+  inspectionStatus: (typeof inspectionStatus)[number];
+  customFields?: Json;
+};
+
+/**
+ * Saves a calibration record and moves its gauge's calibration dates and
+ * status, on one Kysely handle: run it in `ctx.transaction` so the two
+ * apply together. Bypasses row-level security (Quality → Gauges owns the
+ * gauge, Records the record): the operation's permission is the gate, and
+ * every statement is scoped to `companyId`. The gauge moves only when this
+ * calibration is not older than its last one. Undefined when the gauge, or
+ * the record to update, is not the company's.
+ */
+export async function saveGaugeCalibrationRecord(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  record:
+    | (GaugeCalibrationRecordFields & { id?: string; createdBy: string })
+    | (GaugeCalibrationRecordFields & { id: string; updatedBy: string })
+): Promise<{ id: string } | undefined> {
+  const userId = "updatedBy" in record ? record.updatedBy : record.createdBy;
+  const now = datetime.timestamp();
+
+  const gauge = await db
+    .selectFrom("gauge")
+    .select("id")
+    .where("id", "=", record.gaugeId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!gauge) return undefined;
+
+  const passed = record.inspectionStatus === "Pass";
+  await db
+    .updateTable("gauge")
+    .set({
+      gaugeCalibrationStatus: passed ? "In-Calibration" : "Out-of-Calibration",
+      lastCalibrationDate: record.dateCalibrated,
+      nextCalibrationDate: sql<string>`(${record.dateCalibrated}::date + make_interval(months => coalesce("calibrationIntervalInMonths", 0)))::date`,
+      // A pass resets the status so a later lapse notifies again.
+      ...(passed ? { lastCalibrationStatus: "In-Calibration" as const } : {}),
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("id", "=", record.gaugeId)
+    .where("companyId", "=", companyId)
+    .where((eb) =>
+      eb.or([
+        eb("lastCalibrationDate", "is", null),
+        eb("lastCalibrationDate", "<=", record.dateCalibrated)
+      ])
+    )
+    .execute();
+
+  const fields = {
+    gaugeId: record.gaugeId,
+    supplierId: record.supplierId ?? null,
+    dateCalibrated: record.dateCalibrated,
+    requiresAction: record.requiresAction,
+    requiresAdjustment: record.requiresAdjustment,
+    requiresRepair: record.requiresRepair,
+    approvedBy: record.approvedBy ?? null,
+    measurementStandard: record.measurementStandard ?? null,
+    calibrationAttempts: JSON.stringify(record.calibrationAttempts ?? null),
+    inspectionStatus: record.inspectionStatus,
+    ...(record.notes !== undefined
+      ? { notes: JSON.stringify(record.notes) }
+      : {}),
+    ...(record.customFields !== undefined
+      ? { customFields: JSON.stringify(record.customFields) }
+      : {})
+  };
+
+  if ("createdBy" in record) {
+    return db
+      .insertInto("gaugeCalibrationRecord")
+      .values({
+        ...fields,
+        // The new-record form picks the id first, so its files upload there.
+        ...(record.id ? { id: record.id } : {}),
+        // A 0 reading is no reading, as the form sends it.
+        humidity: record.humidity || null,
+        temperature: record.temperature || null,
+        companyId,
+        createdBy: record.createdBy
+      })
+      .returning("id")
+      .executeTakeFirst();
+  }
+  return db
+    .updateTable("gaugeCalibrationRecord")
+    .set({
+      ...fields,
+      humidity: record.humidity ?? null,
+      temperature: record.temperature ?? null,
+      updatedBy: record.updatedBy,
+      updatedAt: now
+    })
+    .where("id", "=", record.id)
+    .where("companyId", "=", companyId)
+    .returning("id")
+    .executeTakeFirst();
+}
+
+/**
+ * Saves a calibration record and its gauge's calibration in one transaction,
+ * as the system: Quality → Gauges owns the gauge, so a Records caller could
+ * not move it. The calling operation's permission is the gate.
+ */
+export async function saveGaugeCalibration(
+  ctx: ServiceContext,
+  record: Parameters<typeof saveGaugeCalibrationRecord>[2]
+) {
+  const saved = await ctx.transaction(async (tx) => {
+    const row = await saveGaugeCalibrationRecord(
+      tx.asSystem.pg,
+      ctx.company.id,
+      record
+    );
+    return row ?? tx.error("notFound", "Gauge or calibration record not found");
+  });
+  return saved.error ?? saved.data;
 }
 
 export async function upsertGaugeType(
@@ -4698,6 +4830,101 @@ type DispositionRow = {
 
 type IssueClosureBlocker = { nonConformanceItemId: string; reason: string };
 
+type DispositionMovement = {
+  itemId: string;
+  locationId: string | null;
+  storageUnitId?: string | null;
+  trackedEntityId: string | null;
+  projectId?: string | null;
+  quantity: number;
+  comment: string;
+  documentLineId?: string;
+  /** An untracked write-off whose bins `planHeldWriteOffBins` chooses. */
+  fromHeldStock?: boolean;
+};
+
+/**
+ * Where an NCR's untracked Scrap / Return to Supplier write-off comes from
+ * when no inspection decided it: the held-stock rule (`planHeldStockDraw`,
+ * as `planHeldUntrackedDraw`): quarantine, MRB and rejected units first,
+ * then the other bins, fullest first; a shortfall on the first bin drawn,
+ * else no storage unit. The rows of one item are planned as one draw, so two
+ * rows never count the same on-hand, and stock an inspection lot holds in a
+ * unit is left to the lot (the hold guard would refuse taking it). Runs in
+ * the close's transaction and locks the draws before it reads the bins.
+ */
+async function planHeldWriteOffBins(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    locationId: string | null;
+    movements: DispositionMovement[];
+  }
+): Promise<DispositionMovement[]> {
+  const { companyId, locationId } = args;
+  const strip = ({ fromHeldStock: _, ...movement }: DispositionMovement) =>
+    movement;
+  const toPlan = args.movements.filter(
+    (m) => m.fromHeldStock && m.locationId === locationId
+  );
+  if (!locationId || toPlan.length === 0) return args.movements.map(strip);
+
+  const quantityByItem = new Map<string, number>();
+  for (const m of toPlan) {
+    quantityByItem.set(
+      m.itemId,
+      round((quantityByItem.get(m.itemId) ?? 0) - m.quantity)
+    );
+  }
+  const itemIds = [...quantityByItem.keys()];
+  await lockUntrackedDraws(trx, { companyId, locationId, itemIds });
+  // Net of what open inspection lots hold in each unit: the hold guard would
+  // refuse a write-off that takes a lot's stock, so the close would fail.
+  const binsByItem = await getUntrackedBinStock(trx, {
+    companyId,
+    itemIds,
+    locationId,
+    stripes: [null],
+    inspectionHolds: "all"
+  });
+  const drawsByItem = new Map(
+    itemIds.map((itemId) => {
+      const bins = binsByItem.get(itemId) ?? [];
+      return [
+        itemId,
+        keepInspectionHeldStock(
+          planHeldStockDraw({
+            bins,
+            preferredStorageUnitId: null,
+            quantity: quantityByItem.get(itemId) ?? 0
+          }).map((draw) => ({ ...draw, projectId: null })),
+          bins
+        )
+      ];
+    })
+  );
+
+  const planned: DispositionMovement[] = [];
+  for (const m of args.movements) {
+    if (!m.fromHeldStock || m.locationId !== locationId) {
+      planned.push(strip(m));
+      continue;
+    }
+    // Every row of the item is in its one draw, emitted at its first row.
+    const draws = drawsByItem.get(m.itemId);
+    if (!draws) continue;
+    drawsByItem.delete(m.itemId);
+    for (const draw of draws) {
+      planned.push({
+        ...strip(m),
+        storageUnitId: draw.storageUnitId,
+        quantity: -draw.quantity
+      });
+    }
+  }
+  return planned;
+}
+
 export async function closeIssue(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -5045,16 +5272,7 @@ export async function closeIssue(
   // linked entity; non-tracked Inventory → −qty write-off (MES/manual scrap) or
   // +qty restore (inspection-kept). Use As Is / Rework on tracked, and any
   // Non-Inventory row, move no value.
-  const movements: {
-    itemId: string;
-    locationId: string | null;
-    storageUnitId?: string | null;
-    trackedEntityId: string | null;
-    projectId?: string | null;
-    quantity: number;
-    comment: string;
-    documentLineId?: string;
-  }[] = [];
+  const movements: DispositionMovement[] = [];
   // Mutable copy: shipped-via-return coverage consumed as it offsets rows.
   const remainingCoverageByItem = new Map(shippedCoverageByItem);
   for (const row of plan) {
@@ -5124,13 +5342,15 @@ export async function closeIssue(
         held.requested = round(held.requested + writeOff);
         continue;
       }
+      // The bins are chosen inside the transaction (`planHeldWriteOffBins`).
       movements.push({
         itemId: row.itemId,
         locationId,
         storageUnitId: null,
         trackedEntityId: null,
         quantity: -writeOff,
-        comment: `NC ${readableNc} scrap`
+        comment: `NC ${readableNc} scrap`,
+        fromHeldStock: true
       });
       continue;
     }
@@ -5392,6 +5612,18 @@ export async function closeIssue(
           .executeTakeFirstOrThrow()
       );
 
+      // Before the Partial lot's stock-row locks below: a draw takes its
+      // advisory lock first, as every other untracked draw does.
+      movements.splice(
+        0,
+        movements.length,
+        ...(await planHeldWriteOffBins(trx, {
+          companyId,
+          locationId,
+          movements
+        }))
+      );
+
       if (heldPartial && heldPartial.requested > EPSILON) {
         const remainderLocationId =
           heldPartial.locationId ??
@@ -5632,16 +5864,6 @@ export async function closeIssue(
 }
 export type { Result } from "@carbon/database/quality";
 
-export async function upsertInspectionSample(
-  db: Kysely<KyselyDatabase>,
-  sample: z.infer<typeof inspectionSampleValidator> & {
-    companyId: string;
-    inspectedBy: string;
-  }
-) {
-  return engine.upsertInspectionSample(db, sample);
-}
-
 export async function dispositionInspection(
   db: Kysely<KyselyDatabase>,
   args: z.infer<typeof inspectionDispositionValidator> & {
@@ -5655,41 +5877,12 @@ export async function dispositionInspection(
   return engine.dispositionInspection(db, args);
 }
 
-export async function upsertInspectionMeasurement(
-  db: Kysely<KyselyDatabase>,
-  args: z.infer<typeof inspectionMeasurementValidator> & {
-    companyId: string;
-    userId: string;
-  }
-) {
-  return engine.upsertInspectionMeasurement(db, args);
-}
-
 export async function reconcileInspectionSamplingPlans(
   db: Kysely<KyselyDatabase>,
   inspectionId: string,
   companyId: string
 ) {
   return engine.reconcileInspectionSamplingPlans(db, inspectionId, companyId);
-}
-
-export async function changeInspectionDocument(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    inspectionId: string;
-    inspectionDocumentId: string | null;
-    companyId: string;
-    userId: string;
-  }
-) {
-  return engine.changeInspectionDocument(db, args);
-}
-
-export async function recordInspectionGauge(
-  db: Kysely<KyselyDatabase>,
-  args: Parameters<typeof engine.recordInspectionGauge>[1]
-) {
-  return engine.recordInspectionGauge(db, args);
 }
 
 export async function getRecentInspectionGauges(
@@ -6887,7 +7080,7 @@ export const postNonConformanceInput = z.object({
 });
 
 export const postNonconformancePermission = {
-  update: "quality"
+  "quality.issues": "Edit"
 } satisfies PermissionRule<z.output<typeof postNonConformanceInput>>;
 
 export async function postNonconformance(

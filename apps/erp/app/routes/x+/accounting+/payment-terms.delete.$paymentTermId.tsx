@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,20 +11,17 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deletePaymentTerm,
-  getPaymentTerm
-} from "~/modules/accounting/accounting.service";
+import { deletePaymentTerm } from "~/modules/accounting/accounting.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "accounting"
+  const { api } = await authorize(request, {
+    "accounting.paymentTerms": "View"
   });
   const { paymentTermId } = params;
   if (!paymentTermId) throw notFound("paymentTermId not found");
 
-  const paymentTerm = await getPaymentTerm(client, paymentTermId);
+  const paymentTerm = await api.accounting.getPaymentTerm({ paymentTermId });
   if (paymentTerm.error) {
     throw redirect(
       `${path.to.paymentTerms}?${getParams(request)}`,
@@ -39,8 +36,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "accounting"
+  const { client } = await authorize(request, {
+    "accounting.paymentTerms": "Full"
   });
 
   const { paymentTermId } = params;

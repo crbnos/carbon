@@ -15,7 +15,7 @@ import {
   renderMigration,
   unshipped
 } from "./migration";
-import { company, type Manifest, serviceOnly } from "./rules";
+import { authenticated, type Manifest, policies, serviceOnly } from "./rules";
 
 // A migrations directory holding only the given generated files.
 const migrations = (files: Record<string, string>) => {
@@ -48,8 +48,8 @@ describe("unshipped: production gets every rule and helper through a migration",
     const result = await unshipped(
       {
         ...manifest,
-        note: company("parts"),
-        brandNewTable: company("parts")
+        note: policies({ select: authenticated }),
+        brandNewTable: policies({ select: authenticated })
       } as Manifest,
       edited,
       migrations({})
@@ -79,7 +79,7 @@ describe("unshipped: production gets every rule and helper through a migration",
     );
     const edited = {
       ...manifest,
-      note: company("parts"),
+      note: policies({ select: authenticated }),
       tableView: serviceOnly()
     } as Manifest;
     const sql = await renderMigration(

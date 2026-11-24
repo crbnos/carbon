@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Button, Card, CardContent, toast } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -30,7 +30,7 @@ export const meta: MetaFunction = () => pageMeta("Traveler");
 // Read-only: a phone camera opens this page with a GET, so it never issues.
 // A scanner posts to `/x/traveler/scan` instead, which claims in one scan.
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await authorize(request, {});
   const { locationId, effectiveUserId } = context.get(userContext) ?? {};
   const trackedEntityId = params.trackedEntityId;
   if (!trackedEntityId) return { kind: "notFound" as const };
