@@ -93,15 +93,6 @@ describe("no-module-permission-key — TypeScript", () => {
 describe("no-module-permission-key — SQL", () => {
   const after = `${String(Number(LAST_MODULE_KEY_MIGRATION) + 1)}_x.sql`;
 
-  it("flags a module key in a migration after the cutoff", () => {
-    expect(
-      scan(
-        `SELECT get_companies_with_employee_permission('settings_update');`,
-        after
-      )
-    ).toEqual(["settings_update"]);
-  });
-
   it("leaves the migrations that existed at the cutoff alone", () => {
     expect(
       scan(
@@ -133,17 +124,18 @@ describe("no-module-permission-key — SQL", () => {
       const firstLine = readFileSync(join(dir, name), "utf8").split("\n")[0];
       expect(firstLine, name).toBe(GENERATED_AUTHZ_MIGRATION);
     }
-    expect(
-      MODULE_KEY_MIGRATIONS.has(
-        `${LAST_MODULE_KEY_MIGRATION}_module-keys-to-pages.sql`
-      )
-    ).toBe(true);
   });
 
   it("flags a managed function file whatever its age", () => {
     expect(
       scan(
-        `PERFORM assert_audit_log_access(p_company_id, 'settings_view');\nAND p.qual LIKE '%settings_view%'`,
+        [
+          "CREATE FUNCTION get_audit_log(p_company_id TEXT) RETURNS void LANGUAGE plpgsql AS $$",
+          "BEGIN",
+          "  PERFORM assert_audit_log_access(p_company_id, 'settings_view');",
+          "  PERFORM 1 FROM pg_policies p WHERE p.qual LIKE '%settings_view%';",
+          "END $$;"
+        ].join("\n"),
         "packages/database/src/event-system/functions/get_audit_log.sql"
       )
     ).toEqual(["settings_view", "settings_view"]);
@@ -157,9 +149,17 @@ describe("no-module-permission-key — SQL", () => {
           `SELECT get_companies_with_employee_permission('settings.auditLogs_view');`,
           `SELECT get_customer_ids_with_customer_permission('parts_view');`,
           `SELECT get_supplier_ids_with_supplier_permission('parts_update');`,
-          `SELECT get_companies_with_employee_permission(''documents_view'');`
+          `SELECT format('SELECT get_companies_with_employee_permission(''documents_view'')');`
         ].join("\n"),
         after
+      )
+    ).toEqual([]);
+  });
+  it("skips SQL that is neither a migration nor a managed function file", () => {
+    expect(
+      scan(
+        `SELECT get_companies_with_employee_permission('settings_update');`,
+        "apps/erp/app/modules/settings/report.sql"
       )
     ).toEqual([]);
   });

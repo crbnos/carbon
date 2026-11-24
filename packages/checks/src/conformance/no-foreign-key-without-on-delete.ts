@@ -3,6 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ConformanceCheck, Violation } from "../check";
+import {
+  relationName,
+  type SqlStatement,
+  sqlNodes,
+  tokensFrom
+} from "../sources/sql";
 
 /**
  * Migrations are history, so the check applies only to migrations newer than
@@ -11,11 +17,24 @@ import type { ConformanceCheck, Violation } from "../check";
  */
 const CUTOFF = "20261120052902";
 
-const REFERENCES = /\bREFERENCES\s+[^\s(]+\s*\([^)]*\)/gi;
-
-/** `--` comments removed; newlines kept so line numbers stay exact. */
-function stripLineComments(sql: string): string {
-  return sql.replace(/--[^\n]*/g, "");
+/**
+ * Whether the reference that starts at `location` writes `ON DELETE`. The
+ * parse tree cannot say: it holds NO ACTION for a missing clause and for a
+ * written `ON DELETE NO ACTION` alike. The clause, if any, sits before the
+ * `,` or `)` that ends the constraint.
+ */
+function writesOnDelete(statement: SqlStatement, location: number): boolean {
+  let depth = 0;
+  let previous = "";
+  for (const token of tokensFrom(statement, location)) {
+    const word = token.text.toUpperCase();
+    if (word === "(") depth++;
+    if (word === ")") depth--;
+    if (depth < 0 || (depth === 0 && (word === "," || word === ";"))) break;
+    if (previous === "ON" && word === "DELETE") return true;
+    previous = word;
+  }
+  return false;
 }
 
 export const noForeignKeyWithoutOnDelete: ConformanceCheck = {
@@ -30,20 +49,18 @@ export const noForeignKeyWithoutOnDelete: ConformanceCheck = {
     const base = file.split("/").pop() ?? file;
     if (base <= CUTOFF) return [];
 
-    const sql = stripLineComments(contents);
     const violations: Violation[] = [];
-    for (const m of sql.matchAll(REFERENCES)) {
-      const start = m.index + m[0].length;
-      // The clause runs to the next column, statement or table end.
-      const rest = sql.slice(start);
-      const end = rest.search(/[,;)]/);
-      const clause = end === -1 ? rest : rest.slice(0, end);
-      if (/\bON\s+DELETE\b/i.test(clause)) continue;
-
+    for (const { node, fragment, statement } of sqlNodes(contents)) {
+      if (!("Constraint" in node)) continue;
+      const { contype, pktable, fk_del_action } = node.Constraint;
+      if (contype !== "CONSTR_FOREIGN" || !pktable) continue;
+      // Any action but NO ACTION can only have been written.
+      if (fk_del_action !== "a") continue;
+      if (writesOnDelete(statement, pktable.location ?? 0)) continue;
       violations.push({
         file,
-        line: sql.slice(0, m.index).split("\n").length,
-        snippet: m[0].replace(/\s+/g, " "),
+        line: fragment.lineAt(pktable.location),
+        snippet: `REFERENCES "${relationName(pktable)}"`,
         message:
           "State ON DELETE on this foreign key: CASCADE for regenerable children, SET NULL for optional links, RESTRICT to keep the parent. The default is a silent choice."
       });

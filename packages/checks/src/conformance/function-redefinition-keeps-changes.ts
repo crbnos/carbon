@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Node } from "libpg-query";
 import type { SourceFile, Violation } from "../check";
+import { nameParts, sqlNodes } from "../sources/sql";
 
 export const FUNCTION_REDEFINITION_KEEPS_CHANGES =
   "function-redefinition-keeps-changes";
@@ -63,25 +65,12 @@ export function findDroppedFunctionChanges(
   return out;
 }
 
-/** First words of the multi-word types, which carry no argument name before them. */
-const TYPE_STARTS = new Set([
-  "bit",
-  "char",
-  "character",
-  "double",
-  "interval",
-  "national",
-  "time",
-  "timestamp"
-]);
-
-/** The spellings Postgres treats as one type. */
-const TYPE_ALIASES: Record<string, string> = {
+/** The parser's internal type names, as Postgres prints them in a signature. */
+const PRINTED_TYPES: Record<string, string> = {
   bool: "boolean",
-  decimal: "numeric",
+  bpchar: "character",
   float4: "real",
   float8: "double precision",
-  int: "integer",
   int2: "smallint",
   int4: "integer",
   int8: "bigint",
@@ -90,103 +79,61 @@ const TYPE_ALIASES: Record<string, string> = {
   varchar: "character varying"
 };
 
-/** The parts of an argument list, split on the commas outside parentheses. */
-function splitArguments(list: string): string[] {
-  const parts: string[] = [];
-  let depth = 0;
-  let start = 0;
-  for (let i = 0; i < list.length; i++) {
-    const c = list[i];
-    if (c === "(") depth++;
-    else if (c === ")") depth--;
-    else if (c === "," && depth === 0) {
-      parts.push(list.slice(start, i));
-      start = i + 1;
-    }
-  }
-  parts.push(list.slice(start));
-  return parts.map((part) => part.trim()).filter(Boolean);
-}
-
-function normalizeType(type: string): string {
-  const base = type
-    .toLowerCase()
-    .replace(/"/g, "")
-    .replace(/^public\./, "")
-    .replace(/\([^)]*\)/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  const array = /(\s*\[\])+$/.exec(base)?.[0] ?? "";
-  const name = base.slice(0, base.length - array.length).trim();
-  return (TYPE_ALIASES[name] ?? name) + array.replace(/\s/g, "");
-}
-
 /**
  * What identifies a function besides its name: the types of its input
- * arguments (an OUT argument is not one), written the way Postgres resolves
- * them, so `int` and `integer` are the same function.
+ * arguments (an OUT or TABLE column is not one), as the parser resolves them,
+ * so `int` and `integer` are the same function.
  */
-function argumentTypes(list: string): string[] {
-  const types: string[] = [];
-  for (const argument of splitArguments(list.replace(/--[^\n]*/g, ""))) {
-    let words = argument
-      .replace(/\s*(?:\bDEFAULT\b|=)[\s\S]*$/i, "")
-      .trim()
-      .split(/\s+/);
-    const mode = words[0]?.toUpperCase();
-    if (mode === "OUT") continue;
-    if (mode === "IN" || mode === "INOUT" || mode === "VARIADIC") {
-      words = words.slice(1);
-    }
-    const first = words[0]?.toLowerCase().replace(/"/g, "") ?? "";
-    if (words.length > 1 && !TYPE_STARTS.has(first)) words = words.slice(1);
-    if (words.length > 0) types.push(normalizeType(words.join(" ")));
-  }
-  return types;
-}
-
-/** The index of the `)` that closes the `(` just before `from`. */
-function closingParen(sql: string, from: number): number {
-  let depth = 1;
-  for (let i = from; i < sql.length; i++) {
-    if (sql[i] === "(") depth++;
-    else if (sql[i] === ")" && --depth === 0) return i;
-  }
-  return -1;
+function argumentTypes(parameters: Node[] | undefined): string[] {
+  return (parameters ?? []).flatMap((parameter) => {
+    if (!("FunctionParameter" in parameter)) return [];
+    const { mode, argType } = parameter.FunctionParameter;
+    if (mode === "FUNC_PARAM_OUT" || mode === "FUNC_PARAM_TABLE") return [];
+    const name = nameParts(argType?.names)
+      .filter((part) => part !== "pg_catalog" && part !== "public")
+      .join(".");
+    return [
+      (PRINTED_TYPES[name] ?? name) +
+        "[]".repeat(argType?.arrayBounds?.length ?? 0)
+    ];
+  });
 }
 
 /**
- * Each `CREATE [OR REPLACE] FUNCTION`: its signature (schema, name and
- * argument types — an overload is another function), the name a finding
- * shows, and its body lines, comments and blanks left out.
+ * Each `CREATE [OR REPLACE] FUNCTION`, wherever it is written: its signature
+ * (schema, name and argument types: an overload is another function), the
+ * name a finding shows, and its body lines, comments and blanks left out.
  */
 function functionBodies(
   sql: string
 ): { signature: string; name: string; lines: Set<string> }[] {
   const out: { signature: string; name: string; lines: Set<string> }[] = [];
-  const header =
-    /CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+(?:"?([A-Za-z_]\w*)"?\.)?"?([A-Za-z_]\w*)"?\s*\(/gi;
-  for (const match of sql.matchAll(header)) {
-    const open = match.index + match[0].length;
-    const close = closingParen(sql, open);
-    if (close < 0) continue;
-    const schema = (match[1] ?? "public").toLowerCase();
-    const name = schema === "public" ? match[2]! : `${schema}.${match[2]!}`;
-    const signature = `${schema}.${match[2]!}(${argumentTypes(sql.slice(open, close)).join(", ")})`;
-    const rest = sql.slice(close);
-    const tag = /\$[A-Za-z_]*\$/.exec(rest);
-    if (!tag) continue;
-    const start = close + tag.index + tag[0].length;
-    const end = sql.indexOf(tag[0], start);
-    if (end < 0) continue;
-    const lines = new Set(
-      sql
-        .slice(start, end)
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line.length > 12 && !line.startsWith("--"))
-    );
-    out.push({ signature, name, lines });
+  for (const { node } of sqlNodes(sql)) {
+    if (!("CreateFunctionStmt" in node)) continue;
+    const { funcname, parameters, options } = node.CreateFunctionStmt;
+    const parts = nameParts(funcname);
+    const bare = parts.at(-1) ?? "";
+    const schema = parts.length > 1 ? (parts[0] ?? "public") : "public";
+    const body = (options ?? []).flatMap((option) =>
+      "DefElem" in option && option.DefElem.defname === "as"
+        ? nameParts(
+            option.DefElem.arg && "List" in option.DefElem.arg
+              ? option.DefElem.arg.List.items
+              : []
+          )
+        : []
+    )[0];
+    if (body === undefined) continue;
+    out.push({
+      signature: `${schema}.${bare}(${argumentTypes(parameters).join(", ")})`,
+      name: schema === "public" ? bare : `${schema}.${bare}`,
+      lines: new Set(
+        body
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 12 && !line.startsWith("--"))
+      )
+    });
   }
   return out;
 }

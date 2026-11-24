@@ -15,7 +15,7 @@ const auditConfig = {
 
 const fn = (name: string, columns: string | null) => ({
   file: `${name}.sql`,
-  contents: `CREATE OR REPLACE FUNCTION public.${name}() RETURNS trigger AS $$
+  contents: `CREATE OR REPLACE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
 ${columns === null ? "" : `  ignored_columns CONSTANT TEXT[] := ARRAY[${columns}];\n`}BEGIN
 END;

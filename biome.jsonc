@@ -134,6 +134,14 @@
   },
   "overrides": [
     {
+      // Rules that read TypeScript syntax are GritQL plugins in
+      // packages/checks/biome-plugins. They warn, so the editor shows them and
+      // `biome lint` still passes; @carbon/checks reads the same diagnostics
+      // and fails on any that its baseline does not grandfather.
+      "includes": ["**/erp/app/routes/**", "!**/*.test.ts", "!**/*.test.tsx"],
+      "plugins": ["./packages/checks/biome-plugins/routeActionShape.grit"]
+    },
+    {
       // Standalone .svg files load through <img>, which takes its name from
       // alt; a <title> inside the file never reaches the accessibility tree.
       "includes": ["**/*.svg"],

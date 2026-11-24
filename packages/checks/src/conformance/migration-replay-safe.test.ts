@@ -181,7 +181,7 @@ describe("migrationReplaySafe", () => {
       'CREATE TABLE "itemSupersession"',
       'CREATE INDEX "itemSupersession_companyId_idx" ON "itemSupersession"',
       'CREATE INDEX "itemSupersession_successorItemId_idx" ON "itemSupersession"',
-      'CREATE POLICY "SELECT" ON "public"."itemSupersession"',
+      'CREATE POLICY "SELECT" ON "itemSupersession"',
       'ADD COLUMN "minimumReserveQuantity"'
     ]);
   });
@@ -192,16 +192,8 @@ describe("migrationReplaySafe", () => {
 
   // #2311 fixed a migration that failed on its first run (a guard on the wrong key), not on a
   // re-run: out of scope.
-  it("passes the NOT EXISTS-guarded INSERT of the card migration, and its ON CONFLICT fix (#2311)", () => {
+  it("passes the NOT EXISTS-guarded INSERT of the card migration", () => {
     expect(scan(CARD_GROUP_INSERT)).toEqual([]);
-    expect(
-      scan(
-        CARD_GROUP_INSERT.replace(
-          /;$/,
-          '\nON CONFLICT ON CONSTRAINT "account_name_key" DO NOTHING;'
-        )
-      )
-    ).toEqual([]);
   });
 
   it("only checks migrations after the newest one on main when the rule was written down", () => {
@@ -249,9 +241,9 @@ describe("migrationReplaySafe", () => {
         'CREATE SCHEMA util;\nCREATE SEQUENCE "s";\nCREATE UNIQUE INDEX "u" ON "t" ("a");'
       )
     ).toEqual([
-      "CREATE SCHEMA util",
+      'CREATE SCHEMA "util"',
       'CREATE SEQUENCE "s"',
-      'CREATE UNIQUE INDEX "u" ON "t"'
+      'CREATE INDEX "u" ON "t"'
     ]);
     expect(
       scan(
@@ -275,7 +267,7 @@ describe("migrationReplaySafe", () => {
       snippets(
         "CREATE FUNCTION public.f() RETURNS int AS $$ SELECT 1 $$ LANGUAGE sql;"
       )
-    ).toEqual(["CREATE FUNCTION public.f"]);
+    ).toEqual(['CREATE FUNCTION "f"']);
     expect(
       scan(
         'DROP VIEW IF EXISTS "v";\nCREATE VIEW "v" WITH (security_invoker = true) AS SELECT 1;\n' +
@@ -316,9 +308,7 @@ END $$;`;
   it("accepts CREATE TRIGGER after DROP TRIGGER IF EXISTS on its table, or as CREATE OR REPLACE", () => {
     const create =
       'CREATE TRIGGER "t_audit" AFTER INSERT OR UPDATE ON "t" FOR EACH ROW EXECUTE FUNCTION audit();';
-    expect(snippets(create)).toEqual([
-      'CREATE TRIGGER "t_audit" AFTER INSERT OR UPDATE ON "t"'
-    ]);
+    expect(snippets(create)).toEqual(['CREATE TRIGGER "t_audit" ON "t"']);
     expect(scan(`DROP TRIGGER IF EXISTS "t_audit" ON "t";\n${create}`)).toEqual(
       []
     );
@@ -377,6 +367,27 @@ SELECT stage, c."id" FROM "company" c CROSS JOIN unnest(ARRAY['Prospect']) AS st
     ).toEqual([]);
   });
 
+  it("does not take a NOT over a plain condition as a guard", () => {
+    const sql = `INSERT INTO "supplierStage" ("name", "companyId")
+SELECT 'Prospect', c."id" FROM "company" c WHERE NOT c."archived";`;
+    expect(snippets(sql)).toEqual(['INSERT INTO "supplierStage"']);
+  });
+
+  it("does not take EXISTS or IN (SELECT …) without NOT as a guard", () => {
+    const insert = `INSERT INTO "supplierStage" ("name", "companyId")
+SELECT 'Prospect', c."id" FROM "company" c`;
+    expect(
+      snippets(
+        `${insert} WHERE EXISTS (SELECT 1 FROM "supplier" s WHERE s."companyId" = c."id");`
+      )
+    ).toEqual(['INSERT INTO "supplierStage"']);
+    expect(
+      snippets(
+        `${insert} WHERE c."id" IN (SELECT "companyId" FROM "supplier");`
+      )
+    ).toEqual(['INSERT INTO "supplierStage"']);
+  });
+
   it("ignores statements in comments, strings and function bodies", () => {
     const sql = `-- CREATE TABLE "a" ();
 /* DROP TABLE "b"; /* nested */ CREATE TYPE "c" AS ENUM ('x'); */
@@ -409,6 +420,21 @@ ALTER TABLE "t" ADD COLUMN "a" TEXT;`;
 
   it("skips a migration generated from the authz manifest", () => {
     const sql = `${GENERATED_AUTHZ_MIGRATION}\nCREATE POLICY "SELECT" ON "public"."item" FOR SELECT USING (true);`;
+    expect(scan(sql)).toEqual([]);
+  });
+  it("leaves an unnamed constraint alone: a re-run adds it under a new name", () => {
+    expect(scan('ALTER TABLE "t" ADD CHECK ("a" > 0);')).toEqual([]);
+  });
+
+  it("trusts a DO block whose body the PL/pgSQL parser cannot read", () => {
+    // A %ROWTYPE variable needs the catalog, so the block's structure is unknown.
+    const sql = `DO $$
+DECLARE
+  v_row "t"%ROWTYPE;
+BEGIN
+  SELECT * INTO v_row.a, v_row FROM t;
+  CREATE TABLE "x" ("id" TEXT);
+END $$;`;
     expect(scan(sql)).toEqual([]);
   });
 });

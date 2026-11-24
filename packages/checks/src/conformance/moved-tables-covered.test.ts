@@ -4,7 +4,6 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  BASE_TABLE_MODULES,
   findMovedTableGaps,
   livePolicies,
   type MovedTablesRegistry
@@ -93,25 +92,17 @@ describe("findMovedTableGaps", () => {
       "demandForecast"
     ]);
   });
-
-  it("knows the modules each table's policies checked on main", () => {
-    expect({
-      eventSystemSubscription: BASE_TABLE_MODULES.eventSystemSubscription,
-      qualityDocumentStep: BASE_TABLE_MODULES.qualityDocumentStep,
-      quoteOperationParameter: BASE_TABLE_MODULES.quoteOperationParameter,
-      itemPostingGroup: BASE_TABLE_MODULES.itemPostingGroup,
-      trainingCompletion: BASE_TABLE_MODULES.trainingCompletion,
-      demandActual: BASE_TABLE_MODULES.demandActual
-    }).toEqual({
-      eventSystemSubscription: { read: [], write: ["settings"] },
-      qualityDocumentStep: { read: [], write: ["production"] },
-      quoteOperationParameter: { read: [], write: ["parts"] },
-      itemPostingGroup: { read: ["accounting"], write: ["accounting"] },
-      trainingCompletion: {
-        read: ["resources"],
-        write: ["people", "resources"]
-      },
-      demandActual: { read: ["inventory", "parts"], write: ["inventory"] }
-    });
+  it("reads only public tables, and a policy with no FOR clause as ALL", () => {
+    const live = livePolicies([
+      {
+        file: "1_ship.sql",
+        contents: [
+          'CREATE POLICY "Bucket read" ON storage.objects FOR SELECT USING (true);',
+          'CREATE POLICY "Everything" ON "demandForecast" USING (true);'
+        ].join("\n")
+      }
+    ]);
+    expect([...live.keys()]).toEqual(["demandForecast"]);
+    expect(live.get("demandForecast")?.map((p) => p.command)).toEqual(["ALL"]);
   });
 });

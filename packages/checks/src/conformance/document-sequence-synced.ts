@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { SourceFile, Violation } from "../check";
+import { sqlNodes } from "../sources/sql";
 
 export const DOCUMENT_SEQUENCE_SYNCED = "document-sequence-synced";
 
@@ -74,10 +75,19 @@ function attachedTables(attachments: string): Entry[] {
 
 /** Tables named in the interceptor's `CASE p_table` (WHEN 'table' THEN 'column'). */
 function interceptedTables(interceptor: string): Entry[] {
-  return [...interceptor.matchAll(/WHEN '(\w+)' THEN '\w+'/g)].map((m) => ({
-    name: m[1] as string,
-    line: lineAt(interceptor, m.index ?? 0)
-  }));
+  const tables: Entry[] = [];
+  for (const { node, line } of sqlNodes(interceptor)) {
+    if (!("CaseWhen" in node)) continue;
+    const { expr, result } = node.CaseWhen;
+    const table =
+      expr && "A_Const" in expr ? expr.A_Const.sval?.sval : undefined;
+    const column =
+      result && "A_Const" in result ? result.A_Const.sval?.sval : undefined;
+    if (table !== undefined && column !== undefined) {
+      tables.push({ name: table, line });
+    }
+  }
+  return tables;
 }
 
 /**

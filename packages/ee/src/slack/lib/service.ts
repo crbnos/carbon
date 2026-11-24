@@ -506,6 +506,7 @@ export async function syncDocumentToSlack(
               )
               .eq("id", taskId)
               .single();
+            if (task.error) throw task.error;
             taskName = task.data?.name || "";
             assignee = task.data?.assignee
               ? await getSlackUserIdByCarbonId(
@@ -520,6 +521,7 @@ export async function syncDocumentToSlack(
               .select("assignee,status, ...nonConformanceRequiredAction(name)")
               .eq("id", taskId)
               .single();
+            if (task.error) throw task.error;
 
             taskName = task.data?.name || "";
             assignee = task.data?.assignee
@@ -535,6 +537,7 @@ export async function syncDocumentToSlack(
               .select("assignee, status, approvalType")
               .eq("id", taskId)
               .single();
+            if (task.error) throw task.error;
 
             taskName = task.data?.approvalType || "";
             assignee = task.data?.assignee
@@ -750,6 +753,16 @@ export async function syncIssueTaskToSlack(
     userId: string;
   }
 ) {
+  // Without the task's issue there is no thread to post to.
+  const taskNotRead = (error: { message: string }) => {
+    logger.error("Failed to read the issue task to sync to Slack", {
+      taskId: data.id,
+      taskType: data.taskType,
+      error
+    });
+    return { data: null, error: error.message };
+  };
+
   let nonConformanceId = "";
   if (data.taskType === "investigation") {
     const nonConformance: any = await (client as any)
@@ -757,6 +770,7 @@ export async function syncIssueTaskToSlack(
       .select("nonConformanceId")
       .eq("id", data.id)
       .single();
+    if (nonConformance.error) return taskNotRead(nonConformance.error);
     nonConformanceId = nonConformance.data?.nonConformanceId || "";
   }
   if (data.taskType === "action") {
@@ -765,6 +779,7 @@ export async function syncIssueTaskToSlack(
       .select("nonConformanceId")
       .eq("id", data.id)
       .single();
+    if (nonConformance.error) return taskNotRead(nonConformance.error);
     nonConformanceId = nonConformance.data?.nonConformanceId || "";
   }
   if (data.taskType === "review") {
@@ -773,6 +788,7 @@ export async function syncIssueTaskToSlack(
       .select("nonConformanceId")
       .eq("id", data.id)
       .single();
+    if (nonConformance.error) return taskNotRead(nonConformance.error);
     nonConformanceId = nonConformance.data?.nonConformanceId || "";
   }
 

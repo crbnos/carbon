@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { SourceFile, Violation } from "../check";
+import { nameParts, sqlNodes } from "../sources/sql";
 
 export const SCHEDULED_SQL_CONSTANTS = "scheduled-sql-constants";
 
@@ -54,14 +55,16 @@ function constantsOf(contents: string): Map<string, string> {
   return out;
 }
 
-/** The newest `CREATE OR REPLACE FUNCTION <fn>(` body in migration order. */
+/** The newest `CREATE FUNCTION <fn>` in migration order, as it is written. */
 function newestDefinition(fn: string, migrations: SourceFile[]) {
-  const marker = `CREATE OR REPLACE FUNCTION ${fn}(`;
   for (const { file, contents } of [...migrations].reverse()) {
-    const start = contents.lastIndexOf(marker);
-    if (start === -1) continue;
-    const end = contents.indexOf("$$;", start);
-    return { file, body: contents.slice(start, end === -1 ? undefined : end) };
+    const definitions = [...sqlNodes(contents)].filter(
+      ({ node }) =>
+        "CreateFunctionStmt" in node &&
+        nameParts(node.CreateFunctionStmt.funcname).join(".") === fn
+    );
+    const newest = definitions.at(-1);
+    if (newest) return { file, body: newest.statement.text };
   }
   return null;
 }

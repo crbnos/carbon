@@ -41,6 +41,44 @@ describe("noUnmountingDialog", () => {
     ).toEqual([2, 4, 7, 8, 10, 11]);
   });
 
+  it("flags a dialog under an open state other than the one it passes", () => {
+    expect(
+      scan(`{drawer.isOpen && <PartDrawer open={ready} item={selected} />}`)
+    ).toEqual([1]);
+  });
+
+  it("flags a dialog whose condition is the same compound expression as its open prop", () => {
+    expect(
+      scan(`{count > 0 && <XModal open={count > 0} onClose={close} />}
+{count>0 && <XModal open={count > 0} onClose={close} />}
+{a && b ? <XModal open={Boolean(a && b)} /> : null}
+{count > 0 && ready && <XModal open={count > 0} />}
+{ready && <XModal open={count > 0} />}
+{count > 10 && <XModal open={count > 1} />}
+{d.isOpen && <XModal open={count > 0} />}`)
+    ).toEqual([1, 2, 3, 7]);
+  });
+
+  it("reads an opening tag to its end past JSX text in a prop, quotes included", () => {
+    expect(
+      scan(`{d.isOpen && <XModal title={<b>Don't</b>} onClose={close} />}
+{d.isOpen && <XModal title={<b>Say "hi"</b>} onClose={close} />}
+{d.isOpen && <XModal title={x ? <b>Don't</b> : null} onClose={close} />}
+{d.isOpen && <XModal limit={count <max} onClose={close} />}
+{d.isOpen && <XModal title={<><b>Note</b> it's <br /> {x}</>} onClose={close} />}
+{d.isOpen && <XModal limit={1 << bits} onClose={close} />}`)
+    ).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it("does not end an opening tag at a > inside a string", () => {
+    expect(
+      scan(`{selected && <XModal title="it's > here" open={d.isOpen} />}
+{selected && <XModal title={'a /> b'} open={d.isOpen} />}
+{selected && <XModal title={\`a > \${b}\`} open={d.isOpen} />}
+{selected && <XModal title={<b title="x > y">Don't</b>} open={d.isOpen} />}`)
+    ).toEqual([]);
+  });
+
   it("flags a dialog in a ternary's empty branch or after ||, ignores data-open, and reads a braced open prop whole", () => {
     expect(
       scan(`{!deleteModal.isOpen ? null : <ConfirmDelete isOpen={deleteModal.isOpen} />}

@@ -117,7 +117,6 @@ import {
   findStaleRegistryHelpers,
   REGISTRY_HELPERS_FRESH
 } from "./conformance/registry-helpers-fresh";
-import { routeActionShape } from "./conformance/route-action-shape";
 import {
   gateConstants,
   listGates,
@@ -148,6 +147,7 @@ import {
   loadErpRouteFiles,
   loadRegistryHelperFiles
 } from "./sources/authz-registry";
+import { loadPluginFindings } from "./sources/biome";
 import {
   loadAccountReferencePolicy,
   loadDeploymentEnvSources,
@@ -172,6 +172,7 @@ import {
 import { loadOfflinePageSources } from "./sources/offline-page";
 import { loadServerFiles } from "./sources/server-files";
 import { loadSideEffectPackages } from "./sources/side-effect-packages";
+import { loadSqlParser } from "./sources/sql";
 import { loadSharedTestFixtures, loadTestFiles } from "./sources/test-files";
 import {
   loadTypescriptFiles,
@@ -194,8 +195,7 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
 /** Checks that run over server-side TS, not SQL migrations. */
 export const SERVER_CHECKS: ConformanceCheck[] = [
   noLocalTimezone,
-  noZeroConcurrency,
-  routeActionShape
+  noZeroConcurrency
 ];
 
 /** Checks that run over ALL app + shared-package TS (client and server). */
@@ -292,7 +292,10 @@ function loadManagedFunctionFiles(root: string): SourceFile[] {
 }
 
 /** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions + license headers under `root`. */
-export function collectFindings(root: string = repoRoot()): Finding[] {
+export async function collectFindings(
+  root: string = repoRoot()
+): Promise<Finding[]> {
+  await loadSqlParser();
   const migrations = loadSqlFiles(migrationsDir(root));
   const listSources = loadListSources(root);
   const eventSources = loadEventFunctionSources(root);
@@ -307,6 +310,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ]),
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
+    // The checks that are Biome plugins (packages/checks/biome-plugins).
+    ...loadPluginFindings(root, ["apps/erp/app/routes"]),
     // noMissingAuditColumn, statusWriteGuarded and counterWriteRelative need
     // the real columns, so they are built from the generated types here rather
     // than sitting in TS_CHECKS — the same shape as noAuthzDdlInMigrations
@@ -419,9 +424,9 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
 }
 
 /** Findings in the real migrations/modules that are NOT grandfathered by the baseline. */
-export function newViolations(): Finding[] {
+export async function newViolations(): Promise<Finding[]> {
   const baseline = loadBaseline();
-  return collectFindings().filter(
+  return (await collectFindings()).filter(
     (f) => !baseline.has(keyOf(f.checkId, f.violation))
   );
 }

@@ -76,6 +76,22 @@ describe("routeGateNamesPage", () => {
     ).toEqual([]);
   });
 
+  it.each([
+    `{ anyOf: morePages, "inventory.storageRules": "Create" }`,
+    `{ ...sharedGate, "inventory.storageRules": "Create" }`,
+    `anyOf(["inventory.storageRules", morePage], "Create")`
+  ])("skips a gate that is only partly readable: %s", (gate) => {
+    expect(scan("resources+/work-centers.new.tsx", gated(gate))).toEqual([]);
+  });
+
+  it("reads the pages a gate spreads from a constant", () => {
+    const violations = scan(
+      "part+/$itemId.tsx",
+      gated(`{ ...CONTRACT_READ_GATE }`)
+    );
+    expect(violations.map((v) => v.line)).toEqual([2]);
+  });
+
   it("reads the gate of the list a route loads with loadListPage", () => {
     const loads = (list: string) =>
       `export async function loader({ request }) {\n  return loadListPage(request, ${list}, { dataKey: "rows" });\n}\n`;
@@ -138,5 +154,31 @@ export const lists = { receipts: receiptsList };`
     expect(lists.get("paymentsList")).toEqual(["invoicing.payments"]);
     expect(lists.get("itemsList")).toContain("parts.parts");
     expect(lists.has("lists")).toBe(false);
+  });
+
+  it("reads a list beside imports and functions", () => {
+    const lists = listGates([
+      {
+        file: "apps/erp/app/utils/list-registry/inventory.server.ts",
+        contents: `import { searchList } from "./search-list";
+export function describeGate() {
+  return "gate: none";
+}
+export const receiptsList = searchList({ key: "receipts", gate: { "inventory.receipts": "View" } });`
+      }
+    ]);
+    expect([...lists]).toEqual([["receiptsList", ["inventory.receipts"]]]);
+  });
+
+  it("reads a list beside constants that are not list definitions", () => {
+    const lists = listGates([
+      {
+        file: "apps/erp/app/utils/list-registry/inventory.server.ts",
+        contents: `const PAGE_SIZE = 50;
+const paging = defaultPaging();
+export const receiptsList = searchList({ key: "receipts", gate: { "inventory.receipts": "View" } });`
+      }
+    ]);
+    expect([...lists]).toEqual([["receiptsList", ["inventory.receipts"]]]);
   });
 });

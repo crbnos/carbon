@@ -122,6 +122,8 @@ WHERE j.status != 'Draft';`;
  RETURNS trigger
  LANGUAGE plpgsql
 AS $function$
+DECLARE
+  v_journal TEXT;
 BEGIN
   IF TG_OP = 'INSERT' THEN
     IF NEW.status <> 'Draft' THEN
@@ -174,6 +176,34 @@ WHERE j."status" IN ('Posted', 'Reversed')
     expect(
       journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
     ).toHaveLength(0);
+  });
+
+  it.each([
+    [`j."sourceType" <> 'Draft'`],
+    [`lower(j."description") <> 'Draft'`]
+  ])(
+    "does not flag a not-Draft test on something other than status: %s",
+    (test) => {
+      const sql = `SELECT * FROM "journal" j WHERE ${test};`;
+      expect(
+        journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
+      ).toHaveLength(0);
+    }
+  );
+
+  it("does not flag an unqualified status in a statement that does not read journal", () => {
+    const sql = `UPDATE "charge" SET "updatedAt" = now() WHERE "status" <> 'Draft';
+SELECT "id" FROM "journal";`;
+    expect(
+      journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
+    ).toHaveLength(0);
+  });
+
+  it("reports a SQL line once when it holds two not-Draft filters", () => {
+    const sql = `SELECT * FROM "journal" j WHERE j."status" <> 'Draft' AND "status" NOT IN ('Draft', 'Superseded');`;
+    expect(
+      journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
+    ).toHaveLength(1);
   });
 
   it("skips a TS file that does not read journal", () => {

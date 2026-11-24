@@ -3,8 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { loadAccountReferencePolicy } from "../sources/cross-file";
-import { repoRoot } from "../sources/migrations";
 import {
   accountFkClassified,
   accountFkRestrict,
@@ -14,6 +12,14 @@ import {
 const FILE = "20261201000000_x.sql";
 const restrict = (sql: string, file = FILE) =>
   accountFkRestrict.scan(file, sql);
+
+/** A column or constraint clause as the one entry of a CREATE TABLE. */
+const inTable = (clause: string) => {
+  if (/^(ALTER|--|\/\*)/.test(clause)) return clause;
+  const entry = clause.replace(/[,;]\s*$/, "");
+  const column = entry.startsWith("REFERENCES") ? `"a" TEXT ${entry}` : entry;
+  return `CREATE TABLE "t" (${column});`;
+};
 
 describe("accountFkRestrict", () => {
   it("fails the SET NULL constraint added to project in 20261021000300_projects-workspace.sql", () => {
@@ -28,8 +34,7 @@ describe("accountFkRestrict", () => {
     ).toEqual([
       {
         line: 3,
-        snippet:
-          'ADD CONSTRAINT "project_costAccount_fkey" FOREIGN KEY ("costAccountId") REFERENCES "account"("id") ON DELETE SET NULL'
+        snippet: "project.costAccountId REFERENCES account"
       }
     ]);
   });
@@ -73,7 +78,7 @@ describe("accountFkRestrict", () => {
       '"a" TEXT REFERENCES PUBLIC . ACCOUNT ON DELETE SET NULL,'
     ]
   ])("fails a foreign key to account with %s", (_, sql) => {
-    expect(restrict(sql)).toHaveLength(1);
+    expect(restrict(inTable(sql))).toHaveLength(1);
   });
 
   it.each([
@@ -115,12 +120,12 @@ describe("accountFkRestrict", () => {
     ],
     ["a block comment", '/* REFERENCES "account"("id") ON DELETE SET NULL */']
   ])("passes %s", (_, sql) => {
-    expect(restrict(sql)).toEqual([]);
+    expect(restrict(inTable(sql))).toEqual([]);
   });
 
   it("skips migrations from before the rule", () => {
     const sql = '"a" TEXT REFERENCES "account"("id") ON DELETE SET NULL,';
-    expect(restrict(sql, "20261013004600_planning.sql")).toEqual([]);
+    expect(restrict(inTable(sql), "20261013004600_planning.sql")).toEqual([]);
   });
 });
 
@@ -211,11 +216,5 @@ describe("parseReferencePolicy", () => {
     expect(() =>
       parseReferencePolicy("export const REFERENCE_POLICY = [\n];")
     ).toThrow(/UNCLASSIFIED_ACCOUNT_REFERENCES not found/);
-  });
-
-  it("reads both lists from account-import.ts", () => {
-    const { classified, unclassified } = loadAccountReferencePolicy(repoRoot());
-    expect(classified.size).toBeGreaterThan(0);
-    expect(unclassified).toContain("account.parentId");
   });
 });

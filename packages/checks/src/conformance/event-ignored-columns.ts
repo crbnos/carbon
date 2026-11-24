@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { SourceFile, Violation } from "../check";
+import { nodesIn, sqlFragments } from "../sources/sql";
 
 export const EVENT_IGNORED_COLUMNS = "event-ignored-columns";
 
@@ -37,18 +38,22 @@ export function findIgnoredColumnDrift(
 
   const out: Violation[] = [];
   for (const { file, contents } of functions) {
-    const declared =
-      /ignored_columns\s+CONSTANT\s+TEXT\[\]\s*:=\s*ARRAY\[([^\]]*)\]/i.exec(
-        contents
-      );
-    if (!declared) continue;
-    const columns = [...(declared[1] ?? "").matchAll(/'([^']+)'/g)]
-      .map((m) => m[1] as string)
-      .sort();
+    // `ignored_columns CONSTANT TEXT[] := ARRAY['a', 'b']` in a DECLARE.
+    const declared = sqlFragments(contents).find(
+      (fragment) => fragment.variable === "ignored_columns"
+    );
+    const [statement] = declared?.statements ?? [];
+    if (!statement) continue;
+    const columns: string[] = [];
+    for (const { node } of nodesIn(statement.node)) {
+      const value = "A_Const" in node ? node.A_Const.sval?.sval : undefined;
+      if (value !== undefined) columns.push(value);
+    }
+    columns.sort();
     if (columns.join() === expected.join()) continue;
     out.push({
       file,
-      line: contents.slice(0, declared.index).split("\n").length,
+      line: statement.line,
       snippet: `ignored_columns ${columns.join(",")}`,
       message: `ignored_columns must equal auditConfig.skipFields (${expected.join(", ")})`
     });

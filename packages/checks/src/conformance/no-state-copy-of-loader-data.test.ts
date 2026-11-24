@@ -44,4 +44,13 @@ describe("noStateCopyOfLoaderData", () => {
   it("ignores a file that loads nothing", () => {
     expect(scan(`const [list, setList] = useState(props.rows);\n`)).toEqual([]);
   });
+
+  it("reads only .tsx files", () => {
+    expect(
+      noStateCopyOfLoaderData.scan(
+        "apps/erp/app/hooks/useThing.ts",
+        `const { rows } = useLoaderData<typeof loader>();\nconst [list, setList] = useState(rows);\n`
+      )
+    ).toEqual([]);
+  });
 });

@@ -37,6 +37,17 @@ describe("findUndeclaredSideEffectImports", () => {
       ])
     ).toEqual([]);
   });
+
+  it("ignores a css import whose file is in the package", () => {
+    expect(
+      findUndeclaredSideEffectImports([
+        pkg(false, {
+          "apps/erp/app/root.tsx": 'import "./styles.css";\n',
+          "apps/erp/app/styles.css": ""
+        })
+      ])
+    ).toEqual([]);
+  });
 });
 
 describe("declaresSideEffects", () => {

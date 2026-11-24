@@ -13,7 +13,9 @@ import { maskCommentsAndStrings } from "./no-default-on-effects";
 const MESSAGE =
   "Check `error` before reading `data`: a failed supabase-js read must not mean 'none'. Bind `error` and `if (error) return/throw` it — and bind a write's result and check it.";
 
+const REQUEST = /\.\s*(?:from|rpc|invoke)\s*(?:<[^()]*>\s*)?\(/;
 const QUERY_CALLS = new Set(["from", "rpc"]);
+const DECLARATIONS = new Set(["const", "let", "var"]);
 const WRITE_CALLS = new Set(["insert", "update", "upsert", "delete"]);
 /** Kysely builders also have `.from(` (`updateTable(…).from(…)`). */
 const KYSELY_CALLS = /^(?:execute\w*|compile|stream)$/;
@@ -193,18 +195,45 @@ function destructureBefore(
   return ["const", "let", "var"].includes(keyword) ? { open, close } : null;
 }
 
-function nameBefore(
-  text: string,
-  eq: number
-): { name: string; start: number } | null {
+type Bound = { name: string; start: number };
+
+/** `const name =`, `name =` starting a statement, or `const name: Type =`. */
+function nameBefore(text: string, eq: number): Bound | null {
   const end = skipWsBack(text, eq - 1);
+  const declared = declaredName(text, end);
+  if (declared) return declared;
+  if (IDENT_PART.test(text[end] ?? "")) {
+    const start = wordStart(text, end);
+    if (startsStatement(text, start)) {
+      return { name: text.slice(start, end + 1), start };
+    }
+  }
+  const colon = annotationColon(text, end);
+  if (colon === -1) return null;
+  return declaredName(text, skipWsBack(text, colon - 1));
+}
+
+function declaredName(text: string, end: number): Bound | null {
   if (!IDENT_PART.test(text[end] ?? "")) return null;
   const start = wordStart(text, end);
   const keyEnd = skipWsBack(text, start - 1);
   const keyStart = wordStart(text, keyEnd);
-  const keyword = text.slice(keyStart, keyEnd + 1);
-  if (keyword !== "const" && keyword !== "let") return null;
+  if (!DECLARATIONS.has(text.slice(keyStart, keyEnd + 1))) return null;
   return { name: text.slice(start, end + 1), start: keyStart };
+}
+
+/** The `:` opening a type annotation that ends at `end`, or -1. */
+function annotationColon(text: string, end: number): number {
+  let depth = 0;
+  for (let i = end; i >= 0; i--) {
+    const c = text[i] as string;
+    if (")]}>".includes(c)) depth++;
+    if ("([{<".includes(c)) depth--;
+    if (depth < 0) return -1;
+    if (depth === 0 && c === ":") return i;
+    if (depth === 0 && c === ";") return -1;
+  }
+  return -1;
 }
 
 function wordStart(text: string, end: number): number {
@@ -282,7 +311,7 @@ function snippetOf(contents: string, from: number, to: number): string {
 }
 
 function requestEnd(text: string, from: number): number {
-  const re = /\.\s*(?:from|rpc|invoke)\s*\(/g;
+  const re = new RegExp(REQUEST.source, "g");
   re.lastIndex = from;
   const m = re.exec(text);
   if (!m) return from;
@@ -303,7 +332,7 @@ export const noDiscardedQueryError: ConformanceCheck = {
   },
   scan(file, contents) {
     if (!/\bawait\b/.test(contents)) return [];
-    if (!/\.\s*(?:from|rpc|invoke)\s*\(/.test(contents)) return [];
+    if (!REQUEST.test(contents)) return [];
     const text = maskCommentsAndStrings(contents);
     const violations: Violation[] = [];
     const report = (at: number, snippet: string) =>

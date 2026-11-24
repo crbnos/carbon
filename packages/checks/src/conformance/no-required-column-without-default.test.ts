@@ -53,33 +53,20 @@ describe("no-required-column-without-default", () => {
     expect(scan(sql)).toEqual([]);
   });
 
-  it("ignores IS NOT NULL inside a generated column's expression", () => {
-    // Real false positive from 20250115041610_backfill-release-date.sql: the
-    // `IS NOT NULL` here is a predicate, not a column constraint, and a backup
-    // can never supply a generated column anyway.
-    expect(
-      scan(
-        `ALTER TABLE "job" ADD COLUMN "secondsToComplete" DECIMAL GENERATED ALWAYS AS ( CASE WHEN "releasedDate" IS NOT NULL THEN 1 ELSE 0 END ) STORED;`
-      )
-    ).toEqual([]);
-  });
-
-  it("ignores IS NOT NULL in a plain added column's expression", () => {
-    expect(
-      scan(
-        `ALTER TABLE "job" ADD COLUMN "flag" BOOLEAN DEFAULT ("releasedDate" IS NOT NULL);`
-      )
-    ).toEqual([]);
-  });
-
-  it("handles ADD COLUMN IF NOT EXISTS", () => {
-    expect(
-      scan(`ALTER TABLE "item" ADD COLUMN IF NOT EXISTS "x" TEXT NOT NULL;`)
-    ).toHaveLength(1);
-    expect(
-      scan(
-        `ALTER TABLE "item" ADD COLUMN IF NOT EXISTS "x" TEXT NOT NULL DEFAULT '';`
-      )
-    ).toEqual([]);
-  });
+  it.each([
+    // From 20250115041610_backfill-release-date.sql, made NOT NULL: a backup
+    // can never supply a generated column, and the `IS NOT NULL` inside the
+    // expression is a predicate, not this column's constraint.
+    [
+      "a generated column",
+      `"secondsToComplete" DECIMAL GENERATED ALWAYS AS ( CASE WHEN "releasedDate" IS NOT NULL THEN 1 ELSE 0 END ) STORED NOT NULL`
+    ],
+    ["an identity column", `"n" INTEGER GENERATED ALWAYS AS IDENTITY NOT NULL`],
+    ["a serial column", `"n" BIGSERIAL NOT NULL`]
+  ])(
+    "allows a NOT NULL column that supplies its own value: %s",
+    (_, column) => {
+      expect(scan(`ALTER TABLE "job" ADD COLUMN ${column};`)).toEqual([]);
+    }
+  );
 });

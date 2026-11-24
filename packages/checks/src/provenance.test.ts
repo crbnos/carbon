@@ -76,7 +76,6 @@ const UNPROVEN_CHECKS = new Set([
   "offline-page-cache-bumped",
   "provider-role-backfilled",
   "registry-helpers-fresh",
-  "route-action-shape",
   "route-gate-names-page",
   "route-maps-to-page",
   "scheduled-sql-constants",
@@ -90,7 +89,7 @@ const UNPROVEN_CHECKS = new Set([
 
 // The size the list was frozen at. Lower it when a check leaves; raising it
 // lets an unproven check in, which is what this test exists to stop.
-const UNPROVEN_CEILING = 62;
+const UNPROVEN_CEILING = 61;
 
 /** Every check `run.ts` registers: one `./conformance/<id>` module each. */
 function registeredChecks(): string[] {

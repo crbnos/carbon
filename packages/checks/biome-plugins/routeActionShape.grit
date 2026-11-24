@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+// route-action-shape: an ERP route writes only through a service function.
+// A write in a route is logic the API and MCP cannot reach: a tool named like
+// the button does less than the button. Only calls that are certainly writes
+// match; `.rpc()` reads as often as it writes.
+//
+// Deprecates: a route action that composes writes itself.
+// Replaced by: one defineServiceFn per operation, called through authorize(request).
+// Since: 2026-10-15.
+language js(typescript,jsx)
+
+`$callee($args)` where {
+    or {
+        $callee <: or { `invokePosting`, `invokePostingOrThrow`, `invokeCreate` },
+        and {
+            $callee <: `$db.$write`,
+            $write <: or { `insertInto`, `updateTable`, `deleteFrom` }
+        },
+        and {
+            $callee <: `$query.$write`,
+            $write <: or { `insert`, `upsert`, `update`, `delete` },
+            $query <: `$client.from($table)`
+        }
+    },
+    register_diagnostic(
+        span = $callee,
+        message = "Move this write into a service function (defineServiceFn in the module's .server.ts) and call it from the route. [route-action-shape]",
+        severity = "warn"
+    )
+}

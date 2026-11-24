@@ -2239,6 +2239,9 @@ importers:
       '@types/pg':
         specifier: 8.15.6
         version: 8.15.6
+      libpg-query:
+        specifier: 18.1.5
+        version: 18.1.5
       pg:
         specifier: 8.20.0
         version: 8.20.0

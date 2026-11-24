@@ -44,7 +44,11 @@ describe("noUnguardedSubmit", () => {
       '<Button isDisabled={navigation.state !== "idle"} type="submit">',
       "navigation"
     ],
-    ['<Button isDisabled={isSubmitting} type="submit">', "isSubmitting"]
+    ['<Button isDisabled={isSubmitting} type="submit">', "isSubmitting"],
+    [
+      '<Button disabled={fetcher.state !== "idle"} type="submit">',
+      "the plain disabled prop"
+    ]
   ])("accepts a guarded button (%s)", (tag) => {
     expect(scan(tag)).toHaveLength(0);
   });
@@ -107,7 +111,7 @@ describe("noUnguardedSubmit", () => {
   it("rejects a local that names no submit state", () => {
     expect(
       scan(`
-        const [loading, setLoading] = useState(true);
+        const loading = !data;
         <Button isDisabled={loading} type="submit">Go</Button>
       `)
     ).toHaveLength(1);
@@ -119,18 +123,6 @@ describe("noUnguardedSubmit", () => {
 
   it("accepts a bare isLoading — always true, so always disabled", () => {
     expect(scan('<Button isLoading type="submit">')).toHaveLength(0);
-  });
-
-  it("requires isDisabled/disabled to name a submit state", () => {
-    expect(
-      scan('<Button isDisabled={isSubmitting} type="submit">')
-    ).toHaveLength(0);
-    expect(scan('<Button disabled={busy} type="submit">')).toHaveLength(1);
-    expect(
-      scan(
-        '<Button isDisabled={!permissions.can("create", "sales")} type="submit">'
-      )
-    ).toHaveLength(1);
   });
 
   it("matches type at an attribute boundary, both quote styles", () => {

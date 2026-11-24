@@ -2,7 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Node } from "libpg-query";
 import type { ConformanceCheck, Violation } from "../check";
+import {
+  ancestorsOf,
+  nameParts,
+  nodesIn,
+  relationName,
+  type SqlBody,
+  type SqlFragment,
+  type SqlStatement,
+  sqlFragments,
+  tokensFrom
+} from "../sources/sql";
 import { GENERATED_AUTHZ_MIGRATION } from "./no-authz-ddl-in-migrations";
 
 // The deploy runner re-runs a failed migration over what it already committed
@@ -12,376 +24,531 @@ import { GENERATED_AUTHZ_MIGRATION } from "./no-authz-ddl-in-migrations";
 /** Migrations up to here are applied history and cannot be edited. */
 const LAST_UNCHECKED = "20261119125737";
 
-const PART = String.raw`(?:"[^"]+"|[A-Za-z_][\w$]*)`;
-const NAME = String.raw`${PART}(?:\s*\.\s*${PART})?`;
-const NAME_LIST = String.raw`${NAME}(?:\s*,\s*${NAME})*`;
-
-/**
- * `"public".x` and `x` are one object; unquoted parts fold to lower case, as in
- * Postgres.
- */
-function normalizeName(raw: string): string {
-  const parts = [...raw.matchAll(new RegExp(PART, "g"))].map(([p]) =>
-    p.startsWith('"') ? p.slice(1, -1) : p.toLowerCase()
-  );
+/** `"public".x` and `x` are one object. */
+function objectName(parts: string[]): string {
   return parts.length === 2 && parts[0] === "public"
     ? (parts[1] ?? "")
     : parts.join(".");
 }
 
-const namesIn = (list: string) =>
-  [...list.matchAll(new RegExp(NAME, "g"))].map(([n]) => normalizeName(n));
+type Dropped = { kind: string; name: string; table?: string };
 
-const blank = (s: string) => s.replace(/[^\n]/g, " ");
-
-type Masked = {
-  /** What runs at migration time, with guarded DO bodies blanked. */
-  top: string;
-  /** Same, but every DO body kept: where an earlier DROP or DELETE may sit. */
-  full: string;
-};
-
-/**
- * A function body runs when called, not at migration time, so it is blanked.
- * A DO body guarded by IF/EXCEPTION is trusted whole and blanked from `top`;
- * an unguarded one is scanned.
- */
-function maskSql(sql: string): Masked {
-  let top = "";
-  let full = "";
-  const emit = (t: string, f: string = t) => {
-    top += t;
-    full += f;
-  };
-  let i = 0;
-  const n = sql.length;
-  while (i < n) {
-    const c = sql[i] as string;
-    const next = sql[i + 1];
-
-    if (c === "-" && next === "-") {
-      const end = sql.indexOf("\n", i);
-      const stop = end === -1 ? n : end;
-      emit(blank(sql.slice(i, stop)));
-      i = stop;
-      continue;
-    }
-
-    if (c === "/" && next === "*") {
-      // Postgres block comments nest.
-      let depth = 0;
-      let j = i;
-      while (j < n) {
-        if (sql[j] === "/" && sql[j + 1] === "*") {
-          depth++;
-          j += 2;
-        } else if (sql[j] === "*" && sql[j + 1] === "/") {
-          depth--;
-          j += 2;
-          if (depth === 0) break;
-        } else j++;
+/** What a DROP statement drops, whether or not it says IF EXISTS. */
+function droppedBy(node: Node): Dropped[] {
+  if ("AlterTableStmt" in node) {
+    const table = relationName(node.AlterTableStmt.relation ?? {});
+    return (node.AlterTableStmt.cmds ?? []).flatMap((cmd) => {
+      if (!("AlterTableCmd" in cmd)) return [];
+      const { subtype, name = "" } = cmd.AlterTableCmd;
+      if (subtype === "AT_DropConstraint") {
+        return [{ kind: "CONSTRAINT", name, table }];
       }
-      emit(blank(sql.slice(i, j)));
-      i = j;
-      continue;
-    }
-
-    if (c === "'") {
-      // E'…' takes backslash escapes, so \' does not end it.
-      const escapes = /(?:^|[^\w$])[eE]$/.test(
-        sql.slice(Math.max(0, i - 2), i)
-      );
-      let j = i + 1;
-      while (j < n) {
-        if (escapes && sql[j] === "\\") j += 2;
-        else if (sql[j] === "'") break;
-        else j++;
-      }
-      emit(`'${blank(sql.slice(i + 1, j))}'`);
-      i = j + 1;
-      continue;
-    }
-
-    if (c === '"') {
-      const j = sql.indexOf('"', i + 1);
-      const stop = j === -1 ? n : j + 1;
-      emit(sql.slice(i, stop));
-      i = stop;
-      continue;
-    }
-
-    if (c === "$" && !/[\w$]/.test(sql[i - 1] ?? "")) {
-      const tag = /^\$(?:[A-Za-z_]\w*)?\$/.exec(sql.slice(i, i + 64))?.[0];
-      if (tag) {
-        const close = sql.indexOf(tag, i + tag.length);
-        const end = close === -1 ? n : close + tag.length;
-        const body = sql.slice(i + tag.length, close === -1 ? n : close);
-        if (/\bDO(?:\s+LANGUAGE\s+\w+)?\s*$/i.test(full.slice(-64))) {
-          const inner = maskSql(body);
-          const guarded = /\b(?:IF|EXCEPTION)\b/i.test(
-            inner.full.replace(/"[^"]*"/g, "")
-          );
-          emit(
-            blank(tag) + (guarded ? blank(body) : inner.top) + blank(tag),
-            blank(tag) + inner.full + blank(tag)
-          );
-        } else {
-          emit(blank(sql.slice(i, end)));
-        }
-        i = end;
-        continue;
-      }
-    }
-
-    emit(c);
-    i++;
+      if (subtype === "AT_DropColumn") return [{ kind: "COLUMN", name, table }];
+      return [];
+    });
   }
-  return { top, full };
+  if (!("DropStmt" in node)) return [];
+  const kind = (node.DropStmt.removeType ?? "").replace("OBJECT_", "");
+  return (node.DropStmt.objects ?? []).map((object) => {
+    const parts =
+      "List" in object
+        ? nameParts(object.List.items)
+        : "TypeName" in object
+          ? nameParts(object.TypeName.names)
+          : "ObjectWithArgs" in object
+            ? nameParts(object.ObjectWithArgs.objname)
+            : "String" in object
+              ? [object.String.sval ?? ""]
+              : [];
+    // A trigger or policy is named on its table: `DROP POLICY p ON t`.
+    if (kind === "TRIGGER" || kind === "POLICY" || kind === "RULE") {
+      return {
+        kind,
+        name: parts.at(-1) ?? "",
+        table: objectName(parts.slice(0, -1))
+      };
+    }
+    return { kind, name: objectName(parts) };
+  });
 }
 
-/**
- * The same text with every quoted identifier's contents replaced, so a
- * keyword inside a name (`"… can insert into the public bucket"`) is never
- * read as a statement. Same length, so offsets carry over.
- */
-const hideIdentifiers = (sql: string) =>
-  sql.replace(/"[^"\n]*"/g, (m) => `"${"_".repeat(m.length - 2)}"`);
+/** The DROP kinds this check asks IF EXISTS of. */
+const DROP_KINDS = new Map([
+  ["TABLE", "TABLE"],
+  ["VIEW", "VIEW"],
+  ["MATVIEW", "MATERIALIZED VIEW"],
+  ["FUNCTION", "FUNCTION"],
+  ["TRIGGER", "TRIGGER"],
+  ["INDEX", "INDEX"],
+  ["TYPE", "TYPE"],
+  ["POLICY", "POLICY"],
+  ["SEQUENCE", "SEQUENCE"],
+  ["SCHEMA", "SCHEMA"],
+  ["CONSTRAINT", "CONSTRAINT"],
+  ["COLUMN", "COLUMN"]
+]);
 
-type Rule = {
-  /**
-   * Matches the statement head. Group `name` is the object; group `table`,
-   * when there is one, the table it lives on (or, for an INSERT, writes to).
-   */
-  pattern: RegExp;
-  /**
-   * The DROP kind that, earlier in the file, makes re-creating `name` safe. A
-   * DROP with no IF EXISTS counts too: the DROP rule reports it, once.
-   */
-  undoneBy?: string;
-  /**
-   * A statement-level escape, e.g. `ON CONFLICT` anywhere in an INSERT. An
-   * earlier `DELETE FROM` or `TRUNCATE` of the table escapes it too.
-   */
-  guardedBy?: RegExp;
-  message: (name: string) => string;
+function dropsWithoutIfExists(node: Node): Dropped[] {
+  if ("DropStmt" in node)
+    return node.DropStmt.missing_ok ? [] : droppedBy(node);
+  if (!("AlterTableStmt" in node)) return [];
+  const table = relationName(node.AlterTableStmt.relation ?? {});
+  return (node.AlterTableStmt.cmds ?? []).flatMap((cmd) => {
+    if (!("AlterTableCmd" in cmd) || cmd.AlterTableCmd.missing_ok) return [];
+    return droppedBy({
+      AlterTableStmt: { relation: { relname: table }, cmds: [cmd] }
+    });
+  });
+}
+
+type Created = {
+  /** How the snippet names the statement: `CREATE TABLE`, `ADD COLUMN`. */
+  what: string;
+  name: string;
+  /** The table it lives on, when it has one. */
+  table?: string;
+  /** The DROP kinds that, earlier in the file, make creating it again safe. */
+  undoneBy: string[];
+  /** Where it is written, when the parser keeps that; else the statement's line is used. */
+  location?: number;
+  message: string;
 };
 
-const RULES: Rule[] = [
-  {
-    pattern: new RegExp(
-      String.raw`\bDROP\s+(?:TABLE|VIEW|MATERIALIZED\s+VIEW|FUNCTION|TRIGGER|INDEX(?:\s+CONCURRENTLY)?|TYPE|POLICY|CONSTRAINT|COLUMN|SEQUENCE|SCHEMA)\s+(?!IF\s+EXISTS\b)(?<name>${NAME})`,
-      "dgi"
-    ),
-    message: (name) =>
-      `DROP of ${name} has no IF EXISTS: on a re-run after a failed deploy it is already gone and the migration fails again. Write DROP … IF EXISTS.`
-  },
-  {
+const VIEW_LIKE = ["VIEW", "MATVIEW", "FUNCTION", "PROCEDURE"];
+
+/** What a statement creates that is not there on the first run and is on a re-run. */
+function createdBy(node: Node): Created[] {
+  if ("IndexStmt" in node) {
+    const { idxname, if_not_exists, relation } = node.IndexStmt;
     // An unnamed index (`CREATE INDEX ON t`) gets a new name on a re-run, so
     // it does not fail.
-    pattern: new RegExp(
-      String.raw`\bCREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:CONCURRENTLY\s+)?(?!IF\s+NOT\s+EXISTS\b|ON\b)(?<name>${NAME})\s+ON\s+(?:ONLY\s+)?(?<table>${NAME})`,
-      "dgi"
-    ),
-    undoneBy: String.raw`INDEX(?:\s+CONCURRENTLY)?`,
-    message: (name) =>
-      `CREATE INDEX ${name} has no IF NOT EXISTS: on a re-run after a failed deploy the index is already there and the migration fails again.`
-  },
-  {
-    pattern: new RegExp(
-      String.raw`\bCREATE\s+(?:UNLOGGED\s+)?TABLE\s+(?!IF\s+NOT\s+EXISTS\b)(?<name>${NAME})`,
-      "dgi"
-    ),
-    undoneBy: "TABLE",
-    message: (name) =>
-      `CREATE TABLE ${name} has no IF NOT EXISTS: on a re-run after a failed deploy the table is already there and the migration fails again.`
-  },
-  {
-    pattern: new RegExp(
-      String.raw`\bCREATE\s+(?:SCHEMA|SEQUENCE)\s+(?!IF\s+NOT\s+EXISTS\b)(?<name>${NAME})`,
-      "dgi"
-    ),
-    message: (name) =>
-      `CREATE of ${name} has no IF NOT EXISTS: on a re-run after a failed deploy it is already there and the migration fails again.`
-  },
-  {
-    pattern: new RegExp(String.raw`\bCREATE\s+TYPE\s+(?<name>${NAME})`, "dgi"),
-    undoneBy: "TYPE",
-    message: (name) =>
-      `CREATE TYPE ${name} fails on a re-run after a failed deploy: the type is already there. CREATE TYPE has no IF NOT EXISTS; create it in a DO block that checks pg_type first, or catches duplicate_object.`
-  },
-  {
-    pattern: new RegExp(
-      String.raw`\bALTER\s+TYPE\s+(?<name>${NAME})\s+ADD\s+VALUE\s+(?!IF\s+NOT\s+EXISTS\b)`,
-      "dgi"
-    ),
-    message: (name) =>
-      `ALTER TYPE ${name} ADD VALUE has no IF NOT EXISTS: on a re-run after a failed deploy the value is already there and the migration fails again.`
-  },
-  {
-    // OR REPLACE never matches: OR sits between CREATE and the kind.
-    pattern: new RegExp(
-      String.raw`\bCREATE\s+(?:(?:RECURSIVE\s+)?VIEW|MATERIALIZED\s+VIEW|FUNCTION|PROCEDURE)\s+(?!IF\s+NOT\s+EXISTS\b)(?<name>${NAME})`,
-      "dgi"
-    ),
-    undoneBy: String.raw`(?:MATERIALIZED\s+)?(?:VIEW|FUNCTION|PROCEDURE)`,
-    message: (name) =>
-      `CREATE of ${name} has no OR REPLACE and no earlier DROP … IF EXISTS: on a re-run after a failed deploy it is already there and the migration fails again.`
-  },
-  {
-    pattern: new RegExp(
-      String.raw`\bADD\s+COLUMN\s+(?!IF\s+NOT\s+EXISTS\b)(?<name>${NAME})`,
-      "dgi"
-    ),
-    message: (name) =>
-      `ADD COLUMN ${name} has no IF NOT EXISTS: on a re-run after a failed deploy the column is already there and the migration fails again.`
-  },
-  {
-    pattern: new RegExp(
-      String.raw`\bADD\s+CONSTRAINT\s+(?<name>${NAME})`,
-      "dgi"
-    ),
-    undoneBy: "CONSTRAINT",
-    message: (name) =>
-      `ADD CONSTRAINT ${name} fails on a re-run after a failed deploy: the constraint is already there. Drop it first with DROP CONSTRAINT IF EXISTS, or add it in a DO block that checks pg_constraint.`
-  },
-  {
-    pattern: new RegExp(
-      String.raw`\bCREATE\s+POLICY\s+(?<name>${NAME})\s+ON\s+(?<table>${NAME})`,
-      "dgi"
-    ),
-    undoneBy: "POLICY",
-    message: (name) =>
-      `CREATE POLICY ${name} fails on a re-run after a failed deploy: the policy is already there. Precede it with DROP POLICY IF EXISTS on the same table.`
-  },
-  {
-    // CREATE OR REPLACE TRIGGER never matches: OR sits between CREATE and TRIGGER.
-    pattern: new RegExp(
-      String.raw`\bCREATE\s+(?:CONSTRAINT\s+)?TRIGGER\s+(?<name>${NAME})[^;]*?\bON\s+(?<table>${NAME})`,
-      "dgi"
-    ),
-    undoneBy: "TRIGGER",
-    message: (name) =>
-      `CREATE TRIGGER ${name} fails on a re-run after a failed deploy: the trigger is already there. Precede it with DROP TRIGGER IF EXISTS on the same table, or write CREATE OR REPLACE TRIGGER.`
-  },
-  {
-    pattern: new RegExp(String.raw`\bINSERT\s+INTO\s+(?<table>${NAME})`, "dgi"),
-    // An anti-join (`LEFT JOIN … WHERE x.id IS NULL`, `NOT IN (SELECT …)`,
-    // `EXCEPT`) inserts only what is missing, as NOT EXISTS does.
-    guardedBy:
-      /\bON\s+CONFLICT\b|\bNOT\s+EXISTS\b|\bIS\s+NULL\b|\bNOT\s+IN\s*\(\s*SELECT\b|\bEXCEPT\b/i,
-    message: (name) =>
-      `INSERT INTO ${name} has no ON CONFLICT and no WHERE NOT EXISTS: on a re-run after a failed deploy the rows are already there, and it fails on a unique key or writes them twice.`
+    if (!idxname || if_not_exists) return [];
+    return [
+      {
+        what: "CREATE INDEX",
+        name: idxname,
+        table: relationName(relation ?? {}),
+        undoneBy: ["INDEX"],
+        message: `CREATE INDEX ${idxname} has no IF NOT EXISTS: on a re-run after a failed deploy the index is already there and the migration fails again.`
+      }
+    ];
   }
-];
-
-function statementAt(text: string, index: number): string {
-  const start = text.lastIndexOf(";", index - 1) + 1;
-  const end = text.indexOf(";", index);
-  return text.slice(start, end === -1 ? text.length : end);
+  if ("CreateStmt" in node || "CreateTableAsStmt" in node) {
+    const table =
+      "CreateStmt" in node
+        ? node.CreateStmt
+        : {
+            relation: node.CreateTableAsStmt.into?.rel,
+            if_not_exists: node.CreateTableAsStmt.if_not_exists
+          };
+    const materialized =
+      "CreateTableAsStmt" in node &&
+      node.CreateTableAsStmt.objtype === "OBJECT_MATVIEW";
+    // A temp table is new in every session.
+    if (table.if_not_exists || table.relation?.relpersistence === "t")
+      return [];
+    const name = relationName(table.relation ?? {});
+    if (materialized) {
+      return [
+        {
+          what: "CREATE MATERIALIZED VIEW",
+          name,
+          undoneBy: VIEW_LIKE,
+          message: `CREATE of ${name} has no OR REPLACE and no earlier DROP … IF EXISTS: on a re-run after a failed deploy it is already there and the migration fails again.`
+        }
+      ];
+    }
+    return [
+      {
+        what: "CREATE TABLE",
+        name,
+        undoneBy: ["TABLE"],
+        message: `CREATE TABLE ${name} has no IF NOT EXISTS: on a re-run after a failed deploy the table is already there and the migration fails again.`
+      }
+    ];
+  }
+  if ("CreateSchemaStmt" in node || "CreateSeqStmt" in node) {
+    const [what, name, exists] =
+      "CreateSchemaStmt" in node
+        ? [
+            "CREATE SCHEMA",
+            node.CreateSchemaStmt.schemaname ?? "",
+            node.CreateSchemaStmt.if_not_exists
+          ]
+        : [
+            "CREATE SEQUENCE",
+            relationName(node.CreateSeqStmt.sequence ?? {}),
+            node.CreateSeqStmt.if_not_exists
+          ];
+    if (exists) return [];
+    return [
+      {
+        what,
+        name,
+        undoneBy: [],
+        message: `CREATE of ${name} has no IF NOT EXISTS: on a re-run after a failed deploy it is already there and the migration fails again.`
+      }
+    ];
+  }
+  const typeName =
+    "CreateEnumStmt" in node
+      ? node.CreateEnumStmt.typeName
+      : "CompositeTypeStmt" in node
+        ? [
+            {
+              String: {
+                sval: relationName(node.CompositeTypeStmt.typevar ?? {})
+              }
+            }
+          ]
+        : "CreateRangeStmt" in node
+          ? node.CreateRangeStmt.typeName
+          : "DefineStmt" in node && node.DefineStmt.kind === "OBJECT_TYPE"
+            ? node.DefineStmt.defnames
+            : undefined;
+  if (typeName) {
+    const name = objectName(nameParts(typeName));
+    return [
+      {
+        what: "CREATE TYPE",
+        name,
+        undoneBy: ["TYPE"],
+        message: `CREATE TYPE ${name} fails on a re-run after a failed deploy: the type is already there. CREATE TYPE has no IF NOT EXISTS; create it in a DO block that checks pg_type first, or catches duplicate_object.`
+      }
+    ];
+  }
+  if ("AlterEnumStmt" in node) {
+    const {
+      typeName: names,
+      newVal,
+      oldVal,
+      skipIfNewValExists
+    } = node.AlterEnumStmt;
+    // RENAME VALUE names an old value; ADD VALUE does not.
+    if (!newVal || oldVal || skipIfNewValExists) return [];
+    const name = objectName(nameParts(names));
+    return [
+      {
+        what: "ALTER TYPE",
+        name,
+        undoneBy: [],
+        message: `ALTER TYPE ${name} ADD VALUE has no IF NOT EXISTS: on a re-run after a failed deploy the value is already there and the migration fails again.`
+      }
+    ];
+  }
+  if ("ViewStmt" in node || "CreateFunctionStmt" in node) {
+    const [what, name, replace] =
+      "ViewStmt" in node
+        ? [
+            "CREATE VIEW",
+            relationName(node.ViewStmt.view ?? {}),
+            node.ViewStmt.replace
+          ]
+        : [
+            node.CreateFunctionStmt.is_procedure
+              ? "CREATE PROCEDURE"
+              : "CREATE FUNCTION",
+            objectName(nameParts(node.CreateFunctionStmt.funcname)),
+            node.CreateFunctionStmt.replace
+          ];
+    if (replace) return [];
+    return [
+      {
+        what,
+        name,
+        undoneBy: VIEW_LIKE,
+        message: `CREATE of ${name} has no OR REPLACE and no earlier DROP … IF EXISTS: on a re-run after a failed deploy it is already there and the migration fails again.`
+      }
+    ];
+  }
+  if ("AlterTableStmt" in node) {
+    const table = relationName(node.AlterTableStmt.relation ?? {});
+    return (node.AlterTableStmt.cmds ?? []).flatMap((cmd): Created[] => {
+      if (!("AlterTableCmd" in cmd)) return [];
+      const { subtype, def, missing_ok } = cmd.AlterTableCmd;
+      if (subtype === "AT_AddColumn" && def && "ColumnDef" in def) {
+        if (missing_ok) return [];
+        const name = def.ColumnDef.colname ?? "";
+        return [
+          {
+            what: "ADD COLUMN",
+            name,
+            table,
+            undoneBy: [],
+            location: def.ColumnDef.location,
+            message: `ADD COLUMN ${name} has no IF NOT EXISTS: on a re-run after a failed deploy the column is already there and the migration fails again.`
+          }
+        ];
+      }
+      if (subtype === "AT_AddConstraint" && def && "Constraint" in def) {
+        const name = def.Constraint.conname;
+        if (!name) return [];
+        return [
+          {
+            what: "ADD CONSTRAINT",
+            name,
+            table,
+            undoneBy: ["CONSTRAINT"],
+            location: def.Constraint.location,
+            message: `ADD CONSTRAINT ${name} fails on a re-run after a failed deploy: the constraint is already there. Drop it first with DROP CONSTRAINT IF EXISTS, or add it in a DO block that checks pg_constraint.`
+          }
+        ];
+      }
+      return [];
+    });
+  }
+  if ("CreatePolicyStmt" in node) {
+    const name = node.CreatePolicyStmt.policy_name ?? "";
+    return [
+      {
+        what: "CREATE POLICY",
+        name,
+        table: relationName(node.CreatePolicyStmt.table ?? {}),
+        undoneBy: ["POLICY"],
+        message: `CREATE POLICY ${name} fails on a re-run after a failed deploy: the policy is already there. Precede it with DROP POLICY IF EXISTS on the same table.`
+      }
+    ];
+  }
+  if ("CreateTrigStmt" in node) {
+    const { trigname: name = "", relation, replace } = node.CreateTrigStmt;
+    if (replace) return [];
+    return [
+      {
+        what: "CREATE TRIGGER",
+        name,
+        table: relationName(relation ?? {}),
+        undoneBy: ["TRIGGER"],
+        message: `CREATE TRIGGER ${name} fails on a re-run after a failed deploy: the trigger is already there. Precede it with DROP TRIGGER IF EXISTS on the same table, or write CREATE OR REPLACE TRIGGER.`
+      }
+    ];
+  }
+  return [];
 }
-
-const ALTER_TABLE = new RegExp(
-  String.raw`^\s*ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:ONLY\s+)?(?<table>${NAME})`,
-  "di"
-);
 
 /**
- * Triggers and policies are named per table: a DROP that names a table must
- * name this one.
+ * Whether a statement writes only what is missing: it has a `NOT EXISTS` /
+ * `NOT IN (SELECT …)`, an anti-join (`LEFT JOIN … WHERE x.id IS NULL`) or an
+ * `EXCEPT`. Read over the whole statement, since the test may sit in a CTE
+ * beside the INSERT.
  */
-function dropsEarlier(
-  before: string,
-  kind: string,
-  name: string,
-  table: string | undefined
-): boolean {
-  const drop = new RegExp(
-    String.raw`\bDROP\s+${kind}\s+(?:IF\s+EXISTS\s+)?(?<names>${NAME_LIST})(?:\s+ON\s+(?<table>${NAME}))?`,
-    "gi"
-  );
-  for (const m of before.matchAll(drop)) {
-    if (!namesIn(m.groups?.names ?? "").includes(name)) continue;
-    const on = m.groups?.table;
-    if (table === undefined || on === undefined || normalizeName(on) === table)
+function readsOnlyMissing(statement: Node): boolean {
+  for (const found of nodesIn(statement)) {
+    const { node } = found;
+    if ("NullTest" in node && node.NullTest.nulltesttype === "IS_NULL") {
       return true;
+    }
+    if ("SelectStmt" in node && node.SelectStmt.op === "SETOP_EXCEPT") {
+      return true;
+    }
+    if (!("SubLink" in node)) continue;
+    for (const parent of ancestorsOf(found)) {
+      if ("BoolExpr" in parent && parent.BoolExpr.boolop === "NOT_EXPR") {
+        return true;
+      }
+    }
   }
   return false;
 }
 
-/** `DELETE FROM` / `TRUNCATE` of the table: a wipe and reseed repeats safely. */
-function wipedEarlier(before: string, table: string): boolean {
-  const wipe = new RegExp(
-    String.raw`\b(?:DELETE\s+FROM|TRUNCATE(?:\s+TABLE)?)\s+(?:ONLY\s+)?(?<names>${NAME_LIST})`,
-    "gi"
-  );
-  for (const m of before.matchAll(wipe))
-    if (namesIn(m.groups?.names ?? "").includes(table)) return true;
-  return false;
+/** The tables a `DELETE FROM` or `TRUNCATE` empties: a wipe and reseed repeats safely. */
+function wipedBy(node: Node): string[] {
+  if ("DeleteStmt" in node) {
+    return [relationName(node.DeleteStmt.relation ?? {})];
+  }
+  if ("TruncateStmt" in node) {
+    return (node.TruncateStmt.relations ?? []).flatMap((relation) =>
+      "RangeVar" in relation ? [relationName(relation.RangeVar)] : []
+    );
+  }
+  return [];
 }
 
-/** A temp table is new in every session, so a re-run starts it empty. */
-function tempTables(sql: string): Set<string> {
-  const temp = new RegExp(
-    String.raw`\bCREATE\s+(?:(?:LOCAL|GLOBAL)\s+)?TEMP(?:ORARY)?\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?<name>${NAME})`,
-    "gi"
-  );
-  return new Set(
-    [...sql.matchAll(temp)].map((m) => normalizeName(m.groups?.name ?? ""))
-  );
+/**
+ * Whether a DO block decides for itself what to run: it has an IF, a CASE or
+ * an EXCEPTION handler. Such a block is trusted whole. A body the PL/pgSQL
+ * parser could not read is trusted too: its structure is not known.
+ */
+function guards(body: SqlBody): boolean {
+  if (body.plpgsql === undefined) return true;
+  const guarded = (tree: unknown): boolean => {
+    if (Array.isArray(tree)) return tree.some(guarded);
+    if (tree === null || typeof tree !== "object") return false;
+    return Object.entries(tree).some(
+      ([key, value]) =>
+        key === "PLpgSQL_stmt_if" ||
+        key === "PLpgSQL_stmt_case" ||
+        key === "exceptions" ||
+        guarded(value)
+    );
+  };
+  return guarded(body.plpgsql);
 }
 
-function groupText(
-  text: string,
-  m: RegExpExecArray | RegExpMatchArray,
-  group: string,
-  offset = 0
-): string | undefined {
-  const span = m.indices?.groups?.[group];
-  return span ? text.slice(span[0] + offset, span[1] + offset) : undefined;
+type Step = {
+  statement: SqlStatement;
+  fragment: SqlFragment;
+  /** In a guarded DO block: its statements are not checked, but still count as earlier. */
+  trusted: boolean;
+};
+
+/**
+ * The statements that run when the migration is applied, in file order: the
+ * file's own, and those of its DO blocks. A function body runs when called,
+ * not at migration time.
+ */
+function migrationSteps(contents: string): Step[] {
+  const steps: Step[] = [];
+  for (const fragment of sqlFragments(contents)) {
+    if (fragment.inside.some((body) => !("DoStmt" in body.statement))) continue;
+    const trusted = fragment.inside.some(guards);
+    for (const statement of fragment.statements) {
+      steps.push({ statement, fragment, trusted });
+    }
+  }
+  // Fragments come file first, then bodies; lines put them back in order.
+  return steps
+    .map((step, index) => ({ step, index }))
+    .sort(
+      (a, b) =>
+        a.step.statement.line - b.step.statement.line || a.index - b.index
+    )
+    .map(({ step }) => step);
+}
+
+/** An ALTER TABLE as one statement per command; any other node as itself. */
+function alterCommands(node: Node): Node[] {
+  if (!("AlterTableStmt" in node)) return [node];
+  return (node.AlterTableStmt.cmds ?? []).map((cmd) => ({
+    AlterTableStmt: { ...node.AlterTableStmt, cmds: [cmd] }
+  }));
+}
+
+const quote = (name: string) => `"${name}"`;
+
+/** `CREATE INDEX "i" ON "t"`: an index, policy or trigger is named with its table. */
+const NAMED_ON_TABLE = new Set([
+  "CREATE INDEX",
+  "CREATE POLICY",
+  "CREATE TRIGGER"
+]);
+function named(what: string, name: string, table: string | undefined) {
+  return table && NAMED_ON_TABLE.has(what)
+    ? `${what} ${quote(name)} ON ${quote(table)}`
+    : `${what} ${quote(name)}`;
+}
+
+/**
+ * The line of the `DROP … name` command of an ALTER TABLE. The parser keeps no
+ * position for a command, so it is found among the statement's tokens.
+ */
+function dropLine(
+  statement: SqlStatement,
+  fragment: SqlFragment,
+  name: string
+): number | undefined {
+  const tokens = tokensFrom(statement, statement.start);
+  for (const [index, token] of tokens.entries()) {
+    if (token.text.toUpperCase() !== "DROP") continue;
+    // DROP [COLUMN | CONSTRAINT] [IF EXISTS] name
+    const names = tokens
+      .slice(index + 1, index + 5)
+      .some((next) => next.text === name || next.text === quote(name));
+    if (names) return fragment.lineAt(statement.start + token.start);
+  }
+  return undefined;
 }
 
 export function scanReplaySafety(file: string, contents: string): Violation[] {
   if (contents.startsWith(GENERATED_AUTHZ_MIGRATION)) return [];
-  const { top, full } = maskSql(contents);
-  const code = hideIdentifiers(top);
-  const temps = tempTables(top);
+  const steps = migrationSteps(contents);
+
+  const temps = new Set<string>();
+  for (const { statement } of steps) {
+    const relation =
+      "CreateStmt" in statement.node
+        ? statement.node.CreateStmt.relation
+        : "CreateTableAsStmt" in statement.node
+          ? statement.node.CreateTableAsStmt.into?.rel
+          : undefined;
+    if (relation?.relpersistence === "t") temps.add(relationName(relation));
+  }
+  const isTemp = (name: string | undefined) =>
+    name !== undefined && (temps.has(name) || name.startsWith("pg_temp."));
+
+  const dropped: Dropped[] = [];
+  const wiped = new Set<string>();
+  /** Triggers and policies are named per table: a DROP that names a table must name this one. */
+  const droppedEarlier = (kinds: string[], name: string, table?: string) =>
+    dropped.some(
+      (drop) =>
+        kinds.includes(drop.kind) &&
+        drop.name === name &&
+        (table === undefined ||
+          drop.table === undefined ||
+          drop.table === table)
+    );
+
   const violations: Violation[] = [];
-  for (const rule of RULES) {
-    for (const m of code.matchAll(rule.pattern)) {
-      const index = m.index ?? 0;
-      const statement = statementAt(code, index);
-      if (rule.guardedBy?.test(statement)) continue;
-
-      // `code` hides identifiers, so names are read from `top` at the same offsets.
-      const stmtStart = code.lastIndexOf(";", index - 1) + 1;
-      const alter = ALTER_TABLE.exec(statement);
-      const tableRaw =
-        groupText(top, m, "table") ??
-        (alter ? groupText(top, alter, "table", stmtStart) : undefined);
-      const table = tableRaw ? normalizeName(tableRaw) : undefined;
-      const nameRaw = groupText(top, m, "name");
-      const name = nameRaw ? normalizeName(nameRaw) : (table ?? "");
-
-      if (
-        temps.has(name) ||
-        name.startsWith("pg_temp.") ||
-        (table && temps.has(table))
-      )
-        continue;
-
-      const before = full.slice(0, index);
-      if (rule.undoneBy && dropsEarlier(before, rule.undoneBy, name, table))
-        continue;
-      // A table dropped earlier is re-created empty, with nothing on it.
-      if (table && dropsEarlier(before, "TABLE", table, undefined)) continue;
-      if (rule.guardedBy && table && wipedEarlier(before, table)) continue;
-
-      violations.push({
-        file,
-        line: top.slice(0, index).split("\n").length,
-        snippet: top.slice(index, index + m[0].length).replace(/\s+/g, " "),
-        message: rule.message(name)
-      });
+  for (const { statement, fragment, trusted } of steps) {
+    for (const found of nodesIn(statement.node)) {
+      const line =
+        found.location === undefined
+          ? statement.line
+          : fragment.lineAt(found.location);
+      // The commands of one ALTER TABLE run in order, so each is taken alone:
+      // `DROP CONSTRAINT IF EXISTS x, ADD CONSTRAINT x` is safe.
+      for (const node of alterCommands(found.node)) {
+        if (!trusted) {
+          for (const drop of dropsWithoutIfExists(node)) {
+            const kind = DROP_KINDS.get(drop.kind);
+            if (!kind || isTemp(drop.name) || isTemp(drop.table)) continue;
+            violations.push({
+              file,
+              line:
+                "AlterTableStmt" in node
+                  ? (dropLine(statement, fragment, drop.name) ?? line)
+                  : line,
+              snippet: `DROP ${kind} ${quote(drop.name)}`,
+              message: `DROP of ${drop.name} has no IF EXISTS: on a re-run after a failed deploy it is already gone and the migration fails again. Write DROP … IF EXISTS.`
+            });
+          }
+          for (const created of createdBy(node)) {
+            const { what, name, table, undoneBy, message } = created;
+            if (isTemp(name) || isTemp(table)) continue;
+            if (droppedEarlier(undoneBy, name, table)) continue;
+            // A table dropped earlier is re-created empty, with nothing on it.
+            if (table && droppedEarlier(["TABLE"], table)) continue;
+            violations.push({
+              file,
+              line:
+                created.location === undefined
+                  ? line
+                  : fragment.lineAt(created.location),
+              snippet: named(what, name, table),
+              message
+            });
+          }
+          if ("InsertStmt" in node) {
+            const table = relationName(node.InsertStmt.relation ?? {});
+            const safe =
+              isTemp(table) ||
+              node.InsertStmt.onConflictClause !== undefined ||
+              readsOnlyMissing(statement.node) ||
+              wiped.has(table) ||
+              droppedEarlier(["TABLE"], table);
+            if (!safe) {
+              violations.push({
+                file,
+                line,
+                snippet: `INSERT INTO ${quote(table)}`,
+                message: `INSERT INTO ${table} has no ON CONFLICT and no WHERE NOT EXISTS: on a re-run after a failed deploy the rows are already there, and it fails on a unique key or writes them twice.`
+              });
+            }
+          }
+        }
+        dropped.push(...droppedBy(node));
+        for (const table of wipedBy(node)) wiped.add(table);
+      }
     }
   }
   return violations.sort((a, b) => a.line - b.line);

@@ -45,6 +45,13 @@ export const getNames = defineServiceFn({ input: z.object({}), permission: { vie
     ).toEqual(["getUnits: permission {}"]);
   });
 
+  it("passes a service function whose definition is not an object literal", () => {
+    expect(
+      scan(`export const sendQuote = defineServiceFn(quoteDefinition);
+export const getQuote = defineServiceFn();`)
+    ).toEqual([]);
+  });
+
   it("reads a module's own server file, .ee variant included", () => {
     const ts = "export function helper() {}";
     expect(scan(ts, "apps/erp/app/modules/sales/sales.service.ts")).toEqual([]);

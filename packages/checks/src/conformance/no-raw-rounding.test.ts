@@ -32,4 +32,12 @@ describe("no-raw-rounding", () => {
     ].join("\n");
     expect(noRawRounding.scan("a.ts", src)).toHaveLength(0);
   });
+  it("skips the precision module, where the rounding helpers are written", () => {
+    expect(
+      noRawRounding.scan(
+        "packages/database/src/precision.ts",
+        "export const round = (x: number) => Math.round(x * 100) / 100;"
+      )
+    ).toHaveLength(0);
+  });
 });

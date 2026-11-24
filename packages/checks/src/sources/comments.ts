@@ -3,15 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 /**
- * Blank out SQL `--` and `/* … *\/` comments, keeping newlines so offsets and
- * line numbers stay right.
- */
-export const blankSqlComments = (sql: string) =>
-  sql
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
-    .replace(/--[^\n]*/g, (m) => " ".repeat(m.length));
-
-/**
  * Replace TS/JS comment text with spaces (newlines kept, so offsets and line
  * numbers survive). String contents are left alone.
  */

@@ -82,4 +82,33 @@ describe("findProviderRoleDrift", () => {
       )
     ).toEqual(["ramp: spend stored, none declared"]);
   });
+  it("does not read the id of an IS DISTINCT FROM test as the integration set", () => {
+    expect(
+      drift(
+        [config("xero", "accounting")],
+        [
+          migration(
+            "1_role.sql",
+            `UPDATE "integration" SET "providerRole" = 'accounting' WHERE id IS DISTINCT FROM 'xero';`
+          )
+        ]
+      )
+    ).toEqual(["xero: accounting declared, NULL stored"]);
+  });
+
+  it("reads only a constant role set on integration, for the ids the WHERE names", () => {
+    const decoys = [
+      `UPDATE "otherTable" SET "providerRole" = 'accounting' WHERE id = 'xero';`,
+      `UPDATE "integration" SET "providerRole" = 'accounting' WHERE "name" = 'xero';`,
+      `UPDATE "integration" SET "providerRole" = lower('ACCOUNTING') WHERE id = 'xero';`,
+      `UPDATE "integration" SET "providerRole" = 'accounting' WHERE id <> 'xero';`,
+      `UPDATE "integration" SET "providerRole" = 'accounting' WHERE id NOT IN ('xero');`
+    ];
+    expect(
+      drift(
+        [config("xero", "accounting")],
+        [migration("1_role.sql", decoys.join("\n"))]
+      )
+    ).toEqual(["xero: accounting declared, NULL stored"]);
+  });
 });

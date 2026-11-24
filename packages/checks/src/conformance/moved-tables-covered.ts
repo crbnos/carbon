@@ -12,6 +12,7 @@ import {
   ownersOf
 } from "@carbon/database/access";
 import type { SourceFile, Violation } from "../check";
+import { sqlNodes } from "../sources/sql";
 
 export const MOVED_TABLES_COVERED = "moved-tables-covered";
 
@@ -36,13 +37,11 @@ export const BASE_TABLE_MODULES: Readonly<Record<string, BaseModules>> =
 /** A table's live policies: the command (`SELECT`, `INSERT`, `UPDATE`, `DELETE`, `ALL`) and its SQL. */
 export type LivePolicy = { command: string; sql: string };
 
-const POLICY =
-  /CREATE POLICY\s+"[^"]*"\s+ON\s+(?:"?public"?\.)?"(\w+)"\s+(?:AS\s+\w+\s+)?FOR\s+(\w+)[^;]*;/g;
-
 /**
  * Each table's policies as the migrations leave them: a migration that creates
  * any policy on a table replaces the whole set (a generated block drops them
- * all first). `migrations` must be in apply order.
+ * all first). `migrations` must be in apply order. Only tables in "public" are
+ * read; a policy with no FOR clause is for ALL.
  */
 export function livePolicies(
   migrations: readonly SourceFile[]
@@ -50,15 +49,14 @@ export function livePolicies(
   const live = new Map<string, LivePolicy[]>();
   for (const migration of migrations) {
     const found = new Map<string, LivePolicy[]>();
-    for (const match of migration.contents.matchAll(POLICY)) {
-      const [sql, table, command] = match as unknown as [
-        string,
-        string,
-        string
-      ];
-      found.set(table, [
-        ...(found.get(table) ?? []),
-        { command: command.toUpperCase(), sql }
+    for (const { node, statement } of sqlNodes(migration.contents)) {
+      if (!("CreatePolicyStmt" in node)) continue;
+      const { table, cmd_name = "all" } = node.CreatePolicyStmt;
+      const schema = table?.schemaname ?? "public";
+      if (schema !== "public" || !table?.relname) continue;
+      found.set(table.relname, [
+        ...(found.get(table.relname) ?? []),
+        { command: cmd_name.toUpperCase(), sql: statement.text }
       ]);
     }
     for (const [table, policies] of found) live.set(table, policies);

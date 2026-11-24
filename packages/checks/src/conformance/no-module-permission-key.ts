@@ -7,7 +7,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ACTIONS, MODULES, pageById } from "@carbon/database/access";
 import type { ConformanceCheck, Violation } from "../check";
-import { blankComments, blankSqlComments } from "../sources/comments";
+import { blankComments } from "../sources/comments";
+import { nameParts, sqlFragments } from "../sources/sql";
 
 /**
  * Phase 3 of page-level permissions: no module key decides access. A module
@@ -74,8 +75,6 @@ const SQL_KEY = new RegExp(
   String.raw`(?<![\w.])(?:${NAMES})_(?:${ACTION_NAMES})\b`,
   "g"
 );
-const PORTAL_CALL =
-  /\bget_(?:customer|supplier)_ids_with_(?:customer|supplier)_permission\s*\(\s*'+\w+'+/g;
 const PORTAL_RULE =
   /\bportal\.(?:customer|supplier)\s*\(\s*(["'`])\w+\1\s*,\s*(["'`])\w+\2/g;
 // Every page of the module: `anyOf(pagesOf("sales"), "View")`.
@@ -143,20 +142,87 @@ function scanTypescript(file: string, contents: string): Violation[] {
   return violations;
 }
 
+/** The portal functions: their argument is a portal account's own key, which keeps its name. */
+const PORTAL_FUNCTIONS = new Set([
+  "get_customer_ids_with_customer_permission",
+  "get_supplier_ids_with_supplier_permission"
+]);
+
+/** `get_customer_ids_with_customer_permission(…)` or its supplier twin. */
+function isPortalCall(tree: object): boolean {
+  if (!("FuncCall" in tree)) return false;
+  const call = tree.FuncCall;
+  if (call === null || typeof call !== "object" || !("funcname" in call)) {
+    return false;
+  }
+  const names = Array.isArray(call.funcname) ? call.funcname : [];
+  return PORTAL_FUNCTIONS.has(nameParts(names).at(-1) ?? "");
+}
+
+/** A function's or DO block's `AS '…'`: its source text. */
+function isBodySource(tree: object): boolean {
+  if (!("DefElem" in tree)) return false;
+  const option = tree.DefElem;
+  return (
+    option !== null &&
+    typeof option === "object" &&
+    "defname" in option &&
+    option.defname === "as"
+  );
+}
+
+type SqlKey = { key: string; location: number | undefined };
+
+/**
+ * Every module key under `tree`: in a string constant, or in a name (a policy
+ * may be named after the key it checks). A function body's source is skipped:
+ * its SQL is read as a fragment of its own.
+ */
+function sqlKeysIn(
+  tree: unknown,
+  location: number | undefined,
+  out: SqlKey[]
+): SqlKey[] {
+  if (typeof tree === "string") {
+    for (const m of tree.matchAll(SQL_KEY)) out.push({ key: m[0], location });
+    return out;
+  }
+  if (Array.isArray(tree)) {
+    for (const item of tree) sqlKeysIn(item, location, out);
+    return out;
+  }
+  if (tree === null || typeof tree !== "object") return out;
+  if (isPortalCall(tree) || isBodySource(tree)) return out;
+  const fields: { location?: unknown } = tree;
+  const here = typeof fields.location === "number" ? fields.location : location;
+  for (const value of Object.values(tree)) sqlKeysIn(value, here, out);
+  return out;
+}
+
 function scanSql(file: string, contents: string): Violation[] {
   const base = file.split("/").pop() ?? file;
   const migration = /^\d{14}_/.test(base);
   if (migration && MODULE_KEY_MIGRATIONS.has(base)) return [];
   if (!migration && !file.startsWith("packages/database/src/")) return [];
-  const sql = blankSqlComments(contents).replace(PORTAL_CALL, (m) =>
-    " ".repeat(m.length)
-  );
-  return [...sql.matchAll(SQL_KEY)].map((m) => ({
-    file,
-    line: lineOf(sql, m.index),
-    snippet: m[0],
-    message: `${m[0]} is a module key: it passes only with a module grant. Check the page's key, <module>.<page>_<action>.`
-  }));
+  const violations: Violation[] = [];
+  for (const fragment of sqlFragments(contents)) {
+    for (const statement of fragment.statements) {
+      for (const { key, location } of sqlKeysIn(
+        statement.node,
+        undefined,
+        []
+      )) {
+        violations.push({
+          file,
+          line:
+            location === undefined ? statement.line : fragment.lineAt(location),
+          snippet: key,
+          message: `${key} is a module key: it passes only with a module grant. Check the page's key, <module>.<page>_<action>.`
+        });
+      }
+    }
+  }
+  return violations;
 }
 
 export const noModulePermissionKey: ConformanceCheck = {

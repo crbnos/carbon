@@ -48,7 +48,6 @@ export {
 } from "./conformance/no-silent-test-pass";
 export { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
-export { routeActionShape } from "./conformance/route-action-shape";
 export { serviceFnFile } from "./conformance/service-fn-file";
 export { spdxLicenseHeader } from "./conformance/spdx-license-header";
 export {

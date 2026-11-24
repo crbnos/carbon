@@ -191,6 +191,16 @@ regex.test("a", () => {
     ).toEqual([]);
   });
 
+  it("ignores a helper's guard in a file that names test without declaring a case", () => {
+    expect(
+      scan(`function seed(client) {
+  if (!client) return;
+  insert(client);
+}
+const withLease = test.extend({});`)
+    ).toEqual([]);
+  });
+
   it("reports each guard once, on its own line", () => {
     expect(
       scan(`it("a", async () => {

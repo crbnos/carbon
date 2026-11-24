@@ -150,6 +150,36 @@ describe("findNestedOutlets", () => {
     ]);
   });
 
+  it("does not take a type argument for a render when following components", () => {
+    const columns = file(
+      "apps/erp/app/modules/settings/ui/ApiKeys/ApiKeysColumns.tsx",
+      'import ApiKeysTable from "./ApiKeysTable";',
+      "const columns = useColumns<ApiKeysTable>();"
+    );
+    const route = file(
+      ROUTE,
+      'import ApiKeysColumns from "~/modules/settings/ui/ApiKeys/ApiKeysColumns";',
+      "<ApiKeysColumns />",
+      "<RecordOutlet />"
+    );
+    expect(where([table, columns, route])).toEqual([]);
+  });
+
+  it("leaves an app other than erp and mes alone", () => {
+    const layout = file(
+      "apps/academy/app/components/Layout.tsx",
+      "<Header />",
+      "<Outlet />"
+    );
+    const lesson = file(
+      "apps/academy/app/routes/lesson.tsx",
+      'import Layout from "../components/Layout";',
+      "<Layout />",
+      "<Outlet />"
+    );
+    expect(where([layout, lesson])).toEqual([]);
+  });
+
   it("ignores type arguments and comments", () => {
     const route = file(
       ROUTE,

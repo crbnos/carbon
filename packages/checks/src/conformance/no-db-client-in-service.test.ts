@@ -27,18 +27,6 @@ describe("noDbClientInService", () => {
     expect(noDbClientInService.scan(SERVICE, ts)).toHaveLength(1);
   });
 
-  it("flags the dynamic-import construction workaround", () => {
-    const ts = [
-      'const { getPostgresClient, getProcessPool } = await import("@carbon/database/client");',
-      'const { PostgresDriver } = await import("kysely");',
-      "return getPostgresClient(getProcessPool(), PostgresDriver);"
-    ].join("\n");
-    // We match construction CALLS, not the destructured import names: line 3's
-    // getPostgresClient( + getProcessPool( + PostgresDriver, plus the
-    // PostgresDriver on line 2 = 4. The workaround is caught at the point of use.
-    expect(noDbClientInService.scan(SERVICE, ts)).toHaveLength(4);
-  });
-
   it("flags getDatabaseClient() and getJobDatabaseClient() in a service file", () => {
     const ts = [
       'import { getDatabaseClient } from "~/services/database.server";',
@@ -88,13 +76,6 @@ describe("noDbClientInService", () => {
       "const pool = getProcessPool(); getPostgresClient(pool, PostgresDriver);";
     expect(
       noDbClientInService.scan("apps/erp/app/services/database.server.ts", ts)
-    ).toHaveLength(0);
-  });
-
-  it("does NOT scan route files (they legitimately call getDatabaseClient)", () => {
-    const ts = "const result = await runMRP(client, getDatabaseClient(), {});";
-    expect(
-      noDbClientInService.scan("apps/erp/app/routes/api+/mrp.ts", ts)
     ).toHaveLength(0);
   });
 

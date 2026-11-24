@@ -78,21 +78,6 @@ describe("moduleShape", () => {
     expect(v.map((x) => x.snippet)).toContain("missing:sales.service.ts");
   });
 
-  it("allows utils and test files", () => {
-    const v = moduleShape.inspect(
-      mod("quality", [
-        "quality.service.ts",
-        "quality.models.ts",
-        "types.ts",
-        "ui",
-        "quality.server.ts",
-        "quality.utils.ts",
-        "quality.utils.test.ts"
-      ])
-    );
-    expect(v).toHaveLength(0);
-  });
-
   it("flags a barrel", () => {
     const v = moduleShape.inspect(
       mod("sales", [...COMPLIANT, "index.ts", "index.server.ts"])

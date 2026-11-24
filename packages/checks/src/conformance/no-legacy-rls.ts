@@ -3,9 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ConformanceCheck, Violation } from "../check";
+import { nameParts, sqlNodes } from "../sources/sql";
 import { GENERATED_AUTHZ_MIGRATION } from "./no-authz-ddl-in-migrations";
-
-const LEGACY_RLS = /has_company_permission\s*\(/gi;
 
 export const noLegacyRls: ConformanceCheck = {
   id: "no-legacy-rls",
@@ -21,17 +20,18 @@ export const noLegacyRls: ConformanceCheck = {
     // definitions until they can be dropped.
     if (contents.startsWith(GENERATED_AUTHZ_MIGRATION)) return [];
     const violations: Violation[] = [];
-    contents.split("\n").forEach((text, i) => {
-      for (const m of text.matchAll(LEGACY_RLS)) {
-        violations.push({
-          file,
-          line: i + 1,
-          snippet: m[0],
-          message:
-            "Deprecated RLS helper; use get_companies_with_employee_permission()."
-        });
-      }
-    });
+    for (const { node, fragment } of sqlNodes(contents)) {
+      if (!("FuncCall" in node)) continue;
+      const { funcname, location } = node.FuncCall;
+      if (nameParts(funcname).at(-1) !== "has_company_permission") continue;
+      violations.push({
+        file,
+        line: fragment.lineAt(location),
+        snippet: "has_company_permission(",
+        message:
+          "Deprecated RLS helper; use get_companies_with_employee_permission()."
+      });
+    }
     return violations;
   }
 };

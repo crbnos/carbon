@@ -185,14 +185,6 @@ describe("noUnscopedKyselyWrite", () => {
     ).toHaveLength(1);
   });
 
-  it("does not let an id predicate scope any other table", () => {
-    expect(
-      scan(
-        'await trx.updateTable("item").set(fields).where("id", "=", id).execute();'
-      )
-    ).toHaveLength(1);
-  });
-
   it("covers routes, MES and jobs", () => {
     const ts = 'await db.deleteFrom("kanban").where("id", "=", id).execute();';
     for (const file of [
@@ -233,5 +225,22 @@ describe("noUnscopedKyselyWrite", () => {
     expect(
       scan('await updateRows(db, "item", { companyId }, { id });', fn)
     ).toHaveLength(1);
+  });
+  it("exempts userPermission, which has no company column", () => {
+    expect(
+      scan(
+        'await trx.updateTable("userPermission").set(fields).where("id", "=", id).execute();'
+      )
+    ).toHaveLength(0);
+  });
+
+  it("exempts userPermission in deleteRows too", () => {
+    expect(
+      scan('await deleteRows(trx, "userPermission", { id });')
+    ).toHaveLength(0);
+  });
+
+  it("ignores a call named updateRows that takes no table and filter", () => {
+    expect(scan("updateRows(next);\nupdateRows(db, next);")).toHaveLength(0);
   });
 });

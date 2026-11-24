@@ -2,8 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Node } from "libpg-query";
 import type { ConformanceCheck, Violation } from "../check";
-import { blankComments, blankSqlComments } from "../sources/comments";
+import { blankComments } from "../sources/comments";
+import { nameParts, nodesIn, sqlFragments } from "../sources/sql";
 
 // A journal reader that filters `status <> 'Draft'` counts every non-Draft
 // status, so the Provisional and Superseded journals of the accounting cutover
@@ -171,6 +173,95 @@ function scanStatements(
   return violations.sort((a, b) => a.line - b.line);
 }
 
+/** `'Draft'`, with or without a cast to the status type. */
+function isDraft(node: Node | undefined): boolean {
+  if (!node) return false;
+  if ("TypeCast" in node) return isDraft(node.TypeCast.arg);
+  return "A_Const" in node && node.A_Const.sval?.sval === "Draft";
+}
+
+/** The qualifier of a `status` column (`j` in `j.status`, "" for none), else undefined. */
+function statusQualifier(node: Node | undefined): string | undefined {
+  if (!node || !("ColumnRef" in node)) return undefined;
+  const fields = nameParts(node.ColumnRef.fields);
+  if (fields.at(-1) !== "status") return undefined;
+  return fields.at(-2)?.toLowerCase() ?? "";
+}
+
+/**
+ * The qualifier of the status a not-Draft filter tests: `status <> 'Draft'`
+ * (either way round; the parser reads `!=` as `<>`), `status NOT IN ('Draft', …)`
+ * or `status IS DISTINCT FROM 'Draft'`.
+ */
+function notDraftStatus(node: Node): string | undefined {
+  if (!("A_Expr" in node)) return undefined;
+  const { kind, name, lexpr, rexpr } = node.A_Expr;
+  const operator = nameParts(name)[0];
+  if (kind === "AEXPR_OP" && operator === "<>") {
+    if (isDraft(rexpr)) return statusQualifier(lexpr);
+    if (isDraft(lexpr)) return statusQualifier(rexpr);
+  }
+  if (kind === "AEXPR_IN" && operator === "<>" && rexpr && "List" in rexpr) {
+    if (rexpr.List.items?.some(isDraft)) return statusQualifier(lexpr);
+  }
+  if (kind === "AEXPR_DISTINCT" && isDraft(rexpr))
+    return statusQualifier(lexpr);
+  return undefined;
+}
+
+/** `journal` and its aliases in a statement; empty when it does not read the table. */
+function journalNamesIn(statement: unknown, names = new Set<string>()) {
+  if (Array.isArray(statement)) {
+    for (const item of statement) journalNamesIn(item, names);
+    return names;
+  }
+  if (statement === null || typeof statement !== "object") return names;
+  const table: { relname?: unknown; schemaname?: unknown; alias?: unknown } =
+    statement;
+  if (
+    table.relname === "journal" &&
+    (table.schemaname === undefined || table.schemaname === "public")
+  ) {
+    names.add("journal");
+    const alias: { aliasname?: unknown } = table.alias ?? {};
+    if (typeof alias.aliasname === "string") {
+      names.add(alias.aliasname.toLowerCase());
+    }
+  }
+  for (const value of Object.values(statement)) journalNamesIn(value, names);
+  return names;
+}
+
+/**
+ * A migration, read as parsed SQL. A statement is one the parser returns: a
+ * top-level one, or one inside a function body or DO block.
+ */
+function scanSql(file: string, contents: string): Violation[] {
+  const flagged = new Set<number>();
+  const violations: Violation[] = [];
+  for (const fragment of sqlFragments(contents)) {
+    for (const statement of fragment.statements) {
+      const names = journalNamesIn(statement.node);
+      if (names.size === 0) continue;
+      for (const { node, location } of nodesIn(statement.node)) {
+        const qualifier = notDraftStatus(node);
+        if (qualifier === undefined) continue;
+        if (qualifier !== "" && !names.has(qualifier)) continue;
+        const line = fragment.lineAt(location);
+        if (flagged.has(line)) continue;
+        flagged.add(line);
+        violations.push({
+          file,
+          line,
+          snippet: `${qualifier === "" ? "" : `${qualifier}.`}status is not 'Draft'`,
+          message: MESSAGE
+        });
+      }
+    }
+  }
+  return violations.sort((a, b) => a.line - b.line);
+}
+
 export const journalStatusFilter: ConformanceCheck = {
   id: "journal-status-filter",
   description:
@@ -185,13 +276,7 @@ export const journalStatusFilter: ConformanceCheck = {
     if (!contents.includes("Draft") || !/journal/i.test(contents)) return [];
     if (file.endsWith(".sql")) {
       if (basename(file) < SINCE_MIGRATION) return [];
-      return scanStatements(
-        file,
-        contents,
-        blankSqlComments(contents),
-        SQL_JOURNAL,
-        SQL_NOT_DRAFT
-      );
+      return scanSql(file, contents);
     }
     return scanStatements(file, contents, blankComments(contents), TS_JOURNAL, [
       ...TS_NOT_DRAFT,

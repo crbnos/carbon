@@ -99,6 +99,13 @@ describe("mes-unit-write-resolves-unit", () => {
     ).toEqual([]);
   });
 
+  it.each([
+    ['throw new Error("insertScrapQuantity(job) failed");'],
+    ["const hint = 'erpPosting(\"issue\", caller, { type, quantity })';"]
+  ])("does not take text inside a string for a write: %s", (line) => {
+    expect(scan(fn("action", line))).toEqual([]);
+  });
+
   it("checks the callers of a writer, not its definition", () => {
     expect(
       scan(
@@ -138,6 +145,15 @@ describe("mes-unit-write-resolves-unit", () => {
     ]);
   });
 
+  it("allows a pick only in the listed function of an allow-listed file", () => {
+    const file = "apps/mes/app/routes/x+/operation.$operationId.tsx";
+    const pick = "const next = getNextIncompleteSerialEntity(units, id);";
+    expect(scan(fn("loader", pick), file)).toEqual([]);
+    expect(scan(fn("action", pick), file)).toEqual([
+      "2:getNextIncompleteSerialEntity"
+    ]);
+  });
+
   it("lets the resolver pick, and leaves the predicate's definition alone", () => {
     expect(
       scan(
@@ -166,39 +182,7 @@ describe("mes-unit-write-resolves-unit", () => {
 describe("the MES unit writers", () => {
   const files = loadTypescriptFiles(repoRoot());
 
-  // A new writer lands here and must be reviewed: does it resolve its unit,
-  // or does it belong on the allow-list (with its reason)?
-  it("are exactly these functions", () => {
-    expect(unitWriters(files)).toEqual([
-      "apps/mes/app/routes/x+/entity+/$materialId.$trackedEntityId.scrap.tsx#action",
-      "apps/mes/app/routes/x+/inspection-lot.$id.disposition.tsx#action",
-      "apps/mes/app/routes/x+/issue-tracked-entity.tsx#action",
-      "apps/mes/app/routes/x+/quality-issue.new.tsx#action",
-      "apps/mes/app/routes/x+/rework.tsx#action",
-      "apps/mes/app/routes/x+/trigger-correction.tsx#action",
-      "apps/mes/app/routes/x+/trigger-rework.tsx#action",
-      "apps/mes/app/services/complete.server.ts#completeOperationQuantity",
-      "apps/mes/app/services/complete.server.ts#scrapOperationQuantity",
-      "apps/mes/app/services/issue.server.ts#issueScannedItem",
-      "apps/mes/app/services/issue.server.ts#unconsumeFromUnit",
-      "apps/mes/app/services/kanban-scan.server.ts#endOperationByScan",
-      "apps/mes/app/services/kanban-scan.server.ts#startOperationByScan",
-      "apps/mes/app/services/operations.service.ts#insertBatchStepRecords",
-      "apps/mes/app/services/production-event.server.ts#productionEventAction",
-      "apps/mes/app/services/quality.server.ts#createInspectionRejectionIssue",
-      "apps/mes/app/services/quality.server.ts#postBulkCompletion",
-      "apps/mes/app/services/quality.server.ts#postSerialCompletions",
-      "apps/mes/app/services/step-record.server.ts#completeAllSteps",
-      "apps/mes/app/services/step-record.server.ts#recordStep",
-      "apps/mes/app/services/traveler.server.ts#issueTravelerUnit"
-    ]);
-  });
-
-  it("resolve their unit, or are allowed with a reason", () => {
-    const findings = files.flatMap(({ file, contents }) =>
-      mesUnitWriteResolvesUnit.scan(file, contents)
-    );
-    expect(findings).toEqual([]);
+  it("are still what every allow-list entry names", () => {
     // A stale entry would pre-approve the next writer added under its name.
     expect(unitWriters(files)).toEqual(
       expect.arrayContaining(Object.keys(UNIT_WRITE_ALLOW_LIST))

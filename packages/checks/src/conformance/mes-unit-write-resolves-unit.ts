@@ -258,7 +258,7 @@ export const mesUnitWriteResolvesUnit: ConformanceCheck = {
   }
 };
 
-/** The functions in scope (`file#function`) that write a unit, for the review-list test. */
+/** The functions in scope (`file#function`) that write a unit: what an allow-list entry must still name. */
 export function unitWriters(files: { file: string; contents: string }[]) {
   return [
     ...new Set(

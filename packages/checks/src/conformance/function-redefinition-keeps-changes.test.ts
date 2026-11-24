@@ -107,6 +107,20 @@ describe("function-redefinition-keeps-changes", () => {
     );
   });
 
+  it("skips a function written without an AS body", () => {
+    const findings = findDroppedFunctionChanges([
+      ...migrations([...ORIGINAL, ...SERIAL]),
+      {
+        file: "20261021101010_sql-body.sql",
+        contents:
+          "CREATE FUNCTION public.one() RETURNS integer LANGUAGE sql RETURN 1;"
+      }
+    ]);
+    expect(findings.map((finding) => finding.snippet)).toEqual([
+      "complete_job drops 20261009101010_always-post.sql"
+    ]);
+  });
+
   it("leaves migrations from before it was added alone", () => {
     expect(
       findDroppedFunctionChanges(

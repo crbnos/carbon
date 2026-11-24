@@ -37,6 +37,9 @@ export async function upsertRecord(client, record: { name: string }) {
 export async function insertRows(client, rows: { name: string }[]) {
   return client.from("account").insert(rows);
 }
+export async function insertUntyped(client, row: { name: string }) {
+  return (client.from("account") as any).insert([row]);
+}
 `;
 
 function findings(server: string) {
@@ -106,6 +109,47 @@ describe("stamp-matches-columns", () => {
         )
       )
     ).toEqual(["createRecord itemCost companyGroupId"]);
+  });
+
+  it("reads the table through a cast on the builder", () => {
+    expect(
+      findings(
+        leaf(
+          "createUntyped",
+          `service.insertUntyped(ctx.asCaller.supabase, payload(ctx, input).forCreate())`
+        )
+      )
+    ).toEqual(["createUntyped account companyId"]);
+  });
+
+  it("ignores a payload that is not handed to a service function", () => {
+    expect(
+      findings(
+        leaf("draftAccount", `save(ctx, payload(ctx, input).forCreate())`)
+      )
+    ).toEqual([]);
+  });
+
+  it("skips a service function the service file does not declare", () => {
+    expect(
+      findings(
+        leaf(
+          "archiveAccount",
+          `service.archiveAccount(ctx.asCaller.supabase, payload(ctx, input).forCreate())`
+        )
+      )
+    ).toEqual([]);
+  });
+
+  it("does not follow a payload built inside a callback argument", () => {
+    expect(
+      findings(
+        leaf(
+          "createAccount",
+          `service.upsertAccount(ctx.asCaller.supabase, withDefaults(() => payload(ctx, input).withGroup().forCreate()))`
+        )
+      )
+    ).toEqual([]);
   });
 
   it("does not follow a nested object stamp never adds fields to", () => {

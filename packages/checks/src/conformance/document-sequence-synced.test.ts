@@ -24,9 +24,9 @@ const attachments = (...tables: string[]) => ({
 
 const interceptor = (...tables: string[]) => ({
   file: "sync_advance_document_sequence.sql",
-  contents: `v_column := CASE p_table\n${tables
+  contents: `CREATE FUNCTION sync_advance_document_sequence(p_table TEXT) RETURNS void LANGUAGE plpgsql AS $$\nDECLARE\n  v_column TEXT;\nBEGIN\n  v_column := CASE p_table\n${tables
     .map((t) => `    WHEN '${t}' THEN '${t}Id'`)
-    .join("\n")}\n  END;\n`
+    .join("\n")}\n    ELSE NULL\n  END;\nEND $$;\n`
 });
 
 const messages = (

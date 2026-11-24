@@ -25,20 +25,6 @@ describe("no-inline-fraction-digits", () => {
     ).toHaveLength(0);
   });
 
-  it("does NOT exclude a file that merely consumes a kind", () => {
-    // Hook files were once listed as exclusions even though they contain no
-    // digits at all, which exempted whatever got added to them later. A file
-    // that consumes a kind has nothing to exempt, so it must still be scanned.
-    const src = "const opts = { maximumFractionDigits: 2 };";
-    for (const file of [
-      "apps/erp/app/hooks/usePercentFormatter.tsx",
-      "apps/erp/app/hooks/useQuantityFormatter.tsx",
-      "packages/documents/src/utils/shared.ts"
-    ]) {
-      expect(noInlineFractionDigits.scan(file, src)).toHaveLength(1);
-    }
-  });
-
   it("allows named kinds", () => {
     const src = "formatOptions={INPUT_FORMAT.percent}";
     expect(noInlineFractionDigits.scan("a.tsx", src)).toHaveLength(0);

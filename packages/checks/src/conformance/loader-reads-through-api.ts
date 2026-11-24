@@ -75,6 +75,8 @@ export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
       );
       // local name -> `<module>.<name>`, for value imports of a service file
       const imported = new Map<string, string>();
+      // namespace name -> `<module>`, for `import * as x` of a service file
+      const namespaces = new Map<string, string>();
       for (const statement of source.statements) {
         if (!ts.isImportDeclaration(statement)) continue;
         const from = (statement.moduleSpecifier as ts.StringLiteral).text;
@@ -82,6 +84,10 @@ export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
         const clause = statement.importClause;
         if (!module || !clause || clause.isTypeOnly) continue;
         const named = clause.namedBindings;
+        if (named && ts.isNamespaceImport(named)) {
+          namespaces.set(named.name.text, module);
+          continue;
+        }
         if (!named || !ts.isNamedImports(named)) continue;
         for (const element of named.elements) {
           if (element.isTypeOnly) continue;
@@ -90,12 +96,24 @@ export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
         }
       }
       const body = loaderBody(source);
-      if (!body || imported.size === 0) return [];
+      if (!body || imported.size + namespaces.size === 0) return [];
+
+      const calledBlock = (callee: ts.Expression): string | undefined => {
+        if (ts.isIdentifier(callee)) return imported.get(callee.text);
+        if (
+          ts.isPropertyAccessExpression(callee) &&
+          ts.isIdentifier(callee.expression)
+        ) {
+          const module = namespaces.get(callee.expression.text);
+          if (module) return `${module}.${callee.name.text}`;
+        }
+        return undefined;
+      };
 
       const violations: Violation[] = [];
       const visit = (node: ts.Node) => {
-        if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
-          const block = imported.get(node.expression.text);
+        if (ts.isCallExpression(node)) {
+          const block = calledBlock(node.expression);
           if (block && wrapped.has(block)) {
             violations.push({
               file,

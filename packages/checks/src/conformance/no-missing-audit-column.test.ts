@@ -162,7 +162,7 @@ describe("noMissingAuditColumn", () => {
     it("ignores a write option in the second argument", () => {
       expect(
         snippets(
-          'client.from("customerPartToItem").upsert({ customerId }, { onConflict: "createdBy" });'
+          'client.from("customerPartToItem").upsert({ customerId }, { createdBy });'
         )
       ).toEqual([]);
     });
@@ -175,18 +175,44 @@ describe("noMissingAuditColumn", () => {
       ).toEqual([]);
     });
 
+    it.each([
+      ["a line comment", "  // itemId, createdBy,"],
+      ["a block comment", "  /* itemId, createdBy, */"]
+    ])("ignores a key commented out with %s", (_, comment) => {
+      const ts = [
+        'client.from("customerPartToItem").insert({',
+        "  customerId,",
+        comment,
+        "  companyId",
+        "});"
+      ].join("\n");
+      expect(snippets(ts)).toEqual([]);
+    });
+
+    it("reads past a closing bracket inside a comment", () => {
+      const ts = [
+        'client.from("customerPartToItem").insert({',
+        "  customerId, // the customer :)",
+        "  createdBy",
+        "});"
+      ].join("\n");
+      expect(snippets(ts)).toEqual(["createdBy"]);
+    });
+
+    it("ends the row at the write's own closing bracket, not one inside a string", () => {
+      const ts = [
+        'client.from("customerPartToItem").insert({ customerPartId: "A)", createdBy });',
+        'client.from("item").insert({ updatedBy });'
+      ].join("\n");
+      expect(snippets(ts)).toEqual(["createdBy"]);
+    });
+
     it("flags every row of an inserted array", () => {
       expect(
         snippets(
           'client.from("customerPartToItem").insert([{ createdBy }, { updatedBy }]);'
         )
       ).toEqual(["createdBy", "updatedBy"]);
-    });
-
-    it("finds nothing in a spread payload — that is the generator's job", () => {
-      expect(
-        snippets('client.from("customerPartToItem").insert([customerPart]);')
-      ).toEqual([]);
     });
   });
 });

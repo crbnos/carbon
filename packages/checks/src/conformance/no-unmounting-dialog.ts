@@ -32,36 +32,67 @@ const RENDERS_DIALOG = /<(?:Modal|Drawer|ModalDrawer|ModalCard)[\s>]/;
 
 const EXCLUDED_PREFIX = "packages/react/src/hooks/";
 
-/** Text of the JSX opening tag at `start`, brace-, quote- and comment-aware. */
+/**
+ * Text of the JSX opening tag at `start`, aware of braces, strings, comments
+ * and JSX nested in its props.
+ */
 function openingTag(contents: string, start: number): string | null {
-  let depth = 0;
+  // Where each character sits: a tag's attributes, a `{…}` expression, or the
+  // children of JSX nested in one, where a quote is text ("Don't").
+  const stack: Array<"tag" | "expression" | "text"> = ["tag"];
   let quote: string | null = null;
   for (let i = start; i < contents.length; i++) {
     const c = contents[i];
+    const context = stack[stack.length - 1];
     if (quote) {
       if (c === quote) quote = null;
       continue;
     }
-    // A comment inside a `{…}` may hold an apostrophe ("method's").
-    if (depth > 0 && c === "/" && contents[i + 1] === "*") {
-      const end = contents.indexOf("*/", i + 2);
-      if (end === -1) return null;
-      i = end + 1;
+    if (context === "text") {
+      if (c === "{") stack.push("expression");
+      else if (c === "<" && contents[i + 1] === "/") {
+        const end = contents.indexOf(">", i);
+        if (end === -1) return null;
+        i = end;
+        stack.pop();
+      } else if (c === "<") stack.push("tag");
       continue;
     }
-    if (depth > 0 && c === "/" && contents[i + 1] === "/") {
-      const end = contents.indexOf("\n", i);
-      if (end === -1) return null;
-      i = end;
-      continue;
+    if (context === "expression") {
+      // A comment may hold an apostrophe ("method's").
+      if (c === "/" && contents[i + 1] === "*") {
+        const end = contents.indexOf("*/", i + 2);
+        if (end === -1) return null;
+        i = end + 1;
+        continue;
+      }
+      if (c === "/" && contents[i + 1] === "/") {
+        const end = contents.indexOf("\n", i);
+        if (end === -1) return null;
+        i = end;
+        continue;
+      }
+      // JSX, not `a < b` or `Array<T>`.
+      if (
+        c === "<" &&
+        /[A-Za-z>]/.test(contents[i + 1] ?? "") &&
+        !/[\w$)\]]$/.test(contents.slice(start, i).trimEnd())
+      ) {
+        stack.push("tag");
+        continue;
+      }
     }
     if (c === '"' || c === "'" || c === "`") {
       quote = c;
       continue;
     }
-    if (c === "{") depth++;
-    else if (c === "}") depth--;
-    else if (c === ">" && depth === 0) return contents.slice(start, i + 1);
+    if (c === "{") stack.push("expression");
+    else if (c === "}" && context === "expression") stack.pop();
+    else if (c === ">" && context === "tag") {
+      if (stack.length === 1) return contents.slice(start, i + 1);
+      stack.pop();
+      if (contents[i - 1] !== "/") stack.push("text");
+    }
   }
   return null;
 }
@@ -134,7 +165,9 @@ function conditionIsOpenState(condition: string, expression: string): boolean {
     .replace(/^!!\s*/, "")
     .replace(/^Boolean\((.*)\)$/, "$1")
     .trim();
-  if (!/^[\w$.?!]+$/.test(value)) return false;
+  if (!/^[\w$.?!]+$/.test(value)) {
+    return condition.replace(/\s+/g, "") === value.replace(/\s+/g, "");
+  }
   return new RegExp(
     `(?<![\\w$.])${escapeRegExp(value)}(?![\\w$])(?!\\s*(?:\\(|=(?!=)))`
   ).test(condition);

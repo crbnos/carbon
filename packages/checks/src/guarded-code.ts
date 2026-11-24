@@ -104,7 +104,7 @@ const COMMENT_LINE = /^\s*(?:\/\*\*?|\*|\/\/)/;
  * block right above it (a hunk that edits a function's JSDoc edits that
  * function). A class is split into its methods, as the checks read it.
  */
-export function functionSpans(source: string): Span[] {
+function functionSpans(source: string): Span[] {
   const lines = source.split("\n");
   const text = blankComments(source);
   const lineAt = (offset: number) => text.slice(0, offset).split("\n").length;

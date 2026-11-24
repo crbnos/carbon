@@ -42,7 +42,7 @@ describe("no-default-on-effects", () => {
   });
 
   it("allows .prefault() on effect-bearing schemas (that is the fix)", () => {
-    const src = `const v = z.object({ a: z.string().default("x") }).prefault({});`;
+    const src = `const v = z.string().transform(Number).prefault("5");`;
     expect(noDefaultOnEffects.scan("a.ts", src)).toHaveLength(0);
   });
 

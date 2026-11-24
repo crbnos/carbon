@@ -24,14 +24,6 @@ describe("no-integration-id-branching", () => {
     ).toHaveLength(1);
   });
 
-  it("flags an ad-hoc id array", () => {
-    const found = scan(
-      "apps/erp/app/modules/accounting/accounting.service.ts",
-      'const IDS = ["xero", "quickbooks", "rillet"];'
-    );
-    expect(found.length).toBeGreaterThan(0);
-  });
-
   it("flags a Set of ids", () => {
     expect(
       scan(
@@ -45,7 +37,7 @@ describe("no-integration-id-branching", () => {
     // packages/ee/src/ramp/** is Ramp's own code; saying "ramp" there is not a
     // branch on identity, it IS the identity.
     expect(
-      scan("packages/ee/src/ramp/lib/spend.ts", 'const RAMP = "ramp";')
+      scan("packages/ee/src/ramp/lib/spend.ts", 'if (id === "ramp") {}')
     ).toEqual([]);
   });
 

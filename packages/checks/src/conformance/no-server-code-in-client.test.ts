@@ -104,6 +104,19 @@ export default function Route() {
     ]);
   });
 
+  it("does not count a renamed type-only specifier", () => {
+    const ts = `import { type Row as ServiceRow, getRow } from "~/modules/a/a.service";
+
+export async function loader() {
+  return getRow();
+}
+
+export default function Route({ row }: { row: ServiceRow }) {
+  return row.id;
+}`;
+    expect(scan("apps/erp/app/routes/x+/a+/$id.tsx", ts)).toEqual([]);
+  });
+
   it("does not count a property or a type-only specifier", () => {
     const ts = `import { type Row, getRow } from "~/modules/a/a.service";
 

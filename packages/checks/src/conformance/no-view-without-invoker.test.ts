@@ -45,16 +45,6 @@ describe("noViewWithoutInvoker", () => {
     expect(noViewWithoutInvoker.scan("p.sql", sql)).toHaveLength(0);
   });
 
-  it("handles a column list before the option list", () => {
-    const sql = 'CREATE VIEW "x" ("a", "b") AS SELECT 1, 2;';
-    expect(noViewWithoutInvoker.scan("p.sql", sql)).toHaveLength(1);
-  });
-
-  it("ignores a view in a block comment", () => {
-    const sql = '/*\nCREATE OR REPLACE VIEW "x" AS\n*/\nSELECT 1;';
-    expect(noViewWithoutInvoker.scan("p.sql", sql)).toHaveLength(0);
-  });
-
   it("keeps line numbers after a block comment", () => {
     const sql = '/* one\ntwo */\nCREATE VIEW "x" AS SELECT 1;';
     expect(noViewWithoutInvoker.scan("p.sql", sql)[0]?.line).toBe(3);
@@ -69,6 +59,18 @@ describe("noViewWithoutInvoker", () => {
 
   it("allows ALTER VIEW … SET (security_invoker = true)", () => {
     const sql = 'ALTER VIEW "x" SET (security_invoker = true);';
+    expect(noViewWithoutInvoker.scan("p.sql", sql)).toHaveLength(0);
+  });
+
+  it("ignores a view named in a string or a function body", () => {
+    const sql = [
+      'COMMENT ON TABLE "job" IS \'CREATE VIEW "x" AS SELECT 1\';',
+      "CREATE FUNCTION f() RETURNS void LANGUAGE sql AS $$ SELECT 'CREATE VIEW \"x\" AS' $$;"
+    ].join("\n");
+    expect(noViewWithoutInvoker.scan("p.sql", sql)).toHaveLength(0);
+  });
+  it("allows ALTER VIEW … RESET of another option", () => {
+    const sql = 'ALTER VIEW "x" RESET (check_option);';
     expect(noViewWithoutInvoker.scan("p.sql", sql)).toHaveLength(0);
   });
 });

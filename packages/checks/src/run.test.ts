@@ -3,19 +3,34 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import type { ConformanceCheck } from "./check";
 import { newViolations, scanAll } from "./run";
 
 describe("scanAll", () => {
-  it("returns every (checkId, violation) across files and checks", () => {
+  it("runs every check over every file and names the check of each violation", () => {
+    const flags = (id: string, word: string): ConformanceCheck => ({
+      id,
+      description: "",
+      provenance: { deprecates: "", replacedBy: "" },
+      scan: (file, contents) =>
+        contents.includes(word)
+          ? [{ file, line: 1, snippet: word, message: "" }]
+          : []
+    });
     const files = [
-      { file: "a.sql", contents: "x NUMERIC(10,2)" },
-      { file: "b.sql", contents: "USING (has_company_permission('view'))" },
-      { file: "c.sql", contents: "y NUMERIC" }
+      { file: "a.sql", contents: "red" },
+      { file: "b.sql", contents: "red blue" },
+      { file: "c.sql", contents: "green" }
     ];
-    const found = scanAll(files);
-    const ids = found.map((f) => f.checkId).sort();
-    expect(ids).toEqual(["no-legacy-rls", "no-numeric-precision"]);
-    expect(found.every((f) => typeof f.violation.line === "number")).toBe(true);
+    const found = scanAll(files, [
+      flags("no-red", "red"),
+      flags("no-blue", "blue")
+    ]);
+    expect(found.map((f) => [f.checkId, f.violation.file])).toEqual([
+      ["no-red", "a.sql"],
+      ["no-red", "b.sql"],
+      ["no-blue", "b.sql"]
+    ]);
   });
 });
 
@@ -25,8 +40,8 @@ describe("conformance gate (real migrations vs baseline)", () => {
   // every other package's suite.
   it("introduces no NEW deprecated patterns beyond the committed baseline", {
     timeout: 120_000
-  }, () => {
-    const fresh = newViolations();
+  }, async () => {
+    const fresh = await newViolations();
     const detail = fresh
       .map(
         (f) =>

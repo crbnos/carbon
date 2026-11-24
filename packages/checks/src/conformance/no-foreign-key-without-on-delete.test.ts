@@ -31,15 +31,9 @@ describe("noForeignKeyWithoutOnDelete", () => {
 
   it("accepts an ON DELETE clause on the same line", () => {
     expect(
-      scan(NEW, `"jobId" TEXT REFERENCES "job"("id") ON DELETE CASCADE,`)
-    ).toHaveLength(0);
-  });
-
-  it("accepts an ON DELETE clause on a following line", () => {
-    expect(
       scan(
         NEW,
-        `"jobId" TEXT REFERENCES "job"("id")\n  ON DELETE SET NULL,\n"y" TEXT`
+        `CREATE TABLE "x" ("jobId" TEXT REFERENCES "job"("id") ON DELETE CASCADE, "y" TEXT);`
       )
     ).toHaveLength(0);
   });
@@ -51,6 +45,32 @@ describe("noForeignKeyWithoutOnDelete", () => {
   });
 
   it("does not apply to migrations older than the cutoff", () => {
-    expect(scan(OLD, `"jobId" TEXT REFERENCES "job"("id"),`)).toHaveLength(0);
+    expect(
+      scan(OLD, `CREATE TABLE "x" ("jobId" TEXT REFERENCES "job"("id"));`)
+    ).toHaveLength(0);
+  });
+
+  it("accepts a written ON DELETE NO ACTION, with a comment before it", () => {
+    expect(
+      scan(
+        NEW,
+        `CREATE TABLE "x" (\n"jobId" TEXT REFERENCES "job"("id") -- kept\n  ON DELETE NO ACTION\n);`
+      )
+    ).toHaveLength(0);
+  });
+
+  it("does not take the next column's ON DELETE for this one", () => {
+    const v = scan(
+      NEW,
+      `CREATE TABLE "x" (\n"a" TEXT REFERENCES "job"("id"),\n"b" TEXT REFERENCES "job"("id") ON DELETE CASCADE\n);`
+    );
+    expect(v.map((x) => x.line)).toEqual([2]);
+  });
+  it("reads only the foreign keys among a table's constraints", () => {
+    const v = scan(
+      NEW,
+      `CREATE TABLE "x" (\n"id" TEXT PRIMARY KEY,\n"n" INT NOT NULL CHECK ("n" > 0),\n"jobId" TEXT REFERENCES "job"("id")\n);`
+    );
+    expect(v.map((x) => x.line)).toEqual([4]);
   });
 });

@@ -174,6 +174,115 @@ async function f() {
     ).toEqual([]);
   });
 
+  const RESULT_BINDINGS = [
+    [
+      "var",
+      'var result = await client.from("t").select("id");',
+      'var result = await client.from("t")'
+    ],
+    [
+      "a declaration with a type annotation",
+      'const result: PostgrestResponse<{ id: string }> = await client.from("t").select("id");',
+      'const result: PostgrestResponse<{ id: string }> = await client.from("t")'
+    ],
+    [
+      "assignment to an existing variable",
+      'let result; result = await client.from("t").select("id");',
+      'result = await client.from("t")'
+    ],
+    [
+      "assignment at the start of a block",
+      'result = await client.from("t").select("id");',
+      'result = await client.from("t")'
+    ]
+  ];
+
+  const boundResult = (binding: string, rest: string) => `
+async function f(id: string) {
+  ${binding}
+  ${rest}
+}`;
+
+  it.each(RESULT_BINDINGS)(
+    "flags a result bound by %s and read for data with its error never read",
+    (_, binding, snippet) => {
+      expect(scan(boundResult(binding, "return result.data;"))).toEqual([
+        { line: 3, snippet }
+      ]);
+    }
+  );
+
+  it.each(RESULT_BINDINGS)(
+    "passes a result bound by %s once its error is read",
+    (_, binding) => {
+      expect(
+        scan(
+          boundResult(
+            binding,
+            "if (result.error) throw result.error; return result.data;"
+          )
+        )
+      ).toEqual([]);
+    }
+  );
+
+  it("judges a bound result only inside its own block", () => {
+    expect(
+      scan(`
+async function unchecked() {
+  const result = await client.from("job").select("id");
+  return result.data;
+}
+async function checked() {
+  const result = await client.from("job").select("id");
+  if (result.error) throw result.error;
+  return result.data;
+}`)
+    ).toEqual([
+      { line: 3, snippet: 'const result = await client.from("job")' }
+    ]);
+  });
+
+  it("does not take another object's property of the same name for the result", () => {
+    expect(
+      scan(`
+async function f() {
+  const result = await client.from("job").select("id");
+  if (response.result.error) throw response.result.error;
+  return result.data;
+}`)
+    ).toEqual([
+      { line: 3, snippet: 'const result = await client.from("job")' }
+    ]);
+  });
+
+  it.each([
+    [
+      "at the very start of the file",
+      'await client.from("job").delete().eq("id", id);\nconst done = true;',
+      1
+    ],
+    [
+      "at the very end of the file with no semicolon",
+      'const id = "j1";\nawait client.from("job").delete().eq("id", id)',
+      2
+    ],
+    [
+      "after else",
+      'if (keep) log(id);\nelse await client.from("job").delete().eq("id", id);',
+      2
+    ],
+    [
+      "as the body of an if without braces",
+      'if (stale) await client.from("job").delete().eq("id", id);',
+      1
+    ]
+  ])("flags an unbound write %s", (_, contents, line) => {
+    expect(scan(contents)).toEqual([
+      { line, snippet: 'await client.from("job").delete(' }
+    ]);
+  });
+
   it("flags .data read straight off an awaited call", () => {
     expect(
       scan(
@@ -189,12 +298,49 @@ async function f() {
   });
 
   it.each([
-    'const { data } = await client.storage.from("private").download(path);',
-    'const { data } = await client.functions.invoke("create", { body });',
-    'const { count } = await carbon?.from("job").select("id", { count: "exact", head: true });',
-    "const { data } = await (serviceRole as any).from(table).select();"
-  ])("flags every supabase-js request shape: %s", (line) => {
-    expect(scan(line)).toHaveLength(1);
+    [
+      'const { data } = await client.storage.from("private").download(path);',
+      'const { data } = await client.storage.from("private")'
+    ],
+    [
+      'const { data } = await client.functions.invoke("create", { body });',
+      'const { data } = await client.functions.invoke("create", { body })'
+    ],
+    [
+      'const { count } = await carbon?.from("job").select("id", { count: "exact", head: true });',
+      'const { count } = await carbon?.from("job")'
+    ],
+    [
+      "const { data } = await (serviceRole as any).from(table).select();",
+      "const { data } = await (serviceRole as any).from(table)"
+    ],
+    [
+      'const { data } = await client!.from("job").select("id");',
+      'const { data } = await client!.from("job")'
+    ],
+    [
+      'const { data } = await client.functions.invoke<Created>("create");',
+      'const { data } = await client.functions.invoke<Created>("create")'
+    ],
+    [
+      'const { data } = await client.rpc<Row[]>("list_rows");',
+      'const { data } = await client.rpc<Row[]>("list_rows")'
+    ]
+  ])("flags every supabase-js request shape: %s", (contents, snippet) => {
+    expect(scan(contents)).toEqual([{ line: 1, snippet }]);
+  });
+
+  it("ends the snippet of a request with a type argument at that request", () => {
+    expect(
+      scan(`const { data } = await client.rpc<Row[]>("list_rows");
+const { data: jobs } = await client.from("job").select("id");`)
+    ).toEqual([
+      {
+        line: 1,
+        snippet: 'const { data } = await client.rpc<Row[]>("list_rows")'
+      },
+      { line: 2, snippet: 'const { data: jobs } = await client.from("job")' }
+    ]);
   });
 
   it.each([
@@ -212,6 +358,14 @@ async function f() {
     [
       "a write in a concise arrow body",
       'onSave(async () => await carbon.from("t").update({ x: 1 }));'
+    ],
+    [
+      "a property assigned a result beside a local of the same name",
+      'let row: Row;\ncache.row = await client.from("t").select("id");\nreturn row.data;'
+    ],
+    [
+      "an awaited array literal",
+      'const results = await [client.from("t").select("id")];'
     ],
     [
       "the pattern inside a comment or string",

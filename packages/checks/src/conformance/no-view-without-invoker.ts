@@ -2,39 +2,34 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Node, RangeVar } from "libpg-query";
 import type { ConformanceCheck, Violation } from "../check";
-import { blankSqlComments } from "../sources/comments";
+import { sqlNodes } from "../sources/sql";
 
-/**
- * Matches a `CREATE [OR REPLACE] VIEW` header up to `AS`, capturing an optional
- * `WITH (...)` option list. `CREATE MATERIALIZED VIEW` never matches, because
- * `MATERIALIZED` is not among the tokens allowed between `CREATE` and `VIEW`:
- * a materialized view cannot run as its caller at all, so the clause does not
- * apply to it (it must have SELECT revoked from anon and authenticated
- * instead).
- *
- * Every view in "public" is a PostgREST endpoint reachable with the anon key the
- * apps publish. Without `security_invoker` a view runs as its owner and the RLS
- * on the tables underneath never sees the caller — `openJobMaterialLines`
- * served every company's rows to anyone for months, after four migrations
- * recreated it from a copy that lacked the clause.
- *
- * Any mention of `security_invoker` in the option list passes, including
- * `security_invoker = false`: the rule is that a view states how it runs, so an
- * owner-rights view is a visible decision rather than an omission.
- */
-const CREATE_VIEW =
-  /CREATE\s+(?:OR\s+REPLACE\s+)?(?:TEMP(?:ORARY)?\s+)?(?:RECURSIVE\s+)?VIEW\s+(?:IF\s+NOT\s+EXISTS\s+)?((?:"[^"]+"|\w+)(?:\s*\.\s*(?:"[^"]+"|\w+))?)\s*(?:\(\s*[^)]*\))?\s*(WITH\s*\([^)]*\))?\s*AS\b/gi;
+// Every view in "public" is a PostgREST endpoint reachable with the anon key the
+// apps publish. Without `security_invoker` a view runs as its owner and the RLS
+// on the tables underneath never sees the caller: `openJobMaterialLines`
+// served every company's rows to anyone for months, after four migrations
+// recreated it from a copy that lacked the clause.
+//
+// Any `security_invoker` option passes, `security_invoker = false` included:
+// the rule is that a view states how it runs, so an owner-rights view is a
+// visible decision rather than an omission. A materialized view is not a
+// `CREATE VIEW` statement and cannot run as its caller at all (it must have
+// SELECT revoked from anon and authenticated instead).
 
-/**
- * `ALTER VIEW … RESET (security_invoker)` puts a view back on the owner-rights
- * default just as silently as a recreation without the clause does.
- */
-const RESET_INVOKER =
-  /ALTER\s+VIEW\s+(?:IF\s+EXISTS\s+)?((?:"[^"]+"|\w+)(?:\s*\.\s*(?:"[^"]+"|\w+))?)\s+RESET\s*\([^)]*security_invoker[^)]*\)/gi;
+function namesInvoker(options: Node[] | undefined): boolean {
+  return (options ?? []).some(
+    (option) =>
+      "DefElem" in option && option.DefElem.defname === "security_invoker"
+  );
+}
 
-function lineOf(sql: string, index: number | undefined): number {
-  return sql.slice(0, index).split("\n").length;
+function quoted(view: RangeVar | undefined): string {
+  return [view?.schemaname, view?.relname]
+    .filter((part) => part !== undefined)
+    .map((part) => `"${part}"`)
+    .join(".");
 }
 
 export const noViewWithoutInvoker: ConformanceCheck = {
@@ -48,24 +43,39 @@ export const noViewWithoutInvoker: ConformanceCheck = {
   },
   scan(file, contents) {
     const violations: Violation[] = [];
-    const sql = blankSqlComments(contents);
-    for (const m of sql.matchAll(CREATE_VIEW)) {
-      const options = m[2] ?? "";
-      if (/security_invoker/i.test(options)) continue;
-      violations.push({
-        file,
-        line: lineOf(sql, m.index),
-        snippet: m[0].replace(/\s+/g, " "),
-        message: `View ${m[1]} has no security_invoker, so it runs as its owner: the RLS on the tables underneath never applies, and PostgREST serves every company's rows to anyone holding the anon key. Add WITH (security_invoker = true).`
-      });
-    }
-    for (const m of sql.matchAll(RESET_INVOKER)) {
-      violations.push({
-        file,
-        line: lineOf(sql, m.index),
-        snippet: m[0].replace(/\s+/g, " "),
-        message: `RESET (security_invoker) puts view ${m[1]} back on owner rights, bypassing RLS for every PostgREST caller. Use SET (security_invoker = true), or state security_invoker = false if owner rights are intended.`
-      });
+    for (const { node, fragment } of sqlNodes(contents)) {
+      if ("ViewStmt" in node) {
+        const { view, options } = node.ViewStmt;
+        if (namesInvoker(options)) continue;
+        violations.push({
+          file,
+          line: fragment.lineAt(view?.location),
+          snippet: `CREATE VIEW ${quoted(view)}`,
+          message: `View ${quoted(view)} has no security_invoker, so it runs as its owner: the RLS on the tables underneath never applies, and PostgREST serves every company's rows to anyone holding the anon key. Add WITH (security_invoker = true).`
+        });
+      }
+      // `ALTER VIEW … RESET (security_invoker)` puts a view back on the
+      // owner-rights default as silently as recreating it without the clause.
+      if (
+        "AlterTableStmt" in node &&
+        node.AlterTableStmt.objtype === "OBJECT_VIEW"
+      ) {
+        const { relation, cmds } = node.AlterTableStmt;
+        for (const cmd of cmds ?? []) {
+          if (!("AlterTableCmd" in cmd)) continue;
+          const { subtype, def } = cmd.AlterTableCmd;
+          if (subtype !== "AT_ResetRelOptions" || !def || !("List" in def)) {
+            continue;
+          }
+          if (!namesInvoker(def.List.items)) continue;
+          violations.push({
+            file,
+            line: fragment.lineAt(relation?.location),
+            snippet: `ALTER VIEW ${quoted(relation)} RESET (security_invoker)`,
+            message: `RESET (security_invoker) puts view ${quoted(relation)} back on owner rights, bypassing RLS for every PostgREST caller. Use SET (security_invoker = true), or state security_invoker = false if owner rights are intended.`
+          });
+        }
+      }
     }
     return violations;
   }

@@ -65,6 +65,17 @@ writeFileSync(join(dir, "types.ts"), "x");
 expect(readFileSync(join(dir, "types.ts"), "utf8")).toBe("x");`
     ],
     [
+      "a fixture whose name holds a bracket, in a file that names a source file",
+      `const data = readFileSync(join(dir, "export (1.json"), "utf8");
+expect(outputName(data)).toBe("types.ts");`
+    ],
+    [
+      "that fixture's path held in a constant",
+      `const FIXTURE = join(dir, "export (1.json");
+const expected = "types.ts";
+const data = readFileSync(FIXTURE, "utf8");`
+    ],
+    [
       "a module imported as code",
       `const modules = import.meta.glob("../app/modules/*/*.service.ts");`
     ],

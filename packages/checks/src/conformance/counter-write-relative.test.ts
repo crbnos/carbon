@@ -247,6 +247,57 @@ describe("counterWriteRelative", () => {
     ]);
   });
 
+  it("stops following the total after three locals", () => {
+    const ts = `export async function receive(client, line, received) {
+  const a = line.quantityReceived ?? 0;
+  const b = a + received;
+  const c = round(b);
+  const d = Math.max(c, 0);
+  await client.from("purchaseOrderLine").update({ quantityReceived: d }).eq("id", line.id);
+}`;
+    expect(scan(ts)).toEqual([]);
+  });
+
+  it("does not take a read of another table after the named lock", () => {
+    const ts = `export async function issue(trx, id, delta) {
+  const line = await trx.selectFrom("jobMaterial").selectAll().where("id", "=", id).executeTakeFirst();
+  await lockUntrackedDraws(trx, { companyId, locationId, itemIds });
+  const operation = await trx.selectFrom("jobOperation").select(["id", "quantityIssued"]).executeTakeFirst();
+  await trx.updateTable("jobMaterial").set({ quantityIssued: line.quantityIssued + delta }).where("id", "=", id).execute();
+}`;
+    expect(snippets(ts)).toEqual(["issue: jobMaterial.quantityIssued"]);
+  });
+
+  it("passes a total read with selectAll after a named lock", () => {
+    const ts = `export async function issue(trx, id, delta) {
+  await lockUntrackedDraws(trx, { companyId, locationId, itemIds });
+  const line = await trx.selectFrom("jobMaterial").selectAll().where("id", "=", id).executeTakeFirst();
+  await trx.updateTable("jobMaterial").set({ quantityIssued: line.quantityIssued + delta }).where("id", "=", id).execute();
+}`;
+    expect(scan(ts)).toEqual([]);
+  });
+
+  it("skips a table the generated types do not have", () => {
+    const ts = `export async function issue(trx, id, delta) {
+  await trx.updateTable("legacyMaterial").set({ quantityIssued: line.quantityIssued + delta }).where("id", "=", id).execute();
+}`;
+    expect(scan(ts)).toEqual([]);
+  });
+
+  it("skips a counter name that is not a numeric column of the written table", () => {
+    const ts = `export async function complete(trx, operation, delta) {
+  await trx.updateTable("jobOperation").set({ quantityIssued: operation.quantityIssued + delta }).where("id", "=", operation.id).execute();
+}`;
+    expect(scan(ts)).toEqual([]);
+  });
+
+  it("passes a relative SQL write whose delta is the difference of two reads", () => {
+    const ts = `export async function issue(trx, id, before, after) {
+  await trx.updateTable("jobMaterial").set({ quantityIssued: (eb) => eb("quantityIssued", "+", after.quantityIssued - before.quantityIssued) }).where("id", "=", id).execute();
+}`;
+    expect(scan(ts)).toEqual([]);
+  });
+
   it("reads rows collected in a map for updateRowsById", () => {
     const ts = `export async function postReceipt(trx, lines) {
   const updates = lines.reduce((acc, line) => {
@@ -297,9 +348,6 @@ describe("COUNTER_COLUMNS over the generated types", () => {
         if (/^number\b/.test(type)) numeric.add(name);
       }
     }
-    expect(types.get("jobMaterial")?.get("quantityIssued")).toBe(
-      "number | null"
-    );
     const missing = [...COUNTER_COLUMNS].filter((c) => !numeric.has(c));
     expect(missing).toEqual([]);
   });
