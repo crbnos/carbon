@@ -395,7 +395,8 @@ export const migrationReplaySafe: ConformanceCheck = {
     deprecates: 'CREATE TABLE "x" / ADD COLUMN "y" / DROP CONSTRAINT "z"',
     replacedBy:
       'CREATE TABLE IF NOT EXISTS "x" / ADD COLUMN IF NOT EXISTS "y" / DROP CONSTRAINT IF EXISTS "z"',
-    since: `after ${LAST_UNCHECKED}_job-wip-balance.sql`
+    since: `after ${LAST_UNCHECKED}_job-wip-balance.sql`,
+    incidents: ["f47e4a25bf", "cb75027fc2"]
   },
   scan(file, contents) {
     const timestamp = /^(\d{14})_/.exec(file)?.[1];
