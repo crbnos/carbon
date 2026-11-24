@@ -636,7 +636,7 @@ triggers: ["quantityNonNettable","effectiveNettable","refresh_storage_unit_netta
 
 **Applies to:** `packages/database/src/event-system/handlers/`, any derived total over `itemLedger` keyed on a `storageUnit` property.
 
-## A foreign key to `account` must be RESTRICT, and a new one needs a merge policy
+## A soft reference to `account` needs a merge policy too
 
 ```scope
 id: a-foreign-key-to-account-must-be-restrict-and-a-new-one-need
@@ -648,7 +648,7 @@ triggers: ["REFERENCES \"account\"","REFERENCE_POLICY","applyAccountImport","rep
 
 **Problem:** `journalLine.accountId` and the order, invoice and supplier quote line FKs were `ON DELETE SET NULL`. Deleting an account with Draft or Provisional lines succeeded and silently emptied the lines' account; Posted lines only refused by accident, through the immutability trigger. The import also has to know, for every column that names an account, whether a merge may move it.
 
-**Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-status`, `repoint-if-parent-status` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `softReferenceBranches` (`packages/database/src/account-import-reads.ts`) and the apply's `repointReferences` (`accounting.service.ts`). (Enforced by `account-fk-restrict` for the RESTRICT half.)
+**Rule:** A column that names an account without a foreign key (a soft reference) goes in `softReferenceBranches` (`packages/database/src/account-import-reads.ts`) and the apply's `repointReferences` (`accounting.service.ts`). No check sees a soft reference, so the import silently leaves it pointing at a merged-away account. The rest is in the `account-fk-restrict` check (`ON DELETE RESTRICT`) and the `account-fk-classified` check (a `REFERENCE_POLICY` class for each foreign key).
 
 **Applies to:** migrations that add a column referencing `account`; `packages/database/src/account-import.ts`; `applyAccountImport` (`apps/erp/app/modules/accounting/accounting.service.ts`) and its live test `apps/erp/test/database/apply-account-import.test.ts`.
 
