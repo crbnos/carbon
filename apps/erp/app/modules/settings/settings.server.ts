@@ -25,7 +25,8 @@ import {
   themeSchema,
   unknownVariables,
   validateDocumentEdit,
-  validateTemplateText
+  validateTemplateText,
+  withoutDocumentValues
 } from "@carbon/documents/template";
 import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { integrations as availableIntegrations } from "@carbon/ee";
@@ -118,7 +119,7 @@ import {
 } from "~/modules/shared/shared.service";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
-import { fromServerFn } from "../shared/shared.service";
+import { fromServerFn, getCustomFieldsSchemas } from "../shared/shared.service";
 import { grantsSchema } from "../users/users.models";
 import {
   accountMappingEntrySchema,
@@ -2066,21 +2067,34 @@ export const getDocumentEditor = defineServiceFn({
       return ctx.error("notFound", "The document could not be found");
     }
     const termsField = DOCUMENT_TERMS_FIELD[documentType];
-    const [template, edit, terms, partNumberLines] = await Promise.all([
-      getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
-      getDocumentEdit(client, {
-        companyId: ctx.company.id,
-        documentType,
-        documentId
-      }),
-      termsField ? service.getTerms(client, ctx.company.id) : null,
-      service.getDocumentPartNumberLines(
-        client,
-        ctx.company.id,
-        documentType,
-        documentId
-      )
-    ]);
+    const [template, edit, terms, partNumberLines, customFieldSchemas] =
+      await Promise.all([
+        getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
+        getDocumentEdit(client, {
+          companyId: ctx.company.id,
+          documentType,
+          documentId
+        }),
+        termsField ? service.getTerms(client, ctx.company.id) : null,
+        service.getDocumentPartNumberLines(
+          client,
+          ctx.company.id,
+          documentType,
+          documentId
+        ),
+        // A custom field block's panel names the field it prints.
+        getCustomFieldsSchemas(client, {
+          companyId: ctx.company.id,
+          table: documentType
+        })
+      ]);
+    if (customFieldSchemas.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the custom fields",
+        customFieldSchemas.error
+      );
+    }
     if (partNumberLines.error) {
       return ctx.error(
         "internal",
@@ -2106,7 +2120,11 @@ export const getDocumentEditor = defineServiceFn({
       template,
       edit,
       termsSeed,
-      sections: Object.values(sections)
+      sections: Object.values(sections),
+      customFields: (
+        (customFieldSchemas.data.find((t) => t.table === documentType)
+          ?.fields ?? []) as { id: string; name: string }[]
+      ).map((f) => ({ id: f.id, name: f.name }))
     };
   }
 });
@@ -2221,6 +2239,7 @@ export const saveDocumentTemplate = defineServiceFn({
   async run(ctx, template) {
     // Changed values belong to one document, never to a company template.
     template.settings.valueEdits = undefined;
+    template.blocks = withoutDocumentValues(template.blocks as DocumentBlock[]);
     const { headerConfig, headerSectionId } = template;
 
     const problems = validateTemplateText({

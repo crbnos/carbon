@@ -17475,6 +17475,10 @@ msgstr "空のままにするか、0を入力して、MRPが計画するすべ�
 msgid "Leave this page"
 msgstr "このページを離れる"
 
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "カスタムフィールド「{0}」を印刷するには、値を空のままにします。"
+
 msgid "Left item"
 msgstr "左側の項目"
 
@@ -32325,6 +32329,9 @@ msgstr "ワークフロー通知が指す レコード。ID とそのタイプ�
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "支払またはメモを請求書に適用し、適用額、値引額、償却額を含むレコード。"
+
+msgid "The record's value"
+msgstr "レコードの値"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "追跡対象エンティティの記録された系譜 — どのインプットがどのアウトプットを生成するために消費されたか、入荷から出荷まで。"

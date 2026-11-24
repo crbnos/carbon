@@ -17475,6 +17475,10 @@ msgstr "MRP द्वारा योजनाबद्ध सब कुछ द�
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
 
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "“{0}” कस्टम फ़ील्ड प्रिंट करने के लिए मान खाली छोड़ें।"
+
 msgid "Left item"
 msgstr "बाईं ओर की वस्तु"
 
@@ -32325,6 +32329,9 @@ msgstr "रिकॉर्ड जिस पर एक वर्कफ़्ल�
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "रिकॉर्ड जो एक चालान पर भुगतान या नोट को लागू करता है, लागू, छूट, और बट्टे खाते की राशि को ले जाता है।"
+
+msgid "The record's value"
+msgstr "रिकॉर्ड का मान"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "ट्रैक किए गए इकाइयों का रिकॉर्ड किया गया वंशावली - कौन से इनपुट का उपभोग किया गया था कौन से आउटपुट का उत्पादन करने के लिए, रसीद से शिपमेंट।"

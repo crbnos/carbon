@@ -17475,6 +17475,10 @@ msgstr "留空或输入 0 以显示 MRP 计划的所有内容。"
 msgid "Leave this page"
 msgstr "离开此页面"
 
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "将值留空以打印“{0}”自定义字段。"
+
 msgid "Left item"
 msgstr "左项"
 
@@ -32325,6 +32329,9 @@ msgstr "工作流通知指向的记录，命名为 id 及其类型；将其留�
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "将付款或备忘录应用于发票的记录，包含应用、折扣和核销金额。"
+
+msgid "The record's value"
+msgstr "记录的值"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "已跟踪实体的记录谱系——哪些输入被消耗以生产哪些输出,从收货到发货。"

@@ -17475,6 +17475,10 @@ msgstr "Оставьте пусто или введите 0, чтобы пока
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
 
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "Оставьте поле «Значение» пустым, чтобы напечатать настраиваемое поле «{0}»."
+
 msgid "Left item"
 msgstr "Левый элемент"
 
@@ -32325,6 +32329,9 @@ msgstr "Запись, на которую указывает уведомлен�
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "Запись, которая применяет платеж или памятку к счет-фактуре, содержащая применяемые суммы, скидки и списания."
+
+msgid "The record's value"
+msgstr "Значение записи"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "Записанная генеалогия отслеживаемых объектов — какие входные данные были израсходованы для производства каких выходных данных, от поступления через отгрузку."

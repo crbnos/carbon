@@ -17475,6 +17475,10 @@ msgstr "Leave empty, or enter 0, to show everything MRP plans."
 msgid "Leave this page"
 msgstr "Leave this page"
 
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "Leave Value empty to print the “{0}” custom field."
+
 msgid "Left item"
 msgstr "Left item"
 
@@ -32325,6 +32329,9 @@ msgstr "The record a workflow notification points at, named as an id plus its ki
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
+
+msgid "The record's value"
+msgstr "The record's value"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
