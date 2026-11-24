@@ -7,7 +7,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Check the Task Router below before research or coding; a single task may match multiple rows — read all relevant guides.
 - Use the closest package/module `AGENTS.md` for local architecture, imports, and validation commands.
 - Follow `.claude/rules/` for subsystem-specific conventions (auto-loaded via `paths:` frontmatter).
-- Run `pnpm brief <files>` before you edit a file. It lists the checks, rules and lessons (`.ai/lessons/`) that apply.
+- Run `pnpm brief <files>` before you edit a file. It lists the checks, rules and lessons (`.ai/lessons/`) that apply. Claude's PreToolUse hook also runs it on each edit: it refuses an edit that breaks a check, but the rest of its briefing arrives after the write, so brief first.
 - After the user corrects you, run `/learn`.
 - Answer `.claude/rules/write-time-checklist.md` before writing each file and again over the diff before committing. `/execute`, `/fix` and `/self-review` run it.
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.

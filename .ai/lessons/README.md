@@ -64,6 +64,15 @@ triggers: ["purchaseInvoices", "salesInvoices"]
 trigger occurs in the file or in the planned edit. It shows the title and the
 **Rule** paragraph. Each lesson has at least one path or one trigger.
 
+## When the briefing runs
+
+`pnpm brief` searches for triggers at two moments only:
+
+1. When an agent runs `pnpm brief <files>`, usually before it edits. It searches the files as they are now.
+2. When Claude calls Edit, Write or MultiEdit on a file in the repository. The PreToolUse hook searches the file as it would be after the edit, plus the edit's own text. A new check violation refuses the edit before the write. The lessons and rules in scope arrive with the tool result, after the write, each once per session.
+
+Nothing searches while an agent only reads files or runs commands. A trigger is plain, case-sensitive text, so it also matches inside a comment or a string.
+
 ## How a lesson is added and removed
 
 1. `/learn` records a mistake. It chooses a check if the mistake shows in the
