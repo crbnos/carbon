@@ -12,10 +12,11 @@ SET LOCAL "storage.allow_delete_query" = 'true';
 DO $proof$
 DECLARE
   group_a text; company_a text; company_b text;
-  admin text := gen_random_uuid()::text;     -- users_update in A
+  admin text := gen_random_uuid()::text;     -- people_update and users_update in A
   person text := gen_random_uuid()::text;    -- employee of A
   plain text := gen_random_uuid()::text;     -- employee of A, no users_update
-  outsider text := gen_random_uuid()::text;  -- users_update in B only
+  outsider text := gen_random_uuid()::text;  -- people_update and users_update in B only
+  usersonly text := gen_random_uuid()::text; -- users_update in A, no people_update
   stranger text := gen_random_uuid()::text;  -- employee of B only
   portal text := gen_random_uuid()::text;    -- customer account in A
   n int;
@@ -26,15 +27,17 @@ BEGIN
   INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
     VALUES ('Avatars B', group_a, 'USD', 'America/New_York') RETURNING id INTO company_b;
   INSERT INTO "user" (id, email)
-    SELECT u, u || '@avatars.invalid' FROM unnest(ARRAY[admin, person, plain, outsider, stranger, portal]) u;
+    SELECT u, u || '@avatars.invalid' FROM unnest(ARRAY[admin, person, plain, outsider, stranger, portal, usersonly]) u;
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
     (admin, company_a, 'employee'), (person, company_a, 'employee'), (plain, company_a, 'employee'),
+    (usersonly, company_a, 'employee'),
     (outsider, company_b, 'employee'), (stranger, company_b, 'employee'),
     (portal, company_a, 'customer');
   INSERT INTO "userPermission" (id, permissions) VALUES
-    (admin, jsonb_build_object('users_update', jsonb_build_array(company_a))),
+    (admin, jsonb_build_object('people_update', jsonb_build_array(company_a), 'users_update', jsonb_build_array(company_a))),
     (plain, '{}'::jsonb),
-    (outsider, jsonb_build_object('users_update', jsonb_build_array(company_b)));
+    (outsider, jsonb_build_object('people_update', jsonb_build_array(company_b), 'users_update', jsonb_build_array(company_b))),
+    (usersonly, jsonb_build_object('users_update', jsonb_build_array(company_a)));
   INSERT INTO storage.objects (bucket_id, name) VALUES
     ('avatars', person || '.png'),
     ('avatars', stranger || '.webp');
@@ -42,7 +45,7 @@ BEGIN
   PERFORM set_config('request.path', '/test', true);
   SET LOCAL ROLE authenticated;
 
-  -- users_update in the person's company: upload, replace, remove.
+  -- people_update and users_update in the person's company: upload, replace, remove.
   PERFORM set_config('request.jwt.claims', jsonb_build_object('sub', admin, 'role', 'authenticated')::text, true);
   INSERT INTO storage.objects (bucket_id, name) VALUES ('avatars', person || '.webp');
   UPDATE storage.objects SET metadata = '{"size": 1}'::jsonb WHERE bucket_id = 'avatars' AND name = person || '.webp';
@@ -110,13 +113,25 @@ BEGIN
   RESET ROLE;
   SET LOCAL ROLE authenticated;
 
-  -- users_update in another company only.
+  -- people_update and users_update in another company only.
   PERFORM set_config('request.jwt.claims', jsonb_build_object('sub', outsider, 'role', 'authenticated')::text, true);
   BEGIN
     INSERT INTO storage.objects (bucket_id, name) VALUES ('avatars', person || '.jpg');
     RAISE EXCEPTION 'users_update in another company uploaded a photo for this company''s user';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
+
+  -- users_update without people_update: the save would be refused, so the file
+  -- must not change either.
+  PERFORM set_config('request.jwt.claims', jsonb_build_object('sub', usersonly, 'role', 'authenticated')::text, true);
+  BEGIN
+    INSERT INTO storage.objects (bucket_id, name) VALUES ('avatars', person || '.jpg');
+    RAISE EXCEPTION 'users_update without people_update uploaded a photo for a coworker';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE storage.objects SET metadata = '{"size": 2}'::jsonb WHERE bucket_id = 'avatars' AND name = person || '.webp';
+  GET DIAGNOSTICS n = ROW_COUNT;
+  ASSERT n = 0, 'users_update without people_update cannot replace a coworker''s photo';
 
   -- An employee without users_update.
   PERFORM set_config('request.jwt.claims', jsonb_build_object('sub', plain, 'role', 'authenticated')::text, true);
@@ -136,7 +151,7 @@ BEGIN
   ASSERT n = 1, 'an employee still removes their own photo';
 
   RESET ROLE;
-  RAISE NOTICE 'PASS users_update holders manage the avatar photos of users in their companies only';
+  RAISE NOTICE 'PASS people and users editors manage the avatar photos of employees in their companies only';
 END
 $proof$;
 
