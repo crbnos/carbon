@@ -4406,6 +4406,16 @@ export async function shortClosePurchaseOrderLine(
   | { found: true; refusal: null; status: PurchaseOrderStatus }
 > {
   return db.transaction().execute(async (trx) => {
+    // The order before the line, as every writer of the line's counters
+    // takes them (`lockOrderLines`); the join below would lock them in
+    // either order.
+    await trx
+      .selectFrom("purchaseOrder")
+      .select("id")
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
     const line = await trx
       .selectFrom("purchaseOrderLine")
       .innerJoin("purchaseOrder", (join) =>
@@ -9614,6 +9624,15 @@ export async function restorePurchaseOrderReceived(
   }
 ): Promise<void> {
   await withTransaction(db, async (trx) => {
+    // The order, then its lines in id order: the order every writer of the
+    // lines' counters takes them in (`lockOrderLines`).
+    await trx
+      .selectFrom("purchaseOrder")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("id", "=", purchaseOrderId)
+      .forUpdate()
+      .execute();
     const [receiptLines, orderLines] = await Promise.all([
       trx
         .selectFrom("receiptLine")
@@ -9632,6 +9651,7 @@ export async function restorePurchaseOrderReceived(
         ])
         .where("companyId", "=", companyId)
         .where("purchaseOrderId", "=", purchaseOrderId)
+        .orderBy("id")
         .forUpdate()
         .execute()
     ]);
