@@ -133,14 +133,16 @@
       "packages/ee/src/accounting/providers/quickbooks-online/provider.ts#toQboRequestId": "3698af9411f7b7c9",
       "packages/ee/src/accounting/providers/xero/provider.ts#\"Idempotency-Key\": key": "c853136fa365642d",
       "packages/ee/src/accounting/providers/xero/entities/journal-entry.ts#getXeroJournalNarrations": "e5392ee82123b05a",
-      "packages/ee/src/accounting/providers/xero/entities/journal-entry.ts#this.xeroProvider.recoverManualJournal(": "0c9ac9b6555095fd",
+      "packages/ee/src/accounting/providers/xero/entities/journal-entry.ts#createManualJournalOnce": "738580a175e8dd0b",
       "packages/ee/src/accounting/providers/xero/entities/invoice.ts#this.xeroProvider.recoverInvoice({": "1953ef8b4cbe6720",
+      "packages/ee/src/accounting/providers/xero/entities/invoice.ts#if (recovered) return recovered;": "e2902effd60893a8",
       "packages/ee/src/accounting/providers/xero/entities/bill.ts#this.xeroProvider.recoverInvoice({": "1953ef8b4cbe6720",
+      "packages/ee/src/accounting/providers/xero/entities/bill.ts#if (recovered) return recovered;": "e2902effd60893a8",
       "packages/ee/src/accounting/providers/xero/entities/payment.ts#this.xeroProvider.recoverPayment(": "d97a8e3cdc0ba48b",
       "packages/jobs/src/inngest/functions/integrations/accounting-sync-operations.ts#drainSyncOperations": "70776bd61839e160",
       "packages/jobs/src/inngest/functions/integrations/accounting-consolidation.ts#readConsolidationPush": "23daf1f85605914b",
       "packages/jobs/src/inngest/functions/integrations/accounting-consolidation.ts#consolidateIntegration": "3949028d97ca3002"
     },
-    "confirmedAt": "3c4f9c30ae"
+    "confirmedAt": "c6c9e7a5ce"
   }
 }
