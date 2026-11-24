@@ -82,6 +82,21 @@
         "createSalesReturnOrderCredit"
       ]
     },
-    "databaseTests": ["test/database/order-line-counters-concurrency.test.ts"]
+    "databaseTests": ["test/database/order-line-counters-concurrency.test.ts"],
+    "fingerprints": {
+      "apps/erp/app/modules/shared/shared.service.ts#ORDER_LINE_COUNTERS": "edee57e07e241c69",
+      "apps/erp/app/modules/shared/shared.service.ts#lockOrderLines": "c0a899888b0dbeb1",
+      "apps/erp/app/modules/shared/shared.service.ts#lockOrderLinesAsRead": "9928ea2cbbfae3cc",
+      "apps/erp/app/modules/inventory/inventory.service.ts#lockOrderLines(": "7cd0c33b7e770a37",
+      "apps/erp/app/modules/inventory/inventory.service.ts#changed while this": "870f3a2132585155",
+      "apps/erp/app/modules/invoicing/invoicing.service.ts#lockOrderLines(": "cad2c89a3a6fbd65",
+      "apps/erp/app/modules/invoicing/invoicing.service.ts#changed while this": "819eae0c4bba7918",
+      "apps/erp/app/modules/invoicing/invoicing.service.ts#restoreSalesOrderInvoiced": "68dd83e91d9ccd02",
+      "apps/erp/app/modules/invoicing/invoicing.service.ts#restorePurchaseOrderInvoiced": "cb953901309324d6",
+      "apps/erp/app/modules/purchasing/purchasing.service.ts#restorePurchaseOrderReceived": "5dab48f98aa953d5",
+      "apps/erp/app/modules/purchasing/purchasing.service.ts#shortClosePurchaseOrderLine": "3be8868893196d68",
+      "apps/erp/app/modules/sales/sales.service.ts#createSalesReturnOrderCredit": "e5d583519a0d4a7c"
+    },
+    "confirmedAt": "ff4342721c"
   }
 }
