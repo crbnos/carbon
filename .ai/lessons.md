@@ -5273,3 +5273,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## Text before an element inside an `inline-flex` box loses its trailing space
+
+**Context:** The timecard badge "Clocked in since <time>" renders `<Trans>Clocked in since{" "}<DateTime /></Trans>` straight inside `Badge` (`packages/react/src/Badge.tsx`, `inline-flex`). The first diagnosis blamed Lingui for dropping the `{" "}`.
+
+**Problem:** Lingui keeps the space (the msgid is "Clocked in since <0/>"). In a flex container each run of text between element children becomes its own anonymous flex item, and the white space at the end of that item collapses, so the badge read "Clocked in since7:38 AM". A `gap` on the container hides it.
+
+**Rule:** Inside a flex container (`Badge` and other `inline-flex` components), wrap text that sits next to an element (a `<Trans>` with an element placeholder, text plus `<DateTime>`) in one `<span>`, so it lays out as one inline run. Check with `el.innerText` in the browser: it follows the layout, while `textContent` still holds the space.
+
+**Applies to:** Any mixed text and element children rendered directly in a flex container.

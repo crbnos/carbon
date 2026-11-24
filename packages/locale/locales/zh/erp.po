@@ -24062,6 +24062,9 @@ msgstr "项目控制"
 msgid "Project element"
 msgstr "项目要素"
 
+msgid "Project Element"
+msgstr "项目要素"
+
 msgid "Project elements"
 msgstr "项目要素"
 

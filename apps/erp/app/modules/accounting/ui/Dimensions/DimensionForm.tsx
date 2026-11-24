@@ -24,29 +24,12 @@ import {
   dimensionEntityTypes,
   dimensionValidator
 } from "../../accounting.models";
+import { dimensionEntityTypeLabels } from "./entityTypeLabels";
 
 type DimensionFormProps = {
   initialValues: z.infer<typeof dimensionValidator>;
   open?: boolean;
   onClose: () => void;
-};
-
-const entityTypeLabels: Record<string, string> = {
-  Custom: "Custom",
-  Location: "Location",
-  Item: "Item",
-  ItemPostingGroup: "Item Group",
-  Supplier: "Supplier",
-  SupplierType: "Supplier Type",
-  Customer: "Customer",
-  CustomerType: "Customer Type",
-  Department: "Department",
-  Employee: "Employee",
-  FixedAssetClass: "Asset Class",
-  CostCenter: "Cost Center",
-  WorkCenter: "Work Center",
-  Process: "Process",
-  ScrapReason: "Scrap Reason"
 };
 
 const DimensionForm = ({
@@ -72,7 +55,7 @@ const DimensionForm = ({
     label: (
       <HStack className="w-full">
         <DimensionEntityTypeIcon entityType={et} className="w-4 h-4 mr-2" />
-        {entityTypeLabels[et]}
+        {t(dimensionEntityTypeLabels[et])}
       </HStack>
     )
   }));
