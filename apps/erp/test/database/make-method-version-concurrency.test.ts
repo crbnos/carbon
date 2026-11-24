@@ -31,6 +31,12 @@ import {
 } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 import { methodImportFixture } from "./fixtures/method-import";
+import {
+  deadlocked,
+  race,
+  raceRounds,
+  raceTimeout
+} from "./fixtures/race";
 
 function signal() {
   let resolve!: () => void;
@@ -507,4 +513,79 @@ databaseTest(
       await f.cleanup();
     }
   }
+);
+
+const VERSION_ROUNDS = raceRounds(6);
+
+// Each round adds two Draft versions to the assembly, then activates both and
+// imports a BOM line into both at once. Earlier rounds' versions stay, so an
+// activation also archives whichever version the round before left Active.
+databaseTest(
+  "two activations and a method import into the same versions at once leave at most one version Active",
+  async () => {
+    const f = await methodImportFixture();
+    try {
+      const assemblyId = f.itemId("ASSY");
+      await f.db
+        .updateTable("makeMethod")
+        .set({ status: "Active" })
+        .where("id", "=", await f.methodOf("ASSY"))
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await race({
+        rounds: VERSION_ROUNDS,
+        setup: async (round) => {
+          const versions = [2 * round, 2 * round + 1];
+          const drafts = await f.db
+            .insertInto("makeMethod")
+            .values(
+              versions.map((version) => ({
+                itemId: assemblyId,
+                version,
+                status: "Draft" as const,
+                companyId: f.companyId,
+                createdBy: USER
+              }))
+            )
+            .returning("id")
+            .execute();
+          return { versions, ids: drafts.map((draft) => draft.id) };
+        },
+        operations: {
+          firstActivation: (db, { ids }) => activate(f, db, ids[0]!),
+          secondActivation: (db, { ids }) => activate(f, db, ids[1]!),
+          import: async (db, { versions }) => {
+            const summary = await f.run(
+              "bom",
+              versions.map((version) => ({
+                rowType: "BOM",
+                parentId: "ASSY",
+                componentId: "COMP-1",
+                quantity: "1",
+                makeMethodVersion: String(version)
+              })),
+              db
+            );
+            return { error: summary.errors.length ? summary.errors : null };
+          }
+        },
+        invariant: async (_, outcomes) => {
+          const active = await f.db
+            .selectFrom("makeMethod")
+            .select("version")
+            .where("itemId", "=", assemblyId)
+            .where("companyId", "=", f.companyId)
+            .where("status", "=", "Active")
+            .execute();
+          expect({
+            deadlocked: deadlocked(outcomes),
+            atMostOneActive: active.length <= 1
+          }).toEqual({ deadlocked: [], atMostOneActive: true });
+        }
+      });
+    } finally {
+      await f.cleanup();
+    }
+  },
+  raceTimeout(VERSION_ROUNDS, 1_000)
 );

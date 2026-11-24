@@ -565,6 +565,28 @@ export async function draftReceiptFromPurchaseOrder(
   return receipt.id;
 }
 
+/** Another Draft receipt of the same order lines: a copy of `receiptId`'s
+ *  rows, its ids suffixed with `key`. Making a purchase order receipt is slow;
+ *  a test that needs many copies one. */
+export async function copyDraftReceipt(
+  f: Fixture,
+  receiptId: string,
+  key: string
+): Promise<string> {
+  const id = `${receiptId}-${key}`;
+  await sql`
+    INSERT INTO "receipt"
+    SELECT (jsonb_populate_record(r, jsonb_build_object('id', ${id}::text, 'receiptId', r."receiptId" || ${`-${key}`}::text))).*
+    FROM "receipt" r WHERE r.id = ${receiptId}
+  `.execute(f.db);
+  await sql`
+    INSERT INTO "receiptLine"
+    SELECT (jsonb_populate_record(l, jsonb_build_object('id', l.id || ${`-${key}`}::text, 'receiptId', ${id}::text))).*
+    FROM "receiptLine" l WHERE l."receiptId" = ${receiptId}
+  `.execute(f.db);
+  return id;
+}
+
 export async function shipSalesOrder(f: Fixture, key = "1"): Promise<string> {
   const salesOrderId = `${f.prefix}-so-${key}`;
   await seed(f, async (trx) => {
@@ -612,14 +634,18 @@ export async function shipSalesOrder(f: Fixture, key = "1"): Promise<string> {
   return shipment.id;
 }
 
-export async function postServiceInvoice(f: Fixture): Promise<string> {
-  const invoiceId = `${f.prefix}-sales-invoice`;
+/** `key` tells apart the invoices of one fixture. */
+export async function postServiceInvoice(
+  f: Fixture,
+  key = ""
+): Promise<string> {
+  const invoiceId = `${f.prefix}-sales-invoice${key}`;
   await seed(f, async (trx) => {
     await trx
       .insertInto("salesInvoice")
       .values({
         id: invoiceId,
-        invoiceId: "INV-1",
+        invoiceId: `INV-1${key}`,
         customerId: f.customerId,
         currencyCode: "USD",
         exchangeRate: 1,
@@ -656,8 +682,12 @@ export async function postServiceInvoice(f: Fixture): Promise<string> {
   return invoiceId;
 }
 
-export async function postSuppliesInvoice(f: Fixture): Promise<string> {
-  const invoiceId = `${f.prefix}-purchase-invoice`;
+/** `key` tells apart the invoices of one fixture. */
+export async function postSuppliesInvoice(
+  f: Fixture,
+  key = ""
+): Promise<string> {
+  const invoiceId = `${f.prefix}-purchase-invoice${key}`;
   await seed(f, async (trx) => {
     const interaction = await trx
       .insertInto("supplierInteraction")
@@ -668,7 +698,7 @@ export async function postSuppliesInvoice(f: Fixture): Promise<string> {
       .insertInto("purchaseInvoice")
       .values({
         id: invoiceId,
-        invoiceId: "PI-1",
+        invoiceId: `PI-1${key}`,
         supplierId: f.supplierId,
         supplierInteractionId: interaction.id,
         currencyCode: "USD",

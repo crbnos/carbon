@@ -20,6 +20,12 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
+import {
+  deadlocked,
+  race,
+  raceRounds,
+  raceTimeout
+} from "./fixtures/race";
 
 function signal() {
   let resolve!: () => void;
@@ -73,16 +79,16 @@ async function setBackflushSettings(f: Fixture, settings: Settings) {
 }
 
 // One unit of a job whose material takes 2 per unit (2 estimated) from a bin
-// holding 10.
-async function materialJob(f: Fixture) {
-  const item = `${f.prefix}-material`;
-  const bin = `${f.prefix}-bin`;
+// holding 10. `key` tells apart the jobs of one fixture.
+async function materialJob(f: Fixture, key = "") {
+  const item = `${f.prefix}-material${key}`;
+  const bin = `${f.prefix}-bin${key}`;
   await seed(f, async (trx) => {
     await trx
       .insertInto("item")
       .values({
         id: item,
-        readableId: `${f.prefix}-MATERIAL`,
+        readableId: `${f.prefix}-MATERIAL${key}`,
         name: "material",
         type: "Part",
         itemTrackingType: "Inventory",
@@ -95,7 +101,7 @@ async function materialJob(f: Fixture) {
       .insertInto("storageUnit")
       .values({
         id: bin,
-        name: "Bin",
+        name: `Bin${key}`,
         locationId: f.locationId,
         companyId: f.companyId,
         createdBy: USER
@@ -115,7 +121,7 @@ async function materialJob(f: Fixture) {
       })
       .execute();
   });
-  const job = await jobFixture(f, "issue-race");
+  const job = await jobFixture(f, `issue-race${key}`);
   await f.db
     .updateTable("jobMaterial")
     .set({ itemId: item, storageUnitId: bin })
@@ -266,4 +272,87 @@ databaseTest(
       await f.cleanup();
     }
   }
+);
+
+const ISSUE_ROUNDS = raceRounds(6);
+
+// The completion's issue, the job's backflush and the MES step backflush of
+// one unit at once, under each backflush setting in turn: the unit needs 2,
+// and the step backflush planned its 2 from a read before any of them.
+databaseTest(
+  "an operation completion, the job's backflush and a step backflush of one unit at once issue at most the unit's need",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await workCenterFixture(f);
+      const settings: Settings[] = [
+        { strict: false, preventNegative: true },
+        { strict: true, preventNegative: true },
+        { strict: true, preventNegative: false }
+      ];
+      await race({
+        rounds: ISSUE_ROUNDS,
+        setup: async (round) => {
+          const { strict, preventNegative } =
+            settings[(round - 1) % settings.length]!;
+          await f.db
+            .updateTable("companySettings")
+            .set({
+              requireBackflushStorageUnit: strict,
+              preventNegativeBackflush: preventNegative
+            })
+            .where("id", "=", f.companyId)
+            .execute();
+          return materialJob(f, `-${round}`);
+        },
+        operations: {
+          completion: (db, { job }) =>
+            invokePosting(
+              handlesOf({ ...f.ctx, db }),
+              "issue",
+              { type: "jobOperation", id: job.operationId, quantity: 1 },
+              issueMaterial
+            ),
+          backflush: (db, { job }) =>
+            sql`SELECT backflush_job_materials(${job.jobId}, 1, ${f.companyId}, ${USER})`.execute(
+              db
+            ),
+          stepBackflush: (db, { item, job }) =>
+            invokePosting(
+              handlesOf({ ...f.ctx, db }),
+              "issue",
+              {
+                type: "partToOperation",
+                id: job.operationId,
+                itemId: item,
+                materialId: job.materialId,
+                quantity: 2,
+                adjustmentType: "Negative Adjmt.",
+                maxQuantityIssued: 2
+              },
+              issueMaterial
+            )
+        },
+        invariant: async ({ item, job }, outcomes) => {
+          const { consumed, quantityIssued } = await consumedAndIssued(
+            f,
+            item,
+            job.materialId
+          );
+          expect({
+            deadlocked: deadlocked(outcomes),
+            leftTheBinWithinNeed: -consumed <= 2,
+            quantityIssued
+          }).toEqual({
+            deadlocked: [],
+            leftTheBinWithinNeed: true,
+            quantityIssued: -consumed
+          });
+        }
+      });
+    } finally {
+      await f.cleanup();
+    }
+  },
+  raceTimeout(ISSUE_ROUNDS, 1_000)
 );

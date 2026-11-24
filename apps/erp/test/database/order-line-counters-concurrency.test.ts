@@ -18,6 +18,7 @@ import {
 } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
+  copyDraftReceipt,
   draftReceiptFromPurchaseOrder,
   type Fixture,
   seed,
@@ -30,6 +31,12 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
+import {
+  deadlocked,
+  race,
+  raceRounds,
+  raceTimeout
+} from "./fixtures/race";
 import { serviceReturnFixture } from "./fixtures/service-return";
 
 async function backendPid(db: Kysely<KyselyDatabase>) {
@@ -184,24 +191,14 @@ async function twoInvoicesOnOneOrderLine(f: Fixture) {
 /** Two Draft receipts of 4 each against the purchase order line of 10. */
 async function twoReceiptsOfOneOrderLine(f: Fixture) {
   const first = await draftReceiptFromPurchaseOrder(f, "race");
-  const second = `${f.prefix}-receipt-b`;
   await f.db
     .updateTable("receiptLine")
     .set({ receivedQuantity: 4 })
     .where("receiptId", "=", first)
     .where("companyId", "=", f.companyId)
     .execute();
-  // A copy of the first receipt, as a second Draft receipt of the same line.
-  await sql`
-    INSERT INTO "receipt"
-    SELECT (jsonb_populate_record(r, jsonb_build_object('id', ${second}::text, 'receiptId', r."receiptId" || '-B'))).*
-    FROM "receipt" r WHERE r.id = ${first}
-  `.execute(f.db);
-  await sql`
-    INSERT INTO "receiptLine"
-    SELECT (jsonb_populate_record(l, jsonb_build_object('id', l.id || '-b', 'receiptId', ${second}::text))).*
-    FROM "receiptLine" l WHERE l."receiptId" = ${first}
-  `.execute(f.db);
+  // A second Draft receipt of the same line.
+  const second = await copyDraftReceipt(f, first, "b");
   const line = await f.db
     .selectFrom("purchaseOrderLine")
     .select("id")
@@ -420,4 +417,95 @@ databaseTest(
       await f.cleanup();
     }
   }
+);
+
+const COUNTER_ROUNDS = raceRounds(6);
+
+// Each round posts a receipt of one unit, then races two more posts against
+// its void, all on the line of 10: over the rounds the line fills up, so the
+// later rounds also flip receivedComplete.
+databaseTest(
+  "two receipts posting into one purchase order line and a void of a third at once leave quantityReceived the sum of the posted receipts",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const template = await draftReceiptFromPurchaseOrder(f, "counters");
+      await f.db
+        .updateTable("receiptLine")
+        .set({ receivedQuantity: 1 })
+        .where("receiptId", "=", template)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const line = await f.db
+        .selectFrom("purchaseOrderLine")
+        .select("id")
+        .where("purchaseOrderId", "=", `${f.prefix}-po-counters`)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const receiptPosting = (
+        db: Kysely<KyselyDatabase>,
+        type: "post" | "void",
+        receiptId: string
+      ) =>
+        invokePosting(
+          handlesOf({ db, companyId: f.companyId, userId: USER }),
+          "post-receipt",
+          { type, receiptId },
+          postReceipt
+        );
+
+      await race({
+        rounds: COUNTER_ROUNDS,
+        // A post reads the line before its transaction: the spread lets the
+        // void commit between one post's read and its write in some rounds.
+        maxDelayMs: 100,
+        setup: async (round) => {
+          const [first, second, voided] = await Promise.all(
+            ["a", "b", "c"].map((key) =>
+              copyDraftReceipt(f, template, `${round}${key}`)
+            )
+          );
+          const posted = await receiptPosting(f.db, "post", voided!);
+          expect(posted.error).toBeNull();
+          return { first: first!, second: second!, voided: voided! };
+        },
+        operations: {
+          firstPost: (db, { first }) => receiptPosting(db, "post", first),
+          secondPost: (db, { second }) => receiptPosting(db, "post", second),
+          void: (db, { voided }) => receiptPosting(db, "void", voided)
+        },
+        invariant: async (_, outcomes) => {
+          const [counters, posted] = await Promise.all([
+            f.db
+              .selectFrom("purchaseOrderLine")
+              .select(["quantityReceived", "receivedComplete", "purchaseQuantity"])
+              .where("id", "=", line.id)
+              .executeTakeFirstOrThrow(),
+            f.db
+              .selectFrom("receiptLine")
+              .innerJoin("receipt", "receipt.id", "receiptLine.receiptId")
+              .select((eb) =>
+                eb.fn.sum<string>("receiptLine.receivedQuantity").as("quantity")
+              )
+              .where("receiptLine.lineId", "=", line.id)
+              .where("receipt.status", "=", "Posted")
+              .executeTakeFirstOrThrow()
+          ]);
+          const received = Number(posted.quantity ?? 0);
+          expect({
+            deadlocked: deadlocked(outcomes),
+            quantityReceived: Number(counters.quantityReceived),
+            receivedComplete: counters.receivedComplete
+          }).toEqual({
+            deadlocked: [],
+            quantityReceived: received,
+            receivedComplete: received >= Number(counters.purchaseQuantity)
+          });
+        }
+      });
+    } finally {
+      await f.cleanup();
+    }
+  },
+  raceTimeout(COUNTER_ROUNDS, 1_000)
 );

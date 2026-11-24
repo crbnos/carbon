@@ -26,6 +26,7 @@ import {
 } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
+  copyDraftReceipt,
   draftReceiptFromPurchaseOrder,
   type Fixture,
   seed,
@@ -40,6 +41,12 @@ import {
   hasLocalDatabase
 } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
+import {
+  deadlocked,
+  race,
+  raceRounds,
+  raceTimeout
+} from "./fixtures/race";
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
 
@@ -779,3 +786,134 @@ databaseTest(
     }
   }
 );
+
+/** The document's journal lines summed per account, leaving out the accounts that net to zero. */
+async function unbalancedAccounts(f: Fixture, documentId: string) {
+  const rows = await f.db
+    .selectFrom("journalLine")
+    .select(["accountId", (eb) => eb.fn.sum<string>("amount").as("net")])
+    .where("documentId", "=", documentId)
+    .where("companyId", "=", f.companyId)
+    .groupBy("accountId")
+    .execute();
+  return rows.filter((row) => Math.abs(Number(row.net)) > 0.000001);
+}
+
+const purchaseInvoicePosting =
+  (type: "post" | "void", invoiceId: string) =>
+  (handles: ReturnType<typeof handlesOf>) =>
+    invokePosting(
+      handles,
+      "post-purchase-invoice",
+      { type, invoiceId },
+      postPurchaseInvoice
+    );
+
+/**
+ * Draft receipts of one unit each on one purchase order line: copies of the
+ * receipt the purchase order makes. Only a purchase order or sales return
+ * receipt can be voided.
+ */
+async function purchaseOrderReceipts(f: Fixture) {
+  const template = await draftReceiptFromPurchaseOrder(f, "copied");
+  await f.db
+    .updateTable("receiptLine")
+    .set({ receivedQuantity: 1 })
+    .where("receiptId", "=", template)
+    .where("companyId", "=", f.companyId)
+    .execute();
+  // Room on the line for every round CI may run.
+  await f.db
+    .updateTable("purchaseOrderLine")
+    .set({ purchaseQuantity: 10_000 })
+    .where("purchaseOrderId", "=", `${f.prefix}-po-copied`)
+    .where("companyId", "=", f.companyId)
+    .execute();
+  return (_: Fixture, key: string) => copyDraftReceipt(f, template, key);
+}
+
+const POST_AND_VOID_ROUNDS = raceRounds(6);
+
+const POST_AND_VOID = [
+  {
+    document: "receipt",
+    label: "purchase order receipt",
+    drafts: purchaseOrderReceipts,
+    posting: receiptPosting
+  },
+  {
+    document: "shipment",
+    label: "sales order shipment",
+    drafts: async () => draftSalesOrderShipment,
+    posting: shipmentPosting
+  },
+  {
+    document: "purchaseInvoice",
+    label: "purchase invoice",
+    drafts: async () => draftPurchaseInvoice,
+    posting: purchaseInvoicePosting
+  }
+] as const;
+
+for (const { document, label, drafts, posting } of POST_AND_VOID) {
+  databaseTest(
+    `two posts and a void of one ${label} at once post it once, and a void that follows reverses it to zero`,
+    async () => {
+      const f = await alwaysPostFixture();
+      try {
+        await stockPart(f, 100);
+        const draft = await drafts(f);
+        const solo = await draft(f, "solo");
+        await claim(f, document, solo);
+        unwrap(await posting("post", solo)(handlesOf(f.ctx)));
+        const once = await effectOf(f, document, solo);
+        const on = (db: Kysely<KyselyDatabase>) =>
+          handlesOf({ ...f.ctx, db });
+
+        await race({
+          rounds: POST_AND_VOID_ROUNDS,
+          // A post takes tens of milliseconds: the spread starts the void
+          // after it has committed in some rounds, before it in others.
+          maxDelayMs: 200,
+          setup: async (round) => {
+            const id = await draft(f, `race-${round}`);
+            await claim(f, document, id);
+            return id;
+          },
+          operations: {
+            firstPost: (db, id) => posting("post", id)(on(db)),
+            secondPost: (db, id) => posting("post", id)(on(db)),
+            void: (db, id) => posting("void", id)(on(db))
+          },
+          invariant: async (id, outcomes) => {
+            const voided = outcomes.void.ok;
+            expect({
+              deadlocked: deadlocked(outcomes),
+              posted: [outcomes.firstPost, outcomes.secondPost].filter(
+                (outcome) => outcome.ok
+              ).length,
+              ...(await effectOf(f, document, id)),
+              unbalancedAccounts: voided
+                ? await unbalancedAccounts(f, id)
+                : []
+            }).toEqual({
+              deadlocked: [],
+              posted: 1,
+              ...(voided
+                ? {
+                    status: "Voided",
+                    stock: 0,
+                    journalLines: 2 * once.journalLines
+                  }
+                : once),
+              unbalancedAccounts: []
+            });
+          }
+        });
+      } finally {
+        await f.cleanup();
+      }
+    },
+    raceTimeout(POST_AND_VOID_ROUNDS, 1_000)
+  );
+}
