@@ -20,6 +20,7 @@ for how a model is written.
 | `accounting-period` | No period is Closed after an open one; only a Closed period has a balance snapshot and `closedAt`; status moves only Open ↔ Locked → Closed → Open | `accounting.service.ts`: `lockAccountingPeriod`, `unlockAccountingPeriod`, `setPeriodCloseStatus`, `lockPeriodLifecycle`, `closeAccountingPeriod`, `reopenAccountingPeriod` | `apps/erp/test/database/period-close-concurrency.test.ts` | every valid start × every 3 operations on 3 periods |
 | `invoice-void` | A voided invoice nets to zero on every account; an invoice is reversed at most once | `invoicing.service.ts`: `changeInvoiceLineAccount`, `readInvoiceLinePosition`, and the lines holding "invoice is already voided" (the void branches sit inside `postSalesInvoice` / `postPurchaseInvoice`, too large to cover whole); `shared.service.ts`: `documentJournalLines` | `apps/erp/test/database/invoice-line-account-void.test.ts` | every sequence of up to 4 voids and line account changes, sales and purchase |
 | `job-material-issue` | An automatic issue (operation completion, job backflush) never takes more than the unit still needs; `quantityIssued` counts every unit that left the bin | `inventory.service.ts`: `issueJobOperationMaterials`; `shared.service.ts`: `lockUntrackedDraws` (the step issue sits inside `issueMaterial` and the backflush in SQL, `backflush_job_materials`: neither is fingerprinted, and a change to either is caught only by `verify`) | `apps/erp/test/database/job-material-issue-concurrency.test.ts` | every sequence of up to 3 completions, step issues and job backflushes of one unit |
+| `accounting-sync` | Each Carbon record has at most one Xero/QuickBooks document; a closed sync operation reflects the newest attempt; a mapping's synced version never hides an unpushed edit | `operations.ts`: `updateHeldOperation` and the closes; `create-key.ts`: `remoteCreateKey`; the Xero recovery reads and `Idempotency-Key`, QBO `requestid`, `getPushedVersion` call sites; `drainSyncOperations`, `consolidateIntegration` (most syncer code is class methods, fingerprinted by the lines named in `coverage.json`; `verify` catches the rest) | `packages/jobs/src/inngest/functions/integrations/accounting-sync-retries.database.test.ts` (a fake Xero at `fetch`) | every sequence of up to 3 drains (delivered, response lost, died after the create), stale reclaims and Retries of a document, both providers; of master data with edits and the sweep; of daily consolidations |
 
 `coverage.json` is the record: each model's file, the functions it covers, the
 database tests, a hash of each covered function as it read when the model was
@@ -33,7 +34,18 @@ close checklist's contents, anything a single request gets wrong without
 another one running. Liveness (that a waiting request eventually runs) is not
 checked; deadlock is. An edit elsewhere inside `postSalesInvoice` or
 `postPurchaseInvoice` (a moved `FOR UPDATE`) does not trip `touched`; the
-invoice-void database tests catch it when `verify` runs.
+invoice-void database tests catch it when `verify` runs. `accounting-sync`
+leaves three cases open: an attempt that stalls more than six minutes
+between its Xero lookup and its create (the model forgets Xero's keys only
+while no attempt is between the two); two overlapping pushes of one
+customer or vendor, where the older payload can land after the newer one;
+and a rename between a lost create and its retry, which still makes a
+second customer or vendor (its create key covers the content, so the
+older record is never linked as the edit). It also takes QuickBooks'
+`requestid` as replayed for as long as the retries come.
+
+A database test path in `coverage.json` is relative to `apps/erp`, or starts
+with `packages/<name>/` to run from that package.
 
 **Why not TLA+:** CI has no Java or TLC, and the checks must run on every pull
 request. The explorer (`packages/models/src/explore.ts`) runs in the existing
@@ -72,6 +84,8 @@ invoice-void model: ok (Tests  7 passed (7))
 invoice-void database: ok (Tests  6 passed (6))
 job-material-issue model: ok (Tests  5 passed (5))
 job-material-issue database: ok (Tests  1 passed (1))
+accounting-sync model: ok (Tests  8 passed (8))
+accounting-sync database: ok (Tests  5 passed (5))
 ```
 
 `SUPABASE_DB_URL must name the local database` → no local database: run

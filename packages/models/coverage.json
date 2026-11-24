@@ -55,5 +55,63 @@
       "apps/erp/app/modules/shared/shared.service.ts#lockUntrackedDraws": "2d415c24e162df87"
     },
     "confirmedAt": "d917e22ed7"
+  },
+  "accounting-sync": {
+    "model": "src/accounting-sync.ts",
+    "code": {
+      "packages/ee/src/accounting/core/operations.ts": [
+        "updateHeldOperation",
+        "completeOperation",
+        "failOperation",
+        "skipOperation",
+        "updateOperationMetadata",
+        "claimPendingOperations"
+      ],
+      "packages/ee/src/accounting/core/create-key.ts": ["remoteCreateKey"],
+      "packages/ee/src/accounting/core/types.ts": [
+        "getPushedVersion",
+        "getPushedVersion(localEntity)",
+        "return this.createKey(`${localId}:${JSON.stringify(payload)}`);"
+      ],
+      "packages/ee/src/accounting/core/external-mapping.ts": [
+        "m.options?.lastSyncedAt instanceof Date"
+      ],
+      "packages/ee/src/accounting/providers/quickbooks-online/entities/shared.ts": [
+        "getPushedVersion(localEntity)"
+      ],
+      "packages/ee/src/accounting/providers/rillet/entities/shared.ts": [
+        "getPushedVersion(localEntity)"
+      ],
+      "packages/ee/src/accounting/providers/quickbooks-online/provider.ts": [
+        "buildQboRequestId",
+        "toQboRequestId"
+      ],
+      "packages/ee/src/accounting/providers/xero/provider.ts": [
+        "\"Idempotency-Key\": key"
+      ],
+      "packages/ee/src/accounting/providers/xero/entities/journal-entry.ts": [
+        "getXeroJournalNarrations",
+        "this.xeroProvider.recoverManualJournal("
+      ],
+      "packages/ee/src/accounting/providers/xero/entities/invoice.ts": [
+        "this.xeroProvider.recoverInvoice({"
+      ],
+      "packages/ee/src/accounting/providers/xero/entities/bill.ts": [
+        "this.xeroProvider.recoverInvoice({"
+      ],
+      "packages/ee/src/accounting/providers/xero/entities/payment.ts": [
+        "this.xeroProvider.recoverPayment("
+      ],
+      "packages/jobs/src/inngest/functions/integrations/accounting-sync-operations.ts": [
+        "drainSyncOperations"
+      ],
+      "packages/jobs/src/inngest/functions/integrations/accounting-consolidation.ts": [
+        "readConsolidationPush",
+        "consolidateIntegration"
+      ]
+    },
+    "databaseTests": [
+      "packages/jobs/src/inngest/functions/integrations/accounting-sync-retries.database.test.ts"
+    ]
   }
 }

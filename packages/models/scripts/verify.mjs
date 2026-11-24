@@ -41,6 +41,21 @@ function run(cwd, files) {
   return { ok: result.status === 0 && !skipped, summary };
 }
 
+/**
+ * A database test path is relative to apps/erp, or names its package
+ * (`packages/<name>/<path>`) when the code it runs lives outside the ERP: it
+ * runs from there.
+ */
+function databaseRuns(tests) {
+  const byDir = new Map();
+  for (const test of tests) {
+    const inPackage = test.match(/^(packages\/[^/]+)\/(.+)$/);
+    const dir = join(repoRoot, inPackage ? inPackage[1] : "apps/erp");
+    byDir.set(dir, [...(byDir.get(dir) ?? []), inPackage ? inPackage[2] : test]);
+  }
+  return [...byDir];
+}
+
 let failed = false;
 for (const name of models) {
   const model = coverage[name];
@@ -50,13 +65,13 @@ for (const name of models) {
     continue;
   }
   const checks = [
-    run(packageDir, [model.model.replace(/\.ts$/, ".test.ts")]),
-    run(join(repoRoot, "apps/erp"), model.databaseTests)
+    ["model", run(packageDir, [model.model.replace(/\.ts$/, ".test.ts")])],
+    ...databaseRuns(model.databaseTests).map(([dir, files]) => [
+      "database",
+      run(dir, files)
+    ])
   ];
-  for (const [label, check] of [
-    ["model", checks[0]],
-    ["database", checks[1]]
-  ]) {
+  for (const [label, check] of checks) {
     console.log(`${name} ${label}: ${check.ok ? "ok" : "FAILED"} (${check.summary})`);
     if (!check.ok) failed = true;
   }
