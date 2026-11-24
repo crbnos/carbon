@@ -24062,6 +24062,9 @@ msgstr "Project Control"
 msgid "Project element"
 msgstr "Project element"
 
+msgid "Project Element"
+msgstr "Project Element"
+
 msgid "Project elements"
 msgstr "Project elements"
 

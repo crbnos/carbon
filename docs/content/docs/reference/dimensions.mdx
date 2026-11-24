@@ -16,7 +16,7 @@ A dimension has a name and an **entity type** that determines its values. It is 
   <Field name="Custom dimension" type="from dimension values">`entityType` is `Custom`. You supply the allowed values yourself as `dimensionValue` rows (Project A, Project B, …). Use it for an axis Carbon doesn't already model as a table.</Field>
 </FieldTable>
 
-The full set of entity types (`dimensionEntityType`, `accounting.models.ts:577`): `CostCenter`, `Custom`, `Customer`, `CustomerType`, `Department`, `Employee`, `FixedAssetClass`, `Item`, `ItemPostingGroup`, `Location`, `Process`, `Supplier`, `SupplierType`, `WorkCenter`. Each was added to the database enum as the posting paths learned to resolve it.
+The full set of entity types (`dimensionEntityTypes`, `accounting.models.ts`), with the label the app shows where it differs: `CostCenter` (Cost Center), `Custom`, `Customer`, `CustomerType` (Customer Type), `Department`, `Employee`, `FixedAssetClass` (Asset Class), `Item`, `ItemPostingGroup` (Item Group), `Location`, `Process`, `Project`, `ProjectElement` (Project Element), `ScrapReason` (Scrap Reason), `Supplier`, `SupplierType` (Supplier Type), `WorkCenter` (Work Center). Each was added to the database enum as the posting paths learned to resolve it.
 
 A dimension carries two flags: **active** (an inactive dimension stops being attached to new postings) and **required**. Names are unique per company group.
 
@@ -81,13 +81,13 @@ Most dimension issues are missing preconditions, not error strings — a dimensi
 Saving a cost center fails without an owner. `ownerId` is required — pick the user responsible for the cost center, then save. (A cost center also requires a **Name**.)
 
 ### "Name is required" / "Entity type is required"
-Saving a dimension needs both a unique **Name** (per company group) and an **Entity type**. Choose an entity type — one of the source-table types (Location, Customer, Department, CostCenter, …) or **Custom** if you'll supply the allowed values yourself — then save.
+Saving a dimension needs both a unique **Name** (per company group) and an **Entity type**. Choose an entity type — one of the source-table types (Location, Customer, Department, Cost Center, …) or **Custom** if you'll supply the allowed values yourself — then save.
 
 ### My journal lines aren't getting tagged with a dimension
 Tagging is opt-in by *defining the dimension*. At posting time the path loads every **active** dimension keyed by entity type and only attaches a tag when an active dimension exists for a fact the line already carries (customer, item, location, cost center, …). If no dimension is defined for that axis — or the dimension is marked **inactive** — no tag is written. Define the dimension (and keep it active) and it applies to *future* postings; already-posted lines are not retroactively tagged.
 
 ### A cost center isn't showing up in reports
-A cost center only reaches the ledger as a `journalLineDimension` row — there is no `costCenterId` column on `journalLine`. You must define a dimension with entity type **CostCenter**; only then do postings begin tagging their lines with the cost center the source document carries. The standalone cost-center tree (assigned to purchase lines) does not by itself put anything on the GL.
+A cost center only reaches the ledger as a `journalLineDimension` row — there is no `costCenterId` column on `journalLine`. You must define a dimension with entity type **Cost Center**; only then do postings begin tagging their lines with the cost center the source document carries. The standalone cost-center tree (assigned to purchase lines) does not by itself put anything on the GL.
 
 ### A dimension filter doesn't change the balance sheet or trial balance
 By design. The trial balance, balance sheet, and income statement report the *whole* company's balances and take no dimension filter. Dimension slicing is an analytical layer over posted journal lines — it answers "how much of this account belongs to each location / department / cost center", not "restate the statements for one project".

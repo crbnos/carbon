@@ -396,10 +396,12 @@ export default function PersonTimecardRoute() {
         </HStack>
         {openEntry && (
           <Badge variant="green" className="w-fit">
-            <Trans>
-              Clocked in since{" "}
-              <DateTime value={openEntry.clockIn} variant="time" />
-            </Trans>
+            <span>
+              <Trans>
+                Clocked in since{" "}
+                <DateTime value={openEntry.clockIn} variant="time" />
+              </Trans>
+            </span>
           </Badge>
         )}
       </CardHeader>

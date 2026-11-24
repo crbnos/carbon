@@ -21,6 +21,7 @@ import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import { dimensionEntityTypes } from "../../accounting.models";
 import type { Dimension } from "../../types";
+import { dimensionEntityTypeLabels } from "./entityTypeLabels";
 
 type DimensionsTableProps = {
   data: Dimension[];
@@ -53,13 +54,18 @@ const DimensionsTable = memo((props: DimensionsTableProps) => {
       {
         accessorKey: "entityType",
         header: t`Entity Type`,
-        cell: (item) => <Enumerable value={item.getValue<string>()} />,
+        cell: ({ row }) => (
+          <Enumerable
+            value={t(dimensionEntityTypeLabels[row.original.entityType])}
+          />
+        ),
         meta: {
           mobile: "P3",
+          exportValue: (row) => t(dimensionEntityTypeLabels[row.entityType]),
           filter: {
             type: "static",
             options: dimensionEntityTypes.map((v) => ({
-              label: <Enumerable value={v} />,
+              label: <Enumerable value={t(dimensionEntityTypeLabels[v])} />,
               value: v
             }))
           },
