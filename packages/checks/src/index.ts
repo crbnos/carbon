@@ -10,6 +10,10 @@ export type {
   Violation
 } from "./check";
 export { findClobbers, objectRefs } from "./clobber";
+export {
+  accountFkClassified,
+  accountFkRestrict
+} from "./conformance/account-fk-restrict";
 export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 export { journalStatusFilter } from "./conformance/journal-status-filter";
@@ -18,6 +22,7 @@ export { moduleShape } from "./conformance/module-shape";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+export { noDiscardedQueryError } from "./conformance/no-discarded-query-error";
 export { noForeignKeyWithoutOnDelete } from "./conformance/no-foreign-key-without-on-delete";
 export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 export { noInlineUniqueViolation } from "./conformance/no-inline-unique-violation";
