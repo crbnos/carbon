@@ -110,6 +110,12 @@ export const quoteTexts = {
     { key: "fees", kind: "text", default: "Fees ({quote.currency})" },
     valueOf("feesValue", "{quote.fees}", "fees"),
     { key: "taxValue", kind: "value", default: "{quote.tax}" },
+    {
+      key: "taxComponent",
+      kind: "text",
+      default: "{tax.name} {tax.rate} on {tax.base} ({quote.currency})",
+      row: "tax"
+    },
     { key: "total", kind: "text", default: "Total ({quote.currency})" },
     valueOf("totalValue", "{quote.total}", "total")
   ],

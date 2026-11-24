@@ -258,6 +258,41 @@ it("buildPeopleBudgets keeps day rows in input order", () => {
   ]);
 });
 
+it("buildPeopleBudgets merges a station's rows on one day", () => {
+  const row = (
+    workCenterId: string,
+    shiftId: string,
+    hours: number | null
+  ) => ({
+    workCenterId,
+    employeeId: "e1",
+    date: "2026-01-15",
+    shiftId,
+    hours
+  });
+  const timed = buildPeopleBudgets([row("wc1", "s1", 3), row("wc1", "s2", 2)]);
+  assertEquals(timed.get("e1")?.get("2026-01-15"), [
+    { workCenterId: "wc1", hours: 5 }
+  ]);
+
+  const whole = buildPeopleBudgets([
+    row("wc1", "s1", null),
+    row("wc1", "s2", null)
+  ]);
+  assertEquals(whole.get("e1")?.get("2026-01-15"), [
+    { workCenterId: "wc1", hours: null }
+  ]);
+  // 8h day: the station keeps all of it, none is left unassigned
+  const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
+  const budgets = whole.get("e1") ?? new Map();
+  assertEquals(
+    winTimes(
+      clipWindowsToStation(windows, "wc1", new Set(["2026-01-15"]), budgets, TZ)
+    ),
+    [[jan6amUTC(15, 14), jan6amUTC(15, 22)]]
+  );
+});
+
 it("clipWindowsToStation with a sole whole-shift row keeps the full day", () => {
   const windows = [
     win(jan6amUTC(15, 14), jan6amUTC(15, 22)),
@@ -327,7 +362,8 @@ it("clipWindowsToStation walks attended time across gaps (split shift)", () => {
   );
 });
 
-it("clipWindowsToStation gives nothing after an earlier whole-shift row", () => {
+it("clipWindowsToStation deals a station's hours before a whole-shift row that sorts first", () => {
+  // 8h day: 8am-4pm local (14:00Z-22:00Z)
   const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
   const budgets = new Map([
     [
@@ -338,9 +374,42 @@ it("clipWindowsToStation gives nothing after an earlier whole-shift row", () => 
       ]
     ]
   ]);
+  const dates = new Set(["2026-01-15"]);
   assertEquals(
-    clipWindowsToStation(windows, "wc2", new Set(["2026-01-15"]), budgets, TZ),
-    []
+    winTimes(clipWindowsToStation(windows, "wc2", dates, budgets, TZ)),
+    [[jan6amUTC(15, 14), jan6amUTC(15, 18)]]
+  );
+  assertEquals(
+    winTimes(clipWindowsToStation(windows, "wc1", dates, budgets, TZ)),
+    [[jan6amUTC(15, 18), jan6amUTC(15, 22)]]
+  );
+});
+
+it("clipWindowsToStation shares the rest of the day between whole-shift rows", () => {
+  // 8h day; wc3 has 2h, wc1 and wc2 are whole-shift and get 3h each
+  const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
+  const budgets = new Map([
+    [
+      "2026-01-15",
+      [
+        { workCenterId: "wc1", hours: null },
+        { workCenterId: "wc2", hours: null },
+        { workCenterId: "wc3", hours: 2 }
+      ]
+    ]
+  ]);
+  const dates = new Set(["2026-01-15"]);
+  assertEquals(
+    winTimes(clipWindowsToStation(windows, "wc3", dates, budgets, TZ)),
+    [[jan6amUTC(15, 14), jan6amUTC(15, 16)]]
+  );
+  assertEquals(
+    winTimes(clipWindowsToStation(windows, "wc1", dates, budgets, TZ)),
+    [[jan6amUTC(15, 16), jan6amUTC(15, 19)]]
+  );
+  assertEquals(
+    winTimes(clipWindowsToStation(windows, "wc2", dates, budgets, TZ)),
+    [[jan6amUTC(15, 19), jan6amUTC(15, 22)]]
   );
 });
 

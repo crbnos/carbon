@@ -69,7 +69,7 @@ import MaintenanceSource from "~/modules/resources/ui/Maintenance/MaintenanceSou
 import MaintenanceStatus from "~/modules/resources/ui/Maintenance/MaintenanceStatus";
 
 import type { loader as kpiLoader } from "~/routes/api+/resources.kpi.$key";
-
+import { isKpiChangeGood } from "~/utils/chart";
 import { path } from "~/utils/path";
 
 const OPEN_STATUSES = ["Open", "Assigned", "In Progress"] as const;
@@ -291,12 +291,6 @@ export default function MaintenanceDashboard() {
         : 0
       : ((total - previousTotal) / previousTotal) * 100;
 
-  // For MTTR, lower is better (faster repairs). For MTBF, higher is better (longer time between failures)
-  const isLowerBetter = selectedKpi === "mttr";
-  const isBadgePositive = isLowerBetter
-    ? percentageChange <= 0
-    : percentageChange >= 0;
-
   const formatValue = (value: number) => {
     // Time-based KPIs (MTTR, MTBF) - value is in seconds
     if (selectedKpi === "mttr" || selectedKpi === "mtbf") {
@@ -374,7 +368,7 @@ export default function MaintenanceDashboard() {
           value={openDispatches}
           to={`${
             path.to.maintenanceDispatches
-          }?filter=status:in:${OPEN_STATUSES.join(",")}`}
+          }?location=all&filter=status:in:${OPEN_STATUSES.join(",")}`}
           linkLabel={t`View Open`}
         />
 
@@ -384,7 +378,7 @@ export default function MaintenanceDashboard() {
           value={openScheduled}
           to={`${
             path.to.maintenanceDispatches
-          }?filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Scheduled`}
+          }?location=all&filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Scheduled`}
           linkLabel={t`View Scheduled`}
         />
 
@@ -394,7 +388,7 @@ export default function MaintenanceDashboard() {
           value={openReactive}
           to={`${
             path.to.maintenanceDispatches
-          }?filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Reactive`}
+          }?location=all&filter=status:in:${OPEN_STATUSES.join(",")}&filter=source:eq:Reactive`}
           linkLabel={t`View Reactive`}
         />
       </div>
@@ -485,17 +479,16 @@ export default function MaintenanceDashboard() {
                 <p className="text-3xl font-medium tracking-tighter">
                   {formatValue(total)}
                 </p>
-                {isBadgePositive ? (
-                  <Badge variant="green">
-                    {percentageChange >= 0 ? "+" : ""}
-                    {percentageChange.toFixed(0)}%
-                  </Badge>
-                ) : (
-                  <Badge variant="red">
-                    {percentageChange >= 0 ? "+" : ""}
-                    {percentageChange.toFixed(0)}%
-                  </Badge>
-                )}
+                <Badge
+                  variant={
+                    isKpiChangeGood(selectedKpiData, percentageChange)
+                      ? "green"
+                      : "red"
+                  }
+                >
+                  {percentageChange >= 0 ? "+" : ""}
+                  {percentageChange.toFixed(0)}%
+                </Badge>
               </>
             )}
           </VStack>

@@ -5,7 +5,6 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -14,10 +13,8 @@ import {
   acceptDigitalQuote,
   rejectDigitalQuote
 } from "~/modules/sales/sales.server";
-import { getQuoteByExternalId } from "~/modules/sales/sales.service";
+import { getSharedQuote } from "~/modules/sales/sales.service";
 import { shareLinkContext } from "~/modules/service-context.server";
-
-const logger = getLogger("erp", "sales", "digital-quote");
 
 const response = z.discriminatedUnion("type", [
   z.object({
@@ -49,29 +46,23 @@ export async function action(args: ActionFunctionArgs) {
     return { success: false, message: "Invalid response" };
   }
 
-  const quote = await getQuoteByExternalId(
-    getCarbonServiceRole(),
-    input.params.id
-  );
-  if (quote.error) {
-    logger.error("Quote not found", { error: quote.error });
-    return { success: false, message: "Quote not found" };
-  }
-  const ctx = await shareLinkContext(quote.data);
+  const quote = await getSharedQuote(getCarbonServiceRole(), input.params.id);
+  if (!quote) return { success: false, message: "Quote not found" };
+  const ctx = await shareLinkContext(quote);
   if (!ctx) throw notFound("Quote not found");
 
   const form = input.data;
   const result =
     form.type === "accept"
       ? await acceptDigitalQuote(ctx, {
-          quoteId: quote.data.id,
+          quoteId: quote.id,
           selectedLines: form.selectedLines,
           acceptedBy: form.digitalQuoteAcceptedBy,
           acceptedByEmail: form.digitalQuoteAcceptedByEmail,
           purchaseOrderFile: form.file
         })
       : await rejectDigitalQuote(ctx, {
-          quoteId: quote.data.id,
+          quoteId: quote.id,
           rejectedBy: form.digitalQuoteRejectedBy,
           rejectedByEmail: form.digitalQuoteRejectedByEmail
         });

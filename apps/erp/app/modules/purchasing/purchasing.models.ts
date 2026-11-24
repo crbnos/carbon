@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   addDays,
   addMonths,
@@ -282,9 +283,11 @@ export const purchaseOrderLineValidator = z
     requiredDate: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     supplierPartId: zfd.text(z.string().optional()),
+    partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional()),
     supplierShippingCost: zfd.numeric(z.number().optional()),
     supplierTaxAmount: zfd.numeric(z.number().optional()),
     supplierUnitPrice: zfd.numeric(z.number().optional()),
+    taxCodeId: zfd.text(z.string().optional()),
     taxPercent: zfd.numeric(z.number().min(0).max(1).optional().default(0))
   })
   .refine(
@@ -406,7 +409,9 @@ export const supplierValidator = z.object({
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   purchasingContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 
@@ -422,7 +427,9 @@ export const supplierApprovalValidator = z.object({
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   purchasingContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 
@@ -437,7 +444,8 @@ export const supplierTaxValidator = z
       (val) => (val === "" ? undefined : val),
       z.enum(taxExemptionReasons).optional().nullable()
     ),
-    taxExemptionCertificateNumber: zfd.text(z.string().optional())
+    taxExemptionCertificateNumber: zfd.text(z.string().optional()),
+    taxCodeId: zfd.text(z.string().optional())
   })
   .refine(
     (data) => !data.taxExempt || (data.taxExempt && data.taxExemptionReason),
@@ -1016,6 +1024,24 @@ export function isPurchaseOrderEditLocked(
 }
 
 /**
+ * Why a purchase order's lines cannot change which part numbers they print,
+ * else null. A sent order keeps printing the numbers it was sent with, and an
+ * order waiting for approval is not edited. The line form and Edit document
+ * both follow it.
+ */
+export function purchaseOrderPartNumberRefusal(
+  status: string | null | undefined
+): string | null {
+  if (status === "Needs Approval") {
+    return "The part numbers of a purchase order cannot change while it waits for approval.";
+  }
+  if (isPurchaseOrderLocked(status)) {
+    return "The part numbers of a purchase order cannot change once it is sent.";
+  }
+  return null;
+}
+
+/**
  * Why an edit of a purchase order is refused, or null when it is allowed.
  * `changesSupplierOrCurrency`: the edit names another supplier or currency,
  * which a released order never takes (that is a new order).
@@ -1215,6 +1241,7 @@ export const PURCHASE_ORDER_LINE_VERSION_COLUMNS = [
   "supplierShippingCost",
   "supplierTaxAmount",
   "taxPercent",
+  "taxCodeId",
   "setupPrice",
   "exchangeRate",
   "locationId",

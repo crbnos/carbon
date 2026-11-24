@@ -15,7 +15,13 @@ import {
   getLineDescriptionDetails,
   getQuoteDisplayId
 } from "../../../utils/quote";
-import { addressVars, companyVars, incotermText, str } from "../textVars";
+import {
+  addressVars,
+  companyVars,
+  incotermText,
+  linePartNumberVars,
+  str
+} from "../textVars";
 import type { QuoteData } from "./types";
 
 type QuoteLine = QuoteData["quoteLines"][number];
@@ -95,12 +101,21 @@ export function buildQuoteVars(
 /** Printed once, on its first quantity's row. */
 export function buildQuoteLineVars(
   line: QuoteLine,
-  rowNumber: number
+  rowNumber: number,
+  data: Pick<QuoteData, "partNumberDisplayDraft">
 ): RowVars<"quote", "line"> {
   return {
     "line.number": String(rowNumber),
-    "line.description": str(getLineDescription(line)),
-    "line.details": str(getLineDescriptionDetails(line))
+    // The part numbers per the line's display choice.
+    "line.description": str(
+      getLineDescription(line, data.partNumberDisplayDraft)
+    ),
+    "line.details": str(getLineDescriptionDetails(line)),
+    ...linePartNumberVars({
+      ours: line.itemReadableId,
+      theirs: line.customerPartId,
+      theirsRevision: line.customerPartRevision
+    })
   };
 }
 

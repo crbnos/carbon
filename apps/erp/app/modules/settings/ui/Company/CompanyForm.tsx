@@ -7,20 +7,19 @@ import { VStack } from "@carbon/react";
 import { isEoriCountry, isRegistrationNumberCountry } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
-import {
-  Currency,
-  Hidden,
-  Input,
-  PhoneInput,
-  Submit,
-  Timezone
-} from "~/components/Form";
+import { Hidden, Input, PhoneInput, Submit, Timezone } from "~/components/Form";
 import AddressAutocomplete from "~/components/Form/AddressAutocomplete";
-import { companyValidator } from "~/modules/settings/settings.models";
+import {
+  companyDetailsValidator,
+  type companyValidator
+} from "~/modules/settings/settings.models";
+import type { BaseCurrencyChange } from "~/modules/settings/types";
 import { path } from "~/utils/path";
+import { BaseCurrencyField } from "./BaseCurrencyField";
 
 type CompanyFormProps = {
   company: z.infer<typeof companyValidator>;
+  baseCurrencyChange: BaseCurrencyChange | null;
 };
 
 // Reads the live countryCode so picking a new country in AddressAutocomplete
@@ -49,15 +48,15 @@ const CountrySpecificFields = () => {
   );
 };
 
-const CompanyForm = ({ company }: CompanyFormProps) => {
+const CompanyForm = ({ company, baseCurrencyChange }: CompanyFormProps) => {
   const { t } = useLingui();
   return (
     <>
       <ValidatedForm
         method="post"
         action={path.to.company}
-        validator={companyValidator}
-        defaultValues={company}
+        validator={companyDetailsValidator}
+        defaultValues={{ ...company, keepRecordCurrencies: false }}
       >
         <Hidden name="intent" value="about" />
 
@@ -80,11 +79,7 @@ const CompanyForm = ({ company }: CompanyFormProps) => {
             />
             <CountrySpecificFields />
             <AddressAutocomplete variant="grid" />
-            <Currency
-              name="baseCurrencyCode"
-              label={t`Base Currency`}
-              isReadOnly
-            />
+            <BaseCurrencyField change={baseCurrencyChange} />
             <Timezone name="timezone" label={t`Timezone`} />
             <PhoneInput
               name="phone"

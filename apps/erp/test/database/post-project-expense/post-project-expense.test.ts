@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect } from "vitest";
-import { postProjectExpense } from "../../../app/modules/projects/projects.service";
+import {
+  getChargeCostRefusal,
+  postProjectExpense
+} from "../../../app/modules/projects/projects.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
@@ -259,6 +262,125 @@ databaseTest(
       expect(await credits(next)).toEqual([
         [f.account("employee-payable"), 25]
       ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+const CAPITAL_REFUSAL =
+  "An expense entry cannot charge a capital project. Use a charge or a purchase invoice.";
+
+databaseTest(
+  "an expense on a Capitalize element is refused and writes nothing, and the element page reads the same refusal",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const refusal = () =>
+        getChargeCostRefusal(f.db, {
+          companyId: f.companyId,
+          projectId: f.projectId,
+          elementId: f.elementId
+        });
+      expect(await refusal()).toBeNull();
+
+      await f.addCapitalAsset({ status: "Under Construction" });
+      expect(await refusal()).toBe(CAPITAL_REFUSAL);
+
+      const entry = await f.db
+        .insertInto("projectExpenseEntry")
+        .values({
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          employeeId: "system",
+          entryDate: "2026-10-05",
+          description: "Mileage",
+          amount: 40,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const result = await invokePosting(
+        handlesOf(f.ctx),
+        "post-project-expense",
+        { projectExpenseEntryId: entry.id },
+        postProjectExpense
+      );
+      expect(result.error?.status).toBeLessThan(500);
+      expect(result.error?.message).toBe(CAPITAL_REFUSAL);
+
+      const journals = await f.db
+        .selectFrom("journal")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(journals).toEqual([]);
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(ledger).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the element page reads an element's own Capitalize override, and leaves a dated one open for the dates before it",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const override = (costTreatmentEffectiveFrom: string | null) =>
+        f.db
+          .updateTable("projectElement")
+          .set({ costTreatment: "Capitalize", costTreatmentEffectiveFrom })
+          .where("id", "=", f.elementId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      const refusal = () =>
+        getChargeCostRefusal(f.db, {
+          companyId: f.companyId,
+          projectId: f.projectId,
+          elementId: f.elementId
+        });
+
+      await override(null);
+      expect(await refusal()).toBe(CAPITAL_REFUSAL);
+
+      await override("2026-10-01");
+      expect(await refusal()).toBeNull();
+
+      // The override has no asset: the posting gives the expense refusal on
+      // and after its date, and posts the dates before it.
+      const post = async (entryDate: string) => {
+        const entry = await f.db
+          .insertInto("projectExpenseEntry")
+          .values({
+            projectId: f.projectId,
+            projectElementId: f.elementId,
+            employeeId: "system",
+            entryDate,
+            description: "Mileage",
+            amount: 40,
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        return invokePosting(
+          handlesOf(f.ctx),
+          "post-project-expense",
+          { projectExpenseEntryId: entry.id },
+          postProjectExpense
+        );
+      };
+      expect((await post("2026-10-01")).error?.message).toBe(CAPITAL_REFUSAL);
+      const before = await post("2026-09-30");
+      expect(before.error).toBeNull();
+      expect(before.data?.posted).toBe(true);
     } finally {
       await f.cleanup();
     }

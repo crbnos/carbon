@@ -8,7 +8,10 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@carbon/react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useMemo, useState } from "react";
@@ -68,6 +71,44 @@ type ActualCard = {
 };
 
 /**
+ * The Charge cost item of a charge menu. With `disabledReason` it shows
+ * disabled, with the reason as its tooltip.
+ */
+export function ChargeCostMenuItem({
+  onClick,
+  isDisabled,
+  disabledReason
+}: {
+  onClick?: () => void;
+  isDisabled?: boolean;
+  disabledReason?: string | null;
+}) {
+  const item = (
+    <DropdownMenuItem
+      disabled={isDisabled || Boolean(disabledReason)}
+      onClick={onClick}
+    >
+      <DropdownMenuIcon icon={<LuReceipt />} />
+      <Trans>Charge cost</Trans>
+    </DropdownMenuItem>
+  );
+  if (!disabledReason) return item;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* A disabled item fires no pointer events: the span does. */}
+        <span tabIndex={0} className="block">
+          {item}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="left" className="max-w-72">
+        {disabledReason}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+/**
  * What has been charged to an element and every element below it, as
  * cards: the project ledger rows, then the timesheet entries that are not
  * Posted yet (Posted time is in the ledger), each with its next step. A
@@ -81,7 +122,8 @@ export function ElementTimeAndMaterials({
   laborCategories,
   onIssue,
   onLogTime,
-  onCharge
+  onCharge,
+  chargeDisabledReason
 }: {
   ledger: ElementLedgerRow[];
   openTime: ElementOpenTimeRow[];
@@ -91,6 +133,8 @@ export function ElementTimeAndMaterials({
   onIssue?: () => void;
   onLogTime?: () => void;
   onCharge?: () => void;
+  /** Why Charge cost is off: the item shows disabled, with it as its tooltip. */
+  chargeDisabledReason?: string | null;
 }) {
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -216,7 +260,9 @@ export function ElementTimeAndMaterials({
     [t]
   );
 
-  const hasActions = Boolean(onIssue || onLogTime || onCharge);
+  const hasActions = Boolean(
+    onIssue || onLogTime || onCharge || chargeDisabledReason
+  );
   const chargeMenu = hasActions ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -237,11 +283,11 @@ export function ElementTimeAndMaterials({
             <Trans>Log time</Trans>
           </DropdownMenuItem>
         )}
-        {onCharge && (
-          <DropdownMenuItem onClick={onCharge}>
-            <DropdownMenuIcon icon={<LuReceipt />} />
-            <Trans>Charge cost</Trans>
-          </DropdownMenuItem>
+        {(onCharge || chargeDisabledReason) && (
+          <ChargeCostMenuItem
+            onClick={onCharge}
+            disabledReason={chargeDisabledReason}
+          />
         )}
       </DropdownMenuContent>
     </DropdownMenu>
