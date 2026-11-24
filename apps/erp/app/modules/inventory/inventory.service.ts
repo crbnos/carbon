@@ -138,7 +138,6 @@ import {
   equals,
   getErrorMessage,
   groupBy,
-  indexBy,
   indexByMapped,
   isFullDraw,
   isJobLocked,
@@ -237,6 +236,9 @@ import {
   journalLineDimensionRows,
   leavingTrackedEntityIds,
   loadTaxCodesInForce,
+  lockOrderLines,
+  lockOrderLinesAsRead,
+  lockPostable,
   lockUntrackedDraws,
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
@@ -14759,6 +14761,28 @@ export async function lockPostedReceipt(
   }
 }
 
+/**
+ * The first statement of a shipment void's transaction: the status read
+ * before it is stale, so two voids sent at once would both reverse the
+ * shipment. The second waits here, then sees Voided and refuses.
+ */
+export async function lockPostedShipment(
+  trx: VoidGuardDb,
+  companyId: string,
+  shipmentId: string
+): Promise<void> {
+  const shipment = await trx
+    .selectFrom("shipment")
+    .select("status")
+    .where("id", "=", shipmentId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (shipment?.status !== "Posted") {
+    throw new InvalidInputError("Can only void posted shipments");
+  }
+}
+
 async function refusingHeldStock<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run();
@@ -15191,29 +15215,21 @@ export async function postReceipt(
           );
         }
 
-        const [originalItemLedger, originalJournalLines, returnLinesVoid] =
-          await inOrder([
-            () =>
-              many(db, "itemLedger", {
-                documentId: receiptId,
-                documentType: "Sales Return Receipt",
-                companyId
-              }),
-            () =>
-              documentJournalLines(db, companyId, {
-                documentId: receiptId,
-                documentType: "Receipt"
-              }),
-            () =>
-              many(db, "salesReturnOrderLine", {
-                salesReturnOrderId,
-                companyId
-              })
-          ]);
+        const [originalItemLedger, originalJournalLines] = await inOrder([
+          () =>
+            many(db, "itemLedger", {
+              documentId: receiptId,
+              documentType: "Sales Return Receipt",
+              companyId
+            }),
+          () =>
+            documentJournalLines(db, companyId, {
+              documentId: receiptId,
+              documentType: "Receipt"
+            })
+        ]);
         if (originalItemLedger.error)
           throw new Error("Failed to fetch original item ledger entries");
-        if (returnLinesVoid.error)
-          throw new Error("Failed to fetch return order lines");
 
         const reversingItemLedger = (originalItemLedger.data ?? []).map(
           (entry) => ({
@@ -15293,6 +15309,14 @@ export async function postReceipt(
                 "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
               );
             }
+            // The order before its lines, as a post takes them; the
+            // quantities come off the lines as they read under the lock.
+            const returnLineById = await lockOrderLines(
+              trx,
+              "salesReturnOrderLine",
+              companyId,
+              [...receivedByLine.keys()]
+            );
 
             await voidServiceJobsForReturn(trx, {
               companyId,
@@ -15351,10 +15375,6 @@ export async function postReceipt(
               .where("companyId", "=", companyId)
               .execute();
 
-            const returnLineById = indexBy(
-              returnLinesVoid.data ?? [],
-              (line) => line.id
-            );
             await updateRowsById(
               trx,
               "salesReturnOrderLine",
@@ -15747,6 +15767,14 @@ export async function postReceipt(
             .execute();
           await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // Every line of the order: its status is set from them.
+          await lockOrderLinesAsRead(
+            trx,
+            "purchaseOrderLine",
+            companyId,
+            purchaseOrderLinesVoid.data,
+            "A purchase order line changed while this receipt was voiding. Void the receipt again."
+          );
           await lockOutsideProcessingJobs(trx, companyId, outsideLineIdsVoid);
           await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
           await removeUnpickedPutAways(trx, companyId, receiptId);
@@ -17170,9 +17198,20 @@ export async function postReceipt(
             (line.quantityReceived ?? 0) * (line.conversionFactor ?? 1)
           ])
         );
+        const receivedLinesRead = purchaseOrderLines.data.filter(
+          (line) => line.id in purchaseOrderLineUpdates
+        );
 
         await db.transaction().execute(async (trx) => {
+          await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOrderLinesAsRead(
+            trx,
+            "purchaseOrderLine",
+            companyId,
+            receivedLinesRead,
+            "A purchase order line changed while this receipt was posting. Post the receipt again."
+          );
           await lockOutsideProcessingJobs(trx, companyId, outsideLineIds);
           if (!isOutsideProcessing) {
             const unheld = await unheldInspectedLineRefusal(trx, companyId, {
@@ -18283,24 +18322,8 @@ export async function postReceipt(
             : null;
 
         await db.transaction().execute(async (trx) => {
+          await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-          // Double-post guard: serialize on the receipt row — a second
-          // concurrent post waits here, then sees Posted and aborts, so
-          // ledger rows, journals, and quantityReceived can never double.
-          const lockedReceipt = await trx
-            .selectFrom("receipt")
-            .select(["status"])
-            .where("id", "=", receiptId)
-            .forUpdate()
-            .executeTakeFirstOrThrow();
-          if (
-            lockedReceipt.status === "Posted" ||
-            lockedReceipt.status === "Voided"
-          ) {
-            throw new InvalidInputError(
-              `Receipt is already ${lockedReceipt.status}`
-            );
-          }
 
           // cancelSalesReturnOrder locks this same order row — re-check the
           // status under the lock so a cancel committed after our
@@ -18317,6 +18340,16 @@ export async function postReceipt(
               `Cannot post a receipt against a return order in ${lockedOrder.status} status`
             );
           }
+
+          await lockOrderLinesAsRead(
+            trx,
+            "salesReturnOrderLine",
+            companyId,
+            (salesReturnOrderLines.data ?? []).filter(
+              (line) => line.id in returnLineUpdates
+            ),
+            "A return order line changed while this receipt was posting. Post the receipt again."
+          );
 
           // A return type change takes this same lock. Re-read the return
           // types under it, so a line is never posted by the rule of a type
@@ -18707,7 +18740,16 @@ export async function postReceipt(
             : null;
 
         await db.transaction().execute(async (trx) => {
+          await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // Every line of the transfer: its status is set from them.
+          await lockOrderLinesAsRead(
+            trx,
+            "warehouseTransferLine",
+            companyId,
+            warehouseTransferLines.data,
+            "A warehouse transfer line changed while this receipt was posting. Post the receipt again."
+          );
           // Update warehouse transfer lines
           await updateRowsById(
             trx,
@@ -18870,13 +18912,15 @@ export async function postReceipt(
 
     return { success: true };
   } catch (err) {
-    // A failed VOID leaves the receipt Posted: its rows still stand.
+    // A failed VOID leaves the receipt Posted: its rows still stand. Only
+    // from Pending: a second post refused because the first one won must
+    // leave it Posted.
     if (type !== "void") {
       await updateRows(
         db,
         "receipt",
         { status: "Draft" },
-        { id: receiptId, companyId }
+        { id: receiptId, companyId, status: "Pending" }
       );
     }
     throw err;
@@ -20627,8 +20671,19 @@ export async function postShipment(
                 ? await getCurrentAccountingPeriod(companyId, db, today)
                 : null;
 
+            const shippedLinesRead = salesOrderLines.data.filter(
+              (line) => line.id in salesOrderLineUpdates
+            );
             await db.transaction().execute(async (trx) => {
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              await lockOrderLinesAsRead(
+                trx,
+                "salesOrderLine",
+                companyId,
+                shippedLinesRead,
+                "A sales order line changed while this shipment was posting. Post the shipment again."
+              );
               await fixedAssetWrites.apply(trx, companyId);
               await updateRowsById(
                 trx,
@@ -21174,6 +21229,16 @@ export async function postShipment(
               }, {}) ?? {};
 
             await db.transaction().execute(async (trx) => {
+              await lockPostable(trx, "shipment", shipmentId, companyId);
+              await lockOrderLinesAsRead(
+                trx,
+                "purchaseOrderLine",
+                companyId,
+                purchaseOrderLines.data.filter(
+                  (line) => line.id in purchaseOrderLineUpdates
+                ),
+                "A purchase order line changed while this shipment was posting. Post the shipment again."
+              );
               await updateRowsById(
                 trx,
                 "purchaseOrderLine",
@@ -21488,6 +21553,15 @@ export async function postShipment(
             }
 
             await db.transaction().execute(async (trx) => {
+              await lockPostable(trx, "shipment", shipmentId, companyId);
+              // Every line of the transfer: its status is set from them.
+              await lockOrderLinesAsRead(
+                trx,
+                "warehouseTransferLine",
+                companyId,
+                warehouseTransferLines.data,
+                "A warehouse transfer line changed while this shipment was posting. Post the shipment again."
+              );
               // Update warehouse transfer lines
               await updateRowsById(
                 trx,
@@ -21760,22 +21834,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
-              // Double-post guard: serialize on the shipment row — a second
-              // concurrent post waits here, then sees Posted and aborts, so
-              // ledger rows and journals can never double.
-              const lockedShipment = await trx
-                .selectFrom("shipment")
-                .select(["status"])
-                .where("id", "=", shipmentId)
-                .forUpdate()
-                .executeTakeFirstOrThrow();
-              if (
-                lockedShipment.status === "Posted" ||
-                lockedShipment.status === "Voided"
-              ) {
-                throw new Error(`Shipment is already ${lockedShipment.status}`);
-              }
-
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
               const returnedItems: ReturnShipmentItem[] = [];
@@ -21945,6 +22004,11 @@ export async function postShipment(
                   .execute();
               }
 
+              // The return order before its lines, as a receipt takes them:
+              // refreshing the status locks the order next.
+              await lockOrderLines(trx, "salesReturnOrderLine", companyId, [
+                ...shippedByReturnLine.keys()
+              ]);
               await addReturnLineQuantityShipped(trx, {
                 companyId,
                 userId,
@@ -22317,22 +22381,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
-              // Double-post guard: serialize on the shipment row — a second
-              // concurrent post waits here, then sees Posted and aborts, so
-              // ledger rows, journals, and quantityShipped can never double.
-              const lockedShipment = await trx
-                .selectFrom("shipment")
-                .select(["status"])
-                .where("id", "=", shipmentId)
-                .forUpdate()
-                .executeTakeFirstOrThrow();
-              if (
-                lockedShipment.status === "Posted" ||
-                lockedShipment.status === "Voided"
-              ) {
-                throw new Error(`Shipment is already ${lockedShipment.status}`);
-              }
-
+              await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
               // cancelPurchaseReturnOrder locks this same order row — re-check
@@ -22349,6 +22398,17 @@ export async function postShipment(
                   `Cannot ship against a return order in ${lockedOrder.status} status`
                 );
               }
+              // The write-off restores below follow from what the lines had
+              // shipped when they were read.
+              await lockOrderLinesAsRead(
+                trx,
+                "purchaseReturnOrderLine",
+                companyId,
+                (purchaseReturnOrderLines.data ?? []).filter(
+                  (line) => line.id in returnLineUpdates
+                ),
+                "A return order line changed while this shipment was posting. Post the shipment again."
+              );
 
               // Put back what the inspection reject wrote off, at the write-off's
               // own cost (Dr Inventory / Cr Scrap) and where it was written off,
@@ -23116,8 +23176,19 @@ export async function postShipment(
                 ? await getCurrentAccountingPeriod(companyId, db, today)
                 : null;
 
+            const shippedLinesRead = (salesOrderLines.data ?? []).filter(
+              (line) => line.id in salesOrderLineUpdates
+            );
             await db.transaction().execute(async (trx) => {
+              await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              await lockOrderLinesAsRead(
+                trx,
+                "salesOrderLine",
+                companyId,
+                shippedLinesRead,
+                "A sales order line changed while this shipment was voiding. Void the shipment again."
+              );
               await fixedAssetWrites.apply(trx, companyId);
               // Update sales order lines to reverse shipped quantities
               await updateRowsById(
@@ -23439,91 +23510,19 @@ export async function postShipment(
                 return acc;
               }, {}) ?? {};
 
-            const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
-              [];
-            const locationId = shipmentHeader.locationId;
-
-            // Create reversing item ledger entries for purchase order void
-            for await (const shipmentLine of shipmentLines.data) {
-              const itemTrackingType =
-                items.data.find((item) => item.id === shipmentLine.itemId)
-                  ?.itemTrackingType ?? "Inventory";
-
-              const shippedQuantity =
-                isNaN(shipmentLine.shippedQuantity) ||
-                shipmentLine.shippedQuantity == null
-                  ? 0
-                  : shipmentLine.shippedQuantity;
-
-              if (itemTrackingType === "Inventory" && shippedQuantity !== 0) {
-                // Create negative adjustment to remove inventory that was added during posting
-                itemLedgerInserts.push({
-                  postingDate: today,
-                  itemId: shipmentLine.itemId,
-                  quantity: round(-shippedQuantity), // Negative to remove inventory
-                  locationId: shipmentLine.locationId ?? locationId,
-                  storageUnitId: shipmentLine.storageUnitId,
-                  entryType: "Negative Adjmt.",
-                  documentType: "Purchase Receipt",
-                  documentId: shipmentHeader.id ?? undefined,
-                  externalDocumentId: undefined,
-                  createdBy: userId,
-                  companyId
-                });
-              }
-
-              if (shipmentLine.requiresBatchTracking) {
-                itemLedgerInserts.push({
-                  postingDate: today,
-                  itemId: shipmentLine.itemId,
-                  quantity: round(-shippedQuantity), // Negative to remove inventory
-                  locationId: shipmentLine.locationId ?? locationId,
-                  storageUnitId: shipmentLine.storageUnitId,
-                  entryType: "Negative Adjmt.",
-                  documentType: "Purchase Receipt",
-                  documentId: shipmentHeader.id ?? undefined,
-                  trackedEntityId: shipmentLineTracking.data?.find(
-                    (tracking) =>
-                      (
-                        tracking.attributes as
-                          | TrackedEntityAttributes
-                          | undefined
-                      )?.["Shipment Line"] === shipmentLine.id
-                  )?.id,
-                  externalDocumentId: undefined,
-                  createdBy: userId,
-                  companyId
-                });
-              }
-
-              if (shipmentLine.requiresSerialTracking) {
-                const lineTracking = shipmentLineTracking.data?.filter(
-                  (tracking) =>
-                    (
-                      tracking.attributes as TrackedEntityAttributes | undefined
-                    )?.["Shipment Line"] === shipmentLine.id
-                );
-
-                lineTracking?.forEach((tracking) => {
-                  itemLedgerInserts.push({
-                    postingDate: today,
-                    itemId: shipmentLine.itemId,
-                    quantity: -1, // Negative to remove inventory
-                    locationId: shipmentLine.locationId ?? locationId,
-                    storageUnitId: shipmentLine.storageUnitId,
-                    entryType: "Negative Adjmt.",
-                    documentType: "Purchase Receipt",
-                    documentId: shipmentHeader.id ?? undefined,
-                    trackedEntityId: tracking.id,
-                    externalDocumentId: undefined,
-                    createdBy: userId,
-                    companyId
-                  });
-                });
-              }
-            }
-
+            // The post books no stock movement for a purchase order
+            // (outside processing) shipment, so the void reverses none.
             await db.transaction().execute(async (trx) => {
+              await lockPostedShipment(trx, companyId, shipmentId);
+              await lockOrderLinesAsRead(
+                trx,
+                "purchaseOrderLine",
+                companyId,
+                purchaseOrderLines.data.filter(
+                  (line) => line.id in purchaseOrderLineUpdates
+                ),
+                "A purchase order line changed while this shipment was voiding. Void the shipment again."
+              );
               // Update purchase order lines to reverse shipped quantities
               await updateRowsById(
                 trx,
@@ -23534,15 +23533,6 @@ export async function postShipment(
                   data
                 }))
               );
-
-              // Create reversing item ledger entries
-              if (itemLedgerInserts.length > 0) {
-                await trx
-                  .insertInto("itemLedger")
-                  .values(itemLedgerInserts)
-                  .returning(["id"])
-                  .execute();
-              }
 
               // Update shipment status to Voided
               await trx
@@ -23729,6 +23719,15 @@ export async function postShipment(
             }
 
             await db.transaction().execute(async (trx) => {
+              await lockPostedShipment(trx, companyId, shipmentId);
+              // Every line of the transfer: its status is set from them.
+              await lockOrderLinesAsRead(
+                trx,
+                "warehouseTransferLine",
+                companyId,
+                warehouseTransferLines.data,
+                "A warehouse transfer line changed while this shipment was voiding. Void the shipment again."
+              );
               // Update warehouse transfer lines
               await updateRowsById(
                 trx,
@@ -23823,6 +23822,7 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
+              await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
               const reversingItemLedger = (originalItemLedger.data ?? []).map(
                 (entry) => ({
@@ -24060,6 +24060,11 @@ export async function postShipment(
                 }
               }
 
+              // The return order before its lines, as a receipt takes them:
+              // refreshing the status locks the order next.
+              await lockOrderLines(trx, "salesReturnOrderLine", companyId, [
+                ...shippedByReturnLine.keys()
+              ]);
               await addReturnLineQuantityShipped(trx, {
                 companyId,
                 userId,
@@ -24121,42 +24126,31 @@ export async function postShipment(
             // transaction.
             const postingStatus = await journalPostingStatus(db, companyId);
 
-            const [
-              originalJournalLines,
-              originalItemLedger,
-              returnLinesVoid,
-              originalCostRows
-            ] = await inOrder([
-              () =>
-                documentJournalLines(db, companyId, {
-                  documentId: shipmentId,
-                  documentType: "Return Order"
-                }),
-              () =>
-                many(db, "itemLedger", {
-                  documentId: shipmentId,
-                  documentType: "Purchase Return Shipment",
-                  companyId
-                }),
-              () =>
-                many(db, "purchaseReturnOrderLine", {
-                  purchaseReturnOrderId,
-                  companyId
-                }),
-              () =>
-                many(db, "costLedger", {
-                  documentId: shipmentId,
-                  documentType: "Purchase Return Shipment",
-                  companyId
-                })
-            ]);
+            const [originalJournalLines, originalItemLedger, originalCostRows] =
+              await inOrder([
+                () =>
+                  documentJournalLines(db, companyId, {
+                    documentId: shipmentId,
+                    documentType: "Return Order"
+                  }),
+                () =>
+                  many(db, "itemLedger", {
+                    documentId: shipmentId,
+                    documentType: "Purchase Return Shipment",
+                    companyId
+                  }),
+                () =>
+                  many(db, "costLedger", {
+                    documentId: shipmentId,
+                    documentType: "Purchase Return Shipment",
+                    companyId
+                  })
+              ]);
             // A failed read here must abort: treating data:null as "nothing
             // to reverse" would mark the shipment Voided while its journal
             // and ledger rows stand.
             if (originalItemLedger.error)
               throw new Error("Failed to fetch item ledger rows to reverse");
-            if (returnLinesVoid.error)
-              throw new Error("Failed to fetch return order lines");
             if (originalCostRows.error)
               throw new Error("Failed to fetch cost ledger rows to reverse");
 
@@ -24208,7 +24202,16 @@ export async function postShipment(
 
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
+              await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              // The order before its lines, as a post takes them; the
+              // quantities come off the lines as they read under the lock.
+              const returnLineById = await lockOrderLines(
+                trx,
+                "purchaseReturnOrderLine",
+                companyId,
+                [...shippedByLine.keys()]
+              );
               const reversingItemLedger = (originalItemLedger.data ?? [])
                 .filter((entry) => !isWriteOffRestore(entry))
                 .map((entry) => ({
@@ -24391,10 +24394,6 @@ export async function postShipment(
                 }
               }
 
-              const returnLineById = indexBy(
-                returnLinesVoid.data ?? [],
-                (line) => line.id
-              );
               await updateRowsById(
                 trx,
                 "purchaseReturnOrderLine",
@@ -24535,12 +24534,14 @@ export async function postShipment(
     // A failed VOID must not touch status: the shipment is still Posted and
     // its ledger/journal rows still stand, so forcing it to Draft would
     // contradict the books and let it be edited and posted a second time.
+    // A failed post resets only from Pending, for the same reason: a second
+    // post refused because the first one won must leave it Posted.
     if (type !== "void") {
       await updateRows(
         db,
         "shipment",
         { status: "Draft" },
-        { id: shipmentId, companyId }
+        { id: shipmentId, companyId, status: "Pending" }
       );
     }
     throw err;
@@ -30678,23 +30679,22 @@ async function consumeTrackedEntitiesIntoOperation(
 
   // Only update if we didn't create a new jobMaterial (in which case it's already set)
   if (actualMaterialId === materialId) {
-    const currentQuantityIssued = round(
-      Number(jobMaterial?.quantityIssued) || 0
-    );
-    const newQuantityIssued = round(currentQuantityIssued + totalChildQuantity);
-
-    await trx
+    // Added to the row, not to the read above: a batch member or a confirmed
+    // over-issue reads the material unlocked, and a write of that read would
+    // drop an issue that committed since.
+    const updated = await trx
       .updateTable("jobMaterial")
-      .set({
-        quantityIssued: newQuantityIssued
-      })
+      .set((eb) => ({
+        quantityIssued: sql<number>`coalesce(${eb.ref("quantityIssued")}, 0) + ${totalChildQuantity}`
+      }))
       .where("id", "=", actualMaterialId!)
       .where("companyId", "=", companyId)
-      .execute();
+      .returning("quantityIssued")
+      .executeTakeFirst();
 
     logger.info("Job material quantity updated", {
       materialId: actualMaterialId,
-      newQuantityIssued
+      newQuantityIssued: updated?.quantityIssued
     });
   }
 
@@ -32383,7 +32383,8 @@ export async function issueMaterial(
         materialId,
         jobOperationStepId,
         adjustmentType,
-        refuseOverIssue
+        refuseOverIssue,
+        maxQuantityIssued
       } = validatedPayload;
 
       // Written into jobMaterialStep for an unplanned part (no companyId there).
@@ -32703,11 +32704,21 @@ export async function issueMaterial(
               );
             }
           }
+          // A step backflush planned its quantity from an unlocked read: a
+          // completion or another step that issued since has covered part of
+          // it.
+          const consumingQuantity =
+            maxQuantityIssued === undefined
+              ? Number(quantity)
+              : Math.min(
+                  Number(quantity),
+                  Math.max(0, round(maxQuantityIssued) - previouslyIssued)
+                );
           const quantityToIssue = round(
             adjustmentType === "Positive Adjmt."
               ? Number(quantity)
               : adjustmentType === "Negative Adjmt."
-                ? Number(quantity)
+                ? consumingQuantity
                 : round(Number(quantity)) -
                   round(Number(material?.quantityIssued)) // set quantity
           );
