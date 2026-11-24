@@ -30,7 +30,8 @@ export const formFieldBudget: ConformanceCheck = {
   provenance: {
     deprecates: "a long flat form grid",
     replacedBy: "FormGroup, FormFold and FormStep* from ~/components/Form",
-    since: "2026-10-23"
+    since: "2026-10-23",
+    incidents: ["f62fb04667"]
   },
   scan(file: string, contents: string): Violation[] {
     if (!APP_UI.test(file)) return [];

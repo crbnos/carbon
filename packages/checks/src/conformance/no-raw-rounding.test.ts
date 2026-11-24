@@ -32,4 +32,26 @@ describe("no-raw-rounding", () => {
     ].join("\n");
     expect(noRawRounding.scan("a.ts", src)).toHaveLength(0);
   });
+
+  it("flags the exchange-rate rounding acdbcad23e fixed, and passes its fix", () => {
+    // packages/jobs/src/inngest/functions/scheduled/update-exchange-rates.ts
+    // before acdbcad23e: the nightly job rounded each rate to the currency's
+    // display decimals, which zeroed every 0-decimal currency's rate and
+    // froze rates that rounded to 0.
+    const before = [
+      "              exchangeRate: Number(",
+      "                rates[currency.code as CurrencyCode]?.toFixed(",
+      "                  currency.decimalPlaces",
+      "                )",
+      "              ),"
+    ].join("\n");
+    const file =
+      "packages/jobs/src/inngest/functions/scheduled/update-exchange-rates.ts";
+    expect(noRawRounding.scan(file, before).map((v) => v.snippet)).toEqual([
+      "rates[currency.code as CurrencyCode]?.toFixed("
+    ]);
+    const after =
+      "              exchangeRate: round(Number(rates[currency.code as CurrencyCode])),";
+    expect(noRawRounding.scan(file, after)).toHaveLength(0);
+  });
 });

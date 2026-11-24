@@ -24,7 +24,8 @@ export const noForeignKeyWithoutOnDelete: ConformanceCheck = {
     "A foreign key must state ON DELETE. The default (NO ACTION) is a decision nobody made.",
   provenance: {
     deprecates: "REFERENCES t(id) with no ON DELETE clause",
-    replacedBy: "REFERENCES t(id) ON DELETE CASCADE | SET NULL | RESTRICT"
+    replacedBy: "REFERENCES t(id) ON DELETE CASCADE | SET NULL | RESTRICT",
+    incidents: ["c476c942de"]
   },
   scan(file, contents) {
     const base = file.split("/").pop() ?? file;

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
-import type { ConformanceCheck, Violation } from "../check";
+import type { ConformanceCheck, Provenance, Violation } from "../check";
 import { blankSqlComments } from "../sources/comments";
 
 /**
@@ -82,18 +82,21 @@ const FUNCTION_DDL = new RegExp(
   "gi"
 );
 
+export const NO_AUTHZ_DDL_IN_MIGRATIONS_PROVENANCE: Provenance = {
+  deprecates: "CREATE/ALTER POLICY and managed function DDL in migrations",
+  replacedBy:
+    "packages/database/src/authz (manifest.ts + helpers/*.sql) and packages/database/src/event-system/functions/*.sql",
+  since: SINCE,
+  incidents: ["4df5f8c9bd", "1f5183a1f2"]
+};
+
 export const noAuthzDdlInMigrations = (
   functions: ManagedFunction[]
 ): ConformanceCheck => ({
   id: "no-authz-ddl-in-migrations",
   description:
     "Policies, RLS helpers, event-system functions and event triggers are authored as files, not migrations.",
-  provenance: {
-    deprecates: "CREATE/ALTER POLICY and managed function DDL in migrations",
-    replacedBy:
-      "packages/database/src/authz (manifest.ts + helpers/*.sql) and packages/database/src/event-system/functions/*.sql",
-    since: SINCE
-  },
+  provenance: NO_AUTHZ_DDL_IN_MIGRATIONS_PROVENANCE,
   scan(file, contents) {
     const timestamp = /^(\d{14})_/.exec(file)?.[1];
     if (

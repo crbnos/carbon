@@ -24,55 +24,21 @@ const CONFORMANCE = join(__dirname, "conformance");
  * merge, as the checks before them did.
  */
 const UNPROVEN_CHECKS = new Set([
-  "account-fk-restrict",
   "deployments-set-required-env",
-  "document-sequence-synced",
-  "edge-function-authorizes-caller",
   "event-ignored-columns",
-  "form-field-budget",
   "function-redefinition-keeps-changes",
-  "index-redirect-before-loaders",
-  "journal-status-filter",
-  "lingui-macro-misuse",
   "list-select-covers-columns",
-  "loader-reads-through-api",
-  "mes-unit-write-resolves-unit",
   "module-shape",
   "moved-tables-covered",
-  "no-authz-ddl-in-migrations",
-  "no-bare-outlet",
-  "no-db-client-in-service",
   "no-default-on-effects",
-  "no-derived-percent-column",
   "no-duplicated-app-file",
-  "no-foreign-key-without-on-delete",
-  "no-inline-fraction-digits",
-  "no-inline-sensor-options",
   "no-inline-unique-violation",
   "no-integration-id-branching",
   "no-interpolated-error-log",
-  "no-legacy-rls",
-  "no-local-timezone",
-  "no-missing-audit-column",
   "no-module-permission-key",
-  "no-noop-open-change",
-  "no-numeric-precision",
   "no-postgres-changes",
-  "no-raw-forwarded-headers",
-  "no-raw-or-search",
-  "no-raw-redirect",
-  "no-raw-revalidator",
-  "no-raw-rounding",
   "no-required-column-without-default",
   "no-server-code-in-client",
-  "no-silent-test-pass",
-  "no-state-copy-of-loader-data",
-  "no-unguarded-submit",
-  "no-unmounting-dialog",
-  "no-unrounded-tracked-quantity",
-  "no-unscoped-kysely-write",
-  "no-view-without-invoker",
-  "no-zero-concurrency",
   "offline-page-cache-bumped",
   "provider-role-backfilled",
   "registry-helpers-fresh",
@@ -81,7 +47,6 @@ const UNPROVEN_CHECKS = new Set([
   "route-maps-to-page",
   "scheduled-sql-constants",
   "service-fn-file",
-  "side-effect-import-declared",
   "spdx-license-header",
   "stamp-matches-columns",
   "test-mocks-own-module",
@@ -90,7 +55,7 @@ const UNPROVEN_CHECKS = new Set([
 
 // The size the list was frozen at. Lower it when a check leaves; raising it
 // lets an unproven check in, which is what this test exists to stop.
-const UNPROVEN_CEILING = 62;
+const UNPROVEN_CEILING = 27;
 
 /** Every check `run.ts` registers: one `./conformance/<id>` module each. */
 function registeredChecks(): string[] {

@@ -24,7 +24,8 @@ export const noRawForwardedHeaders: ConformanceCheck = {
       "reading X-Forwarded-For / -Host / -Proto or X-Real-IP at call sites",
     replacedBy:
       "getClientIp, getRequestProtocol, getRequestHost, getRequestOrigin (@carbon/utils)",
-    since: "2026-09-28"
+    since: "2026-09-28",
+    incidents: ["4df5f8c9bd"]
   },
   scan(file: string, contents: string): Violation[] {
     if (file === HELPERS) return [];

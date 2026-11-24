@@ -65,6 +65,73 @@ SELECT set_event_triggers('widget');`;
     expect(check.scan("20261004194526_before.sql", sql)).toEqual([]);
   });
 
+  // The two forks the check exists for. Each shipped before its function was
+  // taken over, so it replays here as a migration written after the takeover.
+  const forked = noAuthzDdlInMigrations([
+    {
+      schema: "public",
+      name: "get_companies_with_employee_permission",
+      file: "packages/database/src/authz/helpers/get_companies_with_employee_permission.sql",
+      since: "20260927000000"
+    },
+    {
+      schema: "public",
+      name: "create_audit_log_table",
+      file: "packages/database/src/event-system/functions/create_audit_log_table.sql",
+      since: "20261002114954"
+    }
+  ]);
+
+  it("flags the helper redefinition that dropped STABLE, fixed by 4df5f8c9bd", () => {
+    // 20260925121735_rpc-function-guards.sql before 4df5f8c9bd: CREATE OR
+    // REPLACE without STABLE made the RLS helper VOLATILE again.
+    const sql = `CREATE OR REPLACE FUNCTION public.get_companies_with_employee_permission(permission text)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  permission_companies text[];
+BEGIN
+  RETURN permission_companies;
+END;
+$function$;`;
+    expect(forked.scan(NEW, sql).map((v) => v.snippet)).toEqual([
+      "CREATE OR REPLACE FUNCTION public.get_companies_with_employee_permission"
+    ]);
+  });
+
+  it("flags the create_audit_log_table fork that ran DDL on every audit write, fixed by 1f5183a1f2", () => {
+    // 20260924171942_audit-log-company-scope.sql before 1f5183a1f2: the
+    // existing-table path re-attached the append-only trigger every call.
+    const sql = `-- Fork create_audit_log_table (live def, 20260818014100): guard first, then
+-- secure_audit_log_table on both the existing-table and the new-table path.
+CREATE OR REPLACE FUNCTION public.create_audit_log_table(p_company_id text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  tbl_name TEXT;
+BEGIN
+  PERFORM assert_audit_log_access(p_company_id, 'settings_update');
+  tbl_name := 'auditLog_' || p_company_id;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND information_schema.tables.table_name = tbl_name
+  ) THEN
+    PERFORM attach_audit_log_append_only(tbl_name);
+    PERFORM secure_audit_log_table(p_company_id);
+    RETURN;
+  END IF;
+END;
+$function$;`;
+    expect(forked.scan(AFTER_EVENT_TAKEOVER, sql).map((v) => v.line)).toEqual([
+      3
+    ]);
+  });
+
   it("allows DROP POLICY (needed before dropping a column a policy uses)", () => {
     expect(
       check.scan(NEW, `DROP POLICY "SELECT" ON "public"."widget";`)

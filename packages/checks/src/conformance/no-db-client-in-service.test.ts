@@ -107,4 +107,36 @@ describe("noDbClientInService", () => {
       )
     ).toHaveLength(0);
   });
+
+  it("flags getSchedulingDb from before d51cafd551, which built its own pool", () => {
+    // apps/erp/app/modules/production/production.service.ts before d51cafd551.
+    const before = `let schedulingDbPromise: Promise<Kysely<KyselyDatabase>> | undefined;
+function getSchedulingDb(): Promise<Kysely<KyselyDatabase>> {
+  if (!schedulingDbPromise) {
+    schedulingDbPromise = (async () => {
+      const { getPostgresClient, getPostgresConnectionPool } = await import(
+        "@carbon/database/client"
+      );
+      const { PostgresDriver } = await import("kysely");
+      return getPostgresClient(getPostgresConnectionPool(5), PostgresDriver);
+    })();
+  }
+  return schedulingDbPromise;
+}`;
+    expect(
+      noDbClientInService.scan(SERVICE, before).map((v) => [v.line, v.snippet])
+    ).toEqual([
+      [8, "PostgresDriver"],
+      [9, "getPostgresConnectionPool("],
+      [9, "getPostgresClient("],
+      [9, "PostgresDriver"]
+    ]);
+    // The fix: the caller passes db in.
+    expect(
+      noDbClientInService.scan(
+        SERVICE,
+        "export async function getJobExpediteForecast(db: Kysely<KyselyDatabase>, client: SupabaseClient<Database>) {}"
+      )
+    ).toEqual([]);
+  });
 });

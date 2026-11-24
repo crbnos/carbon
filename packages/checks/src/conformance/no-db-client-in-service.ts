@@ -48,7 +48,8 @@ export const noDbClientInService: ConformanceCheck = {
     deprecates:
       "constructing a pg pool / Kysely client, or calling getDatabaseClient() / getJobDatabaseClient(), inside a *.service.ts (e.g. the removed getSchedulingDb in production.service.ts)",
     replacedBy:
-      "a `db: Kysely<KyselyDatabase>` argument: ctx.asSystem.pg (or its transaction) from the service function, getDatabaseClient() from a route"
+      "a `db: Kysely<KyselyDatabase>` argument: ctx.asSystem.pg (or its transaction) from the service function, getDatabaseClient() from a route",
+    incidents: ["d51cafd551"]
   },
   scan(file, contents) {
     // Only `*.service.ts`. A `.server.ts` is the sanctioned home for a DB

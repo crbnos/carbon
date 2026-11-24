@@ -26,7 +26,8 @@ export const indexRedirectBeforeLoaders: ConformanceCheck = {
       "a redirect-only index route whose redirect runs alongside its parents' loaders",
     replacedBy:
       "export const middleware = [redirectBeforeLoaders(loader)] (@carbon/utils)",
-    since: "2026-10-02"
+    since: "2026-10-02",
+    incidents: ["543a65b7b0"]
   },
   scan(file: string, contents: string): Violation[] {
     if (!INDEX_ROUTE.test(file)) return [];

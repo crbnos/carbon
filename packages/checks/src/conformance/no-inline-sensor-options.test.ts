@@ -25,6 +25,31 @@ describe("noInlineSensorOptions", () => {
     expect(violations[0]!.line).toBe(3);
   });
 
+  it("flags the schedule board's keyboard sensor before c1ae854f80", () => {
+    // apps/erp/app/modules/production/ui/Schedule/Kanban/Kanban.tsx before c1ae854f80.
+    const before = `  const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter
+    })
+  );`;
+    expect(scan(before).map((v) => v.snippet)).toEqual([
+      "useSensor(KeyboardSensor, {"
+    ]);
+  });
+
+  it("passes the schedule board's keyboard sensor as c1ae854f80 fixed it", () => {
+    const after = `const KEYBOARD_SENSOR_OPTIONS = { coordinateGetter };
+
+  const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
+  );`;
+    expect(scan(after)).toHaveLength(0);
+  });
+
   it("accepts a sensor with no options or a module constant", () => {
     expect(
       scan(

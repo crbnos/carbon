@@ -14,7 +14,8 @@ export const noLegacyRls: ConformanceCheck = {
   provenance: {
     deprecates: "has_company_permission()",
     replacedBy: "get_companies_with_employee_permission()",
-    since: "20250201181148_rls-refactor.sql"
+    since: "20250201181148_rls-refactor.sql",
+    incidents: ["f25eba584c"]
   },
   scan(file, contents) {
     // Rendered from packages/database/src/authz, which owns the deprecated helpers' own

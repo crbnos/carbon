@@ -59,4 +59,50 @@ describe("formFieldBudget", () => {
       )
     ).toEqual([]);
   });
+
+  it("flags the contract Add Line form from before f62fb04667, which put 16 fields in flat grids", () => {
+    // apps/erp/app/modules/sales/ui/Contracts/ContractLineForm.tsx before
+    // f62fb04667, trimmed to one line per field.
+    const before = `<ValidatedForm validator={customerContractLineValidator} method="post">
+  <ModalCardBody>
+    <Hidden name="id" />
+    <Hidden name="customerContractId" />
+    <VStack spacing={4}>
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+        <Item name="itemId" label={t\`Service\`} type="Service" />
+        <Select name="revenueType" label={t\`Revenue Type\`} options={revenueTypes} />
+        <Input name="description" label={t\`Description\`} />
+      </div>
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
+        <Number name="quantity" label={t\`Quantity\`} minValue={0} />
+        <Number name="rate" label={t\`Rate\`} minValue={0} />
+        {revenueType === "Recurring" && (
+          <Select name="rateUnit" label={t\`Per\`} options={rateUnits} />
+        )}
+        <Number name="discountPercent" label={t\`Discount (%)\`} minValue={0} />
+        <DatePicker name="discountEndsOn" label={t\`Discount Ends On\`} />
+        <Number name="taxPercent" label={t\`Tax (%)\`} minValue={0} />
+      </div>
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
+        <DatePicker name="startDate" label={t\`Start Date\`} />
+        <DatePicker name="endDate" label={t\`End Date\`} />
+        <DatePicker name="goLiveDate" label={t\`Go-Live Date\`} />
+        <ContractProject name="projectId" label={t\`Project\`} />
+      </div>
+      <div className={showRevenue ? "mt-4 grid w-full gap-x-8 gap-y-4" : "hidden"}>
+        <Select name="revenueMethod" label={t\`Revenue Method\`} options={methods} />
+        <DatePicker name="revenueStartDate" label={t\`Revenue Start\`} />
+        <DatePicker name="revenueEndDate" label={t\`Revenue End\`} />
+      </div>
+    </VStack>
+  </ModalCardBody>
+</ValidatedForm>`;
+    const violations = scan(before);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]!.message).toContain("renders 16 fields");
+    // The fix put the fields in titled FormGroups.
+    expect(
+      scan(before.replace("<VStack spacing={4}>", '<FormGroup title="What">'))
+    ).toEqual([]);
+  });
 });

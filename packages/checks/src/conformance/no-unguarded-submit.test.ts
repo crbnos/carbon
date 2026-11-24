@@ -20,6 +20,45 @@ describe("noUnguardedSubmit", () => {
     expect(found[0]?.snippet).toBe('<Button type="submit">');
   });
 
+  it("flags the reimbursement Post button that 69e12568a3 guarded", () => {
+    // apps/erp/app/routes/x+/reimbursements+/$reimbursementId._index.tsx before 69e12568a3.
+    const found = scan(`
+        {canPost && (
+          <Form
+            method="post"
+            action={path.to.reimbursementPost(reimbursement.id)}
+          >
+            <Button type="submit" variant="primary">
+              <Trans>Post</Trans>
+            </Button>
+          </Form>
+        )}`);
+    expect(found.map((v) => v.snippet)).toEqual([
+      '<Button type="submit" variant="primary">'
+    ]);
+  });
+
+  it("passes the reimbursement Post button as 69e12568a3 fixed it", () => {
+    expect(
+      scan(`
+          <Form
+            method="post"
+            action={path.to.reimbursementPost(reimbursement.id)}
+          >
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={
+                navigation.formAction ===
+                path.to.reimbursementPost(reimbursement.id)
+              }
+            >
+              <Trans>Post</Trans>
+            </Button>
+          </Form>`)
+    ).toHaveLength(0);
+  });
+
   // The regression this check exists for: `loading` was the modal's data-fetch
   // flag, not its submission state, so the button stayed live for the seconds
   // the action spent rendering a PDF and emailing the customer.

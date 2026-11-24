@@ -163,7 +163,8 @@ export const noUnguardedSubmit: ConformanceCheck = {
       'raw <Button type="submit"> with no in-flight guard, which posts again on every click',
     replacedBy:
       "<Submit> from @carbon/form, or isDisabled/isLoading bound to the fetcher's state",
-    since: "2026-09-30"
+    since: "2026-09-30",
+    incidents: ["69e12568a3"]
   },
   scan(file: string, contents: string): Violation[] {
     if (!file.endsWith(".tsx")) return [];

@@ -12,7 +12,11 @@ export const noNumericPrecision: ConformanceCheck = {
   description: "Use bare NUMERIC, not NUMERIC(x,y).",
   provenance: {
     deprecates: "NUMERIC(x,y)",
-    replacedBy: "NUMERIC"
+    replacedBy: "NUMERIC",
+    // journalLine.amount was NUMERIC(19, 4): Postgres re-rounded each posted
+    // line after the app's balance check, so a stored journal could drift out
+    // of balance.
+    incidents: ["acdbcad23e"]
   },
   scan(file, contents) {
     const violations: Violation[] = [];

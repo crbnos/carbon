@@ -20,7 +20,8 @@ export const noRawRevalidator: ConformanceCheck = {
   provenance: {
     deprecates: 'import { useRevalidator } from "react-router"',
     replacedBy: 'import { useRevalidator } from "@carbon/query"',
-    since: "2026-10-06"
+    since: "2026-10-06",
+    incidents: ["c1ae854f80"]
   },
   scan(file: string, contents: string): Violation[] {
     if (file === DEFINITION) return [];

@@ -153,6 +153,43 @@ describe("mes-unit-write-resolves-unit", () => {
     ).toEqual([]);
   });
 
+  it("flags the scrap action that posted to the client's unit until f27d5fe481", () => {
+    // apps/mes/app/routes/x+/scrap.tsx before f27d5fe481: a later serial
+    // step scrapped whatever unit the form sent, so closing the picker
+    // recorded the work on the first unit.
+    const before = [
+      "export async function action({ request }: ActionFunctionArgs) {",
+      "  assertIsPost(request);",
+      "  const { companyId, userId } = await requirePermissions(request, {});",
+      "  const issued = await erpPosting(",
+      '    "issue",',
+      "    { companyId, userId },",
+      "    {",
+      '      type: "jobOperationScrap",',
+      "      jobOperationId,",
+      "      quantity,",
+      '      trackedEntityId: trackingType === "Serial" ? trackedEntityId : undefined',
+      "    }",
+      "  );",
+      "}"
+    ].join("\n");
+    expect(scan(before, "apps/mes/app/routes/x+/scrap.tsx")).toEqual([
+      '8:type:"jobOperationScrap"'
+    ]);
+    // apps/mes/app/services/complete.server.ts at f27d5fe481 resolves the
+    // unit before it posts.
+    expect(
+      scan(
+        fn(
+          "scrapOperationQuantity",
+          'const work = await resolveWorkUnit({ mode: "require" });',
+          SCRAP
+        ),
+        "apps/mes/app/services/complete.server.ts"
+      )
+    ).toEqual([]);
+  });
+
   it("only scans MES routes and services", () => {
     expect(
       scan(

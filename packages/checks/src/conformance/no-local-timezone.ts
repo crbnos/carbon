@@ -51,7 +51,10 @@ export const noLocalTimezone: ConformanceCheck = {
   provenance: {
     deprecates: "getLocalTimeZone() / toISOString() day-slicing in server code",
     replacedBy: "@carbon/utils datetime + company/location timezone",
-    since: "20260805020925_company-timezone.sql"
+    since: "20260805020925_company-timezone.sql",
+    // getScheduledEmployeesToday rostered the server's day of week, and
+    // getWeeklyHoursForEmployees cut the payroll week at process-zone midnight.
+    incidents: ["92c041c48e"]
   },
   scan(file, contents) {
     const violations: Violation[] = [];

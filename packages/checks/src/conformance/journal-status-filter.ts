@@ -179,7 +179,8 @@ export const journalStatusFilter: ConformanceCheck = {
     deprecates: "journal status filters written as status <> 'Draft'",
     replacedBy:
       "GL_JOURNAL_STATUSES, DOCUMENT_JOURNAL_STATUSES or OPEN_ITEM_JOURNAL_STATUSES from @carbon/database/accounting-posting",
-    since: SINCE_MIGRATION
+    since: SINCE_MIGRATION,
+    incidents: ["c0cf421500"]
   },
   scan(file: string, contents: string): Violation[] {
     if (!contents.includes("Draft") || !/journal/i.test(contents)) return [];

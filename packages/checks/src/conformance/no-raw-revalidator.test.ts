@@ -38,4 +38,21 @@ describe("noRawRevalidator", () => {
       )
     ).toEqual([]);
   });
+
+  it("flags the realtime reload from before c1ae854f80, which dropped a new quote line", () => {
+    // packages/query/src/useRealtime.tsx before c1ae854f80: a save's own
+    // broadcast revalidated during its redirect and restarted that navigation.
+    const before = `import { useFetchers, useMatches, useRevalidator } from "react-router";
+const revalidator = useRevalidator();`;
+    expect(
+      scan(before, "packages/query/src/useRealtime.tsx").map((v) => v.line)
+    ).toEqual([1]);
+    // The fix imports the held one.
+    expect(
+      scan(
+        `import { useMatches } from "react-router";\nimport { useRevalidator } from "./useRevalidator";\n`,
+        "packages/query/src/useRealtime.tsx"
+      )
+    ).toEqual([]);
+  });
 });

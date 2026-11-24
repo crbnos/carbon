@@ -19,7 +19,10 @@ export const noRawRedirect: ConformanceCheck = {
     deprecates:
       "redirect from react-router, and validating the target at the call site",
     replacedBy: "redirect, redirectExternal (@carbon/utils)",
-    since: "2026-10-04"
+    since: "2026-10-04",
+    // The signup verify action passed its redirectTo form value to the
+    // react-router redirect unvalidated: an open redirect.
+    incidents: ["b0437fbfe4"]
   },
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];

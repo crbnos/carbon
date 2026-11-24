@@ -21,7 +21,8 @@ export const noDerivedPercentColumn: ConformanceCheck = {
       "generated percent columns derived by division (rate = amount / subtotal)",
     replacedBy:
       "writable percent columns; amounts derive via applyRate in @carbon/utils",
-    since: "2026-08-11"
+    since: "2026-08-11",
+    incidents: ["acdbcad23e"]
   },
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];

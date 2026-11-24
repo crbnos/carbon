@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, SourceFile, Violation } from "../check";
+import type {
+  ConformanceCheck,
+  Provenance,
+  SourceFile,
+  Violation
+} from "../check";
 import { maskCommentsAndStrings } from "./no-default-on-effects";
 
 // vitest reports a case whose callback returns before asserting as PASSED:
@@ -312,6 +317,17 @@ export function sharedTestWrappers(fixtures: SourceFile[]): string[] {
   return found;
 }
 
+// Exported on its own because the check is built by a factory: the provenance
+// meta-test reads it without building the check.
+export const NO_SILENT_TEST_PASS_PROVENANCE: Provenance = {
+  deprecates:
+    "`if (!client) return;` at the top of a test callback, which reports the case passed without running it",
+  replacedBy:
+    "`it.skipIf(!client)(…)`, `databaseTest` or `postgrestTest` (.claude/rules/testing.md → Database tests)",
+  since: "2026-11-23",
+  incidents: ["78c72afe13"]
+};
+
 export function noSilentTestPass(
   sharedWrappers: readonly string[]
 ): ConformanceCheck {
@@ -319,13 +335,7 @@ export function noSilentTestPass(
     id: "no-silent-test-pass",
     description:
       "A test case does not return early when what it needs is missing; it skips",
-    provenance: {
-      deprecates:
-        "`if (!client) return;` at the top of a test callback, which reports the case passed without running it",
-      replacedBy:
-        "`it.skipIf(!client)(…)`, `databaseTest` or `postgrestTest` (.claude/rules/testing.md → Database tests)",
-      since: "2026-11-23"
-    },
+    provenance: NO_SILENT_TEST_PASS_PROVENANCE,
     scan(file: string, contents: string): Violation[] {
       const masked = maskCommentsAndStrings(contents);
       const wrappers = [

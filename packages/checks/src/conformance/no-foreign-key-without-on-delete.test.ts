@@ -53,4 +53,30 @@ describe("noForeignKeyWithoutOnDelete", () => {
   it("does not apply to migrations older than the cutoff", () => {
     expect(scan(OLD, `"jobId" TEXT REFERENCES "job"("id"),`)).toHaveLength(0);
   });
+
+  it("flags the productionQuantity event links that blocked deleting a time card before c476c942de", () => {
+    // packages/database/supabase/migrations/20241002012019_production-quantities.sql
+    // as it stood before c476c942de, under a file name past the cutoff (the
+    // check leaves applied history alone). With no ON DELETE, a quantity that
+    // named a production event made that event impossible to delete.
+    const before = `CREATE TABLE "productionQuantity" (
+  "setupProductionEventId" TEXT,
+  "laborProductionEventId" TEXT,
+  "machineProductionEventId" TEXT,
+  CONSTRAINT "productionQuantity_setupProductionEventId_fkey" FOREIGN KEY ("setupProductionEventId") REFERENCES "productionEvent" ("id"),
+  CONSTRAINT "productionQuantity_laborProductionEventId_fkey" FOREIGN KEY ("laborProductionEventId") REFERENCES "productionEvent" ("id"),
+  CONSTRAINT "productionQuantity_machineProductionEventId_fkey" FOREIGN KEY ("machineProductionEventId") REFERENCES "productionEvent" ("id")
+);`;
+    expect(scan(NEW, before).map((v) => v.line)).toEqual([5, 6, 7]);
+    // The fix (20260702174233_production-quantity-event-fk-set-null.sql).
+    expect(
+      scan(
+        NEW,
+        `ALTER TABLE "productionQuantity"
+  ADD CONSTRAINT "productionQuantity_setupProductionEventId_fkey"
+  FOREIGN KEY ("setupProductionEventId") REFERENCES "productionEvent"("id")
+  ON DELETE SET NULL;`
+      )
+    ).toEqual([]);
+  });
 });

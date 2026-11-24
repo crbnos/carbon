@@ -51,6 +51,41 @@ describe("noLocalTimezone", () => {
     expect(noLocalTimezone.scan("f.ts", ts)).toHaveLength(1);
   });
 
+  it("replays 92c041c48e: the roster and the payroll week used the server's calendar", () => {
+    // apps/erp/app/modules/people/people.service.ts before 92c041c48e.
+    const before = `  const today = dayNames[new Date().getDay()];
+
+  return data.filter((ej) => {
+    const shift = ej.shift as Record<string, unknown> | null;
+    return shift && shift[today] === true;
+  });
+}
+
+export async function getWeeklyHoursForEmployees(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  employeeIds: string[]
+): Promise<Record<string, number>> {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+  monday.setHours(0, 0, 0, 0);`;
+    expect(
+      noLocalTimezone
+        .scan("apps/erp/app/modules/people/people.service.ts", before)
+        .map((v) => [v.line, v.snippet])
+    ).toEqual([
+      [1, "new Date().getDay("],
+      [18, ".setHours(0, 0, 0, 0)"]
+    ]);
+    // The fix: the company calendar.
+    const after = `  const tz = await getCompanyTimeZone(client, companyId);
+  const dayName = dayNames[getDayOfWeek(today(tz), "en-US")];
+  const monday = startOfWeek(today(tz), "en-GB").toDate(tz);`;
+    expect(noLocalTimezone.scan("f.ts", after)).toHaveLength(0);
+  });
+
   it("allows full-instant timestamps", () => {
     const ts = "const at = new Date().toISOString();";
     expect(noLocalTimezone.scan("f.ts", ts)).toHaveLength(0);

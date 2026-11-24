@@ -24,7 +24,8 @@ export const noRawRounding: ConformanceCheck = {
     deprecates:
       "ad-hoc Math.round/Math.ceil/Math.floor/toFixed on prices, rates, and quantities",
     replacedBy: "round/scrapAllowance/applyRate/deriveRate from @carbon/utils",
-    since: "2026-08-11"
+    since: "2026-08-11",
+    incidents: ["acdbcad23e"]
   },
   scan(file: string, contents: string): Violation[] {
     if (EXCLUDED_FILES.has(file)) return [];

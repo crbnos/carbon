@@ -23,7 +23,10 @@ export const noZeroConcurrency: ConformanceCheck = {
   description: "Inngest concurrency.limit must be >= 1.",
   provenance: {
     deprecates: "concurrency: { limit: 0 }",
-    replacedBy: "concurrency: { limit: 1 }"
+    replacedBy: "concurrency: { limit: 1 }",
+    // The webhook and schedule-job handlers declared limit 0; every run sat
+    // in QUEUED until the limit became 1.
+    incidents: ["f25eba584c"]
   },
   scan(file, contents) {
     const violations: Violation[] = [];

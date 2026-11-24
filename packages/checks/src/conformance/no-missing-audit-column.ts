@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import type { ConformanceCheck, Provenance, Violation } from "../check";
 
 /**
  * A write must not name `createdBy` / `updatedBy` on a table that has no such
@@ -240,6 +240,16 @@ function rowKeys(
   return keys;
 }
 
+// Exported on its own because the check is built by a factory: the provenance
+// meta-test reads it without building the check.
+export const NO_MISSING_AUDIT_COLUMN_PROVENANCE: Provenance = {
+  deprecates:
+    "stamping createdBy/updatedBy on a table without audit columns (the customerPartToItem upsert in sales-rfq.$rfqId.map-lines.ts, which failed every call)",
+  replacedBy: "writing only the columns the table has",
+  since: "PGRST204 on items_upsertItemCustomerPart",
+  incidents: ["22c9b98508"]
+};
+
 export function noMissingAuditColumn(
   columns: Map<string, Set<string>>
 ): ConformanceCheck {
@@ -247,12 +257,7 @@ export function noMissingAuditColumn(
     id: "no-missing-audit-column",
     description:
       "A write never names createdBy/updatedBy on a table that has no such column — PostgREST rejects the statement with PGRST204 and TypeScript does not catch it.",
-    provenance: {
-      deprecates:
-        "stamping createdBy/updatedBy on a table without audit columns (the customerPartToItem upsert in sales-rfq.$rfqId.map-lines.ts, which failed every call)",
-      replacedBy: "writing only the columns the table has",
-      since: "PGRST204 on items_upsertItemCustomerPart"
-    },
+    provenance: NO_MISSING_AUDIT_COLUMN_PROVENANCE,
     scan(file, contents) {
       const violations: Violation[] = [];
       TARGET_RE.lastIndex = 0;

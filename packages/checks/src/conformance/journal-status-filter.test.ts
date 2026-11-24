@@ -20,6 +20,33 @@ WHERE j."status" <> 'Draft';`;
     expect(violations[0]?.message).toContain("GL_JOURNAL_STATUSES");
   });
 
+  it("replays c0cf421500: get_inventory_tie_out's not-Draft GL read, restated in the GL readers migration", () => {
+    // packages/database/supabase/migrations/20260925121735_rpc-function-guards.sql
+    // before c0cf421500. c0cf421500 restated the function in
+    // 20261009005144_journal-gl-status-readers.sql with the filter changed;
+    // restated unchanged, the old reader is what the check flags.
+    const before = `  gl AS (
+    SELECT jl."accountId" AS "account", SUM(jl."amount") AS "balance"
+    FROM "journal" j
+    INNER JOIN "journalLine" jl
+      ON jl."journalId" = j."id" AND jl."companyId" = j."companyId"
+    WHERE j."companyId" = company_id
+      AND j."status" <> 'Draft'
+      AND j."postingDate" <= v_as_of
+      AND jl."accountId" IN (v_rm_account, v_fg_account)
+    GROUP BY jl."accountId"
+  );`;
+    const file = "20261009005144_journal-gl-status-readers.sql";
+    expect(
+      journalStatusFilter.scan(file, before).map((v) => v.snippet)
+    ).toEqual([`AND j."status" <> 'Draft'`]);
+    const after = before.replace(
+      `j."status" <> 'Draft'`,
+      `j."status" IN ('Posted', 'Reversed')`
+    );
+    expect(journalStatusFilter.scan(file, after)).toHaveLength(0);
+  });
+
   it("skips a migration older than the GL readers migration", () => {
     const sql = `SELECT * FROM "journal" j WHERE j."status" <> 'Draft';`;
     expect(

@@ -22,7 +22,8 @@ export const linguiMacroMisuse: ConformanceCheck = {
     deprecates: "t from @lingui/core/macro, i18n._(msg`...`)",
     replacedBy:
       "useLingui().t or <Trans> from @lingui/react/macro (.claude/rules/i18n-lingui-system.md)",
-    since: "2026-10-25"
+    since: "2026-10-25",
+    incidents: ["5d8d459250"]
   },
   scan(file: string, contents: string): Violation[] {
     const at = (index = 0) => contents.slice(0, index).split("\n").length;

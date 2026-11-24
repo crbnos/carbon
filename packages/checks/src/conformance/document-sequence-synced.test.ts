@@ -94,4 +94,90 @@ describe("findUnsyncedDocumentSequences", () => {
       "sync_advance_document_sequence.sql: WHEN 'job'"
     ]);
   });
+
+  it("flags the counters b091e313b6 left behind, and passes its fix", () => {
+    // packages/database/src/seed-data.ts and
+    // packages/database/src/event-system/attachments.ts before b091e313b6:
+    // no table ran sync_advance_document_sequence, so a job or journal entry
+    // numbered through MCP or a typed ID left the counter behind.
+    const seed = {
+      file: "seed-data.ts",
+      contents: `export const sequences = [
+  {
+    table: "journalEntry",
+    name: "Journal Entry",
+    prefix: "JE-%{yyyy}-%{mm}-",
+  },
+  {
+    table: "job",
+    name: "Job",
+    prefix: "J",
+  },
+  {
+    table: "jobOperationBatch",
+    name: "Operation Batch",
+    prefix: "BAT",
+  },
+] as const;
+`
+    };
+    const before = {
+      file: "attachments.ts",
+      contents: `export const attachments = {
+  job: {
+    before: ["sync_job_complete_or_canceled"],
+    after: ["sync_insert_job_make_method", "sync_job_recompute_service_line"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
+  journal: { events: true, statement: ["broadcast_table_changes"] },
+  journalLine: { events: true },
+} as const;
+`
+    };
+    expect(
+      messages({
+        seedData: seed,
+        attachments: before,
+        interceptor: {
+          file: "sync_advance_document_sequence.sql",
+          contents: ""
+        }
+      })
+    ).toEqual([
+      'seed-data.ts: table: "journalEntry"',
+      'seed-data.ts: table: "job"'
+    ]);
+
+    // The same files at b091e313b6.
+    const after = {
+      file: "attachments.ts",
+      contents: `export const attachments = {
+  job: {
+    before: ["sync_job_complete_or_canceled"],
+    after: [
+      "sync_insert_job_make_method",
+      "sync_job_recompute_service_line",
+      "sync_advance_document_sequence"
+    ],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
+  journal: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
+  journalLine: { events: true },
+} as const;
+`
+    };
+    expect(
+      messages({
+        seedData: seed,
+        attachments: after,
+        interceptor: interceptor("job", "journal")
+      })
+    ).toEqual([]);
+  });
 });

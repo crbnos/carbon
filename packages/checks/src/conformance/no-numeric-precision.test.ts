@@ -18,6 +18,35 @@ describe("noNumericPrecision", () => {
     );
   });
 
+  it("replays acdbcad23e: journalLine.amount re-rounded posted lines to scale 4", () => {
+    // packages/database/supabase/migrations/20230705033432_ledgers.sql before
+    // acdbcad23e, which widened these columns in 20260811123614_widen-ledger-amounts.sql.
+    const sql = `CREATE TABLE "journalLine" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "journalId" INTEGER NOT NULL,
+  "accountNumber" TEXT NOT NULL,
+  "description" TEXT,
+  "amount" NUMERIC(19, 4) NOT NULL,
+  "quantity" NUMERIC(12, 4) NOT NULL DEFAULT 1,`;
+    expect(
+      noNumericPrecision
+        .scan("20230705033432_ledgers.sql", sql)
+        .map((v) => [v.line, v.snippet])
+    ).toEqual([
+      [6, "NUMERIC(19, 4)"],
+      [7, "NUMERIC(12, 4)"]
+    ]);
+    // The fix: bare NUMERIC.
+    expect(
+      noNumericPrecision.scan(
+        "20260811123614_widen-ledger-amounts.sql",
+        `ALTER TABLE "journalLine"
+  ALTER COLUMN "amount" TYPE NUMERIC,
+  ALTER COLUMN "quantity" TYPE NUMERIC;`
+      )
+    ).toHaveLength(0);
+  });
+
   it("allows bare NUMERIC", () => {
     const v = noNumericPrecision.scan("a.sql", "amount NUMERIC NOT NULL");
     expect(v).toHaveLength(0);

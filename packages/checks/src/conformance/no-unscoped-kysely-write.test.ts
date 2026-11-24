@@ -234,4 +234,45 @@ describe("noUnscopedKyselyWrite", () => {
       scan('await updateRows(db, "item", { companyId }, { id });', fn)
     ).toHaveLength(1);
   });
+
+  it("flags updateQuoteLineOrder as 9ddb3bc295 found it, and passes its fix", () => {
+    // apps/erp/app/modules/sales/sales.service.ts before 9ddb3bc295: the
+    // drag-sort wrote any company's quote line through the API's superuser db.
+    const before = `export async function updateQuoteLineOrder(
+  db: Kysely<KyselyDatabase>,
+  updates: { id: string; sortOrder: number; updatedBy: string }[]
+) {
+  return db.transaction().execute(async (trx) => {
+    for (const { id, sortOrder, updatedBy } of updates) {
+      await trx
+        .updateTable("quoteLine")
+        .set({ sortOrder, updatedBy })
+        .where("id", "=", id)
+        .execute();
+    }
+  });
+}
+`;
+    expect(scan(before).map((v) => [v.line, v.snippet])).toEqual([
+      [8, '.updateTable("quoteLine")']
+    ]);
+    const after = `export async function updateQuoteLineOrder(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  userId: string,
+  quoteId: string,
+  updates: { id: string; sortOrder: number }[]
+) {
+  return updateSortOrder(db, {
+    table: "quoteLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "quoteId", id: quoteId },
+    updates
+  });
+}
+`;
+    expect(scan(after)).toEqual([]);
+  });
 });

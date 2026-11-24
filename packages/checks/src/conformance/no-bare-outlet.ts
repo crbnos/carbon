@@ -21,7 +21,8 @@ export const noBareOutlet: ConformanceCheck = {
   provenance: {
     deprecates: "<Outlet />",
     replacedBy: '<RecordOutlet /> from "@carbon/react"',
-    since: "2026-10-06"
+    since: "2026-10-06",
+    incidents: ["f18c5dad02", "5a0ea7c0d2"]
   },
   scan(file: string, contents: string): Violation[] {
     if (!ROUTES.test(file)) return [];

@@ -144,7 +144,8 @@ function accountReferences(file: string, contents: string): AccountReference[] {
 const provenance = {
   deprecates: 'REFERENCES "account"("id") ON DELETE SET NULL',
   replacedBy: 'REFERENCES "account"("id") ON DELETE RESTRICT',
-  since: "20261013005642_account-delete-restrict.sql"
+  since: "20261013005642_account-delete-restrict.sql",
+  incidents: ["a3c398b5f9"]
 };
 
 export const accountFkRestrict: ConformanceCheck = {

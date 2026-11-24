@@ -60,7 +60,8 @@ export const noStateCopyOfLoaderData: ConformanceCheck = {
     deprecates: "useState(valueFrom(useLoaderData() | useRouteData()))",
     replacedBy:
       "a value computed during render, or a component keyed on what it drafts",
-    since: "2026-10-06"
+    since: "2026-10-06",
+    incidents: ["f18c5dad02"]
   },
   scan(file: string, contents: string): Violation[] {
     if (!file.endsWith(".tsx")) return [];

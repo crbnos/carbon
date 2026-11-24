@@ -20,7 +20,8 @@ export const noInlineSensorOptions: ConformanceCheck = {
     deprecates: "useSensor(KeyboardSensor, { coordinateGetter })",
     replacedBy:
       "a module-level constant: useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)",
-    since: "2026-10-06"
+    since: "2026-10-06",
+    incidents: ["c1ae854f80"]
   },
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
