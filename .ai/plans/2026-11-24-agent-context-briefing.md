@@ -11,8 +11,8 @@
 - [x] Task 3: Add `triggers` to every single-file check
 - [x] Task 4: Write the file-set table for single-file checks
 - [x] Task 5: Add `triggers:` and `summary:` to the 89 rules
-- [ ] Task 6: Write the index builder
-- [ ] Task 7: Write the `brief` engine
+- [x] Task 6: Write the index builder
+- [x] Task 7: Write the `brief` engine
 - [ ] Task 8: Write the `pnpm brief` command
 - [ ] Task 9: Write the rule and check honesty tests
 - [ ] Task 10: Write the PreToolUse hook and track the hook settings
