@@ -73,6 +73,15 @@ their vendors there. Two things to know:
   </Step>
 </Steps>
 
+## Send one project code per purchase order
+
+1. In **Settings → Custom Fields**, add an untagged **Text** or **List** field to **Purchase Order**. Add an untagged **Text** field to **Purchase Invoice**. You can name both fields **Project Code**.
+2. In **Settings → Integrations → Ramp → Project coding**, set **Ramp project field type** to **Free text** or **Option external ID**, according to the accounting field your Ramp administrator enabled on purchase order and draft bill lines. With **Option external ID**, the Carbon value must match the option’s external ID exactly. For a fixed list, enter those IDs as your Carbon list options.
+3. Select the two Carbon fields, enter the **Ramp field external ID** from your accounting provider and save. Under **Sync**, keep **Invoices** on. Enable **Purchase orders** if you also want the order in Ramp.
+4. Enter the code under **Properties** on the Carbon purchase order. When you create the invoice from that PO, its Properties panel shows a copy you can review before posting. Each outgoing document uses its own saved code on its lines.
+
+**Off** is the default. Enabling the mapping affects future conversions and pushes. For an existing invoice awaiting its first handoff, enter the code on the invoice. Carbon sends each draft bill once.
+
 ## What Carbon can do in Ramp
 
 | | Carbon is my accounting system | Another system posts my ledger |

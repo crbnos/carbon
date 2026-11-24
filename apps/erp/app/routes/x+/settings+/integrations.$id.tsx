@@ -82,6 +82,7 @@ import {
 } from "@carbon/ee/onshape.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { resolveProjectCodeMapping } from "@carbon/ee/ramp/project-code";
 import { LEDGER_FAMILY_KEYS, type LedgerFamilyKey } from "@carbon/ee/sync";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
@@ -141,6 +142,7 @@ import {
   getOeeDevicesTabData,
   getProviderDimensionTargets,
   getProviderTaxRateOptions,
+  getRampProjectFieldOptions,
   invalidateIntegrationHealthCache,
   isIntegrationInstallWithheld,
   TAX_RATE_MAPPING_PROVIDERS,
@@ -654,9 +656,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // partitioned by account class. Options over CHOICE_CARD_MAX_OPTIONS render
   // as a Select automatically.
   if (integrationId === "ramp") {
-    const accountsResult = await getAccountsList(client, companyGroupId, {
-      isGroup: false
-    });
+    const [accountsResult, projectFields] = await Promise.all([
+      getAccountsList(client, companyGroupId, { isGroup: false }),
+      getRampProjectFieldOptions(client, companyId)
+    ]);
+    Object.assign(dynamicOptions, projectFields);
     const accounts = accountsResult.data ?? [];
     const optionsForClass = (
       accountClass: Database["public"]["Enums"]["glAccountClass"]
@@ -1486,6 +1490,34 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     metadata = foldRilletCredentials(metadata);
   }
   if (integrationId === "ramp") {
+    const mapping = resolveProjectCodeMapping(metadata);
+    if (mapping) {
+      const options = await getRampProjectFieldOptions(client, companyId);
+      if (
+        !options.projectCodePoField.some(
+          (field) => field.value === mapping.purchaseOrderField
+        )
+      ) {
+        return validationError({
+          fieldErrors: {
+            projectCodePoField:
+              "Choose an active, untagged Text or List field on purchase orders."
+          }
+        });
+      }
+      if (
+        !options.projectCodeInvoiceField.some(
+          (field) => field.value === mapping.purchaseInvoiceField
+        )
+      ) {
+        return validationError({
+          fieldErrors: {
+            projectCodeInvoiceField:
+              "Choose an active, untagged Text field on purchase invoices."
+          }
+        });
+      }
+    }
     metadata = foldRampCredentials(metadata);
   }
 

@@ -15,6 +15,10 @@ import {
   resolveRampMode,
   resolveRampModeProfile
 } from "./lib/modes";
+import {
+  projectCodeSettingFields,
+  validateProjectCodeSettings
+} from "./lib/project-code";
 import { RAMP_OAUTH_SCOPES, RAMP_PUSH_ONLY_OAUTH_SCOPES } from "./scopes";
 
 /**
@@ -37,32 +41,40 @@ const RAMP_TOKEN_URL = "https://api.ramp.com/developer/v1/token";
  * optional entity scope, the account mapping, and the sync toggles, all flat at
  * the metadata root.
  */
-const RampSettingsSchema = z.object({
-  entityId: z.string().optional(),
-  /**
-   * Optional HERE only because requiredness depends on the install mode, which
-   * this schema cannot see: a push-only install posts no card journal, so the
-   * form does not render the field and nothing is there to validate. A
-   * `.min(1)` made the whole settings form unsaveable in that mode — a customer
-   * could not change a Sync toggle.
-   *
-   * It is still required for a provider-mode install, enforced where the mode IS
-   * known: `convergeRamp` refuses to push masters or launch finance without it,
-   * and `rampHealthcheck` reports the install unhealthy — both behind
-   * `rampOwnsCodingSurface`. The setting keeps `required: true` so provider mode
-   * still marks the field required in the UI.
-   */
-  cardLiabilityAccountId: z.string().optional(),
-  statementBankAccountId: z.string().optional(),
-  cashbackIncomeAccountId: z.string().optional(),
-  reimbursementBankAccountId: z.string().optional(),
-  // SwitchField posts a literal "true"/"false" string; stored flat as-is.
-  pullTransactions: z.string().optional(),
-  pullBills: z.string().optional(),
-  pullReimbursements: z.string().optional(),
-  pushPurchaseOrders: z.string().optional(),
-  pushInvoices: z.string().optional()
-});
+const RampSettingsSchema = z
+  .object({
+    entityId: z.string().optional(),
+    /**
+     * Optional HERE only because requiredness depends on the install mode, which
+     * this schema cannot see: a push-only install posts no card journal, so the
+     * form does not render the field and nothing is there to validate. A
+     * `.min(1)` made the whole settings form unsaveable in that mode — a customer
+     * could not change a Sync toggle.
+     *
+     * It is still required for a provider-mode install, enforced where the mode IS
+     * known: `convergeRamp` refuses to push masters or launch finance without it,
+     * and `rampHealthcheck` reports the install unhealthy — both behind
+     * `rampOwnsCodingSurface`. The setting keeps `required: true` so provider mode
+     * still marks the field required in the UI.
+     */
+    cardLiabilityAccountId: z.string().optional(),
+    statementBankAccountId: z.string().optional(),
+    cashbackIncomeAccountId: z.string().optional(),
+    reimbursementBankAccountId: z.string().optional(),
+    // SwitchField posts a literal "true"/"false" string; stored flat as-is.
+    pullTransactions: z.string().optional(),
+    pullBills: z.string().optional(),
+    pullReimbursements: z.string().optional(),
+    pushPurchaseOrders: z.string().optional(),
+    pushInvoices: z.string().optional(),
+    ...projectCodeSettingFields
+  })
+  .superRefine(validateProjectCodeSettings);
+
+const whenCodingProjects = {
+  field: "projectCodeValueType",
+  equals: ["option", "text"]
+};
 
 export const Ramp = defineIntegration({
   name: "Ramp",
@@ -207,6 +219,11 @@ export const Ramp = defineIntegration({
       // Deliberately direction-neutral: push-only renders this group with only
       // the outbound toggles, so "flows into and out of Carbon" was false there.
       description: "What Carbon keeps in sync with Ramp"
+    },
+    {
+      name: "Project coding",
+      description:
+        "Carry a purchase order header code onto its invoice and send it on Ramp lines."
     }
   ],
   settings: [
@@ -314,6 +331,54 @@ export const Ramp = defineIntegration({
       type: "switch" as const,
       required: false,
       value: "true"
+    },
+    {
+      name: "projectCodeValueType",
+      group: "Project coding",
+      label: "Ramp project field type",
+      type: "options" as const,
+      listOptions: [
+        { value: "off", label: "Off" },
+        { value: "option", label: "Option external ID" },
+        { value: "text", label: "Free text" }
+      ],
+      description:
+        "For an option field, enter the accounting provider’s exact option external ID as the project code.",
+      value: "off",
+      required: false
+    },
+    {
+      name: "projectCodePoField",
+      group: "Project coding",
+      label: "Purchase order custom field",
+      description:
+        "Choose an untagged Text or List field from Settings → Custom Fields.",
+      type: "options" as const,
+      value: "",
+      required: true,
+      visibleWhen: whenCodingProjects
+    },
+    {
+      name: "projectCodeInvoiceField",
+      group: "Project coding",
+      label: "Purchase invoice custom field",
+      description:
+        "Choose an untagged Text field to receive the code when creating an invoice from a purchase order.",
+      type: "options" as const,
+      value: "",
+      required: true,
+      visibleWhen: whenCodingProjects
+    },
+    {
+      name: "projectCodeFieldExternalId",
+      group: "Project coding",
+      label: "Ramp field external ID",
+      description:
+        "Use the accounting provider’s external ID for a line field enabled on both purchase orders and draft bills.",
+      type: "text" as const,
+      value: "",
+      required: true,
+      visibleWhen: whenCodingProjects
     }
   ],
   schema: RampSettingsSchema

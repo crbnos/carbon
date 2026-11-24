@@ -23,6 +23,7 @@
  *   `loadBillCostingLines` path the accounting providers use.
  */
 
+import type { Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   loadBillCostingLines,
@@ -39,6 +40,7 @@ import {
 export type SpendBillSource = {
   id: string;
   readableId: string;
+  customFields: Json;
   /** The VIEW's derived status — see the header. */
   status: string;
   supplierReference: string | null;
@@ -103,6 +105,7 @@ export async function loadBillPushSource(
     .select([
       "id",
       "invoiceId",
+      "customFields",
       "status",
       "supplierId",
       "supplierReference",
@@ -163,6 +166,7 @@ export async function loadBillPushSource(
     result.set(invoice.id, {
       id: invoice.id,
       readableId: invoice.invoiceId ?? invoice.id,
+      customFields: invoice.customFields,
       status: invoice.status ?? "",
       supplierReference: invoice.supplierReference,
       dateIssued: invoice.dateIssued

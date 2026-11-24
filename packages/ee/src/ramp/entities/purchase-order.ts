@@ -29,13 +29,18 @@ import {
   type SpendPurchaseOrderSource
 } from "../../spend/purchase-order-source";
 import { buildRampIdempotencyKey, RampApiError } from "../lib/client";
+import type {
+  RampCodingSelection,
+  RampProjectCodeSelection
+} from "../lib/coding";
+import type { RampProjectCodeMapping } from "../lib/project-code";
 import {
   prepareRampPurchaseOrderBatch,
   prepareRampVendorResolution,
   type RampPurchaseOrderBatch,
   resolveOrCreateRampSpendVendor
 } from "../lib/spend";
-import { RampPushOnlyEntitySyncer } from "./shared";
+import { projectCodeSelection, RampPushOnlyEntitySyncer } from "./shared";
 
 /**
  * The purchase-order number to send Ramp.
@@ -93,8 +98,116 @@ export type RampPurchaseOrderRemote = {
     unit_quantity: number;
     unit_price: number;
     external_id: string;
+    accounting_field_selections?: RampProjectCodeSelection[];
   }>;
 };
+
+export function buildRampPurchaseOrderPayload(
+  local: SpendPurchaseOrderSource,
+  {
+    archive,
+    vendorId,
+    entityId,
+    mapping
+  }: {
+    archive: boolean;
+    vendorId?: string;
+    entityId?: string;
+    mapping?: RampProjectCodeMapping;
+  }
+): RampPurchaseOrderRemote {
+  const project = archive
+    ? undefined
+    : projectCodeSelection(mapping, "purchaseOrderField", local.customFields);
+  return {
+    archive,
+    purchase_order_number: toRampPurchaseOrderNumber(local.readableId),
+    external_id: local.id,
+    three_way_match_enabled: false,
+    ...(local.currencyCode ? { currency: local.currencyCode } : {}),
+    ...(archive ? {} : { entity_id: entityId }),
+    ...(vendorId ? { vendor_id: vendorId } : {}),
+    line_items: local.lines.map((line) => ({
+      description: line.description ?? "",
+      unit_quantity: line.quantity ?? 0,
+      unit_price: line.unitPrice ?? 0,
+      external_id: line.id,
+      ...(project ? { accounting_field_selections: [project] } : {})
+    }))
+  };
+}
+
+type RemoteOrderLine = {
+  id: string;
+  external_id: string | null;
+  accounting_field_selections: RampCodingSelection[];
+};
+
+/** A line PATCH replaces every selection, including dimensions set by AP in Ramp. */
+function planCodedLineUpdates(
+  remote: RemoteOrderLine[],
+  local: RampPurchaseOrderRemote["line_items"]
+) {
+  const byExternalId = new Map(remote.map((line) => [line.external_id, line]));
+  const updates = [];
+  const additions = [];
+  for (const {
+    external_id,
+    accounting_field_selections: project,
+    ...line
+  } of local) {
+    const existing = byExternalId.get(external_id);
+    if (!existing) {
+      additions.push({
+        external_id,
+        accounting_field_selections: project,
+        ...line
+      });
+      continue;
+    }
+    if (!existing.id || !Array.isArray(existing.accounting_field_selections)) {
+      throw new Error(
+        `Ramp did not return line identity and accounting selections for PO line ${external_id}.`
+      );
+    }
+    const desired = project?.[0];
+    if (
+      !desired ||
+      ("field_option_external_id" in desired &&
+        existing.accounting_field_selections.some(
+          (selection) =>
+            selection.category_info?.external_id ===
+              desired.field_external_id &&
+            selection.external_id === desired.field_option_external_id
+        ))
+    ) {
+      updates.push({ id: existing.id, body: line });
+      continue;
+    }
+    const selections: RampProjectCodeSelection[] = [];
+    for (const selection of existing.accounting_field_selections) {
+      const field = selection.category_info?.external_id;
+      if (field === desired.field_external_id) continue;
+      if (!field || !selection.external_id) {
+        throw new Error(
+          `Cannot preserve an accounting selection on Ramp PO line ${external_id}. Check the line in Ramp before retrying.`
+        );
+      }
+      selections.push({
+        field_external_id: field,
+        field_option_external_id: selection.external_id
+      });
+    }
+    updates.push({
+      id: existing.id,
+      body: {
+        ...line,
+        accounting_field_selections: [...selections, desired]
+      }
+    });
+  }
+  return { updates, additions };
+}
 
 export class RampPurchaseOrderSyncer extends RampPushOnlyEntitySyncer<
   SpendPurchaseOrderSource,
@@ -199,23 +312,57 @@ export class RampPurchaseOrderSyncer extends RampPushOnlyEntitySyncer<
             ))
         )) ?? undefined);
 
-    return {
+    return buildRampPurchaseOrderPayload(local, {
       archive,
-      purchase_order_number: toRampPurchaseOrderNumber(local.readableId),
-      external_id: local.id,
-      three_way_match_enabled: false,
-      ...(local.currencyCode ? { currency: local.currencyCode } : {}),
-      ...(archive
-        ? {}
-        : { entity_id: await this.rampProvider.resolveEntityId() }),
-      ...(vendorId ? { vendor_id: vendorId } : {}),
-      line_items: local.lines.map((line) => ({
-        description: line.description ?? "",
-        unit_quantity: line.quantity ?? 0,
-        unit_price: line.unitPrice ?? 0,
-        external_id: line.id
-      }))
-    };
+      vendorId,
+      entityId: archive ? undefined : await this.rampProvider.resolveEntityId(),
+      mapping: this.rampProvider.projectCodeMapping
+    });
+  }
+
+  private async updateRemoteLines(
+    id: string,
+    lines: RampPurchaseOrderRemote["line_items"]
+  ): Promise<boolean> {
+    const coded = lines.some(
+      (line) => line.accounting_field_selections?.length
+    );
+    let remote: { line_items: RemoteOrderLine[] };
+    try {
+      if (!coded) {
+        await this.ramp.patchPurchaseOrder(id, { line_items: lines });
+        return true;
+      }
+      remote = await this.ramp.getPurchaseOrder(id);
+    } catch (error) {
+      if (error instanceof RampApiError && error.status === 404) return false;
+      throw error;
+    }
+
+    // Ramp's documented update takes a Ramp line ID; the create took our external ID.
+    // A 404 on a LINE must not recreate the entire PO. A retry re-reads the document.
+    const { updates, additions } = planCodedLineUpdates(
+      remote.line_items,
+      lines
+    );
+    for (const update of updates) {
+      await this.ramp.patchPurchaseOrderLine(id, update.id, update.body);
+    }
+    if (additions.length) {
+      await this.ramp.addPurchaseOrderLines(
+        id,
+        { line_items: additions },
+        buildRampIdempotencyKey({
+          companyId: this.companyId,
+          operation: "addPurchaseOrderLines",
+          scope: JSON.stringify([
+            id,
+            additions.map((line) => line.external_id).sort()
+          ])
+        })
+      );
+    }
+    return true;
   }
 
   protected async upsertRemote(
@@ -278,34 +425,29 @@ export class RampPurchaseOrderSyncer extends RampPushOnlyEntitySyncer<
       // search-before-create above, a purchase order Carbon had already pushed
       // but lost the mapping for could only ever take the create path — and fail
       // there on the duplicate number.
-      try {
-        await this.ramp.patchPurchaseOrder(existing, {
-          line_items: payload.line_items
-        });
+      if (await this.updateRemoteLines(existing, payload.line_items)) {
         return existing;
-      } catch (err) {
-        /**
-         * The mapping points at a purchase order Ramp no longer has, so fall
-         * through and create it again — returning a new id, which rewrites the
-         * mapping.
-         *
-         * Every company that ran the earlier build is in exactly this state:
-         * it archived a purchase order the moment it reached `Completed`, and
-         * an archived Ramp purchase order is GONE — `PATCH` answers
-         * `404 DEVELOPER_7002` and it appears in no list. Without this, the
-         * first push after that change would fail permanently on a document
-         * whose mapping nothing will ever repair.
-         *
-         * Recreating is safe because archiving RELEASES the purchase-order
-         * number: re-creating `PO000018-1` while the archived original still
-         * held it returned `201`, not the `400 DEVELOPER_7063` duplicate
-         * (verified live 2026-09-27). Were that not true this branch could only
-         * trade one permanent failure for another.
-         */
-        if (!(err instanceof RampApiError) || err.status !== 404) throw err;
-        recreateOf = existing;
-        existing = null;
       }
+      /**
+       * The mapping points at a purchase order Ramp no longer has, so fall
+       * through and create it again — returning a new id, which rewrites the
+       * mapping.
+       *
+       * Every company that ran the earlier build is in exactly this state:
+       * it archived a purchase order the moment it reached `Completed`, and
+       * an archived Ramp purchase order is GONE — `PATCH` answers
+       * `404 DEVELOPER_7002` and it appears in no list. Without this, the
+       * first push after that change would fail permanently on a document
+       * whose mapping nothing will ever repair.
+       *
+       * Recreating is safe because archiving RELEASES the purchase-order
+       * number: re-creating `PO000018-1` while the archived original still
+       * held it returned `201`, not the `400 DEVELOPER_7063` duplicate
+       * (verified live 2026-09-27). Were that not true this branch could only
+       * trade one permanent failure for another.
+       */
+      recreateOf = existing;
+      existing = null;
     }
 
     const created = (await this.ramp.createPurchaseOrder(

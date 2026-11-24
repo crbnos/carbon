@@ -3,7 +3,12 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it } from "vitest";
-import { buildBillMemo, RampBillSyncer } from "./bill";
+import type {
+  SpendBillSource,
+  SpendPushedCoding
+} from "../../spend/bill-source";
+import type { RampProjectCodeMapping } from "../lib/project-code";
+import { buildBillMemo, buildRampBillPayload, RampBillSyncer } from "./bill";
 
 /**
  * The memo is the only place a pushed bill NAMES the Carbon invoice and the
@@ -140,5 +145,125 @@ describe("RampBillSyncer.shouldSync — an already-handed-off bill", () => {
     expect(
       await probe.ask("pinv_1", { ...invoice, isEmployeeParty: true })
     ).toContain("Employee");
+  });
+});
+
+describe("draft bill project coding on the Ramp wire", () => {
+  const bill: SpendBillSource = {
+    id: "invoice-1",
+    readableId: "AP000008",
+    customFields: { "invoice-field": "PRJ-17" },
+    supplierReference: "SUP-098",
+    status: "Open",
+    dateIssued: "2026-11-20",
+    dateDue: null,
+    updatedAt: null,
+    isEmployeeParty: false,
+    purchaseOrderReadableIds: ["PO000018"],
+    supplier: {
+      id: "supplier-1",
+      name: "Demo Supplier",
+      country: null,
+      contact: null,
+      address: null
+    }
+  };
+  const coding: SpendPushedCoding = {
+    pushedAccountIds: new Map([["account-1", "5500"]]),
+    pushedCostCenterIds: new Map(),
+    pushedProjectIds: new Map([["prj-1", "PRJ-17"]])
+  };
+  const billLine = {
+    amount: 29,
+    memo: "Housing",
+    accountId: "account-1",
+    costCenterId: null,
+    projectId: null
+  };
+  const mapping: RampProjectCodeMapping = {
+    purchaseOrderField: "source-po-field",
+    purchaseInvoiceField: "invoice-field",
+    fieldExternalId: "ERP-project",
+    valueType: "text"
+  };
+  const gl = {
+    field_external_id: "Category",
+    field_option_external_id: "5500"
+  };
+  it("adds text from the invoice snapshot to the journal-coded bill, independently of any Ramp PO", () => {
+    expect(
+      buildRampBillPayload(bill, "vendor-1", "USD", [billLine], coding, mapping)
+    ).toEqual({
+      vendor_id: "vendor-1",
+      invoice_number: "SUP-098",
+      invoice_currency: "USD",
+      issued_at: "2026-11-20",
+      memo: "AP000008 · PO000018",
+      remote_id: "invoice-1",
+      line_items: [
+        {
+          memo: "Housing",
+          amount: 29,
+          accounting_field_selections: [
+            gl,
+            { field_external_id: "ERP-project", free_form_text: "PRJ-17" }
+          ]
+        }
+      ]
+    });
+  });
+  it.each([
+    { mapping: undefined, fields: bill.customFields },
+    { mapping, fields: {} }
+  ])(
+    "preserves existing coding when the mapping or invoice code is absent",
+    ({ mapping, fields }) => {
+      expect(
+        buildRampBillPayload(
+          { ...bill, customFields: fields },
+          "vendor-1",
+          "USD",
+          [billLine],
+          coding,
+          mapping
+        ).line_items
+      ).toEqual([
+        { memo: "Housing", amount: 29, accounting_field_selections: [gl] }
+      ]);
+    }
+  );
+  it("emits one selection when the native project and mapped header agree, and rejects conflicting coding", () => {
+    const target = {
+      ...mapping,
+      valueType: "option" as const,
+      fieldExternalId: "carbon-project"
+    };
+    const lines = [{ ...billLine, projectId: "prj-1" }];
+    expect(
+      buildRampBillPayload(bill, "vendor-1", "USD", lines, coding, target)
+        .line_items
+    ).toEqual([
+      {
+        memo: "Housing",
+        amount: 29,
+        accounting_field_selections: [
+          gl,
+          {
+            field_external_id: "carbon-project",
+            field_option_external_id: "PRJ-17"
+          }
+        ]
+      }
+    ]);
+    expect(() =>
+      buildRampBillPayload(
+        { ...bill, customFields: { "invoice-field": "OTHER" } },
+        "vendor-1",
+        "USD",
+        lines,
+        coding,
+        target
+      )
+    ).toThrow(/conflicting coding/);
   });
 });

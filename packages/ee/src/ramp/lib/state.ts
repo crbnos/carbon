@@ -22,7 +22,11 @@ const RAMP_SETTINGS_PATHS = [
   "pullBills",
   "pullReimbursements",
   "pushPurchaseOrders",
-  "pushInvoices"
+  "pushInvoices",
+  "projectCodeValueType",
+  "projectCodePoField",
+  "projectCodeInvoiceField",
+  "projectCodeFieldExternalId"
 ] as const;
 
 type RampSettingsPath = (typeof RAMP_SETTINGS_PATHS)[number];
@@ -52,7 +56,7 @@ async function patchRampState(
   return patchIntegrationState(serviceRole, companyId, RAMP, patch);
 }
 
-/** Settings owns only the flat account/entity/toggle fields declared above. */
+/** Settings owns only the flat configuration fields declared above. */
 export async function patchRampSettings(
   serviceRole: SupabaseClient<Database>,
   companyId: string,

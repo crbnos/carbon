@@ -20,7 +20,7 @@
  * Both were found by a live push failing, not by a type error.
  */
 
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   emptySpendVendorParty,
@@ -41,6 +41,7 @@ export type SpendPurchaseOrderLine = {
 export type SpendPurchaseOrderSource = {
   id: string;
   readableId: string;
+  customFields: Json;
   status: PurchaseOrderStatus;
   /**
    * Read for `BaseEntitySyncer`'s unchanged-since-last-sync bailout. Without it
@@ -65,6 +66,7 @@ export async function loadPurchaseOrderPushSource(
     .select([
       "id",
       "purchaseOrderId",
+      "customFields",
       "status",
       "supplierId",
       "currencyCode",
@@ -125,6 +127,7 @@ export async function loadPurchaseOrderPushSource(
     result.set(order.id, {
       id: order.id,
       readableId: order.purchaseOrderId,
+      customFields: order.customFields,
       status: order.status,
       updatedAt: order.updatedAt,
       currencyCode: order.currencyCode ?? baseCurrency,

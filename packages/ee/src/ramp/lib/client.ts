@@ -641,6 +641,26 @@ export class RampClient {
     return match?.id ? { id: match.id } : null;
   }
 
+  getPurchaseOrder<T>(id: string): Promise<T> {
+    return this.request<T>("GET", `/developer/v1/purchase-orders/${id}`);
+  }
+
+  patchPurchaseOrderLine(id: string, lineId: string, body: unknown) {
+    return this.request(
+      "PATCH",
+      `/developer/v1/purchase-orders/${id}/line-items/${lineId}`,
+      { body }
+    );
+  }
+
+  addPurchaseOrderLines(id: string, body: unknown, idempotencyKey: string) {
+    return this.request(
+      "POST",
+      `/developer/v1/purchase-orders/${id}/line-items`,
+      { body, idempotencyKey }
+    );
+  }
+
   patchPurchaseOrder<T = unknown>(id: string, body: unknown): Promise<T> {
     return this.request<T>("PATCH", `/developer/v1/purchase-orders/${id}`, {
       body

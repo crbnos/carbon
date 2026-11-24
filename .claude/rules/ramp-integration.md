@@ -443,7 +443,7 @@ All Ramp writes go through `upsert_company_integration_patch`, exposed by
 service-role-only, takes flat dot-path patch/removal maps, advisory-locks the logical
 `(companyId,integrationId)` key, locks an existing row, and writes plaintext metadata,
 Vault, `secretRef`, activation, and audit fields in one PostgreSQL transaction. Settings
-owns only entity/account/scope/toggle paths; OAuth owns its credential set; refresh owns
+owns only entity/account/scope/toggle and project-coding settings paths; OAuth owns its credential set; refresh owns
 access token + expiry; connection/webhook and each cursor own only their paths. Never
 reintroduce raw read/merge/write or a whole-object Vault replacement.
 
@@ -762,6 +762,7 @@ keyset helpers and its two metadata cursors are gone.
   preloads PO/vendor mappings in two reads and, only when named suppliers remain unmapped,
   drains one paginated Ramp vendor snapshot. Successful creates update that page cache, so
   shared suppliers never repeat mapping or provider lookups inside the PO loop.
+- Optional **Project coding** chooses a purchase order custom field, an invoice Text field and a Ramp line accounting field external ID. PO-to-invoice conversion snapshots the header code in the invoice transaction. The PO and draft bill mappers each read their own header, independently of the other push switch. Option values are seat-holder option external IDs. Free-text fields use `free_form_text`. The mode resolves to off for legacy installs. A coded PO update reads existing lines, matches their external IDs, and uses the line endpoints to update or add Carbon lines. Preserve other dimensions when replacing selections. A line-level 404 is retried without recreating the order.
 - **Invoices** (`RampBillSyncer`, `ramp/entities/bill.ts`): **DRAFT-ONLY, shipped + live-verified 2026-09-11**
   (the `RAMP_DRAFT_BILL_CONTRACT_VERIFIED` gate is gone). Targets unmapped Open/Partially
   Paid invoices from non-Employee suppliers — `shouldSync` refuses an already-mapped bill

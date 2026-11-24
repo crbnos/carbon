@@ -51,12 +51,44 @@ describe("Ramp settings by install mode", () => {
     );
   });
 
-  it("offers only the entity scope and the outbound pushes in push-only mode", () => {
+  it("offers the entity scope, outbound pushes and project coding in push-only mode", () => {
     expect(offeredSettings("push-only")).toEqual([
       "entityId",
       "pushPurchaseOrders",
-      "pushInvoices"
+      "pushInvoices",
+      "projectCodeValueType",
+      "projectCodePoField",
+      "projectCodeInvoiceField",
+      "projectCodeFieldExternalId"
     ]);
+  });
+
+  it("requires both Carbon fields and a dedicated Ramp field when project coding is enabled", () => {
+    const settings = {
+      projectCodeValueType: "text",
+      projectCodePoField: "po-field",
+      projectCodeInvoiceField: "invoice-field",
+      projectCodeFieldExternalId: "project"
+    };
+    expect(Ramp.schema.safeParse(settings).success).toBe(true);
+    for (const field of [
+      "projectCodePoField",
+      "projectCodeInvoiceField",
+      "projectCodeFieldExternalId"
+    ]) {
+      expect(Ramp.schema.safeParse({ ...settings, [field]: "" }).success).toBe(
+        false
+      );
+    }
+    expect(
+      Ramp.schema.safeParse({
+        ...settings,
+        projectCodeFieldExternalId: "Category"
+      }).success
+    ).toBe(false);
+    expect(Ramp.schema.safeParse({ projectCodeValueType: "off" }).success).toBe(
+      true
+    );
   });
 
   it("hides the whole Accounts group in push-only mode", () => {

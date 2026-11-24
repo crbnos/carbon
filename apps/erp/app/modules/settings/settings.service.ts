@@ -330,6 +330,7 @@ import type {
 } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
+import { DataType } from "~/modules/shared/types";
 import {
   getItarCertificationStatus,
   getPermissionCacheKey
@@ -631,6 +632,48 @@ export async function getCustomField(
   id: string
 ) {
   return client.from("customField").select("*").eq("id", id).single();
+}
+
+/** Header fields that the PO and invoice Properties panels can display. */
+export async function getRampProjectFieldOptions(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const result = await fetchAllFromTable<
+    Pick<
+      Database["public"]["Tables"]["customField"]["Row"],
+      "id" | "table" | "name" | "dataTypeId"
+    >
+  >(client, "customField", "id, table, name, dataTypeId", (query) =>
+    query
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .in("table", ["purchaseOrder", "purchaseInvoice"])
+      .in("dataTypeId", [DataType.Text, DataType.List])
+      .or("tags.is.null,tags.eq.{}")
+      .order("name")
+      .order("id")
+  );
+  if (result.error)
+    throw new Error("Failed to load project custom fields", {
+      cause: result.error
+    });
+  const toOption = (field: { id: string; name: string }) => ({
+    value: field.id,
+    label: field.name
+  });
+  return {
+    projectCodePoField: result.data
+      .filter((field) => field.table === "purchaseOrder")
+      .map(toOption),
+    projectCodeInvoiceField: result.data
+      .filter(
+        (field) =>
+          field.table === "purchaseInvoice" &&
+          field.dataTypeId === DataType.Text
+      )
+      .map(toOption)
+  };
 }
 
 export async function getCustomFields(

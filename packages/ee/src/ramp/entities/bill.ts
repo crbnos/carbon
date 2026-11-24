@@ -33,17 +33,23 @@ import {
   loadBillPushLines,
   loadBillPushSource,
   loadPushedCoding,
-  type SpendBillSource
+  type SpendBillLine,
+  type SpendBillSource,
+  type SpendPushedCoding
 } from "../../spend/bill-source";
 import { isPushableInvoiceStatus } from "../../spend/gates";
 import { describeMissingVendorFields } from "../../spend/parties";
 import { buildRampIdempotencyKey } from "../lib/client";
-import { buildLineCodingSelections } from "../lib/coding";
+import {
+  buildLineCodingSelections,
+  type RampProjectCodeSelection
+} from "../lib/coding";
+import type { RampProjectCodeMapping } from "../lib/project-code";
 import {
   prepareRampVendorResolution,
   resolveOrCreateRampSpendVendor
 } from "../lib/spend";
-import { RampPushOnlyEntitySyncer } from "./shared";
+import { projectCodeSelection, RampPushOnlyEntitySyncer } from "./shared";
 
 export type RampBillRemote = {
   vendor_id: string;
@@ -56,7 +62,7 @@ export type RampBillRemote = {
   line_items: Array<{
     memo?: string;
     amount: number;
-    accounting_field_selections: ReturnType<typeof buildLineCodingSelections>;
+    accounting_field_selections: RampProjectCodeSelection[];
   }>;
 };
 
@@ -96,6 +102,55 @@ export function buildBillMemo(local: {
   return orders.length > 0
     ? `${local.readableId} · ${orders.join(", ")}`
     : local.readableId;
+}
+
+export function buildRampBillPayload(
+  local: SpendBillSource,
+  vendorId: string,
+  currencyCode: string,
+  lines: SpendBillLine[],
+  pushed: SpendPushedCoding,
+  mapping?: RampProjectCodeMapping
+): RampBillRemote {
+  const memo = buildBillMemo(local);
+  const project = projectCodeSelection(
+    mapping,
+    "purchaseInvoiceField",
+    local.customFields
+  );
+  return {
+    vendor_id: vendorId,
+    invoice_number: (local.supplierReference ?? "").trim() || local.readableId,
+    invoice_currency: currencyCode,
+    ...(local.dateIssued ? { issued_at: local.dateIssued } : {}),
+    ...(local.dateDue ? { due_at: local.dateDue } : {}),
+    ...(memo ? { memo } : {}),
+    remote_id: local.id,
+    line_items: lines.map((line) => {
+      const coding = buildLineCodingSelections(line, pushed);
+      const existing = coding.find(
+        (selection) =>
+          selection.field_external_id === project?.field_external_id
+      );
+      if (
+        existing &&
+        project &&
+        (!("field_option_external_id" in project) ||
+          existing.field_option_external_id !==
+            project.field_option_external_id)
+      ) {
+        throw new Error(
+          `Invoice ${local.readableId} has conflicting coding for Ramp field ${existing.field_external_id}. Choose a separate project-code field or align the codes.`
+        );
+      }
+      return {
+        memo: line.memo,
+        amount: line.amount,
+        accounting_field_selections:
+          project && !existing ? [...coding, project] : coding
+      };
+    })
+  };
 }
 
 export class RampBillSyncer extends RampPushOnlyEntitySyncer<
@@ -204,39 +259,14 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
       pushed
     });
 
-    // `invoice_number` stays the SUPPLIER's reference whenever there is one —
-    // that is the number an AP clerk matches against the paper, and Carbon's own
-    // id in that field would be wrong. But then nothing on the Ramp bill named
-    // the Carbon invoice at all: a bill showing only `CEX-Q-4471` could not be
-    // traced back to `AP000008` without querying the database. `memo` carries
-    // it, alongside the orders the invoice bills (see `buildBillMemo`) — a human
-    // trace, not Ramp's own `purchase_order_ids` link, which is writable and
-    // simply not wired up yet.
-    const invoiceNumber =
-      (local.supplierReference ?? "").trim() || local.readableId;
-    const memo = buildBillMemo(local);
-
-    return {
-      vendor_id: vendorId,
-      invoice_number: invoiceNumber,
-      invoice_currency: currencyCode,
-      ...(local.dateIssued ? { issued_at: local.dateIssued } : {}),
-      ...(local.dateDue ? { due_at: local.dateDue } : {}),
-      ...(memo ? { memo } : {}),
-      remote_id: local.id,
-      line_items: lines.map((line) => ({
-        memo: line.memo,
-        amount: line.amount,
-        accounting_field_selections: buildLineCodingSelections(
-          {
-            accountId: line.accountId,
-            costCenterId: line.costCenterId,
-            projectId: line.projectId
-          },
-          pushed
-        )
-      }))
-    };
+    return buildRampBillPayload(
+      local,
+      vendorId,
+      currencyCode,
+      lines,
+      pushed,
+      this.rampProvider.projectCodeMapping
+    );
   }
 
   protected async upsertRemote(
