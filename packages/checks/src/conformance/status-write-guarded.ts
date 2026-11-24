@@ -5,7 +5,7 @@
 import type { ConformanceCheck, Provenance, Violation } from "../check";
 import { blankComments } from "./no-unscoped-kysely-write";
 import {
-  locksBefore,
+  lockedRead,
   namesColumn,
   regionOf,
   rowLocks,
@@ -26,9 +26,9 @@ import {
  *    a replayed accept made a second sales order from an Ordered quote.
  *  - the receipt post (bbe8dfd6a9): a void between the check and the update
  *    was flipped back to Pending and posted.
- * The invoice voids (578c411ffe) are the same race in the other form: they
- * held the row lock and never re-checked the status under it. A lock passes
- * this check, so that form is the formal models' to catch, not this one.
+ *  - the sales invoice void (578c411ffe): it locked the invoice
+ *    (`.select("id")…forUpdate()`) and never read its status under the lock,
+ *    so a second void waited for the first and then reversed it again.
  *
  * A write is flagged when its row sets a lifecycle status column — an
  * enum-typed column named `status` or `…Status` on that table, read from the
@@ -42,12 +42,20 @@ import {
  *    claim on that column: a second run matches nothing), and
  *  - the function has not locked a row of that table before the write
  *    (`.selectFrom(t)…forUpdate()` / `.forNoKeyUpdate()`, raw SQL `FOR UPDATE`,
- *    or a call to a function in the same file that does). The lock is per
- *    table, not per row: the check cannot see which id was locked.
+ *    or a call to a function in the same file that does) AND read the column
+ *    under that lock: the locked select reads it (`.select("status")`,
+ *    `.select(["id", "status"])`, `selectAll()`), the locked row's local reads
+ *    it later (`locked?.status`), or a later select of the table does. A lock
+ *    that reads only `id` waits for the other writer and then overwrites it.
+ *    The lock is per table, not per row: the check cannot see which id was
+ *    locked, nor that the code compares the status it read.
  *
  * `updateRowsById` has no predicate of its own, so a status it writes passes
  * only under a lock.
  */
+
+const BLIND_LOCK_MESSAGE = (table: string, column: string) =>
+  `This UPDATE sets ${table}.${column} after the function locked the row, but nothing reads ${column} under that lock, so a second request waits for the first and then repeats its change (the double invoice void, 578c411ffe). Select ${column} in the locked query (\`.select("${column}")…forUpdate()\`) and refuse when it is not the status you move from.`;
 
 const MESSAGE = (table: string, column: string) =>
   `This UPDATE sets ${table}.${column} with no predicate on ${column}, so a request that moved the row after you read it is overwritten. Check the status in the UPDATE (\`.eq("${column}", <expected>)\` / \`.where("${column}", "=", <expected>)\`) and refuse when no row changed, or lock the row FOR UPDATE and re-check it before the UPDATE.`;
@@ -116,7 +124,7 @@ export const STATUS_WRITE_GUARDED_PROVENANCE: Provenance = {
   replacedBy:
     'a guarded UPDATE (`.eq("status", <expected>)`) that refuses when no row changed, or a FOR UPDATE row lock and a re-check before the UPDATE',
   since: "de82a88cc6",
-  incidents: ["de82a88cc6", "2c9ef0dd8f"]
+  incidents: ["de82a88cc6", "2c9ef0dd8f", "578c411ffe", "b6ca51d4e1"]
 };
 
 export function statusWriteGuarded(
@@ -156,16 +164,25 @@ export function statusWriteGuarded(
               namesColumn(write.guards, other.name, write.alias, write.table)
           );
           if (claims) continue;
-          if (locksBefore(text, regions, locks, write.index).has(write.table)) {
-            continue;
-          }
+          const lock = lockedRead(
+            text,
+            regions,
+            locks,
+            write.index,
+            write.table,
+            field.name
+          );
+          if (lock === "read") continue;
           const fn = regionOf(regions, write.index)?.name ?? "<top level>";
           seen.add(at);
           violations.push({
             file,
             line: text.slice(0, field.index).split("\n").length,
             snippet: `${fn}: ${write.table}.${field.name}`,
-            message: MESSAGE(write.table, field.name)
+            message: (lock === "blind" ? BLIND_LOCK_MESSAGE : MESSAGE)(
+              write.table,
+              field.name
+            )
           });
         }
       }

@@ -33,7 +33,10 @@ parent row: a different writer of the same row may not take the parent lock.
   takes the draw locks, so the fix reads `quantityIssued` again after
   `lockUntrackedDraws` (f92d1b24fa).
 - Enforced by `status-write-guarded` and `counter-write-relative` (a lock on
-  the written table counts only when it comes before the write).
+  the written table counts only when it comes before the write). For a status,
+  the lock counts only when the status is read under it: the locked select
+  names the column (`.select("status")`, `.where("status", …)`, `selectAll()`),
+  or a later statement reads it (`locked?.status`, a second select).
 
 ## 2. Guard the status in the UPDATE
 

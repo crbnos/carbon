@@ -42,7 +42,14 @@ export type RowWrite = {
 
 export type Region = { start: number; end: number; name: string };
 
-export type RowLock = { index: number; table: string };
+export type RowLock = {
+  index: number;
+  table: string;
+  /** The columns the locked select reads, or "*" for `selectAll()` / `SELECT *`. */
+  columns: Set<string> | "*";
+  /** The local the locked row is assigned to (`const locked = await …`), or null. */
+  binding: string | null;
+};
 
 const IDENT_START = /[A-Za-z_$]/;
 const IDENT_PART = /[\w$]/;
@@ -539,42 +546,148 @@ export function regionOf(regions: Region[], index: number): Region | undefined {
 }
 
 /**
+ * The columns a Kysely select chain reads: "*" for `selectAll()`, else each
+ * quoted name in its `.select(…)` calls (`"status"`, `"r.status"`,
+ * `"status as current"`, `["id", "status"]`), as the bare column, and the
+ * column each `.where*(…)` tests: a lock taken `.where("status", "=", "Open")`
+ * has read the status as surely as one that selects it.
+ */
+export function selectedColumns(
+  text: string,
+  calls: Call[]
+): Set<string> | "*" {
+  if (calls.some((c) => c.name === "selectAll")) return "*";
+  const columns = new Set<string>();
+  for (const call of calls) {
+    if (call.name === "select") {
+      const args = text.slice(call.open, call.close + 1);
+      for (const m of args.matchAll(
+        /["'`](?:[\w$]+\.)?([\w$]+)(?:\s+as\s+[\w$]+)?["'`]/g
+      )) {
+        columns.add(m[1] as string);
+      }
+    } else if (call.name.startsWith("where")) {
+      const first = callArguments(text, call.open)[0]?.text ?? "";
+      const tested = /^\s*["'`](?:[\w$]+\.)?([\w$]+)["'`]\s*$/.exec(first)?.[1];
+      if (tested) columns.add(tested);
+    }
+  }
+  return columns;
+}
+
+/**
+ * The columns of a raw `SELECT <list> FROM … FOR UPDATE`: "*", or each name
+ * in the list, unquoted, and each column the WHERE compares.
+ */
+function sqlSelectList(list: string, rest: string): Set<string> | "*" {
+  if (/(?:^|[\s,.])\*/.test(list)) return "*";
+  const columns = new Set<string>();
+  for (const item of list.split(",")) {
+    // `"r"."status"`, `status AS current`: the column is the first name after
+    // the last qualifier dot, before any alias.
+    const name = /^\s*(?:"?[\w$]+"?\.)?"?([\w$]+)"?/.exec(item)?.[1];
+    if (name) columns.add(name);
+  }
+  const where = rest.split(/\bWHERE\b/i)[1] ?? "";
+  for (const m of where.matchAll(
+    /"?([\w$]+)"?\s*(?:=|<>|!=|\bIN\b|\bIS\b)/gi
+  )) {
+    columns.add(m[1] as string);
+  }
+  return columns;
+}
+
+/**
+ * The local the statement holding `index` assigns its result to: `const x =
+ * await …`, `let x: T = …`, `x = …`. Null for a destructuring or an
+ * expression statement.
+ */
+function statementBinding(text: string, index: number): string | null {
+  const head = text.slice(Math.max(0, index - 400), index);
+  const start = Math.max(
+    head.lastIndexOf(";"),
+    head.lastIndexOf("{"),
+    head.lastIndexOf("}")
+  );
+  return (
+    /^\s*(?:(?:const|let|var)\s+)?([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=(?![=>])/.exec(
+      head.slice(start + 1)
+    )?.[1] ?? null
+  );
+}
+
+/**
  * Row locks taken in the text: a Kysely `.selectFrom("t")…forUpdate()` /
  * `.forNoKeyUpdate()` (also when the query is held in a variable and locked on
  * a later line: the lock goes to the nearest `selectFrom` before it), and raw
- * SQL `… FROM t … FOR [NO KEY] UPDATE`.
+ * SQL `… FROM t … FOR [NO KEY] UPDATE`. Each carries what the locked select
+ * reads and the local it is assigned to, so a check can tell a lock that
+ * re-reads the row from one that only waits for it.
  */
 export function rowLocks(text: string): RowLock[] {
   const locks: RowLock[] = [];
   const covered = new Set<number>();
   const selects = [...text.matchAll(/\.selectFrom\s*\(/g)].map((m) => {
     const open = (m.index ?? 0) + m[0].length - 1;
-    return { index: m.index ?? 0, open, table: literalTableAt(text, open) };
+    return {
+      index: m.index ?? 0,
+      open,
+      table: literalTableAt(text, open),
+      calls: chainCalls(text, matchBracket(text, open) + 1)
+    };
   });
   for (const select of selects) {
     if (!select.table) continue;
-    const calls = chainCalls(text, matchBracket(text, select.open) + 1);
-    const lock = calls.find(
+    const at = select.calls.findIndex(
       (c) => c.name === "forUpdate" || c.name === "forNoKeyUpdate"
     );
+    const lock = select.calls[at];
     if (!lock) continue;
     covered.add(lock.open);
-    locks.push({ index: select.index, table: select.table[1] as string });
+    locks.push({
+      index: select.index,
+      table: select.table[1] as string,
+      columns: selectedColumns(text, select.calls.slice(0, at)),
+      binding: statementBinding(text, select.index)
+    });
   }
   for (const m of text.matchAll(/\.(?:forUpdate|forNoKeyUpdate)\s*\(/g)) {
     const open = (m.index ?? 0) + m[0].length - 1;
     if (covered.has(open)) continue;
     const before = selects.filter((s) => s.index < (m.index ?? 0)).pop();
     if (before?.table) {
-      locks.push({ index: m.index ?? 0, table: before.table[1] as string });
+      locks.push({
+        index: m.index ?? 0,
+        table: before.table[1] as string,
+        columns: selectedColumns(text, before.calls),
+        binding: null
+      });
     }
   }
   for (const m of text.matchAll(/\bFOR\s+(?:NO\s+KEY\s+)?UPDATE\b/g)) {
-    const head = text.slice(Math.max(0, (m.index ?? 0) - 2000), m.index);
+    const headStart = Math.max(0, (m.index ?? 0) - 2000);
+    const head = text.slice(headStart, m.index);
     const from = [
       ...head.matchAll(/\bFROM\s+(?:"?public"?\.)?"?([A-Za-z_]\w*)"?/gi)
     ].pop();
-    if (from?.[1]) locks.push({ index: m.index ?? 0, table: from[1] });
+    if (!from?.[1]) continue;
+    const fromAt = headStart + (from.index ?? 0);
+    const select = [
+      ...text.slice(headStart, fromAt).matchAll(/\bSELECT\b/gi)
+    ].pop();
+    const selectAt =
+      select === undefined ? fromAt : headStart + (select.index ?? 0);
+    locks.push({
+      index: m.index ?? 0,
+      table: from[1],
+      columns: select
+        ? sqlSelectList(
+            text.slice(selectAt + select[0].length, fromAt),
+            text.slice(fromAt, m.index)
+          )
+        : new Set(),
+      binding: statementBinding(text, selectAt)
+    });
   }
   return locks.sort((a, b) => a.index - b.index);
 }
@@ -608,6 +721,86 @@ export function locksBefore(
     for (const lock of own) tables.add(lock.table);
   }
   return tables;
+}
+
+const readsLockColumn = (columns: Set<string> | "*", column: string) =>
+  columns === "*" || columns.has(column);
+
+type Hold = { at: number; columns: Set<string> | "*"; binding: string | null };
+
+/**
+ * How the function holds `table` when it writes `column` at `index`:
+ *  - "none": it took no lock of that table before the write;
+ *  - "blind": it locked the row but never read `column` under the lock, so it
+ *    waited for a concurrent writer and then overwrote it anyway;
+ *  - "read": it read `column` under the lock — the locked select reads it
+ *    (`.select("status")`, `selectAll()`, raw `SELECT *`), the locked row's
+ *    local reads it later (`locked.status`, `locked?.status`), or a later
+ *    select of the table reads it again.
+ * A lock taken by a same-file helper counts as the caller's, with the local
+ * the call is assigned to as its row.
+ */
+export function lockedRead(
+  text: string,
+  regions: Region[],
+  locks: RowLock[],
+  index: number,
+  table: string,
+  column: string
+): "none" | "blind" | "read" {
+  const region = regionFor(regions, index);
+  if (!region) return "none";
+  const holds: Hold[] = [];
+  for (const lock of locks) {
+    if (lock.table !== table) continue;
+    if (lock.index >= region.start && lock.index < index) {
+      holds.push({
+        at: lock.index,
+        columns: lock.columns,
+        binding: lock.binding
+      });
+    }
+  }
+  const body = text.slice(region.start, index);
+  for (const helper of regions) {
+    if (helper === region || !/^[A-Za-z_$][\w$]*$/.test(helper.name)) continue;
+    const own = locks.filter(
+      (l) =>
+        l.table === table && l.index >= helper.start && l.index < helper.end
+    );
+    if (own.length === 0) continue;
+    const columns = own.some((l) => readsLockColumn(l.columns, column))
+      ? "*"
+      : new Set<string>();
+    const name = helper.name.replace(/\$/g, "\\$");
+    for (const call of body.matchAll(new RegExp(`\\b${name}\\s*\\(`, "g"))) {
+      const at = region.start + (call.index ?? 0);
+      holds.push({ at, columns, binding: statementBinding(text, at) });
+    }
+  }
+  if (holds.length === 0) return "none";
+  const col = column.replace(/\$/g, "\\$");
+  for (const hold of holds) {
+    if (readsLockColumn(hold.columns, column)) return "read";
+    if (!hold.binding) continue;
+    const name = hold.binding.replace(/\$/g, "\\$");
+    const after = text.slice(hold.at, index);
+    const member = new RegExp(
+      `\\b${name}(?:\\[[^\\]]*\\])?\\s*[?!]?\\.\\s*${col}\\b`
+    );
+    const destructured = new RegExp(
+      `\\{[^}]*\\b${col}\\b[^}]*\\}\\s*=\\s*${name}\\b`
+    );
+    if (member.test(after) || destructured.test(after)) return "read";
+  }
+  const from = Math.min(...holds.map((h) => h.at));
+  for (const m of text.slice(from, index).matchAll(/\.selectFrom\s*\(/g)) {
+    const open = from + (m.index ?? 0) + m[0].length - 1;
+    if (literalTableAt(text, open)?.[1] !== table) continue;
+    const calls = chainCalls(text, matchBracket(text, open) + 1);
+    if (readsLockColumn(selectedColumns(text, calls), column)) return "read";
+  }
+  return "blind";
 }
 
 /** Whether `name` (or `alias.name`) appears as a quoted column in `text`. */
