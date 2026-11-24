@@ -776,7 +776,6 @@
   "status-write-guarded::apps/erp/app/modules/inventory/shipment-service-return.ts::shipServiceUnits: customerAsset.status",
   "status-write-guarded::apps/erp/app/modules/inventory/shipment-service-return.ts::shipServiceUnits: trackedEntity.status",
   "status-write-guarded::apps/erp/app/modules/invoicing/invoicing.server.ts::postPurchaseInvoice: purchaseInvoice.status",
-  "status-write-guarded::apps/erp/app/modules/invoicing/invoicing.service.ts::postPurchaseInvoice: purchaseInvoice.status",
   "status-write-guarded::apps/erp/app/modules/invoicing/invoicing.service.ts::postSalesInvoice: fixedAsset.status",
   "status-write-guarded::apps/erp/app/modules/invoicing/invoicing.service.ts::postSalesInvoice: salesInvoice.status",
   "status-write-guarded::apps/erp/app/modules/invoicing/invoicing.service.ts::postSalesInvoice: salesOrder.status",
