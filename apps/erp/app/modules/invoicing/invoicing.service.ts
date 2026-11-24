@@ -285,6 +285,7 @@ import {
   loadTaxCodes,
   loadTaxCodesInForce,
   lockContractPositions,
+  lockPostable,
   negateDocumentTaxLedger,
   PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   partyDimensionValues,
@@ -19433,6 +19434,7 @@ export async function postPurchaseInvoice(
       .filter((id): id is string => Boolean(id));
 
     await db.transaction().execute(async (trx) => {
+      await lockPostable(trx, "purchaseInvoice", invoiceId, companyId);
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
       // The gate above ran before this transaction. Lock the invoice's orders
@@ -20002,13 +20004,15 @@ export async function postPurchaseInvoice(
       receiptIds: createdReceiptIds
     };
   } catch (err) {
-    // A failed VOID leaves the invoice Posted: its rows still stand.
+    // A failed VOID leaves the invoice Posted: its rows still stand. Only
+    // from Pending: a second post refused because the first one won must
+    // leave it Open.
     if (type !== "void") {
       await updateRows(
         db,
         "purchaseInvoice",
         { status: "Draft" },
-        { id: invoiceId, companyId }
+        { id: invoiceId, companyId, status: "Pending" }
       );
     }
     throw err;
