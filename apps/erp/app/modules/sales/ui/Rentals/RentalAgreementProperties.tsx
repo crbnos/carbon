@@ -35,7 +35,8 @@ import {
   CustomerLocation,
   Employee,
   Location,
-  PaymentTerm
+  PaymentTerm,
+  TaxCode
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import {
@@ -51,6 +52,7 @@ import {
   rentalBillingCycles,
   rentalBillingTimings
 } from "../../sales.models";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import type { RentalAgreement, RentalAgreementRouteData } from "./types";
 
 type Term =
@@ -66,6 +68,7 @@ type Term =
   | "currencyCode"
   | "depositAmount"
   | "taxPercent"
+  | "taxCodeId"
   | "discountRate"
   | "ownershipTransfers"
   | "specializedAsset"
@@ -111,6 +114,7 @@ const RentalAgreementProperties = () => {
   const agreement = routeData?.rentalAgreement;
   const contactEmail = routeData?.contactEmail ?? null;
   const permissions = usePermissions();
+  const invoiceAutomationHint = useInvoiceAutomationHint();
   const companySettings = useSettings();
   const currencyCode = agreement?.currencyCode ?? "";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -209,6 +213,13 @@ const RentalAgreementProperties = () => {
   const isInvoicingReadOnly =
     !["Draft", "Active"].includes(agreement.status ?? "") ||
     !permissions.can("update", "sales");
+
+  // Payment terms and tax are read when each invoice is drafted, so they stay
+  // editable while Active, like Invoicing.
+  const invoiceTermHelper =
+    agreement.status === "Active" && !isInvoicingReadOnly
+      ? t`Applies to invoices drafted from now on`
+      : undefined;
 
   const isDisabled =
     agreement.status !== "Draft" || !permissions.can("update", "sales");
@@ -414,6 +425,11 @@ const RentalAgreementProperties = () => {
             </span>
           )}
           isReadOnly={isInvoicingReadOnly}
+          labelHelp={
+            agreement.effectiveInvoiceAutomation
+              ? invoiceAutomationHint(agreement.effectiveInvoiceAutomation)
+              : undefined
+          }
           helperText={
             !contactEmail && !isInvoicingReadOnly
               ? t`Add a contact with an email to send invoices`
@@ -438,7 +454,8 @@ const RentalAgreementProperties = () => {
           name="paymentTermId"
           label={t`Payment Terms`}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
           onChange={(term) => {
             onUpdate("paymentTermId", term?.value ?? null);
           }}
@@ -470,12 +487,25 @@ const RentalAgreementProperties = () => {
           }}
         />
       </PropertyForm>
+      <PropertyForm name="taxCodeId" value={agreement.taxCodeId}>
+        <TaxCode
+          name="taxCodeId"
+          label={t`Tax Code`}
+          inline
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
+          onChange={(option) => {
+            onUpdate("taxCodeId", option?.value ?? null);
+          }}
+        />
+      </PropertyForm>
       <PropertyForm name="taxPercent" value={agreement.taxPercent}>
         <NumberControlled
           name="taxPercent"
           label={t`Tax Percent`}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
           value={agreement.taxPercent ?? 0}
           minValue={0}
           maxValue={1}

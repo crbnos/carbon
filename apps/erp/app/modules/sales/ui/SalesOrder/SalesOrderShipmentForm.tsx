@@ -27,6 +27,7 @@ import {
   Number,
   Select,
   ShippingMethod,
+  ShipTo,
   Submit
 } from "~/components/Form";
 import {
@@ -140,6 +141,20 @@ const SalesOrderShipmentForm = forwardRef<
               isClearable
               termId="sales-order-shipment-from-location"
             />
+            {/* A drop shipment ships to its own customer and location below. */}
+            {!dropShip && (
+              <ShipTo
+                name="shipToCustomerLocationId"
+                customerId={routeData?.salesOrder?.customerId ?? undefined}
+                recalculateTaxesAction={path.to.salesOrderRecalculateTaxes(
+                  orderId
+                )}
+                recalculateTaxesText={t`Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line.`}
+                canRecalculateTaxes={
+                  permissions.can("update", "sales") && !isLocked
+                }
+              />
+            )}
             <ShippingMethod
               name="shippingMethodId"
               label={t`Shipping Method`}

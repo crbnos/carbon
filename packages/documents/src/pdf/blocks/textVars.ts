@@ -4,6 +4,7 @@
 
 import type { AddressField, AddressToken } from "../../template";
 import type { Company } from "../../types";
+import type { PartNumbers } from "../../utils/part-number";
 
 /** A value as a variable prints it: nothing, never "null" or "undefined". */
 export const str = (v: unknown): string => (v == null ? "" : String(v));
@@ -45,6 +46,13 @@ export function addressVars<P extends string>(
     ])
   ) as Record<AddressToken<P>, string>;
 }
+
+/** A sales line's part numbers, each on its own whatever its display choice. */
+export const linePartNumberVars = (parts: PartNumbers) => ({
+  "line.itemId": str(parts.ours),
+  "line.customerPartId": str(parts.theirs),
+  "line.customerPartRevision": str(parts.theirsRevision)
+});
 
 /** The variables every document prints of the company. */
 export function companyVars(company: Company | null | undefined) {

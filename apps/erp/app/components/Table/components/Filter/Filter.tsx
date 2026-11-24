@@ -210,6 +210,10 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
         <PopoverContent
           align="start"
           className="min-w-[var(--radix-popover-trigger-width)] p-0"
+          // The popover is portaled out of any drawer the table sits in, so the
+          // drawer's scroll lock would swallow these and the list couldn't scroll.
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
           onInteractOutside={() => {
             closedFromOutside.current = true;
           }}

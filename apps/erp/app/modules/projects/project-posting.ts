@@ -164,6 +164,43 @@ export function resolveProjectTreatment(
 }
 
 /**
+ * Why an expense entry (Charge cost) dated `entryDate` cannot post, or null.
+ * Under Capitalize a cost builds the asset under construction, and the asset's
+ * cost sources have no expense entry. `postProjectExpense` refuses with it.
+ */
+export function projectExpenseRefusal(
+  ctx: ProjectPostingContext,
+  entryDate: string
+): string | null {
+  return resolveProjectTreatment(ctx, entryDate) === "Capitalize"
+    ? "An expense entry cannot charge a capital project. Use a charge or a purchase invoice."
+    : null;
+}
+
+/**
+ * The refusal when an expense entry is refused on every date, else null: the
+ * element page disables Charge cost with it. A dated override
+ * (`costTreatmentEffectiveFrom`) changes the treatment only from its date, so
+ * the treatment is constant between those dates: checking the earliest date
+ * and each override's date covers every date.
+ */
+export function projectExpenseRefusalOnEveryDate(
+  ctx: ProjectPostingContext
+): string | null {
+  const chain = ctx.element ? [ctx.element, ...ctx.ancestors] : [];
+  const dates = [
+    "0001-01-01",
+    ...chain.flatMap((element) =>
+      element.costTreatment !== null && element.costTreatmentEffectiveFrom
+        ? [element.costTreatmentEffectiveFrom]
+        : []
+    )
+  ];
+  const refusals = dates.map((date) => projectExpenseRefusal(ctx, date));
+  return refusals.every(Boolean) ? refusals[0] : null;
+}
+
+/**
  * The treatment and account a charge posts to on `postingDate`
  * (`YYYY-MM-DD`). The nearest element (itself, then its ancestors) whose
  * treatment is in effect on the date decides; else the project does.

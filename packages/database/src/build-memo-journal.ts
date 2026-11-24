@@ -36,8 +36,13 @@
 // the cost never reconcile and GRNI keeps a permanent residual.
 
 import { toBaseAmount } from "./accounting-currency.ts";
+import { REVERSE_CHARGE_TAX_POSTING_DESCRIPTION } from "./accounting-posting.ts";
 import { accountTypeFromClass, credit, debit } from "./ledger.ts";
-import { assertBalanced, round } from "./precision.ts";
+import {
+  assertBalanced,
+  distributeRoundingResidual,
+  round
+} from "./precision.ts";
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
 
@@ -86,6 +91,37 @@ export interface BuildMemoJournalInput {
   // Received Not Invoiced") so the three-line entry reads the same way the
   // return shipment's own GRNI line does.
   reasonDescription?: string;
+  // The memo's tax, in document currency, part of `amount` (the gross that
+  // hits the control account). It posts on the reason side to the tax
+  // account — Tax Received for a customer memo, Tax Paid for a supplier memo —
+  // and the reason leg takes the rest. Omit, or 0, for a memo with no tax.
+  taxAmount?: number;
+  /** The tax legs' base amount when it is not `taxAmount` converted: a
+   *  supplier memo's recoverable share, summed from its tax-ledger parts so
+   *  the GL and the ledger agree exactly. */
+  taxAmountBase?: number;
+  taxAccountId?: string | null;
+  /** The tax account's class. A company may keep one VAT control account
+   *  for both directions, so Tax Paid is not always an asset. Omitted: Tax
+   *  Received is a liability, Tax Paid an asset. */
+  taxAccountClass?: string | null;
+  /** One tax leg per tax component, on the component's own account (null:
+   *  `taxAccountId`), splitting the tax in proportion to `weight` so the
+   *  legs sum to it exactly. Omitted or empty: one leg on `taxAccountId`. */
+  taxLegs?: Array<{
+    accountId: string | null;
+    accountClass?: string | null;
+    weight: number;
+  }>;
+  /** A supplier memo on a Reverse Charge code: the tax its bill
+   *  self-assessed, in base, posted on `accountId` on the control side (the
+   *  supplier charged none). Its recoverable share is the tax legs
+   *  (`taxAmountBase`); the rest joins the reason leg, as cost. */
+  selfAssessed?: {
+    amountBase: number;
+    accountId: string;
+    accountClass?: string | null;
+  };
 }
 
 export interface BuildMemoJournalResult {
@@ -113,7 +149,13 @@ export function buildMemoJournal(
     reasonAccountClass,
     reasonAmountBase,
     varianceAccountId,
-    reasonDescription
+    reasonDescription,
+    taxAmount = 0,
+    taxAmountBase,
+    taxAccountId,
+    taxAccountClass,
+    taxLegs,
+    selfAssessed
   } = input;
 
   if (!controlAccountId) {
@@ -178,9 +220,36 @@ export function buildMemoJournal(
   // the control leg (AP) moves by what the supplier actually credited. When
   // those differ, the reason leg uses its own magnitude and the remainder
   // becomes leg 3.
+  if (!Number.isFinite(taxAmount) || taxAmount < 0 || taxAmount >= amount) {
+    throw new Error(
+      "Memo tax must be at least 0 and less than the memo amount"
+    );
+  }
+  const taxMagnitude =
+    taxAmountBase ??
+    (taxAmount > 0 ? toBaseAmount(taxAmount, exchangeRate) : 0);
+  if (!Number.isFinite(taxMagnitude) || taxMagnitude < 0) {
+    throw new Error("Memo tax must be at least 0");
+  }
+  const selfAssessedMagnitude = selfAssessed
+    ? round(selfAssessed.amountBase)
+    : 0;
+  const legs = taxLegs?.length
+    ? taxLegs
+    : [{ accountId: null, accountClass: null, weight: 1 }];
+  if (
+    taxMagnitude > 0 &&
+    legs.some((leg) => !(leg.accountId ?? taxAccountId))
+  ) {
+    throw new Error(
+      `Missing ${isAR ? "Tax Received" : "Tax Paid"} account default; cannot post memo tax`
+    );
+  }
+  // Self-assessed tax sits on the reason side: its recoverable share on the
+  // tax legs, the rest (cost) in the reason leg.
   const reasonMagnitude =
     reasonAmountBase === undefined
-      ? magnitude
+      ? round(magnitude - taxMagnitude + selfAssessedMagnitude)
       : round(Math.abs(reasonAmountBase));
   pushLine(
     controlIsDebit ? "credit" : "debit",
@@ -190,6 +259,51 @@ export function buildMemoJournal(
       (direction === "Credit" ? "Credit memo" : "Debit memo"),
     reasonMagnitude
   );
+
+  // 2b) Tax leg — the tax inside the memo, on the reason side, so a credit
+  // against a taxed invoice unwinds the tax it charged.
+  // Per component, so each authority's account moves by what the tax
+  // ledger records for it.
+  if (taxMagnitude > 0) {
+    const totalWeight = legs.reduce((total, leg) => total + leg.weight, 0);
+    const amounts = distributeRoundingResidual(
+      legs.map((leg) =>
+        totalWeight === 0
+          ? taxMagnitude / legs.length
+          : (taxMagnitude * leg.weight) / totalWeight
+      ),
+      taxMagnitude
+    );
+    legs.forEach((leg, index) => {
+      if (amounts[index] === 0) return;
+      const accountClass = leg.accountId ? leg.accountClass : taxAccountClass;
+      pushLine(
+        controlIsDebit ? "credit" : "debit",
+        accountClass
+          ? accountTypeFromClass(accountClass)
+          : isAR
+            ? "liability"
+            : "asset",
+        (leg.accountId ?? taxAccountId)!,
+        isAR ? "Tax Received" : "Tax Paid",
+        amounts[index]!
+      );
+    });
+  }
+
+  // 2c) Reverse-charge leg — the self-assessed tax, owed to the authority,
+  // on the control side as the bill posted it.
+  if (selfAssessed && selfAssessedMagnitude > 0) {
+    pushLine(
+      controlIsDebit ? "debit" : "credit",
+      selfAssessed.accountClass
+        ? accountTypeFromClass(selfAssessed.accountClass)
+        : "liability",
+      selfAssessed.accountId,
+      REVERSE_CHARGE_TAX_POSTING_DESCRIPTION,
+      selfAssessedMagnitude
+    );
+  }
 
   // 3) Variance leg — the plug that makes an unequal control/reason pair
   // balance. Same economic family as the invoice-vs-receipt PPV

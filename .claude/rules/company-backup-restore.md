@@ -180,6 +180,10 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   purchaseOrder.id`) SHARES its parent's map rather than minting a second id,
   which would split the pair — and under `session_replication_role='replica'`
   the break would commit.
+- `app.backup_load`: restore (`wipeAndLoad`) and import set it with `SET LOCAL`, next to
+  `app.inspection_release`. The part number display triggers (the line stamp, the order line
+  copy of the other party's number, the party-change restamp) skip it, so a backup's lines
+  keep their values, nulls included, also when replica mode is not available.
 - Derived groups (`src/backups/derived-groups.ts`): the database makes a `group`
   per employee type, customer type, supplier type, customer and supplier (its id IS
   that row's id) plus the company-wide groups (`groups` / `getGroupId` in

@@ -5,6 +5,7 @@
 import type { Database } from "@carbon/database";
 import type {
   getApiKeys,
+  getBaseCurrencyChangePreview,
   getCompanies,
   getCustomField,
   getCustomFieldsTables,
@@ -18,6 +19,10 @@ import type {
 export type ApiKey = NonNullable<
   Awaited<ReturnType<typeof getApiKeys>>["data"]
 >[number];
+
+export type BaseCurrencyChange = Awaited<
+  ReturnType<typeof getBaseCurrencyChangePreview>
+>;
 
 export type Company = NonNullable<
   Awaited<ReturnType<typeof getCompanies>>["data"]

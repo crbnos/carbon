@@ -363,6 +363,7 @@ export async function resolveSalesInvoiceData(
 
   const document = await loadSalesInvoiceDocument({
     client,
+    taxClient: client,
     companyId,
     companyGroupId: company.data.companyGroupId,
     invoiceId,
