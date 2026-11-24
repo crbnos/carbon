@@ -77,6 +77,9 @@ pnpm --filter @carbon/checks guarded-code [base] [--root <repo>]  # warn on chan
 
 ## Cross-References
 
+- `.claude/skills/find-repeated-mistakes/SKILL.md` — the procedure that finds a mistake fixed three or more times and turns it into a check proven on the real past fix (the `provenance.incidents` rule above)
+- `.claude/rules/concurrency.md` — the rules `status-write-guarded` and `counter-write-relative` enforce, and when to add a `guarded-code.json` entry
+
 - `packages/harness/src/gates.ts` — `FLOOR_GATES` includes `@carbon/checks test` and `clobbers` as CI gates
 - `packages/database/supabase/migrations/` — SQL files scanned by conformance checks
 - `apps/erp/app/modules/` — module directories validated by `moduleShape`

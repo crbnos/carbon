@@ -13,9 +13,14 @@ click, a retried job, a second tab, an API call next to the UI. Each rule below
 is a bug that shipped. The checks in `@carbon/checks` fail new code that breaks
 the first three. They read text, so they see one function at a time. When a
 protocol has several actors (a post and a void, a completion and a backflush,
-a close and a reopen), check it with the formal models: the
-`formal-verification` skill (`.claude/skills/formal-verification/SKILL.md`,
-`packages/models`).
+a close and a reopen), prove it with a database test that opens two
+connections: one holds the lock, the other runs the second writer and must
+wait or be refused (`apps/erp/test/database/period-close-concurrency.test.ts`).
+One connection serializes the writers and passes on the bug. Register the
+fixed function and its test in `packages/checks/guarded-code.json`: a pull
+request that changes it then gets a warning in CI that names the test. When the
+same mistake keeps coming back, run the `find-repeated-mistakes` skill
+(`.claude/skills/find-repeated-mistakes/SKILL.md`) to turn it into a check.
 
 ## 1. Lock, then read
 
@@ -85,8 +90,8 @@ between your read and your write is lost or counted twice.
   first create instead of making a second one (`idempotencyKey` in
   `packages/ee/src/accounting/core/operations.ts`).
 - No check enforces this rule: a side effect is usually a call to another
-  function, which a text check cannot follow. Review it, and model it when
-  several actors are involved.
+  function, which a text check cannot follow. Review it, and prove a retried
+  create with a database test that runs it twice.
 
 ## When a check flags your code
 
