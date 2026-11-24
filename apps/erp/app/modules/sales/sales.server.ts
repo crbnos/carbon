@@ -120,6 +120,7 @@ import {
   rentalAgreementLineClassificationValidator,
   rentalAgreementValidator,
   salesOrderLineValidator,
+  salesOrderShipmentValidator,
   salesOrderStatusType,
   salesOrderValidator,
   salesReturnOrderFromAssetsValidator,
@@ -2078,6 +2079,74 @@ export const updateSalesOrderField = defineServiceFn({
       return ctx.error("internal", "Failed to update the orders", update.error);
     }
     return { ids };
+  }
+});
+
+/**
+ * Save a sales order's Shipping card: its shipment, and the order's ship-to
+ * unless it is a drop shipment. Refused while the order is locked.
+ */
+export const updateSalesOrderShipping = defineServiceFn({
+  input: z.object({
+    salesOrderId: z.string(),
+    shipping: salesOrderShipmentValidator,
+    customFields: z.record(z.string(), z.unknown()).optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { salesOrderId, shipping, customFields }) {
+    const order = await ctx.asSystem.supabase
+      .from("salesOrder")
+      .select("status, customerId")
+      .eq("id", salesOrderId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (order.error) {
+      return ctx.error("internal", "Failed to load the order", order.error);
+    }
+    if (!order.data) return ctx.error("notFound", "Sales order not found");
+    if (isSalesOrderLocked(order.data.status)) {
+      return ctx.error(
+        "rule",
+        "Cannot modify a locked sales order. Reopen it first."
+      );
+    }
+
+    // The write below bypasses RLS: every record it points at must be ours.
+    const { id: _id, shipToCustomerLocationId, ...shipment } = shipping;
+    const refusals = await Promise.all([
+      shipment.locationId &&
+        refuseUnlessOwned(ctx, "location", { id: shipment.locationId }),
+      shipment.shippingMethodId &&
+        refuseUnlessOwned(ctx, "shippingMethod", {
+          id: shipment.shippingMethodId
+        }),
+      shipment.customerId &&
+        refuseUnlessOwned(ctx, "customer", { id: shipment.customerId }),
+      shipment.customerLocationId &&
+        refuseUnlessOwned(ctx, "customerLocation", {
+          id: shipment.customerLocationId,
+          customerId: shipment.customerId ?? ""
+        }),
+      !shipment.dropShipment &&
+        shipToCustomerLocationId &&
+        refuseUnlessOwned(ctx, "customerLocation", {
+          id: shipToCustomerLocationId,
+          customerId: order.data.customerId
+        })
+    ]);
+    const refused = refusals.find((refusal) => refusal);
+    if (refused) return refused;
+
+    await service.updateSalesOrderShipping(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      salesOrderId,
+      shipping: shipment,
+      shipToCustomerLocationId,
+      customFields: customFields as Json | undefined
+    });
+    return { salesOrderId };
   }
 });
 
@@ -5172,11 +5241,21 @@ const rentalBooleanTerms = new Set<string>([
   "purchaseOptionReasonablyCertain"
 ]);
 
+// Read when each invoice is drafted, so changing them on an Active agreement
+// changes only the invoices not drafted yet.
+const rentalActiveTerms = new Set<string>([
+  "paymentTermId",
+  "taxPercent",
+  "taxCodeId"
+]);
+
 /**
- * Set one term of a Draft rental agreement.
+ * Set one term of a rental agreement.
  *
  * @remarks
- * The terms are checked as a whole (an end date after the start, a purchase
+ * A Draft agreement takes any term. An Active one takes only the payment
+ * terms, the tax code and the tax percent: they apply to the invoices drafted
+ * from then on, and invoices already drafted keep theirs. The terms are checked as a whole (an end date after the start, a purchase
  * option reasonably certain needs an end date), so the stored terms are
  * read, the one field is swapped in and the whole set is validated and
  * saved. A new customer clears the site and the contacts; a new currency
@@ -5200,10 +5279,14 @@ export const setRentalAgreementTerm = defineServiceFn({
     const companyId = ctx.company.id;
     const agreement = await service.ownRentalAgreement(ctx, id);
     if (agreement instanceof Error) return agreement;
-    if (agreement.status !== "Draft") {
+    const isActiveTerm =
+      agreement.status === "Active" && rentalActiveTerms.has(field);
+    if (agreement.status !== "Draft" && !isActiveTerm) {
       return ctx.error(
         "rule",
-        "Only a Draft rental agreement's terms can be edited"
+        agreement.status === "Active"
+          ? "Only the payment terms and tax of an Active rental agreement can be changed"
+          : "Only a Draft rental agreement's terms can be edited"
       );
     }
 
@@ -5317,15 +5400,30 @@ export const setRentalAgreementTerm = defineServiceFn({
       ...data
     } = validation.data;
 
-    const update = await service.updateRentalAgreement(client, {
-      ...data,
-      // Stated, so clearing the code (an empty value) writes null.
-      taxCodeId: (terms.taxCodeId as string | null) ?? null,
-      id,
-      companyId,
-      updatedBy: ctx.auditUserId,
-      customFields: agreement.customFields ?? undefined
-    });
+    // A tax code, its rate and the payment terms are read when each invoice
+    // is drafted; an Active agreement writes only those.
+    const update = isActiveTerm
+      ? await service.updateRentalAgreementInvoiceTerms(client, {
+          id,
+          companyId,
+          updatedBy: ctx.auditUserId,
+          terms:
+            field === "paymentTermId"
+              ? { paymentTermId: data.paymentTermId ?? null }
+              : {
+                  taxPercent: data.taxPercent,
+                  taxCodeId: (terms.taxCodeId as string | null) ?? null
+                }
+        })
+      : await service.updateRentalAgreement(client, {
+          ...data,
+          // Stated, so clearing the code (an empty value) writes null.
+          taxCodeId: (terms.taxCodeId as string | null) ?? null,
+          id,
+          companyId,
+          updatedBy: ctx.auditUserId,
+          customFields: agreement.customFields ?? undefined
+        });
     if (update.error) {
       logger.error("rental agreement term update failed", {
         companyId,

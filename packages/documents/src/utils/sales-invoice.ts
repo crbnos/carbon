@@ -10,14 +10,15 @@ type SalesInvoiceLineRow =
   Database["public"]["Views"]["salesInvoiceLines"]["Row"];
 
 /**
- * A service job's labor or fixed price line: a Service line with no item,
- * named by its description. "Labor" is the type those lines had before
- * 2026-11-01.
+ * A line with no item, named by its description: a service job's labor or
+ * fixed price line ("Labor" is the type those lines had before 2026-11-01),
+ * or a rental agreement's rent or charge line.
  */
 function isItemlessServiceLine(line: SalesInvoiceLineRow) {
   return (
     (line?.invoiceLineType === "Service" ||
-      line?.invoiceLineType === "Labor") &&
+      line?.invoiceLineType === "Labor" ||
+      line?.invoiceLineType === "Rental") &&
     !line?.itemId
   );
 }

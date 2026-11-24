@@ -95,6 +95,7 @@ import {
 import Shift from "./Shift";
 import Shifts from "./Shifts";
 import ShippingMethod from "./ShippingMethod";
+import ShipTo from "./ShipTo";
 import StandardFactor from "./StandardFactor";
 import StorageTypes from "./StorageTypes";
 import StorageUnit from "./StorageUnit";
@@ -199,6 +200,7 @@ export {
   Shift,
   Shifts,
   ShippingMethod,
+  ShipTo,
   StandardFactor,
   StorageTypes,
   StorageUnit,
