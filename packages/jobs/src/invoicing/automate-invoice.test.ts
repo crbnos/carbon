@@ -139,6 +139,10 @@ function fakeClient(
         filters.push((row) => row[key] != null);
         return query;
       },
+      is: (key: string, value: null) => {
+        filters.push((row) => (row[key] ?? null) === value);
+        return query;
+      },
       update: (values: Row) => {
         update = values;
         return query;
@@ -386,6 +390,25 @@ describe("emailPostedInvoice", () => {
     expect(sendEmail).not.toHaveBeenCalled();
   });
 
+  it("emails the invoice once when two sends run at once", async () => {
+    const { client, tables } = fakeClient(baseTables(posted()));
+    const results = await Promise.all([
+      emailPostedInvoice({ client, ...args }),
+      emailPostedInvoice({ client, ...args })
+    ]);
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    expect(results).toEqual(
+      expect.arrayContaining([
+        { emailed: true, sentTo: "ap@buyer.com, ops@acme.com, ar@acme.com" },
+        { emailed: false }
+      ])
+    );
+    expect(tables.salesInvoice![0]).toMatchObject({
+      sentTo: "ap@buyer.com, ops@acme.com, ar@acme.com",
+      sendError: null
+    });
+  });
+
   it("records why when the contact has no email", async () => {
     const { client, tables } = fakeClient(baseTables(posted(), null));
     expect(await emailPostedInvoice({ client, ...args })).toEqual({
@@ -419,12 +442,12 @@ describe("emailPostedInvoice", () => {
     expect(tables.document).toHaveLength(1);
   });
 
-  it("reports a send whose sent stamp failed as a send error, not a clean send", async () => {
+  it("reports a send whose sent stamp failed as a send error, and keeps it sent", async () => {
     const { client, tables } = fakeClient(
       baseTables(posted()),
       undefined,
       (table, values) =>
-        table === "salesInvoice" && "sentAt" in values
+        table === "salesInvoice" && "sentTo" in values
           ? "connection reset"
           : null
     );
@@ -436,7 +459,12 @@ describe("emailPostedInvoice", () => {
       emailed: false,
       sendError
     });
-    expect(tables.salesInvoice![0]).toMatchObject({ sentAt: null, sendError });
+    // The email went out, so a Send must not email it again.
+    expect(tables.salesInvoice![0]).toMatchObject({
+      sentAt: expect.any(String),
+      sendError
+    });
+    expect(sendEmail).toHaveBeenCalledTimes(1);
   });
 
   it("stamps the send error and leaves it unsent when delivery fails", async () => {
