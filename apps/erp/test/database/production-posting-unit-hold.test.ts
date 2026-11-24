@@ -22,7 +22,12 @@ import {
   USER
 } from "./fixtures/always-post";
 import { handlesOf, systemServiceOf } from "./fixtures/handles";
-import { holdUnits, raiseIssue, serialJob } from "./fixtures/job-unit-hold";
+import {
+  holdUnits,
+  raiseIssue,
+  raiseIssueOnUnit,
+  serialJob
+} from "./fixtures/job-unit-hold";
 import { postgrestTest } from "./fixtures/local-supabase";
 import { stepRecordsForSelection } from "../../app/modules/inventory/ui/Traceability/stepRecords";
 import { databaseTest } from "./fixtures/local-database";
@@ -297,6 +302,116 @@ databaseTest(
         .where("activity.sourceDocumentId", "=", job.materialId)
         .execute();
       expect(outputs).toEqual([{ trackedEntityId: eligibleId }]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "material issue and batch pick refuse a held serial part into an unheld unit until its issue closes",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await serialJob(f, 1);
+      await holdUnits(f, true);
+      const parentId = `${f.prefix}-unit-1`;
+      const partUnitId = `${f.prefix}-part-unit`;
+      const batchId = `${f.prefix}-batch`;
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("item")
+          .set({ itemTrackingType: "Serial" })
+          .where("id", "=", f.partId)
+          .execute();
+        await trx
+          .updateTable("jobMaterial")
+          .set({ requiresSerialTracking: true })
+          .where("id", "=", job.materialId)
+          .execute();
+        await trx
+          .insertInto("trackedEntity")
+          .values({
+            id: partUnitId,
+            itemId: f.partId,
+            readableId: "SA-5",
+            quantity: 1,
+            status: "Available",
+            sourceDocument: "Item",
+            sourceDocumentId: f.partId,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("itemLedger")
+          .values({
+            itemId: f.partId,
+            trackedEntityId: partUnitId,
+            quantity: 1,
+            locationId: f.locationId,
+            entryType: "Positive Adjmt.",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+      const issueId = await raiseIssueOnUnit(f, partUnitId, 5);
+      await attachBatch(f, job.operationId, batchId);
+      const children = [{ trackedEntityId: partUnitId, quantity: 1 }];
+      const issue = () =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "trackedEntitiesToOperation",
+            materialId: job.materialId,
+            parentTrackedEntityId: parentId,
+            children
+          },
+          issueMaterial
+        );
+      const pick = () =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "trackedEntitiesToBatch",
+            batchId,
+            itemId: f.partId,
+            children
+          },
+          issueMaterial
+        );
+      const consumption = () =>
+        f.db
+          .selectFrom("itemLedger")
+          .select("quantity")
+          .where("trackedEntityId", "=", partUnitId)
+          .where("documentType", "=", "Job Consumption")
+          .execute();
+
+      // The refusal names the part, not the unit it was going into.
+      expect((await issue()).error?.message).toMatch(/SA-5.*NCR-5/);
+      expect((await pick()).error?.message).toMatch(/SA-5.*NCR-5/);
+      expect(await consumption()).toEqual([]);
+
+      await seed(f, (trx) =>
+        trx
+          .updateTable("nonConformance")
+          .set({ status: "Closed" })
+          .where("id", "=", issueId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      expect((await issue()).error).toBeNull();
+      expect(await consumption()).toEqual([{ quantity: -1 }]);
+      const part = await f.db
+        .selectFrom("trackedEntity")
+        .select("status")
+        .where("id", "=", partUnitId)
+        .executeTakeFirstOrThrow();
+      expect(part).toEqual({ status: "Consumed" });
     } finally {
       await f.cleanup();
     }

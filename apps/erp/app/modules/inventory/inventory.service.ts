@@ -30444,6 +30444,17 @@ async function consumeTrackedEntitiesIntoOperation(
     parentTrackedEntityId,
     jobMaterial.jobMakeMethodId
   );
+  // A held serial cannot go in as a part either: consumed, its open issue
+  // would leave inside the assembly. Each part is judged by its own make
+  // method or item, never the parent's, and locked after the parent, the
+  // order the consumption writes below take.
+  await lockProductionOutputsForPosting(
+    trx,
+    companyId,
+    children.map((child) => child.trackedEntityId),
+    null,
+    { nameHeldUnit: true }
+  );
 
   // Create tracked activity
   const activityId = nanoid();
@@ -30784,14 +30795,17 @@ async function isSerialCompleteAtOperation(
   return outputs.length > 0;
 }
 
-// These postings accept both lots and serials. Decide from the output's own
+// These postings accept both lots and serials. Decide from each unit's own
 // method (or the item's tracking when the method is missing). Taking the
 // unit lock before reading its holds orders a posting against Quality close.
+// `nameHeldUnit` names the serial in the refusal, for a part being consumed,
+// so it is not read as the unit on screen.
 export async function lockProductionOutputsForPosting(
   trx: Transaction<KyselyDatabase>,
   companyId: string,
   trackedEntityIds: string[],
-  jobMakeMethodId?: string | null
+  jobMakeMethodId?: string | null,
+  { nameHeldUnit = false }: { nameHeldUnit?: boolean } = {}
 ) {
   const ids = [...new Set(trackedEntityIds)];
   if (ids.length === 0) return [];
@@ -30833,7 +30847,14 @@ export async function lockProductionOutputsForPosting(
     )
     .map((entity) => entity.id);
   if (serialIds.length > 0) {
-    await assertSerialsOffQualityHold(trx, companyId, serialIds);
+    await assertSerialsOffQualityHold(
+      trx,
+      companyId,
+      serialIds,
+      nameHeldUnit
+        ? new Map(entities.map((entity) => [entity.id, entity.readableId]))
+        : undefined
+    );
   }
   return entities;
 }
@@ -31488,19 +31509,23 @@ async function loadScrapAccountingContext(
 export async function assertSerialsOffQualityHold(
   trx: Transaction<KyselyDatabase>,
   companyId: string,
-  trackedEntityIds: string[]
+  trackedEntityIds: string[],
+  serialNumbers?: ReadonlyMap<string, string | null>
 ) {
   const hold = await trx
     .selectFrom("unitQualityHold")
-    .select(["issueNumber", "disposition"])
+    .select(["trackedEntityId", "issueNumber", "disposition"])
     .where("trackedEntityId", "in", trackedEntityIds)
     .where("companyId", "=", companyId)
     .orderBy("issueNumber")
     .executeTakeFirst();
   if (hold) {
     const reason = hold.disposition ? ` (${hold.disposition})` : "";
+    const unit =
+      (hold.trackedEntityId && serialNumbers?.get(hold.trackedEntityId)) ||
+      "This unit";
     throw new InvalidInputError(
-      `This unit is on hold for issue ${hold.issueNumber}${reason}`
+      `${unit} is on hold for issue ${hold.issueNumber}${reason}`
     );
   }
 }
