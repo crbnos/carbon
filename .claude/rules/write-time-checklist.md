@@ -106,3 +106,4 @@ Answer before you write a file, and again over the diff before you commit. `/exe
 - Every guarded write has a wire-level test that asserts the predicate and its parameters. Precedent: `apps/erp/app/modules/shared/sort-order.test.ts` (a Kysely `DummyDriver`).
 - Every read-then-write: list the interleavings, and write a test for each that feeds a different value at the write than at the read.
 - Every guard ships with a test that submits what it rejects: a foreign id, a non-open row, a boundary value, a second concurrent call, a 0 or NaN step.
+- Did you break the code and watch each new test fail? Are its expected values literals, not output of the code under test? Does it repeat no existing test of the same rule? [testing]

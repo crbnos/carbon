@@ -30,6 +30,46 @@ your change works, and it goes in your scratchpad or the run log
 (`.ai/runs/`), not the repo. That is fine. A proof you needed once is not a
 regression guard.
 
+## Before you commit one: break the code
+
+Make the bug from question 1 in the code, run the test, and watch it fail. Then
+put the code back. A test that stays green is not a guard.
+
+A 2026-11 prune of the whole repo deleted about 300 tests and rewrote about 300
+more. These are the patterns it removed. Each one passed when the code was
+wrong, or failed when nothing a user sees had changed:
+
+- **The expected value comes from the code under test.** One test expected
+  `cutoverDateReason(...)`, the function it was testing. Another compared the
+  posted legs with a preview built from the same two helpers. Write the
+  literal (`"cutover-date-after-today"`, `[["6010", 60], ["5030", -60]]`).
+- **The check is too weak to fail.** "Two lines that sum to 0" still passes
+  with debit and credit swapped. `toBeDefined()` on a row passes with the
+  wrong quantity. Assert the legs, the quantity, the whole result.
+- **The input never reaches the branch the name describes.** A DST test
+  used 02:30 on a day without a gap. A test named "plans no move for an
+  untracked line" had one line, which never produces a move. Change the
+  input until breaking that branch turns the test red.
+- **The fake ignores the filter under test.** A fake that returns every row,
+  whatever the `.eq` / `.in`, cannot catch a filter bug. The test sees its
+  own row come back and passes.
+- **A pure function called twice.** "Is deterministic", "same input gives the
+  same output" and "read twice gives identical names" cannot fail.
+- **A constant echoed back.** Asserting a lookup table, a target list or a
+  `"system" as const` re-types the source. Test the decision that reads it.
+- **A known bug pinned as expected.** A test that expects the 500 "as our
+  bug" blocks the fix. Fix the bug, or leave the test out and name the bug in
+  the run log.
+- **Removed code asserted gone** ("does not read the Purchasing Level column",
+  "the retired wildcard is refused"). Bringing it back would be a decision.
+  It would not be a regression.
+- **A test-only export in production code** (`__storageRulesCacheSize`,
+  `requestMemoSize`, a "Test seam" that reads private state). Assert through
+  the public result, and leave the export out.
+- **A second copy of a tested rule.** Before you add a case, grep for the
+  function's existing tests and for the rule in the package that owns it.
+  Add the case there, or not at all.
+
 ## Where a check lives
 
 | What you are protecting | Home | Runs |
