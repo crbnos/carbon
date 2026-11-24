@@ -4,6 +4,7 @@
 > Author: Claude (with Brad Barbin)
 > Date: 2026-07-03
 > Research notes: `.ai/research/multi-jurisdiction-tax.md`
+> Superseded by: `.ai/specs/2026-10-16-multi-jurisdiction-tax.md` (2026-10-16). Only the sales tax split shipped, through `2026-09-07-accounting-posting-corrections.md`.
 
 ## TLDR
 

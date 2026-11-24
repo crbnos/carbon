@@ -30,8 +30,8 @@ export default function ContractSetupRevenueRoute() {
         title={<Trans>Recognition</Trans>}
         description={
           <Trans>
-            How each line earns its revenue: spread by the day or evenly per
-            month, from go-live or its start date.
+            How each line earns its revenue over calendar months: spread by the
+            day or evenly per month, from go-live or its start date.
           </Trans>
         }
       >
@@ -41,8 +41,10 @@ export default function ContractSetupRevenueRoute() {
         title={<Trans>Revenue Plan</Trans>}
         description={
           <Trans>
-            One row per month, one column per line. Each line recognizes exactly
-            what its invoices bill.
+            One row per calendar month, one column per line. A month the
+            contract starts or ends part-way through gets part of the revenue.
+            This is for your accounts only: invoices still bill the full amount
+            of each billing period.
           </Trans>
         }
       >

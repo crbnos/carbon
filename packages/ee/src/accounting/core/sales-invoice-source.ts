@@ -112,6 +112,9 @@ export async function loadSalesInvoices(
       "salesInvoiceLine.addOnCost",
       "salesInvoiceLine.nonTaxableAddOnCost",
       "salesInvoiceLine.taxPercent",
+      "salesInvoiceLine.taxCodeId",
+      // The line's snapshot of its code's "taxes shipping", never the live code.
+      "salesInvoiceLine.taxesShipping",
       "salesInvoiceLine.serviceJobId",
       "item.readableIdWithRevision as itemReadableIdWithRevision"
     ])
@@ -311,6 +314,8 @@ export async function loadSalesInvoices(
           convertedUnitPrice,
           discountPercent,
           taxPercent,
+          taxCodeId: line.taxCodeId,
+          taxesShipping: line.taxesShipping ?? false,
           lineAmount: quantity * unitPrice * (1 - discountPercent),
           serviceJobId: line.serviceJobId ?? null
         };

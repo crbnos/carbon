@@ -8,7 +8,12 @@ import {
   selectRequiredMappingAccountIds,
   selectUnmappedRequiredAccounts
 } from "./account-mapping";
-import { isAccountingSyncEnabled, syncEnabledOnConnect } from "./models";
+import {
+  DEFAULT_SYNC_CONFIG,
+  isAccountingSyncEnabled,
+  metadataOnConnect,
+  syncEnabledOnConnect
+} from "./models";
 
 describe("isAccountingSyncEnabled", () => {
   it("is off only when the flag is explicitly false", () => {
@@ -146,5 +151,49 @@ describe("required account mapping", () => {
         mappedAccountIds: new Set()
       })
     ).toEqual([]);
+  });
+});
+
+describe("metadataOnConnect", () => {
+  const stored = {
+    syncConfig: { entities: { item: { enabled: false } } },
+    settings: {
+      syncEnabled: true,
+      pullCursor: "2026-11-23T08:49:05.590Z",
+      postingSync: { families: { ar: "documents", ap: "documents" } }
+    },
+    credentials: {
+      type: "oauth2",
+      providerMetadata: { tenantId: "tenant-1" }
+    }
+  };
+  const credentials = {
+    type: "oauth2",
+    accessToken: "new",
+    providerMetadata: { tenantId: "tenant-1" }
+  };
+
+  it("keeps every setting and swaps only the credentials on a same-organization reconnect", () => {
+    expect(metadataOnConnect(stored, "tenant-1", credentials)).toEqual({
+      syncConfig: stored.syncConfig,
+      settings: { ...stored.settings, syncEnabled: true },
+      credentials
+    });
+  });
+
+  it("starts a new organization from the defaults with sync off", () => {
+    expect(metadataOnConnect(stored, "tenant-2", credentials)).toEqual({
+      syncConfig: DEFAULT_SYNC_CONFIG,
+      settings: { syncEnabled: false },
+      credentials
+    });
+  });
+
+  it("starts a first connection from the defaults with sync off", () => {
+    expect(metadataOnConnect(null, "tenant-1", credentials)).toEqual({
+      syncConfig: DEFAULT_SYNC_CONFIG,
+      settings: { syncEnabled: false },
+      credentials
+    });
   });
 });
