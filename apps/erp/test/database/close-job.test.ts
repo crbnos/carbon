@@ -278,3 +278,55 @@ databaseTest(
     }
   }
 );
+
+for (const status of ["Closed", "Cancelled"] as const) {
+  databaseTest(
+    `completing a ${status} job is refused and receives nothing`,
+    async () => {
+      const f = await alwaysPostFixture();
+      try {
+        await stockPart(f, 10);
+        const job = await jobFixture(f, "1");
+        await issueTwoParts(f, job);
+        await sql`SELECT complete_job_to_inventory(${job.jobId}, ${1}::numeric, ${null}, ${f.locationId}, ${f.companyId}, ${"system"})`.execute(
+          f.db
+        );
+        await f.db
+          .updateTable("job")
+          .set({ status })
+          .where("id", "=", job.jobId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        // Closing writes off the WIP: a later receipt would bring units in at
+        // about zero cost and send the job back to Completed.
+        if (status === "Closed") {
+          await closeJob(f.service, { jobId: job.jobId });
+        }
+
+        await expect(
+          sql`SELECT complete_job_to_inventory(${job.jobId}, ${2}::numeric, ${null}, ${f.locationId}, ${f.companyId}, ${"system"})`.execute(
+            f.db
+          )
+        ).rejects.toThrow(/cannot be completed/);
+
+        expect(
+          await f.db
+            .selectFrom("job")
+            .select(["status", "quantityReceivedToInventory"])
+            .where("id", "=", job.jobId)
+            .where("companyId", "=", f.companyId)
+            .executeTakeFirstOrThrow()
+        ).toEqual({ status, quantityReceivedToInventory: 1 });
+        const received = await f.db
+          .selectFrom("itemLedger")
+          .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+          .where("companyId", "=", f.companyId)
+          .where("itemId", "=", f.assemblyId)
+          .executeTakeFirstOrThrow();
+        expect(Number(received.quantity)).toEqual(1);
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}
