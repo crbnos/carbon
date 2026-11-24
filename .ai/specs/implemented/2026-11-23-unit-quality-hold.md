@@ -61,17 +61,31 @@ stays on screen with a banner listing its open issues. The picker lists units
 on hold after the open ones, with the issue number, and still opens when only
 units on hold are left.
 
+**Receipt to stock.** A completion names no unit: finishing the last operation
+by hand, the ERP's Complete and a batch completion all end in
+`complete_job_to_inventory`, which chose the units to receive by status and
+serial number alone. A unit on hold could be received in place of a finished
+one. With the setting on, the function leaves a unit on hold out of the units
+it receives, and the completion quantity stops short of the units on hold. A
+later completion receives the unit once its issue is closed. The Complete
+dialog leaves those units out of its preview. An inspection lot's decision
+leaves them out of the units it completes.
+
 ## Data
 
 One column: `companySettings.holdUnitsWithOpenIssues BOOLEAN NOT NULL DEFAULT
-false`. No new table.
+false`. No new table. `complete_job_to_inventory` is redefined with the rule
+(`20261124035931_unit-hold-job-receipt.sql`); with the setting off it behaves as
+before.
 
 ## Not in scope
 
 - An override. Closing the issue is the release.
-- The ERP postings, the inspection lot's writes, batch step records and
-  `trigger-rework`, which do not use `resolveWorkUnit`.
-- Finishing an operation by hand, which names no unit.
+- `trigger-rework` and batch step records, which do not use
+  `resolveWorkUnit` and complete no unit.
+- What the unit does after its issue closes. A Scrap or Return to Supplier
+  disposition sets the unit `Rejected`, and the MES does not stop work on a
+  `Rejected` unit. That is unchanged.
 - Batches. A lot is one tracked entity and uses the same link table, so the
   same rule would hold the whole lot. A partial defect would first be split
   into its own lot (`subdivideBatchEntity`), and only that lot held.
@@ -83,3 +97,7 @@ false`. No new table.
   the setting off, a closed issue, a failed read.
 - `apps/mes/app/services/unit-hold.server.test.ts`: the reader.
 - `apps/mes/app/utils/workUnit.test.ts`: the screen rule.
+- `apps/erp/test/database/job-receipt-unit-hold.test.ts`: a job of four with
+  one unit on hold receives the other three; a completion of all four stops at
+  three and receives the fourth once its issue is closed; a job whose only
+  unit is on hold is refused; with the setting off the receipt is unchanged.

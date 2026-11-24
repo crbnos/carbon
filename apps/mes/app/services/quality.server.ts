@@ -23,6 +23,8 @@ import {
   getInspectionMeasurements,
   getInspectionSamplingPlans
 } from "~/services/quality.service";
+import { readUnitHolds } from "~/services/unit-hold.server";
+import { isUnitOnHold } from "~/utils/unitHold";
 
 type ServiceRole = Awaited<ReturnType<typeof getCarbonServiceRole>>;
 
@@ -289,7 +291,8 @@ export type InspectionOutcomeState = {
   opAccounted: number;
   opRemaining: number;
   // Serial only: the make method's WIP entities and the eligibility test
-  // (not Consumed, not Rejected, not already completed at this operation).
+  // (not Consumed, not Rejected, not on hold for an open quality issue, not
+  // already completed at this operation).
   entities: { id: string; status: string | null; attributes: unknown }[];
   entityEligible: (entityId: string) => boolean;
 };
@@ -417,6 +420,22 @@ export async function getInspectionOutcomeState(
   }));
   const opAttrKey = `Operation ${jobOperationId}`;
   const entityById = new Map(entities.map((e) => [e.id, e]));
+  // A unit on hold for an open quality issue is not completed by a lot's
+  // decision either: these completions do not go through `resolveWorkUnit`.
+  const holds = requiresSerialTracking
+    ? await readUnitHolds(serviceRole, {
+        companyId: args.companyId,
+        unitIds: entities.map((entity) => entity.id)
+      })
+    : { data: {}, error: null };
+  if (holds.error) {
+    return {
+      data: null,
+      error: holds.error,
+      message: "Failed to check the units on hold"
+    };
+  }
+  const unitHolds = holds.data;
   const entityEligible = (entityId: string) => {
     const entity = entityById.get(entityId);
     if (!entity) return false;
@@ -425,6 +444,7 @@ export async function getInspectionOutcomeState(
     if (entity.status === "Consumed" || entity.status === "Rejected") {
       return false;
     }
+    if (isUnitOnHold(unitHolds, entity.id)) return false;
     const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
     return !attributes[opAttrKey];
   };

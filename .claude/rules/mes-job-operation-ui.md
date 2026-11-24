@@ -157,9 +157,22 @@ is the one on the operator's screen. Spec:
   `SerialSelectorModal` lists units on hold after the open ones with a badge,
   and the Issue dialog's notice reads "This unit is on hold" (`parentOnHold`).
   The operation loader's first-operation redirect skips a unit on hold.
-- **Not gated:** the writes in `UNIT_WRITE_ALLOW_LIST` (`trigger-rework`, the
-  inspection lot's disposition and completions, batch step records), `finish`
-  (it names no unit) and the ERP postings.
+- **Receipt to stock:** a completion names no unit (`finish`, the ERP's
+  Complete, a batch completion), so `complete_job_to_inventory`
+  (`20261124035931_unit-hold-job-receipt.sql`) leaves a unit on hold out of
+  the units it receives and stops the completion quantity short of them. A
+  later completion receives the unit once its issue is closed. Pinned by
+  `apps/erp/test/database/job-receipt-unit-hold.test.ts`.
+- **Inspection lots:** `getInspectionOutcomeState` (`quality.server.ts`) reads
+  the holds, and `entityEligible` leaves a unit on hold out of the units a
+  lot's decision completes.
+- **Not gated:** `trigger-rework` (it sends units to rework and completes
+  none), batch step records, and `finish` itself (it names no unit; the
+  receipt above is what keeps the unit out of stock).
+- **After the issue closes:** the hold is gone whatever the disposition. A
+  Scrap or Return to Supplier sets the unit `Rejected`, and nothing in the
+  MES stops work on a `Rejected` unit; its next completion sets it back to
+  `Available`. That is unchanged by the hold.
 
 ## Batch mode (operation batching)
 

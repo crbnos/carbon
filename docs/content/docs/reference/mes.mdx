@@ -124,7 +124,9 @@ A company can turn on **"Issues: Hold Units"** in **Settings → Quality** (off 
 - **The first operation** moves past it to the next open unit. A later operation asks for another unit, and a kanban card never takes it. When only units on hold are left, the picker opens on them, so the operator sees which issue each one waits for.
 - **Still possible on the unit:** raising another quality issue, sending it to a correction, unconsuming a part from it and scrapping one of its parts.
 
-Closing the issue in the ERP releases the unit; reopening the issue holds it again. The station shows the change the next time the screen loads. Inspection operations and operations run as a batch do not apply the hold.
+A unit on hold is also kept out of stock. When the job is completed while a unit is on hold (the last operation finished by hand, or **Complete** on the job in the ERP), the other units are received and the unit on hold is not; the Complete dialog leaves it out of the serial numbers it lists. Complete the job again once the issue is closed to receive it. An inspection lot's decision does not complete a unit on hold.
+
+Closing the issue in the ERP releases the unit; reopening the issue holds it again. The station shows the change the next time the screen loads. The hold ends when the issue closes, whatever its disposition: a unit dispositioned Scrap or Return to Supplier is no longer on hold.
 
 Closing the operation is a distinct action. **"Finish"** ends any open events and flips the operation to `Done`. If quantities or steps aren't satisfied Carbon warns (**"Insufficient quantity"**, **"Steps are missing"**) and offers **"Finish Anyways"**. A guard also fires when tracked material was never issued; the operator must acknowledge **"I understand and want to complete without issuing"** to proceed.
 

@@ -34259,6 +34259,9 @@ msgstr "计量单位"
 msgid "Units of measure"
 msgstr "计量单位"
 
+msgid "Units on hold for an open quality issue are not received."
+msgstr "因未关闭的质量问题而搁置的单元不会入库。"
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替代方案。"
 

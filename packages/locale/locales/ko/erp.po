@@ -34259,6 +34259,9 @@ msgstr "측정 단위"
 msgid "Units of measure"
 msgstr "측정 단위"
 
+msgid "Units on hold for an open quality issue are not received."
+msgstr "미결 품질 이슈로 보류 중인 유닛은 입고되지 않습니다."
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "공정작업에서 사유와 함께 회복 불가로 보고된 수량으로, 재작업의 대안입니다."
 

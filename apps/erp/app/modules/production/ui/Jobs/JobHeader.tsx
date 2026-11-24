@@ -37,7 +37,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { chunkArray, formatDate } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -1489,6 +1489,8 @@ function JobCompleteModal({
   const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
   // How the quantity is chosen for a serial job: the serials a completion
   // takes, units numbered as they are received, or locked.
+  // Units a serial completion leaves out: on hold for an open quality issue.
+  const [unitsOnHold, setUnitsOnHold] = useState(0);
   const [serialChoice, setSerialChoice] = useState<SerialCompleteChoice>({
     mode: "locked"
   });
@@ -1582,6 +1584,50 @@ function JobCompleteModal({
         .order("readableId", { ascending: true })
         .order("id", { ascending: true });
 
+      // complete_job_to_inventory does not receive a serial unit on hold for
+      // an open quality issue (companySettings.holdUnitsWithOpenIssues), so the
+      // dialog does not offer it. A failed read offers it; the receipt still
+      // leaves it out.
+      const onHoldEntityIds = new Set<string>();
+      if (
+        makeMethod.data?.requiresSerialTracking &&
+        trackedEntities.data?.length
+      ) {
+        const settings = await carbon
+          .from("companySettings")
+          .select("holdUnitsWithOpenIssues")
+          .eq("id", company.id)
+          .maybeSingle();
+        if (settings.data?.holdUnitsWithOpenIssues) {
+          const links = await Promise.all(
+            chunkArray(
+              trackedEntities.data.map((entity) => entity.id),
+              100
+            ).map((ids) =>
+              carbon
+                .from("nonConformanceTrackedEntity")
+                .select("trackedEntityId, nonConformance!inner(status)")
+                .in("trackedEntityId", ids)
+                .eq("companyId", company.id)
+                .neq("nonConformance.status", "Closed")
+            )
+          );
+          for (const link of links) {
+            for (const row of link.data ?? []) {
+              if (row.nonConformance?.status !== "Closed") {
+                onHoldEntityIds.add(row.trackedEntityId);
+              }
+            }
+          }
+        }
+      }
+      setUnitsOnHold(onHoldEntityIds.size);
+      if (trackedEntities.data && onHoldEntityIds.size > 0) {
+        trackedEntities.data = trackedEntities.data.filter(
+          (entity) => !onHoldEntityIds.has(entity.id)
+        );
+      }
+
       if (trackedEntities.data?.length) {
         const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
         // Only a serial completion to inventory receives issued units.
@@ -1606,7 +1652,10 @@ function JobCompleteModal({
               // whenever the item has a sequence. A failed read keeps the
               // quantity locked.
               hasSerialSequence: !serialSequence.error && !!serialSequence.data,
-              jobQuantity: job?.quantity ?? 0
+              jobQuantity: Math.max(
+                (job?.quantity ?? 0) - onHoldEntityIds.size,
+                0
+              )
             })
           : ({ mode: "locked" } as const);
 
@@ -1627,7 +1676,10 @@ function JobCompleteModal({
                 receivedEntityIds,
                 issuedEntityIds
               ),
-              jobQuantity: job?.quantity ?? 0,
+              jobQuantity: Math.max(
+                (job?.quantity ?? 0) - onHoldEntityIds.size,
+                0
+              ),
               priorReceivedQuantity: currentReceivedQuantity,
               receivableSerialCount: receivableCount
             })
@@ -1805,6 +1857,14 @@ function JobCompleteModal({
                       </Trans>
                     </span>
                   )}
+
+                {unitsOnHold > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    <Trans>
+                      Units on hold for an open quality issue are not received.
+                    </Trans>
+                  </span>
+                )}
 
                 {receivableSerials &&
                   quantityComplete > priorReceivedQuantity &&

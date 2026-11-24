@@ -34259,6 +34259,9 @@ msgstr "unités de mesure"
 msgid "Units of measure"
 msgstr "Unités de mesure"
 
+msgid "Units on hold for an open quality issue are not received."
+msgstr "Les unités suspendues pour un problème qualité ouvert ne sont pas réceptionnées."
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Unités signalées comme irrécupérables à une opération, avec un motif — l'alternative à la retouche."
 

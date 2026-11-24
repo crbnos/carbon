@@ -34259,6 +34259,9 @@ msgstr "ölçü birimleri"
 msgid "Units of measure"
 msgstr "Ölçü birimleri"
 
+msgid "Units on hold for an open quality issue are not received."
+msgstr "Açık bir kalite sorunu nedeniyle askıda olan birimler teslim alınmaz."
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Bir işlemde kurtarılamaz olarak raporlanan birimler, bir nedenle — yeniden işlem için bir alternatif."
 

@@ -34259,6 +34259,9 @@ msgstr "माप की इकाइयाँ"
 msgid "Units of measure"
 msgstr "माप की इकाइयाँ"
 
+msgid "Units on hold for an open quality issue are not received."
+msgstr "खुली गुणवत्ता समस्या के कारण होल्ड पर रखी इकाइयां प्राप्त नहीं की जातीं।"
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "एक ऑपरेशन पर अपूरणीय के रूप में रिपोर्ट की गई इकाइयाँ, एक कारण के साथ — पुनः कार्य का विकल्प।"
 
