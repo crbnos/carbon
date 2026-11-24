@@ -4572,17 +4572,23 @@ async function writeGroup(
       .forNoKeyUpdate()
       .execute();
 
+    // Every version is locked now, in the order an activation locks them: a
+    // file that writes two versions would otherwise take them one at a time
+    // and deadlock with an activation holding the second.
     const methods: MakeMethodVersion[] =
       g.versions.size === 0
         ? []
         : (
-            await trx
-              .selectFrom("makeMethod")
-              .select(["id", "version", "status", "changeOrderId"])
-              .where("itemId", "=", parentItemId)
-              .where("companyId", "=", companyId)
-              .execute()
-          ).map((m) => ({ ...m, version: Number(m.version) }));
+            await lockItemMakeMethods(trx, {
+              itemIds: [parentItemId],
+              companyId
+            })
+          ).map((m) => ({
+            id: m.id,
+            version: Number(m.version),
+            status: m.status,
+            changeOrderId: m.changeOrderId
+          }));
     // Versions this file creates. A blank version still resolves against the
     // versions that existed before the import, whatever the row order.
     const createdIds = new Map<number, string>();
@@ -9486,6 +9492,29 @@ async function billedPurchaseOrderCharges(
   };
 }
 
+/**
+ * Locks every make method version of the items, in id order, and returns
+ * them. A writer that changes a version's status, or writes into a version
+ * because of its status, reads the status here and not before: one id order
+ * for every writer means two of them wait rather than deadlock. NO KEY UPDATE
+ * leaves BOM lines elsewhere that point at these versions free to be written.
+ */
+export async function lockItemMakeMethods(
+  db: Kysely<DB>,
+  args: { itemIds: string[]; companyId: string }
+) {
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return [];
+  return db
+    .selectFrom("makeMethod")
+    .select(["id", "itemId", "version", "status", "changeOrderId"])
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", args.companyId)
+    .orderBy("id")
+    .forNoKeyUpdate()
+    .execute();
+}
+
 /** `id` for the three document-to-invoice conversions, `convertedId` for the rest. */
 export type ConvertResult = { id?: string; convertedId?: string };
 
@@ -9528,63 +9557,50 @@ export async function convertDocument(
       });
       if (makeMethod.error) throw new Error(makeMethod.error.message);
       if (!makeMethod.data) throw new NotFoundError("Make method not found");
+      const { itemId } = makeMethod.data;
 
       if (await isStrictBackflush(db, companyId)) {
         await assertMethodHasPullFrom(db, { makeMethodId, companyId });
       }
 
-      const [relatedMakeMethods, draftQuotes, draftJobs] = await inOrder([
-        () =>
-          many(db, "makeMethod", {
-            itemId: makeMethod.data?.itemId,
-            companyId
-          }),
+      const [draftQuotes, draftJobs] = await inOrder([
         () => many(db, "quote", { companyId, status: "Draft" }),
         () => many(db, "job", { companyId, status: "Draft" })
       ]);
 
-      if (relatedMakeMethods.error)
-        throw new Error(relatedMakeMethods.error.message);
-
       if (draftQuotes.error) throw new Error(draftQuotes.error.message);
       if (draftJobs.error) throw new Error(draftJobs.error.message);
 
-      const draftMakeMethodIds = relatedMakeMethods.data
-        ?.filter(
-          (makeMethod) =>
-            makeMethod.id !== makeMethodId && makeMethod.status === "Draft"
-        )
-        ?.map((makeMethod) => makeMethod.id);
-
-      const activeMakeMethodIds = relatedMakeMethods.data
-        ?.filter(
-          (makeMethod) =>
-            makeMethod.id !== makeMethodId && makeMethod.status === "Active"
-        )
-        ?.map((makeMethod) => makeMethod.id);
-
-      const relatedMakeMethodIds = [
-        ...(draftMakeMethodIds ?? []),
-        ...(activeMakeMethodIds ?? [])
-      ];
-
-      const [methodMaterials] = await inOrder([
-        () =>
-          many(db, "methodMaterial", {
-            materialMakeMethodId: relatedMakeMethodIds,
-            companyId
-          })
-      ]);
-
-      if (methodMaterials.error) throw new Error(methodMaterials.error.message);
-
       await db.transaction().execute(async (trx) => {
+        // The statuses are read under the lock: an activation that waited
+        // for another archives the version that one made Active.
+        const versions = await lockItemMakeMethods(trx, {
+          itemIds: [itemId],
+          companyId
+        });
+        if (!versions.some((version) => version.id === makeMethodId)) {
+          throw new NotFoundError("Make method not found");
+        }
+        const others = versions.filter(
+          (version) => version.id !== makeMethodId
+        );
+        const activeMakeMethodIds = others
+          .filter((version) => version.status === "Active")
+          .map((version) => version.id);
+        const relatedMakeMethodIds = others
+          .filter(
+            (version) =>
+              version.status === "Active" || version.status === "Draft"
+          )
+          .map((version) => version.id);
+
         if (activeMakeMethodIds.length > 0) {
           await trx
             .updateTable("makeMethod")
             .set({ status: "Archived" })
             .where("id", "in", activeMakeMethodIds)
             .where("companyId", "=", companyId)
+            .where("status", "=", "Active")
             .execute();
         }
 
@@ -18693,6 +18709,116 @@ export async function lockUntrackedDraws(
   await sql`SELECT pg_advisory_xact_lock(k) FROM (SELECT DISTINCT hashtextextended(key, 0) AS k FROM unnest(${keys}::text[]) AS key ORDER BY k) AS locks`.execute(
     db
   );
+}
+
+/** Each order line table, its order, and the counters documents post into it. */
+const ORDER_LINE_COUNTERS = {
+  purchaseOrderLine: {
+    order: "purchaseOrder",
+    orderId: "purchaseOrderId",
+    counters: [
+      "quantityReceived",
+      "quantityInvoiced",
+      "quantityShipped",
+      "receivedComplete",
+      "invoicedComplete"
+    ]
+  },
+  salesOrderLine: {
+    order: "salesOrder",
+    orderId: "salesOrderId",
+    counters: [
+      "quantitySent",
+      "quantityInvoiced",
+      "sentComplete",
+      "invoicedComplete"
+    ]
+  },
+  salesReturnOrderLine: {
+    order: "salesReturnOrder",
+    orderId: "salesReturnOrderId",
+    counters: ["quantityReceived", "quantityShipped"]
+  },
+  purchaseReturnOrderLine: {
+    order: "purchaseReturnOrder",
+    orderId: "purchaseReturnOrderId",
+    counters: ["quantityShipped"]
+  },
+  warehouseTransferLine: {
+    order: "warehouseTransfer",
+    orderId: "transferId",
+    counters: ["shippedQuantity", "receivedQuantity"]
+  }
+} as const;
+
+export type OrderLineTable = keyof typeof ORDER_LINE_COUNTERS;
+
+/**
+ * Locks the orders of `lineIds`, then the lines, each FOR UPDATE in id order.
+ * Every writer of an order line's counters takes these locks first, in this
+ * order, so two documents on one line run one after the other and never
+ * deadlock. Returns the lines as they read under the lock.
+ */
+export async function lockOrderLines(
+  db: Kysely<DB>,
+  table: OrderLineTable,
+  companyId: string,
+  lineIds: readonly string[]
+): Promise<Map<string, Record<string, unknown>>> {
+  const ids = [...new Set(lineIds)];
+  const locked = new Map<string, Record<string, unknown>>();
+  if (ids.length === 0) return locked;
+  const { order, orderId } = ORDER_LINE_COUNTERS[table];
+  await sql`
+    SELECT 1 FROM ${sql.table(order)}
+    WHERE "companyId" = ${companyId}
+      AND id IN (
+        SELECT ${sql.ref(orderId)} FROM ${sql.table(table)}
+        WHERE "companyId" = ${companyId} AND id = ANY(${ids}::text[])
+      )
+    ORDER BY id
+    FOR UPDATE
+  `.execute(db);
+  const { rows } = await sql<Record<string, unknown>>`
+    SELECT * FROM ${sql.table(table)}
+    WHERE "companyId" = ${companyId} AND id = ANY(${ids}::text[])
+    ORDER BY id
+    FOR UPDATE
+  `.execute(db);
+  for (const row of rows) locked.set(row.id as string, row);
+  return locked;
+}
+
+/**
+ * {@link lockOrderLines}, then refuses when a counter of a line in `read`
+ * moved since it was read: the document planned its counters, and the
+ * journal lines that follow from them, from that read.
+ */
+export async function lockOrderLinesAsRead(
+  db: Kysely<DB>,
+  table: OrderLineTable,
+  companyId: string,
+  read: readonly { id: string }[],
+  refusal: string
+): Promise<void> {
+  const locked = await lockOrderLines(
+    db,
+    table,
+    companyId,
+    read.map((line) => line.id)
+  );
+  const counters: readonly string[] = ORDER_LINE_COUNTERS[table].counters;
+  const moved = read.some((line) => {
+    const now = locked.get(line.id);
+    return counters.some((counter) => {
+      const before = (line as Record<string, unknown>)[counter];
+      const after = now?.[counter];
+      return typeof before === "boolean" || typeof after === "boolean"
+        ? Boolean(before) !== Boolean(after)
+        : Number(before ?? 0) !== Number(after ?? 0);
+    });
+  });
+  if (moved) throw new InvalidInputError(refusal);
 }
 
 // Each item's untracked on-hand per bin and stripe at a location. `nettable`:
