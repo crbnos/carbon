@@ -120,6 +120,7 @@ import {
   rentalAgreementLineClassificationValidator,
   rentalAgreementValidator,
   salesOrderLineValidator,
+  salesOrderShipmentValidator,
   salesOrderStatusType,
   salesOrderValidator,
   salesReturnOrderFromAssetsValidator,
@@ -2078,6 +2079,74 @@ export const updateSalesOrderField = defineServiceFn({
       return ctx.error("internal", "Failed to update the orders", update.error);
     }
     return { ids };
+  }
+});
+
+/**
+ * Save a sales order's Shipping card: its shipment, and the order's ship-to
+ * unless it is a drop shipment. Refused while the order is locked.
+ */
+export const updateSalesOrderShipping = defineServiceFn({
+  input: z.object({
+    salesOrderId: z.string(),
+    shipping: salesOrderShipmentValidator,
+    customFields: z.record(z.string(), z.unknown()).optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { salesOrderId, shipping, customFields }) {
+    const order = await ctx.asSystem.supabase
+      .from("salesOrder")
+      .select("status, customerId")
+      .eq("id", salesOrderId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (order.error) {
+      return ctx.error("internal", "Failed to load the order", order.error);
+    }
+    if (!order.data) return ctx.error("notFound", "Sales order not found");
+    if (isSalesOrderLocked(order.data.status)) {
+      return ctx.error(
+        "rule",
+        "Cannot modify a locked sales order. Reopen it first."
+      );
+    }
+
+    // The write below bypasses RLS: every record it points at must be ours.
+    const { id: _id, shipToCustomerLocationId, ...shipment } = shipping;
+    const refusals = await Promise.all([
+      shipment.locationId &&
+        refuseUnlessOwned(ctx, "location", { id: shipment.locationId }),
+      shipment.shippingMethodId &&
+        refuseUnlessOwned(ctx, "shippingMethod", {
+          id: shipment.shippingMethodId
+        }),
+      shipment.customerId &&
+        refuseUnlessOwned(ctx, "customer", { id: shipment.customerId }),
+      shipment.customerLocationId &&
+        refuseUnlessOwned(ctx, "customerLocation", {
+          id: shipment.customerLocationId,
+          customerId: shipment.customerId ?? ""
+        }),
+      !shipment.dropShipment &&
+        shipToCustomerLocationId &&
+        refuseUnlessOwned(ctx, "customerLocation", {
+          id: shipToCustomerLocationId,
+          customerId: order.data.customerId
+        })
+    ]);
+    const refused = refusals.find((refusal) => refusal);
+    if (refused) return refused;
+
+    await service.updateSalesOrderShipping(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      salesOrderId,
+      shipping: shipment,
+      shipToCustomerLocationId,
+      customFields: customFields as Json | undefined
+    });
+    return { salesOrderId };
   }
 });
 
