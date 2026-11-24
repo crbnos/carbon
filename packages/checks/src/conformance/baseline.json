@@ -47,6 +47,7 @@
   "module-shape::settings::extra-service:backups.service.ts",
   "module-shape::shared::extra-models:imports.models.ts",
   "module-shape::shared::missing:ui",
+  "no-bare-outlet::apps/erp/app/routes/x+/supplier+/$supplierId.processes.tsx::<SupplierProcesses processes={processes} />",
   "no-derived-percent-column::20241210214820_purchasing-redux.sql::ALTER TABLE \"purchaseInvoiceLine\" ADD COLUMN \"taxPercent\" NUMERIC(10,5) GENERATED ALWAYS AS (",
   "no-derived-percent-column::20241210214820_purchasing-redux.sql::ALTER TABLE \"purchaseOrderLine\" ADD COLUMN IF NOT EXISTS \"taxPercent\" NUMERIC(10,5) GENERATED ALWAYS AS (",
   "no-derived-percent-column::20241210214820_purchasing-redux.sql::ALTER TABLE \"supplierQuoteLinePrice\" ADD COLUMN \"taxPercent\" NUMERIC(10,5) GENERATED ALWAYS AS (",

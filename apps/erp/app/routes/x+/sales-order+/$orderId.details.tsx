@@ -138,6 +138,7 @@ export default function SalesOrderDetailsRoute() {
     deliveryDate: shipment?.deliveryDate ?? "",
     notes: shipment?.notes ?? "",
     dropShipment: shipment?.dropShipment ?? false,
+    shipToCustomerLocationId: orderData.salesOrder.customerLocationId ?? "",
     customerId: shipment?.customerId ?? "",
     customerLocationId: shipment?.customerLocationId ?? "",
     shippingCost: shipment?.shippingCost ?? 0,

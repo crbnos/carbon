@@ -68,6 +68,8 @@ type ProductRow = {
   rateUnit: ContractLine["rateUnit"];
   /** Percent points, as the cell edits them. */
   discountPercent: number;
+  /** Percent points, as the cell edits them. */
+  taxPercent: number;
   startDate: string;
   endDate: string | null;
   total: number;
@@ -138,6 +140,7 @@ const ContractProductsGrid = ({
         rate: Number(line.rate),
         rateUnit: line.rateUnit,
         discountPercent: round(Number(line.discountPercent) * 100),
+        taxPercent: round(Number(line.taxPercent) * 100),
         startDate: line.startDate,
         endDate: line.endDate,
         total: lineTotals[line.id] ?? 0
@@ -213,6 +216,18 @@ const ContractProductsGrid = ({
           row.original.discountPercent > 0 ? (
             <span className="tabular-nums">
               {percent.format(row.original.discountPercent / 100)}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )
+      },
+      {
+        accessorKey: "taxPercent",
+        header: t`Tax`,
+        cell: ({ row }) =>
+          row.original.taxPercent > 0 ? (
+            <span className="tabular-nums">
+              {percent.format(row.original.taxPercent / 100)}
             </span>
           ) : (
             <span className="text-muted-foreground">—</span>
@@ -307,6 +322,12 @@ const ContractProductsGrid = ({
           <span className="px-3 text-muted-foreground">—</span>
         ),
       discountPercent: EditableNumber<ProductRow>(onCellEdit, {
+        minValue: 0,
+        maxValue: 100,
+        step: INPUT_STEP.percent,
+        formatOptions: INPUT_FORMAT.percentPoints
+      }),
+      taxPercent: EditableNumber<ProductRow>(onCellEdit, {
         minValue: 0,
         maxValue: 100,
         step: INPUT_STEP.percent,
