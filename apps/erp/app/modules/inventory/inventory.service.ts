@@ -19909,8 +19909,13 @@ export const postShipmentPermission = {
  * unit), never the line's bin, which is only a default. A unit whose bin
  * cannot cover the quantity, or that has no stock there, is refused rather
  * than driving a bin negative.
+ *
+ * The bins are read before the posting transaction, so the posting calls
+ * `confirm(trx)` first in it: that locks every unit it chose a bin for, in id
+ * order (a stock transfer pick locks the unit the same way before it moves
+ * it), reads the bins again and refuses when a unit has moved since.
  */
-async function trackedShipmentSourceBins(
+export async function trackedShipmentSourceBins(
   db: Kysely<KyselyDatabase>,
   args: {
     units: { id: string; readableId: string | null }[];
@@ -19918,12 +19923,19 @@ async function trackedShipmentSourceBins(
     companyId: string;
   }
 ) {
-  const bins = await getTrackedEntityBins(db, {
-    trackedEntityIds: args.units.map((unit) => unit.id),
-    locationIds: [...new Set(args.locationIds)],
-    companyId: args.companyId
-  });
-  return (
+  const locationIds = [...new Set(args.locationIds)];
+  const readBins = (handle: Kysely<KyselyDatabase>) =>
+    getTrackedEntityBins(handle, {
+      trackedEntityIds: args.units.map((unit) => unit.id),
+      locationIds,
+      companyId: args.companyId
+    });
+  const readableIdOf = (trackedEntityId: string | undefined) =>
+    args.units.find((unit) => unit.id === trackedEntityId)?.readableId ??
+    trackedEntityId ??
+    "A tracked item";
+  const resolve = (
+    bins: Awaited<ReturnType<typeof readBins>>,
     trackedEntityId: string | undefined,
     locationId: string | null,
     quantity: number
@@ -19933,10 +19945,7 @@ async function trackedShipmentSourceBins(
         ? bins(trackedEntityId, locationId)
         : undefined;
     if (!bin || round(bin.quantity) < round(quantity)) {
-      const readableId =
-        args.units.find((unit) => unit.id === trackedEntityId)?.readableId ??
-        trackedEntityId ??
-        "A tracked item";
+      const readableId = readableIdOf(trackedEntityId);
       throw new InvalidInputError(
         bin
           ? `${readableId} has only ${round(bin.quantity)} in one storage unit, ${round(quantity)} needed. Move it into one storage unit first`
@@ -19945,6 +19954,56 @@ async function trackedShipmentSourceBins(
     }
     return bin.storageUnitId;
   };
+
+  const bins = await readBins(db);
+  const chosen: {
+    trackedEntityId: string | undefined;
+    locationId: string | null;
+    quantity: number;
+    storageUnitId: string | null;
+  }[] = [];
+  const sourceBin = (
+    trackedEntityId: string | undefined,
+    locationId: string | null,
+    quantity: number
+  ): string | null => {
+    const storageUnitId = resolve(bins, trackedEntityId, locationId, quantity);
+    chosen.push({ trackedEntityId, locationId, quantity, storageUnitId });
+    return storageUnitId;
+  };
+  sourceBin.confirm = async (trx: Kysely<KyselyDatabase>) => {
+    const ids = [
+      ...new Set(
+        chosen.flatMap((pick) =>
+          pick.trackedEntityId ? [pick.trackedEntityId] : []
+        )
+      )
+    ];
+    if (ids.length === 0) return;
+    await trx
+      .selectFrom("trackedEntity")
+      .select("id")
+      .where("id", "in", ids)
+      .where("companyId", "=", args.companyId)
+      .orderBy("id")
+      .forUpdate()
+      .execute();
+    const current = await readBins(trx);
+    for (const pick of chosen) {
+      const storageUnitId = resolve(
+        current,
+        pick.trackedEntityId,
+        pick.locationId,
+        pick.quantity
+      );
+      if (storageUnitId !== pick.storageUnitId) {
+        throw new InvalidInputError(
+          `${readableIdOf(pick.trackedEntityId)} moved to another storage unit while the shipment was posting. Post the shipment again`
+        );
+      }
+    }
+  };
+  return sourceBin;
 }
 
 /** Posts or voids a shipment: stock, tracked entities, COGS and journal rows. */
@@ -20792,6 +20851,7 @@ export async function postShipment(
                 shippedLinesRead,
                 "A sales order line changed while this shipment was posting. Post the shipment again."
               );
+              await sourceBin.confirm(trx);
               await fixedAssetWrites.apply(trx, companyId);
               await updateRowsById(
                 trx,
@@ -21957,6 +22017,7 @@ export async function postShipment(
               await setInspectionRelease(trx);
               await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              await sourceBin.confirm(trx);
 
               const returnedItems: ReturnShipmentItem[] = [];
               for (const [itemId, quantity] of Object.entries(
@@ -22527,6 +22588,7 @@ export async function postShipment(
               await setInspectionRelease(trx);
               await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              await sourceBin.confirm(trx);
 
               // cancelPurchaseReturnOrder locks this same order row — re-check
               // the status under the lock so a cancel committed after our
