@@ -17448,6 +17448,12 @@ msgstr "上限を設けない場合は空欄のままにしてください。上
 msgid "Leave empty to pick a color from the name"
 msgstr "空欄のままにすると、名前から色が選ばれます"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "空欄のままにすると、出庫元に戻します"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "空欄のままにすると、在庫のある保管ユニットから取り出します"
+
 msgid "Leave empty to use the account default"
 msgstr "空白のままにしてアカウントデフォルトを使用します"
 

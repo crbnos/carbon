@@ -8376,6 +8376,59 @@ export function isDirectItemLine(line: SalesInvoiceLine): boolean {
   );
 }
 
+/** An untracked direct invoice line that takes stock out. */
+type DirectStockDraw = {
+  /** The line's ledger row; its bin is set once the bin is chosen. */
+  ledger: Database["public"]["Tables"]["itemLedger"]["Insert"];
+  lineId: string;
+  itemId: string;
+  locationId: string | null;
+  storageUnitId: string | null;
+  quantity: number;
+};
+
+/**
+ * The bin each untracked direct invoice line ships from, by line id: the bin
+ * the line names, else one that holds its common stock
+ * (`shipmentSourceBinChooser`, as a sales order shipment line takes one).
+ * Quarantine and lineside units are never guessed, and lines are planned in
+ * order, so two lines of one item do not count the same stock. Locks the
+ * draws first, so two postings never plan from the same on-hand. Call it
+ * inside the posting transaction.
+ */
+async function directInvoiceSourceBins(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  draws: DirectStockDraw[]
+): Promise<Map<string, string | null>> {
+  const bins = new Map<string, string | null>();
+  if (draws.length === 0) return bins;
+  const locationIds = [
+    ...new Set(
+      draws.map((draw) => draw.locationId).filter((id): id is string => !!id)
+    )
+  ].sort();
+  // One lock per location: an invoice ships from one or two.
+  for (const locationId of locationIds) {
+    await sharedPostings.lockUntrackedDraws(trx, {
+      companyId,
+      locationId,
+      itemIds: draws
+        .filter((draw) => draw.locationId === locationId)
+        .map((draw) => draw.itemId)
+    });
+  }
+  // A negative line puts stock back: it keeps the bin it names.
+  const outgoing = draws.filter((draw) => draw.quantity > 0);
+  const choose = await sharedPostings.shipmentSourceBinChooser(trx, {
+    companyId,
+    lines: outgoing.filter((draw) => !draw.storageUnitId),
+    inspectionHolds: "all"
+  });
+  for (const draw of outgoing) bins.set(draw.lineId, choose(draw));
+  return bins;
+}
+
 /**
  * The service range of a line whose revenue the posting defers. Only a
  * Service line is deferred: every other item type is a physical good, earned
@@ -9858,6 +9911,9 @@ export async function postSalesInvoice(
           "shipmentId"
         >[] = [];
 
+        // The untracked lines that take stock out, each with its ledger row:
+        // their bins are chosen inside the transaction.
+        const directStockDraws: DirectStockDraw[] = [];
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
 
@@ -10503,18 +10559,29 @@ export async function postSalesInvoice(
             items.data.find((item) => item.id === invoiceLine.itemId)
               ?.itemTrackingType ?? "Inventory";
           if (itemTrackingType === "Inventory") {
-            itemLedgerInserts.push({
-              postingDate: today,
+            const ledger: Database["public"]["Tables"]["itemLedger"]["Insert"] =
+              {
+                postingDate: today,
+                itemId: invoiceLine.itemId!,
+                quantity: round(-invoiceLine.quantity),
+                locationId: invoiceLine.locationId,
+                storageUnitId: invoiceLine.storageUnitId,
+                entryType: "Negative Adjmt.",
+                documentType: "Sales Shipment",
+                documentId: invoiceHeader.id ?? undefined,
+                externalDocumentId:
+                  invoiceHeader.customerReference ?? undefined,
+                createdBy: userId,
+                companyId
+              };
+            itemLedgerInserts.push(ledger);
+            directStockDraws.push({
+              ledger,
+              lineId: invoiceLine.id,
               itemId: invoiceLine.itemId!,
-              quantity: round(-invoiceLine.quantity),
               locationId: invoiceLine.locationId,
               storageUnitId: invoiceLine.storageUnitId,
-              entryType: "Negative Adjmt.",
-              documentType: "Sales Shipment",
-              documentId: invoiceHeader.id ?? undefined,
-              externalDocumentId: invoiceHeader.customerReference ?? undefined,
-              createdBy: userId,
-              companyId
+              quantity: invoiceLine.quantity
             });
           }
         }
@@ -10563,6 +10630,30 @@ export async function postSalesInvoice(
                 );
               }
             }
+          }
+
+          // A line with no bin ships from a bin that holds its stock, never
+          // from "no storage unit" while a bin holds it. Its shipment line
+          // and ledger row both name that bin, so the void puts the stock
+          // back where it came from (it reverses the ledger rows).
+          const sourceBins = await directInvoiceSourceBins(
+            trx,
+            companyId,
+            directStockDraws
+          );
+          const sourceBinOf = (lineId: string, named: string | null) =>
+            sourceBins.has(lineId) ? (sourceBins.get(lineId) ?? null) : named;
+          for (const line of shipmentLineInserts) {
+            line.storageUnitId = sourceBinOf(
+              line.lineId!,
+              line.storageUnitId ?? null
+            );
+          }
+          for (const draw of directStockDraws) {
+            draw.ledger.storageUnitId = sourceBinOf(
+              draw.lineId,
+              draw.ledger.storageUnitId ?? null
+            );
           }
 
           if (shipmentLineInserts.length > 0) {

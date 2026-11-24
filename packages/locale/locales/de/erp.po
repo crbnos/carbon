@@ -17448,6 +17448,12 @@ msgstr "Leer lassen für kein Limit. Darüber hinaus bietet MES nur Ausschuss od
 msgid "Leave empty to pick a color from the name"
 msgstr "Leer lassen, um eine Farbe aus dem Namen zu wählen"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "Leer lassen, um es dorthin zurückzugeben, woher es ausgegeben wurde"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "Leer lassen, um es aus den Lagereinheiten zu entnehmen, die es enthalten"
+
 msgid "Leave empty to use the account default"
 msgstr "Leer lassen, um die Kontostandards zu verwenden"
 

@@ -17448,6 +17448,12 @@ msgstr "Leave empty for no limit. Past it, MES offers only Scrap or a quality is
 msgid "Leave empty to pick a color from the name"
 msgstr "Leave empty to pick a color from the name"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "Leave empty to return it where it was issued from"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "Leave empty to take it from the storage units that hold it"
+
 msgid "Leave empty to use the account default"
 msgstr "Leave empty to use the account default"
 

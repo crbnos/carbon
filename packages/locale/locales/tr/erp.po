@@ -17448,6 +17448,12 @@ msgstr "Sınır yoksa boş bırakın. Bu sınırı aşarsa MES yalnızca Fire ve
 msgid "Leave empty to pick a color from the name"
 msgstr "Boş bırakırsanız renk addan seçilir"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "Çıkarıldığı yere iade etmek için boş bırakın"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "Bulunduğu depolama birimlerinden almak için boş bırakın"
+
 msgid "Leave empty to use the account default"
 msgstr "Hesap varsayılanını kullanmak için boş bırakın"
 

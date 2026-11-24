@@ -17448,6 +17448,12 @@ msgstr "Lascia vuoto per nessun limite. Oltre questo valore, MES propone solo lo
 msgid "Leave empty to pick a color from the name"
 msgstr "Lascia vuoto per scegliere un colore dal nome"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "Lasciare vuoto per restituirlo dove è stato prelevato"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "Lasciare vuoto per prelevarlo dalle unità di stoccaggio che lo contengono"
+
 msgid "Leave empty to use the account default"
 msgstr "Lascia vuoto per usare il valore predefinito dell'account"
 
