@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { niceAxis } from "~/utils/chart";
 
 /**
  * The issue type a receipt inspection lot's NCR opens with: one for supplier or
@@ -78,5 +79,27 @@ export function scarForSupplier({
       supplierId: task.supplierId,
       notes: task.notes
     }))
+  };
+}
+
+/**
+ * The Issue Trend chart's Y axis, from 0 to the busiest week or the issue
+ * target, whichever is higher. Recharts drops a reference line outside the
+ * axis, so an axis fitted to the weeks alone hides a target above them.
+ * `showCounts`: every bar is at most a quarter of the axis, too short to read
+ * against the gridlines, so the bars print their counts.
+ */
+export function issueTrendAxis(
+  weeks: readonly { opened?: number; closed?: number }[],
+  target: number | null | undefined
+) {
+  const busiestWeek = weeks.reduce(
+    (max, week) => Math.max(max, week.opened ?? 0, week.closed ?? 0),
+    0
+  );
+  const axis = niceAxis(0, Math.max(busiestWeek, target ?? 0), 5);
+  return {
+    ...axis,
+    showCounts: busiestWeek > 0 && busiestWeek * 4 <= axis.niceMax
   };
 }

@@ -66,6 +66,7 @@ import {
   Cell,
   ComposedChart,
   Label,
+  LabelList,
   Line,
   Pie,
   PieChart,
@@ -77,6 +78,7 @@ import { DateSelect, Empty, Hyperlink, MetricCard } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { QualityKPIs } from "~/modules/quality/quality.models";
 import { getIssueTypesList } from "~/modules/quality/quality.service";
+import { issueTrendAxis } from "~/modules/quality/quality.utils";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { loader as kpiLoader } from "~/routes/api+/quality.kpi.$key";
@@ -236,6 +238,8 @@ function getPriorityVariant(priority: string | null) {
   }
 }
 
+const countLabel = (value: number) => (value > 0 ? value : "");
+
 // --- Component ---
 
 export default function QualityDashboard() {
@@ -383,6 +387,7 @@ export default function QualityDashboard() {
   // Target: prefer meta value from API, fall back to loader value
   const effectiveTarget =
     (kpiFetcher.data as any)?.meta?.qualityIssueTarget ?? qualityIssueTarget;
+  const trendAxis = issueTrendAxis(chartData as any[], effectiveTarget);
 
   const sumOf = (key: string) =>
     (chartData as any[]).reduce((s, d) => s + (Number(d[key]) || 0), 0);
@@ -521,7 +526,9 @@ export default function QualityDashboard() {
                   <YAxis
                     tickLine={false}
                     axisLine={false}
-                    // Phones: the 200pt chart would drop a tick; keep all five like desktop.
+                    domain={[0, trendAxis.niceMax]}
+                    ticks={trendAxis.ticks}
+                    // Phones: the 200pt chart would drop a tick; keep every tick like desktop.
                     {...(isPhone ? { interval: 0 } : {})}
                   />
                   <ChartTooltip
@@ -554,14 +561,34 @@ export default function QualityDashboard() {
                     maxBarSize={48}
                     radius={2}
                     isAnimationActive={false}
-                  />
+                  >
+                    {trendAxis.showCounts && (
+                      <LabelList
+                        dataKey="opened"
+                        position="top"
+                        formatter={countLabel}
+                        className="fill-foreground"
+                        fontSize={12}
+                      />
+                    )}
+                  </Bar>
                   <Bar
                     dataKey="closed"
                     fill="var(--color-closed)"
                     maxBarSize={48}
                     radius={2}
                     isAnimationActive={false}
-                  />
+                  >
+                    {trendAxis.showCounts && (
+                      <LabelList
+                        dataKey="closed"
+                        position="top"
+                        formatter={countLabel}
+                        className="fill-foreground"
+                        fontSize={12}
+                      />
+                    )}
+                  </Bar>
                 </ComposedChart>
               </ChartContainer>
             )}
