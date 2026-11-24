@@ -405,6 +405,14 @@ function IssueMaterialBody({
             label={t`Storage Unit`}
             locationId={locationId}
             itemId={itemId ?? undefined}
+            stockedFirst
+            helperText={
+              storageUnitId
+                ? undefined
+                : direction === "Issue"
+                  ? t`Leave empty to take it from the storage units that hold it`
+                  : t`Leave empty to return it where it was issued from`
+            }
             isOptional
             allowCreate={false}
             onChange={(unit) => setStorageUnitId(unit?.id ?? null)}

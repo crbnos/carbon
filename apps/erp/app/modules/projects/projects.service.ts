@@ -25,7 +25,6 @@ import type {
 import {
   assertEntitiesInStripes,
   loadDemandStripes,
-  type StripeQuantity,
   splitAcrossStripes,
   trackedEntityStripe
 } from "@carbon/api/stock-stripes";
@@ -119,7 +118,10 @@ import {
   buildJournalLineDimensions,
   calculateCOGS,
   createAdjustmentJournal,
+  getNettableDefaultStorageUnitId,
+  getUntrackedBinStock,
   invokePosting,
+  planUntrackedDraw,
   resolveAccountingPeriod
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
@@ -7537,6 +7539,136 @@ export const postProjectIssuePermission = {
   update: "inventory"
 } satisfies PermissionRule<z.output<typeof postProjectIssueInput>>;
 
+/** One item ledger row of a project issue or return: its bin and stripe. */
+type ProjectIssueDraw = {
+  stripe: string | null;
+  storageUnitId: string | null;
+  quantity: number;
+};
+
+/**
+ * Where an untracked Project Issue with no bin chosen takes its stock:
+ * `planUntrackedDraw` (the item's nettable default, then the bins that hold
+ * it, fullest first, stripe by stripe; never a quarantine or lineside unit).
+ * With `refuseShort` (Prevent negative stock under strict backflush) it
+ * refuses when those bins hold less than the quantity.
+ */
+async function planProjectIssueDraw(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    locationId: string;
+    itemId: string;
+    quantity: number;
+    stripes: (string | null)[];
+    itemLabel: string;
+    refuseShort: boolean;
+  }
+): Promise<ProjectIssueDraw[]> {
+  const { companyId, locationId, itemId, quantity, stripes } = args;
+  const planned = await planUntrackedDraw(trx, {
+    companyId,
+    locationId,
+    itemId,
+    quantity,
+    storageUnitId: null,
+    stripes
+  });
+  if (args.refuseShort) {
+    // What the planner may draw (read under its lock): nettable bins and no
+    // storage unit, and the item's default bin.
+    const preferred = await getNettableDefaultStorageUnitId(
+      trx,
+      itemId,
+      locationId,
+      companyId
+    );
+    const bins =
+      (
+        await getUntrackedBinStock(trx, {
+          companyId,
+          itemIds: [itemId],
+          locationId,
+          stripes
+        })
+      ).get(itemId) ?? [];
+    const onHand = round(
+      bins
+        .filter(
+          (bin) =>
+            bin.nettable ||
+            (bin.storageUnitId !== null && bin.storageUnitId === preferred)
+        )
+        .reduce((sum, bin) => sum + Math.max(0, bin.quantity), 0)
+    );
+    if (onHand < round(quantity)) {
+      throw new InvalidInputError(
+        `${args.itemLabel} has ${onHand} on hand in the storage units it can be taken from, not ${quantity}. Prevent negative stock is on.`
+      );
+    }
+  }
+  return planned.map((draw) => ({
+    stripe: draw.projectId,
+    storageUnitId: draw.storageUnitId,
+    quantity: draw.quantity
+  }));
+}
+
+/**
+ * Where a Return with no bin chosen goes back to: the bins the project's
+ * issues of the item (and lot) drew from, newest draw first, each up to what
+ * it still has out. What they do not cover goes to no storage unit, as
+ * before. A Return goes to one stripe: the project's stock, else common.
+ */
+async function planProjectReturn(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    projectId: string;
+    locationId: string;
+    itemId: string;
+    trackedEntityId: string | null;
+    quantity: number;
+    stripe: string | null;
+  }
+): Promise<ProjectIssueDraw[]> {
+  const { stripe } = args;
+  const issued = (
+    await trx
+      .selectFrom("itemLedger")
+      .select([
+        "storageUnitId",
+        (eb) => eb.fn.sum<number>("quantity").as("balance"),
+        sql<number | null>`max("entryNumber") filter (where "quantity" < 0)`.as(
+          "latestDraw"
+        )
+      ])
+      .where("companyId", "=", args.companyId)
+      .where("documentType", "=", "Project Issue")
+      .where("documentId", "=", args.projectId)
+      .where("itemId", "=", args.itemId)
+      .where("locationId", "=", args.locationId)
+      .where("trackedEntityId", "is not distinct from", args.trackedEntityId)
+      .groupBy("storageUnitId")
+      .execute()
+  ).sort((a, b) => Number(b.latestDraw ?? -1) - Number(a.latestDraw ?? -1));
+  let left = round(args.quantity);
+  const draws: ProjectIssueDraw[] = [];
+  for (const bin of issued) {
+    if (left <= 0) break;
+    const take = round(Math.min(left, Math.max(0, -Number(bin.balance))));
+    if (take <= 0) continue;
+    draws.push({ stripe, storageUnitId: bin.storageUnitId, quantity: take });
+    left = round(left - take);
+  }
+  if (left > 0) {
+    const noBin = draws.find((draw) => draw.storageUnitId === null);
+    if (noBin) noBin.quantity = round(noBin.quantity + left);
+    else draws.push({ stripe, storageUnitId: null, quantity: left });
+  }
+  return draws;
+}
+
 /**
  * Issues stock to a project (or returns it). The stock leaves (or re-enters)
  * inventory at its carrying cost through the inventory-adjustment core, and
@@ -7702,9 +7834,14 @@ export async function postProjectIssue(
   // stock first when it has project stock, then common stock. A Return goes
   // back to the first: the project's stock, else common stock.
   const stripes = await loadDemandStripes(db, companyId, projectId);
-  let draws: StripeQuantity[];
+  // Where each row books. Null: a draw with no bin chosen, planned from
+  // stock inside the transaction, under the draw lock.
+  let draws: ProjectIssueDraw[] | null = null;
+  let refuseShortNoBinDraw = false;
   if (!isIssue) {
-    draws = [{ stripe: stripes[0] ?? null, quantity }];
+    if (storageUnitId) {
+      draws = [{ stripe: stripes[0] ?? null, storageUnitId, quantity }];
+    }
   } else if (trackedEntityId) {
     // A tracked entity is drawn from its own stripe, which the project's
     // demand must be allowed to draw.
@@ -7716,11 +7853,27 @@ export async function postProjectIssue(
       })),
       trackedEntityId
     );
-    const source = trackingRows.find(
-      (row) =>
-        row.trackedEntityId === trackedEntityId &&
-        (row.projectId ?? null) === stripe
-    );
+    // With no bin chosen, the lot is taken from the bin that holds it (its
+    // rows net to 0 in a bin it has left).
+    const source = storageUnitId
+      ? trackingRows.find(
+          (row) =>
+            row.trackedEntityId === trackedEntityId &&
+            (row.projectId ?? null) === stripe
+        )
+      : trackingRows
+          .filter(
+            (row) =>
+              row.trackedEntityId === trackedEntityId &&
+              (row.projectId ?? null) === stripe
+          )
+          .reduce<TrackingQuantityRow | undefined>(
+            (best, row) =>
+              !best || Number(row.quantity ?? 0) > Number(best.quantity ?? 0)
+                ? row
+                : best,
+            undefined
+          );
     // A serial or batch is one real unit: it never goes below zero.
     if (round(quantity) > round(source?.quantity ?? 0)) {
       throw new InvalidInputError(
@@ -7743,7 +7896,22 @@ export async function postProjectIssue(
         stripes
       );
     }
-    draws = [{ stripe, quantity }];
+    draws = [
+      {
+        stripe,
+        storageUnitId: storageUnitId ?? source?.storageUnitId ?? null,
+        quantity
+      }
+    ];
+  } else if (!storageUnitId) {
+    // No bin chosen: the draw is planned from the bins that hold the stock
+    // inside the transaction. Read the setting now, as the named-bin path
+    // does.
+    const { strict, preventNegative } = await getStrictBackflushSettings(
+      db,
+      companyId
+    );
+    refuseShortNoBinDraw = strict && preventNegative;
   } else {
     // Untracked stock at the bin, stripe by stripe in draw order.
     // null == undefined — loose equality, as the adjustment path matches.
@@ -7781,16 +7949,25 @@ export async function postProjectIssue(
     // One stripe (no project stock) books the quantity as given; with
     // several, what no stripe covers comes out of the first one.
     if (stripes.length === 1) {
-      draws = [{ stripe: stripes[0] ?? null, quantity }];
+      draws = [{ stripe: stripes[0] ?? null, storageUnitId, quantity }];
     } else {
-      draws = split.draws.map((draw) => ({ ...draw }));
+      const binDraws: ProjectIssueDraw[] = split.draws.map((draw) => ({
+        ...draw,
+        storageUnitId
+      }));
       const shortfall = round(split.remaining);
       if (shortfall > 0) {
         const first = stripes[0] ?? null;
-        const own = draws.find((draw) => draw.stripe === first);
+        const own = binDraws.find((draw) => draw.stripe === first);
         if (own) own.quantity += shortfall;
-        else draws.unshift({ stripe: first, quantity: shortfall });
+        else
+          binDraws.unshift({
+            stripe: first,
+            storageUnitId,
+            quantity: shortfall
+          });
       }
+      draws = binDraws;
     }
   }
 
@@ -7822,6 +7999,28 @@ export async function postProjectIssue(
         "Set Indirect Cost in Account Defaults before you issue to a Statistical project"
       );
     }
+
+    const bookings: ProjectIssueDraw[] =
+      draws ??
+      (isIssue
+        ? await planProjectIssueDraw(trx, {
+            companyId,
+            locationId,
+            itemId,
+            quantity,
+            stripes,
+            itemLabel,
+            refuseShort: refuseShortNoBinDraw
+          })
+        : await planProjectReturn(trx, {
+            companyId,
+            projectId,
+            locationId,
+            itemId,
+            trackedEntityId,
+            quantity,
+            stripe: stripes[0] ?? null
+          }));
 
     if (trackedEntityId) {
       const entity = await trx
@@ -7903,7 +8102,8 @@ export async function postProjectIssue(
           })
         );
 
-    // One adjustment per stripe drawn; the project is charged their sum.
+    // One adjustment per bin and stripe drawn; the project is charged their
+    // sum.
     const bookedRows: {
       itemLedgerId: string;
       offsetJournalLineId: string | null;
@@ -7912,14 +8112,14 @@ export async function postProjectIssue(
       stripe: string | null;
       quantity: number;
     }[] = [];
-    for (const draw of draws) {
+    for (const draw of bookings) {
       const bookedRow = await bookAdjustment(trx, {
         ledger: {
           postingDate,
           itemId,
           quantity: isIssue ? -draw.quantity : draw.quantity,
           locationId,
-          storageUnitId,
+          storageUnitId: draw.storageUnitId,
           trackedEntityId,
           projectId: draw.stripe,
           entryType: isIssue ? "Negative Adjmt." : "Positive Adjmt.",

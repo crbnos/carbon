@@ -17412,6 +17412,12 @@ msgstr "Laisser vide pour aucune limite. Au-delà, MES ne propose que le rebut o
 msgid "Leave empty to pick a color from the name"
 msgstr "Laissez vide pour choisir une couleur d'après le nom"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "Laissez vide pour le retourner à son emplacement de sortie"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "Laissez vide pour le prélever dans les unités de stockage qui le contiennent"
+
 msgid "Leave empty to use the account default"
 msgstr "Laisser vide pour utiliser le compte par défaut"
 

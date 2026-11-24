@@ -110,6 +110,12 @@ export type BinStock = {
   storageUnitId: string | null;
   projectId?: string | null;
   nettable: boolean;
+  /**
+   * An active, non-nettable unit that is not lineside: a quarantine, MRB or
+   * rejected area. A guess for consumption never takes from it; a draw of
+   * nonconforming or returned stock looks there first (`planHeldStockDraw`).
+   */
+  held?: boolean;
   quantity: number;
 };
 
@@ -208,6 +214,91 @@ export function planStripedUntrackedDraw(args: {
       });
   }
   return draws;
+}
+
+/**
+ * Where a draw of nonconforming or returned untracked stock comes from when no
+ * bin was chosen: an NCR's Scrap or Return to Supplier, a return shipment.
+ * That stock usually sits where it was set aside, so, unlike a consumption
+ * guess, held units (quarantine, MRB, rejected) are candidates and come first:
+ * the preferred bin, then held units, then nettable units and no storage unit,
+ * each fullest first. Lineside and inactive units are never drawn. A shortfall
+ * goes to the preferred bin, else the first bin drawn, else no storage unit.
+ * One stripe: these draws take one owner's stock.
+ */
+export function planHeldStockDraw(args: {
+  bins: readonly BinStock[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}): { storageUnitId: string | null; quantity: number }[] {
+  let left = round(args.quantity);
+  if (left <= 0) return [];
+  const draws: { storageUnitId: string | null; quantity: number }[] = [];
+  for (const [storageUnitId, available] of heldDrawOrder(
+    args.bins,
+    args.preferredStorageUnitId
+  )) {
+    if (left <= 0) break;
+    const take = round(Math.min(left, Math.max(0, available)));
+    if (take <= 0) continue;
+    draws.push({ storageUnitId, quantity: take });
+    left = round(left - take);
+  }
+  if (left > 0) {
+    const shortBin =
+      args.preferredStorageUnitId ?? draws[0]?.storageUnitId ?? null;
+    const existing = draws.find((d) => d.storageUnitId === shortBin);
+    if (existing) existing.quantity = round(existing.quantity + left);
+    else draws.push({ storageUnitId: shortBin, quantity: left });
+  }
+  return draws;
+}
+
+/**
+ * The one bin a return shipment line should name, by `planHeldStockDraw`'s
+ * order: the first candidate that holds `quantity`, else the first with any
+ * stock, else the preferred bin (null: no storage unit).
+ */
+export function chooseHeldStockBin(args: {
+  bins: readonly BinStock[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}): string | null {
+  const order = heldDrawOrder(args.bins, args.preferredStorageUnitId).filter(
+    ([, qty]) => round(qty) > 0
+  );
+  const need = round(args.quantity);
+  const covering = order.find(([, qty]) => round(qty) >= need);
+  const chosen = covering ?? order[0];
+  return chosen ? chosen[0] : args.preferredStorageUnitId;
+}
+
+function heldDrawOrder(
+  bins: readonly BinStock[],
+  preferred: string | null
+): [string | null, number][] {
+  const held = new Map<string | null, number>();
+  const rest = new Map<string | null, number>();
+  let preferredOnHand: number | null = null;
+  for (const bin of bins) {
+    if (bin.storageUnitId !== null && bin.storageUnitId === preferred) {
+      preferredOnHand = (preferredOnHand ?? 0) + bin.quantity;
+      continue;
+    }
+    const target = bin.held ? held : bin.nettable ? rest : null;
+    if (!target) continue;
+    target.set(
+      bin.storageUnitId,
+      (target.get(bin.storageUnitId) ?? 0) + bin.quantity
+    );
+  }
+  return [
+    ...(preferred !== null && preferredOnHand !== null
+      ? ([[preferred, preferredOnHand]] as [string | null, number][])
+      : []),
+    ...fullestFirst(held),
+    ...fullestFirst(rest)
+  ];
 }
 
 /** The advisory lock key of untracked draws of one item at one location

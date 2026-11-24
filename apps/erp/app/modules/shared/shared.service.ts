@@ -32,6 +32,7 @@ import {
 import { attempt, serverFnRefusal } from "@carbon/api/service-tools.server";
 import {
   itemLedgerInStripes,
+  loadProjectStock,
   type StockStripe
 } from "@carbon/api/stock-stripes";
 import { error, getAppUrl } from "@carbon/auth";
@@ -76,7 +77,11 @@ import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
 import {
   type BinStock,
+  chooseHeldStockBin,
   chooseSourceBin,
+  planHeldStockDraw,
+  planStripedUntrackedDraw,
+  type StripedBinDraw,
   untrackedDrawLockKey
 } from "@carbon/database/picked-consumption";
 import { equals, SCALE } from "@carbon/database/precision";
@@ -14132,11 +14137,36 @@ export async function createDocument(
           .where("companyId", "=", companyId)
           .execute();
 
+        // A line with no From bin ships from a bin at the From location that
+        // holds the stock. A serial or batch line posts from its units' bins.
+        const untrackedItemIds = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Inventory")
+            .map((d) => d.id)
+        );
+        const chooseSourceStorageUnit = await shipmentSourceBinChooser(trx, {
+          companyId,
+          lines: shipmentLineItems
+            .filter((line) => untrackedItemIds.has(line.itemId))
+            .map((line) => ({
+              itemId: line.itemId,
+              locationId: line.locationId ?? null
+            }))
+        });
+
         await trx
           .insertInto("shipmentLine")
           .values(
             shipmentLineItems.map((lineItem) => ({
               ...lineItem,
+              storageUnitId: untrackedItemIds.has(lineItem.itemId)
+                ? chooseSourceStorageUnit({
+                    itemId: lineItem.itemId,
+                    locationId: lineItem.locationId ?? null,
+                    storageUnitId: lineItem.storageUnitId ?? null,
+                    quantity: lineItem.shippedQuantity ?? 0
+                  })
+                : lineItem.storageUnitId,
               shipmentId: id
             }))
           )
@@ -14382,11 +14412,52 @@ export async function createDocument(
           .where("companyId", "=", companyId)
           .execute();
 
+        // An untracked Return to Stock line ships from the bin that holds
+        // the returned stock, held units first, from common stock (the
+        // returned stock came in as common stock). A serviced unit ships at
+        // no value and moves no stock, so its line names no bin.
+        const binLineIds = new Set(
+          returnLines
+            .filter(
+              (d) =>
+                d.returnType === "Return to Stock" &&
+                !!d.itemId &&
+                items.data?.some(
+                  (item) =>
+                    item.id === d.itemId &&
+                    item.itemTrackingType === "Inventory"
+                )
+            )
+            .map((d) => d.id)
+        );
+        const chooseSourceStorageUnit = await returnShipmentSourceBinChooser(
+          trx,
+          {
+            companyId,
+            lines: shipmentLineItems
+              .filter((line) => binLineIds.has(line.lineId ?? ""))
+              .map((line) => ({
+                itemId: line.itemId,
+                locationId: line.locationId ?? null,
+                stripe: null
+              }))
+          }
+        );
+
         await trx
           .insertInto("shipmentLine")
           .values(
             shipmentLineItems.map((lineItem) => ({
               ...lineItem,
+              storageUnitId: binLineIds.has(lineItem.lineId ?? "")
+                ? chooseSourceStorageUnit({
+                    itemId: lineItem.itemId,
+                    locationId: lineItem.locationId ?? null,
+                    stripe: null,
+                    storageUnitId: lineItem.storageUnitId ?? null,
+                    quantity: lineItem.shippedQuantity ?? 0
+                  })
+                : lineItem.storageUnitId,
               shipmentId: id
             }))
           )
@@ -14554,6 +14625,105 @@ export async function createDocument(
         entitiesByReturnLine.set(row.purchaseReturnOrderLineId, list);
       }
 
+      // An untracked line ships from the bin that holds the returned stock,
+      // held units first, on the stripe its posting draws: the stripe its
+      // purchase order line received into (its project's stock when the
+      // project has project stock), else common stock.
+      const untrackedItemIds = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Inventory")
+          .map((d) => d.id)
+      );
+      const untrackedReturnLines = purchaseReturnOrderLines.data.filter((d) =>
+        untrackedItemIds.has(d.itemId)
+      );
+      const returnPoLineIds = [
+        ...new Set(
+          untrackedReturnLines
+            .map((d) => d.purchaseOrderLineId)
+            .filter((lineId): lineId is string => !!lineId)
+        )
+      ];
+      const returnPoLines =
+        returnPoLineIds.length > 0
+          ? await db
+              .selectFrom("purchaseOrderLine")
+              .select(["id", "projectId"])
+              .where("id", "in", returnPoLineIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          : [];
+      const returnProjectStock = await loadProjectStock(
+        db,
+        companyId,
+        returnPoLines.map((line) => line.projectId)
+      );
+      const projectByPoLine = new Map(
+        returnPoLines.map((line) => [line.id, line.projectId])
+      );
+      const poLineByReturnLine = new Map(
+        untrackedReturnLines.map((d) => [d.id, d.purchaseOrderLineId])
+      );
+      const returnLineStripe = (
+        lineId: string | null | undefined
+      ): StockStripe => {
+        const poLineId = lineId ? poLineByReturnLine.get(lineId) : null;
+        const projectId = poLineId
+          ? (projectByPoLine.get(poLineId) ?? null)
+          : null;
+        return projectId && returnProjectStock.has(projectId)
+          ? projectId
+          : null;
+      };
+      // A line whose stock an inspection reject wrote off keeps no bin: the
+      // posting puts that write-off back at no storage unit and ships the
+      // line from the bin it names, so the two must be the same bin.
+      const writtenOffReturnLineIds =
+        untrackedReturnLines.length > 0
+          ? new Set(
+              (
+                await db
+                  .selectFrom("nonConformancePurchaseReturnOrderLine as link")
+                  .innerJoin("nonConformanceInspection as ncrLot", (join) =>
+                    join
+                      .onRef(
+                        "ncrLot.nonConformanceId",
+                        "=",
+                        "link.nonConformanceId"
+                      )
+                      .onRef("ncrLot.companyId", "=", "link.companyId")
+                  )
+                  .innerJoin("purchaseReturnOrderLine as line", (join) =>
+                    join
+                      .onRef("line.id", "=", "link.purchaseReturnOrderLineId")
+                      .onRef("line.companyId", "=", "link.companyId")
+                  )
+                  .innerJoin("itemLedger as writeOff", (join) =>
+                    join
+                      .onRef("writeOff.documentId", "=", "ncrLot.inspectionId")
+                      .onRef("writeOff.companyId", "=", "link.companyId")
+                      .onRef("writeOff.itemId", "=", "line.itemId")
+                  )
+                  .select("link.purchaseReturnOrderLineId")
+                  .distinct()
+                  .where("link.companyId", "=", companyId)
+                  .where(
+                    "link.purchaseReturnOrderLineId",
+                    "in",
+                    untrackedReturnLines.map((d) => d.id)
+                  )
+                  .where("writeOff.documentType", "=", "Inbound Inspection")
+                  .where("writeOff.quantity", "<", 0)
+                  .execute()
+              ).map((row) => row.purchaseReturnOrderLineId)
+            )
+          : new Set<string>();
+      const binLineIds = new Set(
+        untrackedReturnLines
+          .filter((d) => !writtenOffReturnLineIds.has(d.id))
+          .map((d) => d.id)
+      );
+
       const result = await db.transaction().execute(async (trx) => {
         const shipmentId = await getNextSequence(trx, "shipment", companyId);
 
@@ -14604,11 +14774,34 @@ export async function createDocument(
           .where("companyId", "=", companyId)
           .execute();
 
+        const chooseSourceStorageUnit = await returnShipmentSourceBinChooser(
+          trx,
+          {
+            companyId,
+            lines: shipmentLineItems
+              .filter((line) => binLineIds.has(line.lineId ?? ""))
+              .map((line) => ({
+                itemId: line.itemId,
+                locationId: line.locationId ?? null,
+                stripe: returnLineStripe(line.lineId)
+              }))
+          }
+        );
+
         const insertedLines = await trx
           .insertInto("shipmentLine")
           .values(
             shipmentLineItems.map((lineItem) => ({
               ...lineItem,
+              storageUnitId: binLineIds.has(lineItem.lineId ?? "")
+                ? chooseSourceStorageUnit({
+                    itemId: lineItem.itemId,
+                    locationId: lineItem.locationId ?? null,
+                    stripe: returnLineStripe(lineItem.lineId),
+                    storageUnitId: lineItem.storageUnitId ?? null,
+                    quantity: lineItem.shippedQuantity ?? 0
+                  })
+                : lineItem.storageUnitId,
               shipmentId: id
             }))
           )
@@ -18727,11 +18920,104 @@ export async function getUntrackedBinStock(
         (row.effectiveNettable === true &&
           row.active === true &&
           !row.workCenterId),
+      held:
+        row.storageUnitId !== null &&
+        row.effectiveNettable === false &&
+        row.active === true &&
+        !row.workCenterId,
       quantity: Number(row.quantity ?? 0)
     });
     bins.set(row.itemId, list);
   }
   return bins;
+}
+
+/**
+ * Where an untracked draw of one item comes from: the bin the caller names,
+ * else the item's nettable default, then the other bins that hold the stock,
+ * fullest first, stripe by stripe (`planStripedUntrackedDraw`). Quarantine and
+ * lineside units are never guessed. Locks the draw before it reads the bins,
+ * so two draws never plan from the same on-hand. Every posting that takes
+ * untracked stock out with no bin chosen goes through this or
+ * `planHeldUntrackedDraw`; never post such a row at a NULL bin by default.
+ */
+export async function planUntrackedDraw(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    locationId: string;
+    itemId: string;
+    quantity: number;
+    storageUnitId: string | null;
+    stripes: readonly StockStripe[];
+  }
+): Promise<StripedBinDraw[]> {
+  await lockUntrackedDraws(trx, {
+    companyId: args.companyId,
+    locationId: args.locationId,
+    itemIds: [args.itemId]
+  });
+  const preferredStorageUnitId =
+    args.storageUnitId ??
+    (await getNettableDefaultStorageUnitId(
+      trx,
+      args.itemId,
+      args.locationId,
+      args.companyId
+    ));
+  const bins =
+    (
+      await getUntrackedBinStock(trx, {
+        companyId: args.companyId,
+        itemIds: [args.itemId],
+        locationId: args.locationId,
+        stripes: args.stripes
+      })
+    ).get(args.itemId) ?? [];
+  return planStripedUntrackedDraw({
+    bins,
+    stripes: args.stripes,
+    preferredStorageUnitId,
+    quantity: args.quantity
+  });
+}
+
+/**
+ * Where a draw of nonconforming or returned untracked stock comes from (an
+ * NCR's Scrap or Return to Supplier): the bin the caller names, else held
+ * units (quarantine, MRB, rejected) first, then the other bins, fullest first
+ * (`planHeldStockDraw`). Locks the draw before it reads the bins.
+ */
+export async function planHeldUntrackedDraw(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    locationId: string;
+    itemId: string;
+    quantity: number;
+    storageUnitId: string | null;
+    stripe: string | null;
+  }
+): Promise<StripedBinDraw[]> {
+  await lockUntrackedDraws(trx, {
+    companyId: args.companyId,
+    locationId: args.locationId,
+    itemIds: [args.itemId]
+  });
+  const bins =
+    (
+      await getUntrackedBinStock(trx, {
+        companyId: args.companyId,
+        itemIds: [args.itemId],
+        locationId: args.locationId,
+        stripes: [args.stripe]
+      })
+    ).get(args.itemId) ?? [];
+  return planHeldStockDraw({
+    bins,
+    preferredStorageUnitId: args.storageUnitId,
+    quantity: args.quantity
+  }).map((draw) => ({ ...draw, projectId: args.stripe }));
 }
 
 /**
@@ -18803,6 +19089,84 @@ export async function shipmentSourceBinChooser(
         quantity: line.quantity
       });
     const k = key(line.itemId, locationId, chosen);
+    assigned.set(k, (assigned.get(k) ?? 0) + line.quantity);
+    return chosen;
+  };
+}
+
+/**
+ * The bin each untracked line of a return shipment (Sales or Purchase Return
+ * Order) ships from. Returned and rejected stock is set aside in a held unit
+ * (quarantine, MRB, rejected), so a line with no bin takes a held unit that
+ * holds the stock first, then another bin, fullest first
+ * (`chooseHeldStockBin`). A bin the line names is kept. Each line draws one
+ * stripe: the stripe its posting draws. Lines are planned in order, so two
+ * lines of one item do not count the same stock.
+ */
+export async function returnShipmentSourceBinChooser(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    lines: { itemId: string; locationId: string | null; stripe: StockStripe }[];
+  }
+): Promise<
+  (line: {
+    itemId: string;
+    locationId: string | null;
+    stripe: StockStripe;
+    storageUnitId: string | null;
+    quantity: number;
+  }) => string | null
+> {
+  const locationIds = [
+    ...new Set(
+      args.lines
+        .map((line) => line.locationId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const stockByLocation = new Map<string, Map<string, BinStock[]>>();
+  for (const locationId of locationIds) {
+    const lines = args.lines.filter((line) => line.locationId === locationId);
+    stockByLocation.set(
+      locationId,
+      await getUntrackedBinStock(db, {
+        companyId: args.companyId,
+        itemIds: [...new Set(lines.map((line) => line.itemId))],
+        locationId,
+        stripes: [...new Set(lines.map((line) => line.stripe ?? null))]
+      })
+    );
+  }
+  const assigned = new Map<string, number>();
+  const key = (
+    itemId: string,
+    locationId: string,
+    stripe: StockStripe,
+    bin: string | null
+  ) => `${locationId}\u0000${itemId}\u0000${stripe ?? ""}\u0000${bin ?? ""}`;
+
+  return (line) => {
+    if (!line.locationId) return line.storageUnitId;
+    const locationId = line.locationId;
+    const stripe = line.stripe ?? null;
+    const chosen =
+      line.storageUnitId ??
+      chooseHeldStockBin({
+        bins: (stockByLocation.get(locationId)?.get(line.itemId) ?? [])
+          .filter((bin) => (bin.projectId ?? null) === stripe)
+          .map((bin) => ({
+            ...bin,
+            quantity:
+              bin.quantity -
+              (assigned.get(
+                key(line.itemId, locationId, stripe, bin.storageUnitId)
+              ) ?? 0)
+          })),
+        preferredStorageUnitId: null,
+        quantity: line.quantity
+      });
+    const k = key(line.itemId, locationId, stripe, chosen);
     assigned.set(k, (assigned.get(k) ?? 0) + line.quantity);
     return chosen;
   };

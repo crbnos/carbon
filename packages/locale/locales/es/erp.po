@@ -17412,6 +17412,12 @@ msgstr "Deje este campo vacío para no tener límite. Al superarlo, MES solo ofr
 msgid "Leave empty to pick a color from the name"
 msgstr "Déjelo vacío para elegir un color a partir del nombre"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "Déjelo vacío para devolverlo a donde se emitió"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "Déjelo vacío para tomarlo de las unidades de almacenamiento que lo contienen"
+
 msgid "Leave empty to use the account default"
 msgstr "Dejar en blanco para usar el valor predeterminado de la cuenta"
 

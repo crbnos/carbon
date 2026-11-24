@@ -17412,6 +17412,12 @@ msgstr "留空表示不设上限。超过该次数后，MES 仅提供报废或�
 msgid "Leave empty to pick a color from the name"
 msgstr "留空则根据名称自动选择颜色"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "留空则退回到出库来源处"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "留空则从存有该物料的存储单元中取用"
+
 msgid "Leave empty to use the account default"
 msgstr "留空以使用帐户默认值"
 

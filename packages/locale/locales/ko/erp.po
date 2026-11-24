@@ -17412,6 +17412,12 @@ msgstr "제한이 없으면 비워 두세요. 이 수량을 넘으면 MES는 스
 msgid "Leave empty to pick a color from the name"
 msgstr "비워 두면 이름에서 색상을 자동으로 고릅니다"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "비워 두면 출고된 위치로 반환합니다"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "비워 두면 재고가 있는 보관 단위에서 가져옵니다"
+
 msgid "Leave empty to use the account default"
 msgstr "계정 기본값을 사용하려면 비워두세요."
 

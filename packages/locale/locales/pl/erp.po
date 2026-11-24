@@ -17412,6 +17412,12 @@ msgstr "Pozostaw puste, aby nie ustalać limitu. Po jego przekroczeniu MES oferu
 msgid "Leave empty to pick a color from the name"
 msgstr "Zostaw puste, aby wybrać kolor na podstawie nazwy"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "Pozostaw puste, aby zwrócić tam, skąd został wydany"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "Pozostaw puste, aby pobrać z jednostek magazynowych, które go zawierają"
+
 msgid "Leave empty to use the account default"
 msgstr "Pozostaw puste, aby użyć wartości domyślnej konta"
 

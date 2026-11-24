@@ -8364,6 +8364,54 @@ export function isDirectItemLine(line: SalesInvoiceLine): boolean {
   );
 }
 
+/** An untracked direct invoice line that takes stock out. */
+type DirectStockDraw = {
+  lineId: string;
+  itemId: string;
+  locationId: string | null;
+  storageUnitId: string | null;
+  quantity: number;
+};
+
+/**
+ * The bin each untracked direct invoice line ships from, by line id: the bin
+ * the line names, else one that holds its common stock
+ * (`shipmentSourceBinChooser`, as a sales order shipment line takes one).
+ * Quarantine and lineside units are never guessed, and lines are planned in
+ * order, so two lines of one item do not count the same stock. Locks the
+ * draws first, so two postings never plan from the same on-hand. Call it
+ * inside the posting transaction.
+ */
+async function directInvoiceSourceBins(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  draws: DirectStockDraw[]
+): Promise<Map<string, string | null>> {
+  const bins = new Map<string, string | null>();
+  if (draws.length === 0) return bins;
+  const locationIds = [
+    ...new Set(
+      draws.map((draw) => draw.locationId).filter((id): id is string => !!id)
+    )
+  ].sort();
+  // One lock per location: an invoice ships from one or two.
+  for (const locationId of locationIds) {
+    await sharedPostings.lockUntrackedDraws(trx, {
+      companyId,
+      locationId,
+      itemIds: draws
+        .filter((draw) => draw.locationId === locationId)
+        .map((draw) => draw.itemId)
+    });
+  }
+  const choose = await sharedPostings.shipmentSourceBinChooser(trx, {
+    companyId,
+    lines: draws.filter((draw) => !draw.storageUnitId)
+  });
+  for (const draw of draws) bins.set(draw.lineId, choose(draw));
+  return bins;
+}
+
 /**
  * The service range of a line whose revenue the posting defers. Only a
  * Service line is deferred: every other item type is a physical good, earned
@@ -9846,6 +9894,9 @@ export async function postSalesInvoice(
           "shipmentId"
         >[] = [];
 
+        // The untracked lines that take stock out, index-parallel to
+        // itemLedgerInserts: their bins are chosen inside the transaction.
+        const directStockDraws: DirectStockDraw[] = [];
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
 
@@ -10491,6 +10542,13 @@ export async function postSalesInvoice(
             items.data.find((item) => item.id === invoiceLine.itemId)
               ?.itemTrackingType ?? "Inventory";
           if (itemTrackingType === "Inventory") {
+            directStockDraws.push({
+              lineId: invoiceLine.id,
+              itemId: invoiceLine.itemId!,
+              locationId: invoiceLine.locationId,
+              storageUnitId: invoiceLine.storageUnitId,
+              quantity: invoiceLine.quantity
+            });
             itemLedgerInserts.push({
               postingDate: today,
               itemId: invoiceLine.itemId!,
@@ -10545,6 +10603,30 @@ export async function postSalesInvoice(
               }
             }
           }
+
+          // A line with no bin ships from a bin that holds its stock, never
+          // from "no storage unit" while a bin holds it. Its shipment line
+          // and ledger row both name that bin, so the void puts the stock
+          // back where it came from (it reverses the ledger rows).
+          const sourceBins = await directInvoiceSourceBins(
+            trx,
+            companyId,
+            directStockDraws
+          );
+          const sourceBinOf = (lineId: string, named: string | null) =>
+            sourceBins.has(lineId) ? (sourceBins.get(lineId) ?? null) : named;
+          for (const line of shipmentLineInserts) {
+            line.storageUnitId = sourceBinOf(
+              line.lineId!,
+              line.storageUnitId ?? null
+            );
+          }
+          itemLedgerInserts.forEach((row, index) => {
+            row.storageUnitId = sourceBinOf(
+              directStockDraws[index]!.lineId,
+              row.storageUnitId ?? null
+            );
+          });
 
           if (shipmentLineInserts.length > 0) {
             const shipmentLinesGroupedByLocationId = shipmentLineInserts.reduce<

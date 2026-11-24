@@ -17412,6 +17412,12 @@ msgstr "Deixe em branco para não ter limite. Ao ultrapassá-lo, o MES oferece a
 msgid "Leave empty to pick a color from the name"
 msgstr "Deixe em branco para escolher uma cor pelo nome"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "Deixe vazio para devolver ao local de onde foi emitido"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "Deixe vazio para retirar das unidades de armazenamento que o contêm"
+
 msgid "Leave empty to use the account default"
 msgstr "Deixe vazio para usar o padrão da conta"
 

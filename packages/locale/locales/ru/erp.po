@@ -17412,6 +17412,12 @@ msgstr "Оставьте пустым, если ограничения нет. �
 msgid "Leave empty to pick a color from the name"
 msgstr "Оставьте пустым, чтобы выбрать цвет по названию"
 
+msgid "Leave empty to return it where it was issued from"
+msgstr "Оставьте пустым, чтобы вернуть туда, откуда он был выдан"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "Оставьте пустым, чтобы взять из единиц хранения, где он есть"
+
 msgid "Leave empty to use the account default"
 msgstr "Оставьте пустым, чтобы использовать значение по умолчанию учетной записи"
 

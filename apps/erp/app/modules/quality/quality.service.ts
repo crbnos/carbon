@@ -46,6 +46,7 @@ import {
   journalPostingStatus,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
+import { planHeldStockDraw } from "@carbon/database/picked-consumption";
 import * as engine from "@carbon/database/quality";
 import {
   errResult,
@@ -74,8 +75,10 @@ import {
   getDefaultPostingGroup,
   getExternalLink,
   getLocationTimeZone,
+  getUntrackedBinStock,
   invokeCreate,
-  invokePosting
+  invokePosting,
+  lockUntrackedDraws
 } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
@@ -4698,6 +4701,128 @@ type DispositionRow = {
 
 type IssueClosureBlocker = { nonConformanceItemId: string; reason: string };
 
+type DispositionMovement = {
+  itemId: string;
+  locationId: string | null;
+  storageUnitId?: string | null;
+  trackedEntityId: string | null;
+  projectId?: string | null;
+  quantity: number;
+  comment: string;
+  documentLineId?: string;
+  /** An untracked write-off whose bins `planHeldWriteOffBins` chooses. */
+  fromHeldStock?: boolean;
+};
+
+/**
+ * Where an NCR's untracked Scrap / Return to Supplier write-off comes from
+ * when no inspection decided it: the held-stock rule (`planHeldStockDraw`,
+ * as `planHeldUntrackedDraw`): quarantine, MRB and rejected units first,
+ * then the other bins, fullest first; a shortfall on the first bin drawn,
+ * else no storage unit. The rows of one item are planned as one draw, so two
+ * rows never count the same on-hand, and stock an inspection lot holds in a
+ * unit is left to the lot (the hold guard would refuse taking it). Runs in
+ * the close's transaction and locks the draws before it reads the bins.
+ */
+async function planHeldWriteOffBins(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    locationId: string | null;
+    movements: DispositionMovement[];
+  }
+): Promise<DispositionMovement[]> {
+  const { companyId, locationId } = args;
+  const strip = ({ fromHeldStock: _, ...movement }: DispositionMovement) =>
+    movement;
+  const toPlan = args.movements.filter(
+    (m) => m.fromHeldStock && m.locationId === locationId
+  );
+  if (!locationId || toPlan.length === 0) return args.movements.map(strip);
+
+  const quantityByItem = new Map<string, number>();
+  for (const m of toPlan) {
+    quantityByItem.set(
+      m.itemId,
+      round((quantityByItem.get(m.itemId) ?? 0) - m.quantity)
+    );
+  }
+  const itemIds = [...quantityByItem.keys()];
+  await lockUntrackedDraws(trx, { companyId, locationId, itemIds });
+  const binsByItem = await getUntrackedBinStock(trx, {
+    companyId,
+    itemIds,
+    locationId,
+    stripes: [null]
+  });
+
+  // What an open or Partial inspection lot holds in a unit is not free.
+  const units = [...binsByItem].flatMap(([itemId, bins]) =>
+    bins
+      .filter((bin) => bin.storageUnitId !== null && bin.quantity > EPSILON)
+      .map((bin) => ({ itemId, storageUnitId: bin.storageUnitId as string }))
+  );
+  const free = new Map<string, number>();
+  if (units.length > 0) {
+    const { rows } = await sql<{
+      itemId: string;
+      storageUnitId: string;
+      free: number;
+    }>`
+      SELECT u."itemId", u."storageUnitId",
+        public.inspection_untracked_on_hand(${companyId}, u."itemId", u."storageUnitId")
+          - public.inspection_held_quantity(${companyId}, u."itemId", u."storageUnitId") AS "free"
+      FROM unnest(
+        ${units.map((u) => u.itemId)}::text[],
+        ${units.map((u) => u.storageUnitId)}::text[]
+      ) AS u("itemId", "storageUnitId")
+    `.execute(trx);
+    for (const row of rows) {
+      free.set(`${row.itemId}\u0000${row.storageUnitId}`, Number(row.free));
+    }
+  }
+
+  const drawsByItem = new Map(
+    itemIds.map((itemId) => [
+      itemId,
+      planHeldStockDraw({
+        bins: (binsByItem.get(itemId) ?? []).map((bin) => {
+          if (bin.storageUnitId === null) return bin;
+          const unitFree = free.get(`${itemId}\u0000${bin.storageUnitId}`);
+          return unitFree === undefined
+            ? bin
+            : {
+                ...bin,
+                quantity: Math.max(0, Math.min(bin.quantity, unitFree))
+              };
+        }),
+        preferredStorageUnitId: null,
+        quantity: quantityByItem.get(itemId) ?? 0
+      })
+    ])
+  );
+
+  const planned: DispositionMovement[] = [];
+  for (const m of args.movements) {
+    if (!m.fromHeldStock || m.locationId !== locationId) {
+      planned.push(strip(m));
+      continue;
+    }
+    // Every row of the item is in its one draw, emitted at its first row.
+    const draws = drawsByItem.get(m.itemId);
+    if (!draws) continue;
+    drawsByItem.delete(m.itemId);
+    for (const draw of draws) {
+      planned.push({
+        ...strip(m),
+        storageUnitId: draw.storageUnitId,
+        quantity: -draw.quantity
+      });
+    }
+  }
+  return planned;
+}
+
 export async function closeIssue(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -5045,16 +5170,7 @@ export async function closeIssue(
   // linked entity; non-tracked Inventory → −qty write-off (MES/manual scrap) or
   // +qty restore (inspection-kept). Use As Is / Rework on tracked, and any
   // Non-Inventory row, move no value.
-  const movements: {
-    itemId: string;
-    locationId: string | null;
-    storageUnitId?: string | null;
-    trackedEntityId: string | null;
-    projectId?: string | null;
-    quantity: number;
-    comment: string;
-    documentLineId?: string;
-  }[] = [];
+  const movements: DispositionMovement[] = [];
   // Mutable copy: shipped-via-return coverage consumed as it offsets rows.
   const remainingCoverageByItem = new Map(shippedCoverageByItem);
   for (const row of plan) {
@@ -5124,13 +5240,15 @@ export async function closeIssue(
         held.requested = round(held.requested + writeOff);
         continue;
       }
+      // The bins are chosen inside the transaction (`planHeldWriteOffBins`).
       movements.push({
         itemId: row.itemId,
         locationId,
         storageUnitId: null,
         trackedEntityId: null,
         quantity: -writeOff,
-        comment: `NC ${readableNc} scrap`
+        comment: `NC ${readableNc} scrap`,
+        fromHeldStock: true
       });
       continue;
     }
@@ -5390,6 +5508,18 @@ export async function closeIssue(
           .where("companyId", "=", companyId)
           .returning(["id"])
           .executeTakeFirstOrThrow()
+      );
+
+      // Before the Partial lot's stock-row locks below: a draw takes its
+      // advisory lock first, as every other untracked draw does.
+      movements.splice(
+        0,
+        movements.length,
+        ...(await planHeldWriteOffBins(trx, {
+          companyId,
+          locationId,
+          movements
+        }))
       );
 
       if (heldPartial && heldPartial.requested > EPSILON) {
