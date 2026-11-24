@@ -5273,3 +5273,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A feature that lets a record repeat must widen the key that forbade it
+
+**Context:** Split hours (`20260731192616_people-split-hours.sql`) let one person's shift be dealt across several `peopleAssignment` rows, one per station. The table's unique key, added a week earlier (`peopleAssignment_person_day_key`), allowed one row per person, date and shift.
+
+**Problem:** The day editor, the free-hours drag and the matrix move each write a second row for the same shift, so each failed with a duplicate-key error. Later code treated the key as the rule: the matrix move refused the case (`"taken"`), and comments explained the refusal by the index, so the stale key spread instead of being fixed.
+
+**Rule:** When a feature lets a record hold several rows where it held one, find the unique keys over that record in the newest migrations and widen them in the same change. A refusal whose only reason is a unique index is a sign the index is stale: check it against the feature it contradicts before adding the refusal.
+
+**Applies to:** Any migration that relaxes a one-row-per-X rule, and any service code that refuses an action because a unique index would reject it.
