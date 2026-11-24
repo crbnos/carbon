@@ -12,7 +12,10 @@ import { sql } from "kysely";
 import { expect } from "vitest";
 import { postReceipt } from "../../app/modules/inventory/inventory.service";
 import { postSalesInvoice } from "../../app/modules/invoicing/invoicing.service";
-import { invokePosting } from "../../app/modules/shared/shared.service";
+import {
+  invokeCreate,
+  invokePosting
+} from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
   draftReceiptFromPurchaseOrder,
@@ -27,6 +30,7 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
+import { serviceReturnFixture } from "./fixtures/service-return";
 
 async function backendPid(db: Kysely<KyselyDatabase>) {
   const { rows } = await sql<{
@@ -60,6 +64,16 @@ async function waitUntilWaiting(
 }
 
 type Result = { error: unknown };
+
+/** A refusal's message, or a database failure's SQLSTATE (40P01 is a
+ *  deadlock); null when the call succeeded. */
+function failure(result: Result): string | null {
+  const error = result.error as
+    | { message?: string; code?: string; cause?: { code?: string } }
+    | null;
+  if (!error) return null;
+  return error.message || error.code || error.cause?.code || "failed";
+}
 
 /**
  * Holds `lineId`'s row lock in `table` on a third connection, starts each
@@ -292,6 +306,117 @@ databaseTest(
         receivedComplete: received >= Number(line.purchaseQuantity)
       });
     } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+// A void writes the return line, then locks the return order to set its
+// status; a post locks the order, then writes the line. Neither may wait on
+// the other. The post's receipt also returns a second item; a third
+// connection holds that item's row, so the post stops on its cost layer's
+// foreign key check, between its order lock and its line write, while the
+// void runs.
+databaseTest(
+  "a return receipt void and a post of another receipt on the same return line do not deadlock",
+  async () => {
+    const f = await serviceReturnFixture();
+    const voider = await connectLocalTestDatabase();
+    const holder = await connectLocalTestDatabase();
+    const monitor = await connectLocalTestDatabase();
+    let release!: () => void;
+    const released = new Promise<void>((done) => {
+      release = done;
+    });
+    let holdingLock: Promise<void> | undefined;
+    try {
+      const { rmaId, lineIds } = await f.addRma([
+        { itemId: f.unitItemId, returnType: "Return to Stock" },
+        { itemId: f.stockItemId, returnType: "Return to Stock" }
+      ]);
+      const [shared, postOnly] = lineIds as [string, string];
+      await f.db
+        .updateTable("salesReturnOrderLine")
+        .set({ quantity: 2 })
+        .where("id", "=", shared)
+        .execute();
+      const handles = handlesOf(f.ctx);
+      /** A Draft receipt of one unit of each line in `received`. */
+      const receiptOf = async (received: string[]) => {
+        const created = await invokeCreate(handles, {
+          type: "receiptFromSalesReturnOrder",
+          salesReturnOrderId: rmaId,
+          locationId: f.locationId
+        });
+        if (created.error) throw created.error;
+        for (const lineId of [shared, postOnly]) {
+          await f.db
+            .updateTable("receiptLine")
+            .set({ receivedQuantity: received.includes(lineId) ? 1 : 0 })
+            .where("receiptId", "=", created.data.id)
+            .where("lineId", "=", lineId)
+            .execute();
+        }
+        return created.data.id;
+      };
+      const posted = await receiptOf([shared]);
+      expect((await f.postReceipt("post", posted)).error).toBeNull();
+      const draft = await receiptOf([shared, postOnly]);
+      const [holderPid, postPid, voidPid] = await Promise.all([
+        backendPid(holder),
+        backendPid(f.db),
+        backendPid(voider)
+      ]);
+
+      let held!: () => void;
+      const holding = new Promise<void>((done) => {
+        held = done;
+      });
+      holdingLock = holder.transaction().execute(async (trx) => {
+        await sql`SELECT 1 FROM "item" WHERE id = ${f.stockItemId} FOR UPDATE`.execute(
+          trx
+        );
+        held();
+        await released;
+      });
+      void holdingLock.catch(() => {});
+      await Promise.race([holding, holdingLock]);
+      const posting = invokePosting(
+        handles,
+        "post-receipt",
+        { type: "post", receiptId: draft },
+        postReceipt
+      );
+      void posting.catch(() => {});
+      await waitUntilWaiting(monitor, [postPid], [holderPid]);
+
+      const voiding = invokePosting(
+        handlesOf({ db: voider, companyId: f.companyId, userId: f.ctx.userId }),
+        "post-receipt",
+        { type: "void", receiptId: posted },
+        postReceipt
+      );
+      void voiding.catch(() => {});
+      await waitUntilWaiting(monitor, [voidPid], [postPid]);
+
+      release();
+      await holdingLock;
+      const [post, voided] = await Promise.all([posting, voiding]);
+
+      expect({ post: failure(post), void: failure(voided) }).toEqual({
+        post: null,
+        void: null
+      });
+      expect(await f.returnLines(rmaId)).toEqual([
+        { id: shared, quantityReceived: 1, quantityShipped: 0 },
+        { id: postOnly, quantityReceived: 1, quantityShipped: 0 }
+      ]);
+    } finally {
+      release();
+      await holdingLock?.catch(() => {});
+      await voider.destroy();
+      await holder.destroy();
+      await monitor.destroy();
       await f.cleanup();
     }
   }

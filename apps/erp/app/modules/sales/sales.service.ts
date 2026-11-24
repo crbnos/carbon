@@ -190,6 +190,7 @@ import {
   getCompanyTimeZone as getCachedCompanyTimeZone,
   getCurrentAccountingPeriod,
   isContactEmailRequired,
+  lockOrderLines,
   refuseUnlessOwned,
   resolveInventoryAccount,
   sendSalesOrderEmail
@@ -8267,6 +8268,11 @@ export async function createSalesReturnOrderCredit(
   }
 
   return db.transaction().execute(async (trx) => {
+    // The return order before its lines, as a receipt and its void take
+    // them.
+    await lockOrderLines(trx, "salesReturnOrderLine", companyId, [
+      ...requested.keys()
+    ]);
     const orderLines = await trx
       .selectFrom("salesReturnOrderLine")
       .select([
@@ -8281,6 +8287,7 @@ export async function createSalesReturnOrderCredit(
       .where("salesReturnOrderId", "=", salesReturnOrderId)
       .where("companyId", "=", companyId)
       .where("id", "in", [...requested.keys()])
+      .orderBy("id")
       .forUpdate()
       .execute();
 

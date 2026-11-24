@@ -267,6 +267,7 @@ import {
   loadContractPositions,
   loadPartyDimensions,
   lockContractPositions,
+  lockOrderLines,
   lockOrderLinesAsRead,
   PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   partyDimensionValues,
@@ -20807,6 +20808,14 @@ async function restorePurchaseOrderInvoiced(
     .where("purchaseOrderLineId", "is not", null)
     .execute();
   if (invoiceLines.length === 0) return;
+  // The orders before every line of them, as each writer of the lines'
+  // counters takes them.
+  await lockOrderLines(
+    tx as Kysely<KyselyDatabase>,
+    "purchaseOrderLine",
+    companyId,
+    invoiceLines.map((line) => line.purchaseOrderLineId as string)
+  );
   const orderLines = await tx
     .selectFrom("purchaseOrderLine")
     .selectAll()
@@ -20822,6 +20831,7 @@ async function restorePurchaseOrderInvoiced(
           invoiceLines.map((line) => line.purchaseOrderLineId as string)
         )
     )
+    .orderBy("id")
     .forUpdate()
     .execute();
   const invoicedByLine = new Map<string, number>();
@@ -20916,6 +20926,14 @@ async function restoreSalesOrderInvoiced(
       .where("salesOrderLineId", "is not", null)
       .execute()
   ]);
+  // The orders before every line of them and before their shipments, as an
+  // invoice post takes them.
+  await lockOrderLines(
+    tx as Kysely<KyselyDatabase>,
+    "salesOrderLine",
+    companyId,
+    invoiceLines.map((line) => line.salesOrderLineId as string)
+  );
 
   await tx
     .updateTable("shipment")
@@ -20958,6 +20976,7 @@ async function restoreSalesOrderInvoiced(
         .where("l.companyId", "=", companyId)
         .where("l.id", "in", [...invoicedByLine.keys()])
     )
+    .orderBy("id")
     .forUpdate()
     .execute();
   const updated = orderLines.map((line) => {

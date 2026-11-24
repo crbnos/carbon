@@ -138,7 +138,6 @@ import {
   equals,
   getErrorMessage,
   groupBy,
-  indexBy,
   indexByMapped,
   isFullDraw,
   isJobLocked,
@@ -236,6 +235,7 @@ import {
   type JournalLineDimensionValues,
   journalLineDimensionRows,
   leavingTrackedEntityIds,
+  lockOrderLines,
   lockOrderLinesAsRead,
   lockUntrackedDraws,
   refuseVoidBeforeCutover,
@@ -15191,29 +15191,21 @@ export async function postReceipt(
           );
         }
 
-        const [originalItemLedger, originalJournalLines, returnLinesVoid] =
-          await inOrder([
-            () =>
-              many(db, "itemLedger", {
-                documentId: receiptId,
-                documentType: "Sales Return Receipt",
-                companyId
-              }),
-            () =>
-              documentJournalLines(db, companyId, {
-                documentId: receiptId,
-                documentType: "Receipt"
-              }),
-            () =>
-              many(db, "salesReturnOrderLine", {
-                salesReturnOrderId,
-                companyId
-              })
-          ]);
+        const [originalItemLedger, originalJournalLines] = await inOrder([
+          () =>
+            many(db, "itemLedger", {
+              documentId: receiptId,
+              documentType: "Sales Return Receipt",
+              companyId
+            }),
+          () =>
+            documentJournalLines(db, companyId, {
+              documentId: receiptId,
+              documentType: "Receipt"
+            })
+        ]);
         if (originalItemLedger.error)
           throw new Error("Failed to fetch original item ledger entries");
-        if (returnLinesVoid.error)
-          throw new Error("Failed to fetch return order lines");
 
         const reversingItemLedger = (originalItemLedger.data ?? []).map(
           (entry) => ({
@@ -15293,6 +15285,14 @@ export async function postReceipt(
                 "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
               );
             }
+            // The order before its lines, as a post takes them; the
+            // quantities come off the lines as they read under the lock.
+            const returnLineById = await lockOrderLines(
+              trx,
+              "salesReturnOrderLine",
+              companyId,
+              [...receivedByLine.keys()]
+            );
 
             await voidServiceJobsForReturn(trx, {
               companyId,
@@ -15351,10 +15351,6 @@ export async function postReceipt(
               .where("companyId", "=", companyId)
               .execute();
 
-            const returnLineById = indexBy(
-              returnLinesVoid.data ?? [],
-              (line) => line.id
-            );
             await updateRowsById(
               trx,
               "salesReturnOrderLine",
@@ -21994,6 +21990,11 @@ export async function postShipment(
                   .execute();
               }
 
+              // The return order before its lines, as a receipt takes them:
+              // refreshing the status locks the order next.
+              await lockOrderLines(trx, "salesReturnOrderLine", companyId, [
+                ...shippedByReturnLine.keys()
+              ]);
               await addReturnLineQuantityShipped(trx, {
                 companyId,
                 userId,
@@ -24147,6 +24148,11 @@ export async function postShipment(
                 }
               }
 
+              // The return order before its lines, as a receipt takes them:
+              // refreshing the status locks the order next.
+              await lockOrderLines(trx, "salesReturnOrderLine", companyId, [
+                ...shippedByReturnLine.keys()
+              ]);
               await addReturnLineQuantityShipped(trx, {
                 companyId,
                 userId,
@@ -24208,42 +24214,31 @@ export async function postShipment(
             // transaction.
             const postingStatus = await journalPostingStatus(db, companyId);
 
-            const [
-              originalJournalLines,
-              originalItemLedger,
-              returnLinesVoid,
-              originalCostRows
-            ] = await inOrder([
-              () =>
-                documentJournalLines(db, companyId, {
-                  documentId: shipmentId,
-                  documentType: "Return Order"
-                }),
-              () =>
-                many(db, "itemLedger", {
-                  documentId: shipmentId,
-                  documentType: "Purchase Return Shipment",
-                  companyId
-                }),
-              () =>
-                many(db, "purchaseReturnOrderLine", {
-                  purchaseReturnOrderId,
-                  companyId
-                }),
-              () =>
-                many(db, "costLedger", {
-                  documentId: shipmentId,
-                  documentType: "Purchase Return Shipment",
-                  companyId
-                })
-            ]);
+            const [originalJournalLines, originalItemLedger, originalCostRows] =
+              await inOrder([
+                () =>
+                  documentJournalLines(db, companyId, {
+                    documentId: shipmentId,
+                    documentType: "Return Order"
+                  }),
+                () =>
+                  many(db, "itemLedger", {
+                    documentId: shipmentId,
+                    documentType: "Purchase Return Shipment",
+                    companyId
+                  }),
+                () =>
+                  many(db, "costLedger", {
+                    documentId: shipmentId,
+                    documentType: "Purchase Return Shipment",
+                    companyId
+                  })
+              ]);
             // A failed read here must abort: treating data:null as "nothing
             // to reverse" would mark the shipment Voided while its journal
             // and ledger rows stand.
             if (originalItemLedger.error)
               throw new Error("Failed to fetch item ledger rows to reverse");
-            if (returnLinesVoid.error)
-              throw new Error("Failed to fetch return order lines");
             if (originalCostRows.error)
               throw new Error("Failed to fetch cost ledger rows to reverse");
 
@@ -24296,6 +24291,14 @@ export async function postShipment(
             await db.transaction().execute(async (trx) => {
               await setInspectionRelease(trx);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              // The order before its lines, as a post takes them; the
+              // quantities come off the lines as they read under the lock.
+              const returnLineById = await lockOrderLines(
+                trx,
+                "purchaseReturnOrderLine",
+                companyId,
+                [...shippedByLine.keys()]
+              );
               const reversingItemLedger = (originalItemLedger.data ?? [])
                 .filter((entry) => !isWriteOffRestore(entry))
                 .map((entry) => ({
@@ -24478,10 +24481,6 @@ export async function postShipment(
                 }
               }
 
-              const returnLineById = indexBy(
-                returnLinesVoid.data ?? [],
-                (line) => line.id
-              );
               await updateRowsById(
                 trx,
                 "purchaseReturnOrderLine",
