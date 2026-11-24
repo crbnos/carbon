@@ -8,11 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useCompanyToday, useRouteData, useUser } from "~/hooks";
 import { gaugeValidator } from "~/modules/quality/quality.models";
 import { insertGauge } from "~/modules/quality/quality.service";
+import { gaugeCalibrationStatusFromDates } from "~/modules/quality/quality.utils";
 import type { GaugeType } from "~/modules/quality/types";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
@@ -45,13 +45,10 @@ export async function action({ request }: ActionFunctionArgs) {
   const companyToday = datetime.today(
     await getCompanyTimeZone(client, companyId)
   );
-  const gaugeCalibrationStatus = d.nextCalibrationDate
-    ? parseDate(d.nextCalibrationDate).compare(companyToday) < 0
-      ? "Out-of-Calibration"
-      : d.lastCalibrationDate
-        ? "In-Calibration"
-        : "Pending"
-    : "Pending";
+  const gaugeCalibrationStatus = gaugeCalibrationStatusFromDates(
+    d,
+    companyToday
+  );
 
   const result = await insertGauge(client, {
     ...d,

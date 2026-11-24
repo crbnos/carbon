@@ -248,8 +248,9 @@ references).
   `create: quality`, route `x+/inspection-document+/$id.version.tsx`). It locks
   the root, numbers the copy one past the group's highest `version`, and copies
   the plan row (drawing `storagePath` and `modelUploadId` are shared, not
-  duplicated), its characteristics (new ids), balloons (remapped to the new
-  characteristics) and parameters. The copy is a Draft.
+  duplicated), its characteristics (new ids, in the editor's order
+  `compareInspectionFeatures`, each a microsecond after the one before), balloons
+  (remapped to the new characteristics) and parameters. The copy is a Draft.
 - **Publish** — `activateInspectionDocumentVersion` (operation of the same name,
   `update: quality`, route `$id.activate.tsx`). One transaction locks the group,
   archives the Active version, activates this one, and moves
@@ -1209,7 +1210,9 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 - **Features saved together share one `createdAt`** (the RPC is one transaction, `NOW()`
   is fixed), so `ORDER BY "createdAt"` alone returns them in heap order, and an UPDATE
   moves a row to the end. Anything listing features must break the tie — the editor sorts
-  by `createdAt`, then label (natural), then id, on load only.
+  by `createdAt`, then label (natural), then id, on load only (`compareInspectionFeatures`,
+  `quality.utils.ts`). A save and a New Version space the characteristics they create a
+  microsecond apart, so their order holds.
 - **Sample status is derived on document-driven lots** — do not add manual sample
   pass/fail UI there; deviations resolve at disposition via MRB/NCR (spec decision).
 - **Per-cell measurement saves are quiet** (plain `fetch`, no revalidation) — the grid and

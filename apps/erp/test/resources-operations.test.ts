@@ -41,8 +41,11 @@ import { createServiceContext } from "@carbon/api/service-fn.server";
 // while shared.service's mock is being built binds the unmocked one.
 await import("../app/modules/resources/resources.service");
 const {
+  createMaintenanceDispatchComment,
+  createMaintenanceDispatchItem,
   createMaintenanceEvent,
   createProcess,
+  deleteMaintenanceDispatch,
   createTrainingAssignment,
   completeTrainingAssignment,
   issueMaintenancePart,
@@ -111,10 +114,13 @@ function client(answers: Record<string, unknown>) {
   return { from, rpc, writes };
 }
 
-function contextWith(answers: Record<string, unknown> = {}) {
+function contextWith(
+  answers: Record<string, unknown> = {},
+  grants: typeof permissions = permissions
+) {
   const db = client(answers);
   const ctx = createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions },
+    actor: { type: "user", userId: "user-1", permissions: grants },
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
     system: () => db as never,
@@ -218,6 +224,112 @@ describe("issuing a spare part to a dispatch", () => {
         itemId: "item-1",
         unitOfMeasureCode: "EA",
         quantity: 3
+      }
+    ]);
+  });
+});
+
+describe("adding a spare part by quantity", () => {
+  it("answers the new part's id", async () => {
+    invoke.mockResolvedValue({
+      data: { success: true, maintenanceDispatchItemId: "mdi-1" },
+      error: null
+    });
+    const { ctx } = contextWith({
+      maintenanceDispatch: { id: "md-1", status: "Open" },
+      item: { id: "item-1" }
+    });
+
+    const result = await createMaintenanceDispatchItem(ctx, {
+      maintenanceDispatchId: "md-1",
+      itemId: "item-1",
+      quantity: 2,
+      unitOfMeasureCode: "EA"
+    });
+
+    expect(result).toEqual({ data: { id: "mdi-1" }, error: null });
+  });
+});
+
+describe("deleting a maintenance dispatch", () => {
+  it.each(["Completed", "Cancelled"])(
+    "refuses a %s dispatch, and deletes nothing",
+    async (status) => {
+      const { ctx, writes } = contextWith({
+        maintenanceDispatch: { id: "md-1", status }
+      });
+
+      const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
+
+      expect(result.error?.category).toBe("rule");
+      expect(writes).toEqual([]);
+    }
+  );
+
+  it("deletes an open dispatch", async () => {
+    const { ctx, writes } = contextWith({
+      maintenanceDispatch: { id: "md-1", status: "Open" }
+    });
+
+    const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
+
+    expect(result.error).toBeNull();
+    expect(writes.map((w) => `${w.op}:${w.table}`)).toEqual([
+      "delete:maintenanceDispatch"
+    ]);
+  });
+});
+
+describe("commenting on a maintenance dispatch", () => {
+  const comment = { maintenanceDispatchId: "md-1", comment: "Belt replaced" };
+
+  it.each(["Completed", "Cancelled"])(
+    "refuses a %s dispatch, and writes nothing",
+    async (status) => {
+      const { ctx, writes } = contextWith({
+        maintenanceDispatch: { id: "md-1", status }
+      });
+
+      const result = await createMaintenanceDispatchComment(ctx, comment);
+
+      expect(result.error?.category).toBe("rule");
+      expect(writes).toEqual([]);
+    }
+  );
+
+  it("refuses a caller who may create resources but not update them", async () => {
+    const { ctx, writes } = contextWith(
+      { maintenanceDispatch: { id: "md-1", status: "Open" } },
+      {
+        resources: {
+          view: ["company-1"],
+          create: ["company-1"],
+          update: [],
+          delete: []
+        }
+      }
+    );
+
+    const result = await createMaintenanceDispatchComment(ctx, comment);
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
+  });
+
+  it("adds the comment to an open dispatch", async () => {
+    const { ctx, writes } = contextWith({
+      maintenanceDispatch: { id: "md-1", status: "Open" },
+      maintenanceDispatchComment: { id: "mdc-1" }
+    });
+
+    const result = await createMaintenanceDispatchComment(ctx, comment);
+
+    expect(result).toEqual({ data: { id: "mdc-1" }, error: null });
+    expect(writes).toEqual([
+      {
+        op: "insert",
+        table: "maintenanceDispatchComment",
+        payload: [{ ...comment, companyId: "company-1", createdBy: "user-1" }]
       }
     ]);
   });

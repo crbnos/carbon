@@ -3,14 +3,21 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { createServiceContext } from "@carbon/api/service-fn.server";
+import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
 import {
+  createGaugeCalibrationRecord,
   createIssue,
+  createRisk,
+  insertGauge,
   saveInspectionDocument,
   setIssueStatus,
+  updateGauge,
+  updateGaugeCalibrationRecord,
   updateIssueField,
   updateIssueItemField,
-  updateQualityDocumentField
+  updateIssueWorkflow,
+  updateQualityDocumentField,
+  updateRisk
 } from "../app/modules/quality/quality.server";
 
 const quality = {
@@ -24,10 +31,12 @@ const quality = {
 
 /**
  * A Supabase client whose every query answers with the rows the test names
- * for its table. Any write is recorded; nothing else is checked.
+ * for its table. Any write is recorded, with its values; nothing else is
+ * checked.
  */
 function client(rows: Record<string, unknown>) {
   const writes: string[] = [];
+  const written: { table: string; values: unknown }[] = [];
   const from = (table: string) => {
     const result = { data: rows[table] ?? null, error: null };
     const chain: Record<string, unknown> = {};
@@ -35,8 +44,9 @@ function client(rows: Record<string, unknown>) {
       chain[method] = () => chain;
     }
     for (const method of ["insert", "update", "delete"]) {
-      chain[method] = () => {
+      chain[method] = (values?: unknown) => {
         writes.push(`${method}:${table}`);
+        written.push({ table, values });
         return chain;
       };
     }
@@ -45,23 +55,27 @@ function client(rows: Record<string, unknown>) {
       Promise.resolve(result).then(resolve);
     return chain;
   };
-  return { from, writes } as unknown as {
+  return { from, writes, written } as unknown as {
     from: typeof from;
     writes: string[];
+    written: { table: string; values: unknown }[];
   };
 }
 
-function contextWith(rows: Record<string, unknown> = {}) {
+function contextWith(
+  rows: Record<string, unknown> = {},
+  actor: Actor = { type: "user", userId: "user-1", permissions: quality }
+) {
   const db = client(rows);
   const ctx = createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions: quality },
+    actor,
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
     system: () => db as never,
     pg: () => ({}) as never,
     kv: () => ({}) as never
   });
-  return { ctx, writes: db.writes };
+  return { ctx, writes: db.writes, written: db.written };
 }
 
 describe("opening an issue", () => {
@@ -218,5 +232,229 @@ describe("saving an inspection plan", () => {
     });
     expect(result.error?.category).toBe("validation");
     expect(writes).toEqual([]);
+  });
+});
+
+describe("calibration records", () => {
+  const calibration = {
+    gaugeId: "gauge-1",
+    dateCalibrated: "2026-10-01",
+    calibrationAttempts: []
+  };
+
+  const contradicted = {
+    ...calibration,
+    requiresRepair: true,
+    inspectionStatus: "Pass"
+  } as const;
+
+  it.each([
+    ["create", (ctx: never) => createGaugeCalibrationRecord(ctx, contradicted)],
+    [
+      "update",
+      (ctx: never) =>
+        updateGaugeCalibrationRecord(ctx, { ...contradicted, id: "gcr-1" })
+    ]
+  ])(
+    "%s refuses a Pass on a calibration that requires repair, before any write",
+    async (_name, save) => {
+      const { ctx, writes } = contextWith();
+      const result = await save(ctx as never);
+      expect(result.error?.category).toBe("validation");
+      expect(writes).toEqual([]);
+    }
+  );
+
+  it("saves the flags left out as false, with the result they decide", async () => {
+    const { ctx, written } = contextWith({
+      gauge: { lastCalibrationDate: "2026-11-01", calibrationIntervalInMonths: 6 }
+    });
+    const result = await updateGaugeCalibrationRecord(ctx, {
+      ...calibration,
+      id: "gcr-1",
+      inspectionStatus: "Pass"
+    });
+    expect(result.error).toBeNull();
+    expect(
+      written.find((write) => write.table === "gaugeCalibrationRecord")?.values
+    ).toMatchObject({
+      requiresAction: false,
+      requiresAdjustment: false,
+      requiresRepair: false,
+      inspectionStatus: "Pass"
+    });
+  });
+});
+
+describe("updating a calibration record", () => {
+  const record = {
+    id: "gcr-1",
+    gaugeId: "gauge-1",
+    dateCalibrated: "2026-10-01",
+    calibrationAttempts: []
+  };
+  const gauge = { lastCalibrationDate: null, calibrationIntervalInMonths: 6 };
+
+  it("answers the record's id", async () => {
+    const { ctx } = contextWith({
+      gauge,
+      gaugeCalibrationRecord: [{ id: "gcr-1" }]
+    });
+    const result = await updateGaugeCalibrationRecord(ctx, record);
+    expect(result).toEqual({ data: { id: "gcr-1" }, error: null });
+  });
+
+  it("refuses an id that matches no record, and leaves the gauge alone", async () => {
+    const { ctx, writes } = contextWith({ gauge, gaugeCalibrationRecord: [] });
+    const result = await updateGaugeCalibrationRecord(ctx, record);
+    expect(result.error).not.toBeNull();
+    expect(writes).not.toContain("update:gauge");
+  });
+});
+
+describe("gauges", () => {
+  const statusWritten = (written: { table: string; values: unknown }[]) =>
+    (
+      written.find((write) => write.table === "gauges")?.values as {
+        gaugeCalibrationStatus?: string;
+      }
+    )?.gaugeCalibrationStatus;
+
+  it("a new gauge takes its calibration status from its dates", async () => {
+    const { ctx, written } = contextWith({
+      gauges: { id: "g-1", gaugeId: "G-1" }
+    });
+    const result = await insertGauge(ctx, {
+      gaugeId: "G-1",
+      gaugeTypeId: "type-1",
+      gaugeRole: "Standard",
+      lastCalibrationDate: "2026-01-01",
+      nextCalibrationDate: "2999-01-01"
+    });
+    expect(result.error).toBeNull();
+    expect(statusWritten(written)).toBe("In-Calibration");
+  });
+
+  it("an update derives the status from the stored dates, not from a sent one", async () => {
+    const { ctx, written } = contextWith({
+      gauge: {
+        lastCalibrationDate: "1999-01-01",
+        nextCalibrationDate: "2000-01-01"
+      },
+      gauges: { id: "g-1" }
+    });
+    const result = await updateGauge(ctx, {
+      id: "g-1",
+      manufacturer: "Mitutoyo",
+      gaugeCalibrationStatus: "In-Calibration"
+    } as never);
+    expect(result.error).toBeNull();
+    expect(statusWritten(written)).toBe("Out-of-Calibration");
+  });
+});
+
+describe("issue workflows", () => {
+  const workflow = {
+    id: "ncw-1",
+    name: "Supplier defect",
+    content: "Contain, then correct.",
+    priority: "Medium",
+    source: "External"
+  } as const;
+
+  it("an update answers the workflow's id, as a create does", async () => {
+    const { ctx } = contextWith({ nonConformanceWorkflow: [{ id: "ncw-1" }] });
+    const result = await updateIssueWorkflow(ctx, workflow);
+    expect(result).toEqual({ data: { id: "ncw-1" }, error: null });
+  });
+
+  it("an update of a workflow that matches nothing is refused", async () => {
+    const { ctx } = contextWith({ nonConformanceWorkflow: [] });
+    const result = await updateIssueWorkflow(ctx, workflow);
+    expect(result.error).not.toBeNull();
+  });
+});
+
+describe("recording a risk", () => {
+  const risk = {
+    title: "Single-source bearing",
+    source: "General",
+    status: "Open",
+    type: "Risk",
+    severity: 3,
+    likelihood: 2
+  } as const;
+  const apiKey = (actions: Partial<Record<"view" | "create", string[]>>) =>
+    ({
+      type: "apiKey",
+      createdBy: "user-1",
+      scopes: {
+        quality: { view: [], create: [], update: [], delete: [], ...actions }
+      }
+    }) as Actor;
+
+  it("refuses an API key without create: quality, before any write", async () => {
+    const { ctx, writes } = contextWith(
+      {},
+      apiKey({ view: ["company-1"] })
+    );
+    const result = await createRisk(ctx, risk);
+    expect(result.error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
+  });
+
+  it("records it for a key with create: quality and answers its id", async () => {
+    const { ctx } = contextWith(
+      { riskRegister: { id: "risk-1" } },
+      apiKey({ create: ["company-1"] })
+    );
+    const result = await createRisk(ctx, risk);
+    expect(result).toEqual({ data: { id: "risk-1" }, error: null });
+  });
+
+  it("refuses an assignee who is not an employee of the company", async () => {
+    const { ctx, writes } = contextWith({ employee: null });
+    const result = await createRisk(ctx, { ...risk, assignee: "user-9" });
+    expect(result.error?.category).toBe("rule");
+    expect(writes).toEqual([]);
+  });
+
+  it.each([0, 6])("refuses a severity of %s, off the form's scale", async (severity) => {
+    const { ctx, writes } = contextWith();
+    const result = await createRisk(ctx, { ...risk, severity });
+    expect(result.error?.category).toBe("validation");
+    expect(writes).toEqual([]);
+  });
+});
+
+describe("changing a risk", () => {
+  const risk = {
+    id: "risk-1",
+    title: "Single-source bearing",
+    source: "General",
+    status: "Open",
+    type: "Risk",
+    severity: 3,
+    likelihood: 2
+  } as const;
+
+  it("refuses a new assignee who is not an employee of the company", async () => {
+    const { ctx, writes } = contextWith({
+      riskRegister: { id: "risk-1", assignee: "user-1" },
+      employee: null
+    });
+    const result = await updateRisk(ctx, { ...risk, assignee: "user-9" });
+    expect(result.error?.category).toBe("rule");
+    expect(writes).toEqual([]);
+  });
+
+  it("saves a risk whose unchanged assignee is no longer an employee", async () => {
+    const { ctx, writes } = contextWith({
+      riskRegister: { id: "risk-1", assignee: "user-9" },
+      employee: null
+    });
+    const result = await updateRisk(ctx, { ...risk, assignee: "user-9" });
+    expect(result).toEqual({ data: { id: "risk-1" }, error: null });
+    expect(writes).toEqual(["update:riskRegister"]);
   });
 });

@@ -42,8 +42,10 @@ inputs use its validators).
 module's `<module>.server.ts` imports something those inputs do not cover.
 
 The committed record is `tool-manifest.digest.json`: one line per operation
-with its classification, permission, `paginates` and a hash of each schema, so
-a contract change is one visible line in review. `pnpm check:manifest`
+with its classification, permission (`module:action+action`, the `scopes`
+joined by `+` for a gate over several modules, `none` for membership),
+`paginates` and a hash of each schema, so a contract change is one visible
+line in review. `pnpm check:manifest`
 regenerates without the cache and fails when the digest is stale. Pre-commit
 (`scripts/git-hooks/pre-commit`) runs that check when a staged file falls under
 the same inputs; its path pattern mirrors the turbo list, so change both.
@@ -116,15 +118,22 @@ any other value export in a server file fails generation.
   `@param name - text` becomes that input field's `description`, and naming a
   field the input does not have fails generation.
 - **Permission**: read off the literal `permission` and published in the
-  manifest. One module → `{ module, actions }`; several modules, or `{}`
-  (company membership) → `{ module: null, actions: [] }`. The function's own
-  gate is the only check. `"system"` and a keyed permission (`{ by, rules }`)
-  cannot be published.
+  manifest (`ToolPermission`, `@carbon/api`). One module → `{ module, actions }`;
+  two or more modules → `{ module: null, actions: [], scopes }`, every
+  `<module>_<action>` the literal names, sorted
+  (`{ create: "production", view: "projects" }` → `["production_create",
+  "projects_view"]`); `{}` (company membership) → `{ module: null, actions: [] }`.
+  The caller must hold all of it: the function's own gate is the only check, and
+  `hasPermissions` (`@carbon/api/permissions`) requires every module of every
+  action. `"system"` and a keyed permission (`{ by, rules }`) cannot be
+  published.
 - **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
   WRITE. `@mcp read` forces READ, for a read gated on membership alone (`{}`);
   on a permission that names `create`, `update` or `delete` it fails
-  generation, since a READ is offered as safe to run unasked. `@mcp destructive`
-  forces DESTRUCTIVE.
+  generation, since a READ is offered as safe to run unasked. `@mcp write`
+  forces WRITE, for a write whose gate names only `view` because its route has
+  only ever required view (`users_updateGroup`); it never lowers DESTRUCTIVE.
+  `@mcp destructive` forces DESTRUCTIVE.
 - **Input schema**: the TYPE of `run`'s input parameter, through
   `typeToJsonSchema` (`scripts/lib/response-schema.ts`). A field whose type
   admits `undefined` is optional. Enum members are sorted, so the hash does not
@@ -168,6 +177,10 @@ The procedure (`api+/v1+/lib/router.server.ts`) is the same one HTTP serves:
    The context's client is `scopedToCompany`: every update and delete on a
    company table also filters by the caller's company, so an id from the
    user's other company matches nothing.
+   The HTTP and MCP routes set `AuthedContext.origin` from the request
+   (`originOf`), and `runServiceFn` puts it on the context as `ctx.origin`.
+   An operation that emails or audits where a request came from reads it,
+   never an argument.
 4. A refusal (`CarbonError`) becomes an `ORPCError` with the category's code and
    status, and `data.category`. The message is the function's own; a throw
    inside `run` arrives as `internal` with the cause logged, not returned.
@@ -224,6 +237,21 @@ instance advertises its own endpoint. Never hard-code `app.carbon.ms`.
 
 `companyId` / `userId` always come from the credential, never from arguments.
 
+**Rate limits.** An API key's calls are counted by `check_api_key_rate_limit`
+(Postgres, through `requirePermissions`):
+- each key has its own limit, `apiKey.rateLimit` per `rateLimitWindow`
+  (default 20 a minute);
+- on Carbon Cloud (a company with a `companyPlan` row) all the company's keys
+  together also stop at 60 a minute, or the row's `apiRateLimit`;
+- the key form saves a key's limit only on a single-tenant deployment
+  (`SINGLE_TENANT`), where there is no company limit; on Cloud, Carbon sets it.
+
+A call over a limit gets 429 with `Retry-After`. A bulk load over MCP on Cloud
+runs at 20 calls a minute on one key (10,000 calls take about 8 hours); for a
+faster load, Carbon staff raise the key's `rateLimit` and the company's
+`apiRateLimit`. An OAuth connector is limited per user to 60 a minute, in Redis
+(`OAUTH_RATE_LIMIT`, `_index.ts`).
+
 **Edition/plan gate.** MCP is a Business+ feature, locked inside the commercial
 engine: `serveMcpRequest` throws `EntitlementError`, which the route turns into
 a 402 (`makeMcpDisabledResponse`). One check covers both auth paths, the
@@ -253,7 +281,9 @@ API keeps accepting and dropping such a field; an agent reads that success as
 "saved". The call is logged with its argument KEYS only (values are customer
 data). It was found when the refactor's strict inputs silently dropped the
 `workInstruction` and `assignee` that the old pass-through tools wrote
-(`.ai/runs/2026-10-19-api-refactor-lost-mcp-writes.md`).
+(`.ai/runs/2026-10-19-api-refactor-lost-mcp-writes.md`). A full-set list read
+(`paginates: false`) is the exception for `limit` and `offset`: `call_tool`
+pages its response with them, so they are never refused there.
 
 ### Catalog search (`packages/ee/src/mcp/catalog-search.ts`)
 
@@ -294,8 +324,9 @@ the manifest.
   above better ones, and the name already carries the module. A page short of
   the total names the next offset.
 - `describe_tool` (`formatToolDescription`) opens with `name [CLASS]`, the
-  description, and `Permission:` (the gate checks it for every caller, not only
-  API keys).
+  description, and `Permission:`, every scope the gate requires joined by "and"
+  (`production_create and projects_view`). The gate checks it for every caller,
+  not only API keys. A membership gate prints no line.
 - `describe_tool` prints input and response schemas as TypeScript types
   (`formatSchemaType`): the manifest's schemas use only type, enum, anyOf,
   properties, required, items and additionalProperties, so nothing is lost and
@@ -468,11 +499,20 @@ Markdown markers.
   not a customer's saved workflow.
 - Publish a function only when it is safe with nothing but its input. The API
   runs the gate and `run`; nothing a route does around the call.
-- A function gated on several modules publishes `module: null` in the
-  manifest; its own gate decides, as for every function.
+- A function gated on several modules publishes `module: null` with `scopes`.
+  A pin of it in `apps/erp/test/mcp-tool-permissions.test.ts` (`OVERRIDES`)
+  names the scopes; `{ module: null, actions: [] }` there means membership.
 - A write gated on `{}` admits an API key with any scope, even a read-only one.
   It starts with `refuseKeyWithout(ctx, required)` (`shared.service.ts`), and its
   `@remarks` name what a key needs: the manifest shows no permission.
+- A write whose building blocks write under the caller's RLS can need more
+  than its gate. It calls `refuseKeyWithout(ctx, required)` first and names
+  what a key needs in `@remarks` (`users_inviteEmployee`: `update: users` and
+  `create: people`; `users_inviteCustomerContact` / `inviteSupplierContact`:
+  `view`, `create` and `update` on sales / purchasing).
+- A write that runs as a job answers before its effect lands:
+  `users_bulkUpdatePermissions` queues one job per user, and
+  `users_getEmployeePermissions` reads the grants in force.
 - **A form validator's `.refine()` checks are invisible in the published
   schema**: the manifest says a field is optional, and the call refuses it
   anyway. Give the API input the base object and fill or keep what a caller

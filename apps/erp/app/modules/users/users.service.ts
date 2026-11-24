@@ -2299,15 +2299,6 @@ export async function resetPassword(userId: string, password: string) {
   });
 }
 
-/** The request's IP and city, for the operations that record them. */
-export function originOf(request: Request) {
-  return {
-    ip: getClientIp(request) ?? undefined,
-    city: request.headers.get("x-vercel-ip-city") ?? undefined,
-    userAgent: request.headers.get("user-agent") ?? undefined
-  };
-}
-
 /**
  * Role authoring is a Business-plan feature. This is the friendly refusal;
  * the lock is `requireEntitlement` inside `@carbon/ee/permissions.server`.
@@ -2338,6 +2329,7 @@ export async function inviteSender(ctx: ServiceContext) {
   return { companyName: company.data.name, invitedBy: user.data };
 }
 
+/** The invite email, which shows where the request came from (`ctx.origin`). */
 export async function sendInviteEmail(
   ctx: ServiceContext,
   invite: {
@@ -2346,8 +2338,6 @@ export async function sendInviteEmail(
     name: string;
     companyName: string;
     invitedBy: { email: string; fullName: string | null };
-    ip?: string;
-    city?: string;
   }
 ) {
   const inviteLink = await getSsoAwareInviteLink(
@@ -2363,8 +2353,8 @@ export async function sendInviteEmail(
     name: invite.name,
     companyName: invite.companyName,
     inviteLink,
-    ip: invite.ip ?? "127.0.0.1",
-    location: invite.city ?? "Unknown",
+    ip: ctx.origin.ip ?? "127.0.0.1",
+    location: ctx.origin.city ?? "Unknown",
     controlledEnvironment: CONTROLLED_ENVIRONMENT
   });
   // Queued so it follows the company's Email settings; a failed dispatch only logs.
@@ -2389,8 +2379,7 @@ export async function sendInviteEmail(
 /** Email a new customer or supplier account its invite link. */
 export async function emailAccountInvite(
   ctx: ServiceContext,
-  account: { userId: string; email: string; code: string },
-  origin: { ip?: string; city?: string }
+  account: { userId: string; email: string; code: string }
 ) {
   const [sender, invitee] = await Promise.all([
     inviteSender(ctx),
@@ -2405,10 +2394,261 @@ export async function emailAccountInvite(
     ...sender,
     email: account.email,
     code: account.code,
-    name: invitee.data?.fullName ?? "",
-    ...origin
+    name: invitee.data?.fullName ?? ""
   });
   return { userId: account.userId };
+}
+
+/**
+ * Revoking an invite deactivates the user, so it takes only pending invites:
+ * an invite here that is neither accepted nor revoked, and no account in the
+ * company. The Employees, Customers and Suppliers lists offer Revoke Invite
+ * only on such rows; without this, a caller could remove an active account
+ * with `create: users`, which deactivating needs `delete: users` for.
+ */
+export async function refuseUnlessPendingInvites(
+  ctx: ServiceContext,
+  userIds: string[],
+  users: { id: string; email: string }[]
+) {
+  const found = new Set(users.map((user) => user.id));
+  if (userIds.some((id) => !found.has(id))) {
+    return ctx.error("notFound", "User not found");
+  }
+  const serviceRole = ctx.asSystem.supabase;
+  const [pending, members] = await Promise.all([
+    serviceRole
+      .from("invite")
+      .select("email")
+      .eq("companyId", ctx.company.id)
+      .in(
+        "email",
+        users.map((user) => user.email)
+      )
+      .is("acceptedAt", null)
+      .is("revokedAt", null),
+    serviceRole
+      .from("userToCompany")
+      .select("userId")
+      .eq("companyId", ctx.company.id)
+      .in("userId", [...found])
+  ]);
+  if (pending.error || members.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the invites",
+      pending.error ?? members.error
+    );
+  }
+  const pendingEmails = new Set(pending.data.map((invite) => invite.email));
+  if (
+    members.data.length > 0 ||
+    users.some((user) => !pendingEmails.has(user.email))
+  ) {
+    return ctx.error(
+      "rule",
+      "Only a pending invite can be revoked. Deactivate an active account instead."
+    );
+  }
+  return null;
+}
+
+/**
+ * Deactivate takes users of the company: each id needs a membership, an
+ * employee, customer or supplier account, or an invite here.
+ * `deactivateUser` answers any other id "already deactivated", and the job
+ * it queues for several changes nothing.
+ */
+export async function refuseUnlessCompanyUsers(
+  ctx: ServiceContext,
+  userIds: string[]
+): Promise<CarbonError | null> {
+  const companyId = ctx.company.id;
+  const serviceRole = ctx.asSystem.supabase;
+  const ids = [...new Set(userIds)];
+  const known = new Set<string>();
+  const users: { id: string; email: string }[] = [];
+  for (const chunk of chunkArray(ids, 100)) {
+    const [found, members, employees, customers, suppliers] = await Promise.all(
+      [
+        serviceRole.from("user").select("id, email").in("id", chunk),
+        serviceRole
+          .from("userToCompany")
+          .select("userId")
+          .eq("companyId", companyId)
+          .in("userId", chunk),
+        serviceRole
+          .from("employee")
+          .select("id")
+          .eq("companyId", companyId)
+          .in("id", chunk),
+        serviceRole
+          .from("customerAccount")
+          .select("id")
+          .eq("companyId", companyId)
+          .in("id", chunk),
+        serviceRole
+          .from("supplierAccount")
+          .select("id")
+          .eq("companyId", companyId)
+          .in("id", chunk)
+      ]
+    );
+    if (
+      found.error ||
+      members.error ||
+      employees.error ||
+      customers.error ||
+      suppliers.error
+    ) {
+      return ctx.error(
+        "internal",
+        "Failed to read the users",
+        found.error ??
+          members.error ??
+          employees.error ??
+          customers.error ??
+          suppliers.error
+      );
+    }
+    users.push(...found.data);
+    for (const member of members.data) known.add(member.userId);
+    for (const account of [
+      ...employees.data,
+      ...customers.data,
+      ...suppliers.data
+    ]) {
+      known.add(account.id);
+    }
+  }
+
+  const uninvited = users.filter((user) => !known.has(user.id));
+  for (const chunk of chunkArray(uninvited, 100)) {
+    const invites = await serviceRole
+      .from("invite")
+      .select("email")
+      .eq("companyId", companyId)
+      .in(
+        "email",
+        chunk.map((user) => user.email)
+      );
+    if (invites.error) {
+      return ctx.error("internal", "Failed to read the invites", invites.error);
+    }
+    const invited = new Set(invites.data.map((invite) => invite.email));
+    for (const user of chunk) if (invited.has(user.email)) known.add(user.id);
+  }
+
+  if (ids.some((id) => !known.has(id))) {
+    return ctx.error("notFound", "User not found");
+  }
+  return null;
+}
+
+/**
+ * A portal invite takes a contact of the named customer or supplier, with an
+ * email, whose person has no account in the company yet. A second account
+ * insert fails, and its rollback deactivates the account the person already
+ * has: a removal that `create: users` must not reach, since deactivating
+ * needs `delete: users`. The contact pages offer Create Account only on a
+ * contact with no user.
+ */
+export async function refuseUninvitableContact(
+  ctx: ServiceContext,
+  contact:
+    | { role: "customer"; id: string; customerId: string }
+    | { role: "supplier"; id: string; supplierId: string }
+): Promise<CarbonError | null> {
+  const companyId = ctx.company.id;
+  const serviceRole = ctx.asSystem.supabase;
+
+  // The contact's email, or undefined when the contact is not the named
+  // customer's or supplier's in this company.
+  let email: string | null | undefined;
+  if (contact.role === "customer") {
+    const row = await serviceRole
+      .from("customerContact")
+      .select("customerId, contact(email)")
+      .eq("id", contact.id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (row.error) {
+      return ctx.error("internal", "Failed to read the contact", row.error);
+    }
+    if (row.data?.customerId === contact.customerId) {
+      email = row.data.contact?.email ?? null;
+    }
+  } else {
+    const row = await serviceRole
+      .from("supplierContact")
+      .select("supplierId, contact(email)")
+      .eq("id", contact.id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (row.error) {
+      return ctx.error("internal", "Failed to read the contact", row.error);
+    }
+    if (row.data?.supplierId === contact.supplierId) {
+      email = row.data.contact?.email ?? null;
+    }
+  }
+  if (email === undefined) {
+    return ctx.error(
+      "notFound",
+      contact.role === "customer"
+        ? "Customer contact not found"
+        : "Supplier contact not found"
+    );
+  }
+  if (!email) {
+    return ctx.error("validation", "The contact has no email address");
+  }
+
+  const user = await serviceRole
+    .from("user")
+    .select("id")
+    .eq("email", email.toLowerCase())
+    .maybeSingle();
+  if (user.error) {
+    return ctx.error("internal", "Failed to read the user", user.error);
+  }
+  if (!user.data) return null;
+
+  const [member, account] = await Promise.all([
+    serviceRole
+      .from("userToCompany")
+      .select("userId")
+      .eq("userId", user.data.id)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    contact.role === "customer"
+      ? serviceRole
+          .from("customerAccount")
+          .select("id")
+          .eq("id", user.data.id)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : serviceRole
+          .from("supplierAccount")
+          .select("id")
+          .eq("id", user.data.id)
+          .eq("companyId", companyId)
+          .maybeSingle()
+  ]);
+  if (member.error || account.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the accounts",
+      member.error ?? account.error
+    );
+  }
+  if (member.data || account.data) {
+    return ctx.error(
+      "conflict",
+      "This person already has an account in the company"
+    );
+  }
+  return null;
 }
 
 /** `updateEmployee` / `updatePermissions` refusals, by what they mean. */

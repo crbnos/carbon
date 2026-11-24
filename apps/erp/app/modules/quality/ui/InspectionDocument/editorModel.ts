@@ -7,6 +7,7 @@
 
 import { BALLOON_H_NORM, BALLOON_W_NORM } from "@carbon/utils";
 import type { BalloonRegionAnalysis } from "~/modules/quality/quality.models";
+import { compareInspectionFeatures } from "~/modules/quality/quality.utils";
 import type { procedureStepType } from "~/modules/shared/shared.models";
 import type { SamplingRule } from "./SamplingRuleModal";
 
@@ -411,27 +412,6 @@ function mapFeatureRowFromRecords(
   };
 }
 
-// Features saved together share one createdAt (the save RPC runs in a single
-// transaction), so createdAt alone leaves their order to the heap, and an
-// UPDATE moves the edited row to the end. Break the tie by balloon label, the
-// order the inspection grid shows them in. Rows are sorted on load only; a
-// save response keeps the editor's order (mergeSaveResponse), so a row never
-// moves under the cursor.
-function compareFeatureRecords(
-  a: Record<string, unknown>,
-  b: Record<string, unknown>
-) {
-  const aCreated = String(a.createdAt ?? "");
-  const bCreated = String(b.createdAt ?? "");
-  return (
-    (aCreated < bCreated ? -1 : aCreated > bCreated ? 1 : 0) ||
-    String(a.label ?? "").localeCompare(String(b.label ?? ""), undefined, {
-      numeric: true
-    }) ||
-    String(a.id).localeCompare(String(b.id))
-  );
-}
-
 export function buildFeatureRowsFromLoader(
   features: Array<Record<string, unknown>>,
   balloons: Array<Record<string, unknown>>
@@ -439,8 +419,10 @@ export function buildFeatureRowsFromLoader(
   const balloonByFeatureId = new Map(
     balloons.map((b) => [String(b.inspectionFeatureId), b])
   );
+  // Sorted on load only: a save response keeps the editor's order
+  // (mergeSaveResponse), so a row never moves under the cursor.
   return [...features]
-    .sort(compareFeatureRecords)
+    .sort(compareInspectionFeatures)
     .map((f) =>
       mapFeatureRowFromRecords(
         f,

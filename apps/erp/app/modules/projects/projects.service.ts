@@ -13746,12 +13746,12 @@ export async function invokePostProjectIssue(
  * through `post-project-expense` (Dr the project account / Cr the employee payable, one
  * Other Direct ledger row). An entry that does not post is deleted again, so
  * a refusal (a closed element, a Capitalize project) leaves nothing behind.
- * Returns an error message, or null.
+ * Returns the posted entry's id, or the error message.
  */
 export async function addProjectExpense(
   ctx: ServiceContext,
   args: z.infer<typeof projectExpenseValidator>
-): Promise<string | null> {
+): Promise<{ id: string } | { postingError: string }> {
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
@@ -13776,7 +13776,7 @@ export async function addProjectExpense(
     { projectExpenseEntryId: entry.id },
     postProjectExpense
   );
-  if (!posting.error) return null;
+  if (!posting.error) return { id: entry.id };
 
   logger.error("Failed to post a project expense", {
     companyId,
@@ -13798,7 +13798,7 @@ export async function addProjectExpense(
       error: deleteError
     });
   }
-  return posting.error.message || "Failed to charge the cost";
+  return { postingError: posting.error.message || "Failed to charge the cost" };
 }
 /**
  * A project's own stock: on-hand per item, location, storage unit and lot,

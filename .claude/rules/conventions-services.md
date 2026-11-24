@@ -67,6 +67,15 @@ export const cancelJob = defineServiceFn({
   transfer). Before an RLS-bypassing write keyed on an id the caller sent,
   `refuseUnlessOwned(ctx, table, match)` (`shared/shared.service.ts`) returns
   a refusal unless the row is the company's.
+- **Request origin**: `ctx.origin` holds the request's `ip`, `city` and
+  `userAgent` (`RequestOrigin`). `originOf(request)`
+  (`@carbon/api/service-fn.server`) reads them from the headers: the IP
+  through `getClientIp`, the city from `X-Vercel-IP-City`, the user agent
+  from `User-Agent`. `carbon(request)`, the HTTP API route (`api+/v1+/$.ts`)
+  and the MCP route (`api+/mcp+/_index.ts`) put it on the context. A job, a
+  share link or a workflow has an empty origin. An operation that emails or
+  audits where a request came from reads `ctx.origin`, never an input field:
+  an input field lets an API caller write any address into the audit log.
 - **Transactions**: `ctx.transaction(async (tx) => …)` on `asSystem.pg`. A
   returned `CarbonError` rolls back; a nested call joins the open
   transaction; `tx.asCaller` throws, because that client is outside it.
@@ -74,16 +83,19 @@ export const cancelJob = defineServiceFn({
   authenticates the caller and returns the router: `api.production.cancelJob(input)`
   resolves to the result, its error a plain `{ category, message, status }`.
   A route that needs the auth result for more than the call (a role gate, a
-  stream) builds the context with `serviceContext(auth)`
-  (`modules/service-context.server.ts`); a caller with no session (a public
+  stream) builds the context with `serviceContext(auth, originOf(request))`
+  (`modules/service-context.server.ts`; the origin may be left out when no
+  operation it calls records one); a caller with no session (a public
   share link) uses `systemContext({ companyId, companyGroupId, onBehalfOf })`.
 - **Published**: `@mcp` in the TSDoc publishes the const as the MCP tool
   `{module}_{name}` and `POST /api/v1/{module}/{name}`. The permission decides
   the classification (only `view` → READ, any `delete` → DESTRUCTIVE, else
-  WRITE); `@mcp read` forces READ (a read gated on `update`), `@mcp destructive`
-  forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
-  an operation only when it is safe with nothing but its input: the API runs
-  the gate and `run`, nothing the route does around the call.
+  WRITE); `@mcp read` forces READ (a read gated on `update`), `@mcp write`
+  forces WRITE (a write whose route has only ever required `view`),
+  `@mcp destructive` forces DESTRUCTIVE. `@param name - text` describes an
+  input field. Publish an operation only when it is safe with nothing but its
+  input: the API runs the gate and `run`, nothing the route does around the
+  call.
 - **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
   Kysely or `invokePosting` write in an ERP route; `service-fn-file` fails
   anything but service functions in `{module}.server.ts`.

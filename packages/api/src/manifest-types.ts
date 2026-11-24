@@ -13,13 +13,17 @@ export type Classification = "READ" | "WRITE" | "DESTRUCTIVE";
 export type PermissionAction = "view" | "create" | "update" | "delete";
 
 /**
- * The permission an API-key caller must hold to invoke the operation.
- * `module` is `null` for operations that gate only on a valid key of the company
- * (e.g. `account`, `shared`) rather than a specific permission module.
+ * The permission every caller (an API key, an OAuth connector's user, a
+ * workflow's owner) must hold to invoke the operation: all of it, never one
+ * part. A gate on one module is `{ module, actions }`. A gate on company
+ * membership alone (`account`, `shared`) is `{ module: null, actions: [] }`.
+ * A gate over 2 or more modules is `{ module: null, actions: [], scopes }`.
  */
 export interface ToolPermission {
   module: string | null;
   actions: PermissionAction[];
+  /** A gate over 2 or more modules: each `<module>_<action>` it names, sorted. */
+  scopes?: string[];
 }
 
 /** One operation in the manifest — the successor of a `tool-metadata.json` entry. */

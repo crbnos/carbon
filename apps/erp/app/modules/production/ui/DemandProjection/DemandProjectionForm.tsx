@@ -53,7 +53,7 @@ import { path } from "~/utils/path";
 import { demandProjectionValidator } from "../../production.models";
 
 type LoaderData = {
-  periods?: Array<{ id: string; name: string }>;
+  periods?: Array<{ id: string; name?: string; startDate: string }>;
   initialValues?: z.infer<typeof demandProjectionValidator>;
 };
 
@@ -196,7 +196,7 @@ const DemandProjectionsForm = ({
         toFinite((initialValues as Record<string, unknown>)[`week${i}`])
       )
     );
-  }, [initialValues.itemId, initialValues.locationId]);
+  }, [initialValues.itemId, initialValues.locationId, initialValues]);
 
   const handleWeekChange = (index: number, value: number) => {
     setWeekValues((prev) => {
@@ -279,8 +279,8 @@ const DemandProjectionsForm = ({
               {periods?.map((period, index) => (
                 <Hidden
                   key={period.id}
-                  name={`periods[${index}]`}
-                  value={period.id}
+                  name={`weekStarts[${index}]`}
+                  value={period.startDate}
                 />
               ))}
             </div>

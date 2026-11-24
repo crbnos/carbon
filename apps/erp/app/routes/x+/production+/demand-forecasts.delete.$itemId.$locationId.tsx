@@ -2,76 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { deleteDemandProjections } from "@carbon/ee/forecast.server";
-import { requireFeature } from "@carbon/ee/plan.server";
-import { datetime, redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import {
-  getLocationTimeZone,
-  getOrCreatePeriods
-} from "~/modules/shared/shared.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "production"
-  });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "FORECAST",
-    redirectTo: path.to.demandProjections
-  });
-
   const { itemId, locationId } = params;
-
   if (!itemId || !locationId) {
-    return data(
-      {},
-      await flash(
-        request,
-        error("Item ID and Location ID are required", "Missing parameters")
-      )
-    );
+    throw new Error("Item ID and Location ID are required");
   }
-
-  // Get current date to determine future periods
-  const periods = await getOrCreatePeriods(
-    getDatabaseClient(),
-    datetime.today(await getLocationTimeZone(client, locationId, companyId)),
-    52
-  );
-
-  // Only delete projections for future periods (current week and beyond)
-  const futurePeriodIds = periods.map((p) => p.id);
-
-  const result = await deleteDemandProjections(client, {
+  const api = await carbon(request);
+  const result = await api.production.deleteDemandProjections({
     itemId,
-    locationId,
-    companyId,
-    futurePeriodIds
+    locationId
   });
-
-  if (result.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(result.error, "Failed to delete demand projections")
-      )
-    );
-  }
-
-  return redirect(
-    path.to.demandProjections + `?location=${locationId}`,
-    await flash(request, success("Demand projections deleted successfully"))
+  return respond(request, result).redirect(
+    `${path.to.demandProjections}?location=${locationId}`,
+    { message: "Demand projections deleted successfully" }
   );
 }

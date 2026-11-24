@@ -3,10 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
+import { originOf } from "@carbon/api/service-fn.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { resendInviteValidator } from "~/modules/users/users.models";
-import { originOf } from "~/modules/users/users.service";
 import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
 export async function action(args: ActionFunctionArgs) {
@@ -28,5 +28,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(resendInviteValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.users.resendInvites({ userIds: input.data.users, ip, city });
+  return api.users.resendInvites({ userIds: input.data.users });
 }

@@ -1048,6 +1048,58 @@ export const getBase64ImageFromSupabase = defineServiceFn({
 });
 
 /**
+ * List the weekly planning periods of a location.
+ *
+ * @remarks
+ * The weeks the planning screens show: the week of the location's today and
+ * the 47 after it, earliest first. A week runs Sunday to Saturday. Weeks
+ * missing from the calendar are added, as the planning screens add them.
+ * Pass the ids, in this order, as `periods` to
+ * `production_getProductionPlanning`, `production_getProductionProjections`,
+ * `purchasing_getPurchasingPlanning`, `items_getItemDemand` and
+ * `items_getDemandForecastSources`. Needs view on production, purchasing or
+ * parts, as each planning screen does.
+ *
+ * @param locationId - The location whose today starts the first week.
+ *
+ * @mcp read
+ */
+export const getPlanningPeriods = defineServiceFn({
+  input: z.object({ locationId: z.string().min(1) }),
+  // Each planning screen gates on its own module, and a gate names one
+  // module, so `run` admits a viewer of any of the three.
+  permission: {},
+  async run(ctx, { locationId }) {
+    const planningModules = ["production", "purchasing", "parts"];
+    if (!planningModules.some((module) => ctx.can({ view: module }))) {
+      return ctx.error(
+        "forbidden",
+        "Planning periods need view on production, purchasing or parts"
+      );
+    }
+    const owned = await service.refuseUnlessOwned(ctx, "location", {
+      id: locationId
+    });
+    if (owned) return owned;
+    const today = datetime.today(
+      await service.getLocationTimeZone(
+        ctx.asCaller.supabase,
+        locationId,
+        ctx.company.id
+      )
+    );
+    const periods = await service.getOrCreatePeriods(
+      ctx.asSystem.pg,
+      today,
+      service.PLANNING_WEEKS
+    );
+    return periods
+      .map(({ id, startDate, endDate }) => ({ id, startDate, endDate }))
+      .sort((a, b) => a.startDate.localeCompare(b.startDate));
+  }
+});
+
+/**
  * Get countries
  *
  * @mcp read

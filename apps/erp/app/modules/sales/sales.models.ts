@@ -8,6 +8,7 @@ import {
   bicMatchesCountry,
   colorNames,
   conditionAstFormField,
+  conditionAstSchema,
   equals,
   getBankFieldConfig,
   getFieldDef,
@@ -1276,6 +1277,36 @@ export function isQuoteLocked(status: string | null | undefined): boolean {
 // -----------------------------------------------------------------------------
 export const salesRuleSeverities = RULE_SEVERITIES;
 
+/**
+ * A condition names a field the rule builder offers, and one the evaluator
+ * fills for every chosen surface (else it resolves undefined → false
+ * "X is required").
+ */
+function refineSalesRuleConditions(
+  val: {
+    surfaces: readonly (typeof SALES_RULE_SURFACES)[number][];
+    conditionAst: { conditions: { field: string }[] };
+  },
+  ctx: z.RefinementCtx
+) {
+  val.conditionAst.conditions.forEach((c, i) => {
+    const def = getFieldDef(c.field);
+    if (!def) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["conditionAst", "conditions", i, "field"],
+        message: `"${c.field}" is not a field a sales rule can test`
+      });
+    } else if (!isFieldAvailableOnSalesRuleSurfaces(def, val.surfaces)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["conditionAst", "conditions", i, "field"],
+        message: `"${def.label}" isn't available on the selected surface(s)`
+      });
+    }
+  });
+}
+
 export const salesRuleValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -1296,21 +1327,32 @@ export const salesRuleValidator = z
       }),
     conditionAst: conditionAstFormField
   })
-  .superRefine((val, ctx) => {
-    // Reject conditions on a registry field whose context the evaluator won't
-    // populate for every selected surface (else it resolves undefined → false
-    // "X is required"). Unknown paths are left to runtime presence handling.
-    val.conditionAst.conditions.forEach((c, i) => {
-      const def = getFieldDef(c.field);
-      if (def && !isFieldAvailableOnSalesRuleSurfaces(def, val.surfaces)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["conditionAst", "conditions", i, "field"],
-          message: `"${def.label}" isn't available on the selected surface(s)`
-        });
-      }
-    });
-  });
+  .superRefine(refineSalesRuleConditions);
+
+/** A sales rule as the API takes it: the form's fields, as JSON. */
+const salesRuleFields = z.object({
+  name: z.string().trim().min(1, { message: "Name is required" }).max(120),
+  description: z.string().optional(),
+  message: z.string().min(1, { message: "Message is required" }).max(500),
+  severity: z.enum(salesRuleSeverities),
+  filteredItemTypes: z.array(z.string()).optional(),
+  filteredItemGroupIds: z.array(z.string()).optional(),
+  filteredItemMatchAll: z.boolean().optional(),
+  active: z.boolean().optional(),
+  surfaces: z
+    .array(z.enum(SALES_RULE_SURFACES))
+    .min(1, { message: "Pick at least one surface" }),
+  conditionAst: conditionAstSchema
+});
+
+export const salesRuleInputValidator = salesRuleFields.superRefine(
+  refineSalesRuleConditions
+);
+
+export const salesRuleUpdateInputValidator = salesRuleFields
+  .extend({ id: z.string().min(1) })
+  .superRefine(refineSalesRuleConditions);
+
 // ─── Sales Return Orders (RMAs) ───
 
 export const salesReturnOrderStatusType = [

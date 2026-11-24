@@ -199,6 +199,8 @@ export interface LeafDocs {
   destructive: boolean;
   /** `@mcp read`: changes nothing, whatever its permission names. */
   read: boolean;
+  /** `@mcp write`: a write whose gate names only view (its route's own gate). */
+  write: boolean;
 }
 
 /** The leaf's TSDoc: the summary, `@remarks`, and `@mcp [destructive]`. */
@@ -234,9 +236,9 @@ export function leafDocs(leaf: ServiceFnLeaf): LeafDocs {
   const mcp = tags.filter((tag) => tag.getTagName() === "mcp");
   if (mcp.length > 1) throw new Error(`${where}: more than one @mcp tag`);
   const modifier = mcp[0]?.getCommentText()?.trim() ?? "";
-  if (modifier !== "" && modifier !== "destructive" && modifier !== "read") {
+  if (!["", "destructive", "read", "write"].includes(modifier)) {
     throw new Error(
-      `${where}: @mcp takes nothing, "read" or "destructive", not "${modifier}"`
+      `${where}: @mcp takes nothing, "read", "write" or "destructive", not "${modifier}"`
     );
   }
   if (mcp.length > 0 && !title) {
@@ -258,7 +260,8 @@ export function leafDocs(leaf: ServiceFnLeaf): LeafDocs {
     params,
     published: mcp.length > 0,
     destructive: modifier === "destructive",
-    read: modifier === "read"
+    read: modifier === "read",
+    write: modifier === "write"
   };
 }
 
@@ -275,12 +278,6 @@ function stringsOf(node: Node | undefined): string[] | null {
   return null;
 }
 
-/**
- * The API gate's view of the declared permission. The gate checks one module;
- * a permission naming several modules publishes module `null` (membership
- * only) and the function's own gate decides, as it does for `{}` (any member
- * of the company). `"system"` and a keyed rule are refused.
- */
 /**
  * The permission's object literal: written in place, or a constant it names
  * (`service.closeJobPermission`, the one a ported posting body shares with
@@ -306,6 +303,12 @@ function permissionLiteral(node: Node | undefined): Node | undefined {
   return current;
 }
 
+/**
+ * The declared permission as the manifest publishes it. One module is
+ * `{ module, actions }`; several are every `<module>_<action>` they name
+ * (`scopes`), all of which the function's gate requires; `{}` is any member
+ * of the company. `"system"` and a keyed rule are refused.
+ */
 export function leafPermission(leaf: ServiceFnLeaf): {
   permission: ToolPermission;
   actions: PermissionAction[];
@@ -333,6 +336,7 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   }
 
   const modules = new Set<string>();
+  const scopes = new Set<string>();
   const actions: PermissionAction[] = [];
   for (const action of ACTIONS) {
     const entry = value.getProperty(action);
@@ -343,26 +347,30 @@ export function leafPermission(leaf: ServiceFnLeaf): {
     if (!names || names.length === 0) {
       throw new Error(`${where}: permission.${action} must be string literals`);
     }
-    for (const name of names) modules.add(name);
+    for (const name of names) {
+      modules.add(name);
+      scopes.add(`${name}_${action}`);
+    }
     actions.push(action);
   }
-  // `{}`: any member of the company (the caller's own account, a membership
-  // read). The API gate then checks only that the key is the company's.
   const [module] = modules;
-  return {
-    permission:
-      modules.size === 1 && module ? { module, actions } : { module: null, actions: [] },
-    actions
-  };
+  let permission: ToolPermission = { module: null, actions: [] };
+  if (modules.size === 1 && module) permission = { module, actions };
+  if (modules.size > 1) {
+    permission = { module: null, actions: [], scopes: [...scopes].sort() };
+  }
+  return { permission, actions };
 }
 
 function classify(
   actions: PermissionAction[],
   destructive: boolean,
-  read = false
+  read = false,
+  write = false
 ): Classification {
   if (read) return "READ";
   if (destructive || actions.includes("delete")) return "DESTRUCTIVE";
+  if (write) return "WRITE";
   return actions.length > 0 && actions.every((a) => a === "view")
     ? "READ"
     : "WRITE";
@@ -492,7 +500,12 @@ export function buildServiceFnTools(
       {
         name: leaf.path.join("_"),
         module: leaf.path[0]!,
-        classification: classify(actions, docs.destructive, docs.read),
+        classification: classify(
+          actions,
+          docs.destructive,
+          docs.read,
+          docs.write
+        ),
         title: docs.title,
         description: docs.description,
         permission,

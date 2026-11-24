@@ -19,8 +19,13 @@ export const modulePreferencesValidator = z.object({
   )
 });
 
+/** `add` only grants; `update` also takes away what the form leaves unticked. */
+export const bulkPermissionEditTypes = ["add", "update"] as const;
+
 export const bulkPermissionsValidator = z.object({
-  editType: z.string().min(1, { message: "Update type is required" }),
+  editType: z.enum(bulkPermissionEditTypes, {
+    error: "Update type is required"
+  }),
   userIds: z
     .array(z.string().min(1, { message: "Invalid selection" }))
     .min(1, { message: "Group members are required" }),

@@ -64,6 +64,7 @@ import {
   changeNoticeNotifyStages,
   changeNoticeStatusValidator,
   changeNoticeValidator,
+  configurationParameterGroupValidator,
   deriveItemMethodUpdate,
   getMethodValidator,
   itemBulkUpdateValidator,
@@ -81,6 +82,7 @@ import {
 } from "./items.models";
 import * as service from "./items.service";
 import * as utils from "./items.utils";
+import { newMaterialIdentity } from "./material-properties";
 
 const logger = getLogger("erp", "change-orders");
 
@@ -2577,6 +2579,9 @@ export const getItemCustomerParts = defineServiceFn({
 /**
  * Get item demand
  *
+ * @param periods - The weekly period ids, earliest first, from
+ *   `shared_getPlanningPeriods` for the same location.
+ *
  * @mcp read
  */
 export const getItemDemand = defineServiceFn({
@@ -2599,6 +2604,9 @@ export const getItemDemand = defineServiceFn({
 
 /**
  * Get demand forecast sources
+ *
+ * @param periods - The weekly period ids, earliest first, from
+ *   `shared_getPlanningPeriods` for the same location.
  *
  * @mcp read
  */
@@ -4087,20 +4095,31 @@ export const upsertConfigurationParameter = defineServiceFn({
 });
 
 /**
- * Upsert configuration parameter group
+ * Add or rename a configuration parameter group
+ *
+ * @remarks
+ * As the Add Group and Edit Group dialogs of a configurable item do: without
+ * `id` it adds a group after the item's other groups; with `id` it renames
+ * that group of the item. Returns the group's id.
+ *
+ * @param itemId - The configurable item the group belongs to.
+ * @param id - The group to rename, from the `groups` of items_getConfigurationParameters; omit it to add a group.
+ * @param name - The group's name.
  *
  * @mcp
  */
 export const upsertConfigurationParameterGroup = defineServiceFn({
-  input: z.looseObject({ itemId: z.string() }),
+  input: configurationParameterGroupValidator.extend({
+    itemId: z.string().min(1)
+  }),
   permission: { create: "parts", update: "parts" },
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertConfigurationParameterGroup(
-        ctx.asCaller.supabase,
-        payload(ctx, input).build() as never
-      )
+      await service.upsertConfigurationParameterGroup(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id
+      })
     );
   }
 });
@@ -4218,19 +4237,17 @@ export const upsertPickMethodWithShelfLife = defineServiceFn({
  * Create a consumable
  *
  * @remarks
- * Creates a consumable (item row and consumable row) or updates one; on update `id` is the item id (uuid) or the consumable's readable id and the write is a full…
+ * Writes the item and its consumable row, its item group and unit cost,
+ * default storage unit and shelf life (`upsertConsumable`). Returns the new
+ * item's id.
+ *
+ * @param id - The new consumable's number (its readable id).
  *
  * @mcp
  */
 export const createConsumable = defineServiceFn({
   input: z.looseObject({
-    id: z
-      .string()
-      .min(1)
-      .max(255)
-      .describe(
-        "Updates the existing record with this key; creates one when there is none."
-      ),
+    id: z.string().min(1).max(255),
     readableId: z.string().optional(),
     name: z.string().min(1).max(255).describe(itemNameNote),
     description: z.string().optional().describe(itemDescriptionNote),
@@ -4257,10 +4274,19 @@ export const createConsumable = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
-    return await service.upsertConsumable(
+    const created = await service.upsertConsumable(
       ctx.asCaller.supabase,
       payload(ctx, input).forCreate() as never
     );
+    const id: string | null | undefined = created.data?.id;
+    if (created.error || !id) {
+      return ctx.error(
+        "internal",
+        "Failed to insert consumable",
+        created.error
+      );
+    }
+    return { id };
   }
 });
 
@@ -5580,21 +5606,25 @@ export const setMethodOperationToolStepLink = defineServiceFn({
  * Create a material
  *
  * @remarks
- * Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size
+ * Creates a material as the New Material form does, with one revision per
+ * entry of `sizes`. When the company generates material IDs (Settings →
+ * Items), the ID and name are derived from the substance, shape, grade, type,
+ * dimension and finish, as in the form: leave out `id` and `name`, or send
+ * exactly the derived values; anything else is refused and names them. When
+ * IDs are typed, `id` and `name` are required. An ID another material has is
+ * refused. Returns the new item's id (the one the material page opens).
+ *
+ * @param id - The new material's ID. Required when material IDs are typed; with generated IDs leave it out.
+ * @param name - The material's short description. Required when material IDs are typed; with generated IDs leave it out. Printed on returns to suppliers and copied onto new purchase order, RFQ and supplier quote lines, which suppliers see: keep internal notes out.
+ * @param readableId - Not used on create: the new material's ID is `id`.
  *
  * @mcp
  */
 export const createMaterial = defineServiceFn({
   input: z.looseObject({
-    id: z
-      .string()
-      .min(1)
-      .max(255)
-      .describe(
-        "Updates the existing record with this key; creates one when there is none."
-      ),
+    id: z.string().min(1).max(255).optional(),
     readableId: z.string().optional(),
-    name: z.string().min(1).max(255).describe(itemNameNote),
+    name: z.string().min(1).max(255).optional().describe(itemNameNote),
     description: z.string().optional().describe(itemDescriptionNote),
     mpn: z.string().optional(),
     replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
@@ -5626,11 +5656,36 @@ export const createMaterial = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
-    return await service.upsertMaterial(
-      ctx.asCaller.supabase,
-      ctx.asSystem.pg,
-      payload(ctx, input).forCreate() as never
+    const client = ctx.asCaller.supabase;
+    const generated = unwrap(
+      ctx,
+      await service.getGeneratedMaterialIdentity(client, {
+        ...input,
+        companyId: ctx.company.id
+      })
     );
+    if (generated instanceof CarbonError) return generated;
+    const identity = newMaterialIdentity(generated, input);
+    if ("refusal" in identity) {
+      return ctx.error(identity.refusal, identity.message);
+    }
+
+    const created = unwrap(
+      ctx,
+      await service.upsertMaterial(
+        client,
+        ctx.asSystem.pg,
+        payload(ctx, {
+          ...input,
+          id: identity.readableId,
+          name: identity.name
+        }).forCreate() as never
+      )
+    );
+    if (created instanceof CarbonError) return created;
+    const id = (created as { id?: string | null } | null)?.id;
+    if (!id) return ctx.error("internal", "Failed to insert material");
+    return { id };
   }
 });
 
@@ -5638,24 +5693,27 @@ export const createMaterial = defineServiceFn({
  * Update a material
  *
  * @remarks
- * Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size.
+ * Updates a material by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size.
+ * When the company generates material IDs (Settings → Items), a call that
+ * changes a property derives the ID and name and writes them to every
+ * revision: leave out `readableId` and `name`, or send exactly the derived
+ * values. A call that changes no property writes a sent `name` to the item,
+ * as the properties panel's name field does, and refuses a `readableId`
+ * other than the material's (the panel has no ID field).
  * An update never changes whether the material is active: `setItemActive`
  * does.
+ *
+ * @param id - The item id, or the readable id of a material with one revision.
+ * @param readableId - A new readable id, when material IDs are typed.
  *
  * @mcp
  */
 export const updateMaterial = defineServiceFn({
   input: z
     .looseObject({
-      id: z
-        .string()
-        .min(1)
-        .max(255)
-        .describe(
-          "Updates the existing record with this key; creates one when there is none."
-        ),
+      id: z.string().min(1).max(255),
       readableId: z.string().optional(),
-      name: z.string().min(1).max(255).describe(itemNameNote),
+      name: z.string().min(1).max(255).optional().describe(itemNameNote),
       description: z.string().optional().describe(itemDescriptionNote),
       mpn: z.string().optional(),
       replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
@@ -5693,10 +5751,13 @@ export const updateMaterial = defineServiceFn({
     .required({ id: true }),
   permission: { update: "parts" },
   async run(ctx, input) {
-    return await service.upsertMaterial(
-      ctx.asCaller.supabase,
-      ctx.asSystem.pg,
-      payload(ctx, input).forUpdate() as never
+    return unwrap(
+      ctx,
+      await service.upsertMaterial(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        payload(ctx, input).forUpdate() as never
+      )
     );
   }
 });
@@ -6255,19 +6316,16 @@ export const updateUnitOfMeasure = defineServiceFn({
  * Create a tool
  *
  * @remarks
- * Creates a tool (item row and tool row) or updates one; on update `id` is the item id (uuid) or the tool's readable id and the write is a full replace, so omitt…
+ * Writes the item and its tool row, its item group and unit cost, default
+ * storage unit and shelf life (`upsertTool`). Returns the new item's id.
+ *
+ * @param id - The new tool's number (its readable id).
  *
  * @mcp
  */
 export const createTool = defineServiceFn({
   input: z.looseObject({
-    id: z
-      .string()
-      .min(1)
-      .max(255)
-      .describe(
-        "Updates the existing record with this key; creates one when there is none."
-      ),
+    id: z.string().min(1).max(255),
     readableId: z.string().optional(),
     name: z.string().min(1).max(255).describe(itemNameNote),
     description: z.string().optional().describe(itemDescriptionNote),
@@ -6297,10 +6355,15 @@ export const createTool = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
-    return await service.upsertTool(
+    const created = await service.upsertTool(
       ctx.asCaller.supabase,
       payload(ctx, input).forCreate() as never
     );
+    const id: string | null | undefined = created.data?.id;
+    if (created.error || !id) {
+      return ctx.error("internal", "Failed to insert tool", created.error);
+    }
+    return { id };
   }
 });
 
@@ -6709,6 +6772,13 @@ export const updateChangeNoticeAffectedItemCutover = defineServiceFn({
 
 /**
  * Get change notice affected items
+ *
+ * @remarks
+ * Every affected item of the change notice, in the notice's order, as its
+ * page lists them: the change type, the draft method and new item it made,
+ * the cutover, and `item` (the affected item's part number, name and type).
+ *
+ * @param changeNoticeId - The change notice's id (`co_…`), not its readable number.
  *
  * @mcp read
  */

@@ -674,6 +674,101 @@ export async function getCustomFieldsTables(
   return query;
 }
 
+// Custom field tables whose rows a company group shares: a record carries
+// `companyGroupId`, not `companyId`.
+const GROUP_CUSTOM_FIELD_TABLES = new Set(["account", "currency"]);
+
+/**
+ * What edits the records of a custom field table: the permission module whose
+ * update the properties panels require, and the column that ties a record to
+ * the company. Data is null when the table has no custom fields.
+ */
+export async function getCustomFieldTableEditScope(
+  client: SupabaseClient<Database>,
+  table: string
+) {
+  const { data, error } = await client
+    .from("customFieldTable")
+    .select("module")
+    .eq("table", table)
+    .maybeSingle();
+  if (error || !data) return { data: null, error };
+  return {
+    data: {
+      // Item tables are listed under Items and edited with the parts permission.
+      module: data.module === "Items" ? "parts" : data.module.toLowerCase(),
+      scopeColumn: GROUP_CUSTOM_FIELD_TABLES.has(table)
+        ? ("companyGroupId" as const)
+        : ("companyId" as const)
+    },
+    error: null
+  };
+}
+
+export async function getTableCustomFieldIds(
+  client: SupabaseClient<Database>,
+  table: string,
+  companyId: string
+) {
+  return client
+    .from("customField")
+    .select("id")
+    .eq("table", table)
+    .eq("companyId", companyId);
+}
+
+/** The stored custom field values of some records of one table. */
+export async function getRecordsCustomFields(
+  client: SupabaseClient<Database>,
+  args: {
+    table: string;
+    ids: string[];
+    scopeColumn: "companyId" | "companyGroupId";
+    scopeId: string;
+  }
+) {
+  const { data, error } = await (client as unknown as SupabaseClient)
+    .from(args.table)
+    .select("id, customFields")
+    .in("id", args.ids)
+    .eq(args.scopeColumn, args.scopeId);
+  return {
+    data: (data ?? null) as
+      | { id: string; customFields: Record<string, unknown> | null }[]
+      | null,
+    error
+  };
+}
+
+/**
+ * Write one table's custom field values on the records of one company (or, for
+ * a table a company group shares, of its group). The table is named at run
+ * time, so the client is untyped here; RLS on the table still applies.
+ */
+export async function updateRecordCustomFields(
+  client: SupabaseClient<Database>,
+  args: {
+    table: string;
+    ids: string[];
+    scopeColumn: "companyId" | "companyGroupId";
+    scopeId: string;
+    customFields: Record<string, unknown>;
+    updatedBy: string;
+  }
+) {
+  const { data, error } = await (client as unknown as SupabaseClient)
+    .from(args.table)
+    .update({
+      customFields: args.customFields,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .in("id", args.ids)
+    .eq(args.scopeColumn, args.scopeId)
+    .select("id");
+  return { data: (data ?? null) as { id: string }[] | null, error };
+}
+
 export async function getIntegration(
   client: SupabaseClient<Database>,
   id: string,
@@ -3161,7 +3256,9 @@ export async function upsertCustomField(
 
       return client
         .from("customField")
-        .insert([{ ...customField, sortOrder: maxSortOrder + 1 }]);
+        .insert([{ ...customField, sortOrder: maxSortOrder + 1 }])
+        .select("id")
+        .single();
     }
     return requireAffected(
       client

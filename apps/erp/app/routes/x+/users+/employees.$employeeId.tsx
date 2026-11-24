@@ -37,8 +37,7 @@ import {
   getClaims,
   getEmployee,
   getEmployeeTypes,
-  getPermissionsByEmployeeType,
-  originOf
+  getPermissionsByEmployeeType
 } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
@@ -156,8 +155,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.users.updateEmployeePermissions({
     id,
     employeeType,
-    permissions: JSON.parse(permissions),
-    ip: originOf(args.request).ip
+    permissions: JSON.parse(permissions)
   });
   return respond(args.request, result).redirect(path.to.employeeAccounts, {
     message: "Permissions updated"

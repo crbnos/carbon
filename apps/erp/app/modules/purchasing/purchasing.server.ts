@@ -5674,6 +5674,11 @@ export const getPurchasingDocumentsAssignedToMe = defineServiceFn({
 /**
  * Get purchasing planning
  *
+ * @param locationId - The location to plan.
+ * @param periods - The weekly period ids, earliest first, from
+ *   `shared_getPlanningPeriods` for the same location.
+ * @param asOf - The location's today (YYYY-MM-DD).
+ *
  * @mcp read
  */
 export const getPurchasingPlanning = defineServiceFn({
@@ -8842,11 +8847,19 @@ export const deleteSupplierStage = defineServiceFn({
 });
 
 /**
- * The parts an item's Request Quote offers: the item, and the parts to buy for
- * one of it from its Active make method, or its latest version without one.
- * Each has a supplier to start from: the preferred supplier, else the only
- * supplier with a supplier part. Not published: it needs two modules, which
- * the tool manifest cannot express.
+ * Get the parts an item's Request Quote offers.
+ *
+ * @remarks
+ * The item, and the parts to buy for one of it from its Active make method,
+ * or its latest version without one; a row's `quantity` is for one of the
+ * item, in the part's inventory unit. Each has a supplier to start from
+ * (`defaultSupplierId`): the preferred supplier, else the only supplier with
+ * a supplier part. purchasing_requestQuoteFromItem takes the rows chosen as
+ * its `lines`.
+ *
+ * @param itemId - The item the quote is for.
+ *
+ * @mcp
  */
 export const getRequestQuoteRows = defineServiceFn({
   input: z.object({ itemId: z.string().min(1) }),

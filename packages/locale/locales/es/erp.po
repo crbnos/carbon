@@ -13094,12 +13094,6 @@ msgstr "Todos los códigos de impuesto en uso están mapeados"
 msgid "Every unit has a rate."
 msgstr "Cada unidad tiene una tarifa."
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "Cada unidad se numera de antemano, por lo que se pueden imprimir series antes de que comience el trabajo"
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "Cada unidad se numera cuando la orden de trabajo va a la planta, por lo que todavía se pueden imprimir hojas viajeras y las órdenes de trabajo canceladas antes de la liberación no consumen ningún recurso"
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "Todos los usuarios que coinciden con los filtros de la lista. A los usuarios a los que esta acción no aplica se les marcará como omitidos."
 
@@ -31742,6 +31736,12 @@ msgstr "El costo de esta orden de trabajo se asigna a esta tarea."
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "La salida del orden de trabajo entra en las existencias del proyecto en lugar de existencias no asignadas"
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "Las unidades propias de la orden de trabajo se numeran cuando va a la planta, por lo que todavía se pueden imprimir hojas viajeras y las órdenes de trabajo canceladas antes de la liberación no consumen ningún número. Las unidades de un subensamble de fabricación bajo pedido se numeran la primera vez que se trabajan."
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "Las unidades propias de la orden de trabajo se numeran al crearla, por lo que se pueden imprimir los números de serie antes de que comience el trabajo. Las unidades de un subensamble de fabricación bajo pedido se numeran la primera vez que se trabajan."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "La posición del trabajo en la cola de programación de su ubicación — un número fraccionario que Carbon calcula a partir de la fecha de vencimiento y tipo de plazo, no una calificación Bajo/Alto."

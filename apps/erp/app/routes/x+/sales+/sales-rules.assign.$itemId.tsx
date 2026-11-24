@@ -2,57 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { requireFeature } from "@carbon/ee/plan.server";
-import { assignSalesRule } from "@carbon/ee/rules.server";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
 import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(
+    z.object({ ruleId: z.string().min(1, { message: "Rule id required" }) })
+  ).request(args, { params: ["itemId"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.sales.assignSalesRule({
+    ruleId: input.data.ruleId,
+    itemId: input.params.itemId
   });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "SALES_RULES",
-    redirectTo: path.to.salesRules
+  const back = requestReferrer(args.request) ?? path.to.salesRules;
+  return respond(args.request, result).redirect(back, {
+    message: "Rule assigned",
+    onError: back
   });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("itemId required");
-
-  const formData = await request.formData();
-  const ruleId = String(formData.get("ruleId") ?? "");
-  if (!ruleId) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.salesRules,
-      await flash(request, error(null, "Rule id required"))
-    );
-  }
-
-  const result = await assignSalesRule(client, {
-    itemId,
-    ruleId,
-    companyId,
-    createdBy: userId
-  });
-
-  if (result.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.salesRules,
-      await flash(request, error(result.error, "Failed to assign rule"))
-    );
-  }
-
-  throw redirect(
-    requestReferrer(request) ?? path.to.salesRules,
-    await flash(request, success("Rule assigned"))
-  );
 }

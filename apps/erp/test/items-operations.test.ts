@@ -15,7 +15,16 @@ vi.mock("@carbon/ee/approvals/document.server", () => ({
 
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
 import {
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler
+} from "kysely";
+import {
   addItemPredecessor,
+  createConsumable,
+  createTool,
   setChangeNoticeStatus,
   setItemActive,
   setItemPostingGroup,
@@ -23,6 +32,7 @@ import {
   updateConsumable,
   updateItem,
   updateItemPlanning,
+  updateMaterial,
   updatePart,
   updateTool
 } from "../app/modules/items/items.server";
@@ -60,6 +70,10 @@ function fakeClient(reads: Record<string, unknown> = {}) {
           write = { op: "update", values };
           return chain;
         },
+        upsert: (values: unknown) => {
+          write = { op: "insert", values };
+          return chain;
+        },
         delete: () => {
           write = { op: "delete" };
           return chain;
@@ -72,6 +86,8 @@ function fakeClient(reads: Record<string, unknown> = {}) {
           filters.push([column, value]);
           return chain;
         },
+        or: () => chain,
+        limit: () => chain,
         order: () => chain,
         range: () => chain,
         maybeSingle: async () => answer(),
@@ -90,7 +106,10 @@ const unreachable = () => {
 
 function contextFor(
   caller: unknown,
-  { system = unreachable }: { system?: () => unknown } = {}
+  {
+    system = unreachable,
+    pg = () => ({})
+  }: { system?: () => unknown; pg?: () => unknown } = {}
 ) {
   return createServiceContext({
     actor: {
@@ -108,9 +127,26 @@ function contextFor(
     company: { id: "company-1", groupId: "group-1" },
     caller: caller as any,
     system: system as any,
-    pg: () => ({}) as any,
+    pg: pg as any,
     kv: unreachable
   });
+}
+
+/** A system connection that answers no rows and records each statement. */
+function recordingPg() {
+  const statements: { sql: string; parameters: readonly unknown[] }[] = [];
+  const pg = new Kysely<any>({
+    dialect: {
+      createAdapter: () => new PostgresAdapter(),
+      createDriver: () => new DummyDriver(),
+      createIntrospector: (db) => new PostgresIntrospector(db),
+      createQueryCompiler: () => new PostgresQueryCompiler()
+    },
+    log: (event) => {
+      if (event.level === "query") statements.push(event.query);
+    }
+  });
+  return { pg, statements };
 }
 
 beforeEach(() => {
@@ -233,6 +269,87 @@ describe("details saves", () => {
       name: "Bracket",
       active: false
     });
+  });
+});
+
+describe("item creates", () => {
+  const item = {
+    id: "C-100",
+    name: "Gloves",
+    replenishmentSystem: "Buy",
+    defaultMethodType: "Pull from Inventory",
+    itemTrackingType: "Inventory",
+    unitOfMeasureCode: "EA"
+  } as const;
+
+  it.each([
+    ["createConsumable", "consumables", (ctx: any) => createConsumable(ctx, item)],
+    [
+      "createTool",
+      "tools",
+      (ctx: any) => createTool(ctx, { ...item, revision: "0" })
+    ]
+  ])("%s answers the new item's id, as createPart does", async (_name, view, create) => {
+    const { client } = fakeClient({ [view]: { id: "i1", readableId: "C-100" } });
+
+    const result = await create(contextFor(client));
+
+    expect(result).toEqual({ data: { id: "i1" }, error: null });
+  });
+});
+
+describe("updateMaterial under generated material IDs", () => {
+  const material = {
+    id: "i1",
+    replenishmentSystem: "Buy",
+    defaultMethodType: "Pull from Inventory",
+    itemTrackingType: "Inventory",
+    unitOfMeasureCode: "EA"
+  } as const;
+  const reads = {
+    companySettings: { materialGeneratedIds: true },
+    item: { id: "i1", readableId: "AL-PL" },
+    material: {
+      materialSubstanceId: "aluminum",
+      materialFormId: "plate",
+      materialTypeId: null,
+      finishId: null,
+      gradeId: null,
+      dimensionId: null
+    },
+    materialSubstance: { name: "Aluminum", code: "AL" },
+    materialForm: { name: "Sheet", code: "SH" }
+  };
+
+  it("writes a sent name to the item when no property changes, as the panel's name field does", async () => {
+    const { client } = fakeClient(reads);
+    const { pg, statements } = recordingPg();
+
+    const result = await updateMaterial(contextFor(client, { pg: () => pg }), {
+      ...material,
+      name: "Plate offcuts"
+    });
+
+    expect(result.error).toBeNull();
+    const itemUpdate = statements.find((statement) =>
+      statement.sql.startsWith('update "item"')
+    );
+    expect(itemUpdate?.parameters).toContain("Plate offcuts");
+  });
+
+  it("refuses a name the property change does not derive, before any write", async () => {
+    const { client, writes } = fakeClient(reads);
+    const { pg, statements } = recordingPg();
+
+    const result = await updateMaterial(contextFor(client, { pg: () => pg }), {
+      ...material,
+      materialFormId: "sheet",
+      name: "Plate offcuts"
+    });
+
+    expect(result.error).toMatchObject({ category: "rule" });
+    expect(writes).toEqual([]);
+    expect(statements).toEqual([]);
   });
 });
 

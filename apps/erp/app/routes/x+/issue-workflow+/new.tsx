@@ -57,7 +57,10 @@ export async function action({ request }: ActionFunctionArgs) {
     createdBy: userId
   });
 
-  if (insertIssueWorkflow.error || !insertIssueWorkflow.data?.id) {
+  // A create answers one row; the building block's update branch answers a list.
+  const created = insertIssueWorkflow.data;
+  const createdId = Array.isArray(created) ? created[0]?.id : created?.id;
+  if (insertIssueWorkflow.error || !createdId) {
     return data(
       {},
       await flash(
@@ -68,7 +71,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.issueWorkflow(insertIssueWorkflow.data.id),
+    path.to.issueWorkflow(createdId),
     await flash(request, success("Non-conformance workflow created"))
   );
 }

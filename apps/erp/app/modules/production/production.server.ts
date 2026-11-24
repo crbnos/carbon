@@ -5,6 +5,7 @@
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { fetchAllByIds, type Json } from "@carbon/database";
+import { deleteDemandProjections as eeDeleteDemandProjections } from "@carbon/ee/forecast.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -60,7 +61,9 @@ import {
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
-  isActiveCompanyEmployee
+  getOrCreatePeriods,
+  isActiveCompanyEmployee,
+  refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { decodeCursor } from "~/utils/cursor";
 import {
@@ -6732,83 +6735,16 @@ export const deleteScrapReason = defineServiceFn({
 });
 
 /**
- * Delete failure mode
+ * Get an item's demand projections at a location.
  *
- * @mcp destructive
- */
-export const deleteFailureMode = defineServiceFn({
-  input: z.looseObject({ failureModeId: z.string() }),
-  permission: { delete: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteFailureMode(
-        ctx.asCaller.supabase,
-        input.failureModeId as never
-      )
-    );
-  }
-});
-
-/**
- * Delete maintenance dispatch
+ * @remarks
+ * Each row has its week's start date (`weekStart`), the date the projection
+ * writes take. Without `periodIds`, the 52 weeks the forecast form shows,
+ * from this week on in the location's time zone.
  *
- * @mcp destructive
- */
-export const deleteMaintenanceDispatch = defineServiceFn({
-  input: z.looseObject({ dispatchId: z.string() }),
-  permission: { delete: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteMaintenanceDispatch(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
-    );
-  }
-});
-
-/**
- * Delete maintenance dispatch event
- *
- * @mcp destructive
- */
-export const deleteMaintenanceDispatchEvent = defineServiceFn({
-  input: z.looseObject({ eventId: z.string() }),
-  permission: { delete: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteMaintenanceDispatchEvent(
-        ctx.asCaller.supabase,
-        input.eventId as never
-      )
-    );
-  }
-});
-
-/**
- * Delete maintenance schedule
- *
- * @mcp destructive
- */
-export const deleteMaintenanceSchedule = defineServiceFn({
-  input: z.looseObject({ scheduleId: z.string() }),
-  permission: { delete: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteMaintenanceSchedule(
-        ctx.asCaller.supabase,
-        input.scheduleId as never
-      )
-    );
-  }
-});
-
-/**
- * Get demand projections
+ * @param itemId - The item.
+ * @param locationId - The location.
+ * @param periodIds - The weekly period ids to read (see `shared_getPlanningPeriods`). Leave it out for the form's 52 weeks.
  *
  * @mcp read
  */
@@ -6816,17 +6752,146 @@ export const getDemandProjections = defineServiceFn({
   input: z.looseObject({
     itemId: z.string(),
     locationId: z.string(),
-    periodIds: z.array(z.string())
+    periodIds: z.array(z.string()).optional()
   }),
   permission: { view: "production" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getDemandProjections(
-        ctx.asCaller.supabase,
-        payload(ctx, input).build() as never
-      )
+    return unwrap(ctx, await service.getDemandProjectionWeeks(ctx, input));
+  }
+});
+
+const demandProjectionInput = z.object({
+  itemId: z.string().min(1),
+  locationId: z.string().min(1),
+  weeks: z
+    .array(
+      z.object({
+        weekStart: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Use YYYY-MM-DD" }),
+        quantity: z.number().min(0)
+      })
+    )
+    .min(1)
+});
+
+/**
+ * Create the demand projections of an item at a location.
+ *
+ * @remarks
+ * Needs demand forecasting (the FORECAST feature). A projection is a weekly
+ * quantity the planning run counts as demand. A week is named by its start
+ * date, a Sunday, among the 52 weeks from this week on in the location's
+ * time zone. Only weeks above 0 are written, and at least one must be. A week
+ * the item already has is overwritten.
+ *
+ * @param itemId - The item.
+ * @param locationId - The location.
+ * @param weeks - The weekly quantities: `weekStart` (YYYY-MM-DD, a Sunday) and `quantity`.
+ * @returns The weeks written, each with its period id (see production_getDemandProjections).
+ *
+ * @mcp
+ */
+export const createDemandProjections = defineServiceFn({
+  input: demandProjectionInput,
+  permission: { create: "production" },
+  async run(ctx, input) {
+    const refused =
+      (await refuseUnlessOwned(ctx, "item", { id: input.itemId })) ??
+      (await refuseUnlessOwned(ctx, "location", { id: input.locationId }));
+    if (refused) return refused;
+    const rows = await service.demandProjectionRows(ctx, input);
+    if (rows instanceof Error) return rows;
+    const positive = rows.filter((row) => row.forecastQuantity > 0);
+    if (positive.length === 0) {
+      return ctx.error("validation", "No forecast quantities provided");
+    }
+    return service.writeDemandProjections(ctx, input, positive);
+  }
+});
+
+/**
+ * Set weeks of an item's demand projections at a location.
+ *
+ * @remarks
+ * Needs demand forecasting (the FORECAST feature). Every week sent is
+ * written: 0 removes its projection. Weeks not sent keep their quantity. A
+ * week is named by its start date, a Sunday, among the 52 weeks from this
+ * week on in the location's time zone.
+ *
+ * @param itemId - The item.
+ * @param locationId - The location.
+ * @param weeks - The weekly quantities: `weekStart` (YYYY-MM-DD, a Sunday) and `quantity`.
+ * @returns The weeks written, each with its period id (see production_getDemandProjections).
+ *
+ * @mcp
+ */
+export const updateDemandProjections = defineServiceFn({
+  input: demandProjectionInput,
+  permission: { update: "production" },
+  async run(ctx, input) {
+    const refused =
+      (await refuseUnlessOwned(ctx, "item", { id: input.itemId })) ??
+      (await refuseUnlessOwned(ctx, "location", { id: input.locationId }));
+    if (refused) return refused;
+    const rows = await service.demandProjectionRows(ctx, input);
+    if (rows instanceof Error) return rows;
+    return service.writeDemandProjections(ctx, input, rows);
+  }
+});
+
+/**
+ * Delete an item's demand projections at a location.
+ *
+ * @remarks
+ * Needs demand forecasting (the FORECAST feature). Removes the weeks from
+ * this week on in the location's time zone; earlier weeks stay.
+ *
+ * @param itemId - The item.
+ * @param locationId - The location.
+ *
+ * @mcp destructive
+ */
+export const deleteDemandProjections = defineServiceFn({
+  input: z.object({
+    itemId: z.string().min(1),
+    locationId: z.string().min(1)
+  }),
+  permission: { delete: "production" },
+  async run(ctx, { itemId, locationId }) {
+    const refused =
+      (await refuseUnlessOwned(ctx, "item", { id: itemId })) ??
+      (await refuseUnlessOwned(ctx, "location", { id: locationId }));
+    if (refused) return refused;
+    const periods = await getOrCreatePeriods(
+      ctx.asSystem.pg,
+      datetime.today(
+        await getLocationTimeZone(
+          ctx.asCaller.supabase,
+          locationId,
+          ctx.company.id
+        )
+      ),
+      service.DEMAND_PROJECTION_WEEKS
     );
+    try {
+      const deleted = await eeDeleteDemandProjections(ctx.asCaller.supabase, {
+        itemId,
+        locationId,
+        companyId: ctx.company.id,
+        futurePeriodIds: periods.map((period) => period.id)
+      });
+      if (deleted.error) {
+        return ctx.error(
+          "internal",
+          "Failed to delete demand projections",
+          deleted.error
+        );
+      }
+      return { itemId, locationId };
+    } catch (err) {
+      return service.forecastEntitlementRefusal(ctx, err);
+    }
   }
 });
 
@@ -7695,6 +7760,11 @@ export const getProductionEvents = defineServiceFn({
 /**
  * Get production planning
  *
+ * @param locationId - The location to plan.
+ * @param periods - The weekly period ids, earliest first, from
+ *   `shared_getPlanningPeriods` for the same location.
+ * @param asOf - The location's today (YYYY-MM-DD).
+ *
  * @mcp read
  */
 export const getProductionPlanning = defineServiceFn({
@@ -7729,6 +7799,10 @@ export const getProductionPlanning = defineServiceFn({
 
 /**
  * Get production projections
+ *
+ * @param locationId - The location to read.
+ * @param periods - The weekly period ids, earliest first, from
+ *   `shared_getPlanningPeriods` for the same location.
  *
  * @mcp read
  */
@@ -8158,26 +8232,51 @@ export const runMRP = defineServiceFn({
 });
 
 /**
- * Update job batch number
+ * Set the serial or batch number of a unit of a job.
+ *
+ * @remarks
+ * Renames one tracked entity (`readableId`): the Serial and Batch Number
+ * fields on the job page. The unit must be one of the job's own units or a
+ * unit of one of its Make to Order sub-assemblies. The value is trimmed, and
+ * an empty value clears the number. It is not checked against the item's
+ * serial sequence or against other units.
+ *
+ * @param jobId - The job (its `id`) whose unit it is.
+ * @param trackedEntityId - The unit. A job's own units come from
+ *   `production_getTrackedEntitiesByJobId`; a sub-assembly's from
+ *   `inventory_getTrackedEntitiesByMakeMethodId`.
+ * @param value - The new serial or batch number; null or empty clears it.
+ * @returns The unit's id and its number.
  *
  * @mcp
  */
 export const updateJobBatchNumber = defineServiceFn({
-  input: z.looseObject({
-    trackedEntityId: z.string(),
+  input: z.object({
+    jobId: z.string().min(1),
+    trackedEntityId: z.string().min(1),
     value: z.string().nullable()
   }),
   permission: { update: "production" },
   async run(ctx, input) {
-    return unwrap(
+    // As the system, as the job page always wrote it: a unit's row is
+    // inventory's under RLS, and the field needs production update only.
+    const updated = unwrap(
       ctx,
       await service.updateJobBatchNumber(
-        ctx.asCaller.supabase,
+        ctx.asSystem.supabase,
         ctx.company.id,
-        input.trackedEntityId as never,
-        input.value as never
+        {
+          jobId: input.jobId,
+          trackedEntityId: input.trackedEntityId,
+          value: input.value?.trim() || null
+        }
       )
     );
+    if (updated instanceof CarbonError) return updated;
+    const unit = updated?.[0];
+    if (!unit)
+      return ctx.error("notFound", "The unit is not one of this job's");
+    return unit;
   }
 });
 
@@ -9156,330 +9255,6 @@ export const updateScrapReason = defineServiceFn({
     return unwrap(
       ctx,
       await service.upsertScrapReason(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a failure mode
- *
- * @remarks
- * Upsert failure mode
- *
- * @mcp
- */
-export const createFailureMode = defineServiceFn({
-  input: z.looseObject({
-    name: z.string().min(1),
-    customFields: z.unknown().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertFailureMode(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a failure mode
- *
- * @remarks
- * Upsert failure mode
- *
- * @mcp
- */
-export const updateFailureMode = defineServiceFn({
-  input: z
-    .looseObject({
-      name: z.string().min(1),
-      customFields: z.unknown().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertFailureMode(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a maintenance dispatch comment
- *
- * @remarks
- * Upsert maintenance dispatch comment
- *
- * @mcp
- */
-export const createMaintenanceDispatchComment = defineServiceFn({
-  input: z.looseObject({
-    maintenanceDispatchId: z.string().min(1),
-    comment: z.string().min(1),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchComment(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a maintenance dispatch comment
- *
- * @remarks
- * Upsert maintenance dispatch comment
- *
- * @mcp
- */
-export const updateMaintenanceDispatchComment = defineServiceFn({
-  input: z
-    .looseObject({
-      maintenanceDispatchId: z.string().min(1),
-      comment: z.string().min(1),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchComment(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a maintenance dispatch event
- *
- * @remarks
- * Upsert maintenance dispatch event
- *
- * @mcp
- */
-export const createMaintenanceDispatchEvent = defineServiceFn({
-  input: z.looseObject({
-    maintenanceDispatchId: z.string().min(1),
-    employeeId: z.string().min(1),
-    workCenterId: z.string().min(1),
-    startTime: z.string().min(1),
-    endTime: z.string().optional(),
-    notes: z.string().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchEvent(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a maintenance dispatch event
- *
- * @remarks
- * Upsert maintenance dispatch event
- *
- * @mcp
- */
-export const updateMaintenanceDispatchEvent = defineServiceFn({
-  input: z
-    .looseObject({
-      maintenanceDispatchId: z.string().min(1),
-      employeeId: z.string().min(1),
-      workCenterId: z.string().min(1),
-      startTime: z.string().min(1),
-      endTime: z.string().optional(),
-      notes: z.string().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchEvent(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a maintenance dispatch item
- *
- * @remarks
- * Upsert maintenance dispatch item
- *
- * @mcp
- */
-export const createMaintenanceDispatchItem = defineServiceFn({
-  input: z.looseObject({
-    maintenanceDispatchId: z.string().min(1),
-    itemId: z.string().min(1),
-    quantity: z.number().min(1),
-    unitOfMeasureCode: z.string().min(1),
-    unitCost: z.number().min(0).optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchItem(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a maintenance dispatch item
- *
- * @remarks
- * Upsert maintenance dispatch item
- *
- * @mcp
- */
-export const updateMaintenanceDispatchItem = defineServiceFn({
-  input: z
-    .looseObject({
-      maintenanceDispatchId: z.string().min(1),
-      itemId: z.string().min(1),
-      quantity: z.number().min(1),
-      unitOfMeasureCode: z.string().min(1),
-      unitCost: z.number().min(0).optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchItem(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
-    );
-  }
-});
-
-/**
- * Create a maintenance schedule
- *
- * @remarks
- * Upsert maintenance schedule
- *
- * @mcp
- */
-export const createMaintenanceSchedule = defineServiceFn({
-  input: z.looseObject({
-    name: z.string().min(1),
-    description: z.string().optional(),
-    workCenterId: z.string().min(1),
-    frequency: z.enum(["Daily", "Weekly", "Monthly", "Quarterly", "Annual"]),
-    priority: z.enum(["Low", "Medium", "High", "Critical"]),
-    estimatedDuration: z.number().optional(),
-    active: z.boolean().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
-  permission: { create: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceSchedule(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a maintenance schedule
- *
- * @remarks
- * Upsert maintenance schedule
- *
- * @mcp
- */
-export const updateMaintenanceSchedule = defineServiceFn({
-  input: z
-    .looseObject({
-      name: z.string().min(1),
-      description: z.string().optional(),
-      workCenterId: z.string().min(1),
-      frequency: z.enum(["Daily", "Weekly", "Monthly", "Quarterly", "Annual"]),
-      priority: z.enum(["Low", "Medium", "High", "Critical"]),
-      estimatedDuration: z.number().optional(),
-      active: z.boolean().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceSchedule(
         ctx.asCaller.supabase,
         payload(ctx, input).forUpdate() as never
       )

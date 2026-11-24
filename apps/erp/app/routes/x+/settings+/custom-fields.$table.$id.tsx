@@ -2,21 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people/types";
 import { customFieldValidator } from "~/modules/settings/settings.models";
-import {
-  getCustomField,
-  upsertCustomField
-} from "~/modules/settings/settings.service";
+import { getCustomField } from "~/modules/settings/settings.service";
 import { CustomFieldForm } from "~/modules/settings/ui";
 import { DataType } from "~/modules/shared/types";
 import { getParams, path } from "~/utils/path";
@@ -45,39 +43,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { customField: customField.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    create: "settings"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(customFieldValidator).request(args, {
+    params: ["table"]
   });
-
-  const { table } = params;
-  if (!table) throw new Error("table is not found");
-
-  const validation = await validator(customFieldValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
+  if ("invalid" in input) return input.invalid;
+  const { id, name, listOptions, tags, required } = input.data;
   if (!id) throw new Error("id is not found");
-
-  const update = await upsertCustomField(client, {
+  const api = await carbon(args.request);
+  const result = await api.settings.updateCustomField({
     id,
-    ...d,
-    updatedBy: userId
+    name,
+    listOptions,
+    tags,
+    required
   });
-  if (update.error) {
-    return data(
-      {},
-      await flash(request, error(update.error, "Failed to update custom field"))
-    );
-  }
-
-  throw redirect(`${path.to.customFieldList(table)}?${getParams(request)}`);
+  return respond(args.request, result).redirect(
+    `${path.to.customFieldList(input.params.table)}?${getParams(args.request)}`
+  );
 }
 
 export default function UpdateCustomFieldRoute() {

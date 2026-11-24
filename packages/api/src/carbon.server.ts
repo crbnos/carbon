@@ -13,6 +13,8 @@ import { flash, flashData } from "@carbon/auth/session.server";
 import { type FailureReason, type FormError, redirect } from "@carbon/utils";
 import type { z } from "zod";
 import {
+  originOf,
+  type RequestOrigin,
   type RouteResult,
   type ServiceContext,
   type ServiceFn,
@@ -49,13 +51,13 @@ export type Api<T> = {
 
 let registered: {
   router: object;
-  context: (auth: CallerAuth) => ServiceContext;
+  context: (auth: CallerAuth, origin: RequestOrigin) => ServiceContext;
 } | null = null;
 
 /** Called once at server start: the app's router, and its context for a caller. */
 export function registerCarbon(setup: {
   router: RegisteredRouter;
-  context: (auth: CallerAuth) => ServiceContext;
+  context: (auth: CallerAuth, origin: RequestOrigin) => ServiceContext;
 }) {
   registered = setup;
 }
@@ -84,23 +86,26 @@ export function bindServiceFns<T extends object>(
 /**
  * The operations, bound to this request's caller: `api.production.cancelJob(input)`.
  * Each call is checked against its own permission, and returns its result as
- * the route sends it.
+ * the route sends it. The context carries the request's origin (`originOf`).
  */
 export async function carbon(request: Request): Promise<Api<RegisteredRouter>> {
-  return carbonFor(await requirePermissions(request, {}));
+  return carbonFor(await requirePermissions(request, {}), originOf(request));
 }
 
 /**
  * `carbon()` for a caller a route authenticated another way, such as the
  * Onshape panel's bearer token (`requireOnshapePanelPermissions`).
  */
-export function carbonFor(auth: CallerAuth): Api<RegisteredRouter> {
+export function carbonFor(
+  auth: CallerAuth,
+  origin: RequestOrigin = {}
+): Api<RegisteredRouter> {
   if (!registered) {
     throw new Error("carbon(): the app has not called registerCarbon");
   }
   return bindServiceFns(
     registered.router as RegisteredRouter & object,
-    registered.context(auth)
+    registered.context(auth, origin)
   );
 }
 

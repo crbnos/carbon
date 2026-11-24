@@ -254,11 +254,12 @@ export function formatToolDescription(
 ): string {
   let output = `${tool.name} [${tool.classification}]\n`;
   output += `${tool.description}\n`;
-  if (tool.permission.module) {
-    const scopes = tool.permission.actions
-      .map((action) => `${tool.permission.module}_${action}`)
-      .join(" or ");
-    output += `Permission: ${scopes}\n`;
+  // The gate requires every scope it names, never one of them.
+  const { module, actions, scopes } = tool.permission;
+  const required =
+    scopes ?? (module ? actions.map((action) => `${module}_${action}`) : []);
+  if (required.length > 0) {
+    output += `Permission: ${required.join(" and ")}\n`;
   }
   if (options.isList) {
     if (tool.paginates) {

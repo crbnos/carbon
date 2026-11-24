@@ -6,7 +6,7 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { describeCause, type FailureReason } from "@carbon/utils";
+import { describeCause, type FailureReason, getClientIp } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
@@ -99,9 +99,43 @@ export type Actor =
 
 type Kv = typeof redis;
 
+/**
+ * Where a request came from: the client's IP and city as the proxy in front
+ * of the app reported them, and its user agent. Invite emails and audit
+ * records show them. Every field is absent for a call no request made.
+ */
+export type RequestOrigin = {
+  ip?: string;
+  city?: string;
+  userAgent?: string;
+};
+
+const NO_ORIGIN: RequestOrigin = Object.freeze({});
+
+/**
+ * The request's origin, read from its headers. The IP is the entry our own
+ * proxy wrote (`getClientIp`). The city is Vercel's `X-Vercel-IP-City`, so
+ * behind any other proxy the caller sets it, as it sets its user agent.
+ */
+export function originOf(request: {
+  headers: Pick<Headers, "get">;
+}): RequestOrigin {
+  return {
+    ip: getClientIp(request) ?? undefined,
+    city: request.headers.get("x-vercel-ip-city") ?? undefined,
+    userAgent: request.headers.get("user-agent") ?? undefined
+  };
+}
+
 export type ServiceContext = {
   actor: Actor;
   company: { id: string; groupId: string };
+  /**
+   * Where the request came from, read by the entry point that authenticated
+   * it, never from the input: a caller cannot write another IP into an audit
+   * record. Empty for a job, a share link or a workflow.
+   */
+  origin: RequestOrigin;
   /**
    * Runs as the caller: row-level security applies. Not part of a
    * transaction: inside `ctx.transaction` reading it throws.
@@ -151,6 +185,7 @@ export type Settled<R> = Result<
 type Handles = {
   actor: Actor;
   company: { id: string; groupId: string };
+  origin?: RequestOrigin;
   caller: SupabaseClient<Database>;
   system: () => SupabaseClient<Database>;
   pg: () => Kysely<KyselyDatabase>;
@@ -227,6 +262,7 @@ class SystemHandles {
 class Context implements ServiceContext {
   readonly actor: Actor;
   readonly company: { id: string; groupId: string };
+  readonly origin: RequestOrigin;
   readonly asCaller: CallerHandles;
   readonly asSystem: SystemHandles;
   readonly auditUserId: string;
@@ -242,6 +278,7 @@ class Context implements ServiceContext {
   constructor(handles: Handles, nested: boolean, inTransaction: boolean) {
     this.actor = handles.actor;
     this.company = handles.company;
+    this.origin = handles.origin ?? NO_ORIGIN;
     this.asCaller = new CallerHandles(handles.caller, inTransaction);
     this.asSystem = new SystemHandles(handles);
     this.auditUserId = auditUserIdOf(handles.actor);

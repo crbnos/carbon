@@ -180,7 +180,7 @@ cd apps/erp && npx vitest run test/database/post-timesheet test/database/save-ti
 | `projectElement.isUnallowable` / `isPreproduction` / `isLeave` | Element flags (5a) |
 | `timesheetEntryRevision`, `timesheetCertification` | DCAA correction trail and weekly certification (5a) |
 | `get_missing_timesheet_days` (RPC) | Scheduled work days with no entry (5a): `timesheetRequired` employees only, from their start date, up to yesterday |
-| `getMissingTimeByEmployee` / `getMissingTimeExcludedCount` / `updateTimesheetRequired` | The Missing Time report: one row per employee, the excluded list, and Exclude / Include (`employeeJob.timesheetRequired`) |
+| `getMissingTimeByEmployee` / `getMissingTimeExcludedCount` / `updateTimesheetRequired` | The Missing Time report: one row per employee, the excluded list, and Exclude / Include (`employeeJob.timesheetRequired`). The operation `updateTimesheetRequired` is an MCP tool, gated on `view: projects` and `update: people` |
 | `projectElement.isBusinessComponent` / `rdComponentType` / `rdSoftwareType`, `timesheetEntry.rdActivityRole` / `workLocationId`, `laborCategory.rdActivityRole` | R&D tax tags (Government Contracting 5d; `government-contracting.md` → *R&D tax*) |
 | `projectPeg` | Versioned pegs: supply (`supplyType`, `supplyId`), member demand, `state`, `supersededAt`, `hardenedAt`, `itemLedgerId` |
 
@@ -256,7 +256,10 @@ operation of the same name in `projects.server.ts`.
   Phase 3. The commercial writes live in `@carbon/ee/pegging.server`: `upsertPlanningGroup`
   and `createManualPeg` call `requireEntitlement` first. The operations of the same name
   (`projects.server.ts`) turn an `EntitlementError` into an `entitlement` refusal; the
-  routes also call `requireFeature`.
+  routes also call `requireFeature`. The operation `upsertPlanningGroup` is an MCP tool
+  gated on company membership: it checks `create: projects` (no `id`) or
+  `update: projects` itself, and refuses an API key without that scope
+  (`refuseKeyWithout`, `shared.service.ts`).
 - `getContractBillableItems` (rows typed `ContractBillableItemRow`), `getContractBillingLines`,
   `getProjectBillingElements`, `updateProjectBillableItems` (hold, release, write off,
   price; refuses Billed and Written Off items); `billableItemActionValidator` (models) —
@@ -295,6 +298,21 @@ operation of the same name in `projects.server.ts`.
   (Government Contracting 5d). The role and type labels are hooks in
   `ui/RdTax/useRdTaxLabels.ts`; the element page's type pickers use `PropertySelect`
   (`ui/Element/PropertyFields.tsx`).
+- `createProjectJob` — the one path that makes a job for a project element
+  (`.claude/rules/projects-system.md` → *Consume-to-project jobs*). Its operations
+  `createJobFromMaterial` (a plan line's Create Job) and `createProjectElementJob` (a
+  job for a part with no plan line yet) are MCP tools, gated on `create: production` and
+  `view: projects`.
+- `createPurchaseOrderLineFromMaterial` — a Purchase to Order plan line's Create PO line
+  (route `$projectId.elements.$elementId.create-po-line.tsx` with a `materialId`): a line
+  charged to the element, on a Draft order of the supplier or a new one, stamped on
+  `projectElementMaterial.purchaseOrderLineId`. An MCP tool, gated on `create: purchasing`
+  and `view: projects`.
+- `upsertIndirectPool` and the other indirect rate operations call
+  `@carbon/ee/indirect-rates.server` (`.claude/rules/indirect-rates.md`); all are MCP
+  tools. `upsertIndirectPool` is gated on company membership: it checks
+  `create: accounting` (no `id`) or `update: accounting` itself, and refuses an API key
+  without that scope (`refuseKeyWithout`).
 - `getPlanningSegmentOwners`, `moveActionPegsToSupply` — the planning routes'
   Apply in a group segment: the owner of each segment, and one transaction that splits an
   action's pegs across the PO lines or jobs that answered it, by quantity

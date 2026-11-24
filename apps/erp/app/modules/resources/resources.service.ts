@@ -52,7 +52,6 @@ import type {
   locationValidator,
   maintenanceDispatchCommentValidator,
   maintenanceDispatchEventValidator,
-  maintenanceDispatchItemValidator,
   maintenanceDispatchPriority,
   maintenanceDispatchStatus,
   maintenanceScheduleValidator,
@@ -2106,10 +2105,15 @@ export async function upsertMaintenanceDispatchComment(
       .select("id")
       .single();
   } else {
-    return client
-      .from("maintenanceDispatchComment")
-      .update(sanitize(comment))
-      .eq("id", comment.id);
+    // The comment must be on the dispatch the caller checked is editable.
+    return requireAffected(
+      client
+        .from("maintenanceDispatchComment")
+        .update(sanitize(comment))
+        .eq("id", comment.id)
+        .eq("maintenanceDispatchId", comment.maintenanceDispatchId)
+        .select("id")
+    );
   }
 }
 
@@ -2137,32 +2141,6 @@ export async function upsertMaintenanceDispatchEvent(
       .from("maintenanceDispatchEvent")
       .update(sanitize(event))
       .eq("id", event.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchItem(
-  client: SupabaseClient<Database>,
-  item:
-    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in item) {
-    return client
-      .from("maintenanceDispatchItem")
-      .insert([item])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchItem")
-      .update(sanitize(item))
-      .eq("id", item.id);
   }
 }
 

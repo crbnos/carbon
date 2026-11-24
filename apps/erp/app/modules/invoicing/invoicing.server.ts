@@ -130,6 +130,12 @@ const salesInvoiceFields = [
  * customer changes. A new issue date or payment term on a single invoice
  * recomputes its due date; with several invoices nothing is written. A new
  * currency brings today's exchange rate. An empty value clears the field.
+ *
+ * @param ids - The sales invoices to change. See invoicing_getSalesInvoices.
+ * @param field - The field to set.
+ * @param value - The new value: an id, text, a number or a date (YYYY-MM-DD). Empty or null clears the field.
+ *
+ * @mcp
  */
 export const updateSalesInvoiceField = defineServiceFn({
   input: service.fieldUpdate(salesInvoiceFields),
@@ -1070,10 +1076,16 @@ const purchaseInvoiceFields = [
  * and address. A new issue date or payment term on a single invoice
  * recomputes its due date; with several invoices nothing is written. A new
  * currency brings today's exchange rate. An empty value clears the field.
+ *
+ * @param ids - The purchase invoices to change. See invoicing_getPurchaseInvoices.
+ * @param field - The field to set.
+ * @param value - The new value: an id, text, a number or a date (YYYY-MM-DD). Empty or null clears the field.
+ *
+ * @mcp
  */
 export const updatePurchaseInvoiceField = defineServiceFn({
   input: service.fieldUpdate(purchaseInvoiceFields),
-  permission: { update: "sales" },
+  permission: { update: "invoicing" },
 
   async run(ctx, { ids, field, value }) {
     const locked = await service.refuseLockedInvoices(

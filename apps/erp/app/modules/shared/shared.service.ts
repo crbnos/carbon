@@ -1372,6 +1372,9 @@ export async function sendSalesOrderEmail(args: {
   return { success: true };
 }
 
+/** The weeks the planning screens show, from this week of the location's today. */
+export const PLANNING_WEEKS = 12 * 4;
+
 export async function getOrCreatePeriods(
   db: Kysely<KyselyDatabase>,
   today: CalendarDate,

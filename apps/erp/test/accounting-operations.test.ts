@@ -5,6 +5,7 @@
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { describe, expect, it } from "vitest";
 import {
+  createFiscalYearPeriods,
   reopenPeriod,
   saveJournalEntry
 } from "../app/modules/accounting/accounting.server";
@@ -15,7 +16,7 @@ const unreachable = () => {
   throw new Error("must not be reached");
 };
 
-const context = () =>
+const context = (caller: unknown = {}) =>
   createServiceContext({
     actor: {
       type: "user",
@@ -30,7 +31,7 @@ const context = () =>
       }
     },
     company: { id: "company-1", groupId: "group-1" },
-    caller: {} as never,
+    caller: caller as never,
     system: unreachable,
     pg: unreachable,
     kv: unreachable
@@ -122,4 +123,60 @@ describe("reopenPeriod", () => {
     const result = await reopenPeriod(ctx, { periodId: "period-1" });
     expect(result.error).toMatchObject({ category: "forbidden" });
   });
+});
+
+describe("createFiscalYearPeriods", () => {
+  /** A January fiscal year with periods `existing`; an insert answers each
+   *  row's id from its period number. */
+  function periodsClient(existing: number[]) {
+    return {
+      from(table: string) {
+        let inserted: { periodNumber: number }[] | null = null;
+        const answer = () => {
+          if (table === "fiscalYearSettings") {
+            return { data: { startMonth: "January" }, error: null };
+          }
+          if (inserted) {
+            return {
+              data: inserted.map((row) => ({ id: `p-${row.periodNumber}` })),
+              error: null
+            };
+          }
+          return {
+            data: existing.map((periodNumber) => ({ periodNumber })),
+            error: null
+          };
+        };
+        const chain: Record<string, unknown> = {
+          select: () => chain,
+          eq: () => chain,
+          insert: (rows: { periodNumber: number }[]) => {
+            inserted = rows;
+            return chain;
+          },
+          single: async () => answer(),
+          then: (resolve: (value: unknown) => unknown) => resolve(answer())
+        };
+        return chain;
+      }
+    };
+  }
+
+  it("answers the ids of the periods it created", async () => {
+    const result = await createFiscalYearPeriods(
+      context(periodsClient([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])),
+      { fiscalYear: 2026 }
+    );
+    expect(result).toEqual({ data: { ids: ["p-11", "p-12"] }, error: null });
+  });
+
+  it.each([1999, 2026.5])(
+    "refuses fiscal year %s, which the Generate Fiscal Year form refuses",
+    async (fiscalYear) => {
+      const result = await createFiscalYearPeriods(context(unreachable), {
+        fiscalYear
+      });
+      expect(result.error).toMatchObject({ category: "validation" });
+    }
+  );
 });

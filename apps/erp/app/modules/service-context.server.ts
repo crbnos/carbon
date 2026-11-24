@@ -5,6 +5,7 @@
 import type { ModulePermissions } from "@carbon/api/permissions";
 import {
   createServiceContext,
+  type RequestOrigin,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import type { requirePermissions } from "@carbon/auth/auth.server";
@@ -24,6 +25,8 @@ export type Caller = {
   companyId: string;
   companyGroupId: string;
   client: SupabaseClient<Database>;
+  /** Where the request came from, when a request made the call. */
+  origin?: RequestOrigin;
 };
 
 /** The context a service function runs with for this caller. */
@@ -42,6 +45,7 @@ export function contextFor(caller: Caller): ServiceContext {
             permissions: caller.permissions
           },
     company: { id: caller.companyId, groupId: caller.companyGroupId },
+    origin: caller.origin,
     caller: caller.client,
     system: getCarbonServiceRole,
     pg: getDatabaseClient,
@@ -106,7 +110,10 @@ type Auth = Pick<
 >;
 
 /** The context for a request, built from what `requirePermissions` returned. */
-export function serviceContext(auth: Auth): ServiceContext {
+export function serviceContext(
+  auth: Auth,
+  origin?: RequestOrigin
+): ServiceContext {
   return contextFor({
     // For a key, requirePermissions reports the key's creator as `userId`.
     kind: auth.caller === "apiKey" ? "apiKey" : "user",
@@ -114,6 +121,7 @@ export function serviceContext(auth: Auth): ServiceContext {
     permissions: auth.permissions,
     companyId: auth.companyId,
     companyGroupId: auth.companyGroupId,
-    client: auth.client
+    client: auth.client,
+    origin
   });
 }

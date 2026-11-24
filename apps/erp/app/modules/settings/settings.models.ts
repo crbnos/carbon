@@ -309,6 +309,31 @@ export const customFieldValidator = z
     return true;
   });
 
+/** A list field needs at least one option, and no empty one. */
+const listFieldHasOptions = (input: {
+  dataTypeId: number;
+  listOptions?: string[];
+}) =>
+  input.dataTypeId !== DataType.List ||
+  (input.listOptions !== undefined &&
+    input.listOptions.length > 0 &&
+    input.listOptions.every((option) => option.length > 0));
+
+/** A custom field definition as the API creates it: the form's fields, as JSON. */
+export const customFieldInputValidator = z
+  .object({
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    table: z.string().min(1, { message: "Table is required" }),
+    dataTypeId: z.number().int().min(1, { message: "Data type is required" }),
+    listOptions: z.string().min(1).array().optional(),
+    tags: z.array(z.string()).optional(),
+    required: z.boolean().optional()
+  })
+  .refine(listFieldHasOptions, {
+    message: "A list field needs at least one option",
+    path: ["listOptions"]
+  });
+
 export const digitalQuoteValidator = z.object({
   digitalQuoteEnabled: zfd.checkbox(),
   digitalQuoteNotificationGroup: z

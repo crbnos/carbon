@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import type { Database } from "@carbon/database";
 import {
@@ -3112,16 +3112,30 @@ export const getFiscalCalendarCommitted = defineServiceFn({
 /**
  * Create fiscal year periods
  *
+ * @remarks
+ * Creates the fiscal year's monthly accounting periods that do not exist yet,
+ * from the fiscal year settings' start month, as Generate Fiscal Year does.
+ * Returns the new periods' ids; none when the year is already complete.
+ *
+ * @param fiscalYear - The fiscal year, named by the calendar year it ends in (2000 to 2200).
+ *
  * @mcp
  */
 export const createFiscalYearPeriods = defineServiceFn({
-  input: z.looseObject({ fiscalYear: z.number() }),
+  input: z.looseObject({ fiscalYear: z.number().int().min(2000).max(2200) }),
   permission: { create: "accounting" },
   async run(ctx, input) {
-    return await service.createFiscalYearPeriods(
-      ctx.asCaller.supabase,
-      payload(ctx, input).withUser().forUpsert() as never
+    const created = unwrap(
+      ctx,
+      await service.createFiscalYearPeriods(
+        ctx.asCaller.supabase,
+        payload(ctx, input).withUser().forUpsert() as never
+      )
     );
+    if (created instanceof CarbonError) return created;
+    return {
+      ids: (created as { id: string }[]).map((period) => period.id)
+    };
   }
 });
 

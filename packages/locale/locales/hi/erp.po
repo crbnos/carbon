@@ -13094,12 +13094,6 @@ msgstr "उपयोग में आने वाले हर कर कोड
 msgid "Every unit has a rate."
 msgstr "प्रत्येक इकाई की एक दर है।"
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "प्रत्येक इकाई को पहले से संख्यायित किया जाता है, इसलिए काम शुरू होने से पहले सीरीज प्रिंट की जा सकती है।"
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "हर इकाई को संख्यायित किया जाता है जब जॉब शॉप फ्लोर पर जाता है, इसलिए ट्रैवलर अभी भी प्रिंट किए जा सकते हैं और जॉब रिलीज से पहले रद्द किए जा सकते हैं कोई नहीं जलाते।"
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "सूची के फ़िल्टर से मेल खाने वाला हर उपयोगकर्ता। जिन उपयोगकर्ताओं पर यह कार्रवाई लागू नहीं होती, उन्हें छोड़ दिया जाएगा।"
 
@@ -31742,6 +31736,12 @@ msgstr "जॉब की लागत इस कार्य को रिपो
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "जॉब का आउटपुट प्रोजेक्ट के स्टॉक में प्रवेश करता है बजाय अनुदेशित स्टॉक के"
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "जॉब की अपनी इकाइयों को तब संख्यायित किया जाता है जब जॉब शॉप फ्लोर पर जाता है, इसलिए ट्रैवलर अभी भी प्रिंट किए जा सकते हैं और जारी करने से पहले रद्द किए गए जॉब कोई नंबर खर्च नहीं करते। ऑर्डर पर निर्माण वाली सब-असेंबली की इकाइयों को पहली बार उन पर काम होने पर संख्यायित किया जाता है।"
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "जॉब की अपनी इकाइयों को उसके बनने पर संख्यायित किया जाता है, इसलिए काम शुरू होने से पहले सीरियल नंबर प्रिंट किए जा सकते हैं। ऑर्डर पर निर्माण वाली सब-असेंबली की इकाइयों को पहली बार उन पर काम होने पर संख्यायित किया जाता है।"
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "जॉब की अपने स्थान की शेड्यूल पंक्ति में स्थिति — एक अंशीय संख्या जो Carbon नियत तिथि और समय सीमा प्रकार से परिकलित करता है, कोई निम्न/उच्च रेटिंग नहीं।"

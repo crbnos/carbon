@@ -68,6 +68,7 @@ import {
   getLocationTimeZone,
   invokeCreate,
   invokePosting,
+  refuseKeyWithout,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
@@ -3790,6 +3791,27 @@ export const postInventoryCount = defineServiceFn({
  * Every adjustment but an unscrap needs `locationId`; an unscrap resolves its
  * location, bin and cost from the original scrap.
  *
+ * The stock of a Serial or Batch item is always a serial or lot, as on the
+ * quantities page. Without `trackedEntityId`, an increase (a positive
+ * adjustment, or a set quantity) creates a new one numbered `readableId`
+ * with that quantity, even when a lot with that number exists; a decrease
+ * takes the one numbered `readableId` in `storageUnitId` (with no number,
+ * stock with no number in the unit, else the unit's only serial or lot); a
+ * scrap needs `trackedEntityId`. A serial item moves one unit at a time.
+ *
+ * The posting date is today in the company's time zone; there is no other.
+ * An increase is valued at the item's current cost: its standard cost
+ * (Standard), its unit cost (Average), or the average of its open cost
+ * layers, else its unit cost (FIFO, LIFO). To value opening stock at another
+ * cost, set the item's cost first. A decrease relieves cost by the costing
+ * method, and an unscrap restores the cost the scrap took.
+ *
+ * @param quantity - A positive magnitude: `adjustmentType` says which way stock moves. For a set quantity, the quantity on hand to reach.
+ * @param trackedEntityId - The serial or lot to adjust: one of this item with stock at `locationId`. Leave it out for a new serial or lot, and for an item that is not Serial or Batch.
+ * @param readableId - The serial or batch number. It numbers a new serial or lot, finds the one a decrease takes when `trackedEntityId` is left out, and renames the one `trackedEntityId` names.
+ * @param expirationDate - The expiry of the serial or lot (YYYY-MM-DD). A new one left without takes the item's fixed-duration shelf life; a change to an existing one is kept in its history.
+ * @param projectId - The project that owns untracked stock or a new serial or lot: a project that keeps project stock. Left out, common stock. An existing serial or lot stays with its owner.
+ *
  * @mcp
  */
 export const adjustInventory = defineServiceFn({
@@ -3797,7 +3819,6 @@ export const adjustInventory = defineServiceFn({
     .object({
       itemId: z.string().min(1),
       adjustmentType: z.enum(inventoryAdjustmentTypes),
-      /** A positive magnitude; the type says which way it moves. */
       quantity: z.number().min(0),
       locationId: z.string().optional(),
       storageUnitId: z.string().optional(),
@@ -3808,6 +3829,8 @@ export const adjustInventory = defineServiceFn({
       comment: z.string().optional(),
       scrapReasonId: z.string().optional(),
       unscrapOfItemLedgerId: z.string().optional(),
+      // The stock owner the quantities page sends for a row in project stock.
+      projectId: z.string().optional(),
       acknowledged: z.boolean().default(false)
     })
     .refine((d) => d.adjustmentType !== "Scrap" || !!d.scrapReasonId, {
@@ -3821,13 +3844,9 @@ export const adjustInventory = defineServiceFn({
   // The adjustment route's gate, and the update the posting itself requires.
   permission: { create: "inventory", update: "inventory" },
 
-  async run(ctx, { acknowledged, ...adjustment }) {
-    const serial = await service.serialQuantityRefusal(
-      ctx,
-      adjustment.itemId,
-      adjustment.quantity
-    );
-    if (serial) return serial;
+  async run(ctx, { acknowledged, ...input }) {
+    const adjustment = await service.trackedAdjustment(ctx, input);
+    if (adjustment instanceof Error) return adjustment;
 
     const held = await service.inspectionHoldAdjustmentRefusal(
       ctx.asSystem.pg,
@@ -4342,15 +4361,27 @@ export type KanbanScan =
  * collision. Buy: adds a line to the supplier's open Draft or Planned purchase
  * order, or a new Draft one, priced from the supplier part in the order's
  * currency. Transfer: releases a stock transfer to the kanban's storage unit
- * (`kanban-replenish`, as the scanner).
+ * (`kanban-replenish`, as the scanner). Any employee may scan a card. An API
+ * key needs `update: inventory`, and `create: production` for a Make kanban.
+ *
+ * @param kanbanId - The kanban's id (`id`, not the printed `kanbanId`); see
+ *   `inventory_getKanbans`.
+ * @returns What the scan made: `collision`, the `job` (with its first
+ *   operation when released), the `purchaseOrder` or the `stockTransfer`.
+ *
+ * @mcp
  */
 export const scanKanban = defineServiceFn({
   input: z.object({ kanbanId: z.string() }),
-  // Safe only unpublished (an employee-only route; Make creates jobs as the
-  // system): give it a real rule before it is ever tagged @mcp.
+  // The card's route admits every employee. A key's scopes are checked in
+  // `run`, because a Make card needs production as well and creates its job as
+  // the system.
   permission: {},
 
   async run(ctx, { kanbanId }): Promise<KanbanScan | CarbonError> {
+    const keyRefused = refuseKeyWithout(ctx, { update: "inventory" });
+    if (keyRefused) return keyRefused;
+
     const client = ctx.asCaller.supabase;
     const serviceRole = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
@@ -4361,6 +4392,11 @@ export const scanKanban = defineServiceFn({
       return ctx.error("notFound", "Kanban is not active", kanban.error);
     }
     const card = kanban.data;
+
+    if (card.replenishmentSystem === "Make") {
+      const makeRefused = refuseKeyWithout(ctx, { create: "production" });
+      if (makeRefused) return makeRefused;
+    }
 
     // replenishKanban checks a Transfer card's units itself, for scans and
     // level checks alike.
@@ -6126,6 +6162,8 @@ export const getTrackedEntitiesByMakeMethodId = defineServiceFn({
 
 /**
  * Get tracked entity
+ *
+ * @param trackedEntityId - The id of the serial or lot, sent as `trackedEntityId`: this read takes no `id` field.
  *
  * @mcp read
  */

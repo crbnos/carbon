@@ -4,6 +4,7 @@
 
 // oRPC context + middleware shared by the HTTP transport and the MCP/agent bridges.
 
+import type { RequestOrigin } from "@carbon/api/service-fn.server";
 import type { Permission } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { os } from "@orpc/server";
@@ -30,6 +31,9 @@ export interface AuthedContext {
    *  user (OAuth, a workflow's owner) the user's own permissions in the company
    *  (`scopesFromPermissions`). */
   scopes: Record<string, string[]>;
+  /** Where the request came from (`originOf`), set by the HTTP and MCP
+   *  routes from its headers. A workflow has none. */
+  origin?: RequestOrigin;
 }
 
 export const base = os.$context<AuthedContext>();

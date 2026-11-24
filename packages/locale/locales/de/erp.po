@@ -13094,12 +13094,6 @@ msgstr "Alle verwendeten Steuerkodes sind zugeordnet."
 msgid "Every unit has a rate."
 msgstr "Jede Einheit hat einen Satz."
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "Jede Einheit wird sofort nummeriert, damit Seriennummern vor Arbeitsbeginn gedruckt werden können."
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "Jede Einheit wird nummeriert, wenn der Fertigungsauftrag in die Werkstatt geht, sodass Laufkarten noch gedruckt und Fertigungsaufträge vor der Freigabe gelöscht werden können."
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "Jeder Benutzer, der den Filtern der Liste entspricht. Benutzer, auf die diese Aktion nicht zutrifft, werden übersprungen."
 
@@ -31742,6 +31736,12 @@ msgstr "Die Kosten des Fertigungsauftrags werden dieser Aufgabe zugeordnet."
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "Die Ausgabe des Fertigungsauftrags wird zum Projektbestand statt zu nicht zugewiesenem Bestand"
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "Die eigenen Einheiten des Fertigungsauftrags werden nummeriert, wenn er in die Werkstatt geht, sodass Laufkarten noch gedruckt werden können und vor der Freigabe stornierte Fertigungsaufträge keine Nummern verbrauchen. Die Einheiten einer Baugruppe in Auftragsfertigung werden nummeriert, wenn sie zum ersten Mal bearbeitet werden."
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "Die eigenen Einheiten des Fertigungsauftrags werden bei seiner Anlage nummeriert, damit Seriennummern vor Arbeitsbeginn gedruckt werden können. Die Einheiten einer Baugruppe in Auftragsfertigung werden nummeriert, wenn sie zum ersten Mal bearbeitet werden."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Die Position des Fertigungsauftrags in der Terminplanwarteschlange des Standorts — eine Dezimalzahl, die Carbon aus dem Fälligkeitsdatum und dem Termintyp berechnet, keine Hoch/Niedrig-Bewertung."

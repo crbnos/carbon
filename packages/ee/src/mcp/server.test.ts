@@ -161,6 +161,54 @@ describe("call_tool keeps list output small", () => {
   });
 });
 
+describe("call_tool pages a full-set read with a strict input", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("takes limit and offset, and still refuses any other unknown argument", async () => {
+    callOperation.mockResolvedValueOnce({
+      success: true,
+      data: [{ id: "m1" }, { id: "m2" }, { id: "m3" }]
+    });
+    const client = await connect(
+      {
+        name: "projects_getProjectMembers",
+        module: "projects",
+        paginates: false,
+        schema: {
+          type: "object",
+          properties: { projectId: { type: "string" } }
+        }
+      },
+      true
+    );
+
+    const paged = await client.callTool({
+      name: "call_tool",
+      arguments: {
+        name: "projects_getProjectMembers",
+        arguments: { projectId: "p1", limit: 1, offset: 1 }
+      }
+    });
+    expect(paged.isError).toBeFalsy();
+    const lines = (paged.content as { text: string }[])[0]!.text.split(/\r?\n/);
+    expect(lines.slice(0, 3)).toEqual([
+      "# projects_getProjectMembers.csv",
+      "id",
+      "m2"
+    ]);
+
+    const refused = await client.callTool({
+      name: "call_tool",
+      arguments: {
+        name: "projects_getProjectMembers",
+        arguments: { projectId: "p1", role: "Lead" }
+      }
+    });
+    expect(refused.isError).toBe(true);
+    expect(JSON.stringify(refused.content)).toContain("does not take role");
+  });
+});
+
 describe("serveMcpRequest", () => {
   beforeEach(() => vi.clearAllMocks());
 

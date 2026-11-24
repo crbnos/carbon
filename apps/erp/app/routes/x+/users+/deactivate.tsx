@@ -3,10 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
+import { originOf } from "@carbon/api/service-fn.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { deactivateUsersValidator } from "~/modules/users/users.models";
-import { originOf } from "~/modules/users/users.service";
 import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
 export async function action(args: ActionFunctionArgs) {
@@ -28,10 +28,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { users, redirectTo } = input.data;
   const api = await carbon(args.request);
-  const result = await api.users.deactivateUsers({
-    userIds: users,
-    ip: originOf(args.request).ip
-  });
+  const result = await api.users.deactivateUsers({ userIds: users });
   return respond(args.request, result).redirect(redirectTo, {
     message: result.data?.message
   });

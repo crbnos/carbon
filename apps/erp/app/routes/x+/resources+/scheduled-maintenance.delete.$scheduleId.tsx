@@ -2,19 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteMaintenanceSchedule,
-  getMaintenanceSchedule
-} from "~/modules/resources/resources.service";
+import { getMaintenanceSchedule } from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -39,40 +38,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { schedule: schedule.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["scheduleId"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.deleteMaintenanceSchedule({
+    scheduleId: input.params.scheduleId
   });
-
-  const { scheduleId } = params;
-  if (!scheduleId) {
-    throw redirect(
-      `${path.to.maintenanceSchedules}?${getParams(request)}`,
-      await flash(request, error(null, "Failed to get a schedule id"))
-    );
-  }
-
-  const { error: deleteError } = await deleteMaintenanceSchedule(
-    client,
-    scheduleId
-  );
-  if (deleteError) {
-    const errorMessage = getDatabaseErrorMessage(
-      deleteError,
-      "Failed to delete maintenance schedule",
-      { referenced: "Schedule has related dispatches, cannot delete" }
-    );
-
-    throw redirect(
-      `${path.to.maintenanceSchedules}?${getParams(request)}`,
-      await flash(request, error(deleteError, errorMessage))
-    );
-  }
-
-  throw redirect(
-    `${path.to.maintenanceSchedules}?${getParams(request)}`,
-    await flash(request, success("Successfully deleted maintenance schedule"))
-  );
+  const list = `${path.to.maintenanceSchedules}?${getParams(args.request)}`;
+  return respond(args.request, result).redirect(list, {
+    message: "Successfully deleted maintenance schedule",
+    onError: list
+  });
 }
 
 export default function DeleteMaintenanceScheduleRoute() {

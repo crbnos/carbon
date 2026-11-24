@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ManifestEntry } from "@carbon/api";
+import { originOf } from "@carbon/api/service-fn.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { createCatalogSearch, type McpServerDeps } from "@carbon/ee/mcp";
 import { serveMcpRequest } from "@carbon/ee/mcp.server";
@@ -184,7 +185,8 @@ async function resolveAuth(request: Request): Promise<{
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { ctx, request: authedRequest } = await resolveAuth(request);
+  const { ctx: authed, request: authedRequest } = await resolveAuth(request);
+  const ctx: AuthedContext = { ...authed, origin: originOf(request) };
   addLogContext({
     companyId: ctx.companyId,
     userId: ctx.userId,

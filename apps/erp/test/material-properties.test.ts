@@ -6,10 +6,12 @@ import { describe, expect, it } from "vitest";
 import {
   checkMaterialProperties,
   clearsSubstanceOrShape,
+  generatedMaterialUpdateRefusal,
   generateMaterialIdentity,
   materialItemUpdateFields,
   type MaterialPropertyLookups,
   type MaterialPropertyValues,
+  newMaterialIdentity,
   noMaterialProperties,
   resolveMaterialProperties,
   sentMaterialProperties
@@ -189,7 +191,7 @@ describe("generated material IDs", () => {
     ).toBeNull();
   });
 
-  it("ignores a sent name, which is derived instead", () => {
+  it("leaves the name out of the item update of a call that derives it", () => {
     expect(materialItemUpdateFields(true)).not.toContain("name");
     expect(materialItemUpdateFields(false)).toContain("name");
   });
@@ -207,6 +209,77 @@ describe("generated material IDs", () => {
         materialSubstanceId: "aluminum"
       })
     ).toBe(false);
+  });
+});
+
+describe("newMaterialIdentity", () => {
+  // An API create mirrors the New Material form, which has no ID or name
+  // field under generated IDs and requires both when IDs are typed.
+  const derived = { readableId: "6061-AL-PL", name: "6061 Aluminum Plate" };
+
+  it("takes the derived ID and name when none or the same are sent", () => {
+    expect(newMaterialIdentity(derived, {})).toEqual(derived);
+    expect(
+      newMaterialIdentity(derived, {
+        id: "6061-AL-PL",
+        name: "6061 Aluminum Plate"
+      })
+    ).toEqual(derived);
+  });
+
+  it.each([
+    { id: "AL-SHEET" },
+    { name: "Aluminum sheet" }
+  ])("refuses %o when it differs from the derived value", (sent) => {
+    expect(newMaterialIdentity(derived, sent)).toMatchObject({
+      refusal: "rule"
+    });
+  });
+
+  it("requires both an ID and a name when IDs are typed", () => {
+    expect(
+      newMaterialIdentity(null, { id: "AL-SHEET", name: "Aluminum sheet" })
+    ).toEqual({ readableId: "AL-SHEET", name: "Aluminum sheet" });
+    expect(newMaterialIdentity(null, { name: "Aluminum sheet" })).toMatchObject(
+      { refusal: "validation" }
+    );
+    expect(newMaterialIdentity(null, { id: "AL-SHEET" })).toMatchObject({
+      refusal: "validation"
+    });
+  });
+});
+
+describe("generatedMaterialUpdateRefusal", () => {
+  // An API update mirrors the properties panel under generated IDs: no ID
+  // field, and a name field whose value a property change replaces.
+  const derived = { readableId: "6061-AL-SH", name: "6061 Aluminum Sheet" };
+
+  it("lets a call that changes no property set any name", () => {
+    expect(
+      generatedMaterialUpdateRefusal("6061-AL-PL", null, {
+        name: "Plate offcuts"
+      })
+    ).toBeNull();
+  });
+
+  it("lets a property change through with no name, or the derived one", () => {
+    expect(generatedMaterialUpdateRefusal("6061-AL-PL", derived, {})).toBeNull();
+    expect(
+      generatedMaterialUpdateRefusal("6061-AL-PL", derived, {
+        readableId: "6061-AL-SH",
+        name: "6061 Aluminum Sheet"
+      })
+    ).toBeNull();
+  });
+
+  it.each([
+    ["a name the change does not derive", derived, { name: "Plate offcuts" }],
+    ["an ID the change does not derive", derived, { readableId: "AL-SHEET" }],
+    ["another ID with no property change", null, { readableId: "AL-SHEET" }]
+  ])("refuses %s", (_case, generated, sent) => {
+    expect(
+      generatedMaterialUpdateRefusal("6061-AL-PL", generated, sent)
+    ).toEqual(expect.any(String));
   });
 });
 

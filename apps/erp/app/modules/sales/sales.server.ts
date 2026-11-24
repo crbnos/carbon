@@ -16,6 +16,12 @@ import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
+import {
+  deleteEnforcementRule,
+  assignSalesRule as eeAssignSalesRule,
+  unassignSalesRule as eeUnassignSalesRule,
+  upsertEnforcementRule
+} from "@carbon/ee/rules.server";
 import { safeStorageFileName, storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { TiptapText } from "@carbon/files/markdown";
@@ -127,6 +133,8 @@ import {
   salesRFQStatusType,
   salesRfqDragValidator,
   salesRfqValidator,
+  salesRuleInputValidator,
+  salesRuleUpdateInputValidator,
   selectedLinesValidator
 } from "./sales.models";
 import { renderQuotePdf, renderSalesReturnOrderPdf } from "./sales.pdf";
@@ -801,6 +809,12 @@ const quoteFields = [
  * Refused when any of the quotes is locked. A new customer on a single quote
  * brings its currency. A new currency brings today's exchange rate. An empty
  * value clears the field.
+ *
+ * @param ids - The quotes to change. See sales_getQuotes.
+ * @param field - The field to set.
+ * @param value - The new value: an id, text or a date (YYYY-MM-DD). Empty or null clears the field.
+ *
+ * @mcp
  */
 export const updateQuoteField = defineServiceFn({
   input: service.fieldUpdate(quoteFields),
@@ -1427,6 +1441,10 @@ export const convertQuote = defineServiceFn({
  * Saves the configuration on the line, clears its prices, copies the item's
  * method for that configuration, then prices its Purchase to Order materials
  * from supplier price breaks (a typed cost is left alone).
+ *
+ * Not published: no page calls it, and it leaves the line unpriced by the
+ * pricing rules. The quote line form saves a configuration through
+ * `updateQuoteLine` (`sales_updateQuoteLine`), which reprices the line.
  */
 export const configureQuoteLine = defineServiceFn({
   input: z.object({
@@ -2007,10 +2025,17 @@ const salesOrderFields = [
  * Set one field on one or more sales orders.
  *
  * @remarks
- * Refused once any of the orders is confirmed. A new customer on a single
+ * Refused while any of the orders is To Ship and Invoice, To Ship, To
+ * Invoice, Completed, Cancelled or Closed. A new customer on a single
  * order brings its currency and today's exchange rate; so does a new
  * currency. The requested and promised dates are the shipment's. An empty
  * value clears the field.
+ *
+ * @param ids - The sales orders to change. See sales_getSalesOrders.
+ * @param field - The field to set.
+ * @param value - The new value: an id, text, a number or a date (YYYY-MM-DD). Empty or null clears the field.
+ *
+ * @mcp
  */
 export const updateSalesOrderField = defineServiceFn({
   input: service.fieldUpdate(salesOrderFields),
@@ -11260,20 +11285,112 @@ export const buildContractLineJob = defineServiceFn({
 /**
  * Gets a contract's persisted invoice schedule: planned invoices with their lines, and the cancellation credits that sit on a memo instead of an invoice
  *
+ * @remarks
+ * An unedited Draft stores no schedule: `planned` then holds the schedule
+ * the contract page shows, planned live from the lines. Each of its invoices
+ * and rows has a `ref`, which `sales_editContractSchedule` takes in place of
+ * an id. `planned` is null once a schedule is stored.
+ *
  * @mcp read
  */
 export const getContractInvoiceSchedule = defineServiceFn({
   input: z.looseObject({ customerContractId: z.string() }),
   permission: { view: "sales" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getContractInvoiceSchedule(
-        ctx.asCaller.supabase,
-        input.customerContractId as never,
-        ctx.company.id
-      )
+    const schedule = await service.getContractInvoiceSchedule(
+      ctx.asCaller.supabase,
+      input.customerContractId,
+      ctx.company.id
     );
+    if (schedule.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the invoice schedule",
+        schedule.error
+      );
+    }
+    const planned = await service.plannedContractSchedule(
+      ctx,
+      input.customerContractId,
+      schedule.data.invoices.length
+    );
+    if (planned instanceof Error) {
+      return ctx.error("internal", "Failed to plan the schedule", planned);
+    }
+    return { ...schedule.data, planned };
+  }
+});
+
+/**
+ * Edit a Draft contract's invoice schedule.
+ *
+ * @remarks
+ * One edit, as on the contract's invoice grid: `move` an invoice to another
+ * date, `split` a row into installments, `merge` one invoice into another,
+ * `moveLine` a row to another date, `setAmount` of one line on one invoice
+ * (0 removes it), `addInvoice`, or `delete` an invoice. Only Planned invoices
+ * change. The first edit stores the schedule. Money only moves: what a line
+ * no longer invoices is its residual, shown on the contract until it is
+ * placed again or the schedule is reset. An invoice or row of an unedited
+ * Draft is named by its `ref` from sales_getContractInvoiceSchedule.
+ *
+ * @param customerContractId - The Draft contract. See sales_getContracts.
+ * @param edit - The edit, by `intent`.
+ *
+ * @mcp
+ */
+export const editContractSchedule = defineServiceFn({
+  input: z.object({
+    customerContractId: z.string().min(1),
+    edit: service.scheduleEdit
+  }),
+  permission: { update: "sales" },
+  async run(ctx, { customerContractId, edit }) {
+    const result = await service.postContract(ctx, {
+      type: "edit-schedule",
+      customerContractId,
+      asOf: await service.companyToday(ctx),
+      edit
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to edit the invoice schedule"),
+        result.error
+      );
+    }
+    return { customerContractId };
+  }
+});
+
+/**
+ * Reset a Draft contract's invoice schedule.
+ *
+ * @remarks
+ * Throws the schedule edits away: the schedule is planned from the lines
+ * again.
+ *
+ * @param customerContractId - The Draft contract. See sales_getContracts.
+ *
+ * @mcp
+ */
+export const resetContractSchedule = defineServiceFn({
+  input: z.object({ customerContractId: z.string().min(1) }),
+  permission: { update: "sales" },
+  async run(ctx, { customerContractId }) {
+    const result = await service.postContract(ctx, {
+      type: "reset-schedule",
+      customerContractId,
+      asOf: await service.companyToday(ctx)
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to reset the invoice schedule"),
+        result.error
+      );
+    }
+    return { customerContractId };
   }
 });
 
@@ -11370,7 +11487,11 @@ export const createContractLine = defineServiceFn({
       ctx,
       await service.upsertContractLine(
         ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
+        payload(ctx, {
+          ...input,
+          // The line form's default; left out, the insert failed.
+          billingMethod: input.billingMethod ?? "Fixed"
+        }).forCreate() as never
       )
     );
   }
@@ -11755,6 +11876,17 @@ export const updateContractLineFunding = defineServiceFn({
  * @remarks
  * A contract modification, on a Draft or Active contract, then the line's
  * funded totals, in one transaction. Refuses a Fixed line.
+ *
+ * @param id - The funding action to change. Leave it out to add one. See sales_getContractFundingActions.
+ * @param customerContractLineId - The Time & Materials or Cost Plus line. See sales_getContractLines.
+ * @param modificationNumber - The contract modification that funds it.
+ * @param fundedDate - When it was funded (YYYY-MM-DD).
+ * @param acrn - The accounting classification reference number: 2 capital letters or digits.
+ * @param fundedCost - The cost it funds, in the contract currency.
+ * @param fundedFee - The fee it funds, in the contract currency.
+ * @param expiresOn - When the funds expire (YYYY-MM-DD).
+ *
+ * @mcp
  */
 export const upsertContractFunding = defineServiceFn({
   input: customerContractFundingValidator,
@@ -11785,6 +11917,10 @@ export const upsertContractFunding = defineServiceFn({
  * @remarks
  * On a Draft or Active contract, then the line's funded totals, in one
  * transaction. Refuses a Fixed line.
+ *
+ * @param id - The funding action. See sales_getContractFundingActions.
+ *
+ * @mcp destructive
  */
 export const deleteContractFunding = defineServiceFn({
   input: z.object({ id: z.string() }),
@@ -11856,5 +11992,229 @@ export const getProjectBillingBackup = defineServiceFn({
         salesInvoiceId
       })
     );
+  }
+});
+
+// --- Sales rules (SALES_RULES, @carbon/ee) -----------------------------------
+
+/**
+ * Create a sales rule.
+ *
+ * @remarks
+ * Needs sales rules (the SALES_RULES feature). The rule is checked when an
+ * item is added to a line on each chosen surface: when the line does not meet
+ * its conditions, an `error` rule blocks the line and a `warn` rule asks the
+ * person to acknowledge it. With no item types
+ * and no item groups the rule covers every item; `sales_assignSalesRule`
+ * pins it to single items as well. A name another sales rule has is refused.
+ *
+ * @param name - The rule's name, unique among sales rules.
+ * @param description - What the rule is for.
+ * @param message - What the person sees when the rule fires. `{token}` puts a value in, for example `{customer.location.countryCode}`.
+ * @param severity - error blocks the line; warn asks for an acknowledgement.
+ * @param filteredItemTypes - The item types it covers (Part, Material, Tool, Consumable, Service). Left out with no item groups: every item.
+ * @param filteredItemGroupIds - The item groups it covers. See items_getItemPostingGroups.
+ * @param filteredItemMatchAll - true: an item must match both the types and the groups. Default false: either.
+ * @param active - Default true.
+ * @param surfaces - Where it is checked: quoteLine, salesOrderLine, salesInvoiceLine.
+ * @param conditionAst - What a line must meet; the rule fires when it does not. `kind` all, any or none of `conditions` must hold. Each condition is `{ field, op, value }`, for example `{ field: "customer.location.countryCode", op: "in", value: ["US"] }` for US ship-to only. Fields: item.type, item.replenishmentSystem, item.itemTrackingType, item.itemPostingGroupId, transaction.quantity, customer.customerTypeId, customer.customerStatusId, customer.location.countryCode (the ship-to country, ISO alpha-2), item.customFields.<key>, customer.customFields.<key>. Operators: eq, neq, in, notIn, isSet, isNotSet, and gt, lt for a number.
+ *
+ * @mcp
+ */
+export const createSalesRule = defineServiceFn({
+  input: salesRuleInputValidator,
+  permission: { create: "sales" },
+
+  async run(ctx, input) {
+    try {
+      return unwrap(
+        ctx,
+        await upsertEnforcementRule(
+          ctx.asCaller.supabase,
+          "sales",
+          ctx.company.id,
+          { ...service.salesRuleRow(input), createdBy: ctx.auditUserId }
+        )
+      );
+    } catch (err) {
+      return service.salesRulesEntitlementRefusal(ctx, err);
+    }
+  }
+});
+
+/**
+ * Replace a sales rule.
+ *
+ * @remarks
+ * Needs sales rules (the SALES_RULES feature). Takes the whole rule, as the
+ * rule form sends it: a field left out takes its default (no description, no
+ * item filters, active).
+ *
+ * @param id - The sales rule. See shared_getEnforcementRules with family sales.
+ * @param name - The rule's name, unique among sales rules.
+ * @param description - What the rule is for.
+ * @param message - What the person sees when the rule fires. `{token}` puts a value in, for example `{customer.location.countryCode}`.
+ * @param severity - error blocks the line; warn asks for an acknowledgement.
+ * @param filteredItemTypes - The item types it covers (Part, Material, Tool, Consumable, Service). Left out with no item groups: every item.
+ * @param filteredItemGroupIds - The item groups it covers. See items_getItemPostingGroups.
+ * @param filteredItemMatchAll - true: an item must match both the types and the groups. Default false: either.
+ * @param active - Default true.
+ * @param surfaces - Where it is checked: quoteLine, salesOrderLine, salesInvoiceLine.
+ * @param conditionAst - What a line must meet, as for sales_createSalesRule.
+ *
+ * @mcp
+ */
+export const updateSalesRule = defineServiceFn({
+  input: salesRuleUpdateInputValidator,
+  permission: { update: "sales" },
+
+  async run(ctx, { id, ...input }) {
+    const refused = await refuseUnlessOwned(ctx, "enforcementRule", {
+      id,
+      family: "sales"
+    });
+    if (refused) return refused;
+    try {
+      return unwrap(
+        ctx,
+        await upsertEnforcementRule(
+          ctx.asCaller.supabase,
+          "sales",
+          ctx.company.id,
+          { ...service.salesRuleRow(input), id, updatedBy: ctx.auditUserId }
+        )
+      );
+    } catch (err) {
+      return service.salesRulesEntitlementRefusal(ctx, err);
+    }
+  }
+});
+
+/**
+ * Delete a sales rule.
+ *
+ * @remarks
+ * Needs sales rules (the SALES_RULES feature). Its item pins go with it; the
+ * acknowledgements already recorded stay.
+ *
+ * @param id - The sales rule. See shared_getEnforcementRules with family sales.
+ *
+ * @mcp destructive
+ */
+export const deleteSalesRule = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { delete: "sales" },
+
+  async run(ctx, { id }) {
+    const refused = await refuseUnlessOwned(ctx, "enforcementRule", {
+      id,
+      family: "sales"
+    });
+    if (refused) return refused;
+    try {
+      const deleted = await deleteEnforcementRule(
+        ctx.asCaller.supabase,
+        "sales",
+        id,
+        ctx.company.id
+      );
+      if (deleted.error) {
+        return ctx.error("internal", "Failed to delete rule", deleted.error);
+      }
+      return { id };
+    } catch (err) {
+      return service.salesRulesEntitlementRefusal(ctx, err);
+    }
+  }
+});
+
+/**
+ * Pin a sales rule to an item.
+ *
+ * @remarks
+ * Needs sales rules (the SALES_RULES feature). The rule then also covers the
+ * item, whatever its item filters say. A pin the item already has is refused.
+ *
+ * @param ruleId - The sales rule. See shared_getEnforcementRules with family sales.
+ * @param itemId - The item.
+ *
+ * @mcp
+ */
+export const assignSalesRule = defineServiceFn({
+  input: z.object({ ruleId: z.string().min(1), itemId: z.string().min(1) }),
+  permission: { update: "sales" },
+
+  async run(ctx, { ruleId, itemId }) {
+    const refused =
+      (await refuseUnlessOwned(ctx, "enforcementRule", {
+        id: ruleId,
+        family: "sales"
+      })) ?? (await refuseUnlessOwned(ctx, "item", { id: itemId }));
+    if (refused) return refused;
+    try {
+      const pinned = await eeAssignSalesRule(ctx.asCaller.supabase, {
+        itemId,
+        ruleId,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      });
+      if (pinned.error) {
+        return ctx.error("internal", "Failed to assign rule", pinned.error);
+      }
+      return { ruleId, itemId };
+    } catch (err) {
+      return service.salesRulesEntitlementRefusal(ctx, err);
+    }
+  }
+});
+
+/**
+ * Remove a sales rule's pin from an item.
+ *
+ * @remarks
+ * Needs sales rules (the SALES_RULES feature). The rule still covers the item
+ * when its item filters do.
+ *
+ * @param ruleId - The sales rule. See shared_getEnforcementRules with family sales.
+ * @param itemId - The pinned item.
+ *
+ * @mcp
+ */
+export const unassignSalesRule = defineServiceFn({
+  input: z.object({ ruleId: z.string().min(1), itemId: z.string().min(1) }),
+  permission: { update: "sales" },
+
+  async run(ctx, { ruleId, itemId }) {
+    const refused = await refuseUnlessOwned(ctx, "enforcementRule", {
+      id: ruleId,
+      family: "sales"
+    });
+    if (refused) return refused;
+    const pin = await ctx.asCaller.supabase
+      .from("enforcementRuleItemAssignment")
+      .select("ruleId")
+      .eq("ruleId", ruleId)
+      .eq("itemId", itemId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (pin.error) {
+      return ctx.error("internal", "Failed to read the pin", pin.error);
+    }
+    if (!pin.data) {
+      return ctx.error("notFound", "The item is not pinned to this rule");
+    }
+    try {
+      const unpinned = await eeUnassignSalesRule(ctx.asCaller.supabase, {
+        itemId,
+        ruleId,
+        companyId: ctx.company.id
+      });
+      if (unpinned.error) {
+        return ctx.error("internal", "Failed to unassign rule", unpinned.error);
+      }
+      return { ruleId, itemId };
+    } catch (err) {
+      return service.salesRulesEntitlementRefusal(ctx, err);
+    }
   }
 });

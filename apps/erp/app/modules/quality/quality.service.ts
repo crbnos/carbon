@@ -23,7 +23,11 @@ import { z } from "zod";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { receiptLotIssueType } from "./quality.utils";
+import {
+  compareInspectionFeatures,
+  receiptLotIssueType,
+  samplingRuleForPlanType
+} from "./quality.utils";
 
 const logger = getLogger("erp", "quality");
 
@@ -1392,7 +1396,11 @@ export async function insertIssueReviewer(
     createdBy: string;
   }
 ) {
-  return client.from("nonConformanceReviewer").insert(reviewer);
+  return client
+    .from("nonConformanceReviewer")
+    .insert(reviewer)
+    .select("id")
+    .single();
 }
 
 export async function updateIssueActionProcesses(
@@ -1668,6 +1676,26 @@ export async function upsertGaugeCalibrationRecord(
 
   if (gauge.error) return gauge;
 
+  // An update writes the record first: an id that matches no record is
+  // refused before the gauge's dates move.
+  const updated =
+    "updatedBy" in gaugeCalibrationRecord
+      ? await requireAffected(
+          client
+            .from("gaugeCalibrationRecord")
+            .update(
+              sanitize({
+                ...gaugeCalibrationRecord,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
+            )
+            .eq("id", gaugeCalibrationRecord.id)
+            .select("id")
+        )
+      : null;
+  if (updated?.error) return updated;
+
   if (
     !gauge.data?.lastCalibrationDate ||
     parseDate(gauge.data.lastCalibrationDate) <=
@@ -1715,16 +1743,7 @@ export async function upsertGaugeCalibrationRecord(
       .select("id")
       .single();
   }
-  return client
-    .from("gaugeCalibrationRecord")
-    .update(
-      sanitize({
-        ...gaugeCalibrationRecord,
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-    )
-    .eq("id", gaugeCalibrationRecord.id);
+  return updated ?? { data: null, error: null };
 }
 
 export async function upsertGaugeType(
@@ -2086,10 +2105,13 @@ export async function upsertIssueWorkflow(
       .select("id")
       .single();
   } else {
-    return client
-      .from("nonConformanceWorkflow")
-      .update(sanitize(nonConformanceWorkflow))
-      .eq("id", nonConformanceWorkflow.id);
+    return requireAffected(
+      client
+        .from("nonConformanceWorkflow")
+        .update(sanitize(nonConformanceWorkflow))
+        .eq("id", nonConformanceWorkflow.id)
+        .select("id")
+    );
   }
 }
 
@@ -3303,8 +3325,8 @@ export async function attachModelToInspectionDocument(
 /**
  * Makes a new Draft version of an inspection plan as a copy of `copyFromId`,
  * in one transaction: the plan row (numbered one past the plan's highest
- * version), its characteristics, balloons and parameters. The copy shares the
- * drawing file and the model. Returns the new version's id.
+ * version), its characteristics (in their order), balloons and parameters.
+ * The copy shares the drawing file and the model. Returns the new version's id.
  */
 export async function copyInspectionDocumentAsVersion(
   db: Kysely<KyselyDatabase>,
@@ -3372,6 +3394,13 @@ export async function copyInspectionDocumentAsVersion(
       trx
         .selectFrom("inspectionFeature")
         .selectAll()
+        // As text, since a Date drops the microseconds that order a save's
+        // characteristics.
+        .select(
+          sql<string>`to_char("createdAt" AT TIME ZONE 'UTC', 'YYYYMMDDHH24MISSUS')`.as(
+            "createdOrder"
+          )
+        )
         .where("inspectionDocumentId", "=", copyFromId)
         .where("companyId", "=", companyId)
         .execute(),
@@ -3389,21 +3418,41 @@ export async function copyInspectionDocumentAsVersion(
         .execute()
     ]);
 
-    const featureIds = await newIds(trx, "ift", features.length);
-    const featureIdMap = new Map(
-      features.map((feature, index) => [feature.id, featureIds[index]!])
+    // One insert gives every copy the same createdAt, which loses the order:
+    // each copy is a microsecond after the one before, in the source's order.
+    const ordered = [...features].sort((a, b) =>
+      compareInspectionFeatures(
+        { ...a, createdAt: a.createdOrder },
+        { ...b, createdAt: b.createdOrder }
+      )
     );
-    if (features.length > 0) {
+    const featureIds = await newIds(trx, "ift", ordered.length);
+    const featureIdMap = new Map(
+      ordered.map((feature, index) => [feature.id, featureIds[index]!])
+    );
+    if (ordered.length > 0) {
       await trx
         .insertInto("inspectionFeature")
         .values(
-          features.map(
-            ({ id, createdAt, updatedAt, updatedBy, createdBy, ...rest }) => ({
+          ordered.map(
+            (
+              {
+                id,
+                createdAt,
+                createdOrder,
+                updatedAt,
+                updatedBy,
+                createdBy,
+                ...rest
+              },
+              index
+            ) => ({
               ...rest,
               id: featureIdMap.get(id)!,
               inspectionDocumentId: planId!,
               companyId,
-              createdBy: userId
+              createdBy: userId,
+              createdAt: sql<string>`now() + ${index}::int * interval '1 microsecond'`
             })
           )
         )
@@ -3821,7 +3870,7 @@ export async function updateInspectionDocumentSampling(
     client
       .from("inspectionDocument")
       .update({
-        ...sampling,
+        ...samplingRuleForPlanType(sampling),
         updatedBy: userId,
         updatedAt: datetime.timestamp()
       })
@@ -3833,8 +3882,16 @@ export async function updateInspectionDocumentSampling(
   );
 }
 
+/**
+ * Saves a plan's characteristics and balloons with the atomic RPC, as the
+ * caller. The RPC inserts in one transaction, so the characteristics it
+ * creates share its `now()` as `createdAt`, and every list of them orders by
+ * `createdAt`: one UPDATE then spaces them a microsecond apart in the order
+ * they were sent, and the saved rows it returns are put in that order.
+ */
 export async function saveInspectionDocumentAtomic(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     inspectionDocumentId: string;
     companyId: string;
@@ -3847,7 +3904,7 @@ export async function saveInspectionDocumentAtomic(
     balloons: unknown;
   }
 ) {
-  return (
+  const saved = await (
     client as unknown as {
       rpc: (
         fn: string,
@@ -3867,6 +3924,84 @@ export async function saveInspectionDocumentAtomic(
     p_default_page_height: args.defaultPageHeight ?? null,
     p_features: args.features,
     p_balloons: args.balloons
+  });
+  if (saved.error || !saved.data || typeof saved.data !== "object") {
+    return saved;
+  }
+
+  const data = saved.data as {
+    featureIdMap?: Record<string, string>;
+    features?: Array<Record<string, unknown>>;
+  };
+  const created = createdFeatureIds(args.features, data.featureIdMap ?? {});
+  if (created.length < 2) return saved;
+
+  try {
+    const spaced = await sql<{ id: string; createdAt: string }>`
+      UPDATE "inspectionFeature" AS f
+      SET "createdAt" = f."createdAt" + (v.position - 1) * interval '1 microsecond'
+      FROM unnest(${created}::text[]) WITH ORDINALITY AS v(id, position)
+      WHERE f."id" = v.id
+        AND f."inspectionDocumentId" = ${args.inspectionDocumentId}
+        AND f."companyId" = ${args.companyId}
+      RETURNING f."id", to_jsonb(f."createdAt") #>> '{}' AS "createdAt"
+    `.execute(db);
+    return {
+      data: {
+        ...data,
+        features: inSentOrder(data.features ?? [], created, spaced.rows)
+      },
+      error: null
+    };
+  } catch (error) {
+    // The save itself committed: report it, in the order the RPC returned.
+    logger.error("Failed to keep the order of saved characteristics", {
+      inspectionDocumentId: args.inspectionDocumentId,
+      error
+    });
+    return saved;
+  }
+}
+
+/** The persisted ids of the characteristics a save creates, in sent order. */
+function createdFeatureIds(
+  features: unknown,
+  featureIdMap: Record<string, string>
+): string[] {
+  const create = (features as { create?: unknown } | null)?.create;
+  if (!Array.isArray(create)) return [];
+  const ids = create.flatMap((item: unknown): string[] => {
+    const { id, tempId } = (item ?? {}) as { id?: unknown; tempId?: unknown };
+    if (typeof id === "string" && id) return [id];
+    const persisted = typeof tempId === "string" ? featureIdMap[tempId] : null;
+    return persisted ? [persisted] : [];
+  });
+  return [...new Set(ids)];
+}
+
+/**
+ * The saved characteristics with the created ones in the slots the RPC gave
+ * them (their `createdAt` tied, so in no set order), now in sent order and
+ * with their new `createdAt`.
+ */
+function inSentOrder(
+  features: Array<Record<string, unknown>>,
+  created: string[],
+  spaced: Array<{ id: string; createdAt: string }>
+) {
+  const position = new Map(created.map((id, index) => [id, index]));
+  const createdAt = new Map(spaced.map((row) => [row.id, row.createdAt]));
+  const sent = features
+    .filter((feature) => position.has(String(feature.id)))
+    .sort((a, b) => position.get(String(a.id))! - position.get(String(b.id))!);
+  let next = 0;
+  return features.map((feature) => {
+    if (!position.has(String(feature.id))) return feature;
+    const row = sent[next++]!;
+    return {
+      ...row,
+      createdAt: createdAt.get(String(row.id)) ?? row.createdAt
+    };
   });
 }
 type TrackedEntityRow = Database["public"]["Tables"]["trackedEntity"]["Row"];

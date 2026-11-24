@@ -299,6 +299,7 @@ import type {
   salesRFQStatusType,
   salesRfqLineValidator,
   salesRfqValidator,
+  salesRuleInputValidator,
   selectedLinesValidator
 } from "./sales.models";
 import {
@@ -349,6 +350,11 @@ import type {
   SalesOrder,
   SalesRFQ
 } from "./types";
+import {
+  toContractLineTerms,
+  toContractTerms
+} from "./ui/Contracts/contractTerms";
+import type { Contract } from "./ui/Contracts/types";
 
 // The customer list's columns: its table, filters, custom field columns and
 // cursor. Leaving out orderCount (a grouped count of salesOrder) and externalId
@@ -21339,7 +21345,7 @@ const customerContractTypes = [
 /** One edit to a Draft schedule — the ERP's
  *  `customerContractScheduleEditValidator` minus `reset`. Refs are a stored
  *  id or a `planned:` position ref (see `editSchedule`). */
-const scheduleEdit = z.discriminatedUnion("intent", [
+export const scheduleEdit = z.discriminatedUnion("intent", [
   z.object({
     intent: z.literal("move"),
     customerContractInvoiceId: z.string().min(1),
@@ -25232,4 +25238,87 @@ export async function generateContractBillableItems(
     });
     return { generated };
   });
+}
+
+// --- Sales rules --------------------------------------------------------------
+
+/**
+ * A sales rule's columns from the API input. A field left out takes the
+ * new-rule form's default, so an update replaces the whole rule.
+ */
+export function salesRuleRow(input: z.infer<typeof salesRuleInputValidator>) {
+  return {
+    name: input.name,
+    description: input.description || null,
+    message: input.message,
+    severity: input.severity,
+    filteredItemTypes: input.filteredItemTypes ?? [],
+    filteredItemGroupIds: input.filteredItemGroupIds ?? [],
+    filteredItemMatchAll: input.filteredItemMatchAll ?? false,
+    active: input.active ?? true,
+    surfaces: [...input.surfaces],
+    conditionAst: input.conditionAst
+  };
+}
+
+/**
+ * A sales rule write the plan refuses (`requireEntitlement` in
+ * `@carbon/ee/rules.server`): the upgrade message the write routes flashed.
+ */
+export function salesRulesEntitlementRefusal(
+  ctx: ServiceContext,
+  err: unknown
+) {
+  if (!(err instanceof EntitlementError)) throw err;
+  return ctx.error(
+    "entitlement",
+    defaultUpgradeMessage(resolveRequirement({ feature: "SALES_RULES" }))
+  );
+}
+
+// --- Contract invoice schedule ------------------------------------------------
+
+/**
+ * An unedited Draft contract's invoice schedule, planned live as the contract
+ * page plans it, each invoice and row named by the position ref the schedule
+ * edits take (`planned:<invoiceDate>`,
+ * `planned:<invoiceDate>:<lineId>:<periodStart>[:adjustment]`). Null for a
+ * contract that is not a Draft, has no start date or stores its schedule.
+ */
+export async function plannedContractSchedule(
+  ctx: ServiceContext,
+  customerContractId: string,
+  storedInvoiceCount: number
+) {
+  if (storedInvoiceCount > 0) return null;
+  const [contract, lines] = await Promise.all([
+    getContract(ctx.asCaller.supabase, customerContractId, ctx.company.id),
+    getContractLines(ctx.asCaller.supabase, customerContractId, ctx.company.id)
+  ]);
+  if (contract.error) return contract.error;
+  if (lines.error) return lines.error;
+  if (contract.data?.status !== "Draft" || !contract.data.startDate) {
+    return null;
+  }
+  const terms = toContractTerms(contract.data as Contract);
+  const planned = planInvoiceSchedule(
+    terms,
+    (lines.data ?? []).map(toContractLineTerms),
+    horizon(terms, await companyToday(ctx))
+  );
+  return planned.map((invoice) => ({
+    ref: `planned:${invoice.invoiceDate}`,
+    invoiceDate: invoice.invoiceDate,
+    status: invoice.status,
+    rows: invoice.rows.map((row) => ({
+      ref: `planned:${row.invoiceDate}:${row.lineId}:${row.periodStart}${row.isAdjustment ? ":adjustment" : ""}`,
+      customerContractLineId: row.lineId,
+      periodStart: row.periodStart,
+      periodEnd: row.periodEnd,
+      units: row.units,
+      unitPrice: row.unitPrice,
+      amount: row.amount,
+      isAdjustment: row.isAdjustment
+    }))
+  }));
 }

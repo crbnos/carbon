@@ -89,7 +89,9 @@ UPDATE → `quality_update`; DELETE → `quality_delete`.
   `RiskType.tsx`.
 - Routes `apps/erp/app/routes/x+/quality+/`: `risks.tsx` (list, `view: "quality"`),
   `risks.new.tsx` (`createRisk`: company membership, and the table's
-  employee-only INSERT policy — **not** `create: "quality"`; not published),
+  employee-only INSERT policy — **not** `create: "quality"`; published as
+  `quality_createRisk`, where an API key needs `create: quality`
+  (`refuseKeyWithout`); the assignee must be an active employee),
   `risks.$id.tsx` (loader `view`, `updateRisk`: `update: "quality"`),
   `risks.delete.$id.tsx` (`delete: "quality"`).
 - Path helpers (`apps/erp/app/utils/path.ts`): `risks`, `risk(id)`, `newRisk`,

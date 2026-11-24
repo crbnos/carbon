@@ -770,13 +770,13 @@ function SerialNumberTimingChoice() {
           {
             value: "jobCreation",
             title: labels.jobCreation,
-            description: t`Every unit is numbered up front, so serials can be printed before work starts.`,
+            description: t`The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on.`,
             icon: <LuTicket />
           },
           {
             value: "jobRelease",
             title: labels.jobRelease,
-            description: t`Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none.`,
+            description: t`The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on.`,
             icon: <LuSend />
           },
           {

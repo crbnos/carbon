@@ -2,17 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { upsertDemandProjections } from "@carbon/ee/forecast.server";
-import { requireFeature } from "@carbon/ee/plan.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useRouteData, useRouteDialog } from "@carbon/react";
-import { datetime, redirect } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { demandProjectionValidator } from "~/modules/production/production.models";
+import {
+  demandProjectionValidator,
+  demandProjectionWeeks
+} from "~/modules/production/production.models";
 import DemandProjectionForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
 import {
   getCompanyTimeZone,
@@ -39,77 +38,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { periods };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "production"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(demandProjectionValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { itemId, locationId } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.production.createDemandProjections({
+    itemId,
+    locationId,
+    weeks: demandProjectionWeeks(input.data)
   });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "FORECAST",
-    redirectTo: path.to.demandProjections
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(demandProjectionValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { itemId, locationId, periods, ...weekData } = validation.data;
-
-  // Extract week values and create demand forecast records
-  const demandProjections = [];
-
-  for (let i = 0; i < 52; i++) {
-    const weekKey = `week${i}` as keyof typeof weekData;
-    const quantity = weekData[weekKey];
-
-    if (
-      quantity !== undefined &&
-      quantity !== null &&
-      quantity > 0 &&
-      periods?.[i]
-    ) {
-      demandProjections.push({
-        itemId,
-        locationId,
-        periodId: periods[i],
-        forecastQuantity: quantity,
-        companyId,
-        createdBy: userId
-      });
-    }
-  }
-
-  if (demandProjections.length === 0) {
-    return data(
-      {},
-      await flash(request, error(null, "No forecast quantities provided"))
-    );
-  }
-
-  const result = await upsertDemandProjections(client, demandProjections);
-
-  if (result.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(result.error, "Failed to save demand forecasts")
-      )
-    );
-  }
-
-  return redirect(
-    path.to.demandProjections + `?location=${locationId}`,
-    await flash(request, success("Demand forecasts created successfully"))
+  return respond(args.request, result).redirect(
+    `${path.to.demandProjections}?location=${locationId}`,
+    { message: "Demand forecasts created successfully" }
   );
 }
 

@@ -73,13 +73,13 @@ export type SentFields<T, K extends keyof T> = {
 };
 
 /**
- * The item columns a material update copies from its payload. With generated
- * IDs the name is derived from the properties and written to every revision,
- * so a sent name is ignored.
+ * The item columns a material update copies from its payload. A call that
+ * derives the name (generated IDs, a property changed) writes it to every
+ * revision instead, so the name is not copied.
  */
-export function materialItemUpdateFields(generatedIds: boolean) {
+export function materialItemUpdateFields(nameDerived: boolean) {
   return [
-    ...(generatedIds ? [] : (["name"] as const)),
+    ...(nameDerived ? [] : (["name"] as const)),
     "description",
     "mpn",
     "replenishmentSystem",
@@ -233,4 +233,60 @@ export function generateMaterialIdentity(
     readableId: getMaterialId(naming),
     name: getMaterialDescription(naming)
   };
+}
+
+export type NewMaterialIdentity =
+  | { readableId: string; name: string }
+  | { refusal: "validation" | "rule"; message: string };
+
+/**
+ * The ID and name an API caller's new material is created under, as the New
+ * Material form decides them. With generated IDs (`generated`) the form has
+ * no ID or name field, so a sent one that differs is refused rather than
+ * replaced; with typed IDs both are required.
+ */
+export function newMaterialIdentity(
+  generated: { readableId: string; name: string } | null,
+  sent: { id?: string; name?: string }
+): NewMaterialIdentity {
+  if (generated) {
+    const otherId = sent.id !== undefined && sent.id !== generated.readableId;
+    const otherName = sent.name !== undefined && sent.name !== generated.name;
+    if (otherId || otherName) {
+      return {
+        refusal: "rule",
+        message: `Material IDs are generated from the properties: this material is ${generated.readableId}, named ${generated.name}. Leave out id and name, or send these`
+      };
+    }
+    return generated;
+  }
+  if (!sent.id) {
+    return { refusal: "validation", message: "Material ID is required" };
+  }
+  if (!sent.name) {
+    return { refusal: "validation", message: "Short description is required" };
+  }
+  return { readableId: sent.id, name: sent.name };
+}
+
+/**
+ * Why an API caller's update of a material with generated IDs is refused, as
+ * the properties panel decides it; null when it is not. The panel has no ID
+ * field, so a sent ID other than the one the material ends up with is refused.
+ * Its name field writes the name, but a call that changes a property derives
+ * the name (`generated`), so a sent name that differs is refused there.
+ */
+export function generatedMaterialUpdateRefusal(
+  readableId: string,
+  generated: { readableId: string; name: string } | null,
+  sent: { readableId?: string | null; name?: string | null }
+): string | null {
+  const nextId = generated?.readableId ?? readableId;
+  const otherId = !!sent.readableId && sent.readableId !== nextId;
+  const otherName =
+    generated !== null && sent.name != null && sent.name !== generated.name;
+  if (!otherId && !otherName) return null;
+  return generated
+    ? `Material IDs are generated from the properties: this change makes the material ${generated.readableId}, named ${generated.name}. Leave out readableId and name, or send these; change the name in a call that changes no property`
+    : `Material IDs are generated from the properties: this material is ${readableId}. Leave out readableId, or send it`;
 }

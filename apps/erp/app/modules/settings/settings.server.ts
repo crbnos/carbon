@@ -109,7 +109,9 @@ import {
   getCompanyTimeZone,
   invalidateCompanyTimeZone,
   invokePosting,
-  isActiveCompanyEmployee
+  isActiveCompanyEmployee,
+  refuseKeyWithout,
+  refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
@@ -120,6 +122,7 @@ import {
   calculatedShelfLifeInputScopes,
   companyDetailsValidator,
   companyValidator,
+  customFieldInputValidator,
   dimensionSlotEntrySchema,
   dimensionValueMappingEntrySchema,
   expiredEntityPolicies,
@@ -140,7 +143,8 @@ import * as service from "./settings.service";
 import {
   DOCUMENT_EDIT_RECORDS,
   DOCUMENT_TERMS_FIELD,
-  documentEditPermissions
+  documentEditPermissions,
+  refusedCustomFieldKeys
 } from "./settings.utils";
 
 const logger = getLogger("erp", "settings");
@@ -237,8 +241,11 @@ export const updateAccountingSettings = defineServiceFn({
  * A company that enabled accounting before the enable wrote journals has
  * documents posted on or after its cutover with no journal. This runs the
  * `journal-legacy-documents` posting, which journals each of them, and
- * returns how many documents it journaled. Not published: it needs two
- * modules' permissions, which the API gate cannot state yet.
+ * returns how many documents it journaled. A document that has a journal is
+ * left alone, so a second run journals nothing. Refused before the
+ * accounting cutover.
+ *
+ * @mcp
  */
 export const writeMissingJournals = defineServiceFn({
   input: z.object({}),
@@ -2736,8 +2743,23 @@ export const setRecordTags = defineServiceFn({
  * Set the custom field values of some records of one table.
  *
  * @remarks
- * Replaces the `customFields` of each record. Row-level security decides
- * which records the caller may change.
+ * Replaces the `customFields` of each record with the values sent, as a
+ * record's properties panel does: send every value the record keeps. Only the
+ * company's records change, and row-level security decides which of them the
+ * caller may change. A table that takes no custom fields is refused, and so
+ * is a key that is not one of the table's custom fields, unless the records
+ * already hold that value (the panel sends back a deleted field's value
+ * unchanged). A call that changes no record is refused. An API key needs
+ * `update` on the module that edits the table's records (`parts` for item
+ * tables such as part or material).
+ *
+ * @param table - A table with custom fields, such as part, customer, salesOrder or job. See settings_getCustomFieldsTables.
+ * @param ids - The records to change.
+ * @param customFields - The values, keyed by custom field id. See settings_getCustomFields.
+ *
+ * @returns The ids of the records changed.
+ *
+ * @mcp
  */
 export const setRecordCustomFields = defineServiceFn({
   input: z.object({
@@ -2747,21 +2769,87 @@ export const setRecordCustomFields = defineServiceFn({
   }),
   permission: {},
   async run(ctx, { table, ids, customFields }) {
-    const { error } = await ctx.asCaller.supabase
-      // @ts-expect-error: the table is the caller's, for any record with custom fields
-      .from(table)
-      .update(
-        unchecked({
-          customFields,
-          updatedBy: ctx.auditUserId,
-          updatedAt: datetime.timestamp()
-        })
-      )
-      .in(unchecked("id"), ids);
+    const scope = await service.getCustomFieldTableEditScope(
+      ctx.asSystem.supabase,
+      table
+    );
+    if (scope.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the custom field table",
+        scope.error
+      );
+    }
+    if (!scope.data) {
+      return ctx.error("validation", `${table} has no custom fields`);
+    }
+    const keyRefused = refuseKeyWithout(ctx, { update: scope.data.module });
+    if (keyRefused) return keyRefused;
+
+    const { scopeColumn } = scope.data;
+    const scopeId =
+      scopeColumn === "companyId" ? ctx.company.id : ctx.company.groupId;
+
+    const fields = await service.getTableCustomFieldIds(
+      ctx.asCaller.supabase,
+      table,
+      ctx.company.id
+    );
+    if (fields.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the custom fields",
+        fields.error
+      );
+    }
+    const fieldIds = (fields.data ?? []).map((field) => field.id);
+    if (Object.keys(customFields).some((key) => !fieldIds.includes(key))) {
+      const stored = await service.getRecordsCustomFields(
+        ctx.asCaller.supabase,
+        { table, ids, scopeColumn, scopeId }
+      );
+      if (stored.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the records",
+          stored.error
+        );
+      }
+      const refused = refusedCustomFieldKeys(
+        customFields,
+        fieldIds,
+        (stored.data ?? []).map((record) => record.customFields)
+      );
+      if (refused.length > 0) {
+        return ctx.error(
+          "validation",
+          `Not a custom field of ${table}: ${refused.join(", ")}`
+        );
+      }
+    }
+
+    const { data, error } = await service.updateRecordCustomFields(
+      ctx.asCaller.supabase,
+      {
+        table,
+        ids,
+        scopeColumn,
+        scopeId,
+        customFields,
+        updatedBy: ctx.auditUserId
+      }
+    );
     if (error) {
       return ctx.error("internal", "Failed to update custom fields", error);
     }
-    return { ids };
+    const changed = data ?? [];
+    if (changed.length === 0) {
+      return ctx.error(
+        "notFound",
+        "No record was changed: none exists in this company that you can change"
+      );
+    }
+    return { ids: changed.map((row) => row.id) };
   }
 });
 
@@ -3577,6 +3665,137 @@ export const getCustomFields = defineServiceFn({
 });
 
 /**
+ * Create a custom field definition.
+ *
+ * @remarks
+ * Adds a field to every record of one table, last in its order. A list field
+ * needs at least one option. A name the table already has is refused.
+ *
+ * @param name - The field's label.
+ * @param table - The table it belongs to, such as customer, supplier, part, purchaseOrder or salesOrder. See settings_getCustomFieldsTables.
+ * @param dataTypeId - 1 Yes/No, 2 Date, 3 List, 4 Numeric, 5 Text, 6 User, 7 Customer, 8 Supplier, 9 File, 10 Link.
+ * @param listOptions - The choices of a List field.
+ * @param tags - Tags that limit the records it shows on.
+ * @param required - Whether a record needs a value. Default false.
+ *
+ * @mcp
+ */
+export const createCustomField = defineServiceFn({
+  input: customFieldInputValidator,
+  permission: { create: "settings" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertCustomField(ctx.asCaller.supabase, {
+        ...input,
+        required: input.required ?? false,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Change a custom field definition.
+ *
+ * @remarks
+ * Its table and data type cannot change, as in the field form. A field left
+ * out keeps its value. A List field keeps at least one option.
+ *
+ * @param id - The custom field. See settings_getCustomField.
+ * @param name - The field's label.
+ * @param listOptions - The choices of a List field.
+ * @param tags - Tags that limit the records it shows on.
+ * @param required - Whether a record needs a value.
+ *
+ * @mcp
+ */
+export const updateCustomField = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    name: z.string().trim().min(1, { message: "Name is required" }).optional(),
+    listOptions: z.string().min(1).array().optional(),
+    tags: z.array(z.string()).optional(),
+    required: z.boolean().optional()
+  }),
+  // The field form's route has always required create, not update.
+  permission: { create: "settings" },
+  async run(ctx, { id, ...changes }) {
+    const stored = await ctx.asCaller.supabase
+      .from("customField")
+      .select("name, table, dataTypeId, listOptions, tags, required")
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (stored.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the custom field",
+        stored.error
+      );
+    }
+    if (!stored.data) {
+      return ctx.error("notFound", "The custom field could not be found");
+    }
+    const field = customFieldInputValidator.safeParse({
+      name: changes.name ?? stored.data.name,
+      table: stored.data.table,
+      dataTypeId: stored.data.dataTypeId,
+      listOptions: changes.listOptions ?? stored.data.listOptions ?? undefined,
+      tags: changes.tags ?? stored.data.tags ?? undefined,
+      required: changes.required ?? stored.data.required
+    });
+    if (!field.success) {
+      return ctx.error("validation", z.prettifyError(field.error));
+    }
+    const updated = await service.upsertCustomField(ctx.asCaller.supabase, {
+      ...field.data,
+      required: field.data.required ?? false,
+      id,
+      updatedBy: ctx.auditUserId
+    });
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update custom field",
+        updated.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Delete a custom field definition.
+ *
+ * @param id - The custom field. See settings_getCustomField.
+ *
+ * @mcp destructive
+ */
+export const deleteCustomField = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { delete: "settings" },
+  async run(ctx, { id }) {
+    const refused = await refuseUnlessOwned(ctx, "customField", { id });
+    if (refused) return refused;
+    const deleted = await service.deleteCustomField(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete custom field",
+        deleted.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
  * Get custom fields tables
  *
  * @mcp read
@@ -3796,7 +4015,14 @@ export const getItemSerialSequence = defineServiceFn({
  * Create a item serial sequence
  *
  * @remarks
- * Upsert item serial sequence
+ * Gives an item its serial number sequence, as Settings → Serial Numbers →
+ * New does; numbers are drawn only for serial- or batch-tracked items. A
+ * unit's serial number is the prefix, the counter padded to `size` digits,
+ * and the suffix.
+ *
+ * @param next - The last number issued (the form's Current), not the next one: the next unit gets next + step. Send 0 for a new sequence to start at step (1 with a step of 1).
+ * @param step - How much the counter goes up per unit.
+ * @param size - The counter's digits, zero-padded.
  *
  * @mcp
  */
@@ -3823,11 +4049,20 @@ export const createItemSerialSequence = defineServiceFn({
       ),
     id: z
       .string()
-      .describe("Send to update that record; omit to create a new one.")
+      .describe(
+        "Leave out: a new sequence gets its own id. To change one, use settings_updateItemSerialSequence."
+      )
       .optional()
   }),
   permission: { create: "settings" },
   async run(ctx, input) {
+    // The form never sends one on create; with it the insert took the id.
+    if (input.id) {
+      return ctx.error(
+        "validation",
+        "A new serial sequence takes no id. To change one, use settings_updateItemSerialSequence."
+      );
+    }
     return unwrap(
       ctx,
       await service.upsertItemSerialSequence(
@@ -3842,7 +4077,12 @@ export const createItemSerialSequence = defineServiceFn({
  * Update a item serial sequence
  *
  * @remarks
- * Upsert item serial sequence
+ * Changes an item's serial number sequence, as its edit form in Settings →
+ * Serial Numbers does. Serial numbers already issued keep their values.
+ *
+ * @param next - The last number issued (the form's Current), not the next one: the next unit gets next + step.
+ * @param step - How much the counter goes up per unit.
+ * @param size - The counter's digits, zero-padded.
  *
  * @mcp
  */
@@ -3868,14 +4108,34 @@ export const updateItemSerialSequence = defineServiceFn({
         .describe(
           "Print the serial label when the job's last operation completes."
         ),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
+      id: z.string().describe("The serial sequence to change.").optional()
     })
     .required({ id: true }),
   permission: { update: "settings" },
   async run(ctx, input) {
+    // The edit form shows the item read-only: a sequence stays on its item.
+    const stored = await ctx.asCaller.supabase
+      .from("itemSerialSequence")
+      .select("itemId")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (stored.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the serial sequence",
+        stored.error
+      );
+    }
+    if (!stored.data) {
+      return ctx.error("notFound", "The serial sequence could not be found");
+    }
+    if (stored.data.itemId !== input.itemId) {
+      return ctx.error(
+        "validation",
+        "A serial sequence stays on its item: send the item it belongs to."
+      );
+    }
     return unwrap(
       ctx,
       await service.upsertItemSerialSequence(

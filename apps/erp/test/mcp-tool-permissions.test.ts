@@ -14,7 +14,7 @@ type Tool = {
   name: string;
   module: string;
   classification: "READ" | "WRITE" | "DESTRUCTIVE";
-  permission: { module: string | null; actions: string[] };
+  permission: { module: string | null; actions: string[]; scopes?: string[] };
 };
 
 const allTools = metadata.tools as Tool[];
@@ -91,16 +91,15 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "purchasing",
     actions: ["create"]
   },
-  // Opens a quality Issue from an RMA line: quality_create AND sales_update,
-  // which the API cannot name as one module, so its own gate checks both.
-  sales_escalateReturnOrderLine: { module: null, actions: [] },
+  // Opens a quality Issue from an RMA line: quality_create AND sales_update.
+  sales_escalateReturnOrderLine: { module: null, actions: [], scopes: ["quality_create", "sales_update"] },
   // A rental unit on a shipment or receipt: sales_update AND
   // inventory_create. Selling it: sales and invoicing create.
-  sales_deliverRentalUnit: { module: null, actions: [] },
-  sales_returnRentalUnit: { module: null, actions: [] },
-  sales_sellRentalUnit: { module: null, actions: [] },
+  sales_deliverRentalUnit: { module: null, actions: [], scopes: ["inventory_create", "sales_update"] },
+  sales_returnRentalUnit: { module: null, actions: [], scopes: ["inventory_create", "sales_update"] },
+  sales_sellRentalUnit: { module: null, actions: [], scopes: ["invoicing_create", "sales_create", "sales_update"] },
   // A part CLIN's delivery: sales_update AND inventory_create.
-  sales_deliverContractLine: { module: null, actions: [] },
+  sales_deliverContractLine: { module: null, actions: [], scopes: ["inventory_create", "sales_update"] },
   // The classification override is an accounting decision: its route
   // requires accounting_update.
   sales_classifyRentalUnit: {
@@ -136,12 +135,11 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   // MRP: its route requires inventory_update.
   production_runMRP: { module: "inventory", actions: ["update"] },
   // A method's steps and Save Method need production AND the owning module
-  // (parts or sales), which the API cannot name as one module, so the
-  // function's own gate checks both.
-  production_updateMethodOperationStepOrder: { module: null, actions: [] },
-  production_updateQuoteOperationStepOrder: { module: null, actions: [] },
-  production_upsertMakeMethodFromJob: { module: null, actions: [] },
-  production_upsertMakeMethodFromJobMethod: { module: null, actions: [] },
+  // (parts or sales).
+  production_updateMethodOperationStepOrder: { module: null, actions: [], scopes: ["parts_update", "production_update"] },
+  production_updateQuoteOperationStepOrder: { module: null, actions: [], scopes: ["production_update", "sales_update"] },
+  production_upsertMakeMethodFromJob: { module: null, actions: [], scopes: ["parts_update", "production_update"] },
+  production_upsertMakeMethodFromJobMethod: { module: null, actions: [], scopes: ["parts_update", "production_update"] },
   // Enrolling the company in the Implementation Hub: its route requires
   // settings_update.
   shared_enrollImplementationHub: { module: "settings", actions: ["update"] },
@@ -170,33 +168,105 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   service_setServiceJobDayHours: { module: null, actions: [] },
   // Each needs two modules, as its route does, so the function's own gate
   // checks them. A Kysely read or a posting has no RLS behind that gate.
-  projects_postProjectIssue: { module: null, actions: [] },
-  projects_placeProjectAssetsInService: { module: null, actions: [] },
-  projects_getLaborDistribution: { module: null, actions: [] },
-  projects_getLaborDistributionPeriods: { module: null, actions: [] },
-  projects_getRdSection174AReport: { module: null, actions: [] },
-  projects_getRdForm6765GReport: { module: null, actions: [] },
-  sales_buildContractLineJob: { module: null, actions: [] },
-  sales_createProjectBillingInvoices: { module: null, actions: [] },
-  // Creating and editing a labor category need different permissions, and
-  // contract billing needs projects AND sales, which the API cannot name as
-  // one module, so each function's own gate checks them.
+  projects_postProjectIssue: { module: null, actions: [], scopes: ["inventory_update", "projects_update"] },
+  projects_placeProjectAssetsInService: { module: null, actions: [], scopes: ["accounting_create", "projects_update"] },
+  projects_getLaborDistribution: { module: null, actions: [], scopes: ["people_view", "projects_view"] },
+  projects_getLaborDistributionPeriods: { module: null, actions: [], scopes: ["people_view", "projects_view"] },
+  projects_getRdSection174AReport: { module: null, actions: [], scopes: ["accounting_view", "projects_view"] },
+  projects_getRdForm6765GReport: { module: null, actions: [], scopes: ["accounting_view", "projects_view"] },
+  sales_buildContractLineJob: { module: null, actions: [], scopes: ["production_create", "sales_update"] },
+  sales_createProjectBillingInvoices: { module: null, actions: [], scopes: ["invoicing_create", "sales_update"] },
+  // Creating and editing a labor category need different permissions, which
+  // its own body checks; contract billing needs projects AND sales.
   projects_upsertLaborCategory: { module: null, actions: [] },
-  projects_getContractBillableItems: { module: null, actions: [] },
-  projects_getContractBillingLines: { module: null, actions: [] },
-  projects_updateProjectBillableItems: { module: null, actions: [] },
+  projects_getContractBillableItems: { module: null, actions: [], scopes: ["projects_view", "sales_view"] },
+  projects_getContractBillingLines: { module: null, actions: [], scopes: ["projects_view", "sales_view"] },
+  projects_updateProjectBillableItems: { module: null, actions: [], scopes: ["projects_update", "sales_view"] },
   // Changing a warranty return line to a billable service line edits the RMA
-  // (sales) AND re-posts the job's coverage (service); the API cannot name
-  // two modules, so the operation's own gate checks both.
-  sales_changeReturnLineToService: { module: null, actions: [] },
-  // Needs invoicing_update AND accounting_update; the operation's own gate
-  // checks both.
-  invoicing_changePurchaseInvoiceLineAccount: { module: null, actions: [] },
-  invoicing_changeSalesInvoiceLineAccount: { module: null, actions: [] },
+  // (sales) AND re-posts the job's coverage (service).
+  sales_changeReturnLineToService: { module: null, actions: [], scopes: ["sales_update", "service_update"] },
+  // Needs invoicing_update AND accounting_update.
+  invoicing_changePurchaseInvoiceLineAccount: { module: null, actions: [], scopes: ["accounting_update", "invoicing_update"] },
+  invoicing_changeSalesInvoiceLineAccount: { module: null, actions: [], scopes: ["accounting_update", "invoicing_update"] },
   // Invoicing a completed service job needs service_update AND
-  // invoicing_create (the old service order invoice's rule); the operation's
-  // own gate checks both.
-  service_createServiceInvoice: { module: null, actions: [] }
+  // invoicing_create (the old service order invoice's rule).
+  service_createServiceInvoice: { module: null, actions: [], scopes: ["invoicing_create", "service_update"] },
+  // A plan line's Create Job, and a job for a part on a task: production
+  // create AND projects view, as the route requires.
+  projects_createJobFromMaterial: {
+    module: null,
+    actions: [],
+    scopes: ["production_create", "projects_view"]
+  },
+  projects_createProjectElementJob: {
+    module: null,
+    actions: [],
+    scopes: ["production_create", "projects_view"]
+  },
+  // A plan line's Create PO line: purchasing create AND projects view.
+  projects_createPurchaseOrderLineFromMaterial: {
+    module: null,
+    actions: [],
+    scopes: ["projects_view", "purchasing_create"]
+  },
+  // The missing-time report's Timesheet Required toggle.
+  projects_updateTimesheetRequired: {
+    module: null,
+    actions: [],
+    scopes: ["people_update", "projects_view"]
+  },
+  // A request for quote's lines read parts and purchasing.
+  purchasing_getRequestQuoteRows: {
+    module: null,
+    actions: [],
+    scopes: ["parts_view", "purchasing_view"]
+  },
+  // The cutover repair journals documents: settings AND accounting update.
+  settings_writeMissingJournals: {
+    module: null,
+    actions: [],
+    scopes: ["accounting_update", "settings_update"]
+  },
+  // Create or update by whether an id is sent; the body checks the pair
+  // (ctx.can) and refuses a key without it (refuseKeyWithout).
+  projects_upsertIndirectPool: { module: null, actions: [] },
+  projects_upsertPlanningGroup: { module: null, actions: [] },
+  // Any employee scans a kanban card, as on the shop floor; a key also needs
+  // inventory_update, and production_create for a Make card.
+  inventory_scanKanban: { module: null, actions: [] },
+  // Any employee may record a risk, as the New Risk route lets one; a key
+  // also needs quality_create (refuseKeyWithout).
+  quality_createRisk: { module: null, actions: [] },
+  // Any record's custom field values: RLS decides per record; a key also
+  // needs update on the table's module, checked in the body.
+  settings_setRecordCustomFields: { module: null, actions: [] },
+  // The group edit route has always required users_view; RLS decides the
+  // write. Published as a WRITE (@mcp write); a key also needs users_update.
+  users_updateGroup: { module: "users", actions: ["view"] },
+  // The sales invoice header fields: the page's panel and update route have
+  // always required sales_update (the table's RLS adds invoicing_update).
+  invoicing_updateSalesInvoiceField: { module: "sales", actions: ["update"] },
+  // Indirect rates are accounting: the pool and rate screens require
+  // accounting_view to read, accounting_update to change, and
+  // accounting_delete to delete a pool.
+  projects_upsertIndirectPoolAccount: {
+    module: "accounting",
+    actions: ["update"]
+  },
+  projects_deleteIndirectPoolAccount: {
+    module: "accounting",
+    actions: ["update"]
+  },
+  projects_deleteIndirectPool: { module: "accounting", actions: ["delete"] },
+  projects_setIndirectRate: { module: "accounting", actions: ["update"] },
+  projects_runIndirectRatePeriod: { module: "accounting", actions: ["update"] },
+  projects_runFinalTrueUp: { module: "accounting", actions: ["update"] },
+  projects_getIndirectPools: { module: "accounting", actions: ["view"] },
+  projects_getIndirectPool: { module: "accounting", actions: ["view"] },
+  projects_getIndirectRates: { module: "accounting", actions: ["view"] },
+  projects_getIndirectRateRuns: { module: "accounting", actions: ["view"] },
+  // The custom field form's edit route has always required settings_create.
+  settings_updateCustomField: { module: "settings", actions: ["create"] }
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));

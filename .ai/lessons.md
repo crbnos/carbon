@@ -5273,3 +5273,23 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A helper that writes the rows you are about to update
+
+**Context:** `users_revokeInvites` deactivates each user, then marks the invites revoked with an UPDATE filtered on `revokedAt IS NULL`.
+
+**Problem:** `deactivateUser` (`@carbon/auth/users.server`) already stamps the invite revoked. For one user the operation's own UPDATE matched nothing, so it answered `{ revoked: 0 }` for a revoke that worked and skipped the audit entry that records the request's origin. Its unit test used two users, which take the job path, so it never saw the one-user path.
+
+**Rule:** Before calling a helper, read it to its end. If it writes the rows the next statement filters on, read their ids first and update by id. Count from the rows found, not from a second filtered write.
+
+**Applies to:** Any operation that calls a shared write (deactivate, post, close) and then updates the same rows.
+
+## A gate the manifest cannot show reads as membership
+
+**Context:** The MCP manifest published a gate over two or more modules (`{ create: "production", view: "projects" }`) as `{ module: null, actions: [] }`, the shape of a company-membership gate.
+
+**Problem:** `describe_tool` printed no permission and the digest wrote `none`, so a gate could lose a module, or become `{}`, without any digest line changing. The API still enforced the full gate, so nothing was open, but the contract a caller reads was wrong.
+
+**Rule:** The manifest publishes every `<module>_<action>` a gate names (`scopes`), and the digest line names them. When the generator meets a gate shape it does not know, fail generation rather than fall back to membership.
+
+**Applies to:** `scripts/lib/service-fn-metadata.ts`, `scripts/lib/manifest-digest.ts`, `apps/erp/test/mcp-tool-permissions.test.ts`.

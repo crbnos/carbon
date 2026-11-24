@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { procedureStepType } from "../shared/shared.models";
+import { requiredActionIdList } from "./quality.utils";
 import {
   inspectionLevels,
   inspectionSeverities,
@@ -273,6 +274,23 @@ export const issueWorkflowValidator = z.object({
     .array(z.enum(nonConformanceApprovalRequirement))
     .optional()
 });
+
+/**
+ * An issue workflow's required actions as the API takes them: the list of
+ * ids, in order. A string (the field's first published type) is still read,
+ * as `requiredActionIdList` reads it.
+ */
+export const issueWorkflowRequiredActionIdsInput = z
+  .union([z.array(z.string()), z.string()])
+  .transform((value, ctx) => {
+    const ids = requiredActionIdList(value);
+    if (ids) return ids;
+    ctx.addIssue({
+      code: "custom",
+      message: "requiredActionIds must be a list of required action ids"
+    });
+    return z.NEVER;
+  });
 
 const entityAssignmentItem = z.object({
   trackedEntityId: z.string().min(1, { message: "Tracked entity is required" }),
@@ -653,14 +671,16 @@ export const balloonUpdateItemsValidator = z.array(
 export const balloonDeleteIdsValidator = z.array(z.string().min(1));
 
 // The document-level default sampling rule (fallback for features without
-// their own rule; the lot-level plan base). Sent by the editor as JSON.
+// their own rule; the lot-level plan base). Sent by the editor as JSON. Only
+// the values of the plan type are kept (`samplingRuleForPlanType`), so the
+// rest may be left out.
 export const inspectionDocumentSamplingValidator = z.object({
   samplingPlanType: z.enum(samplingPlanTypes).nullable(),
-  samplingSampleSize: z.number().int().positive().nullable(),
-  samplingPercentage: z.number().positive().max(100).nullable(),
-  samplingAql: z.number().positive().nullable(),
-  samplingInspectionLevel: z.enum(inspectionLevels).nullable(),
-  samplingSeverity: z.enum(inspectionSeverities).nullable()
+  samplingSampleSize: z.number().int().positive().nullable().optional(),
+  samplingPercentage: z.number().positive().max(100).nullable().optional(),
+  samplingAql: z.number().positive().nullable().optional(),
+  samplingInspectionLevel: z.enum(inspectionLevels).nullable().optional(),
+  samplingSeverity: z.enum(inspectionSeverities).nullable().optional()
 });
 
 // The plan's parameters, the whole list in display order. Sent by the editor

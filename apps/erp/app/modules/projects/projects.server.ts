@@ -31,6 +31,10 @@ import {
 import {
   deleteIndirectPool as eeDeleteIndirectPool,
   deleteIndirectPoolAccount as eeDeleteIndirectPoolAccount,
+  getIndirectPool as eeGetIndirectPool,
+  getIndirectPools as eeGetIndirectPools,
+  getIndirectRateRuns as eeGetIndirectRateRuns,
+  getIndirectRates as eeGetIndirectRates,
   runFinalTrueUp as eeRunFinalTrueUp,
   runIndirectRatePeriod as eeRunIndirectRatePeriod,
   setIndirectRate as eeSetIndirectRate,
@@ -70,7 +74,10 @@ import {
 } from "~/modules/accounting/accounting.service";
 import { upsertPurchaseOrderLine } from "~/modules/purchasing/purchasing.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import { refuseKeyWithout } from "~/modules/shared/shared.service";
+import {
+  refuseKeyWithout,
+  refuseUnlessOwned
+} from "~/modules/shared/shared.service";
 import {
   billableItemActionValidator,
   buildFromPartValidator,
@@ -3504,7 +3511,19 @@ export const buildElementsFromPart = defineServiceFn({
  * unreleased change notice holds, for a Make to Asset item that cannot
  * complete to the asset, and for a charge number that cannot take the job.
  * When one part CLIN of a project contract has the same item and bills this
- * element, the job builds that CLIN's part. The material remembers the job.
+ * element, the job builds that CLIN's part. The material remembers the job,
+ * so the plan line shows it.
+ *
+ * @returns `jobId`, the new job.
+ *
+ * @param projectId - The project of the element.
+ * @param projectElementId - The element the material is a plan line of.
+ * @param materialId - The Make to Order plan line (a `projectElementMaterial` id). See projects_getProjectElementPlanLines.
+ * @param quantity - How many to make, in the plan line's unit. Above 0.
+ * @param dueDate - The job's due date, `YYYY-MM-DD`. Left out, the job has none.
+ * @param locationId - The location that makes the job.
+ *
+ * @mcp
  */
 export const createJobFromMaterial = defineServiceFn({
   input: createJobFromMaterialValidator.extend({
@@ -3584,7 +3603,19 @@ export const createJobFromMaterial = defineServiceFn({
  * Contract project consumes the job; a Capitalize project builds the
  * element's asset under construction. When one part CLIN of a project
  * contract has the same item and bills this element, the job builds that
- * CLIN's part.
+ * CLIN's part. For a plan line that is already there, use
+ * projects_createJobFromMaterial.
+ *
+ * @returns `jobId`, the new job.
+ *
+ * @param projectId - The project of the element.
+ * @param projectElementId - The task the job is charged to.
+ * @param itemId - A part the company makes (replenishment Make, or Buy and Make).
+ * @param quantity - How many to make, in the part's unit. Above 0.
+ * @param dueDate - The job's due date, `YYYY-MM-DD`. Left out, the job has none.
+ * @param locationId - The location that makes the job.
+ *
+ * @mcp
  */
 export const createProjectElementJob = defineServiceFn({
   input: newProjectJobValidator.extend({
@@ -3633,12 +3664,26 @@ export const createProjectElementJob = defineServiceFn({
  *
  * @remarks
  * The line is charged to the material's element, on a Draft purchase order
- * of the supplier (`purchaseOrderId`) or a new one (`purchaseOrderId` =
- * `new`). The quantity is in the plan line's unit and becomes purchase units
- * through the supplier part's conversion factor, raised to its minimum order
- * quantity; the price is the supplier part's, in the order's currency.
- * Refused while purchasing is blocked for the item. The material remembers
- * the line.
+ * of the supplier (`purchaseOrderId`) or a new one at the project's location
+ * (`purchaseOrderId` = `new`). The quantity is in the plan line's unit and
+ * becomes purchase units through the supplier part's conversion factor,
+ * raised to its minimum order quantity; the price is the supplier part's, else
+ * the item's unit cost, in the order's currency. Refused for a material that
+ * is not Purchase to Order or already has a PO line, and while purchasing is
+ * blocked for the item. The material remembers the line, so the plan line
+ * shows it.
+ *
+ * @returns `purchaseOrderId`, the order, and `purchaseOrderLineId`, the new line.
+ *
+ * @param projectId - The project of the element.
+ * @param projectElementId - The element the material is a plan line of.
+ * @param materialId - The Purchase to Order plan line (a `projectElementMaterial` id). See projects_getProjectElementPlanLines.
+ * @param supplierId - The supplier to buy from.
+ * @param quantity - How many to buy, in the plan line's unit. Above 0.
+ * @param requiredDate - The line's required date, `YYYY-MM-DD`. Left out, the line has none.
+ * @param purchaseOrderId - A Draft purchase order of the supplier, or `new` for a new one.
+ *
+ * @mcp
  */
 export const createPurchaseOrderLineFromMaterial = defineServiceFn({
   input: createPurchaseOrderLineFromMaterialValidator.extend({
@@ -4984,8 +5029,15 @@ export const sendMissingTimeReminders = defineServiceFn({
  * Take an employee out of the Missing Time report, or back in.
  *
  * @remarks
- * Sets `timesheetRequired` on the employee's job record. Refuses an employee
- * with no job record.
+ * Sets `timesheetRequired` on the employee's job record, as Exclude and
+ * Include on Projects → Reports → Missing Time do. An employee with it off
+ * gets no missing time notice and is not counted by the close check.
+ * Refuses an employee with no job record.
+ *
+ * @param employeeId - The employee's user id.
+ * @param timesheetRequired - False takes the employee out of the report; true puts them back.
+ *
+ * @mcp
  */
 export const updateTimesheetRequired = defineServiceFn({
   input: z.object({
@@ -5031,6 +5083,8 @@ export const updateTimesheetRequired = defineServiceFn({
  * control (Government Contracting 5c): a Block budget refuses the charge, a
  * Warn budget posts it and returns the overrun as `budgetWarning`.
  *
+ * @returns The expense entry's `id` and the `budgetWarning`.
+ *
  * @mcp
  */
 export const createProjectExpense = defineServiceFn({
@@ -5054,9 +5108,10 @@ export const createProjectExpense = defineServiceFn({
     );
     if (budget.status === "block") return ctx.error("rule", budget.message);
 
-    const postingError = await service.addProjectExpense(ctx, input);
-    if (postingError) return ctx.error("rule", postingError);
+    const added = await service.addProjectExpense(ctx, input);
+    if ("postingError" in added) return ctx.error("rule", added.postingError);
     return {
+      id: added.id,
       budgetWarning: budget.status === "warn" ? budget.message : null
     };
   }
@@ -5336,7 +5391,17 @@ export const getPlanningGroupMembers = defineServiceFn({
  *
  * @remarks
  * Planning groups are a commercial feature (PLANNING_GROUPS). Creating needs
- * `create: projects`, updating `update: projects`.
+ * `create: projects`, updating (with `id`) `update: projects`; an API key
+ * needs the same scope. Refuses a location of another company and an
+ * exception project without project stock.
+ *
+ * @param id - The group to update. Left out, a new group.
+ * @param locationId - The location whose stock the group plans.
+ * @param excessRule - Where supply beyond the members' need goes: `Common Stock`, or `Exception Project`.
+ * @param exceptionProjectId - The project that takes the excess, for `Exception Project`. It needs project stock.
+ * @param priorityRule - Which member is supplied first: `Earliest Need`, or `Project Priority`.
+ *
+ * @mcp
  */
 export const upsertPlanningGroup = defineServiceFn({
   input: z
@@ -5359,7 +5424,10 @@ export const upsertPlanningGroup = defineServiceFn({
     ),
   permission: {},
   async run(ctx, { id, ...fields }) {
-    if (!ctx.can(id ? { update: "projects" } : { create: "projects" })) {
+    const required = id ? { update: "projects" } : { create: "projects" };
+    const keyRefused = refuseKeyWithout(ctx, required);
+    if (keyRefused) return keyRefused;
+    if (!ctx.can(required)) {
       return ctx.error("forbidden", "You do not have permission to do this");
     }
     try {
@@ -5761,9 +5829,19 @@ export const getProjectStockOnHand = defineServiceFn({
  *
  * @remarks
  * Government Contracting is a commercial feature: without it the call is
- * refused. Creating needs `create: accounting`, updating
- * `update: accounting`. A duplicate name or sequence is refused with the
- * field's message.
+ * refused. Creating needs `create: accounting`, updating (with `id`)
+ * `update: accounting`; an API key needs the same scope. A duplicate name or
+ * sequence is refused with the field's message.
+ *
+ * @returns `id`, the pool.
+ *
+ * @param id - The pool to update. Left out, a new pool.
+ * @param sequence - The pool's place in the rate cascade, 1 first. Unique in the company.
+ * @param appliedAccountId - The account applied burden credits, when burden is posted as applied burden.
+ * @param appliesToProjects - Whether the pool's rate burdens project cost. A Service Center pool cannot.
+ * @param offsetAbsorbedOverhead - Overhead pools only: subtract the overhead projects already absorbed from their burden.
+ *
+ * @mcp
  */
 export const upsertIndirectPool = defineServiceFn({
   input: z
@@ -5797,9 +5875,12 @@ export const upsertIndirectPool = defineServiceFn({
     ),
   permission: {},
   async run(ctx, input) {
-    if (
-      !ctx.can(input.id ? { update: "accounting" } : { create: "accounting" })
-    ) {
+    const required = input.id
+      ? { update: "accounting" }
+      : { create: "accounting" };
+    const keyRefused = refuseKeyWithout(ctx, required);
+    if (keyRefused) return keyRefused;
+    if (!ctx.can(required)) {
       return ctx.error("forbidden", "You do not have permission to do this");
     }
     try {
@@ -5827,15 +5908,109 @@ export const upsertIndirectPool = defineServiceFn({
 });
 
 /**
+ * List the indirect pools.
+ *
+ * @remarks
+ * Every pool of the company, active or not, in sequence order: the pool's
+ * type, base type, applied account and whether it burdens projects.
+ *
+ * @mcp read
+ */
+export const getIndirectPools = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await eeGetIndirectPools(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get an indirect pool with its accounts.
+ *
+ * @remarks
+ * Each account is a Cost or Base account of the pool, with its number, name
+ * and any dimension that narrows it.
+ *
+ * @param id - The indirect pool. See projects_getIndirectPools.
+ *
+ * @mcp read
+ */
+export const getIndirectPool = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { view: "accounting" },
+  async run(ctx, { id }) {
+    return unwrap(
+      ctx,
+      await eeGetIndirectPool(ctx.asCaller.supabase, id, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * List the indirect rates of a fiscal year.
+ *
+ * @remarks
+ * One row per pool, period and rate type (Provisional, Target, Final, and
+ * Actual from the rate runs). A rate is a fraction: 0.3 is 30 %.
+ *
+ * @param fiscalYear - The fiscal year, for example 2026.
+ *
+ * @mcp read
+ */
+export const getIndirectRates = defineServiceFn({
+  input: z.object({ fiscalYear: z.number().int() }),
+  permission: { view: "accounting" },
+  async run(ctx, { fiscalYear }) {
+    return unwrap(
+      ctx,
+      await eeGetIndirectRates(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        fiscalYear
+      })
+    );
+  }
+});
+
+/**
+ * List the indirect rate runs.
+ *
+ * @remarks
+ * Each period run and year-end true-up, newest first, with the start date
+ * of the period it posted into.
+ *
+ * @mcp read
+ */
+export const getIndirectRateRuns = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await eeGetIndirectRateRuns(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
  * Delete an indirect pool.
  *
  * @remarks
  * A pool with rates or burden is refused: deactivate it instead.
+ *
+ * @param id - The indirect pool. See projects_getIndirectPools.
+ *
+ * @mcp destructive
  */
 export const deleteIndirectPool = defineServiceFn({
   input: z.object({ id: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, { id }) {
+    // A delete that matches no row would answer success.
+    const refused = await refuseUnlessOwned(ctx, "indirectPool", { id });
+    if (refused) return refused;
     try {
       const deleted = await eeDeleteIndirectPool(ctx.asCaller.supabase, {
         id,
@@ -5862,6 +6037,15 @@ export const deleteIndirectPool = defineServiceFn({
  * @remarks
  * A project account cannot be a Base account; one account and dimension
  * cell is a Cost account of at most one pool.
+ *
+ * @param id - The pool account to change. Leave it out to add one. See projects_getIndirectPool.
+ * @param indirectPoolId - The indirect pool. See projects_getIndirectPools.
+ * @param accountId - The account.
+ * @param dimensionId - A dimension that narrows the account. Send it with dimensionValueId, or neither.
+ * @param dimensionValueId - The dimension's value. Send it with dimensionId, or neither.
+ * @param role - Cost (the pool's cost) or Base (what the pool's rate applies to).
+ *
+ * @mcp
  */
 export const upsertIndirectPoolAccount = defineServiceFn({
   input: indirectPoolAccountValidator,
@@ -5897,11 +6081,18 @@ export const upsertIndirectPoolAccount = defineServiceFn({
 
 /**
  * Remove an account from an indirect pool.
+ *
+ * @param id - The pool account. See projects_getIndirectPool.
+ *
+ * @mcp destructive
  */
 export const deleteIndirectPoolAccount = defineServiceFn({
   input: z.object({ id: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { id }) {
+    // A delete that matches no row would answer success.
+    const refused = await refuseUnlessOwned(ctx, "indirectPoolAccount", { id });
+    if (refused) return refused;
     try {
       const deleted = await eeDeleteIndirectPoolAccount(ctx.asCaller.supabase, {
         id,
@@ -5921,7 +6112,17 @@ export const deleteIndirectPoolAccount = defineServiceFn({
  *
  * @remarks
  * Actual rates come from the rate run: enter a Provisional, Target or Final
- * rate.
+ * rate. Writes the rate for each period from `fromPeriod` to 12.
+ *
+ * @returns The ids of the rate rows written.
+ *
+ * @param indirectPoolId - The indirect pool. See projects_getIndirectPools.
+ * @param fiscalYear - The fiscal year, for example 2026.
+ * @param fromPeriod - The first period of the year it applies to, 1 to 12.
+ * @param rateType - Provisional, Target or Final.
+ * @param rate - A fraction: 0.3 is 30 %.
+ *
+ * @mcp
  */
 export const setIndirectRate = defineServiceFn({
   input: indirectRateEntryValidator,
@@ -5937,7 +6138,11 @@ export const setIndirectRate = defineServiceFn({
       if (result.error && (!("code" in result.error) || !result.error.code)) {
         return ctx.error("rule", result.error.message);
       }
-      return unwrap(ctx, result);
+      const rates = unwrap(ctx, result);
+      if (rates instanceof Error) return rates;
+      // One row per period from `fromPeriod` on; an object, so the tool does
+      // not read as a paged list.
+      return { ids: (rates ?? []).map((rate) => rate.id) };
     } catch (err) {
       if (!(err instanceof EntitlementError)) throw err;
       return ctx.error("entitlement", "Upgrade to use indirect rates");
@@ -5950,6 +6155,10 @@ export const setIndirectRate = defineServiceFn({
  *
  * @remarks
  * Computes the period's indirect rates, the project burden and its billing.
+ *
+ * @param accountingPeriodId - A Locked accounting period. See accounting_getAccountingPeriods.
+ *
+ * @mcp
  */
 export const runIndirectRatePeriod = defineServiceFn({
   input: z.object({
@@ -5982,6 +6191,11 @@ export const runIndirectRatePeriod = defineServiceFn({
  * @remarks
  * The burden catch-up of `fiscalYear` at the Final rate of period 12, posted
  * into the given Locked period, then the burden billing.
+ *
+ * @param fiscalYear - The fiscal year to true up, for example 2026.
+ * @param accountingPeriodId - A Locked accounting period the catch-up posts into. See accounting_getAccountingPeriods.
+ *
+ * @mcp
  */
 export const runFinalTrueUp = defineServiceFn({
   input: z.object({

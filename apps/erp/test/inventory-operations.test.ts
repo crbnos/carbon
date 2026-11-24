@@ -4,10 +4,11 @@
 
 import { describe, expect, it } from "vitest";
 import { ServerFnError } from "@carbon/api/errors";
-import { createServiceContext } from "@carbon/api/service-fn.server";
+import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
 import {
   adjustInventory,
-  postInventoryCount
+  postInventoryCount,
+  scanKanban
 } from "../app/modules/inventory/inventory.server";
 import {
   adjustmentRuleSurfaces,
@@ -15,6 +16,7 @@ import {
   pickRefusal,
   postingFailure
 } from "../app/modules/inventory/inventory.service";
+import { filteringSupabase } from "./filtering-supabase-fake";
 
 /** The caller's client: each table's one row. */
 const clientWith = (rows: Record<string, unknown>) => ({
@@ -172,5 +174,76 @@ describe("pickRefusal", () => {
     expect(
       pickRefusal(ctx(), new ServerFnError("relation does not exist", 500))
     ).toMatchObject({ category: "internal", message: "Failed to pick line" });
+  });
+});
+
+describe("scanKanban for an API key", () => {
+  const noScope = { view: [], create: [], update: [], delete: [] };
+  const key = (
+    scopes: Record<string, Partial<Record<"view" | "create" | "update" | "delete", string[]>>>
+  ): Actor => ({
+    type: "apiKey",
+    createdBy: "user-1",
+    scopes: Object.fromEntries(
+      Object.entries(scopes).map(([module, actions]) => [
+        module,
+        { ...noScope, ...actions }
+      ])
+    )
+  });
+  // A Make card whose job is still open: the scan only answers "collision".
+  const makeCard = (jobReadableId: string | null) => ({
+    id: "kb-1",
+    companyId: "company-1",
+    replenishmentSystem: "Make",
+    itemId: "item-1",
+    storageUnitId: null,
+    jobReadableId
+  });
+  // The system handles: touching one fails the test.
+  const untouched = new Proxy(
+    {},
+    {
+      get(_, key) {
+        throw new Error(`Nothing should run as the system (${String(key)})`);
+      }
+    }
+  );
+  const scan = (actor: Actor, card = makeCard("J-1")) => {
+    const caller = filteringSupabase({ kanbans: [card] });
+    const ctx = createServiceContext({
+      actor,
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller.client,
+      system: () => untouched as never,
+      pg: () => untouched as never,
+      kv: () => ({}) as any
+    });
+    return { result: scanKanban(ctx, { kanbanId: "kb-1" }), writes: caller.writes };
+  };
+
+  it("refuses a key without inventory update, before reading the card", async () => {
+    const { result, writes } = scan(key({ inventory: { view: ["company-1"] } }));
+    expect((await result).error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
+  });
+
+  it("refuses a Make card to a key without production create", async () => {
+    const { result, writes } = scan(
+      key({ inventory: { update: ["company-1"] } }),
+      makeCard(null)
+    );
+    expect((await result).error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
+  });
+
+  it("scans a Make card for a key with both", async () => {
+    const { result } = scan(
+      key({
+        inventory: { update: ["company-1"] },
+        production: { create: ["company-1"] }
+      })
+    );
+    expect(await result).toEqual({ data: { type: "collision" }, error: null });
   });
 });

@@ -1291,6 +1291,8 @@ export const stopMaintenanceEvent = defineServiceFn({
  * stock leaves inventory through the `issue` posting, whose refusal is
  * returned as it is.
  *
+ * @returns The new part's id (`id`), with the dispatch and the item.
+ *
  * @mcp
  */
 export const issueMaintenancePart = defineServiceFn({
@@ -1348,7 +1350,12 @@ export const issueMaintenancePart = defineServiceFn({
       inventoryPostings.issueMaterial
     );
     if (issued.error) return unwrap(ctx, issued) as CarbonError;
-    return { dispatchId, itemId };
+    const id = issued.data.maintenanceDispatchItemId;
+    return {
+      id: typeof id === "string" ? id : null,
+      dispatchId,
+      itemId
+    };
   }
 });
 
@@ -1739,7 +1746,8 @@ export const updateTrainingAssignment = defineServiceFn({
 });
 
 /**
- * Mark a training assignment complete for an employee.
+ * Mark a training assignment complete for an employee, with an optional
+ * certificate.
  *
  * @remarks
  * Only an employee in the assignment's groups can complete it: a completion
@@ -1747,9 +1755,9 @@ export const updateTrainingAssignment = defineServiceFn({
  * Active. An external assignment may carry a certificate (PDF, PNG or JPG, 10
  * MB). A second completion in the same period counts as already recorded. A
  * granted ability restamps the scheduler. Takes a file, so it is not
- * published.
+ * published: `completeTrainingAssignment` is the same completion without one.
  */
-export const completeTrainingAssignment = defineServiceFn({
+export const completeTrainingAssignmentWithCertificate = defineServiceFn({
   input: z.object({
     trainingAssignmentId: z.string().min(1),
     employeeId: z.string().min(1),
@@ -1802,6 +1810,37 @@ export const completeTrainingAssignment = defineServiceFn({
       );
     }
     return { trainingAssignmentId, employeeId };
+  }
+});
+
+/**
+ * Mark a training assignment complete for an employee.
+ *
+ * @remarks
+ * Only an employee in the assignment's groups can complete it: a completion
+ * can grant an ability, which gates scheduling. An internal training must be
+ * Active. A second completion in the same period counts as already recorded.
+ * A granted ability restamps the scheduler. Records no certificate: attach
+ * one in the app.
+ *
+ * @param trainingAssignmentId - The training assignment. See resources_getTrainingAssignments.
+ * @param employeeId - The employee's user id, a member of one of the assignment's groups.
+ *
+ * @mcp
+ */
+export const completeTrainingAssignment = defineServiceFn({
+  input: z.object({
+    trainingAssignmentId: z.string().min(1),
+    employeeId: z.string().min(1)
+  }),
+  permission: { update: "resources" },
+
+  async run(ctx, input) {
+    const completed = await completeTrainingAssignmentWithCertificate(
+      ctx,
+      input
+    );
+    return completed.error ?? completed.data;
   }
 });
 
@@ -1910,7 +1949,13 @@ export const deleteLocation = defineServiceFn({
 });
 
 /**
- * Delete maintenance dispatch
+ * Delete a maintenance dispatch
+ *
+ * @remarks
+ * Refused when the dispatch is Completed or Cancelled, as the dispatch page's
+ * Delete is. Its timecards, parts, comments and work centers are deleted with
+ * it. A part's stock is not returned: remove the part first
+ * (`resources_unissueMaintenancePart`).
  *
  * @mcp destructive
  */
@@ -1918,6 +1963,8 @@ export const deleteMaintenanceDispatch = defineServiceFn({
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { delete: "resources" },
   async run(ctx, input) {
+    const dispatch = await service.editableDispatch(ctx, input.dispatchId);
+    if (dispatch instanceof CarbonError) return dispatch;
     return unwrap(
       ctx,
       await service.deleteMaintenanceDispatch(
@@ -3274,21 +3321,23 @@ export const updateFailureMode = defineServiceFn({
  * Create a maintenance dispatch comment
  *
  * @remarks
- * Upsert maintenance dispatch comment
+ * Refused when the dispatch is Completed or Cancelled.
  *
  * @mcp
  */
 export const createMaintenanceDispatchComment = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     maintenanceDispatchId: z.string().min(1),
-    comment: z.string().min(1),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+    comment: z.string().min(1)
   }),
-  permission: { create: "resources" },
+  // The dispatch's comment box shows only with `update: resources`.
+  permission: { update: "resources" },
   async run(ctx, input) {
+    const dispatch = await service.editableDispatch(
+      ctx,
+      input.maintenanceDispatchId
+    );
+    if (dispatch instanceof CarbonError) return dispatch;
     return unwrap(
       ctx,
       await service.upsertMaintenanceDispatchComment(
@@ -3303,23 +3352,24 @@ export const createMaintenanceDispatchComment = defineServiceFn({
  * Update a maintenance dispatch comment
  *
  * @remarks
- * Upsert maintenance dispatch comment
+ * Refused when the dispatch is Completed or Cancelled, and when the comment
+ * is not on that dispatch.
  *
  * @mcp
  */
 export const updateMaintenanceDispatchComment = defineServiceFn({
-  input: z
-    .looseObject({
-      maintenanceDispatchId: z.string().min(1),
-      comment: z.string().min(1),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
+  input: z.object({
+    id: z.string().min(1).describe("The comment to change."),
+    maintenanceDispatchId: z.string().min(1),
+    comment: z.string().min(1)
+  }),
   permission: { update: "resources" },
   async run(ctx, input) {
+    const dispatch = await service.editableDispatch(
+      ctx,
+      input.maintenanceDispatchId
+    );
+    if (dispatch instanceof CarbonError) return dispatch;
     return unwrap(
       ctx,
       await service.upsertMaintenanceDispatchComment(
@@ -3339,6 +3389,8 @@ export const updateMaintenanceDispatchComment = defineServiceFn({
  * dispatch's location, at its cost. A serial or batch part is issued with
  * `issueMaintenancePart`, which names its tracked entities.
  *
+ * @returns The new part's id.
+ *
  * @mcp
  */
 export const createMaintenanceDispatchItem = defineServiceFn({
@@ -3353,12 +3405,14 @@ export const createMaintenanceDispatchItem = defineServiceFn({
     ctx,
     { maintenanceDispatchId, itemId, quantity, unitOfMeasureCode }
   ) {
-    return issueMaintenancePart(ctx, {
+    const issued = await issueMaintenancePart(ctx, {
       dispatchId: maintenanceDispatchId,
       itemId,
       unitOfMeasureCode,
       quantity
     });
+    if (issued.error) return issued.error;
+    return { id: issued.data.id };
   }
 });
 

@@ -154,7 +154,9 @@ import {
   checkMaterialProperties,
   clearsSubstanceOrShape,
   generatedIdsNeedSubstanceAndShape,
+  generatedMaterialUpdateRefusal,
   generateMaterialIdentity,
+  type MaterialPropertyField,
   type MaterialPropertyLookups,
   type MaterialPropertyValues,
   materialItemUpdateFields,
@@ -664,12 +666,21 @@ export async function deleteConfigurationParameterGroup(
     .eq("configurationParameterGroupId", id);
 
   if (parameters && parameters.length > 0) {
-    // Get the ungrouped group
-    const { data: ungrouped } = await client
+    // The ungrouped group of the same item: every configurable item has its
+    // own, so an unscoped `.single()` matched several rows and moved nothing.
+    const { data: group } = await client
       .from("configurationParameterGroup")
-      .select("id")
-      .eq("isUngrouped", true)
-      .single();
+      .select("itemId")
+      .eq("id", id)
+      .maybeSingle();
+    const { data: ungrouped } = group
+      ? await client
+          .from("configurationParameterGroup")
+          .select("id")
+          .eq("itemId", group.itemId)
+          .eq("isUngrouped", true)
+          .maybeSingle()
+      : { data: null };
 
     if (ungrouped) {
       // Update all parameters to use the ungrouped group
@@ -2849,16 +2860,18 @@ export async function upsertConfigurationParameterGroup(
   }
 ) {
   const { itemId, ...data } = configurationParameterGroup;
+  // A group of another item, or one RLS hides, matches no row: `.single()`
+  // refuses it.
   if (configurationParameterGroup.id) {
-    return requireAffected(
-      client
-        .from("configurationParameterGroup")
-        .update({
-          name: data.name
-        })
-        .eq("id", configurationParameterGroup.id)
-        .select("id")
-    );
+    return client
+      .from("configurationParameterGroup")
+      .update({
+        name: data.name
+      })
+      .eq("id", configurationParameterGroup.id)
+      .eq("itemId", itemId)
+      .select("id")
+      .single();
   }
 
   const existingGroups = await client
@@ -2872,12 +2885,16 @@ export async function upsertConfigurationParameterGroup(
       1
     ) ?? 0;
 
-  return client.from("configurationParameterGroup").insert({
-    ...data,
-    itemId,
-    name: data.name,
-    sortOrder: maxSortOrder + 1
-  });
+  return client
+    .from("configurationParameterGroup")
+    .insert({
+      ...data,
+      itemId,
+      name: data.name,
+      sortOrder: maxSortOrder + 1
+    })
+    .select("id")
+    .single();
 }
 
 export async function upsertConfigurationRule(
@@ -5662,6 +5679,40 @@ async function planMaterialPropertyChanges(
   };
 }
 
+/**
+ * The readable id and name a new material gets when the company generates
+ * material IDs, derived from the properties sent; null when IDs are typed.
+ * Without a substance and a shape it is refused, as the create refuses it.
+ */
+export async function getGeneratedMaterialIdentity(
+  client: SupabaseClient<Database>,
+  material: { companyId: string } & Partial<
+    Record<MaterialPropertyField, string | null>
+  >
+): Promise<
+  | { data: { readableId: string; name: string } | null; error: null }
+  | { data: null; error: ServiceError }
+> {
+  const generatedIds = await materialIdsAreGenerated(
+    client,
+    material.companyId
+  );
+  if (generatedIds.error) return generatedIds;
+  if (!generatedIds.data) return { data: null, error: null };
+
+  const plan = await planMaterialPropertyChanges(client, {
+    companyId: material.companyId,
+    current: noMaterialProperties,
+    changes: sentMaterialProperties(material),
+    generatedIds: true
+  });
+  if (plan.error) return plan;
+  if (!plan.data.generated) {
+    return { data: null, error: ruleError(generatedIdsNeedSubstanceAndShape) };
+  }
+  return { data: plan.data.generated, error: null };
+}
+
 async function materialIdIsTaken(
   client: SupabaseClient<Database>,
   readableId: string,
@@ -5832,9 +5883,11 @@ async function getNewMaterialSizes(
  * any optional field it leaves out, and `sizes` adds a revision per new size.
  * Property changes follow updateMaterialProperties: dependents reset, picks
  * are checked against their substance and shape, and with generated material
- * IDs on the readable id and name are derived from the properties (any `id`
- * or `name` sent for them is ignored). `readableId` renames a material when
- * IDs are typed by hand. An update's material, item and item cost writes land
+ * IDs on the readable id and name are derived from the properties. There an
+ * update refuses a `readableId` or a derived `name` it would not write
+ * (`generatedMaterialUpdateRefusal`); a call that changes no property writes a
+ * sent `name` to the item, as the properties panel does. `readableId` renames
+ * a material when IDs are typed by hand. An update's material, item and item cost writes land
  * together or not at all; the pick method, shelf life and new sizes are
  * written after them.
  */
@@ -6054,6 +6107,15 @@ export async function upsertMaterial(
   });
   if (plan.error) return plan;
 
+  if (generatedIds.data) {
+    const refusal = generatedMaterialUpdateRefusal(
+      readableId,
+      plan.data.generated,
+      material
+    );
+    if (refusal) return { data: null, error: ruleError(refusal) };
+  }
+
   let newSizes: string[] = [];
   if (material.sizes?.length) {
     const sizes = await getNewMaterialSizes(client, {
@@ -6068,7 +6130,7 @@ export async function upsertMaterial(
 
   const itemUpdate = sentFields(
     material,
-    materialItemUpdateFields(generatedIds.data)
+    materialItemUpdateFields(plan.data.generated !== null)
   );
 
   const costUpdate: { itemPostingGroupId?: string | null; unitCost?: number } =

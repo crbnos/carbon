@@ -112,12 +112,84 @@ describe("buildServiceFnTools", () => {
     });
   });
 
-  it("gates one module on the API and leaves several to the function", () => {
+  it("lists null among a nullable enum's values, so the input validator takes null", () => {
+    const [sampling] = toolsFor({
+      "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+/**
+ * Set a sampling level.
+ *
+ * @mcp
+ */
+export const setSampling = defineServiceFn({
+  input: null,
+  permission: { update: "production" },
+  async run(_ctx, input: { level: "II" | "I" | null; mode: "A" | "B" }) {
+    return null;
+  }
+});`,
+      "/m/router.ts": ROUTER
+    });
+    expect(sampling?.schema).toEqual({
+      type: "object",
+      properties: {
+        level: { type: ["string", "null"], enum: ["I", "II", null] },
+        mode: { type: "string", enum: ["A", "B"] }
+      },
+      required: ["level", "mode"]
+    });
+  });
+
+  it("publishes one module as its module and several as every scope they need", () => {
     expect(cancel?.permission).toEqual({ module: "production", actions: ["update"] });
     expect(cancel?.classification).toBe("WRITE");
     const remove = tools.find((tool) => tool.name === "production_deleteJob");
-    expect(remove?.permission).toEqual({ module: null, actions: [] });
+    expect(remove?.permission).toEqual({
+      module: null,
+      actions: [],
+      scopes: ["inventory_update", "production_update"]
+    });
     expect(remove?.classification).toBe("DESTRUCTIVE");
+  });
+
+  it.each([
+    [
+      `{ create: "production", view: "projects" }`,
+      { module: null, actions: [], scopes: ["production_create", "projects_view"] },
+      "WRITE"
+    ],
+    [
+      `{ view: ["projects"], update: "people" }`,
+      { module: null, actions: [], scopes: ["people_update", "projects_view"] },
+      "WRITE"
+    ],
+    [
+      `{ view: ["purchasing", "parts"] }`,
+      { module: null, actions: [], scopes: ["parts_view", "purchasing_view"] },
+      "READ"
+    ],
+    [`{ view: ["projects"] }`, { module: "projects", actions: ["view"] }, "READ"],
+    [`{}`, { module: null, actions: [] }, "WRITE"]
+  ])("publishes the gate %s", (permission, published, classification) => {
+    const [tool] = toolsFor({
+      "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+/**
+ * Make a job.
+ *
+ * @mcp
+ */
+export const makeJob = defineServiceFn({
+  input: null,
+  permission: ${permission},
+  async run(_ctx, input: { id: string }) {
+    return null;
+  }
+});`,
+      "/m/router.ts": ROUTER
+    });
+    expect(tool?.permission).toEqual(published);
+    expect(tool?.classification).toBe(classification);
   });
 
   it("publishes a paged result as a list the function pages", () => {
@@ -190,6 +262,31 @@ export const getKeys = defineServiceFn({
       "@mcp read on a function whose permission names update"
     );
     expect(read(`{ view: "users" }`)[0]?.classification).toBe("READ");
+  });
+
+  // A route that has only ever required view can still write: it must not be
+  // offered as a READ, which a client may run unasked.
+  it("labels @mcp write a WRITE, and never below DESTRUCTIVE", () => {
+    const write = (permission: string) =>
+      toolsFor({
+        "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+/**
+ * Rename a group.
+ *
+ * @mcp write
+ */
+export const renameGroup = defineServiceFn({
+  input: null,
+  permission: ${permission},
+  async run(_ctx, input: { id: string }) {
+    return null;
+  }
+});`,
+        "/m/router.ts": ROUTER
+      })[0]?.classification;
+    expect(write(`{ view: "users" }`)).toBe("WRITE");
+    expect(write(`{ delete: "users" }`)).toBe("DESTRUCTIVE");
   });
 
   it("refuses a summary that was cut off", () => {

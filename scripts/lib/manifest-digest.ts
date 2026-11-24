@@ -95,9 +95,11 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
         classification: t.classification,
         schema: stableHash(t.schema),
         response: t.responseSchema ? stableHash(t.responseSchema) : "none",
-        permission: t.permission?.module
-          ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
-          : "none",
+        permission: t.permission?.scopes
+          ? t.permission.scopes.join("+")
+          : t.permission?.module
+            ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
+            : "none",
         paginates: t.paginates
       }))
   };

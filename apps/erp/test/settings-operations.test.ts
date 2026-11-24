@@ -44,12 +44,13 @@ vi.mock("@carbon/printing/printing.server", () => ({
 vi.mock("@carbon/jobs", () => ({ batchTrigger, trigger }));
 
 import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { createServiceContext } from "@carbon/api/service-fn.server";
+import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
 
 import {
   removePrinterRoute,
   savePrinterRoute,
   setIntegrationSyncEnabled,
+  setRecordCustomFields,
   transitionSyncOperations,
   updateInventorySettings,
   updateInvoicingSettings,
@@ -663,5 +664,184 @@ describe("a location's staffing requirement", () => {
 
     expect(writes.filter((w) => w.table === "location")).toEqual([]);
     expect(scheduleNotices()).toEqual([]);
+  });
+});
+
+describe("setting a record's custom field values", () => {
+  // The boundary is PostgREST: a real supabase-js client whose fetch answers
+  // the custom field table's module and the UPDATE with the rows it changed.
+  function recordCustomFields({
+    actor = { type: "user", userId: "user-1", permissions: settings },
+    module = "Items",
+    changed = ["P-1"],
+    fields = ["color"],
+    stored = []
+  }: {
+    actor?: Actor;
+    module?: string | null;
+    changed?: string[];
+    fields?: string[];
+    stored?: { id: string; customFields: Record<string, unknown> }[];
+  } = {}) {
+    const sent: { method: string; url: URL; body: unknown }[] = [];
+    const fetchStub = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      const url = new URL(String(input));
+      sent.push({
+        method,
+        url,
+        body: init?.body ? JSON.parse(String(init.body)) : null
+      });
+      const rows = url.pathname.endsWith("/customFieldTable")
+        ? module
+          ? [{ module }]
+          : []
+        : url.pathname.endsWith("/customField")
+          ? fields.map((id) => ({ id }))
+          : method === "GET"
+            ? stored
+            : changed.map((id) => ({ id }));
+      return new Response(JSON.stringify(rows), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+    const caller = createClient("http://localhost:54321", "anon-key", {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: fetchStub as typeof fetch }
+    });
+    const ctx = createServiceContext({
+      actor,
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => caller as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    const updates = () => sent.filter((request) => request.method === "PATCH");
+    return { ctx, updates };
+  }
+
+  const key = (scopes: Record<string, { view?: string[]; update?: string[] }>) =>
+    ({
+      type: "apiKey",
+      createdBy: "user-1",
+      scopes: Object.fromEntries(
+        Object.entries(scopes).map(([module, actions]) => [
+          module,
+          { view: [], create: [], update: [], delete: [], ...actions }
+        ])
+      )
+    }) as Actor;
+
+  const partValues = {
+    table: "part",
+    ids: ["P-1", "P-2"],
+    customFields: { color: "Red" }
+  };
+
+  // A part number repeats across companies, so an unscoped write would change
+  // another company's part of the same number.
+  it("changes only this company's records and answers the ids it changed", async () => {
+    const { ctx, updates } = recordCustomFields({ changed: ["P-1"] });
+
+    const result = await setRecordCustomFields(ctx, partValues);
+
+    expect(result).toEqual({ data: { ids: ["P-1"] }, error: null });
+    const [update] = updates();
+    expect(update?.url.pathname).toBe("/rest/v1/part");
+    expect(update?.url.searchParams.get("companyId")).toBe("eq.company-1");
+    expect(update?.url.searchParams.get("id")).toBe("in.(P-1,P-2)");
+    expect(update?.body).toMatchObject({ customFields: { color: "Red" } });
+  });
+
+  it("scopes a table shared by the company group by the group", async () => {
+    const { ctx, updates } = recordCustomFields({
+      module: "Accounting",
+      changed: ["acc-1"]
+    });
+
+    await setRecordCustomFields(ctx, {
+      table: "account",
+      ids: ["acc-1"],
+      customFields: {}
+    });
+
+    const [update] = updates();
+    expect(update?.url.searchParams.get("companyGroupId")).toBe("eq.group-1");
+    expect(update?.url.searchParams.has("companyId")).toBe(false);
+  });
+
+  it.each([
+    ["only view on parts", { parts: { view: ["company-1"] } }],
+    ["update on items, the table's module name", { items: { update: ["company-1"] } }],
+    ["update on another module", { sales: { update: ["company-1"] } }]
+  ])("refuses an API key with %s and writes nothing", async (_name, scopes) => {
+    const { ctx, updates } = recordCustomFields({ actor: key(scopes) });
+
+    const result = await setRecordCustomFields(ctx, partValues);
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(updates()).toEqual([]);
+  });
+
+  it("lets an API key with update on parts change an item table's records", async () => {
+    const { ctx, updates } = recordCustomFields({
+      actor: key({ parts: { update: ["company-1"] } })
+    });
+
+    const result = await setRecordCustomFields(ctx, partValues);
+
+    expect(result.error).toBeNull();
+    expect(updates()).toHaveLength(1);
+  });
+
+  it("refuses a table that has no custom fields", async () => {
+    const { ctx, updates } = recordCustomFields({ module: null });
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      table: "apiKey"
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(updates()).toEqual([]);
+  });
+
+  it("refuses a key that is not one of the table's custom fields", async () => {
+    const { ctx, updates } = recordCustomFields({
+      stored: [{ id: "P-1", customFields: { color: "Blue" } }]
+    });
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      customFields: { color: "Red", notAField: "junk" }
+    });
+
+    expect(result.error?.category).toBe("validation");
+    expect(updates()).toEqual([]);
+  });
+
+  it("sends back a deleted field's stored value unchanged, as the panel does", async () => {
+    const { ctx, updates } = recordCustomFields({
+      stored: [{ id: "P-1", customFields: { color: "Blue", retired: "x" } }]
+    });
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      ids: ["P-1"],
+      customFields: { color: "Red", retired: "x" }
+    });
+
+    expect(result.error).toBeNull();
+    expect(updates()).toHaveLength(1);
+  });
+
+  it("refuses a write that changed no record", async () => {
+    const { ctx } = recordCustomFields({ changed: [] });
+
+    const result = await setRecordCustomFields(ctx, partValues);
+
+    expect(result.error?.category).toBe("notFound");
   });
 });

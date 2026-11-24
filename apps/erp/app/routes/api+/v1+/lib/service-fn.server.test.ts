@@ -94,6 +94,28 @@ describe("callServiceFn", () => {
     }
   );
 
+  it("runs a gate over two modules only for a key holding every scope it names", async () => {
+    const makeJob = defineServiceFn({
+      input: z.object({}),
+      permission: { create: "production", view: "projects" },
+      async run() {
+        return { made: true };
+      }
+    });
+    const key = (scopes: Record<string, string[]>) =>
+      callServiceFn(makeJob, single, caller("api-key", scopes), {});
+
+    await expect(key({ production_create: ["c1"] })).rejects.toMatchObject({
+      code: "FORBIDDEN"
+    });
+    await expect(key({ projects_view: ["c1"] })).rejects.toMatchObject({
+      code: "FORBIDDEN"
+    });
+    await expect(
+      key({ production_create: ["c1"], projects_view: ["c1"] })
+    ).resolves.toEqual({ data: { made: true } });
+  });
+
   it("filters an update on a company table by the caller's company", async () => {
     const filters: [string, string][] = [];
     const builder = {
@@ -131,5 +153,21 @@ describe("callServiceFn", () => {
       ["companyId", "c1"],
       ["id", "j1"]
     ]);
+  });
+
+  // The invite email and the audit log show these, so they come from the
+  // route's headers and never from the arguments.
+  it("hands the function the origin the route read from the request", async () => {
+    const origin = { ip: "203.0.113.9", city: "Oslo", userAgent: "agent/1" };
+    const echo = defineServiceFn({
+      input: z.object({}),
+      permission: { view: "production" },
+      async run(ctx) {
+        return ctx.origin;
+      }
+    });
+    await expect(
+      callServiceFn(echo, single, { ...caller("api-key"), origin }, {})
+    ).resolves.toEqual({ data: origin });
   });
 });

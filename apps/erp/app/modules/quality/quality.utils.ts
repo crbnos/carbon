@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { type CalendarDate, parseDate } from "@internationalized/date";
+import type { FeatureSamplingRule } from "./samplingStandards";
 
 /**
  * The issue type a receipt inspection lot's NCR opens with: one for supplier or
@@ -19,6 +21,161 @@ export function receiptLotIssueType<Type extends { id: string; name: string }>(
   );
 }
 
+/**
+ * An issue workflow's required action ids, in order and without repeats. A
+ * string is read as the workflow form sends it (a JSON list), as a Postgres
+ * array literal (`{a,b}`) or as comma-separated ids. Null when a JSON list
+ * does not parse.
+ */
+export function requiredActionIdList(
+  value: readonly string[] | string
+): string[] | null {
+  let ids: readonly unknown[];
+  const text = typeof value === "string" ? value.trim() : null;
+  if (text === null) {
+    ids = value as readonly string[];
+  } else if (text.startsWith("[")) {
+    try {
+      const parsed: unknown = JSON.parse(text);
+      if (!Array.isArray(parsed)) return null;
+      ids = parsed;
+    } catch {
+      return null;
+    }
+  } else {
+    ids = text.replace(/^\{([\s\S]*)\}$/, "$1").split(",");
+  }
+  const list = ids
+    .map((id) =>
+      String(id)
+        .trim()
+        .replace(/^"([\s\S]*)"$/, "$1")
+    )
+    .filter(Boolean);
+  return [...new Set(list)];
+}
+
+/**
+ * A sampling rule as the sampling form saves it: each value is kept only for
+ * the plan type that uses it (sample size for First, percentage for
+ * Percentage, AQL, inspection level and severity for AQL), the rest are null.
+ * A missing value is null; the sampling engine reads a null AQL value, level
+ * and severity as 1.0, II and Normal, as the form preselects them.
+ */
+export function samplingRuleForPlanType(rule: FeatureSamplingRule): {
+  [K in keyof FeatureSamplingRule]-?: Exclude<
+    FeatureSamplingRule[K],
+    undefined
+  >;
+} {
+  const type = rule.samplingPlanType ?? null;
+  const aql = type === "AQL";
+  return {
+    samplingPlanType: type,
+    samplingSampleSize:
+      type === "First" ? (rule.samplingSampleSize ?? null) : null,
+    samplingPercentage:
+      type === "Percentage" ? (rule.samplingPercentage ?? null) : null,
+    samplingAql: aql ? (rule.samplingAql ?? null) : null,
+    samplingInspectionLevel: aql
+      ? (rule.samplingInspectionLevel ?? null)
+      : null,
+    samplingSeverity: aql ? (rule.samplingSeverity ?? null) : null
+  };
+}
+
+/**
+ * A calibration's result as the calibration form decides it: Fail when it
+ * requires action, adjustment or repair, else Pass.
+ */
+export function calibrationInspectionStatus(record: {
+  requiresAction?: boolean;
+  requiresAdjustment?: boolean;
+  requiresRepair?: boolean;
+}): "Pass" | "Fail" {
+  return record.requiresAction ||
+    record.requiresAdjustment ||
+    record.requiresRepair
+    ? "Fail"
+    : "Pass";
+}
+
+/**
+ * A calibration's flags and the result they decide, as the form saves them: a
+ * flag left out is false, as an unticked box.
+ */
+export function calibrationFlags(record: {
+  requiresAction?: boolean;
+  requiresAdjustment?: boolean;
+  requiresRepair?: boolean;
+}) {
+  const flags = {
+    requiresAction: record.requiresAction ?? false,
+    requiresAdjustment: record.requiresAdjustment ?? false,
+    requiresRepair: record.requiresRepair ?? false
+  };
+  return { ...flags, inspectionStatus: calibrationInspectionStatus(flags) };
+}
+
+/**
+ * Why a calibration's sent `inspectionStatus` is refused: the form has no such
+ * field and decides it from the flags, so a sent one must agree with them.
+ * Null when it agrees or none was sent.
+ */
+export function calibrationInspectionStatusRefusal(record: {
+  requiresAction?: boolean;
+  requiresAdjustment?: boolean;
+  requiresRepair?: boolean;
+  inspectionStatus?: "Pass" | "Fail";
+}): string | null {
+  const decided = calibrationInspectionStatus(record);
+  if (!record.inspectionStatus || record.inspectionStatus === decided) {
+    return null;
+  }
+  return decided === "Fail"
+    ? "A calibration that requires action, adjustment or repair is a Fail. Leave out inspectionStatus, or send Fail"
+    : "A calibration that requires no action, adjustment or repair is a Pass. Leave out inspectionStatus, or send Pass";
+}
+
+/**
+ * The order an inspection plan's characteristics are shown in: by
+ * `createdAt`, then by label (natural, so 2 comes before 10), then by id.
+ * Characteristics saved together can share a `createdAt`. `createdAt` is
+ * compared as text, so it must keep its microseconds.
+ */
+export function compareInspectionFeatures(
+  a: { createdAt?: unknown; label?: unknown; id?: unknown },
+  b: { createdAt?: unknown; label?: unknown; id?: unknown }
+): number {
+  const aCreated = String(a.createdAt ?? "");
+  const bCreated = String(b.createdAt ?? "");
+  return (
+    (aCreated < bCreated ? -1 : aCreated > bCreated ? 1 : 0) ||
+    String(a.label ?? "").localeCompare(String(b.label ?? ""), undefined, {
+      numeric: true
+    }) ||
+    String(a.id).localeCompare(String(b.id))
+  );
+}
+
+/**
+ * A gauge's calibration status as the gauge form derives it from its dates:
+ * Out-of-Calibration once the next calibration date has passed, else
+ * In-Calibration when it has a last calibration date, else Pending.
+ */
+export function gaugeCalibrationStatusFromDates(
+  dates: {
+    lastCalibrationDate?: string | null;
+    nextCalibrationDate?: string | null;
+  },
+  today: CalendarDate
+): "Pending" | "In-Calibration" | "Out-of-Calibration" {
+  if (!dates.nextCalibrationDate) return "Pending";
+  if (parseDate(dates.nextCalibrationDate).compare(today) < 0) {
+    return "Out-of-Calibration";
+  }
+  return dates.lastCalibrationDate ? "In-Calibration" : "Pending";
+}
 type Tables = Database["public"]["Tables"];
 
 export type ScarIssue = Pick<

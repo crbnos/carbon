@@ -2,17 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { requireFeature } from "@carbon/ee/plan.server";
-import { upsertEnforcementRule } from "@carbon/ee/rules.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import type { SalesRuleSurface } from "@carbon/utils";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import type { z } from "zod";
 import {
   type salesRuleSeverities,
@@ -33,42 +30,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { rule: rule.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesRuleValidator).request(args, {
+    params: ["id"]
   });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "SALES_RULES",
-    redirectTo: path.to.salesRules
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.sales.updateSalesRule({
+    ...input.data,
+    id: input.params.id
   });
-
-  const { id } = params;
-  if (!id) throw new Error("id required");
-
-  const formData = await request.formData();
-  const validation = await validator(salesRuleValidator).validate(formData);
-  if (validation.error) return validationError(validation.error);
-
-  const update = await upsertEnforcementRule(client, "sales", companyId, {
-    ...validation.data,
-    id,
-    description: validation.data.description ?? null,
-    updatedBy: userId
-  });
-
-  if (update.error) {
-    return data(
-      {},
-      await flash(request, error(update.error, "Failed to update rule"))
-    );
-  }
-
-  throw redirect(`${path.to.salesRules}?${getParams(request)}`);
+  return respond(args.request, result).redirect(
+    `${path.to.salesRules}?${getParams(args.request)}`
+  );
 }
 
 export default function EditSalesRuleRoute() {

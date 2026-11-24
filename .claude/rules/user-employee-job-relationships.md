@@ -115,6 +115,16 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   `TEXT REFERENCES "user"("id")`, so the database accepts any user's id, including another
   company's). A route saves one only after `isActiveCompanyEmployee(client, companyId, userId)`
   (`apps/erp/app/modules/shared/shared.service.ts`), which fails closed on a read error.
+- **Revoke Invite deactivates, so it takes only pending invites.** `revokeInvites`
+  (`users.server.ts`, gate `create: users`) deactivates each user before it marks the invite
+  revoked. `refuseUnlessPendingInvites` (`users.service.ts`) refuses unless every user has an
+  invite in the company with `acceptedAt` and `revokedAt` NULL and no `userToCompany` row there,
+  the rows the Employees, Customers and Suppliers lists offer the action on. Without it a
+  `users_create` holder could remove an active account, which Deactivate gates on `users_delete`.
+- An API key inviting an employee (`inviteEmployee`) also needs `users_update` and `people_create`
+  (`refuseKeyWithout`), the two the first-time insert needs under RLS and the re-add checks
+  (`canReAddDeactivatedEmployee`). The re-add reads the key creator's claims, not the key's scopes,
+  so without the refusal a narrow key could re-add through its creator.
 - Re-adding a deactivated person through Add Account (`createEmployeeAccount`) reuses the surviving
   rows rather than failing: it refuses only when the existing `employee` row is `active`. A person
   whose invite is still pending is re-added the same way, which issues a new code and invalidates

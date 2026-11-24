@@ -108,6 +108,27 @@ describe("formatToolDescription", () => {
     expect(text).not.toContain("database-side paging use");
   });
 
+  test.each<[ManifestEntry["permission"], string]>([
+    [
+      {
+        module: null,
+        actions: [],
+        scopes: ["production_create", "projects_view"]
+      },
+      "Permission: production_create and projects_view"
+    ],
+    [
+      { module: "sales", actions: ["create", "update"] },
+      "Permission: sales_create and sales_update"
+    ]
+  ])("names every scope the gate requires: %j", (permission, line) => {
+    const text = formatToolDescription(
+      { ...baseTool, permission },
+      { isList: false }
+    );
+    expect(text.split("\n")[2]).toBe(line);
+  });
+
   test("omits the permission line for key-only operations", () => {
     const text = formatToolDescription(
       { ...baseTool, permission: { module: null, actions: ["view"] } },
