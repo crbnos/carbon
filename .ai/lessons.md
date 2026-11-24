@@ -4409,7 +4409,7 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Problem:** A worker saves the file only when it installs, and it reinstalls only when `service-worker.js` itself changes. Editing `offline.html` alone leaves every browser that already has the worker on the old copy, and the self-heal only fills a missing entry, it never replaces one.
 
-**Rule:** Every change to `offline.html` bumps the offline cache in both workers (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`). `offline-page.test.ts` in each app pins the page's hash to the cache name, so a change that skips the bump fails.
+**Rule:** Every change to `offline.html` bumps the offline cache in both workers (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`). The `offline-page-cache-bumped` check in `packages/checks` pins the page's hash to both cache names, so a change that skips the bump fails.
 
 **Applies to:** `apps/{erp,mes}/public/offline.html` and `service-worker.js`.
 
