@@ -223,6 +223,57 @@ databaseTest("a week move onto a station the person also works that day adds the
   }
 });
 
+databaseTest("a week move keeps the overtime of the row it merges away", async () => {
+  const { f, lathe, mill } = await peopleFixture();
+  try {
+    // overtime set for one department only stamps that department's station
+    await f.db
+      .insertInto("peopleAssignment")
+      .values(
+        [
+          { workCenterId: lathe, overtimeHours: 2 },
+          { workCenterId: mill, overtimeHours: 0 }
+        ].map((row) => ({
+          ...row,
+          companyId: f.companyId,
+          locationId: f.locationId,
+          employeeId: USER,
+          date: DAY,
+          shiftId: null,
+          hours: 4,
+          createdBy: USER
+        }))
+      )
+      .execute();
+
+    await movePeopleWeek(f.db, {
+      companyId: f.companyId,
+      employeeId: USER,
+      fromWorkCenterId: lathe,
+      workCenterId: mill,
+      weekStart: DAY,
+      shiftId: null
+    });
+
+    const rows = await f.db
+      .selectFrom("peopleAssignment")
+      .select(["workCenterId", "hours", "overtimeHours"])
+      .where("companyId", "=", f.companyId)
+      .where("employeeId", "=", USER)
+      .where("date", "=", DAY)
+      .execute();
+    expect(
+      rows.map((row) => ({
+        workCenterId: row.workCenterId,
+        hours: Number(row.hours),
+        overtimeHours: Number(row.overtimeHours)
+      }))
+    ).toEqual([{ workCenterId: mill, hours: 8, overtimeHours: 2 }]);
+  } finally {
+    await f.cleanup();
+  }
+});
+
 databaseTest("a person still holds one row per station, day and shift", async () => {
   const { f, lathe } = await peopleFixture();
   try {

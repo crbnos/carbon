@@ -258,6 +258,41 @@ it("buildPeopleBudgets keeps day rows in input order", () => {
   ]);
 });
 
+it("buildPeopleBudgets merges a station's rows on one day", () => {
+  const row = (
+    workCenterId: string,
+    shiftId: string,
+    hours: number | null
+  ) => ({
+    workCenterId,
+    employeeId: "e1",
+    date: "2026-01-15",
+    shiftId,
+    hours
+  });
+  const timed = buildPeopleBudgets([row("wc1", "s1", 3), row("wc1", "s2", 2)]);
+  assertEquals(timed.get("e1")?.get("2026-01-15"), [
+    { workCenterId: "wc1", hours: 5 }
+  ]);
+
+  const whole = buildPeopleBudgets([
+    row("wc1", "s1", null),
+    row("wc1", "s2", null)
+  ]);
+  assertEquals(whole.get("e1")?.get("2026-01-15"), [
+    { workCenterId: "wc1", hours: null }
+  ]);
+  // 8h day: the station keeps all of it, none is left unassigned
+  const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
+  const budgets = whole.get("e1") ?? new Map();
+  assertEquals(
+    winTimes(
+      clipWindowsToStation(windows, "wc1", new Set(["2026-01-15"]), budgets, TZ)
+    ),
+    [[jan6amUTC(15, 14), jan6amUTC(15, 22)]]
+  );
+});
+
 it("clipWindowsToStation with a sole whole-shift row keeps the full day", () => {
   const windows = [
     win(jan6amUTC(15, 14), jan6amUTC(15, 22)),

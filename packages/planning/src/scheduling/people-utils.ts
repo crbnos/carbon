@@ -332,7 +332,9 @@ export type PeopleDayRow = { workCenterId: string; hours: number | null };
 /**
  * employeeId -> dateKey -> that day's station rows in input order (the
  * provider orders rows deterministically, so "the first rows get the first
- * hours" is stable across runs).
+ * hours" is stable across runs). A station holds one entry per day: its rows
+ * on that day (one per shift) merge, hours adding and a whole-shift row
+ * absorbing the rest, so no share of the day is left with no station.
  */
 export function buildPeopleBudgets(
   rows: PeopleAssignmentRow[]
@@ -349,7 +351,16 @@ export function buildPeopleBudgets(
       dayRows = [];
       byDate.set(row.date, dayRows);
     }
-    dayRows.push({ workCenterId: row.workCenterId, hours: row.hours ?? null });
+    const hours = row.hours ?? null;
+    const station = dayRows.find(
+      (dayRow) => dayRow.workCenterId === row.workCenterId
+    );
+    if (station) {
+      station.hours =
+        station.hours === null || hours === null ? null : station.hours + hours;
+      continue;
+    }
+    dayRows.push({ workCenterId: row.workCenterId, hours });
   }
   return map;
 }
