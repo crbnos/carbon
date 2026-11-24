@@ -4431,6 +4431,9 @@ msgstr "Applies to all work centers"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 
+msgid "Applies to invoices drafted from now on"
+msgstr "Applies to invoices drafted from now on"
+
 msgid "Applies to Projects"
 msgstr "Applies to Projects"
 
@@ -7116,6 +7119,9 @@ msgstr "Charged on each rent invoice line"
 
 msgid "Charges"
 msgstr "Charges"
+
+msgid "Charges invoice"
+msgstr "Charges invoice"
 
 msgid "Charging"
 msgstr "Charging"
@@ -11482,6 +11488,9 @@ msgstr "Draft purchase invoices are created every day for the payments that are 
 msgid "Draft Request"
 msgstr "Draft Request"
 
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr "Drafted on <0/>. Nothing is saved until then."
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Drafts a credit memo for the time already invoiced after the end date."
 
@@ -11783,6 +11792,9 @@ msgstr "Each line is a link from this company's data to a row it doesn't own. Re
 
 msgid "Each line shows its item ID and revision."
 msgstr "Each line shows its item ID and revision."
+
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr "Each line starts as One-time. Set it to Recurring for a service billed every period."
 
 msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
 msgstr "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
@@ -15329,8 +15341,8 @@ msgstr "How Carbon looks in this browser."
 msgid "How coverage is worked out"
 msgstr "How coverage is worked out"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "How each unit's rent is cut into periods, and when in a period it is invoiced."
@@ -16409,6 +16421,9 @@ msgstr "Invoices"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Invoices and bills sync after you activate accounting"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 
@@ -16432,6 +16447,15 @@ msgstr "Invoices are drafted, posted and emailed automatically."
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "Invoices are drafted, posted and sent via Stripe automatically."
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr "Invoices are posted and emailed to the contact as soon as they are created."
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr "Invoices are posted and sent through Stripe as soon as they are created."
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr "Invoices are posted as soon as they are created. Nothing is emailed."
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "Invoices are sent to the Stripe customer already linked to the billing customer."
@@ -20310,6 +20334,9 @@ msgstr "No employees found"
 msgid "No end"
 msgstr "No end"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+
 msgid "No estimate lines"
 msgstr "No estimate lines"
 
@@ -21001,6 +21028,9 @@ msgstr "No unposted documents dated before the cutover"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "No unstarted, unbatched operations on this process at this location."
 
+msgid "No upcoming invoice."
+msgstr "No upcoming invoice."
+
 msgid "No value"
 msgstr "No value"
 
@@ -21670,14 +21700,14 @@ msgstr "One payment for every three months."
 msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 msgstr "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+
 msgid "One row per characteristic"
 msgstr "One row per characteristic"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
 
 msgid "One row per part"
 msgstr "One row per part"
@@ -22046,9 +22076,6 @@ msgstr "Open Workflow"
 
 msgid "Open-ended"
 msgstr "Open-ended"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "Open-ended: the value of the invoices planned so far."
 
 msgid "Opened"
 msgstr "Opened"
@@ -23686,6 +23713,9 @@ msgstr "Preview"
 
 msgid "Preview failed: {error}"
 msgstr "Preview failed: {error}"
+
+msgid "Preview PDF"
+msgstr "Preview PDF"
 
 msgid "Preview Quantity"
 msgstr "Preview Quantity"
@@ -25837,6 +25867,9 @@ msgstr "Renewal Uplift (%)"
 msgid "Rent"
 msgstr "Rent"
 
+msgid "Rent invoice"
+msgstr "Rent invoice"
+
 msgid "Rental"
 msgstr "Rental"
 
@@ -26627,6 +26660,9 @@ msgstr "Revenue GL account for operating rental income recognized straight-line 
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "Revenue is previewed once the contract has lines."
@@ -35531,12 +35567,6 @@ msgstr "What each period's payment is for this asset in the first year"
 
 msgid "What employees read or watch before the questions"
 msgstr "What employees read or watch before the questions"
-
-msgid "What happens to an invoice once it is created"
-msgstr "What happens to an invoice once it is created"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "What happens to an invoice once it is drafted"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."

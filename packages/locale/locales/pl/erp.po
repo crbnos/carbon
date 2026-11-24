@@ -4431,6 +4431,9 @@ msgstr "Dotyczy wszystkich stanowisk roboczych"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Dotyczy charakterystyk bez własnej reguły i partii, gdy ten plan kontroli prowadzi do wykonania kontroli."
 
+msgid "Applies to invoices drafted from now on"
+msgstr ""
+
 msgid "Applies to Projects"
 msgstr "Dotyczy projektów"
 
@@ -7116,6 +7119,9 @@ msgstr "Naliczane na każdej pozycji faktury wynajmu"
 
 msgid "Charges"
 msgstr "Obciążenia"
+
+msgid "Charges invoice"
+msgstr ""
 
 msgid "Charging"
 msgstr "Obciążanie"
@@ -11482,6 +11488,9 @@ msgstr "Faktury zakupu w wersji roboczej są tworzone każdego dnia dla płatno�
 msgid "Draft Request"
 msgstr "Żądanie w wersji roboczej"
 
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Tworzy projekt faktury korygującej za czas już zafakturowany po dacie zakończenia."
 
@@ -11783,6 +11792,9 @@ msgstr "Każdy wiersz to łącze z danych tej firmy do wiersza, którego nie jes
 
 msgid "Each line shows its item ID and revision."
 msgstr "Każda pozycja pokazuje jej ID artykułu i rewizję."
+
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
 
 msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
 msgstr "Każda pozycja otrzymuje kod podatku i stawkę, jakie jej artykuł ma w lokalizacji wysyłki faktury na dzień wystawienia. To nadpisze kod podatku, który usunięto z pozycji. Pozycje wynajmu i umów zachowują swój kod."
@@ -15329,8 +15341,8 @@ msgstr "Jak Carbon wygląda w tej przeglądarce."
 msgid "How coverage is worked out"
 msgstr "Jak ustalić pokrycie"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "Jak każda Pozycja zarabia swoje Przychody ze sprzedaży: rozłożone dzień po dniu lub równomiernie za miesiąc, od uruchomienia lub od Data rozpoczęcia."
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Jak czynsz każdej sztuki jest dzielony na okresy i kiedy w okresie jest fakturowany."
@@ -16409,6 +16421,9 @@ msgstr "Faktury"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Faktury są synchronizowane po aktywacji księgowości"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Faktury są tworzone automatycznie każdego dnia za to, co jest należne. Użyj tego, aby wystawić fakturę za to, co jest należne od razu — na przykład po dodaniu opłaty. Faktury będą następnie zgodne z ustawieniami fakturowania dla tej umowy."
 
@@ -16432,6 +16447,15 @@ msgstr "Faktury są redagowane, zaksięgowywane i wysyłane pocztą elektroniczn
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "Faktury są redagowane, zaksięgowywane i wysyłane przez Stripe automatycznie."
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "Faktury są wysyłane do klienta Stripe już połączonego z klientem rozliczeniowym."
@@ -20310,6 +20334,9 @@ msgstr "Nie znaleziono pracowników"
 msgid "No end"
 msgstr "Brak końca"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "Brak pozycji wyceny"
 
@@ -21001,6 +21028,9 @@ msgstr "Brak niezaksięgowanych dokumentów datowanych przed datą przejścia"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Brak nierozpoczętych, niezagregowanych operacji na tym procesie w tej lokalizacji."
 
+msgid "No upcoming invoice."
+msgstr ""
+
 msgid "No value"
 msgstr "Brak wartości"
 
@@ -21670,14 +21700,14 @@ msgstr "Jedna płatność co trzy miesiące."
 msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 msgstr "Jedna stawka wewnątrz kodu podatku, taka jak stawka stanowa lub stawka miejska, ze swoim organem podatkowym, procentem możliwym do odzyskania i datami wejścia w życie."
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "Jeden wiersz na charakterystykę"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "Jeden wiersz na fakturę, jedna kolumna na pozycję. Zmień datę lub kwotę, dodaj fakturę lub usuń jedną."
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "Jeden wiersz na miesiąc, jedna kolumna na pozycję. Każda pozycja rozpoznaje dokładnie to, co jej faktury rozliczają."
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "Jeden wiersz na część"
@@ -22046,9 +22076,6 @@ msgstr "Otwórz przepływ pracy"
 
 msgid "Open-ended"
 msgstr "Otwarte"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "Otwarte: wartość dotychczasowych zaplanowanych faktur."
 
 msgid "Opened"
 msgstr "Otwarty"
@@ -23686,6 +23713,9 @@ msgstr "Podgląd"
 
 msgid "Preview failed: {error}"
 msgstr "Podgląd nie powiódł się: {error}"
+
+msgid "Preview PDF"
+msgstr ""
 
 msgid "Preview Quantity"
 msgstr "Ilość podglądu"
@@ -25837,6 +25867,9 @@ msgstr "Wzrost ceny przy odnowieniu (%)"
 msgid "Rent"
 msgstr "Wynajem"
 
+msgid "Rent invoice"
+msgstr ""
+
 msgid "Rental"
 msgstr "Wynajmu"
 
@@ -26627,6 +26660,9 @@ msgstr "Konto księgowe przychodów ze sprzedaży dla przychodów z wynajmu oper
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Przychody ze sprzedaży zafakturowane zanim są zarobione, przechowywane jako zobowiązanie i zwolnione do przychodów przez przebieg rozpoznania w miarę upływu okresu usługi."
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "Przychody ze sprzedaży są wyświetlane w podglądzie, gdy umowa ma pozycje."
@@ -35531,12 +35567,6 @@ msgstr "Jaka jest płatność za każdy okres dla tego aktywa w pierwszym roku"
 
 msgid "What employees read or watch before the questions"
 msgstr "Co pracownicy czytają lub oglądają przed pytaniami"
-
-msgid "What happens to an invoice once it is created"
-msgstr "Co się stanie z fakturą po jej utworzeniu"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "Co się dzieje z fakturą po jej wystawieniu"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "Co się dzieje z fakturami tworzonymi automatycznie każdego dnia z umów wynajmu i umów. Faktury zawierające opłaty wynajmu, kredyty, ponowne rozliczenia unieważnionych faktur lub naruszenia reguł zawsze czekają na przegląd."
