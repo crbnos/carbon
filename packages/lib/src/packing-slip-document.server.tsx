@@ -153,7 +153,8 @@ export async function loadPackingSlipDocument(args: {
       terms: (terms.salesTerms ?? {}) as PackingSlipPDFProps["terms"],
       thumbnails,
       template,
-      sections
+      sections,
+      partNumberDisplayDraft: args.edit?.partNumberDisplay
     },
     shipmentReadableId: shipment.shipmentId,
     fileName: `${company.name} - ${shipment.shipmentId}.pdf`

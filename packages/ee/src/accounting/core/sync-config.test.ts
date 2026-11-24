@@ -100,3 +100,29 @@ describe("resolveSyncConfig", () => {
     expect("batchSize" in resolved.entities.item).toBe(false);
   });
 });
+
+describe("resolveSyncConfig memo families", () => {
+  it("turns the memo syncers on when the Posting tab pushes memo documents", () => {
+    const config = resolveSyncConfig({
+      syncConfig: { entities: { creditMemo: { enabled: false } } },
+      settings: {
+        postingSync: {
+          families: {
+            ar: "documents",
+            ap: "documents",
+            creditMemo: "documents",
+            supplierCredit: "documents"
+          }
+        }
+      }
+    });
+    expect(config.entities.creditMemo.enabled).toBe(true);
+    expect(config.entities.supplierCredit.enabled).toBe(true);
+  });
+
+  it("keeps them off while the families are none (the default)", () => {
+    const config = resolveSyncConfig({});
+    expect(config.entities.creditMemo.enabled).toBe(false);
+    expect(config.entities.supplierCredit.enabled).toBe(false);
+  });
+});

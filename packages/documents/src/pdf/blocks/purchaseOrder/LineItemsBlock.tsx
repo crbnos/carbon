@@ -13,7 +13,7 @@ import {
 import { Note } from "../../components";
 import { Cell, TextCell } from "../Cell";
 import { columnWidths } from "../columns";
-import { itemTextOverflowStyle } from "../itemText";
+import { breakLongItemWord, itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
 import type { PurchaseOrderData } from "./types";
 import { buildPurchaseOrderLineVars } from "./vars";
@@ -123,7 +123,10 @@ export function LineItemsBlock({
                 </TextCell>
                 <Cell width={w.description} style={tw("pr-2")}>
                   {t.prints("descriptionCell", row) ? (
-                    <Text style={{ ...tw("text-gray-900"), ...overflow }}>
+                    <Text
+                      style={{ ...tw("text-gray-900"), ...overflow }}
+                      hyphenationCallback={breakLongItemWord}
+                    >
                       {t("descriptionCell", row)}
                     </Text>
                   ) : null}
