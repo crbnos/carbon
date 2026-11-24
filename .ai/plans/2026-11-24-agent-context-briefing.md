@@ -15,7 +15,7 @@
 - [x] Task 7: Write the `brief` engine
 - [x] Task 8: Write the `pnpm brief` command
 - [x] Task 9: Write the rule and check honesty tests
-- [ ] Task 10: Write the PreToolUse hook and track the hook settings
+- [x] Task 10: Write the PreToolUse hook and track the hook settings
 - [ ] Task 11: Prove that the hook reaches the agent
 - [x] Task 12: Split `.ai/lessons.md` into one file per lesson
 - [x] Task 13: Add scopes to the lessons and write the triage report
