@@ -44,6 +44,7 @@ import {
   toast
 } from "@carbon/react";
 import {
+  displaySerial,
   formatDate,
   getItemReadableId,
   INPUT_FORMAT,
@@ -77,7 +78,11 @@ import { issueValidator } from "~/services/models";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { captureIssueSerial, parseTravelerCode } from "~/utils/traveler";
+import {
+  captureIssueSerial,
+  issueSerialChildren,
+  parseTravelerCode
+} from "~/utils/traveler";
 import { ShortStockBadge } from "./Materials";
 import { ScrapEntityModal } from "./ScrapEntityModal";
 import type { ScrappableEntity } from "./ScrapTab";
@@ -90,6 +95,7 @@ type SerialSelection = {
   id: string;
   observedId?: string;
   expectedSerial?: string;
+  confirmSerial?: string;
 };
 
 interface ItemDetails {
@@ -163,7 +169,11 @@ export function IssueMaterialModal({
       <ModalContent>
         {/* A scan can open another part while the dialog is open: start over. */}
         <IssueMaterialBody
-          key={props.material?.id}
+          key={JSON.stringify([
+            props.material?.id,
+            props.operationId,
+            props.parentId
+          ])}
           onClose={onClose}
           {...props}
         />
@@ -466,10 +476,10 @@ function IssueMaterialBody({
     (material.quantityIssued ?? 0) <
       (material.quantity ?? material.estimatedQuantity ?? Infinity);
   const observeSerial = useCallback(
-    (index: number, id: string): SerialSelection => ({
+    (index: number, id: string, pairingScan = false): SerialSelection => ({
       index,
       id,
-      ...captureIssueSerial(serialNumbers?.data ?? [], id)
+      ...captureIssueSerial(serialNumbers?.data ?? [], id, pairingScan)
     }),
     [serialNumbers?.data]
   );
@@ -504,6 +514,14 @@ function IssueMaterialBody({
       })),
     [selectedSerialNumbers]
   );
+  const pendingSerials = resolvedIssueSerials.filter(
+    (sn): sn is typeof sn & { confirmSerial: string } =>
+      sn.confirmSerial !== undefined
+  );
+  const needsSerialConfirmation = pendingSerials.length > 0;
+  const partName = pendingSerials
+    .map((sn) => displaySerial(sn.confirmSerial))
+    .join(", ");
   const [serialErrors, setSerialErrors] = useState<Record<number, string>>({});
   const [scrapEntityTarget, setScrapEntityTarget] = useState<{
     id: string;
@@ -1093,8 +1111,15 @@ function IssueMaterialBody({
   }, []);
 
   // Submit handlers
-  const handleSubmitSerial = useCallback(() => {
-    if (issueBlocked) return;
+  function handleSubmitSerial(action: "scan" | "confirm") {
+    if (
+      issueBlocked ||
+      fetcher.state !== "idle" ||
+      (needsSerialConfirmation && !serialNumbers?.pairingDestination)
+    )
+      return;
+    const children = issueSerialChildren(resolvedIssueSerials, action);
+    if (!children) return;
     if (!parentId) {
       toast.error("Parent tracking ID is required for serial tracked items.");
       return;
@@ -1138,11 +1163,7 @@ function IssueMaterialBody({
             materialId: material.id,
             jobOperationId: operationId,
             parentTrackedEntityId: parentId,
-            children: resolvedIssueSerials.map((sn) => ({
-              expectedSerial: sn.expectedSerial,
-              trackedEntityId: sn.id,
-              quantity: 1
-            })),
+            children,
             ...contextFields,
             ...overrideFields,
             ...(overIssueRefusal ? { allowOverIssue: true } : {})
@@ -1151,11 +1172,7 @@ function IssueMaterialBody({
             jobOperationId: operationId,
             itemId: selectedItemId,
             parentTrackedEntityId: parentId,
-            children: resolvedIssueSerials.map((sn) => ({
-              expectedSerial: sn.expectedSerial,
-              trackedEntityId: sn.id,
-              quantity: 1
-            })),
+            children,
             ...contextFields,
             ...overrideFields
           };
@@ -1166,21 +1183,7 @@ function IssueMaterialBody({
         encType: "application/json"
       });
     }
-  }, [
-    issueBlocked,
-    resolvedIssueSerials,
-    validateSerialNumber,
-    parentId,
-    material?.id,
-    operationId,
-    selectedItemId,
-    fetcher,
-    hasExpiredSelection,
-    expiryOverrideReason,
-    jobOperationStepId,
-    unitNumber,
-    overIssueRefusal
-  ]);
+  }
 
   const handleSubmitBatch = useCallback(() => {
     if (issueBlocked) return;
@@ -1784,26 +1787,23 @@ function IssueMaterialBody({
                                   aria-label={t`Serial number ${index + 1}`}
                                   value={sn.id}
                                   onChange={(e) => {
-                                    const newValue =
-                                      parseTravelerCode(e.target.value) ??
-                                      e.target.value;
                                     const newSerialNumbers = [
                                       ...selectedSerialNumbers
                                     ];
                                     newSerialNumbers[index] = observeSerial(
                                       index,
-                                      newValue
+                                      e.target.value,
+                                      !!serialNumbers?.pairingDestination
                                     );
                                     setSelectedSerialNumbers(newSerialNumbers);
                                   }}
                                   onKeyDown={(e) => {
-                                    // Barcode scanners emit the code then an
-                                    // Enter keystroke — submit the issue on
-                                    // Enter, same as clicking Issue.
+                                    // An identity-only pairing scan still needs the
+                                    // operator to confirm the printed serial below.
                                     if (e.key === "Enter") {
                                       e.preventDefault();
                                       if (!overIssueRefusal)
-                                        handleSubmitSerial();
+                                        handleSubmitSerial("scan");
                                     }
                                   }}
                                   onBlur={() => {
@@ -2372,6 +2372,31 @@ function IssueMaterialBody({
                   </AlertDescription>
                 </Alert>
               )}
+              {needsSerialConfirmation &&
+                serialNumbers?.pairingDestination &&
+                activeTab !== "unconsume" && (
+                  <Alert>
+                    <AlertTitle>{t`Serial number`}</AlertTitle>
+                    <AlertDescription>
+                      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                        <dt>{t`Scanned`}</dt>
+                        <dd>
+                          {pendingSerials.map((sn) => (
+                            <div key={sn.index}>
+                              {displaySerial(sn.confirmSerial)} · {sn.id}
+                            </div>
+                          ))}
+                        </dd>
+                        <dt>{t`Job`}</dt>
+                        <dd>{serialNumbers.pairingDestination.job}</dd>
+                        <dt>{t`Operation`}</dt>
+                        <dd>{serialNumbers.pairingDestination.operation}</dd>
+                        <dt>{t`Unit`}</dt>
+                        <dd>{parentId}</dd>
+                      </dl>
+                    </AlertDescription>
+                  </Alert>
+                )}
               {overIssueRefusal && activeTab !== "unconsume" && (
                 <Alert variant="warning">
                   <AlertTitle>{overIssueRefusal}</AlertTitle>
@@ -2411,19 +2436,26 @@ function IssueMaterialBody({
                 size="lg"
                 onClick={
                   trackingType === "Serial"
-                    ? handleSubmitSerial
+                    ? () => handleSubmitSerial("confirm")
                     : handleSubmitBatch
                 }
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={
                   issueBlocked ||
-                  (trackingType === "Serial" && loadingSerialStock) ||
+                  (trackingType === "Serial" &&
+                    (loadingSerialStock ||
+                      (needsSerialConfirmation &&
+                        !serialNumbers?.pairingDestination))) ||
                   fetcher.state !== "idle" ||
                   !selectedItemId ||
                   isLoadingItem
                 }
               >
-                {overIssueRefusal ? "Issue anyway" : "Issue"}
+                {needsSerialConfirmation
+                  ? t`Issue ${partName}`
+                  : overIssueRefusal
+                    ? "Issue anyway"
+                    : "Issue"}
               </Button>
             )}
           </ModalFooter>

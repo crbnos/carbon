@@ -8,6 +8,7 @@ import {
   captureIssueSerial,
   decideTravelerClaim,
   findScannedUnit,
+  issueSerialChildren,
   isUnitInOperationScope,
   parseTravelerCode,
   pickTravelerClaims,
@@ -613,4 +614,54 @@ describe("batchScanQuantity", () => {
   it("takes nothing from a lot with no stock the job can draw", () => {
     expect(batchScanQuantity({ needed: 5, available: 0 })).toBe(0);
   });
+});
+
+it("keeps an identity-only pack-out scan pending until the displayed serial is confirmed", () => {
+  const stock = [{ id: "unit", readableId: " PADDED " }];
+  for (const code of ["https://labels.test/x/traveler/unit", "unit"]) {
+    const scan = captureIssueSerial(stock, code, true);
+    expect(scan).toEqual({ observedId: "unit", confirmSerial: " PADDED " });
+    stock[0]!.readableId = "NEW";
+    expect(scan.confirmSerial).toBe(" PADDED ");
+    stock[0]!.readableId = " PADDED ";
+  }
+  expect(captureIssueSerial(stock, " PADDED ", true)).toEqual({
+    observedId: "unit",
+    expectedSerial: " PADDED "
+  });
+  expect(captureIssueSerial(stock, "unit", false)).toEqual({
+    observedId: "unit",
+    expectedSerial: " PADDED "
+  });
+});
+
+it("builds no Issue request on scanner Enter until every identity-only scan has been confirmed", () => {
+  const stock = [
+    { id: "unit", readableId: "unit" },
+    { id: "other", readableId: " PAD " }
+  ];
+  const scanned = (id: string, code: string, paired = true) => ({
+    id,
+    ...captureIssueSerial(stock, code, paired)
+  });
+  const qr = scanned("unit", "https://labels.test/x/traveler/unit");
+  const exact = scanned("other", " PAD ");
+  expect(issueSerialChildren([exact, qr], "scan")).toBeNull();
+  const url = "https://labels.test/x/traveler/unit";
+  stock[0]!.readableId = url;
+  expect(issueSerialChildren([scanned("unit", url)], "scan")).toBeNull();
+  expect(issueSerialChildren([qr], "confirm")).toEqual([
+    { trackedEntityId: "unit", expectedSerial: "unit", quantity: 1 }
+  ]);
+  expect(issueSerialChildren([exact], "scan")).toEqual([
+    { trackedEntityId: "other", expectedSerial: " PAD ", quantity: 1 }
+  ]);
+  const ordinary = scanned(
+    "other",
+    "https://labels.test/x/traveler/other",
+    false
+  );
+  expect(issueSerialChildren([ordinary], "scan")).toEqual([
+    { trackedEntityId: "other", expectedSerial: " PAD ", quantity: 1 }
+  ]);
 });

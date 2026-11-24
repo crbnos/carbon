@@ -2329,7 +2329,47 @@ export async function assignShipmentSerial(
         attributes["Shipment Line"] !== input.shipmentLineId ||
         attributes["Shipment Line Index"] != null)
     ) {
-      return "This serial is already assigned to another shipment slot.";
+      // A posted sale's tag is also the provenance for customer returns. A
+      // released unit can change slots once a later posted receipt put that
+      // same physical unit back. An open draft has no such sale debit.
+      const returned =
+        selected.status === "Available" &&
+        typeof attributes.Shipment === "string" &&
+        typeof attributes.Receipt === "string" &&
+        (await trx
+          .selectFrom("itemLedger as sold")
+          .innerJoin("itemLedger as back", (join) =>
+            join
+              .onRef("back.companyId", "=", "sold.companyId")
+              .onRef("back.itemId", "=", "sold.itemId")
+              .onRef("back.trackedEntityId", "=", "sold.trackedEntityId")
+              .onRef("back.entryNumber", ">", "sold.entryNumber")
+          )
+          .innerJoin("receipt as r", (join) =>
+            join
+              .onRef("r.id", "=", "back.documentId")
+              .onRef("r.companyId", "=", "back.companyId")
+          )
+          .innerJoin("shipment as s", (join) =>
+            join
+              .onRef("s.id", "=", "sold.documentId")
+              .onRef("s.companyId", "=", "sold.companyId")
+          )
+          .select("back.id")
+          .where("sold.companyId", "=", companyId)
+          .where("sold.itemId", "=", itemId)
+          .where("sold.trackedEntityId", "=", selected.id)
+          .where("sold.documentType", "=", "Sales Shipment")
+          .where("sold.documentId", "=", attributes.Shipment)
+          .where("s.status", "=", "Posted")
+          .where("sold.quantity", "<", 0)
+          .where("back.documentType", "=", "Sales Return Receipt")
+          .where("back.documentId", "=", attributes.Receipt)
+          .where("r.status", "=", "Posted")
+          .where("back.quantity", ">", 0)
+          .executeTakeFirst());
+      if (!returned)
+        return "This serial is already assigned to another shipment slot.";
     }
     if (currentId) {
       await trx
@@ -18085,10 +18125,8 @@ export async function postReceipt(
           ])
         );
 
-        // Original-outbound-cost resolution: the shipment's consumption rows
-        // are per (shipment, item) — post-shipment aggregates across lines —
-        // so resolve the shipment ids behind the linked shipment lines, then
-        // average that shipment's consumption rows for the item.
+        // Current serialized sales identify the unit on each cost row. Older
+        // sales and nonserialized stock can have a single pooled cost per SKU.
         const linkedShipmentLineIds = [
           ...new Set(
             (salesReturnOrderLines.data ?? [])
@@ -18098,29 +18136,61 @@ export async function postReceipt(
         ];
         const shipmentIdByShipmentLine = new Map<string, string>();
         if (linkedShipmentLineIds.length > 0) {
-          const shipmentLines = await many(
-            db,
-            "shipmentLine",
-            { companyId, id: linkedShipmentLineIds },
-            { columns: ["id", "shipmentId"] }
-          );
-          // A failed read must abort, not fall back: an empty map here would
-          // silently book every linked line at CURRENT cost instead of the
-          // original outbound cost, defeating exact-cost reversing unnoticed.
-          if (shipmentLines.error)
-            throw new Error(
-              "Failed to resolve shipments for original-cost lookup"
-            );
-          for (const line of shipmentLines.data ?? []) {
-            if (line.shipmentId)
-              shipmentIdByShipmentLine.set(line.id, line.shipmentId);
-          }
+          const shipmentLines = await db
+            .selectFrom("shipmentLine as l")
+            .innerJoin("shipment as s", "s.id", "l.shipmentId")
+            .select(["l.id", "s.id as shipmentId"])
+            .where("l.id", "in", linkedShipmentLineIds)
+            .where("l.companyId", "=", companyId)
+            .where("s.companyId", "=", companyId)
+            .where("s.customerId", "=", salesReturnOrder.data.customerId)
+            .where("s.status", "=", "Posted")
+            .execute();
+          for (const row of shipmentLines)
+            shipmentIdByShipmentLine.set(row.id, row.shipmentId);
         }
-        const shipmentIds = [...new Set(shipmentIdByShipmentLine.values())];
-        const consumptionRowsByShipmentItem = new Map<
-          string,
-          { quantity: number; cost: number }[]
-        >();
+
+        // A customer may return a different unit than the linked line. Its
+        // latest posted outbound debit identifies the sale, even for legacy
+        // units whose mutable shipment and SKU tags are missing or stale.
+        const selectedIds = (receiptLineTracking.data ?? []).map(
+          (row) => row.id
+        );
+        const soldUnits = selectedIds.length
+          ? await db
+              .selectFrom("itemLedger as l")
+              .innerJoin("shipment as s", "s.id", "l.documentId")
+              .distinctOn("l.trackedEntityId")
+              .select([
+                "l.trackedEntityId",
+                "l.itemId",
+                "s.id as shipmentId",
+                "s.customerId"
+              ])
+              .where("l.trackedEntityId", "in", selectedIds)
+              .where("l.companyId", "=", companyId)
+              .where("l.documentType", "=", "Sales Shipment")
+              .where("l.quantity", "<", 0)
+              .where("s.companyId", "=", companyId)
+              .where("s.status", "=", "Posted")
+              .orderBy("l.trackedEntityId")
+              .orderBy("l.entryNumber", "desc")
+              .execute()
+          : [];
+        const saleByUnit = new Map(
+          soldUnits.map((row) => [row.trackedEntityId, row])
+        );
+        const shipmentIds = [
+          ...new Set([
+            ...shipmentIdByShipmentLine.values(),
+            ...soldUnits
+              .filter(
+                (row) => row.customerId === salesReturnOrder.data.customerId
+              )
+              .map((row) => row.shipmentId)
+          ])
+        ];
+        const unitCosts = new Map<string, number | null>();
         if (shipmentIds.length > 0) {
           const consumptionRows = await many(
             db,
@@ -18131,21 +18201,39 @@ export async function postReceipt(
               companyId,
               quantity: lt(0)
             },
-            { columns: ["documentId", "itemId", "quantity", "cost"] }
+            {
+              columns: [
+                "documentId",
+                "itemId",
+                "quantity",
+                "cost",
+                "trackedEntityId"
+              ]
+            }
           );
           if (consumptionRows.error)
             throw new Error(
               "Failed to fetch shipment cost layers for original-cost lookup"
             );
+          const groups = new Map<
+            string,
+            { quantity: number; cost: number }[]
+          >();
           for (const row of consumptionRows.data ?? []) {
-            const key = `${row.documentId}::${row.itemId}`;
-            const list = consumptionRowsByShipmentItem.get(key) ?? [];
-            list.push({
-              quantity: Number(row.quantity ?? 0),
-              cost: Number(row.cost ?? 0)
-            });
-            consumptionRowsByShipmentItem.set(key, list);
+            const itemKey = `${row.documentId}::${row.itemId}`;
+            // Keep the historical whole-item rate for an unidentified return,
+            // and a separate group for each physical unit and the anonymous pool.
+            for (const key of [
+              itemKey,
+              `${itemKey}::${row.trackedEntityId ?? ""}`
+            ]) {
+              const rows = groups.get(key) ?? [];
+              rows.push(row);
+              groups.set(key, rows);
+            }
           }
+          for (const [key, rows] of groups)
+            unitCosts.set(key, resolveReturnUnitCost(rows));
         }
 
         const accountDefaults = await getDefaultPostingGroup(db, companyId);
@@ -18255,45 +18343,19 @@ export async function postReceipt(
             continue;
           }
 
-          // Cost resolution: zero-value reason -> 0; linked -> original
-          // outbound cost from the shipment's consumption rows; else current.
-          let unitCost: number;
-          if (
-            (
-              returnLine.returnReason as {
-                inventoryValueZero: boolean;
-              } | null
-            )?.inventoryValueZero
-          ) {
-            unitCost = 0;
-          } else if (
-            returnLine.shipmentLineId &&
-            shipmentIdByShipmentLine.has(returnLine.shipmentLineId)
-          ) {
-            const shipmentId = shipmentIdByShipmentLine.get(
-              returnLine.shipmentLineId
-            )!;
-            const rows =
-              consumptionRowsByShipmentItem.get(
-                `${shipmentId}::${receiptLine.itemId}`
-              ) ?? [];
-            // Falls back to current cost only when the resolved shipment
-            // genuinely has no usable consumption rows for the item (empty,
-            // zero-quantity, or NaN — resolveReturnUnitCost returns null).
-            // Read failures throw above rather than reaching this fallback.
-            unitCost =
-              resolveReturnUnitCost(rows) ??
-              currentCostByItem.get(receiptLine.itemId) ??
-              0;
-          } else {
-            unitCost = currentCostByItem.get(receiptLine.itemId) ?? 0;
-          }
-
-          const cost = receivedQuantity * unitCost;
-          const createsLayers =
-            itemTrackingType !== "Non-Inventory" &&
-            !!receiptLine.itemId &&
-            receivedQuantity > 0;
+          const linkedShipment = returnLine.shipmentLineId
+            ? shipmentIdByShipmentLine.get(returnLine.shipmentLineId)
+            : undefined;
+          const key = `${linkedShipment}::${receiptLine.itemId}`;
+          const zeroValue =
+            returnLine.returnReason?.inventoryValueZero === true;
+          const currentCost = currentCostByItem.get(receiptLine.itemId) ?? 0;
+          const unitCost = zeroValue ? 0 : (unitCosts.get(key) ?? currentCost);
+          const returnCosts: {
+            trackedEntityId: string | null;
+            quantity: number;
+            cost: number;
+          }[] = [];
 
           // itemLedger — mirrors the Purchase Order branch's three sites,
           // with the Sales Return Receipt document identity.
@@ -18356,6 +18418,34 @@ export async function postReceipt(
                     tracking.attributes as TrackedEntityAttributes | undefined
                   )?.["Receipt Line Index"] === i
               );
+              if (!trackingWithIndex) {
+                throw new InvalidInputError(
+                  "Assign each returned serial before posting the receipt."
+                );
+              }
+              const sale = saleByUnit.get(trackingWithIndex.id);
+              if (
+                sale &&
+                (sale.customerId !== salesReturnOrder.data.customerId ||
+                  sale.itemId !== receiptLine.itemId)
+              ) {
+                throw new InvalidInputError(
+                  "This returned unit was not shipped to this customer for this item."
+                );
+              }
+              let serialCost = unitCost;
+              if (sale && returnLine.shipmentLineId && !zeroValue) {
+                const actualItem = `${sale.shipmentId}::${sale.itemId}`;
+                serialCost =
+                  unitCosts.get(`${actualItem}::${trackingWithIndex.id}`) ??
+                  unitCosts.get(`${actualItem}::`) ??
+                  currentCost;
+              }
+              returnCosts.push({
+                trackedEntityId: trackingWithIndex.id,
+                quantity: 1,
+                cost: serialCost
+              });
               itemLedgerInserts.push({
                 postingDate: today,
                 itemId: receiptLine.itemId,
@@ -18365,40 +18455,47 @@ export async function postReceipt(
                 entryType: "Positive Adjmt.",
                 documentType: "Sales Return Receipt",
                 documentId: receiptHeader.id ?? undefined,
-                trackedEntityId: trackingWithIndex?.id,
+                trackedEntityId: trackingWithIndex.id,
                 externalDocumentId:
                   receiptHeader.externalDocumentId ?? undefined,
                 createdBy: userId,
                 companyId
               });
-              if (trackingWithIndex) {
-                trackedEntityUpdates[trackingWithIndex.id] = {
-                  status: "On Hold",
-                  quantity: 1
-                };
-              }
+              trackedEntityUpdates[trackingWithIndex.id] = {
+                status: "On Hold",
+                quantity: 1
+              };
             }
           }
 
-          // Cost layer: consumable re-entry at the resolved cost. A
-          // zero-value reason still creates the (0-cost) layer so FIFO
-          // consumption stays quantity-consistent.
-          if (createsLayers) {
-            costLedgerInserts.push({
-              itemLedgerType: "Sale",
-              costLedgerType: "Direct Cost",
-              adjustment: false,
-              documentType: "Sales Return Receipt",
-              documentId: receiptHeader.id ?? undefined,
-              externalDocumentId: receiptHeader.externalDocumentId ?? undefined,
-              itemId: receiptLine.itemId,
-              quantity: round(receivedQuantity),
-              nominalCost: round(cost),
-              cost: round(cost),
-              remainingQuantity: round(receivedQuantity),
-              companyId,
-              postingDate: today
+          if (!receiptLine.requiresSerialTracking) {
+            returnCosts.push({
+              trackedEntityId: null,
+              quantity: receivedQuantity,
+              cost: receivedQuantity * unitCost
             });
+          }
+          // A zero-value return still restores the physical layer quantity.
+          if (itemTrackingType !== "Non-Inventory") {
+            for (const row of returnCosts) {
+              costLedgerInserts.push({
+                itemLedgerType: "Sale",
+                costLedgerType: "Direct Cost",
+                adjustment: false,
+                documentType: "Sales Return Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                externalDocumentId:
+                  receiptHeader.externalDocumentId ?? undefined,
+                itemId: receiptLine.itemId,
+                trackedEntityId: row.trackedEntityId,
+                quantity: round(row.quantity),
+                nominalCost: round(row.cost),
+                cost: round(row.cost),
+                remainingQuantity: round(row.quantity),
+                companyId,
+                postingDate: today
+              });
+            }
           }
 
           // Journal: Dr Inventory / Cr COGS at the re-entry value. Zero-value
@@ -18407,7 +18504,7 @@ export async function postReceipt(
             returnLineId: receiptLine.lineId,
             itemId: receiptLine.itemId,
             quantity: receivedQuantity,
-            cost,
+            cost: returnCosts.reduce((sum, row) => sum + round(row.cost), 0),
             replenishmentSystem: item?.replenishmentSystem,
             itemPostingGroupId:
               itemPostingGroupByItem.get(receiptLine.itemId) ?? null,
@@ -19170,8 +19267,8 @@ export function netBookValue(
 
 /**
  * A sales order shipment: per costed line, COGS against inventory on
- * `shipment:<shipmentLineId>`. An item's relieved cost is shared across its
- * lines by quantity, the last line taking the remainder. Then, per fixed
+ * `shipment:<shipmentLineId>`. A serial's booked cost goes to the line that
+ * shipped it. Other costs are shared by quantity. Then, per fixed
  * asset sold, the accumulated depreciation cleared, the net book value moved
  * to disposal clearing, and the asset removed at cost.
  */
@@ -19184,6 +19281,7 @@ export function buildSalesShipmentJournal({
   defaults,
   lines,
   relievedCostByItem,
+  serialCostByLine = new Map(),
   fixedAssetSales
 }: {
   shipmentId: string;
@@ -19195,21 +19293,29 @@ export function buildSalesShipmentJournal({
   lines: SalesShipmentLine[];
   /** The cost each item's shipment relieved, positive. */
   relievedCostByItem: ReadonlyMap<string, number>;
+  serialCostByLine?: ReadonlyMap<string, number>;
   fixedAssetSales: FixedAssetSale[];
 }): ShipmentJournal {
   const costed = costedLines(lines);
-  const totalQuantityByItem = shippedQuantityByItem(lines);
-
-  const costByLine = new Map<string, number>();
+  const costByLine = new Map(serialCostByLine);
   for (const [itemId, group] of Map.groupBy(costed, (line) => line.itemId)) {
-    const total = relievedCostByItem.get(itemId) ?? 0;
-    const totalQuantity = totalQuantityByItem.get(itemId) ?? 0;
+    let sharedCost = relievedCostByItem.get(itemId) ?? 0;
+    const sharedLines = group.filter((line) => {
+      const identified = serialCostByLine.get(line.shipmentLineId);
+      if (identified === undefined) return true;
+      sharedCost -= identified;
+      return false;
+    });
+    const sharedQuantity = sharedLines.reduce(
+      (sum, line) => sum + line.quantity,
+      0
+    );
     let assigned = 0;
-    group.forEach((line, index) => {
+    sharedLines.forEach((line, index) => {
       const lineCost =
-        index === group.length - 1
-          ? total - assigned
-          : (line.quantity / totalQuantity) * total;
+        index === sharedLines.length - 1
+          ? sharedCost - assigned
+          : round((line.quantity / sharedQuantity) * sharedCost);
       assigned += lineCost;
       costByLine.set(line.shipmentLineId, lineCost);
     });
@@ -21177,6 +21283,7 @@ export async function postShipment(
               }
 
               // Relieve each item's cost, then write the journal.
+              const serialCostByLine = new Map<string, number>();
               const relievedCostByItem = new Map<string, number>();
               for (const [itemId, quantity] of shippedQuantityByItem(
                 journalShipmentLines
@@ -21200,6 +21307,17 @@ export async function postShipment(
                   leaving.filter((id) => selectedSerials.has(id)),
                   cogsResult.identified
                 );
+                for (const row of costs) {
+                  const selected =
+                    row.trackedEntityId &&
+                    selectedSerials.get(row.trackedEntityId);
+                  if (selected) {
+                    serialCostByLine.set(
+                      selected.lineId,
+                      (serialCostByLine.get(selected.lineId) ?? 0) + row.cost
+                    );
+                  }
+                }
                 for (const batch of chunked(costs)) {
                   await trx
                     .insertInto("costLedger")
@@ -21233,6 +21351,7 @@ export async function postShipment(
                 defaults: accountDefaults.data,
                 lines: journalShipmentLines,
                 relievedCostByItem,
+                serialCostByLine,
                 fixedAssetSales
               });
               if (journal.lines.length > 0) {
@@ -23554,7 +23673,14 @@ export async function postShipment(
               }
 
               await clearShipmentTags(trx, { companyId, shipmentId });
-              if (serialItems.size > 0) {
+              const restoredItems = [
+                ...new Set(
+                  itemLedgerInserts
+                    .filter((row) => row.quantity > 0)
+                    .map((row) => row.itemId)
+                )
+              ];
+              if (restoredItems.length > 0) {
                 // Mirror the booked sale, including its original valuation if
                 // the item master has changed. Older sales pooled costs by SKU.
                 const sales = await trx
@@ -23574,7 +23700,7 @@ export async function postShipment(
                   .where("sale.companyId", "=", companyId)
                   .where("sale.documentId", "=", shipmentId)
                   .where("sale.documentType", "=", "Sales Shipment")
-                  .where("sale.itemId", "in", [...serialItems])
+                  .where("sale.itemId", "in", restoredItems)
                   .where("sale.quantity", "<", 0)
                   .$narrowType<{ itemId: string }>()
                   .execute();
@@ -23583,9 +23709,14 @@ export async function postShipment(
                   (row) => row.itemId
                 );
                 const reversals = sales.flatMap((sale) => {
+                  const serial = serialItems.has(sale.itemId);
+                  if (!serial && sale.costingMethod !== "Average") return [];
+                  const restored = serial
+                    ? serialsByItem.get(sale.itemId)
+                    : undefined;
                   const ids = sale.trackedEntityId
                     ? [sale.trackedEntityId]
-                    : (serialsByItem.get(sale.itemId) ?? []).flatMap((row) =>
+                    : (restored ?? []).flatMap((row) =>
                         row.trackedEntityId ? [row.trackedEntityId] : []
                       );
                   return salesShipmentCostRows(
@@ -23609,6 +23740,16 @@ export async function postShipment(
                         ? row.quantity
                         : 0
                   }));
+                });
+                // Price the incoming stock before the item ledger changes.
+                // Its value is the amount this void restores to inventory.
+                await applyAverageCostChanges(trx, {
+                  companyId,
+                  changes: reversals.map((row) => ({
+                    itemId: row.itemId,
+                    quantity: row.quantity,
+                    value: row.cost
+                  }))
                 });
                 for (const rows of chunked(reversals)) {
                   await trx.insertInto("costLedger").values(rows).execute();

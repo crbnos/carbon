@@ -2,11 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { sql } from "kysely";
 import { expect } from "vitest";
 import {
   assignShipmentSerial,
-  issueMaterial,
+  postReceipt,
   postShipment
 } from "../../app/modules/inventory/inventory.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
@@ -21,120 +20,22 @@ import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
 import {
   createPackedShipment,
+  postPackedShipment,
   shipPackedUnit
 } from "./fixtures/packout-shipment";
-import { confirmPackoutCommand, createPairedJob } from "./fixtures/paired-job";
-
-async function stockSerials(f: Fixture) {
-  await f.db
-    .updateTable("item")
-    .set({ itemTrackingType: "Serial" })
-    .where("companyId", "=", f.companyId)
-    .where("id", "=", f.assemblyId)
-    .execute();
-  const serials = [40, 22].map((cost) => ({
-    cost,
-    id: f.prefix + "-sn-" + cost,
-    readableId: "SN-" + cost
-  }));
-  const common = { itemId: f.assemblyId, companyId: f.companyId, quantity: 1 };
-  await f.db
-    .insertInto("trackedEntity")
-    .values(
-      serials.map((unit) => ({
-        ...common,
-        id: unit.id,
-        readableId: unit.readableId,
-        sourceDocument: "Item",
-        sourceDocumentId: f.assemblyId,
-        status: "Available" as const,
-        createdBy: USER
-      }))
-    )
-    .execute();
-  await f.db
-    .insertInto("itemLedger")
-    .values(
-      serials.map((unit) => ({
-        ...common,
-        entryType: "Positive Adjmt." as const,
-        locationId: f.locationId,
-        trackedEntityId: unit.id,
-        createdBy: USER
-      }))
-    )
-    .execute();
-  await f.db
-    .insertInto("costLedger")
-    .values(
-      serials.map((unit) => ({
-        ...common,
-        cost: unit.cost,
-        trackedEntityId: unit.id,
-        remainingQuantity: 1,
-        itemLedgerType: "Positive Adjmt." as const,
-        costLedgerType: "Direct Cost" as const
-      }))
-    )
-    .execute();
-  return serials;
-}
-
-type Method = "FIFO" | "LIFO" | "Average" | "Standard";
-
-async function packSerials(
-  f: Fixture,
-  method: Method,
-  sources: Awaited<ReturnType<typeof stockSerials>>
-) {
-  const job = await createPairedJob(f, f.assemblyId, 2);
-  await f.db
-    .updateTable("itemCost")
-    .set({ costingMethod: method, standardCost: 15 })
-    .where("companyId", "=", f.companyId)
-    .where("itemId", "=", job.salesItemId)
-    .execute();
-  const post = async (input: Parameters<typeof issueMaterial>[1]) =>
-    unwrap(
-      await invokePosting(
-        handlesOf(f.ctx),
-        "issue",
-        await confirmPackoutCommand(f, input),
-        issueMaterial
-      )
-    );
-  const outputs: string[] = [];
-  for (const source of sources) {
-    const output = await f.db
-      .selectFrom("trackedEntity")
-      .select("id")
-      .where("companyId", "=", f.companyId)
-      .where("itemId", "=", job.salesItemId)
-      .where(sql<boolean>`attributes->>'Job' = ${job.jobId}`)
-      .where("readableId", "is", null)
-      .executeTakeFirstOrThrow();
-    outputs.push(output.id!);
-    await post({
-      type: "trackedEntitiesToOperation",
-      jobOperationId: job.operationId,
-      materialId: job.materialId,
-      parentTrackedEntityId: output.id!,
-      children: [{ trackedEntityId: source.id, quantity: 1 }]
-    });
-    await post({
-      type: "jobOperationSerialComplete",
-      jobOperationId: job.operationId,
-      trackedEntityId: output.id!,
-      quantity: 1
-    });
-    if (outputs.length === 1) {
-      await sql`SELECT receive_job_to_inventory(
-        ${job.jobId}, 1, ${f.companyId}, ${USER}, ${f.locationId}, NULL, ARRAY[${source.readableId}]::text[]
-      )`.execute(f.db);
-    }
-  }
-  return { itemId: job.salesItemId, outputs };
-}
+import {
+  stockSerials,
+  packSerials,
+  shipNormalAndWarranty,
+  createLinkedSerialReturn
+} from "./fixtures/serialized-sale";
+import { postgrestTest, operationContext } from "./fixtures/local-supabase";
+import {
+  assignReceiptReturnEntity,
+  setReceiptLineSerial,
+  assignShipmentLineEntity
+} from "../../app/modules/inventory/inventory.server";
+import { setSalesReturnOrderLineDisposition } from "../../app/modules/sales/sales.server";
 
 function layers(f: Fixture, itemId: string) {
   return f.db
@@ -421,3 +322,480 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a mixed serialized sale charges normal COGS and warranty expense for the unit on each line",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stampCutover(f);
+      const {
+        itemId,
+        outputs: [rich, cheap]
+      } = await packSerials(f, "FIFO", await stockSerials(f));
+      const sale = await shipNormalAndWarranty(f, itemId, cheap!, rich!);
+      const booked = await f.db
+        .selectFrom("costLedger")
+        .select(["trackedEntityId", "cost", "quantity"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Sales Shipment")
+        .where("documentId", "=", sale.shipmentId)
+        .orderBy("cost")
+        .execute();
+      expect(booked).toEqual([
+        { trackedEntityId: rich, cost: -40, quantity: -1 },
+        { trackedEntityId: cheap, cost: -22, quantity: -1 }
+      ]);
+      const lines = await f.db
+        .selectFrom("journalLine as l")
+        .innerJoin("journal as j", "j.id", "l.journalId")
+        .select([
+          "l.accountId",
+          "l.amount",
+          "l.documentLineReference",
+          "j.status"
+        ])
+        .where("l.companyId", "=", f.companyId)
+        .where("j.companyId", "=", f.companyId)
+        .where("l.documentId", "=", sale.shipmentId)
+        .execute();
+      expect(lines).toHaveLength(4);
+      expect(lines).toEqual(
+        expect.arrayContaining([
+          {
+            accountId: f.account("cogs"),
+            amount: 22,
+            documentLineReference: "shipment:" + sale.shipmentLineId,
+            status: "Posted"
+          },
+          {
+            accountId: f.account("scrap"),
+            amount: 40,
+            documentLineReference: "shipment:" + sale.warrantyLineId,
+            status: "Posted"
+          },
+          {
+            accountId: f.account("finished-goods"),
+            amount: -22,
+            documentLineReference: "shipment:" + sale.shipmentLineId,
+            status: "Posted"
+          },
+          {
+            accountId: f.account("finished-goods"),
+            amount: -40,
+            documentLineReference: "shipment:" + sale.warrantyLineId,
+            status: "Posted"
+          }
+        ])
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+for (const scenario of [
+  "linked cost",
+  "resale after Use As Is",
+  "historical pooled cost"
+] as const) {
+  postgrestTest(
+    "a serialized customer return preserves " + scenario,
+    async (client) => {
+      const f = await alwaysPostFixture();
+      try {
+        await stampCutover(f);
+        const {
+          itemId,
+          outputs: [rich, cheap]
+        } = await packSerials(f, "FIFO", await stockSerials(f));
+        const sale = await shipNormalAndWarranty(f, itemId, cheap!, rich!);
+        const readOtherUnit = () =>
+          f.db
+            .selectFrom("trackedEntity")
+            .select(["status", "quantity", "attributes"])
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", rich!)
+            .executeTakeFirstOrThrow();
+        const before = await readOtherUnit();
+        const rma = await createLinkedSerialReturn(
+          f,
+          itemId,
+          sale.shipmentLineId
+        );
+        if (scenario === "historical pooled cost") {
+          await f.db.transaction().execute(async (trx) => {
+            await trx
+              .deleteFrom("costLedger")
+              .where("companyId", "=", f.companyId)
+              .where("documentId", "=", sale.shipmentId)
+              .where("documentType", "=", "Sales Shipment")
+              .execute();
+            await trx
+              .insertInto("costLedger")
+              .values({
+                companyId: f.companyId,
+                itemLedgerType: "Sale",
+                costLedgerType: "Direct Cost",
+                adjustment: false,
+                itemId,
+                quantity: -2,
+                cost: -62,
+                documentId: sale.shipmentId,
+                documentType: "Sales Shipment",
+                remainingQuantity: 0
+              })
+              .execute();
+          });
+        }
+        const ctx = operationContext(f, client, USER);
+        expect(
+          (
+            await assignReceiptReturnEntity(ctx, {
+              receiptId: rma.receiptId,
+              receiptLineId: rma.receiptLineId,
+              trackedEntityId: cheap!,
+              index: 0
+            })
+          ).error
+        ).toBeNull();
+        // An anonymous open layer must survive resale of a returned physical unit.
+        await f.db
+          .insertInto("costLedger")
+          .values({
+            itemLedgerType: "Positive Adjmt.",
+            costLedgerType: "Direct Cost",
+            itemId,
+            quantity: 1,
+            remainingQuantity: 1,
+            cost: 77,
+            companyId: f.companyId
+          })
+          .execute();
+        unwrap(
+          await invokePosting(
+            handlesOf(f.ctx),
+            "post-receipt",
+            { type: "post", receiptId: rma.receiptId },
+            postReceipt
+          )
+        );
+        const expected = scenario === "historical pooled cost" ? 31 : 22;
+        if (scenario !== "resale after Use As Is") {
+          const journal = await f.db
+            .selectFrom("journalLine as l")
+            .innerJoin("journal as j", "j.id", "l.journalId")
+            .select(["l.accountId", "l.amount", "j.status"])
+            .where("l.companyId", "=", f.companyId)
+            .where("j.companyId", "=", f.companyId)
+            .where("l.documentId", "=", rma.receiptId)
+            .execute();
+          expect.soft(journal).toEqual(
+            expect.arrayContaining([
+              {
+                accountId: f.account("cogs"),
+                amount: -expected,
+                status: "Posted"
+              },
+              {
+                accountId: f.account("finished-goods"),
+                amount: expected,
+                status: "Posted"
+              }
+            ])
+          );
+          const layer = await f.db
+            .selectFrom("costLedger")
+            .select([
+              "cost",
+              "quantity",
+              "remainingQuantity",
+              "trackedEntityId"
+            ])
+            .where("companyId", "=", f.companyId)
+            .where("documentId", "=", rma.receiptId)
+            .execute();
+          expect(layer).toEqual([
+            {
+              cost: expected,
+              quantity: 1,
+              remainingQuantity: 1,
+              trackedEntityId: cheap
+            }
+          ]);
+        } else {
+          expect(
+            (
+              await setSalesReturnOrderLineDisposition(ctx, {
+                lineId: rma.returnLineId,
+                disposition: "Use As Is"
+              })
+            ).error
+          ).toBeNull();
+          const next = await createPackedShipment(f, itemId, "fresh");
+          const pick = (draft: typeof next) =>
+            assignShipmentLineEntity(ctx, {
+              shipmentId: draft.shipmentId,
+              shipmentLineId: draft.shipmentLineId,
+              trackingType: "serial",
+              trackedEntityId: cheap!,
+              index: 0
+            });
+          expect((await pick(next)).error).toBeNull();
+          const other = await createPackedShipment(f, itemId, "other");
+          expect((await pick(other)).error?.message).toMatch(
+            /already assigned/
+          );
+          await postPackedShipment(f, next, itemId, cheap!);
+          expect(await journal(f, next.shipmentId)).toEqual([22]);
+          expect(
+            (await layers(f, itemId)).filter((r) => r.remainingQuantity > 0)
+          ).toEqual([
+            { trackedEntityId: null, cost: 77, remainingQuantity: 1 }
+          ]);
+          expect(before).toMatchObject({
+            status: "Consumed",
+            attributes: {
+              Shipment: sale.shipmentId,
+              "Shipment Line": sale.warrantyLineId
+            }
+          });
+          expect(await readOtherUnit()).toEqual(before);
+          const otherStock = await f.db
+            .selectFrom("itemLedger")
+            .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+            .where("companyId", "=", f.companyId)
+            .where("itemId", "=", itemId)
+            .where("trackedEntityId", "=", rich!)
+            .executeTakeFirstOrThrow();
+          expect(otherStock.quantity).toBe(0);
+          const otherMovements = await f.db
+            .selectFrom("costLedger")
+            .select(["quantity", "cost", "remainingQuantity"])
+            .where("companyId", "=", f.companyId)
+            .where("itemId", "=", itemId)
+            .where("trackedEntityId", "=", rich!)
+            .orderBy("entryNumber")
+            .execute();
+          expect(otherMovements).toEqual([
+            { quantity: 1, cost: 40, remainingQuantity: 0 },
+            { quantity: -1, cost: -40, remainingQuantity: 0 }
+          ]);
+          // Even stale status metadata cannot use this earlier receipt as proof
+          // of a return from the later sale. Its stock debit is newer.
+          await f.db
+            .updateTable("trackedEntity")
+            .set({ status: "Available" })
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", cheap!)
+            .execute();
+          expect((await pick(other)).error?.message).toMatch(
+            /already assigned/
+          );
+        }
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}
+
+for (const scenario of [
+  "different line",
+  "different shipment",
+  "mixed historical ledger",
+  "legacy sale without tags",
+  "new receipt serial on a linked return",
+  "blind",
+  "zero value",
+  "another customer"
+] as const) {
+  postgrestTest(
+    "returning the selected serial supports " + scenario,
+    async (client) => {
+      const f = await alwaysPostFixture();
+      try {
+        await stampCutover(f);
+        const [rich, cheap] = await stockSerials(f);
+        const itemId = f.assemblyId;
+        let linkedLine: string;
+        let actualShipment: string;
+        if (
+          scenario === "different shipment" ||
+          scenario === "another customer"
+        ) {
+          const original = await shipPackedUnit(f, itemId, cheap!.id);
+          const actual = await shipPackedUnit(f, itemId, rich!.id);
+          const line = await f.db
+            .selectFrom("shipmentLine")
+            .select("id")
+            .where("companyId", "=", f.companyId)
+            .where("shipmentId", "=", original.shipmentId)
+            .executeTakeFirstOrThrow();
+          linkedLine = line.id;
+          actualShipment = actual.shipmentId;
+        } else {
+          const sale = await shipNormalAndWarranty(
+            f,
+            itemId,
+            cheap!.id,
+            rich!.id
+          );
+          linkedLine = sale.shipmentLineId;
+          actualShipment = sale.shipmentId;
+        }
+        const rma = await createLinkedSerialReturn(f, itemId, linkedLine);
+        if (scenario === "mixed historical ledger") {
+          await f.db
+            .updateTable("costLedger")
+            .set({ trackedEntityId: null })
+            .where("companyId", "=", f.companyId)
+            .where("itemId", "=", itemId)
+            .where("documentId", "=", actualShipment)
+            .where("trackedEntityId", "=", rich!.id)
+            .execute();
+        }
+        if (scenario === "blind") {
+          await f.db
+            .updateTable("salesReturnOrderLine")
+            .set({ shipmentLineId: null })
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", rma.returnLineId)
+            .execute();
+          await f.db
+            .updateTable("itemCost")
+            .set({ unitCost: 9 })
+            .where("companyId", "=", f.companyId)
+            .where("itemId", "=", itemId)
+            .execute();
+        }
+        if (scenario === "zero value") {
+          const reason = await f.db
+            .insertInto("returnReason")
+            .values({
+              name: "No value",
+              inventoryValueZero: true,
+              companyId: f.companyId,
+              createdBy: USER
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          await f.db
+            .updateTable("salesReturnOrderLine")
+            .set({ returnReasonId: reason.id })
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", rma.returnLineId)
+            .execute();
+        }
+        const ctx = operationContext(f, client, USER);
+        let returnedId = rich!.id;
+        if (scenario === "new receipt serial on a linked return") {
+          expect(
+            (
+              await setReceiptLineSerial(ctx, {
+                receiptId: rma.receiptId,
+                receiptLineId: rma.receiptLineId,
+                serialNumber: "Unrecorded",
+                index: 0
+              })
+            ).error
+          ).toBeNull();
+          const entered = await f.db
+            .selectFrom("trackedEntity")
+            .select("id")
+            .where("companyId", "=", f.companyId)
+            .where("readableId", "=", "Unrecorded")
+            .executeTakeFirstOrThrow();
+          returnedId = entered.id;
+        } else {
+          expect(
+            (
+              await assignReceiptReturnEntity(ctx, {
+                receiptId: rma.receiptId,
+                receiptLineId: rma.receiptLineId,
+                trackedEntityId: rich!.id,
+                index: 0
+              })
+            ).error
+          ).toBeNull();
+        }
+        if (scenario === "legacy sale without tags") {
+          // This historical return slot lacks the newer mutable SKU and shipment tags.
+          const unit = await f.db
+            .selectFrom("trackedEntity")
+            .select("attributes")
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", returnedId)
+            .executeTakeFirstOrThrow();
+          const receiptTags = {
+            ...(unit.attributes as Record<string, string>)
+          };
+          delete receiptTags.Shipment;
+          await f.db
+            .updateTable("trackedEntity")
+            .set({ itemId: null, attributes: receiptTags })
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", returnedId)
+            .execute();
+        }
+        const post = () =>
+          invokePosting(
+            handlesOf(f.ctx),
+            "post-receipt",
+            { type: "post", receiptId: rma.receiptId },
+            postReceipt
+          ).then(unwrap);
+        if (scenario === "another customer") {
+          const other = await f.db
+            .insertInto("customer")
+            .values({
+              id: f.prefix + "-customer2",
+              name: "Other customer",
+              readableId: "Other",
+              companyId: f.companyId
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          // A selected unit whose shipment no longer proves this customer's ownership.
+          await f.db
+            .updateTable("shipment")
+            .set({ customerId: other.id })
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", actualShipment)
+            .execute();
+          await expect(post()).rejects.toThrow(/shipped to this customer/);
+          expect(
+            await f.db
+              .selectFrom("itemLedger")
+              .select("id")
+              .where("companyId", "=", f.companyId)
+              .where("documentId", "=", rma.receiptId)
+              .execute()
+          ).toEqual([]);
+          return;
+        }
+        await post();
+        const expected =
+          scenario === "zero value"
+            ? 0
+            : scenario === "blind"
+              ? 9
+              : scenario === "new receipt serial on a linked return"
+                ? 31
+                : 40;
+        expect(
+          await f.db
+            .selectFrom("costLedger")
+            .select(["trackedEntityId", "cost", "remainingQuantity"])
+            .where("companyId", "=", f.companyId)
+            .where("documentId", "=", rma.receiptId)
+            .execute()
+        ).toEqual([
+          { trackedEntityId: returnedId, cost: expected, remainingQuantity: 1 }
+        ]);
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}

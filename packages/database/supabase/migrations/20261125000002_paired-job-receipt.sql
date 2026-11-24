@@ -216,15 +216,11 @@ DECLARE
   v_journal_entry_id TEXT;
   v_journal_id TEXT;
   v_jl_ids TEXT[];
-  v_new_per_unit_cost NUMERIC;
   v_costing_method TEXT;
   v_existing_unit_cost NUMERIC;
   v_item_posting_group_id TEXT;
   v_job_location_id TEXT;
-  v_total_qty_on_hand NUMERIC;
   v_prior_qty NUMERIC;
-  v_prior_value NUMERIC;
-  v_new_unit_cost NUMERIC;
   v_serial_unit_ids TEXT[];
   v_paired BOOLEAN;
   v_partial_paired_receipt BOOLEAN := false;
@@ -744,6 +740,15 @@ BEGIN
     WHERE sol.id = v_sales_order_line_id
       AND sol."companyId" = p_company_id;
   END IF;
+
+  -- Take the same item-cost lock as purchase receipts and shipment voids
+  -- before this receipt adds its stock. Other receipts then see this value
+  -- and its quantity together when they calculate the next moving average.
+  SELECT "costingMethod", "unitCost", "itemPostingGroupId"
+  INTO v_costing_method, v_existing_unit_cost, v_item_posting_group_id
+  FROM "itemCost"
+  WHERE "itemId" = v_item_id AND "companyId" = p_company_id
+  FOR NO KEY UPDATE;
 
   -- Insert itemLedger entries based on tracking type.
   -- Non-Inventory items (services) never enter inventory, and a re-completion at
@@ -1601,6 +1606,20 @@ BEGIN
     FROM allocations ORDER BY ord;
   END IF;
 
+  -- A free receipt changes the quantity in the moving average even though it
+  -- has no journal amount. Negative WIP stays on the job and contributes zero.
+  IF v_costing_method = 'Average' AND v_item_tracking_type IS DISTINCT FROM 'Non-Inventory'
+     AND v_asset_target IS NULL AND v_quantity_received_to_inventory > 0 THEN
+    -- Backflush can also consume this SKU. Its remaining stock, excluding
+    -- these new units, is the holding to blend (zero for negative on-hand).
+    SELECT GREATEST(COALESCE(SUM(quantity), 0) - v_quantity_received_to_inventory, 0)
+      INTO v_prior_qty FROM "itemLedger" WHERE "itemId" = v_item_id AND "companyId" = p_company_id;
+    UPDATE "itemCost"
+    SET "unitCost" = ROUND((v_prior_qty * COALESCE(v_existing_unit_cost, 0)
+      + GREATEST(v_accumulated_wip_cost, 0)) / (v_prior_qty + v_quantity_received_to_inventory), 5)
+    WHERE "itemId" = v_item_id AND "companyId" = p_company_id;
+  END IF;
+
   IF v_accumulated_wip_cost <= 0 THEN
     RETURN;
   END IF;
@@ -1741,42 +1760,11 @@ BEGIN
     END LOOP;
   END IF;
 
-  -- Update item cost
-  SELECT "costingMethod", "unitCost", "itemPostingGroupId"
-  INTO v_costing_method, v_existing_unit_cost, v_item_posting_group_id
-  FROM "itemCost"
-  WHERE "itemId" = v_item_id
-    AND "companyId" = p_company_id;
-
-  -- Update itemCost.unitCost (skipped for Non-Inventory: a service has no
-  -- stocked unit cost; the read above still feeds the dimension inserts below)
-  IF v_item_tracking_type IS DISTINCT FROM 'Non-Inventory' AND v_asset_target IS NULL THEN
-    v_new_per_unit_cost := v_accumulated_wip_cost / v_quantity_received_to_inventory;
-
-    IF v_costing_method = 'Average' THEN
-      SELECT COALESCE(SUM(quantity), 0)
-      INTO v_total_qty_on_hand
-      FROM "itemLedger"
-      WHERE "itemId" = v_item_id
-        AND "companyId" = p_company_id;
-
-      v_prior_qty := v_total_qty_on_hand - v_quantity_received_to_inventory;
-      v_prior_value := v_prior_qty * COALESCE(v_existing_unit_cost, 0);
-
-      IF v_total_qty_on_hand > 0 THEN
-        v_new_unit_cost := (v_prior_value + v_accumulated_wip_cost) / v_total_qty_on_hand;
-        UPDATE "itemCost"
-        SET "unitCost" = v_new_unit_cost
-        WHERE "itemId" = v_item_id
-          AND "companyId" = p_company_id;
-      END IF;
-
-    ELSIF v_costing_method IN ('FIFO', 'LIFO') THEN
-      UPDATE "itemCost"
-      SET "unitCost" = v_new_per_unit_cost
-      WHERE "itemId" = v_item_id
-        AND "companyId" = p_company_id;
-    END IF;
+  IF v_costing_method IN ('FIFO', 'LIFO') AND v_item_tracking_type IS DISTINCT FROM 'Non-Inventory'
+     AND v_asset_target IS NULL THEN
+    UPDATE "itemCost"
+    SET "unitCost" = v_accumulated_wip_cost / v_quantity_received_to_inventory
+    WHERE "itemId" = v_item_id AND "companyId" = p_company_id;
   END IF;
 
   -- Make to Asset: price the assets created above from the swept WIP and link

@@ -6,9 +6,9 @@
 // shipment's costLedger consumption rows for the returned item (linked via
 // costLedger.documentId = the shipment id, documentType 'Sales Shipment'),
 // return the unit cost the re-entry layer must book at so a ship→return round
-// trip nets zero P&L (BC exact cost reversing). Consumption rows are per
-// (shipment, item) — post-shipment aggregates across lines — so the average is
-// the best obtainable original cost. Returns null when the rows can't yield a
+// trip nets zero P&L. The caller uses a serialized sale's recorded physical
+// unit cost when available. For older or pooled stock this resolver spreads
+// the recorded cost over its quantity. Returns null when the rows can't yield a
 // cost — the caller then falls back to current cost (flagged-variance path).
 // Same math as resolveUnscrapUnitCost (post-inventory-adjustment), kept as its
 // own named contract because the two flows evolve independently.

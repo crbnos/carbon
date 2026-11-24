@@ -38,7 +38,11 @@ export function travelerIssueSerial(
 ) {
   return (
     selectedSerial ??
-    (code !== entity.id && code === entity.readableId ? code : undefined)
+    (code === entity.readableId &&
+    code !== entity.id &&
+    !parseTravelerCode(code)
+      ? code
+      : undefined)
   );
 }
 
@@ -57,13 +61,41 @@ export function findScannedUnit<
 /** Capture what a scan or selection identified while that stock list was on screen. */
 export function captureIssueSerial(
   stock: readonly { id: string | null; readableId: string | null }[],
-  value: string
+  value: string,
+  pairingScan = false
 ) {
   const unit = findScannedUnit(stock, value);
+  if (
+    pairingScan &&
+    unit?.id &&
+    unit.readableId != null &&
+    travelerIssueSerial(value, { id: unit.id, readableId: unit.readableId }) ===
+      undefined
+  ) {
+    return { observedId: unit.id, confirmSerial: unit.readableId };
+  }
   return {
     observedId: unit?.id ?? undefined,
     expectedSerial: unit?.readableId ?? undefined
   };
+}
+
+/** Resolve the physical children for one Issue request, including the frozen label. */
+export function issueSerialChildren(
+  serials: readonly {
+    id: string;
+    expectedSerial?: string;
+    confirmSerial?: string;
+  }[],
+  action: "scan" | "confirm"
+) {
+  if (action === "scan" && serials.some((sn) => sn.confirmSerial !== undefined))
+    return null;
+  return serials.map((sn) => ({
+    trackedEntityId: sn.id,
+    quantity: 1,
+    expectedSerial: sn.expectedSerial ?? sn.confirmSerial
+  }));
 }
 
 /**

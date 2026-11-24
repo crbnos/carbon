@@ -4,7 +4,10 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { issueMaterial } from "../../app/modules/inventory/inventory.service";
+import {
+  issueMaterial,
+  postShipment
+} from "../../app/modules/inventory/inventory.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
@@ -574,3 +577,143 @@ databaseTest(
     }
   }
 );
+
+for (const voidFirstSale of [false, true]) {
+  databaseTest(
+    voidFirstSale
+      ? "Average blends a voided sale's booked value with intervening receipts"
+      : "Average includes the quantity of a free packed receipt",
+    async () => {
+      const f = await alwaysPostFixture();
+      try {
+        await stampCutover(f);
+        const a = { ...rich, cost: 40 };
+        const b = { ...cheap, cost: voidFirstSale ? 22 : 0 };
+        const pack = await pricedPackout(f, 2, [a, b], false);
+        const itemId = pack.job.salesItemId;
+        await f.db
+          .updateTable("itemCost")
+          .set({ costingMethod: "Average" })
+          .where("companyId", "=", f.companyId)
+          .where("itemId", "=", itemId)
+          .execute();
+        const valuation = async () => {
+          const result = await sql`
+            SELECT "quantityOnHand", "unitCost", "totalValue"
+            FROM get_inventory_valuation(${f.companyId}) WHERE "itemId" = ${itemId}
+          `.execute(f.db);
+          return result.rows;
+        };
+        const posted = (shipmentId: string) =>
+          f.db
+            .selectFrom("journalLine as l")
+            .innerJoin("journal as j", "j.id", "l.journalId")
+            .select(["l.amount", "j.status"])
+            .where("l.companyId", "=", f.companyId)
+            .where("l.documentType", "=", "Sales Shipment")
+            .where("l.documentId", "=", shipmentId)
+            .where("l.accountId", "=", f.account("cogs"))
+            .orderBy("l.amount")
+            .execute();
+        const first = await pack.issue(a);
+        await pack.log(first);
+        await pack.receive(1, [a.serial]);
+        expect(await valuation()).toEqual([
+          { quantityOnHand: 1, unitCost: 40, totalValue: 40 }
+        ]);
+        const initial = voidFirstSale
+          ? await shipPackedUnit(f, itemId, first)
+          : null;
+        if (initial)
+          expect(await posted(initial.shipmentId)).toEqual([
+            { amount: 40, status: "Posted" }
+          ]);
+        const second = await pack.issue(b);
+        await pack.log(second); // Terminal MES Finish receives this piece.
+        expect(await pack.wip()).toBe(0);
+        if (initial) {
+          expect(await valuation()).toEqual([
+            { quantityOnHand: 1, unitCost: 22, totalValue: 22 }
+          ]);
+          unwrap(
+            await invokePosting(
+              handlesOf(f.ctx),
+              "post-shipment",
+              { type: "void", shipmentId: initial.shipmentId },
+              postShipment
+            )
+          );
+          expect(await posted(initial.shipmentId)).toEqual([
+            { amount: -40, status: "Posted" },
+            { amount: 40, status: "Posted" }
+          ]);
+        }
+        const expectedAverage = (a.cost + b.cost) / 2;
+        expect.soft(await valuation()).toEqual([
+          {
+            quantityOnHand: 2,
+            unitCost: expectedAverage,
+            totalValue: a.cost + b.cost
+          }
+        ]);
+        for (const id of [first, second]) {
+          const sale = await shipPackedUnit(f, itemId, id, "-after");
+          expect
+            .soft(await posted(sale.shipmentId))
+            .toEqual([{ amount: expectedAverage, status: "Posted" }]);
+        }
+        const sales = await f.db
+          .selectFrom("costLedger")
+          .select(["trackedEntityId", "quantity", "cost", "remainingQuantity"])
+          .where("companyId", "=", f.companyId)
+          .where("documentType", "=", "Sales Shipment")
+          .where("itemId", "=", itemId)
+          .orderBy("entryNumber")
+          .execute();
+        expect(sales).toEqual([
+          ...(initial
+            ? [
+                {
+                  trackedEntityId: first,
+                  quantity: -1,
+                  cost: -40,
+                  remainingQuantity: 0
+                },
+                {
+                  trackedEntityId: first,
+                  quantity: 1,
+                  cost: 40,
+                  remainingQuantity: 0
+                }
+              ]
+            : []),
+          ...[first, second].map((trackedEntityId) => ({
+            trackedEntityId,
+            quantity: -1,
+            cost: -expectedAverage,
+            remainingQuantity: 0
+          }))
+        ]);
+        expect(await pack.layerCosts()).toEqual([
+          { trackedEntityId: first, cost: a.cost, remainingQuantity: 1 },
+          { trackedEntityId: second, cost: b.cost, remainingQuantity: 1 }
+        ]);
+        expect(await valuation()).toEqual([]);
+        // Only the receipts and sales concern the sales SKU. The source
+        // material also hits Finished Goods when it is issued to this job.
+        const finishedGoods = await f.db
+          .selectFrom("journalLine as l")
+          .innerJoin("journal as j", "j.id", "l.journalId")
+          .select((eb) => eb.fn.sum<number>("l.amount").as("balance"))
+          .where("l.companyId", "=", f.companyId)
+          .where("l.accountId", "=", f.account("finished-goods"))
+          .where("l.documentType", "in", ["Sales Shipment", "Job Receipt"])
+          .where("j.status", "=", "Posted")
+          .executeTakeFirstOrThrow();
+        expect.soft(finishedGoods.balance).toBe(0);
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}

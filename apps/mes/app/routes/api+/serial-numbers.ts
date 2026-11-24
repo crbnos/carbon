@@ -18,5 +18,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const jobOperationId = url.searchParams.get("operationId");
   if (!itemId || !jobOperationId) return { data: [], error: null };
 
-  return getIssueLotsForItem(client, { itemId, companyId, jobOperationId });
+  return getIssueLotsForItem(client, {
+    itemId,
+    companyId,
+    jobOperationId,
+    checkPairing: true
+  });
 }
