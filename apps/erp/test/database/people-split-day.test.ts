@@ -11,6 +11,7 @@ import { sql } from "kysely";
 import { expect } from "vitest";
 import {
   movePeopleAssignmentCell,
+  movePeopleWeek,
   setPeopleDay,
   upsertPeopleAssignment
 } from "../../app/modules/production/production.service";
@@ -182,6 +183,41 @@ databaseTest("a matrix move onto a day at another station splits that day", asyn
         { workCenterId: mill, hours: 5 }
       ])
     );
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest("a week move onto a station the person also works that day adds the hours", async () => {
+  const { f, lathe, mill } = await peopleFixture();
+  try {
+    await f.db
+      .insertInto("peopleAssignment")
+      .values(
+        [lathe, mill].map((workCenterId) => ({
+          companyId: f.companyId,
+          locationId: f.locationId,
+          workCenterId,
+          employeeId: USER,
+          date: DAY,
+          shiftId: null,
+          hours: 4,
+          createdBy: USER
+        }))
+      )
+      .execute();
+
+    const result = await movePeopleWeek(f.db, {
+      companyId: f.companyId,
+      employeeId: USER,
+      fromWorkCenterId: lathe,
+      workCenterId: mill,
+      weekStart: DAY,
+      shiftId: null
+    });
+
+    expect(result).toEqual({ moved: 0, merged: 1 });
+    expect(await dayRows(f, DAY)).toEqual([{ workCenterId: mill, hours: 8 }]);
   } finally {
     await f.cleanup();
   }

@@ -7686,8 +7686,9 @@ export async function unassignPeopleWeek(
 
 /**
  * Move a person's whole week from one station to another. Days where they
- * already have a row at the target station keep the target row (the source
- * row is dropped); other days simply change station.
+ * already have a row at the target station for the same shift merge into it
+ * (hours add; a whole-shift row absorbs the other); other days simply change
+ * station.
  * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleWeek(
@@ -7708,7 +7709,7 @@ export async function movePeopleWeek(
   return db.transaction().execute(async (trx) => {
     let sourceQuery = trx
       .selectFrom("peopleAssignment")
-      .select(["id", "date", "shiftId"])
+      .select(["id", "date", "shiftId", "hours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("workCenterId", "=", args.fromWorkCenterId)
@@ -7723,20 +7724,34 @@ export async function movePeopleWeek(
 
     const target = await trx
       .selectFrom("peopleAssignment")
-      .select(["date", "shiftId"])
+      .select(["id", "date", "shiftId", "hours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("workCenterId", "=", args.workCenterId)
       .where("date", ">=", args.weekStart)
       .where("date", "<=", weekEnd)
       .execute();
-    const occupied = new Set(
-      target.map((row) => `${toIsoDate(row.date)}:${row.shiftId ?? ""}`)
+    const occupied = new Map(
+      target.map((row) => [`${toIsoDate(row.date)}:${row.shiftId ?? ""}`, row])
     );
 
     let moved = 0;
     for (const row of source) {
-      if (occupied.has(`${toIsoDate(row.date)}:${row.shiftId ?? ""}`)) {
+      const existing = occupied.get(
+        `${toIsoDate(row.date)}:${row.shiftId ?? ""}`
+      );
+      if (existing) {
+        await trx
+          .updateTable("peopleAssignment")
+          .set({
+            hours:
+              row.hours === null || existing.hours === null
+                ? null
+                : Number(row.hours) + Number(existing.hours)
+          })
+          .where("id", "=", existing.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
         await trx
           .deleteFrom("peopleAssignment")
           .where("id", "=", row.id)

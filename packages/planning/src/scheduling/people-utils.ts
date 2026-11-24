@@ -357,10 +357,11 @@ export function buildPeopleBudgets(
 /**
  * A member's availability AT ONE STATION: windows clipped to their assigned
  * dates there and, on split days, to their hours budget at that station.
- * The day's attended time is dealt out sequentially in row order — the first
- * row gets the first hours of the day, the next row the following hours.
- * A sole whole-shift row keeps the full day (identical to
- * clipWindowsToDates), so unsplit boards behave exactly as before.
+ * The day's attended time is dealt out sequentially: rows with hours first,
+ * in row order, then the whole-shift rows, which share what is left equally.
+ * No station's hours depend on where a whole-shift row sorts. A sole
+ * whole-shift row keeps the full day (identical to clipWindowsToDates), so
+ * unsplit boards behave exactly as before.
  */
 export function clipWindowsToStation(
   windows: CalendarWindow[],
@@ -393,32 +394,35 @@ export function clipWindowsToStation(
       continue;
     }
 
-    // walk earlier rows to find this station's slice of the attended day
-    let offsetMs = 0;
-    let budgetMs: number | null = null;
-    let found = false;
-    for (const row of dayRows) {
-      if (row.workCenterId === workCenterId) {
-        budgetMs = row.hours === null ? null : row.hours * HOUR_MS;
-        found = true;
-        break;
-      }
-      if (row.hours === null) {
-        // an earlier whole-shift row consumes the rest of the day
-        offsetMs = Number.POSITIVE_INFINITY;
-        break;
-      }
-      offsetMs += row.hours * HOUR_MS;
-    }
-    if (!found && offsetMs !== Number.POSITIVE_INFINITY) {
+    // this station's slice: rows with hours in order, then whole-shift rows
+    const timed = dayRows.filter((row) => row.hours !== null);
+    const wholeShift = dayRows.filter((row) => row.hours === null);
+    const own = dayRows.find((row) => row.workCenterId === workCenterId);
+    if (!own) {
       // dates come from this station's rows, so this shouldn't happen —
       // fall back to the whole day rather than silently dropping the person
       kept.push(...segments);
       continue;
     }
+    const timedMs = (rows: PeopleDayRow[]) =>
+      rows.reduce((sum, row) => sum + (row.hours ?? 0) * HOUR_MS, 0);
+    let offsetMs: number;
+    let budgetMs: number;
+    if (own.hours !== null) {
+      offsetMs = timedMs(timed.slice(0, timed.indexOf(own)));
+      budgetMs = own.hours * HOUR_MS;
+    } else {
+      const dayMs = segments.reduce((sum, s) => sum + (s.end - s.start), 0);
+      const shareMs = Math.max(0, dayMs - timedMs(timed)) / wholeShift.length;
+      const index = wholeShift.indexOf(own);
+      offsetMs = timedMs(timed) + index * shareMs;
+      // the last whole-shift row takes the rest of the day
+      budgetMs =
+        index === wholeShift.length - 1 ? Number.POSITIVE_INFINITY : shareMs;
+    }
 
     let toSkip = offsetMs;
-    let toKeep = budgetMs === null ? Number.POSITIVE_INFINITY : budgetMs;
+    let toKeep = budgetMs;
     for (const segment of segments) {
       const lengthMs = segment.end - segment.start;
       if (toSkip >= lengthMs) {
