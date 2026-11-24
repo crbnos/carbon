@@ -215,19 +215,22 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     pool,
     PostgresDriver
   );
-  const client: SupabaseClient<Database> = createClient<Database>(
-    `http://localhost:${env.PORT_API}`,
-    env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: { autoRefreshToken: false, persistSession: false },
-      global: { fetch: realFetch }
-    }
-  );
+  // Built in beforeAll: a skipped suite still runs this body, and with no
+  // local stack the URL is malformed.
+  let client: SupabaseClient<Database>;
   const companies: string[] = [];
   let fake: FakeXero;
   let consolidateIntegration: typeof import("./accounting-consolidation")["consolidateIntegration"];
 
   beforeAll(async () => {
+    client = createClient<Database>(
+      `http://localhost:${env.PORT_API}`,
+      env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: { autoRefreshToken: false, persistSession: false },
+        global: { fetch: realFetch }
+      }
+    );
     // The consolidation module builds its service-role and Redis clients at
     // import, from the local stack's environment.
     process.env.SUPABASE_URL ??= `http://localhost:${env.PORT_API}`;
