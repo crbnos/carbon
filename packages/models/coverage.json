@@ -22,6 +22,38 @@
     },
     "confirmedAt": "ca0691d725"
   },
+  "document-posting": {
+    "model": "src/document-posting.ts",
+    "code": {
+      "apps/erp/app/modules/shared/shared.service.ts": [
+        "assertPostable",
+        "lockPostable"
+      ],
+      "apps/erp/app/modules/inventory/inventory.service.ts": [
+        "lockPostedReceipt",
+        "lockPostedShipment",
+        "await lockPostable(trx, \"receipt\", receiptId, companyId);",
+        "await lockPostable(trx, \"shipment\", shipmentId, companyId);",
+        "await lockPostedReceipt(trx, companyId, receiptId);",
+        "await lockPostedShipment(trx, companyId, shipmentId);",
+        "{ id: receiptId, companyId, status: \"Pending\" }",
+        "{ id: shipmentId, companyId, status: \"Pending\" }"
+      ],
+      "apps/erp/app/modules/invoicing/invoicing.service.ts": [
+        "await lockPostable(trx, \"purchaseInvoice\", invoiceId, companyId);",
+        "{ id: invoiceId, companyId, status: \"Pending\" }"
+      ],
+      "apps/erp/app/modules/inventory/inventory.server.ts": [
+        ".in(\"status\", [\"Draft\", \"Pending\"])",
+        ".eq(\"status\", \"Pending\");"
+      ],
+      "apps/erp/app/modules/invoicing/invoicing.server.ts": [
+        ".eq(\"status\", \"Draft\")",
+        ".eq(\"status\", \"Pending\");"
+      ]
+    },
+    "databaseTests": ["test/database/document-posting-concurrency.test.ts"]
+  },
   "invoice-void": {
     "model": "src/invoice-void.ts",
     "code": {
