@@ -633,8 +633,10 @@ function CapitalAssetLink({
           size="sm"
           leftIcon={<LuBuilding2 />}
           isDisabled={
-            !permissions.can("create", "accounting") ||
-            !permissions.can("update", "projects")
+            !permissions.has({
+              "accounting.assets": "Create",
+              "projects.projects": "Edit"
+            })
           }
           onClick={placeModal.onOpen}
         >

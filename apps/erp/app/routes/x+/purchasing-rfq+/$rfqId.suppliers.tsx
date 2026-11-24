@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -12,8 +12,8 @@ import { upsertPurchasingRFQSuppliers } from "~/modules/purchasing/purchasing.se
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "purchasing"
+  const { client, companyId, userId } = await authorize(request, {
+    "purchasing.rfqs": "Edit"
   });
 
   const { rfqId: id } = params;

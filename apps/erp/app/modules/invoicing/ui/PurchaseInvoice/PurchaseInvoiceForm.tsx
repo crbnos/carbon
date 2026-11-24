@@ -233,8 +233,8 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
           <Submit
             isDisabled={
               isEditing
-                ? !permissions.can("update", "invoicing")
-                : !permissions.can("create", "invoicing")
+                ? !permissions.has({ "invoicing.purchaseInvoices": "Edit" })
+                : !permissions.has({ "invoicing.purchaseInvoices": "Create" })
             }
           >
             <Trans>Save</Trans>

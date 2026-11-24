@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -41,11 +41,11 @@ export const handle: Handle = {
 export const WEEKS_TO_PROJECT = 12 * 4;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee",
-    bypassRls: true
-  });
+  const { client, companyId, userId } = await authorize(
+    request,
+    { "production.demandForecasts": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

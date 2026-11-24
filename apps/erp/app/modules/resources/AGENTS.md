@@ -62,7 +62,7 @@ pnpm --filter erp test -- resources   # vitest filters by file path
 
 ## Operations (`resources.server.ts`)
 
-Each operation is one `defineServiceFn` const in `resources.server.ts`. A route calls it through `carbon(request)` as `api.resources.<name>(input)` and makes no other write; the API and MCP publish the ones tagged `@mcp` as `resources_<name>`. Every check the route used to make is in the function.
+Each operation is one `defineServiceFn` const in `resources.server.ts`. A route calls it through `authorize(request)` as `api.resources.<name>(input)` and makes no other write; the API and MCP publish the ones tagged `@mcp` as `resources_<name>`. Every check the route used to make is in the function.
 
 | Operation | Route | What it holds |
 |---|---|---|

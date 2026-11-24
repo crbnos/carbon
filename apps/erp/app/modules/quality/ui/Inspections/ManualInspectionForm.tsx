@@ -163,7 +163,11 @@ const ManualInspectionForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={!permissions.can("create", "quality")}>
+                <Submit
+                  isDisabled={
+                    !permissions.has({ "quality.inspections": "Create" })
+                  }
+                >
                   {t`Create`}
                 </Submit>
                 <Button size="md" variant="solid" onClick={onClose}>

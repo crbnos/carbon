@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
 import type { ConformanceCheck, Violation } from "../check";
+import { blankSqlComments } from "../sources/comments";
 
 /**
  * RLS policies and the managed functions are authored only as files — the manifest and
@@ -31,7 +33,7 @@ const ATTACHMENTS_SINCE = "20261004194527";
 
 /** The directories of managed function files, and the migration each set is checked from. */
 export const MANAGED_FUNCTION_SETS = [
-  { dir: "packages/database/src/authz/helpers", since: SINCE },
+  { dir: REGISTRY_HELPERS_DIR, since: SINCE },
   {
     dir: "packages/database/src/event-system/functions",
     since: EVENT_SYSTEM_SINCE
@@ -80,12 +82,6 @@ const FUNCTION_DDL = new RegExp(
   "gi"
 );
 
-/** Blank out comments, keeping newlines so line numbers stay right. */
-const stripComments = (sql: string) =>
-  sql
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
-    .replace(/--[^\n]*/g, (m) => " ".repeat(m.length));
-
 export const noAuthzDdlInMigrations = (
   functions: ManagedFunction[]
 ): ConformanceCheck => ({
@@ -110,7 +106,7 @@ export const noAuthzDdlInMigrations = (
     const managed = new Map(
       functions.map((f) => [`${f.schema}.${f.name}`.toLowerCase(), f])
     );
-    const sql = stripComments(contents);
+    const sql = blankSqlComments(contents);
     const line = (index: number) => sql.slice(0, index).split("\n").length;
     const violations: Violation[] = [];
     for (const m of sql.matchAll(POLICY_DDL)) {

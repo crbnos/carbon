@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,22 +11,17 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { fixedAssetValidator } from "~/modules/accounting/accounting.models";
-import {
-  getFixedAsset,
-  updateFixedAsset
-} from "~/modules/accounting/accounting.service";
+import { updateFixedAsset } from "~/modules/accounting/accounting.service";
 import { FixedAssetForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
-  });
+  const { api } = await authorize(request, { "accounting.assets": "View" });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
-  const asset = await getFixedAsset(client, fixedAssetId, companyId);
+  const asset = await api.accounting.getFixedAsset({ id: fixedAssetId });
 
   if (asset.error) {
     throw redirect(
@@ -42,8 +37,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "accounting"
+  const { client, userId } = await authorize(request, {
+    "accounting.assets": "Edit"
   });
 
   const formData = await request.formData();

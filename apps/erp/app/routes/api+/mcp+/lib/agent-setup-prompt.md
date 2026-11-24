@@ -62,8 +62,8 @@ connectors.
 
 Claude Code, Cursor, VS Code, Codex, and any headless / CI use authenticate with
 a bearer API key. The user creates it in **Carbon → Settings → API Keys**; it is
-scoped to one company and to explicit module permissions (View / Create / Update
-/ Delete), rate-limited, and shown only once. Ask the user to create a key and
+scoped to one company and to explicit page permissions (View / Create / Edit /
+Full on each page, such as Sales → Quotes), rate-limited, and shown only once. Ask the user to create a key and
 paste it, then use it as `Bearer <api-key>` in the `Authorization` header.
 
 > **Scope tightly.** For a read-only agent, ask for a key with View permissions
@@ -167,7 +167,7 @@ listing the four meta-tools and running one read:
 
 If a request comes back `401`, the key is missing, malformed, expired, or
 deleted (recreate it in Settings → API Keys) — or a connector needs
-re-authorizing. A `403` means the identity is authenticated but lacks the module
+re-authorizing. A `403` means the identity is authenticated but lacks the page
 permission for that action, or, on Cloud, the company is on the Starter plan
 (API and MCP access is a Business-plan feature). A `429` means you've exceeded
 the key's rate limit — the `X-RateLimit-*` headers say when to retry.

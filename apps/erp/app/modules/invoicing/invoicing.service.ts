@@ -8,7 +8,7 @@ import {
   NotFoundError,
   ServerFnError
 } from "@carbon/api/errors";
-import type { PermissionRule } from "@carbon/api/permissions";
+import { type PermissionRule, rowRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { withStripe } from "@carbon/api/stock-stripes";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -98,7 +98,10 @@ import {
 } from "@carbon/database/tax-ledger";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
-import { isCompanyAdmin } from "@carbon/ee/approvals.server";
+import {
+  getCompanyAdminIds,
+  isCompanyAdmin
+} from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   dedupeViolations,
@@ -237,7 +240,6 @@ import {
   deletePurchaseInvoiceReleasingLeases,
   type ForceDeleteReversalAccounting,
   forceDeleteReceiptRefusal,
-  getCompanyAdminIds,
   getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
@@ -285,6 +287,8 @@ import {
   loadTaxCodes,
   loadTaxCodesInForce,
   lockContractPositions,
+  lockOrderLines,
+  lockOrderLinesAsRead,
   lockPostable,
   negateDocumentTaxLedger,
   PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
@@ -1600,6 +1604,12 @@ export async function updatePurchaseInvoiceLineOrder(
   });
 }
 
+/**
+ * Inserts a sales invoice with its opportunity and shipment. Sales owns
+ * `opportunity`, so pass the system client as `system` once the caller's
+ * invoicing permission has passed: the opportunity is written with it,
+ * scoped to `input.companyId`.
+ */
 export async function insertSalesInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -1620,7 +1630,8 @@ export async function insertSalesInvoice(
     exchangeRate?: number;
     exchangeRateUpdatedAt?: string;
     customFields?: Json;
-  }
+  },
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string; invoiceId: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
@@ -1648,7 +1659,7 @@ export async function insertSalesInvoice(
 
   const [opportunity, customerPayment, customerShipping, salesPerson] =
     await Promise.all([
-      client
+      system
         .from("opportunity")
         .insert({
           companyId: input.companyId,
@@ -9687,7 +9698,7 @@ const RECOGNIZED_REVENUE_VOID_ERROR =
   "Invoice has recognized revenue; reverse the revenue recognition or lease run that posted it first";
 
 export const postSalesInvoicePermission = {
-  update: "invoicing"
+  "invoicing.salesInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postSalesInvoiceInput>>;
 
 /** Posts or voids a sales invoice: its ledger, cost and journal rows, atomically. */
@@ -10531,6 +10542,13 @@ export async function postSalesInvoice(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOrderLinesAsRead(
+            trx,
+            "salesOrderLine",
+            companyId,
+            salesOrderLines,
+            "A sales order line changed while this invoice was posting. Post the invoice again."
+          );
           // The movements above were computed from positions read before
           // this transaction; refuse if another writer moved one since.
           if (contractPositionsRead.size > 0) {
@@ -11352,6 +11370,13 @@ export async function postSalesInvoice(
           if (locked?.status === "Voided") {
             throw new InvalidInputError("Sales invoice is already voided");
           }
+          await lockOrderLinesAsRead(
+            trx,
+            "salesOrderLine",
+            companyId,
+            salesOrderLines,
+            "A sales order line changed while this invoice was voiding. Void the invoice again."
+          );
           const journalEntries = await documentJournalLines(trx, companyId, {
             documentId: invoiceId,
             documentType: "Invoice"
@@ -13625,9 +13650,9 @@ export const postMemoInput = z.object({
   memoId: z.string()
 });
 
-export const postMemoPermission = {
-  update: "invoicing"
-} satisfies PermissionRule<z.output<typeof postMemoInput>>;
+export const postMemoPermission = rowRule("memo", "Edit", {
+  id: "memoId"
+}) satisfies PermissionRule<z.output<typeof postMemoInput>>;
 
 /** Posts or voids a credit/debit memo and its journal, atomically. */
 export async function postMemo(
@@ -16030,7 +16055,7 @@ export const postPaymentInput = z.object({
 });
 
 export const postPaymentPermission = {
-  update: "invoicing"
+  "invoicing.payments": "Edit"
 } satisfies PermissionRule<z.output<typeof postPaymentInput>>;
 
 /** Posts or voids a payment: settlements, funding and its journal, atomically. */
@@ -17666,7 +17691,7 @@ export const postPurchaseInvoiceInput = z.object({
 });
 
 export const postPurchaseInvoicePermission = {
-  update: "invoicing"
+  "invoicing.purchaseInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postPurchaseInvoiceInput>>;
 
 /** Posts or voids a purchase invoice: receipts, cost, ledger and journal rows. */
@@ -18122,6 +18147,14 @@ export async function postPurchaseInvoice(
         if (locked?.status === "Voided") {
           throw new InvalidInputError("Purchase invoice is already voided");
         }
+        // Every line of the orders: the order's status is set from them.
+        await lockOrderLinesAsRead(
+          trx,
+          "purchaseOrderLine",
+          companyId,
+          purchaseOrderLinesVoid.data,
+          "A purchase order line changed while this invoice was voiding. Void the invoice again."
+        );
         const originalJournalLines = await documentJournalLines(
           trx,
           companyId,
@@ -19476,6 +19509,13 @@ export async function postPurchaseInvoice(
           throw new ServerFnError(lockedFundsRefused.message, 422);
         }
       }
+      await lockOrderLinesAsRead(
+        trx,
+        "purchaseOrderLine",
+        companyId,
+        purchaseOrderLines.data,
+        "A purchase order line changed while this invoice was posting. Post the invoice again."
+      );
 
       await fixedAssetWrites.apply(trx, companyId);
       if (receiptLineInserts.length > 0) {
@@ -20805,7 +20845,7 @@ export async function notifyDocumentForceDelete(
   try {
     const userIds =
       event === "Requested"
-        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+        ? (await getCompanyAdminIds(ctx.asSystem.supabase, companyId)).filter(
             (id) => id !== requestedBy
           )
         : requestedBy === ctx.auditUserId
@@ -21663,6 +21703,14 @@ async function restorePurchaseOrderInvoiced(
     .where("purchaseOrderLineId", "is not", null)
     .execute();
   if (invoiceLines.length === 0) return;
+  // The orders before every line of them, as each writer of the lines'
+  // counters takes them.
+  await lockOrderLines(
+    tx as Kysely<KyselyDatabase>,
+    "purchaseOrderLine",
+    companyId,
+    invoiceLines.map((line) => line.purchaseOrderLineId as string)
+  );
   const orderLines = await tx
     .selectFrom("purchaseOrderLine")
     .selectAll()
@@ -21678,6 +21726,7 @@ async function restorePurchaseOrderInvoiced(
           invoiceLines.map((line) => line.purchaseOrderLineId as string)
         )
     )
+    .orderBy("id")
     .forUpdate()
     .execute();
   const invoicedByLine = new Map<string, number>();
@@ -21772,6 +21821,14 @@ async function restoreSalesOrderInvoiced(
       .where("salesOrderLineId", "is not", null)
       .execute()
   ]);
+  // The orders before every line of them and before their shipments, as an
+  // invoice post takes them.
+  await lockOrderLines(
+    tx as Kysely<KyselyDatabase>,
+    "salesOrderLine",
+    companyId,
+    invoiceLines.map((line) => line.salesOrderLineId as string)
+  );
 
   await tx
     .updateTable("shipment")
@@ -21814,6 +21871,7 @@ async function restoreSalesOrderInvoiced(
         .where("l.companyId", "=", companyId)
         .where("l.id", "in", [...invoicedByLine.keys()])
     )
+    .orderBy("id")
     .forUpdate()
     .execute();
   const updated = orderLines.map((line) => {
@@ -23023,9 +23081,9 @@ export async function adjustPurchaseInvoiceRounding(
     const posted = invoice.status !== "Draft";
     if (posted) {
       // A posted invoice's adjustment posts a journal.
-      if (!ctx.can({ update: "accounting" })) {
+      if (!ctx.can({ "accounting.journalEntries": "Edit" })) {
         throw new ForbiddenError(
-          "Adjusting a posted invoice needs accounting update permission."
+          "Adjusting a posted invoice needs Edit on Journal Entries."
         );
       }
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);

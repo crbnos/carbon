@@ -11,6 +11,7 @@ import {
   HOLIDAYS,
   ITEM_POSTING_GROUPS,
   MATERIAL_TAXONOMY,
+  motorFoundation,
   NO_QUOTE_REASONS,
   PLANT,
   PRINTER_ROUTE,
@@ -62,6 +63,7 @@ export const motorLine: Dataset = {
   assetIndustryId: "automotive_precision",
   foundation: {
     departments: ["Assembly"],
+    roles: motorFoundation.roles,
     abilities: ["Precision Assembly"],
     processes: AJ3_PROCESSES,
     workCenters: AJ3_WORK_CENTERS,

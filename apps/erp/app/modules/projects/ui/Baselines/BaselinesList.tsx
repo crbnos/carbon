@@ -56,7 +56,7 @@ const BaselinesList = ({
   action
 }: BaselinesListProps) => {
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "projects");
+  const canUpdate = permissions.has({ "projects.projects": "Edit" });
   const [isTaking, setIsTaking] = useState(false);
 
   return (

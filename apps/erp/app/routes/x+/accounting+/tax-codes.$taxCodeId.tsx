@@ -2,33 +2,28 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { taxCodeValidator } from "~/modules/accounting/accounting.models";
-import {
-  getTaxAuthoritiesList,
-  getTaxCode
-} from "~/modules/accounting/accounting.service";
 import { TaxCodeForm } from "~/modules/accounting/ui/Tax";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "accounting.taxCodes": "View"
   });
 
   const { taxCodeId } = params;
   if (!taxCodeId) throw notFound("taxCodeId not found");
 
   const [taxCode, taxAuthorities] = await Promise.all([
-    getTaxCode(client, taxCodeId),
-    getTaxAuthoritiesList(client, companyId)
+    api.accounting.getTaxCode({ taxCodeId }),
+    api.accounting.getTaxAuthoritiesList({})
   ]);
 
   if (!taxCode.data) throw notFound("Tax code not found");
@@ -44,7 +39,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["taxCodeId"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.accounting.updateTaxCode({
     ...input.data,
     id: input.params.taxCodeId

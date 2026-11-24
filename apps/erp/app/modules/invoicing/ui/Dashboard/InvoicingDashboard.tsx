@@ -56,6 +56,7 @@ export type RecentPayment = {
 };
 
 type InvoicingDashboardProps = {
+  can: { receivables: boolean; payables: boolean; payments: boolean };
   asOfDate: string;
   accountingSetUp: boolean;
   ar: AgingTotals;
@@ -170,6 +171,7 @@ const AgingCard = ({
 };
 
 const InvoicingDashboard = ({
+  can,
   accountingSetUp,
   ar,
   ap,
@@ -214,155 +216,176 @@ const InvoicingDashboard = ({
         <Trans>Invoicing Dashboard</Trans>
       </h1>
       {/* KPI Cards */}
-      <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
-        <MetricCard
-          icon={<LuHandCoins />}
-          title={<Trans>AR Outstanding</Trans>}
-          value={format(ar.total)}
-          to={path.to.receivables}
-          linkLabel={t`View Receivables`}
-          description={t`${ar.count} customers with a balance`}
-        />
+      {(can.receivables || can.payables) && (
+        <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
+          {can.receivables && (
+            <>
+              <MetricCard
+                icon={<LuHandCoins />}
+                title={<Trans>AR Outstanding</Trans>}
+                value={format(ar.total)}
+                to={path.to.receivables}
+                linkLabel={t`View Receivables`}
+                description={t`${ar.count} customers with a balance`}
+              />
 
-        <MetricCard
-          icon={<LuClock />}
-          title={<Trans>AR Overdue</Trans>}
-          value={format(arOverdue)}
-          description={
-            ar.total > 0
-              ? t`${arOverduePct}% of receivables`
-              : t`No receivables`
-          }
-        />
+              <MetricCard
+                icon={<LuClock />}
+                title={<Trans>AR Overdue</Trans>}
+                value={format(arOverdue)}
+                description={
+                  ar.total > 0
+                    ? t`${arOverduePct}% of receivables`
+                    : t`No receivables`
+                }
+              />
+            </>
+          )}
 
-        <MetricCard
-          icon={<LuHandCoins />}
-          title={<Trans>AP Outstanding</Trans>}
-          value={format(ap.total)}
-          to={path.to.payables}
-          linkLabel={t`View Payables`}
-          description={t`${ap.count} suppliers with a balance`}
-        />
+          {can.payables && (
+            <>
+              <MetricCard
+                icon={<LuHandCoins />}
+                title={<Trans>AP Outstanding</Trans>}
+                value={format(ap.total)}
+                to={path.to.payables}
+                linkLabel={t`View Payables`}
+                description={t`${ap.count} suppliers with a balance`}
+              />
 
-        <MetricCard
-          icon={<LuClock />}
-          title={<Trans>AP Overdue</Trans>}
-          value={format(apOverdue)}
-          description={
-            ap.total > 0 ? t`${apOverduePct}% of payables` : t`No payables`
-          }
-        />
-      </div>
+              <MetricCard
+                icon={<LuClock />}
+                title={<Trans>AP Overdue</Trans>}
+                value={format(apOverdue)}
+                description={
+                  ap.total > 0
+                    ? t`${apOverduePct}% of payables`
+                    : t`No payables`
+                }
+              />
+            </>
+          )}
+        </div>
+      )}
 
       {/* Aging breakdown */}
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
-        <AgingCard
-          title={<Trans>Receivables aging</Trans>}
-          icon={<LuClock />}
-          totals={ar}
-          tieOut={arTieOut}
-          showTieOut={accountingSetUp}
-          bucketLabels={bucketLabels}
-          format={format}
-        />
-        <AgingCard
-          title={<Trans>Payables aging</Trans>}
-          icon={<LuClock />}
-          totals={ap}
-          tieOut={apTieOut}
-          showTieOut={accountingSetUp}
-          bucketLabels={bucketLabels}
-          format={format}
-        />
-      </div>
+      {(can.receivables || can.payables) && (
+        <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
+          {can.receivables && (
+            <AgingCard
+              title={<Trans>Receivables aging</Trans>}
+              icon={<LuClock />}
+              totals={ar}
+              tieOut={arTieOut}
+              showTieOut={accountingSetUp}
+              bucketLabels={bucketLabels}
+              format={format}
+            />
+          )}
+          {can.payables && (
+            <AgingCard
+              title={<Trans>Payables aging</Trans>}
+              icon={<LuClock />}
+              totals={ap}
+              tieOut={apTieOut}
+              showTieOut={accountingSetUp}
+              bucketLabels={bucketLabels}
+              format={format}
+            />
+          )}
+        </div>
+      )}
 
       {/* Recent payments */}
-      <Card>
-        <CardHeader className="flex-row gap-2">
-          <LuBanknote className="text-muted-foreground" />
-          <CardTitle>
-            <Trans>Recent payments</Trans>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="min-h-[120px] w-full">
-            {recentPayments.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                <Trans>No payments yet.</Trans>
-              </p>
-            ) : (
-              <Table>
-                <Thead>
-                  <Tr>
-                    <Th>
-                      <Trans>Date</Trans>
-                    </Th>
-                    <Th>
-                      <Trans>Payment</Trans>
-                    </Th>
-                    <Th>
-                      <Trans>Counterparty</Trans>
-                    </Th>
-                    <Th>
-                      <Trans>Type</Trans>
-                    </Th>
-                    <Th className="text-right">
-                      <Trans>Amount</Trans>
-                    </Th>
-                    <Th>
-                      <Trans>Status</Trans>
-                    </Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {recentPayments.map((p) => {
-                    const name =
-                      p.paymentType === "Receipt"
-                        ? (customerName.get(p.customerId ?? "") ?? p.customerId)
-                        : (supplierName.get(p.supplierId ?? "") ??
-                          p.supplierId);
-                    return (
-                      <Tr key={p.id}>
-                        <Td>
-                          {p.paymentDate ? (
-                            <DateTime value={p.paymentDate} variant="date" />
-                          ) : (
-                            "—"
-                          )}
-                        </Td>
-                        <Td>
-                          <Link
-                            to={path.to.payment(p.id)}
-                            className="text-primary hover:underline"
-                          >
-                            {p.paymentId}
-                          </Link>
-                        </Td>
-                        <Td className="max-w-[200px] truncate">
-                          {name ?? "—"}
-                        </Td>
-                        <Td>
-                          {p.paymentType === "Receipt" ? (
-                            <Trans>From customer</Trans>
-                          ) : (
-                            <Trans>To supplier</Trans>
-                          )}
-                        </Td>
-                        <Td className="text-right tabular-nums">
-                          {currencyFormatter.format(Number(p.totalAmount))}
-                        </Td>
-                        <Td>
-                          <PaymentStatus status={p.status ?? undefined} />
-                        </Td>
-                      </Tr>
-                    );
-                  })}
-                </Tbody>
-              </Table>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {can.payments && (
+        <Card>
+          <CardHeader className="flex-row gap-2">
+            <LuBanknote className="text-muted-foreground" />
+            <CardTitle>
+              <Trans>Recent payments</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="min-h-[120px] w-full">
+              {recentPayments.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">
+                  <Trans>No payments yet.</Trans>
+                </p>
+              ) : (
+                <Table>
+                  <Thead>
+                    <Tr>
+                      <Th>
+                        <Trans>Date</Trans>
+                      </Th>
+                      <Th>
+                        <Trans>Payment</Trans>
+                      </Th>
+                      <Th>
+                        <Trans>Counterparty</Trans>
+                      </Th>
+                      <Th>
+                        <Trans>Type</Trans>
+                      </Th>
+                      <Th className="text-right">
+                        <Trans>Amount</Trans>
+                      </Th>
+                      <Th>
+                        <Trans>Status</Trans>
+                      </Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {recentPayments.map((p) => {
+                      const name =
+                        p.paymentType === "Receipt"
+                          ? (customerName.get(p.customerId ?? "") ??
+                            p.customerId)
+                          : (supplierName.get(p.supplierId ?? "") ??
+                            p.supplierId);
+                      return (
+                        <Tr key={p.id}>
+                          <Td>
+                            {p.paymentDate ? (
+                              <DateTime value={p.paymentDate} variant="date" />
+                            ) : (
+                              "—"
+                            )}
+                          </Td>
+                          <Td>
+                            <Link
+                              to={path.to.payment(p.id)}
+                              className="text-primary hover:underline"
+                            >
+                              {p.paymentId}
+                            </Link>
+                          </Td>
+                          <Td className="max-w-[200px] truncate">
+                            {name ?? "—"}
+                          </Td>
+                          <Td>
+                            {p.paymentType === "Receipt" ? (
+                              <Trans>From customer</Trans>
+                            ) : (
+                              <Trans>To supplier</Trans>
+                            )}
+                          </Td>
+                          <Td className="text-right tabular-nums">
+                            {currencyFormatter.format(Number(p.totalAmount))}
+                          </Td>
+                          <Td>
+                            <PaymentStatus status={p.status ?? undefined} />
+                          </Td>
+                        </Tr>
+                      );
+                    })}
+                  </Tbody>
+                </Table>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

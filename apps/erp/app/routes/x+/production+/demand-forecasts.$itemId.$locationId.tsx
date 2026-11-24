@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { upsertDemandProjections } from "@carbon/ee/forecast.server";
 import { requireFeature } from "@carbon/ee/plan.server";
@@ -13,7 +13,6 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
-import { getDemandProjections } from "~/modules/production/production.service";
 import DemandProjectionsForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
 import {
   getLocationTimeZone,
@@ -25,8 +24,8 @@ import { path } from "~/utils/path";
 const WEEKS_TO_PROJECT = 52;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production"
+  const { client, companyId, api } = await authorize(request, {
+    "production.demandForecasts": "View"
   });
 
   const { itemId, locationId } = params;
@@ -42,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   // Load existing demand forecasts for this item and location
-  const existingProjections = await getDemandProjections(client, {
+  const existingProjections = await api.production.getDemandProjections({
     itemId,
     locationId,
     companyId,
@@ -84,8 +83,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+  const { client, companyId, userId } = await authorize(request, {
+    "production.demandForecasts": "Edit"
   });
 
   await requireFeature({

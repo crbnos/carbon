@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 import {
   createIssue,
   saveInspectionDocument,
@@ -13,14 +14,14 @@ import {
   updateQualityDocumentField
 } from "../app/modules/quality/quality.server";
 
-const quality = {
+const quality = pageClaims({
   quality: {
     view: ["company-1"],
     create: ["company-1"],
     update: ["company-1"],
     delete: ["company-1"]
   }
-};
+});
 
 /**
  * A Supabase client whose every query answers with the rows the test names
@@ -54,7 +55,7 @@ function client(rows: Record<string, unknown>) {
 function contextWith(rows: Record<string, unknown> = {}) {
   const db = client(rows);
   const ctx = createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions: quality },
+    actor: { type: "user", role: "employee", userId: "user-1", permissions: quality },
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
     system: () => db as never,

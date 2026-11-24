@@ -14,10 +14,7 @@ import { Plural, Trans } from "@lingui/react/macro";
 import { LuInfo } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getTaxCodesList } from "~/modules/accounting/accounting.service";
-import { getCustomerStatuses } from "~/modules/sales/sales.service";
 import { CustomersTable } from "~/modules/sales/ui/Customers";
-import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
 import { customersList } from "~/utils/list-registry/sales.server";
@@ -33,31 +30,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, customersList, {
     dataKey: "customers",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => {
+    firstPage: async ({ api, client, companyId }) => {
       const [customerStatuses, tags, taxCodes] = await Promise.all([
-        getCustomerStatuses(client, companyId),
-        getTagsList(client, companyId, "customer"),
-        getTaxCodesList(client, companyId)
+        api.sales.getCustomerStatuses({}),
+        api.shared.getTagsList({ table: "customer" }),
+        api.accounting.getTaxCodesList({})
       ]);
 
       // Once the company has a tax code, count the customers still taxed by
       // the legacy bare percent: a percent above zero and no tax code.
-      const customersWithoutTaxCode = taxCodes.data?.length
-        ? ((
-            await client
-              .from("customer")
-              .select("id, customerTax!inner(taxCodeId)", {
-                count: "exact",
-                head: true
-              })
-              .eq("companyId", companyId)
-              .gt("taxPercent", 0)
-              .is("customerTax.taxCodeId", null)
-          ).count ?? 0)
-        : 0;
+      let customersWithoutTaxCode = 0;
+      if (taxCodes.data?.length) {
+        const untaxed = await client
+          .from("customer")
+          .select("id, customerTax!inner(taxCodeId)", {
+            count: "exact",
+            head: true
+          })
+          .eq("companyId", companyId)
+          .gt("taxPercent", 0)
+          .is("customerTax.taxCodeId", null);
+        if (untaxed.error) throw untaxed.error;
+        customersWithoutTaxCode = untaxed.count ?? 0;
+      }
 
       return {
-        customerStatuses: customerStatuses.data ?? [],
+        customerStatuses: customerStatuses.data?.rows ?? [],
         tags: tags.data ?? [],
         customersWithoutTaxCode
       };

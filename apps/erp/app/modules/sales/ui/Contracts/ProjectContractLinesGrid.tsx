@@ -124,7 +124,7 @@ const ProjectContractLinesGrid = ({
   const contractId = contract.id!;
   const { currencyCode } = contract;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.serviceContracts": "Edit" });
   // In DCAA mode the funding actions own a line's funded amount.
   const fundedByActions = settings.timekeepingControls === "DCAA";
   // The CLIN column shows only to a company that does government contracting.
@@ -505,7 +505,7 @@ const ProjectContractLinesGrid = ({
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "sales")}
+            disabled={!permissions.has({ "sales.serviceContracts": "Full" })}
             onClick={() => openDelete(line)}
           >
             <MenuIcon icon={<LuTrash />} />
@@ -545,7 +545,9 @@ const ProjectContractLinesGrid = ({
           <Button
             className="mt-4"
             leftIcon={<LuPlus />}
-            isDisabled={!permissions.can("create", "sales")}
+            isDisabled={
+              !permissions.has({ "sales.serviceContracts": "Create" })
+            }
             onClick={openAddLine}
           >
             <Trans>Add Line</Trans>
@@ -578,7 +580,9 @@ const ProjectContractLinesGrid = ({
             <Button
               variant="secondary"
               leftIcon={<LuPlus />}
-              isDisabled={!permissions.can("create", "sales")}
+              isDisabled={
+                !permissions.has({ "sales.serviceContracts": "Create" })
+              }
               onClick={openAddLine}
             >
               <Trans>Add Line</Trans>

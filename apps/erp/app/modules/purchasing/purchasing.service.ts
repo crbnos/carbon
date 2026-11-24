@@ -13,8 +13,6 @@ import {
   CarbonError,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
-import { hasPermission } from "@carbon/auth";
-import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import {
   fetchAllByIds,
@@ -22,6 +20,7 @@ import {
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
+import { type ExpandedClaims, holdsGate } from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
   type Kysely,
@@ -64,6 +63,7 @@ import {
 import {
   getApprovalRuleByAmount,
   getApproverUserIdsForRule,
+  getCompanyAdminIds,
   getDocumentApproval,
   isApprovalRequired,
   rejectRequest
@@ -4328,21 +4328,23 @@ async function settlementDecimals(
     currencyCode: string | null;
   }
 ): Promise<number | null> {
-  const currencyCode =
-    args.currencyCode ??
-    (
-      await client
-        .from("company")
-        .select("baseCurrencyCode")
-        .eq("id", args.companyId)
-        .single()
-    ).data?.baseCurrencyCode;
+  let currencyCode = args.currencyCode;
+  if (!currencyCode) {
+    const company = await client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", args.companyId)
+      .single();
+    if (company.error) throw company.error;
+    currencyCode = company.data.baseCurrencyCode;
+  }
   if (!currencyCode) return null;
   const currency = await getCurrencyByCode(
     client,
     args.companyGroupId,
     currencyCode
   );
+  if (currency.error) throw currency.error;
   return currency.data?.decimalPlaces ?? null;
 }
 
@@ -4404,6 +4406,16 @@ export async function shortClosePurchaseOrderLine(
   | { found: true; refusal: null; status: PurchaseOrderStatus }
 > {
   return db.transaction().execute(async (trx) => {
+    // The order before the line, as every writer of the line's counters
+    // takes them (`lockOrderLines`); the join below would lock them in
+    // either order.
+    await trx
+      .selectFrom("purchaseOrder")
+      .select("id")
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
     const line = await trx
       .selectFrom("purchaseOrderLine")
       .innerJoin("purchaseOrder", (join) =>
@@ -7351,7 +7363,10 @@ export async function createReplacementPurchaseOrder(
     companyId: string;
     companyGroupId: string;
     userId: string;
-  }
+  },
+  // Purchasing → Returns owns the return order: pass the system client once
+  // the caller's purchase order permission has passed, so the link is written.
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string } | null;
   error: PostgrestError | null;
@@ -7569,7 +7584,7 @@ export async function createReplacementPurchaseOrder(
   }
 
   const link = await requireAffected(
-    client
+    system
       .from("purchaseReturnOrder")
       .update({
         replacementPurchaseOrderId: purchaseOrderId,
@@ -8578,20 +8593,17 @@ export async function generateLeaseInvoicesNow(
  *  as `draftRentalAgreementSetupPath`. */
 export async function draftLeaseSetupPath(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
+  args: { companyId: string; permissions: ExpandedClaims; id: string }
 ): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [lease, claims] = await Promise.all([
-    client
-      .from("lease")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
-  if (lease.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "purchasing", "update", companyId)) {
+  const { companyId, permissions, id } = args;
+  const lease = await client
+    .from("lease")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (lease.error || lease.data?.status !== "Draft") return null;
+  if (!holdsGate(permissions, { "purchasing.leases": "Edit" }, companyId)) {
     return null;
   }
   return path.to.leaseSetup(id, "assets");
@@ -9258,26 +9270,6 @@ export async function cancelPendingApprovals(
     .execute();
 }
 
-/** The active Admins of the company (`isCompanyAdmin`, @carbon/ee), as user ids. */
-export async function getCompanyAdminIds(
-  db: Kysely<KyselyDatabase>,
-  companyId: string
-): Promise<string[]> {
-  const rows = await db
-    .selectFrom("employee")
-    .innerJoin("employeeType", (join) =>
-      join
-        .onRef("employeeType.id", "=", "employee.employeeTypeId")
-        .onRef("employeeType.companyId", "=", "employee.companyId")
-    )
-    .select("employee.id")
-    .where("employee.companyId", "=", companyId)
-    .where("employee.active", "=", true)
-    .where("employeeType.systemType", "=", "Admin")
-    .execute();
-  return rows.map((row) => row.id);
-}
-
 /**
  * The documents that still name the order and keep a force delete from
  * running (`purchaseOrderForceDeleteBlockerMessage`). Its receipts are not
@@ -9612,6 +9604,15 @@ export async function restorePurchaseOrderReceived(
   }
 ): Promise<void> {
   await withTransaction(db, async (trx) => {
+    // The order, then its lines in id order: the order every writer of the
+    // lines' counters takes them in (`lockOrderLines`).
+    await trx
+      .selectFrom("purchaseOrder")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("id", "=", purchaseOrderId)
+      .forUpdate()
+      .execute();
     const [receiptLines, orderLines] = await Promise.all([
       trx
         .selectFrom("receiptLine")
@@ -9630,6 +9631,7 @@ export async function restorePurchaseOrderReceived(
         ])
         .where("companyId", "=", companyId)
         .where("purchaseOrderId", "=", purchaseOrderId)
+        .orderBy("id")
         .forUpdate()
         .execute()
     ]);
@@ -10185,7 +10187,7 @@ export async function notifyForceDelete(
   try {
     const userIds =
       event === "Requested"
-        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+        ? (await getCompanyAdminIds(ctx.asSystem.supabase, companyId)).filter(
             (id) => id !== requestedBy
           )
         : requestedBy === ctx.auditUserId
@@ -10555,7 +10557,7 @@ export const finalizeSupplierQuoteInput = z.object({
 });
 
 export const finalizeSupplierQuotePermission = {
-  create: "purchasing"
+  "purchasing.supplierQuotes": "Create"
 } satisfies PermissionRule<z.output<typeof finalizeSupplierQuoteInput>>;
 
 /**
@@ -10803,10 +10805,6 @@ export type FinalizedSupplierQuote = {
   externalLinkId: string;
 };
 
-export const finalizePurchasingRfqPermission = {
-  create: "purchasing"
-} satisfies PermissionRule<z.output<typeof finalizePurchasingRfqInput>>;
-
 /**
  * Sends a purchasing RFQ out: one Draft supplier quote per RFQ supplier, each
  * with its share link and a line per RFQ line that names an item, then the RFQ
@@ -11017,7 +11015,7 @@ const calculateLeadTimeInDays = (
 };
 
 export const updatePurchasedPricesPermission = {
-  update: "purchasing"
+  "purchasing.purchaseOrders": "Edit"
 } satisfies PermissionRule<z.output<typeof updatePurchasedPricesInput>>;
 
 export async function updatePurchasedPrices(
@@ -14041,7 +14039,7 @@ export const postLeaseInput = payloadValidator;
 export type PostLeaseInput = LeasePayload;
 
 export const postLeaseActionPermission = {
-  update: "purchasing"
+  "purchasing.leases": "Edit"
 } satisfies PermissionRule<z.output<typeof postLeaseInput>>;
 
 export async function postLeaseAction(
@@ -14488,8 +14486,8 @@ export const createLeaseInvoicesInput = z.object({
 });
 
 export const createLeaseInvoicesPermission = {
-  update: "purchasing",
-  create: "invoicing"
+  "purchasing.leases": "Edit",
+  "invoicing.purchaseInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createLeaseInvoicesInput>>;
 
 /** Drafts the lease invoices due on or before `asOf` (see

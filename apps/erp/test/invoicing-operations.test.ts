@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { pageClaims } from "./page-claims";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { describe, expect, it } from "vitest";
 import { fromServerFn } from "../app/modules/shared/shared.service";
@@ -99,7 +100,8 @@ describe("changing a posted line's account", () => {
       actor: {
         type: "user",
         userId: "user-1",
-        permissions: {
+        role: "employee",
+        permissions: pageClaims({
           invoicing: {
             view: ["company-1"],
             create: ["company-1"],
@@ -112,7 +114,7 @@ describe("changing a posted line's account", () => {
             update: [],
             delete: []
           }
-        }
+        })
       },
       company: { id: "company-1", groupId: "group-1" },
       caller: {} as never,

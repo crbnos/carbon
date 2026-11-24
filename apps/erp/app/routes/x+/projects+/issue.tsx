@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -14,7 +13,10 @@ import {
   data,
   type LoaderFunctionArgs
 } from "react-router";
-import { projectIssueValidator } from "~/modules/projects/projects.models";
+import {
+  PROJECT_ISSUE_GATE,
+  projectIssueValidator
+} from "~/modules/projects/projects.models";
 import { IssueMaterialModal } from "~/modules/projects/ui/Element/IssueMaterialModal";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -25,7 +27,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, { update: ["inventory", "projects"] });
+  await authorize(request, PROJECT_ISSUE_GATE);
   return null;
 }
 
@@ -41,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.projects.postProjectIssue(validation.data);
   if (result.error) {
     return data({ success: false, error: { message: result.error.message } });

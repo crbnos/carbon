@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { pageClaims } from "./page-claims";
 import { describe, expect, it, vi } from "vitest";
 
 // The module's imports reach the glossary, whose `msg` macro only runs compiled.
@@ -381,7 +382,12 @@ describe("createRentalAgreementCharge", () => {
   };
   const contextFor = (client: unknown) =>
     createServiceContext({
-      actor: { type: "user", userId: "user-1", permissions: grant },
+      actor: {
+        type: "user",
+        userId: "user-1",
+        role: "employee",
+        permissions: pageClaims(grant)
+      },
       company: { id: "company-1", groupId: "group-1" },
       caller: client as never,
       system: (() => client) as never,

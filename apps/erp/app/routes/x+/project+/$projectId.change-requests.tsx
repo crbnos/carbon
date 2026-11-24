@@ -2,12 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useOutlet, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getProjectChangeRequests } from "~/modules/projects/projects.service";
 import type { Project } from "~/modules/projects/types";
 import ChangeRequestsTable from "~/modules/projects/ui/ChangeRequests/ChangeRequestsTable";
 import { path } from "~/utils/path";
@@ -15,18 +14,16 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "project-change-requests");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
-  const changeRequests = await getProjectChangeRequests(
-    client,
-    projectId,
-    companyId
-  );
+  const changeRequests = await api.projects.getProjectChangeRequests({
+    projectId
+  });
   if (changeRequests.error) {
     logger.error("Failed to load change requests", {
       companyId,

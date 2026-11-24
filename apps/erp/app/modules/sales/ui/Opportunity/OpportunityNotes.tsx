@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { pageOfTable } from "@carbon/database/access";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -45,10 +46,8 @@ const OpportunityNotes = ({
   const permissions = usePermissions();
   const isEmployee = permissions.is("employee");
   const { t } = useLingui();
-  // Invoice rows are written under invoicing's RLS, not sales'.
   const canEdit =
-    !isReadOnlyProp &&
-    permissions.can("update", table === "salesInvoice" ? "invoicing" : "sales");
+    !isReadOnlyProp && permissions.has({ [pageOfTable(table)]: "Edit" });
   const [tab, setTab] = useState(isEmployee ? "internal" : "external");
   const [internalNotes, setInternalNotes] = useState(
     initialInternalNotes ?? {}

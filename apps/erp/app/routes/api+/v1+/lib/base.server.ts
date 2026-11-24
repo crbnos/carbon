@@ -4,8 +4,8 @@
 
 // oRPC context + middleware shared by the HTTP transport and the MCP/agent bridges.
 
-import type { Permission } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import type { ExpandedClaims } from "@carbon/database/access";
 import { os } from "@orpc/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -26,31 +26,12 @@ export interface AuthedContext {
    *  acting as a user (the workflow engine acting as the workflow's owner) —
    *  not "oauth" because that names a wire protocol. */
   authKind: "api-key" | "oauth" | "session";
-  /** `{ "<module>_<action>": [companyId, …] }` — the API key's scopes, or for a
-   *  user (OAuth, a workflow's owner) the user's own permissions in the company
-   *  (`scopesFromPermissions`). */
-  scopes: Record<string, string[]>;
+  /** The key's grants, or for a user (OAuth, a workflow's owner) the user's
+   *  own, as `authorize` expands them (`<page>` → action → company ids). */
+  permissions: ExpandedClaims;
+  /** The user's role in the company, as their entry point resolved it; `null`
+   *  for an API key. */
+  role: "employee" | null;
 }
 
 export const base = os.$context<AuthedContext>();
-
-/**
- * A user's permissions (`getUserClaims().permissions`: module → action → company
- * ids) as the scope map the gate reads, holding only `companyId`. The OAuth
- * caller's scopes, so a connector token can do exactly what its user can do in
- * the token's company — no more.
- */
-export function scopesFromPermissions(
-  permissions: Record<string, Permission>,
-  companyId: string
-): Record<string, string[]> {
-  const scopes: Record<string, string[]> = {};
-  for (const [module, actions] of Object.entries(permissions)) {
-    for (const [action, companyIds] of Object.entries(actions)) {
-      if (companyIds.includes(companyId)) {
-        scopes[`${module}_${action}`] = [companyId];
-      }
-    }
-  }
-  return scopes;
-}

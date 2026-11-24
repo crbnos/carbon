@@ -39,7 +39,9 @@ export function DocumentSidebar({ documents, activity }: DocumentSidebarProps) {
     "documents"
   );
   // The audit log is a settings-level read; without it there is no tab.
-  const canViewActivity = usePermissions().can("view", "settings");
+  const canViewActivity = usePermissions().has({
+    "settings.auditLogs": "View"
+  });
 
   if (!activity || !canViewActivity) {
     return (

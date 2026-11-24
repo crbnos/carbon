@@ -2,13 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Constants } from "@carbon/database";
+import { levelReaches, pageById } from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 
-// Permission claims are `<module>_<action>`, module lowercased.
-const MODULES = new Set(
-  Constants.public.Enums.module.map((module) => module.toLowerCase())
-);
+// A permission is `{ "<page>": "<Level>" }`: each key a page of the registry.
+const LEVELS = new Set(["View", "Create", "Edit", "Full"]);
 
 // These admit any member of the company. Widening who may run a posting is a
 // review decision: add an entry only after one.
@@ -56,15 +54,50 @@ describe("posting permissions", () => {
     expect(open).toEqual(OPEN_TO_ANY_MEMBER);
   }, 120_000);
 
-  it("names only modules that exist, so no claim can satisfy a typo", async () => {
+  it("names only pages and levels that exist, so no claim can satisfy a typo", async () => {
     const unknown = (await permissionExports()).flatMap(([name, rule]) =>
-      rule === "system"
+      // A row rule picks its page from the row at run time (`rowRule`, `itemRule`).
+      rule === "system" ||
+      rule === "employee" ||
+      (typeof rule === "object" && rule !== null && "row" in rule)
         ? []
-        : Object.values(rule as Record<string, string | string[]>)
-            .flat()
-            .filter((module) => !MODULES.has(module))
-            .map((module) => `${name}: ${module}`)
+        : Object.entries(rule as Record<string, string>)
+            .filter(([page, level]) => !pageById(page) || !LEVELS.has(level))
+            .map(([page, level]) => `${name}: ${page} ${level}`)
     );
     expect(unknown).toEqual([]);
+  }, 120_000);
+
+  // The rule's type needs a row for every conversion, including those that run as
+  // the system (quote → order, RFQ → quote, warehouse transfers).
+  it("a conversion needs Create on the page of the document it makes", async () => {
+    const { convertDocumentPermission } = await import(
+      "../app/modules/shared/shared.service"
+    );
+    const made: Record<string, string> = {
+      purchaseOrderToPurchaseInvoice: "invoicing.purchaseInvoices",
+      quoteToSalesOrder: "sales.salesOrders",
+      salesOrderToSalesInvoice: "invoicing.salesInvoices",
+      salesRfqToQuote: "sales.quotes",
+      shipmentToSalesInvoice: "invoicing.salesInvoices",
+      supplierQuoteToPurchaseOrder: "purchasing.purchaseOrders",
+      warehouseTransferToShipment: "inventory.shipments",
+      warehouseTransferToReceipt: "inventory.receipts"
+    };
+    const rules = convertDocumentPermission.rules as Record<
+      string,
+      Record<string, "View" | "Create" | "Edit" | "Full">
+    >;
+    // A new conversion gets a row here; activating a method makes nothing.
+    expect(Object.keys(rules).sort()).toEqual(
+      [...Object.keys(made), "methodVersionToActive"].sort()
+    );
+    const missing = Object.entries(made)
+      .filter(([type, page]) => {
+        const level = rules[type]?.[page];
+        return !level || !levelReaches(level, "Create");
+      })
+      .map(([type, page]) => `${type}: ${page}`);
+    expect(missing).toEqual([]);
   }, 120_000);
 });

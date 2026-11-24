@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { Button, LabelWithHelp } from "@carbon/react";
 import { datetime } from "@carbon/utils";
@@ -19,7 +19,7 @@ import {
 } from "~/modules/projects/projects.service";
 import ProjectBillableItemsTable from "~/modules/projects/ui/Billing/ProjectBillableItemsTable";
 import ProjectBillingLines from "~/modules/projects/ui/Billing/ProjectBillingLines";
-import { getContractLineFunding } from "~/modules/sales/sales.service";
+import { withContractRead } from "~/modules/sales/sales.models";
 import type { ContractStatusType } from "~/modules/sales/ui/Contracts";
 import { ContractStatus } from "~/modules/sales/ui/Contracts";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
@@ -31,10 +31,11 @@ const logger = getLogger("erp", "project-billing");
 /** A project's contract billing: the lines that bill it with their funding,
  *  and its billable items. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  // Contract billing: the sales permission as well as the projects one.
-  const { client, companyId } = await requirePermissions(request, {
-    view: ["projects", "sales"]
-  });
+  // Contract billing: a contracts page as well as the projects one.
+  const { api, client, companyId } = await authorize(
+    request,
+    withContractRead({ "projects.projects": "View" })
+  );
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
@@ -57,8 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
   const lineIds = (lines.data ?? []).map((line) => line.id);
   const [funding, revenue] = await Promise.all([
-    getContractLineFunding(client, {
-      companyId,
+    api.sales.getContractLineFunding({
       lineIds,
       asOf: datetime.today(timeZone).toString()
     }),
@@ -117,7 +117,7 @@ export default function ProjectBillingRoute() {
         title={t`No project contract bills this project`}
         description={t`A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price.`}
       >
-        {permissions.can("create", "sales") && (
+        {permissions.has({ "sales.serviceContracts": "Create" }) && (
           <Button asChild leftIcon={<LuCirclePlus />} className="mt-4">
             <Link to={path.to.newProjectContractForProject(projectId)}>
               <Trans>New Project Contract</Trans>

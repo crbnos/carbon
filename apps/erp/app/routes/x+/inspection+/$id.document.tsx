@@ -3,21 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import invariant from "tiny-invariant";
-import { changeInspectionDocument } from "~/modules/quality/quality.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "quality",
-    role: "employee"
-  });
+  const { api } = await authorize(request);
   const { id } = params;
   invariant(id, "id is required");
 
@@ -25,11 +20,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const inspectionDocumentId =
     (formData.get("inspectionDocumentId") as string | null)?.trim() || null;
 
-  const result = await changeInspectionDocument(getDatabaseClient(), {
+  const result = await api.quality.setInspectionDocument({
     inspectionId: id,
-    inspectionDocumentId,
-    companyId,
-    userId
+    inspectionDocumentId
   });
 
   if (result.error) {

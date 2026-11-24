@@ -9,6 +9,7 @@ import {
 } from "@carbon/ee/workflows";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EngineStep, RunPayload } from "./execute";
+import type { RunContext } from "./log";
 
 vi.mock("@carbon/ee/workflows.server", () => ({
   workflowsEnabledForCompany: vi.fn(async () => true)
@@ -24,8 +25,7 @@ vi.mock("./ledger", () => ({
   settleStep: vi.fn(async () => {}),
   failInterruptedSteps: vi.fn(async () => 0)
 }));
-// @carbon/auth builds its Supabase client at import time; ./owner imports it.
-vi.mock("@carbon/auth", () => ({}));
+// @carbon/auth/client.server builds its Supabase client at import time; ./owner imports it.
 vi.mock("@carbon/auth/client.server", () => ({}));
 // The owner's reads are faked; the permission rule itself is real.
 vi.mock("./owner", async (importOriginal) => ({
@@ -45,15 +45,15 @@ vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
 
 const { executeWorkflowRun } = await import("./execute");
 const { loadRunContext, claimRun, finishRun } = await import("./log");
-const { claimStep, settleStep } = await import("./ledger");
+const { claimStep } = await import("./ledger");
 const { readOwnerPermissions } = await import("./owner");
 
-/** The owner's Purchasing grants in co1. */
+/** The owner's grants on the Purchase Orders page in co1. */
 function purchasing(...actions: ("view" | "create" | "update" | "delete")[]) {
   const grant = (action: string) =>
     actions.includes(action as never) ? ["co1"] : [];
   return {
-    purchasing: {
+    "purchasing.purchaseOrders": {
       view: grant("view"),
       create: grant("create"),
       update: grant("update"),
@@ -114,6 +114,26 @@ const payload: RunPayload = {
   }
 };
 
+function runContext(
+  overrides: { publishedVersionId?: string | null } = {}
+): RunContext {
+  return {
+    run: {
+      id: "run1",
+      companyId: "co1",
+      ownerId: "u1",
+      workflowId: "wf1",
+      workflowVersionId: "wv1",
+      eventId: "purchaseOrder.status.changed",
+      status: "Queued"
+    },
+    publishedVersionId: "wv1",
+    companyGroupId: "cg1",
+    version: definition,
+    ...overrides
+  };
+}
+
 const logger = { info: vi.fn(), error: vi.fn() };
 
 function harness() {
@@ -147,49 +167,31 @@ beforeEach(() => {
     runOperation: async () => ({ ok: false, error: "not stubbed" }),
     search: async () => ({ ok: false, error: "not stubbed" })
   });
-  vi.mocked(loadRunContext).mockResolvedValue({
-    run: {
-      id: "run1",
-      companyId: "co1",
-      ownerId: "u1",
-      workflowId: "wf1",
-      workflowVersionId: "wv1",
-      eventId: "purchaseOrder.status.changed",
-      status: "Queued"
-    },
-    workflowPublished: true,
-    companyGroupId: "cg1",
-    version: definition
-  });
+  vi.mocked(loadRunContext).mockResolvedValue(runContext());
 });
 
+// What each gate refuses, and the wording, is pinned by value in owner.test.ts
+// (`ownerRefusal`). These pin what a refusal does to the run.
 describe("the owner's permissions", () => {
-  it("fails the action step by name when the owner has lost the module", async () => {
+  it("fails the run without running the action when the owner has lost the page", async () => {
     const { step } = harness();
     // The trigger's own view check still passes; only the action's update is gone.
     vi.mocked(readOwnerPermissions).mockResolvedValue(purchasing("view"));
 
     const result = await executeWorkflowRun({ payload, step, logger });
 
-    expect(vi.mocked(settleStep).mock.calls.at(-1)?.[1]).toMatchObject({
-      status: "Failed",
-      error: "The owner of this workflow no longer has access to Purchasing."
-    });
-    expect(runAction).not.toHaveBeenCalled();
     expect(result.status).toBe("Failed");
+    expect(runAction).not.toHaveBeenCalled();
   });
 
-  it("refuses the whole run when the trigger's own module is gone", async () => {
-    const { ids, step } = harness();
+  it("refuses the whole run, running no step, when the trigger's own page is gone", async () => {
+    const { step } = harness();
     vi.mocked(readOwnerPermissions).mockResolvedValue(purchasing());
 
-    await executeWorkflowRun({ payload, step, logger });
+    const result = await executeWorkflowRun({ payload, step, logger });
 
-    expect(ids).toEqual(["load", "custom-fields", "permissions"]);
-    expect(vi.mocked(finishRun).mock.calls.at(-1)?.[1]).toMatchObject({
-      status: "Failed",
-      error: "The owner of this workflow no longer has access to Purchasing."
-    });
+    expect(result).toEqual({ runId: "run1", status: "Failed", steps: 0 });
+    expect(runAction).not.toHaveBeenCalled();
   });
 });
 
@@ -203,6 +205,22 @@ describe("a second delivery of the same event", () => {
     expect(result).toEqual({ runId: "run1", status: "Duplicate", steps: 0 });
     expect(ids).toEqual(["load"]);
     expect(claimStep).not.toHaveBeenCalled();
+    expect(runAction).not.toHaveBeenCalled();
+  });
+});
+
+describe("a run queued against a version that is not the published one", () => {
+  it("skips the run without claiming it or running a node", async () => {
+    const { step } = harness();
+    // A trigger row naming a draft: the owner published wv2, the run carries wv1.
+    vi.mocked(loadRunContext).mockResolvedValue(
+      runContext({ publishedVersionId: "wv2" })
+    );
+
+    const result = await executeWorkflowRun({ payload, step, logger });
+
+    expect(result).toEqual({ runId: "run1", status: "Skipped", steps: 0 });
+    expect(claimRun).not.toHaveBeenCalled();
     expect(runAction).not.toHaveBeenCalled();
   });
 });

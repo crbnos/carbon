@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
     { params: ["jobId"] }
   );
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request, { "service.jobs": "Edit" });
   // A failed email does not undo the send: the modal shows `warning`.
   return api.service.sendServiceJobEstimate({
     ...input.data,

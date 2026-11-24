@@ -29,7 +29,7 @@ const PersonAbilities = ({ personId, abilities }: PersonAbilitiesProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "resources");
+  const canUpdate = permissions.has({ "resources.abilities": "Edit" });
 
   return (
     <Card>

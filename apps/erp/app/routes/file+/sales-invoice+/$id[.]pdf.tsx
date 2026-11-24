@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   loadSalesInvoiceDocument,
@@ -12,12 +12,9 @@ import { getPreferenceHeaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "invoicing"
-    }
-  );
+  const { client, companyId, companyGroupId } = await authorize(request, {
+    "invoicing.salesInvoices": "View"
+  });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -26,7 +23,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { pdfProps, fileName } = await loadSalesInvoiceDocument({
     client,
-    // Tax reads need accounting/sales view; invoicing view is checked above.
+    // Tax reads need other pages' view; the invoice page's view is checked above.
     taxClient: getCarbonServiceRole(),
     companyId,
     companyGroupId,

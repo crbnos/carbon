@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { ScrollArea } from "@carbon/react";
@@ -28,13 +28,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
-  });
+  const { api } = await authorize(request, { "accounting.fiscalYear": "View" });
 
   const [settings, committed] = await Promise.all([
-    getFiscalYearSettings(client, companyId),
-    getFiscalCalendarCommitted(client, companyId)
+    api.accounting.getFiscalYearSettings({}),
+    api.accounting.getFiscalCalendarCommitted({})
   ]);
   if (settings.error) {
     throw redirect(
@@ -54,8 +52,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
+  const { client, companyId, userId } = await authorize(request, {
+    "accounting.fiscalYear": "Edit"
   });
 
   const validation = await validator(fiscalYearSettingsValidator).validate(

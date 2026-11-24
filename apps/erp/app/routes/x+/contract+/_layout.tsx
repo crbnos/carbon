@@ -12,8 +12,7 @@ export const meta = moduleMeta("Contract");
 
 export const handle: Handle = {
   breadcrumb: msg`Sales`,
-  to: path.to.sales,
-  module: "sales"
+  to: path.to.sales
 };
 
 export default function ContractRoute() {

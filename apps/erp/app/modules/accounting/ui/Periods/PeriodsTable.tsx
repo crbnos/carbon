@@ -156,14 +156,16 @@ const PeriodsTable = memo(
                 ? MENU_ITEM_SHORTCUTS.view
                 : undefined
             }
-            disabled={!permissions.can("view", "accounting")}
+            disabled={
+              !permissions.has({ "accounting.accountingPeriods": "View" })
+            }
             onClick={() => navigate(path.to.accountingPeriodClose(row.id))}
           >
             <MenuIcon icon={<LuCircleCheck />} />
             {row.closeStatus === "Closed" ? t`View Period` : t`Close Period`}
           </MenuItem>
           {row.closeStatus === "Open" &&
-            permissions.can("delete", "accounting") && (
+            permissions.has({ "accounting.accountingPeriods": "Full" }) && (
               <MenuItem
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive

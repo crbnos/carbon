@@ -59,8 +59,8 @@ const SupplierStageForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "purchasing")
-    : !permissions.can("create", "purchasing");
+    ? !permissions.has({ "purchasing.supplierStages": "Edit" })
+    : !permissions.has({ "purchasing.supplierStages": "Create" });
 
   return (
     <ModalDrawerProvider type={type}>

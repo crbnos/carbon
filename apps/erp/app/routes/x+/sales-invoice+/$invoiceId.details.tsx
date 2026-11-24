@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -16,10 +16,6 @@ import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData, useUser } from "~/hooks";
 import { isSalesInvoiceLocked } from "~/modules/invoicing/invoicing.models";
-import {
-  getInvoiceSettlementsForInvoice,
-  getSalesInvoice
-} from "~/modules/invoicing/invoicing.service";
 import type {
   SalesInvoice,
   SalesInvoiceLine,
@@ -38,16 +34,16 @@ import { getCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
+  const { api } = await authorize(request, {
+    "invoicing.salesInvoices": "View"
   });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const [invoice, applications] = await Promise.all([
-    getSalesInvoice(client, invoiceId),
-    getInvoiceSettlementsForInvoice(client, companyId, "sales", invoiceId)
+    api.invoicing.getSalesInvoice({ salesInvoiceId: invoiceId }),
+    api.invoicing.getInvoiceSettlementsForInvoice({ side: "sales", invoiceId })
   ]);
   if (invoice.error) {
     throw redirect(

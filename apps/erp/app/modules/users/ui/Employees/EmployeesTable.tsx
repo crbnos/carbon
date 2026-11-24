@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { subjectGates } from "@carbon/ee/permission-grants";
 import {
   Badge,
   Checkbox,
@@ -48,7 +49,10 @@ import {
   ResendInviteModal,
   RevokeInviteModal
 } from "~/modules/users/ui";
-import { canBulkActOnUser } from "~/modules/users/users.models";
+import {
+  canBulkActOnUser,
+  nonOperatorPinResetPermission
+} from "~/modules/users/users.models";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { useBulkUserActionFetcher } from "../components/AllMatchingUsers";
@@ -115,7 +119,7 @@ const EmployeesTable = memo(
     const resendInviteModal = useDisclosure();
     const revokeInviteModal = useDisclosure();
 
-    const canEdit = permissions.can("update", "users");
+    const canEdit = permissions.has(subjectGates("Edit").person);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(() => {
@@ -320,7 +324,7 @@ const EmployeesTable = memo(
               shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => open("permissions", bulkEditDrawer.onOpen)}
               disabled={
-                !permissions.can("update", "users") ||
+                !permissions.has(subjectGates("Edit").person) ||
                 (!allMatching && usersFor("permissions").length === 0)
               }
             >
@@ -332,7 +336,7 @@ const EmployeesTable = memo(
             <DropdownMenuItem
               onClick={() => open("invite", resendInviteModal.onOpen)}
               disabled={
-                !permissions.can("create", "users") ||
+                !permissions.has({ "users.accounts": "Create" }) ||
                 (!allMatching && usersFor("invite").length === 0)
               }
             >
@@ -344,7 +348,7 @@ const EmployeesTable = memo(
             <DropdownMenuItem
               onClick={() => open("deactivate", deactivateEmployeeModal.onOpen)}
               disabled={
-                !permissions.can("delete", "users") ||
+                !permissions.has({ "users.accounts": "Full" }) ||
                 (!allMatching && usersFor("deactivate").length === 0)
               }
             >
@@ -386,12 +390,11 @@ const EmployeesTable = memo(
                   <MenuIcon icon={<LuPencil />} />
                   <Trans>Edit Permissions</Trans>
                 </MenuItem>
-                {/* Resetting a PIN hands over that person's console identity:
-                    console operators need users_update, anyone else also
-                    settings_update (enforced again by the route). */}
+                {/* A hint only: the row has no operator flag or type, so the
+                    synthetic email stands in; resetConsoleOperatorPin decides. */}
                 {settings.consoleEnabled &&
-                  permissions.can("update", "users") &&
-                  (permissions.can("update", "settings") ||
+                  permissions.has({ "users.operators": "Edit" }) &&
+                  (permissions.has(nonOperatorPinResetPermission) ||
                     row.email?.endsWith("@console.internal")) && (
                     <MenuItem
                       onClick={() =>
@@ -431,7 +434,7 @@ const EmployeesTable = memo(
             ) : (
               <>
                 <MenuItem
-                  disabled={!permissions.can("create", "users")}
+                  disabled={!permissions.has({ "users.accounts": "Create" })}
                   onClick={() => {
                     setBulkAllMatching(null);
                     setSelectedUserIds([row.id!]);
@@ -445,18 +448,19 @@ const EmployeesTable = memo(
                     <Trans>Send Invite</Trans>
                   )}
                 </MenuItem>
-                {hasUnrevokedInvite && permissions.can("delete", "users") && (
-                  <MenuItem
-                    onClick={() => {
-                      setSelectedUserIds([row.id!]);
-                      revokeInviteModal.onOpen();
-                    }}
-                    destructive
-                  >
-                    <MenuIcon icon={<LuBan />} />
-                    <Trans>Revoke Invite</Trans>
-                  </MenuItem>
-                )}
+                {hasUnrevokedInvite &&
+                  permissions.has({ "users.accounts": "Full" }) && (
+                    <MenuItem
+                      onClick={() => {
+                        setSelectedUserIds([row.id!]);
+                        revokeInviteModal.onOpen();
+                      }}
+                      destructive
+                    >
+                      <MenuIcon icon={<LuBan />} />
+                      <Trans>Revoke Invite</Trans>
+                    </MenuItem>
+                  )}
               </>
             )}
           </>
@@ -484,7 +488,7 @@ const EmployeesTable = memo(
           infinite={infinite}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
-            permissions.can("create", "users") && (
+            permissions.has({ "users.accounts": "Create" }) && (
               <New label={t`Account`} to={`new?${params.toString()}`} />
             )
           }

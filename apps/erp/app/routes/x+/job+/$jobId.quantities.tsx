@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, useMount, VStack } from "@carbon/react";
@@ -12,9 +12,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
 import {
-  getJobOperationsList,
   getProductionQuantities,
-  getScrapReasons,
   PRODUCTION_QUANTITIES_PAGING
 } from "~/modules/production/production.service";
 import { ProductionQuantitiesTable } from "~/modules/production/ui/Jobs";
@@ -26,8 +24,8 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "job-quantities");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production"
+  const { client, companyId, api } = await authorize(request, {
+    "production.jobs": "View"
   });
 
   const { jobId } = params;
@@ -39,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const operations = await getJobOperationsList(client, jobId);
+  const operations = await api.production.getJobOperationsList({ jobId });
   if (operations.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.job(jobId),
@@ -69,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    cursor ? null : getScrapReasons(client, companyId)
+    cursor ? null : api.production.getScrapReasons({})
   ]);
 
   if (events.error) {
@@ -97,7 +95,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     events: page.rows,
     nextCursor: page.nextCursor,
     operations: operations.data ?? [],
-    scrapReasons: scrapReasons?.data ?? []
+    scrapReasons: scrapReasons?.data?.rows ?? []
   };
 }
 

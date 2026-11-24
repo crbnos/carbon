@@ -30,6 +30,11 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
 
 ## Key Patterns
 
+- **Owner only**: a user call that acts on the company's subscription (checkout, the billing
+  portal) must first pass `isCompanyOwner` / `requireCompanyOwner` (`@carbon/auth/company.server`)
+  — the functions here do not check the caller. Webhooks and the seat sync are not user calls.
+  See `.claude/rules/billing-system.md` → "Who may manage billing".
+
 - **Exports**: `@carbon/stripe/stripe.server` (platform billing),
   `@carbon/stripe/connect.server` (Connect accounts, invoicing, Connect webhooks),
   `@carbon/stripe/connect.constants`, `@carbon/stripe/send-sales-invoice.server`

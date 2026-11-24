@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ConformanceCheck, Provenance, Violation } from "../check";
-import { blankComments } from "./no-unscoped-kysely-write";
+import { blankComments } from "../sources/comments";
 import {
   chainCalls,
   locksBefore,

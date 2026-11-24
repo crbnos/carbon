@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,23 +11,19 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { failureModeValidator } from "~/modules/resources/resources.models";
-import {
-  getFailureMode,
-  upsertFailureMode
-} from "~/modules/resources/resources.service";
+import { upsertFailureMode } from "~/modules/resources/resources.service";
 import FailureModeForm from "~/modules/resources/ui/FailureModes/FailureModeForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "resources.failureModes": "View"
   });
 
   const { failureModeId } = params;
   if (!failureModeId) throw notFound("failureModeId not found");
 
-  const failureMode = await getFailureMode(client, failureModeId);
+  const failureMode = await api.resources.getFailureMode({ failureModeId });
 
   if (failureMode.error) {
     throw redirect(
@@ -46,8 +42,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "resources"
+  const { client, userId } = await authorize(request, {
+    "resources.failureModes": "Edit"
   });
 
   const formData = await request.formData();

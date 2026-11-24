@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -13,11 +13,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
-import {
-  getStockTransfer,
-  getStockTransferLines,
-  getStockTransferLiveBins
-} from "~/modules/inventory/inventory.service";
+import { getStockTransferLiveBins } from "~/modules/inventory/inventory.service";
 import StockTransferDocuments from "~/modules/inventory/ui/StockTransfers/StockTransferDocuments";
 import StockTransferHeader from "~/modules/inventory/ui/StockTransfers/StockTransferHeader";
 import StockTransferLines from "~/modules/inventory/ui/StockTransfers/StockTransferLines";
@@ -50,24 +46,23 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Stock Transfers`, to: path.to.stockTransfers },
     (data) => data?.stockTransfer?.stockTransferId
-  ),
-  module: "inventory"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.stockTransfer?.stockTransferId, "Stock Transfer");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, api } = await authorize(request, {
+    "inventory.stockTransfers": "View"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [stockTransfer, stockTransferLines, liveBins] = await Promise.all([
-    getStockTransfer(client, id),
-    getStockTransferLines(client, id),
+    api.inventory.getStockTransfer({ stockTransferId: id }),
+    api.inventory.getStockTransferLines({ stockTransferId: id }),
     getStockTransferLiveBins(client, id, companyId)
   ]);
 

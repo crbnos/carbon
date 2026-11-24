@@ -173,7 +173,9 @@ const ProjectStockTransferForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={!permissions.can("update", "projects")}>
+                <Submit
+                  isDisabled={!permissions.has({ "projects.projects": "Edit" })}
+                >
                   <Trans>Create</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={onClose}>

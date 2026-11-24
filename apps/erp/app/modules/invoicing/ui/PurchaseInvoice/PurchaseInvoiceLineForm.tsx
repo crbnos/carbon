@@ -163,8 +163,10 @@ const PurchaseInvoiceLineForm = ({
     !["Draft", "Pending", "Voided"].includes(
       routeData?.purchaseInvoice?.status ?? ""
     ) &&
-    permissions.can("update", "invoicing") &&
-    permissions.can("update", "accounting");
+    permissions.has({
+      "invoicing.purchaseInvoices": "Edit",
+      "accounting.journalEntries": "Edit"
+    });
   // Settlement decimals come from the document currency's row (loader data);
   // 2 is only the last resort for a currency-less document
   // The loader's currency row is the primary source — it is correct on first
@@ -434,8 +436,8 @@ const PurchaseInvoiceLineForm = ({
   });
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "invoicing")
-    : !permissions.can("create", "invoicing");
+    ? !permissions.has({ "invoicing.purchaseInvoices": "Edit" })
+    : !permissions.has({ "invoicing.purchaseInvoices": "Create" });
 
   // These badges render DOCUMENT-currency values, so both formatters take the
   // document's currency and decimals. Defaulting to base currency is what
