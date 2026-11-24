@@ -8,7 +8,6 @@ import {
   type ConformanceCheck,
   eachFile,
   fileCheck,
-  type Provenance,
   type SourceFile,
   type Violation
 } from "../check";
@@ -20,6 +19,7 @@ import {
 import { typescript } from "../sources/inputs";
 import { loadModuleServerFiles } from "../sources/modules";
 import {
+  callArguments,
   chainCalls,
   lockedRead,
   locksBefore,
@@ -27,9 +27,12 @@ import {
   namesColumn,
   nearestInitializer,
   type Region,
+  type RowLock,
+  type RowWrite,
   regionOf,
   rowLocks,
   rowWrites,
+  skipSpace,
   topLevelRegions
 } from "../sources/row-writes";
 import { IDENT_PART, IDENT_START, lineOf } from "../sources/text";
@@ -42,7 +45,43 @@ import { IDENT_PART, IDENT_START, lineOf } from "../sources/text";
  * concurrency checks, which share the write reader in `sources/row-writes.ts`.
  */
 
-const UNIQUE_VIOLATION = /["']23505["']/;
+/** One violation per match of the global `pattern`, its snippet the trimmed line the match starts on. */
+function matchedLines(
+  file: string,
+  contents: string,
+  pattern: RegExp,
+  message: string
+): Violation[] {
+  const lines = contents.split("\n");
+  const violations: Violation[] = [];
+  for (const match of contents.matchAll(pattern)) {
+    const line = lineOf(contents, match.index);
+    violations.push({
+      file,
+      line,
+      snippet: lines[line - 1]?.trim() ?? "",
+      message
+    });
+  }
+  return violations;
+}
+
+/**
+ * A check over the app TypeScript whose scan is built from repo data (the
+ * generated columns), so a test builds it from its own map.
+ */
+function builtFrom<T>(
+  about: Omit<ConformanceCheck, "scan">,
+  load: (root: string) => T,
+  build: (data: T) => ConformanceCheck
+): Check {
+  return {
+    ...about,
+    find: (repo) => eachFile(repo.read(typescript), build(repo.read(load)).scan)
+  };
+}
+
+const UNIQUE_VIOLATION = /["']23505["']/g;
 
 /**
  * The helper owns the SQLSTATE. `error-reason.ts` maps every code to a user
@@ -67,18 +106,12 @@ export const noInlineUniqueViolation = fileCheck(typescript, {
   },
   scan(file, contents) {
     if (EXEMPT_FILES.has(file)) return [];
-    const violations: Violation[] = [];
-    contents.split("\n").forEach((text, i) => {
-      if (!UNIQUE_VIOLATION.test(text)) return;
-      violations.push({
-        file,
-        line: i + 1,
-        snippet: text.trim(),
-        message:
-          'Use isUniqueViolation(error) from @carbon/utils. A literal "23505" lets each caller drift on the code, and the helper is the one place the SQLSTATE is named.'
-      });
-    });
-    return violations;
+    return matchedLines(
+      file,
+      contents,
+      UNIQUE_VIOLATION,
+      'Use isUniqueViolation(error) from @carbon/utils. A literal "23505" lets each caller drift on the code, and the helper is the one place the SQLSTATE is named.'
+    );
   }
 });
 
@@ -97,18 +130,12 @@ export const noRawOrSearch = fileCheck(typescript, {
     since: "2026-10-19"
   },
   scan(file: string, contents: string): Violation[] {
-    const violations: Violation[] = [];
-    for (const match of contents.matchAll(RAW_OR_SEARCH)) {
-      const line = lineOf(contents, match.index);
-      violations.push({
-        file,
-        line,
-        snippet: contents.split("\n")[line - 1]?.trim() ?? "",
-        message:
-          'Use `.or(searchFilter([...columns], term))` from "@carbon/utils": interpolated text is parsed as filter syntax, so a comma breaks the request'
-      });
-    }
-    return violations;
+    return matchedLines(
+      file,
+      contents,
+      RAW_OR_SEARCH,
+      'Use `.or(searchFilter([...columns], term))` from "@carbon/utils": interpolated text is parsed as filter syntax, so a comma breaks the request'
+    );
   }
 });
 
@@ -134,18 +161,12 @@ export const noPostgresChanges = fileCheck(typescript, {
     since: "2026-10-05"
   },
   scan(file: string, contents: string): Violation[] {
-    const violations: Violation[] = [];
-    for (const match of contents.matchAll(POSTGRES_CHANGES)) {
-      const line = lineOf(contents, match.index);
-      violations.push({
-        file,
-        line,
-        snippet: contents.split("\n")[line - 1]?.trim() ?? "",
-        message:
-          "Declare the table in the route's `handle.realtime`, or use `useRealtime` / `useChangedRows` from @carbon/query. A table needs a broadcast handler in packages/database/src/event-system/attachments.ts."
-      });
-    }
-    return violations;
+    return matchedLines(
+      file,
+      contents,
+      POSTGRES_CHANGES,
+      "Declare the table in the route's `handle.realtime`, or use `useRealtime` / `useChangedRows` from @carbon/query. A table needs a broadcast handler in packages/database/src/event-system/attachments.ts."
+    );
   }
 });
 
@@ -169,19 +190,8 @@ export const noPostgresChanges = fileCheck(typescript, {
 const DB_CLIENT_MESSAGE =
   "A *.service.ts must not construct or fetch a DB pool/Kysely client (getDatabaseClient() included) — take a `db: Kysely<KyselyDatabase>` argument and let the service function pass ctx.asSystem.pg (or its transaction), so the write joins the caller's transaction.";
 
-const BANNED = [
-  {
-    pattern: /\b(?:getProcessPool|getPostgresConnectionPool)\s*\(/g,
-    message: DB_CLIENT_MESSAGE
-  },
-  { pattern: /getPostgresClient\s*\(/g, message: DB_CLIENT_MESSAGE },
-  { pattern: /new Pool\s*\(/g, message: DB_CLIENT_MESSAGE },
-  { pattern: /\bPostgresDriver\b/g, message: DB_CLIENT_MESSAGE },
-  {
-    pattern: /\b(?:getDatabaseClient|getJobDatabaseClient)\s*\(/g,
-    message: DB_CLIENT_MESSAGE
-  }
-];
+const DB_CLIENT =
+  /\b(?:getProcessPool|getPostgresConnectionPool)\s*\(|getPostgresClient\s*\(|new Pool\s*\(|\bPostgresDriver\b|\b(?:getDatabaseClient|getJobDatabaseClient)\s*\(/g;
 
 const COMMENT_LINE = /^\s*(?:\/\/|\/?\*)/;
 
@@ -202,10 +212,13 @@ export const noDbClientInService = fileCheck(typescript, {
     const violations: Violation[] = [];
     contents.split("\n").forEach((text, i) => {
       if (COMMENT_LINE.test(text)) return;
-      for (const { pattern, message } of BANNED) {
-        for (const m of text.matchAll(pattern)) {
-          violations.push({ file, line: i + 1, snippet: m[0], message });
-        }
+      for (const m of text.matchAll(DB_CLIENT)) {
+        violations.push({
+          file,
+          line: i + 1,
+          snippet: m[0],
+          message: DB_CLIENT_MESSAGE
+        });
       }
     });
     return violations;
@@ -303,27 +316,6 @@ const ROWS_WRITE = /\b(updateRows|deleteRows)\s*\(/g;
 const ROWS_MESSAGE =
   "Kysely bypasses RLS: this updateRows/deleteRows filter has no companyId, so ids from the request can reach another tenant's rows. Add companyId to the filter (the last argument).";
 
-function callArguments(text: string, from: number): string[] {
-  const args: string[] = [];
-  let depth = 0;
-  let start = from;
-  for (let i = from; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === "(" || ch === "[" || ch === "{") depth++;
-    else if (ch === ")" || ch === "]" || ch === "}") {
-      if (depth === 0) {
-        args.push(text.slice(start, i));
-        break;
-      }
-      depth--;
-    } else if (ch === "," && depth === 0) {
-      args.push(text.slice(start, i));
-      start = i + 1;
-    }
-  }
-  return args.filter((arg) => arg.trim() !== "");
-}
-
 /** The statement's text from `from` to its end at depth 0 (see header). */
 function statementFrom(text: string, from: number): string {
   let depth = 0;
@@ -402,7 +394,9 @@ export const noUnscopedKyselyWrite = fileCheck(typescript, {
     }
     for (const m of text.matchAll(ROWS_WRITE)) {
       const start = m.index ?? 0;
-      const args = callArguments(text, start + m[0].length);
+      const args = callArguments(text, start + m[0].length - 1).map(
+        (arg) => arg.text
+      );
       if (args.length < 3) continue;
       const table = args[1]?.trim().replace(/^["'`]|["'`]$/g, "");
       if (table && EXEMPT_TABLES.has(table)) continue;
@@ -445,217 +439,98 @@ export const noUnscopedKyselyWrite = fileCheck(typescript, {
  * A payload object spread into the row (`insert([row])`) can carry the same bad
  * key, but only the caller knows what is in it.
  *
- * Both halves of the match are structural rather than textual, because the loose
+ * Both halves of the match read the parsed TypeScript, because the textual
  * version of each produced false findings and this check gates commits through
  * `collectFindings`:
  *
- *  - The write must sit in the matched target's OWN call chain. A character
- *    window picks up the NEXT statement's write instead, so
+ *  - The write must sit in the matched target's OWN call chain
+ *    (`.from("t")…insert(row)`). A character window picked up the NEXT
+ *    statement's write instead, so
  *    `from("link").select("id"); from("item").insert({ createdBy })` reported
  *    `createdBy` against `link`.
- *  - A name must be in key POSITION in a row object. Matching the bare name
+ *  - A name must be a property KEY of a row object. Matching the bare name
  *    anywhere flagged an identifier used as a value
  *    (`update({ name: createdBy })`), flagged the keys of nested value objects,
  *    and missed a quoted key (`{ "createdBy": userId }`) entirely.
  */
-const AUDIT_FIELDS = ["createdBy", "updatedBy"] as const;
-type AuditField = (typeof AUDIT_FIELDS)[number];
+const AUDIT_FIELDS = ["createdBy", "updatedBy"];
 
-/** `.from("t")`, `insertInto("t")`, `updateTable("t")`. */
-const TARGET_RE = /(?:\.from|insertInto|updateTable)\(\s*["'`](\w+)["'`]\s*\)/g;
+/** A file the check can report on: it names a target and an audit field. */
+const AUDIT_TARGET = /(?:\.from|insertInto|updateTable)\(\s*["'`]\w+["'`]\s*\)/;
+const AUDIT_FIELD = /\b(?:createdBy|updatedBy)\b/;
 
 /** Chain members whose first argument carries the row(s). */
 const WRITE_VERBS = new Set(["insert", "upsert", "update", "values", "set"]);
 
-/** Index just past the string literal that opens at `i`. */
-function skipString(text: string, i: number): number {
-  const quote = text[i];
-  for (let j = i + 1; j < text.length; j++) {
-    if (text[j] === "\\") {
-      j++;
-      continue;
-    }
-    if (text[j] === quote) return j + 1;
-  }
-  return text.length;
-}
-
-/** Index just past the comment that opens at `i`, or `i` when there is none. */
-function skipComment(text: string, i: number): number {
-  if (text[i] !== "/") return i;
-  if (text[i + 1] === "/") {
-    const nl = text.indexOf("\n", i);
-    return nl === -1 ? text.length : nl + 1;
-  }
-  if (text[i + 1] === "*") {
-    const end = text.indexOf("*/", i + 2);
-    return end === -1 ? text.length : end + 2;
-  }
-  return i;
-}
-
-/** Index of the first character at or after `i` that is neither space nor comment. */
-function skipTrivia(text: string, i: number): number {
-  for (;;) {
-    while (i < text.length && /\s/.test(text[i] as string)) i++;
-    const after = skipComment(text, i);
-    if (after === i) return i;
-    i = after;
-  }
-}
-
-/** Index of the bracket matching the one at `open`, skipping strings and comments. */
-function auditMatchBracket(text: string, open: number): number {
-  const close = { "(": ")", "[": "]", "{": "}" }[text[open] as string];
-  if (!close) return open;
-  let depth = 0;
-  for (let i = open; i < text.length; i++) {
-    const c = text[i] as string;
-    if (c === '"' || c === "'" || c === "`") {
-      i = skipString(text, i) - 1;
-      continue;
-    }
-    if (c === "/") {
-      const after = skipComment(text, i);
-      if (after !== i) {
-        i = after - 1;
-        continue;
-      }
-    }
-    if (c === text[open]) depth++;
-    else if (c === close) {
-      depth--;
-      if (depth === 0) return i;
-    }
-  }
-  return text.length - 1;
+/** The table of `.from("t")`, `insertInto("t")` or `updateTable("t")`. */
+function targetTable(node: ts.Expression): string | undefined {
+  if (!ts.isCallExpression(node) || node.arguments.length !== 1) return;
+  const callee = node.expression;
+  const name = ts.isPropertyAccessExpression(callee)
+    ? callee.name.text
+    : ts.isIdentifier(callee)
+      ? callee.text
+      : "";
+  const isTarget =
+    name === "insertInto" ||
+    name === "updateTable" ||
+    (name === "from" && ts.isPropertyAccessExpression(callee));
+  const [table] = node.arguments;
+  if (!isTarget || !table || !ts.isStringLiteralLike(table)) return;
+  return /^\w+$/.test(table.text) ? table.text : undefined;
 }
 
 /**
- * The opening paren of the write call belonging to the SAME chain as a target
- * that ends at `from`, else null. Walks `.member(…)` segments and stops at
- * anything that is not one — a `;`, a new statement, the end of an expression.
+ * The table a write call (`….insert(row)`) writes, when its own chain starts
+ * at a target. The chain is walked back through `.member` and `.member(…)`;
+ * anything else (`?.`, a cast, an index) ends it, and so does an earlier write
+ * call, which is the one the target's row belongs to.
  */
-function writeInChain(contents: string, from: number): number | null {
-  let i = from;
+function writtenTable(write: ts.CallExpression): string | undefined {
+  if (!ts.isPropertyAccessExpression(write.expression)) return;
+  if (!WRITE_VERBS.has(write.expression.name.text)) return;
+  let access: ts.PropertyAccessExpression = write.expression;
   for (;;) {
-    i = skipTrivia(contents, i);
-    if (contents[i] !== ".") return null;
-    i = skipTrivia(contents, i + 1);
-    if (!IDENT_START.test(contents[i] ?? "")) return null;
-    let end = i;
-    while (end < contents.length && IDENT_PART.test(contents[end] as string)) {
-      end++;
-    }
-    const member = contents.slice(i, end);
-    const afterMember = skipTrivia(contents, end);
-    if (contents[afterMember] !== "(") {
-      // A property access rather than a call — keep walking the same chain.
-      i = afterMember;
+    if (access.questionDotToken) return;
+    const link = access.expression;
+    if (ts.isPropertyAccessExpression(link)) {
+      access = link;
       continue;
     }
-    if (WRITE_VERBS.has(member)) return afterMember;
-    i = auditMatchBracket(contents, afterMember) + 1;
+    const table = targetTable(link);
+    if (table) return table;
+    if (!ts.isCallExpression(link)) return;
+    if (!ts.isPropertyAccessExpression(link.expression)) return;
+    if (WRITE_VERBS.has(link.expression.name.text)) return;
+    access = link.expression;
   }
 }
 
 /**
- * Top-level keys of the row object(s) in the call's FIRST argument, each with
- * its absolute index. A ROW object is an object literal with no enclosing object
- * literal, so `insert({…})` and `insert([{…}, {…}])` both yield rows while a
- * nested value object does not. The second argument (`{ onConflict }`) is never
- * reached, and shorthand, `key:` and `"key":` forms all count.
+ * The keys of the row objects in a write's FIRST argument. A ROW object is an
+ * object literal with no enclosing object literal, so `insert({…})` and
+ * `insert([{…}, {…}])` both yield rows while a nested value object does not.
+ * Shorthand, `key:` and `"key":` forms all count.
  */
 function rowKeys(
-  contents: string,
-  open: number
-): { name: string; index: number }[] {
-  const close = auditMatchBracket(contents, open);
-  const keys: { name: string; index: number }[] = [];
-  // One frame per open object literal: whether it is a row, and whether we are
-  // inside a nested bracket/paren of it (where a comma separates values, not
-  // keys).
-  const frames: { isRow: boolean; nesting: number }[] = [];
-  // Brackets/parens seen OUTSIDE every object literal, so an array of rows
-  // (`insert([{…}, {…}])`) is not mistaken for a second argument.
-  let outerNesting = 0;
-  let expectKey = false;
-
-  for (let i = open + 1; i < close; i++) {
-    const c = contents[i] as string;
-    const frame = frames[frames.length - 1];
-    const inKeyPosition =
-      expectKey && frame?.isRow === true && frame.nesting === 0;
-
-    if (c === '"' || c === "'" || c === "`") {
-      const end = skipString(contents, i);
-      if (inKeyPosition) {
-        const raw = contents.slice(i + 1, end - 1);
-        // Only a quoted KEY counts — it must be followed by a colon.
-        if (/^\w+$/.test(raw) && contents[skipTrivia(contents, end)] === ":") {
-          keys.push({ name: raw, index: i });
-        }
-      }
-      expectKey = false;
-      i = end - 1;
-      continue;
-    }
-    if (c === "/") {
-      const after = skipComment(contents, i);
-      if (after !== i) {
-        i = after - 1;
-        continue;
+  node: ts.Node,
+  keys: (ts.Identifier | ts.StringLiteral)[] = []
+): (ts.Identifier | ts.StringLiteral)[] {
+  if (ts.isObjectLiteralExpression(node)) {
+    for (const property of node.properties) {
+      if (
+        (ts.isPropertyAssignment(property) ||
+          ts.isShorthandPropertyAssignment(property)) &&
+        (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
+      ) {
+        keys.push(property.name);
       }
     }
-    if (c === "{") {
-      frames.push({ isRow: frames.length === 0, nesting: 0 });
-      expectKey = true;
-      continue;
-    }
-    if (c === "}") {
-      frames.pop();
-      expectKey = false;
-      continue;
-    }
-    if (c === "[" || c === "(") {
-      if (frame) frame.nesting++;
-      else outerNesting++;
-      expectKey = false;
-      continue;
-    }
-    if (c === "]" || c === ")") {
-      if (frame) frame.nesting--;
-      else outerNesting--;
-      expectKey = false;
-      continue;
-    }
-    if (c === ",") {
-      if (!frame) {
-        // A comma outside every object literal AND every bracket separates
-        // ARGUMENTS: the row(s) are the first one, so stop before
-        // `{ onConflict }` and friends. Inside a bracket it separates rows.
-        if (outerNesting === 0) break;
-        continue;
-      }
-      expectKey = frame.nesting === 0;
-      continue;
-    }
-    if (/\s/.test(c)) continue;
-
-    if (inKeyPosition && IDENT_START.test(c)) {
-      let end = i;
-      while (end < close && IDENT_PART.test(contents[end] as string)) end++;
-      const afterKey = contents[skipTrivia(contents, end)];
-      // `key:`, or shorthand terminated by a comma or the closing brace.
-      if (afterKey === ":" || afterKey === "," || afterKey === "}") {
-        keys.push({ name: contents.slice(i, end), index: i });
-      }
-      expectKey = false;
-      i = end - 1;
-      continue;
-    }
-    expectKey = false;
+    return keys;
   }
+  node.forEachChild((child) => {
+    rowKeys(child, keys);
+  });
   return keys;
 }
 
@@ -683,45 +558,42 @@ export function noMissingAuditColumn(
   return {
     ...AUDIT_ABOUT,
     scan(file, contents) {
+      // Parse only a file that could hold a finding.
+      if (!AUDIT_TARGET.test(contents) || !AUDIT_FIELD.test(contents)) {
+        return [];
+      }
+      // No parent links: the walk goes down from each write, and the module
+      // services it parses are a megabyte each.
+      const sf = ts.createSourceFile(file, contents, ts.ScriptTarget.Latest);
       const violations: Violation[] = [];
-      TARGET_RE.lastIndex = 0;
-      for (const target of contents.matchAll(TARGET_RE)) {
-        const table = target[1];
+      visit(sf, (node) => {
+        if (!ts.isCallExpression(node)) return;
+        const table = writtenTable(node);
         const present = table ? columns.get(table) : undefined;
-        if (!present) continue;
-        const missing: AuditField[] = AUDIT_FIELDS.filter(
-          (f) => !present.has(f)
-        );
-        if (missing.length === 0) continue;
-
-        const open = writeInChain(contents, target.index + target[0].length);
-        if (open === null) continue;
-
-        for (const key of rowKeys(contents, open)) {
-          if (!missing.includes(key.name as AuditField)) continue;
+        const [row] = node.arguments;
+        if (!present || !row) return;
+        for (const key of rowKeys(row)) {
+          if (!AUDIT_FIELDS.includes(key.text) || present.has(key.text)) {
+            continue;
+          }
           violations.push({
             file,
-            line: lineOf(contents, key.index),
-            snippet: key.name,
-            message: `"${table}" has no "${key.name}" column — this write fails with PGRST204 (and TypeScript will not flag it). Remove the field.`
+            line: lineOf(contents, key.getStart(sf)),
+            snippet: key.text,
+            message: `"${table}" has no "${key.text}" column — this write fails with PGRST204 (and TypeScript will not flag it). Remove the field.`
           });
         }
-      }
+      });
       return violations;
     }
   };
 }
 
-export const noMissingAuditColumnCheck: Check = {
-  ...AUDIT_ABOUT,
-  find: (repo) =>
-    eachFile(
-      repo.read(typescript),
-      noMissingAuditColumn(repo.read(loadDbTableColumns)).scan
-    )
-};
-
-export const STAMP_MATCHES_COLUMNS = "stamp-matches-columns";
+export const noMissingAuditColumnCheck = builtFrom(
+  AUDIT_ABOUT,
+  loadDbTableColumns,
+  noMissingAuditColumn
+);
 
 /**
  * A service function's `payload(ctx, value)…forCreate()` (or `forUpdate`,
@@ -985,7 +857,7 @@ function fromTable(node: ts.Expression): string | undefined {
 }
 
 export const stampMatchesColumns: Check = {
-  id: STAMP_MATCHES_COLUMNS,
+  id: "stamp-matches-columns",
   description:
     "A service function's `payload(ctx, value)…forCreate()` (or `forUpdate`, `forUpsert`, `for(op)`, `build`) adds identity fields to the payload it hands a building block.",
   find: (repo) =>
@@ -1013,12 +885,7 @@ const KYSELY_CALLS = /^(?:execute\w*|compile|stream)$/;
 type Segment = { name: string; call: boolean };
 type Chain = { head: string; segments: Segment[]; end: number };
 
-function skipWs(text: string, i: number): number {
-  while (i < text.length && /\s/.test(text[i] as string)) i++;
-  return i;
-}
-
-function skipWsBack(text: string, i: number): number {
+function skipSpaceBack(text: string, i: number): number {
   while (i >= 0 && /\s/.test(text[i] as string)) i--;
   return i;
 }
@@ -1065,7 +932,7 @@ function readIdent(text: string, i: number): number {
  * character that continues no chain.
  */
 function parseChain(text: string, start: number): Chain | null {
-  let i = skipWs(text, start);
+  let i = skipSpace(text, start);
   let head: string;
   if (text[i] === "(") {
     const close = matchForward(text, i);
@@ -1080,7 +947,7 @@ function parseChain(text: string, start: number): Chain | null {
   }
   const segments: Segment[] = [];
   for (;;) {
-    const k = skipWs(text, i);
+    const k = skipSpace(text, i);
     const c = text[k];
     if (c === "!" && text[k + 1] !== "=") {
       i = k + 1;
@@ -1090,17 +957,17 @@ function parseChain(text: string, start: number): Chain | null {
     if (c === ".") dot = k + 1;
     else if (c === "?" && text[k + 1] === ".") dot = k + 2;
     if (dot !== -1) {
-      const at = skipWs(text, dot);
+      const at = skipSpace(text, dot);
       if (text[at] === "(" || text[at] === "[") {
         i = at;
         continue;
       }
       const end = readIdent(text, at);
       if (end === at) return { head, segments, end: k };
-      let next = skipWs(text, end);
+      let next = skipSpace(text, end);
       if (text[next] === "<") {
         const close = matchForward(text, next);
-        const after = close === -1 ? -1 : skipWs(text, close + 1);
+        const after = close === -1 ? -1 : skipSpace(text, close + 1);
         if (after !== -1 && text[after] === "(") next = after;
       }
       if (text[next] === "(") {
@@ -1172,11 +1039,11 @@ function destructureBefore(
   text: string,
   eq: number
 ): { open: number; close: number } | null {
-  const close = skipWsBack(text, eq - 1);
+  const close = skipSpaceBack(text, eq - 1);
   if (text[close] !== "}") return null;
   const open = matchBack(text, close);
   if (open === -1) return null;
-  const before = skipWsBack(text, open - 1);
+  const before = skipSpaceBack(text, open - 1);
   if (text[before] === "(") return { open, close };
   const keyword = text.slice(wordStart(text, before), before + 1);
   return ["const", "let", "var"].includes(keyword) ? { open, close } : null;
@@ -1186,7 +1053,7 @@ type Bound = { name: string; start: number };
 
 /** `const name =`, `name =` starting a statement, or `const name: Type =`. */
 function nameBefore(text: string, eq: number): Bound | null {
-  const end = skipWsBack(text, eq - 1);
+  const end = skipSpaceBack(text, eq - 1);
   const declared = declaredName(text, end);
   if (declared) return declared;
   if (IDENT_PART.test(text[end] ?? "")) {
@@ -1197,13 +1064,13 @@ function nameBefore(text: string, eq: number): Bound | null {
   }
   const colon = annotationColon(text, end);
   if (colon === -1) return null;
-  return declaredName(text, skipWsBack(text, colon - 1));
+  return declaredName(text, skipSpaceBack(text, colon - 1));
 }
 
 function declaredName(text: string, end: number): Bound | null {
   if (!IDENT_PART.test(text[end] ?? "")) return null;
   const start = wordStart(text, end);
-  const keyEnd = skipWsBack(text, start - 1);
+  const keyEnd = skipSpaceBack(text, start - 1);
   const keyStart = wordStart(text, keyEnd);
   if (!DECLARATIONS.has(text.slice(keyStart, keyEnd + 1))) return null;
   return { name: text.slice(start, end + 1), start: keyStart };
@@ -1267,7 +1134,7 @@ function readsDataNotError(
 }
 
 function startsStatement(text: string, at: number): boolean {
-  const prev = skipWsBack(text, at - 1);
+  const prev = skipSpaceBack(text, at - 1);
   if (prev < 0) return true;
   const c = text[prev];
   if (c === ";" || c === "{" || c === "}") return true;
@@ -1281,7 +1148,7 @@ function startsStatement(text: string, at: number): boolean {
 }
 
 function endsStatement(text: string, end: number): boolean {
-  const next = skipWs(text, end);
+  const next = skipSpace(text, end);
   if (next >= text.length) return true;
   const c = text[next];
   if (c === ";" || c === "}") return true;
@@ -1379,7 +1246,7 @@ export const noDiscardedQueryError = fileCheck(typescript, {
       if (!query) continue;
       const request = requestEnd(text, at);
 
-      const prev = skipWsBack(text, at - 1);
+      const prev = skipSpaceBack(text, at - 1);
       if (text[prev] === "=" && !/[=!<>]/.test(text[prev - 1] ?? "")) {
         const bound = nameBefore(text, prev);
         if (bound) {
@@ -1393,7 +1260,7 @@ export const noDiscardedQueryError = fileCheck(typescript, {
         const keys = patternKeys(text, pattern.open, pattern.close);
         const readsResult = keys.includes("data") || keys.includes("count");
         if (readsResult && !keys.includes("error") && !keys.includes("...")) {
-          const before = skipWsBack(text, pattern.open - 1);
+          const before = skipSpaceBack(text, pattern.open - 1);
           const from =
             text[before] === "(" ? pattern.open : wordStart(text, before);
           report(from, snippetOf(contents, from, request));
@@ -1402,7 +1269,7 @@ export const noDiscardedQueryError = fileCheck(typescript, {
       }
 
       if (text[prev] === "(") {
-        const close = skipWs(text, chain.end);
+        const close = skipSpace(text, chain.end);
         if (text[close] !== ")") continue;
         const member = text
           .slice(close + 1)
@@ -1434,7 +1301,9 @@ export const noDiscardedQueryError = fileCheck(typescript, {
 // top-level function that writes a unit calls it, or is listed below with the
 // reason it does not need to. Only the resolver picks a unit on the server.
 //
-// A nested callback counts as the top-level function it sits in. The test
+// A nested callback counts as the top-level function it sits in, read as the
+// concurrency checks read it (`topLevelRegions`, so a class method is
+// `Class.method`). The test
 // holds the allow-lists to the repo (`unitWriters`, `unitPickers`): every
 // entry must still name a function that writes or picks, so a stale entry
 // cannot pre-approve a later one. The check proves that the function calls
@@ -1452,7 +1321,7 @@ const UNIT_POSTING_TYPES = [
 ];
 
 /** MES helpers that write a unit; their callers are checked by name. */
-export const UNIT_WRITE_CALLS = [
+const UNIT_WRITE_CALLS = [
   "startProductionEvent",
   "startMachineProductionEvent",
   "insertAttributeRecord",
@@ -1522,59 +1391,6 @@ export const UNIT_PICK_ALLOW_LIST: Record<string, string> = {
     "lists the open units the operator may claim; the claim goes through resolveWorkUnit"
 };
 
-type UnitRegion = { start: number; name: string; isImport: boolean };
-
-const DECLARATION =
-  /^(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function\*?\s+([\w$]+)|(?:const|let|var)\s+([\w$]+))/;
-
-/**
- * The file's top-level statements. Biome puts every top-level statement at
- * column 0 and indents everything inside one, so a line that starts with an
- * identifier character in the masked text opens the next statement.
- */
-function unitTopLevelRegions(masked: string): UnitRegion[] {
-  const regions: UnitRegion[] = [];
-  let offset = 0;
-  for (const line of masked.split("\n")) {
-    if (/^[A-Za-z_$@]/.test(line)) {
-      const m = DECLARATION.exec(line);
-      regions.push({
-        start: offset,
-        name: m?.[1] ?? m?.[2] ?? `<line ${lineOf(masked, offset)}>`,
-        isImport: line.startsWith("import")
-      });
-    }
-    offset += line.length + 1;
-  }
-  return regions;
-}
-
-function regionAt(
-  regions: UnitRegion[],
-  index: number
-): UnitRegion | undefined {
-  let found: UnitRegion | undefined;
-  for (const region of regions) {
-    if (region.start > index) break;
-    found = region;
-  }
-  return found;
-}
-
-/** Index just past the `)` that closes the call opened at `open`. */
-function closingParen(masked: string, open: number): number {
-  let depth = 0;
-  for (let i = open; i < masked.length; i++) {
-    const ch = masked[i];
-    if (ch === "(" || ch === "[" || ch === "{") depth++;
-    else if (ch === ")" || ch === "]" || ch === "}") {
-      depth--;
-      if (depth === 0) return i + 1;
-    }
-  }
-  return masked.length;
-}
-
 type Write = { index: number; snippet: string };
 
 function unitWrites(code: string, masked: string): Write[] {
@@ -1590,7 +1406,7 @@ function unitWrites(code: string, masked: string): Write[] {
   for (const m of code.matchAll(/\b(?:erpPosting|post)\(\s*["']issue["']/g)) {
     if (masked[m.index] !== code[m.index]) continue;
     const open = m.index + m[0].indexOf("(");
-    const args = code.slice(open, closingParen(masked, open));
+    const args = code.slice(open, matchBracket(masked, open) + 1);
     if (!/\btype:\s*["'][\w-]+["']/.test(args)) {
       writes.push({ index: m.index, snippet: m[0].replace(/\s+/g, "") });
     }
@@ -1601,27 +1417,26 @@ function unitWrites(code: string, masked: string): Write[] {
 const RESOLVES = /(?<!function\s)\bresolveWorkUnit\s*\(/g;
 
 type Analysis = {
-  regions: UnitRegion[];
-  writes: (Write & { key: string; region?: UnitRegion })[];
+  writes: (Write & { key: string; region?: Region })[];
   picks: { index: number; snippet: string; key: string }[];
-  resolving: Set<UnitRegion>;
+  resolving: Set<Region>;
 };
 
 function analyze(file: string, contents: string): Analysis {
   const code = blankComments(contents);
   const masked = maskCommentsAndStrings(contents);
-  const regions = unitTopLevelRegions(masked);
-  const keyOf = (region?: UnitRegion) => `${file}#${region?.name ?? "<top>"}`;
+  const regions = topLevelRegions(masked);
+  const keyOf = (region?: Region) => `${file}#${region?.name ?? "<top>"}`;
 
-  const resolving = new Set<UnitRegion>();
+  const resolving = new Set<Region>();
   for (const m of masked.matchAll(RESOLVES)) {
-    const region = regionAt(regions, m.index);
+    const region = regionOf(regions, m.index);
     if (region) resolving.add(region);
   }
 
   const writes = unitWrites(code, masked)
     .map((w) => {
-      const region = regionAt(regions, w.index);
+      const region = regionOf(regions, w.index);
       return { ...w, region, key: keyOf(region) };
     })
     // The definition of a checked writer is the writer itself.
@@ -1629,19 +1444,20 @@ function analyze(file: string, contents: string): Analysis {
 
   const picks = [...masked.matchAll(SERVER_PICKS)]
     .filter((m) => {
-      const region = regionAt(regions, m.index);
+      const region = regionOf(regions, m.index);
+      const isImport = region && masked.startsWith("import", region.start);
       const isDefinition = /function\s*$/.test(
         masked.slice(Math.max(0, m.index - 20), m.index)
       );
-      return !region?.isImport && !isDefinition;
+      return !isImport && !isDefinition;
     })
     .map((m) => ({
       index: m.index,
       snippet: m[0],
-      key: keyOf(regionAt(regions, m.index))
+      key: keyOf(regionOf(regions, m.index))
     }));
 
-  return { regions, writes, picks, resolving };
+  return { writes, picks, resolving };
 }
 
 export const mesUnitWriteResolvesUnit = fileCheck(typescript, {
@@ -1840,25 +1656,39 @@ const AUDIT_COLUMNS = new Set([
   "createdBy"
 ]);
 
-export const STATUS_WRITE_GUARDED = "status-write-guarded";
-
-// Exported on its own because the check is built from the generated types:
-// the provenance meta-test reads it without building the check.
-export const STATUS_WRITE_GUARDED_PROVENANCE: Provenance = {
-  deprecates:
-    "reading a row's status, checking it in code, then updating the status by id alone (lockAccountingPeriod, the convert edge function's quote → Ordered, the invoice void, the receipt post)",
-  replacedBy:
-    'a guarded UPDATE (`.eq("status", <expected>)`) that refuses when no row changed, or a FOR UPDATE row lock and a re-check before the UPDATE',
-  since: "de82a88cc6",
-  incidents: ["de82a88cc6", "2c9ef0dd8f", "578c411ffe", "b6ca51d4e1"]
-};
-
 const STATUS_ABOUT = {
-  id: STATUS_WRITE_GUARDED,
+  id: "status-write-guarded",
   description:
     "An UPDATE that sets a lifecycle status column carries a predicate on that column, or runs after the function locked the row — a status checked in code and written by id alone overwrites a concurrent change.",
-  provenance: STATUS_WRITE_GUARDED_PROVENANCE
+  provenance: {
+    deprecates:
+      "reading a row's status, checking it in code, then updating the status by id alone (lockAccountingPeriod, the convert edge function's quote → Ordered, the invoice void, the receipt post)",
+    replacedBy:
+      'a guarded UPDATE (`.eq("status", <expected>)`) that refuses when no row changed, or a FOR UPDATE row lock and a re-check before the UPDATE',
+    since: "de82a88cc6",
+    incidents: ["de82a88cc6", "2c9ef0dd8f", "578c411ffe", "b6ca51d4e1"]
+  }
 };
+
+/** What the two concurrency checks read in a file; no writes when it makes no UPDATE. */
+function readRowWrites(contents: string): {
+  text: string;
+  regions: Region[];
+  locks: RowLock[];
+  writes: RowWrite[];
+} {
+  if (!/\.updateTable|\.update\s*\(|updateRows/.test(contents)) {
+    return { text: contents, regions: [], locks: [], writes: [] };
+  }
+  const text = blankComments(contents);
+  const regions = topLevelRegions(text);
+  return {
+    text,
+    regions,
+    locks: rowLocks(text),
+    writes: rowWrites(text, regions)
+  };
+}
 
 export function statusWriteGuarded(
   columnTypes: Map<string, Map<string, string>>
@@ -1867,13 +1697,10 @@ export function statusWriteGuarded(
   return {
     ...STATUS_ABOUT,
     scan(file, contents) {
-      if (!/\.updateTable|\.update\s*\(|updateRows/.test(contents)) return [];
-      const text = blankComments(contents);
-      const regions = topLevelRegions(text);
-      const locks = rowLocks(text);
+      const { text, regions, locks, writes } = readRowWrites(contents);
       const violations: Violation[] = [];
       const seen = new Set<string>();
-      for (const write of rowWrites(text, regions)) {
+      for (const write of writes) {
         const lifecycle = columns.get(write.table);
         if (!lifecycle) continue;
         for (const field of write.fields) {
@@ -1921,14 +1748,11 @@ export function statusWriteGuarded(
   };
 }
 
-export const statusWriteGuardedCheck: Check = {
-  ...STATUS_ABOUT,
-  find: (repo) =>
-    eachFile(
-      repo.read(typescript),
-      statusWriteGuarded(repo.read(loadDbTableColumnTypes)).scan
-    )
-};
+export const statusWriteGuardedCheck = builtFrom(
+  STATUS_ABOUT,
+  loadDbTableColumnTypes,
+  statusWriteGuarded
+);
 
 /**
  * A running total (`quantityIssued`, `quantityReceived`, …) must be added to in
@@ -2079,22 +1903,18 @@ function rereadUnderNamedLock(
   return false;
 }
 
-export const COUNTER_WRITE_RELATIVE = "counter-write-relative";
-
-export const COUNTER_WRITE_RELATIVE_PROVENANCE: Provenance = {
-  deprecates:
-    "writing a counter as a JavaScript total of an earlier read (issueJobOperationMaterials' `quantityIssued: material.quantityIssued + quantityToIssue`)",
-  replacedBy:
-    'a relative SQL write (sql`"quantityIssued" + delta`), or a FOR UPDATE row lock taken before the counter is read',
-  since: "ca513209d8, f92d1b24fa",
-  incidents: ["ca513209d8", "f92d1b24fa"]
-};
-
 const COUNTER_ABOUT = {
-  id: COUNTER_WRITE_RELATIVE,
+  id: "counter-write-relative",
   description:
     "A running total is added to in SQL, or read under the row lock — an absolute value computed in JavaScript from an earlier read loses or doubles a concurrent writer's change.",
-  provenance: COUNTER_WRITE_RELATIVE_PROVENANCE
+  provenance: {
+    deprecates:
+      "writing a counter as a JavaScript total of an earlier read (issueJobOperationMaterials' `quantityIssued: material.quantityIssued + quantityToIssue`)",
+    replacedBy:
+      'a relative SQL write (sql`"quantityIssued" + delta`), or a FOR UPDATE row lock taken before the counter is read',
+    since: "ca513209d8, f92d1b24fa",
+    incidents: ["ca513209d8", "f92d1b24fa"]
+  }
 };
 
 export function counterWriteRelative(
@@ -2103,13 +1923,10 @@ export function counterWriteRelative(
   return {
     ...COUNTER_ABOUT,
     scan(file, contents) {
-      if (!/\.updateTable|\.update\s*\(|updateRows/.test(contents)) return [];
-      const text = blankComments(contents);
-      const regions = topLevelRegions(text);
-      const locks = rowLocks(text);
+      const { text, regions, locks, writes } = readRowWrites(contents);
       const violations: Violation[] = [];
       const seen = new Set<string>();
-      for (const write of rowWrites(text, regions)) {
+      for (const write of writes) {
         const columns = columnTypes.get(write.table);
         if (!columns) continue;
         const region = regionOf(regions, write.index);
@@ -2157,14 +1974,11 @@ export function counterWriteRelative(
   };
 }
 
-export const counterWriteRelativeCheck: Check = {
-  ...COUNTER_ABOUT,
-  find: (repo) =>
-    eachFile(
-      repo.read(typescript),
-      counterWriteRelative(repo.read(loadDbTableColumnTypes)).scan
-    )
-};
+export const counterWriteRelativeCheck = builtFrom(
+  COUNTER_ABOUT,
+  loadDbTableColumnTypes,
+  counterWriteRelative
+);
 
 /** The data-access checks, in the order they are written above. */
 export const checks: Check[] = [

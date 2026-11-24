@@ -86,7 +86,8 @@ export function matchBracket(text: string, open: number): number {
   return text.length - 1;
 }
 
-function skipSpace(text: string, i: number): number {
+/** Index of the first character at or after `i` that is not whitespace. */
+export function skipSpace(text: string, i: number): number {
   while (i < text.length && /\s/.test(text[i] as string)) i++;
   return i;
 }

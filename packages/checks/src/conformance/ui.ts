@@ -104,9 +104,10 @@ const EXCLUDED_PREFIX = "packages/react/src/hooks/";
 
 /**
  * Text of the JSX opening tag at `start`, aware of braces, strings, comments
- * and JSX nested in its props.
+ * and JSX nested in its props, so a `>` in `{a > b}`, in a string or in a
+ * nested tag does not end it. Null on an unterminated tag.
  */
-function dialogOpeningTag(contents: string, start: number): string | null {
+function openingTag(contents: string, start: number): string | null {
   // Where each character sits: a tag's attributes, a `{…}` expression, or the
   // children of JSX nested in one, where a quote is text ("Don't").
   const stack: Array<"tag" | "expression" | "text"> = ["tag"];
@@ -168,23 +169,30 @@ function dialogOpeningTag(contents: string, start: number): string | null {
 }
 
 /**
- * The open state the tag passes, or null. A bare `open` or `open={true}` is
- * held open, so the condition around the tag still decides when it leaves.
+ * The `{...}` expression bound to `prop` in a JSX opening tag, brace-balanced.
+ * The prop itself, not `data-open` or `aria-disabled`.
  */
-function openExpression(tag: string): string | null {
-  // The prop itself, not `data-open` or `aria-open`.
-  const at = /(?<![\w-])(?:open|isOpen)\s*=\s*\{/.exec(tag);
+function propExpression(tag: string, prop: string): string | null {
+  const at = new RegExp(`(?<![\\w-])${prop}\\s*=\\s*\\{`).exec(tag);
   if (!at) return null;
   const start = at.index + at[0].length;
   let depth = 1;
   for (let i = start; i < tag.length; i++) {
     if (tag[i] === "{") depth++;
-    else if (tag[i] === "}" && --depth === 0) {
-      const expression = tag.slice(start, i).trim();
-      return expression && expression !== "true" ? expression : null;
-    }
+    else if (tag[i] === "}" && --depth === 0) return tag.slice(start, i);
   }
   return null;
+}
+
+/**
+ * The open state the tag passes, or null. A bare `open` or `open={true}` is
+ * held open, so the condition around the tag still decides when it leaves.
+ */
+function openExpression(tag: string): string | null {
+  const expression = (
+    propExpression(tag, "open") ?? propExpression(tag, "isOpen")
+  )?.trim();
+  return expression && expression !== "true" ? expression : null;
 }
 
 /**
@@ -293,7 +301,7 @@ export const noUnmountingDialog = fileCheck(typescript, {
     for (const match of contents.matchAll(CONDITIONAL_TAG)) {
       const name = match[1] ?? "";
       const start = (match.index ?? 0) + match[0].lastIndexOf("<");
-      const tag = dialogOpeningTag(contents, start);
+      const tag = openingTag(contents, start);
       if (tag === null) continue;
       const isModalForm = /Form$/.test(name) && /\btype="modal"/.test(tag);
       if (!DIALOG_NAME.test(name) && !isModalForm) continue;
@@ -398,45 +406,6 @@ const EXCLUDED_FILES = new Set(["packages/form/src/components/Submit.tsx"]);
 const OPEN_TAG = /<(Button|button|IconButton)[\s>]/g;
 
 /**
- * Text of a JSX opening tag starting at `start`, i.e. up to the `>` that closes
- * it — tracking brace depth and quotes so a `>` inside `{a > b}` or inside an
- * attribute string does not end the tag early. Returns null on an unterminated
- * tag rather than guessing.
- */
-function submitOpeningTag(contents: string, start: number): string | null {
-  let depth = 0;
-  let quote: string | null = null;
-  for (let i = start; i < contents.length; i++) {
-    const c = contents[i];
-    if (quote) {
-      if (c === quote) quote = null;
-      continue;
-    }
-    if (c === '"' || c === "'" || c === "`") {
-      quote = c;
-      continue;
-    }
-    if (c === "{") depth++;
-    else if (c === "}") depth--;
-    else if (c === ">" && depth === 0) return contents.slice(start, i + 1);
-  }
-  return null;
-}
-
-/** The `{...}` expression bound to `prop` in a JSX opening tag, brace-balanced. */
-function propExpression(tag: string, prop: string): string | null {
-  const at = new RegExp(`\\b${prop}\\s*=\\s*\\{`).exec(tag);
-  if (!at) return null;
-  const start = at.index + at[0].length;
-  let depth = 1;
-  for (let i = start; i < tag.length; i++) {
-    if (tag[i] === "{") depth++;
-    else if (tag[i] === "}" && --depth === 0) return tag.slice(start, i);
-  }
-  return null;
-}
-
-/**
  * Does the tag disable itself while its own submission runs? The signal has to
  * sit on a prop that actually disables — finding `isSubmitting` anywhere in the
  * tag would accept `title={isSubmitting ? "Saving" : "Save"}`, which changes a
@@ -516,7 +485,7 @@ export const noUnguardedSubmit = fileCheck(typescript, {
     let match: RegExpExecArray | null = OPEN_TAG.exec(contents);
     while (match !== null) {
       const start = match.index;
-      const tag = submitOpeningTag(contents, start);
+      const tag = openingTag(contents, start);
       if (
         tag &&
         SUBMIT_ATTR.test(tag) &&
@@ -789,8 +758,6 @@ export const noInlineSensorOptions = fileCheck(typescript, {
   }
 });
 
-export const LIST_SELECT_COVERS_COLUMNS = "list-select-covers-columns";
-
 const UI = "apps/erp/app/modules";
 
 /**
@@ -823,10 +790,6 @@ export const LIST_TABLES: Record<string, string> = {
   SUPPLIERS_LIST_COLUMNS: `${UI}/purchasing/ui/Supplier/SuppliersTable.tsx`,
   CONTRACTS_LIST_COLUMNS: `${UI}/sales/ui/Contracts/ContractsTable.tsx`
 };
-
-// Lists checked for their cursor columns only: their tables read embedded
-// records (`location.name`), not flat accessors.
-export const SORT_ONLY_LISTS = new Set(["FIXED_ASSETS_LIST_COLUMNS"]);
 
 /** Every module's `<m>.service.ts`, and the list tables `LIST_TABLES` names. */
 export function loadListSources(root: string) {
@@ -893,7 +856,9 @@ export function findUnselectedListColumns(
           message: `${paging} sorts or pages on "${column}" but ${constant} does not select it, so the list ends after page 1`
         });
       }
-      if (SORT_ONLY_LISTS.has(constant)) continue;
+      // Checked for its cursor columns only: its table reads embedded records
+      // (`location.name`), not flat accessors.
+      if (constant === "FIXED_ASSETS_LIST_COLUMNS") continue;
       const tablePath = LIST_TABLES[constant];
       const table = tablePath ? tableByFile.get(tablePath) : undefined;
       if (!table) {
@@ -950,7 +915,7 @@ export function findUnselectedListColumns(
 }
 
 export const listSelectCoversColumns: Check = {
-  id: LIST_SELECT_COVERS_COLUMNS,
+  id: "list-select-covers-columns",
   description:
     "Every list table's accessorKeys, and the columns its cursor reads, are in the columns its endpoint selects.",
   find: (repo) => {
