@@ -226,7 +226,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 ### Self-Improvement Loop
 
 - After corrections, run `/learn`: it stores the mistake as a check, a rule line or a lesson in `.ai/lessons/`.
-- Review lessons at the start of each session when relevant to the task.
+- `pnpm brief <files>` shows the lessons for the files you touch; read them before you edit.
 
 ## Architecture Quick Reference
 

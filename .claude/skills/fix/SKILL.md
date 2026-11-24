@@ -205,6 +205,7 @@ to the human even in autonomous mode).
 | BC | Any FROZEN surface touched? STABLE without deprecation? |
 | Patterns | Does the code read like its neighbors? |
 | Leftovers | No debug logging, commented-out code, or stray files in the diff? |
+| Learn | If the root cause was an earlier agent's mistake, did you run `/learn` on it? |
 
 ### 3.7 Fix output
 

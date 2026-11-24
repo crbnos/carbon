@@ -68,7 +68,8 @@ bug, include it as a risk/question rather than dropping it.
 - **Docs freshness**
 
 End with a compact TLDR listing every item again, grouped by section. Present
-findings to the user — they decide what to act on; do not auto-fix.
+findings to the user — they decide what to act on; do not auto-fix. For each
+Must fix the user accepts, run `/learn` so the next agent is briefed on it.
 
 ## Strict mode (thermo-nuclear)
 

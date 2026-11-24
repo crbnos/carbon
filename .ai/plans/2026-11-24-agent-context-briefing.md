@@ -25,7 +25,7 @@
 - [x] Task 17: Write the Stop and UserPromptSubmit hooks
 - [x] Task 18: Write the `/learn` skill
 - [x] Task 19: Write the weekly sweep script
-- [ ] Task 20: Wire the skills and the AGENTS.md files
+- [x] Task 20: Wire the skills and the AGENTS.md files
 - [ ] Task 21: Run the final verification
 
 ## Dependencies

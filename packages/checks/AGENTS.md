@@ -8,6 +8,8 @@ Conformance checking, clobber detection, invariant queries, and module structure
 - **Use `newViolations()` for CI** — filters findings against the baseline so only new violations fail the build
 - **The conformance gate runs in four places, all the same command** (`pnpm --filter @carbon/checks exec vitest run src/run.test.ts`): CI (`.github/workflows/check.yml`), the harness (`packages/harness/src/gates.ts`, via `pnpm --filter @carbon/checks test`, which runs every test file including `run.test.ts`), the pre-commit hook (`scripts/git-hooks/pre-commit`, on any staged `.ts`/`.tsx`/`.sql` under `apps/` or `packages/`; `CARBON_SKIP_CONFORMANCE_CHECK=1` skips) and `/check-and-commit` Gate 2b. A new violation is fixed in the code; the baseline grandfathers pre-existing sites only
 - **Add new conformance rules to the array that matches the rule's SOURCE** — `CONFORMANCE_CHECKS` (SQL migrations), `SERVER_CHECKS` (server-only TS), `TS_CHECKS` (all app + shared-package TS, client and server), `EDGE_FUNCTION_CHECKS` (one source per edge function, all of its `.ts` files joined — `sources/edge-functions.ts`), or `STRUCTURE_CHECKS` (module layout). Follow the `ConformanceCheck` / `StructureCheck` interface
+- **Give every new `ConformanceCheck` its `triggers`** — literal code tokens that every violation's file contains. `pnpm brief` lists the check for a file by them, and `src/brief/scopes.test.ts` fails a check that reports a violation in a file without one of its triggers
+- **Add a new single-file check to `FILE_SETS` too** (`src/brief/file-sets.ts`) when you add it to a per-file `scanAll` in `collectFindings` — `file-sets.test.ts` fails until the two lists match
 - **Write invariants as `.sql` files** — each returns rows that VIOLATE the rule (empty = healthy); loaded from directory by `loadInvariants(dir)`
 
 ## Ask First
@@ -28,6 +30,8 @@ pnpm --filter @carbon/checks test          # vitest — unit tests
 pnpm --filter @carbon/checks clobbers      # check for migration clobber risks
 pnpm --filter @carbon/checks invariants    # run SQL invariants against DB
 pnpm --filter @carbon/checks baseline      # regenerate baseline (careful!)
+pnpm brief <file> [<file> …]               # what applies to a file before an edit (root script)
+pnpm --filter @carbon/checks learn:sweep   # weekly report of repeated failures (.ai/runs/)
 ```
 
 ## Key Patterns
@@ -71,6 +75,10 @@ pnpm --filter @carbon/checks baseline      # regenerate baseline (careful!)
   credentials — `check.yml` runs only the static `check:workflow-catalog`, and `supabase.yml`
   applies migrations through the Supabase CLI. Run them by hand against staging or production
   after a catalog change, or give the deploy workflow a connection string first.
+
+- **Briefing** (`src/brief/`): `buildBriefIndex` reads every rule (`.claude/rules/*.md`: `paths:`, `triggers:`, `summary:`), every lesson (`.ai/lessons/*.md`: `paths:`, `triggers:`) and every single-file check (`FILE_SETS`: its file set and `triggers`) on each call, about 60 ms. `brief` selects an entry by a path glob or by a trigger in the file or the planned edit (`scope.ts`: plain substrings, case-sensitive, or `{ text, minCount }`), refuses an edit only for a check violation that is new to the file and not in the baseline, puts trigger matches first, and names a rule that matches only a broad glob (`isBroadGlob`: the repo, an app or a package root) instead of repeating it. `formatBriefing` caps the text at about 2k tokens. `pnpm brief` (`src/scripts/brief.ts`) prints it for any agent
+- **Hooks** (`src/hooks/`, wired in `.claude/settings.json` through `.claude/hooks/*.sh`): `pre-tool-use.ts` runs `brief` before each Edit/Write/MultiEdit and denies a write with a new check violation, else adds the briefing to the context (Claude Code delivers that context with the tool result, after the write: `.ai/runs/2026-11-24-agent-context-briefing-hook-probe.md`), each entry once per session; `stop.ts` asks once per session for `/learn` while the worktree has logged failures
+- **Learning inbox** (`src/learn/`): `~/.carbon/learn-inbox.jsonl` (`CARBON_LEARN_INBOX` overrides) holds `gate-failure` (logged by `scripts/git-hooks/pre-commit` through `learn:log-gate`), `refused-edit`, `learned` (`learn:mark`, the last step of `/learn`) and `stop-asked` signals. `learn:sweep` groups the failures that repeat and the fix commits that may hold an unrecorded mistake
 
 ## Cross-References
 

@@ -122,7 +122,7 @@ translations by invoking the **translate skill** (`/translate`), not by hand:
 | Biome formatting/import order | Already fixed by `--write`; re-run to confirm clean |
 | Type error from stale generated types | Run Gate 1, re-run typecheck |
 | Type/test error caused by this change | Fix the code, re-run |
-| Conformance violation (Gate 2b) | Fix the code. Never add it to `packages/checks/src/conformance/baseline.json`; the baseline grandfathers old code only |
+| Conformance violation (Gate 2b) | Fix the code. Never add it to `packages/checks/src/conformance/baseline.json`; the baseline grandfathers old code only. If the same check already failed once on this branch, run `/learn` after the fix |
 | Pre-existing failure, unrelated to this change | Note in report; don't block, don't fix |
 | Anything unclear or still failing after **2** fix attempts | STOP — report BLOCKED |
 

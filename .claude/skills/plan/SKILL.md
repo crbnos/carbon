@@ -70,6 +70,7 @@ Every task uses exactly this shape:
 
 Hard rules for task content:
 
+- **Brief each task.** Run `pnpm brief <the task's files>`. Paste its output into the task under a **Briefing:** line, so the executor starts with the checks, rules and lessons in scope.
 - **Write every sentence in STE-80 from the first draft.** Use the write-time habits in `.claude/rules/writing-ste.md`. Never ask the human to check the style.
 - **Prose follows STE-80** (`.claude/rules/writing-ste.md`): one instruction
   per step, imperative, at most 20 words. Step 5 makes the STE-80 review pass a gate.
