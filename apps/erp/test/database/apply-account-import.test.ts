@@ -14,7 +14,8 @@ import {
   type ChartImportRow,
   type DefaultImportRow,
   FIXED_ASSET_CLASS_COLUMNS,
-  REFERENCE_POLICY
+  REFERENCE_POLICY,
+  UNCLASSIFIED_ACCOUNT_REFERENCES
 } from "@carbon/database/account-import";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Insertable, type Kysely, sql, type Transaction } from "kysely";
@@ -719,9 +720,9 @@ describe("apply-account-import", () => {
         .filter(
           (ref) =>
             !classified.has(ref) &&
-            !ref.startsWith("accountDefault.") &&
-            !ref.startsWith("fixedAssetClass.") &&
-            ref !== "account.parentId"
+            !UNCLASSIFIED_ACCOUNT_REFERENCES.some(
+              (u) => ref === u || ref.startsWith(`${u}.`)
+            )
         );
       expect(unclassified).toEqual([]);
     }
