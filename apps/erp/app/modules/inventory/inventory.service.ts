@@ -40,6 +40,7 @@ import {
 import type { Database, Json } from "@carbon/database";
 import {
   fetchAllFromTable,
+  fetchAllRecords,
   getCompanyTimeZone,
   journalReference
 } from "@carbon/database";
@@ -365,6 +366,12 @@ import type {
   StepRecord,
   TrackedEntity
 } from "./types";
+
+import {
+  type ActivityStepRecord,
+  batchOutputSerialsByIndex,
+  type SerialOutput
+} from "./ui/Traceability/stepRecords";
 
 const logger = getLogger("erp", "inventory");
 
@@ -10268,33 +10275,96 @@ export async function fetchLineageSubgraph(
 export async function fetchJobStepRecords(
   client: SupabaseClient<Database>,
   jobId: string,
-  companyId: string
+  companyId: string,
+  operationId?: string
 ): Promise<StepRecord[]> {
-  const res = await client.rpc("get_job_operation_step_records", {
-    p_job_id: jobId,
-    p_company_id: companyId
+  const records = await fetchAllRecords<StepRecord>(() => {
+    const query = client
+      .rpc("get_job_operation_step_records", {
+        p_job_id: jobId,
+        p_company_id: companyId
+      })
+      .select(
+        "id, jobOperationStepId, index, type, name, value, numericValue, booleanValue, userValue, unitOfMeasureCode, minValue, maxValue, operationId, operationDescription, itemId, itemReadableId, createdAt, createdBy"
+      );
+    if (operationId) query.eq("operationId", operationId);
+    return query.order("jobOperationStepId").order("index").order("id");
   });
-  if (!res.data) return [];
-  return (res.data as any[]).map((r) => ({
-    id: r.id,
-    jobOperationStepId: r.jobOperationStepId,
-    index: r.index,
-    type: r.type,
-    name: r.name,
-    value: r.value,
-    numericValue: r.numericValue,
-    booleanValue: r.booleanValue,
-    userValue: r.userValue,
-    unitOfMeasureCode: r.unitOfMeasureCode,
-    minValue: r.minValue,
-    maxValue: r.maxValue,
-    operationId: r.operationId,
-    operationDescription: r.operationDescription,
-    itemId: r.itemId,
-    itemReadableId: r.itemReadableId,
-    createdAt: r.createdAt,
-    createdBy: r.createdBy
-  }));
+  return records.data ?? [];
+}
+
+export async function fetchActivityStepRecords(
+  client: SupabaseClient<Database>,
+  activityId: string,
+  companyId: string
+): Promise<ActivityStepRecord[]> {
+  const { data: activity } = await client
+    .from("trackedActivity")
+    .select("type, sourceDocument, sourceDocumentId, attributes")
+    .eq("companyId", companyId)
+    .eq("id", activityId)
+    .maybeSingle();
+  const attrs = activity?.attributes as Record<string, unknown> | null;
+  const jobId = attrs?.Job;
+  const operationId = attrs?.["Job Operation"];
+  if (
+    !attrs ||
+    typeof jobId !== "string" ||
+    !jobId ||
+    typeof operationId !== "string" ||
+    !operationId
+  )
+    return [];
+
+  // The route uses the service-role client. Establish the tenant of the
+  // referenced job before looking up its measurements.
+  const { data: job } = await client
+    .from("job")
+    .select("id")
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (!job) return [];
+
+  if (activity?.type === "Produce" && "Job Operation Batch" in attrs) {
+    if (
+      activity.sourceDocument !== "Job Operation" ||
+      activity.sourceDocumentId !== operationId
+    )
+      return [];
+    const outputs = await fetchAllRecords<SerialOutput>(() =>
+      client
+        .from("trackedActivityOutput")
+        .select("trackedEntityId, quantity, trackedEntity(readableId)")
+        .eq("trackedActivityId", activityId)
+        .eq("companyId", companyId)
+        .eq("trackedEntity.companyId", companyId)
+        .order("trackedEntityId")
+    );
+    if (!outputs.data) return [];
+    const serialsByIndex = batchOutputSerialsByIndex(attrs, outputs.data);
+    if (!serialsByIndex.size) return [];
+    const records = await fetchJobStepRecords(
+      client,
+      jobId,
+      companyId,
+      operationId
+    );
+    return records.flatMap((record) => {
+      const outputSerial = serialsByIndex.get(record.index);
+      return outputSerial ? [{ ...record, outputSerial }] : [];
+    });
+  }
+
+  const records = await fetchJobStepRecords(
+    client,
+    jobId,
+    companyId,
+    operationId
+  );
+  return typeof attrs.Unit === "number"
+    ? records.filter((r) => r.index === attrs.Unit)
+    : records;
 }
 
 export async function fetchContainmentsForEntities(

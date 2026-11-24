@@ -22,6 +22,7 @@ import { isUnitOnHold, type UnitHolds } from "./unitHold";
 type UnitLike = {
   id: string;
   inOperationScope?: boolean;
+  completedOperationId?: string;
   attributes?: unknown;
   status?: string | null;
 };
@@ -29,13 +30,18 @@ type UnitLike = {
 /** The marker records the unit index, including index zero. Legacy scalar
  * attributes carry no operation marker. */
 export function completedAtOperation(
-  attributes: unknown,
+  unit: Pick<UnitLike, "attributes" | "completedOperationId">,
   operationId: string
 ): boolean {
+  const { attributes } = unit;
   return (
-    attributes !== null &&
-    typeof attributes === "object" &&
-    Object.prototype.hasOwnProperty.call(attributes, `Operation ${operationId}`)
+    unit.completedOperationId === operationId ||
+    (attributes !== null &&
+      typeof attributes === "object" &&
+      Object.prototype.hasOwnProperty.call(
+        attributes,
+        `Operation ${operationId}`
+      ))
   );
 }
 
@@ -53,7 +59,7 @@ export function operationUnits<T extends UnitLike>(
     return inScope;
   if (!quality) return inScope.slice(0, unitCount);
   const completedHere = (unit: T) =>
-    completedAtOperation(unit.attributes, quality.operationId);
+    completedAtOperation(unit, quality.operationId);
   let remaining = unitCount - inScope.filter(completedHere).length;
   return inScope.filter((unit) => {
     if (

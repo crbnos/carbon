@@ -11,9 +11,10 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { usePeople } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
+import type { ActivityStepRecord } from "./stepRecords";
 import type { StepRecord } from "./utils";
 
-type Props = { records: StepRecord[]; jobId?: string | null };
+type Props = { records: ActivityStepRecord[]; jobId?: string | null };
 
 export function StepRecordsList({ records, jobId }: Props) {
   const numberFormatter = useNumberFormatter();
@@ -52,6 +53,9 @@ export function StepRecordsList({ records, jobId }: Props) {
               </span>
             </div>
             <div className="text-[0.625rem] text-muted-foreground/70 mt-0.5 truncate flex items-center gap-1.5">
+              {r.outputSerial && (
+                <span className="font-mono">{r.outputSerial}</span>
+              )}
               {r.operationDescription && (
                 <span className="truncate">{r.operationDescription}</span>
               )}

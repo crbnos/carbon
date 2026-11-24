@@ -109387,6 +109387,17 @@ export type Database = {
         Args: { p_company_a: string; p_company_b: string }
         Returns: string
       }
+      finish_mes_job_operation: {
+        Args: {
+          p_company_id: string
+          p_job_operation_id: string
+          p_user_id: string
+        }
+        Returns: {
+          id: string
+          jobId: string
+        }[]
+      }
       generateEliminationEntries: {
         Args: {
           p_company_group_id: string

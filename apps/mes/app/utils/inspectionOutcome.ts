@@ -13,6 +13,7 @@ export function inspectionEntityEligible(
     status: string | null;
     attributes: unknown;
     inOperationScope?: boolean;
+    completedOperationId?: string;
   },
   operationId: string,
   holds: UnitHolds,
@@ -24,7 +25,7 @@ export function inspectionEntityEligible(
     (!isUnsampleableEntityStatus(entity.status) ||
       (includeHeld && held && entity.status === "Rejected")) &&
     (includeHeld || !held) &&
-    !completedAtOperation(entity.attributes, operationId)
+    !completedAtOperation(entity, operationId)
   );
 }
 

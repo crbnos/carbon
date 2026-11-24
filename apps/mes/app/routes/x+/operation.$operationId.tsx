@@ -184,6 +184,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const operationPromise = getJobOperationById(serviceRole, operationId);
   const unitsPromise = jobMakeMethodId
     ? getTrackedEntitiesForOperation(serviceRole, {
+        includeSerialOutputs:
+          ownedOperation.data.jobMakeMethod?.requiresSerialTracking === true,
         operationId,
         jobMakeMethodId,
         companyId

@@ -4,7 +4,10 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { issueMaterial } from "../../app/modules/inventory/inventory.service";
+import {
+  fetchActivityStepRecords,
+  issueMaterial
+} from "../../app/modules/inventory/inventory.service";
 import {
   batchOperation,
   triggerCorrection,
@@ -20,6 +23,8 @@ import {
 } from "./fixtures/always-post";
 import { handlesOf, systemServiceOf } from "./fixtures/handles";
 import { holdUnits, raiseIssue, serialJob } from "./fixtures/job-unit-hold";
+import { postgrestTest } from "./fixtures/local-supabase";
+import { stepRecordsForSelection } from "../../app/modules/inventory/ui/Traceability/stepRecords";
 import { databaseTest } from "./fixtures/local-database";
 
 async function attachBatch(f: Fixture, operationId: string, batchId: string) {
@@ -906,3 +911,113 @@ databaseTest(
     }
   }
 );
+
+for (const quantity of [2, 3]) {
+  postgrestTest(
+    `the traceability sidebar attributes measurements only to the ${quantity - 1} serials produced in a mixed batch`,
+    async (client) => {
+      const f = await alwaysPostFixture();
+      try {
+        const scoped = quantity === 3;
+        const job = await activeSerialBatch(f, scoped ? 4 : 2);
+        await seed(f, async (trx) => {
+          if (scoped) {
+            // The third unit has measurements but is outside this operation's
+            // rework scope. Its place in the step index still belongs to it.
+            await trx
+              .insertInto("jobOperationTrackedEntity")
+              .values(
+                [1, 2, 4].map((n) => ({
+                  companyId: f.companyId,
+                  createdBy: USER,
+                  jobOperationId: job.operationId,
+                  trackedEntityId: `${f.prefix}-unit-${n}`
+                }))
+              )
+              .execute();
+          }
+          const step = await trx
+            .insertInto("jobOperationStep")
+            .values({
+              operationId: job.operationId,
+              type: "Measurement",
+              name: "Thickness",
+              companyId: f.companyId,
+              createdBy: USER
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          await trx
+            .insertInto("jobOperationStepRecord")
+            .values(
+              (scoped ? [15, 10, 99, 11] : [15, 10]).map(
+                (numericValue, index) => ({
+                  numericValue,
+                  index,
+                  jobOperationStepId: step.id,
+                  companyId: f.companyId,
+                  createdBy: USER
+                })
+              )
+            )
+            .execute();
+        });
+        expect((await job.submit(quantity - 1)).error).toBeNull();
+        const activity = await f.db
+          .selectFrom("trackedActivity")
+          .select(["id", "attributes"])
+          .where("companyId", "=", f.companyId)
+          .where("type", "=", "Produce")
+          .where("sourceDocumentId", "=", job.operationId)
+          .executeTakeFirstOrThrow();
+        // A serial may be renamed later. The historical activity's step
+        // indices must not be re-ranked using the serials as they are now.
+        await seed(f, (trx) =>
+          trx
+            .updateTable("trackedEntity")
+            .set({ readableId: "SN-999" })
+            .where("id", "=", `${f.prefix}-unit-1`)
+            .execute()
+        );
+        const measurements = {
+          activityId: activity.id,
+          stepRecords: await fetchActivityStepRecords(
+            client,
+            activity.id,
+            f.companyId
+          )
+        };
+        expect(
+          stepRecordsForSelection(activity.id, measurements).map((r) => [
+            r.outputSerial,
+            r.index,
+            r.numericValue
+          ])
+        ).toEqual(
+          [
+            ["SN-002", 1, 10],
+            ["SN-004", 3, 11]
+          ].slice(0, quantity - 1)
+        );
+        expect(
+          stepRecordsForSelection("another-activity", measurements)
+        ).toEqual([]);
+
+        // An older batch's ordinal markers on the entities give no durable
+        // evidence of the step indices. The HTTP response must withhold them.
+        await seed(f, (trx) =>
+          trx
+            .updateTable("trackedActivity")
+            .set({ attributes: sql`attributes - 'Output Unit Indices'` })
+            .where("id", "=", activity.id)
+            .execute()
+        );
+        expect(
+          await fetchActivityStepRecords(client, activity.id, f.companyId)
+        ).toEqual([]);
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}

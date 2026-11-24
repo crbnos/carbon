@@ -28954,6 +28954,24 @@ async function recordEligibleBatchSerials(
     }
     const partial =
       remaining.length > eligible.length && member.quantity < balance;
+    // Step records use zero-based positions in the whole make method, even
+    // for a rework operation scoped to just a few of the serials. Freeze the
+    // output positions before first-touch numbering can change a tie break.
+    const axis = await trx
+      .selectFrom("trackedEntity")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where(sql<string>`attributes->>'Job Make Method'`, "=", op.methodId)
+      .orderBy("createdAt")
+      .orderBy("readableId")
+      .orderBy("id")
+      .execute();
+    const outputIds = new Set(eligible.map((unit) => unit.id));
+    const outputUnitIndices = Object.fromEntries(
+      axis.flatMap((unit, index) =>
+        outputIds.has(unit.id) ? [[unit.id, index]] : []
+      )
+    );
     const activity = await trx
       .insertInto("trackedActivity")
       .values({
@@ -28964,6 +28982,7 @@ async function recordEligibleBatchSerials(
           Job: op.jobId,
           "Job Operation": op.id,
           "Job Operation Batch": batchId,
+          "Output Unit Indices": outputUnitIndices,
           "Partial Operation": partial
         },
         companyId,

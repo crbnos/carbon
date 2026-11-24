@@ -88,7 +88,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // this company before any of them runs.
   const scopedOperation = await serviceRole
     .from("jobOperation")
-    .select("id, jobId, jobOperationBatchId")
+    .select(
+      "id, jobId, jobOperationBatchId, jobMakeMethod(requiresSerialTracking)"
+    )
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -224,6 +226,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInspectionMeasurements(serviceRole, lot.data.id, companyId),
     getIssueTypesList(serviceRole, companyId),
     getTrackedEntitiesForOperation(serviceRole, {
+      includeSerialOutputs:
+        scopedOperation.data.jobMakeMethod?.requiresSerialTracking === true,
       operationId,
       jobMakeMethodId: op.jobMakeMethodId,
       companyId

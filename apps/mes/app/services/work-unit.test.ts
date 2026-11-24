@@ -13,6 +13,7 @@ import {
 } from "./work-unit.server";
 import {
   fakeClient,
+  operationOutput,
   serialOperation,
   serialUnits
 } from "./work-unit-test-fixture";
@@ -538,6 +539,40 @@ describe("resolveWorkUnit", () => {
     });
   });
 
+  it("counts historical credits toward the target while allowing Quality to review the serial", async () => {
+    const fake = fakeClient({
+      ...tables(false),
+      jobOperation: [
+        serialOperation({
+          id: op,
+          jobMakeMethodId: "jmm",
+          later: false,
+          extra: { operationQuantity: 1 }
+        })
+      ],
+      // The completed unit is outside the first place on the unit axis.
+      trackedActivityOutput: [operationOutput("u2", op, "Produce")]
+    });
+    expect(
+      await resolve(fake.client, { requestedUnitId: null, mode: "advance" })
+    ).toMatchObject({
+      kind: "refuse",
+      pickUnit: false
+    });
+    expect(await resolve(fake.client, { requestedUnitId: "u1" })).toMatchObject(
+      {
+        kind: "refuse",
+        pickUnit: false
+      }
+    );
+    expect(
+      await resolve(fake.client, { requestedUnitId: "u2", mode: "member" })
+    ).toMatchObject({
+      kind: "unit",
+      unitId: "u2"
+    });
+  });
+
   it("reads the operation and its units for the company only", async () => {
     const fake = fakeClient(tables(true));
     await resolveWorkUnit({
@@ -551,6 +586,7 @@ describe("resolveWorkUnit", () => {
       "jobOperation",
       "trackedEntity",
       "jobOperationTrackedEntity",
+      "trackedActivityOutput",
       "companySettings"
     ]);
     for (const call of fake.calls) {

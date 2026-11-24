@@ -355,6 +355,7 @@ export async function resolveWorkUnit({
   const units = await getOperationUnitAxis(client, {
     operationId,
     jobMakeMethodId: facts.jobMakeMethodId,
+    includeSerialOutputs: facts.serial && mode !== "member",
     companyId
   });
   if (units.error) {

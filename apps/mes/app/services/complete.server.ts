@@ -25,8 +25,7 @@ import {
   abilityBlockRefusal,
   finishJobOperation,
   getRequiredScanShortfall,
-  insertProductionQuantity,
-  insertProductionQuantityIfCurrent
+  insertProductionQuantity
 } from "~/services/operations.service";
 import { autoPrintOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
@@ -36,6 +35,7 @@ import {
 } from "~/services/work-unit.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
+import { insertProductionQuantityIfCurrent } from "./production-quantity.server";
 
 const log = getLogger("mes");
 

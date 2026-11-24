@@ -21,6 +21,7 @@ import { issueTravelerUnit } from "./traveler.server";
 import { SELECT_UNIT_FIRST } from "./work-unit.server";
 import {
   fakeClient,
+  operationOutput,
   serialOperation,
   serialUnits
 } from "./work-unit-test-fixture";
@@ -32,10 +33,12 @@ const caller = { companyId: "co", userId: "user" };
 function floor({
   later = true,
   allDone = false,
+  firstDone = true,
   extra = {}
 }: {
   later?: boolean;
   allDone?: boolean;
+  firstDone?: boolean;
   extra?: Record<string, Record<string, unknown>[]>;
 } = {}) {
   return fakeClient({
@@ -52,7 +55,7 @@ function floor({
     job: [{ id: "job", companyId: "co", status: "In Progress" }],
     jobOperationStep: [{ id: "step", companyId: "co", operationId: op }],
     trackedEntity: serialUnits("jmm", op, [
-      { id: "u1", done: true },
+      { id: "u1", done: firstDone },
       { id: "u2", done: allDone },
       { id: "u3", done: allDone }
     ])
@@ -79,6 +82,7 @@ const GATE_READS = [
   "jobOperation",
   "trackedEntity",
   "jobOperationTrackedEntity",
+  "trackedActivityOutput",
   "companySettings"
 ];
 
@@ -152,6 +156,31 @@ describe("kanban Complete scan (end route)", () => {
     });
     expect(fake.posts.map((p) => p.input.trackedEntityId)).toEqual(["u2"]);
   });
+
+  it.each(["Complete", "Produce"])(
+    "skips a serial credited only by a prior %s when the QR names no unit",
+    async (type) => {
+      const fake = floor({
+        later: false,
+        firstDone: false,
+        extra: {
+          trackedActivityOutput: [
+            operationOutput("u1", op, type),
+            operationOutput("u2", "other-op", "Produce"),
+            operationOutput("u2", op, "Unconsume")
+          ]
+        }
+      });
+      await endOperationByScan(fake, {
+        ...caller,
+        request: get(`/x/end/${op}`),
+        operationId: op
+      });
+      expect(fake.posts.map((post) => post.input.trackedEntityId)).toEqual([
+        "u2"
+      ]);
+    }
+  );
 
   it("completes nothing for a unit on hold for an open quality issue", async () => {
     const fake = floor({ extra: onHold("u3") });
@@ -390,6 +419,19 @@ describe("traveler scan claim (traveler.scan route)", () => {
       retryable: false,
       pickUnit: true
     });
+    expect(fake.writes()).toEqual([]);
+  });
+
+  it("refuses a named parent already credited at the claim's operation", async () => {
+    const fake = floor({
+      extra: { trackedActivityOutput: [operationOutput("u3", op, "Produce")] }
+    });
+    const result = await issueTravelerUnit(
+      fake.client,
+      { ...caller, trackedEntityId: "part", claim, heldUnitId: "u3" },
+      fake.post
+    );
+    expect(result.error).toMatch(/already complete/i);
     expect(fake.writes()).toEqual([]);
   });
 

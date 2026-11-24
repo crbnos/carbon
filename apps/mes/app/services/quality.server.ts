@@ -371,6 +371,7 @@ export async function getInspectionOutcomeState(
       ? await getTrackedEntitiesForOperation(serviceRole, {
           operationId: jobOperationId,
           jobMakeMethodId: operation.jobMakeMethodId,
+          includeSerialOutputs: true,
           companyId: args.companyId
         })
       : null;
@@ -423,6 +424,7 @@ export async function getInspectionOutcomeState(
     id: e.id,
     status: e.status,
     attributes: e.attributes,
+    completedOperationId: e.completedOperationId,
     inOperationScope: e.inOperationScope
   }));
   const entityById = new Map(entities.map((e) => [e.id, e]));
