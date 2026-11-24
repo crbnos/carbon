@@ -63,6 +63,10 @@ export type RampCodingWriteSelection = {
   field_option_external_id: string;
 };
 
+export type RampProjectCodeSelection =
+  | RampCodingWriteSelection
+  | { field_external_id: string; free_form_text: string };
+
 /**
  * Build the `accounting_field_selections` to code ONE pushed draft-bill line
  * from a Carbon purchase-invoice line's GL account and cost center. The mirror

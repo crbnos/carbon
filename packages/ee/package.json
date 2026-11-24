@@ -60,6 +60,7 @@
     "./sso.server": "./src/sso/index.server.ts",
     "./hooks.server": "./src/hooks.server.ts",
     "./quickbooks/hooks.server": "./src/quickbooks/hooks.server.ts",
+    "./ramp/project-code": "./src/ramp/lib/project-code.ts",
     "./ramp.server": "./src/ramp/lib/index.ts",
     "./ramp/entities": "./src/ramp/entities/index.ts",
     "./ramp/hooks.server": "./src/ramp/hooks.server.ts",

@@ -11,10 +11,32 @@
  * API client.
  */
 
+import type { Json } from "@carbon/database";
 import type { SpendPushOnlyEntitySyncer as SpendBase } from "../../spend/push-only-syncer";
 import { SpendPushOnlyEntitySyncer } from "../../spend/push-only-syncer";
 import type { RampClient } from "../lib/client";
+import type { RampProjectCodeSelection } from "../lib/coding";
+import {
+  type RampProjectCodeMapping,
+  readProjectCode
+} from "../lib/project-code";
 import type { RampProvider } from "../lib/provider";
+
+export function projectCodeSelection(
+  mapping: RampProjectCodeMapping | undefined,
+  source: "purchaseOrderField" | "purchaseInvoiceField",
+  customFields: Json
+): RampProjectCodeSelection | undefined {
+  if (!mapping) return undefined;
+  const code = readProjectCode(customFields, mapping[source]);
+  if (!code) return undefined;
+  return mapping.valueType === "text"
+    ? { field_external_id: mapping.fieldExternalId, free_form_text: code }
+    : {
+        field_external_id: mapping.fieldExternalId,
+        field_option_external_id: code
+      };
+}
 
 export abstract class RampPushOnlyEntitySyncer<
   TLocal,

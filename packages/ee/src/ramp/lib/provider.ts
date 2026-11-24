@@ -29,6 +29,10 @@ import type { SpendCapabilities } from "../../sync/capabilities";
 import type { RampClient } from "./client";
 import type { RampIntegrationMetadata } from "./models";
 import { resolveRampMode, resolveRampModeProfile } from "./modes";
+import {
+  type RampProjectCodeMapping,
+  resolveProjectCodeMapping
+} from "./project-code";
 
 const logger = getLogger("ee", "ramp");
 
@@ -44,6 +48,8 @@ export class RampProvider implements SyncProvider {
 
   /** The stored install mode; `provider` for anything that predates modes. */
   readonly mode: SpendInstallMode;
+
+  readonly projectCodeMapping?: RampProjectCodeMapping;
 
   private readonly syncConfig: GlobalSyncConfig;
   private readonly configuredEntityId: string | undefined;
@@ -69,6 +75,7 @@ export class RampProvider implements SyncProvider {
     metadata: RampIntegrationMetadata,
     options: { codingIdentityIntegrationId?: string } = {}
   ) {
+    this.projectCodeMapping = resolveProjectCodeMapping(metadata);
     this.codingIdentityIntegrationId = options.codingIdentityIntegrationId;
     this.configuredEntityId = metadata.entityId ?? undefined;
 

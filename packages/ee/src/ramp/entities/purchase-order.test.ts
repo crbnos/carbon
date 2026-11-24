@@ -2,11 +2,14 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { EntityConfig, SyncContext } from "../../accounting/core/types";
+import type { SpendPurchaseOrderSource } from "../../spend/purchase-order-source";
 import { buildRampIdempotencyKey, RampApiError } from "../lib/client";
+import type { RampProjectCodeMapping } from "../lib/project-code";
 import type { RampPurchaseOrderBatch } from "../lib/spend";
 import {
+  buildRampPurchaseOrderPayload,
   RAMP_PURCHASE_ORDER_NUMBER_SUFFIX,
   type RampPurchaseOrderRemote,
   RampPurchaseOrderSyncer,
@@ -251,6 +254,198 @@ describe("RampPurchaseOrderSyncer recreate idempotency", () => {
     const syncer = makeSyncer({ ramp, mappedRemoteId: "po_live" });
 
     await expect(push(syncer, payload())).rejects.toBeInstanceOf(RampApiError);
+    expect(ramp.createdKeys).toEqual([]);
+  });
+});
+
+const purchaseOrder: SpendPurchaseOrderSource = {
+  id: "po-local-1",
+  readableId: "PO000018",
+  status: "To Receive and Invoice",
+  customFields: { "source-po-field": "PRJ-17" },
+  updatedAt: null,
+  currencyCode: "USD",
+  supplier: {
+    id: "supplier-1",
+    name: "Demo Supplier",
+    country: null,
+    contact: null,
+    address: null
+  },
+  lines: [
+    { id: "po-line-1", description: "Housing", quantity: 2, unitPrice: 14.5 }
+  ]
+};
+const projectMapping: RampProjectCodeMapping = {
+  purchaseOrderField: "source-po-field",
+  purchaseInvoiceField: "invoice-field",
+  fieldExternalId: "ERP-project",
+  valueType: "option"
+};
+const poLine = {
+  external_id: "po-line-1",
+  description: "Housing",
+  unit_quantity: 2,
+  unit_price: 14.5
+};
+const project = {
+  field_external_id: "ERP-project",
+  field_option_external_id: "PRJ-17"
+};
+
+describe("purchase order project coding on the Ramp wire", () => {
+  it("sends the PO header's configured option on its line at create", async () => {
+    const ramp = makeRamp();
+    const create = vi.spyOn(ramp, "createPurchaseOrder");
+    const mapped = buildRampPurchaseOrderPayload(purchaseOrder, {
+      archive: false,
+      vendorId: "vendor-1",
+      entityId: "entity-1",
+      mapping: projectMapping
+    });
+    await push(makeSyncer({ ramp }), mapped);
+    expect(create.mock.calls[0]?.[0]).toEqual({
+      purchase_order_number: "PO000018-1",
+      external_id: "po-local-1",
+      three_way_match_enabled: false,
+      currency: "USD",
+      entity_id: "entity-1",
+      vendor_id: "vendor-1",
+      line_items: [{ ...poLine, accounting_field_selections: [project] }]
+    });
+  });
+
+  it.each([
+    { mapping: undefined, customFields: purchaseOrder.customFields },
+    { mapping: projectMapping, customFields: { "source-po-field": " " } }
+  ])(
+    "omits line coding from the original PO update when mapping or code is absent",
+    async ({ mapping, customFields }) => {
+      const ramp = makeRamp();
+      const patch = vi.spyOn(ramp, "patchPurchaseOrder");
+      const mapped = buildRampPurchaseOrderPayload(
+        { ...purchaseOrder, customFields },
+        { archive: false, mapping }
+      );
+      await push(makeSyncer({ ramp, mappedRemoteId: "remote-po" }), mapped);
+      expect(patch.mock.calls[0]).toEqual([
+        "remote-po",
+        { line_items: [poLine] }
+      ]);
+    }
+  );
+
+  function mappedUpdate(
+    existingCoding: {
+      external_id: string;
+      category_info: { external_id: string };
+    }[]
+  ) {
+    const ramp = {
+      ...makeRamp(),
+      getPurchaseOrder: async () => ({
+        line_items: [
+          {
+            id: "remote-line",
+            external_id: "po-line-1",
+            accounting_field_selections: existingCoding
+          }
+        ]
+      }),
+      patchPurchaseOrderLine: vi.fn(
+        async (_id: string, _lineId: string, _body: unknown) => ({})
+      ),
+      addPurchaseOrderLines: vi.fn(async () => ({}))
+    };
+    const mapped = buildRampPurchaseOrderPayload(
+      {
+        ...purchaseOrder,
+        lines: [
+          ...purchaseOrder.lines,
+          { id: "po-line-2", description: "Pin", quantity: 1, unitPrice: 3 }
+        ]
+      },
+      { archive: false, mapping: projectMapping }
+    );
+    return {
+      ramp,
+      apply: () =>
+        push(makeSyncer({ ramp, mappedRemoteId: "remote-po" }), mapped)
+    };
+  }
+
+  it("patches the matched line by Ramp ID, preserves its GL selection and adds only the new line", async () => {
+    const { ramp, apply } = mappedUpdate([
+      { external_id: "5500", category_info: { external_id: "Category" } },
+      { external_id: "PRJ-OLD", category_info: { external_id: "ERP-project" } }
+    ]);
+    await apply();
+    expect(ramp.patchPurchaseOrderLine.mock.calls).toEqual([
+      [
+        "remote-po",
+        "remote-line",
+        {
+          description: "Housing",
+          unit_quantity: 2,
+          unit_price: 14.5,
+          accounting_field_selections: [
+            { field_external_id: "Category", field_option_external_id: "5500" },
+            project
+          ]
+        }
+      ]
+    ]);
+    expect(ramp.addPurchaseOrderLines).toHaveBeenCalledWith(
+      "remote-po",
+      {
+        line_items: [
+          {
+            external_id: "po-line-2",
+            description: "Pin",
+            unit_quantity: 1,
+            unit_price: 3,
+            accounting_field_selections: [project]
+          }
+        ]
+      },
+      expect.any(String)
+    );
+  });
+
+  it("leaves the complete accounting selection set alone when Ramp already has the project option", async () => {
+    const { ramp, apply } = mappedUpdate([
+      { external_id: "", category_info: { external_id: "other" } },
+      { external_id: "PRJ-17", category_info: { external_id: "ERP-project" } }
+    ]);
+    await apply();
+    expect(ramp.patchPurchaseOrderLine.mock.calls).toEqual([
+      [
+        "remote-po",
+        "remote-line",
+        {
+          description: "Housing",
+          unit_quantity: 2,
+          unit_price: 14.5
+        }
+      ]
+    ]);
+  });
+
+  it("refuses a replacement that would drop an opaque Ramp selection before writing any lines", async () => {
+    const { ramp, apply } = mappedUpdate([
+      { external_id: "", category_info: { external_id: "other" } }
+    ]);
+    await expect(apply()).rejects.toThrow(/preserve/);
+    expect(ramp.patchPurchaseOrderLine).not.toHaveBeenCalled();
+    expect(ramp.addPurchaseOrderLines).not.toHaveBeenCalled();
+  });
+
+  it("retries a missing line without recreating its purchase order", async () => {
+    const { ramp, apply } = mappedUpdate([]);
+    ramp.patchPurchaseOrderLine.mockRejectedValue(
+      new RampApiError(404, undefined, "missing line")
+    );
+    await expect(apply()).rejects.toBeInstanceOf(RampApiError);
     expect(ramp.createdKeys).toEqual([]);
   });
 });

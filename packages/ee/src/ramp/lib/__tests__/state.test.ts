@@ -36,6 +36,10 @@ describe("Ramp integration state patches", () => {
         pullReimbursements: "true",
         pushPurchaseOrders: "false",
         pushInvoices: "true",
+        projectCodeValueType: "option",
+        projectCodePoField: "po-code",
+        projectCodeInvoiceField: "invoice-code",
+        projectCodeFieldExternalId: "project",
         connectionId: "stale-connection",
         webhookId: "stale-webhook",
         credentials: { accessToken: "stale-token" },
@@ -56,7 +60,11 @@ describe("Ramp integration state patches", () => {
           pullBills: "true",
           pullReimbursements: "true",
           pushPurchaseOrders: "false",
-          pushInvoices: "true"
+          pushInvoices: "true",
+          projectCodeValueType: "option",
+          projectCodePoField: "po-code",
+          projectCodeInvoiceField: "invoice-code",
+          projectCodeFieldExternalId: "project"
         },
         p_metadata_remove: ["entityId", "cashbackIncomeAccountId"],
         p_secret_patch: {},

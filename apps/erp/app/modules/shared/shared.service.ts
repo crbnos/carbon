@@ -134,6 +134,10 @@ import {
 } from "@carbon/documents/email";
 import { type SyncedEntityType, syncedEntities } from "@carbon/ee/issue-sync";
 import {
+  readProjectCode,
+  resolveProjectCodeMapping
+} from "@carbon/ee/ramp/project-code";
+import {
   ERP_URL,
   SESSION_SECRET,
   SUPABASE_SERVICE_ROLE_KEY
@@ -9707,10 +9711,40 @@ export async function convertDocument(
           dateIssued
         );
 
+        // Snapshot the code under the invoice field's own ID. Only the
+        // active installation participates, including in invoice-only mode.
+        const projectSource = await trx
+          .selectFrom("purchaseOrder")
+          .innerJoin("companyIntegration", (join) =>
+            join
+              .onRef(
+                "companyIntegration.companyId",
+                "=",
+                "purchaseOrder.companyId"
+              )
+              .on("companyIntegration.id", "=", "ramp")
+              .on("companyIntegration.active", "=", true)
+          )
+          .select(["purchaseOrder.customFields", "companyIntegration.metadata"])
+          .where("purchaseOrder.id", "=", purchaseOrderId)
+          .where("purchaseOrder.companyId", "=", companyId)
+          .executeTakeFirst();
+        const mapping = resolveProjectCodeMapping(projectSource?.metadata);
+        const code =
+          mapping &&
+          readProjectCode(
+            projectSource?.customFields,
+            mapping.purchaseOrderField
+          );
+
         const purchaseInvoice = await trx
           .insertInto("purchaseInvoice")
           .values({
             invoiceId: purchaseInvoiceId!,
+            customFields:
+              mapping && code
+                ? toJson({ [mapping.purchaseInvoiceField]: code })
+                : undefined,
             status: "Draft",
             supplierId: purchaseOrder.data!.supplierId,
             supplierReference: purchaseOrder.data!.supplierReference ?? "",
