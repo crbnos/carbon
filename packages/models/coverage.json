@@ -231,14 +231,14 @@
     "fingerprints": {
       "apps/erp/app/modules/shared/shared.service.ts#lockItemMakeMethods": "6e595baec70bdeac",
       "apps/erp/app/modules/shared/shared.service.ts#lockItemMakeMethods(": "6c8393a05f24f999",
-      "apps/erp/app/modules/shared/shared.service.ts#methodImportLock": "9385fbd41ca0f9e4",
+      "apps/erp/app/modules/shared/shared.service.ts#methodImportLock": "fccd210f5f080db7",
       "apps/erp/app/modules/shared/shared.service.ts#status: locked.status,": "e74cbd2f4b0730c2",
       "apps/erp/app/modules/items/items.service.ts#lockItemMakeMethods(": "1306b42705cb92d9",
       "apps/erp/app/modules/items/items.service.ts#createMakeMethodVersion": "ead44eef86eb78d6",
       "apps/erp/app/modules/items/items.service.ts#chooseSyncMethod": "748e4df2f73bf1ca",
       "apps/erp/app/modules/items/items.service.ts#lockedStatus.get(": "2cdbaaf8dc8f7c1c"
     },
-    "confirmedAt": "df2cd3f908"
+    "confirmedAt": "295c117ab9"
   },
   "order-line-counters": {
     "model": "src/order-line-counters.ts",
@@ -268,7 +268,7 @@
     },
     "databaseTests": ["test/database/order-line-counters-concurrency.test.ts"],
     "fingerprints": {
-      "apps/erp/app/modules/shared/shared.service.ts#ORDER_LINE_COUNTERS": "edee57e07e241c69",
+      "apps/erp/app/modules/shared/shared.service.ts#ORDER_LINE_COUNTERS": "3c77c88e0f7641dc",
       "apps/erp/app/modules/shared/shared.service.ts#lockOrderLines": "c0a899888b0dbeb1",
       "apps/erp/app/modules/shared/shared.service.ts#lockOrderLinesAsRead": "9928ea2cbbfae3cc",
       "apps/erp/app/modules/inventory/inventory.service.ts#lockOrderLines(": "7cd0c33b7e770a37",
@@ -281,6 +281,6 @@
       "apps/erp/app/modules/purchasing/purchasing.service.ts#shortClosePurchaseOrderLine": "3be8868893196d68",
       "apps/erp/app/modules/sales/sales.service.ts#createSalesReturnOrderCredit": "563faaae8e8db8f3"
     },
-    "confirmedAt": "30b7e9f1e5"
+    "confirmedAt": "295c117ab9"
   }
 }
