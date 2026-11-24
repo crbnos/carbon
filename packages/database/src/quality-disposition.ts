@@ -52,8 +52,12 @@ export type InspectionDispositionInput = {
   // Partial on an untracked (Inventory) receipt lot: how much passed. Required
   // there, ignored otherwise.
   acceptedQuantity?: number;
-  // Server-selected WIP serials covered by a MES Accept, including held units.
-  acceptedUnitIds?: string[];
+  // The server-selected WIP serials covered by a MES Accept (including held
+  // units), and the sampled failures that decision left out.
+  serialAcceptance?: {
+    acceptedUnitIds: string[];
+    failedUnitIds: string[];
+  };
 };
 
 // -------------------------------------------------------------
@@ -292,11 +296,16 @@ export async function dispositionInspection(
           .map((s) => s.trackedEntityId)
           .filter(Boolean)
       );
-      // Sampling writes also lock the lot. A failure recorded after MES read
-      // its units must be reviewed before that selection can be accepted.
-      if (args.acceptedUnitIds?.some((id) => failedEntityIds.has(id))) {
+      // Sample writes take the same lot lock. Refuse a prepared selection if
+      // an accepted serial now fails or an excluded failure has been cleared.
+      const acceptance = args.serialAcceptance;
+      if (
+        acceptance &&
+        (acceptance.acceptedUnitIds.some((id) => failedEntityIds.has(id)) ||
+          acceptance.failedUnitIds.some((id) => !failedEntityIds.has(id)))
+      ) {
         throw new Error(
-          "An accepted unit failed inspection. Reload the lot and review its verdicts."
+          "The sample verdicts changed. Reload the lot and review the units before accepting it."
         );
       }
       const allLotIds = lotEntities.map((e) => e.id);
@@ -752,7 +761,7 @@ export async function dispositionInspection(
             ...(wasOpen &&
             inspection.sourceDocument === "Job Operation" &&
             args.decision === "Accept"
-              ? { acceptedUnitIds: args.acceptedUnitIds }
+              ? { acceptedUnitIds: acceptance?.acceptedUnitIds }
               : {}),
             ...(acceptedQuantity !== null ? { acceptedQuantity } : {}),
             ...((movedToStorageUnitId ?? legacyHoldUnitId)

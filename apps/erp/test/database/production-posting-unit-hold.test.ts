@@ -735,3 +735,174 @@ databaseTest(
     }
   }
 );
+
+type HistoricalBatchOutput = "Produce" | "Complete" | "multi-unit" | "unnamed";
+async function seedHistoricalBatchOutput(
+  f: Fixture,
+  operationId: string,
+  shape: HistoricalBatchOutput
+) {
+  await seed(f, async (trx) => {
+    if (shape !== "unnamed") {
+      const activity = await trx
+        .insertInto("trackedActivity")
+        .values({
+          type: shape === "Complete" ? "Complete" : "Produce",
+          sourceDocument: "Job Operation",
+          sourceDocumentId: operationId,
+          attributes: { "Job Operation": operationId, Employee: USER },
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await trx
+        .insertInto("trackedActivityOutput")
+        .values({
+          trackedActivityId: activity.id,
+          trackedEntityId: `${f.prefix}-unit-2`,
+          quantity: shape === "multi-unit" ? 2 : 1,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+    }
+    await trx
+      .insertInto("productionQuantity")
+      .values({
+        jobOperationId: operationId,
+        type: "Production",
+        quantity: 1,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .updateTable("jobOperation")
+      .set({ quantityComplete: 1 })
+      .where("id", "=", operationId)
+      .execute();
+  });
+}
+
+function batchGenealogy(f: Fixture, operationId: string) {
+  return f.db
+    .selectFrom("trackedActivity as a")
+    .innerJoin("trackedActivityOutput as o", "o.trackedActivityId", "a.id")
+    .select([
+      "o.trackedEntityId",
+      "o.quantity",
+      "a.type",
+      sql<string>`a.attributes->>'Job Operation'`.as("operation")
+    ])
+    .where("a.sourceDocument", "=", "Job Operation")
+    .where("a.sourceDocumentId", "=", operationId)
+    .where("a.companyId", "=", f.companyId)
+    .where("a.type", "in", ["Produce", "Complete"])
+    .orderBy("o.trackedEntityId")
+    .execute();
+}
+
+for (const shape of ["Produce", "multi-unit", "unnamed"] as const) {
+  databaseTest(
+    `an open-held batch leaves historical ${shape} production and materials intact when no unit can be credited`,
+    async () => {
+      const f = await alwaysPostFixture();
+      try {
+        const job = await activeSerialBatch(f, shape === "Produce" ? 2 : 3);
+        await seedHistoricalBatchOutput(f, job.operationId, shape);
+        const before = await batchGenealogy(f, job.operationId);
+        expect(
+          (await job.submit(shape === "Produce" ? 1 : 2)).error?.message
+        ).toMatch(shape === "Produce" ? /NCR-1/ : /earlier production/i);
+        expect(await batchGenealogy(f, job.operationId)).toEqual(before);
+        expect(
+          await f.db
+            .selectFrom("productionQuantity")
+            .select(["type", "quantity"])
+            .where("jobOperationId", "=", job.operationId)
+            .execute()
+        ).toEqual([{ type: "Production", quantity: 1 }]);
+        expect(
+          await f.db
+            .selectFrom("jobMaterial")
+            .select("quantityIssued")
+            .where("id", "=", job.materialId)
+            .executeTakeFirst()
+        ).toEqual({ quantityIssued: 0 });
+        expect(
+          await f.db
+            .selectFrom("jobOperationBatch")
+            .select("status")
+            .where("id", "=", job.batchId)
+            .executeTakeFirst()
+        ).toEqual({ status: "Active" });
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}
+
+databaseTest(
+  "an ordinary batch credits only the remaining eligible sibling after a historical serial completion, including on resume",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await activeSerialBatch(f, 3);
+      await seedHistoricalBatchOutput(f, job.operationId, "Complete");
+      const accounts = await f.db
+        .deleteFrom("accountDefault")
+        .where("companyId", "=", f.companyId)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      expect((await job.submit(1)).error?.message).toMatch(/issue materials/i);
+      await seed(f, (trx) =>
+        trx.insertInto("accountDefault").values(accounts).execute()
+      );
+      expect((await job.submit(2)).error?.message).toMatch(/already recorded/i);
+      expect((await job.submit(1)).error).toBeNull();
+      // Back on the individual serial screen, the pre-marker serial still
+      // cannot be completed again by name.
+      const duplicate = await invokePosting(
+        handlesOf(f.ctx),
+        "issue",
+        {
+          type: "jobOperationSerialComplete",
+          quantity: 1,
+          jobOperationId: job.operationId,
+          trackedEntityId: `${f.prefix}-unit-2`
+        },
+        issueMaterial
+      );
+      expect(duplicate.error?.message).toMatch(/already complete/i);
+      expect(await batchGenealogy(f, job.operationId)).toEqual([
+        {
+          trackedEntityId: `${f.prefix}-unit-2`,
+          quantity: 1,
+          type: "Complete",
+          operation: job.operationId
+        },
+        {
+          trackedEntityId: `${f.prefix}-unit-3`,
+          quantity: 1,
+          type: "Produce",
+          operation: job.operationId
+        }
+      ]);
+      expect(
+        await f.db
+          .selectFrom("jobOperation")
+          .select(["quantityComplete", "status", "jobOperationBatchId"])
+          .where("id", "=", job.operationId)
+          .executeTakeFirst()
+      ).toEqual({
+        quantityComplete: 2,
+        status: "In Progress",
+        jobOperationBatchId: null
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

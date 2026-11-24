@@ -26,14 +26,18 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-it.each(["unsampled", "Pending"])(
+it.each(["unsampled", "Pending", "corrected failure"])(
   "the closed lot posts its %s serial once after release",
   async (sample) => {
     const samples = [
       { id: "sample-a", trackedEntityId: "a", status: "Passed" }
     ];
-    if (sample === "Pending") {
-      samples.push({ id: "sample-b", trackedEntityId: "b", status: "Pending" });
+    if (sample !== "unsampled") {
+      samples.push({
+        id: "sample-b",
+        trackedEntityId: "b",
+        status: sample === "corrected failure" ? "Failed" : "Pending"
+      });
     }
     const lot = {
       id: "lot",
@@ -72,7 +76,17 @@ it.each(["unsampled", "Pending"])(
     });
     ports.service.mockResolvedValue(client);
     ports.close.mockImplementation(async (_db, args) => {
-      lot.acceptedUnitIds = args.acceptedUnitIds;
+      const decision = args.serialAcceptance;
+      if (sample === "corrected failure" && samples[1]!.status === "Failed") {
+        // Quality saved a passing verdict between the MES read and the lot lock.
+        samples[1]!.status = "Passed";
+        expect(decision).toEqual({
+          acceptedUnitIds: ["a"],
+          failedUnitIds: ["b"]
+        });
+        return { error: { message: "The sample verdicts changed." } };
+      }
+      lot.acceptedUnitIds = decision.acceptedUnitIds;
       lot.status = "Passed";
       return { error: null };
     });
@@ -114,6 +128,11 @@ it.each(["unsampled", "Pending"])(
       expect((response as Response).status).toBe(302);
     };
 
+    if (sample === "corrected failure") {
+      await submit(disposition);
+      expect(lot.status).toBe("In Progress");
+      expect(production).toEqual([]);
+    }
     await submit(disposition);
     expect(lot.acceptedUnitIds?.sort()).toEqual(["a", "b"]);
     expect(production).toEqual([{ serial: "a", sample: "sample-a" }]);
@@ -126,7 +145,7 @@ it.each(["unsampled", "Pending"])(
     await submit(complete);
     expect(production).toEqual([
       { serial: "a", sample: "sample-a" },
-      { serial: "b", sample: sample === "Pending" ? "sample-b" : null }
+      { serial: "b", sample: sample === "unsampled" ? null : "sample-b" }
     ]);
   }
 );

@@ -30668,6 +30668,52 @@ async function consumeTrackedEntitiesIntoOperation(
   return { splitEntities, warning: expiredWarning };
 }
 
+// Older serial completions have Complete/Produce genealogy without an
+// Operation marker. A serial must account for exactly one output unit.
+export function getOperationSerialOutputs(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  operationId: string,
+  trackedEntityId?: string
+) {
+  let query = trx
+    .selectFrom("trackedActivity as a")
+    .innerJoin("trackedActivityOutput as output", (join) =>
+      join
+        .onRef("output.trackedActivityId", "=", "a.id")
+        .onRef("output.companyId", "=", "a.companyId")
+    )
+    .select([
+      "output.trackedEntityId",
+      sql<boolean>`count(*) = 1 AND sum(output.quantity) = 1`.as("single")
+    ])
+    .where("a.companyId", "=", companyId)
+    .where("a.sourceDocument", "=", "Job Operation")
+    .where("a.sourceDocumentId", "=", operationId)
+    .where("a.type", "in", ["Complete", "Produce"])
+    .groupBy("output.trackedEntityId");
+  if (trackedEntityId)
+    query = query.where("output.trackedEntityId", "=", trackedEntityId);
+  return query.execute();
+}
+
+async function isSerialCompleteAtOperation(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  operationId: string,
+  unit: { id: string; attributes: unknown }
+) {
+  const attributes = (unit.attributes ?? {}) as TrackedEntityAttributes;
+  if (`Operation ${operationId}` in attributes) return true;
+  const outputs = await getOperationSerialOutputs(
+    trx,
+    companyId,
+    operationId,
+    unit.id
+  );
+  return outputs.length > 0;
+}
+
 // These postings accept both lots and serials. Decide from the output's own
 // method (or the item's tracking when the method is missing). Taking the
 // unit lock before reading its holds orders a posting against Quality close.
@@ -30720,6 +30766,22 @@ export async function lockProductionOutputsForPosting(
     await assertSerialsOffQualityHold(trx, companyId, serialIds);
   }
   return entities;
+}
+
+// Production on a final operation and replacement after scrap may both write
+// the job. Take its lock before any operation or output unit.
+function lockProductionJob(
+  trx: Transaction<KyselyDatabase>,
+  jobId: string,
+  companyId: string
+) {
+  return trx
+    .selectFrom("job")
+    .select(["status", "quantityReceivedToInventory"])
+    .where("id", "=", jobId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirstOrThrow();
 }
 
 async function lockProductionOutputForPosting(
@@ -31500,13 +31562,7 @@ export async function issueMaterial(
       // Final production can trigger a job receipt in this transaction. Both
       // MES and a manual receipt take the job before any of its units.
       const lockJob = async (trx: Transaction<KyselyDatabase>) => {
-        const job = await trx
-          .selectFrom("job")
-          .select(["status", "quantityReceivedToInventory"])
-          .where("id", "=", jobOperation.jobId)
-          .where("companyId", "=", companyId)
-          .forUpdate()
-          .executeTakeFirstOrThrow();
+        const job = await lockProductionJob(trx, jobOperation.jobId, companyId);
         if (
           job.status === "Completed" ||
           job.status === "Closed" ||
@@ -31674,6 +31730,9 @@ export async function issueMaterial(
         if (!trackedEntity) {
           throw new NotFoundError("Tracked entity not found");
         }
+        if (trackedEntity.status === "Scrapped") {
+          throw new InvalidInputError("This unit has already been scrapped.");
+        }
         await assertSerialsOffQualityHold(trx, companyId, [trackedEntityId]);
         // A manual receipt can complete the routing without a per-unit
         // operation marker. Reopening the job leaves that receipt in place.
@@ -31700,11 +31759,15 @@ export async function issueMaterial(
             );
           }
         }
-        // A unit completes once per operation; a second production row would
-        // issue the material of a unit never made.
+        // A unit completes once per operation, including units whose first
+        // posting predates the operation marker.
         if (
-          `Operation ${row.jobOperationId}` in
-          ((trackedEntity.attributes ?? {}) as TrackedEntityAttributes)
+          await isSerialCompleteAtOperation(
+            trx,
+            companyId,
+            row.jobOperationId,
+            trackedEntity
+          )
         ) {
           throw new InvalidInputError(
             "This unit is already complete on this operation"
@@ -32074,6 +32137,7 @@ export async function issueMaterial(
 
       let newEntityId: string | undefined;
       await db.transaction().execute(async (trx) => {
+        await lockProductionJob(trx, job.id, companyId);
         // Provisional before the company's accounting cutover, Posted after it.
         const postingStatus = await journalPostingStatus(trx, companyId);
 
@@ -32140,6 +32204,18 @@ export async function issueMaterial(
           if (Number(onHand?.quantity ?? 0) > 0) {
             throw new InvalidInputError(
               "The unit is already in stock. Scrap it from inventory instead."
+            );
+          }
+          if (
+            await isSerialCompleteAtOperation(
+              trx,
+              companyId,
+              jobOperationId,
+              entity
+            )
+          ) {
+            throw new InvalidInputError(
+              "This unit is already complete on this operation"
             );
           }
           scrappedEntityAttributes =

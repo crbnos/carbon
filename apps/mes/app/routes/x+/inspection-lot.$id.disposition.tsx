@@ -265,7 +265,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     decision,
     companyId,
     dispositionedBy: userId,
-    acceptedUnitIds,
+    serialAcceptance: acceptedUnitIds
+      ? { acceptedUnitIds, failedUnitIds: [...failedEntityIds] }
+      : undefined,
     requireSource: "Job Operation",
     requireOpen: true
   });

@@ -355,7 +355,7 @@ databaseTest(
 );
 
 databaseTest(
-  "a job lot saves its accepted serials at close and refuses a newly failed unit",
+  "a job lot refuses stale failures in either direction and saves the reviewed serials at close",
   async () => {
     const { f, units } = await setup();
     try {
@@ -385,24 +385,21 @@ databaseTest(
           })
           .execute()
       );
-      for (const [trackedEntityId, status] of [
-        [passed, "Passed"],
-        [failed, "Failed"]
-      ] as const) {
-        const result = await upsertInspectionSample(f.db, {
+      const save = (trackedEntityId: string, status: "Passed" | "Failed") =>
+        upsertInspectionSample(f.db, {
           inspectionId: lotId,
           trackedEntityId,
           status,
           companyId: f.companyId,
           inspectedBy: USER
         });
-        expect(result.error).toBeNull();
-      }
-      const accept = (acceptedUnitIds: string[]) =>
+      expect((await save(passed, "Passed")).error).toBeNull();
+      expect((await save(failed, "Failed")).error).toBeNull();
+      const accept = (acceptedUnitIds: string[], failedUnitIds: string[]) =>
         dispositionInspection(f.db, {
           id: lotId,
           decision: "Accept",
-          acceptedUnitIds,
+          serialAcceptance: { acceptedUnitIds, failedUnitIds },
           requireOpen: true,
           requireSource: "Job Operation",
           companyId: f.companyId,
@@ -414,17 +411,40 @@ databaseTest(
           .select(["status", "acceptedUnitIds"])
           .where("id", "=", lotId)
           .executeTakeFirstOrThrow();
-      expect((await accept([passed, unsampled, failed])).error).not.toBeNull();
+      const history = () =>
+        f.db
+          .selectFrom("inspectionHistory")
+          .select(["outcome", "defectsFound"])
+          .where("inspectionId", "=", lotId)
+          .execute();
+      expect(
+        (await accept([passed, unsampled, failed], [])).error?.message
+      ).toMatch(/verdicts changed/);
+      // A previously excluded serial now passes, then a different unit fails.
+      // Neither stale selection may decide the lot or affect its history.
+      expect((await save(failed, "Passed")).error).toBeNull();
+      expect(
+        (await accept([passed, unsampled], [failed])).error?.message
+      ).toMatch(/verdicts changed/);
+      expect((await save(passed, "Failed")).error).toBeNull();
+      expect(
+        (await accept([passed, unsampled, failed], [])).error?.message
+      ).toMatch(/verdicts changed/);
       expect(await decision()).toEqual({
         status: "In Progress",
         acceptedUnitIds: null
       });
-      expect((await accept([passed, unsampled])).error).toBeNull();
-      expect((await accept([passed])).error).not.toBeNull();
+      expect(await history()).toEqual([]);
+      expect((await accept([unsampled, failed], [passed])).error).toBeNull();
+      expect((await save(passed, "Passed")).error).not.toBeNull();
+      expect((await accept([passed], [])).error).not.toBeNull();
       expect(await decision()).toEqual({
         status: "Passed",
-        acceptedUnitIds: [passed, unsampled]
+        acceptedUnitIds: [unsampled, failed]
       });
+      expect(await history()).toEqual([
+        { outcome: "Accepted", defectsFound: 1 }
+      ]);
     } finally {
       await f.cleanup();
     }

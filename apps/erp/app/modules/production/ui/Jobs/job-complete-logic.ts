@@ -36,6 +36,60 @@ export function receiptHasTrackedOutput(tracking?: JobReceiptTracking) {
   );
 }
 
+/** Mirrors the outstanding serial capacity in complete_job_to_inventory.
+ * A zero-delta close is valid while any sibling could still be received,
+ * including units on a partially received seed or awaiting a serial number. */
+export function isSerialReceiptBlockedByHolds(
+  tracking: Pick<
+    JobReceiptTracking,
+    | "trackedEntities"
+    | "quantity"
+    | "sequenceId"
+    | "fixedAssetClassId"
+    | "fixedAssetId"
+  >
+) {
+  const units = tracking.trackedEntities;
+  if (
+    !units.some(
+      (unit) =>
+        unit.held &&
+        !unit.fixedAsset &&
+        unit.status !== "Scrapped" &&
+        unit.quantity > (unit.received ?? 0)
+    )
+  ) {
+    return false;
+  }
+
+  const toStock = !tracking.fixedAssetClassId && !tracking.fixedAssetId;
+  let representedQuantity = 0;
+  let canCreateUnits = !!tracking.sequenceId;
+  for (const unit of units) {
+    if (unit.status === "Scrapped") continue;
+    representedQuantity += unit.quantity;
+    if (unit.held || unit.fixedAsset || unit.status === "Rejected") continue;
+    if (
+      unit.status === "Consumed" &&
+      !(toStock && unit.issued && unit.quantity === 1)
+    )
+      continue;
+
+    if (toStock && unit.quantity > 1) canCreateUnits = true;
+    const received = unit.received ?? 0;
+    if (
+      unit.quantity > received &&
+      (toStock ||
+        unit.quantity === 1 ||
+        (tracking.sequenceId && received === 0))
+    ) {
+      return false;
+    }
+  }
+
+  return !(canCreateUnits && tracking.quantity > representedQuantity);
+}
+
 /** Values submitted by the serial receipt dialog. Deferred units have a
  * confirmation too, even when the receipt itself will assign their numbers. */
 export function getReceiptConfirmation(

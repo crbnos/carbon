@@ -13,6 +13,7 @@ import {
   reopenJob
 } from "../../app/modules/production/production.server";
 import {
+  isSerialReceiptBlockedByHolds,
   getReceiptConfirmation,
   getTrackedReceiptQuantity
 } from "../../app/modules/production/ui/Jobs/job-complete-logic";
@@ -137,12 +138,12 @@ postgrestTest(
 );
 
 postgrestTest(
-  "a fresh empty selection recloses at the cumulative quantity already received",
+  "the dialog allows an empty selection with mixed holds and refuses it when every remaining serial is held",
   async (client) => {
     const f = await alwaysPostFixture();
     try {
       await stockPart(f, 20);
-      const { jobId } = await serialJob(f, 2);
+      const { jobId } = await serialJob(f, 3);
       await holdUnits(f, true);
       const first = await dialogConfirmation(f, jobId);
       expect((await submit(f, jobId, first)).error).toBeNull();
@@ -150,6 +151,13 @@ postgrestTest(
         reopenJob(operationContext(f, client, USER), { jobId });
       expect((await reopen()).error).toBeNull();
 
+      const submitBlockedByHolds = async () => {
+        const preview = await getJobReceiptPreview(f.db, jobId, f.companyId);
+        if (!preview) throw new Error("Missing job receipt preview");
+        return isSerialReceiptBlockedByHolds(preview.tracking);
+      };
+      await raiseIssue(f, 2);
+      expect(await submitBlockedByHolds()).toBe(false);
       const fresh = await dialogConfirmation(f, jobId);
       expect(fresh.expectedUnitIds).toEqual([]);
       expect((await submit(f, jobId, fresh)).error).toBeNull();
@@ -158,7 +166,8 @@ postgrestTest(
         quantityReceivedToInventory: 1
       });
       expect(await reopen()).toMatchObject({ error: null });
-      await raiseIssue(f, 2);
+      await raiseIssue(f, 3);
+      expect(await submitBlockedByHolds()).toBe(true);
       const held = await dialogConfirmation(f, jobId);
       expect((await submit(f, jobId, held)).error?.message).toMatch(
         /blocked by a quality issue/

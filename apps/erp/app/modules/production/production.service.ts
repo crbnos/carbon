@@ -28806,7 +28806,7 @@ async function lockBatchJobs(
 }
 
 // A serial member submits quantities, with no lot/serial id. If serials are
-// held or already received, a quantity identifies the output unambiguously
+// held, already worked or received, a quantity identifies the output unambiguously
 // only when it covers all remaining eligible single units. Record those ids
 // before the production trigger runs. The batch activity also lets a retry
 // finish the run while leaving this operation open for its held siblings.
@@ -28871,13 +28871,31 @@ async function recordEligibleBatchSerials(
       .orderBy("id")
       .forUpdate()
       .execute();
-    const remaining = units.filter(
-      (u) =>
-        !u.received &&
-        u.status !== "Consumed" &&
-        u.status !== "Scrapped" &&
-        !(marker in ((u.attributes as Record<string, unknown>) ?? {}))
+    // Pre-marker Complete and Produce activities are also worked-unit evidence
+    // for final receipt. Each output must identify a single unit exactly once.
+    const outputs = await inventoryPostings.getOperationSerialOutputs(
+      trx,
+      companyId,
+      op.id
     );
+    const worked = new Set(
+      units
+        .filter(
+          (unit) =>
+            marker in ((unit.attributes as Record<string, unknown>) ?? {})
+        )
+        .map((unit) => unit.id)
+    );
+    const scopedIds = new Set(units.map((unit) => unit.id));
+    const ambiguousHistory = () =>
+      new InvalidInputError(
+        "Earlier production does not identify one serial for each completed unit. Review this operation's production and traceability before completing the batch."
+      );
+    for (const output of outputs) {
+      if (!output.single || !scopedIds.has(output.trackedEntityId))
+        throw ambiguousHistory();
+      worked.add(output.trackedEntityId);
+    }
     if (!units.length) continue;
     // Read after acquiring the locks, so an issue link which committed
     // while the posting waited is visible in this statement's snapshot.
@@ -28892,7 +28910,16 @@ async function recordEligibleBatchSerials(
       )
       .orderBy("issueNumber")
       .execute();
-    if (!holds.length && !units.some((u) => u.received)) continue;
+    const hasReceived = units.some((u) => u.received);
+    if (!holds.length && !hasReceived && !worked.size) continue;
+    if (worked.size !== (op.quantityComplete ?? 0)) throw ambiguousHistory();
+    const remaining = units.filter(
+      (u) =>
+        !u.received &&
+        u.status !== "Consumed" &&
+        u.status !== "Scrapped" &&
+        !worked.has(u.id)
+    );
     const held = new Set(holds.map((h) => h.trackedEntityId));
     const eligible = remaining.filter(
       (u) =>
@@ -28917,7 +28944,9 @@ async function recordEligibleBatchSerials(
       throw new InvalidInputError(
         (holds[0]
           ? `Serial units are on hold for issue ${holds[0].issueNumber}. `
-          : "Serials on this job have already been received. ") +
+          : hasReceived
+            ? "Serials on this job have already been received. "
+            : "Serials have already completed this operation. ") +
           (eligible.length && eligible.length <= balance
             ? `Enter ${eligible.length} with zero scrap to complete all eligible serials. For a smaller run, leave this operation out of the batch and complete the serials individually.`
             : "Review the remaining units before completing this operation.")
@@ -28933,6 +28962,7 @@ async function recordEligibleBatchSerials(
         sourceDocumentId: op.id,
         attributes: {
           Job: op.jobId,
+          "Job Operation": op.id,
           "Job Operation Batch": batchId,
           "Partial Operation": partial
         },
@@ -28954,9 +28984,7 @@ async function recordEligibleBatchSerials(
       )
       .execute();
     if (partial) partialOperations.push(op.id);
-    let completedUnits = units.filter(
-      (u) => marker in ((u.attributes as Record<string, unknown>) ?? {})
-    ).length;
+    let completedUnits = worked.size;
     for (const unit of eligible) {
       completedUnits++;
       await assignSerialNumberIfMissing(trx, {
@@ -29153,6 +29181,38 @@ async function completeBatch(
         if (r.type === "Scrap") s.scrap += Number(r.quantity);
         sums.set(r.jobOperationId, s);
       }
+      // A serial member may already have production rows from an earlier
+      // run. Its batch activity records exactly the serials credited in this
+      // run and whether the operation stays open for its remaining siblings.
+      const serialRuns = await trx
+        .selectFrom("trackedActivity as a")
+        .innerJoin("trackedActivityOutput as output", (join) =>
+          join
+            .onRef("output.trackedActivityId", "=", "a.id")
+            .onRef("output.companyId", "=", "a.companyId")
+        )
+        .select([
+          "a.sourceDocumentId",
+          sql<number>`sum(output.quantity)`.as("produced"),
+          sql<boolean>`a.attributes @> '{"Partial Operation":true}'::jsonb`.as(
+            "partial"
+          )
+        ])
+        .where("a.companyId", "=", companyId)
+        .where("a.sourceDocument", "=", "Job Operation")
+        .where("a.sourceDocumentId", "in", memberIds)
+        .where("a.type", "=", "Produce")
+        .where(sql<string>`a.attributes->>'Job Operation Batch'`, "=", batchId)
+        .where(sql<boolean>`a.attributes ? 'Partial Operation'`)
+        .groupBy(["a.id", "a.sourceDocumentId"])
+        .execute();
+      for (const run of serialRuns) {
+        sums.set(run.sourceDocumentId!, {
+          produced: Number(run.produced),
+          scrap: 0
+        });
+        if (run.partial) partialOperations.push(run.sourceDocumentId!);
+      }
       const mismatches = members.filter((m) => {
         const s = sums.get(m.jobOperationId) ?? { produced: 0, scrap: 0 };
         return s.produced !== m.quantity || s.scrap !== (m.scrapQuantity ?? 0);
@@ -29169,18 +29229,6 @@ async function completeBatch(
             `Retry with the recorded values; corrections happen after completion.`
         );
       }
-
-      const partial = await trx
-        .selectFrom("trackedActivity")
-        .select("sourceDocumentId")
-        .where("companyId", "=", companyId)
-        .where("sourceDocument", "=", "Job Operation")
-        .where("sourceDocumentId", "in", memberIds)
-        .where("type", "=", "Produce")
-        .where(sql<string>`attributes->>'Job Operation Batch'`, "=", batchId)
-        .where(sql<boolean>`attributes @> '{"Partial Operation":true}'::jsonb`)
-        .execute();
-      partialOperations = partial.map((a) => a.sourceDocumentId!);
 
       const existing = await trx
         .selectFrom("productionEvent")

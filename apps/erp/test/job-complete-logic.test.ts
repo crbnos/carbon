@@ -9,6 +9,7 @@ import {
   getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
   getSerialCompleteChoice,
+  isSerialReceiptBlockedByHolds,
   type JobSerialUnit
 } from "../app/modules/production/ui/Jobs/job-complete-logic";
 
@@ -501,5 +502,64 @@ describe("getSerialCompleteChoice", () => {
         jobQuantity: 3
       })
     ).toMatchObject({ mode: "serials", serials: [{ readableId: "SN-0001" }, { readableId: "SN-0002" }, { readableId: "SN-0003" }] });
+  });
+});
+
+describe("receipt capacity with a held sibling", () => {
+  const serial = {
+    ...unit({}),
+    held: false,
+    fixedAsset: false,
+    received: null,
+    issued: false
+  };
+  const held = { ...serial, held: true };
+  const seed = { ...serial, quantity: 2, received: 1 };
+  const tracking = {
+    quantity: 3,
+    sequenceId: null,
+    fixedAssetClassId: null,
+    fixedAssetId: null,
+    trackedEntities: [held, seed]
+  };
+
+  it("can close with a partially received stock seed but cannot capitalize that seed", () => {
+    expect(isSerialReceiptBlockedByHolds(tracking)).toBe(false);
+    expect(
+      isSerialReceiptBlockedByHolds({
+        ...tracking,
+        fixedAssetClassId: "class",
+        sequenceId: "seq"
+      })
+    ).toBe(true);
+  });
+
+  it("counts replacement capacity only if missing units can be created", () => {
+    const scrapped = { ...serial, status: "Scrapped" };
+    const missing = { ...tracking, trackedEntities: [held, scrapped] };
+    expect(isSerialReceiptBlockedByHolds(missing)).toBe(true);
+    expect(
+      isSerialReceiptBlockedByHolds({ ...missing, sequenceId: "seq" })
+    ).toBe(false);
+    expect(
+      isSerialReceiptBlockedByHolds({
+        ...tracking,
+        quantity: 4,
+        trackedEntities: [held, { ...seed, received: 2 }]
+      })
+    ).toBe(false);
+  });
+
+  it("counts an issued serial as a stock receipt but excludes it from capitalization", () => {
+    const issued = { ...serial, status: "Consumed", issued: true };
+    const preview = {
+      ...tracking,
+      quantity: 2,
+      trackedEntities: [held, issued]
+    };
+    expect(isSerialReceiptBlockedByHolds(preview)).toBe(false);
+    expect(
+      isSerialReceiptBlockedByHolds({ ...preview, fixedAssetId: "asset" })
+    ).toBe(true);
   });
 });

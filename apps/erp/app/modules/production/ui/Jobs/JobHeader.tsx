@@ -112,6 +112,7 @@ import JobStatus from "./JobStatus";
 import {
   getReceiptConfirmation,
   getTrackedReceiptQuantity,
+  isSerialReceiptBlockedByHolds,
   type JobReceiptSnapshot,
   receiptHasTrackedOutput,
   type SerialCompleteChoice
@@ -1965,8 +1966,7 @@ function JobCompleteModal({
                 type="submit"
                 isDisabled={
                   !receiptSnapshot ||
-                  (unitsOnHold.length > 0 &&
-                    quantityComplete <= priorReceivedQuantity) ||
+                  isSerialReceiptBlockedByHolds(receiptSnapshot.tracking) ||
                   (hasLeftover && !leftoverAction) ||
                   // Completing a stocked item at zero receives nothing and
                   // consumes nothing; the database refuses it as well.
