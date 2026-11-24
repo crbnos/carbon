@@ -423,6 +423,7 @@ const IssueProperties = () => {
           label={t`Approval Requirements`}
           name="approvalRequirements"
           inline
+          value={routeData?.nonConformance?.approvalRequirements ?? []}
           onChange={(value) => {
             onUpdate(
               "approvalRequirements",

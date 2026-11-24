@@ -14,7 +14,7 @@ import { getLineTaxesAndFees } from "../../../utils/sales-order";
 import { Note } from "../../components";
 import { Cell, ChargeRow, TextCell } from "../Cell";
 import { columnWidths } from "../columns";
-import { itemTextOverflowStyle } from "../itemText";
+import { breakLongItemWord, itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
 import type { SalesOrderData } from "./types";
 import { buildSalesOrderLineVars } from "./vars";
@@ -93,7 +93,10 @@ export function LineItemsBlock({
             >
               <Cell width={w.description} style={tw("pr-2")}>
                 {/* Both stay when empty: the details margin holds the row's height. */}
-                <Text style={{ ...tw("text-gray-800"), ...overflow }}>
+                <Text
+                  style={{ ...tw("text-gray-800"), ...overflow }}
+                  hyphenationCallback={breakLongItemWord}
+                >
                   {t.prints("descriptionCell", row)
                     ? t("descriptionCell", row)
                     : ""}

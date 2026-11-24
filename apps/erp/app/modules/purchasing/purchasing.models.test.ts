@@ -33,6 +33,7 @@ import {
   purchaseOrderForceDeleteUsedStockMessage,
   purchaseOrderForceDeleteWithdrawRefusal,
   purchaseOrderLineDateRefusal,
+  purchaseOrderPartNumberRefusal,
   purchaseOrderStatusAfterReversal,
   purchaseOrderStatusType,
   purchaseOrderValidator,
@@ -1164,5 +1165,16 @@ describe("receipt reversal: order quantities", () => {
         line("Service", 0, 5)
       ])
     ).toBe("To Receive and Invoice");
+  });
+});
+
+describe("purchaseOrderPartNumberRefusal", () => {
+  it("lets the lines' part numbers change only before the order waits for approval or is sent", () => {
+    expect(
+      purchaseOrderStatusType.filter(
+        (status) => purchaseOrderPartNumberRefusal(status) === null
+      )
+    ).toEqual(["Draft", "Planned", "To Review", "Rejected"]);
+    expect(purchaseOrderPartNumberRefusal(null)).toBeNull();
   });
 });

@@ -9,18 +9,22 @@ import { Currency, Input, Select, Submit, Timezone } from "~/components/Form";
 import AddressAutocomplete from "~/components/Form/AddressAutocomplete";
 import { useRouteData } from "~/hooks";
 import { subsidiaryValidator } from "~/modules/settings/settings.models";
-import type { Company } from "~/modules/settings/types";
+import type { BaseCurrencyChange, Company } from "~/modules/settings/types";
 import { path } from "~/utils/path";
+import { BaseCurrencyField } from "../Company/BaseCurrencyField";
 
 type CompanyFormProps = {
   company: z.infer<typeof subsidiaryValidator>;
   parentCompanyId: string;
+  baseCurrencyChange?: BaseCurrencyChange | null;
 };
 
 const SubsidiaryCompanyForm = ({
   company,
-  parentCompanyId
+  parentCompanyId,
+  baseCurrencyChange
 }: CompanyFormProps) => {
+  const isEditing = company.id !== undefined;
   const routeData = useRouteData<{ companies: Company[] }>(path.to.companies);
   const parentCompanyOptions =
     routeData?.companies
@@ -47,7 +51,11 @@ const SubsidiaryCompanyForm = ({
             <Input name="name" label="Company Name" />
             <AddressAutocomplete variant="grid" />
             <Timezone name="timezone" label="Timezone" />
-            <Currency name="baseCurrencyCode" label="Base Currency" />
+            {isEditing ? (
+              <BaseCurrencyField change={baseCurrencyChange} />
+            ) : (
+              <Currency name="baseCurrencyCode" label="Base Currency" />
+            )}
           </div>
           <Submit withBlocker={false}>Save</Submit>
         </VStack>

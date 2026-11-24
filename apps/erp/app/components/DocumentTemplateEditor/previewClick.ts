@@ -64,6 +64,9 @@ export function groupLines(
  */
 const squash = (s: string) => s.replace(/\s+/g, "").toUpperCase();
 
+/** A text with a line break prints each of its lines on a line of the page. */
+const linesOf = (s: string) => s.split("\n").map(squash).filter(Boolean);
+
 function holdsWords(text: string, part: string) {
   const whole = text.toUpperCase();
   const piece = part.toUpperCase();
@@ -123,14 +126,19 @@ function matcherOf(texts: PrintedText[]) {
       if (text.onlyValue && (text.of || printed.length < MIN_VALUE_LENGTH)) {
         continue;
       }
-      const words = squash(printed);
-      exact.set(words, [...(exact.get(words) ?? []), text]);
-    } else if (text.text.search(TOKEN_RE) < 0) {
-      const words = squash(text.text);
-      if (words) exact.set(words, [...(exact.get(words) ?? []), text]);
+      for (const words of linesOf(printed)) {
+        exact.set(words, [...(exact.get(words) ?? []), text]);
+      }
     } else {
-      const regex = wordsAround(text.text);
-      if (regex) patterns.push({ regex, text });
+      for (const textLine of text.text.split("\n")) {
+        if (textLine.search(TOKEN_RE) < 0) {
+          const words = squash(textLine);
+          if (words) exact.set(words, [...(exact.get(words) ?? []), text]);
+        } else {
+          const regex = wordsAround(textLine);
+          if (regex) patterns.push({ regex, text });
+        }
+      }
     }
   }
   return {
@@ -193,8 +201,7 @@ function titleLine(lines: PageRun[][], texts: PrintedText[]) {
         !text.isSection &&
         HEADER_TEXT_KEYS.includes(text.key)
     )
-    .map((text) => squash(text.printed?.[0] ?? text.text))
-    .filter(Boolean);
+    .flatMap((text) => linesOf(text.printed?.[0] ?? text.text));
   return lines.findIndex((runs, lineIndex) =>
     runs.some((run, first) => {
       if (!run.text.trim()) return false;
@@ -371,7 +378,9 @@ export function findPrintedText(
   const piece = normalize(clickedRun.text);
   // Exactly what these runs print, or a stretch of a longer text that holds them.
   const printsExactly = (text: PrintedText) =>
-    text.printed?.some((printed) => windows.includes(squash(printed))) ?? false;
+    text.printed?.some((printed) =>
+      linesOf(printed).some((words) => windows.includes(words))
+    ) ?? false;
   const printsPiece = (text: PrintedText) =>
     text.printed?.some((printed) => {
       // A value too long for its cell prints cut short, or breaks inside a word.

@@ -24,7 +24,7 @@ import {
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -253,7 +253,6 @@ const ApiKeysTable = memo((props: ApiKeysTableProps) => {
         renderContextMenu={renderContextMenu}
         title={t`API Keys`}
       />
-      <Outlet />
     </>
   );
 });

@@ -753,6 +753,28 @@ export const auditConfig = {
         revenueRecognitionRun: { role: "root" },
         revenueRecognitionRunLine: { entityIdColumn: "runId" }
       }
+    },
+
+    taxCode: {
+      label: "Tax Code",
+      tables: {
+        taxCode: { role: "root" },
+        taxCodeComponent: { entityIdColumn: "taxCodeId" }
+      }
+    },
+
+    taxAuthority: {
+      label: "Tax Authority",
+      tables: {
+        taxAuthority: { role: "root" }
+      }
+    },
+
+    taxRegistration: {
+      label: "Tax Registration",
+      tables: {
+        taxRegistration: { role: "root" }
+      }
     }
   } satisfies Record<string, EntityConfig>,
 
@@ -942,6 +964,8 @@ export const fkDisplayRegistry: {
   supplierQuote: ["supplierQuoteId"],
   supplierStage: ["name"],
   supplierType: ["name"],
+  taxAuthority: ["name"],
+  taxCode: ["name"],
   trackedEntity: ["readableId"],
   unitOfMeasure: ["name"],
   user: ["fullName"],

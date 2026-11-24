@@ -45,7 +45,7 @@ import {
   type ManagedFunction,
   noAuthzDdlInMigrations
 } from "./conformance/no-authz-ddl-in-migrations";
-import { noBareOutlet } from "./conformance/no-bare-outlet";
+import { findNestedOutlets, noBareOutlet } from "./conformance/no-bare-outlet";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
@@ -54,8 +54,10 @@ import {
   NO_DUPLICATED_APP_FILE,
   SHARED_APP_DIRS
 } from "./conformance/no-duplicated-app-file";
+import { noForeignKeyWithoutOnDelete } from "./conformance/no-foreign-key-without-on-delete";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 import { noInlineSensorOptions } from "./conformance/no-inline-sensor-options";
+import { noInlineUniqueViolation } from "./conformance/no-inline-unique-violation";
 import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
@@ -140,6 +142,7 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noDerivedPercentColumn,
   noRequiredColumnWithoutDefault,
   noViewWithoutInvoker,
+  noForeignKeyWithoutOnDelete,
   journalStatusFilter
 ];
 
@@ -166,7 +169,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noUnmountingDialog,
   noPostgresChanges,
   journalStatusFilter,
-  mesUnitWriteResolvesUnit
+  mesUnitWriteResolvesUnit,
+  noInlineUniqueViolation
 ];
 
 /** Checks that run over git-tracked vitest files (apps, packages, scripts, docs). */
@@ -236,6 +240,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
   const migrations = loadSqlFiles(migrationsDir(root));
   const listSources = loadListSources(root);
   const eventSources = loadEventFunctionSources(root);
+  const typescriptFiles = loadTypescriptFiles(root);
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
@@ -246,7 +251,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     // noMissingAuditColumn needs the real column list, so it is built from the
     // generated types here rather than sitting in TS_CHECKS — the same shape as
     // noAuthzDdlInMigrations above, which keeps every `scan` pure.
-    ...scanAll(loadTypescriptFiles(root), [
+    ...scanAll(typescriptFiles, [
       ...TS_CHECKS,
       noMissingAuditColumn(loadDbTableColumns(root))
     ]),
@@ -256,7 +261,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noRawRedirect,
       linguiMacroMisuse
     ]),
-    ...scanAll(loadTypescriptFiles(root), [
+    ...scanAll(typescriptFiles, [
       noRawOrSearch,
       noRawRevalidator,
       noInlineSensorOptions,
@@ -264,6 +269,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noStateCopyOfLoaderData,
       formFieldBudget
     ]),
+    ...findNestedOutlets(typescriptFiles).map((violation) => ({
+      checkId: noBareOutlet.id,
+      violation
+    })),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders
     ]),

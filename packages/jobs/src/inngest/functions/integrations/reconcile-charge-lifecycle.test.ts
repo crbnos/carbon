@@ -19,8 +19,10 @@ describe("providerSupportsNativeVoid", () => {
     ["charge", "xero", true],
     ["charge", "quickbooks", true],
     ["charge", "rillet", true],
-    // Invoices and bills fall back to the default set: Rillet only.
-    ["invoice", "xero", false],
+    // Invoices and bills fall back to the default set: Rillet deletes, Xero voids.
+    ["invoice", "xero", true],
+    ["bill", "xero", true],
+    ["invoice", "quickbooks", false],
     ["invoice", "rillet", true]
   ] as const)("%s on %s: %s", (entityType, providerId, expected) => {
     expect(providerSupportsNativeVoid(entityType, providerId)).toBe(expected);
