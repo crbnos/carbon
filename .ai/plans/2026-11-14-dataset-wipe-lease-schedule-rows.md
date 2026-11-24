@@ -16,6 +16,9 @@
 ## Approach
 
 - Add `revenueRecognitionRun`, then `revenueRecognitionSchedule`, to `PARENT_CHECK_TABLES`.
+- Add `Lease` and `Lease Run` to `DOCUMENT_JOURNAL_SOURCES`, and add `lease` to the
+  document match in `reverseDocumentJournals`. Then the wipe voids the lease's posted
+  journals before it deletes the lease.
 - Widen the list's comment and the two rules (`conventions-database.md`,
   `onboarding-company-templates.md`) to both-or-neither pairings and to tables only the app
   writes.

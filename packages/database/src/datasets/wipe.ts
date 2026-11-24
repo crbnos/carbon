@@ -324,7 +324,11 @@ const DOCUMENT_JOURNAL_SOURCES = [
   "Sales Shipment",
   "Inventory Adjustment",
   "Reimbursement",
-  "Service Job"
+  "Service Job",
+  // A lessee lease's commencement, lifecycle and lease run journals, matched
+  // by the lease their lines name
+  "Lease",
+  "Lease Run"
 ];
 
 /**
@@ -356,7 +360,8 @@ async function reverseDocumentJournals(ctx: Ctx): Promise<void> {
              UNION ALL SELECT id FROM shipment WHERE "companyId" = $1
              UNION ALL SELECT id FROM "reimbursement" WHERE "companyId" = $1
              UNION ALL SELECT id FROM "serviceJob" WHERE "companyId" = $1
-             UNION ALL SELECT id FROM "itemLedger" WHERE "companyId" = $1))
+             UNION ALL SELECT id FROM "itemLedger" WHERE "companyId" = $1
+             UNION ALL SELECT id FROM lease WHERE "companyId" = $1))
          -- a zero-cash payment's journal has no lines to match on
          OR j.id IN (SELECT "journalId" FROM payment WHERE "companyId" = $1)
          OR j.id IN (SELECT "journalId" FROM memo WHERE "companyId" = $1)

@@ -97,7 +97,8 @@ around its generic FK-null + topological delete, all inside the apply transactio
    `Seed: this company has N posted or voided card transaction(s) …` error, which the
    template job writes to its marker as `failed`. Then it **voids posted document
    journals** (`reverseDocumentJournals`): every Posted journal of a `DOCUMENT_JOURNAL_SOURCES`
-   type (invoices, payments, memos, receipts, shipments, `Inventory Adjustment`) whose
+   type (invoices, payments, memos, receipts, shipments, `Inventory Adjustment`, a lessee
+   lease's `Lease` and `Lease Run` journals) whose
    lines — or `payment`/`memo.journalId` — point at a row it is about to delete gets a
    negated Posted `VOID …` entry dated today, the original left Posted, as the posting
    functions void. The select takes `status = 'Posted'` only: a `Provisional` journal of a
