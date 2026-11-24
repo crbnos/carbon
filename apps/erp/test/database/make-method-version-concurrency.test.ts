@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The writers of one item's make method version statuses, the
-// counterexamples of packages/models/src/make-method-versions.ts on the real
-// code. In a race, a held row lock makes a writer wait at its first write, so
+// The writers of one item's make method version statuses, racing on two
+// connections. In a race, a held row lock makes a writer wait at its first write, so
 // the interleaving is the one the test names. Runs against the local
 // database; skips without one.
 
