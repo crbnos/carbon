@@ -112,7 +112,11 @@ export const issueInput = z.discriminatedUnion("type", [
     materialId: z.string(),
     parentTrackedEntityId: z.string(),
     scrapReasonId: z.string(),
-    makeReplacement: z.boolean().optional()
+    makeReplacement: z.boolean().optional(),
+    // The quantity a scrap approval valued: the posting refuses (409) an
+    // entity whose quantity is no longer this. Left out, it scraps whatever
+    // the entity holds.
+    expectedQuantity: z.number().optional()
   }),
   // Scrap untracked parts at an operation (a material's own part, or parts
   // inside a kit) and replace them from the shelf. Retried with the same key,

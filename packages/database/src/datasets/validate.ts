@@ -281,7 +281,9 @@ export const COVERAGE = {
       purchaseOrderForceDelete:
         "the seed does not create purchase order force delete requests",
       documentForceDelete:
-        "the seed does not create document force delete requests"
+        "the seed does not create document force delete requests",
+      scrap:
+        "a scrap approval is signed at the tablet and the seed posts no shop-floor scrap through it"
     }),
     missing: (type) => `purchasing.approvalRequests: no ${type} request`
   },

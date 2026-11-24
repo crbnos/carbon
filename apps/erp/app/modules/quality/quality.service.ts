@@ -4698,10 +4698,34 @@ type DispositionRow = {
 
 type IssueClosureBlocker = { nonConformanceItemId: string; reason: string };
 
+/** Untracked or tracked stock of one item that closing an issue writes off as Scrap. */
+export type IssueScrapWriteOff = { itemId: string; quantity: number };
+
 export async function closeIssue(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { nonConformanceId: string; companyId: string; userId: string }
+  args: {
+    nonConformanceId: string;
+    companyId: string;
+    userId: string;
+    /**
+     * Meets the scrap approval rules. `approve` gets what the close writes
+     * off as Scrap, before anything posts, and refuses the close by returning
+     * false; `settle` is told afterwards what came of the close and, when it
+     * was written, the items a Scrap movement wrote off (the others wrote off
+     * nothing).
+     */
+    scrapApproval?: {
+      approve: (
+        scrap: IssueScrapWriteOff[],
+        readableId: string
+      ) => Promise<boolean>;
+      settle: (
+        outcome: "written" | "refused" | { error: unknown },
+        writtenOffItemIds: string[]
+      ) => Promise<void>;
+    };
+  }
 ): Promise<Result<{ id: string; warning?: string }>> {
   const { nonConformanceId, companyId, userId } = args;
 
@@ -5057,6 +5081,22 @@ export async function closeIssue(
   }[] = [];
   // Mutable copy: shipped-via-return coverage consumed as it offsets rows.
   const remainingCoverageByItem = new Map(shippedCoverageByItem);
+  // What the Scrap rows write off, by item: what a scrap approval rule values.
+  const scrapByItem = new Map<string, number>();
+  // The items a Scrap movement writes off; a held remainder's joins once drawn.
+  const scrappedItemIds = new Set<string>();
+  const addScrap = (row: DispositionRow, quantity: number) => {
+    if (row.disposition !== "Scrap") return;
+    scrapByItem.set(
+      row.itemId,
+      round((scrapByItem.get(row.itemId) ?? 0) + quantity)
+    );
+  };
+  const addScrapMovement = (row: DispositionRow, quantity: number) => {
+    if (row.disposition !== "Scrap" || quantity <= EPSILON) return;
+    addScrap(row, quantity);
+    scrappedItemIds.add(row.itemId);
+  };
   for (const row of plan) {
     const isScrap =
       row.disposition === "Scrap" || row.disposition === "Return to Supplier";
@@ -5085,6 +5125,7 @@ export async function closeIssue(
               quantity: -link.quantity,
               comment: `NC ${readableNc} ${suffix}`
             });
+            addScrapMovement(row, link.quantity);
             continue;
           }
           let left = round(link.quantity);
@@ -5101,6 +5142,8 @@ export async function closeIssue(
               quantity: -take,
               comment: `NC ${readableNc} ${suffix}`
             });
+            // A unit with ledger history and no stock writes off nothing.
+            addScrapMovement(row, take);
           }
           if (left > EPSILON) writtenOffShort.add(link.trackedEntityId);
         }
@@ -5121,6 +5164,8 @@ export async function closeIssue(
       if (writeOff <= EPSILON) continue;
       const held = heldPartial?.itemId === row.itemId ? heldPartial : null;
       if (held) {
+        // Valued as asked: the close draws it, up to what the lot holds.
+        addScrap(row, writeOff);
         held.requested = round(held.requested + writeOff);
         continue;
       }
@@ -5132,6 +5177,7 @@ export async function closeIssue(
         quantity: -writeOff,
         comment: `NC ${readableNc} scrap`
       });
+      addScrapMovement(row, writeOff);
       continue;
     }
     if (isKeep && inspectionOriginated) {
@@ -5171,15 +5217,48 @@ export async function closeIssue(
     }
   }
 
+  // A scrap approval rule is met before anything posts: a refusal leaves the
+  // issue open. A tracked unit counts what its movements write off; a held
+  // remainder counts as asked, and the close can write off less of it.
+  const scrap = [...scrapByItem].map(([itemId, quantity]) => ({
+    itemId,
+    quantity
+  }));
+  if (
+    args.scrapApproval &&
+    scrap.length > 0 &&
+    !(await args.scrapApproval.approve(scrap, readableNc))
+  ) {
+    return errResult("This scrap needs an approver");
+  }
+
+  let settled = false;
+  // A transaction whose callback never ran, or threw (rolled back), posted
+  // nothing. Any other failure (the commit itself) may have committed.
+  let started = false;
+  let rolledBack = false;
   try {
     let warning: string | undefined;
     const result = await db.transaction().execute(async (trx) => {
+      started = true;
+      try {
+        return await closeInTransaction(trx);
+      } catch (error) {
+        rolledBack = true;
+        throw error;
+      }
+    });
+    async function closeInTransaction(trx: KyselyTx) {
       const { status } = await lockIssueDispositions(trx, {
         nonConformanceId,
         companyId
       });
       if (status === "Closed")
-        return { id: nonConformanceId, closedNow: false };
+        return {
+          id: nonConformanceId,
+          closedNow: false,
+          scrappedItemIds: [] as string[]
+        };
       // Closing refreshes the receipts of its lots (their Put Away counts the
       // Use As Is part). Lock them now, before the lots: a lot decision takes
       // its receipt, then the lot, and the other order deadlocks with it.
@@ -5481,6 +5560,10 @@ export async function closeIssue(
             comment: `NC ${readableNc} scrap`
           });
         }
+        // A remainder with no claimable stock writes off nothing.
+        if (writtenOff > EPSILON && scrapByItem.has(heldPartial.itemId)) {
+          scrappedItemIds.add(heldPartial.itemId);
+        }
       }
 
       if (movements.length > 0) {
@@ -5598,10 +5681,20 @@ export async function closeIssue(
         }
       }
 
-      return { id: updated.id, closedNow: true };
-    });
+      return {
+        id: updated.id,
+        closedNow: true,
+        scrappedItemIds: [...scrappedItemIds]
+      };
+    }
 
-    const { closedNow, ...closed } = result;
+    const { closedNow, scrappedItemIds: writtenOffItemIds, ...closed } = result;
+    settled = true;
+    // An issue someone else closed meanwhile posted nothing of this close.
+    await args.scrapApproval?.settle(
+      closedNow ? "written" : "refused",
+      writtenOffItemIds
+    );
     if (closedNow) {
       const notes = [warning];
       if (writtenOffShort.size > 0) {
@@ -5627,6 +5720,12 @@ export async function closeIssue(
       nonConformanceId,
       error: err
     });
+    if (!settled) {
+      await args.scrapApproval?.settle(
+        !started || rolledBack ? "refused" : { error: err },
+        []
+      );
+    }
     return engine.engineErrResult(err, "Failed to close NCR");
   }
 }

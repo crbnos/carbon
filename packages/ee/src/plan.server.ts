@@ -10,7 +10,9 @@ import {
 } from "@carbon/auth";
 import {
   getCompanyPlanId,
-  isCarbonOwnedCompany
+  getCompanyPlanIdOrThrow,
+  isCarbonOwnedCompany,
+  isCarbonOwnedCompanyOrThrow
 } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
@@ -61,7 +63,8 @@ export async function hasIntegrationEarlyAccess({
 // shared with the API-key plan gate in `requirePermissions`. A failed read
 // normalizes to the lowest plan, which turns plan-gated ENFORCEMENT (storage/sales
 // rules) off — fail-open. Callers are UI gates and evaluators that should not 500
-// on a transient blip.
+// on a transient blip; enforcement that must fail closed uses
+// `companyHasFeatureOrThrow`.
 //
 // The `_client` param is kept for call-site compatibility; the read never goes
 // through the caller's client, whose RLS scope can hide the plan row.
@@ -106,16 +109,32 @@ export async function getPlan(
 
 /** Self-hosted and bypass-listed companies always pass. */
 export async function companyHasPlan(
-  client: SupabaseClient<Database>,
+  _client: SupabaseClient<Database>,
   companyId: string,
   spec: GateSpec
+): Promise<boolean> {
+  return meetsPlan(companyId, spec, {
+    planId: getCompanyPlanId,
+    carbonOwned: isCarbonOwnedCompany
+  });
+}
+
+// The precedence every plan check shares: self-hosted, bypass list, the plan
+// row, Carbon-owned. The readers decide what a failed read becomes.
+async function meetsPlan(
+  companyId: string,
+  spec: GateSpec,
+  read: {
+    planId: (companyId: string) => Promise<string | null>;
+    carbonOwned: (companyId: string) => Promise<boolean>;
+  }
 ): Promise<boolean> {
   if (CarbonEdition !== Edition.Cloud) return true;
   if (isBypassCompany(companyId)) return true;
 
-  const current = await getCompanyPlan(client, companyId);
+  const current = normalizePlanId(await read.planId(companyId));
   if (planMeetsRequirement(current, resolveRequirement(spec))) return true;
-  return isCarbonOwnedCompany(companyId);
+  return read.carbonOwned(companyId);
 }
 
 type RequirePlanArgs = {
@@ -173,6 +192,24 @@ export async function companyHasFeature(
 ): Promise<boolean> {
   if (CarbonEdition === Edition.Community) return false;
   return companyHasPlan(client, companyId, spec);
+}
+
+/**
+ * `companyHasFeature` for enforcement that must fail closed: on Cloud a failed
+ * plan read, or a failed Carbon-owned read, throws instead of reading as the
+ * lowest plan, which would turn the feature's rules off. Reads that succeed
+ * answer as `companyHasFeature` does.
+ */
+export async function companyHasFeatureOrThrow(
+  _client: SupabaseClient<Database>,
+  companyId: string,
+  spec: GateSpec
+): Promise<boolean> {
+  if (CarbonEdition === Edition.Community) return false;
+  return meetsPlan(companyId, spec, {
+    planId: getCompanyPlanIdOrThrow,
+    carbonOwned: isCarbonOwnedCompanyOrThrow
+  });
 }
 
 /** Throws a redirect with flash when `companyHasFeature` is false. */

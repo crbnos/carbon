@@ -79,6 +79,87 @@ export type DocumentApprovalState = {
 
 export type ApprovalStatus = Database["public"]["Enums"]["approvalStatus"];
 
+/** What is scrapped, as a scrap route describes it to `describeScraps`. */
+export type ScrapSubject =
+  | {
+      type: "operation";
+      jobOperationId: string;
+      quantity: number;
+      trackedEntityId?: string | null;
+      scrapReasonId?: string | null;
+      notes?: string | null;
+    }
+  | {
+      type: "material";
+      jobMaterialId: string;
+      trackedEntityId: string;
+      scrapReasonId?: string | null;
+      notes?: string | null;
+    }
+  | {
+      type: "batch";
+      jobOperationBatchId: string;
+      members: { jobOperationId: string; scrapQuantity: number }[];
+    }
+  | {
+      // Stock scrapped by an inventory adjustment: no job is involved.
+      type: "item";
+      itemId: string;
+      quantity: number;
+      trackedEntityId?: string | null;
+      scrapReasonId?: string | null;
+      notes?: string | null;
+    }
+  | {
+      // Parts ruined at an operation and replaced from the shelf (MES Scrap
+      // parts): one scrap per line, under one approval of their summed value.
+      type: "parts";
+      jobOperationId: string;
+      lines: ScrapPartLine[];
+      scrapReasonId?: string | null;
+      notes?: string | null;
+    };
+
+/** One part line of a `parts` scrap: untracked by item, tracked by the serial or batch used. */
+export type ScrapPartLine =
+  | { materialId: string; itemId: string; quantity: number }
+  | { materialId: string; trackedEntityId: string; quantity: number };
+
+/** The `scrapRequest` a scrap would be recorded as, with its estimated value. */
+export type ScrapDescription = {
+  jobId: string | null;
+  jobOperationId: string | null;
+  jobOperationBatchId: string | null;
+  jobMaterialId: string | null;
+  trackedEntityId: string | null;
+  itemId: string | null;
+  scrapReasonId: string | null;
+  notes: string | null;
+  quantity: number;
+  estimatedValue: number;
+};
+
+/** A person who may sign a scrap at the tablet. */
+export type ScrapApprover = {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+};
+
+/**
+ * What a scrap route answers when the scrap needs an approver: the modal shows
+ * the value and the approvers, then sends the same form with an approver and
+ * their PIN. `error` is set when the last attempt was refused.
+ */
+export type ScrapApprovalPrompt = {
+  estimatedValue: number;
+  /** The company's base currency, which the value and the tiers are in. */
+  currencyCode: string;
+  decimalPlaces: number;
+  approvers: ScrapApprover[];
+  error?: string;
+};
+
 export type CreateApprovalRequestInput = Omit<
   z.infer<typeof approvalRequestValidator>,
   "id"

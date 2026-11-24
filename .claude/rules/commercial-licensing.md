@@ -52,7 +52,7 @@ lock; a check inside `packages/ee` is.
    `~/components/UpgradeOverlay` primitives. This is UX — the server ee check is the
    enforcement. Reference: `x+/sales+/sales-rules.tsx` + `SalesRulesUpgradeOverlay`.
 
-## The API — three helpers, know which to use
+## The API — four helpers, know which to use
 
 All in `@carbon/ee`. `FEATURE_PLANS` (`plan.ts`) is the source of truth for which plans
 grant which `Feature`; every helper reads it.
@@ -60,13 +60,15 @@ grant which `Feature`; every helper reads it.
 | Helper | Shape | Where | Use for |
 |---|---|---|---|
 | `companyHasFeature(client, companyId, { feature })` | `Promise<boolean>` | `plan.server` | RUNTIME paths that must DEGRADE (feature off = no-op), not throw |
+| `companyHasFeatureOrThrow(client, companyId, { feature })` | `Promise<boolean>`, throws on a failed plan read | `plan.server` | RUNTIME enforcement that must fail closed (scrap approval rules): a failed plan read must not turn the rules off |
 | `requireEntitlement(client, companyId, feature)` | throws `EntitlementError` | `entitlements.server` | **The LOCK.** Top of every commercial AUTHORING function, inside `packages/ee` |
 | `requireFeature({ request, client, companyId, redirectTo, feature })` | throws a `redirect` | `plan.server` | UX only, in the open route loader/action — a friendly upgrade redirect |
 
 - `companyHasFeature` semantics: **Community edition → false (blocked)**; Enterprise/Test
   self-hosted → true; Cloud → plan-based; bypass/carbon-owned → true. It is the ONE place
   the future license-key server plugs in (a signed, server-bound validity token) — so every
-  feature inherits it without a call-site change.
+  feature inherits it without a call-site change. `companyHasFeatureOrThrow` shares its
+  precedence (`meetsPlan`) and differs only in what a failed plan read becomes.
 - Do NOT use `companyHasPlan`/`requirePlan` for community-gated features — those no-op off
   Cloud (a self-hosted feature toggle), so a self-hosted Community instance would pass.
   They remain only for features that are Cloud-paywall-only.

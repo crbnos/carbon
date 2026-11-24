@@ -76,7 +76,10 @@ redirects kinds it does not serve (no loops).
   `x+/entity+/$materialId.$trackedEntityId.scrap.tsx` → `issue`
   `scrapTrackedEntity`, reached from a dedicated **Scrap tab** in the
   `IssueMaterialModal` (`ScrapTab` lists the material's Available + Consumed
-  entities; each opens `ScrapEntityModal`). That case branches on entity
+  entities; each opens `ScrapEntityModal`). With a scrap rule enabled the route
+  sends the valued entity quantity as `expectedQuantity`; the posting re-reads
+  the entity `FOR UPDATE` and refuses a changed one (409), which discards the
+  approval. That case branches on entity
   **state**, not `methodType`: an `Available` (picked/in-stock) part scraps from
   stock (`Negative Adjmt`, Dr scrap / Cr inventory, `quantityIssued` untouched);
   a `Consumed` part relieves WIP (Dr scrap / Cr WIP at the item's unit cost) and
@@ -87,6 +90,32 @@ redirects kinds it does not serve (no loops).
   scrap doesn't consume the good `targetQuantity`, so app-side remaining/Done
   mirrors (`complete.tsx` `willBeFinished`, `InspectionView`/`quality.server`
   `opRemaining`) also dropped the scrap term.
+- **Scrap approval** (`.ai/specs/2026-10-24-scrap-approval.md`): the operation
+  scrap route, the component scrap route, the Scrap parts route
+  (`scrap-parts.$operationId.tsx`: the parts summed under one approval, one
+  `scrapRequest` per line; a resent request whose idempotency key already
+  booked posts without asking), `batch.$batchId.complete.tsx`
+  (when a member scraps) and `inspection-lot.$id.disposition.tsx` (when the
+  disposition scraps; `DispositionModal` holds the step) wrap their posting in
+  `postScrapWithApproval`
+  (`services/scrap-approval.server.ts`). With an enabled `scrap` approval rule
+  whose tier the estimated value meets, the first submit answers
+  `{ scrapApproval: prompt }` (value, currency, the approvers with a console
+  PIN) and posts nothing; the modal (`ScrapApprovalStep` / `useScrapApproval`,
+  `components/JobOperation/components/ScrapApproval.tsx`) stays open and sends
+  the same form again with `approverId` + `approverPin` + `approvedValue` (the
+  value shown; a changed scrap quantity clears the prompt). The route refuses
+  the recorder as approver, checks authority (`authorizeScrapApprover`), refuses
+  an approver the prompt did not offer (inactive, no PIN) and a value that
+  differs from `approvedValue`, checks the PIN under the console pin-in budgets
+  (`services/pin-limits.server.ts`, shared with `console.pin-in.tsx`), records
+  the approval, posts, and marks it posted. A failed authority or PIN check asks
+  again with a retryable message and records nothing. Only a 4xx refusal deletes
+  the record; any other failure keeps it unconfirmed. A batch whose phase 2 failed
+  resumes without a second approval (`alreadyApproved`, which names the
+  unconfirmed record a successful resume marks posted); a failed completion marks
+  its approval posted only when this attempt moved the batch past phase 1
+  (`postedDespiteError`). No rule: the posting runs as before.
 - **`finishJobOperation`** (`operations.service.ts`) flips the op to `Done` (firing
   the `sync_finish_job_operation` trigger that completes the job to inventory when
   it's the last op). It then runs `returnPickedRemainders`: one `post-picking`

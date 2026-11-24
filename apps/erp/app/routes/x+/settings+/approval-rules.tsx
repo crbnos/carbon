@@ -84,13 +84,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const changeRequestRules = enrichedRules.filter(
     (r) => r.documentType === "projectChangeRequest"
   );
+  const scrapRules = enrichedRules
+    .filter((r) => r.documentType === "scrap")
+    .sort((a, b) => (a.lowerBoundAmount ?? 0) - (b.lowerBoundAmount ?? 0));
 
   return {
     poRules,
     qdRules,
     supplierRules,
     changeOrderRules,
-    changeRequestRules
+    changeRequestRules,
+    scrapRules
   };
 }
 
@@ -100,7 +104,8 @@ export default function ApprovalSettingsRoute() {
     qdRules,
     supplierRules,
     changeOrderRules,
-    changeRequestRules
+    changeRequestRules,
+    scrapRules
   } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "APPROVAL_RULES" });
 
@@ -116,6 +121,7 @@ export default function ApprovalSettingsRoute() {
         supplierRules={supplierRules}
         changeOrderRules={changeOrderRules}
         changeRequestRules={changeRequestRules}
+        scrapRules={scrapRules}
       />
       <RecordOutlet />
     </>

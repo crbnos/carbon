@@ -7,42 +7,19 @@ import { logAuthEvent, requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setConsolePinIn } from "@carbon/auth/console-pin.server";
 import { verifyEmployeePin } from "@carbon/ee/console.server";
-import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
 import { getClientIp } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { userContext } from "~/context";
 import { getDatabaseClient } from "~/services/database.server";
-
-// A PIN is four digits — 10,000 values — so the verifier, not the PIN, is what
-// stops a guess-every-code attack. Two layers, both in Redis (fail-open, like
-// login):
-// - per OPERATOR (`AccountLockout`): 5 wrong PINs in 15 min lock that operator's
-//   pin-in with exponential backoff, however many terminals the guesses come from;
-// - per TERMINAL (`Ratelimit`): caps how many WRONG PINs one console session can
-//   submit across all operators, so spreading guesses across people does not
-//   reset the budget. Only failures count — a busy shift change must not lock
-//   the kiosk.
-// Both are CONSUMED before the PIN is checked and given back when the request
-// turns out not to be a wrong guess. Checking first and recording only on
-// failure let a parallel burst all pass the check before any failure landed,
-// so the limit capped nothing.
-const pinLockout = new AccountLockout({
-  redis,
-  prefix: "@carbon/console-pin",
-  maxAttempts: 5,
-  window: "15 m"
-});
-
-const terminalRatelimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(30, "15 m"),
-  prefix: "@carbon/console-pin:terminal"
-});
-
-const GENERIC_PIN_ERROR = "Incorrect PIN";
-const LOCKED_PIN_ERROR =
-  "Too many incorrect PINs. Please wait a few minutes and try again.";
+import {
+  GENERIC_PIN_ERROR,
+  LOCKED_PIN_ERROR,
+  pinLockout,
+  pinLockoutKey,
+  pinTerminalKey,
+  terminalRatelimit
+} from "~/services/pin-limits.server";
 
 export async function action({ request, context }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -67,8 +44,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 
   const ip = getClientIp(request) ?? undefined;
-  const lockoutKey = `${companyId}:${userId}`;
-  const terminalKey = `${companyId}:${sessionUserId}`;
+  const lockoutKey = pinLockoutKey(companyId, userId);
+  const terminalKey = pinTerminalKey(companyId, sessionUserId);
 
   // The Lua script counts and refuses in one step, so of N concurrent requests
   // at most the remaining budget get past here. Redis down → fails open, like

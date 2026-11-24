@@ -28,6 +28,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LuCheck, LuScan, LuX } from "react-icons/lu";
 import { useSearchParams } from "react-router";
 import { useQueueTitles } from "~/components/AppSidebar";
+import {
+  ScrapApprovalStep,
+  useScrapApproval
+} from "~/components/JobOperation/components/ScrapApproval";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import type {
@@ -396,7 +400,14 @@ function VerdictBody({
   const [reason, setReason] = useState("");
   // As the ERP's Reject Lot: an NCR for MRB disposition unless turned off.
   const [createNcr, setCreateNcr] = useState(true);
-  const fetcher = useAction<{}>({});
+  // A scrap approval rule answers an untracked lot's Reject with the
+  // approvers; the modal stays open for the approver's PIN.
+  const approval = useScrapApproval();
+  const fetcher = useAction<{}>({
+    onSettled: (data) => {
+      approval.settle(data);
+    }
+  });
   const busy = fetcher.state !== "idle";
   const missingReason = requireReason && reason.trim().length === 0;
 
@@ -452,6 +463,9 @@ function VerdictBody({
               ) : null}
             </label>
           ) : null}
+          {decision === "Reject" ? (
+            <ScrapApprovalStep approval={approval} isSubmitting={busy} />
+          ) : null}
         </VStack>
       </ModalBody>
       <ModalFooter>
@@ -464,10 +478,12 @@ function VerdictBody({
           type="submit"
           variant={decision === "Reject" ? "destructive" : "primary"}
           isLoading={busy}
-          isDisabled={busy || missingReason}
+          isDisabled={busy || missingReason || approval.isIncomplete}
         >
           {decision === "Accept" ? (
             <Trans>Accept</Trans>
+          ) : approval.prompt ? (
+            <Trans>Approve and Reject Lot</Trans>
           ) : (
             <Trans>Reject</Trans>
           )}

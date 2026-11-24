@@ -37,6 +37,10 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import {
+  ScrapApprovalStep,
+  useScrapApproval
+} from "~/components/JobOperation/components/ScrapApproval";
 import ScrapReason from "~/components/JobOperation/components/ScrapReason";
 import {
   CORRECTION_TARGET_PREFIX,
@@ -136,8 +140,15 @@ const DispositionBody = ({
   onSubmit
 }: Omit<DispositionModalProps, "open">) => {
   const { t } = useLingui();
+  // A scrap approval rule answers the first submit with the approvers; the
+  // modal stays open for the approver's PIN and the same form is sent again.
+  const approval = useScrapApproval();
   const fetcher = useAction<{}>({
-    onSettled: () => {
+    onSettled: (data) => {
+      if (approval.settle(data)) {
+        submitted.current = false;
+        return;
+      }
       if (submitted.current) {
         onSubmit();
         submitted.current = false;
@@ -199,8 +210,12 @@ const DispositionBody = ({
   const scrapCount = isSerial ? scrapEntityIds.length : scrapQuantity;
   const reworkCount = isSerial ? reworkEntityIds.length : reworkQuantity;
   const overAllocated = !isSerial && scrapCount + reworkCount > maxAllocatable;
+  // The allocation is locked while a submit is pending: an answer for the
+  // allocation sent must not land on a different one.
+  const isSubmitting = fetcher.state !== "idle";
 
   const setAll = (outcome: UnitOutcome) => {
+    approval.reset();
     setUnitOutcomes(
       new Map(units.map((unit) => [unit.trackedEntityId, outcome]))
     );
@@ -318,6 +333,7 @@ const DispositionBody = ({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    isDisabled={isSubmitting}
                     onClick={() => setAll("scrap")}
                   >
                     <Trans>All scrap</Trans>
@@ -326,6 +342,7 @@ const DispositionBody = ({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    isDisabled={isSubmitting}
                     onClick={() => setAll("rework")}
                   >
                     <Trans>All rework</Trans>
@@ -334,6 +351,7 @@ const DispositionBody = ({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    isDisabled={isSubmitting}
                     onClick={() => setAll("none")}
                   >
                     <Trans>Record only</Trans>
@@ -375,13 +393,15 @@ const DispositionBody = ({
                             <button
                               key={value}
                               type="button"
-                              onClick={() =>
+                              disabled={isSubmitting}
+                              onClick={() => {
+                                approval.reset();
                                 setUnitOutcomes((prev) => {
                                   const next = new Map(prev);
                                   next.set(unit.trackedEntityId, value);
                                   return next;
-                                })
-                              }
+                                });
+                              }}
                               className={cn(
                                 "px-2 py-1 text-xs font-medium transition-colors",
                                 outcome === value
@@ -409,9 +429,13 @@ const DispositionBody = ({
                 name="scrapQuantity"
                 label={t`Scrap quantity`}
                 value={scrapQuantity}
-                onChange={setScrapQuantity}
+                onChange={(value) => {
+                  approval.reset();
+                  setScrapQuantity(value);
+                }}
                 minValue={0}
                 maxValue={maxAllocatable}
+                isReadOnly={isSubmitting}
               />
               <NumberControlled
                 name="reworkQuantity"
@@ -420,6 +444,7 @@ const DispositionBody = ({
                 onChange={setReworkQuantity}
                 minValue={0}
                 maxValue={maxAllocatable}
+                isReadOnly={isSubmitting}
               />
             </div>
           )}
@@ -519,6 +544,11 @@ const DispositionBody = ({
                 </AlertDescription>
               </Alert>
             ))}
+
+          <ScrapApprovalStep
+            approval={approval}
+            isSubmitting={fetcher.state !== "idle"}
+          />
         </VStack>
       </ModalBody>
       <ModalFooter>
@@ -533,11 +563,18 @@ const DispositionBody = ({
             isDisabled={
               fetcher.state !== "idle" ||
               overAllocated ||
+              approval.isIncomplete ||
               (createNcr && hasIssueTypes && !issueTypeId)
             }
           >
             {decision === "Reject" ? (
-              <Trans>Reject Lot</Trans>
+              approval.prompt ? (
+                <Trans>Approve and Reject Lot</Trans>
+              ) : (
+                <Trans>Reject Lot</Trans>
+              )
+            ) : approval.prompt ? (
+              <Trans>Approve and Record Partial</Trans>
             ) : (
               <Trans>Record Partial</Trans>
             )}

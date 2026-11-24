@@ -17,7 +17,7 @@ import {
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "../entitlements.server";
-import { companyHasFeature } from "../plan.server";
+import { companyHasFeature, companyHasFeatureOrThrow } from "../plan.server";
 import {
   adminApprovedDocumentTypes,
   type approvalDocumentType
@@ -302,10 +302,16 @@ export async function approveRequest(
   }
 }
 
+/**
+ * Whether the user may approve the request at its amount's tier or a higher
+ * one. `failClosed` is for enforcement that must not treat a failed plan read
+ * as "no tier": the lookup throws instead (`getApprovalRuleByAmount`).
+ */
 export async function canApproveRequest(
   client: SupabaseClient<Database>,
   approvalRequest: ApprovalRequestForApproveCheck,
-  userId: string
+  userId: string,
+  options: { failClosed?: boolean } = {}
 ): Promise<boolean> {
   if (adminApprovedDocumentTypes.includes(approvalRequest.documentType)) {
     return isCompanyAdmin(client, approvalRequest.companyId, userId);
@@ -329,11 +335,16 @@ export async function canApproveRequest(
     client,
     approvalRequest.documentType,
     approvalRequest.companyId,
-    approvalRequest.amount ?? undefined
+    approvalRequest.amount ?? undefined,
+    options
   );
+  // Fail closed: an unknown tier would read as the lowest, so a low-tier
+  // approver could approve any amount.
+  if (matched.error) return false;
   const tierFloor = matched.data?.lowerBoundAmount ?? 0;
 
   const userGroups = await client.rpc("groups_for_user", { uid: userId });
+  if (userGroups.error) return false;
   const userGroupIds = userGroups.data || [];
 
   return rules.data
@@ -549,15 +560,26 @@ export async function getApprovalRequestsByDocument(
     .order("requestedAt", { ascending: false });
 }
 
+/**
+ * The enabled rule whose tier covers the amount: the highest floor at or
+ * below it. No rule without `APPROVAL_RULES`. The plan check degrades (a
+ * failed plan read reads as no rule) unless `failClosed`, where it throws.
+ */
 export async function getApprovalRuleByAmount(
   client: SupabaseClient<Database>,
   documentType: (typeof approvalDocumentType)[number],
   companyId: string,
-  amount?: number
+  amount?: number,
+  options: { failClosed?: boolean } = {}
 ) {
-  if (
-    !(await companyHasFeature(client, companyId, { feature: "APPROVAL_RULES" }))
-  ) {
+  const entitled = options.failClosed
+    ? await companyHasFeatureOrThrow(client, companyId, {
+        feature: "APPROVAL_RULES"
+      })
+    : await companyHasFeature(client, companyId, {
+        feature: "APPROVAL_RULES"
+      });
+  if (!entitled) {
     return { data: null, error: null };
   }
 

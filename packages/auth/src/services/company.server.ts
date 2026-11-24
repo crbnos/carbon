@@ -63,7 +63,19 @@ const carbonOwnedCacheKey = (companyId: string) => `carbonOwned:${companyId}`;
  */
 export function getCompanyPlanId(companyId: string): Promise<string | null> {
   return oncePerRead(`companyPlan:${companyId}`, () =>
-    loadCompanyPlanId(companyId)
+    loadCompanyPlanId(companyId, false)
+  );
+}
+
+/**
+ * `getCompanyPlanId` for a check that must fail closed: a failed read throws
+ * instead of reading as no plan row.
+ */
+export function getCompanyPlanIdOrThrow(
+  companyId: string
+): Promise<string | null> {
+  return oncePerRead(`companyPlanOrThrow:${companyId}`, () =>
+    loadCompanyPlanId(companyId, true)
   );
 }
 
@@ -78,7 +90,10 @@ export function planIdFromCache(
   return cached || null;
 }
 
-async function loadCompanyPlanId(companyId: string): Promise<string | null> {
+async function loadCompanyPlanId(
+  companyId: string,
+  failClosed: boolean
+): Promise<string | null> {
   const cacheKey = companyPlanCacheKey(companyId);
   const cached = planIdFromCache(await redis.get(cacheKey));
   if (cached !== undefined) return cached;
@@ -90,6 +105,10 @@ async function loadCompanyPlanId(companyId: string): Promise<string | null> {
     .maybeSingle();
 
   if (error) {
+    // A caller that fails closed handles, and logs, the failure itself.
+    if (failClosed) {
+      throw new Error("Failed to read company plan", { cause: error });
+    }
     logger.error("Failed to read company plan", { companyId, error });
     return null;
   }
@@ -107,11 +126,26 @@ async function loadCompanyPlanId(companyId: string): Promise<string | null> {
  */
 export function isCarbonOwnedCompany(companyId: string): Promise<boolean> {
   return oncePerRead(`carbonOwned:${companyId}`, () =>
-    loadIsCarbonOwnedCompany(companyId)
+    loadIsCarbonOwnedCompany(companyId, false)
   );
 }
 
-async function loadIsCarbonOwnedCompany(companyId: string): Promise<boolean> {
+/**
+ * `isCarbonOwnedCompany` for a check that must fail closed: a failed owner
+ * read throws instead of reading as not Carbon-owned.
+ */
+export function isCarbonOwnedCompanyOrThrow(
+  companyId: string
+): Promise<boolean> {
+  return oncePerRead(`carbonOwnedOrThrow:${companyId}`, () =>
+    loadIsCarbonOwnedCompany(companyId, true)
+  );
+}
+
+async function loadIsCarbonOwnedCompany(
+  companyId: string,
+  failClosed: boolean
+): Promise<boolean> {
   const cacheKey = carbonOwnedCacheKey(companyId);
   const cached = await redis.get(cacheKey);
   if (cached === "1" || cached === "0") return cached === "1";
@@ -124,6 +158,10 @@ async function loadIsCarbonOwnedCompany(companyId: string): Promise<boolean> {
     .eq("id", companyId)
     .maybeSingle();
   if (company.error) {
+    // A caller that fails closed handles, and logs, the failure itself.
+    if (failClosed) {
+      throw new Error("Failed to read company owner", { cause: company.error });
+    }
     logger.error("Failed to read company owner", {
       companyId,
       error: company.error
@@ -140,6 +178,11 @@ async function loadIsCarbonOwnedCompany(companyId: string): Promise<boolean> {
       .eq("id", ownerId)
       .maybeSingle();
     if (owner.error) {
+      if (failClosed) {
+        throw new Error("Failed to read company owner email", {
+          cause: owner.error
+        });
+      }
       logger.error("Failed to read company owner email", {
         companyId,
         error: owner.error

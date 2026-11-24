@@ -142,8 +142,11 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
         issue
       );
 
+    // Each scrap attempt names its own reason: the names are unique.
+    let scrapAttempts = 0;
     /** Scraps the kit the job consumed, as the dialog's Scrap tab does. */
-    const scrapIssuedKit = async () => {
+    const scrapIssuedKit = async (expectedQuantity?: number) => {
+      scrapAttempts += 1;
       // The issue split the consumed kit off the lot, under the lot's number.
       const consumedKit = await f.db
         .selectFrom("trackedEntity")
@@ -155,7 +158,7 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
       const reason = await f.db
         .insertInto("scrapReason")
         .values({
-          name: `Damaged ${key}`,
+          name: `Damaged ${key} ${scrapAttempts}`,
           companyId: f.companyId,
           createdBy: USER
         })
@@ -169,7 +172,8 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
           trackedEntityId: consumedKit.id,
           materialId: material.id,
           parentTrackedEntityId: parentId,
-          scrapReasonId: reason.id
+          scrapReasonId: reason.id,
+          expectedQuantity
         },
         issue
       );
@@ -221,6 +225,33 @@ describe.skipIf(!hasLocalDatabase)("tracked issue requirement", () => {
 
       expect((await job.issueKits(1)).error).toBeNull();
       expect(await job.state()).toEqual({ issued: 1, leftInLot: 3 });
+    }
+  );
+
+  // A scrap approval valued the entity at one quantity; a write since then
+  // must not let the posting scrap another.
+  databaseTest(
+    "refuses to scrap a kit whose quantity is not the one approved",
+    async () => {
+      const job = await jobNeedingOneKit("approved");
+      expect((await job.issueKits(1)).error).toBeNull();
+      const kitStatus = async () =>
+        (
+          await f.db
+            .selectFrom("trackedEntity")
+            .select("status")
+            .where("readableId", "=", "KIT-approved")
+            .where("status", "in", ["Consumed", "Scrapped"])
+            .where("companyId", "=", f.companyId)
+            .executeTakeFirstOrThrow()
+        ).status;
+
+      const changed = await job.scrapIssuedKit(2);
+      expect(changed.error?.status).toBe(409);
+      expect(await kitStatus()).toBe("Consumed");
+
+      expect((await job.scrapIssuedKit(1)).error).toBeNull();
+      expect(await kitStatus()).toBe("Scrapped");
     }
   );
 

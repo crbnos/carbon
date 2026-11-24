@@ -65,7 +65,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     operator: {
       id: operator.id,
       firstName: operator.firstName,
-      lastName: operator.lastName
+      lastName: operator.lastName,
+      isConsoleOperator: operator.isConsoleOperator
     }
   };
 }
@@ -86,7 +87,15 @@ export default function ResetPinRoute() {
     formFetcher.data && "error" in formFetcher.data ? formFetcher.data : null;
   const newPin = result?.data?.pin ?? null;
   const failure = result?.error?.message ?? null;
-  const dialog = useRouteDialog(newPin ? path.to.operators : undefined);
+  // Anyone but a console operator is reset from the Employees list (a scrap
+  // approver signs with the PIN, console mode on or off), so goes back there.
+  const dialog = useRouteDialog(
+    !operator.isConsoleOperator
+      ? path.to.employeeAccounts
+      : newPin
+        ? path.to.operators
+        : undefined
+  );
 
   return (
     <Modal
@@ -111,8 +120,8 @@ export default function ResetPinRoute() {
               <VStack spacing={4}>
                 <p className="text-sm text-muted-foreground">
                   <Trans>
-                    Share this PIN with the operator so they can pin in at MES
-                    terminals.
+                    Share this PIN with them. They enter it at the MES to pin
+                    in, or to approve scrap.
                   </Trans>
                 </p>
                 <div className="flex items-center justify-center gap-3 w-full">
@@ -129,8 +138,8 @@ export default function ResetPinRoute() {
               <VStack spacing={4}>
                 <p className="text-sm text-muted-foreground">
                   <Trans>
-                    Generate a new 4-digit PIN. The operator's current PIN stops
-                    working immediately.
+                    Generate a new 4-digit PIN. Their current PIN stops working
+                    immediately.
                   </Trans>
                 </p>
                 {failure && (

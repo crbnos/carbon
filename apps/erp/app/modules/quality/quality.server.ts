@@ -40,6 +40,12 @@ import {
   updateChangeNotice
 } from "~/modules/items/items.service";
 import {
+  approveErpStockScraps,
+  type RecordedScrapApproval,
+  settleErpScrapApprovals,
+  settleErpStockScrapApprovals
+} from "~/modules/production/production.service";
+import {
   deletePurchaseReturnOrder,
   insertPurchaseReturnOrder,
   setPurchaseReturnOrderLineTrackedEntities,
@@ -476,7 +482,11 @@ export const setIssueStatus = defineServiceFn({
  * is) posts through `post-nonconformance`, and the units change status; a
  * failure leaves the issue open. An NCR with a Partial receipt lot beside
  * another lot is refused, and so is a Partial untracked lot's NCR with no
- * disposition row for the lot's item. The company's integrations are told.
+ * disposition row for the lot's item. When a scrap approval rule applies to
+ * the estimated value of the stock its Scrap rows write off (a Partial lot's
+ * held remainder included), only a user who can approve at that tier
+ * completes it, and an API key is refused; the approval is recorded with the
+ * write-off. The company's integrations are told.
  *
  * @mcp
  */
@@ -487,15 +497,48 @@ export const completeIssue = defineServiceFn({
   async run(ctx, { id }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
+    // Set by the scrap approval check inside the close.
+    const scrap: {
+      refusal: CarbonError | null;
+      scrapRequests: RecordedScrapApproval[];
+    } = {
+      refusal: null,
+      scrapRequests: []
+    };
     const result = await service.closeIssue(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       {
         nonConformanceId: id,
         companyId,
-        userId
+        userId,
+        scrapApproval: {
+          approve: async (writeOffs, readableId) => {
+            const approved = await approveErpStockScraps(
+              ctx,
+              writeOffs.map((writeOff) => ({
+                ...writeOff,
+                notes: `NC ${readableId} scrap`
+              }))
+            );
+            if (approved instanceof CarbonError) {
+              scrap.refusal = approved;
+              return false;
+            }
+            scrap.scrapRequests = approved.scrapRequests;
+            return true;
+          },
+          settle: (outcome, writtenOffItemIds) =>
+            settleErpStockScrapApprovals(
+              ctx,
+              scrap.scrapRequests,
+              outcome,
+              writtenOffItemIds
+            )
+        }
       }
     );
+    if (scrap.refusal) return scrap.refusal;
     if (result.error) {
       return ctx.error(
         "rule",
@@ -1435,6 +1478,10 @@ export const cancelManualInspection = defineServiceFn({
  * the `reason` go in its description. A failure after the issue was inserted
  * deletes it again; the lot stays rejected. A repeated Reject on a Failed lot
  * posts nothing new and keeps the lot's NCR; it can still open a missing one.
+ * When a scrap approval rule applies to the estimated value of the write-off
+ * (the lot's quantity at the item's cost), only a user who can approve at
+ * that tier rejects the lot, and an API key is refused; the approval is
+ * recorded with the write-off. The shop floor asks an approver's PIN first.
  *
  * @param reason - Why the lot is rejected. Required when no characteristic
  * reached its rejection number and no sample failed (a suspected counterfeit,
@@ -1453,7 +1500,38 @@ export const rejectInspection = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    const rejected = await ctx.transaction(async (tx) => {
+    // An untracked lot's write-off meets the scrap approval rules before the
+    // lot is decided: a refusal leaves it open. The shop floor, which posts
+    // as the system, asked an approver's PIN already.
+    let writeOff: Awaited<ReturnType<typeof engine.rejectWriteOffEstimate>>;
+    try {
+      writeOff = await engine.rejectWriteOffEstimate(ctx.asSystem.pg, {
+        id,
+        companyId
+      });
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        "Could not check whether this scrap needs approval",
+        error
+      );
+    }
+    const approval = writeOff
+      ? await approveErpStockScraps(ctx, [
+          {
+            itemId: writeOff.itemId,
+            quantity: writeOff.quantity,
+            notes: `${writeOff.readableId} rejected`
+          }
+        ])
+      : { scrapRequests: [] };
+    if (approval instanceof CarbonError) return approval;
+    const scrapRequestIds = approval.scrapRequests.map(
+      (request) => request.scrapRequestId
+    );
+
+    // The decision and its write-off, in one transaction.
+    async function rejectInTransaction(tx: typeof ctx) {
       const decided = await engine.dispositionInspection(tx.asSystem.pg, {
         id,
         decision: "Reject",
@@ -1499,7 +1577,39 @@ export const rejectInspection = defineServiceFn({
         }
       }
       return decided.data;
-    });
+    }
+
+    // A transaction whose callback never ran, or threw (rolled back), wrote
+    // nothing; a failure after it returned (the commit) may have committed.
+    let started = false;
+    let rolledBack = false;
+    const rejectLot = () =>
+      ctx.transaction(async (tx) => {
+        started = true;
+        try {
+          return await rejectInTransaction(tx);
+        } catch (error) {
+          rolledBack = true;
+          throw error;
+        }
+      });
+    let rejected: Awaited<ReturnType<typeof rejectLot>>;
+    try {
+      rejected = await rejectLot();
+    } catch (error) {
+      await settleErpScrapApprovals(
+        ctx,
+        scrapRequestIds,
+        !started || rolledBack ? "refused" : { error }
+      );
+      return ctx.error("internal", "Failed to reject lot", error);
+    }
+    // A returned refusal rolled the transaction back.
+    await settleErpScrapApprovals(
+      ctx,
+      scrapRequestIds,
+      !rejected.error && rejected.data?.writeOff ? "written" : "refused"
+    );
     if (rejected.error) return rejected.error;
 
     if (!createNcr) return { id, issueId: null };

@@ -42,6 +42,7 @@ import type {
 import { OriginInput } from "~/utils/origin";
 import { path } from "~/utils/path";
 import { unissuedTrackedMaterials } from "~/utils/trackedMaterials";
+import { ScrapApprovalStep, useScrapApproval } from "./ScrapApproval";
 import ScrapReason from "./ScrapReason";
 
 // Fractional quantities for weight/length UoMs, capped at the 2 decimals
@@ -96,6 +97,9 @@ export function QuantityModal({
 }) {
   const { t } = useLingui();
   const numberFormatter = useNumberFormatter(QUANTITY_FORMAT_OPTIONS);
+  // A scrap approval rule answers the first submit with the approvers; the
+  // modal stays open for the approver's PIN and the same form is sent again.
+  const approval = useScrapApproval();
   // The modal opens from state, not a DialogTrigger, so Radix has no trigger
   // to return focus to and it falls to <body>. Remember the opener instead.
   const [opener] = useState(() =>
@@ -105,7 +109,11 @@ export function QuantityModal({
   );
   // The action's redirect keeps the page the operation was opened from.
   const fetcher = useAction<ProductionQuantity>({
-    onSettled: () => {
+    onSettled: (data) => {
+      if (approval.settle(data)) {
+        submitted.current = false;
+        return;
+      }
       if (submitted.current) {
         onClose();
       }
@@ -159,7 +167,7 @@ export function QuantityModal({
   };
 
   const actionButtonMap = {
-    scrap: t`Log Scrap`,
+    scrap: approval.prompt ? t`Approve and Log Scrap` : t`Log Scrap`,
     rework: t`Log Rework`,
     complete: t`Log Completed`,
     finish: isOperationComplete ? t`Mark as Done` : t`Mark as Done Anyways`
@@ -349,7 +357,10 @@ export function QuantityModal({
                       name="quantity"
                       label={t`Quantity`}
                       value={quantity}
-                      onChange={setQuantity}
+                      onChange={(value) => {
+                        setQuantity(value);
+                        approval.reset();
+                      }}
                       isReadOnly={parentIsSerial}
                       minValue={0}
                       formatOptions={QUANTITY_FORMAT_OPTIONS}
@@ -400,6 +411,10 @@ export function QuantityModal({
                     size="lg"
                   />
                   <TextArea label={t`Notes`} name="notes" size="lg" />
+                  <ScrapApprovalStep
+                    approval={approval}
+                    isSubmitting={isSubmitting}
+                  />
                 </>
               ) : (
                 <>
@@ -436,6 +451,7 @@ export function QuantityModal({
               isLoading={isSubmitting}
               disabled={
                 isSubmitting ||
+                (type === "scrap" && approval.isIncomplete) ||
                 (type === "complete" &&
                   hasUnissuedTrackedMaterials &&
                   (blockedByUnissued || !confirmedUnissued))
