@@ -54,7 +54,13 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { DateTime, Empty, Hyperlink } from "~/components";
+import {
+  ChartSeriesLegend,
+  DateTime,
+  Empty,
+  Hyperlink,
+  useHiddenSeries
+} from "~/components";
 import { useQuantityFormatter } from "~/hooks";
 import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
@@ -141,17 +147,7 @@ export const ItemPlanningChart = ({
   );
   const isFetching = forecastFetcher.isFetching || !forecastFetcher.data;
   const [searchTerm, setSearchTerm] = useState("");
-  const [hiddenSeries, setHiddenSeries] = useState<Set<SeriesKey>>(
-    () => new Set()
-  );
-  const isShown = (key: SeriesKey) => !hiddenSeries.has(key);
-  const toggleSeries = (key: SeriesKey) =>
-    setHiddenSeries((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+  const { hiddenSeries, isShown, toggleSeries } = useHiddenSeries<SeriesKey>();
 
   const dateFormatter = useDateFormatter({
     month: "short",
@@ -781,7 +777,7 @@ export const ItemPlanningChart = ({
                   />
                   <ChartLegend
                     content={
-                      <PlanningChartLegend
+                      <ChartSeriesLegend
                         config={chartConfig}
                         hiddenSeries={hiddenSeries}
                         onToggle={toggleSeries}
@@ -959,65 +955,6 @@ export const ItemPlanningChart = ({
     </>
   );
 };
-
-// Legend that distinguishes line series (Projected on hand, Safety stock) from
-// bar series with a line vs. square glyph, so "the line" maps to something.
-function PlanningChartLegend({
-  payload,
-  config,
-  hiddenSeries,
-  onToggle,
-  disabledSeries
-}: {
-  payload?: Array<{ dataKey: SeriesKey; type?: string; color?: string }>;
-  config: ChartConfig;
-  hiddenSeries: Set<SeriesKey>;
-  onToggle: (key: SeriesKey) => void;
-  disabledSeries: SeriesKey[];
-}) {
-  if (!payload?.length) return null;
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 pt-3 text-xs text-muted-foreground">
-      {payload.map((item) => {
-        const shown = !hiddenSeries.has(item.dataKey);
-        return (
-          <button
-            key={item.dataKey}
-            type="button"
-            aria-pressed={shown}
-            disabled={disabledSeries.includes(item.dataKey)}
-            onClick={() => onToggle(item.dataKey)}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-1.5 py-0.5 transition-colors",
-              "hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              "disabled:pointer-events-none disabled:opacity-50",
-              !shown && "text-muted-foreground/60 line-through"
-            )}
-          >
-            {item.type === "line" ? (
-              <span
-                className="h-[3px] w-3.5 shrink-0 rounded-full border"
-                style={{
-                  borderColor: item.color,
-                  backgroundColor: shown ? item.color : "transparent"
-                }}
-              />
-            ) : (
-              <span
-                className="size-2.5 shrink-0 rounded-[2px] border"
-                style={{
-                  borderColor: item.color,
-                  backgroundColor: shown ? item.color : "transparent"
-                }}
-              />
-            )}
-            <span>{config[item.dataKey]?.label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 function ChartHelpContent() {
   const { t } = useLingui();

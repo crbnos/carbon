@@ -145,4 +145,19 @@ describe("issueTrendAxis", () => {
       false
     );
   });
+
+  it("fits the weeks when the legend hides the target", () => {
+    expect(
+      issueTrendAxis([{ opened: 1, closed: 1 }], 20, new Set(["target"]))
+    ).toEqual({ niceMin: 0, niceMax: 1, ticks: [0, 1], showCounts: false });
+  });
+
+  it("leaves a hidden series out of the busiest week", () => {
+    const weeks = [{ opened: 23, closed: 4 }];
+    expect(issueTrendAxis(weeks, 0, new Set(["opened"])).niceMax).toBe(4);
+    expect(issueTrendAxis(weeks, 0, new Set(["closed"])).niceMax).toBe(25);
+    expect(
+      issueTrendAxis(weeks, 20, new Set(["opened", "target"])).niceMax
+    ).toBe(4);
+  });
 });
