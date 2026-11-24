@@ -297,23 +297,19 @@ describe("batchPropertySortOrders", () => {
 
   it("moves a property between two that share a sort order", () => {
     expect(batchPropertySortOrders(neverDragged, "grade", "mill")).toEqual({
+      heat: 1,
       grade: 2,
       mill: 3,
       coating: 4
     });
   });
 
-  it("writes only the properties whose position changes", () => {
-    const numbered = [
-      { id: "heat", sortOrder: 1 },
-      { id: "mill", sortOrder: 2 },
-      { id: "grade", sortOrder: 3 },
-      { id: "coating", sortOrder: 4 }
-    ];
-    expect(batchPropertySortOrders(numbered, "heat", "grade")).toEqual({
+  it("moves a property down past the drop target", () => {
+    expect(batchPropertySortOrders(neverDragged, "heat", "grade")).toEqual({
       mill: 1,
       grade: 2,
-      heat: 3
+      heat: 3,
+      coating: 4
     });
   });
 

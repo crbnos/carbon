@@ -154,6 +154,23 @@ describe("updateBatchPropertyOrder", () => {
   postgrestTest(
     "refuses a property of another item and writes nothing",
     async (client) => {
+      // A starting order the refused update's first row would change.
+      await seed(f, async (trx) => {
+        for (const [label, sortOrder] of [
+          ["Second", 1],
+          ["First", 2]
+        ] as const) {
+          await trx
+            .updateTable("batchProperty")
+            .set({ sortOrder })
+            .where("itemId", "=", f.assemblyId)
+            .where("companyId", "=", f.companyId)
+            .where("label", "=", label)
+            .execute();
+        }
+      });
+      const partBefore = await labels(client, f.partId);
+
       const result = await updateBatchPropertyOrder(
         operationContext(f, client, USER),
         {
@@ -167,7 +184,7 @@ describe("updateBatchPropertyOrder", () => {
       expect(result.error?.category).toBe("rule");
 
       expect(await labels(client, f.assemblyId)).toEqual(["Second", "First"]);
-      expect((await labels(client, f.partId))?.[0]).toBe("Heat number");
+      expect(await labels(client, f.partId)).toEqual(partBefore);
     }
   );
 });
