@@ -87,17 +87,15 @@ const personPhotoValidator = z.object({
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const auth = await requirePermissions(request, {
-    update: "people"
-  });
-  const { client } = auth;
   const { personId } = params;
   if (!personId) throw new Error("No person ID provided");
-
   const formData = await request.formData();
+
   // ProfilePhotoForm posts through a fetcher whose useAction toasts the result.
-  // Your own person page saves like Account → Profile, with no users_update.
+  // The operations hold the permissions: your own photo saves like Account →
+  // Profile, with none; another person's needs people and users update.
   if (formData.get("intent") === "photo") {
+    const auth = await requirePermissions(request, {});
     const photo = await validator(personPhotoValidator).validate(formData);
     if (photo.error) return validationError(photo.error);
     const ctx = serviceContext(auth);
@@ -109,6 +107,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  const { client } = await requirePermissions(request, {
+    update: "people"
+  });
   const validation = await validator(accountProfileValidator).validate(
     formData
   );
