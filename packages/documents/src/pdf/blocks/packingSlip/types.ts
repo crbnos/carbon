@@ -12,6 +12,7 @@ import type {
   ResolvedSection
 } from "../../../template";
 import type { Company } from "../../../types";
+import type { PartNumberDisplay } from "../../../utils/part-number";
 
 /** One rental unit on a Delivery Ticket, or one delivered contract line on a
  *  Receiving Report. */
@@ -60,6 +61,11 @@ export interface PackingSlipData {
   vars: Record<string, string>;
   values: DocumentValues;
   headerOptions: HeaderOptions;
+  /**
+   * The Edit document modal's unsaved display choice for every line, on a
+   * preview or download. Absent: each line prints its own choice.
+   */
+  partNumberDisplayDraft?: PartNumberDisplay;
 }
 
 export type BlockRenderer = (args: {

@@ -3721,6 +3721,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -3876,6 +3879,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -3983,6 +3989,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.partNumberDisplay"
           },
           {
             $ref: "#/parameters/body.quoteLine"
@@ -30043,6 +30052,9 @@ export default {
             $ref: "#/parameters/rowFilter.customers.fax"
           },
           {
+            $ref: "#/parameters/rowFilter.customers.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -52099,6 +52111,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -52320,6 +52335,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -52493,6 +52511,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.partNumberDisplay"
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine"
@@ -60820,6 +60841,9 @@ export default {
             $ref: "#/parameters/rowFilter.suppliers.stage"
           },
           {
+            $ref: "#/parameters/rowFilter.suppliers.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -66088,6 +66112,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.taxesShipping"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.itemReadableId"
           },
           {
@@ -66104,6 +66131,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.customerPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.customerPartRevision"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.assetReadableId"
@@ -78667,6 +78697,9 @@ export default {
             $ref: "#/parameters/rowFilter.customer.readableId"
           },
           {
+            $ref: "#/parameters/rowFilter.customer.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -78798,6 +78831,9 @@ export default {
             $ref: "#/parameters/rowFilter.customer.readableId"
           },
           {
+            $ref: "#/parameters/rowFilter.customer.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -78881,6 +78917,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customer.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.partNumberDisplay"
           },
           {
             $ref: "#/parameters/body.customer"
@@ -80032,6 +80071,15 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.partNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.customerPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.customerPartRevision"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId"
           },
           {
@@ -80056,10 +80104,10 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.unitCost"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.customerPartId"
+            $ref: "#/parameters/rowFilter.salesOrderLines.customerPartIdFromCustomer"
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.customerPartRevision"
+            $ref: "#/parameters/rowFilter.salesOrderLines.customerPartRevisionFromCustomer"
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.orderDate"
@@ -88717,6 +88765,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLines.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLines.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteLines.itemReadableId"
           },
           {
@@ -93121,6 +93172,18 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLines.fulfillmentId"
           },
           {
+            $ref: "#/parameters/rowFilter.shipmentLines.serialNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.customerContractInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.previousInvoiceDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/rowFilter.shipmentLines.itemReadableId"
           },
           {
@@ -93128,6 +93191,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLines.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.customerPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.customerPartRevision"
           },
           {
             $ref: "#/parameters/select"
@@ -93391,6 +93460,9 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLine.previousInvoiceDate"
           },
           {
+            $ref: "#/parameters/rowFilter.shipmentLine.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -93516,6 +93588,9 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLine.previousInvoiceDate"
           },
           {
+            $ref: "#/parameters/rowFilter.shipmentLine.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -93593,6 +93668,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLine.previousInvoiceDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLine.partNumberDisplay"
           },
           {
             $ref: "#/parameters/body.shipmentLine"
@@ -94234,6 +94312,15 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.partNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.customerPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.customerPartRevision"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -94461,6 +94548,15 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.partNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.customerPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.customerPartRevision"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -94640,6 +94736,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.taxCodeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.partNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.customerPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.customerPartRevision"
           },
           {
             $ref: "#/parameters/body.salesOrderLine"
@@ -103405,6 +103510,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.taxCodeId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.supplierPartIdFromSupplier"
           },
           {
@@ -109342,6 +109450,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.supplierStageId"
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -109476,6 +109587,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.supplierStageId"
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -109562,6 +109676,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplier.supplierStageId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.partNumberDisplay"
           },
           {
             $ref: "#/parameters/body.supplier"
@@ -119647,6 +119764,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.taxesShipping"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -119868,6 +119988,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.taxesShipping"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.partNumberDisplay"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -120041,6 +120164,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.taxesShipping"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.partNumberDisplay"
           },
           {
             $ref: "#/parameters/body.salesInvoiceLine"
@@ -121228,6 +121354,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.sequenceWeekNumbering"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.supplierPartNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -121587,6 +121719,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.sequenceWeekNumbering"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.supplierPartNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -121898,6 +122036,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.sequenceWeekNumbering"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.supplierPartNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -130945,6 +131089,63 @@ export default {
         tags: ["(rpc) accountTreeBalances"]
       }
     },
+    "/rpc/base_currency_change_blockers": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) base_currency_change_blockers"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) base_currency_change_blockers"]
+      }
+    },
     "/rpc/nanoid_optimized": {
       post: {
         parameters: [
@@ -132189,6 +132390,63 @@ export default {
           }
         },
         tags: ["(rpc) translateTrialBalance"]
+      }
+    },
+    "/rpc/base_currency_data_blockers": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) base_currency_data_blockers"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) base_currency_data_blockers"]
       }
     },
     "/rpc/sync_update_sales_order_exchange_rate": {
@@ -144529,6 +144787,11 @@ export default {
         taxCodeId: {
           format: "text",
           type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
         }
       },
       type: "object"
@@ -156847,6 +157110,11 @@ export default {
         fax: {
           format: "text",
           type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
         }
       },
       type: "object"
@@ -166969,6 +167237,11 @@ export default {
         taxCodeId: {
           format: "text",
           type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
         }
       },
       type: "object"
@@ -171296,6 +171569,11 @@ export default {
         stage: {
           format: "text",
           type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
         }
       },
       type: "object"
@@ -173771,6 +174049,11 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -173792,6 +174075,10 @@ export default {
           type: "number"
         },
         customerPartId: {
+          format: "text",
+          type: "string"
+        },
+        customerPartRevision: {
           format: "text",
           type: "string"
         },
@@ -179235,6 +179522,11 @@ export default {
           default: "",
           format: "text",
           type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
         }
       },
       type: "object"
@@ -179923,6 +180215,19 @@ export default {
           format: "text",
           type: "string"
         },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
+        },
+        customerPartId: {
+          format: "text",
+          type: "string"
+        },
+        customerPartRevision: {
+          format: "text",
+          type: "string"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -179955,11 +180260,11 @@ export default {
           format: "numeric",
           type: "number"
         },
-        customerPartId: {
+        customerPartIdFromCustomer: {
           format: "text",
           type: "string"
         },
-        customerPartRevision: {
+        customerPartRevisionFromCustomer: {
           format: "text",
           type: "string"
         },
@@ -184196,6 +184501,11 @@ export default {
           format: "text",
           type: "string"
         },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -186376,6 +186686,23 @@ export default {
           format: "text",
           type: "string"
         },
+        serialNumber: {
+          format: "text",
+          type: "string"
+        },
+        customerContractInvoiceLineId: {
+          format: "text",
+          type: "string"
+        },
+        previousInvoiceDate: {
+          format: "date",
+          type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -186385,6 +186712,14 @@ export default {
           type: "string"
         },
         description: {
+          format: "text",
+          type: "string"
+        },
+        customerPartId: {
+          format: "text",
+          type: "string"
+        },
+        customerPartRevision: {
           format: "text",
           type: "string"
         }
@@ -186563,6 +186898,11 @@ export default {
           description:
             "The date a contract delivery moved a whole billing row from; NULL when the delivery split the row.",
           format: "date",
+          type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
           type: "string"
         }
       },
@@ -187156,6 +187496,19 @@ export default {
           type: "string"
         },
         taxCodeId: {
+          format: "text",
+          type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
+        },
+        customerPartId: {
+          format: "text",
+          type: "string"
+        },
+        customerPartRevision: {
           format: "text",
           type: "string"
         }
@@ -191291,6 +191644,11 @@ export default {
           format: "text",
           type: "string"
         },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
+        },
         supplierPartIdFromSupplier: {
           format: "text",
           type: "string"
@@ -194225,6 +194583,11 @@ export default {
         },
         supplierStageId: {
           format: "text",
+          type: "string"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
           type: "string"
         }
       },
@@ -199521,6 +199884,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        partNumberDisplay: {
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
         }
       },
       type: "object"
@@ -199953,7 +200321,9 @@ export default {
         "autoPickingListOnRelease",
         "deliveryDateControl",
         "receiptBatchNumbersFromPurchaseOrder",
-        "sequenceWeekNumbering"
+        "sequenceWeekNumbering",
+        "supplierPartNumberDisplay",
+        "customerPartNumberDisplay"
       ],
       properties: {
         id: {
@@ -200485,6 +200855,18 @@ export default {
         sequenceWeekNumbering: {
           default: "iso",
           format: "text",
+          type: "string"
+        },
+        supplierPartNumberDisplay: {
+          default: "Theirs First",
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
+          type: "string"
+        },
+        customerPartNumberDisplay: {
+          default: "Ours First",
+          enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
+          format: 'public."partNumberDisplay"',
           type: "string"
         }
       },
@@ -203584,6 +203966,12 @@ export default {
     },
     "rowFilter.quoteLine.taxCodeId": {
       name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteLine.partNumberDisplay": {
+      name: "partNumberDisplay",
       required: false,
       in: "query",
       type: "string"
@@ -217422,6 +217810,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.customers.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.configurationParameter": {
       name: "configurationParameter",
       description: "configurationParameter",
@@ -228703,6 +229097,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrderLine.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.stockTransferLines": {
       name: "stockTransferLines",
       description: "stockTransferLines",
@@ -233379,6 +233779,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.suppliers.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.accounts": {
       name: "accounts",
       description: "accounts",
@@ -236190,6 +236596,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesInvoiceLines.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesInvoiceLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -236222,6 +236634,12 @@ export default {
     },
     "rowFilter.salesInvoiceLines.customerPartId": {
       name: "customerPartId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoiceLines.customerPartRevision": {
+      name: "customerPartRevision",
       required: false,
       in: "query",
       type: "string"
@@ -242275,6 +242693,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.customer.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.purchaseOrder": {
       name: "purchaseOrder",
       description: "purchaseOrder",
@@ -243058,6 +243482,24 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderLines.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.customerPartId": {
+      name: "customerPartId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.customerPartRevision": {
+      name: "customerPartRevision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesOrderLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -243106,14 +243548,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesOrderLines.customerPartId": {
-      name: "customerPartId",
+    "rowFilter.salesOrderLines.customerPartIdFromCustomer": {
+      name: "customerPartIdFromCustomer",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.salesOrderLines.customerPartRevision": {
-      name: "customerPartRevision",
+    "rowFilter.salesOrderLines.customerPartRevisionFromCustomer": {
+      name: "customerPartRevisionFromCustomer",
       required: false,
       in: "query",
       type: "string"
@@ -247798,6 +248240,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteLines.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.quoteLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -250194,6 +250642,30 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.shipmentLines.serialNumber": {
+      name: "serialNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.shipmentLines.customerContractInvoiceLineId": {
+      name: "customerContractInvoiceLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.shipmentLines.previousInvoiceDate": {
+      name: "previousInvoiceDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.shipmentLines.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.shipmentLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -250208,6 +250680,18 @@ export default {
     },
     "rowFilter.shipmentLines.description": {
       name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.shipmentLines.customerPartId": {
+      name: "customerPartId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.shipmentLines.customerPartRevision": {
+      name: "customerPartRevision",
       required: false,
       in: "query",
       type: "string"
@@ -250406,6 +250890,12 @@ export default {
       name: "previousInvoiceDate",
       description:
         "The date a contract delivery moved a whole billing row from; NULL when the delivery split the row.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.shipmentLine.partNumberDisplay": {
+      name: "partNumberDisplay",
       required: false,
       in: "query",
       type: "string"
@@ -251074,6 +251564,24 @@ export default {
     },
     "rowFilter.salesOrderLine.taxCodeId": {
       name: "taxCodeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.customerPartId": {
+      name: "customerPartId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.customerPartRevision": {
+      name: "customerPartRevision",
       required: false,
       in: "query",
       type: "string"
@@ -255770,6 +256278,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrderLines.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.purchaseOrderLines.supplierPartIdFromSupplier": {
       name: "supplierPartIdFromSupplier",
       required: false,
@@ -259031,6 +259545,12 @@ export default {
     },
     "rowFilter.supplier.supplierStageId": {
       name: "supplierStageId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplier.partNumberDisplay": {
+      name: "partNumberDisplay",
       required: false,
       in: "query",
       type: "string"
@@ -264934,6 +265454,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesInvoiceLine.partNumberDisplay": {
+      name: "partNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.itemRentalRate": {
       name: "itemRentalRate",
       description: "itemRentalRate",
@@ -265918,6 +266444,18 @@ export default {
     },
     "rowFilter.companySettings.sequenceWeekNumbering": {
       name: "sequenceWeekNumbering",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.supplierPartNumberDisplay": {
+      name: "supplierPartNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.customerPartNumberDisplay": {
+      name: "customerPartNumberDisplay",
       required: false,
       in: "query",
       type: "string"

@@ -4,17 +4,27 @@
 
 import type { Database } from "@carbon/database";
 import { distinctItemText } from "@carbon/utils";
+import { formatLinePartNumber, type PartNumberDisplay } from "./part-number";
 import { withRevisionSuffix } from "./revision";
 
+/**
+ * A quote line's title: its part numbers per its display choice. `draft` is
+ * the Edit document modal's unsaved pick.
+ */
 export function getLineDescription(
-  line: Database["public"]["Views"]["quoteLines"]["Row"]
+  line: Database["public"]["Views"]["quoteLines"]["Row"],
+  draft?: PartNumberDisplay
 ) {
-  const customerPartNumber = line.customerPartId
-    ? ` (${line.customerPartId} ${
-        line.customerPartRevision ? `Rev ${line.customerPartRevision}` : ""
-      })`
-    : "";
-  return line?.itemReadableId + customerPartNumber;
+  return formatLinePartNumber(
+    "quote",
+    {
+      ours: line?.itemReadableId,
+      theirs: line?.customerPartId,
+      theirsRevision: line?.customerPartRevision
+    },
+    line?.partNumberDisplay,
+    draft
+  );
 }
 
 export function getLineDescriptionDetails(

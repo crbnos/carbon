@@ -12,6 +12,7 @@ import type {
   ResolvedSection
 } from "../../../template";
 import type { Company, CompanySettings } from "../../../types";
+import type { PartNumberDisplay } from "../../../utils/part-number";
 import type { TaxSummaryEntry } from "../../../utils/tax-summary";
 
 export type QuoteCustomerDetails =
@@ -67,6 +68,11 @@ export interface QuoteData {
   documentTitle: string;
   /** The printed document number, from the template's document texts. */
   documentNumber?: string;
+  /**
+   * The Edit document modal's unsaved display choice for every line, on a
+   * preview or download. Absent: each line prints its own choice.
+   */
+  partNumberDisplayDraft?: PartNumberDisplay;
 }
 
 export type BlockRenderer = (args: {

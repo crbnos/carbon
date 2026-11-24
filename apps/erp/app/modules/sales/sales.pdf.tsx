@@ -252,6 +252,7 @@ export async function renderQuotePdf(
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}
+      partNumberDisplayDraft={edit?.partNumberDisplay}
       taxCodes={taxCodes?.data as TaxCodeSummaryRow[] | null | undefined}
       taxDate={taxDate}
     />
@@ -451,6 +452,7 @@ export async function renderSalesOrderPdf(
       thumbnails={thumbnails}
       template={templateConfig}
       sections={sections}
+      partNumberDisplayDraft={edit?.partNumberDisplay}
       taxCodes={taxCodes?.data as TaxCodeSummaryRow[] | null | undefined}
       taxDate={taxDate}
     />

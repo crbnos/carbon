@@ -347,6 +347,7 @@ export async function loadSalesInvoiceDocument(args: {
     thumbnails,
     template: templateConfig,
     sections,
+    partNumberDisplayDraft: edit?.partNumberDisplay,
     ...tax
   };
 

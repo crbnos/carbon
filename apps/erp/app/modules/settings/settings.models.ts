@@ -13,6 +13,7 @@ import {
   sectionConfigSchema,
   themeSchema
 } from "@carbon/documents/template";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   isValidTimeZone,
   labelSizes,
@@ -245,6 +246,28 @@ const company = {
 
 export const companyValidator = z.object(company);
 
+// Why a base currency change is refused: the reason codes of SQL
+// `base_currency_change_blockers`, in its order.
+export const baseCurrencyChangeBlockers = [
+  "ledger-has-amounts",
+  "has-documents",
+  "has-stock-or-costs",
+  "has-fixed-assets",
+  "group-has-data",
+  "accounting-integration"
+] as const;
+
+export type BaseCurrencyChangeBlocker =
+  (typeof baseCurrencyChangeBlockers)[number];
+
+// A base currency change moves the customers, suppliers, supplier parts and
+// bank accounts set to the old base onto the new one, unless this is on.
+export const companyDetailsValidator = companyValidator.extend({
+  // Omitted when the form could not read the current base: the save keeps it.
+  baseCurrencyCode: zfd.text(z.string().optional()),
+  keepRecordCurrencies: zfd.checkbox()
+});
+
 // The onboarding company step collects only the address; the industry choice
 // comes from the dedicated industry step that follows.
 export const addressValidator = z.object({
@@ -429,6 +452,15 @@ export const rescheduleToleranceValidator = z.object({
 // Empty clears the default: items without their own horizon then have no fence.
 export const deliveryDateCheckSettingsValidator = z.object({
   deliveryDateControl: z.enum(deliveryDateControlTypes)
+});
+
+// Which part numbers new document lines print, by default for the company.
+export const supplierPartNumberDisplaySettingsValidator = z.object({
+  supplierPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS)
+});
+
+export const customerPartNumberDisplaySettingsValidator = z.object({
+  customerPartNumberDisplay: z.enum(PART_NUMBER_DISPLAYS)
 });
 
 export const planningHorizonValidator = z.object({
@@ -1053,7 +1085,8 @@ export const documentEditValidator = zfd.formData({
   notes: jsonField(
     z.record(z.string(), z.unknown()).nullable(),
     "Invalid notes"
-  ).optional()
+  ).optional(),
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
 });
 
 export const documentSectionValidator = zfd.formData({

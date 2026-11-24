@@ -1883,6 +1883,34 @@ export async function getQuoteByExternalId(
 }
 
 /**
+ * The quote a public share link names, or null when the company has Digital
+ * Quotes turned off: the page, its PDF and accept/reject all refuse then.
+ */
+export async function getSharedQuote(
+  client: SupabaseClient<Database>,
+  externalId: string
+) {
+  const quote = await getQuoteByExternalId(client, externalId);
+  if (quote.error) return null;
+
+  const settings = await client
+    .from("companySettings")
+    .select("digitalQuoteEnabled")
+    .eq("id", quote.data.companyId)
+    .single();
+  if (settings.error) {
+    logger.error("Failed to read the digital quote setting", {
+      companyId: quote.data.companyId,
+      quoteId: quote.data.id,
+      error: settings.error
+    });
+    return null;
+  }
+
+  return settings.data.digitalQuoteEnabled ? quote.data : null;
+}
+
+/**
  * Whether a Sent quote's share link has expired: from the start (UTC) of its
  * expiration date. The digital quote and its PDF download both refuse it.
  */
@@ -6579,11 +6607,17 @@ export async function cancelSalesOrder(
 export async function upsertSalesOrderShipment(
   client: SupabaseClient<Database>,
   salesOrderShipment:
-    | (z.infer<typeof salesOrderShipmentValidator> & {
+    | (Omit<
+        z.infer<typeof salesOrderShipmentValidator>,
+        "shipToCustomerLocationId"
+      > & {
         createdBy: string;
         customFields?: Json;
       })
-    | (z.infer<typeof salesOrderShipmentValidator> & {
+    | (Omit<
+        z.infer<typeof salesOrderShipmentValidator>,
+        "shipToCustomerLocationId"
+      > & {
         id: string;
         updatedBy: string;
         customFields?: Json;
@@ -6602,6 +6636,50 @@ export async function upsertSalesOrderShipment(
     .insert([salesOrderShipment])
     .select("id")
     .single();
+}
+
+/**
+ * The sales order's Shipping card in one transaction: the shipment row, and
+ * the order's own ship-to unless it is a drop shipment.
+ */
+export async function updateSalesOrderShipping(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    salesOrderId: string;
+    shipping: Omit<
+      z.infer<typeof salesOrderShipmentValidator>,
+      "id" | "shipToCustomerLocationId"
+    >;
+    shipToCustomerLocationId: string | undefined;
+    customFields?: Json;
+  }
+) {
+  const audit = { updatedBy: args.userId, updatedAt: datetime.timestamp() };
+  await withTransaction(db, async (trx) => {
+    await trx
+      .updateTable("salesOrderShipment")
+      .set({
+        ...sanitize(args.shipping),
+        customFields: args.customFields ?? null,
+        ...audit
+      })
+      .where("id", "=", args.salesOrderId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    if (!args.shipping.dropShipment) {
+      await trx
+        .updateTable("salesOrder")
+        .set({
+          customerLocationId: args.shipToCustomerLocationId ?? null,
+          ...audit
+        })
+        .where("id", "=", args.salesOrderId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+  });
 }
 
 /** Not published: `sales.order.line.create` / `update` also refuse a locked order. */

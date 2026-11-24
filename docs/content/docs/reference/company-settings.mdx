@@ -54,6 +54,7 @@ A user can belong to multiple companies and switch between them with the company
   <Field name="forecastConsumptionBackwardPeriods / forecastConsumptionForwardPeriods" type="number">How many weeks before and after its own week a real order reaches to consume forecast (defaults 4 and 1). Edited from **Settings → Planning**. See [forecast consumption](/docs/reference/forecast).</Field>
   <Field name="updateLeadTimesOnReceipt" type="boolean">Whether receiving recalculates supplier lead times.</Field>
   <Field name="purchasePriceUpdateTiming" type="enum">When purchase prices refresh: `Purchase Invoice Post` or `Purchase Order Finalize`.</Field>
+  <Field name="supplierPartNumberDisplay" type="enum">Which part numbers a new purchase order line prints, unless its supplier sets its own: `Ours First`, `Theirs First` (the default), `Theirs Only` or `Ours Only`. Edited from **Settings → Purchasing**. See [part numbers on documents](/docs/reference/suppliers-and-customers#part-numbers-on-documents).</Field>
   <Field name="maintenanceGenerateInAdvance / maintenanceAdvanceDays" type="boolean / number">Whether preventive maintenance is generated ahead of time, and by how many days (1–90).</Field>
   <Field name="samplingStandard" type="enum">The default inspection sampling standard.</Field>
   <Field name="enforceInspectionFourEyes" type="boolean">Requires a second person to sign off inspections.</Field>
@@ -75,7 +76,27 @@ After accounting is set up, Settings → Accounting can also show a warning: doc
 
 ## Base currency
 
-Each company has one `baseCurrencyCode`. Carbon converts foreign-currency transactions at their exchange rate and stores posted amounts in the base currency. The value is chosen during onboarding and denominates the company's posting history. After accounting is set up, a database trigger refuses any change to it. A subsidiary can use a different base currency from its parent; consolidation handles the conversion.
+Each company has one `baseCurrencyCode`. Carbon converts foreign-currency transactions at their exchange rate and stores posted amounts in the base currency. The value is chosen during onboarding. A subsidiary can use a different base currency from its parent; consolidation handles the conversion.
+
+The base currency can change until the company records its first transaction. Setting up accounting does not lock it. On **Settings → Company** the field is editable while nothing blocks a change. Otherwise it is read-only and lists the reasons:
+
+- "The ledger has entries": a journal line with an amount, in any status. A saved opening trial balance counts.
+- "Quotes, orders, invoices or other documents exist": a sales or supplier quote, a sales or purchase order, invoice or return order, a receipt, shipment, payment, memo, charge, reimbursement, contract, rental agreement, lease or intercompany transaction, in any status.
+- "Stock has been received, moved or used": an entry in the item, cost, supplier or project ledger.
+- "Fixed assets exist": any fixed asset.
+- "Another company in the group has transactions": the company is a parent, and another company of its group has any of the above. A parent's base currency is the group's consolidation currency. A subsidiary is checked on its own data only.
+- "An accounting or spend integration is connected": Xero, Rillet or Ramp is connected, or still holds records it synced for this company, even after it is disconnected. See [accounting integrations](/docs/integrations/accounting).
+
+A change converts no amounts. Every stored number keeps its value and is read in the new currency. Before you save, the form lists the item costs, item prices, work center rates and approval rules this affects. The save also does the following, all together or not at all:
+
+- Deletes the exchange rates you entered (**Your rate**), because they were stated against the old base currency.
+- For the company at the top of its group, clears the group's historical exchange rates, for the same reason. Enter them again against the new currency.
+- Makes the new currency active.
+- Moves item sale prices, and item, customer and customer type rental rates, from the old currency to the new one. Where a rental rate already exists in the new currency, the old one stays in the old currency.
+- Moves customers, suppliers, supplier parts and bank accounts set to the old currency to the new one, unless you turn on the form's switch to keep them (for example **Keep 3 records in USD**).
+- Moves a parent's elimination entity that used the old currency to the new one.
+
+Only **Settings → Company**, the Companies edit page and the `updateCompanyDetails` operation change the base currency, because only they make these changes with it. The operation is the `settings_updateCompanyDetails` MCP tool and `POST /api/v1/settings/updateCompanyDetails`. A direct write to the company table through the data API is refused, even when nothing blocks a change. If Settings → Company can't load the base currency, the field stays empty and a save keeps the stored one.
 
 ## Theme and tags
 
@@ -111,7 +132,7 @@ The warning on Settings → Accounting. `hasLegacyDocuments` found posted docume
 Theme is per-user (a cookie), not per-company. Document templates carry a separate theme setting.
 
 ### I can't change the base currency
-By design: it's the denomination of the whole posted history, chosen at onboarding. After accounting is set up the trigger `check_accounting_config_locked` refuses the change (*"The base currency is locked: accounting was set up …"*). Subsidiary/parent currency differences reconcile at consolidation, not by switching a base.
+The company already holds data in its base currency, so a change would relabel amounts that depend on it. Settings → Company lists the reasons under the field; see [base currency](#base-currency). A save that changes it anyway is refused with *"The base currency can't change: …"* and the same reasons. A direct database write is refused with *"The base currency is locked: …"* and, when nothing blocks a change, with *"The base currency changes only through the company settings …"*. Setting up accounting does not lock it by itself. Carbon never converts stored amounts, so a company with any of this data keeps its base currency. Subsidiary/parent currency differences reconcile at consolidation, not by switching a base.
 
 ### A Modules toggle does nothing I expect
 Flags are read by modules at runtime, and the feature may also be gated by plan/edition. Check licensing before assuming the toggle is broken.

@@ -195,17 +195,26 @@ export function WordInput({
         // composition picks a word.
         if ((e.target as HTMLElement).closest("button")) return;
         if (e.nativeEvent.isComposing) return;
-        // A text is one line on the page: Enter finishes the edit.
-        if (e.key === "Enter") {
-          e.preventDefault();
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        // Shift+Enter starts a new line; Enter finishes the edit.
+        if (e.shiftKey) {
+          document.execCommand("insertLineBreak");
+        } else {
           ref.current?.blur();
         }
       }}
       onDrop={(e) => e.preventDefault()}
       onPaste={(e) => {
         e.preventDefault();
-        const text = e.clipboardData.getData("text/plain").replace(/\s+/g, " ");
-        document.execCommand("insertText", false, text);
+        const lines = e.clipboardData
+          .getData("text/plain")
+          .split(/\r?\n/)
+          .map((line) => line.replace(/\s+/g, " "));
+        lines.forEach((line, i) => {
+          if (i > 0) document.execCommand("insertLineBreak");
+          if (line) document.execCommand("insertText", false, line);
+        });
       }}
       className={cn(
         "min-h-9 w-full min-w-0 whitespace-pre-wrap break-words rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-xs outline-none",
@@ -229,6 +238,16 @@ function chip(token: string, label: string): HTMLSpanElement {
   return span;
 }
 
+/** Text with each line break as a `<br>`, the node a Shift+Enter inserts. */
+function textNodes(text: string): Node[] {
+  return text
+    .split("\n")
+    .flatMap((line, i) => [
+      ...(i > 0 ? [document.createElement("br")] : []),
+      ...(line ? [document.createTextNode(line)] : [])
+    ]);
+}
+
 function render(value: string, labels: Record<string, string>): Node[] {
   const nodes: Node[] = [];
   let last = 0;
@@ -236,13 +255,14 @@ function render(value: string, labels: Record<string, string>): Node[] {
     const label = labels[match[1]];
     if (!label) continue;
     if (match.index > last) {
-      nodes.push(document.createTextNode(value.slice(last, match.index)));
+      nodes.push(...textNodes(value.slice(last, match.index)));
     }
     nodes.push(chip(match[1], label));
     last = match.index + match[0].length;
   }
-  if (last < value.length)
-    nodes.push(document.createTextNode(value.slice(last)));
+  if (last < value.length) nodes.push(...textNodes(value.slice(last)));
+  // A field ending in a line break needs one more for the browser to show it.
+  if (value.endsWith("\n")) nodes.push(document.createElement("br"));
   return nodes;
 }
 
@@ -251,9 +271,12 @@ function read(el: HTMLElement): string {
   for (const node of el.childNodes) {
     if (node instanceof HTMLElement && node.dataset.token) {
       text += `{${node.dataset.token}}`;
+    } else if (node.nodeName === "BR") {
+      text += "\n";
     } else {
       text += node.textContent ?? "";
     }
   }
-  return text.replace(/ /g, " ").replace(/\n/g, " ");
+  // The browser keeps a last `<br>` only so the caret can sit on an empty line.
+  return text.replace(/\u00a0/g, " ").replace(/\n$/, "");
 }

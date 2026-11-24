@@ -283,7 +283,8 @@ export const CUSTOMERS = [
     status: "Active",
     phone: "+1-616-555-0110",
     website: "https://ridgelinedrives.com",
-    taxCode: "IN – State"
+    taxCode: "IN – State",
+    partNumberDisplay: "Theirs First" as const
   },
   {
     name: "Cardinal Motorworks",
@@ -370,7 +371,8 @@ export const SUPPLIERS = [
     stage: "Qualified" as const,
     type: "Materials",
     phone: "+1-219-555-0730",
-    website: "https://lakelandsteel.com"
+    website: "https://lakelandsteel.com",
+    partNumberDisplay: "Ours First" as const
   },
   {
     name: "Summit Bearing Supply",

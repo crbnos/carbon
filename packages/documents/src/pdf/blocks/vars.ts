@@ -14,7 +14,13 @@ import {
   getTaxTotal,
   getTotal
 } from "../../utils/sales-invoice";
-import { addressVars, companyVars, incotermText, str } from "./textVars";
+import {
+  addressVars,
+  companyVars,
+  incotermText,
+  linePartNumberVars,
+  str
+} from "./textVars";
 import type { SalesInvoiceData } from "./types";
 
 /**
@@ -145,12 +151,23 @@ export function buildSalesInvoiceVars(
 export function buildSalesInvoiceLineVars(
   line: SalesInvoiceData["salesInvoiceLines"][number],
   rowNumber: number,
-  data: Pick<SalesInvoiceData, "numberFormatter" | "rateFormatter" | "locale">
+  data: Pick<
+    SalesInvoiceData,
+    "numberFormatter" | "rateFormatter" | "locale" | "partNumberDisplayDraft"
+  >
 ): RowVars<"salesInvoice", "line"> {
   const money = (v: number) => data.numberFormatter.format(v);
   const common = {
-    "line.description": str(getLineDescription(line)),
-    "line.details": str(getLineDescriptionDetails(line))
+    // The part numbers per the line's display choice.
+    "line.description": str(
+      getLineDescription(line, data.partNumberDisplayDraft)
+    ),
+    "line.details": str(getLineDescriptionDetails(line)),
+    ...linePartNumberVars({
+      ours: line.itemReadableId,
+      theirs: line.customerPartId,
+      theirsRevision: line.customerPartRevision
+    })
   };
 
   if (line.invoiceLineType === "Comment") {

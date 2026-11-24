@@ -76,6 +76,10 @@ msgstr "（此部门外）"
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
 msgstr "{0, plural, =0 {其工艺需要有资质的操作员，因此其工序无法排程，直到添加人员。} one {其工艺需要有资质的操作员：# 道工序无法排程，直到添加人员。} other {其工艺需要有资质的操作员：# 道工序无法排程，直到添加人员。}}"
 
+#. placeholder {0}: pending.approvalRules
+msgid "{0, plural, one {# approval rule} other {# approval rules}}"
+msgstr ""
+
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
 msgstr "{0, plural, one {# 物料清单行被遗漏：其物料没有成本记录} other {# 物料清单行被遗漏：其物料没有成本记录}}"
@@ -136,6 +140,14 @@ msgstr "{0, plural, one {# 元素} other {# 元素}}"
 #. placeholder {0}: data.hiddenCount
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
 msgstr "{0, plural, one {# 被类型筛选器隐藏} other {# 被类型筛选器隐藏}}"
+
+#. placeholder {0}: pending.itemCosts
+msgid "{0, plural, one {# item cost} other {# item costs}}"
+msgstr ""
+
+#. placeholder {0}: pending.itemPrices
+msgid "{0, plural, one {# item price} other {# item prices}}"
+msgstr ""
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -269,6 +281,10 @@ msgstr "{0, plural, one {移动 # 项物料} other {移动全部 # 项物料}}"
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {过账或删除日期在截断前的 # 份文件。} other {过账或删除日期在截断前的 # 份文档。}}"
+
+#. placeholder {0}: pending.workCenterRates
+msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
+msgstr ""
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -1333,6 +1349,9 @@ msgstr "{readyJobs, plural, =0 {没有未结工单具备全部零件} one {正�
 
 msgid "{received} of {ordered}"
 msgstr "已收 {received} / 已订购 {ordered}"
+
+msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
+msgstr ""
 
 msgid "{ref} not found"
 msgstr "未找到 {ref}"
@@ -3996,6 +4015,9 @@ msgstr "在重新连接之前，此列表中缺少一个账户。"
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "一个会计分类，按部门或职能对费用进行分组，以便总账可以按组而不仅按账户报告支出"
 
+msgid "An accounting or spend integration is connected"
+msgstr ""
+
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "一条会计记录，记录您折旧而不是当作费用的固定资产；草稿→启用→已提足折旧→已处置。"
 
@@ -4273,6 +4295,9 @@ msgstr "租赁折扣的年费率"
 
 msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "每年。从公司的增量借款利率开始"
+
+msgid "Another company in the group has transactions"
+msgstr ""
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "此集成的另一个连接已具有该名称。请选择不同的名称。"
@@ -6748,6 +6773,15 @@ msgstr "仅限 Carbon"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbon从其未结项目中开设此账户。此处的金额仅在迁移清算时比较。"
 
+msgid "Carbon part number only"
+msgstr "仅显示 Carbon 零件号"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Carbon 零件号，然后是客户零件号"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Carbon 零件号，然后是供应商零件号"
+
 msgid "Carbon Posted"
 msgstr "Carbon已过账"
 
@@ -7004,6 +7038,9 @@ msgstr "更新日志通讯"
 
 msgid "Changes"
 msgstr "更改"
+
+msgid "Changing the base currency converts no amounts"
+msgstr ""
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "更改组件重新定义了组。重新运行运动规划以将更改应用到步骤。"
@@ -7310,6 +7347,12 @@ msgstr "选择去向位置"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "选择物料清单浏览器是否在物料、报价单和工单上用描述或物料 ID 标记每行。"
+
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "选择新建采购订单行打印哪些零件号。供应商可以覆盖此选择，每一行也可以更改此选择。"
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "选择新建报价单、订单、发票和装箱单的行打印哪些零件号。客户可以覆盖此选择。"
 
 msgid "Choose your style"
 msgstr "选择您的风格"
@@ -9742,6 +9785,12 @@ msgstr "客户料号"
 msgid "Customer Part Number"
 msgstr "客户零件号"
 
+msgid "Customer part number only"
+msgstr "仅显示客户零件号"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "客户零件号，然后是 Carbon 零件号"
+
 msgid "Customer Part Revision"
 msgstr "客户零件修订版"
 
@@ -9831,6 +9880,9 @@ msgstr "客户"
 
 msgid "Customers"
 msgstr "客户"
+
+msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+msgstr ""
 
 msgid "Customizations, training, and integrations"
 msgstr "定制、培训和集成"
@@ -11930,6 +11982,9 @@ msgstr "编辑收费项"
 
 msgid "Edit column visibility"
 msgstr "编辑列可见性"
+
+msgid "Edit company"
+msgstr ""
 
 msgid "Edit Component Group"
 msgstr "编辑零件组"
@@ -14200,6 +14255,9 @@ msgstr "固定资产"
 
 msgid "Fixed Assets"
 msgstr "固定资产"
+
+msgid "Fixed assets exist"
+msgstr ""
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "当批量与标准不符时的固定成本摊销差异"
@@ -16956,6 +17014,9 @@ msgstr "保留了 {total} 个中的 {kept} 个；{unresolved} 个无法检查。
 msgid "Kept {kept} of {total}."
 msgstr "保留了 {total} 个中的 {kept} 个。"
 
+msgid "Kept as entered and read in {toCode}:"
+msgstr ""
+
 msgid "Key"
 msgstr "钥匙"
 
@@ -17558,6 +17619,12 @@ msgstr "第{position}行"
 msgid "Line Add-On"
 msgstr "行附加费"
 
+msgid "Line Customer Part ID"
+msgstr "行客户零件 ID"
+
+msgid "Line Customer Part Revision"
+msgstr "行客户修订版"
+
 msgid "Line description"
 msgstr "行描述"
 
@@ -17606,8 +17673,11 @@ msgstr "行运输"
 msgid "Line Status"
 msgstr "行状态"
 
-msgid "Line Supplier Part ID"
-msgstr "行供应商零件 ID"
+msgid "Line Supplier Part ID Row"
+msgstr "行供应商零件 ID 行"
+
+msgid "Line Supplier Part Number"
+msgstr "行供应商零件号"
 
 msgid "Line Total"
 msgstr "行总计"
@@ -18809,6 +18879,9 @@ msgstr "缺失时间"
 
 msgid "Missing:"
 msgstr "缺失："
+
+msgid "Mixed"
+msgstr "混合"
 
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
@@ -20408,6 +20481,9 @@ msgstr "尚未过账租赁运行"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "未设置休假元素。在间接项目中，打开休假元素并启用\"休假\"功能。"
 
+msgid "No line of this document has an item yet."
+msgstr "此单据的行中还没有物料。"
+
 msgid "No lines"
 msgstr "无行项"
 
@@ -21189,6 +21265,9 @@ msgstr "未在公司设置中设置"
 
 msgid "Not set up"
 msgstr "未设置"
+
+msgid "Not set: prints as before"
+msgstr "未设置：保持原有打印方式"
 
 msgid "Not started"
 msgstr "未开始"
@@ -22635,6 +22714,18 @@ msgstr "零件提前期从已过账的采购收货更新。"
 msgid "Part Number"
 msgstr "零件编号"
 
+msgid "Part number display"
+msgstr "零件号显示"
+
+msgid "Part Numbers"
+msgstr "零件号"
+
+msgid "Part Numbers on Documents"
+msgstr "单据上的零件号"
+
+msgid "Part numbers on documents updated"
+msgstr "单据上的零件号已更新"
+
 msgid "Part Supersession"
 msgstr "零件替代"
 
@@ -23811,6 +23902,9 @@ msgstr "打印"
 msgid "Prints as"
 msgstr "打印为"
 
+msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
+msgstr ""
+
 msgid "Priorities"
 msgstr "优先级"
 
@@ -24750,6 +24844,9 @@ msgstr "报价单、订单和发票被阻止，直到供应商有一个带有电
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "报价单、订单、发票和询价单"
+
+msgid "Quotes, orders, invoices or other documents exist"
+msgstr ""
 
 msgid "Quoting"
 msgstr "报价"
@@ -28491,6 +28588,9 @@ msgstr "将版本 {0} 设置为启用版本？"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "在个人资料设置中设置默认地点以选择存储单元。"
 
+msgid "Sets every line of this document when you save."
+msgstr "保存时，此单据的每一行都会设置为此选项。"
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "在序列号发运时设置劳动保证"
 
@@ -29666,6 +29766,9 @@ msgstr "库存位置："
 msgid "Stock Availability"
 msgstr "库存可用性"
 
+msgid "Stock has been received, moved or used"
+msgstr ""
+
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "此存储单元中的库存不属于供应。MRP 和计划页面不计算它，拣货也不从中取货。当上级单元或其任一存储类型不计入MRP时，该单元同样不计入MRP。用于隔离区和冻结区。库存调拨可将库存再移出。"
 
@@ -30214,6 +30317,9 @@ msgstr "供应商位置"
 msgid "Supplier Name"
 msgstr "供应商名称"
 
+msgid "Supplier or company default"
+msgstr "供应商或公司默认值"
+
 msgid "Supplier Order Number"
 msgstr "供应商订单号"
 
@@ -30231,6 +30337,12 @@ msgstr "供应商料号"
 
 msgid "Supplier Part Number"
 msgstr "供应商零件号"
+
+msgid "Supplier part number only"
+msgstr "仅显示供应商零件号"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "供应商零件号，然后是 Carbon 零件号"
 
 msgid "Supplier Part Numbers"
 msgstr "供应商零件号"
@@ -31092,6 +31204,12 @@ msgstr "备份工作报告了此错误。"
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "为保持其工单按时完成，工序必须完成的反向计算日期，写入工序的到期日。测量进度的稳定目标 — 永远不是放置约束。"
 
+msgid "The base currency can't change because:"
+msgstr ""
+
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "生产批次送往车间。其工单已下达。"
 
@@ -31711,6 +31829,9 @@ msgstr "该租赁的"
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
 msgstr "租赁资产变成固定资产，从行使日期开始折旧。其之后应付的付款被移除。该租赁的其他资产不变。"
 
+msgid "The ledger has entries"
+msgstr ""
+
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "要开票的法律实体，当不同于接收商品的客户时 — 用于母公司/子公司或第三方开票安排。"
 
@@ -31734,6 +31855,9 @@ msgstr "此供应商的生命周期状态 — 启用、已停用、待批准等�
 
 msgid "The lines could not be loaded."
 msgstr "无法加载明细行。"
+
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "各行打印的零件号不同。选择一个选项将统一设置所有行。"
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "从计划组的订单的一部分到一个成员的需求的链接：订单未结时软链接(MRP可能会移动它)，收到或完成后硬链接(永不移动)，或规划员以原因设置时手动链接。"
@@ -31939,6 +32063,9 @@ msgstr "当需要该零件的父级被构造时，该零件被制造为其自己
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "构建其父级时，从现有库存中获取该零件 - 无新工作或采购订单。"
+
+msgid "The part numbers of this document cannot change now."
+msgstr "此单据的零件号现在不能更改。"
 
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "交付付款中政府保留的部分，用以收回进度付款或绩效付款：清算比率乘以发票，不超过未清算的融资。"

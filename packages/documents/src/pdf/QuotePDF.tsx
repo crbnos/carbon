@@ -13,6 +13,7 @@ import {
   type ValueCollector
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
+import type { PartNumberDisplay } from "../utils/part-number";
 import { getQuoteDisplayId } from "../utils/quote";
 import { getMoneyFormatter, resolveRegistrationLine } from "../utils/shared";
 import {
@@ -52,6 +53,8 @@ interface QuotePDFProps extends PDF {
   sections?: Record<string, ResolvedSection>;
   /** Settlement decimals from the document currency's row; null/omitted falls back to 2. */
   currencyDecimals?: number | null;
+  /** The Edit document modal's unsaved display choice for every line. */
+  partNumberDisplayDraft?: PartNumberDisplay;
   /** The codes the lines name (`TAX_CODE_SUMMARY_SELECT`), for the tax summary. */
   taxCodes?: TaxCodeSummaryRow[] | null;
   /** The date the codes' components are read on (YYYY-MM-DD). */
@@ -79,7 +82,8 @@ const QuotePDF = ({
   template,
   sections = {},
   taxCodes,
-  taxDate
+  taxDate,
+  partNumberDisplayDraft
 }: QuotePDFProps) => {
   const currencyCode = quote.currencyCode ?? company.baseCurrencyCode;
   const shouldConvertCurrency =
@@ -262,7 +266,8 @@ const QuotePDF = ({
     headerOptions,
     taxSummary,
     documentTitle,
-    documentNumber
+    documentNumber,
+    partNumberDisplayDraft
   };
 
   const displayId = getQuoteDisplayId(quote);

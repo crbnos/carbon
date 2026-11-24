@@ -4,6 +4,7 @@
 
 import type { JSONContent } from "@carbon/react";
 import { z } from "zod";
+import type { PartNumberDisplay } from "../utils/part-number";
 import { lockedTokens } from "./mergeFields";
 import type {
   DocumentBlock,
@@ -51,6 +52,12 @@ export type DocumentEdit = z.infer<typeof documentEditSchema> & {
    * has no column for them: a save writes them to the record.
    */
   notes?: JSONContent | null;
+  /**
+   * The modal's unsaved display choice for every line, for a preview or
+   * download only. `documentEdit` has no column for it: a save writes it to
+   * the document's lines.
+   */
+  partNumberDisplay?: PartNumberDisplay;
 };
 
 /** The documents one record can edit; labels belong to an item, not a document. */
@@ -300,6 +307,7 @@ export async function editToPrint(args: {
   draft:
     | (Pick<DocumentTemplate, "blocks" | "settings"> & {
         notes?: JSONContent | null;
+        partNumberDisplay?: PartNumberDisplay;
       })
     | null;
   readSaved: () => Promise<DocumentEdit | null>;
@@ -316,7 +324,13 @@ export async function editToPrint(args: {
   );
   return problems.length > 0
     ? { refused: problems.map((problem) => problem.message).join("\n") }
-    : { edit: { ...edit, notes: draft.notes } };
+    : {
+        edit: {
+          ...edit,
+          notes: draft.notes,
+          partNumberDisplay: draft.partNumberDisplay
+        }
+      };
 }
 
 /**
