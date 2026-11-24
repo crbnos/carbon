@@ -22,6 +22,7 @@ const TYPES = new Map<string, Map<string, string>>([
     ])
   ],
   ["quote", new Map([["status", enumOf("quoteStatus")]])],
+  ["salesInvoice", new Map([["status", enumOf("salesInvoiceStatus")]])],
   ["receipt", new Map([["status", enumOf("receiptStatus")]])],
   [
     "leasePayment",
@@ -196,6 +197,66 @@ const C2C9EF0DD8F_FIX = `          const newQuoteStatus: "Ordered" | "Partial" =
           }
 `;
 
+// `git show 578c411ffe^:apps/erp/app/modules/invoicing/invoicing.service.ts`:
+// the void branch of postSalesInvoice (from line 9516), its lock (lines
+// 11066–11077) and its status write (11629–11640). The lock reads only `id`,
+// so a second void waited for the first and then reversed the invoice again.
+// The fix reached main squashed into b6ca51d4e1 (#2337), the sha that stays
+// reachable once the branch is gone.
+const INVOICING = "apps/erp/app/modules/invoicing/invoicing.service.ts";
+const VOID_HEAD = `export async function postSalesInvoice(
+  ctx: ServiceContext,
+  raw: z.input<typeof postSalesInvoiceInput>
+) {
+  const { type, invoiceId } = postSalesInvoiceInput.parse(raw);
+`;
+const VOID_WRITE = `          // Update invoice status to voided
+          await trx
+            .updateTable("salesInvoice")
+            .set({
+              status: "Voided",
+              updatedAt: today,
+              updatedBy: userId
+            })
+            .where("id", "=", invoiceId)
+            .where("companyId", "=", companyId)
+            .execute();
+        });
+}
+`;
+const C578C411FFE_PARENT = `${VOID_HEAD}        await db.transaction().execute(async (trx) => {
+          await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // Locked before the journal is read, as a line account change locks
+          // it before it adds lines: those are reversed with the rest, never
+          // left on a voided invoice.
+          await trx
+            .selectFrom("salesInvoice")
+            .select("id")
+            .where("id", "=", invoiceId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .execute();
+${VOID_WRITE}`;
+
+// `git show 578c411ffe:…/invoicing.service.ts`, lines 11066–11081: the same
+// lock reads the status and refuses a Voided invoice.
+const C578C411FFE_FIX = `${VOID_HEAD}        await db.transaction().execute(async (trx) => {
+          await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // Locked before the journal is read, as a line account change locks
+          // it before it adds lines: those are reversed with the rest, never
+          // left on a voided invoice.
+          const locked = await trx
+            .selectFrom("salesInvoice")
+            .select("status")
+            .where("id", "=", invoiceId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (locked?.status === "Voided") {
+            throw new InvalidInputError("Sales invoice is already voided");
+          }
+${VOID_WRITE}`;
+
 describe("statusWriteGuarded: the shipped bugs", () => {
   it("flags lock and unlock from before de82a88cc6", () => {
     const v = scan(DE82A88CC6_PARENT);
@@ -220,6 +281,18 @@ describe("statusWriteGuarded: the shipped bugs", () => {
 
   it("passes the 2c9ef0dd8f fix", () => {
     expect(scan(C2C9EF0DD8F_FIX, CONVERT)).toEqual([]);
+  });
+
+  it("flags the void from before 578c411ffe (b6ca51d4e1 on main), which locked the invoice and never read its status", () => {
+    const v = scan(C578C411FFE_PARENT, INVOICING);
+    expect(v.map((x) => [x.line, x.snippet])).toEqual([
+      [22, "postSalesInvoice: salesInvoice.status"]
+    ]);
+    expect(v[0]?.message).toContain("nothing reads status under that lock");
+  });
+
+  it("passes the 578c411ffe fix", () => {
+    expect(scan(C578C411FFE_FIX, INVOICING)).toEqual([]);
   });
 });
 
@@ -259,6 +332,59 @@ describe("statusWriteGuarded", () => {
     const ts = `export async function voidReceipt(trx, id) {
   const locked = await trx.selectFrom("receipt").select("status").where("id", "=", id).forUpdate().executeTakeFirst();
   if (locked?.status !== "Posted") throw new Error("not posted");
+  await trx.updateTable("receipt").set({ status: "Voided" }).where("id", "=", id).execute();
+}`;
+    expect(scan(ts)).toEqual([]);
+  });
+
+  it("counts a lock whose select reads the status, or a read of it after the lock", () => {
+    const guarded = [
+      `const locked = await trx.selectFrom("receipt").select(["id", "status"]).where("id", "=", id).forUpdate().executeTakeFirst();`,
+      `const locked = await trx.selectFrom("receipt as r").select("r.status as current").where("r.id", "=", id).forUpdate().executeTakeFirst();`,
+      `const locked = await trx.selectFrom("receipt").selectAll().where("id", "=", id).forUpdate().executeTakeFirst();`,
+      `const locked = await trx.selectFrom("receipt").select("id").where("id", "=", id).where("status", "=", "Posted").forUpdate().executeTakeFirst();`,
+      `await sql\`SELECT "id" FROM "receipt" WHERE "id" = \${id} AND "status" = 'Posted' FOR UPDATE\`.execute(trx);`,
+      `await trx.selectFrom("receipt").select("id").where("id", "=", id).forUpdate().execute();
+  const current = await trx.selectFrom("receipt").select("status").where("id", "=", id).executeTakeFirst();`,
+      `const { rows } = await sql\`SELECT * FROM "receipt" WHERE "id" = \${id} FOR UPDATE\`.execute(trx);`
+    ];
+    for (const lock of guarded) {
+      const ts = `export async function voidReceipt(trx, id) {
+  ${lock}
+  await trx.updateTable("receipt").set({ status: "Voided" }).where("id", "=", id).execute();
+}`;
+      expect(scan(ts), lock).toEqual([]);
+    }
+  });
+
+  it("flags a lock that reads no status, as SQL or through a helper", () => {
+    const blind = [
+      `await sql\`SELECT "id" FROM "receipt" WHERE "id" = \${id} FOR UPDATE\`.execute(trx);`,
+      "await lockReceipt(trx, id);",
+      `const locked = await trx.selectFrom("receipt").select("id").where("id", "=", id).forUpdate().executeTakeFirst();
+  if (!locked) throw new Error("not found");`
+    ];
+    for (const lock of blind) {
+      const ts = `async function lockReceipt(trx, id) {
+  return trx.selectFrom("receipt").select("id").where("id", "=", id).forUpdate().executeTakeFirst();
+}
+
+export async function voidReceipt(trx, id) {
+  ${lock}
+  await trx.updateTable("receipt").set({ status: "Voided" }).where("id", "=", id).execute();
+}`;
+      expect(snippets(ts), lock).toEqual(["voidReceipt: receipt.status"]);
+    }
+  });
+
+  it("passes a helper's lock when the caller reads the status of the row it returns", () => {
+    const ts = `async function lockReceipt(trx, id) {
+  return trx.selectFrom("receipt").selectAll("receipt").where("id", "=", id).forUpdate().executeTakeFirst();
+}
+
+export async function voidReceipt(trx, id) {
+  const receipt = await lockReceipt(trx, id);
+  if (receipt?.status !== "Posted") throw new Error("not posted");
   await trx.updateTable("receipt").set({ status: "Voided" }).where("id", "=", id).execute();
 }`;
     expect(scan(ts)).toEqual([]);

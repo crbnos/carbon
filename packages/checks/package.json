@@ -10,6 +10,7 @@
     "baseline": "tsx src/scripts/generate-baseline.ts",
     "clean": "rimraf .turbo node_modules dist",
     "clobbers": "tsx src/scripts/check-clobbers.ts",
+    "guarded-code": "tsx src/scripts/guarded-code.ts",
     "invariants": "tsx src/scripts/run-invariants.ts",
     "license-headers": "tsx src/scripts/license-headers.ts",
     "lint": "biome lint --write ",
