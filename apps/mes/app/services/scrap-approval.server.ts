@@ -163,9 +163,13 @@ export async function postScrapWithApproval<T>(args: {
     };
   }
 
-  // Under every tier too, the posting scraps the quantity that was valued.
-  const valued = scrap.quantity > 0 ? { quantity: scrap.quantity } : undefined;
-  if (!requirement.required || !valued) return postAsBefore(valued);
+  // Under every tier too, the posting scraps the quantity that was valued, a
+  // zero included, so stock restored since is refused rather than scrapped
+  // unapproved. Nothing to scrap asks no approver.
+  const valued = { quantity: scrap.quantity };
+  if (!requirement.required || scrap.quantity <= 0) {
+    return postAsBefore(valued);
+  }
 
   const prompt = (error?: string): ScrapApprovalOutcome<T> => ({
     status: "approval-required",
