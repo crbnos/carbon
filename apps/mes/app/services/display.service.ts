@@ -335,7 +335,7 @@ export async function getWorkDisplayData(
   args: { workCenterId: string; companyId: string; locationId: string }
 ): Promise<WorkDisplayData> {
   const [events, queue, lastEnded] = await Promise.all([
-    // @ts-ignore TS2589: the PostgREST select parse crosses the instantiation-depth limit (see .ai/lessons.md)
+    // @ts-ignore TS2589: the PostgREST select parse crosses the instantiation-depth limit (see .ai/lessons/ts-expect-error-ts2589-on-supabase-joined-selects-is-fragile.md)
     client
       .from("productionEvent")
       .select(

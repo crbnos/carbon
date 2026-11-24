@@ -121,7 +121,7 @@ prove it, and stop.
 
 1. **Read the brief.** No proven cause → you are not in Phase 3 yet; go back to
    Phase 1 (`/root-cause`). Never fix a guess.
-2. Read `.ai/lessons.md` for the affected area.
+2. Run `pnpm brief` on the affected files.
 3. Read the affected module/package `AGENTS.md`.
 4. Read `.claude/rules/write-time-checklist.md`.
 5. Read `BACKWARD_COMPATIBILITY.md` if the brief lists any BC impact.

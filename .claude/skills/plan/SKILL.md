@@ -19,7 +19,7 @@ implementation plan."
 
 1. Read the spec. If any Open Question is unchecked → **STOP** and return to
    `/spec-writing` Step 7. Do not plan around an open question.
-2. Read `.ai/lessons.md` and the module `AGENTS.md` for every module the spec
+2. Run `pnpm brief` on the files the spec touches, and read the module `AGENTS.md` for every module the spec
    touches.
 3. Read the matching guides for the work in the plan (from the root `AGENTS.md`
    Task Router). At minimum:

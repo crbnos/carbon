@@ -53,7 +53,7 @@ For every package or module directory the diff touches:
 2. New package/module without an `AGENTS.md`? → flag it (create via
    `/create-agents-md`).
 3. New pattern, convention, or pitfall worth keeping? → flag it for
-   `.ai/lessons.md`. Spec implemented? → flag the spec for `implemented/` per
+   `/learn`. Spec implemented? → flag the spec for `implemented/` per
    `.ai/specs/AGENTS.md`.
 
 ## Step 4: Output

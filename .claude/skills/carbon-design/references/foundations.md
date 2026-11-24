@@ -107,7 +107,7 @@ Rules:
   Never hand-roll a top-level card from `rounded-lg border bg-card`.
 - **One edge per surface.** Don't put a border on something whose primitive already draws a
   shadow edge (a bordered `CardContent` under a `CardHeader` → `CardContent className="border-0"`
-  with `CardHeader className="border-b border-border"`, per `.ai/lessons.md` "The design-system
+  with `CardHeader className="border-b border-border"`, per `.ai/lessons/the-design-system-card-is-a-gray-tray-shadow-edge-the-white.md` "The design-system
   `Card` is a gray tray").
 - **Tinting a Card shell** requires the `dark:` twin (`bg-emerald-500/5 dark:bg-emerald-500/5`)
   or the base `dark:bg-card` silently wins in dark mode.
@@ -115,7 +115,7 @@ Rules:
   (currently `bg-muted dark:bg-card` on all 23 of them — see `anti-patterns.md` §Carbon's own
   drift). Don't invent a third option.
 - **Scroll:** the page (or the content pane) is the only scroll surface. No `max-h` +
-  `overflow-y-auto` regions inside cards (`.ai/lessons.md` "Card lists never get their own
+  `overflow-y-auto` regions inside cards (`.ai/lessons/card-lists-never-get-their-own-scroll-region-the-page-is-the.md` "Card lists never get their own
   scroll region").
 - **Full-height calcs** inside the content panel subtract `var(--topbar-height)`,
   `var(--header-height)` and `var(--content-inset)`; prefer `h-full` inheritance for new pages.
@@ -183,7 +183,7 @@ size.** ERP uses md/sm; MES uses lg (see `shop-floor-mes.md`).
 `VStack`/`HStack` take `spacing` (VStack 0,1,2,3,4,8; HStack 0,1,2,3,4,6,8), are
 `space-y/x-*` based and `VStack` is `w-full`. Prefer `gap-*` when a child may inject siblings at
 runtime (e.g. `Hyperlink` prefetch links) — `space-*` then adds a phantom margin
-(`.ai/lessons.md` "`space-x-*` gives a phantom margin"). A flex child that fills the rest of a
+(`.ai/lessons/space-x-gives-a-phantom-margin-when-a-component-injects-sibl.md`). A flex child that fills the rest of a
 row is `flex-1 min-w-0`, never `w-full`; fixed siblings get `shrink-0`.
 
 Content widths are capped: full-page create `max-w-4xl`, posting documents `max-w-5xl`,

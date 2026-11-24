@@ -29,7 +29,7 @@ For each unchecked task, in dependency order:
 1. **Read the task** and every file it lists (including the precedent file for
    UI tasks).
 2. **Answer the write-time checklist** (`.claude/rules/write-time-checklist.md`)
-   for each file, BEFORE writing it. Read `.ai/lessons.md` for the area. A
+   for each file, BEFORE writing it. Run `pnpm brief` on the task's files. A
    question you cannot answer from the plan is a plan gap → Step 3.
 3. **Do exactly the steps.** Exact paths, exact code, exact commands. If the
    task says "copy from precedent X", open X and match its structure and idiom.

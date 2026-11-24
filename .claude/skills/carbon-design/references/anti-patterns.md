@@ -131,7 +131,7 @@ Three kinds:
 | "No results / Remove Filters" for pre-filtered tables | `emptyState` neutral sentence | `678cf28e16` |
 | Combobox "Add X" button empty state | inline sentence link (`useEmptyState`) | `ce5aa7d0d8` |
 | Tables for small rich config sets | cards + drawer | `ad9e436003` |
-| Posting-group-style N×M config matrices | flat defaults + per-entity override | `.ai/lessons.md` |
+| Posting-group-style N×M config matrices | flat defaults + per-entity override | `.ai/lessons/posting-group-style-matrices-are-a-rejected-pattern.md` |
 | Collapsed line-item forms when editing | expanded by default | `540abad96d` |
 | Emoji in CTAs/confirmations | plain copy | `1640fdd35e` |
 | `Spinner className="h-8 w-8"` | `Spinner size={32}` | — |

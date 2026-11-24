@@ -71,4 +71,4 @@ that it reparses in Rust.
 - `apps/assembler` — the `/v1/optimize` action + service contract (`AGENTS.md`).
 - `crates/draco-bridge` — cxx bridge to static Google Draco (the `Draco` codec).
 - `packages/viewer` — `useAssembly` loads these GLBs with `MeshoptDecoder`.
-- `.ai/lessons.md` — the meshopt-stride pitfall in full.
+- `.ai/lessons/meshopt-vertex-codec-requires-a-stride-that-is-a-multiple-of.md` — the meshopt-stride pitfall in full.
