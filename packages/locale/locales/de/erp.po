@@ -22705,8 +22705,8 @@ msgstr "Teilenummern auf Dokumenten"
 msgid "Part numbers on documents updated"
 msgstr "Teilenummern auf Dokumenten aktualisiert"
 
-msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
-msgstr "Ein Teil dieser Rechnung ist bereits im Eröffnungsbestand enthalten. Dieser Teil wird auf dieses Konto gebucht (bei leerem Feld: Migrationsverrechnung)."
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
+msgstr "Ein Teil dieser Rechnung ist bereits im Eröffnungsbestand enthalten. Dieser Teil wird stattdessen auf diesem Konto gebucht und nicht auf den Bestand."
 
 msgid "Part Supersession"
 msgstr "Teil-Ablösung"

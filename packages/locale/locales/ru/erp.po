@@ -22705,8 +22705,8 @@ msgstr "Номера деталей в документах"
 msgid "Part numbers on documents updated"
 msgstr "Номера деталей в документах обновлены"
 
-msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
-msgstr "Часть этого счета-фактуры уже есть во входящих запасах. Эта часть проводится на этот счет (если поле пустое, на счет Migration Clearing)."
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
+msgstr "Часть этого счета-фактуры уже учтена в начальных остатках. Эта часть проведена по этому счету вместо запасов."
 
 msgid "Part Supersession"
 msgstr "Замещение деталей"

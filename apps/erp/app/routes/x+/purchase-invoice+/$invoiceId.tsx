@@ -149,7 +149,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     purchaseInvoice.data?.status === "Open"
       ? purchaseInvoiceLedgerGap(getDatabaseClient(), companyId, invoiceId)
           .then((gap) =>
-            gap.eligible ? { cutoverDate: gap.cutoverDate } : null
+            gap.eligible
+              ? {
+                  cutoverDate: gap.cutoverDate,
+                  defaultPostingDate: gap.defaultPostingDate,
+                  defaultOffsetAccountId: gap.defaultOffsetAccountId
+                }
+              : null
           )
           .catch((cause) => {
             logger.warning("Failed to read whether the invoice is in the GL", {

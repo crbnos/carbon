@@ -22705,8 +22705,8 @@ msgstr "Números de pieza en documentos"
 msgid "Part numbers on documents updated"
 msgstr "Números de pieza en documentos actualizados"
 
-msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
-msgstr "Parte de esta factura ya está en el inventario inicial. Esa parte se contabiliza en esta cuenta (Compensación de migración si se deja vacío)."
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
+msgstr "Parte de esta factura ya está en las existencias de apertura. Esa parte se contabiliza en esta cuenta en lugar de en existencias."
 
 msgid "Part Supersession"
 msgstr "Reemplazo de pieza"

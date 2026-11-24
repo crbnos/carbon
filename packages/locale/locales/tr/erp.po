@@ -22705,8 +22705,8 @@ msgstr "Belgelerde parça numaraları"
 msgid "Part numbers on documents updated"
 msgstr "Belgelerdeki parça numaraları güncellendi"
 
-msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
-msgstr "Bu faturanın bir kısmı zaten açılış stoğunda. Bu kısım bu hesaba muhasebeleştirilir (boş bırakılırsa Migration Clearing)."
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
+msgstr "Bu faturanın bir kısmı zaten açılış stoğunda bulunuyor. Bu kısım stok yerine bu hesapta muhasebeleştirilir."
 
 msgid "Part Supersession"
 msgstr "Parça İkamesi"

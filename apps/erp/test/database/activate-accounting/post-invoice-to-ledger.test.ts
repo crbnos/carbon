@@ -481,6 +481,62 @@ describe("postPurchaseInvoiceToLedger", () => {
     }
   );
 
+  databaseTest(
+    "defaults to the first Open period after a Closed cutover month, and previews its refusal",
+    async () => {
+      const f = await activationFixture();
+      try {
+        const order = await orderParts(f, 5, 0);
+        await receive(f, order);
+        const invoiceId = await invoiceAtNoPrice(f, order);
+        await enable(f, invoiceId, []);
+        await priceAfterCutover(f, invoiceId, 2);
+        // The cutover's month is Closed; the next month is Open.
+        const next = await f.db
+          .selectFrom("accountingPeriod")
+          .select(sql<string>`("endDate" + 1)::text`.as("start"))
+          .where("companyId", "=", f.companyId)
+          .where("startDate", "<=", f.cutoverDate)
+          .where("endDate", ">=", f.cutoverDate)
+          .executeTakeFirstOrThrow();
+        await f.db
+          .updateTable("accountingPeriod")
+          .set({ closeStatus: "Closed" })
+          .where("companyId", "=", f.companyId)
+          .where("startDate", "<=", f.cutoverDate)
+          .where("endDate", ">=", f.cutoverDate)
+          .execute();
+        await f.db
+          .insertInto("accountingPeriod")
+          .values({
+            companyId: f.companyId,
+            startDate: next.start,
+            endDate: sql<string>`(date_trunc('month', ${next.start}::date) + interval '1 month - 1 day')::date`,
+            closeStatus: "Open",
+            createdBy: USER
+          })
+          .execute();
+
+        expect(
+          await purchaseInvoiceLedgerGap(f.db, f.companyId, invoiceId)
+        ).toMatchObject({ eligible: true, defaultPostingDate: next.start });
+        expect(
+          (
+            await invokePosting(
+              handlesOf(f.ctx),
+              "preview-purchase-invoice-ledger-posting",
+              { invoiceId, postingDate: f.cutoverDate },
+              previewPurchaseInvoiceLedgerPosting
+            )
+          ).error?.message
+        ).toMatch(/is closed/);
+        expect((await postToLedger(f, invoiceId, next.start)).error).toBeNull();
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+
   databaseTest("refuses an invoice posted on or after the cutover", async () => {
     const f = await activationFixture();
     try {

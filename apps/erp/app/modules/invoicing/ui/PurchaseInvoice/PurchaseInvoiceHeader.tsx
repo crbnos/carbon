@@ -100,7 +100,11 @@ const PurchaseInvoiceHeader = () => {
       purchaseInvoiceLines: PurchaseInvoiceLine[];
       orgHasCredits: boolean;
       /** Set when the invoice can be posted to the GL after the cutover. */
-      ledgerPosting: { cutoverDate: string } | null;
+      ledgerPosting: {
+        cutoverDate: string;
+        defaultPostingDate: string;
+        defaultOffsetAccountId: string | null;
+      } | null;
       rampMapping: {
         id: string;
         externalId: string | null;
@@ -448,6 +452,10 @@ const PurchaseInvoiceHeader = () => {
           open={postToLedgerModal.isOpen}
           invoiceId={invoiceId}
           cutoverDate={routeData.ledgerPosting.cutoverDate}
+          defaultPostingDate={routeData.ledgerPosting.defaultPostingDate}
+          defaultOffsetAccountId={
+            routeData.ledgerPosting.defaultOffsetAccountId
+          }
           onClose={postToLedgerModal.onClose}
         />
       )}

@@ -22705,8 +22705,8 @@ msgstr "Codici componente sui documenti"
 msgid "Part numbers on documents updated"
 msgstr "Codici componente sui documenti aggiornati"
 
-msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
-msgstr "Una parte di questa fattura è già presente nella giacenza di apertura. Tale parte viene registrata su questo conto (Migration Clearing se lasciato vuoto)."
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
+msgstr "Parte di questa fattura è già presente nelle giacenze di apertura. Quella parte viene registrata su questo conto invece che a giacenza."
 
 msgid "Part Supersession"
 msgstr "Sostituzione Pezzo"

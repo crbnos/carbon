@@ -22705,8 +22705,8 @@ msgstr "单据上的零件号"
 msgid "Part numbers on documents updated"
 msgstr "单据上的零件号已更新"
 
-msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
-msgstr "本发票的一部分已在期初库存中。该部分过账到此科目（留空时为迁移清算科目）。"
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
+msgstr "发票的一部分已计入期初库存。该部分改为过账至此科目，而不计入库存。"
 
 msgid "Part Supersession"
 msgstr "零件替代"

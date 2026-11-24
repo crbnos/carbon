@@ -20,6 +20,7 @@ import {
   Table,
   Tbody,
   Td,
+  Tfoot,
   Th,
   Thead,
   Tr,
@@ -44,12 +45,19 @@ import { path } from "~/utils/path";
 export default function PurchaseInvoicePostToLedgerModal({
   invoiceId,
   cutoverDate,
+  defaultPostingDate,
+  defaultOffsetAccountId,
   open,
   onClose
 }: {
   invoiceId: string;
   /** The earliest date the journal can take. */
   cutoverDate: string;
+  /** The first date on or after the cutover in an Open period. */
+  defaultPostingDate: string;
+  /** The company's Migration Clearing account, the offset unless another
+   *  is chosen. */
+  defaultOffsetAccountId: string | null;
   open: boolean;
   onClose: () => void;
 }) {
@@ -58,8 +66,10 @@ export default function PurchaseInvoicePostToLedgerModal({
   const formatter = useCurrencyFormatter({
     currency: company.baseCurrencyCode
   });
-  const [postingDate, setPostingDate] = useState(cutoverDate);
-  const [offsetAccountId, setOffsetAccountId] = useState<string | undefined>();
+  const [postingDate, setPostingDate] = useState(defaultPostingDate);
+  const [offsetAccountId, setOffsetAccountId] = useState<string | undefined>(
+    defaultOffsetAccountId ?? undefined
+  );
 
   const preview = useFetcher<typeof previewLoader>();
   const { load } = preview;
@@ -81,6 +91,8 @@ export default function PurchaseInvoicePostToLedgerModal({
   const lines = result?.data?.lines ?? [];
   const refusal = result?.error?.message ?? null;
   const loading = preview.state !== "idle";
+  const totalDebit = lines.reduce((sum, line) => sum + line.debit, 0);
+  const totalCredit = lines.reduce((sum, line) => sum + line.credit, 0);
 
   return (
     <Modal
@@ -94,7 +106,10 @@ export default function PurchaseInvoicePostToLedgerModal({
           method="post"
           action={path.to.purchaseInvoicePostToLedger(invoiceId)}
           validator={purchaseInvoicePostToLedgerValidator}
-          defaultValues={{ postingDate: cutoverDate }}
+          defaultValues={{
+            postingDate: defaultPostingDate,
+            openingOffsetAccountId: defaultOffsetAccountId ?? undefined
+          }}
           fetcher={fetcher}
         >
           <ModalHeader>
@@ -124,7 +139,7 @@ export default function PurchaseInvoicePostToLedgerModal({
               <Account
                 name="openingOffsetAccountId"
                 label={t`Offset for value in the opening balance`}
-                helperText={t`Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty).`}
+                helperText={t`Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory.`}
                 onChange={(account) => setOffsetAccountId(account?.value)}
               />
             )}
@@ -143,9 +158,6 @@ export default function PurchaseInvoicePostToLedgerModal({
                     <Th>
                       <Trans>Account</Trans>
                     </Th>
-                    <Th>
-                      <Trans>Description</Trans>
-                    </Th>
                     <Th className="text-right">
                       <Trans>Debit</Trans>
                     </Th>
@@ -158,11 +170,17 @@ export default function PurchaseInvoicePostToLedgerModal({
                   {lines.map((line) => (
                     <Tr key={`${line.accountId}-${line.description}`}>
                       <Td>
-                        {line.accountNumber
-                          ? `${line.accountNumber} ${line.accountName}`
-                          : line.accountName}
+                        <div>
+                          {line.accountNumber
+                            ? `${line.accountNumber} ${line.accountName}`
+                            : line.accountName}
+                        </div>
+                        {line.description !== line.accountName && (
+                          <div className="text-xs text-muted-foreground">
+                            {line.description}
+                          </div>
+                        )}
                       </Td>
-                      <Td>{line.description}</Td>
                       <Td className="text-right tabular-nums">
                         {line.debit ? formatter.format(line.debit) : ""}
                       </Td>
@@ -172,6 +190,19 @@ export default function PurchaseInvoicePostToLedgerModal({
                     </Tr>
                   ))}
                 </Tbody>
+                <Tfoot>
+                  <Tr>
+                    <Td className="font-medium">
+                      <Trans>Total</Trans>
+                    </Td>
+                    <Td className="text-right font-medium tabular-nums">
+                      {formatter.format(totalDebit)}
+                    </Td>
+                    <Td className="text-right font-medium tabular-nums">
+                      {formatter.format(totalCredit)}
+                    </Td>
+                  </Tr>
+                </Tfoot>
               </Table>
             )}
           </ModalBody>

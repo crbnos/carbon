@@ -22705,8 +22705,8 @@ msgstr "Part Numbers on Documents"
 msgid "Part numbers on documents updated"
 msgstr "Part numbers on documents updated"
 
-msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
-msgstr "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
+msgstr "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
 
 msgid "Part Supersession"
 msgstr "Part Supersession"

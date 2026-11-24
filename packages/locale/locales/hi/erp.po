@@ -22705,8 +22705,8 @@ msgstr "दस्तावेज़ों पर पार्ट नंबर"
 msgid "Part numbers on documents updated"
 msgstr "दस्तावेज़ों पर पार्ट नंबर अपडेट हुए"
 
-msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
-msgstr "इस चालान का कुछ हिस्सा पहले से प्रारंभिक स्टॉक में है। वह हिस्सा इस खाते में पोस्ट किया जाता है (खाली छोड़ने पर Migration Clearing)।"
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
+msgstr "इस चालान का एक हिस्सा पहले से ओपनिंग स्टॉक में है। वह हिस्सा स्टॉक के बजाय इस खाते में पोस्ट किया जाता है।"
 
 msgid "Part Supersession"
 msgstr "भाग प्रतिस्थापन"

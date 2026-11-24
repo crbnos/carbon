@@ -23397,8 +23397,73 @@ export const purchaseInvoiceLedgerPostingInput = z.object({
 });
 
 export type PurchaseInvoiceLedgerGap =
-  | { eligible: true; cutoverDate: string }
+  | {
+      eligible: true;
+      cutoverDate: string;
+      /** The first day on or after the cutover in a period still Open. */
+      defaultPostingDate: string;
+      /** The offset for value the opening balance holds, unless one is
+       *  chosen: the company's Migration Clearing account. */
+      defaultOffsetAccountId: string | null;
+    }
   | { eligible: false; reason: string };
+
+/** Why the period of `postingDate` refuses the journal, or null. A journal
+ *  before the cutover's first period has none to check; the posting's
+ *  `resolveAccountingPeriod` decides it. `forUpdate` holds the period
+ *  against a close while the posting writes. */
+async function ledgerPostingPeriodRefusal(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  postingDate: string,
+  forUpdate = false
+): Promise<string | null> {
+  let query = db
+    .selectFrom("accountingPeriod")
+    .select([
+      "closeStatus",
+      "closedAt",
+      "fiscalYear",
+      "periodNumber",
+      sql<string>`"startDate"::text`.as("startDate"),
+      sql<string>`"endDate"::text`.as("endDate")
+    ])
+    .where("companyId", "=", companyId)
+    .where("startDate", "<=", postingDate)
+    .where("endDate", ">=", postingDate)
+    .orderBy("startDate");
+  if (forUpdate) query = query.forUpdate();
+  const period = await query.executeTakeFirst();
+  return period
+    ? lineAccountChangePeriodRefusal(period, "posting the invoice")
+    : null;
+}
+
+/** The first day on or after the cutover whose period is Open: the cutover
+ *  itself when its period is, else the start of the first Open period after
+ *  it. The cutover when no period after it is Open (the posting refuses). */
+async function firstOpenLedgerDate(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  cutoverDate: string
+): Promise<string> {
+  const periods = await db
+    .selectFrom("accountingPeriod")
+    .select([
+      "closeStatus",
+      "closedAt",
+      sql<string>`"startDate"::text`.as("startDate")
+    ])
+    .where("companyId", "=", companyId)
+    .where("endDate", ">=", cutoverDate)
+    .orderBy("startDate")
+    .execute();
+  const open = periods.find(
+    (period) => period.closeStatus === "Open" && !period.closedAt
+  );
+  if (!open) return cutoverDate;
+  return open.startDate > cutoverDate ? open.startDate : cutoverDate;
+}
 
 const LEDGER_JOURNAL_SOURCES = ["Purchase Invoice", "Opening Balance"];
 
@@ -23484,7 +23549,17 @@ export async function purchaseInvoiceLedgerGap(
       reason: "The invoice's payable is already in the GL."
     };
   }
-  return { eligible: true, cutoverDate };
+  const defaults = await db
+    .selectFrom("accountDefault")
+    .select("migrationClearingAccount")
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  return {
+    eligible: true,
+    cutoverDate,
+    defaultPostingDate: await firstOpenLedgerDate(db, companyId, cutoverDate),
+    defaultOffsetAccountId: defaults?.migrationClearingAccount ?? null
+  };
 }
 
 /** A layer the variance never writes to: units received before the cutover
@@ -24418,6 +24493,15 @@ export async function previewPurchaseInvoiceLedgerPosting(
       `The posting date must be on or after the accounting cutover (${gap.cutoverDate}).`
     );
   }
+  // The period the posting would refuse, said before the post.
+  if ((await journalPostingStatus(db, companyId)) === "Posted") {
+    const refusal = await ledgerPostingPeriodRefusal(
+      db,
+      companyId,
+      input.postingDate
+    );
+    if (refusal) throw new InvalidInputError(refusal);
+  }
   return withTransaction(db, async (trx) => {
     const plan = await planPurchaseInvoiceLedgerPosting(trx, {
       companyId,
@@ -24458,7 +24542,13 @@ export async function previewPurchaseInvoiceLedgerPosting(
             description: entry.description,
             ...debitCredit(account?.class, entry.amount)
           };
-        }),
+        })
+        // Debits first, then credits, each by account number.
+        .sort(
+          (a, b) =>
+            Number(b.debit > 0) - Number(a.debit > 0) ||
+            (a.accountNumber ?? "").localeCompare(b.accountNumber ?? "")
+        ),
       hasOpeningValue: plan.hasOpeningValue
     };
   });
@@ -24508,25 +24598,12 @@ export async function postPurchaseInvoiceToLedger(
     // A Provisional journal has no period.
     let accountingPeriodId: string | null = null;
     if (postingStatus === "Posted") {
-      const period = await trx
-        .selectFrom("accountingPeriod")
-        .select([
-          "closeStatus",
-          "closedAt",
-          "fiscalYear",
-          "periodNumber",
-          sql<string>`"startDate"::text`.as("startDate"),
-          sql<string>`"endDate"::text`.as("endDate")
-        ])
-        .where("companyId", "=", companyId)
-        .where("startDate", "<=", input.postingDate)
-        .where("endDate", ">=", input.postingDate)
-        .orderBy("startDate")
-        .forUpdate()
-        .executeTakeFirst();
-      const refusal = period
-        ? lineAccountChangePeriodRefusal(period, "posting the invoice")
-        : null;
+      const refusal = await ledgerPostingPeriodRefusal(
+        trx,
+        companyId,
+        input.postingDate,
+        true
+      );
       if (refusal) throw new InvalidInputError(refusal);
       accountingPeriodId = (
         await resolveAccountingPeriod(

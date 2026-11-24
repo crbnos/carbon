@@ -22705,8 +22705,8 @@ msgstr "문서의 품번"
 msgid "Part numbers on documents updated"
 msgstr "문서의 품번이 업데이트됨"
 
-msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
-msgstr "이 송장의 일부는 이미 기초 재고에 포함되어 있습니다. 해당 부분은 이 계정에 전기됩니다(비워 두면 마이그레이션 정리 계정)."
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
+msgstr "이 송장의 일부는 이미 기초 재고에 포함되어 있습니다. 그 일부는 재고 대신 이 계정에 전기됩니다."
 
 msgid "Part Supersession"
 msgstr "부품 대체"

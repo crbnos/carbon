@@ -22705,8 +22705,8 @@ msgstr "帳票の部品番号"
 msgid "Part numbers on documents updated"
 msgstr "帳票の部品番号を更新しました"
 
-msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
-msgstr "この請求書の一部はすでに期首在庫に含まれています。その部分はこの勘定に転記されます（空欄の場合は移行清算勘定）。"
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account instead of inventory."
+msgstr "この請求書の一部は、すでに期首在庫に含まれています。その一部は在庫ではなく、この勘定に転記されます。"
 
 msgid "Part Supersession"
 msgstr "部品後継切替"

@@ -7,6 +7,11 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { purchaseInvoicePostToLedgerValidator } from "~/modules/invoicing/invoicing.models";
 
+/** The dialog loads its preview when it opens or a field changes. After a
+ *  post the invoice has its payable, so a revalidation would only ask for a
+ *  preview the service now refuses. */
+export const shouldRevalidate = () => false;
+
 /** The preview of the journal, for the date and offset account asked. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { invoiceId } = params;
