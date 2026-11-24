@@ -5310,3 +5310,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** Seed the state a controlled field reads (`Combobox`, `SelectControlled`, `NumberControlled`, `Item`, `TaxCode`) from the same value the form gets as its default: `useState(initialValues.x)`, or the same `?? ""` in both places. A caller that leaves a field out gets `undefined` as its default, so a state fallback such as `?? "Return to Stock"` needs the same value in that caller's defaults. To find the field behind a false Unsaved changes prompt, read each controlled field's starting value against its default, not the fields that look interactive.
 
 **Applies to:** Every `ValidatedForm` whose controlled fields read component state, and every route or modal that builds its `initialValues`.
+
+## A UI hint for a posting's refusal calls the posting's rule, at every entry point
+
+**Context:** Charge cost on the element page posts an expense entry, and `postProjectExpense` refuses one whose treatment on the entry date is Capitalize.
+
+**Problem:** The first write-up disabled the action on the project's treatment. The treatment resolves per element: the element, then its ancestors whose override is in effect on the date, then the project. A project-level check would refuse an element that expenses its own cost and offer the action on a capital element under an Expense project. The action also opened from a third place, the plan card's Charge button, beside the two menus the write-up named.
+
+**Rule:** Move the posting's check into a pure function of the posting context and the date. The posting refuses with it, and the loader calls it on the context the posting loads (`loadProjectPostingContexts`), never on a copy of the rule. Before gating an action, grep its opener (`charging.open`) for every entry point and give each the same disabled state and reason. Disable the action only when no input the user can still change (the entry date) makes it post, and keep the server refusal for the inputs that are refused: a dated override (`costTreatmentEffectiveFrom`) leaves the dates before it open, so a today-only check would block entries the posting accepts.
+
+**Applies to:** `projectExpenseRefusal` / `getChargeCostRefusal`, and any action the UI disables with a reason the server decides by cost treatment or date.

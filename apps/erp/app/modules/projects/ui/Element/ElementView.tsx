@@ -28,7 +28,6 @@ import {
   LuLink,
   LuListOrdered,
   LuPackageMinus,
-  LuReceipt,
   LuTimer,
   LuTrash
 } from "react-icons/lu";
@@ -71,7 +70,10 @@ import { ElementDescription } from "./ElementDescription";
 import { ElementLinks } from "./ElementLinks";
 import { ElementPlanLines } from "./ElementPlanLines";
 import { ElementSidebar } from "./ElementSidebar";
-import { ElementTimeAndMaterials } from "./ElementTimeAndMaterials";
+import {
+  ChargeCostMenuItem,
+  ElementTimeAndMaterials
+} from "./ElementTimeAndMaterials";
 import { ElementTypeBlock, hasTypeBlock } from "./ElementTypeBlock";
 import { IssueMaterialModal } from "./IssueMaterialModal";
 import { LogTimeModal } from "./LogTimeModal";
@@ -130,6 +132,7 @@ export function ElementView({
   requirementStatus,
   qualityDocuments,
   itemFields,
+  chargeCostRefusal,
   states,
   labels,
   milestones,
@@ -206,6 +209,10 @@ export function ElementView({
     changeRequest?.status !== "Draft"
       ? projectPlanLockedMessage(lockMilestone.name)
       : null;
+  // An expense entry that no date can post (Capitalize on every date): Charge
+  // cost shows disabled, with the posting's reason as its tooltip.
+  const chargeCostDisabledReason = canChargeCost ? chargeCostRefusal : null;
+  const chargeCostEnabled = canChargeCost && !chargeCostDisabledReason;
 
   // t and i open Log time and Issue material. Never while typing or with a
   // dialog open.
@@ -397,13 +404,11 @@ export function ElementView({
                     <DropdownMenuIcon icon={<LuPackageMinus />} />
                     <Trans>Issue material</Trans>
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled={!canChargeCost}
+                  <ChargeCostMenuItem
+                    isDisabled={!canChargeCost}
+                    disabledReason={chargeCostDisabledReason}
                     onClick={() => charging.open({})}
-                  >
-                    <DropdownMenuIcon icon={<LuReceipt />} />
-                    <Trans>Charge cost</Trans>
-                  </DropdownMenuItem>
+                  />
                 </>
               ) : (
                 chargeActions
@@ -564,7 +569,10 @@ export function ElementView({
                           addDisabledReason={planLockMessage}
                           onIssue={canIssue ? issuing.open : undefined}
                           onLogTime={canLogTime ? loggingTime.open : undefined}
-                          onCharge={canChargeCost ? charging.open : undefined}
+                          onCharge={
+                            chargeCostEnabled ? charging.open : undefined
+                          }
+                          chargeDisabledReason={chargeCostDisabledReason}
                         />
                       ) : (
                         <EmptyCosts>
@@ -592,8 +600,11 @@ export function ElementView({
                             canLogTime ? () => loggingTime.open({}) : undefined
                           }
                           onCharge={
-                            canChargeCost ? () => charging.open({}) : undefined
+                            chargeCostEnabled
+                              ? () => charging.open({})
+                              : undefined
                           }
+                          chargeDisabledReason={chargeCostDisabledReason}
                         />
                       )}
                     </TabsContent>
