@@ -4525,6 +4525,19 @@ export async function createMakeMethodVersion(
 
   try {
     const draftId = await withTransaction(db, async (trx) => {
+      // Read under the lock an activation takes: the source goes Active only
+      // while no other version of the item is.
+      const setActive =
+        activate &&
+        !(
+          await sharedPostings.lockItemMakeMethods(trx, {
+            itemIds: [source.data.itemId],
+            companyId
+          })
+        ).some(
+          (method) => method.id !== copyFromId && method.status === "Active"
+        );
+
       const draft = await trx
         .insertInto("makeMethod")
         .values({
@@ -4540,7 +4553,7 @@ export async function createMakeMethodVersion(
         .returning("id")
         .executeTakeFirstOrThrow();
 
-      if (activate) {
+      if (setActive) {
         // A source set Active meanwhile, or archived behind a newer Active, is
         // not outranked by the new Draft either: nothing to refuse.
         await trx

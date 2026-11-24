@@ -230,6 +230,36 @@ versionTest("copies the source and sets a Draft source Active", async (f) => {
   });
 });
 
+// The page offers to set the source Active when it is the item's only
+// version; another version made Active since then must stay the only one.
+versionTest("leaves a Draft source Draft when another version is Active", async (f) => {
+  const source = await sourceMethod(f, "Draft");
+  const active = await f.db
+    .insertInto("makeMethod")
+    .values({
+      itemId: f.assemblyId,
+      version: 3,
+      status: "Active",
+      companyId: f.companyId,
+      createdBy: USER
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+
+  const result = await createMakeMethodVersion(
+    system!,
+    f.db,
+    version(f, source, { activate: true })
+  );
+
+  expect(result.error).toBeNull();
+  expect(await versions(f)).toEqual([
+    { id: source, version: 1, status: "Draft" },
+    { id: result.data!.id, version: 2, status: "Draft" },
+    { id: active.id, version: 3, status: "Active" }
+  ]);
+});
+
 versionTest("rolls back the version, the activation and the copied lines when the copy fails", async (f) => {
   const source = await sourceMethod(f, "Draft");
   const before = await companyLines(f);
