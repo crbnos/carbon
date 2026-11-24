@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -26,7 +27,8 @@ import {
   getDocumentForceDeleteData,
   getPurchaseInvoice,
   getPurchaseInvoiceDelivery,
-  getPurchaseInvoiceLines
+  getPurchaseInvoiceLines,
+  purchaseInvoiceLedgerGap
 } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoiceHeader } from "~/modules/invoicing/ui";
 import PurchaseInvoiceExplorer from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceExplorer";
@@ -41,6 +43,8 @@ import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("erp", "purchase-invoice");
 
 export const handle: Handle = {
   realtime: [
@@ -103,7 +107,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     currency,
     rampMapping,
     resolvedTax,
-    forceDelete
+    forceDelete,
+    ledgerPosting
   ] = await Promise.all([
     purchaseInvoice.data?.supplierId
       ? getSupplier(client, purchaseInvoice.data.supplierId)
@@ -138,7 +143,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       userId,
       documentType: "purchaseInvoice",
       documentId: invoiceId
-    })
+    }),
+    // Post to GL: an Open invoice from before the cutover whose amount
+    // never reached the GL. A failed read only hides the action.
+    purchaseInvoice.data?.status === "Open"
+      ? purchaseInvoiceLedgerGap(getDatabaseClient(), companyId, invoiceId)
+          .then((gap) =>
+            gap.eligible ? { cutoverDate: gap.cutoverDate } : null
+          )
+          .catch((cause) => {
+            logger.warning("Failed to read whether the invoice is in the GL", {
+              invoiceId,
+              error: cause
+            });
+            return null;
+          })
+      : null
   ]);
 
   return {
@@ -157,6 +177,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     rampMapping: rampMapping?.data ?? null,
     resolvedTax: resolvedTax.data,
     taxDate,
+    ledgerPosting,
     ...forceDelete
   };
 }

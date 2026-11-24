@@ -95,6 +95,22 @@ A posted line coded to the wrong account can move to another without a void. Ope
 - **Identical lines:** when another line of the invoice posted the same amount with the same quantity and dimensions (item, location, project, cost center), Carbon cannot tell the two postings apart and refuses the change; record a journal entry instead.
 - **Accounting sync:** an invoice already synced to an accounting provider keeps its original account there.
 
+## Posting a pre-cutover invoice to the GL
+
+A purchase invoice posted before the accounting cutover with no price, and priced after it, has an amount in the invoice list but none in the GL: the cutover replaced its journal, and its opening balance held no payable for it. Payments against it fail with "Target is missing its original control account". On such an invoice the header menu offers **Post to GL**.
+
+The dialog shows the journal before it posts. Carbon books what its invoice posting would book for each line today, credits **Accounts Payable** for the invoice, and leaves the invoice itself as it is:
+
+- **Goods received after the cutover:** GR/IR is cleared at what the receipt credited it.
+- **Goods still in stock:** the difference adds to their inventory cost, on their cost layers, so the inventory ledger moves with the GL.
+- **Goods already used:** the difference goes to purchase price variance.
+- **Value the opening balance already holds:** goods received before the cutover at a cost were in the opening inventory, so that cost is posted to the offset account the dialog asks for (Migration Clearing when left empty), not to inventory again.
+- **Fixed assets:** the asset's account takes the cost the receipt did not book (the sales tax, for example), and the asset's acquisition cost becomes the line total. A Draft asset no receipt brought in is registered.
+
+- **Posting date:** on or after the cutover, in an Open period.
+- **Permission:** invoicing update and accounting update.
+- **Refused:** an invoice with a payment applied, one the cutover recorded as settled, one whose payable is already in the GL, and lines it does not handle: a tax code, a lease, a project charge, outside processing, a line with no purchase order, or an asset received before the cutover. Record a journal entry for those instead.
+
 ## Settling an invoice
 
 A posted invoice is settled by applying another posted document. An **invoice settlement** links that document to the invoice for a specified amount.
@@ -160,7 +176,10 @@ The invoice has settled payments against it. Reverse (or unapply) those payments
 A database guard (same wording for sales invoices). Once an invoice leaves Draft it can't be deleted — void a posted invoice instead, which writes reversing entries.
 
 ### "Cannot modify a confirmed purchase invoice." / "Cannot modify a locked sales invoice."
-Invoices lock the moment they leave Draft; posted numbers can't be edited in place. To change a posted invoice, void it and raise a new one (or issue a credit/debit note).
+Invoices lock the moment they leave Draft; posted numbers can't be edited in place, through the app, the API or MCP. To change a posted invoice, void it and raise a new one (or issue a credit/debit note).
+
+### "Target is missing its original control account"
+A payment applied to an invoice whose payable is in no journal. For a purchase invoice posted before the accounting cutover and priced after it, use **Post to GL** on the invoice, then post the payment. See [Posting a pre-cutover invoice to the GL](#posting-a-pre-cutover-invoice-to-the-gl).
 
 ### "Accounting period … is closed. Reopen it before changing the account."
 Changing a posted line's account posts on the invoice's posting date, and that period is Closed. Reopen the periods from the most recent back to this one, change the account, then close them again. A Locked period says "… is locked. Unlock it before changing the account."

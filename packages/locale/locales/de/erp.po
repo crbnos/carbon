@@ -78,7 +78,7 @@ msgstr "{0, plural, =0 {Das Verfahren benötigt einen qualifizierten Werker, dah
 
 #. placeholder {0}: pending.approvalRules
 msgid "{0, plural, one {# approval rule} other {# approval rules}}"
-msgstr ""
+msgstr "{0, plural, one {# Genehmigungsregel} other {# Genehmigungsregeln}}"
 
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
@@ -143,11 +143,11 @@ msgstr "{0, plural, one {# durch den Typfilter verborgen} other {# durch den Typ
 
 #. placeholder {0}: pending.itemCosts
 msgid "{0, plural, one {# item cost} other {# item costs}}"
-msgstr ""
+msgstr "{0, plural, one {# Artikelkosten} other {# Artikelkosten}}"
 
 #. placeholder {0}: pending.itemPrices
 msgid "{0, plural, one {# item price} other {# item prices}}"
-msgstr ""
+msgstr "{0, plural, one {# Artikelpreis} other {# Artikelpreise}}"
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -284,7 +284,7 @@ msgstr "{0, plural, one {Buchen Sie das # Dokument ab oder löschen Sie es, das 
 
 #. placeholder {0}: pending.workCenterRates
 msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
-msgstr ""
+msgstr "{0, plural, one {Sätze an # Arbeitsplatz} other {Sätze an # Arbeitsplätzen}}"
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -439,7 +439,7 @@ msgstr "Verteilung für {0}"
 
 #. placeholder {0}: route.dpi
 msgid "{0} dpi"
-msgstr ""
+msgstr "{0} dpi"
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -1073,7 +1073,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} von {total} Phasen abgeschlossen"
 
 msgid "{dpi} dpi"
-msgstr ""
+msgstr "{dpi} dpi"
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# Zeile muss korrigiert werden} other {# Zeilen müssen korrigiert werden}}"
@@ -1351,7 +1351,7 @@ msgid "{received} of {ordered}"
 msgstr "{received} von {ordered}"
 
 msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
-msgstr ""
+msgstr "{records, plural, one {# Datensatz in {fromCode} behalten} other {# Datensätze in {fromCode} behalten}}"
 
 msgid "{ref} not found"
 msgstr "{ref} nicht gefunden"
@@ -4016,7 +4016,7 @@ msgid "An accounting bucket that groups expenses by department or function so th
 msgstr "Ein Buchhaltungs-Container, der Aufwendungen nach Abteilung oder Funktion gruppiert, sodass das Hauptbuch Ausgaben nach Gruppe statt nur nach Konto berichten kann."
 
 msgid "An accounting or spend integration is connected"
-msgstr ""
+msgstr "Eine Buchhaltungs- oder Ausgabenintegration ist verbunden"
 
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "Ein Buchhaltungsdatensatz für einen aktivierten Vermögenswert, den Sie abschreiben anstatt ihn als Aufwand zu buchen; Entwurf → Aktiv → Vollständig abgeschrieben → Abgegangen."
@@ -4297,7 +4297,7 @@ msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "Jährlich. Startet ab dem inkrementellen Kreditzins des Unternehmens"
 
 msgid "Another company in the group has transactions"
-msgstr ""
+msgstr "Ein anderes Unternehmen in der Gruppe hat Transaktionen"
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "Eine andere Verbindung zu dieser Integration hat bereits diesen Namen. Wählen Sie einen anderen."
@@ -7037,7 +7037,7 @@ msgid "Changes"
 msgstr "Änderungen"
 
 msgid "Changing the base currency converts no amounts"
-msgstr ""
+msgstr "Die Änderung der Basiswährung rechnet keine Beträge um"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "Das Ändern der Komponenten definiert die Gruppe neu. Führen Sie Motion Planning erneut aus, um die Änderung auf die Schritte anzuwenden."
@@ -9876,7 +9876,7 @@ msgid "Customers"
 msgstr "Kunden"
 
 msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
-msgstr ""
+msgstr "Kunden, Lieferanten, Lieferantenteile und Bankkonten, die auf {fromCode} eingestellt sind. Andernfalls wechseln sie zu {toCode}."
 
 msgid "Customizations, training, and integrations"
 msgstr "Anpassungen, Schulung und Integrationen"
@@ -11416,7 +11416,7 @@ msgid "Done when day-to-day runs without us in the room"
 msgstr "Erledigt, wenn der Tagesablauf ohne unsere Anwesenheit läuft"
 
 msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
-msgstr ""
+msgstr "Punkte pro Zoll. Benutzerdefinierte Vorlagen drucken mit 203 dpi; QR-Codes können bei 300 und 600 dpi kleiner gedruckt werden."
 
 msgid "Double-click to open this sub-assembly"
 msgstr "Doppelklicken Sie, um diese Unterbaugruppe zu öffnen"
@@ -11459,7 +11459,7 @@ msgid "Download the template. Each row is a default account Carbon posts to. In 
 msgstr "Laden Sie die Vorlage herunter. Jede Zeile ist ein Standardkonto, auf das Carbon bucht. Geben Sie in Kontonummer die Nummer des Kontos in Ihrem Kontenplan ein, das es übernimmt. Carbon aktualisiert das Standardkonto, um es anzupassen."
 
 msgid "DPI"
-msgstr ""
+msgstr "DPI"
 
 msgid "Draft"
 msgstr "Entwurf"
@@ -11972,7 +11972,7 @@ msgid "Edit column visibility"
 msgstr "Spaltensichtbarkeit bearbeiten"
 
 msgid "Edit company"
-msgstr ""
+msgstr "Unternehmen bearbeiten"
 
 msgid "Edit Component Group"
 msgstr "Komponentengruppe bearbeiten"
@@ -14245,7 +14245,7 @@ msgid "Fixed Assets"
 msgstr "Anlagevermögen"
 
 msgid "Fixed assets exist"
-msgstr ""
+msgstr "Anlagegüter sind vorhanden"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Abweichung der Rüstkostenumlage, wenn die Losgröße vom Sollwert abweicht"
@@ -15145,7 +15145,7 @@ msgid "Hide lines"
 msgstr "Positionen ausblenden"
 
 msgid "Hide menu"
-msgstr ""
+msgstr "Menü ausblenden"
 
 msgid "Hide monthly revenue"
 msgstr "Monatliche Umsatzerlöse ausblenden"
@@ -16349,6 +16349,9 @@ msgstr "Rechnungsnummer"
 msgid "Invoice posted and sent via Stripe"
 msgstr "Rechnung gebucht und über Stripe versendet"
 
+msgid "Invoice posted to the GL"
+msgstr "Rechnung im Hauptbuch gebucht"
+
 msgid "Invoice Rate"
 msgstr "Wechselkurs der Rechnung"
 
@@ -16991,7 +16994,7 @@ msgid "Kept {kept} of {total}."
 msgstr "{kept} von {total} behalten."
 
 msgid "Kept as entered and read in {toCode}:"
-msgstr ""
+msgstr "Wie eingegeben beibehalten und in {toCode} gelesen:"
 
 msgid "Key"
 msgstr "Schlüssel"
@@ -21499,6 +21502,9 @@ msgstr "Ausgleich absorbierter Gemeinkosten"
 msgid "Offset Account"
 msgstr "Gegenkonto"
 
+msgid "Offset for value in the opening balance"
+msgstr "Gegenkonto für Wert im Eröffnungssaldo"
+
 msgid "ok"
 msgstr "ok"
 
@@ -22699,6 +22705,9 @@ msgstr "Teilenummern auf Dokumenten"
 msgid "Part numbers on documents updated"
 msgstr "Teilenummern auf Dokumenten aktualisiert"
 
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
+msgstr "Ein Teil dieser Rechnung ist bereits im Eröffnungsbestand enthalten. Dieser Teil wird auf dieses Konto gebucht (bei leerem Feld: Migrationsverrechnung)."
+
 msgid "Part Supersession"
 msgstr "Teil-Ablösung"
 
@@ -23542,6 +23551,9 @@ msgstr "Beleg buchen"
 
 msgid "Post Shipment"
 msgstr "Lieferung buchen"
+
+msgid "Post to GL"
+msgstr "Im Hauptbuch buchen"
 
 msgid "Postal code"
 msgstr "Postleitzahl"
@@ -24813,7 +24825,7 @@ msgid "Quotes, orders, invoices and RFQs"
 msgstr "Angebote, Bestellungen, Rechnungen und Anfragen"
 
 msgid "Quotes, orders, invoices or other documents exist"
-msgstr ""
+msgstr "Angebote, Aufträge, Rechnungen oder andere Dokumente sind vorhanden"
 
 msgid "Quoting"
 msgstr "Angebotserstellung"
@@ -25498,7 +25510,7 @@ msgid "Rejected"
 msgstr "Abgelehnt"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "Bei der Prüfung abgelehnt"
 
 msgid "Rejected at Inspection"
 msgstr "Bei Prüfung abgelehnt"
@@ -29004,7 +29016,7 @@ msgid "Show lines"
 msgstr "Positionen anzeigen"
 
 msgid "Show menu"
-msgstr ""
+msgstr "Menü anzeigen"
 
 msgid "Show monthly revenue"
 msgstr "Monatliche Umsatzerlöse anzeigen"
@@ -29052,10 +29064,10 @@ msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Zeige {0} von {totalFiltered} — verfeinern Sie Ihre Suche"
 
 msgid "Showing {shown} of {total}"
-msgstr ""
+msgstr "{shown} von {total} werden angezeigt"
 
 msgid "Showing {shown} of {total}, through {last}"
-msgstr ""
+msgstr "{shown} von {total} werden angezeigt, bis {last}"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Anzeige in {parentCurrency}"
@@ -29728,7 +29740,7 @@ msgid "Stock Availability"
 msgstr "Bestandsverfügbarkeit"
 
 msgid "Stock has been received, moved or used"
-msgstr ""
+msgstr "Bestand wurde eingebucht, umgelagert oder verbraucht"
 
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "Bestand in dieser Lagereinheit ist keine Deckung. MRP und die Planungsansichten zählen ihn nicht, und die Kommissionierung entnimmt nichts daraus. Eine Einheit ist auch nicht disponierbar, wenn ihre übergeordnete Einheit oder einer ihrer Lagertypen es ist. Für Quarantäne- und Sperrbereiche verwenden. Eine Bestandsumlagerung bringt den Bestand wieder heraus."
@@ -31166,10 +31178,10 @@ msgid "The backward-computed date an operation must finish by to keep its job on
 msgstr "Das rückwärts berechnete Datum, bis zu dem ein Arbeitsgang beendet sein muss, um seinen Fertigungsauftrag pünktlich zu halten, geschrieben auf das Fälligkeitsdatum des Arbeitsgangs. Ein stabiles Ziel zur Messung des Fortschritts - niemals eine Platzierungsbeschränkung."
 
 msgid "The base currency can't change because:"
-msgstr ""
+msgstr "Die Basiswährung kann sich nicht ändern, weil:"
 
 msgid "The base currency couldn't be loaded. Saving keeps it as it is."
-msgstr ""
+msgstr "Die Basiswährung konnte nicht geladen werden. Beim Speichern bleibt sie unverändert."
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "Das Los geht in die Werkstatt. Seine Fertigungsaufträge sind bereits freigegeben."
@@ -31791,7 +31803,7 @@ msgid "The leased asset becomes a fixed asset that depreciates from the exercise
 msgstr "Das Leasingobjekt wird zum Anlagegut, das ab dem Ausübungsdatum abgeschrieben wird. Seine danach fälligen Zahlungen werden entfernt. Die anderen Anlagegüter des Leasings ändern sich nicht."
 
 msgid "The ledger has entries"
-msgstr ""
+msgstr "Das Hauptbuch enthält Einträge"
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "Die juristische Person, an die die Rechnung gesendet wird, wenn diese sich vom Kunden unterscheidet, der die Waren erhält – für Mutter-/Tochtergesellschaften oder Rechnungen Dritter."
@@ -32861,6 +32873,9 @@ msgstr "Diese Rechnung hat kein verwendbares Fälligkeitsdatum — wählen Sie e
 
 msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
 msgstr "Diese Rechnung verwendet für {currencyCode} einen Kurs von 1, aber der heutige Kurs beträgt {currentRate}"
+
+msgid "This invoice was posted before the accounting cutover, and its amount never reached the GL, so payments cannot be applied to it. Posting books what each line would book today: received goods clear GR/IR, goods still in stock add to their inventory cost, used goods go to purchase price variance, and Accounts Payable is credited for the invoice. The invoice itself does not change."
+msgstr "Diese Rechnung wurde vor der Buchhaltungsumstellung gebucht, und ihr Betrag ist nie im Hauptbuch angekommen, daher können ihr keine Zahlungen zugeordnet werden. Das Buchen bucht, was jede Position heute buchen würde: Eingegangene Ware löst WE/RE auf, noch auf Lager befindliche Ware erhöht deren Bestandskosten, verbrauchte Ware geht in die Einkaufspreisabweichung, und die Verbindlichkeiten werden für die Rechnung gutgeschrieben. Die Rechnung selbst ändert sich nicht."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Diese Rechnung wird dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um die Details zu ändern, bearbeiten Sie sie im Stripe-Dashboard."

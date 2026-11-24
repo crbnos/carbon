@@ -1,5 +1,5 @@
 {
-  "totalTools": 1849,
+  "totalTools": 1851,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -394,8 +394,10 @@
     {"name":"invoicing_postMemo","classification":"WRITE","schema":"9eb0a633fb99","response":"188417093a55","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_postPayment","classification":"WRITE","schema":"3e3212e1bffd","response":"bd163ca304cd","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_postPurchaseInvoice","classification":"WRITE","schema":"5710b96a8949","response":"2d07f638a2bb","permission":"invoicing:update","paginates":false},
+    {"name":"invoicing_postPurchaseInvoiceToLedger","classification":"WRITE","schema":"4a57fb3ec295","response":"5a941e7102a9","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_postReimbursement","classification":"WRITE","schema":"8e77ccb5c087","response":"1440dbb5599d","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_postSalesInvoice","classification":"WRITE","schema":"4b9809c93c34","response":"aa004f6905a5","permission":"invoicing:update","paginates":false},
+    {"name":"invoicing_previewPurchaseInvoiceLedgerPosting","classification":"READ","schema":"4a57fb3ec295","response":"c35fbd6d71b8","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_recalculateSalesInvoiceTaxes","classification":"WRITE","schema":"79cd487d4e95","response":"7c5991f4542e","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_replaceInvoiceSettlements","classification":"DESTRUCTIVE","schema":"ee88d5f72042","response":"none","permission":"invoicing:update","paginates":false},
     {"name":"invoicing_saveAndPostReimbursement","classification":"WRITE","schema":"f6834fe09aa5","response":"1440dbb5599d","permission":"invoicing:update","paginates":false},

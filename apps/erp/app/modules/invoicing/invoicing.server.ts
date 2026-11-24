@@ -97,6 +97,11 @@ import * as service from "./invoicing.service";
 
 const logger = getLogger("erp", "invoicing");
 
+/** The refusal for a line write on a posted purchase invoice; the line
+ *  routes say the same before they call. */
+const POSTED_PURCHASE_INVOICE_LINES_ERROR =
+  "Cannot modify a confirmed purchase invoice.";
+
 // --- Shared -------------------------------------------------------------------
 
 const customFieldValues = z.record(
@@ -1450,6 +1455,15 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
   permission: { update: "invoicing" },
 
   async run(ctx, { invoiceId, mappings }) {
+    // A mapped Comment line gains an item and a price, which a posted
+    // invoice's journal never booked.
+    const locked = await service.unlockedPurchaseInvoice(
+      ctx,
+      invoiceId,
+      POSTED_PURCHASE_INVOICE_LINES_ERROR
+    );
+    if (locked) return locked;
+
     const serviceRole = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
@@ -2798,6 +2812,22 @@ export const createPurchaseInvoiceLine = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
+    // A posted invoice's lines are what its journal booked: a line added or
+    // repriced afterwards would change the invoice with no journal.
+    if (input.id) {
+      const refused = await refuseUnlessOwned(ctx, "purchaseInvoiceLine", {
+        id: input.id,
+        invoiceId: input.invoiceId
+      });
+      if (refused) return refused;
+    }
+    const locked = await service.unlockedPurchaseInvoice(
+      ctx,
+      input.invoiceId,
+      POSTED_PURCHASE_INVOICE_LINES_ERROR
+    );
+    if (locked) return locked;
+
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
     // The charge number: the company's project, and an element of it.
@@ -2921,6 +2951,20 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
+    // The line must be on the invoice named, so the lock below is the line's
+    // own invoice's.
+    const refusedLine = await refuseUnlessOwned(ctx, "purchaseInvoiceLine", {
+      id: input.id,
+      invoiceId: input.invoiceId
+    });
+    if (refusedLine) return refusedLine;
+    const locked = await service.unlockedPurchaseInvoice(
+      ctx,
+      input.invoiceId,
+      POSTED_PURCHASE_INVOICE_LINES_ERROR
+    );
+    if (locked) return locked;
+
     const client = ctx.asCaller.supabase;
     // The charge number: the company's project, and an element of it.
     const chargeError = await chargeNumberError(client, ctx.company.id, input);
@@ -4657,6 +4701,68 @@ export const adjustPurchaseInvoiceRounding = defineServiceFn({
   async run(ctx, input) {
     return run(ctx, "adjust-purchase-invoice-rounding", () =>
       service.adjustPurchaseInvoiceRounding(ctx, input)
+    );
+  }
+});
+
+/**
+ * Preview posting a pre-cutover purchase invoice to the GL.
+ *
+ * @remarks
+ * What `postPurchaseInvoiceToLedger` would post for the invoice on
+ * `postingDate`, one line per account and description, with debits and
+ * credits. Writes nothing. Refused, with the reason, for an invoice it does
+ * not apply to.
+ *
+ * @param postingDate - The journal's date, on or after the accounting cutover.
+ * @param openingOffsetAccountId - The account for value the opening balance
+ * already holds; the Migration Clearing account when left out.
+ *
+ * @mcp read
+ */
+export const previewPurchaseInvoiceLedgerPosting = defineServiceFn({
+  input: service.purchaseInvoiceLedgerPostingInput,
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return run(ctx, "preview-purchase-invoice-ledger-posting", () =>
+      service.previewPurchaseInvoiceLedgerPosting(ctx, input)
+    );
+  }
+});
+
+/**
+ * Post a pre-cutover purchase invoice to the GL.
+ *
+ * @remarks
+ * For an Open invoice posted before the accounting cutover whose amount
+ * never reached the GL (priced after the cutover), so its payments are
+ * refused for want of a payable. Posts one journal on `postingDate` (on or
+ * after the cutover, in an Open period) with what Carbon's invoice posting
+ * books for each line given the receipts and cost layers as they are now:
+ * GR/IR cleared at receipt cost, the variance on units still on hand into
+ * inventory with a write-up of their cost layers, the rest to purchase price
+ * variance, a fixed asset's cost to its class's asset account, and value the
+ * opening balance already holds to the offset account. It credits Accounts
+ * Payable keyed to the invoice. The invoice itself does not change.
+ *
+ * Needs accounting update permission. Refused for an invoice with a payment
+ * applied, one after the cutover, one the cutover recorded as settled, one
+ * whose payable is already in the GL, and for lines it does not handle: a
+ * tax code, a lease, a project charge, outside processing, a line with no
+ * purchase order, or an asset received before the cutover.
+ *
+ * @param postingDate - The journal's date, on or after the accounting cutover.
+ * @param openingOffsetAccountId - The account for value the opening balance
+ * already holds; the Migration Clearing account when left out.
+ *
+ * @mcp
+ */
+export const postPurchaseInvoiceToLedger = defineServiceFn({
+  input: service.purchaseInvoiceLedgerPostingInput,
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return run(ctx, "post-purchase-invoice-to-ledger", () =>
+      service.postPurchaseInvoiceToLedger(ctx, input)
     );
   }
 });

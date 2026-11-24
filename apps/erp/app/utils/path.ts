@@ -2370,6 +2370,8 @@ export const path = {
       generatePath(`${x}/purchase-invoice/${invoiceId}/line-order`),
     purchaseInvoicePost: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/post`),
+    purchaseInvoicePostToLedger: (id: string) =>
+      generatePath(`${x}/purchase-invoice/${id}/post-to-ledger`),
     purchaseInvoiceRoot: `${x}/purchase-invoice`,
     purchaseInvoiceRounding: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/rounding`),

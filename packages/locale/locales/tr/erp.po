@@ -78,7 +78,7 @@ msgstr "{0, plural, =0 {Prosesi yeterli nitelikli bir operatör gerektiriyor, bu
 
 #. placeholder {0}: pending.approvalRules
 msgid "{0, plural, one {# approval rule} other {# approval rules}}"
-msgstr ""
+msgstr "{0, plural, one {# onay kuralı} other {# onay kuralı}}"
 
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
@@ -143,11 +143,11 @@ msgstr "{0, plural, one {# tür filtresi tarafından gizlendi} other {# tür fil
 
 #. placeholder {0}: pending.itemCosts
 msgid "{0, plural, one {# item cost} other {# item costs}}"
-msgstr ""
+msgstr "{0, plural, one {# stok kartı maliyeti} other {# stok kartı maliyeti}}"
 
 #. placeholder {0}: pending.itemPrices
 msgid "{0, plural, one {# item price} other {# item prices}}"
-msgstr ""
+msgstr "{0, plural, one {# stok kartı fiyatı} other {# stok kartı fiyatı}}"
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -284,7 +284,7 @@ msgstr "{0, plural, one {Kesme tarihinden önce tarihlendirilmiş # belgeyi muha
 
 #. placeholder {0}: pending.workCenterRates
 msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
-msgstr ""
+msgstr "{0, plural, one {# iş merkezindeki tarife} other {# iş merkezindeki tarife}}"
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -439,7 +439,7 @@ msgstr "{0} dağılımı"
 
 #. placeholder {0}: route.dpi
 msgid "{0} dpi"
-msgstr ""
+msgstr "{0} dpi"
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -1073,7 +1073,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
 msgid "{dpi} dpi"
-msgstr ""
+msgstr "{dpi} dpi"
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# satır düzeltme gerekli} other {# satırlar düzeltme gerekli}}"
@@ -1351,7 +1351,7 @@ msgid "{received} of {ordered}"
 msgstr "{received} / {ordered}"
 
 msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
-msgstr ""
+msgstr "{records, plural, one {{fromCode} para birimindeki # kayıt korunur} other {{fromCode} para birimindeki # kayıt korunur}}"
 
 msgid "{ref} not found"
 msgstr "{ref} bulunamadı"
@@ -4016,7 +4016,7 @@ msgid "An accounting bucket that groups expenses by department or function so th
 msgstr "Giderleri departman veya işlev tarafından gruplandıran ve Büyük Defteri harcamaları hesap yerine grup tarafından rapor etmesine izin veren bir muhasebe kategorisi."
 
 msgid "An accounting or spend integration is connected"
-msgstr ""
+msgstr "Bir muhasebe veya harcama entegrasyonu bağlı"
 
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "Gider yerine amortisman yaptığınız kapitalize edilmiş bir madde için bir muhasebe kaydı; Taslak → Aktif → Amortismanı tamamlanmış → Elden çıkarıldı."
@@ -4297,7 +4297,7 @@ msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "Yıllık. Şirketin marjinal borçlanma oranından başlar"
 
 msgid "Another company in the group has transactions"
-msgstr ""
+msgstr "Gruptaki başka bir şirketin işlemleri var"
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "Bu entegrasyon için başka bir bağlantı zaten bu adı taşıyor. Farklı birini seçin."
@@ -7037,7 +7037,7 @@ msgid "Changes"
 msgstr "Değişiklikler"
 
 msgid "Changing the base currency converts no amounts"
-msgstr ""
+msgstr "Ana para birimini değiştirmek hiçbir tutarı dönüştürmez"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "Bileşenleri değiştirmek grubu yeniden tanımlar. Değişikliği adımlara uygulamak için Motion Planlama'yı yeniden çalıştırın."
@@ -9876,7 +9876,7 @@ msgid "Customers"
 msgstr "Müşteriler"
 
 msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
-msgstr ""
+msgstr "{fromCode} para birimine ayarlı müşteriler, tedarikçiler, tedarikçi parçaları ve banka hesapları bu para birimini korur. Diğerleri {toCode} para birimine taşınır."
 
 msgid "Customizations, training, and integrations"
 msgstr "Özelleştirmeler, eğitim ve entegrasyonlar"
@@ -11416,7 +11416,7 @@ msgid "Done when day-to-day runs without us in the room"
 msgstr "Günlük işlemler bizim olmadan kendi kendine çalışırken bitti"
 
 msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
-msgstr ""
+msgstr "İnç başına nokta. Özel şablonlar 203 dpi'da yazdırılır; QR kodları 300 ve 600 dpi'da daha küçük yazdırılabilir."
 
 msgid "Double-click to open this sub-assembly"
 msgstr "Bu alt montajı açmak için çift tıkla"
@@ -11459,7 +11459,7 @@ msgid "Download the template. Each row is a default account Carbon posts to. In 
 msgstr "Şablonu indir. Her satır, Carbon'un muhasebeleştirdiği varsayılan bir hesaptır. Hesap Numarası'nda, bunu alan hesap planınızdaki hesabın numarasını girin. Carbon varsayılan hesabı eşleştirecek şekilde günceller."
 
 msgid "DPI"
-msgstr ""
+msgstr "DPI"
 
 msgid "Draft"
 msgstr "Taslak"
@@ -11972,7 +11972,7 @@ msgid "Edit column visibility"
 msgstr "Sütun görünürlüğünü düzenle"
 
 msgid "Edit company"
-msgstr ""
+msgstr "Şirketi düzenle"
 
 msgid "Edit Component Group"
 msgstr "Bileşen Grubunu Düzenle"
@@ -14245,7 +14245,7 @@ msgid "Fixed Assets"
 msgstr "Sabit kıymetler"
 
 msgid "Fixed assets exist"
-msgstr ""
+msgstr "Sabit kıymetler mevcut"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Sabit maliyet amortisman sapması parti boyutu standarttan farklı olduğunda"
@@ -15145,7 +15145,7 @@ msgid "Hide lines"
 msgstr "Satırları Gizle"
 
 msgid "Hide menu"
-msgstr ""
+msgstr "Menüyü gizle"
 
 msgid "Hide monthly revenue"
 msgstr "Hesaplamayı gizle"
@@ -16349,6 +16349,9 @@ msgstr "Fatura Numarası"
 msgid "Invoice posted and sent via Stripe"
 msgstr "Fatura muhasebeleştirildi ve Stripe aracılığıyla gönderildi"
 
+msgid "Invoice posted to the GL"
+msgstr "Fatura büyük deftere muhasebeleştirildi"
+
 msgid "Invoice Rate"
 msgstr "Fatura döviz kuru"
 
@@ -16991,7 +16994,7 @@ msgid "Kept {kept} of {total}."
 msgstr "{total} içinden {kept} tutuldu."
 
 msgid "Kept as entered and read in {toCode}:"
-msgstr ""
+msgstr "Girildiği gibi bırakılır ve {toCode} para biriminde okunur:"
 
 msgid "Key"
 msgstr "Anahtar"
@@ -21499,6 +21502,9 @@ msgstr "Emilen Genel Üretim Giderlerini Dengeleme"
 msgid "Offset Account"
 msgstr "Karşı Hesap"
 
+msgid "Offset for value in the opening balance"
+msgstr "Açılış bakiyesindeki değer için karşılık"
+
 msgid "ok"
 msgstr "tamam"
 
@@ -22699,6 +22705,9 @@ msgstr "Belgelerde parça numaraları"
 msgid "Part numbers on documents updated"
 msgstr "Belgelerdeki parça numaraları güncellendi"
 
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
+msgstr "Bu faturanın bir kısmı zaten açılış stoğunda. Bu kısım bu hesaba muhasebeleştirilir (boş bırakılırsa Migration Clearing)."
+
 msgid "Part Supersession"
 msgstr "Parça İkamesi"
 
@@ -23542,6 +23551,9 @@ msgstr "Makbuzu Kaydet"
 
 msgid "Post Shipment"
 msgstr "Sevkiyatı Kaydet"
+
+msgid "Post to GL"
+msgstr "Büyük deftere muhasebeleştir"
 
 msgid "Postal code"
 msgstr "Posta kodu"
@@ -24813,7 +24825,7 @@ msgid "Quotes, orders, invoices and RFQs"
 msgstr "Teklifler, siparişler, faturalar ve teklif talepleri"
 
 msgid "Quotes, orders, invoices or other documents exist"
-msgstr ""
+msgstr "Teklifler, siparişler, faturalar veya diğer belgeler mevcut"
 
 msgid "Quoting"
 msgstr "Teklif Verme"
@@ -25498,7 +25510,7 @@ msgid "Rejected"
 msgstr "Reddedilmiş"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "Muayenede reddedildi"
 
 msgid "Rejected at Inspection"
 msgstr "Muayenede reddedildi"
@@ -29004,7 +29016,7 @@ msgid "Show lines"
 msgstr "Satırları Göster"
 
 msgid "Show menu"
-msgstr ""
+msgstr "Menüyü göster"
 
 msgid "Show monthly revenue"
 msgstr "Aylık Hasılatı Göster"
@@ -29052,10 +29064,10 @@ msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "{0} / {totalFiltered} gösteriliyor — aramanızı daraltın"
 
 msgid "Showing {shown} of {total}"
-msgstr ""
+msgstr "{total} içinden {shown} gösteriliyor"
 
 msgid "Showing {shown} of {total}, through {last}"
-msgstr ""
+msgstr "{total} içinden {shown} gösteriliyor (son: {last})"
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency} cinsinden gösteriliyor"
@@ -29728,7 +29740,7 @@ msgid "Stock Availability"
 msgstr "Stok Mevcudiyeti"
 
 msgid "Stock has been received, moved or used"
-msgstr ""
+msgstr "Stok teslim alındı, taşındı veya kullanıldı"
 
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "Bu depolama birimindeki stok arz değildir. MRP ve planlama ekranları onu saymaz, toplama da ondan almaz. Üst birimi veya depolama türlerinden biri MRP dışıysa birim de MRP dışıdır. Karantina ve bekletme alanları için kullanın. Bir stok transferi stoku yeniden dışarı taşır."
@@ -31166,10 +31178,10 @@ msgid "The backward-computed date an operation must finish by to keep its job on
 msgstr "Bir operasyon'un iş emri'sini zamanında tutmak için bitirmesi gereken geriye doğru hesaplanan tarih, operasyon'un son tarih'e yazılır. İlerlemeyi ölçmek için kararlı bir hedef — yerleştirilme üzerinde hiçbir zaman bir kısıtlama değildir."
 
 msgid "The base currency can't change because:"
-msgstr ""
+msgstr "Ana para birimi şu nedenlerle değiştirilemez:"
 
 msgid "The base currency couldn't be loaded. Saving keeps it as it is."
-msgstr ""
+msgstr "Ana para birimi yüklenemedi. Kaydetme, mevcut haliyle korur."
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "Parti atölyeye gider. İş emirleri zaten serbest bırakıldı."
@@ -31791,7 +31803,7 @@ msgid "The leased asset becomes a fixed asset that depreciates from the exercise
 msgstr "Kiralanmış varlık kullanım hakkı varlığına (sabit kıymet) dönüşür ve kullanım tarihinden itibaren amortize edilir. Sonrası ödenecek ödemeleri kaldırılır. Kiralamının diğer varlıkları değişmez."
 
 msgid "The ledger has entries"
-msgstr ""
+msgstr "Muhasebe defterinde kayıtlar var"
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "Malları alan müşteriden farklı olduğunda faturalandırılacak yasal kuruluş - ebeveyn/yan kuruluş veya üçüncü taraf faturalandırma düzenlemeleri için."
@@ -32861,6 +32873,9 @@ msgstr "Bu faturanın kullanılabilir bir son tarihi yok — Stripe için birini
 
 msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
 msgstr "Bu fatura {currencyCode} için 1 kur kullanıyor, ancak bugünkü kur ise {currentRate}"
+
+msgid "This invoice was posted before the accounting cutover, and its amount never reached the GL, so payments cannot be applied to it. Posting books what each line would book today: received goods clear GR/IR, goods still in stock add to their inventory cost, used goods go to purchase price variance, and Accounts Payable is credited for the invoice. The invoice itself does not change."
+msgstr "Bu fatura muhasebe geçişinden önce muhasebeleştirildi ve tutarı hiçbir zaman büyük deftere ulaşmadı; bu nedenle faturaya ödeme uygulanamaz. Muhasebeleştirme, her satırın bugün kaydedeceği tutarı kaydeder: teslim alınan mallar GR/IR hesabını kapatır, hâlâ stokta olan mallar stok maliyetine eklenir, kullanılan mallar satın alma fiyat sapmasına gider ve fatura için Borç hesapları alacaklandırılır. Fatura kendisi değişmez."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalanacak. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."

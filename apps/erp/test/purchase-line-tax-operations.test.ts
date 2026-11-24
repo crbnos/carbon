@@ -12,6 +12,7 @@ vi.mock("@lingui/core/macro", () => ({
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import {
   createPurchaseInvoiceLine,
+  mapPurchaseInvoiceLines,
   updatePurchaseInvoiceLine
 } from "../app/modules/invoicing/invoicing.server";
 import { createPurchaseOrderLine } from "../app/modules/purchasing/purchasing.server";
@@ -83,7 +84,20 @@ const tables = () => ({
       dateIssued: "2026-10-01",
       postingDate: null,
       currencyCode: "USD"
+    },
+    {
+      id: "pi-posted",
+      companyId: "company-1",
+      supplierId: "supplier-1",
+      dateIssued: "2026-10-01",
+      postingDate: "2026-10-01",
+      currencyCode: "USD"
     }
+  ],
+  // The view the lock reads, scoped by RLS (so its rows carry no companyId).
+  purchaseInvoices: [
+    { id: "pi-1", status: "Draft" },
+    { id: "pi-posted", status: "Open" }
   ],
   purchaseOrder: [
     {
@@ -362,6 +376,63 @@ describe("createPurchaseInvoiceLine", () => {
 
     expect(result.error?.message).toContain("Tax code not found");
     expect(writes).toHaveLength(0);
+  });
+});
+
+describe("line writes on a posted purchase invoice", () => {
+  it.each([
+    ["createPurchaseInvoiceLine", () => createPurchaseInvoiceLine],
+    ["updatePurchaseInvoiceLine", () => updatePurchaseInvoiceLine]
+  ] as const)(
+    "%s refuses a line on a posted invoice and writes nothing",
+    async (_name, operation) => {
+      const { client, writes } = filteringSupabase({
+        ...tables(),
+        purchaseInvoiceLine: [
+          { id: "pil-posted", companyId: "company-1", invoiceId: "pi-posted" }
+        ]
+      });
+
+      const result = await (operation() as typeof updatePurchaseInvoiceLine)(
+        contextFor(client, "invoicing"),
+        { ...piLine, invoiceId: "pi-posted", id: "pil-posted" }
+      );
+
+      expect(result.error?.category).toBe("rule");
+      expect(writes).toEqual([]);
+    }
+  );
+
+  it("refuses an update naming a draft invoice for a line on a posted one", async () => {
+    const { client, writes } = filteringSupabase({
+      ...tables(),
+      purchaseInvoiceLine: [
+        { id: "pil-posted", companyId: "company-1", invoiceId: "pi-posted" }
+      ]
+    });
+
+    const result = await updatePurchaseInvoiceLine(
+      contextFor(client, "invoicing"),
+      { ...piLine, invoiceId: "pi-1", id: "pil-posted" }
+    );
+
+    expect(result.error?.category).toBe("notFound");
+    expect(writes).toEqual([]);
+  });
+
+  it("refuses mapping extracted lines on a posted invoice", async () => {
+    const { client, writes } = filteringSupabase(tables());
+
+    const result = await mapPurchaseInvoiceLines(
+      contextFor(client, "invoicing"),
+      {
+        invoiceId: "pi-posted",
+        mappings: [{ lineId: "pil-1", action: "map", itemId: "item-1" }]
+      }
+    );
+
+    expect(result.error?.category).toBe("rule");
+    expect(writes).toEqual([]);
   });
 });
 

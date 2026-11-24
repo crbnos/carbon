@@ -78,7 +78,7 @@ msgstr "{0, plural, =0 {इसकी प्रक्रिया को यो�
 
 #. placeholder {0}: pending.approvalRules
 msgid "{0, plural, one {# approval rule} other {# approval rules}}"
-msgstr ""
+msgstr "{0, plural, one {# अनुमोदन नियम} other {# अनुमोदन नियम}}"
 
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
@@ -143,11 +143,11 @@ msgstr "{0, plural, one {# प्रकार फ़िल्टर द्वा
 
 #. placeholder {0}: pending.itemCosts
 msgid "{0, plural, one {# item cost} other {# item costs}}"
-msgstr ""
+msgstr "{0, plural, one {# आइटम लागत} other {# आइटम लागतें}}"
 
 #. placeholder {0}: pending.itemPrices
 msgid "{0, plural, one {# item price} other {# item prices}}"
-msgstr ""
+msgstr "{0, plural, one {# आइटम मूल्य} other {# आइटम मूल्य}}"
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -284,7 +284,7 @@ msgstr "{0, plural, one {# दस्तावेज़ को पोस्ट �
 
 #. placeholder {0}: pending.workCenterRates
 msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
-msgstr ""
+msgstr "{0, plural, one {# वर्क सेंटर पर दरें} other {# वर्क सेंटरों पर दरें}}"
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -439,7 +439,7 @@ msgstr "{0} वितरण"
 
 #. placeholder {0}: route.dpi
 msgid "{0} dpi"
-msgstr ""
+msgstr "{0} dpi"
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -1073,7 +1073,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
 msgid "{dpi} dpi"
-msgstr ""
+msgstr "{dpi} dpi"
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# पंक्ति को ठीक करने की आवश्यकता है} other {# पंक्तियों को ठीक करने की आवश्यकता है}}"
@@ -1351,7 +1351,7 @@ msgid "{received} of {ordered}"
 msgstr "{received} / {ordered}"
 
 msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
-msgstr ""
+msgstr "{records, plural, one {{fromCode} में # रिकॉर्ड रखें} other {{fromCode} में # रिकॉर्ड रखें}}"
 
 msgid "{ref} not found"
 msgstr "{ref} नहीं मिला"
@@ -4016,7 +4016,7 @@ msgid "An accounting bucket that groups expenses by department or function so th
 msgstr "एक लेखांकन बकेट जो विभाग या कार्य द्वारा व्यय को समूहित करता है ताकि सामान्य खाता बही समूह द्वारा व्यय की रिपोर्ट कर सकें, केवल खाता द्वारा नहीं।"
 
 msgid "An accounting or spend integration is connected"
-msgstr ""
+msgstr "कोई लेखांकन या व्यय एकीकरण जुड़ा है"
 
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "एक पूंजीकृत आइटम के लिए एक लेखांकन रिकॉर्ड जिसे आप व्यय की बजाय मूल्यह्रास करते हैं; ड्राफ्ट → सक्रिय → पूर्ण मूल्यह्रासित → निपटाया गया।"
@@ -4297,7 +4297,7 @@ msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "वार्षिक। कंपनी की वृद्धिशील उधार दर से शुरू होता है"
 
 msgid "Another company in the group has transactions"
-msgstr ""
+msgstr "समूह की किसी अन्य कंपनी में लेन-देन हैं"
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "इस एकीकरण के लिए एक और कनेक्शन पहले से ही उस नाम के साथ है। एक अलग चुनें।"
@@ -7037,7 +7037,7 @@ msgid "Changes"
 msgstr "परिवर्तन"
 
 msgid "Changing the base currency converts no amounts"
-msgstr ""
+msgstr "आधार मुद्रा बदलने पर कोई राशि परिवर्तित नहीं होती"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "घटकों को बदलने से समूह को पुनः परिभाषित किया जाता है। परिवर्तन को चरणों पर लागू करने के लिए मोशन योजना को पुनः चलाएं।"
@@ -9876,7 +9876,7 @@ msgid "Customers"
 msgstr "ग्राहक"
 
 msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
-msgstr ""
+msgstr "ग्राहक, आपूर्तिकर्ता, आपूर्तिकर्ता के पार्ट्स और बैंक खाते {fromCode} पर सेट हैं। अन्यथा वे {toCode} पर स्थानांतरित हो जाएँगे।"
 
 msgid "Customizations, training, and integrations"
 msgstr "कस्टमाइज़ेशन, प्रशिक्षण और एकीकरण"
@@ -11416,7 +11416,7 @@ msgid "Done when day-to-day runs without us in the room"
 msgstr "दिन-प्रतिदिन हमारे बिना कमरे में चले तब हो गया"
 
 msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
-msgstr ""
+msgstr "प्रति इंच बिंदु। कस्टम टेम्पलेट 203 dpi पर प्रिंट होते हैं; QR कोड 300 और 600 dpi पर छोटे प्रिंट किए जा सकते हैं।"
 
 msgid "Double-click to open this sub-assembly"
 msgstr "इस उप-विधानसभा को खोलने के लिए डबल-क्लिक करें"
@@ -11459,7 +11459,7 @@ msgid "Download the template. Each row is a default account Carbon posts to. In 
 msgstr "टेम्पलेट डाउनलोड करें। प्रत्येक पंक्ति एक डिफ़ॉल्ट खाता है जो Carbon पोस्ट करता है। खाता संख्या में, अपने चार्ट में उस खाते की संख्या दर्ज करें जो इसे लेता है। Carbon डिफ़ॉल्ट खाते को मेल खाने के लिए अपडेट करता है।"
 
 msgid "DPI"
-msgstr ""
+msgstr "DPI"
 
 msgid "Draft"
 msgstr "ड्राफ्ट"
@@ -11972,7 +11972,7 @@ msgid "Edit column visibility"
 msgstr "कॉलम दृश्यता संपादित करें"
 
 msgid "Edit company"
-msgstr ""
+msgstr "कंपनी संपादित करें"
 
 msgid "Edit Component Group"
 msgstr "घटक समूह संपादित करें"
@@ -14245,7 +14245,7 @@ msgid "Fixed Assets"
 msgstr "अचल संपत्तियाँ"
 
 msgid "Fixed assets exist"
-msgstr ""
+msgstr "अचल संपत्तियाँ मौजूद हैं"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "निर्धारित लागत परिशोधन विचलन जब बैच आकार सामान्य से भिन्न हो"
@@ -15145,7 +15145,7 @@ msgid "Hide lines"
 msgstr "पंक्तियां छुपाएं"
 
 msgid "Hide menu"
-msgstr ""
+msgstr "मेनू छिपाएँ"
 
 msgid "Hide monthly revenue"
 msgstr "गणना को छिपाएं"
@@ -16349,6 +16349,9 @@ msgstr "चालान संख्या"
 msgid "Invoice posted and sent via Stripe"
 msgstr "चालान पोस्ट किया गया और Stripe के माध्यम से भेजा गया"
 
+msgid "Invoice posted to the GL"
+msgstr "चालान सामान्य खाता बही में पोस्ट किया गया"
+
 msgid "Invoice Rate"
 msgstr "चालान विनिमय दर"
 
@@ -16991,7 +16994,7 @@ msgid "Kept {kept} of {total}."
 msgstr "{total} में से {kept} रखे गए।"
 
 msgid "Kept as entered and read in {toCode}:"
-msgstr ""
+msgstr "जैसा दर्ज किया गया था वैसा रखा गया और {toCode} में पढ़ा गया:"
 
 msgid "Key"
 msgstr "कुंजी"
@@ -21499,6 +21502,9 @@ msgstr "ऑफसेट अवशोषित उपरिव्यय"
 msgid "Offset Account"
 msgstr "ऑफसेट खाता"
 
+msgid "Offset for value in the opening balance"
+msgstr "प्रारंभिक शेष राशि में मूल्य के लिए ऑफ़सेट"
+
 msgid "ok"
 msgstr "ठीक"
 
@@ -22699,6 +22705,9 @@ msgstr "दस्तावेज़ों पर पार्ट नंबर"
 msgid "Part numbers on documents updated"
 msgstr "दस्तावेज़ों पर पार्ट नंबर अपडेट हुए"
 
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
+msgstr "इस चालान का कुछ हिस्सा पहले से प्रारंभिक स्टॉक में है। वह हिस्सा इस खाते में पोस्ट किया जाता है (खाली छोड़ने पर Migration Clearing)।"
+
 msgid "Part Supersession"
 msgstr "भाग प्रतिस्थापन"
 
@@ -23542,6 +23551,9 @@ msgstr "रसीद पोस्ट करें"
 
 msgid "Post Shipment"
 msgstr "शिपमेंट पोस्ट करें"
+
+msgid "Post to GL"
+msgstr "सामान्य खाता बही में पोस्ट करें"
 
 msgid "Postal code"
 msgstr "पिन कोड"
@@ -24813,7 +24825,7 @@ msgid "Quotes, orders, invoices and RFQs"
 msgstr "कोटेशन, आदेश, चालान और RFQ"
 
 msgid "Quotes, orders, invoices or other documents exist"
-msgstr ""
+msgstr "कोटेशन, ऑर्डर, चालान या अन्य दस्तावेज़ मौजूद हैं"
 
 msgid "Quoting"
 msgstr "कोटेशन"
@@ -25498,7 +25510,7 @@ msgid "Rejected"
 msgstr "अस्वीकृत"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "निरीक्षण में अस्वीकृत"
 
 msgid "Rejected at Inspection"
 msgstr "निरीक्षण में अस्वीकृत"
@@ -29004,7 +29016,7 @@ msgid "Show lines"
 msgstr "पंक्तियां दिखाएं"
 
 msgid "Show menu"
-msgstr ""
+msgstr "मेनू दिखाएँ"
 
 msgid "Show monthly revenue"
 msgstr "मासिक राजस्व दिखाएं"
@@ -29052,10 +29064,10 @@ msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "{0} of {totalFiltered} दिखा रहे हैं — अपनी खोज को परिष्कृत करें"
 
 msgid "Showing {shown} of {total}"
-msgstr ""
+msgstr "{total} में से {shown} दिखाए जा रहे हैं"
 
 msgid "Showing {shown} of {total}, through {last}"
-msgstr ""
+msgstr "{total} में से {shown} दिखाए जा रहे हैं, {last} तक"
 
 msgid "Showing in {parentCurrency}"
 msgstr "में दिखाई दे रहा है {parentCurrency}"
@@ -29728,7 +29740,7 @@ msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"
 
 msgid "Stock has been received, moved or used"
-msgstr ""
+msgstr "स्टॉक प्राप्त, स्थानांतरित या उपयोग किया गया है"
 
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "इस भंडारण इकाई का स्टॉक आपूर्ति नहीं है। MRP और योजना स्क्रीन इसे नहीं गिनतीं, और पिकिंग इससे नहीं लेती। कोई इकाई तब भी MRP से बाहर होती है जब उसकी मूल इकाई या उसका कोई भंडारण प्रकार बाहर हो। क्वारंटाइन और होल्ड क्षेत्रों के लिए इसका उपयोग करें। स्टॉक स्थानांतरण स्टॉक को फिर से बाहर ले जाता है।"
@@ -31166,10 +31178,10 @@ msgid "The backward-computed date an operation must finish by to keep its job on
 msgstr "वह पिछड़ी हुई गणना की गई तारीख जिस तक एक ऑपरेशन को अपने जॉब को समय पर रखने के लिए समाप्त करना चाहिए, ऑपरेशन की नियत तिथि में लिखा गया है। प्रगति को मापने के लिए एक स्थिर लक्ष्य — कभी भी प्लेसमेंट पर बाधा नहीं।"
 
 msgid "The base currency can't change because:"
-msgstr ""
+msgstr "आधार मुद्रा इन कारणों से नहीं बदल सकती:"
 
 msgid "The base currency couldn't be loaded. Saving keeps it as it is."
-msgstr ""
+msgstr "आधार मुद्रा लोड नहीं हो सकी। सहेजने पर यह जैसी है वैसी ही रहेगी।"
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "बैच शॉप फ्लोर पर जाता है। इसकी जॉब्स पहले से ही जारी हैं।"
@@ -31791,7 +31803,7 @@ msgid "The leased asset becomes a fixed asset that depreciates from the exercise
 msgstr "पट्टे की गई संपत्ति अचल संपत्ति बन जाती है जो व्यायाम तिथि से मूल्यह्रास होती है। इसके बाद की भुगतान देयताएं निकाल दी जाती हैं। पट्टे की अन्य संपत्तियां परिवर्तित नहीं होती हैं।"
 
 msgid "The ledger has entries"
-msgstr ""
+msgstr "खाता बही में प्रविष्टियाँ हैं"
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "कानूनी इकाई जिसे चालान भेजा जाता है, जब यह उस ग्राहक से अलग होता है जो माल प्राप्त करता है - माता-पिता / सहायक या तीसरे पक्ष के बिलिंग व्यवस्था के लिए।"
@@ -32861,6 +32873,9 @@ msgstr "इस चालान का कोई उपयोगी नियत 
 
 msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
 msgstr "इस चालान में {currencyCode} के लिए 1 की दर का उपयोग किया गया है, लेकिन आज की दर {currentRate} है"
+
+msgid "This invoice was posted before the accounting cutover, and its amount never reached the GL, so payments cannot be applied to it. Posting books what each line would book today: received goods clear GR/IR, goods still in stock add to their inventory cost, used goods go to purchase price variance, and Accounts Payable is credited for the invoice. The invoice itself does not change."
+msgstr "यह चालान लेखांकन कटओवर से पहले पोस्ट किया गया था, और इसकी राशि कभी सामान्य खाता बही तक नहीं पहुँची, इसलिए इस पर भुगतान लागू नहीं किए जा सकते। पोस्टिंग वही दर्ज करती है जो हर पंक्ति आज दर्ज करती: प्राप्त माल GR/IR को साफ़ करता है, स्टॉक में बचा माल अपनी स्टॉक लागत में जुड़ता है, उपयोग किया गया माल खरीद मूल्य विचलन में जाता है, और देय खाते चालान के लिए क्रेडिट किए जाते हैं। चालान स्वयं नहीं बदलता।"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"

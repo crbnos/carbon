@@ -254,7 +254,7 @@ msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 个工单"
 
 msgid "{scrapped} scrapped"
-msgstr ""
+msgstr "{scrapped} 已报废"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "库存 {unbinned}，不在任何料箱中"
@@ -1332,7 +1332,7 @@ msgid "Flag issue"
 msgstr "标记问题"
 
 msgid "Flow chart view"
-msgstr ""
+msgstr "流程图视图"
 
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
@@ -1725,7 +1725,7 @@ msgid "Log completed for {0}"
 msgstr "记录 {0} 的完成数量"
 
 msgid "Log completed for {trackedEntityReadableId}"
-msgstr ""
+msgstr "已为 {trackedEntityReadableId} 记录完成"
 
 msgid "Log Rework"
 msgstr "记录返工"
@@ -2145,7 +2145,7 @@ msgid "No unit"
 msgstr "无件"
 
 msgid "No unit selected"
-msgstr ""
+msgstr "未选择件"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
@@ -2306,7 +2306,7 @@ msgid "Open sub-assembly {0}: {1}"
 msgstr "打开子装配体 {0}: {1}"
 
 msgid "Open the operation to pick the unit"
-msgstr ""
+msgstr "打开工序以选择件"
 
 msgid "Operation"
 msgstr "工序"
@@ -2466,10 +2466,10 @@ msgid "Pick a style, a color and a face."
 msgstr "选择样式、颜色和面。"
 
 msgid "Pick an open unit to issue parts."
-msgstr ""
+msgstr "选择一个进行中的件以领料。"
 
 msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
-msgstr ""
+msgstr "选择一个进行中的件以领料。该件中已有的零件仍可取消消耗。"
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "选择工单。在您添加一些时间前，它显示零小时。"
@@ -3060,10 +3060,10 @@ msgid "Select a serial number to continue with this operation"
 msgstr "选择一个序列号以继续此工序"
 
 msgid "Select a unit"
-msgstr ""
+msgstr "选择件"
 
 msgid "Select a unit first"
-msgstr ""
+msgstr "请先选择件"
 
 msgid "Select an issue type"
 msgstr "选择问题类型"
@@ -3545,7 +3545,7 @@ msgid "This job has no bill rate. Ask the office to set it before the time is bi
 msgstr "此工单没有账单费率。请要求办公室在时间被账单处理之前设置它。"
 
 msgid "This job has no operations"
-msgstr ""
+msgstr "此工单没有工序。"
 
 msgid "This label does not belong to a unit in this company"
 msgstr "此标签不属于本公司的任何单件"
@@ -3575,10 +3575,10 @@ msgid "This unit has used this correction its limit number of times. Scrap it or
 msgstr "该件已达到此纠正的次数上限。请改为报废该件或发起质量问题。"
 
 msgid "This unit is complete here"
-msgstr ""
+msgstr "此件在此已完成。"
 
 msgid "This unit is not part of this operation"
-msgstr ""
+msgstr "此件不属于此工序。"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "此单元将被永久报废，并将创建替换单元。"
@@ -3779,7 +3779,7 @@ msgid "Until <0/>"
 msgstr "直到 <0/>"
 
 msgid "Untitled"
-msgstr ""
+msgstr "未命名"
 
 msgid "Up next"
 msgstr "下一个"

@@ -5273,3 +5273,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A lock checked in the route is not a lock
+
+**Context:** Purchase invoice line routes refused an edit on a posted invoice (`requireUnlocked(isPurchaseInvoiceLocked(...))`), but `createPurchaseInvoiceLine`, `updatePurchaseInvoiceLine` and `mapPurchaseInvoiceLines` did not. The API and MCP call the service function, not the route.
+
+**Problem:** A caller repriced the lines of posted invoices through the API. The invoice list read the new prices, but no journal was written, so the subledger and the GL disagreed and payments were refused for want of a payable. Invoices posted before the accounting cutover could not even be voided to start again.
+
+**Rule:** Put a status lock in the service function every caller runs (`unlockedPurchaseInvoice`, as the sales line operations already did), and check the record named by id is on the parent named (`refuseUnlessOwned` with both keys). A route check is the page's early answer only. When a route guards a write, grep its operation for the same guard.
+
+**Applies to:** every `defineServiceFn` that writes a document's lines; `apps/erp/app/modules/invoicing/invoicing.server.ts`.

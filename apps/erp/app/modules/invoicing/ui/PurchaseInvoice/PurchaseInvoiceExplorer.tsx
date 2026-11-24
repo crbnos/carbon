@@ -121,7 +121,7 @@ export default function PurchaseInvoiceExplorer() {
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}
         >
-          {unmappedLines.length > 0 && !editMode.isEditing && (
+          {unmappedLines.length > 0 && !isDisabled && !editMode.isEditing && (
             <div className="p-2 border-b">
               <Alert variant="warning">
                 <AlertTitle>

@@ -254,7 +254,7 @@ msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 작업 지시"
 
 msgid "{scrapped} scrapped"
-msgstr ""
+msgstr "{scrapped} 폐기됨"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "재고 {unbinned}, 빈 미지정"
@@ -1332,7 +1332,7 @@ msgid "Flag issue"
 msgstr "문제 표시"
 
 msgid "Flow chart view"
-msgstr ""
+msgstr "흐름도 보기"
 
 msgid "Forgot to Clock Out?"
 msgstr "작업 종료를 잊었나요?"
@@ -1725,7 +1725,7 @@ msgid "Log completed for {0}"
 msgstr "{0} 완료 기록"
 
 msgid "Log completed for {trackedEntityReadableId}"
-msgstr ""
+msgstr "{trackedEntityReadableId} 완료 기록"
 
 msgid "Log Rework"
 msgstr "재작업 기록"
@@ -2145,7 +2145,7 @@ msgid "No unit"
 msgstr "단위 없음"
 
 msgid "No unit selected"
-msgstr ""
+msgstr "선택된 개가 없습니다"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
@@ -2306,7 +2306,7 @@ msgid "Open sub-assembly {0}: {1}"
 msgstr "하위 조립체 {0} 열기: {1}"
 
 msgid "Open the operation to pick the unit"
-msgstr ""
+msgstr "공정을 열고 개를 선택하세요"
 
 msgid "Operation"
 msgstr "공정"
@@ -2466,10 +2466,10 @@ msgid "Pick a style, a color and a face."
 msgstr "스타일, 색상 및 면을 선택하세요."
 
 msgid "Pick an open unit to issue parts."
-msgstr ""
+msgstr "부품을 불출하려면 미결 개를 선택하세요."
 
 msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
-msgstr ""
+msgstr "부품을 불출하려면 미결 개를 선택하세요. 이 개에 이미 불출된 부품은 아직 불출 취소할 수 있습니다."
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "작업 지시를 선택하세요. 시간을 추가할 때까지 시간이 표시되지 않습니다."
@@ -3060,10 +3060,10 @@ msgid "Select a serial number to continue with this operation"
 msgstr "이 공정을 계속하려면 시리얼 번호를 선택하세요"
 
 msgid "Select a unit"
-msgstr ""
+msgstr "개를 선택하세요"
 
 msgid "Select a unit first"
-msgstr ""
+msgstr "먼저 개를 선택하세요"
 
 msgid "Select an issue type"
 msgstr "문제 유형 선택"
@@ -3545,7 +3545,7 @@ msgid "This job has no bill rate. Ask the office to set it before the time is bi
 msgstr "이 작업 지시에는 청구 요금이 없습니다. 시간이 청구되기 전에 사무실에서 설정하도록 요청하십시오."
 
 msgid "This job has no operations"
-msgstr ""
+msgstr "이 작업 지시에는 공정이 없습니다"
 
 msgid "This label does not belong to a unit in this company"
 msgstr "이 라벨은 이 회사의 유닛에 속하지 않습니다"
@@ -3575,10 +3575,10 @@ msgid "This unit has used this correction its limit number of times. Scrap it or
 msgstr "이 개는 이 보정을 허용 횟수만큼 사용했습니다. 대신 스크랩하거나 품질 이슈를 등록하세요."
 
 msgid "This unit is complete here"
-msgstr ""
+msgstr "이 개는 이 공정에서 완료되었습니다"
 
 msgid "This unit is not part of this operation"
-msgstr ""
+msgstr "이 개는 이 공정에 속하지 않습니다"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "이 유닛은 영구적으로 스크랩되고 대체 유닛이 생성됩니다."
@@ -3779,7 +3779,7 @@ msgid "Until <0/>"
 msgstr "<0/>까지"
 
 msgid "Untitled"
-msgstr ""
+msgstr "제목 없음"
 
 msgid "Up next"
 msgstr "다음"

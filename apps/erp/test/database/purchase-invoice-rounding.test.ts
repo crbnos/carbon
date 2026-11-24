@@ -26,7 +26,7 @@ import {
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest } from "./fixtures/local-database";
 
-/** A Draft invoice like APV-000180: 13 x 5.81 + 5.29 tax + 12.64 shipping. */
+/** A Draft invoice of 13 x 5.81 + 5.29 tax + 12.64 shipping (93.46). */
 async function draftInvoice(f: Fixture) {
   const invoiceId = `${f.prefix}-rounding-invoice`;
   await seed(f, async (trx) => {
@@ -258,7 +258,7 @@ describe("adjustPurchaseInvoiceRounding", () => {
           balance: 93.46
         });
 
-        // APV-000180: the card was charged 93.47.
+        // The card was charged 93.47.
         const result = await adjustPurchaseInvoiceRounding(f.service, {
           invoiceId,
           targetTotal: 93.47

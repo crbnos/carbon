@@ -20,6 +20,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
+  LuBookCheck,
   LuCheckCheck,
   LuCoins,
   LuHandCoins,
@@ -55,6 +56,7 @@ import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import { isPurchaseInvoiceLocked } from "../../invoicing.models";
 import PurchaseInvoicePostModal from "./PurchaseInvoicePostModal";
+import PurchaseInvoicePostToLedgerModal from "./PurchaseInvoicePostToLedgerModal";
 import PurchaseInvoiceRoundingModal from "./PurchaseInvoiceRoundingModal";
 import PurchaseInvoiceVoidModal from "./PurchaseInvoiceVoidModal";
 
@@ -67,6 +69,7 @@ const PurchaseInvoiceHeader = () => {
   const postingModal = useDisclosure();
   const voidModal = useDisclosure();
   const roundingModal = useDisclosure();
+  const postToLedgerModal = useDisclosure();
   const deleteModal = useDisclosure();
   const forceDeleteModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
@@ -96,6 +99,8 @@ const PurchaseInvoiceHeader = () => {
       purchaseInvoice: PurchaseInvoice;
       purchaseInvoiceLines: PurchaseInvoiceLine[];
       orgHasCredits: boolean;
+      /** Set when the invoice can be posted to the GL after the cutover. */
+      ledgerPosting: { cutoverDate: string } | null;
       rampMapping: {
         id: string;
         externalId: string | null;
@@ -225,6 +230,21 @@ const PurchaseInvoiceHeader = () => {
   const menuItems = (
     <>
       {auditLogTrigger}
+      {routeData?.ledgerPosting && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={
+              !permissions.can("update", "invoicing") ||
+              !permissions.can("update", "accounting")
+            }
+            onClick={postToLedgerModal.onOpen}
+          >
+            <DropdownMenuIcon icon={<LuBookCheck />} />
+            <Trans>Post to GL</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
       {canAdjustRounding && (
         <>
           <DropdownMenuSeparator />
@@ -423,6 +443,14 @@ const PurchaseInvoiceHeader = () => {
         open={voidModal.isOpen}
         onClose={voidModal.onClose}
       />
+      {routeData?.ledgerPosting && (
+        <PurchaseInvoicePostToLedgerModal
+          open={postToLedgerModal.isOpen}
+          invoiceId={invoiceId}
+          cutoverDate={routeData.ledgerPosting.cutoverDate}
+          onClose={postToLedgerModal.onClose}
+        />
+      )}
       {roundingModal.isOpen && (
         <PurchaseInvoiceRoundingModal
           open

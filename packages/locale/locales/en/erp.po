@@ -16349,6 +16349,9 @@ msgstr "Invoice Number"
 msgid "Invoice posted and sent via Stripe"
 msgstr "Invoice posted and sent via Stripe"
 
+msgid "Invoice posted to the GL"
+msgstr "Invoice posted to the GL"
+
 msgid "Invoice Rate"
 msgstr "Invoice Rate"
 
@@ -21499,6 +21502,9 @@ msgstr "Offset Absorbed Overhead"
 msgid "Offset Account"
 msgstr "Offset Account"
 
+msgid "Offset for value in the opening balance"
+msgstr "Offset for value in the opening balance"
+
 msgid "ok"
 msgstr "ok"
 
@@ -22699,6 +22705,9 @@ msgstr "Part Numbers on Documents"
 msgid "Part numbers on documents updated"
 msgstr "Part numbers on documents updated"
 
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
+msgstr "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
+
 msgid "Part Supersession"
 msgstr "Part Supersession"
 
@@ -23542,6 +23551,9 @@ msgstr "Post Receipt"
 
 msgid "Post Shipment"
 msgstr "Post Shipment"
+
+msgid "Post to GL"
+msgstr "Post to GL"
 
 msgid "Postal code"
 msgstr "Postal code"
@@ -32861,6 +32873,9 @@ msgstr "This invoice has no usable due date — choose one for Stripe."
 
 msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
 msgstr "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+
+msgid "This invoice was posted before the accounting cutover, and its amount never reached the GL, so payments cannot be applied to it. Posting books what each line would book today: received goods clear GR/IR, goods still in stock add to their inventory cost, used goods go to purchase price variance, and Accounts Payable is credited for the invoice. The invoice itself does not change."
+msgstr "This invoice was posted before the accounting cutover, and its amount never reached the GL, so payments cannot be applied to it. Posting books what each line would book today: received goods clear GR/IR, goods still in stock add to their inventory cost, used goods go to purchase price variance, and Accounts Payable is credited for the invoice. The invoice itself does not change."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."

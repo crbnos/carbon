@@ -78,7 +78,7 @@ msgstr "{0, plural, =0 {Il suo processo richiede un operatore qualificato, quind
 
 #. placeholder {0}: pending.approvalRules
 msgid "{0, plural, one {# approval rule} other {# approval rules}}"
-msgstr ""
+msgstr "{0, plural, one {# regola di approvazione} other {# regole di approvazione}}"
 
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
@@ -143,11 +143,11 @@ msgstr "{0, plural, one {# nascosto dal filtro di tipo} other {# nascosti dal fi
 
 #. placeholder {0}: pending.itemCosts
 msgid "{0, plural, one {# item cost} other {# item costs}}"
-msgstr ""
+msgstr "{0, plural, one {# costo articolo} other {# costi articolo}}"
 
 #. placeholder {0}: pending.itemPrices
 msgid "{0, plural, one {# item price} other {# item prices}}"
-msgstr ""
+msgstr "{0, plural, one {# prezzo articolo} other {# prezzi articolo}}"
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -284,7 +284,7 @@ msgstr "{0, plural, one {Registra o elimina il # documento datato prima della tr
 
 #. placeholder {0}: pending.workCenterRates
 msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
-msgstr ""
+msgstr "{0, plural, one {Tariffe su # centro di lavoro} other {Tariffe su # centri di lavoro}}"
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -439,7 +439,7 @@ msgstr "Distribuzione {0}"
 
 #. placeholder {0}: route.dpi
 msgid "{0} dpi"
-msgstr ""
+msgstr "{0} dpi"
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -1073,7 +1073,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} di {total} fasi completate"
 
 msgid "{dpi} dpi"
-msgstr ""
+msgstr "{dpi} dpi"
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# riga richiede correzione} other {# righe richiedono correzione}}"
@@ -1351,7 +1351,7 @@ msgid "{received} of {ordered}"
 msgstr "{received} di {ordered}"
 
 msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
-msgstr ""
+msgstr "{records, plural, one {Mantieni # record in {fromCode}} other {Mantieni # record in {fromCode}}}"
 
 msgid "{ref} not found"
 msgstr "{ref} non trovato"
@@ -4016,7 +4016,7 @@ msgid "An accounting bucket that groups expenses by department or function so th
 msgstr "Un bucket di contabilità che raggruppa le spese per reparto o funzione in modo che la Contabilità generale possa riportare le spese per gruppo, non solo per conto."
 
 msgid "An accounting or spend integration is connected"
-msgstr ""
+msgstr "È collegata un'integrazione contabile o di spesa"
 
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "Un record contabile per un articolo capitalizzato che ammortizzi piuttosto che spesare; Bozza → Attivo → Completamente ammortizzato → Dismesso."
@@ -4297,7 +4297,7 @@ msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "Annuale. Inizia dal tasso di prestito incrementale dell'azienda"
 
 msgid "Another company in the group has transactions"
-msgstr ""
+msgstr "Un'altra azienda del gruppo ha movimenti"
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "Un'altra connessione a questa integrazione ha già quel nome. Scegli uno diverso."
@@ -7037,7 +7037,7 @@ msgid "Changes"
 msgstr "Modifiche"
 
 msgid "Changing the base currency converts no amounts"
-msgstr ""
+msgstr "Cambiare la valuta di base non converte alcun importo"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "La modifica dei componenti ridefinisce il gruppo. Riesegui Motion Planning per applicare la modifica ai passi."
@@ -9876,7 +9876,7 @@ msgid "Customers"
 msgstr "Clienti"
 
 msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
-msgstr ""
+msgstr "Clienti, fornitori, componenti dei fornitori e conti bancari impostati su {fromCode}. Altrimenti vengono spostati su {toCode}."
 
 msgid "Customizations, training, and integrations"
 msgstr "Personalizzazioni, formazione e integrazioni"
@@ -11416,7 +11416,7 @@ msgid "Done when day-to-day runs without us in the room"
 msgstr "Fatto quando le operazioni quotidiane funzionano senza di noi in sala."
 
 msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
-msgstr ""
+msgstr "Punti per pollice. I modelli personalizzati stampano a 203 dpi; i codici QR possono stampare più piccoli a 300 e 600 dpi."
 
 msgid "Double-click to open this sub-assembly"
 msgstr "Fai doppio clic per aprire questo sottoassembly"
@@ -11459,7 +11459,7 @@ msgid "Download the template. Each row is a default account Carbon posts to. In 
 msgstr "Scarica il modello. Ogni riga è un conto predefinito su cui Carbon registra le transazioni. Nel campo Numero di conto, inserisci il numero del conto nel tuo piano dei conti che lo sostituisce. Carbon aggiorna il conto predefinito per farlo corrispondere."
 
 msgid "DPI"
-msgstr ""
+msgstr "DPI"
 
 msgid "Draft"
 msgstr "Bozza"
@@ -11972,7 +11972,7 @@ msgid "Edit column visibility"
 msgstr "Modifica visibilità colonna"
 
 msgid "Edit company"
-msgstr ""
+msgstr "Modifica azienda"
 
 msgid "Edit Component Group"
 msgstr "Modifica gruppo componenti"
@@ -14245,7 +14245,7 @@ msgid "Fixed Assets"
 msgstr "Cespiti"
 
 msgid "Fixed assets exist"
-msgstr ""
+msgstr "Esistono cespiti"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Scostamento di ammortamento del costo fisso quando la dimensione del lotto differisce dallo standard"
@@ -15145,7 +15145,7 @@ msgid "Hide lines"
 msgstr "Nascondi righe"
 
 msgid "Hide menu"
-msgstr ""
+msgstr "Nascondi menu"
 
 msgid "Hide monthly revenue"
 msgstr "Nascondi ricavi mensili"
@@ -16349,6 +16349,9 @@ msgstr "Numero Fattura"
 msgid "Invoice posted and sent via Stripe"
 msgstr "Fattura registrata e inviata tramite Stripe"
 
+msgid "Invoice posted to the GL"
+msgstr "Fattura registrata in contabilità generale"
+
 msgid "Invoice Rate"
 msgstr "Tasso di cambio della fattura"
 
@@ -16991,7 +16994,7 @@ msgid "Kept {kept} of {total}."
 msgstr "Mantenuti {kept} su {total}."
 
 msgid "Kept as entered and read in {toCode}:"
-msgstr ""
+msgstr "Mantenuti come inseriti e letti in {toCode}:"
 
 msgid "Key"
 msgstr "Chiave"
@@ -21499,6 +21502,9 @@ msgstr "Costi generali assorbiti compensati"
 msgid "Offset Account"
 msgstr "Conto di compensazione"
 
+msgid "Offset for value in the opening balance"
+msgstr "Contropartita per il valore nel saldo di apertura"
+
 msgid "ok"
 msgstr "ok"
 
@@ -22699,6 +22705,9 @@ msgstr "Codici componente sui documenti"
 msgid "Part numbers on documents updated"
 msgstr "Codici componente sui documenti aggiornati"
 
+msgid "Part of this invoice is already in the opening inventory. That part is posted to this account (Migration Clearing when left empty)."
+msgstr "Una parte di questa fattura è già presente nella giacenza di apertura. Tale parte viene registrata su questo conto (Migration Clearing se lasciato vuoto)."
+
 msgid "Part Supersession"
 msgstr "Sostituzione Pezzo"
 
@@ -23542,6 +23551,9 @@ msgstr "Registra Ricevuta"
 
 msgid "Post Shipment"
 msgstr "Registra Spedizione"
+
+msgid "Post to GL"
+msgstr "Registra in contabilità generale"
 
 msgid "Postal code"
 msgstr "Codice postale"
@@ -24813,7 +24825,7 @@ msgid "Quotes, orders, invoices and RFQs"
 msgstr "Offerte, ordini, fatture e RdO"
 
 msgid "Quotes, orders, invoices or other documents exist"
-msgstr ""
+msgstr "Esistono offerte, ordini, fatture o altri documenti"
 
 msgid "Quoting"
 msgstr "Preventivi"
@@ -25498,7 +25510,7 @@ msgid "Rejected"
 msgstr "Rifiutato"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "Rifiutato al controllo"
 
 msgid "Rejected at Inspection"
 msgstr "Rifiutato al controllo"
@@ -29004,7 +29016,7 @@ msgid "Show lines"
 msgstr "Mostra righe"
 
 msgid "Show menu"
-msgstr ""
+msgstr "Mostra menu"
 
 msgid "Show monthly revenue"
 msgstr "Mostra ricavi mensili"
@@ -29052,10 +29064,10 @@ msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Visualizzazione {0} di {totalFiltered} — perfeziona la ricerca"
 
 msgid "Showing {shown} of {total}"
-msgstr ""
+msgstr "Mostrati {shown} di {total}"
 
 msgid "Showing {shown} of {total}, through {last}"
-msgstr ""
+msgstr "Mostrati {shown} di {total}, fino a {last}"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Visualizzazione in {parentCurrency}"
@@ -29728,7 +29740,7 @@ msgid "Stock Availability"
 msgstr "Disponibilità di Giacenza"
 
 msgid "Stock has been received, moved or used"
-msgstr ""
+msgstr "La giacenza è stata ricevuta, spostata o utilizzata"
 
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "La giacenza in questa unità di stoccaggio non è copertura. MRP e le schermate di pianificazione non la contano, e il prelievo non la usa. Un'unità è non nettabile anche quando lo è la sua unità superiore o uno dei suoi tipi di archiviazione. Da usare per aree di quarantena e blocco. Un trasferimento giacenza la sposta di nuovo fuori."
@@ -31166,10 +31178,10 @@ msgid "The backward-computed date an operation must finish by to keep its job on
 msgstr "La data calcolata a ritroso che un'operazione deve terminare entro per mantenere il suo ordine di produzione in orario, scritta nella data di scadenza dell'operazione. Un obiettivo stabile per misurare i progressi — mai un vincolo sul posizionamento."
 
 msgid "The base currency can't change because:"
-msgstr ""
+msgstr "La valuta di base non può cambiare perché:"
 
 msgid "The base currency couldn't be loaded. Saving keeps it as it is."
-msgstr ""
+msgstr "Impossibile caricare la valuta di base. Il salvataggio la mantiene invariata."
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "Il lotto di produzione va all'officina. I suoi ordini di produzione sono già rilasciati."
@@ -31791,7 +31803,7 @@ msgid "The leased asset becomes a fixed asset that depreciates from the exercise
 msgstr "Il bene in leasing diventa un cespite che si ammortizza dalla data di esercizio. I pagamenti dovuti in seguito sono rimossi. Gli altri cespiti del leasing rimangono invariati."
 
 msgid "The ledger has entries"
-msgstr ""
+msgstr "Il libro mastro ha registrazioni"
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "L'entità legale da fatturare, quando diversa dal cliente che riceve le merci - per i servizi di fatturazione genitore/sussidiaria o terza parte."
@@ -32861,6 +32873,9 @@ msgstr "Questa fattura non ha una data di scadenza utilizzabile — scegline una
 
 msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
 msgstr "Questa fattura utilizza un tasso di cambio pari a 1 per {currencyCode}, ma il tasso odierno è {currentRate}"
+
+msgid "This invoice was posted before the accounting cutover, and its amount never reached the GL, so payments cannot be applied to it. Posting books what each line would book today: received goods clear GR/IR, goods still in stock add to their inventory cost, used goods go to purchase price variance, and Accounts Payable is credited for the invoice. The invoice itself does not change."
+msgstr "Questa fattura è stata registrata prima del passaggio contabile e il suo importo non è mai arrivato alla contabilità generale, quindi non è possibile applicarvi pagamenti. La registrazione contabilizza ciò che ogni riga conterebbe oggi: i beni ricevuti azzerano GR/IR, i beni ancora in giacenza si aggiungono al loro costo di magazzino, i beni utilizzati vanno nello scostamento del prezzo di acquisto e i Debiti verso fornitori vengono accreditati per la fattura. La fattura in sé non cambia."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Questa fattura sarà addebitata al cliente Stripe già collegato a questo cliente Carbon. Per modificare i suoi dettagli, modificalo nel dashboard Stripe."

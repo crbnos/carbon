@@ -906,6 +906,13 @@ export const purchaseInvoiceRoundingValidator = z.object({
   targetTotal: zfd.numeric(z.number({ error: "Amount to match is required" }))
 });
 
+/** Posting a pre-cutover purchase invoice to the GL: the journal's date and,
+ *  when part of it is already in the opening balance, the offset account. */
+export const purchaseInvoicePostToLedgerValidator = z.object({
+  postingDate: z.string().min(1, { message: "Posting date is required" }),
+  openingOffsetAccountId: zfd.text(z.string().optional())
+});
+
 /** A rounding adjustment never exceeds 100 minor units (1.00 USD, 100 JPY). */
 export const MAX_ROUNDING_MINOR_UNITS = 100;
 

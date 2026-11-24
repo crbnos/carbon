@@ -201,7 +201,7 @@ import {
 } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { Selectable, Transaction } from "kysely";
+import type { Insertable, Selectable, Transaction } from "kysely";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { render } from "react-email";
@@ -23373,4 +23373,1273 @@ async function postPurchaseInvoiceRoundingJournal(
   }
 
   return { journalId: journal.id, journalEntryId };
+}
+
+// Posting a pre-cutover purchase invoice to the GL.
+//
+// An invoice posted before the accounting cutover whose lines were priced
+// after it has a payable in the sub-ledger and none in the GL: the enable
+// superseded its journal and took no payable for it into the opening
+// journal, and a price entered later wrote no journal. Its payments are then
+// refused for want of a control line. This posts the journal Carbon's own
+// posting would write for it today, through the same builder: the PO lines as
+// they stood before this invoice, the receipts and cost layers as they are.
+
+/** The journal description's suffix, after "Purchase Invoice <number>". */
+export const LEDGER_POSTING_DESCRIPTION_SUFFIX = "(posted after cutover)";
+
+export const purchaseInvoiceLedgerPostingInput = z.object({
+  invoiceId: z.string().min(1),
+  postingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "A date is required"),
+  /** The account for value the opening balance already holds; the company's
+   *  Migration Clearing account when absent. */
+  openingOffsetAccountId: z.string().min(1).optional()
+});
+
+export type PurchaseInvoiceLedgerGap =
+  | { eligible: true; cutoverDate: string }
+  | { eligible: false; reason: string };
+
+const LEDGER_JOURNAL_SOURCES = ["Purchase Invoice", "Opening Balance"];
+
+/**
+ * Whether a purchase invoice is one this posting is for: Open with nothing
+ * applied, posted before the cutover, not settled outside Carbon at the
+ * enable, with an amount, and no payable in any journal (the test the
+ * payment posting refuses on, so a second run finds one and stops).
+ */
+export async function purchaseInvoiceLedgerGap(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  invoiceId: string
+): Promise<PurchaseInvoiceLedgerGap> {
+  const cutoverDate = await readAccountingCutoverDate(db, companyId);
+  if (!cutoverDate) {
+    return { eligible: false, reason: "Accounting has no cutover yet." };
+  }
+  const invoice = await db
+    .selectFrom("purchaseInvoices")
+    .select([
+      "status",
+      "balance",
+      "orderTotal",
+      sql<string | null>`"postingDate"::text`.as("postingDate")
+    ])
+    .where("id", "=", invoiceId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!invoice) throw new NotFoundError("Purchase invoice not found");
+  if (invoice.status !== "Open") {
+    return {
+      eligible: false,
+      reason: "Only an Open invoice with no payment applied can be posted."
+    };
+  }
+  if (
+    !invoice.postingDate ||
+    !isBeforeCutover(invoice.postingDate, cutoverDate)
+  ) {
+    return {
+      eligible: false,
+      reason:
+        "Only an invoice posted before the accounting cutover can be posted this way."
+    };
+  }
+  const total = Number(invoice.orderTotal ?? 0);
+  if (Math.abs(total) <= EPSILON) {
+    return { eligible: false, reason: "The invoice has no amount to post." };
+  }
+  if (Math.abs(Number(invoice.balance ?? 0) - total) > 0.005) {
+    return {
+      eligible: false,
+      reason: "A payment or memo is applied to the invoice."
+    };
+  }
+  const ignored = await db
+    .selectFrom("accountingCutoverIgnoredInvoice")
+    .select("invoiceId")
+    .where("companyId", "=", companyId)
+    .where("invoiceId", "=", invoiceId)
+    .executeTakeFirst();
+  if (ignored) {
+    return {
+      eligible: false,
+      reason: "The cutover recorded this invoice as settled before it."
+    };
+  }
+  const controls = await withTransaction(db, (trx) =>
+    readTargetControlLines(trx, companyId, [invoiceId])
+  );
+  const hasPayable = controls.some(
+    (line) =>
+      line.documentType === "Invoice" &&
+      (PAYABLE_POSTING_DESCRIPTIONS as readonly string[]).includes(
+        line.description ?? ""
+      ) &&
+      LEDGER_JOURNAL_SOURCES.includes(line.sourceType ?? "")
+  );
+  if (hasPayable) {
+    return {
+      eligible: false,
+      reason: "The invoice's payable is already in the GL."
+    };
+  }
+  return { eligible: true, cutoverDate };
+}
+
+/** A layer the variance never writes to: units received before the cutover
+ *  of an item that had none left at it. */
+const NO_OPENING_LAYER = "no-opening-layer";
+
+type LedgerOffsetAccount = { id: string; name: string; class: AccountClass };
+
+type PurchaseInvoiceLedgerPlan = {
+  invoice: {
+    id: string;
+    invoiceId: string;
+    supplierId: string | null;
+    supplierReference: string | null;
+  };
+  /** The journal lines, with their dimensions, in order. */
+  lines: PurchaseInvoiceJournalLine[];
+  /** Adjustment rows on cost layers, and the Average cost changes. */
+  costLedgerInserts: Insertable<KyselyDatabase["costLedger"]>[];
+  averageCostChanges: { itemId: string; quantity: number; value: number }[];
+  /** Each asset's new cost, and whether a Draft asset goes Active. */
+  assetWrites: {
+    assetId: string;
+    acquisitionCost: number;
+    activate: boolean;
+  }[];
+  dimensionIdByEntity: Map<string, string>;
+  /** Some of the invoice is value the opening balance already holds. */
+  hasOpeningValue: boolean;
+};
+
+/**
+ * The journal and sub-ledger rows of posting `invoiceId` to the GL on
+ * `postingDate`. Reads only; the preview and the posting share it.
+ */
+async function planPurchaseInvoiceLedgerPosting(
+  trx: Trx,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    invoiceId: string;
+    cutoverDate: string;
+    postingDate: string;
+    openingOffsetAccountId?: string;
+  }
+): Promise<PurchaseInvoiceLedgerPlan> {
+  const { companyId, invoiceId, cutoverDate, postingDate } = args;
+  const refuse = (message: string): never => {
+    throw new InvalidInputError(message);
+  };
+
+  const invoice = await trx
+    .selectFrom("purchaseInvoice")
+    .select([
+      "id",
+      "invoiceId",
+      "supplierId",
+      "supplierReference",
+      "exchangeRate",
+      "dateIssued",
+      "postingDate",
+      "createdAt"
+    ])
+    .where("id", "=", invoiceId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!invoice) throw new NotFoundError("Purchase invoice not found");
+
+  const [invoiceLines, delivery, supplier, defaults, dimensions] =
+    await Promise.all([
+      trx
+        .selectFrom("purchaseInvoiceLine")
+        .selectAll()
+        .where("invoiceId", "=", invoiceId)
+        .where("companyId", "=", companyId)
+        .orderBy("createdAt")
+        .orderBy("id")
+        .execute(),
+      trx
+        .selectFrom("purchaseInvoiceDelivery")
+        .select("supplierShippingCost")
+        .where("id", "=", invoiceId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+      invoice.supplierId
+        ? trx
+            .selectFrom("supplier")
+            .select(["supplierTypeId", "intercompanyCompanyId"])
+            .where("id", "=", invoice.supplierId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : Promise.resolve(undefined),
+      getDefaultPostingGroup(trx, companyId),
+      trx
+        .selectFrom("dimension")
+        .select(["id", "entityType"])
+        .where("companyGroupId", "=", args.companyGroupId)
+        .where("active", "=", true)
+        .execute()
+    ]);
+  if (defaults.error || !defaults.data) {
+    throw new Error("Failed to read the account defaults");
+  }
+  const accountDefaults = defaults.data;
+  if (supplier?.intercompanyCompanyId) {
+    refuse("An intercompany invoice cannot be posted this way.");
+  }
+
+  // What this posting does not handle; each is refused before anything is
+  // read for it.
+  const lines = invoiceLines.filter(
+    (line) => line.invoiceLineType !== "Comment"
+  );
+  const seenPurchaseOrderLines = new Set<string>();
+  for (const line of lines) {
+    if (line.taxCodeId) {
+      refuse("A line with a tax code cannot be posted this way.");
+    }
+    if (line.invoiceLineType === "Lease") {
+      refuse("A lease line cannot be posted this way.");
+    }
+    if (line.projectId) {
+      refuse("A line charged to a project cannot be posted this way.");
+    }
+    if (isItemLineType(line.invoiceLineType) && !line.purchaseOrderLineId) {
+      refuse(
+        "A line received with the invoice (no purchase order) cannot be posted this way."
+      );
+    }
+    if (line.purchaseOrderLineId) {
+      if (seenPurchaseOrderLines.has(line.purchaseOrderLineId)) {
+        refuse("Two lines bill the same purchase order line.");
+      }
+      seenPurchaseOrderLines.add(line.purchaseOrderLineId);
+    }
+  }
+
+  const taxCodes = await loadTaxCodesInForce(trx, {
+    companyId,
+    taxCodeIds: [],
+    taxPointDate: invoice.dateIssued ?? postingDate,
+    document: "purchase invoice"
+  });
+  const amountsByLineId = new Map(
+    calculatePurchasePostingAmounts({
+      lines: withPurchaseTax(lines, taxCodes),
+      exchangeRate: Number(invoice.exchangeRate ?? 1),
+      supplierShippingCost: Number(delivery?.supplierShippingCost ?? 0)
+    }).map((amounts) => [amounts.id, amounts])
+  );
+
+  const itemIds = [
+    ...new Set(lines.flatMap((line) => (line.itemId ? [line.itemId] : [])))
+  ];
+  const purchaseOrderLineIds = [...seenPurchaseOrderLines];
+  const assetIds = [
+    ...new Set(
+      lines.flatMap((line) =>
+        line.invoiceLineType === "Fixed Asset" && line.assetId
+          ? [line.assetId]
+          : []
+      )
+    )
+  ];
+  const glAccountIds = [
+    ...new Set(
+      lines.flatMap((line) =>
+        line.invoiceLineType === "G/L Account" && line.accountId
+          ? [line.accountId]
+          : []
+      )
+    )
+  ];
+
+  const [items, itemCosts, purchaseOrderLines, assets, glAccounts] =
+    await Promise.all([
+      itemIds.length
+        ? trx
+            .selectFrom("item")
+            .select(["id", "itemTrackingType", "replenishmentSystem"])
+            .where("companyId", "=", companyId)
+            .where("id", "in", itemIds)
+            .execute()
+        : Promise.resolve([]),
+      itemIds.length
+        ? trx
+            .selectFrom("itemCost")
+            .select(["itemId", "itemPostingGroupId", "costingMethod"])
+            .where("companyId", "=", companyId)
+            .where("itemId", "in", itemIds)
+            .execute()
+        : Promise.resolve([]),
+      purchaseOrderLineIds.length
+        ? trx
+            .selectFrom("purchaseOrderLine")
+            .select([
+              "id",
+              "quantityReceived",
+              "conversionFactor",
+              "jobOperationId",
+              "planningGroupId"
+            ])
+            .where("companyId", "=", companyId)
+            .where("id", "in", purchaseOrderLineIds)
+            .execute()
+        : Promise.resolve([]),
+      assetIds.length
+        ? trx
+            .selectFrom("fixedAsset as asset")
+            .innerJoin("fixedAssetClass as class", (join) =>
+              join
+                .onRef("class.id", "=", "asset.fixedAssetClassId")
+                .onRef("class.companyId", "=", "asset.companyId")
+            )
+            .select([
+              "asset.id",
+              "asset.status",
+              "asset.acquisitionCost",
+              "asset.locationId",
+              "asset.fixedAssetClassId",
+              "class.assetAccountId",
+              "class.isConstructionInProgress"
+            ])
+            .where("asset.companyId", "=", companyId)
+            .where("asset.id", "in", assetIds)
+            .execute()
+        : Promise.resolve([]),
+      glAccountIds.length
+        ? trx
+            .selectFrom("account")
+            .select(["id", "name", "class", "isGroup"])
+            .where("companyGroupId", "=", args.companyGroupId)
+            .where("id", "in", glAccountIds)
+            .execute()
+        : Promise.resolve([])
+    ]);
+
+  const itemOf = (itemId: string | null): PurchaseInvoiceItem => {
+    const item = items.find((row) => row.id === itemId);
+    const itemCost = itemCosts.find((row) => row.itemId === itemId);
+    return {
+      itemId,
+      itemTrackingType: item?.itemTrackingType ?? null,
+      replenishmentSystem: item?.replenishmentSystem ?? null,
+      itemPostingGroupId: itemCost?.itemPostingGroupId ?? null,
+      costingMethod: itemCost?.costingMethod ?? "FIFO"
+    };
+  };
+  const purchaseOrderLineOf = (id: string | null) =>
+    purchaseOrderLines.find((row) => row.id === id);
+  for (const purchaseOrderLine of purchaseOrderLines) {
+    if (purchaseOrderLine.jobOperationId) {
+      refuse("An outside processing line cannot be posted this way.");
+    }
+    if (purchaseOrderLine.planningGroupId) {
+      refuse("A line for a planning group cannot be posted this way.");
+    }
+  }
+
+  // What other posted invoices invoiced on each PO line before this one, in
+  // posting order (the legacy builder's rule).
+  const otherInvoiceLines = purchaseOrderLineIds.length
+    ? await trx
+        .selectFrom("purchaseInvoiceLine as line")
+        .innerJoin("purchaseInvoice as other", (join) =>
+          join
+            .onRef("other.id", "=", "line.invoiceId")
+            .onRef("other.companyId", "=", "line.companyId")
+        )
+        .select([
+          "line.purchaseOrderLineId",
+          "line.quantity",
+          "line.conversionFactor",
+          "other.id",
+          "other.postingDate",
+          "other.createdAt"
+        ])
+        .where("line.companyId", "=", companyId)
+        .where("line.purchaseOrderLineId", "in", purchaseOrderLineIds)
+        .where("other.id", "!=", invoiceId)
+        .where("other.status", "not in", ["Draft", "Pending", "Voided"])
+        .execute()
+    : [];
+  const postedBefore = (other: {
+    id: string;
+    postingDate: string | null;
+    createdAt: string | Date;
+  }) => {
+    const a = other.postingDate ?? "";
+    const b = invoice.postingDate ?? "";
+    if (a !== b) return a < b;
+    const ac = String(other.createdAt);
+    const bc = String(invoice.createdAt);
+    if (ac !== bc) return ac < bc;
+    return other.id < invoice.id;
+  };
+  const invoicedBefore = new Map<string, number>();
+  for (const row of otherInvoiceLines) {
+    if (!row.purchaseOrderLineId || !postedBefore(row)) continue;
+    invoicedBefore.set(
+      row.purchaseOrderLineId,
+      (invoicedBefore.get(row.purchaseOrderLineId) ?? 0) +
+        Number(row.quantity ?? 0) * Number(row.conversionFactor ?? 1)
+    );
+  }
+
+  // Each PO line's posted receipts, split at the cutover.
+  const receipts = purchaseOrderLineIds.length
+    ? await trx
+        .selectFrom("receiptLine as line")
+        .innerJoin("receipt", (join) =>
+          join
+            .onRef("receipt.id", "=", "line.receiptId")
+            .onRef("receipt.companyId", "=", "line.companyId")
+        )
+        .select([
+          "line.lineId",
+          "line.receiptId",
+          "line.receivedQuantity",
+          "line.conversionFactor",
+          sql<string>`"receipt"."postingDate"::text`.as("postingDate")
+        ])
+        .where("line.companyId", "=", companyId)
+        .where("receipt.status", "=", "Posted")
+        .where("receipt.sourceDocument", "=", "Purchase Order")
+        .where("line.lineId", "in", purchaseOrderLineIds)
+        .where("line.receivedQuantity", ">", 0)
+        .execute()
+    : [];
+  const received = new Map<
+    string,
+    { before: number; after: number; afterReceiptIds: Set<string> }
+  >();
+  for (const row of receipts) {
+    if (!row.lineId) continue;
+    const entry = received.get(row.lineId) ?? {
+      before: 0,
+      after: 0,
+      afterReceiptIds: new Set<string>()
+    };
+    const quantity =
+      Number(row.receivedQuantity) * Number(row.conversionFactor ?? 1);
+    if (isBeforeCutover(row.postingDate, cutoverDate)) entry.before += quantity;
+    else {
+      entry.after += quantity;
+      entry.afterReceiptIds.add(row.receiptId);
+    }
+    received.set(row.lineId, entry);
+  }
+
+  // The receipt journals of each PO line, in the order they were posted. A
+  // receipt from before the cutover has a Superseded journal, so only those
+  // on or after it are here; the opening journal holds the GR/IR the cutover
+  // left open, which this posting does not clear.
+  const receiptJournalLines = purchaseOrderLineIds.length
+    ? await trx
+        .selectFrom("journalLine")
+        .innerJoin("journal", (join) =>
+          join
+            .onRef("journal.id", "=", "journalLine.journalId")
+            .onRef("journal.companyId", "=", "journalLine.companyId")
+        )
+        .selectAll("journalLine")
+        .select("journal.sourceType as journalSourceType")
+        .where("journalLine.companyId", "=", companyId)
+        .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+        .where(
+          "journalLine.documentLineReference",
+          "in",
+          purchaseOrderLineIds.map((id) => journalReference.to.receipt(id))
+        )
+        .orderBy("journal.postingDate")
+        .orderBy("journal.createdAt")
+        .orderBy("journal.id")
+        .orderBy("journalLine.createdAt")
+        .orderBy("journalLine.id")
+        .execute()
+    : [];
+  const receiptLinesByPurchaseOrderLine = new Map<string, JournalLineRow[]>();
+  for (const { journalSourceType, ...line } of receiptJournalLines) {
+    const purchaseOrderLineId = (line.documentLineReference ?? "").split(
+      ":"
+    )[1];
+    if (!purchaseOrderLineId) continue;
+    if (journalSourceType === "Opening Balance") {
+      if (Math.abs(Number(line.amount ?? 0)) > EPSILON) {
+        refuse(
+          "The opening balance still holds GR/IR for a line of this invoice. Correct it with a journal entry instead."
+        );
+      }
+      continue;
+    }
+    const list = receiptLinesByPurchaseOrderLine.get(purchaseOrderLineId) ?? [];
+    list.push(line as JournalLineRow);
+    receiptLinesByPurchaseOrderLine.set(purchaseOrderLineId, list);
+  }
+
+  // Cost layers: the receipts' own on or after the cutover, and each item's
+  // opening layers, less what earlier postings like this one already wrote
+  // up on them.
+  const afterReceiptIds = [
+    ...new Set(
+      [...received.values()].flatMap((entry) => [...entry.afterReceiptIds])
+    )
+  ];
+  const [receiptLayers, openingLayers, onHand] = await Promise.all([
+    afterReceiptIds.length && itemIds.length
+      ? trx
+          .selectFrom("costLedger")
+          .select([
+            "id",
+            "documentId",
+            "itemId",
+            "quantity",
+            "remainingQuantity",
+            "projectId"
+          ])
+          .where("companyId", "=", companyId)
+          .where("documentType", "=", "Purchase Receipt")
+          .where("documentId", "in", afterReceiptIds)
+          .where("itemId", "in", itemIds)
+          .where("adjustment", "=", false)
+          .orderBy("postingDate")
+          .orderBy("createdAt")
+          .execute()
+      : Promise.resolve([]),
+    itemIds.length
+      ? trx
+          .selectFrom("costLedger as layer")
+          .select((eb) => [
+            "layer.id",
+            "layer.itemId",
+            "layer.quantity",
+            "layer.remainingQuantity",
+            "layer.cost",
+            "layer.projectId",
+            eb
+              .selectFrom("costLedger as child")
+              .select(sql<number>`coalesce(sum("child"."quantity"), 0)`.as("q"))
+              .whereRef("child.appliesToCostLedgerId", "=", "layer.id")
+              .whereRef("child.companyId", "=", "layer.companyId")
+              .where("child.documentType", "=", "Purchase Invoice")
+              .as("writtenUp")
+          ])
+          .where("layer.companyId", "=", companyId)
+          .where("layer.itemId", "in", itemIds)
+          .where("layer.documentType", "=", "Purchase Receipt")
+          .where("layer.documentId", "is", null)
+          .where("layer.adjustment", "=", false)
+          .where("layer.postingDate", "=", cutoverDate)
+          .orderBy("layer.createdAt")
+          .orderBy("layer.id")
+          .execute()
+      : Promise.resolve([]),
+    itemIds.length
+      ? trx
+          .selectFrom("itemLedger")
+          .select((eb) => [
+            "itemId",
+            eb.fn.sum<number>("quantity").as("quantity")
+          ])
+          .where("companyId", "=", companyId)
+          .where("itemId", "in", itemIds)
+          .groupBy("itemId")
+          .execute()
+      : Promise.resolve([])
+  ]);
+  const onHandByItem = new Map(
+    onHand.map((row) => [row.itemId, Number(row.quantity ?? 0)])
+  );
+  const openingLeft = new Map(
+    openingLayers.map((layer) => [
+      layer.id,
+      Math.max(
+        0,
+        Number(layer.remainingQuantity ?? 0) - Number(layer.writtenUp ?? 0)
+      )
+    ])
+  );
+  /** An item's value per unit in the opening balance. */
+  const openingUnitCost = (itemId: string) => {
+    const layers = openingLayers.filter((layer) => layer.itemId === itemId);
+    const quantity = layers.reduce(
+      (sum, layer) => sum + Number(layer.quantity),
+      0
+    );
+    const cost = layers.reduce((sum, layer) => sum + Number(layer.cost), 0);
+    return quantity > EPSILON ? cost / quantity : 0;
+  };
+
+  // The posting lines, and per ordered line the opening value its received
+  // units carry (cleared against the offset account, not GR/IR).
+  const postingLines: PurchaseInvoicePostingLine[] = [];
+  const openingValueByLine = new Map<string, number>();
+  const fixedAssetLines = new Map<
+    string,
+    { assetId: string; received: boolean }
+  >();
+  for (const line of lines) {
+    const amounts = amountsByLineId.get(line.id);
+    if (!amounts) throw new Error("Failed to compute the line's amounts");
+    const base = {
+      id: line.id,
+      invoiceLineType: line.invoiceLineType,
+      locationId: line.locationId ?? null,
+      amounts
+    };
+
+    if (isItemLineType(line.invoiceLineType)) {
+      const purchaseOrderLineId = line.purchaseOrderLineId!;
+      const item = itemOf(line.itemId ?? null);
+      const before = invoicedBefore.get(purchaseOrderLineId) ?? 0;
+      const receipt = received.get(purchaseOrderLineId) ?? {
+        before: 0,
+        after: 0,
+        afterReceiptIds: new Set<string>()
+      };
+      const itemOpening = openingLayers.filter(
+        (layer) => layer.itemId === line.itemId
+      );
+      // A line no receipt brought in is taken as stock the cutover counted:
+      // the opening balance valued it.
+      const neverReceived = receipt.before + receipt.after <= EPSILON;
+      if (neverReceived && itemOpening.length === 0) {
+        refuse(
+          "A line has no receipt and its item had no stock at the cutover. Receive it first."
+        );
+      }
+      const openingQuantity = neverReceived
+        ? before + amounts.inventoryQuantity
+        : receipt.before;
+      const unitCost = line.itemId ? openingUnitCost(line.itemId) : 0;
+      const groups: { quantity: number; cost: number }[] = [];
+      if (openingQuantity > EPSILON) {
+        groups.push({
+          quantity: openingQuantity,
+          cost: openingQuantity * unitCost
+        });
+      }
+      const afterGroups = receiptGroups(
+        receiptLinesByPurchaseOrderLine.get(purchaseOrderLineId) ?? []
+      );
+      const grouped = afterGroups.reduce(
+        (sum, group) => sum + group.quantity,
+        0
+      );
+      groups.push(...afterGroups);
+      // A receipt that posted no journal (at no cost) still holds its units.
+      if (receipt.after - grouped > EPSILON) {
+        groups.push({ quantity: receipt.after - grouped, cost: 0 });
+      }
+
+      // The opening units this line clears: the received units come in
+      // receipt order, the opening ones first, after what was invoiced before.
+      const openingCleared = Math.max(
+        0,
+        Math.min(amounts.inventoryQuantity, openingQuantity - before)
+      );
+      openingValueByLine.set(line.id, openingCleared * unitCost);
+
+      // The opening units still on hand take their share into the opening
+      // layers, oldest first; the rest were used, and their share is PPV.
+      const layersForLine: ReceiptLayerLike[] = [];
+      let toCover = openingCleared;
+      for (const layer of itemOpening) {
+        if (toCover <= EPSILON) break;
+        const left = openingLeft.get(layer.id) ?? 0;
+        const taken = Math.min(toCover, left);
+        if (taken <= EPSILON) continue;
+        layersForLine.push({
+          id: layer.id,
+          quantity: taken,
+          remainingQuantity: taken,
+          projectId: layer.projectId
+        });
+        openingLeft.set(layer.id, left - taken);
+        toCover -= taken;
+      }
+      if (toCover > EPSILON) {
+        layersForLine.push({
+          id: NO_OPENING_LAYER,
+          quantity: toCover,
+          remainingQuantity: 0
+        });
+      }
+      for (const layer of receiptLayers) {
+        if (
+          layer.itemId === line.itemId &&
+          layer.documentId &&
+          receipt.afterReceiptIds.has(layer.documentId)
+        ) {
+          layersForLine.push({
+            id: layer.id,
+            quantity: Number(layer.quantity),
+            remainingQuantity: Number(layer.remainingQuantity ?? 0),
+            projectId: layer.projectId
+          });
+        }
+      }
+      // Never empty: an empty list would make a new layer for the on-hand.
+      if (layersForLine.length === 0) {
+        layersForLine.push({
+          id: NO_OPENING_LAYER,
+          quantity: 0,
+          remainingQuantity: 0
+        });
+      }
+
+      postingLines.push({
+        ...base,
+        kind: "ordered",
+        item,
+        purchaseOrderLine: {
+          purchaseOrderLineId,
+          quantityReceived: neverReceived
+            ? openingQuantity
+            : receipt.before + receipt.after,
+          quantityInvoiced: before,
+          receiptGroups: groups,
+          isOutsideProcessing: false,
+          processId: null,
+          planningGroupId: null,
+          coverage: {
+            receiptLayers: layersForLine,
+            onHandQuantity: line.itemId
+              ? (onHandByItem.get(line.itemId) ?? 0)
+              : 0
+          }
+        }
+      });
+      continue;
+    }
+
+    switch (line.invoiceLineType) {
+      case "Fixed Asset": {
+        const asset = assets.find((row) => row.id === line.assetId);
+        if (!asset) refuse("A fixed asset line has no asset selected.");
+        if (asset!.isConstructionInProgress) {
+          refuse("A construction in progress asset cannot be posted this way.");
+        }
+        const purchaseOrderLine = purchaseOrderLineOf(line.purchaseOrderLineId);
+        const wasReceived =
+          Number(purchaseOrderLine?.quantityReceived ?? 0) > 0;
+        const receiptLines = line.purchaseOrderLineId
+          ? (receiptLinesByPurchaseOrderLine.get(line.purchaseOrderLineId) ??
+            [])
+          : [];
+        if (wasReceived && receiptLines.length === 0) {
+          refuse(
+            "A fixed asset received before the cutover is in the opening fixed assets. Correct it with a journal entry instead."
+          );
+        }
+        fixedAssetLines.set(line.id, {
+          assetId: asset!.id,
+          received: wasReceived
+        });
+        postingLines.push({
+          ...base,
+          kind: "fixedAsset",
+          purchaseOrderLineId: line.purchaseOrderLineId,
+          purchaseOrderLineLocationId: null,
+          assetLocationId: asset!.locationId ?? null,
+          fixedAssetClassId: asset!.fixedAssetClassId,
+          acquisition: wasReceived
+            ? { receiptCost: fixedAssetReceiptCost(receiptLines) }
+            : { assetAccountId: asset!.assetAccountId }
+        });
+        break;
+      }
+      case "G/L Account": {
+        const account = glAccounts.find((row) => row.id === line.accountId);
+        if (!account) throw new Error("Failed to fetch account");
+        if (account.isGroup) refuse("Cannot post to a group account");
+        postingLines.push({
+          ...base,
+          kind: "glAccount",
+          purchaseOrderLineId: line.purchaseOrderLineId,
+          account: {
+            id: account.id,
+            name: account.name,
+            class: isAccountClass(account.class) ? account.class : null
+          },
+          costCenterId: line.costCenterId ?? null,
+          projectId: null
+        });
+        break;
+      }
+      default:
+        refuse(`A ${line.invoiceLineType} line cannot be posted this way.`);
+    }
+  }
+
+  const posting = buildPurchaseInvoicePostingLines({
+    invoice: {
+      id: invoice.id,
+      supplierId: invoice.supplierId,
+      supplierReference: invoice.supplierReference
+    },
+    supplierTypeId: supplier?.supplierTypeId ?? null,
+    accounts: accountDefaults,
+    payables: {
+      accountId: accountDefaults.payablesAccount,
+      accountDefaultRole: null
+    },
+    lines: postingLines
+  });
+
+  // The opening value clears against the offset account; GR/IR keeps the rest.
+  const openingTotal = [...openingValueByLine.values()].reduce(
+    (a, b) => a + b,
+    0
+  );
+  let offset: LedgerOffsetAccount | null = null;
+  if (openingTotal > 0.005) {
+    const offsetId =
+      args.openingOffsetAccountId ?? accountDefaults.migrationClearingAccount;
+    if (!offsetId) {
+      refuse(
+        "Part of this invoice is already in the opening balance. Choose the account to offset it against."
+      );
+    }
+    const row = await trx
+      .selectFrom("account")
+      .select(["id", "name", "class", "isGroup"])
+      .where("id", "=", offsetId!)
+      .where("companyGroupId", "=", args.companyGroupId)
+      .executeTakeFirst();
+    if (!row || row.isGroup || !isAccountClass(row.class)) {
+      refuse("The offset account cannot be posted to.");
+    }
+    offset = {
+      id: row!.id,
+      name: row!.name,
+      class: row!.class as AccountClass
+    };
+  }
+
+  const journalLines: PurchaseInvoiceJournalLine[] = [];
+  for (const journalLine of posting.lines) {
+    const purchaseOrderLineId = (journalLine.documentLineReference ?? "").split(
+      ":"
+    )[1];
+    const invoiceLine = lines.find(
+      (line) =>
+        line.purchaseOrderLineId &&
+        line.purchaseOrderLineId === purchaseOrderLineId
+    );
+    const openingValue = invoiceLine
+      ? (openingValueByLine.get(invoiceLine.id) ?? 0)
+      : 0;
+    if (
+      offset &&
+      journalLine.description === "GR/IR Clearing" &&
+      openingValue > 0.005
+    ) {
+      const receiptCost =
+        posting.receivedVariances.get(invoiceLine!.id)?.receiptCost ?? 0;
+      const grir = round(debit("liability", receiptCost - openingValue));
+      if (Math.abs(grir) > 0.005)
+        journalLines.push({ ...journalLine, amount: grir });
+      journalLines.push({
+        ...journalLine,
+        accountId: offset.id,
+        description: offset.name,
+        amount: round(debitSigned(offset.class, openingValue))
+      });
+      continue;
+    }
+    // A fixed asset's price variance is part of its cost (as the register
+    // takes it), so it debits the asset's account, not PPV.
+    const fixedAsset = invoiceLine
+      ? fixedAssetLines.get(invoiceLine.id)
+      : undefined;
+    if (fixedAsset && journalLine.description === "Purchase Price Variance") {
+      const asset = assets.find((row) => row.id === fixedAsset.assetId)!;
+      journalLines.push({
+        ...journalLine,
+        accountId: asset.assetAccountId,
+        description: "Fixed Asset Acquisition"
+      });
+      continue;
+    }
+    journalLines.push(journalLine);
+  }
+
+  // The sub-ledger: write-ups of the covered layers, Average cost changes,
+  // and each asset's cost.
+  const costLedgerInserts: Insertable<KyselyDatabase["costLedger"]>[] = [];
+  const averageCostChanges: PurchaseInvoiceLedgerPlan["averageCostChanges"] =
+    [];
+  for (const line of lines) {
+    const variance = posting.receivedVariances.get(line.id);
+    if (!variance || !line.itemId || fixedAssetLines.has(line.id)) continue;
+    if (variance.selfHealQuantity > 0) {
+      throw new Error("A line's variance would make a new cost layer");
+    }
+    if (Math.abs(variance.allocation.inventoryShare) > VARIANCE_THRESHOLD) {
+      averageCostChanges.push({
+        itemId: line.itemId,
+        quantity: 0,
+        value: round(variance.allocation.inventoryShare)
+      });
+    }
+    for (const entry of variance.allocation.perLayer) {
+      if (entry.costLedgerId === NO_OPENING_LAYER) continue;
+      costLedgerInserts.push({
+        itemLedgerType: "Purchase",
+        costLedgerType: "Direct Cost",
+        adjustment: true,
+        appliesToCostLedgerId: entry.costLedgerId,
+        documentType: "Purchase Invoice",
+        documentId: invoice.id,
+        externalDocumentId: invoice.supplierReference ?? undefined,
+        itemId: line.itemId,
+        quantity: round(entry.appliedQuantity),
+        nominalCost: round(entry.adjustmentCost),
+        cost: round(entry.adjustmentCost),
+        remainingQuantity: round(entry.appliedQuantity),
+        supplierId: invoice.supplierId,
+        projectId: entry.projectId ?? null,
+        companyId,
+        postingDate
+      });
+    }
+  }
+
+  const assetWrites: PurchaseInvoiceLedgerPlan["assetWrites"] = [];
+  for (const [lineId, { assetId, received: wasReceived }] of fixedAssetLines) {
+    const asset = assets.find((row) => row.id === assetId)!;
+    const reference = lines.find(
+      (line) => line.id === lineId
+    )?.purchaseOrderLineId;
+    // What the journal debits the asset's account for this line.
+    const debited = journalLines
+      .filter(
+        (journalLine) =>
+          journalLine.accountId === asset.assetAccountId &&
+          journalLine.description === "Fixed Asset Acquisition" &&
+          (reference
+            ? journalLine.documentLineReference ===
+              journalReference.to.purchaseInvoice(reference)
+            : true)
+      )
+      .reduce((sum, journalLine) => sum + Number(journalLine.amount ?? 0), 0);
+    assetWrites.push({
+      assetId,
+      acquisitionCost: round(Number(asset.acquisitionCost ?? 0) + debited),
+      activate: !wasReceived && asset.status === "Draft"
+    });
+  }
+
+  const dimensionIdByEntity = new Map<string, string>();
+  for (const dimension of dimensions) {
+    if (dimension.entityType)
+      dimensionIdByEntity.set(dimension.entityType, dimension.id);
+  }
+
+  return {
+    invoice: {
+      id: invoice.id,
+      invoiceId: invoice.invoiceId,
+      supplierId: invoice.supplierId,
+      supplierReference: invoice.supplierReference
+    },
+    lines: journalLines,
+    costLedgerInserts,
+    averageCostChanges,
+    assetWrites,
+    dimensionIdByEntity,
+    hasOpeningValue: offset !== null
+  };
+}
+
+/** Debits less credits of a journal's lines, by their accounts' classes. */
+async function ledgerPlanImbalance(
+  trx: Trx,
+  companyGroupId: string,
+  lines: PurchaseInvoiceJournalLine[]
+) {
+  const accounts = await trx
+    .selectFrom("account")
+    .select(["id", "name", "number", "class"])
+    .where("companyGroupId", "=", companyGroupId)
+    .where("id", "in", [...new Set(lines.map((line) => line.accountId!))])
+    .execute();
+  const byId = new Map(accounts.map((account) => [account.id, account]));
+  let net = 0;
+  for (const line of lines) {
+    const account = byId.get(line.accountId!);
+    const sign =
+      account?.class === "Asset" || account?.class === "Expense" ? 1 : -1;
+    net += sign * Number(line.amount ?? 0);
+  }
+  return { net: round(net), byId };
+}
+
+export type PurchaseInvoiceLedgerPreview = {
+  lines: {
+    accountId: string;
+    accountNumber: string | null;
+    accountName: string;
+    description: string;
+    debit: number;
+    credit: number;
+  }[];
+  /** Value the opening balance already holds, cleared against the offset. */
+  hasOpeningValue: boolean;
+};
+
+/** Debit or credit of a natural-signed amount on an account of `cls`. */
+function debitCredit(cls: string | null | undefined, amount: number) {
+  const debitValue = cls === "Asset" || cls === "Expense" ? amount : -amount;
+  return debitValue >= 0
+    ? { debit: round(debitValue), credit: 0 }
+    : { debit: 0, credit: round(-debitValue) };
+}
+
+/** What `postPurchaseInvoiceToLedger` would post, one line per account and
+ *  description. Writes nothing. */
+export async function previewPurchaseInvoiceLedgerPosting(
+  ctx: ServiceContext,
+  raw: z.input<typeof purchaseInvoiceLedgerPostingInput>
+): Promise<PurchaseInvoiceLedgerPreview> {
+  const input = purchaseInvoiceLedgerPostingInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const gap = await purchaseInvoiceLedgerGap(db, companyId, input.invoiceId);
+  if (!gap.eligible) throw new InvalidInputError(gap.reason);
+  if (isBeforeCutover(input.postingDate, gap.cutoverDate)) {
+    throw new InvalidInputError(
+      `The posting date must be on or after the accounting cutover (${gap.cutoverDate}).`
+    );
+  }
+  return withTransaction(db, async (trx) => {
+    const plan = await planPurchaseInvoiceLedgerPosting(trx, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      invoiceId: input.invoiceId,
+      cutoverDate: gap.cutoverDate,
+      postingDate: input.postingDate,
+      openingOffsetAccountId: input.openingOffsetAccountId
+    });
+    const { byId } = await ledgerPlanImbalance(
+      trx,
+      ctx.company.groupId,
+      plan.lines
+    );
+    const grouped = new Map<
+      string,
+      { accountId: string; description: string; amount: number }
+    >();
+    for (const line of plan.lines) {
+      const key = `${line.accountId}\u0000${line.description ?? ""}`;
+      const entry = grouped.get(key) ?? {
+        accountId: line.accountId!,
+        description: line.description ?? "",
+        amount: 0
+      };
+      entry.amount += Number(line.amount ?? 0);
+      grouped.set(key, entry);
+    }
+    return {
+      lines: [...grouped.values()]
+        .filter((entry) => Math.abs(entry.amount) > 0.005)
+        .map((entry) => {
+          const account = byId.get(entry.accountId);
+          return {
+            accountId: entry.accountId,
+            accountNumber: account?.number ?? null,
+            accountName: account?.name ?? entry.accountId,
+            description: entry.description,
+            ...debitCredit(account?.class, entry.amount)
+          };
+        }),
+      hasOpeningValue: plan.hasOpeningValue
+    };
+  });
+}
+
+/**
+ * Posts a purchase invoice from before the accounting cutover, whose amount
+ * never reached the GL, as Carbon's posting would post it today (see
+ * `planPurchaseInvoiceLedgerPosting`): one journal on `postingDate`, on or
+ * after the cutover in an Open period, with its payable keyed to the
+ * invoice, plus the write-ups of the cost layers and the assets' costs. The
+ * invoice itself is not changed.
+ */
+export async function postPurchaseInvoiceToLedger(
+  ctx: ServiceContext,
+  raw: z.input<typeof purchaseInvoiceLedgerPostingInput>
+) {
+  const input = purchaseInvoiceLedgerPostingInput.parse(raw);
+  if (!ctx.can({ update: "accounting" })) {
+    throw new ForbiddenError(
+      "Posting an invoice to the GL needs accounting update permission."
+    );
+  }
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const postingStatus = await journalPostingStatus(db, companyId);
+
+  return withTransaction(db, async (trx) => {
+    // FOR UPDATE: a second post, a payment or a void of this invoice waits.
+    await trx
+      .selectFrom("purchaseInvoice")
+      .select("id")
+      .where("id", "=", input.invoiceId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+    const gap = await purchaseInvoiceLedgerGap(trx, companyId, input.invoiceId);
+    if (!gap.eligible) throw new InvalidInputError(gap.reason);
+    if (isBeforeCutover(input.postingDate, gap.cutoverDate)) {
+      throw new InvalidInputError(
+        `The posting date must be on or after the accounting cutover (${gap.cutoverDate}).`
+      );
+    }
+
+    // A Provisional journal has no period.
+    let accountingPeriodId: string | null = null;
+    if (postingStatus === "Posted") {
+      const period = await trx
+        .selectFrom("accountingPeriod")
+        .select([
+          "closeStatus",
+          "closedAt",
+          "fiscalYear",
+          "periodNumber",
+          sql<string>`"startDate"::text`.as("startDate"),
+          sql<string>`"endDate"::text`.as("endDate")
+        ])
+        .where("companyId", "=", companyId)
+        .where("startDate", "<=", input.postingDate)
+        .where("endDate", ">=", input.postingDate)
+        .orderBy("startDate")
+        .forUpdate()
+        .executeTakeFirst();
+      const refusal = period
+        ? lineAccountChangePeriodRefusal(period, "posting the invoice")
+        : null;
+      if (refusal) throw new InvalidInputError(refusal);
+      accountingPeriodId = (
+        await resolveAccountingPeriod(
+          trx,
+          companyId,
+          input.postingDate,
+          "historical"
+        )
+      ).id;
+    }
+
+    const plan = await planPurchaseInvoiceLedgerPosting(trx, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      invoiceId: input.invoiceId,
+      cutoverDate: gap.cutoverDate,
+      postingDate: input.postingDate,
+      openingOffsetAccountId: input.openingOffsetAccountId
+    });
+    const { net } = await ledgerPlanImbalance(
+      trx,
+      ctx.company.groupId,
+      plan.lines
+    );
+    if (Math.abs(net) > 0.005) {
+      throw new Error(`The invoice's journal does not balance (${net})`);
+    }
+
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+    const journal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
+        accountingPeriodId,
+        description: `Purchase Invoice ${plan.invoice.invoiceId} ${LEDGER_POSTING_DESCRIPTION_SUFFIX}`,
+        postingDate: input.postingDate,
+        companyId,
+        sourceType: "Purchase Invoice",
+        status: postingStatus,
+        postedAt: datetime.timestamp(),
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    const lineIds = await allocateJournalLineIds(trx, plan.lines.length);
+    await trx
+      .insertInto("journalLine")
+      .values(
+        plan.lines.map(({ dimensions: _dimensions, ...line }, index) => ({
+          ...line,
+          id: lineIds[index]!,
+          journalId: journal.id,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+    if (plan.dimensionIdByEntity.size > 0) {
+      const dimensionRows = journalLineDimensionRows({
+        journalLineIds: lineIds,
+        lines: plan.lines,
+        dimensionIdByEntity: plan.dimensionIdByEntity,
+        companyId
+      });
+      if (dimensionRows.length > 0) {
+        await trx
+          .insertInto("journalLineDimension")
+          .values(dimensionRows)
+          .execute();
+      }
+    }
+
+    if (plan.costLedgerInserts.length > 0) {
+      await trx
+        .insertInto("costLedger")
+        .values(plan.costLedgerInserts)
+        .execute();
+    }
+    await applyAverageCostChanges(trx, {
+      companyId,
+      changes: plan.averageCostChanges
+    });
+    for (const write of plan.assetWrites) {
+      await trx
+        .updateTable("fixedAsset")
+        .set({
+          acquisitionCost: write.acquisitionCost,
+          ...(write.activate
+            ? {
+                status: "Active" as const,
+                acquisitionDate: sql<string>`coalesce("acquisitionDate", ${input.postingDate}::date)`,
+                depreciationStartDate: sql<string>`coalesce("depreciationStartDate", ${input.postingDate}::date)`
+              }
+            : {}),
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", write.assetId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    return {
+      invoiceId: plan.invoice.id,
+      journalId: journal.id,
+      journalEntryId,
+      postingDate: input.postingDate
+    };
+  });
 }
