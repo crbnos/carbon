@@ -32,9 +32,10 @@ export const hasLocalDatabase: boolean = (() => {
 /** A vitest case for a regression that requires the local database. */
 export function databaseTest(
   name: string,
-  fn: () => void | Promise<void>
+  fn: () => void | Promise<void>,
+  timeout = 60_000
 ): void {
-  it.skipIf(!hasLocalDatabase)(name, fn, 60_000);
+  it.skipIf(!hasLocalDatabase)(name, fn, timeout);
 }
 
 /** Fixture connections have trigger suppression on. An edit-lock test needs a
