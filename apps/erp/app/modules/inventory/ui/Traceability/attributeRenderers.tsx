@@ -45,6 +45,7 @@ const SKIPPED_ATTRIBUTE_KEYS = new Set([
   "Shipment Line",
   "Inventory Adjustment",
   "expiryOverrides",
+  "Output Unit Indices",
   // Injected by the lineage loader for the graph's edge badges; the stored
   // "From Shelf"/"To Shelf" ids already render as "From/To Storage Unit".
   "From Storage Unit Name",

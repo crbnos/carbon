@@ -11,6 +11,7 @@ import type {
   InspectionSample,
   InspectionSamplingPlan
 } from "~/services/types";
+import { isUnsampleableEntityStatus } from "~/utils/inspectionOutcome";
 import type { MeasurementSaveResult } from "./InspectionMeasurementMatrix";
 
 /** A lot as both MES lot views receive it: the row and its item. */
@@ -34,19 +35,6 @@ export type DrawingBalloonRow = {
   regionWidth: number;
   regionHeight: number;
 };
-
-/** A unit in one of these states can no longer be sampled. */
-export const UNSAMPLEABLE_ENTITY_STATUSES = [
-  "Consumed",
-  "Rejected",
-  "Scrapped"
-] as const;
-
-export function isUnsampleableEntityStatus(status: string | null | undefined) {
-  return (UNSAMPLEABLE_ENTITY_STATUSES as readonly string[]).includes(
-    status ?? ""
-  );
-}
 
 export function inspectionStatusVariant(status: InspectionRow["status"]) {
   switch (status) {
