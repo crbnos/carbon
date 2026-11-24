@@ -1030,6 +1030,7 @@ export async function drainSyncOperations(args: {
         await failOperation(args.client, {
           id: operation.id,
           companyId: operation.companyId,
+          attemptCount: operation.attemptCount,
           errorCode: "ATTEMPTS_EXHAUSTED",
           errorMessage: `Sync was attempted ${operation.attemptCount} times without reaching a terminal outcome; parked as Failed — retry manually once the underlying issue is fixed`
         });
@@ -1085,6 +1086,7 @@ export async function drainSyncOperations(args: {
             await failOperation(args.client, {
               id: operation.id,
               companyId: operation.companyId,
+              attemptCount: operation.attemptCount,
               ...decision.record
             });
             continue;
@@ -1095,6 +1097,7 @@ export async function drainSyncOperations(args: {
             await skipOperation(args.client, {
               id: operation.id,
               companyId: operation.companyId,
+              attemptCount: operation.attemptCount,
               reason: decision.reason
             });
             continue;
@@ -1104,6 +1107,7 @@ export async function drainSyncOperations(args: {
           await completeOperation(args.client, {
             id: operation.id,
             companyId: operation.companyId,
+            attemptCount: operation.attemptCount,
             ...(decision.externalId ? { externalId: decision.externalId } : {})
           });
         }
@@ -1127,6 +1131,7 @@ export async function drainSyncOperations(args: {
           await failOperation(args.client, {
             id: operation.id,
             companyId: operation.companyId,
+            attemptCount: operation.attemptCount,
             errorMessage
           });
         }

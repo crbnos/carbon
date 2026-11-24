@@ -312,6 +312,7 @@ describe("updateOperationMetadata", () => {
         id: "op-1",
         companyId: "company-1",
         status: "In Flight",
+        attemptCount: 1,
         metadata: { qbdPhase: "query", stale: true },
         updatedAt: null
       }
@@ -320,6 +321,7 @@ describe("updateOperationMetadata", () => {
     const result = await updateOperationMetadata(makeOperationTableStub(rows), {
       id: "op-1",
       companyId: "company-1",
+      attemptCount: 1,
       metadata: { qbdPhase: "mod" }
     });
 
@@ -332,14 +334,29 @@ describe("updateOperationMetadata", () => {
     expect(rows[0]?.updatedAt).toBeTruthy();
   });
 
-  it("returns an error for a missing operation", async () => {
-    const result = await updateOperationMetadata(makeOperationTableStub([]), {
-      id: "op-missing",
+  it("writes nothing for an attempt whose operation a later claim took over", async () => {
+    const rows = [
+      {
+        id: "op-1",
+        companyId: "company-1",
+        status: "In Flight",
+        attemptCount: 2,
+        metadata: { qbdPhase: "query" },
+        updatedAt: null
+      }
+    ];
+
+    const result = await updateOperationMetadata(makeOperationTableStub(rows), {
+      id: "op-1",
       companyId: "company-1",
+      attemptCount: 1,
       metadata: { qbdPhase: "add" }
     });
 
-    expect(result.data).toBeNull();
-    expect(result.error).toMatch(/expected 1 row, got 0/);
+    expect(result).toEqual({ data: null, error: null });
+    expect(rows[0]).toMatchObject({
+      metadata: { qbdPhase: "query" },
+      updatedAt: null
+    });
   });
 });

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { Database } from "@carbon/database";
 import {
   aggregateJournalEntriesForDate,
   claimPendingOperations,
@@ -30,6 +31,7 @@ import {
   type XeroProvider
 } from "@carbon/ee/accounting";
 import { getLogger } from "@carbon/logger";
+import type { SupabaseClient } from "@supabase/supabase-js";
 /**
  * Daily-consolidation cron (posting sync, spec Phase B §6).
  *
@@ -162,7 +164,6 @@ async function consolidateCompany(args: {
 }): Promise<ConsolidationSummary & { skippedReason?: string }> {
   const { companyId, providerId, database } = args;
   const client = getCarbonServiceRole();
-  const summary = emptySummary();
 
   const integration = await getAccountingIntegration(
     client,
@@ -170,12 +171,41 @@ async function consolidateCompany(args: {
     providerId
   );
 
+  return consolidateIntegration({
+    client,
+    database,
+    companyId,
+    providerId,
+    integrationMetadata: integration.metadata,
+    provider: getProviderIntegration(
+      client,
+      companyId,
+      integration.id,
+      integration.metadata
+    ) as XeroProvider,
+    createdBy: getSyncOperationActor(integration)
+  });
+}
+
+/** One company's consolidation run, given its loaded integration and provider. */
+export async function consolidateIntegration(args: {
+  client: SupabaseClient<Database>;
+  database: SyncContext["database"];
+  companyId: string;
+  providerId: ProviderID;
+  integrationMetadata: unknown;
+  provider: XeroProvider;
+  createdBy: string;
+}): Promise<ConsolidationSummary & { skippedReason?: string }> {
+  const { client, companyId, providerId, database, provider, createdBy } = args;
+  const summary = emptySummary();
+
   // Re-check the gate inside the step: settings may have changed between
   // enumeration and execution. The cron runs for pure-daily configs
   // (transitional v2 shims) AND for any config with daily-summary source
   // types (v3 per-source-type granularity).
   const settings: PostingSyncSettings = resolvePostingSyncSettings(
-    integration.metadata
+    args.integrationMetadata
   );
   if (
     settings.consolidation !== "daily" &&
@@ -187,14 +217,6 @@ async function consolidateCompany(args: {
     };
   }
 
-  const provider = getProviderIntegration(
-    client,
-    companyId,
-    integration.id,
-    integration.metadata
-  ) as XeroProvider;
-
-  const createdBy = getSyncOperationActor(integration);
   const today = getUtcDateString();
   const now = new Date();
 
@@ -354,6 +376,9 @@ async function consolidateCompany(args: {
     integration: providerId,
     consolidatedBatchKeys
   });
+  const claimedMarkerById = new Map(
+    partition.markers.map((marker) => [marker.id, marker])
+  );
 
   summary.held = partition.held.length;
   if (partition.held.length > 0) {
@@ -389,6 +414,7 @@ async function consolidateCompany(args: {
         await failOperation(client, {
           id: operation.id,
           companyId: operation.companyId,
+          attemptCount: operation.attemptCount,
           ...getSyncOperationFailureRecord(operation, syncResult)
         });
         continue;
@@ -402,6 +428,7 @@ async function consolidateCompany(args: {
       await completeOperation(client, {
         id: operation.id,
         companyId: operation.companyId,
+        attemptCount: operation.attemptCount,
         ...(syncResult.remoteId ? { externalId: syncResult.remoteId } : {})
       });
     }
@@ -413,6 +440,7 @@ async function consolidateCompany(args: {
     await failOperation(client, {
       id: operation.id,
       companyId: operation.companyId,
+      attemptCount: operation.attemptCount,
       errorMessage: `Journal ${operation.entityId} not found in Carbon`
     });
   }
@@ -447,6 +475,9 @@ async function consolidateCompany(args: {
       }
       marker = lateMarker.data;
     }
+    // The marker was reserved before the claim; its closes speak for the
+    // attempt this run's claim took, when it took one.
+    marker = claimedMarkerById.get(marker.id) ?? marker;
     processedMarkerIds.add(marker.id);
 
     // Fetch + gate each member exactly like the syncer's shouldSync would
@@ -464,6 +495,7 @@ async function consolidateCompany(args: {
         await failOperation(client, {
           id: operation.id,
           companyId: operation.companyId,
+          attemptCount: operation.attemptCount,
           errorMessage: `Journal ${operation.entityId} not found in Carbon`
         });
         continue;
@@ -490,7 +522,8 @@ async function consolidateCompany(args: {
         summary.membersSkipped++;
         await completeOperation(client, {
           id: operation.id,
-          companyId: operation.companyId
+          companyId: operation.companyId,
+          attemptCount: operation.attemptCount
         });
         continue;
       }
@@ -508,6 +541,7 @@ async function consolidateCompany(args: {
         await completeOperation(client, {
           id: operation.id,
           companyId: operation.companyId,
+          attemptCount: operation.attemptCount,
           externalId: mapping.externalId
         });
         continue;
@@ -540,6 +574,7 @@ async function consolidateCompany(args: {
         await failOperation(client, {
           id: member.operation.id,
           companyId: member.operation.companyId,
+          attemptCount: member.operation.attemptCount,
           errorMessage: memberPreflight.failure.message,
           errorCode: memberPreflight.failure.errorCode,
           warning: memberPreflight.failure.warning,
@@ -562,6 +597,7 @@ async function consolidateCompany(args: {
       await completeOperation(client, {
         id: marker.id,
         companyId: marker.companyId,
+        attemptCount: marker.attemptCount,
         metadata: {
           ...(marker.metadata ?? {}),
           consolidation: true,
@@ -627,6 +663,7 @@ async function consolidateCompany(args: {
         await completeOperation(client, {
           id: operation.id,
           companyId: operation.companyId,
+          attemptCount: operation.attemptCount,
           ...(externalId ? { externalId } : {}),
           metadata: {
             ...(operation.metadata ?? {}),
@@ -639,6 +676,7 @@ async function consolidateCompany(args: {
       await completeOperation(client, {
         id: marker.id,
         companyId: marker.companyId,
+        attemptCount: marker.attemptCount,
         ...(externalId ? { externalId } : {}),
         metadata: {
           ...(marker.metadata ?? {}),
@@ -670,6 +708,7 @@ async function consolidateCompany(args: {
         await failOperation(client, {
           id: operation.id,
           companyId: operation.companyId,
+          attemptCount: operation.attemptCount,
           errorMessage,
           ...(failure
             ? { errorCode: failure.errorCode, warning: failure.warning }
@@ -686,6 +725,7 @@ async function consolidateCompany(args: {
       await failOperation(client, {
         id: marker.id,
         companyId: marker.companyId,
+        attemptCount: marker.attemptCount,
         errorMessage: `Daily consolidation for ${date} failed: ${errorMessage}`,
         ...(failure
           ? { errorCode: failure.errorCode, warning: failure.warning }
@@ -707,6 +747,7 @@ async function consolidateCompany(args: {
     await completeOperation(client, {
       id: operation.id,
       companyId: operation.companyId,
+      attemptCount: operation.attemptCount,
       metadata: {
         ...(operation.metadata ?? {}),
         note: "Marker closed without members by the consolidation cron"
