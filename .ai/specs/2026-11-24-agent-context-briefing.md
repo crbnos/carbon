@@ -1,6 +1,6 @@
 # Agent context briefing and the learning loop
 
-> Status: draft
+> Status: in-progress
 > Author: naveenkash
 > Date: 2026-11-24
 > Research: `.ai/research/2026-11-24-agent-context-briefing.md`
@@ -323,7 +323,7 @@ N/A. No product UI. The agent sees the briefing as text in its context.
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| `additionalContext` on `PreToolUse` does not reach the agent | Med | Phase 2 proves it first. The refusal and `pnpm brief` work without it. |
+| `additionalContext` on `PreToolUse` reaches the agent with the tool result, after the write (proved 2026-11-24, `.ai/runs/2026-11-24-agent-context-briefing-hook-probe.md`) | High | The refusal reaches the agent before the write. A briefing before the first write needs a decision: a PostToolUse hook on `Read`, or a one-time refusal of the first write. |
 | Triggers that are too broad flood the briefing | Med | Tests 2 and 3. The 2k-token limit. |
 | Triggers and summaries for 89 rules take judgment | Med | Agents write them per area. A human reviews each area. |
 | The hook slows each edit | Low | The index avoids parsing on each edit. A timed-out hook does not block. |
@@ -353,3 +353,22 @@ N/A. No product UI. The agent sees the briefing as text in its context.
 ## Changelog
 
 - 2026-11-24: Created. Questions 1 and 2 answered by the user. Questions 3 to 14 answered by the user's acceptance of the recommendations.
+- 2026-11-24: Implemented phases 1 to 4 (plan `.ai/plans/2026-11-24-agent-context-briefing.md`, Tasks 1 to 21). Deviations:
+  1. `brief` builds its index in memory on each call (about 60 ms). There is no `brief-index.json` and no staleness test.
+  2. A trigger may reach 25% of source files. A check trigger may reach 50%: it must occur in every violation's file, and a check entry is one line, shown only in its file set. The reach test measures every 8th file.
+  3. The briefing ranks a trigger in the edit's own text first, then a specific path match, then a trigger elsewhere in the file. A rule that matches only a broad glob (an app or a package root) shows by name only, because Claude Code loads it when the file opens. The overflow line names at most 10 entries.
+  4. `additionalContext` arrives after the write (Risks). The refusal arrives before it.
+  5. `.gitignore` now tracks `.claude/settings.json` and `.claude/hooks/`, so every agent gets the hooks.
+  6. No lesson is deleted. `.ai/runs/2026-11-24-lesson-triage.md` lists 129 lessons that a rule or check states, 40 duplicates and 82 that name code that is gone.
+- 2026-11-24: Acceptance evidence:
+  - Transaction rule on a route file: `pnpm brief` on a route with two `.update(` calls lists `database-patterns` first.
+  - Raw redirect refused: headless probe 1, and `pre-tool-use.test.ts`.
+  - Baselined violation passes, and an entry shows once per session: `brief.test.ts`, `pre-tool-use.test.ts`.
+  - Size: the briefing of `sales.service.ts` (about 10,000 lines) is 8.8k characters with the overflow line.
+  - Broken frontmatter, a loose trigger and a check without its trigger fail `scopes.test.ts`.
+  - Lessons are one file each, every one with a scope: `scopes.test.ts`.
+  - A gate failure adds a `gate-failure` line: run on a probe file with a raw redirect.
+  - The Stop hook asks once: `stop.test.ts`.
+  - The sweep writes a report and opens no pull request.
+  - Codex gets the same briefing from `pnpm brief`.
+  - Open: the weekly sweep has no schedule yet; a human starts it.

@@ -26,7 +26,7 @@
 - [x] Task 18: Write the `/learn` skill
 - [x] Task 19: Write the weekly sweep script
 - [x] Task 20: Wire the skills and the AGENTS.md files
-- [ ] Task 21: Run the final verification
+- [x] Task 21: Run the final verification
 
 ## Dependencies
 - Task 2 needs Task 1.
