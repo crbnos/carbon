@@ -63,11 +63,12 @@
     ],
     "fingerprints": {
       "apps/erp/app/modules/inventory/inventory.service.ts#issueJobOperationMaterials": "45fccb4a95d9fa8f",
-      "apps/erp/app/modules/inventory/inventory.service.ts#maxQuantityIssued": "missing",
+      "apps/erp/app/modules/inventory/inventory.service.ts#maxQuantityIssued === undefined": "1ecab0ae12a38ec8",
+      "apps/erp/app/modules/inventory/inventory.service.ts#round(maxQuantityIssued) - previouslyIssued": "c25b0f4a55954326",
       "apps/erp/app/modules/shared/shared.service.ts#lockUntrackedDraws": "2d415c24e162df87",
       "apps/erp/app/modules/shared/shared.service.ts#calculateCOGS": "bd09bfc69ab27df9",
       "apps/mes/app/services/operations.service.ts#backflushUntrackedMaterialsOnStepRecord": "887551f9a85b570c"
     },
-    "confirmedAt": "d6d406fa32"
+    "confirmedAt": "3e0cb1f771"
   }
 }
