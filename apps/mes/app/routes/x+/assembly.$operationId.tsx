@@ -38,6 +38,7 @@ import {
   isFirstOpenOperationOfMakeMethod
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
+import { readScreenUnitHolds } from "~/services/unit-hold.server";
 import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
@@ -124,6 +125,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const operationPromise = getJobOperationById(serviceRole, operationId);
+  const unitsPromise = jobMakeMethodId
+    ? getTrackedEntitiesForOperation(serviceRole, {
+        operationId,
+        jobMakeMethodId,
+        companyId
+      })
+    : null;
+  const makeMethodPromise = jobMakeMethodId
+    ? getJobMakeMethod(serviceRole, jobMakeMethodId)
+    : null;
   const procedurePromise = getJobOperationProcedure(serviceRole, operationId);
   const [
     job,
@@ -146,7 +157,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     abilityWarning,
     openEvent,
     isFirstOperation,
-    isFirstOpenOperation
+    isFirstOpenOperation,
+    unitHolds
   ] = await Promise.all([
     getJob(serviceRole, jobId),
     operationPromise,
@@ -161,14 +173,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         companyId
       )
     ),
-    jobMakeMethodId
-      ? getTrackedEntitiesForOperation(serviceRole, {
-          operationId,
-          jobMakeMethodId: jobMakeMethodId,
-          companyId
-        })
-      : null,
-    jobMakeMethodId ? getJobMakeMethod(serviceRole, jobMakeMethodId) : null,
+    unitsPromise,
+    makeMethodPromise,
     procedurePromise,
     getToolsByOperationId(serviceRole, operationId),
     getNcrsByJobOperationId(serviceRole, operationId),
@@ -238,7 +244,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           operationId,
           jobMakeMethodId
         )
-      : false
+      : false,
+    // The units on hold for an open quality issue. Chained on the units and
+    // make method reads, so it stays in this wave.
+    Promise.all([unitsPromise, makeMethodPromise]).then(([units, makeMethod]) =>
+      readScreenUnitHolds(serviceRole, {
+        companyId,
+        operationId,
+        serial: !!makeMethod?.data?.requiresSerialTracking,
+        unitIds: (units?.data ?? []).map((unit) => unit.id)
+      })
+    )
   ]);
 
   if (job.error)
@@ -363,6 +379,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     thumbnailPath,
     correctionName,
     trackedEntities: trackedEntities?.data ?? [],
+    unitHolds,
     // The resolved entity for the current unit, or null for untracked units, so the
     // component falls back to the ?unit index instead of snapping back to unit 0.
     trackedEntityId: effectiveEntityId ?? null,

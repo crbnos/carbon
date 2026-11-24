@@ -12583,6 +12583,9 @@ msgstr "Enable to start tracking changes to your data."
 msgid "Enable to start tracking work shifts."
 msgstr "Enable to start tracking work shifts."
 
+msgid "Enable to stop work on a serial unit until its issue is closed."
+msgstr "Enable to stop work on a serial unit until its issue is closed."
+
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Enable to update part lead times from posted purchase receipts."
 
@@ -16597,6 +16600,9 @@ msgstr "Issues by type, with cumulative percentage"
 
 msgid "Issues opened and closed by week"
 msgstr "Issues opened and closed by week"
+
+msgid "Issues: Hold Units"
+msgstr "Issues: Hold Units"
 
 msgid "It could not start. Try again."
 msgstr "It could not start. Try again."
@@ -21923,6 +21929,12 @@ msgstr "Open Issues"
 
 msgid "Open issues by criticality and weeks open"
 msgstr "Open issues by criticality and weeks open"
+
+msgid "Open issues do not stop work"
+msgstr "Open issues do not stop work"
+
+msgid "Open issues no longer stop work"
+msgstr "Open issues no longer stop work"
 
 msgid "Open item details"
 msgstr "Open item details"
@@ -29788,6 +29800,9 @@ msgstr "Stop Receiving"
 msgid "Stop Shipping"
 msgstr "Stop Shipping"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "Stop shop floor work on a serial unit while an issue linked to it is open."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Stop using {0} in this step"
@@ -32309,6 +32324,9 @@ msgstr "The shelves and bins where stock physically sits"
 msgid "The shop cannot finish this by {promised}."
 msgstr "The shop cannot finish this by {promised}."
 
+msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
+msgstr "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "The shop supplies and consumables you keep on hand"
 
@@ -34249,6 +34267,12 @@ msgstr "Units that failed a sample stay Rejected. Every other unit, including un
 
 msgid "Units this customer owns show here once registered."
 msgstr "Units this customer owns show here once registered."
+
+msgid "Units with an open issue are now on hold"
+msgstr "Units with an open issue are now on hold"
+
+msgid "Units with an open issue are on hold"
+msgstr "Units with an open issue are on hold"
 
 msgid "Unknown"
 msgstr "Unknown"

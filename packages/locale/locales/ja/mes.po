@@ -256,6 +256,9 @@ msgstr "{recorded}/{0}件の製造指図"
 msgid "{scrapped} scrapped"
 msgstr ""
 
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} は保留中です"
+
 msgid "{unbinned} in stock, in no bin"
 msgstr "在庫 {unbinned}、ビンなし"
 
@@ -2248,6 +2251,9 @@ msgstr "最も古い順"
 msgid "On Hold"
 msgstr "保留中"
 
+msgid "On hold · {issueNumbers}"
+msgstr "保留中 · {issueNumbers}"
+
 msgid "On its way"
 msgstr "移動中"
 
@@ -3580,6 +3586,9 @@ msgstr ""
 msgid "This unit is not part of this operation"
 msgstr ""
 
+msgid "This unit is on hold"
+msgstr "このユニットは保留中です"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
 
@@ -3898,6 +3907,9 @@ msgstr "作業区ディスプレイ"
 
 msgid "Work instructions"
 msgstr "作業手順書"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "品質担当が以下の問題をすべてクローズするまで、このユニットの作業は保留されます。他のユニットには影響しません。"
 
 msgid "Work Site"
 msgstr "作業現場"

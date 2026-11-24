@@ -12583,6 +12583,9 @@ msgstr "Włącz, aby rozpocząć śledzenie zmian w Twoich danych."
 msgid "Enable to start tracking work shifts."
 msgstr "Włącz, aby rozpocząć śledzenie zmian pracy."
 
+msgid "Enable to stop work on a serial unit until its issue is closed."
+msgstr "Włącz, aby wstrzymać pracę nad jednostką z numerem seryjnym do czasu zamknięcia jej problemu."
+
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Włącz, aby zaktualizować czasy realizacji części z zaksięgowanych przyjęć zakupów."
 
@@ -16597,6 +16600,9 @@ msgstr "Problemy wg typu, z procentem narastającym"
 
 msgid "Issues opened and closed by week"
 msgstr "Problemy otwarte i zamknięte wg tygodnia"
+
+msgid "Issues: Hold Units"
+msgstr "Problemy: wstrzymywanie jednostek"
 
 msgid "It could not start. Try again."
 msgstr "Nie można było rozpocząć. Spróbuj ponownie."
@@ -21923,6 +21929,12 @@ msgstr "Otwarte problemy"
 
 msgid "Open issues by criticality and weeks open"
 msgstr "Otwarte problemy wg krytyczności i liczby tygodni otwarcia"
+
+msgid "Open issues do not stop work"
+msgstr "Otwarte problemy nie wstrzymują pracy"
+
+msgid "Open issues no longer stop work"
+msgstr "Otwarte problemy nie wstrzymują już pracy"
 
 msgid "Open item details"
 msgstr "Otwórz szczegóły artykułu"
@@ -29788,6 +29800,9 @@ msgstr "Zatrzymaj Odbieranie"
 msgid "Stop Shipping"
 msgstr "Zatrzymaj wysyłkę"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "Wstrzymuje pracę na hali nad jednostką z numerem seryjnym, dopóki powiązany z nią problem jest otwarty."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Przestań używać {0} w tym kroku"
@@ -32309,6 +32324,9 @@ msgstr "Półki i pojemniki, gdzie fizycznie znajduje się zapas"
 msgid "The shop cannot finish this by {promised}."
 msgstr "Warsztat nie zdąży tego zakończyć do {promised}."
 
+msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
+msgstr "Hala odmawia pracy nad jednostką do czasu zamknięcia problemu. Pozostałe jednostki zlecenia nie są objęte wstrzymaniem."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Materiały eksploatacyjne i zużywalne, które masz pod ręką"
 
@@ -34249,6 +34267,12 @@ msgstr "Jednostki, które nie przeszły próbki, pozostają odrzucone. Wszystkie
 
 msgid "Units this customer owns show here once registered."
 msgstr "Sztuki posiadane przez tego klienta pojawiają się tutaj po zarejestrowaniu."
+
+msgid "Units with an open issue are now on hold"
+msgstr "Jednostki z otwartym problemem są teraz wstrzymywane"
+
+msgid "Units with an open issue are on hold"
+msgstr "Jednostki z otwartym problemem są wstrzymane"
 
 msgid "Unknown"
 msgstr "Nieznany"

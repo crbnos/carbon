@@ -256,6 +256,9 @@ msgstr "{recorded}/{0} jobs"
 msgid "{scrapped} scrapped"
 msgstr "{scrapped} scrapped"
 
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} is on hold"
+
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} in stock, in no bin"
 
@@ -2248,6 +2251,9 @@ msgstr "Oldest first"
 msgid "On Hold"
 msgstr "On Hold"
 
+msgid "On hold · {issueNumbers}"
+msgstr "On hold · {issueNumbers}"
+
 msgid "On its way"
 msgstr "On its way"
 
@@ -3580,6 +3586,9 @@ msgstr "This unit is complete here"
 msgid "This unit is not part of this operation"
 msgstr "This unit is not part of this operation"
 
+msgid "This unit is on hold"
+msgstr "This unit is on hold"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "This unit will be permanently scrapped and a replacement unit will be created."
 
@@ -3898,6 +3907,9 @@ msgstr "Work Center Displays"
 
 msgid "Work instructions"
 msgstr "Work instructions"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "Work on this unit waits until quality closes every issue below. Other units are not affected."
 
 msgid "Work Site"
 msgstr "Work Site"

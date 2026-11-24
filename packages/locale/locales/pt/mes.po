@@ -256,6 +256,9 @@ msgstr "{recorded}/{0} ordens de produção"
 msgid "{scrapped} scrapped"
 msgstr ""
 
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} está suspensa"
+
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} em estoque, sem compartimento"
 
@@ -2248,6 +2251,9 @@ msgstr "Mais antigo primeiro"
 msgid "On Hold"
 msgstr "Suspenso"
 
+msgid "On hold · {issueNumbers}"
+msgstr "Suspensa · {issueNumbers}"
+
 msgid "On its way"
 msgstr "A caminho"
 
@@ -3580,6 +3586,9 @@ msgstr ""
 msgid "This unit is not part of this operation"
 msgstr ""
 
+msgid "This unit is on hold"
+msgstr "Esta unidade está suspensa"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Esta unidade será permanentemente descartada e uma unidade de substituição será criada."
 
@@ -3898,6 +3907,9 @@ msgstr "Exibições do Centro de Trabalho"
 
 msgid "Work instructions"
 msgstr "Instruções de trabalho"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "O trabalho nesta unidade aguarda até que a qualidade feche todos os problemas abaixo. As outras unidades não são afetadas."
 
 msgid "Work Site"
 msgstr "Local de trabalho"

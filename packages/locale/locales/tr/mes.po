@@ -256,6 +256,9 @@ msgstr "{recorded}/{0} iş emirleri"
 msgid "{scrapped} scrapped"
 msgstr ""
 
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} askıda"
+
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} stokta, hiçbir gözde değil"
 
@@ -2248,6 +2251,9 @@ msgstr "En eski önce"
 msgid "On Hold"
 msgstr "Askıda"
 
+msgid "On hold · {issueNumbers}"
+msgstr "Askıda · {issueNumbers}"
+
 msgid "On its way"
 msgstr "Yolda"
 
@@ -3580,6 +3586,9 @@ msgstr ""
 msgid "This unit is not part of this operation"
 msgstr ""
 
+msgid "This unit is on hold"
+msgstr "Bu birim askıda"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir birim oluşturulacaktır."
 
@@ -3898,6 +3907,9 @@ msgstr "İş Merkezi Ekranları"
 
 msgid "Work instructions"
 msgstr "İş talimatları"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "Bu birimdeki iş, kalite aşağıdaki tüm sorunları kapatana kadar bekler. Diğer birimler etkilenmez."
 
 msgid "Work Site"
 msgstr "İş Sahanı"

@@ -70,13 +70,37 @@ async function toast(response: unknown) {
   return flash?.result.message;
 }
 
-/** The reads up to the unit check: the operation, its unit rule, its units. */
+/**
+ * The reads up to the unit check: the operation, its unit rule, its units,
+ * and whether the company holds units with an open quality issue.
+ */
 const GATE_READS = [
   "jobOperation",
   "jobOperation",
   "trackedEntity",
-  "jobOperationTrackedEntity"
+  "jobOperationTrackedEntity",
+  "companySettings"
 ];
+
+/** Unit `unitId` has an open quality issue, and the company holds such units. */
+const onHold = (unitId: string) => ({
+  companySettings: [{ id: "co", holdUnitsWithOpenIssues: true }],
+  nonConformanceTrackedEntity: [
+    {
+      trackedEntityId: unitId,
+      companyId: "co",
+      nonConformance: {
+        id: "nc_1",
+        nonConformanceId: "NCR-1",
+        name: "Cracked housing",
+        description: null,
+        status: "Registered",
+        createdAt: "2026-01-01T00:00:00Z",
+        nonConformanceType: { name: "Defect" }
+      }
+    }
+  ]
+});
 
 const get = (path: string) => new Request(`http://mes.test${path}`);
 const post = (path: string, fields: Record<string, string>) => {
@@ -129,6 +153,27 @@ describe("kanban Complete scan (end route)", () => {
     });
     expect(fake.posts.map((p) => p.input.trackedEntityId)).toEqual(["u2"]);
   });
+
+  it("completes nothing for a unit on hold for an open quality issue", async () => {
+    const fake = floor({ extra: onHold("u3") });
+    const response = await endOperationByScan(fake, {
+      ...caller,
+      request: get(`/x/end/${op}?trackedEntityId=u3`),
+      operationId: op
+    });
+    expect(location(response)).toBe(`/x/operation/${op}?trackedEntityId=u3`);
+    expect(fake.writes()).toEqual([]);
+  });
+
+  it("skips a unit on hold for the next unit on the first operation", async () => {
+    const fake = floor({ later: false, extra: onHold("u2") });
+    await endOperationByScan(fake, {
+      ...caller,
+      request: get(`/x/end/${op}`),
+      operationId: op
+    });
+    expect(fake.posts.map((p) => p.input.trackedEntityId)).toEqual(["u3"]);
+  });
 });
 
 describe("kanban Start scan (start route)", () => {
@@ -180,6 +225,20 @@ describe("Log completed (complete route)", () => {
     expect(fake.writes()).toEqual([]);
     // It stops at the unit check: the operation, its rule, its units.
     expect(fake.calls.map((call) => call.table)).toEqual(GATE_READS);
+  });
+
+  it("refuses a unit on hold for an open quality issue", async () => {
+    const fake = floor({ extra: onHold("u2") });
+    await completeOperationQuantity(deps(fake), {
+      ...caller,
+      permissions: {},
+      request: post("/x/complete", {
+        jobOperationId: op,
+        quantity: "1",
+        trackedEntityId: "u2"
+      })
+    });
+    expect(fake.writes()).toEqual([]);
   });
 
   it("refuses a unit already complete here", async () => {

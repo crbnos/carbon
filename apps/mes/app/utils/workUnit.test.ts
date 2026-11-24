@@ -224,3 +224,79 @@ describe("operationUnits", () => {
     ).toEqual(["b", "c"]);
   });
 });
+
+describe("serialUnitSelection with a unit on hold", () => {
+  const isOnHold = (unit: Unit) => unit.id === "b";
+  const pick = (unitId: string, open: boolean) =>
+    run([{ type: "pick", unitId, isOpen: open }]);
+
+  it("lists it as not open and names it in no write", () => {
+    const selection = select({ isOnHold, state: pick("b", false) });
+    expect(selection.openUnits.map((unit) => unit.id)).toEqual(["a", "c"]);
+    expect(selection.unit?.id).toBe("b");
+    expect(selection.unitIsOpen).toBe(false);
+    expect(selection.writesBlocked).toBe(true);
+    expect(selection.workUnitId).toBeUndefined();
+    // A quality issue or an unconsume still names it.
+    expect(selection.reviewUnitId).toBe("b");
+  });
+
+  it("keeps a picked unit on screen when it goes on hold, and asks for another", () => {
+    // Picked while open; the issue was raised after.
+    const selection = select({ isOnHold, state: pick("b", true) });
+    expect(selection.unit?.id).toBe("b");
+    expect(selection.writesBlocked).toBe(true);
+    expect(selection.pickerOpen).toBe(true);
+  });
+
+  it("keeps it on screen even when one other unit is left", () => {
+    const selection = select({
+      isOnHold,
+      units: units("a!", "b", "c"),
+      state: pick("b", true)
+    });
+    expect(selection.unit?.id).toBe("b");
+    expect(selection.soleOpenUnit?.id).toBe("c");
+    expect(selection.workUnitId).toBeUndefined();
+  });
+
+  it("takes the other unit as the one left when none was picked", () => {
+    const selection = select({ isOnHold, units: units("a!", "b", "c") });
+    expect(selection.workUnitId).toBe("c");
+    expect(selection.pickerOpen).toBe(false);
+  });
+
+  it("offers the units on hold to look at when only they are left", () => {
+    const left = units("a!", "b", "c!");
+    const selection = select({ isOnHold, units: left });
+    expect(selection.unit).toBeUndefined();
+    expect(selection.openUnits).toEqual([]);
+    expect(selection.onHoldUnits.map((unit) => unit.id)).toEqual(["b"]);
+    expect(selection.pickerOpen).toBe(true);
+    expect(selection.writesBlocked).toBe(true);
+    // Once one is on screen the picker stays closed: its banner says why.
+    const viewed = select({ isOnHold, units: left, state: pick("b", false) });
+    expect(viewed.unit?.id).toBe("b");
+    expect(viewed.pickerOpen).toBe(false);
+  });
+
+  it("lists no unit on hold that is already done here", () => {
+    const selection = select({ isOnHold, units: units("a", "b!", "c") });
+    expect(selection.onHoldUnits).toEqual([]);
+  });
+
+  it("flows past it on the first operation", () => {
+    const selection = select({
+      isOnHold,
+      isFirstOperation: true,
+      units: units("a!", "b", "c"),
+      urlUnitId: "b"
+    });
+    expect(selection.workUnitId).toBe("c");
+  });
+
+  it("changes nothing when no unit is on hold", () => {
+    const state = pick("b", true);
+    expect(select({ isOnHold: () => false, state })).toEqual(select({ state }));
+  });
+});

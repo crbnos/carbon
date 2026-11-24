@@ -36,6 +36,10 @@ in the migrations — **newest wins**; core tables created in
 - **Issue status** (`nonConformanceStatus`): `Registered` → `In Progress` → `Closed`.
   DB column default is `'Registered'`. `isIssueLocked(status)` ⇒ `status === "Closed"`
   (blocks edits to issue + task assignments).
+  An issue that is not `Closed` and is linked to a serial unit
+  (`nonConformanceTrackedEntity`) puts that unit on hold in the MES when
+  `companySettings.holdUnitsWithOpenIssues` is on (Settings → Quality); see
+  `mes-job-operation-ui.md` → Quality hold.
 - **Task status** (`nonConformanceTaskStatus`): `Pending`, `In Progress`,
   `Completed`, `Skipped`. Tasks start `Pending`; they do **not** auto-start.
 - **Source** (`nonConformanceSource`): `Internal`, `External`.

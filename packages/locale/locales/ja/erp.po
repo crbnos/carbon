@@ -12583,6 +12583,9 @@ msgstr "データへの変更の追跡を開始するには有効にしてくだ
 msgid "Enable to start tracking work shifts."
 msgstr "作業シフトの追跡を開始するには有効にしてください。"
 
+msgid "Enable to stop work on a serial unit until its issue is closed."
+msgstr "有効にすると、問題がクローズされるまでシリアル番号付きユニットの作業を止めます。"
+
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "転記済の購買入荷から部品のリードタイムを更新するために有効にします。"
 
@@ -16597,6 +16600,9 @@ msgstr "種類別の問題（累積割合付き）"
 
 msgid "Issues opened and closed by week"
 msgstr "週ごとの問題の発生とクローズ"
+
+msgid "Issues: Hold Units"
+msgstr "問題：ユニットの保留"
 
 msgid "It could not start. Try again."
 msgstr "開始できませんでした。もう一度試してください。"
@@ -21923,6 +21929,12 @@ msgstr "未解決の問題"
 
 msgid "Open issues by criticality and weeks open"
 msgstr "重要度と未完了週数別のオープンの問題"
+
+msgid "Open issues do not stop work"
+msgstr "未解決の問題があっても作業は止まりません"
+
+msgid "Open issues no longer stop work"
+msgstr "未解決の問題で作業が止まらなくなりました"
 
 msgid "Open item details"
 msgstr "品目の詳細を開く"
@@ -29788,6 +29800,9 @@ msgstr "受信を停止"
 msgid "Stop Shipping"
 msgstr "配送を停止"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "リンクされた問題が未解決の間、シリアル番号付きユニットの現場作業を止めます。"
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "{0} をこのステップで使用しない"
@@ -32309,6 +32324,9 @@ msgstr "在庫が物理的に置かれている棚とビン。"
 msgid "The shop cannot finish this by {promised}."
 msgstr "工場では{promised}までに完了できません。"
 
+msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
+msgstr "問題がクローズされるまで、現場ではそのユニットの作業を受け付けません。ジョブの他のユニットには影響しません。"
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "手元に保管する店舗用品と消耗品"
 
@@ -34249,6 +34267,12 @@ msgstr "サンプルで不合格となったユニットは却下のままです
 
 msgid "Units this customer owns show here once registered."
 msgstr "この顧客が所有する個体は、登録済になるとここに表示されます。"
+
+msgid "Units with an open issue are now on hold"
+msgstr "未解決の問題があるユニットは保留されるようになりました"
+
+msgid "Units with an open issue are on hold"
+msgstr "未解決の問題があるユニットは保留されます"
 
 msgid "Unknown"
 msgstr "不明"

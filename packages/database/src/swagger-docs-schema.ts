@@ -121360,6 +121360,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -121725,6 +121728,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -122042,6 +122048,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -200323,7 +200332,8 @@ export default {
         "receiptBatchNumbersFromPurchaseOrder",
         "sequenceWeekNumbering",
         "supplierPartNumberDisplay",
-        "customerPartNumberDisplay"
+        "customerPartNumberDisplay",
+        "holdUnitsWithOpenIssues"
       ],
       properties: {
         id: {
@@ -200868,6 +200878,11 @@ export default {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
           format: 'public."partNumberDisplay"',
           type: "string"
+        },
+        holdUnitsWithOpenIssues: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -266456,6 +266471,12 @@ export default {
     },
     "rowFilter.companySettings.customerPartNumberDisplay": {
       name: "customerPartNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.holdUnitsWithOpenIssues": {
+      name: "holdUnitsWithOpenIssues",
       required: false,
       in: "query",
       type: "string"

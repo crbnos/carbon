@@ -8474,6 +8474,7 @@ export type Database = {
           forecastConsumptionBackwardPeriods: number
           forecastConsumptionForwardPeriods: number
           gaugeCalibrationExpiredNotificationGroup: string[]
+          holdUnitsWithOpenIssues: boolean
           id: string
           includeMaterialsOnTraveler: boolean
           includeOperationsOnTraveler: boolean
@@ -8578,6 +8579,7 @@ export type Database = {
           forecastConsumptionBackwardPeriods?: number
           forecastConsumptionForwardPeriods?: number
           gaugeCalibrationExpiredNotificationGroup?: string[]
+          holdUnitsWithOpenIssues?: boolean
           id: string
           includeMaterialsOnTraveler?: boolean
           includeOperationsOnTraveler?: boolean
@@ -8682,6 +8684,7 @@ export type Database = {
           forecastConsumptionBackwardPeriods?: number
           forecastConsumptionForwardPeriods?: number
           gaugeCalibrationExpiredNotificationGroup?: string[]
+          holdUnitsWithOpenIssues?: boolean
           id?: string
           includeMaterialsOnTraveler?: boolean
           includeOperationsOnTraveler?: boolean

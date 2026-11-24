@@ -12583,6 +12583,9 @@ msgstr "Aktivieren Sie diese Option, um Änderungen an Ihren Daten zu verfolgen.
 msgid "Enable to start tracking work shifts."
 msgstr "Aktivieren Sie die Nachverfolgung von Schichten."
 
+msgid "Enable to stop work on a serial unit until its issue is closed."
+msgstr "Aktivieren, um die Arbeit an einer Einheit mit Seriennummer anzuhalten, bis ihr Problem geschlossen ist."
+
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Aktivieren, um Beschaffungszeiten von Teilen aus gebuchten Wareneingängen zu aktualisieren."
 
@@ -16597,6 +16600,9 @@ msgstr "Vorgänge nach Typ mit kumuliertem Anteil in Prozent"
 
 msgid "Issues opened and closed by week"
 msgstr "Geöffnete und abgeschlossene Vorgänge pro Woche"
+
+msgid "Issues: Hold Units"
+msgstr "Probleme: Einheiten anhalten"
 
 msgid "It could not start. Try again."
 msgstr "Es konnte nicht gestartet werden. Versuchen Sie es erneut."
@@ -21923,6 +21929,12 @@ msgstr "Offene Probleme"
 
 msgid "Open issues by criticality and weeks open"
 msgstr "Offene Vorgänge nach Kritikalität und offenen Wochen"
+
+msgid "Open issues do not stop work"
+msgstr "Offene Probleme halten die Arbeit nicht an"
+
+msgid "Open issues no longer stop work"
+msgstr "Offene Probleme halten die Arbeit nicht mehr an"
 
 msgid "Open item details"
 msgstr "Artikeldetails öffnen"
@@ -29788,6 +29800,9 @@ msgstr "Empfang beenden"
 msgid "Stop Shipping"
 msgstr "Versand stoppen"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "Hält die Arbeit in der Fertigung an einer Einheit mit Seriennummer an, solange ein mit ihr verknüpftes Problem offen ist."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Verwendung von {0} in diesem Schritt beenden"
@@ -32309,6 +32324,9 @@ msgstr "Die Regale und Lagerplätze, an denen Bestand physisch sitzt"
 msgid "The shop cannot finish this by {promised}."
 msgstr "Die Werkstatt kann dies nicht bis {promised} fertigstellen."
 
+msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
+msgstr "Die Fertigung lehnt Arbeit an der Einheit ab, bis das Problem geschlossen ist. Andere Einheiten des Auftrags sind nicht betroffen."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Die Werkstattbedarf und Verbrauchsmaterialien, die Sie bereithalten"
 
@@ -34249,6 +34267,12 @@ msgstr "Einheiten, die bei einer Stichprobe durchgefallen sind, bleiben abgelehn
 
 msgid "Units this customer owns show here once registered."
 msgstr "Einheiten, die dieser Kunde besitzt, werden hier angezeigt, sobald sie registriert sind."
+
+msgid "Units with an open issue are now on hold"
+msgstr "Einheiten mit einem offenen Problem werden jetzt angehalten"
+
+msgid "Units with an open issue are on hold"
+msgstr "Einheiten mit einem offenen Problem sind angehalten"
 
 msgid "Unknown"
 msgstr "Unbekannt"

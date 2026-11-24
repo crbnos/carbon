@@ -589,7 +589,8 @@ export const updatePurchasingSettings = defineServiceFn({
  *
  * @remarks
  * Writes the fields sent and leaves the rest: whether an inspection needs a
- * second person to sign it off, the sampling standard inspection plans use,
+ * second person to sign it off, whether a serial unit with an open issue is on
+ * hold on the shop floor, the sampling standard inspection plans use,
  * the open-issue target on the quality dashboard, and who is notified when a
  * gauge goes out of calibration. Then one location's goods-in storage units:
  * the inspection storage unit received parts wait in, and the rejected
@@ -603,6 +604,7 @@ export const updatePurchasingSettings = defineServiceFn({
 export const updateQualitySettings = defineServiceFn({
   input: z.object({
     enforceInspectionFourEyes: z.boolean().optional(),
+    holdUnitsWithOpenIssues: z.boolean().optional(),
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
     qualityIssueTarget: z.number().int().min(0).optional(),
     gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional(),

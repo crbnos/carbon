@@ -12583,6 +12583,9 @@ msgstr "अपने डेटा में परिवर्तन ट्र�
 msgid "Enable to start tracking work shifts."
 msgstr "कार्य शिफ्ट को ट्रैक करना शुरू करने के लिए सक्षम करें।"
 
+msgid "Enable to stop work on a serial unit until its issue is closed."
+msgstr "सक्षम करने पर, सीरियल नंबर वाली इकाई पर काम तब तक रुका रहता है जब तक उसकी समस्या बंद नहीं होती।"
+
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "पोस्ट की गई क्रय प्राप्तियों से पार्ट लीड टाइम अपडेट करने के लिए सक्षम करें।"
 
@@ -16597,6 +16600,9 @@ msgstr "प्रकार के अनुसार समस्याएँ, �
 
 msgid "Issues opened and closed by week"
 msgstr "सप्ताह के अनुसार खुली और बंद समस्याएँ"
+
+msgid "Issues: Hold Units"
+msgstr "समस्याएं: इकाइयां होल्ड पर रखें"
 
 msgid "It could not start. Try again."
 msgstr "यह शुरू नहीं हो सका। फिर से प्रयास करें।"
@@ -21923,6 +21929,12 @@ msgstr "खुले मुद्दे"
 
 msgid "Open issues by criticality and weeks open"
 msgstr "गंभीरता और खुले सप्ताहों के अनुसार खुली समस्याएँ"
+
+msgid "Open issues do not stop work"
+msgstr "खुली समस्याएं काम नहीं रोकतीं"
+
+msgid "Open issues no longer stop work"
+msgstr "खुली समस्याएं अब काम नहीं रोकतीं"
 
 msgid "Open item details"
 msgstr "आइटम विवरण खोलें"
@@ -29788,6 +29800,9 @@ msgstr "प्राप्ति को रोकें"
 msgid "Stop Shipping"
 msgstr "शिपिंग बंद करें"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "जब तक सीरियल नंबर वाली इकाई से जुड़ी कोई समस्या खुली है, उस पर शॉप फ्लोर का काम रोकता है।"
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "इस चरण में {0} का उपयोग बंद करें"
@@ -32309,6 +32324,9 @@ msgstr "वह शेल्फ और बिन जहां स्टॉक भ
 msgid "The shop cannot finish this by {promised}."
 msgstr "शॉप {promised} तक यह पूरा नहीं कर सकती।"
 
+msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
+msgstr "समस्या बंद होने तक शॉप फ्लोर उस इकाई पर काम स्वीकार नहीं करता। जॉब की अन्य इकाइयों पर कोई असर नहीं पड़ता।"
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "दुकान की आपूर्ति और उपभोग्य सामग्री जो आप हाथ में रखते हैं"
 
@@ -34249,6 +34267,12 @@ msgstr "जो इकाइयाँ नमूने में विफल र�
 
 msgid "Units this customer owns show here once registered."
 msgstr "इस ग्राहक की इकाइयाँ एक बार पंजीकृत होने के बाद यहाँ दिखाई देती हैं।"
+
+msgid "Units with an open issue are now on hold"
+msgstr "खुली समस्या वाली इकाइयां अब होल्ड पर रहती हैं"
+
+msgid "Units with an open issue are on hold"
+msgstr "खुली समस्या वाली इकाइयां होल्ड पर हैं"
 
 msgid "Unknown"
 msgstr "अज्ञात"

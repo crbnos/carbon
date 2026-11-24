@@ -256,6 +256,9 @@ msgstr "{recorded}/{0} 작업 지시"
 msgid "{scrapped} scrapped"
 msgstr ""
 
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} 보류 중"
+
 msgid "{unbinned} in stock, in no bin"
 msgstr "재고 {unbinned}, 빈 미지정"
 
@@ -2248,6 +2251,9 @@ msgstr "오래된순"
 msgid "On Hold"
 msgstr "보류"
 
+msgid "On hold · {issueNumbers}"
+msgstr "보류 · {issueNumbers}"
+
 msgid "On its way"
 msgstr "이동 중"
 
@@ -3580,6 +3586,9 @@ msgstr ""
 msgid "This unit is not part of this operation"
 msgstr ""
 
+msgid "This unit is on hold"
+msgstr "이 유닛은 보류 중입니다"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "이 유닛은 영구적으로 스크랩되고 대체 유닛이 생성됩니다."
 
@@ -3898,6 +3907,9 @@ msgstr "작업장 화면"
 
 msgid "Work instructions"
 msgstr "작업 표준서"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "품질 담당이 아래의 모든 이슈를 종결할 때까지 이 유닛의 작업이 대기합니다. 다른 유닛은 영향을 받지 않습니다."
 
 msgid "Work Site"
 msgstr "작업 현장"

@@ -12583,6 +12583,9 @@ msgstr "Abilita per iniziare a tracciare le modifiche ai tuoi dati."
 msgid "Enable to start tracking work shifts."
 msgstr "Abilita per iniziare a tracciare i turni di lavoro."
 
+msgid "Enable to stop work on a serial unit until its issue is closed."
+msgstr "Attiva per fermare il lavoro su un'unità con numero di serie finché il suo problema non viene chiuso."
+
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Attiva per aggiornare i lead time dei componenti dalle entrate merci registrate."
 
@@ -16597,6 +16600,9 @@ msgstr "Segnalazioni per tipo, con percentuale cumulativa"
 
 msgid "Issues opened and closed by week"
 msgstr "Segnalazioni aperte e chiuse per settimana"
+
+msgid "Issues: Hold Units"
+msgstr "Problemi: sospendere le unità"
 
 msgid "It could not start. Try again."
 msgstr "Non è riuscito ad avviare. Riprova."
@@ -21923,6 +21929,12 @@ msgstr "Problemi Aperti"
 
 msgid "Open issues by criticality and weeks open"
 msgstr "Segnalazioni aperte per criticità e settimane di apertura"
+
+msgid "Open issues do not stop work"
+msgstr "I problemi aperti non fermano il lavoro"
+
+msgid "Open issues no longer stop work"
+msgstr "I problemi aperti non fermano più il lavoro"
 
 msgid "Open item details"
 msgstr "Apri dettagli articolo"
@@ -29788,6 +29800,9 @@ msgstr "Interrompi ricezione"
 msgid "Stop Shipping"
 msgstr "Arresta spedizione"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "Ferma il lavoro in officina su un'unità con numero di serie finché un problema collegato è aperto."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Smetti di usare {0} in questo passo"
@@ -32309,6 +32324,9 @@ msgstr "Gli scaffali e i contenitori dove il magazzino si trova fisicamente"
 msgid "The shop cannot finish this by {promised}."
 msgstr "L'officina non può terminare questo entro {promised}."
 
+msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
+msgstr "L'officina rifiuta il lavoro sull'unità finché il problema non viene chiuso. Le altre unità del lavoro non sono interessate."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "I materiali di consumo e le forniture che tieni a portata di mano"
 
@@ -34249,6 +34267,12 @@ msgstr "Le unità che non hanno superato un campione restano rifiutate. Tutte le
 
 msgid "Units this customer owns show here once registered."
 msgstr "Le unità che il cliente possiede vengono visualizzate qui una volta registrate."
+
+msgid "Units with an open issue are now on hold"
+msgstr "Le unità con un problema aperto sono ora in sospeso"
+
+msgid "Units with an open issue are on hold"
+msgstr "Le unità con un problema aperto sono in sospeso"
 
 msgid "Unknown"
 msgstr "Sconosciuto"

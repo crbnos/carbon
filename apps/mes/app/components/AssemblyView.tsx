@@ -120,6 +120,7 @@ import { useWorkUnit } from "~/components/JobOperation/hooks/useWorkUnit";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
+import { UnitHoldBanner } from "~/components/UnitHoldBanner";
 import { useRealtime, useUser } from "~/hooks";
 import {
   type AbilityShortfall,
@@ -140,6 +141,7 @@ import {
 } from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
+import { holdingIssues, isUnitOnHold, type UnitHolds } from "~/utils/unitHold";
 import { deriveUnits } from "~/utils/units";
 import { shownRecordIndex } from "~/utils/workUnit";
 
@@ -340,6 +342,8 @@ type Props = {
     /** False when this rework or correction copy does not work the unit. */
     inOperationScope?: boolean;
   }[];
+  /** The units on hold for an open quality issue (`readUnitHolds`). */
+  unitHolds?: UnitHolds;
   trackedEntityId: string | null;
   materials: { materials?: any[]; trackedInputs?: any[] } | null;
   procedure: { attributes: Step[]; parameters: any[] };
@@ -550,6 +554,7 @@ export function AssemblyView({
   thumbnailPath,
   correctionName,
   trackedEntities,
+  unitHolds,
   trackedEntityId,
   materials,
   procedure,
@@ -906,12 +911,19 @@ export function AssemblyView({
   // The serial unit the operator works on, decided as on the operation view
   // (`useWorkUnit`). At a later operation the unit on screen is for viewing
   // until the operator picks or scans one: no write names it.
+  // A unit on hold for an open quality issue is not open here: no work names
+  // it and the screen moves past it, as the server does (`resolveWorkUnit`).
   const workUnit = useWorkUnit({
     serial: navigatesByEntity,
     isFirstOperation,
     units: unitEntities,
-    isOpen: (entity) => isUnitIncompleteForOperation(entity, operationId)
+    isOpen: (entity) => isUnitIncompleteForOperation(entity, operationId),
+    isOnHold: (entity) => isUnitOnHold(unitHolds, entity.id)
   });
+  // The open issues that hold the unit on screen.
+  const shownUnitHolds = navigatesByEntity
+    ? holdingIssues(unitHolds, workUnit.reviewUnitId)
+    : [];
 
   // Resolve the current unit. A serial part shows the unit `useWorkUnit` holds
   // (picked, or looked back at), so what the screen shows is what its writes
@@ -2085,6 +2097,14 @@ export function AssemblyView({
           <AbilityWarning warning={abilityWarning} />
         </div>
       )}
+      {shownUnitHolds.length > 0 && (
+        <div className="shrink-0 px-4 pt-3">
+          <UnitHoldBanner
+            serialNumber={workUnit.unit?.readableId}
+            issues={shownUnitHolds}
+          />
+        </div>
+      )}
 
       {/* ── BODY ── stacks vertically (page scrolls) on phones/tablets,
           three columns side-by-side on lg+. ── */}
@@ -2874,6 +2894,7 @@ export function AssemblyView({
           ""
         }
         issueBlocked={writesBlocked}
+        parentOnHold={shownUnitHolds.length > 0}
         parentIdIsSerialized={requiresSerialTracking}
         // Stamp the current step + 1-based unit onto the consume so issued
         // quantities can be attributed per-unit even for a batch parent (where
@@ -2977,6 +2998,8 @@ export function AssemblyView({
       <SerialSelectorModal
         open={workUnit.pickerOpen}
         availableEntities={workUnit.openUnits as never}
+        onHoldEntities={workUnit.onHoldUnits as never}
+        unitHolds={unitHolds}
         onClose={workUnit.closePicker}
         onCancel={workUnit.closePicker}
         onSelect={(entity) => workUnit.pick(entity.id)}

@@ -12583,6 +12583,9 @@ msgstr "Включите, чтобы начать отслеживание из�
 msgid "Enable to start tracking work shifts."
 msgstr "Включите для начала отслеживания рабочих смен."
 
+msgid "Enable to stop work on a serial unit until its issue is closed."
+msgstr "Включите, чтобы остановить работу над единицей с серийным номером до закрытия её проблемы."
+
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Включите обновление сроков поставки деталей из проведенных поступлений от поставщиков."
 
@@ -16597,6 +16600,9 @@ msgstr "Проблемы по типу с накопленным процент�
 
 msgid "Issues opened and closed by week"
 msgstr "Открытые и закрытые проблемы по неделям"
+
+msgid "Issues: Hold Units"
+msgstr "Проблемы: приостановка единиц"
 
 msgid "It could not start. Try again."
 msgstr "Не удалось начать. Попробуйте еще раз."
@@ -21923,6 +21929,12 @@ msgstr "Открытые проблемы"
 
 msgid "Open issues by criticality and weeks open"
 msgstr "Открытые проблемы по критичности и неделям открытия"
+
+msgid "Open issues do not stop work"
+msgstr "Открытые проблемы не останавливают работу"
+
+msgid "Open issues no longer stop work"
+msgstr "Открытые проблемы больше не останавливают работу"
 
 msgid "Open item details"
 msgstr "Открыть сведения о номенклатуре"
@@ -29788,6 +29800,9 @@ msgstr "Остановить получение"
 msgid "Stop Shipping"
 msgstr "Остановить отправку"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "Останавливает работу в цехе над единицей с серийным номером, пока связанная с ней проблема открыта."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Прекратить использование {0} на этом шаге"
@@ -32309,6 +32324,9 @@ msgstr "Полки и ячейки, где физически располага
 msgid "The shop cannot finish this by {promised}."
 msgstr "Цех не сможет завершить это к {promised}."
 
+msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
+msgstr "Цех отклоняет работу над единицей, пока проблема не закрыта. Остальные единицы задания не затрагиваются."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Расходные материалы и товары, которые вы держите под рукой"
 
@@ -34249,6 +34267,12 @@ msgstr "Единицы, не прошедшие выборку, остаются
 
 msgid "Units this customer owns show here once registered."
 msgstr "Единицы, которыми владеет этот покупатель, отображаются здесь после регистрации."
+
+msgid "Units with an open issue are now on hold"
+msgstr "Единицы с открытой проблемой теперь приостанавливаются"
+
+msgid "Units with an open issue are on hold"
+msgstr "Единицы с открытой проблемой приостановлены"
 
 msgid "Unknown"
 msgstr "Неизвестно"

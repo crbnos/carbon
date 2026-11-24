@@ -12583,6 +12583,9 @@ msgstr "Verilerinizi izlemeye başlamak için etkinleştirin."
 msgid "Enable to start tracking work shifts."
 msgstr "Çalışma vardiyalarını izlemeye başlamak için etkinleştir."
 
+msgid "Enable to stop work on a serial unit until its issue is closed."
+msgstr "Seri numaralı bir birimdeki işi, sorunu kapatılana kadar durdurmak için etkinleştirin."
+
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "Parça tedarik sürelerini muhasebeleştirilmiş mal kabul belgelerinden güncellemek için etkinleştirin."
 
@@ -16597,6 +16600,9 @@ msgstr "Türe göre uygunsuzluklar, kümülatif yüzde ile"
 
 msgid "Issues opened and closed by week"
 msgstr "Haftaya göre açılan ve kapatılan uygunsuzluklar"
+
+msgid "Issues: Hold Units"
+msgstr "Sorunlar: birimleri askıya al"
 
 msgid "It could not start. Try again."
 msgstr "Başlatılamadı. Yeniden deneyin."
@@ -21923,6 +21929,12 @@ msgstr "Açık Sorunlar"
 
 msgid "Open issues by criticality and weeks open"
 msgstr "Kritikliğe ve açık kalma süresine göre açık uygunsuzluklar"
+
+msgid "Open issues do not stop work"
+msgstr "Açık sorunlar işi durdurmaz"
+
+msgid "Open issues no longer stop work"
+msgstr "Açık sorunlar artık işi durdurmuyor"
 
 msgid "Open item details"
 msgstr "Stok kartı ayrıntılarını aç"
@@ -29788,6 +29800,9 @@ msgstr "Alımı Durdur"
 msgid "Stop Shipping"
 msgstr "Gönderimi Durdur"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "Seri numaralı bir birime bağlı bir sorun açıkken o birimdeki atölye işini durdurur."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Bu adımda {0} kullanmayı durdur"
@@ -32309,6 +32324,9 @@ msgstr "Stoğun fiziksel olarak bulunduğu raflar ve gözler"
 msgid "The shop cannot finish this by {promised}."
 msgstr "Atölye bunu {promised} tarihine kadar tamamlayamaz."
 
+msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
+msgstr "Atölye, sorun kapatılana kadar birim üzerindeki işi reddeder. İşin diğer birimleri etkilenmez."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Elinizdeki tezgâh malzemeleri ve sarf malzemeleri"
 
@@ -34249,6 +34267,12 @@ msgstr "Bir numunede başarısız olan birimler reddedilmiş kalır. Hiç numune
 
 msgid "Units this customer owns show here once registered."
 msgstr "Bu müşterinin sahip olduğu adetler kaydedildikten sonra burada gösterilir."
+
+msgid "Units with an open issue are now on hold"
+msgstr "Açık sorunu olan birimler artık askıya alınıyor"
+
+msgid "Units with an open issue are on hold"
+msgstr "Açık sorunu olan birimler askıda"
 
 msgid "Unknown"
 msgstr "Bilinmeyen"

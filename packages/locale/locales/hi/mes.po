@@ -256,6 +256,9 @@ msgstr "{recorded}/{0} जॉब्स"
 msgid "{scrapped} scrapped"
 msgstr ""
 
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} होल्ड पर है"
+
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} स्टॉक में, किसी बिन में नहीं"
 
@@ -2248,6 +2251,9 @@ msgstr "सबसे पुराना पहले"
 msgid "On Hold"
 msgstr "होल्ड पर"
 
+msgid "On hold · {issueNumbers}"
+msgstr "होल्ड पर · {issueNumbers}"
+
 msgid "On its way"
 msgstr "रास्ते में"
 
@@ -3580,6 +3586,9 @@ msgstr ""
 msgid "This unit is not part of this operation"
 msgstr ""
 
+msgid "This unit is on hold"
+msgstr "यह इकाई होल्ड पर है"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट इकाई बनाई जाएगी।"
 
@@ -3898,6 +3907,9 @@ msgstr "वर्क सेंटर डिस्प्ले"
 
 msgid "Work instructions"
 msgstr "कार्य निर्देश"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "इस इकाई पर काम तब तक रुका रहेगा जब तक गुणवत्ता टीम नीचे दी गई सभी समस्याएं बंद नहीं करती। अन्य इकाइयों पर कोई असर नहीं पड़ता।"
 
 msgid "Work Site"
 msgstr "कार्य स्थल"

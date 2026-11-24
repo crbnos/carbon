@@ -8,16 +8,27 @@
 // and open here) and never picks a unit itself on a later operation. Every
 // MES write of a unit goes through `resolveWorkUnit` (the
 // `mes-unit-write-resolves-unit` check in @carbon/checks).
+//
+// A unit on hold for an open quality issue (`readUnitHolds`) is not open
+// here: no write that needs an open unit names it, and none takes it as the
+// next unit or the one left. A `member` write still names it; that is how
+// quality acts on it.
 
 import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  isUnitOnHold,
+  type UnitHolds,
+  unitOnHoldMessage
+} from "~/utils/unitHold";
 import { operationUnits } from "~/utils/workUnit";
 import {
   getOperationUnitAxis,
   isSerialEntityIncompleteForOperation,
   type SerialEntityForSelection
 } from "./operations.service";
+import { readUnitHolds } from "./unit-hold.server";
 
 const log = getLogger("mes", "work-unit");
 
@@ -30,6 +41,7 @@ const NOT_THIS_JOB = "This unit is not part of this job";
 const NOT_THIS_OPERATION = "This unit is not worked at this operation";
 const DONE_HERE = "This unit is already complete at this operation";
 const ALL_DONE = "Every unit is complete at this operation";
+const ONLY_ON_HOLD = "Every unit left at this operation is on hold";
 
 /**
  * How a write may come to its unit.
@@ -44,7 +56,7 @@ const ALL_DONE = "Every unit is complete at this operation";
  *   named, or one done here or outside the operation, the first operation
  *   takes the next open unit and a later operation stamps none.
  * - `member`: a named unit must be this operation's; it may be done here
- *   (a quality issue, a correction, a subcomponent scrap).
+ *   (a quality issue, a correction, a subcomponent scrap) or on hold.
  * - `claim`: the server proposes the unit (a traveler claim). On a later
  *   operation it must be `heldUnitId` or the one open unit.
  *
@@ -163,7 +175,8 @@ export function decideWorkUnit({
   requestedUnitId,
   mode,
   heldUnitId = null,
-  legacyUnitIndex
+  legacyUnitIndex,
+  onHold = {}
 }: {
   facts: OperationUnitFacts;
   /** The make method's units in axis order, flagged with operation scope. */
@@ -177,9 +190,14 @@ export function decideWorkUnit({
    * Read on a first operation only, where units flow in order.
    */
   legacyUnitIndex?: number;
+  /** The open issues that hold a unit (`readUnitHolds`); serial units only. */
+  onHold?: UnitHolds;
 }): WorkUnit {
-  const isOpen = (unit: Unit) =>
+  const isIncomplete = (unit: Unit) =>
     isSerialEntityIncompleteForOperation(unit, operationId);
+  // Work waits on a unit on hold, so it is never the next unit or the one left.
+  const isOpen = (unit: Unit) =>
+    isIncomplete(unit) && !isUnitOnHold(onHold, unit.id);
 
   if (!facts.serial) {
     if (mode === "optional") {
@@ -197,15 +215,19 @@ export function decideWorkUnit({
     );
     const lotId =
       requestedUnitId ??
-      (live.find(isOpen) ?? live[live.length - 1] ?? units[units.length - 1])
-        ?.id;
+      (
+        live.find(isIncomplete) ??
+        live[live.length - 1] ??
+        units[units.length - 1]
+      )?.id;
     return lotId ? { kind: "none", lotId } : { kind: "none" };
   }
 
   const { isFirstOperation } = facts;
   // The units the operation works, as the screens list them (scope, then
   // quantity). A named unit is checked against the whole axis.
-  const open = operationUnits(units, facts.operationQuantity).filter(isOpen);
+  const worked = operationUnits(units, facts.operationQuantity);
+  const open = worked.filter(isOpen);
   const sole = open.length === 1 ? open[0] : undefined;
   const take = (unit: Unit, via: "named" | "advanced" | "sole"): WorkUnit => ({
     kind: "unit",
@@ -233,6 +255,10 @@ export function decideWorkUnit({
     if (mode === "optional" && !isOpen(named)) return timerUnit();
     if (named.inOperationScope === false)
       return refuse(true, NOT_THIS_OPERATION);
+    // A unit done here answers "already complete", on hold or not.
+    if (mode !== "member" && isIncomplete(named) && !isOpen(named)) {
+      return refuse(true, unitOnHoldMessage(onHold[named.id] ?? []));
+    }
     if (
       mode === "claim" &&
       !isFirstOperation &&
@@ -254,7 +280,9 @@ export function decideWorkUnit({
     return take(next, "advanced");
   }
   if (sole) return take(sole, "sole");
-  if (open.length === 0) return refuse(false, ALL_DONE);
+  if (open.length === 0) {
+    return refuse(false, worked.some(isIncomplete) ? ONLY_ON_HOLD : ALL_DONE);
+  }
   if (mode === "start") return { kind: "none" };
   return refuse(true, SELECT_UNIT_FIRST);
 }
@@ -329,6 +357,30 @@ export async function resolveWorkUnit({
     });
     return refuse(false, UNIT_CHECK_FAILED);
   }
+
+  // A `member` write may name a unit on hold, and a lot is never on hold:
+  // neither reads the holds. Every unit still to do is read, not only a named
+  // one: "the next unit" and "the one left" skip a unit on hold.
+  const holds =
+    facts.serial && mode !== "member"
+      ? await readUnitHolds(client, {
+          companyId,
+          unitIds: units.data
+            .filter((unit) =>
+              isSerialEntityIncompleteForOperation(unit, operationId)
+            )
+            .map((unit) => unit.id)
+        })
+      : { data: {}, error: null };
+  if (holds.error) {
+    log.error("Could not read the units on hold", {
+      companyId,
+      operationId,
+      error: holds.error
+    });
+    return refuse(false, UNIT_CHECK_FAILED);
+  }
+
   return decideWorkUnit({
     facts,
     units: units.data,
@@ -336,6 +388,7 @@ export async function resolveWorkUnit({
     requestedUnitId,
     mode,
     heldUnitId,
-    legacyUnitIndex
+    legacyUnitIndex,
+    onHold: holds.data
   });
 }

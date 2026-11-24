@@ -129,6 +129,7 @@ import {
 import { AbilityWarning } from "~/components/AbilityWarning";
 import { MethodItemTypeIcon } from "~/components/Icons";
 import { ReworkBadge } from "~/components/ReworkBadge";
+import { UnitHoldBanner } from "~/components/UnitHoldBanner";
 import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import type {
@@ -163,6 +164,7 @@ import {
 } from "~/utils/kanban";
 import { useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
+import { holdingIssues, isUnitOnHold, type UnitHolds } from "~/utils/unitHold";
 import { operationUnits, shownRecordIndex } from "~/utils/workUnit";
 import ItemThumbnail from "../ItemThumbnail";
 import { MesAppBar } from "../MesAppBar";
@@ -241,6 +243,8 @@ type JobOperationProps = {
   /** The correction this rework operation belongs to, if any. */
   correctionName?: string | null;
   trackedEntities: TrackedEntity[];
+  /** The units on hold for an open quality issue (`readUnitHolds`). */
+  unitHolds?: UnitHolds;
   isFirstOperation: boolean;
   isFirstOpenOperation?: boolean;
   requireTrackedMaterialsIssued?: boolean;
@@ -279,6 +283,7 @@ export const JobOperation = ({
   thumbnailPath,
   correctionName,
   trackedEntities,
+  unitHolds,
   isFirstOperation,
   isFirstOpenOperation = false,
   requireTrackedMaterialsIssued = false,
@@ -304,12 +309,19 @@ export const JobOperation = ({
   // Serial work names the unit in hand (`useWorkUnit`, shared with the
   // assembly view); a batch parent's lot entity is the default.
   const isSerialOperation = !!parentIsSerial && !isBatched;
+  const units = operationUnits(
+    trackedEntities,
+    originalOperation.operationQuantity
+  );
+  // A unit on hold for an open quality issue is not open here: no work names
+  // it and the screen moves past it, as the server does (`resolveWorkUnit`).
   const workUnit = useWorkUnit({
     serial: isSerialOperation,
     isFirstOperation,
-    units: operationUnits(trackedEntities, originalOperation.operationQuantity),
+    units,
     isOpen: (entity) =>
-      isSerialEntityIncompleteForOperation(entity, originalOperation.id)
+      isSerialEntityIncompleteForOperation(entity, originalOperation.id),
+    isOnHold: (entity) => isUnitOnHold(unitHolds, entity.id)
   });
   const heldUnit = workUnit.unit;
   const writesBlocked = workUnit.writesBlocked;
@@ -321,6 +333,10 @@ export const JobOperation = ({
     : (trackedEntityParam ?? trackedEntities[0]?.id);
   // The unit a write that needs an open unit names (and a timer).
   const trackedEntityId = isSerialOperation ? workUnit.workUnitId : shownUnitId;
+  // The open issues that hold the unit on screen.
+  const shownUnitHolds = isSerialOperation
+    ? holdingIssues(unitHolds, shownUnitId)
+    : [];
   const stepUnitId = isSerialOperation ? trackedEntityId : undefined;
   // A batched operation opens on the whole batch; "?scope=job" narrows to this
   // job's own details. Kept in the URL so a member link can land on either.
@@ -848,6 +864,7 @@ export const JobOperation = ({
       // Unconsume may name a finished unit; Issue waits for an open one.
       parentId={shownUnitId ?? ""}
       issueBlocked={writesBlocked}
+      parentOnHold={shownUnitHolds.length > 0}
       parentIdIsSerialized={method?.requiresSerialTracking ?? false}
       trackedInputs={resolvedMaterials?.trackedInputs ?? []}
       onClose={issueModal.onClose}
@@ -1396,6 +1413,14 @@ export const JobOperation = ({
             {abilityWarning && (
               <div className="px-4 pt-4 lg:px-6">
                 <AbilityWarning warning={abilityWarning} />
+              </div>
+            )}
+            {shownUnitHolds.length > 0 && (
+              <div className="px-4 pt-4 lg:px-6">
+                <UnitHoldBanner
+                  serialNumber={heldUnit?.readableId}
+                  issues={shownUnitHolds}
+                />
               </div>
             )}
             {scope === "job" && batch && (
@@ -3235,6 +3260,8 @@ export const JobOperation = ({
       <SerialSelectorModal
         open={workUnit.pickerOpen}
         availableEntities={workUnit.openUnits}
+        onHoldEntities={workUnit.onHoldUnits}
+        unitHolds={unitHolds}
         onClose={workUnit.closePicker}
         onCancel={() => navigate(path.to.operations)}
         onSelect={(entity) => workUnit.pick(entity.id)}

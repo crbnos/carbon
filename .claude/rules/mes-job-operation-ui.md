@@ -10,6 +10,8 @@ paths:
   - "apps/mes/app/utils/trackedMaterials.ts"
   - "apps/mes/app/utils/workUnit.ts"
   - "apps/mes/app/services/work-unit.server.ts"
+  - "apps/mes/app/services/unit-hold.server.ts"
+  - "apps/mes/app/utils/unitHold.ts"
   - "apps/mes/app/services/kanban-scan.server.ts"
 ---
 
@@ -124,6 +126,40 @@ banner.
 `event.tsx` also redirects a full-page POST (`Sec-Fetch-Mode: navigate`, a press
 before the page hydrates) back to the referrer with the flash, so the operator never
 lands on the bare resource route.
+
+## Quality hold
+
+With `companySettings.holdUnitsWithOpenIssues` on (Settings → Quality, default
+off), a serial unit is **on hold** while an issue that is not `Closed` links it
+in `nonConformanceTrackedEntity`. Nothing is stored: closing the issue releases
+the unit and reopening it holds it again. "On hold", never "held": a held unit
+is the one on the operator's screen. Spec:
+`.ai/specs/implemented/2026-11-23-unit-quality-hold.md`.
+
+- **One reader:** `readUnitHolds` (`services/unit-hold.server.ts`) returns
+  `UnitHolds` (`~/utils/unitHold`): the open issues per unit, oldest first. With
+  the setting off it reads the settings row and nothing else.
+- **The server:** `resolveWorkUnit` reads the holds of the units still to do
+  (not in `member` mode, never for a lot) and `decideWorkUnit` treats a unit on
+  hold as not open. A write that names it is refused with "This unit is on
+  hold for issue <number>"; "the next unit" and "the one left" skip it; with
+  only units on hold left the answer is "Every unit left at this operation is
+  on hold". A timer drops it like any unit not open. `member` writes (quality
+  issue, correction, unconsume, part scrap) still name it. A failed read
+  refuses.
+- **The screens:** both loaders read `readScreenUnitHolds` in the first wave
+  (chained on the units and make method reads; a failed read shows none, like
+  the ability gate) and pass `unitHolds` to the view. `useWorkUnit` takes
+  `isOnHold`: such a unit is not open (`writesBlocked`), and a picked unit that
+  goes on hold stays on screen. With only units on hold left and none on
+  screen, `canPick` stays true so the picker opens on them (`onHoldUnits`).
+  `UnitHoldBanner` shows the unit's issues,
+  `SerialSelectorModal` lists units on hold after the open ones with a badge,
+  and the Issue dialog's notice reads "This unit is on hold" (`parentOnHold`).
+  The operation loader's first-operation redirect skips a unit on hold.
+- **Not gated:** the writes in `UNIT_WRITE_ALLOW_LIST` (`trigger-rework`, the
+  inspection lot's disposition and completions, batch step records), `finish`
+  (it names no unit) and the ERP postings.
 
 ## Batch mode (operation batching)
 

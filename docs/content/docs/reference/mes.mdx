@@ -115,6 +115,17 @@ Until a unit is picked, **"Log Completed"**, Scrap, Rework, recording steps and 
 Pick a unit that is already complete at this operation to look back at its records. Work that needs an open unit stays disabled. You can still raise a quality issue against the unit and unconsume parts from it. **Issue** stays disabled with the note **"This unit is complete here"**.
 </Callout>
 
+### Units on hold for a quality issue
+
+A company can turn on **"Issues: Hold Units"** in **Settings → Quality** (off by default). With it on, a serial unit is on hold while an issue linked to it is open (**Registered** or **In Progress**). Raising a quality issue on a unit from the station links it, so the unit is on hold at once, at this operation and at every later one. Other units of the job are not affected.
+
+- **The unit's screen** shows **"<serial> is on hold"** with each open issue: its number, type, status and description. **"Log Completed"**, Scrap, Rework, recording steps and issuing material are disabled for it.
+- **The unit picker** lists it after the open units, marked **"On hold · <issue number>"**, with **View** in place of **Select**.
+- **The first operation** moves past it to the next open unit. A later operation asks for another unit, and a kanban card never takes it. When only units on hold are left, the picker opens on them, so the operator sees which issue each one waits for.
+- **Still possible on the unit:** raising another quality issue, sending it to a correction, unconsuming a part from it and scrapping one of its parts.
+
+Closing the issue in the ERP releases the unit; reopening the issue holds it again. The station shows the change the next time the screen loads. Inspection operations and operations run as a batch do not apply the hold.
+
 Closing the operation is a distinct action. **"Finish"** ends any open events and flips the operation to `Done`. If quantities or steps aren't satisfied Carbon warns (**"Insufficient quantity"**, **"Steps are missing"**) and offers **"Finish Anyways"**. A guard also fires when tracked material was never issued; the operator must acknowledge **"I understand and want to complete without issuing"** to proceed.
 
 <Callout type="warn" title="&quot;End Operations&quot; is not the same as finishing.">
@@ -202,6 +213,9 @@ The scanned or typed unit is not one of this operation's units (another job, or 
 
 ### "This unit is complete here"
 The unit on screen is already done at this operation and is open only to look back at. Issuing parts is disabled; unconsuming parts and raising a quality issue still work. Pick an open unit to issue parts.
+
+### "This unit is on hold for issue …"
+The unit has an open quality issue linked to it, and the company holds such units (**Settings → Quality → "Issues: Hold Units"**). Work that needs the unit open is refused (`resolveWorkUnit` in `apps/mes/app/services/work-unit.server.ts`). Quality closes the issue in the ERP to release the unit; until then, pick another unit. **"Every unit left at this operation is on hold"** means no other unit is open.
 
 ### "You can't work on this operation"
 The operation's process requires an ability you don't hold, or your qualification expired, and the process is set to **Block**. Complete the training the banner names, or ask a supervisor to add the ability on your Abilities page. A planner can also switch the process to **Warn** under **Resources → Processes**.

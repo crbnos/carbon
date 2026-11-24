@@ -256,6 +256,9 @@ msgstr "{recorded}/{0} производственных заказов"
 msgid "{scrapped} scrapped"
 msgstr ""
 
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} приостановлена"
+
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} на складе, без ячейки"
 
@@ -2248,6 +2251,9 @@ msgstr "Самые старые первыми"
 msgid "On Hold"
 msgstr "Приостановлено"
 
+msgid "On hold · {issueNumbers}"
+msgstr "Приостановлена · {issueNumbers}"
+
 msgid "On its way"
 msgstr "В пути"
 
@@ -3580,6 +3586,9 @@ msgstr ""
 msgid "This unit is not part of this operation"
 msgstr ""
 
+msgid "This unit is on hold"
+msgstr "Эта единица приостановлена"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Эта единица будет окончательно списана, и будет создана единица на замену."
 
@@ -3898,6 +3907,9 @@ msgstr "Дисплеи рабочего центра"
 
 msgid "Work instructions"
 msgstr "Рабочие инструкции"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "Работа над этой единицей ждёт, пока служба качества не закроет все проблемы ниже. Остальные единицы не затрагиваются."
 
 msgid "Work Site"
 msgstr "Объект"

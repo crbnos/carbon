@@ -12583,6 +12583,9 @@ msgstr "데이터 변경 사항 추적을 시작하려면 활성화하세요."
 msgid "Enable to start tracking work shifts."
 msgstr "작업 교대조 추적을 시작하려면 활성화하세요."
 
+msgid "Enable to stop work on a serial unit until its issue is closed."
+msgstr "활성화하면 이슈가 종결될 때까지 시리얼 번호 유닛의 작업을 중지합니다."
+
 msgid "Enable to update part lead times from posted purchase receipts."
 msgstr "전기된 구매 입고에서 부품 리드타임을 업데이트하려면 활성화합니다."
 
@@ -16597,6 +16600,9 @@ msgstr "유형별 이슈, 누적 백분율 포함"
 
 msgid "Issues opened and closed by week"
 msgstr "주별 등록 및 마감 이슈"
+
+msgid "Issues: Hold Units"
+msgstr "이슈: 유닛 보류"
 
 msgid "It could not start. Try again."
 msgstr "시작할 수 없습니다. 다시 시도하세요."
@@ -21923,6 +21929,12 @@ msgstr "미결 이슈"
 
 msgid "Open issues by criticality and weeks open"
 msgstr "중요도 및 미결 주수별 미결 이슈"
+
+msgid "Open issues do not stop work"
+msgstr "미결 이슈가 있어도 작업을 중지하지 않습니다"
+
+msgid "Open issues no longer stop work"
+msgstr "이제 미결 이슈가 작업을 중지하지 않습니다"
 
 msgid "Open item details"
 msgstr "품목 세부 정보 열기"
@@ -29788,6 +29800,9 @@ msgstr "수령 중지"
 msgid "Stop Shipping"
 msgstr "배송 중지"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "시리얼 번호 유닛에 연결된 이슈가 미결인 동안 해당 유닛의 현장 작업을 중지합니다."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "이 단계에서 {0} 사용 중지"
@@ -32309,6 +32324,9 @@ msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
 msgid "The shop cannot finish this by {promised}."
 msgstr "생산 현장에서 {promised}까지 완료할 수 없습니다."
 
+msgid "The shop floor refuses work on the unit until the issue is closed. Other units of the job are not affected."
+msgstr "이슈가 종결될 때까지 현장에서 해당 유닛의 작업을 거부합니다. 작업의 다른 유닛은 영향을 받지 않습니다."
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "보유하고 있는 공장 소모품 및 소모재"
 
@@ -34249,6 +34267,12 @@ msgstr "샘플에서 불합격한 단위는 반려 상태로 유지됩니다. �
 
 msgid "Units this customer owns show here once registered."
 msgstr "이 고객이 보유한 개(단위)는 등록되면 여기에 표시됩니다."
+
+msgid "Units with an open issue are now on hold"
+msgstr "이제 미결 이슈가 있는 유닛은 보류됩니다"
+
+msgid "Units with an open issue are on hold"
+msgstr "미결 이슈가 있는 유닛은 보류됩니다"
 
 msgid "Unknown"
 msgstr "알 수 없음"
