@@ -242,7 +242,8 @@ const Grid = <T extends object>({
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!selectedCell) return;
+      // The Enter or Tab that ends an IME composition belongs to it.
+      if (!selectedCell || event.nativeEvent.isComposing) return;
 
       const { shiftKey } = event;
       const code = gridKeyCode(event);
