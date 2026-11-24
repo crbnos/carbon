@@ -4,7 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { parseCsvLines } from "@carbon/files/csv";
-import { round } from "@carbon/utils";
+import { displaySerial, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
 
@@ -34,7 +34,7 @@ export function shipmentSerialLabels(
     records.map(({ id, label, displayed }) => {
       if (counts.get(displayed) === 1 && label === displayed)
         return [id, label] as const;
-      const visible = JSON.stringify(label).slice(1, -1).replaceAll(" ", "␠");
+      const visible = displaySerial(label);
       return [id, `${visible} · ${id}`] as const;
     })
   );

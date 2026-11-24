@@ -8,48 +8,12 @@ CREATE OR REPLACE FUNCTION public.receive_job_to_inventory(
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_completed boolean;
-  v_received numeric;
-  v_expected_new integer;
 BEGIN
   -- Production staff can receive jobs even when their role cannot read itemLedger.
   PERFORM public.assert_company_access(p_company_id, 'production_update');
-  -- Decide whether the snapshot is required after any in-flight Issue has committed.
-  SELECT COALESCE("quantityReceivedToInventory", 0) INTO STRICT v_received
-    FROM public.job WHERE id = p_job_id AND "companyId" = p_company_id FOR UPDATE;
-  IF public.job_requires_serial_pairing(p_job_id, p_company_id) THEN
-    IF p_expected_serials IS NULL OR cardinality(p_expected_serials) = 0 THEN
-      RAISE EXCEPTION 'Reopen the job receipt and confirm the packed serials before receiving them.';
-    END IF;
-    SELECT count(DISTINCT expected.serial) INTO v_expected_new
-    FROM unnest(p_expected_serials) AS expected(serial)
-    WHERE NOT EXISTS (
-      SELECT 1 FROM public."jobUnitPairing" pair
-      JOIN public."itemLedger" receipt ON receipt."companyId" = pair."companyId"
-        AND receipt."documentId" = pair."jobId" AND receipt."trackedEntityId" = pair."outputId"
-        AND receipt."documentType" = 'Job Receipt' AND receipt.quantity = 1
-      WHERE pair."companyId" = p_company_id AND pair."jobId" = p_job_id
-        AND pair.serial = expected.serial AND pair."releasedAt" IS NULL
-    );
-  END IF;
-  PERFORM public.complete_job_to_inventory(
-    p_job_id, p_quantity_complete, p_storage_unit_id, p_location_id, p_company_id, p_user_id
+  PERFORM util.post_job_receipt(
+    p_job_id, p_quantity_complete, p_storage_unit_id, p_location_id, p_company_id, p_user_id, p_expected_serials, false
   );
-  -- The MES may have completed another serial while the ERP dialog was open.
-  -- Verify what reached inventory under the same job lock. A mismatch rolls
-  -- back this receipt. A retry whose named units already arrived succeeds.
-  IF v_expected_new <> p_quantity_complete - v_received OR (p_expected_serials IS NOT NULL AND EXISTS (
-    SELECT 1 FROM unnest(p_expected_serials) AS expected(serial)
-    WHERE NOT EXISTS (
-      SELECT 1 FROM public."jobUnitPairing" pair
-      JOIN public."itemLedger" receipt ON receipt."companyId" = pair."companyId"
-        AND receipt."documentId" = pair."jobId" AND receipt."trackedEntityId" = pair."outputId"
-        AND receipt."documentType" = 'Job Receipt' AND receipt.quantity = 1
-      WHERE pair."companyId" = p_company_id AND pair."jobId" = p_job_id
-        AND pair.serial = expected.serial AND pair."releasedAt" IS NULL
-    )
-  )) THEN
-    RAISE EXCEPTION 'The packed serials ready for receipt changed. Reopen the job receipt and verify the serials.';
-  END IF;
   SELECT status IN ('Completed', 'Closed') INTO STRICT v_completed
     FROM public.job WHERE id = p_job_id AND "companyId" = p_company_id;
   RETURN v_completed;

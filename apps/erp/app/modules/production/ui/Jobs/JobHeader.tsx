@@ -37,7 +37,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { displaySerial, formatDate } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -179,9 +179,9 @@ const JobHeader = () => {
     onSuccess: ({ data }) => {
       if (!data) return;
       toast.success(
-        data.completed
-          ? t`Job completed successfully`
-          : t`Units received. The job is still open.`
+        data.completed === false
+          ? t`Units received. The job is still open.`
+          : t`Job completed successfully`
       );
       if (data.warning) toast.error(data.warning);
     }
@@ -1869,6 +1869,7 @@ function JobCompleteModal({
                               0
                             )
                           )
+                          .map(displaySerial)
                           .join(", ")}
                       </span>
                     </VStack>

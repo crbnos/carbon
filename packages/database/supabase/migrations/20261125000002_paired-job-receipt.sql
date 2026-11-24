@@ -1,3 +1,37 @@
+-- Consume books against the physical child (including a split batch draw).
+-- Unconsume reverses the edge. Keep only material still fitted to a good
+-- top-level output. A zero-cost input starts work just like a priced one.
+CREATE OR REPLACE FUNCTION public.job_fitted_output_materials(p_job_id text, p_company_id text)
+RETURNS TABLE(output_id text, component_id text, material_id text, quantity numeric)
+LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public
+AS $function$
+  WITH movements AS (
+    SELECT m.id AS material_id, CASE WHEN a.type = 'Unconsume' THEN ai."trackedEntityId" ELSE ao."trackedEntityId" END AS output_id,
+           CASE WHEN a.type = 'Unconsume' THEN ao."trackedEntityId" ELSE ai."trackedEntityId" END AS component_id,
+           CASE a.type WHEN 'Unconsume' THEN -ao.quantity WHEN 'Scrap' THEN -ai.quantity ELSE ai.quantity END AS quantity
+    FROM "jobMaterial" m
+    JOIN "trackedActivity" a ON a."sourceDocument" = 'Job Material' AND a."sourceDocumentId" = m.id
+      AND a."companyId" = m."companyId" AND a.type IN ('Consume', 'Unconsume', 'Scrap')
+    JOIN "trackedActivityInput" ai ON ai."trackedActivityId" = a.id AND ai."companyId" = a."companyId"
+    JOIN "trackedActivityOutput" ao ON ao."trackedActivityId" = a.id AND ao."companyId" = a."companyId"
+    WHERE m."jobId" = p_job_id AND m."companyId" = p_company_id
+  )
+  SELECT mv.output_id, mv.component_id, mv.material_id, LEAST(sum(mv.quantity), component.quantity)
+  FROM movements mv
+  JOIN "trackedEntity" component ON component.id = mv.component_id AND component."companyId" = p_company_id
+  JOIN "trackedEntity" output ON output.id = mv.output_id AND output."companyId" = p_company_id
+  JOIN job j ON j.id = p_job_id AND j."companyId" = output."companyId" AND j."itemId" = output."itemId"
+  JOIN "jobMakeMethod" mm ON mm.id = output.attributes->>'Job Make Method' AND mm."companyId" = j."companyId"
+    AND mm."jobId" = j.id AND mm."parentMaterialId" IS NULL
+  WHERE component.status = 'Consumed' AND output.status <> 'Scrapped' AND output.quantity = 1
+    AND output.attributes->>'Job' = j.id
+  GROUP BY mv.output_id, mv.component_id, mv.material_id, component.quantity
+  HAVING sum(mv.quantity) > 0
+$function$;
+
+REVOKE ALL ON FUNCTION public.job_fitted_output_materials(text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.job_fitted_output_materials(text, text) TO authenticated, service_role;
+
 -- A packed output is receivable once its exact source is consumed and the
 -- physical output has been logged through its terminal operations. The picker
 -- and the receipt use this same ordered set. ERP takes the requested prefix.
@@ -30,7 +64,10 @@ AS $function$
   JOIN "trackedEntity" output ON output.id = pair."outputId" AND output."companyId" = pair."companyId"
   JOIN "trackedEntity" source ON source.id = pair."sourceId" AND source."companyId" = pair."companyId"
   WHERE pair."jobId" = p_job_id AND pair."companyId" = p_company_id AND pair."releasedAt" IS NULL
-    AND source."itemId" = material."itemId" AND source.quantity = 1 AND source.status = 'Consumed'
+    AND COALESCE(source."itemId", CASE WHEN source."sourceDocument" = 'Item' THEN source."sourceDocumentId" END) = material."itemId"
+    AND source.quantity = 1 AND source.status = 'Consumed'
+    AND EXISTS (SELECT 1 FROM job_fitted_output_materials(p_job_id, p_company_id) fitted
+      WHERE fitted.output_id = output.id AND fitted.component_id = source.id AND fitted.material_id = material.id)
     AND source."readableId" = pair.serial AND output."readableId" = pair.serial
     AND output."itemId" = j."itemId" AND output.attributes->>'Job' = j.id
     AND output.attributes->>'Job Make Method' = material."jobMakeMethodId"
@@ -68,8 +105,23 @@ AS $function$
   ORDER BY pair.serial, output.id
 $function$;
 
+-- A received output still fills its planned slot after it ships or is
+-- scrapped in stock. An unreceived output starts with its first fitted part.
+CREATE OR REPLACE FUNCTION public.job_started_paired_outputs(p_job_id text, p_company_id text)
+RETURNS SETOF text
+LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public
+AS $function$
+  SELECT output_id FROM job_fitted_output_materials(p_job_id, p_company_id)
+  UNION
+  SELECT il."trackedEntityId" FROM "itemLedger" il WHERE il."companyId" = p_company_id
+    AND il."documentId" = p_job_id AND il."documentType" = 'Job Receipt'
+$function$;
+
+REVOKE ALL ON FUNCTION public.job_started_paired_outputs(text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.job_started_paired_outputs(text, text) TO authenticated, service_role;
+
 -- Count only scrap that can stand in for unfinished demand. When another
--- source has already been fitted to a replacement, its output still has to
+-- material has already been fitted to a replacement, its output still has to
 -- finish. Both Finish and ERP use this count, while holding the job lock.
 CREATE OR REPLACE FUNCTION public.job_scrapped_paired_output_count(p_job_id text, p_company_id text)
 RETURNS integer
@@ -98,8 +150,7 @@ AS $function$
       )
   )
   SELECT LEAST(physical_scrap.quantity, GREATEST(0, j.quantity - (
-    SELECT count(*) FROM "jobUnitPairing" p
-    WHERE p."jobId" = j.id AND p."companyId" = j."companyId" AND p."releasedAt" IS NULL
+    SELECT count(*) FROM job_started_paired_outputs(p_job_id, p_company_id)
   )))::integer
   FROM physical_scrap CROSS JOIN job j
   WHERE j.id = p_job_id AND j."companyId" = p_company_id
@@ -112,10 +163,13 @@ GRANT EXECUTE ON FUNCTION public.job_scrapped_paired_output_count(text, text) TO
 
 -- Preserve the native job stock, WIP and cost posting. On a paired job the
 -- chosen unit IDs and whether the job can finish are decided under its lock.
-CREATE OR REPLACE FUNCTION public.complete_job_to_inventory(p_job_id text, p_quantity_complete numeric, p_storage_unit_id text DEFAULT NULL::text, p_location_id text DEFAULT NULL::text, p_company_id text DEFAULT NULL::text, p_user_id text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION util.post_job_receipt(
+  p_job_id text, p_quantity_complete numeric, p_storage_unit_id text, p_location_id text,
+  p_company_id text, p_user_id text, p_expected_serials text[], p_automatic_finish boolean
+)
  RETURNS void
  LANGUAGE plpgsql
- SECURITY DEFINER
+ SECURITY INVOKER
  SET search_path TO 'public'
 AS $function$
 DECLARE
@@ -178,9 +232,9 @@ DECLARE
   v_production_quantity NUMERIC;
   v_backflush_quantity NUMERIC;
   v_scrapped_outputs INTEGER;
-  v_selected_source_cost NUMERIC;
-  v_unit_source_costs NUMERIC[];
-  v_pending_source_cost NUMERIC;
+  v_selected_direct_cost NUMERIC;
+  v_unit_direct_costs NUMERIC[];
+  v_pending_direct_cost NUMERIC;
   v_receipt_backflush_cost NUMERIC;
   v_issued_units_received NUMERIC := 0;
   v_units_taken INTEGER;
@@ -406,15 +460,6 @@ BEGIN
     v_scrapped_outputs := job_scrapped_paired_output_count(p_job_id, p_company_id);
     v_partial_paired_receipt := p_quantity_complete + v_scrapped_outputs < v_planned_quantity;
 
-    -- An exact retry with no additional goods cannot manufacture another
-    -- event, cost layer or receipt. A job whose remainder was scrapped can
-    -- still finish when its terminal operation is committed.
-    IF v_quantity_received_to_inventory = 0 AND (v_partial_paired_receipt OR EXISTS (
-      SELECT 1 FROM job WHERE id = p_job_id AND "companyId" = p_company_id AND status IN ('Completed', 'Closed')
-    )) THEN
-      RETURN;
-    END IF;
-
     v_serial_unit_ids := ARRAY(
       SELECT id FROM job_receivable_paired_units(p_job_id, p_company_id) AS ready(id)
       LIMIT v_quantity_received_to_inventory::integer
@@ -422,6 +467,42 @@ BEGIN
     IF cardinality(v_serial_unit_ids) <> v_quantity_received_to_inventory THEN
       RAISE EXCEPTION 'Only % completed paired unit(s) are ready on job %; % requested. Scan and log each production unit first.',
         cardinality(v_serial_unit_ids), v_job_id_readable, v_quantity_received_to_inventory;
+    END IF;
+
+    IF NOT p_automatic_finish THEN
+      IF COALESCE(cardinality(p_expected_serials), 0) = 0 THEN
+        RAISE EXCEPTION 'Reopen the job receipt and confirm the packed serials before receiving them.';
+      END IF;
+      -- Under the job lock, compare the displayed serials with the exact units
+      -- about to be received. A replay may also name units already received.
+      IF EXISTS (
+        SELECT 1 FROM "jobUnitPairing" p
+        WHERE p."companyId" = p_company_id AND p."jobId" = p_job_id AND p."releasedAt" IS NULL
+          AND p."outputId" = ANY(v_serial_unit_ids)
+          AND NOT EXISTS (SELECT 1 FROM unnest(p_expected_serials) s WHERE s = p.serial)
+      ) OR EXISTS (
+        SELECT 1 FROM unnest(p_expected_serials) s
+        WHERE NOT EXISTS (
+          SELECT 1 FROM "jobUnitPairing" p
+          WHERE p."companyId" = p_company_id AND p."jobId" = p_job_id AND p."releasedAt" IS NULL
+            AND p.serial = s AND (p."outputId" = ANY(v_serial_unit_ids) OR EXISTS (
+              SELECT 1 FROM "itemLedger" il
+              WHERE il."companyId" = p_company_id AND il."documentId" = p_job_id
+                AND il."documentType" = 'Job Receipt' AND il."trackedEntityId" = p."outputId" AND il.quantity = 1
+            ))
+        )
+      ) THEN
+        RAISE EXCEPTION 'The packed serials ready for receipt changed. Reopen the job receipt and verify the serials.';
+      END IF;
+    END IF;
+
+    -- An exact retry with no additional goods cannot manufacture another
+    -- event, cost layer or receipt. A job whose remainder was scrapped can
+    -- still finish when its terminal operation is committed.
+    IF v_quantity_received_to_inventory = 0 AND (v_partial_paired_receipt OR EXISTS (
+      SELECT 1 FROM job WHERE id = p_job_id AND "companyId" = p_company_id AND status IN ('Completed', 'Closed')
+    )) THEN
+      RETURN;
     END IF;
 
     -- Job actions serialize through the job row; inventory can change the
@@ -1449,37 +1530,40 @@ BEGIN
   v_accumulated_wip_cost := job_wip_balance(p_job_id, p_company_id);
 
   IF v_paired AND v_quantity_received_to_inventory > 0 THEN
-    -- The latest issue is the cost of the current binding. Earlier issues
-    -- of the same source may have been reversed or scrapped and recovered.
+    -- The issue layer is booked at the configured cost when the physical
+    -- component is consumed. Earlier issues may have been returned and reissued.
     WITH pending AS (
-      SELECT p."outputId", selected.ord, COALESCE(-issue.cost, 0) AS source_cost
-      FROM "jobUnitPairing" p
-      LEFT JOIN unnest(v_serial_unit_ids) WITH ORDINALITY selected(id, ord) ON selected.id = p."outputId"
+      SELECT fitted.output_id, selected.ord,
+             SUM(COALESCE(issue.cost, 0)) AS direct_cost
+      FROM job_fitted_output_materials(p_job_id, p_company_id) fitted
+      LEFT JOIN unnest(v_serial_unit_ids) WITH ORDINALITY selected(id, ord) ON selected.id = fitted.output_id
       LEFT JOIN LATERAL (
-        SELECT cl.cost FROM "costLedger" cl
-        WHERE cl."trackedEntityId" = p."sourceId" AND cl."companyId" = p."companyId"
-          AND cl."documentId" = p."jobId" AND cl."documentType" = 'Job Consumption'
+        SELECT CASE WHEN fitted.quantity = -cl.quantity THEN -cl.cost
+          ELSE ROUND(cl.cost * fitted.quantity / cl.quantity, 5) END AS cost
+        FROM "costLedger" cl
+        WHERE cl."trackedEntityId" = fitted.component_id AND cl."companyId" = p_company_id
+          AND cl."documentId" = p_job_id AND cl."documentType" = 'Job Consumption'
           AND cl.quantity < 0 AND NOT cl.adjustment
         ORDER BY cl."entryNumber" DESC LIMIT 1
       ) issue ON true
-      WHERE p."jobId" = p_job_id AND p."companyId" = p_company_id AND p."releasedAt" IS NULL
-        AND (selected.ord IS NOT NULL OR NOT EXISTS (
-          SELECT 1 FROM "itemLedger" il
-          WHERE il."trackedEntityId" = p."outputId" AND il."companyId" = p_company_id
-            AND il."documentId" = p_job_id AND il."documentType" = 'Job Receipt'
-        ))
+      WHERE selected.ord IS NOT NULL OR NOT EXISTS (
+        SELECT 1 FROM "itemLedger" il
+        WHERE il."trackedEntityId" = fitted.output_id AND il."companyId" = p_company_id
+          AND il."documentId" = p_job_id AND il."documentType" = 'Job Receipt'
+      )
+      GROUP BY fitted.output_id, selected.ord
     )
-    SELECT SUM(source_cost) FILTER (WHERE ord IS NOT NULL), SUM(source_cost),
-           array_agg(source_cost ORDER BY ord) FILTER (WHERE ord IS NOT NULL)
-    INTO v_selected_source_cost, v_pending_source_cost, v_unit_source_costs
+    SELECT SUM(direct_cost) FILTER (WHERE ord IS NOT NULL), SUM(direct_cost),
+           array_agg(direct_cost ORDER BY ord) FILTER (WHERE ord IS NOT NULL)
+    INTO v_selected_direct_cost, v_pending_direct_cost, v_unit_direct_costs
     FROM pending;
 
     IF v_partial_paired_receipt THEN
-      -- Leave the cost of the other sources in WIP. Shared job expenses are
+      -- Leave the other outputs' fitted materials in WIP. Shared job expenses are
       -- apportioned across the good pieces still expected, with this receipt's
       -- incremental backflush charged to its own pieces.
-      v_accumulated_wip_cost := ROUND(v_selected_source_cost + v_receipt_backflush_cost
-        + (v_accumulated_wip_cost - v_pending_source_cost - v_receipt_backflush_cost)
+      v_accumulated_wip_cost := ROUND(v_selected_direct_cost + v_receipt_backflush_cost
+        + (v_accumulated_wip_cost - v_pending_direct_cost - v_receipt_backflush_cost)
         * v_quantity_received_to_inventory / (v_planned_quantity - v_scrapped_outputs - COALESCE(v_prior_quantity_received, 0)), 5);
     END IF;
 
@@ -1489,19 +1573,20 @@ BEGIN
     -- sum to the exact amount transferred from WIP.
     WITH costs AS (
       SELECT unit.id, unit.ord, receipt."projectId",
-             SUM(unit.source_cost) OVER (ORDER BY unit.ord) AS source_total
-      FROM unnest(v_serial_unit_ids, v_unit_source_costs) WITH ORDINALITY unit(id, source_cost, ord)
+             SUM(unit.direct_cost) OVER (ORDER BY unit.ord) AS direct_total
+      FROM unnest(v_serial_unit_ids, v_unit_direct_costs) WITH ORDINALITY unit(id, direct_cost, ord)
       JOIN "itemLedger" receipt ON receipt."trackedEntityId" = unit.id
         AND receipt."documentId" = p_job_id AND receipt."documentType" = 'Job Receipt'
         AND receipt."companyId" = p_company_id
     ), allocations AS (
       SELECT *, CASE
         WHEN v_accumulated_wip_cost <= 0 THEN 0
+        WHEN ord = v_quantity_received_to_inventory THEN v_accumulated_wip_cost
         -- A credit against shared WIP reduces the units in proportion to
-        -- their source values, without making a cheap unit's layer negative.
-        WHEN v_accumulated_wip_cost < v_selected_source_cost THEN
-          ROUND(v_accumulated_wip_cost * source_total / v_selected_source_cost, 5)
-        ELSE source_total + ROUND((v_accumulated_wip_cost - v_selected_source_cost)
+        -- their directly issued values, without making a cheap unit's layer negative.
+        WHEN v_accumulated_wip_cost < v_selected_direct_cost THEN
+          ROUND(v_accumulated_wip_cost * direct_total / v_selected_direct_cost, 5)
+        ELSE direct_total + ROUND((v_accumulated_wip_cost - v_selected_direct_cost)
           * ord / v_quantity_received_to_inventory, 5)
       END AS cumulative_cost
       FROM costs
@@ -1791,3 +1876,15 @@ BEGIN
   END IF;
 END;
 $function$;
+
+
+-- Only the database event dispatcher may choose automatic Finish. Both manual
+-- RPCs run the same serial check, including the original quantity-only API.
+REVOKE ALL ON FUNCTION util.post_job_receipt(text, numeric, text, text, text, text, text[], boolean)
+  FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.complete_job_to_inventory(p_job_id text, p_quantity_complete numeric, p_storage_unit_id text DEFAULT NULL::text, p_location_id text DEFAULT NULL::text, p_company_id text DEFAULT NULL::text, p_user_id text DEFAULT NULL::text)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  SELECT util.post_job_receipt(p_job_id, p_quantity_complete, p_storage_unit_id, p_location_id,
+    p_company_id, p_user_id, NULL, false);
+$$;

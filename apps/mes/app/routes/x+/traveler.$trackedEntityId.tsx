@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Button, Card, CardContent, toast } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { displaySerial, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
@@ -35,18 +35,26 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const trackedEntityId = params.trackedEntityId;
   if (!trackedEntityId) return { kind: "notFound" as const };
 
+  const paramsOnScreen = new URL(request.url).searchParams;
+  const operationId = paramsOnScreen.get("operationId");
+  const heldUnitId = paramsOnScreen.get("trackedEntityId");
   const resolution = await resolveTravelerScan(getCarbonServiceRole(), {
     companyId,
     locationId: locationId ?? null,
     employeeId: effectiveUserId ?? userId,
-    trackedEntityId
+    trackedEntityId,
+    at: operationId
+      ? { operationId, trackedEntityId: heldUnitId ?? undefined }
+      : undefined
   });
   if (resolution.kind === "open") {
     throw redirect(
       `${path.to.operation(resolution.operationId)}?trackedEntityId=${resolution.trackedEntityId}&${TRAVELER_PARAM}`
     );
   }
-  return resolution;
+  return resolution.kind === "claim"
+    ? { ...resolution, heldUnitId }
+    : resolution;
 }
 
 export default function TravelerRoute() {
@@ -61,7 +69,7 @@ export default function TravelerRoute() {
           result.kind === "notFound" ? (
             <Trans>Traveler</Trans>
           ) : (
-            result.unit.readableId
+            displaySerial(result.unit.readableId)
           )
         }
       />
@@ -105,6 +113,7 @@ export default function TravelerRoute() {
             unit={result.unit}
             options={result.options}
             auto={result.auto}
+            heldUnitId={result.heldUnitId}
           />
         )}
         {result.kind === "refuse" && (
@@ -182,11 +191,13 @@ function UnitInfo({
 function ClaimChooser({
   unit,
   options,
-  auto
+  auto,
+  heldUnitId
 }: {
   unit: Unit;
   options: ClaimOption[];
   auto: boolean;
+  heldUnitId: string | null;
 }) {
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -195,9 +206,11 @@ function ClaimChooser({
   const selected =
     options.find((option) => option.operationId === selectedId) ?? options[0];
 
+  const needsUnit =
+    selected?.laterSerial && selected.parentTrackedEntityId !== heldUnitId;
   const start = async () => {
     if (!selected) return;
-    if (selected.laterSerial) {
+    if (needsUnit) {
       navigate(path.to.operation(selected.operationId));
       return;
     }
@@ -234,7 +247,7 @@ function ClaimChooser({
                 <Trans>Scanned</Trans>
               </dt>
               <dd className="truncate font-medium">
-                {unit.readableId}
+                {displaySerial(unit.readableId)}
                 {unit.itemReadableId ? ` · ${unit.itemReadableId}` : ""}
               </dd>
               <dt className="text-muted-foreground">
@@ -250,7 +263,7 @@ function ClaimChooser({
                 <Trans>Operation</Trans>
               </dt>
               <dd className="truncate">{selected.operation.description}</dd>
-              {!selected.laterSerial && (
+              {!needsUnit && (
                 <>
                   <dt className="text-muted-foreground">
                     <Trans>Unit</Trans>
@@ -268,7 +281,7 @@ function ClaimChooser({
               isDisabled={pending}
               onClick={start}
             >
-              {selected.laterSerial ? (
+              {needsUnit ? (
                 <Trans>Open the operation to pick the unit</Trans>
               ) : (
                 <Trans>Start {selected.parentReadableId}</Trans>

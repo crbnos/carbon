@@ -16189,6 +16189,7 @@ export interface COGSResult {
   unitCost: number;
   totalCost: number;
   layersConsumed: CostLayer[];
+  identified?: ReadonlyMap<string, { cost: number; quantity: number }>;
 }
 
 export async function calculateCOGS(
@@ -16327,6 +16328,7 @@ export async function calculateCOGS(
       return {
         unitCost: quantity > 0 ? relief.totalCost / quantity : 0,
         totalCost: relief.totalCost,
+        identified: relief.identified,
         layersConsumed: relief.layersConsumed.map((layer) => ({
           costLedgerId: layer.layerId,
           quantityConsumed: layer.quantity,

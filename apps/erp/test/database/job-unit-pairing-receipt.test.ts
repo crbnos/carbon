@@ -159,6 +159,15 @@ databaseTest(
           ?.trackedEntityIds
       ).toEqual([]);
 
+      // The original quantity-only completion RPC is also a manual entry point.
+      await expect(
+        sql`SELECT complete_job_to_inventory(${job.jobId}, 1, NULL, ${f.locationId}, ${f.companyId}, ${USER})`.execute(f.db)
+      ).rejects.toThrow(/confirm the packed serials/);
+      expect(
+        (await getJobReceiptSnapshot(f.db, job.jobId, f.companyId))
+          ?.trackedEntityIds
+      ).toEqual([]);
+
       expect((await receive(1)).rows).toEqual([{ completed: false }]);
       expect((await receive(1)).rows).toEqual([{ completed: false }]);
       await expect(undo(production.second.id!)).rejects.toThrow(/received/i);

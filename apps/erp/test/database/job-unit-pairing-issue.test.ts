@@ -638,3 +638,105 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a stocked production unit with legacy Item provenance can be packed and received",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const production = await receiveProductionPair(f);
+      const job = await createPairedJob(f, production.productionItemId);
+      const source = await f.db
+        .updateTable("trackedEntity")
+        .set({
+          itemId: null,
+          sourceDocument: "Item",
+          sourceDocumentId: production.productionItemId
+        })
+        .where("companyId", "=", f.companyId)
+        .where("id", "=", production.first.id!)
+        .returning(["id", "itemId"])
+        .executeTakeFirstOrThrow();
+      expect(source.itemId).toBeNull();
+      expect((await issue(f, job, source.id!)).error).toBeNull();
+      expect((await complete(f, job)).error).toBeNull();
+      await sql`SELECT receive_job_to_inventory(
+        ${job.jobId}, 1::numeric, ${f.companyId}, ${USER},
+        p_expected_serials => ARRAY[${production.first.serial}]::text[]
+      )`.execute(f.db);
+      const moves = await f.db
+        .selectFrom("itemLedger")
+        .select(["trackedEntityId", "itemId", "quantity"])
+        .where("companyId", "=", f.companyId)
+        .where("documentId", "=", job.jobId)
+        .orderBy("entryNumber")
+        .execute();
+      expect(moves).toEqual([
+        {
+          trackedEntityId: source.id,
+          itemId: production.productionItemId,
+          quantity: -1
+        },
+        { trackedEntityId: job.unitId, itemId: job.salesItemId, quantity: 1 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a legacy sales unit blocks a colliding scan before source debit or pairing",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const production = await receiveProductionPair(f);
+      const job = await createPairedJob(f, production.productionItemId);
+      const sales = await f.db
+        .insertInto("trackedEntity")
+        .values({
+          sourceDocument: "Item",
+          sourceDocumentId: job.salesItemId,
+          readableId: production.first.serial,
+          quantity: 1,
+          status: "Available",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .returning(["id", "itemId"])
+        .executeTakeFirstOrThrow();
+      expect(sales.itemId).toBeNull();
+      await f.db
+        .insertInto("itemLedger")
+        .values({
+          itemId: job.salesItemId,
+          trackedEntityId: sales.id,
+          entryType: "Positive Adjmt.",
+          quantity: 1,
+          locationId: f.locationId,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      expect((await issue(f, job, production.first.id!)).error?.message).toMatch(
+        /serial already/
+      );
+      const pairings = await f.db
+        .selectFrom("jobUnitPairing")
+        .select("id")
+        .where("jobId", "=", job.jobId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(pairings).toEqual([]);
+      const stock = await f.db
+        .selectFrom("itemLedger")
+        .select("quantity")
+        .where("trackedEntityId", "=", production.first.id!)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(stock).toEqual([{ quantity: 1 }]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

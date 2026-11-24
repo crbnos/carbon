@@ -111995,6 +111995,15 @@ export type Database = {
           similarity: number
         }[]
       }
+      job_fitted_output_materials: {
+        Args: { p_company_id: string; p_job_id: string }
+        Returns: {
+          component_id: string
+          material_id: string
+          output_id: string
+          quantity: number
+        }[]
+      }
       job_receipt_line_references: {
         Args: { p_company_id: string; p_job_id?: string }
         Returns: {
@@ -112014,6 +112023,10 @@ export type Database = {
       job_scrapped_paired_output_count: {
         Args: { p_company_id: string; p_job_id: string }
         Returns: number
+      }
+      job_started_paired_outputs: {
+        Args: { p_company_id: string; p_job_id: string }
+        Returns: string[]
       }
       job_wip_balance: {
         Args: {

@@ -18,9 +18,11 @@ import { handlesOf } from "./handles";
 export async function createPackedShipment(
   f: Fixture,
   itemId: string,
-  trackedEntityId: string
+  trackedEntityId: string,
+  orderSuffix = "",
+  saleQuantity = 1
 ) {
-  const salesOrderId = `${f.prefix}-so-${trackedEntityId}`;
+  const salesOrderId = `${f.prefix}-so-${trackedEntityId}${orderSuffix}`;
   await seed(f, async (trx) => {
     await trx
       .insertInto("salesOrder")
@@ -46,7 +48,7 @@ export async function createPackedShipment(
         salesOrderId,
         salesOrderLineType: "Part",
         itemId,
-        saleQuantity: 1,
+        saleQuantity,
         unitPrice: 25,
         methodType: "Pull from Inventory",
         unitOfMeasureCode: "EA",
@@ -79,9 +81,15 @@ export async function createPackedShipment(
 export async function shipPackedUnit(
   f: Fixture,
   itemId: string,
-  trackedEntityId: string
+  trackedEntityId: string,
+  orderSuffix = ""
 ) {
-  const draft = await createPackedShipment(f, itemId, trackedEntityId);
+  const draft = await createPackedShipment(
+    f,
+    itemId,
+    trackedEntityId,
+    orderSuffix
+  );
   const refusal = await assignShipmentSerial(
     f.db,
     f.companyId,

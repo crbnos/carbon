@@ -1045,11 +1045,10 @@ export const completeJob = defineServiceFn({
       });
       return {
         jobId,
-        completed: true,
         warning: "Job completed, but returning picked material failed"
       };
     }
-    return { jobId, completed: true, warning: null };
+    return { jobId, warning: null };
   }
 });
 

@@ -805,6 +805,21 @@ export async function scanTraveler(
           "The chosen production or sales unit has changed. Refresh and choose again."
       };
     }
+    const observedSerial =
+      resolution.unit.id === args.trackedEntityId
+        ? args.expectedSerial
+        : undefined;
+    if (observedSerial === undefined) {
+      // A traveler QR identifies a physical unit (or an ancestor). It carries
+      // no printed serial to inherit. Show the chooser before pairing it.
+      const paired = await client.rpc("job_requires_serial_pairing", {
+        p_job_id: claim.operation.jobId,
+        p_company_id: args.companyId
+      });
+      if (paired.error)
+        return { resolution: null, claimed: null, error: LOOKUP_FAILED };
+      if (paired.data) return { resolution, claimed: null, error: null };
+    }
     // Step attribution belongs to the unit on screen only.
     const sameUnit = args.at?.trackedEntityId === claim.parentTrackedEntityId;
     const issued = await issueTravelerUnit(client, {
@@ -813,10 +828,7 @@ export async function scanTraveler(
       // The unit the label travels with now: a kit's chamber, not the kit.
       trackedEntityId: resolution.unit.id,
       issueId: args.issueId,
-      expectedSerial:
-        resolution.unit.id === args.trackedEntityId
-          ? args.expectedSerial
-          : (resolution.unit.readableId ?? undefined),
+      expectedSerial: observedSerial,
       claim,
       heldUnitId:
         args.at?.operationId === claim.operationId

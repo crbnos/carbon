@@ -2375,7 +2375,7 @@ export const assignShipmentLineEntity = defineServiceFn({
         .single(),
       client
         .from("shipmentLine")
-        .select("itemId, lineId")
+        .select("itemId, requiresBatchTracking, requiresSerialTracking")
         .eq("id", shipmentLineId)
         .eq("shipmentId", shipmentId)
         .eq("companyId", companyId)
@@ -2394,6 +2394,17 @@ export const assignShipmentLineEntity = defineServiceFn({
     }
     if (line.error) {
       return ctx.error("internal", "Failed to load shipment line", line.error);
+    }
+    const trackingType = line.data.requiresSerialTracking
+      ? "serial"
+      : line.data.requiresBatchTracking
+        ? "batch"
+        : null;
+    if (input.trackingType !== trackingType) {
+      return ctx.error(
+        "validation",
+        "Tracking type does not match the shipment line."
+      );
     }
     if (
       entity.data.itemId &&

@@ -134,7 +134,7 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .executeTakeFirstOrThrow();
       expect(output.status).toBe("Available");
-      await sql`SELECT complete_job_to_inventory(${job.jobId},1::numeric,NULL,${f.locationId},${f.companyId},${USER})`.execute(
+      await sql`SELECT receive_job_to_inventory(${job.jobId},1,${f.companyId},${USER},p_expected_serials => ARRAY[${prod.first.serial}]::text[])`.execute(
         f.db
       );
       expect(await pickList()).toEqual(candidates);
@@ -224,7 +224,7 @@ databaseTest(
         quantity: 1
       });
       expect(await ready()).toEqual([{ id: job.unitId }]);
-      await sql`SELECT complete_job_to_inventory(${job.jobId},1,NULL,${f.locationId},${f.companyId},${USER})`.execute(
+      await sql`SELECT receive_job_to_inventory(${job.jobId},1,${f.companyId},${USER},p_expected_serials => ARRAY[${production.first.serial}]::text[])`.execute(
         f.db
       );
       expect(await ready()).toEqual([]);

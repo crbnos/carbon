@@ -14,7 +14,7 @@ import {
   scanTraveler
 } from "~/services/traveler.server";
 import { path, TRAVELER_PARAM } from "~/utils/path";
-import { parseTravelerCode } from "~/utils/traveler";
+import { parseTravelerCode, travelerIssueSerial } from "~/utils/traveler";
 
 const scanValidator = z.object({
   issueId: z.string().min(1).max(100).optional(),
@@ -83,7 +83,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     employeeId: effectiveUserId ?? userId,
     trackedEntityId: found.entity.id,
     issueId,
-    expectedSerial: expectedSerial ?? found.entity.readableId ?? undefined,
+    expectedSerial: travelerIssueSerial(code, found.entity, expectedSerial),
     confirmedChoice: expectedSerial !== undefined,
     at: operationId ? { operationId, ...screen } : undefined
   });
@@ -117,6 +117,18 @@ export async function action({ request, context }: ActionFunctionArgs) {
         null,
         "This label does not belong to a unit in this company"
       );
+    case "claim": {
+      const params = new URLSearchParams();
+      if (operationId) params.set("operationId", operationId);
+      if (screen.trackedEntityId)
+        params.set("trackedEntityId", screen.trackedEntityId);
+      return reply(
+        200,
+        path.to.traveler(resolution.unit.id) +
+          (params.size ? `?${params}` : ""),
+        null
+      );
+    }
     default:
       // Choices and unit details live on the traveler page.
       return reply(200, path.to.traveler(found.entity.id), null);

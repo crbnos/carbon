@@ -689,7 +689,7 @@
     {"name":"production_cancelJob","classification":"WRITE","schema":"2a395fbb9557","response":"6d52a19440e7","permission":"production:update","paginates":false},
     {"name":"production_clearPersonAbsence","classification":"DESTRUCTIVE","schema":"6e16b6a2487f","response":"3797626bd17e","permission":"production:update","paginates":false},
     {"name":"production_closeJob","classification":"WRITE","schema":"e3efee9a18c7","response":"eecc1bc3f4f6","permission":"production:update","paginates":false},
-    {"name":"production_completeJob","classification":"WRITE","schema":"79bfd14dce2a","response":"ef204371879d","permission":"production:update","paginates":false},
+    {"name":"production_completeJob","classification":"WRITE","schema":"79bfd14dce2a","response":"dd150db8c3a1","permission":"production:update","paginates":false},
     {"name":"production_completeOperation","classification":"WRITE","schema":"92c192733c55","response":"665690c509e5","permission":"production:create+update","paginates":false},
     {"name":"production_configureJob","classification":"WRITE","schema":"1ff7ac888d72","response":"4999bd4be598","permission":"production:update","paginates":false},
     {"name":"production_convertAssemblyModel","classification":"WRITE","schema":"6ff676e45a1b","response":"277f7d872d8c","permission":"production:update","paginates":false},

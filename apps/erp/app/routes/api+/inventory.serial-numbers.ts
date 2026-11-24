@@ -22,12 +22,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
+  const stockShipment = url.searchParams.get("stockShipment") === "true";
   const result = await getSerialNumbersForItem(client, {
     itemId,
-    companyId
+    companyId,
+    stockShipment
   });
-  if (!result.data || url.searchParams.get("stockShipment") !== "true")
-    return result;
+  if (!result.data || !stockShipment) return result;
   const data = await filterStockShipmentSerials(
     getDatabaseClient(),
     companyId,

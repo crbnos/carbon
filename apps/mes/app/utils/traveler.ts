@@ -30,6 +30,18 @@ export function parseTravelerCode(input: string): string | null {
   return id;
 }
 
+/** The serial confirmed by a traveler scan or the on-screen claim chooser. */
+export function travelerIssueSerial(
+  code: string,
+  entity: { id: string; readableId: string | null },
+  selectedSerial?: string
+) {
+  return (
+    selectedSerial ??
+    (code !== entity.id && code === entity.readableId ? code : undefined)
+  );
+}
+
 /** Match the printed ID first. A human-readable serial must identify exactly one candidate. */
 export function findScannedUnit<
   T extends { id: string | null; readableId: string | null }

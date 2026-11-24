@@ -153,13 +153,15 @@ BEGIN
     -- received, and refusing here would block the Done update itself.
     v_quantity_complete := GREATEST(v_quantity_complete, COALESCE(v_quantity_received, 0));
 
-    PERFORM complete_job_to_inventory(
+    PERFORM util.post_job_receipt(
       p_job_id := p_new->>'jobId',
       p_quantity_complete := v_quantity_complete,
       p_storage_unit_id := v_job_storage_unit_id,
       p_location_id := v_job_location_id,
       p_company_id := p_new->>'companyId',
-      p_user_id := COALESCE(p_new->>'updatedBy', p_new->>'createdBy')
+      p_user_id := COALESCE(p_new->>'updatedBy', p_new->>'createdBy'),
+      p_expected_serials := NULL,
+      p_automatic_finish := true
     );
   END IF;
 END;
