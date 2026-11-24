@@ -145,8 +145,7 @@ export const batchPropertyValidator = z
   );
 
 export const batchPropertyOrderValidator = z.object({
-  id: z.string().min(1, { message: "ID is required" }),
-  sortOrder: zfd.numeric(z.number().min(0))
+  updates: zfd.json(z.record(z.string().min(1), z.number().min(0)))
 });
 
 // Manual override of a tracked entity's expirationDate. Reason is required

@@ -5273,3 +5273,13 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A sortable row is inserted last, and a drag renumbers the list
+
+**Context:** Batch properties were inserted with no `sortOrder`, so each took the column default of 1, and a drag wrote the midpoint between the drop target's neighbours.
+
+**Problem:** Every property never dragged tied at 1. A new one listed above any property dragged below them, and a drag between two properties at 1 wrote 1, so nothing moved. Numbering new rows max + 1 alone fixes neither the existing ties nor the drag.
+
+**Rule:** Insert a row of a sortable list at the parent's max + 1. Order its reads by `sortOrder`, then `createdAt` and `id`. Save a drag by renumbering the list through `updateSortOrder` (`shared/sort-order.ts`), never a midpoint: no value between two equal sort orders separates them.
+
+**Applies to:** every table with a `sortOrder` column default and a drag-sort UI (batch properties, configuration parameters and their groups).

@@ -310,7 +310,7 @@
     {"name":"inventory_splitReceiptLine","classification":"WRITE","schema":"a0cd072a3187","response":"17337505bb69","permission":"inventory:update","paginates":false},
     {"name":"inventory_splitShipmentLine","classification":"WRITE","schema":"c407647473d8","response":"84320a09c1ac","permission":"inventory:update","paginates":false},
     {"name":"inventory_unpickStockTransferLine","classification":"WRITE","schema":"bb1a5c4569ba","response":"7ad8a3f49853","permission":"inventory:create","paginates":false},
-    {"name":"inventory_updateBatchPropertyOrder","classification":"WRITE","schema":"12f0062fbf60","response":"8394fbabd845","permission":"inventory:update","paginates":false},
+    {"name":"inventory_updateBatchPropertyOrder","classification":"WRITE","schema":"9412df669eed","response":"none","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateInventoryCountLine","classification":"WRITE","schema":"e59c475ac625","response":"3797626bd17e","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateInventoryCountStatus","classification":"WRITE","schema":"91b73f4670b0","response":"7ef2505ff688","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateKanban","classification":"WRITE","schema":"58de766efca8","response":"3797626bd17e","permission":"inventory:update","paginates":false},
