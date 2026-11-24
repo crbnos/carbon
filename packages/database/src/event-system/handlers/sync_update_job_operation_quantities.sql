@@ -17,8 +17,9 @@ BEGIN
                              ELSE p_new->>'jobOperationId' END;
 
   -- A terminal quantity updates both job and operation and can receive the
-  -- job. Match ERP receipt and MES serial posting even for a direct insert
-  -- (e.g. inspection scrap); other operations update only their own counts.
+  -- job. Take the receipt's own lock (FOR UPDATE) first, even for a direct
+  -- insert (e.g. inspection scrap), so the receipt never upgrades a weaker
+  -- job lock; other operations update only their own counts.
   SELECT j.id INTO v_job_id
   FROM "jobOperation" jo
   JOIN "jobMakeMethod" method ON method.id = jo."jobMakeMethodId" AND method."companyId" = jo."companyId"
@@ -31,7 +32,7 @@ BEGIN
       JOIN "jobMakeMethod" child_method ON child_method.id = child."jobMakeMethodId"
       WHERE dep."dependsOnId" = jo.id AND child_method."parentMaterialId" IS NULL
     )
-  FOR NO KEY UPDATE OF j;
+  FOR UPDATE OF j;
 
   IF p_operation = 'INSERT' THEN
     UPDATE "jobOperation"

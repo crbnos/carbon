@@ -131517,6 +131517,49 @@ export default {
         tags: ["(rpc) searchQuotes"]
       }
     },
+    "/rpc/finish_mes_job_operation": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_job_operation_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_job_operation_id", "p_company_id", "p_user_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) finish_mes_job_operation"]
+      }
+    },
     "/rpc/populate_company_search_index": {
       post: {
         parameters: [
@@ -136677,58 +136720,6 @@ export default {
           }
         },
         tags: ["(rpc) get_supplier_ids_with_supplier_permission"]
-      }
-    },
-    "/rpc/split_serial_units_for_completion": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                p_company_id: {
-                  format: "text",
-                  type: "string"
-                },
-                p_count: {
-                  format: "integer",
-                  type: "integer"
-                },
-                p_job_id: {
-                  format: "text",
-                  type: "string"
-                },
-                p_make_method_id: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: [
-                "p_job_id",
-                "p_make_method_id",
-                "p_company_id",
-                "p_count"
-              ],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) split_serial_units_for_completion"]
       }
     },
     "/rpc/attach_event_trigger": {

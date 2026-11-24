@@ -112832,15 +112832,6 @@ export type Database = {
           quantity: number
         }[]
       }
-      split_serial_units_for_completion: {
-        Args: {
-          p_company_id: string
-          p_count: number
-          p_job_id: string
-          p_make_method_id: string
-        }
-        Returns: number
-      }
       storage_unit_block_location_change_with_children: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined

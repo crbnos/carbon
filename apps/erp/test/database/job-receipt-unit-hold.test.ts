@@ -654,10 +654,10 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
           3
         );
         if (ambiguous) {
-          expect(result.error?.message).toMatch(
-            /final operations do not identify/i
-          );
-          expect(await received(f, job.jobId)).toEqual([]);
+          // A multi-unit output names no serial, so the job receives by
+          // quantity: available units in serial number order.
+          expect(result.error).toBeNull();
+          expect(await received(f, job.jobId)).toEqual(["SN-001", "SN-002"]);
         } else {
           expect(result.error).toBeNull();
           expect(await received(f, job.jobId)).toEqual(["SN-002", "SN-003"]);
@@ -671,7 +671,7 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
     });
   }
 
-  it("refuses a named automatic receipt after a quantity-only receipt shared one serial seed", async () => {
+  it("receives by quantity after a quantity-only receipt shared one serial seed", async () => {
     const f = await alwaysPostFixture();
     try {
       const job = await terminalJob(f, 3);
@@ -759,17 +759,14 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
         3
       );
       const state = await jobQuantities(f, job.jobId);
+      // The seed's receipt of 2 cannot be ascribed to worked serials, so the
+      // third completion receives the one unit the job still owes.
       expect({
-        message: attempt.error?.message,
+        error: attempt.error,
         status: state.status,
         quantity: state.quantityReceivedToInventory
-      }).toEqual({
-        message: expect.stringMatching(/previous receipts.*serials completed/i),
-        status: "In Progress",
-        quantity: 2
-      });
-      expect((await jobQuantities(f, job.jobId)).status).toBe("In Progress");
-      expect(await received(f, job.jobId)).toEqual(["SN-001"]);
+      }).toEqual({ error: null, status: "Completed", quantity: 3 });
+      expect(await received(f, job.jobId)).toEqual(["SN-001", "SN-002"]);
     } finally {
       await sql`SELECT set_config('app.sync_in_progress', 'true', false)`.execute(
         f.db
@@ -783,7 +780,11 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
     "different serials on parallel terminal operations",
     "a new hold on a previously worked serial"
   ] as const) {
-    it(`rolls back final production and receipt for ${scenario}`, async () => {
+    it(`${
+      scenario === "different serials on parallel terminal operations"
+        ? "rolls back final production and receipt"
+        : "completes the final operation and receives"
+    } for ${scenario}`, async () => {
       const f = await alwaysPostFixture();
       try {
         const parallel =
@@ -844,19 +845,31 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
           job.operationId,
           3
         );
-        expect(result.error?.message).toMatch(
-          /final operations do not identify|fewer than the 2 being completed/i
-        );
-        expect(await received(f, job.jobId)).toEqual([]);
         const last = await f.db
           .selectFrom("jobOperation")
           .select(["quantityComplete", "status"])
           .where("id", "=", job.operationId)
           .executeTakeFirstOrThrow();
-        expect(last).toMatchObject({
-          status: "In Progress",
-          quantityComplete: parallel ? 0 : 1
-        });
+        if (!parallel) {
+          // An anonymous completion: receive by quantity, available units in
+          // serial number order. A held worked serial: receive the other one
+          // and leave the held one out.
+          expect({ error: result.error, status: last.status }).toEqual({
+            error: null,
+            status: "Done"
+          });
+          expect(await received(f, job.jobId)).toEqual(
+            scenario === "mixed named and anonymous output"
+              ? ["SN-001", "SN-002"]
+              : ["SN-003"]
+          );
+          return;
+        }
+        expect(result.error?.message).toMatch(
+          /final operations do not identify/i
+        );
+        expect(await received(f, job.jobId)).toEqual([]);
+        expect(last).toMatchObject({ status: "In Progress", quantityComplete: 0 });
         const unit = await f.db
           .selectFrom("trackedEntity")
           .select("attributes")

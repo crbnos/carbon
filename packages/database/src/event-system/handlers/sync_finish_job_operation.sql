@@ -131,10 +131,20 @@ BEGIN
     INTO v_quantity_complete, v_worked_unit_ids, v_missing_worked_units
     FROM terminal;
 
+    -- When a final operation does not name a serial for every unit it
+    -- completed (some recorded by quantity alone, in the ERP or by an edited
+    -- production row), receive by quantity as before: the receipt still keeps
+    -- held units out. Refusing here would block the Done update itself.
+    -- Serials that disagree across parallel final operations are a data
+    -- error the operator must correct, so that still refuses.
     IF v_worked_unit_ids IS NOT NULL AND (
       v_missing_worked_units OR cardinality(v_worked_unit_ids) <> v_quantity_complete
     ) THEN
-      RAISE EXCEPTION 'The final operations do not identify the serials for every completed unit';
+      IF v_missing_worked_units THEN
+        v_worked_unit_ids := NULL;
+      ELSE
+        RAISE EXCEPTION 'The final operations do not identify the serials for every completed unit';
+      END IF;
     END IF;
 
     IF COALESCE(v_quantity_complete, 0) = 0 THEN

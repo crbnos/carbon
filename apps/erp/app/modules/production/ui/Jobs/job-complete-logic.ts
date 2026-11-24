@@ -36,58 +36,15 @@ export function receiptHasTrackedOutput(tracking?: JobReceiptTracking) {
   );
 }
 
-/** Mirrors the outstanding serial capacity in complete_job_to_inventory.
- * A zero-delta close is valid while any sibling could still be received,
- * including units on a partially received seed or awaiting a serial number. */
+/** A serial completion is refused when quality holds keep out units and
+ * nothing else can be received. The database computes both numbers with the
+ * receipt's own function (util.job_serial_receipt_capacity), so the dialog
+ * never re-derives which units count. */
 export function isSerialReceiptBlockedByHolds(
-  tracking: Pick<
-    JobReceiptTracking,
-    | "trackedEntities"
-    | "quantity"
-    | "sequenceId"
-    | "fixedAssetClassId"
-    | "fixedAssetId"
-  >
+  tracking: Pick<JobReceiptTracking, "serialReceiptCapacity">
 ) {
-  const units = tracking.trackedEntities;
-  if (
-    !units.some(
-      (unit) =>
-        unit.held &&
-        !unit.fixedAsset &&
-        unit.status !== "Scrapped" &&
-        unit.quantity > (unit.received ?? 0)
-    )
-  ) {
-    return false;
-  }
-
-  const toStock = !tracking.fixedAssetClassId && !tracking.fixedAssetId;
-  let representedQuantity = 0;
-  let canCreateUnits = !!tracking.sequenceId;
-  for (const unit of units) {
-    if (unit.status === "Scrapped") continue;
-    representedQuantity += unit.quantity;
-    if (unit.held || unit.fixedAsset || unit.status === "Rejected") continue;
-    if (
-      unit.status === "Consumed" &&
-      !(toStock && unit.issued && unit.quantity === 1)
-    )
-      continue;
-
-    if (toStock && unit.quantity > 1) canCreateUnits = true;
-    const received = unit.received ?? 0;
-    if (
-      unit.quantity > received &&
-      (toStock ||
-        unit.quantity === 1 ||
-        (tracking.sequenceId && received === 0))
-    ) {
-      return false;
-    }
-  }
-
-  return !(canCreateUnits && tracking.quantity > representedQuantity);
+  const capacity = tracking.serialReceiptCapacity;
+  return !!capacity && capacity.held > 0 && capacity.receivable === 0;
 }
 
 /** Values submitted by the serial receipt dialog. Deferred units have a

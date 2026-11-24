@@ -23,7 +23,8 @@ export async function insertProductionQuantityIfCurrent(
 ): Promise<{ id: string } | null> {
   const inserted = await db.transaction().execute(async (trx) => {
     // Terminal quantities can finish and receive the job from their insert
-    // trigger. Acquire the job ahead of the checked operation as Finish does.
+    // trigger. Take the receipt's job lock (FOR UPDATE) ahead of the checked
+    // operation, as Finish does, so the receipt never upgrades a weaker one.
     const job = await trx
       .selectFrom("job")
       .innerJoin("jobOperation", "jobOperation.jobId", "job.id")
@@ -31,7 +32,7 @@ export async function insertProductionQuantityIfCurrent(
       .where("jobOperation.id", "=", data.jobOperationId)
       .where("jobOperation.companyId", "=", data.companyId)
       .where("job.companyId", "=", data.companyId)
-      .forNoKeyUpdate("job")
+      .forUpdate("job")
       .executeTakeFirst();
     if (!job) return null;
     const operation = await trx

@@ -371,6 +371,9 @@ export type JobReceiptTracking = {
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
   sequenceId: string | null;
+  /** Serial jobs only: what a completion can still receive and what quality
+   * holds keep out, from util.job_serial_receipt_capacity. */
+  serialReceiptCapacity: { held: number; receivable: number } | null;
   trackedEntities: (JobSerialUnit & {
     held: boolean;
     issued: boolean;
