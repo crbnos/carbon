@@ -1227,7 +1227,9 @@ export const assignReceiptReturnEntity = defineServiceFn({
       service.returnReceiptLineOf(ctx, { receiptId, receiptLineId }),
       client
         .from("trackedEntity")
-        .select("id, status, attributes, itemId")
+        .select(
+          "id, status, attributes, itemId, sourceDocument, sourceDocumentId"
+        )
         .eq("id", trackedEntityId)
         .eq("companyId", companyId)
         .maybeSingle(),
@@ -1270,7 +1272,7 @@ export const assignReceiptReturnEntity = defineServiceFn({
         "Return line does not belong to this receipt's return order"
       );
     }
-    if (entity.data.itemId !== orderLine.data.itemId) {
+    if (utils.trackedEntityItemId(entity.data) !== orderLine.data.itemId) {
       return ctx.error(
         "validation",
         "Entity is a different item than this return line"

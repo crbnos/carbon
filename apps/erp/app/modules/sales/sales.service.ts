@@ -183,6 +183,7 @@ import {
   createDocumentUploadUrl,
   upsertDocument
 } from "~/modules/documents/documents.service";
+import { trackedEntityItemFilter } from "~/modules/inventory/inventory.utils";
 import { getItemTaxable, upsertPart } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
@@ -8238,7 +8239,7 @@ export async function getShippedTrackedEntitiesForCustomer(
     (query) =>
       query
         .eq("companyId", companyId)
-        .eq("itemId", itemId)
+        .or(trackedEntityItemFilter(itemId))
         .eq("status", "Consumed")
   );
   if (entities.error) return { data: null, error: entities.error };

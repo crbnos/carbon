@@ -51,10 +51,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { shipmentId } = params;
   if (!shipmentId) throw new Error("Could not find shipmentId");
 
-  const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all([
+  const [shipment, shipmentLines] = await Promise.all([
     getShipment(client, shipmentId),
-    getShipmentLines(client, shipmentId),
-    getShipmentTracking(client, shipmentId, companyId)
+    getShipmentLines(client, shipmentId)
   ]);
 
   if (shipment.error) {
@@ -67,6 +66,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (shipment.data.companyId !== companyId) {
     throw redirect(path.to.shipments);
   }
+
+  const shipmentLineTracking = await getShipmentTracking(
+    client,
+    shipmentId,
+    companyId,
+    shipment.data.sourceDocument === "Sales Order" &&
+      ["Posted", "Voided"].includes(shipment.data.status ?? "")
+      ? (shipmentLines.data ?? [])
+      : undefined
+  );
+  if (shipmentLineTracking.error)
+    throw new Error("Failed to load shipment tracking", {
+      cause: shipmentLineTracking.error
+    });
 
   let fixedAssetLines: {
     id: string;

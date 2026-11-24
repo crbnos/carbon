@@ -146,7 +146,6 @@ import {
   isJobLocked,
   PickGuardError,
   pluckUnique,
-  quoteFilterValue,
   requireAffected,
   resolvePick,
   resolveReturnUnitCost,
@@ -328,6 +327,8 @@ import {
   serialLineShortfalls,
   serialShortfallMessage,
   spreadBatchCount,
+  trackedEntityItemFilter,
+  trackedEntityItemId,
   writeOffRestoreQuantity
 } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
@@ -1634,13 +1635,10 @@ export async function getSerialNumbersForItem(
       .order("id");
 
   if (args.stockShipment) {
-    const item = quoteFilterValue(args.itemId);
     return fetchAllRecords(() =>
       serials()
         .eq("status", "Available")
-        .or(
-          `itemId.eq.${item},and(itemId.is.null,sourceDocument.eq.Item,sourceDocumentId.eq.${item})`
-        )
+        .or(trackedEntityItemFilter(args.itemId))
     );
   }
   return serials()
@@ -2219,18 +2217,6 @@ export async function getRentalReceiptLines(
   );
 }
 
-/** Older stock serials identify their SKU through Item provenance. */
-function shipmentTrackedItemId(unit: {
-  itemId: string | null;
-  sourceDocument: string | null;
-  sourceDocumentId: string | null;
-}) {
-  return (
-    unit.itemId ??
-    (unit.sourceDocument === "Item" ? unit.sourceDocumentId : null)
-  );
-}
-
 /** Change one slot in a draft serial shipment against the occupant the clerk saw. */
 export async function assignShipmentSerial(
   db: Kysely<KyselyDatabase>,
@@ -2303,7 +2289,7 @@ export async function assignShipmentSerial(
       .forUpdate()
       .execute();
     const selected = rows.find((row) => row.id === input.trackedEntityId);
-    const itemId = selected && shipmentTrackedItemId(selected);
+    const itemId = selected && trackedEntityItemId(selected);
     const attributes = (selected?.attributes ?? {}) as Record<string, unknown>;
     if (
       !selected ||
@@ -14933,6 +14919,46 @@ export async function assertReceivedStockOnHand(
   }
 }
 
+/** A later return of the same serial can refill the original bin. Lock the
+ * unit as shipment posting does, then check which document last moved it. */
+async function assertLatestSerialReturn(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  receiptId: string,
+  serialIds: string[]
+): Promise<void> {
+  if (serialIds.length === 0) return;
+  await trx
+    .selectFrom("trackedEntity")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("id", "=", sql<string>`ANY(${serialIds}::text[])`)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  const latest = await trx
+    .selectFrom("itemLedger")
+    .distinctOn("trackedEntityId")
+    .select(["documentId", "documentType", "quantity"])
+    .where("companyId", "=", companyId)
+    .where("trackedEntityId", "=", sql<string>`ANY(${serialIds}::text[])`)
+    .where("quantity", "!=", 0)
+    .orderBy("trackedEntityId")
+    .orderBy("entryNumber", "desc")
+    .execute();
+  if (
+    latest.length !== serialIds.length ||
+    latest.some(
+      (row) =>
+        row.documentType !== "Sales Return Receipt" ||
+        row.documentId !== receiptId ||
+        row.quantity <= 0
+    )
+  ) {
+    throw new InvalidInputError(RECEIPT_VOID_STOCK_MOVED_ERROR);
+  }
+}
+
 /**
  * Locks the receipt and re-reads its status inside the void's transaction, so
  * two voids sent at once cannot both reverse it. Inspection writes read the
@@ -15433,6 +15459,23 @@ export async function postReceipt(
           })
         );
 
+        const serialItems = new Set(
+          (receiptLines.data ?? [])
+            .filter((line) => line.requiresSerialTracking)
+            .map((line) => line.itemId)
+        );
+        const serialIds = [
+          ...new Set(
+            reversingItemLedger.flatMap((row) =>
+              row.quantity < 0 &&
+              row.trackedEntityId &&
+              serialItems.has(row.itemId)
+                ? [row.trackedEntityId]
+                : []
+            )
+          )
+        ];
+
         const reversingJournalLines = originalJournalLines.map((line) => ({
           accountId: line.accountId,
           description: `VOID: ${line.description ?? ""}`,
@@ -15466,6 +15509,12 @@ export async function postReceipt(
           db.transaction().execute(async (trx) => {
             await lockPostedReceipt(trx, companyId, receiptId);
             await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+            await assertLatestSerialReturn(
+              trx,
+              companyId,
+              receiptId,
+              serialIds
+            );
             await assertReceivedStockOnHand(
               trx,
               companyId,
@@ -15473,7 +15522,7 @@ export async function postReceipt(
             );
             const receiptLayers = await trx
               .selectFrom("costLedger")
-              .select(["quantity", "remainingQuantity"])
+              .select(["itemId", "cost", "quantity", "remainingQuantity"])
               .where("documentId", "=", receiptId)
               .where("documentType", "=", "Sales Return Receipt")
               .where("companyId", "=", companyId)
@@ -15489,6 +15538,23 @@ export async function postReceipt(
                 "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
               );
             }
+
+            // Reverse the quantity and value this receipt added, using the
+            // balance before its reversing item ledger rows are written.
+            await applyAverageCostChanges(trx, {
+              companyId,
+              changes: receiptLayers.flatMap((row) =>
+                row.itemId
+                  ? [
+                      {
+                        itemId: row.itemId,
+                        quantity: -row.quantity,
+                        value: -row.cost
+                      }
+                    ]
+                  : []
+              )
+            });
 
             await voidServiceJobsForReturn(trx, {
               companyId,
@@ -18252,8 +18318,11 @@ export async function postReceipt(
 
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
-        const costLedgerInserts: Database["public"]["Tables"]["costLedger"]["Insert"][] =
-          [];
+        const costLedgerInserts: (Tables["costLedger"]["Insert"] & {
+          itemId: string;
+          quantity: number;
+          cost: number;
+        })[] = [];
         const returnJournalLines: SalesReturnReceiptLine[] = [];
         const itemById = new Map(items.data.map((item) => [item.id, item]));
         const itemPostingGroupByItem = new Map(
@@ -18607,6 +18676,14 @@ export async function postReceipt(
           // A customer return copies the sales shipment it reverses, which
           // drew common stock (Projects Phase 2a): its layers are common.
           if (costLedgerInserts.length > 0) {
+            await applyAverageCostChanges(trx, {
+              companyId,
+              changes: costLedgerInserts.map((row) => ({
+                itemId: row.itemId,
+                quantity: row.quantity,
+                value: row.cost
+              }))
+            });
             await trx
               .insertInto("costLedger")
               .values(withStripe(costLedgerInserts, null))
@@ -20551,31 +20628,39 @@ export async function postShipment(
                     )?.["Shipment Line"] === shipmentLine.id
                 );
 
-                lineTracking?.forEach((tracking) => {
-                  itemLedgerInserts.push({
-                    postingDate: today,
-                    itemId: shipmentLine.itemId,
-                    quantity: -1,
-                    locationId: shipmentLine.locationId ?? locationId,
-                    entryType: "Negative Adjmt.",
-                    documentType: "Sales Shipment",
-                    documentId: shipmentHeader.id ?? undefined,
-                    trackedEntityId: tracking.id,
-                    externalDocumentId: undefined,
-                    createdBy: userId,
-                    companyId
-                  });
-
-                  if (tracking.id) {
-                    selectedSerials.set(tracking.id, {
+                // The posted ledger preserves each serial's line and scan-slot order.
+                const slot = (unit: NonNullable<typeof lineTracking>[number]) =>
+                  (unit.attributes as TrackedEntityAttributes | null)?.[
+                    "Shipment Line Index"
+                  ] ?? 0;
+                lineTracking
+                  ?.sort((a, b) => slot(a) - slot(b))
+                  .forEach((tracking) => {
+                    itemLedgerInserts.push({
+                      postingDate: today,
                       itemId: shipmentLine.itemId,
-                      lineId: shipmentLine.id,
-                      index: (
-                        tracking.attributes as TrackedEntityAttributes | null
-                      )?.["Shipment Line Index"]
+                      quantity: -1,
+                      locationId: shipmentLine.locationId ?? locationId,
+                      entryType: "Negative Adjmt.",
+                      documentType: "Sales Shipment",
+                      documentId: shipmentHeader.id ?? undefined,
+                      documentLineId: shipmentLine.id,
+                      trackedEntityId: tracking.id,
+                      externalDocumentId: undefined,
+                      createdBy: userId,
+                      companyId
                     });
-                  }
-                });
+
+                    if (tracking.id) {
+                      selectedSerials.set(tracking.id, {
+                        itemId: shipmentLine.itemId,
+                        lineId: shipmentLine.id,
+                        index: (
+                          tracking.attributes as TrackedEntityAttributes | null
+                        )?.["Shipment Line Index"]
+                      });
+                    }
+                  });
               }
 
               journalShipmentLines.push({
@@ -20918,7 +21003,7 @@ export async function postShipment(
                   return (
                     expected &&
                     isShippableEntityStatus("Sales Order", unit.status) &&
-                    shipmentTrackedItemId(unit) === expected.itemId &&
+                    trackedEntityItemId(unit) === expected.itemId &&
                     tags?.Shipment === shipmentId &&
                     tags["Shipment Line"] === expected.lineId &&
                     tags["Shipment Line Index"] === expected.index

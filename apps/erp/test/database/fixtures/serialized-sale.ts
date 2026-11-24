@@ -78,7 +78,8 @@ type Method = "FIFO" | "LIFO" | "Average" | "Standard";
 export async function packSerials(
   f: Fixture,
   method: Method,
-  sources: Awaited<ReturnType<typeof stockSerials>>
+  sources: Awaited<ReturnType<typeof stockSerials>>,
+  afterFirstReceipt?: (itemId: string, outputId: string) => Promise<void>
 ) {
   const job = await createPairedJob(f, f.assemblyId, 2);
   await f.db
@@ -124,6 +125,7 @@ export async function packSerials(
       await sql`SELECT receive_job_to_inventory(
         ${job.jobId}, 1, ${f.companyId}, ${USER}, ${f.locationId}, NULL, ARRAY[${source.readableId}]::text[]
       )`.execute(f.db);
+      await afterFirstReceipt?.(job.salesItemId, output.id!);
     }
   }
   return { itemId: job.salesItemId, outputs };
@@ -135,7 +137,7 @@ async function createReturnLine(
   shipmentLineId?: string
 ) {
   const returnType = shipmentLineId ? "Return to Stock" : "Return for Warranty";
-  const reference = shipmentLineId ? "credit" : "warranty";
+  const reference = shipmentLineId ?? "warranty";
   const rma = await f.db
     .insertInto("salesReturnOrder")
     .values({
@@ -167,13 +169,7 @@ async function createReturnLine(
   return { rmaId: rma.id, returnLineId: line.id };
 }
 
-/** Sell two units on separate lines of the same shipment, one under warranty. */
-export async function shipNormalAndWarranty(
-  f: Fixture,
-  itemId: string,
-  cheapId: string,
-  richId: string
-) {
+export async function createNormalAndWarrantyShipment(f: Fixture, itemId: string) {
   const original = await createPackedShipment(f, itemId, "mixed");
   const warranty = await createReturnLine(f, itemId);
   await f.db
@@ -215,9 +211,20 @@ export async function shipNormalAndWarranty(
     })
     .returning("id")
     .executeTakeFirstOrThrow();
+  return { ...original, warrantyLineId: warrantyLine.id };
+}
+
+/** Sell two units on separate lines of the same shipment, one under warranty. */
+export async function shipNormalAndWarranty(
+  f: Fixture,
+  itemId: string,
+  cheapId: string,
+  richId: string
+) {
+  const original = await createNormalAndWarrantyShipment(f, itemId);
   for (const [shipmentLineId, trackedEntityId] of [
     [original.shipmentLineId, cheapId],
-    [warrantyLine.id, richId]
+    [original.warrantyLineId, richId]
   ] as const) {
     expect(
       await assignShipmentSerial(
@@ -248,7 +255,7 @@ export async function shipNormalAndWarranty(
       postShipment
     )
   );
-  return { ...original, warrantyLineId: warrantyLine.id };
+  return original;
 }
 
 /** A draft receipt, ready for the clerk to select the returned serial. */
