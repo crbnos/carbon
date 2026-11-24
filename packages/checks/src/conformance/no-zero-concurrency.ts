@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { loadServerFiles } from "../sources/server-files";
+import { lineOf } from "../sources/text";
 
 /**
  * Matches `limit: 0` inside an Inngest `concurrency` block.
@@ -31,7 +32,7 @@ export const noZeroConcurrency = fileCheck(loadServerFiles, {
     for (const m of contents.matchAll(ZERO_CONCURRENCY)) {
       violations.push({
         file,
-        line: contents.slice(0, m.index).split("\n").length,
+        line: lineOf(contents, m.index),
         snippet: m[0].replace(/\s+/g, " "),
         message:
           "concurrency.limit 0 is no capacity, not unlimited — every run parks in QUEUED forever. Use >= 1, or omit the concurrency block."

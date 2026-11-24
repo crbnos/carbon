@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Check, SourceFile, Violation } from "../check";
 import { sqlNodes } from "../sources/sql";
+import { lineOf } from "../sources/text";
 
 export const DOCUMENT_SEQUENCE_SYNCED = "document-sequence-synced";
 
@@ -66,7 +67,7 @@ export const EXEMPT_COUNTERS: Record<string, string> = {
 type Entry = { name: string; line: number };
 
 function lineAt(contents: string, index: number): number {
-  return contents.slice(0, index).split("\n").length;
+  return lineOf(contents, index);
 }
 
 /** The `table:` of every counter in `export const sequences = [...]`. */

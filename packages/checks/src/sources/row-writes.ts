@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { IDENT_PART, IDENT_START } from "./text";
 /**
  * The row writes and row locks a TypeScript file makes, read from its text,
  * for the concurrency checks (`status-write-guarded`, `counter-write-relative`).
@@ -50,9 +51,6 @@ export type RowLock = {
   /** The local the locked row is assigned to (`const locked = await …`), or null. */
   binding: string | null;
 };
-
-const IDENT_START = /[A-Za-z_$]/;
-const IDENT_PART = /[\w$]/;
 
 /** Index just past the string literal that opens at `i`. */
 function skipString(text: string, i: number): number {

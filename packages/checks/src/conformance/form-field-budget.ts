@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // A form that asks for everything on one screen overloads the user: the
 // project contract's Add Line had 17 fields in one three-column grid, with
@@ -49,7 +50,7 @@ export const formFieldBudget = fileCheck(typescript, {
     return [
       {
         file,
-        line: contents.slice(0, form.index).split("\n").length,
+        line: lineOf(contents, form.index),
         // One key per file: an old form stays baselined as it changes.
         snippet: "<ValidatedForm>",
         message: `This form renders ${fields} fields in one grid (budget ${FORM_FIELD_BUDGET}). Group them with FormGroup / FormFold, or step them with FormStepBar / FormStepPanel / FormStepButtons (carbon-design forms.md §4a)`

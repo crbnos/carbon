@@ -5,6 +5,7 @@
 import type { Check, SourceFile, Violation } from "../check";
 import { readIfPresent } from "../sources/cross-file";
 import { loadModules, modulesDir } from "../sources/modules";
+import { lineOf } from "../sources/text";
 
 export const LIST_SELECT_COVERS_COLUMNS = "list-select-covers-columns";
 
@@ -77,8 +78,7 @@ function pagingColumns(contents: string, paging: string): string[] | null {
   return [...sorts, idColumn];
 }
 
-const lineAt = (contents: string, index = 0) =>
-  contents.slice(0, index).split("\n").length;
+const lineAt = (contents: string, index = 0) => lineOf(contents, index);
 
 /** Every list table's accessorKeys against the columns its endpoint selects. */
 export function findUnselectedListColumns(

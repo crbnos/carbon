@@ -12,6 +12,7 @@ import {
 import { blankComments } from "../sources/comments";
 import { migrations, typescript } from "../sources/inputs";
 import { nameParts, nodesIn, sqlFragments } from "../sources/sql";
+import { lineOf } from "../sources/text";
 
 // A journal reader that filters `status <> 'Draft'` counts every non-Draft
 // status, so the Provisional and Superseded journals of the accounting cutover
@@ -164,7 +165,7 @@ function scanStatements(
       for (const m of statement.matchAll(pattern)) {
         const qualifier = m.groups?.q?.toLowerCase();
         if (qualifier && !names.has(qualifier)) continue;
-        const line = text.slice(0, start + (m.index ?? 0)).split("\n").length;
+        const line = lineOf(text, start + (m.index ?? 0));
         if (flagged.has(line)) continue;
         flagged.add(line);
         violations.push({

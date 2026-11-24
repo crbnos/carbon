@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { requestHandlingTypescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // React Router's redirect goes wherever it is told. A destination read from a
 // query string or a form then sends the browser off-site unless the call site
@@ -25,7 +26,7 @@ export const noRawRedirect = fileCheck(requestHandlingTypescript, {
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     for (const match of contents.matchAll(RAW_IMPORT)) {
-      const line = contents.slice(0, match.index).split("\n").length;
+      const line = lineOf(contents, match.index);
       violations.push({
         file,
         line,

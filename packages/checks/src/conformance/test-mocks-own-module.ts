@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { loadTestFiles } from "../sources/test-files";
+import { lineOf } from "../sources/text";
 
 // A test that mocks its own module's neighbours pins the wiring between them:
 // it passes while the rule is wrong and fails when the code is reorganised.
@@ -24,7 +25,7 @@ export const testMocksOwnModule = fileCheck(loadTestFiles, {
   scan(file: string, contents: string): Violation[] {
     return [...contents.matchAll(OWN_MODULE_MOCK)].map((match) => ({
       file,
-      line: contents.slice(0, match.index).split("\n").length,
+      line: lineOf(contents, match.index),
       snippet: `vi.${match[1]}("${match[3]}")`,
       message:
         "Do not mock our own modules; extract the decision into a pure function and test it by value (.claude/rules/testing.md → Mocks)"

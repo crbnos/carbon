@@ -10,6 +10,7 @@ import {
 } from "../check";
 import { loadDbTableColumns } from "../sources/db-columns";
 import { typescript } from "../sources/inputs";
+import { IDENT_PART, IDENT_START, lineOf } from "../sources/text";
 
 /**
  * A write must not name `createdBy` / `updatedBy` on a table that has no such
@@ -51,9 +52,6 @@ const TARGET_RE = /(?:\.from|insertInto|updateTable)\(\s*["'`](\w+)["'`]\s*\)/g;
 
 /** Chain members whose first argument carries the row(s). */
 const WRITE_VERBS = new Set(["insert", "upsert", "update", "values", "set"]);
-
-const IDENT_START = /[A-Za-z_$]/;
-const IDENT_PART = /[\w$]/;
 
 /** Index just past the string literal that opens at `i`. */
 function skipString(text: string, i: number): number {
@@ -289,7 +287,7 @@ export function noMissingAuditColumn(
           if (!missing.includes(key.name as AuditField)) continue;
           violations.push({
             file,
-            line: contents.slice(0, key.index).split("\n").length,
+            line: lineOf(contents, key.index),
             snippet: key.name,
             message: `"${table}" has no "${key.name}" column — this write fails with PGRST204 (and TypeScript will not flag it). Remove the field.`
           });

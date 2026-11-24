@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // `useState(initial)` reads `initial` once. Seeded from loader or route data,
 // the state is a copy that no reload updates: a quote's totals kept a deleted
@@ -77,7 +78,7 @@ export const noStateCopyOfLoaderData = fileCheck(typescript, {
       const initial = argument(contents, open);
       const name = initial.match(used)?.[0];
       if (!name) continue;
-      const line = contents.slice(0, match.index).split("\n").length;
+      const line = lineOf(contents, match.index);
       violations.push({
         file,
         line,

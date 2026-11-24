@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { requestHandlingTypescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // An error log's message is exported as a span attribute and is what errors are
 // grouped by. A value interpolated into it (`Failed to upload ${file.name}`)
@@ -22,7 +23,7 @@ export const noInterpolatedErrorLog = fileCheck(requestHandlingTypescript, {
   },
   scan(file: string, contents: string): Violation[] {
     return [...contents.matchAll(INTERPOLATED)].map((match) => {
-      const line = contents.slice(0, match.index).split("\n").length;
+      const line = lineOf(contents, match.index);
       return {
         file,
         line,

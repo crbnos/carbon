@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { requestHandlingTypescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // No `runtimeConfigModule` is configured, so `t` from @lingui/core/macro
 // compiles to a call on the global i18n instance, which is never activated:
@@ -26,7 +27,7 @@ export const linguiMacroMisuse = fileCheck(requestHandlingTypescript, {
     since: "2026-10-25"
   },
   scan(file: string, contents: string): Violation[] {
-    const at = (index = 0) => contents.slice(0, index).split("\n").length;
+    const at = (index = 0) => lineOf(contents, index);
     return [
       ...[...contents.matchAll(CORE_T_IMPORT)].map((m) => ({
         file,

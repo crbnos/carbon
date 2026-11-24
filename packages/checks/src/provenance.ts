@@ -14,7 +14,7 @@
  */
 
 import type { Provenance } from "./check";
-import { matchBracket } from "./conformance/row-writes";
+import { matchBracket } from "./sources/row-writes";
 
 /** A commit sha as the tests cite it: 10–40 hex characters, letters and digits. */
 const SHA = /\b(?=[0-9a-f]*[a-f])(?=[0-9a-f]*[0-9])[0-9a-f]{10,40}\b/g;

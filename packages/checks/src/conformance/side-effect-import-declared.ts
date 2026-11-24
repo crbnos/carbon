@@ -4,6 +4,7 @@
 
 import type { Check, SourceFile, Violation } from "../check";
 import { loadSideEffectPackages } from "../sources/side-effect-packages";
+import { lineOf } from "../sources/text";
 
 // A bare import (`import "./x"`) runs a file for what it does, not for what it
 // exports. In a package whose package.json says `"sideEffects": false`, or
@@ -88,7 +89,7 @@ export function findUndeclaredSideEffectImports(
         if (declaresSideEffects(pkg.sideEffects, relative)) continue;
         violations.push({
           file,
-          line: contents.slice(0, match.index).split("\n").length,
+          line: lineOf(contents, match.index),
           snippet: spec,
           message: `"${spec}" is imported for its side effects, but ${pkg.dir}/package.json does not list "./${relative}" in "sideEffects", so the production build drops it. Add it there.`
         });

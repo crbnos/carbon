@@ -3,7 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { fileCheck, type Violation } from "../check";
+import { maskCommentsAndStrings } from "../sources/comments";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // zod v4 changed `.default()` semantics: on `undefined` input the default value
 // is returned AS-IS — it is no longer parsed through the schema. On a chain that
@@ -17,71 +19,6 @@ const EFFECTS =
   /\.(transform|refine|superRefine|check|overwrite|pipe)\s*\(|\bz\.preprocess\s*\(/;
 
 const DEFAULT_CALL = /\.default\s*\(/g;
-
-/**
- * Blank the INTERIOR of comments and string/template literals, preserving every
- * character position and newline so reported line numbers stay exact.
- *
- * Two failures this fixes, both demonstrated by tests below:
- * - A `.transform(f).default(x)` written inside a string or a doc comment was
- *   reported as a real violation.
- * - A comment BETWEEN the effect and `.default()` hid a genuine violation:
- *   `receiverBefore` stops at `/`, so the receiver never reached the
- *   `.transform(` and the site was silently skipped. That direction is the
- *   dangerous one — a missed violation looks identical to a clean file.
- *
- * Regex literals are deliberately not tracked: telling `/` division from a
- * regex needs real parsing, and a regex containing `.default(` preceded by an
- * effect is not a shape that occurs here.
- */
-export function maskCommentsAndStrings(contents: string): string {
-  const out = contents.split("");
-  let i = 0;
-  const blank = (from: number, to: number) => {
-    for (let j = from; j < to && j < out.length; j++) {
-      if (out[j] !== "\n") out[j] = " ";
-    }
-  };
-
-  while (i < contents.length) {
-    const c = contents[i];
-    const next = contents[i + 1];
-
-    if (c === "/" && next === "/") {
-      const end = contents.indexOf("\n", i);
-      blank(i, end === -1 ? contents.length : end);
-      i = end === -1 ? contents.length : end;
-      continue;
-    }
-    if (c === "/" && next === "*") {
-      const end = contents.indexOf("*/", i + 2);
-      const stop = end === -1 ? contents.length : end + 2;
-      blank(i, stop);
-      i = stop;
-      continue;
-    }
-    if (c === '"' || c === "'" || c === "`") {
-      const quote = c;
-      let j = i + 1;
-      while (j < contents.length) {
-        if (contents[j] === "\\") {
-          j += 2;
-          continue;
-        }
-        if (contents[j] === quote) break;
-        j++;
-      }
-      // Keep the quotes themselves so the receiver walk still sees a literal
-      // boundary rather than bare whitespace.
-      blank(i + 1, j);
-      i = j + 1;
-      continue;
-    }
-    i++;
-  }
-
-  return out.join("");
-}
 
 // Walk backwards from the `.` of `.default(` over the receiver expression:
 // balanced (...)/[...]/{...} groups plus identifier chars, dots, and
@@ -136,7 +73,7 @@ export const noDefaultOnEffects = fileCheck(typescript, {
     for (const match of masked.matchAll(DEFAULT_CALL)) {
       const receiver = receiverBefore(masked, match.index);
       if (!EFFECTS.test(receiver)) continue;
-      const line = contents.slice(0, match.index).split("\n").length;
+      const line = lineOf(contents, match.index);
       const lineText = contents.split("\n")[line - 1] ?? "";
       violations.push({
         file,

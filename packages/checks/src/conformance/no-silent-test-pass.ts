@@ -11,8 +11,9 @@ import {
   type SourceFile,
   type Violation
 } from "../check";
+import { maskCommentsAndStrings } from "../sources/comments";
 import { loadTestFiles } from "../sources/test-files";
-import { maskCommentsAndStrings } from "./no-default-on-effects";
+import { lineOf } from "../sources/text";
 
 // vitest reports a case whose callback returns before asserting as PASSED:
 // without a local stack the five cancel-job regressions went green unrun.
@@ -46,9 +47,6 @@ const MODIFIERS = new Set([
   "runIf"
 ]);
 const ARG_MODIFIERS = new Set(["each", "for", "skipIf", "runIf"]);
-
-const lineOf = (text: string, index: number) =>
-  text.slice(0, index).split("\n").length;
 
 function closeOf(masked: string, open: number): number {
   let depth = 0;

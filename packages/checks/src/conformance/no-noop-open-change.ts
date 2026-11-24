@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // Modal and Drawer hide their close button when they are held open with no
 // `onOpenChange`. A handler that does nothing defeats that: the dialog still
@@ -26,7 +27,7 @@ export const noNoopOpenChange = fileCheck(typescript, {
     for (const match of contents.matchAll(NOOP_HANDLER)) {
       violations.push({
         file,
-        line: contents.slice(0, match.index).split("\n").length,
+        line: lineOf(contents, match.index),
         snippet: match[0].replace(/\s+/g, " "),
         message:
           "Remove onOpenChange: a dialog with no handler cannot be dismissed and shows no close button"

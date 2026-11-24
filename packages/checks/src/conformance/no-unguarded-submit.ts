@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // A submit button that stays live while its own submission is in flight posts
 // again on every extra click, and each POST runs to completion on the server —
@@ -160,9 +161,6 @@ function inValidatedForm(contents: string, index: number): boolean {
   const close = contents.indexOf("</ValidatedForm>", open);
   return close === -1 || close > index;
 }
-
-const lineOf = (contents: string, index: number) =>
-  contents.slice(0, index).split("\n").length;
 
 export const noUnguardedSubmit = fileCheck(typescript, {
   id: "no-unguarded-submit",

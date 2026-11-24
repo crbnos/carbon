@@ -22,7 +22,8 @@ import {
   rowLocks,
   rowWrites,
   topLevelRegions
-} from "./row-writes";
+} from "../sources/row-writes";
+import { lineOf } from "../sources/text";
 
 /**
  * A running total (`quantityIssued`, `quantityReceived`, …) must be added to in
@@ -242,7 +243,7 @@ export function counterWriteRelative(
           seen.add(at);
           violations.push({
             file,
-            line: text.slice(0, field.index).split("\n").length,
+            line: lineOf(text, field.index),
             snippet: `${region?.name ?? "<top level>"}: ${write.table}.${field.name}`,
             message: MESSAGE(write.table, field.name)
           });

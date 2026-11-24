@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { routeTypescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // An index route that renders nothing exists to redirect (`/x/issue/:id` →
 // `…/details`). React Router runs the loaders of a matched branch in parallel,
@@ -38,7 +39,7 @@ export const indexRedirectBeforeLoaders = fileCheck(routeTypescript, {
       return [];
     }
     if (MIDDLEWARE.test(contents)) return [];
-    const line = contents.slice(0, loader.index).split("\n").length;
+    const line = lineOf(contents, loader.index);
     return [
       {
         file,

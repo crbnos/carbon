@@ -3,9 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { fileCheck, type Violation } from "../check";
-import { blankComments } from "../sources/comments";
+import { blankComments, maskCommentsAndStrings } from "../sources/comments";
 import { typescript } from "../sources/inputs";
-import { maskCommentsAndStrings } from "./no-default-on-effects";
+import { lineOf } from "../sources/text";
 
 // On a later operation of a serial part, a write names the unit the operator
 // picked or scanned, never one the server chose. `resolveWorkUnit`
@@ -100,9 +100,6 @@ export const UNIT_PICK_ALLOW_LIST: Record<string, string> = {
   "apps/mes/app/services/traveler.server.ts#getClaimOptions":
     "lists the open units the operator may claim; the claim goes through resolveWorkUnit"
 };
-
-const lineOf = (contents: string, index: number) =>
-  contents.slice(0, index).split("\n").length;
 
 type Region = { start: number; name: string; isImport: boolean };
 

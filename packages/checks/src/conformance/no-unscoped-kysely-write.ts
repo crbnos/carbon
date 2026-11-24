@@ -5,6 +5,7 @@
 import { fileCheck, type Violation } from "../check";
 import { blankComments } from "../sources/comments";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 /**
  * Every Kysely `updateTable` / `deleteFrom` must carry a `companyId` predicate.
@@ -189,7 +190,7 @@ export const noUnscopedKyselyWrite = fileCheck(typescript, {
       const call = text.slice(start, text.indexOf(")", openParen) + 1);
       violations.push({
         file,
-        line: text.slice(0, start).split("\n").length,
+        line: lineOf(text, start),
         snippet: call.length <= 80 ? call : m[0],
         message: MESSAGE
       });
@@ -211,7 +212,7 @@ export const noUnscopedKyselyWrite = fileCheck(typescript, {
       }
       violations.push({
         file,
-        line: text.slice(0, start).split("\n").length,
+        line: lineOf(text, start),
         snippet: `${m[1]}(…, ${args[1]?.trim()}, …)`,
         message: ROWS_MESSAGE
       });

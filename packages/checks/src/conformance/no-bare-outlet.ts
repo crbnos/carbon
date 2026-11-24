@@ -11,6 +11,7 @@ import {
   type Violation
 } from "../check";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // React Router keeps a route's components mounted when only its params change
 // (part A to part B, one order line to the next). Whatever the page seeded once
@@ -37,7 +38,7 @@ export const noBareOutlet: ConformanceCheck & Check = {
       // An outlet with its own key already says when its page remounts (the
       // shell keys on the company).
       if (/\bkey=/.test(match[1]!)) continue;
-      const line = contents.slice(0, match.index).split("\n").length;
+      const line = lineOf(contents, match.index);
       const text = contents.split("\n")[line - 1]?.trim() ?? "";
       if (text.startsWith("//") || text.startsWith("*")) continue;
       violations.push({

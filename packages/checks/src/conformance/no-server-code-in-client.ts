@@ -5,6 +5,7 @@
 import { fileCheck, type Violation } from "../check";
 import { typescript } from "../sources/inputs";
 import { maskClientCode } from "../sources/server-files";
+import { lineOf } from "../sources/text";
 
 /**
  * Code that runs in the browser — components, hooks, stores, a module's `ui/`,
@@ -94,7 +95,7 @@ function scanRoute(file: string, contents: string): Violation[] {
       if (declaresLocal(client, name)) continue;
       violations.push({
         file,
-        line: contents.slice(0, match.index).split("\n").length,
+        line: lineOf(contents, match.index),
         snippet: `${name} from ${match[2]!}`,
         message: `"${name}" from "${match[2]}" is used in the route's browser code, which pulls the server-only file into the client build: move it into the module's .utils.ts, or pass it from the loader.`
       });
@@ -120,7 +121,7 @@ export const noServerCodeInClient = fileCheck(typescript, {
     for (const match of contents.matchAll(SERVER_IMPORT)) {
       violations.push({
         file,
-        line: contents.slice(0, match.index).split("\n").length,
+        line: lineOf(contents, match.index),
         snippet: match[1]!,
         message: `"${match[1]}" is server-only: move what this file calls into the module's .utils.ts, or pass it from the route's loader.`
       });

@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // React Router's `revalidate()` during an action drops the fetcher's redirect,
 // and during the navigation that follows a save it restarts that navigation
@@ -28,7 +29,7 @@ export const noRawRevalidator = fileCheck(typescript, {
     const violations: Violation[] = [];
     for (const match of contents.matchAll(ROUTER_IMPORT)) {
       if (!/\buseRevalidator\b/.test(match[1]!)) continue;
-      const line = contents.slice(0, match.index).split("\n").length;
+      const line = lineOf(contents, match.index);
       violations.push({
         file,
         line,

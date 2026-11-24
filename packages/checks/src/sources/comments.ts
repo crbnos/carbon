@@ -43,3 +43,68 @@ export function blankComments(src: string): string {
   }
   return out.join("");
 }
+
+/**
+ * Blank the INTERIOR of comments and string/template literals, preserving every
+ * character position and newline so reported line numbers stay exact.
+ *
+ * Two failures this fixes, both demonstrated by tests below:
+ * - A `.transform(f).default(x)` written inside a string or a doc comment was
+ *   reported as a real violation.
+ * - A comment BETWEEN the effect and `.default()` hid a genuine violation:
+ *   `receiverBefore` stops at `/`, so the receiver never reached the
+ *   `.transform(` and the site was silently skipped. That direction is the
+ *   dangerous one — a missed violation looks identical to a clean file.
+ *
+ * Regex literals are deliberately not tracked: telling `/` division from a
+ * regex needs real parsing, and a regex containing `.default(` preceded by an
+ * effect is not a shape that occurs here.
+ */
+export function maskCommentsAndStrings(contents: string): string {
+  const out = contents.split("");
+  let i = 0;
+  const blank = (from: number, to: number) => {
+    for (let j = from; j < to && j < out.length; j++) {
+      if (out[j] !== "\n") out[j] = " ";
+    }
+  };
+
+  while (i < contents.length) {
+    const c = contents[i];
+    const next = contents[i + 1];
+
+    if (c === "/" && next === "/") {
+      const end = contents.indexOf("\n", i);
+      blank(i, end === -1 ? contents.length : end);
+      i = end === -1 ? contents.length : end;
+      continue;
+    }
+    if (c === "/" && next === "*") {
+      const end = contents.indexOf("*/", i + 2);
+      const stop = end === -1 ? contents.length : end + 2;
+      blank(i, stop);
+      i = stop;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      const quote = c;
+      let j = i + 1;
+      while (j < contents.length) {
+        if (contents[j] === "\\") {
+          j += 2;
+          continue;
+        }
+        if (contents[j] === quote) break;
+        j++;
+      }
+      // Keep the quotes themselves so the receiver walk still sees a literal
+      // boundary rather than bare whitespace.
+      blank(i + 1, j);
+      i = j + 1;
+      continue;
+    }
+    i++;
+  }
+
+  return out.join("");
+}

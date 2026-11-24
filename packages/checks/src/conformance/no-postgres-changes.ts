@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // Realtime runs on private broadcast topics (@carbon/query). The
 // `supabase_realtime` publication is empty, so a `postgres_changes`
@@ -29,7 +30,7 @@ export const noPostgresChanges = fileCheck(typescript, {
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     for (const match of contents.matchAll(POSTGRES_CHANGES)) {
-      const line = contents.slice(0, match.index).split("\n").length;
+      const line = lineOf(contents, match.index);
       violations.push({
         file,
         line,

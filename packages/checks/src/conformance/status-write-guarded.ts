@@ -19,7 +19,8 @@ import {
   rowLocks,
   rowWrites,
   topLevelRegions
-} from "./row-writes";
+} from "../sources/row-writes";
+import { lineOf } from "../sources/text";
 
 /**
  * An UPDATE that moves a row's lifecycle status must check the status it moves
@@ -216,7 +217,7 @@ export function statusWriteGuarded(
           seen.add(at);
           violations.push({
             file,
-            line: text.slice(0, field.index).split("\n").length,
+            line: lineOf(text, field.index),
             snippet: `${fn}: ${write.table}.${field.name}`,
             message: (lock === "blind" ? BLIND_LOCK_MESSAGE : MESSAGE)(
               write.table,

@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { loadTestFiles } from "../sources/test-files";
+import { lineOf } from "../sources/text";
 
 // A test that regexes source or migration text is a change detector: an
 // applied migration never changes, a later one can redefine the object, and a
@@ -26,9 +27,6 @@ const RAW_IMPORT =
 const READ_CALL = /\b(readFileSync|readFile|readdirSync|readdir)\s*\(/g;
 const DECLARATION =
   /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?:(?::[^=;]+)?=|\s+of\b)|\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g;
-
-const lineOf = (contents: string, index: number) =>
-  contents.slice(0, index).split("\n").length;
 
 /** Index just past the bracket that closes the one at `open`, skipping strings. */
 function closeOf(text: string, open: number): number {

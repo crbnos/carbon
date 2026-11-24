@@ -15,6 +15,7 @@ import {
 import { blankComments } from "../sources/comments";
 import { migrations } from "../sources/inputs";
 import { nameParts, sqlFragments } from "../sources/sql";
+import { lineOf } from "../sources/text";
 import { loadTypescriptFiles } from "../sources/typescript";
 import { loadManagedFunctionFiles } from "./no-authz-ddl-in-migrations";
 
@@ -122,9 +123,6 @@ function span(text: string, from: number): string {
   }
   return text.slice(from);
 }
-
-const lineOf = (text: string, index: number) =>
-  text.slice(0, index).split("\n").length;
 
 function scanTypescript(file: string, contents: string): Violation[] {
   const text = blankComments(contents).replace(PORTAL_RULE, (m) =>

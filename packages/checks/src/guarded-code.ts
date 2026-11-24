@@ -12,8 +12,8 @@
  * Pure: the script (`scripts/guarded-code.ts`) reads git and the files.
  */
 
-import { topLevelRegions } from "./conformance/row-writes";
 import { blankComments } from "./sources/comments";
+import { topLevelRegions } from "./sources/row-writes";
 
 export type GuardedEntry = {
   file: string;

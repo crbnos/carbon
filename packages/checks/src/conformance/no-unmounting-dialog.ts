@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // A Radix dialog plays its closing animation only while it stays on the page
 // and its `open` prop turns false. Two patterns removed it in the same render
@@ -228,9 +229,6 @@ function clearsGuardOnClose(
   }
   return false;
 }
-
-const lineOf = (contents: string, index: number) =>
-  contents.slice(0, index).split("\n").length;
 
 export const noUnmountingDialog = fileCheck(typescript, {
   id: "no-unmounting-dialog",

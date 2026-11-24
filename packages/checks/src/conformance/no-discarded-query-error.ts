@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { fileCheck, type Violation } from "../check";
+import { maskCommentsAndStrings } from "../sources/comments";
 import { typescript } from "../sources/inputs";
-import { maskCommentsAndStrings } from "./no-default-on-effects";
+import { IDENT_PART, IDENT_START, lineOf } from "../sources/text";
 
 /**
  * supabase-js never throws: a failed query resolves to `data: null`, so
@@ -20,9 +21,6 @@ const DECLARATIONS = new Set(["const", "let", "var"]);
 const WRITE_CALLS = new Set(["insert", "update", "upsert", "delete"]);
 /** Kysely builders also have `.from(` (`updateTable(…).from(…)`). */
 const KYSELY_CALLS = /^(?:execute\w*|compile|stream)$/;
-
-const IDENT_START = /[A-Za-z_$]/;
-const IDENT_PART = /[\w$]/;
 
 type Segment = { name: string; call: boolean };
 type Chain = { head: string; segments: Segment[]; end: number };
@@ -379,7 +377,7 @@ export const noDiscardedQueryError = fileCheck(typescript, {
     const report = (at: number, snippet: string) =>
       violations.push({
         file,
-        line: contents.slice(0, at).split("\n").length,
+        line: lineOf(contents, at),
         snippet,
         message: MESSAGE
       });

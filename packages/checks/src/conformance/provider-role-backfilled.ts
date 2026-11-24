@@ -7,6 +7,7 @@ import type { Check, SourceFile, Violation } from "../check";
 import { loadIntegrationConfigs } from "../sources/cross-file";
 import { migrations } from "../sources/inputs";
 import { nameParts, nodesIn, relationName, sqlNodes } from "../sources/sql";
+import { lineOf } from "../sources/text";
 
 export const PROVIDER_ROLE_BACKFILLED = "provider-role-backfilled";
 
@@ -79,7 +80,7 @@ export function findProviderRoleDrift(
     declared.set(id[1], {
       role: role[1],
       file,
-      line: contents.slice(0, role.index).split("\n").length
+      line: lineOf(contents, role.index)
     });
   }
 

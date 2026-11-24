@@ -4,6 +4,7 @@
 
 import { fileCheck, type Violation } from "../check";
 import { typescript } from "../sources/inputs";
+import { lineOf } from "../sources/text";
 
 // Text interpolated into a PostgREST `.or()` filter is parsed as filter
 // syntax: a search for "a,b" ended the filter at the comma and the request
@@ -22,7 +23,7 @@ export const noRawOrSearch = fileCheck(typescript, {
   scan(file: string, contents: string): Violation[] {
     const violations: Violation[] = [];
     for (const match of contents.matchAll(RAW_OR_SEARCH)) {
-      const line = contents.slice(0, match.index).split("\n").length;
+      const line = lineOf(contents, match.index);
       violations.push({
         file,
         line,
