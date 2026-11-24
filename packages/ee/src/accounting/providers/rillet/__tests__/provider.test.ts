@@ -18,6 +18,12 @@ import {
   RilletProvider
 } from "../provider";
 
+const CREATE_KEY = buildRilletIdempotencyKey({
+  companyId: "company-1",
+  operation: "create",
+  localId: "local-1"
+});
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -118,9 +124,9 @@ describe("RilletProvider auth (API key, no OAuth)", () => {
     expect(() => provider.auth.getCredentials()).toThrow(
       /no stored credentials/
     );
-    await expect(provider.createCustomer({ name: "Acme" })).rejects.toThrow(
-      /no stored credentials/
-    );
+    await expect(
+      provider.createCustomer({ name: "Acme" }, CREATE_KEY)
+    ).rejects.toThrow(/no stored credentials/);
   });
 
   it("rejects a non-apiKey credentials variant", async () => {
@@ -128,9 +134,9 @@ describe("RilletProvider auth (API key, no OAuth)", () => {
       credentials: { type: "oauth2", accessToken: "token" }
     });
 
-    await expect(provider.createCustomer({ name: "Acme" })).rejects.toThrow(
-      /apiKey credentials/
-    );
+    await expect(
+      provider.createCustomer({ name: "Acme" }, CREATE_KEY)
+    ).rejects.toThrow(/apiKey credentials/);
   });
 
   it("does not retry on 401 — a rejected key is terminal", async () => {
@@ -156,13 +162,13 @@ describe("RilletProvider idempotency", () => {
     const provider = makeProvider();
     const created = await provider.createJournalEntry(
       JOURNAL_PAYLOAD,
-      "idem-key-123"
+      CREATE_KEY
     );
 
     expect(created.id).toBe("je-remote-1");
     expect(requestUrl(0)).toBe("https://api.rillet.com/journal-entries");
     expect(requestInit(0)?.method).toBe("POST");
-    expect(requestHeaders(0)["Idempotency-Key"]).toBe("idem-key-123");
+    expect(requestHeaders(0)["Idempotency-Key"]).toBe(CREATE_KEY);
     expect(JSON.parse(String(requestInit(0)?.body))).toEqual(JOURNAL_PAYLOAD);
   });
 
@@ -197,9 +203,9 @@ describe("RilletProvider rate limiting + errors", () => {
     );
 
     const provider = makeProvider();
-    await expect(provider.createCustomer({ name: "Acme" })).rejects.toThrow(
-      RatelimitError
-    );
+    await expect(
+      provider.createCustomer({ name: "Acme" }, CREATE_KEY)
+    ).rejects.toThrow(RatelimitError);
   });
 
   it("extracts RFC 9457 problem details including the errors[] extension", () => {
@@ -259,7 +265,7 @@ describe("RilletProvider rate limiting + errors", () => {
 
     let thrown: unknown;
     try {
-      await provider.createVendor({ name: "Acme" });
+      await provider.createVendor({ name: "Acme" }, CREATE_KEY);
     } catch (error) {
       thrown = error;
     }
@@ -286,7 +292,7 @@ describe("RilletProvider rate limiting + errors", () => {
     );
 
     const provider = makeProvider();
-    const created = await provider.createCustomer({ name: "Acme" });
+    const created = await provider.createCustomer({ name: "Acme" }, CREATE_KEY);
     expect(created.id).toBe("cus-1");
   });
 });

@@ -777,7 +777,7 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
       createServiceItem: (input) =>
         this.qboProvider.createServiceItem({
           ...input,
-          requestId: buildQboRequestId(
+          key: buildQboRequestId(
             this.companyId,
             CREDIT_REASON_ITEM_ENTITY_TYPE,
             local.reasonAccount!

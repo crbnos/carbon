@@ -835,7 +835,10 @@ export class QboBillSyncer extends BaseEntitySyncer<
     const existingRemoteId = await this.getRemoteId(localId);
 
     if (!existingRemoteId) {
-      const created = await this.qboProvider.createBill(data);
+      const created = await this.qboProvider.createBill(
+        data,
+        this.createKey(localId)
+      );
       this.rememberRemoteEntity(created);
       return created.Id;
     }

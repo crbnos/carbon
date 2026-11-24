@@ -8,6 +8,7 @@ import type {
   ExternalIdentityKind,
   RemoteCandidate
 } from "../../core/counterpart-types";
+import type { RemoteCreateKey } from "../../core/create-key";
 import { ProviderID } from "../../core/models";
 import {
   parseXeroTrialBalance,
@@ -505,20 +506,127 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
   }
 
   /**
-   * Create a manual journal (POST /ManualJournals). Throws an
-   * AccountingApiError when Xero rejects the payload. Pass ManualJournalID
-   * to update an existing manual journal instead of creating one.
+   * Create one document (POST /Invoices, /ManualJournals, …) under `key`.
+   *
+   * Xero replays a create's response for the same `Idempotency-Key` for six
+   * minutes only, so the key covers a quick retry of a lost response. A
+   * stale reclaim (10 minutes) or a person's Retry comes later: each
+   * syncer's durable guard is a lookup by the reference Carbon writes on the
+   * document, made before it calls this.
    */
-  async createManualJournal(
-    journal: Omit<Xero.ManualJournal, "UpdatedDateUTC" | "ManualJournalID"> & {
-      ManualJournalID?: string;
+  async createDocument<T>(
+    path: string,
+    body: unknown,
+    key: RemoteCreateKey
+  ): Promise<HttpResponse<T>> {
+    return this.request<T>("POST", path, {
+      body: JSON.stringify(body),
+      headers: { "Idempotency-Key": key }
+    });
+  }
+
+  /**
+   * The live invoice or bill a lost create left behind: the one of `type`
+   * carrying `invoiceNumber` for `contactId`, or null when no attempt reached
+   * Xero. A number another contact's document carries is not this one (Xero
+   * numbers its own sales invoices too). Two live matches are a duplicate a
+   * person has to resolve.
+   */
+  async recoverInvoice(args: {
+    type: "ACCREC" | "ACCPAY";
+    invoiceNumber: string;
+    contactId: string;
+  }): Promise<string | null> {
+    const where = encodeURIComponent(
+      `Type==${JSON.stringify(args.type)} AND InvoiceNumber==${JSON.stringify(args.invoiceNumber)}`
+    );
+    const response = await this.request<{ Invoices: Xero.Invoice[] }>(
+      "GET",
+      `/Invoices?where=${where}&page=1`
+    );
+    if (response.error) throwXeroApiError("find invoice by number", response);
+    if (!Array.isArray(response.data?.Invoices)) {
+      throw new Error("Xero invoice lookup returned no invoice list");
     }
-  ): Promise<Xero.ManualJournal> {
+
+    const live = response.data.Invoices.filter(
+      (invoice) =>
+        invoice.Type === args.type &&
+        invoice.InvoiceNumber === args.invoiceNumber &&
+        invoice.Contact?.ContactID === args.contactId &&
+        invoice.Status !== "VOIDED" &&
+        invoice.Status !== "DELETED" &&
+        !!invoice.InvoiceID
+    );
+    if (live.length > 1) {
+      throw new Error(
+        `Multiple Xero ${args.type === "ACCPAY" ? "bills" : "invoices"} carry the number ${args.invoiceNumber}; resolve the duplicates before retrying`
+      );
+    }
+    return live[0]?.InvoiceID ?? null;
+  }
+
+  /**
+   * The manual journals whose Narration is exactly `narration`
+   * (GET /ManualJournals?where=Narration=="…"), the recovery read for a
+   * journal create whose response was lost.
+   */
+  async findManualJournalsByNarration(
+    narration: string
+  ): Promise<Xero.ManualJournal[]> {
+    const where = encodeURIComponent(`Narration==${JSON.stringify(narration)}`);
     const response = await this.request<{
       ManualJournals: Xero.ManualJournal[];
-    }>("POST", "/ManualJournals", {
-      body: JSON.stringify({ ManualJournals: [journal] })
-    });
+    }>("GET", `/ManualJournals?where=${where}`);
+
+    if (response.error) {
+      throwXeroApiError("find manual journal by narration", response);
+    }
+    if (!Array.isArray(response.data?.ManualJournals)) {
+      throw new Error("Xero manual journal lookup returned no journal list");
+    }
+    return response.data.ManualJournals;
+  }
+
+  /**
+   * The live manual journal a lost create left behind, found by the
+   * Narrations it may carry, or null when no attempt reached Xero. Voided
+   * and deleted journals do not count; two live ones are a duplicate a
+   * person has to resolve before Carbon pushes again.
+   */
+  async recoverManualJournal(
+    narrations: string[]
+  ): Promise<Xero.ManualJournal | null> {
+    const live: Xero.ManualJournal[] = [];
+    for (const narration of new Set(narrations)) {
+      for (const journal of await this.findManualJournalsByNarration(
+        narration
+      )) {
+        if (journal.Status !== "VOIDED" && journal.Status !== "DELETED") {
+          live.push(journal);
+        }
+      }
+    }
+    if (live.length > 1) {
+      throw new Error(
+        `Multiple Xero manual journals carry the narration "${narrations[0]}"; resolve the duplicates before retrying`
+      );
+    }
+    return live[0] ?? null;
+  }
+
+  /**
+   * Create a manual journal (POST /ManualJournals) under `key`. Throws an
+   * AccountingApiError when Xero rejects the payload. Pushed journals are
+   * immutable, so there is no update.
+   */
+  async createManualJournal(
+    journal: Omit<Xero.ManualJournal, "UpdatedDateUTC" | "ManualJournalID">,
+    key: RemoteCreateKey
+  ): Promise<Xero.ManualJournal> {
+    const response = await this.createDocument<{
+      ManualJournals: Xero.ManualJournal[];
+    }>("/ManualJournals", { ManualJournals: [journal] }, key);
 
     if (response.error) {
       throwXeroApiError("create manual journal", response);
@@ -578,16 +686,23 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
    * AccountingApiError when Xero rejects the payload; returns the created
    * PaymentID.
    */
-  async createPayment(payment: {
-    Invoice: { InvoiceID: string };
-    Account: { Code: string };
-    Amount: number;
-    Date: string;
-  }): Promise<string> {
+  async createPayment(
+    payment: {
+      Invoice: { InvoiceID: string };
+      Account: { Code: string };
+      Amount: number;
+      Date: string;
+      Reference: string;
+    },
+    key: RemoteCreateKey
+  ): Promise<string> {
     const response = await this.request<{ Payments: Xero.Payment[] }>(
       "PUT",
       "/Payments",
-      { body: JSON.stringify({ Payments: [payment] }) }
+      {
+        body: JSON.stringify({ Payments: [payment] }),
+        headers: { "Idempotency-Key": key }
+      }
     );
 
     if (response.error) {
@@ -602,6 +717,41 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     }
 
     return created.PaymentID;
+  }
+
+  /**
+   * The live payment a lost create left on `invoiceId` under `reference`
+   * (GET /Payments?where=Reference=="…"), or null when no attempt reached
+   * Xero. Deleted payments do not count; two live ones are a duplicate a
+   * person has to resolve.
+   */
+  async recoverPayment(
+    invoiceId: string,
+    reference: string
+  ): Promise<string | null> {
+    const where = encodeURIComponent(`Reference==${JSON.stringify(reference)}`);
+    const response = await this.request<{ Payments: Xero.Payment[] }>(
+      "GET",
+      `/Payments?where=${where}`
+    );
+    if (response.error)
+      throwXeroApiError("find payment by reference", response);
+    if (!Array.isArray(response.data?.Payments)) {
+      throw new Error("Xero payment lookup returned no payment list");
+    }
+
+    const live = response.data.Payments.filter(
+      (payment) =>
+        payment.Invoice?.InvoiceID === invoiceId &&
+        payment.Status !== "DELETED" &&
+        !!payment.PaymentID
+    );
+    if (live.length > 1) {
+      throw new Error(
+        `Multiple Xero payments carry the reference "${reference}"; resolve the duplicates before retrying`
+      );
+    }
+    return live[0]?.PaymentID ?? null;
   }
 
   // =================================================================
@@ -628,20 +778,15 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
    */
   async createCreditNote(
     creditNote: Omit<Xero.CreditNote, "CreditNoteID" | "UpdatedDateUTC">,
-    options?: { idempotencyKey?: string }
+    key: RemoteCreateKey
   ): Promise<Xero.CreditNote> {
-    const response = await this.request<{ CreditNotes: Xero.CreditNote[] }>(
-      "POST",
+    const response = await this.createDocument<{
+      CreditNotes: Xero.CreditNote[];
+    }>(
       "/CreditNotes?unitdp=4",
-      {
-        // Status last: a credit note MUST be AUTHORISED to be allocatable.
-        body: JSON.stringify({
-          CreditNotes: [{ ...creditNote, Status: "AUTHORISED" }]
-        }),
-        ...(options?.idempotencyKey
-          ? { headers: { "Idempotency-Key": options.idempotencyKey } }
-          : {})
-      }
+      // Status last: a credit note MUST be AUTHORISED to be allocatable.
+      { CreditNotes: [{ ...creditNote, Status: "AUTHORISED" }] },
+      key
     );
 
     if (response.error) {

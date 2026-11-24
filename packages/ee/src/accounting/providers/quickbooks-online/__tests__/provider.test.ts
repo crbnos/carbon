@@ -8,13 +8,15 @@ import type { ProviderCredentials } from "../../../core/types";
 import { AccountingApiError } from "../../../core/utils";
 import { Qbo } from "../models";
 import {
+  buildQboRequestId,
   buildQboSyncConfig,
   extractQboErrorDetails,
   isQboDuplicateNameError,
   isQboStaleObjectError,
   QBO_FAULT_CODES,
   type QboEnvironment,
-  QboProvider
+  QboProvider,
+  toQboRequestId
 } from "../provider";
 
 const REALM_ID = "9130357849328710";
@@ -80,11 +82,12 @@ describe("QboProvider base URL", () => {
       jsonResponse({ Purchase: { Id: "purchase-1", SyncToken: "0" } })
     );
     const { provider } = makeProvider();
+    const key = buildQboRequestId("company-1", "charge", "charge-1");
     await provider.createPurchase(
       { PaymentType: "CreditCard", AccountRef: { value: "card" }, Line: [] },
-      "stable-charge-request"
+      key
     );
-    expect(requestUrl(0)).toContain("requestid=stable-charge-request");
+    expect(requestUrl(0)).toContain(`requestid=${toQboRequestId(key)}`);
   });
 
   it("deletes a purchase with its current SyncToken and validates the deletion response", async () => {
@@ -439,10 +442,10 @@ describe("QboProvider entity reads/writes", () => {
     );
 
     const { provider } = makeProvider();
-    const created = await provider.createCustomer({
-      DisplayName: "Acme",
-      Active: true
-    });
+    const created = await provider.createCustomer(
+      { DisplayName: "Acme", Active: true },
+      buildQboRequestId("company-1", "customer", "customer-1")
+    );
 
     expect(created.Id).toBe("42");
     expect(requestUrl(0)).toContain(`/v3/company/${REALM_ID}/customer`);
@@ -498,7 +501,10 @@ describe("QboProvider entity reads/writes", () => {
 
     let thrown: unknown;
     try {
-      await provider.createCustomer({ DisplayName: "Acme" });
+      await provider.createCustomer(
+        { DisplayName: "Acme" },
+        buildQboRequestId("company-1", "customer", "customer-1")
+      );
     } catch (error) {
       thrown = error;
     }

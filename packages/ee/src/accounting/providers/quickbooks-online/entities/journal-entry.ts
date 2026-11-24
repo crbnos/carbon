@@ -386,13 +386,17 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
         resolveDimensionValueLabels(this.database, { values }),
       createExternalValue: async (slot, label) => {
         if (slot.target === QBO_DIMENSION_TARGET_CLASS) {
-          const created = await this.qboProvider.createClass({ Name: label });
+          const created = await this.qboProvider.createClass(
+            { Name: label },
+            this.createKey(label, "class")
+          );
           return created.Id;
         }
         if (slot.target === QBO_DIMENSION_TARGET_DEPARTMENT) {
-          const created = await this.qboProvider.createDepartment({
-            Name: label
-          });
+          const created = await this.qboProvider.createDepartment(
+            { Name: label },
+            this.createKey(label, "department")
+          );
           return created.Id;
         }
         throw new Error(
@@ -725,7 +729,10 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
     // hard-skips already-mapped ids, so the SyncToken update path never
     // applies here
     try {
-      const created = await this.qboProvider.createJournalEntry(data);
+      const created = await this.qboProvider.createJournalEntry(
+        data,
+        this.createKey(localId)
+      );
       return created.Id;
     } catch (error) {
       // Closed-books backstop: the manual lock date can be stale (the QBO

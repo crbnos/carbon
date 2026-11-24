@@ -17,6 +17,7 @@ import type {
   ExternalIdentityKind,
   RemoteCandidate
 } from "./counterpart-types";
+import { type RemoteCreateKey, remoteCreateKey } from "./create-key";
 import {
   createMappingService,
   type ExternalIntegrationMappingService
@@ -535,6 +536,14 @@ export abstract class BaseEntitySyncer<
       remoteId,
       this.entityType
     );
+  }
+
+  /** The key every attempt at creating `localId` remotely sends. */
+  protected createKey(
+    localId: string,
+    operation: string = this.entityType
+  ): RemoteCreateKey {
+    return remoteCreateKey({ companyId: this.companyId, operation, localId });
   }
 
   /**

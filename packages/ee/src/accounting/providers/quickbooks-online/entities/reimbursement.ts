@@ -270,13 +270,17 @@ export class QboReimbursementSyncer extends ChargeSyncerBase<
         resolveDimensionValueLabels(this.database, { values }),
       createExternalValue: async (slot, label) => {
         if (slot.target === QBO_DIMENSION_TARGET_CLASS) {
-          const created = await this.qboProvider.createClass({ Name: label });
+          const created = await this.qboProvider.createClass(
+            { Name: label },
+            this.createKey(label, "class")
+          );
           return created.Id;
         }
         if (slot.target === QBO_DIMENSION_TARGET_DEPARTMENT) {
-          const created = await this.qboProvider.createDepartment({
-            Name: label
-          });
+          const created = await this.qboProvider.createDepartment(
+            { Name: label },
+            this.createKey(label, "department")
+          );
           return created.Id;
         }
         throw new Error(

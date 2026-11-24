@@ -420,7 +420,10 @@ export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
     const existingRemoteId = await this.getRemoteId(localId);
 
     if (!existingRemoteId) {
-      const created = await this.qboProvider.createPurchaseOrder(data);
+      const created = await this.qboProvider.createPurchaseOrder(
+        data,
+        this.createKey(localId)
+      );
       return created.Id;
     }
 

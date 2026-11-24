@@ -5,6 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SYNC_CONFIG } from "../../../core/models";
 import {
+  buildQboRequestId,
   QBO_DIMENSION_TARGET_CLASS,
   QBO_DIMENSION_TARGET_DEPARTMENT,
   QboProvider
@@ -96,7 +97,10 @@ describe("QboProvider dimension entities (Class / Department)", () => {
       jsonResponse({ Class: { Id: "301", SyncToken: "0", Name: "Boston" } })
     );
 
-    const created = await makeProvider().createClass({ Name: "Boston" });
+    const created = await makeProvider().createClass(
+      { Name: "Boston" },
+      buildQboRequestId("company-1", "class", "Boston")
+    );
     expect(created.Id).toBe("301");
 
     const url = String(fetchMock.mock.calls[0]?.[0]);
@@ -114,9 +118,10 @@ describe("QboProvider dimension entities (Class / Department)", () => {
       })
     );
 
-    const created = await makeProvider().createDepartment({
-      Name: "Operations"
-    });
+    const created = await makeProvider().createDepartment(
+      { Name: "Operations" },
+      buildQboRequestId("company-1", "department", "Operations")
+    );
     expect(created.Id).toBe("500");
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
       `/v3/company/${REALM_ID}/department`

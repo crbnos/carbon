@@ -5,6 +5,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Accounting } from "../../../../core/types";
 import type { Xero } from "../../models";
+import { XeroProvider } from "../../provider";
 import { SalesInvoiceSyncer } from "../invoice";
 
 /**
@@ -528,13 +529,15 @@ describe("Xero posted facts and monetary representation", () => {
     async (batch) => {
       const syncer = reviewSyncer();
       const requests: string[] = [];
-      (syncer as any).provider.request = async (
-        _method: string,
-        url: string
-      ) => {
-        requests.push(url);
-        return { data: { Invoices: [{ InvoiceID: "remote" }] } };
-      };
+      (syncer as any).provider = Object.assign(
+        Object.create(XeroProvider.prototype),
+        {
+          request: async (method: string, url: string) => {
+            if (method === "POST") requests.push(url);
+            return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+          }
+        }
+      );
       const payload = await syncer.mapToRemote(invoice());
       if (batch)
         await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);

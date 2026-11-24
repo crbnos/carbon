@@ -227,7 +227,7 @@ describe("QBO charge durability", () => {
     const syncer = setup({ createPurchase });
     expect((await syncer.pushToAccounting("a")).status).toBe("error");
     expect((await syncer.pushToAccounting("a")).status).toBe("success");
-    expect(identities[0]).toMatch(/^[a-f0-9]{40}$/);
+    expect(identities[0]).toMatch(/^[a-f0-9]{64}$/);
     expect(identities[1]).toBe(identities[0]);
   });
 

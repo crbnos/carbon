@@ -23,6 +23,7 @@ import {
   ProviderID,
   parseJournalEntrySyncEntityId,
   RatelimitError,
+  remoteCreateKey,
   resolvePostingSyncSettings,
   runJournalEntryPreflight,
   type SyncContext,
@@ -647,10 +648,17 @@ export async function consolidateIntegration(args: {
           ? `${aggregate.narration} | original date ${preflight.redatedFromDate}`
           : aggregate.narration;
 
-        const created = await provider.createManualJournal({
-          ...payload,
-          Narration: narration
-        });
+        const { ManualJournalID: _unmapped, ...journal } = payload;
+        const created = await provider.createManualJournal(
+          { ...journal, Narration: narration },
+          // The member set is part of the key: a later run pushing a
+          // different set must not receive this push's replayed response.
+          remoteCreateKey({
+            companyId,
+            operation: "dailyConsolidation",
+            localId: `${batchKey}:${[...memberJournalIds].sort().join(",")}`
+          })
+        );
         externalId = created.ManualJournalID;
         summary.batchesPushed++;
       } else {

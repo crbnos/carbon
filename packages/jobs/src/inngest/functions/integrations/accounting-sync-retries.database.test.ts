@@ -28,6 +28,7 @@ import {
   getSyncOperationsByIds,
   ProviderID,
   type SyncOperation,
+  transitionOperation,
   type XeroProvider
 } from "@carbon/ee/accounting";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -441,6 +442,33 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     });
   }
 
+  it("a journal whose create response was lost is created once when its operation is retried", async () => {
+    const scope = await company();
+    const journalId = await postedJournal(scope, "lost");
+    const op = await enqueue(scope.companyId, "journalEntry", journalId);
+
+    fake.next("lose");
+    await drain(scope);
+    expect((await operation(scope.companyId, op.id)).status).toBe("Failed");
+
+    fake.now += 10 * MINUTE;
+    await transitionOperation(client, {
+      id: op.id,
+      companyId: scope.companyId,
+      to: "Pending",
+      userId: "system"
+    });
+    await drain(scope);
+
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+    expect(await operation(scope.companyId, op.id)).toMatchObject({
+      status: "Completed",
+      externalId: "ManualJournals-1"
+    });
+  });
+
   /**
    * Attempt 1's create reaches Xero and its response is held; the row goes
    * stale, attempt 2 reclaims and finishes it; then attempt 1's response
@@ -461,6 +489,13 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     await first;
     return operation(scope.companyId, op.id);
   }
+
+  it("a stale reclaim of a journal still being pushed creates it once", async () => {
+    await staleReclaim("stale-create");
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+  });
 
   it("a reclaimed attempt's late failure does not reopen the operation the newer attempt completed", async () => {
     expect(await staleReclaim("stale-close")).toMatchObject({

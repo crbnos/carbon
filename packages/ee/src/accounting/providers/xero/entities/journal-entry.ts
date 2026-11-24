@@ -111,6 +111,25 @@ export type XeroJournalDimensionArgs = {
   optionIdsByValue: ReadonlyMap<string, string>;
 };
 
+const XERO_REDATED_NARRATION = " | original date ";
+
+/**
+ * Both Narrations an earlier push of the same journal may have used: with and
+ * without the redate suffix, since the lock date can move between attempts.
+ * `date` is the push date, which is the original date when no suffix is set.
+ */
+export function getXeroJournalNarrations(
+  narration: string,
+  date: string | undefined
+): string[] {
+  const [base = narration, original = date] = narration.split(
+    XERO_REDATED_NARRATION
+  );
+  return original
+    ? [base, `${base}${XERO_REDATED_NARRATION}${original}`]
+    : [base];
+}
+
 export function mapJournalEntryToManualJournal(args: {
   journal: Accounting.JournalEntry;
   accountCodesById: ReadonlyMap<string, string>;
@@ -178,7 +197,7 @@ export function mapJournalEntryToManualJournal(args: {
     ? `Carbon reversal of ${journal.journalEntryId}`
     : `Carbon ${journal.journalEntryId} ${journal.id}`;
   if (args.redatedFromDate) {
-    narration += ` | original date ${args.redatedFromDate}`;
+    narration += `${XERO_REDATED_NARRATION}${args.redatedFromDate}`;
   }
 
   return {
@@ -691,9 +710,17 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
     data: Omit<Xero.ManualJournal, "UpdatedDateUTC">,
     localId: string
   ): Promise<string> {
-    const existingRemoteId = await this.getRemoteId(localId);
+    // The journal's Narration names it, so an attempt whose create reached
+    // Xero but whose link never did finds that journal here.
+    const recovered = await this.xeroProvider.recoverManualJournal(
+      getXeroJournalNarrations(data.Narration, data.Date)
+    );
+    if (recovered) return recovered.ManualJournalID;
+
+    const { ManualJournalID: _unmapped, ...journal } = data;
     const created = await this.xeroProvider.createManualJournal(
-      existingRemoteId ? { ...data, ManualJournalID: existingRemoteId } : data
+      journal,
+      this.createKey(localId)
     );
     return created.ManualJournalID;
   }

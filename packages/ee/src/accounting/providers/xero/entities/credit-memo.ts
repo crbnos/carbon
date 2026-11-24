@@ -2,7 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { createHash } from "node:crypto";
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { loadAccountCodesById } from "../../../core/account-mapping";
@@ -586,13 +585,12 @@ export abstract class XeroCreditNoteSyncerBase extends BaseEntitySyncer<
       return existing.CreditNoteID;
     }
 
-    const created = await this.xeroProvider.createCreditNote(data, {
-      // Transient-network guard only (Xero expires it after six minutes);
-      // durable idempotency is the mapping row + the recovery read above.
-      idempotencyKey: createHash("sha256")
-        .update(`${this.companyId}:${this.entityType}:${localId}`)
-        .digest("hex")
-    });
+    // The key is a transient-network guard only (Xero expires it after six
+    // minutes); durable idempotency is the mapping row + the recovery read above.
+    const created = await this.xeroProvider.createCreditNote(
+      data,
+      this.createKey(localId)
+    );
 
     return created.CreditNoteID;
   }

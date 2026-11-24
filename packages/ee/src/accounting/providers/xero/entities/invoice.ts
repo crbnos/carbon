@@ -484,15 +484,33 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     localId: string
   ): Promise<string> {
     const existingRemoteId = await this.getRemoteId(localId);
-    const invoices = existingRemoteId
-      ? [{ ...data, InvoiceID: existingRemoteId }]
-      : [data];
+    if (!existingRemoteId) {
+      // The invoice's InvoiceNumber names it, so an attempt whose create
+      // reached Xero but whose link never did finds that invoice here.
+      const recovered =
+        data.InvoiceNumber && data.Contact?.ContactID
+          ? await this.xeroProvider.recoverInvoice({
+              type: "ACCREC",
+              invoiceNumber: data.InvoiceNumber,
+              contactId: data.Contact.ContactID
+            })
+          : null;
+      if (recovered) return recovered;
+    }
 
-    const result = await this.xeroProvider.request<{
-      Invoices: Xero.Invoice[];
-    }>("POST", "/Invoices?unitdp=4", {
-      body: JSON.stringify({ Invoices: invoices })
-    });
+    const result = existingRemoteId
+      ? await this.xeroProvider.request<{
+          Invoices: Xero.Invoice[];
+        }>("POST", "/Invoices?unitdp=4", {
+          body: JSON.stringify({
+            Invoices: [{ ...data, InvoiceID: existingRemoteId }]
+          })
+        })
+      : await this.xeroProvider.createDocument<{ Invoices: Xero.Invoice[] }>(
+          "/Invoices?unitdp=4",
+          { Invoices: [data] },
+          this.createKey(localId)
+        );
 
     if (result.error) {
       throwXeroApiError(
@@ -510,6 +528,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     return result.data.Invoices[0].InvoiceID;
   }
 
+  /** One invoice per request, so each create carries its own key and recovery read. */
   protected async upsertRemoteBatch(
     data: Array<{
       localId: string;
@@ -517,45 +536,9 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     }>
   ): Promise<Map<string, string>> {
     const result = new Map<string, string>();
-    if (data.length === 0) return result;
-
-    const invoices: Xero.Invoice[] = [];
-    const localIdOrder: string[] = [];
-
     for (const { localId, payload } of data) {
-      const existingRemoteId = await this.getRemoteId(localId);
-      invoices.push(
-        existingRemoteId
-          ? ({ ...payload, InvoiceID: existingRemoteId } as Xero.Invoice)
-          : (payload as Xero.Invoice)
-      );
-      localIdOrder.push(localId);
+      result.set(localId, await this.upsertRemote(payload, localId));
     }
-
-    const response = await this.xeroProvider.request<{
-      Invoices: Xero.Invoice[];
-    }>("POST", "/Invoices?unitdp=4", {
-      body: JSON.stringify({ Invoices: invoices })
-    });
-
-    if (response.error) {
-      throwXeroApiError("batch upsert invoices", response);
-    }
-
-    if (!response.data?.Invoices) {
-      throw new Error(
-        "Xero API returned success but no Invoices array was returned"
-      );
-    }
-
-    for (let i = 0; i < response.data.Invoices.length; i++) {
-      const returnedInvoice = response.data.Invoices[i];
-      const localId = localIdOrder[i];
-      if (returnedInvoice?.InvoiceID && localId) {
-        result.set(localId, returnedInvoice.InvoiceID);
-      }
-    }
-
     return result;
   }
 

@@ -7,6 +7,7 @@ import type { CostingLine } from "../../../../core/document-costing";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { Accounting } from "../../../../core/types";
 import type { Xero } from "../../models";
+import { XeroProvider } from "../../provider";
 import { BillSyncer, buildXeroBillLineItems } from "../bill";
 
 /**
@@ -340,10 +341,12 @@ it.each([false, true])(
   async (batch) => {
     const syncer = makeBillSyncer({} as never, null) as any;
     const requests: string[] = [];
-    syncer.provider.request = async (_method: string, url: string) => {
-      requests.push(url);
-      return { data: { Invoices: [{ InvoiceID: "remote" }] } };
-    };
+    syncer.provider = Object.assign(Object.create(XeroProvider.prototype), {
+      request: async (method: string, url: string) => {
+        if (method === "POST") requests.push(url);
+        return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+      }
+    });
     const payload = {
       Type: "ACCPAY",
       InvoiceNumber: "AP000001",

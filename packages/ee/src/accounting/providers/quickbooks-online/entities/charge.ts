@@ -2,7 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { createHash } from "node:crypto";
 import type { KyselyTx } from "@carbon/database/client";
 import {
   type CardChargeSource,
@@ -312,13 +311,17 @@ export class QboChargeSyncer extends ChargeSyncerBase<
         resolveDimensionValueLabels(this.database, { values }),
       createExternalValue: async (slot, label) => {
         if (slot.target === QBO_DIMENSION_TARGET_CLASS) {
-          const created = await this.qboProvider.createClass({ Name: label });
+          const created = await this.qboProvider.createClass(
+            { Name: label },
+            this.createKey(label, "class")
+          );
           return created.Id;
         }
         if (slot.target === QBO_DIMENSION_TARGET_DEPARTMENT) {
-          const created = await this.qboProvider.createDepartment({
-            Name: label
-          });
+          const created = await this.qboProvider.createDepartment(
+            { Name: label },
+            this.createKey(label, "department")
+          );
           return created.Id;
         }
         throw new Error(
@@ -552,10 +555,7 @@ export class QboChargeSyncer extends ChargeSyncerBase<
       // https://blogs.a.intuit.com/2018/09/10/quickbooks-online-api-best-practices/
       const created = await this.qboProvider.createPurchase(
         data,
-        createHash("sha256")
-          .update(`${this.companyId}:charge:${localId}`)
-          .digest("hex")
-          .slice(0, 40)
+        this.createKey(localId, "charge")
       );
       if (!created?.Id)
         throw new Error(

@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { remoteCreateKey } from "../../../../core/create-key";
 import { DEFAULT_SYNC_CONFIG } from "../../../../core/models";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import { XeroProvider } from "../../provider";
@@ -416,6 +417,11 @@ const requestOf = (index: number) => ({
 
 describe("XeroProvider credit notes", () => {
   it("creates AUTHORISED even when the caller asks for something else", async () => {
+    const key = remoteCreateKey({
+      companyId: "company-1",
+      operation: "creditMemo",
+      localId: "memo-1"
+    });
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ CreditNotes: [{ CreditNoteID: "cn-1" }] })
     );
@@ -429,7 +435,7 @@ describe("XeroProvider credit notes", () => {
         Status: "DRAFT",
         LineItems: [{ Quantity: 1, UnitAmount: 250, AccountCode: "4400" }]
       },
-      { idempotencyKey: "key-1" }
+      key
     );
 
     const request = requestOf(0);
@@ -439,7 +445,7 @@ describe("XeroProvider credit notes", () => {
     );
     expect(request.body.CreditNotes[0].Status).toBe("AUTHORISED");
     // Transient-network guard only; Xero expires the key after six minutes.
-    expect(request.headers["Idempotency-Key"]).toBe("key-1");
+    expect(request.headers["Idempotency-Key"]).toBe(key);
   });
 
   it("allocates with a SEPARATE PUT to the credit note's Allocations collection", async () => {

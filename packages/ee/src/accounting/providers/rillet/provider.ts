@@ -2,13 +2,13 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { createHash } from "node:crypto";
 import { getLogger } from "@carbon/logger";
 import type {
   CounterpartSearchKeys,
   ExternalIdentityKind,
   RemoteCandidate
 } from "../../core/counterpart-types";
+import { type RemoteCreateKey, remoteCreateKey } from "../../core/create-key";
 import { ProviderID } from "../../core/models";
 import {
   parseRilletTrialBalance,
@@ -232,10 +232,8 @@ export function buildRilletIdempotencyKey(args: {
   companyId: string;
   operation: string;
   localId: string;
-}): string {
-  return createHash("sha256")
-    .update(`${args.companyId}:${args.operation}:${args.localId}`)
-    .digest("hex");
+}): RemoteCreateKey {
+  return remoteCreateKey(args);
 }
 
 // /********************************************************\
@@ -781,7 +779,7 @@ export class RilletProvider extends BaseProvider {
   async createField(
     name: string,
     area: "EXPENSES" | "REVENUE",
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.Field> {
     return this.writeEntity<Rillet.Field>({
       method: "POST",
@@ -1018,7 +1016,7 @@ export class RilletProvider extends BaseProvider {
    */
   async createJournalEntry(
     journalEntry: RilletJournalEntryCreate,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.JournalEntry> {
     return this.writeEntity({
       method: "POST",
@@ -1036,7 +1034,7 @@ export class RilletProvider extends BaseProvider {
 
   async createCustomer(
     customer: RilletCustomerWrite,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.Customer> {
     return this.writeEntity({
       method: "POST",
@@ -1067,7 +1065,7 @@ export class RilletProvider extends BaseProvider {
 
   async createVendor(
     vendor: RilletVendorWrite,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.Vendor> {
     return this.writeEntity({
       method: "POST",
@@ -1098,7 +1096,7 @@ export class RilletProvider extends BaseProvider {
 
   async createProduct(
     product: RilletProductWrite,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.Product> {
     return this.writeEntity({
       method: "POST",
@@ -1130,7 +1128,7 @@ export class RilletProvider extends BaseProvider {
   /** Create a native invoice (Carbon issues it; Rillet recognizes the posting). */
   async createInvoice(
     invoice: RilletInvoiceCreate,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.Invoice> {
     return this.writeEntity({
       method: "POST",
@@ -1148,7 +1146,7 @@ export class RilletProvider extends BaseProvider {
 
   async createBill(
     bill: RilletBillCreate,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.Bill> {
     return this.writeEntity({
       method: "POST",
@@ -1174,7 +1172,7 @@ export class RilletProvider extends BaseProvider {
   /** `POST /reimbursements` — an employee reimbursement (see `Rillet.ReimbursementSchema`). */
   async createReimbursement(
     reimbursement: RilletReimbursementCreate,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.Reimbursement> {
     return this.writeEntity({
       method: "POST",
@@ -1189,7 +1187,7 @@ export class RilletProvider extends BaseProvider {
   /** `POST /charges` — a credit-card charge (see `Rillet.ChargeSchema`). */
   async createCharge(
     charge: RilletChargeCreate,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.Charge> {
     return this.writeEntity({
       method: "POST",
@@ -1215,7 +1213,7 @@ export class RilletProvider extends BaseProvider {
    */
   async createVendorCredit(
     vendorCredit: RilletVendorCreditCreate,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.VendorCredit> {
     return this.writeEntity({
       method: "POST",
@@ -1248,7 +1246,7 @@ export class RilletProvider extends BaseProvider {
    */
   async createCreditMemo(
     creditMemo: RilletCreditMemoCreate,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.CreditMemo> {
     return this.writeEntity({
       method: "POST",
@@ -1274,7 +1272,7 @@ export class RilletProvider extends BaseProvider {
   async applyCreditMemo(
     id: string,
     applications: Rillet.CreditMemoApplication[],
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<void> {
     const body: RilletCreditMemoApplicationsRequest = { applications };
     const response = await this.request<unknown>(
@@ -1296,7 +1294,7 @@ export class RilletProvider extends BaseProvider {
   async applyVendorCredit(
     id: string,
     applications: Rillet.VendorCreditApplication[],
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<void> {
     const body: RilletVendorCreditApplicationsRequest = { applications };
     const response = await this.request<unknown>(
@@ -1480,7 +1478,7 @@ export class RilletProvider extends BaseProvider {
   async createInvoicePayment(
     invoiceId: string,
     payment: RilletPaymentCreate,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.InvoicePayment> {
     return this.writeEntity({
       method: "POST",
@@ -1504,7 +1502,7 @@ export class RilletProvider extends BaseProvider {
   async createBillPayment(
     billId: string,
     payment: RilletPaymentCreate,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.BillPayment> {
     return this.writeEntity({
       method: "POST",
@@ -1537,7 +1535,7 @@ export class RilletProvider extends BaseProvider {
   async createReimbursementPayment(
     reimbursementId: string,
     payment: RilletPaymentCreate,
-    idempotencyKey?: string
+    idempotencyKey: RemoteCreateKey
   ): Promise<Rillet.ReimbursementPayment> {
     return this.writeEntity({
       method: "POST",
