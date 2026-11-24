@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { expect, it } from "vitest";
+import { ACCOUNT_REFERENCE_POLICY_FILE } from "../conformance/account-fk-restrict";
 import { MANAGED_FUNCTION_SETS } from "../conformance/no-authz-ddl-in-migrations";
 import { repoRoot } from "../sources/migrations";
 import { buildBriefIndex } from "./index-builder";
@@ -15,6 +16,14 @@ function fixtureRoot(): string {
   mkdirSync(join(root, ".claude/rules"), { recursive: true });
   mkdirSync(join(root, ".ai/lessons"), { recursive: true });
   // The migrations check reads its managed functions from the real repo shape.
+  // The migrations file set also reads the account reference policy.
+  mkdirSync(join(root, dirname(ACCOUNT_REFERENCE_POLICY_FILE)), {
+    recursive: true
+  });
+  copyFileSync(
+    join(repoRoot(), ACCOUNT_REFERENCE_POLICY_FILE),
+    join(root, ACCOUNT_REFERENCE_POLICY_FILE)
+  );
   for (const { dir } of MANAGED_FUNCTION_SETS) {
     mkdirSync(join(root, dir), { recursive: true });
   }

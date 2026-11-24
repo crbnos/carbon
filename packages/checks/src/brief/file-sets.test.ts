@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { accountFkClassified } from "../conformance/account-fk-restrict";
 import { formFieldBudget } from "../conformance/form-field-budget";
 import { indexRedirectBeforeLoaders } from "../conformance/index-redirect-before-loaders";
 import { linguiMacroMisuse } from "../conformance/lingui-macro-misuse";
@@ -23,6 +24,7 @@ import {
   TEST_CHECKS,
   TS_CHECKS
 } from "../run";
+import { loadAccountReferencePolicy } from "../sources/cross-file";
 import { loadLicenseFiles } from "../sources/license-files";
 import { loadSqlFiles, migrationsDir, repoRoot } from "../sources/migrations";
 import { loadServerFiles } from "../sources/server-files";
@@ -91,6 +93,7 @@ it("holds exactly the single-file checks the gate runs", () => {
   const gateIds = [
     ...CONFORMANCE_CHECKS,
     noAuthzDdlInMigrations(loadManagedFunctions(root)),
+    accountFkClassified(loadAccountReferencePolicy(root)),
     ...SERVER_CHECKS,
     ...TS_CHECKS,
     noRawOrSearch,

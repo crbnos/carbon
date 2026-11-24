@@ -4,6 +4,7 @@
 
 import { basename } from "node:path";
 import type { ConformanceCheck } from "../check";
+import { accountFkClassified } from "../conformance/account-fk-restrict";
 import { formFieldBudget } from "../conformance/form-field-budget";
 import { indexRedirectBeforeLoaders } from "../conformance/index-redirect-before-loaders";
 import { linguiMacroMisuse } from "../conformance/lingui-macro-misuse";
@@ -25,6 +26,7 @@ import {
   TEST_CHECKS,
   TS_CHECKS
 } from "../run";
+import { loadAccountReferencePolicy } from "../sources/cross-file";
 import {
   ERP_MODULES_ROOT,
   ERP_SERVER_SUFFIXES,
@@ -109,7 +111,8 @@ export const FILE_SETS: FileSet[] = [
     prepare: asIs,
     checks: (root) => [
       ...CONFORMANCE_CHECKS,
-      noAuthzDdlInMigrations(loadManagedFunctions(root))
+      noAuthzDdlInMigrations(loadManagedFunctions(root)),
+      accountFkClassified(loadAccountReferencePolicy(root))
     ]
   },
   {
