@@ -167,6 +167,23 @@ describe("rule order and broad globs", () => {
     ]);
   });
 
+  it("ranks a trigger in the edit above a path match, and one elsewhere in the file below it", () => {
+    const path = "apps/erp/app/modules/sales/__brief-fixture.service.ts";
+    const inEdit = brief(input({ path, after: TWO_WRITES, edit: TWO_WRITES }));
+    const inFile = brief(
+      input({ path, after: TWO_WRITES, edit: "// a comment\n" })
+    );
+    expect({
+      inEdit: inEdit.lessons.concat().map((l) => l.match),
+      ruleInEdit: inEdit.rules.find(
+        (r) => r.id === ".claude/rules/database-patterns.md"
+      )?.match,
+      ruleInFile: inFile.rules.find(
+        (r) => r.id === ".claude/rules/database-patterns.md"
+      )?.match
+    }).toEqual({ inEdit: [], ruleInEdit: "edit", ruleInFile: "path" });
+  });
+
   it("names a broad-glob rule instead of repeating its summary", () => {
     const text = formatBriefing(
       brief(

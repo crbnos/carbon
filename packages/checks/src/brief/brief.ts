@@ -23,6 +23,11 @@ export type BriefInput = {
   after: string;
   index: BriefIndex;
   baseline: Set<string>;
+  /**
+   * The text the edit adds (Edit `new_string`, Write `content`). A trigger
+   * found here outranks one found elsewhere in a large file.
+   */
+  edit?: string;
   /** Entry ids already shown in this session. */
   seen?: Set<string>;
 };
@@ -39,7 +44,7 @@ export type Refusal = {
  * Claude Code loads such a rule whenever the file opens, so the briefing
  * names it instead of repeating it.
  */
-export type Match = "trigger" | "path" | "broad";
+export type Match = "edit" | "path" | "trigger" | "broad";
 
 export type Briefing = {
   refusals: Refusal[];
@@ -48,7 +53,12 @@ export type Briefing = {
   checks: CheckEntry[];
 };
 
-const MATCH_ORDER: Record<Match, number> = { trigger: 0, path: 1, broad: 2 };
+const MATCH_ORDER: Record<Match, number> = {
+  edit: 0,
+  path: 1,
+  trigger: 2,
+  broad: 3
+};
 
 /**
  * A glob whose fixed folders stop at the repo, an app or a package root
@@ -134,10 +144,16 @@ export function brief(input: BriefInput): Briefing {
     paths: string[];
     triggers: RuleEntry["triggers"];
   }): Match | null => {
-    if (matchingTriggers(text, entry.triggers).length > 0) return "trigger";
+    if (
+      input.edit !== undefined &&
+      matchingTriggers(input.edit, entry.triggers).length > 0
+    ) {
+      return "edit";
+    }
     const globs = entry.paths.filter((glob) => matchesPath(input.path, [glob]));
-    if (globs.length === 0) return null;
-    return globs.every(isBroadGlob) ? "broad" : "path";
+    if (globs.some((glob) => !isBroadGlob(glob))) return "path";
+    if (matchingTriggers(text, entry.triggers).length > 0) return "trigger";
+    return globs.length > 0 ? "broad" : null;
   };
   const select = <
     T extends { id: string; paths: string[]; triggers: RuleEntry["triggers"] }
@@ -190,6 +206,9 @@ export function isEmpty(b: Briefing): boolean {
     b.checks.length === 0
   );
 }
+
+/** The overflow line names at most this many entries. */
+const MAX_OVERFLOW_NAMES = 10;
 
 /**
  * Text for the agent: refusals first, then lessons, rules and checks. Past
@@ -252,6 +271,12 @@ export function formatBriefing(b: Briefing, budgetChars = 8000): string {
       );
     }
   }
-  if (rest.length > 0) shown.push(`More that applies: ${rest.join(", ")}`);
+  if (rest.length > 0) {
+    const names = rest.slice(0, MAX_OVERFLOW_NAMES).join(", ");
+    const more = rest.length - MAX_OVERFLOW_NAMES;
+    shown.push(
+      `More that applies: ${names}${more > 0 ? ` and ${more} more (pnpm brief <file> lists them)` : ""}`
+    );
+  }
   return shown.join("\n\n");
 }

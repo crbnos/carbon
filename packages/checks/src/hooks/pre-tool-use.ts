@@ -77,6 +77,15 @@ function plannedContent(input: HookInput, before: string): string {
   );
 }
 
+/** The text the tool call adds: the whole Write, or each Edit's new text. */
+function addedText(input: HookInput): string {
+  const tool = input.tool_input ?? {};
+  if (input.tool_name === "Write") return tool.content ?? "";
+  const edits: EditInput[] =
+    input.tool_name === "MultiEdit" ? (tool.edits ?? []) : [tool];
+  return edits.map((edit) => edit.new_string ?? "").join("\n");
+}
+
 /** Pure: what the hook answers for one tool call, and what it showed. */
 export function decide(
   input: HookInput,
@@ -96,6 +105,7 @@ export function decide(
     path,
     before,
     after: plannedContent(input, before),
+    edit: addedText(input),
     index: deps.index,
     baseline: deps.baseline,
     seen: deps.seen
