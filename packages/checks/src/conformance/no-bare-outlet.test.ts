@@ -118,6 +118,21 @@ describe("findNestedOutlets", () => {
     expect(where([itemSupplierParts, route])).toEqual([]);
   });
 
+  it("does not take another export of the component's file for the component", () => {
+    const panel = file(
+      "apps/erp/app/components/Panel/Panel.tsx",
+      "export const PanelHeader = () => <h2 />;",
+      "export default function Panel() { return <Outlet />; }"
+    );
+    const route = file(
+      ROUTE,
+      'import { PanelHeader } from "~/components/Panel/Panel";',
+      "<PanelHeader />",
+      "<RecordOutlet />"
+    );
+    expect(where([panel, route])).toEqual([]);
+  });
+
   it("follows a default import through a folder's index", () => {
     const panel = file(
       "apps/erp/app/components/Panel/Panel.tsx",

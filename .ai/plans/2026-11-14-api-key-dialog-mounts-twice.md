@@ -12,7 +12,7 @@ Scope: remove each component outlet that sits beside a route outlet, and extend 
 - [x] Add `findNestedOutlets` to `no-bare-outlet.ts`. It flags a file that renders its own outlet and also a component that renders one, directly or through other components.
 - [x] Make `findNestedOutlets` follow `~/` and relative imports: to a component's file, or by the file's name through a barrel above it. A default import through a folder's index matches by its local name.
 - [x] Run `findNestedOutlets` from `collectFindings` under the `no-bare-outlet` id. Read `loadTypescriptFiles(root)` once for the 3 scans that use it.
-- [x] Add unit tests for 6 cases: the API Keys route, the upgrade overlay that renders the table, one outlet in either place, a same-named component in another module, a default import through a folder's index, and type arguments and comments.
+- [x] Add unit tests for 7 cases: the API Keys route, the upgrade overlay that renders the table, one outlet in either place, a same-named component in another module, another export of the component's file, a default import through a folder's index, and type arguments and comments.
 - [x] Prove red then green. On `main`, `findNestedOutlets` reports 5 findings on the 3 routes. Without the 2 outlet removals, the conformance gate (`run.test.ts`) fails with 4 findings. With them, it passes.
 - [x] Update `.claude/rules/coding-conventions.md`, `packages/react/AGENTS.md`, `packages/checks/AGENTS.md` and `.ai/lessons.md`.
 

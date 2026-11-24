@@ -112,14 +112,22 @@ const tagPattern = (name: string) =>
 
 type OutletComponent = { file: string; name: string; chain: string[] };
 
+// From the component's own file, only its default export or the export named
+// after the file counts: another export of that file renders no outlet.
 // A default import through a folder's index (`import Panel from "~/components/Panel"`)
 // is matched by its local name.
-const importsComponent = (binding: Binding, owner: OutletComponent) =>
-  stem(owner.file) === binding.from ||
-  stem(owner.file) === `${binding.from}/index` ||
-  ((binding.imported === "default" ? binding.local : binding.imported) ===
-    owner.name &&
-    owner.file.startsWith(`${binding.from}/`));
+const importsComponent = (binding: Binding, owner: OutletComponent) => {
+  const ownFile =
+    stem(owner.file) === binding.from ||
+    stem(owner.file) === `${binding.from}/index`;
+  if (ownFile) {
+    return binding.imported === "default" || binding.imported === owner.name;
+  }
+  return (
+    (binding.imported === "default" ? binding.local : binding.imported) ===
+      owner.name && owner.file.startsWith(`${binding.from}/`)
+  );
+};
 
 export function findNestedOutlets(files: SourceFile[]): Violation[] {
   const sources = files.flatMap(({ file, contents }) => {
@@ -196,7 +204,7 @@ export function findNestedOutlets(files: SourceFile[]): Violation[] {
           file: source.file,
           line: index + 1,
           snippet: text.trim(),
-          message: `<${local}> renders an outlet (${owner.chain.join(" → ")}) and this file renders its own, so the child route mounts twice. Remove the component's outlet and keep the route's <RecordOutlet />`
+          message: `<${local}> renders an outlet (${owner.chain.join(" → ")}) and this file renders its own. Where both render, the child route mounts twice. Remove the component's outlet and keep the route's <RecordOutlet />`
         });
       });
     }
