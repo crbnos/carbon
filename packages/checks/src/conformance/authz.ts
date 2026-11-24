@@ -27,7 +27,13 @@ import {
   renderRegistryHelpers
 } from "@carbon/database/authz-registry-sql";
 import type { Node } from "libpg-query";
-import ts from "typescript5";
+import type {
+  Argument,
+  CallExpression,
+  ObjectProperty,
+  PropertyKey,
+  VariableDeclaration
+} from "oxc-parser";
 import {
   type Check,
   type ConformanceCheck,
@@ -42,6 +48,7 @@ import { loadEdgeFunctions } from "../sources/edge-functions";
 import { migrations, routeTypescript } from "../sources/inputs";
 import { loadSqlFiles } from "../sources/migrations";
 import { nameParts, sqlFragments, sqlNodes } from "../sources/sql";
+import { declarationOf, parseTypescript, walk } from "../sources/syntax";
 import { lineOf } from "../sources/text";
 import { loadTypescriptFiles } from "../sources/typescript";
 
@@ -1048,52 +1055,84 @@ export const ROUTE_GATE_EXCEPTIONS: Readonly<Record<string, Exception>> = {
 
 const isPage = (text: string) => pageById(text) !== undefined;
 
+/** The text of a string literal, or of a template with no substitutions. */
+function stringValue(node: Argument | PropertyKey): string | undefined {
+  if (node.type === "Literal") {
+    const value = node.value;
+    return typeof value === "string" ? value : undefined;
+  }
+  if (node.type === "TemplateLiteral" && node.expressions.length === 0)
+    return node.quasis[0]?.value.cooked ?? undefined;
+  return undefined;
+}
+
+/**
+ * The expression under parentheses, `as` and `satisfies`. An optional chain
+ * (`anyOf?.(…)`) is read as the call or member inside it.
+ */
+const unwrap = (node: Argument): Argument =>
+  node.type === "ParenthesizedExpression" ||
+  node.type === "TSAsExpression" ||
+  node.type === "TSSatisfiesExpression" ||
+  node.type === "ChainExpression"
+    ? unwrap(node.expression)
+    : node;
+
 /**
  * The pages a gate expression names; undefined when part of it cannot be
  * read (a variable, a property of a row, a call other than `anyOf`/`pagesOf`).
  */
 function pagesNamed(
-  node: ts.Node,
+  argument: Argument,
   constants: ReadonlyMap<string, readonly string[]>
 ): string[] | undefined {
-  if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node))
-    return pagesNamed(node.expression, constants);
-  if (ts.isSatisfiesExpression(node))
-    return pagesNamed(node.expression, constants);
-  if (ts.isStringLiteralLike(node)) return isPage(node.text) ? [node.text] : [];
-  if (ts.isIdentifier(node)) {
-    if (node.text === "ITEM_PAGES") return [...ITEM_PAGES];
-    return constants.get(node.text)
-      ? [...constants.get(node.text)!]
-      : undefined;
+  const node = unwrap(argument);
+  const text = stringValue(node);
+  if (text !== undefined) return isPage(text) ? [text] : [];
+  if (node.type === "Identifier") {
+    if (node.name === "ITEM_PAGES") return [...ITEM_PAGES];
+    const pages = constants.get(node.name);
+    return pages ? [...pages] : undefined;
   }
-  if (ts.isObjectLiteralExpression(node)) {
+  if (node.type === "ObjectExpression") {
     const out: string[] = [];
     for (const property of node.properties) {
-      if (ts.isPropertyAssignment(property)) {
-        const name = property.name;
-        if (ts.isStringLiteralLike(name) || ts.isIdentifier(name)) {
-          if (isPage(name.text)) out.push(name.text);
-          // `{ anyOf: [...] }`
-          else if (name.text === "anyOf") {
-            const inner = pagesNamed(property.initializer, constants);
-            if (!inner) return undefined;
-            out.push(...inner);
-          }
-        } else return undefined;
-      } else if (ts.isSpreadAssignment(property)) {
-        const inner = pagesNamed(property.expression, constants);
+      if (property.type === "SpreadElement") {
+        const inner = pagesNamed(property.argument, constants);
         if (!inner) return undefined;
         out.push(...inner);
-      } else return undefined;
+        continue;
+      }
+      // A shorthand, a method, an accessor or a computed name is unreadable.
+      if (
+        property.kind !== "init" ||
+        property.method ||
+        property.shorthand ||
+        property.computed
+      )
+        return undefined;
+      const name =
+        property.key.type === "Identifier"
+          ? property.key.name
+          : stringValue(property.key);
+      if (name === undefined) return undefined;
+      if (isPage(name)) out.push(name);
+      // `{ anyOf: [...] }`
+      else if (name === "anyOf") {
+        const inner = pagesNamed(property.value, constants);
+        if (!inner) return undefined;
+        out.push(...inner);
+      }
     }
     return out;
   }
-  if (ts.isArrayLiteralExpression(node)) {
+  if (node.type === "ArrayExpression") {
     const out: string[] = [];
     for (const element of node.elements) {
+      // A hole (`[a, , b]`) is unreadable.
+      if (!element) return undefined;
       const inner = pagesNamed(
-        ts.isSpreadElement(element) ? element.expression : element,
+        element.type === "SpreadElement" ? element.argument : element,
         constants
       );
       if (!inner) return undefined;
@@ -1101,23 +1140,32 @@ function pagesNamed(
     }
     return out;
   }
-  if (ts.isConditionalExpression(node)) {
-    const a = pagesNamed(node.whenTrue, constants);
-    const b = pagesNamed(node.whenFalse, constants);
+  if (node.type === "ConditionalExpression") {
+    const a = pagesNamed(node.consequent, constants);
+    const b = pagesNamed(node.alternate, constants);
     return a && b ? [...a, ...b] : undefined;
   }
-  if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+  if (node.type === "CallExpression" && node.callee.type === "Identifier") {
     const [first] = node.arguments;
     if (!first) return undefined;
-    if (node.expression.text === "anyOf") return pagesNamed(first, constants);
-    if (node.expression.text === "pagesOf" && ts.isStringLiteralLike(first))
-      return pagesOf(first.text);
+    if (node.callee.name === "anyOf") return pagesNamed(first, constants);
+    const area = stringValue(first);
+    if (node.callee.name === "pagesOf" && area !== undefined)
+      return pagesOf(area);
   }
   return undefined;
 }
 
-const parse = (file: string, contents: string) =>
-  ts.createSourceFile(file, contents, ts.ScriptTarget.Latest, true);
+/** The top-level `const`/`let`/`var` statements of a file, exported or not. */
+function variableStatements(file: string, contents: string) {
+  const out: { declaration: VariableDeclaration; exported: boolean }[] = [];
+  for (const statement of parseTypescript(file, contents).program.body) {
+    const { node, exported } = declarationOf(statement);
+    if (node.type === "VariableDeclaration")
+      out.push({ declaration: node, exported });
+  }
+  return out;
+}
 
 /**
  * The exported upper-case constants of the ERP's non-route files that name
@@ -1131,35 +1179,21 @@ export function gateConstants(
   for (const { file, contents } of files) {
     if (!file.startsWith("apps/erp/app/") || ROUTE.test(file)) continue;
     if (!/export const [A-Z]/.test(contents)) continue;
-    for (const statement of parse(file, contents).statements) {
-      if (
-        !ts.isVariableStatement(statement) ||
-        !statement.modifiers?.some(
-          (m) => m.kind === ts.SyntaxKind.ExportKeyword
-        )
-      )
-        continue;
-      for (const declaration of statement.declarationList.declarations) {
-        if (
-          !ts.isIdentifier(declaration.name) ||
-          !CONSTANT.test(declaration.name.text) ||
-          !declaration.initializer
-        )
+    for (const { declaration, exported } of variableStatements(
+      file,
+      contents
+    )) {
+      if (!exported) continue;
+      for (const { id, init } of declaration.declarations) {
+        if (id.type !== "Identifier" || !CONSTANT.test(id.name) || !init)
           continue;
-        const pages = pagesNamed(declaration.initializer, out);
-        if (pages?.length) out.set(declaration.name.text, pages);
+        const pages = pagesNamed(init, out);
+        if (pages?.length) out.set(id.name, pages);
       }
     }
   }
   return out;
 }
-
-const unwrap = (node: ts.Expression): ts.Expression =>
-  ts.isAsExpression(node) ||
-  ts.isSatisfiesExpression(node) ||
-  ts.isParenthesizedExpression(node)
-    ? unwrap(node.expression)
-    : node;
 
 /**
  * The pages each exported list of the list registry gates on, by the list's
@@ -1171,24 +1205,27 @@ export function listGates(files: readonly SourceFile[]): Map<string, string[]> {
   const out = new Map<string, string[]>();
   for (const { file, contents } of files) {
     if (!contents.includes("gate:")) continue;
-    for (const statement of parse(file, contents).statements) {
-      if (!ts.isVariableStatement(statement)) continue;
-      for (const declaration of statement.declarationList.declarations) {
-        if (!ts.isIdentifier(declaration.name) || !declaration.initializer)
-          continue;
-        const value = unwrap(declaration.initializer);
-        const definition = ts.isCallExpression(value)
-          ? value.arguments[0] && unwrap(value.arguments[0])
-          : value;
-        if (!definition || !ts.isObjectLiteralExpression(definition)) continue;
+    for (const { declaration } of variableStatements(file, contents)) {
+      for (const { id, init } of declaration.declarations) {
+        if (id.type !== "Identifier" || !init) continue;
+        const value = unwrap(init);
+        const definition =
+          value.type === "CallExpression"
+            ? value.arguments[0] && unwrap(value.arguments[0])
+            : value;
+        if (definition?.type !== "ObjectExpression") continue;
         const gate = definition.properties.find(
-          (property): property is ts.PropertyAssignment =>
-            ts.isPropertyAssignment(property) &&
-            ts.isIdentifier(property.name) &&
-            property.name.text === "gate"
+          (property): property is ObjectProperty =>
+            property.type === "Property" &&
+            property.kind === "init" &&
+            !property.method &&
+            !property.shorthand &&
+            !property.computed &&
+            property.key.type === "Identifier" &&
+            property.key.name === "gate"
         );
-        const pages = gate && pagesNamed(gate.initializer, new Map());
-        if (pages?.length) out.set(declaration.name.text, pages);
+        const pages = gate && pagesNamed(gate.value, new Map());
+        if (pages?.length) out.set(id.name, pages);
       }
     }
   }
@@ -1197,17 +1234,15 @@ export function listGates(files: readonly SourceFile[]): Map<string, string[]> {
 
 /** The gate argument of an `authorize` call, or the list of a `loadListPage` call. */
 function gateOfCall(
-  node: ts.CallExpression,
+  node: CallExpression,
   constants: ReadonlyMap<string, readonly string[]>,
   lists: ReadonlyMap<string, readonly string[]>
 ): string[] | undefined {
-  if (!ts.isIdentifier(node.expression) || node.arguments.length < 2)
-    return undefined;
-  const argument = node.arguments[1]!;
-  if (node.expression.text === "authorize")
-    return pagesNamed(argument, constants);
-  if (node.expression.text === "loadListPage" && ts.isIdentifier(argument)) {
-    const pages = lists.get(argument.text);
+  const argument = node.arguments[1];
+  if (node.callee.type !== "Identifier" || !argument) return undefined;
+  if (node.callee.name === "authorize") return pagesNamed(argument, constants);
+  if (node.callee.name === "loadListPage" && argument.type === "Identifier") {
+    const pages = lists.get(argument.name);
     return pages ? [...pages] : undefined;
   }
   return undefined;
@@ -1253,24 +1288,19 @@ export function routeGateNamesPage(
           [])
       ]);
       const out: Violation[] = [];
-      const source = parse(file, contents);
-      const visit = (node: ts.Node) => {
-        if (ts.isCallExpression(node)) {
-          const pages = gateOfCall(node, constants, lists);
-          if (pages?.length && !pages.some((named) => allowed.has(named))) {
-            const line =
-              source.getLineAndCharacterOfPosition(node.getStart()).line + 1;
-            out.push({
-              file,
-              line,
-              snippet: contents.split("\n")[line - 1]?.trim() ?? "",
-              message: `The gate names ${[...new Set(pages)].join(", ")}, but the registry maps ${routeUrl(route)} to ${page}. Gate on ${page}, move the URL to the right page's \`paths\`, or add the route to ROUTE_GATE_EXCEPTIONS with the reason.`
-            });
-          }
+      walk(parseTypescript(file, contents).program, (node) => {
+        if (node.type !== "CallExpression") return;
+        const pages = gateOfCall(node, constants, lists);
+        if (pages?.length && !pages.some((named) => allowed.has(named))) {
+          const line = lineOf(contents, node.start);
+          out.push({
+            file,
+            line,
+            snippet: contents.split("\n")[line - 1]?.trim() ?? "",
+            message: `The gate names ${[...new Set(pages)].join(", ")}, but the registry maps ${routeUrl(route)} to ${page}. Gate on ${page}, move the URL to the right page's \`paths\`, or add the route to ROUTE_GATE_EXCEPTIONS with the reason.`
+          });
         }
-        ts.forEachChild(node, visit);
-      };
-      visit(source);
+      });
       return out;
     }
   };

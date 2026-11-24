@@ -1765,6 +1765,7 @@
   "test-mocks-own-module::packages/jobs/src/workflows/engine/manual.test.ts::vi.mock(\"../actions\")",
   "test-mocks-own-module::packages/jobs/src/workflows/engine/manual.test.ts::vi.mock(\"./owner\")",
   "test-mocks-own-module::packages/kv/src/lease.test.ts::vi.mock(\"./client\")",
+  "test-reads-source::apps/erp/test/mcp-manifest-cache-inputs.test.ts::importedSpecifiers(file)",
   "test-reads-source::apps/erp/test/mcp-manifest-cache-inputs.test.ts::readFileSync(file, \"utf8\")",
   "test-reads-source::apps/erp/test/mcp-manifest-cache-inputs.test.ts::resolveImport(file, fileName)",
   "test-reads-source::docs/content/src/links.test.ts::readFileSync(file, \"utf8\")",

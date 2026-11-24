@@ -2,7 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import ts from "typescript5";
+import type {
+  CallExpression,
+  Function as FunctionNode,
+  ParamPattern,
+  Program,
+  StaticMemberExpression
+} from "oxc-parser";
 import {
   type Check,
   type ConformanceCheck,
@@ -35,6 +41,13 @@ import {
   skipSpace,
   topLevelRegions
 } from "../sources/row-writes";
+import {
+  childrenOf,
+  isNamedMember,
+  type Node,
+  parseTypescript,
+  walk
+} from "../sources/syntax";
 import { IDENT_PART, IDENT_START, lineOf } from "../sources/text";
 
 /*
@@ -462,22 +475,34 @@ const AUDIT_FIELD = /\b(?:createdBy|updatedBy)\b/;
 /** Chain members whose first argument carries the row(s). */
 const WRITE_VERBS = new Set(["insert", "upsert", "update", "values", "set"]);
 
+/** The text of `"t"` or `` `t` ``; undefined for any other node. */
+function literalText(node: Node): string | undefined {
+  if (node.type === "Literal" && typeof node.value === "string") {
+    return node.value;
+  }
+  if (node.type === "TemplateLiteral" && node.expressions.length === 0) {
+    return node.quasis[0]?.value.cooked ?? undefined;
+  }
+  return undefined;
+}
+
 /** The table of `.from("t")`, `insertInto("t")` or `updateTable("t")`. */
-function targetTable(node: ts.Expression): string | undefined {
-  if (!ts.isCallExpression(node) || node.arguments.length !== 1) return;
-  const callee = node.expression;
-  const name = ts.isPropertyAccessExpression(callee)
-    ? callee.name.text
-    : ts.isIdentifier(callee)
-      ? callee.text
+function targetTable(node: Node): string | undefined {
+  if (node.type !== "CallExpression" || node.arguments.length !== 1) return;
+  const callee = node.callee;
+  const name = isNamedMember(callee)
+    ? callee.property.name
+    : callee.type === "Identifier"
+      ? callee.name
       : "";
   const isTarget =
     name === "insertInto" ||
     name === "updateTable" ||
-    (name === "from" && ts.isPropertyAccessExpression(callee));
+    (name === "from" && isNamedMember(callee));
   const [table] = node.arguments;
-  if (!isTarget || !table || !ts.isStringLiteralLike(table)) return;
-  return /^\w+$/.test(table.text) ? table.text : undefined;
+  const text = table ? literalText(table) : undefined;
+  if (!isTarget || text === undefined) return;
+  return /^\w+$/.test(text) ? text : undefined;
 }
 
 /**
@@ -486,51 +511,56 @@ function targetTable(node: ts.Expression): string | undefined {
  * anything else (`?.`, a cast, an index) ends it, and so does an earlier write
  * call, which is the one the target's row belongs to.
  */
-function writtenTable(write: ts.CallExpression): string | undefined {
-  if (!ts.isPropertyAccessExpression(write.expression)) return;
-  if (!WRITE_VERBS.has(write.expression.name.text)) return;
-  let access: ts.PropertyAccessExpression = write.expression;
+function writtenTable(write: CallExpression): string | undefined {
+  if (!isNamedMember(write.callee)) return;
+  if (!WRITE_VERBS.has(write.callee.property.name)) return;
+  let access: StaticMemberExpression = write.callee;
   for (;;) {
-    if (access.questionDotToken) return;
-    const link = access.expression;
-    if (ts.isPropertyAccessExpression(link)) {
+    if (access.optional) return;
+    const link = access.object;
+    if (isNamedMember(link)) {
       access = link;
       continue;
     }
     const table = targetTable(link);
     if (table) return table;
-    if (!ts.isCallExpression(link)) return;
-    if (!ts.isPropertyAccessExpression(link.expression)) return;
-    if (WRITE_VERBS.has(link.expression.name.text)) return;
-    access = link.expression;
+    if (link.type !== "CallExpression") return;
+    if (!isNamedMember(link.callee)) return;
+    if (WRITE_VERBS.has(link.callee.property.name)) return;
+    access = link.callee;
   }
 }
+
+type RowKey = { name: string; start: number };
 
 /**
  * The keys of the row objects in a write's FIRST argument. A ROW object is an
  * object literal with no enclosing object literal, so `insert({…})` and
  * `insert([{…}, {…}])` both yield rows while a nested value object does not.
- * Shorthand, `key:` and `"key":` forms all count.
+ * Shorthand, `key:` and `"key":` forms all count; a computed `[key]:`, a
+ * method and an accessor do not.
  */
-function rowKeys(
-  node: ts.Node,
-  keys: (ts.Identifier | ts.StringLiteral)[] = []
-): (ts.Identifier | ts.StringLiteral)[] {
-  if (ts.isObjectLiteralExpression(node)) {
+function rowKeys(node: Node, keys: RowKey[] = []): RowKey[] {
+  if (node.type === "ObjectExpression") {
     for (const property of node.properties) {
       if (
-        (ts.isPropertyAssignment(property) ||
-          ts.isShorthandPropertyAssignment(property)) &&
-        (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
+        property.type !== "Property" ||
+        property.computed ||
+        property.method ||
+        property.kind !== "init"
       ) {
-        keys.push(property.name);
+        continue;
+      }
+      const { key } = property;
+      if (key.type === "Identifier") {
+        keys.push({ name: key.name, start: key.start });
+      } else if (key.type === "Literal" && typeof key.value === "string") {
+        keys.push({ name: key.value, start: key.start });
       }
     }
     return keys;
   }
-  node.forEachChild((child) => {
-    rowKeys(child, keys);
-  });
+  for (const child of childrenOf(node)) rowKeys(child, keys);
   return keys;
 }
 
@@ -562,25 +592,23 @@ export function noMissingAuditColumn(
       if (!AUDIT_TARGET.test(contents) || !AUDIT_FIELD.test(contents)) {
         return [];
       }
-      // No parent links: the walk goes down from each write, and the module
-      // services it parses are a megabyte each.
-      const sf = ts.createSourceFile(file, contents, ts.ScriptTarget.Latest);
+      const { program } = parseTypescript(file, contents);
       const violations: Violation[] = [];
-      visit(sf, (node) => {
-        if (!ts.isCallExpression(node)) return;
+      walk(program, (node) => {
+        if (node.type !== "CallExpression") return;
         const table = writtenTable(node);
         const present = table ? columns.get(table) : undefined;
         const [row] = node.arguments;
         if (!present || !row) return;
         for (const key of rowKeys(row)) {
-          if (!AUDIT_FIELDS.includes(key.text) || present.has(key.text)) {
+          if (!AUDIT_FIELDS.includes(key.name) || present.has(key.name)) {
             continue;
           }
           violations.push({
             file,
-            line: lineOf(contents, key.getStart(sf)),
-            snippet: key.text,
-            message: `"${table}" has no "${key.text}" column — this write fails with PGRST204 (and TypeScript will not flag it). Remove the field.`
+            line: lineOf(contents, key.start),
+            snippet: key.name,
+            message: `"${table}" has no "${key.name}" column — this write fails with PGRST204 (and TypeScript will not flag it). Remove the field.`
           });
         }
       });
@@ -621,19 +649,25 @@ export function findStampColumnMismatches(
 ): Violation[] {
   const out: Violation[] = [];
   for (const { server, service } of modules) {
-    const serviceFns = exportedFunctions(parse(service));
-    const serverSf = parse(server);
-    visit(serverSf, (node) => {
+    const serviceFns = topLevelFunctions(
+      parseTypescript(service.file, service.contents).program
+    );
+    const serverTree = parseTypescript(server.file, server.contents).program;
+    walk(serverTree, (node, ancestors) => {
       const chain = payloadChain(node);
       if (!chain) return;
       const { fields, operation } = chain;
-      const outer = enclosingServiceCall(node);
+      const outer = enclosingServiceCall(ancestors);
       if (!outer) return;
       const fn = serviceFns.get(outer.name);
       const index = outer.call.arguments.findIndex((a) => contains(a, node));
-      const param = fn?.parameters[index];
-      if (!fn?.body || !param || !ts.isIdentifier(param.name)) return;
-      const isList = /\[\]\s*$|^\s*Array</.test(param.type?.getText() ?? "");
+      const param = fn?.params[index];
+      const named = param ? namedParameter(param) : undefined;
+      if (!fn?.body || !named) return;
+      const type = named.type
+        ? service.contents.slice(named.type.start, named.type.end)
+        : "";
+      const isList = /\[\]\s*$|^\s*Array</.test(type);
       const added = fields.filter((field) =>
         field === "createdBy"
           ? operation !== "update"
@@ -643,12 +677,10 @@ export function findStampColumnMismatches(
               ? operation !== "create"
               : true
       );
-      const writes = carriedWrites(fn.body, param.name.text);
+      const writes = carriedWrites(fn.body, named.name, service.contents);
       if (writes.length === 0) return;
-      const line =
-        serverSf.getLineAndCharacterOfPosition(node.getStart(serverSf)).line +
-        1;
-      const leaf = leafName(node);
+      const line = lineOf(server.contents, node.start);
+      const leaf = leafName(ancestors);
       for (const table of new Set(writes.map((write) => write.table))) {
         const missing = added.filter((f) => !columns.get(table)?.has(f));
         if (columns.has(table) && missing.length > 0) {
@@ -676,27 +708,49 @@ export function findStampColumnMismatches(
   return out;
 }
 
-function parse({ file, contents }: SourceFile): ts.SourceFile {
-  return ts.createSourceFile(file, contents, ts.ScriptTarget.Latest, true);
+function contains(outer: Node, inner: Node): boolean {
+  return inner.start >= outer.start && inner.end <= outer.end;
 }
 
-function visit(node: ts.Node, fn: (node: ts.Node) => void): void {
-  fn(node);
-  node.forEachChild((child) => visit(child, fn));
-}
-
-function contains(outer: ts.Node, inner: ts.Node): boolean {
-  return inner.pos >= outer.pos && inner.end <= outer.end;
-}
-
-function exportedFunctions(sf: ts.SourceFile) {
-  const out = new Map<string, ts.FunctionDeclaration>();
-  for (const statement of sf.statements) {
-    if (ts.isFunctionDeclaration(statement) && statement.name) {
-      out.set(statement.name.text, statement);
+/** Every function declared at the top level of the file, exported or not. */
+function topLevelFunctions(program: Program): Map<string, FunctionNode> {
+  const out = new Map<string, FunctionNode>();
+  for (const statement of program.body) {
+    const declaration =
+      statement.type === "ExportNamedDeclaration" ||
+      statement.type === "ExportDefaultDeclaration"
+        ? statement.declaration
+        : statement;
+    if (declaration?.type === "FunctionDeclaration" && declaration.id) {
+      out.set(declaration.id.name, declaration);
     }
   }
   return out;
+}
+
+/**
+ * The name and type of a parameter that is one name: `p`, `p: T`,
+ * `p: T = v` or `...p: T`. A destructured parameter has no one name.
+ */
+function namedParameter(
+  param: ParamPattern
+): { name: string; type?: Node } | undefined {
+  if (param.type === "Identifier") {
+    return { name: param.name, type: param.typeAnnotation?.typeAnnotation };
+  }
+  if (param.type === "AssignmentPattern" && param.left.type === "Identifier") {
+    return {
+      name: param.left.name,
+      type: param.left.typeAnnotation?.typeAnnotation
+    };
+  }
+  if (param.type === "RestElement" && param.argument.type === "Identifier") {
+    return {
+      name: param.argument.name,
+      type: param.typeAnnotation?.typeAnnotation
+    };
+  }
+  return undefined;
 }
 
 const TERMINALS: Record<string, { fields: string[]; operation?: string }> = {
@@ -709,73 +763,77 @@ const TERMINALS: Record<string, { fields: string[]; operation?: string }> = {
 
 /**
  * The fields and operation of a `payload(ctx, value).<modifiers>.<terminal>()`
- * chain, read off its calls; undefined for any other call.
+ * chain, read off its calls; undefined for any other node.
  */
 function payloadChain(
-  node: ts.Node
-): (ts.CallExpression & { fields: string[]; operation?: string }) | undefined {
-  if (
-    !ts.isCallExpression(node) ||
-    !ts.isPropertyAccessExpression(node.expression)
-  ) {
+  node: Node
+): { fields: string[]; operation?: string } | undefined {
+  if (node.type !== "CallExpression" || !isNamedMember(node.callee)) {
     return undefined;
   }
-  const name = node.expression.name.text;
-  if (!Object.hasOwn(TERMINALS, name)) return undefined;
-  const terminal = TERMINALS[name]!;
+  const name = node.callee.property.name;
+  const terminal = Object.hasOwn(TERMINALS, name) ? TERMINALS[name] : undefined;
+  if (!terminal) return undefined;
   const fields = new Set(["companyId", ...terminal.fields]);
   const operation =
-    node.expression.name.text === "for"
-      ? stringValue(node.arguments[0])
-      : terminal.operation;
-  let inner: ts.Expression = node.expression.expression;
-  while (
-    ts.isCallExpression(inner) &&
-    ts.isPropertyAccessExpression(inner.expression)
-  ) {
-    const modifier = inner.expression.name.text;
+    name === "for" ? stringValue(node.arguments[0]) : terminal.operation;
+  let inner: Node = node.callee.object;
+  while (inner.type === "CallExpression" && isNamedMember(inner.callee)) {
+    const modifier = inner.callee.property.name;
     if (modifier === "withGroup") fields.add("companyGroupId");
     else if (modifier === "withUser") fields.add("userId");
     else if (modifier === "withoutCompany") fields.delete("companyId");
     else return undefined;
-    inner = inner.expression.expression;
+    inner = inner.callee.object;
   }
   if (
-    !ts.isCallExpression(inner) ||
-    !ts.isIdentifier(inner.expression) ||
-    inner.expression.text !== "payload"
+    inner.type !== "CallExpression" ||
+    inner.callee.type !== "Identifier" ||
+    inner.callee.name !== "payload"
   ) {
     return undefined;
   }
-  return Object.assign(node, { fields: [...fields], operation });
+  return { fields: [...fields], operation };
 }
 
-function stringValue(node: ts.Node | undefined): string | undefined {
-  return node && ts.isStringLiteral(node) ? node.text : undefined;
+/** The value of a `"…"` string literal; a template literal is not one. */
+function stringValue(node: Node | undefined): string | undefined {
+  return node?.type === "Literal" && typeof node.value === "string"
+    ? node.value
+    : undefined;
 }
 
-/** The `service.<name>(…)` call the stamped value is an argument of. */
+const isFunction = (node: Node) =>
+  node.type === "FunctionDeclaration" ||
+  node.type === "FunctionExpression" ||
+  node.type === "ArrowFunctionExpression";
+
+/**
+ * The `service.<name>(…)` call the stamped value is an argument of: the
+ * nearest of its `ancestors`, unless a function lies between them.
+ */
 function enclosingServiceCall(
-  node: ts.Node
-): { call: ts.CallExpression; name: string } | undefined {
-  for (let n = node.parent; n; n = n.parent) {
+  ancestors: Node[]
+): { call: CallExpression; name: string } | undefined {
+  for (const n of ancestors.toReversed()) {
     if (
-      ts.isCallExpression(n) &&
-      ts.isPropertyAccessExpression(n.expression) &&
-      ts.isIdentifier(n.expression.expression) &&
-      n.expression.expression.text === "service"
+      n.type === "CallExpression" &&
+      isNamedMember(n.callee) &&
+      n.callee.object.type === "Identifier" &&
+      n.callee.object.name === "service"
     ) {
-      return { call: n, name: n.expression.name.text };
+      return { call: n, name: n.callee.property.name };
     }
-    if (ts.isArrowFunction(n) || ts.isFunctionLike(n)) return undefined;
+    if (isFunction(n)) return undefined;
   }
   return undefined;
 }
 
-function leafName(node: ts.Node): string {
-  for (let n = node.parent; n; n = n.parent) {
-    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name)) {
-      return n.name.text;
+/** The name of the nearest variable the stamped value is declared in. */
+function leafName(ancestors: Node[]): string {
+  for (const n of ancestors.toReversed()) {
+    if (n.type === "VariableDeclarator" && n.id.type === "Identifier") {
+      return n.id.name;
     }
   }
   return "?";
@@ -783,12 +841,14 @@ function leafName(node: ts.Node): string {
 
 /** Writes whose row is `param` itself, with their table. */
 function carriedWrites(
-  body: ts.Block,
-  param: string
+  body: Node,
+  param: string,
+  contents: string
 ): { table: string; verb: string }[] {
   const out: { table: string; verb: string }[] = [];
-  const carriesName = (arg: ts.Expression, name: string) => {
-    const text = arg.getText().replace(/\s+/g, "");
+  const textOf = (node: Node) => contents.slice(node.start, node.end);
+  const carriesName = (arg: Node, name: string) => {
+    const text = textOf(arg).replace(/\s+/g, "");
     return (
       text === name ||
       text === `[${name}]` ||
@@ -798,26 +858,20 @@ function carriedWrites(
   };
   // One level of aliasing: `const data = sanitize(param)` carries it too.
   const names = [param];
-  visit(body, (node) => {
+  walk(body, (node) => {
     if (
-      ts.isVariableDeclaration(node) &&
-      ts.isIdentifier(node.name) &&
-      node.initializer &&
-      carriesName(node.initializer, param)
+      node.type === "VariableDeclarator" &&
+      node.id.type === "Identifier" &&
+      node.init &&
+      carriesName(node.init, param)
     ) {
-      names.push(node.name.text);
+      names.push(node.id.name);
     }
   });
-  const carries = (arg: ts.Expression) =>
-    names.some((name) => carriesName(arg, name));
-  visit(body, (node) => {
-    if (
-      !ts.isCallExpression(node) ||
-      !ts.isPropertyAccessExpression(node.expression)
-    ) {
-      return;
-    }
-    const verb = node.expression.name.text;
+  const carries = (arg: Node) => names.some((name) => carriesName(arg, name));
+  walk(body, (node) => {
+    if (node.type !== "CallExpression" || !isNamedMember(node.callee)) return;
+    const verb = node.callee.property.name;
     const [row] = node.arguments;
     if (
       !["insert", "update", "upsert"].includes(verb) ||
@@ -826,29 +880,39 @@ function carriedWrites(
     ) {
       return;
     }
-    const table = fromTable(node.expression.expression);
+    const table = fromTable(node.callee.object, contents);
     if (table) out.push({ table, verb });
   });
   return out;
 }
 
-/** The `.from("t")` at the root of a builder chain, never `storage.from`. */
-function fromTable(node: ts.Expression): string | undefined {
-  let n: ts.Expression = node;
+/**
+ * The `.from("t")` at the root of a builder chain, never `storage.from`. The
+ * walk passes `(…)` and `as T`, and the `?.` chain a pair of parentheses
+ * closes.
+ */
+function fromTable(node: Node, contents: string): string | undefined {
+  let n: Node = node;
   for (;;) {
-    if (ts.isCallExpression(n)) {
-      const callee = n.expression;
+    if (n.type === "CallExpression") {
+      const callee = n.callee;
       if (
-        ts.isPropertyAccessExpression(callee) &&
-        callee.name.text === "from" &&
-        !callee.expression.getText().endsWith("storage")
+        isNamedMember(callee) &&
+        callee.property.name === "from" &&
+        !contents
+          .slice(callee.object.start, callee.object.end)
+          .endsWith("storage")
       ) {
         return stringValue(n.arguments[0]);
       }
       n = callee;
-    } else if (ts.isPropertyAccessExpression(n)) {
-      n = n.expression;
-    } else if (ts.isParenthesizedExpression(n) || ts.isAsExpression(n)) {
+    } else if (isNamedMember(n)) {
+      n = n.object;
+    } else if (
+      n.type === "ParenthesizedExpression" ||
+      n.type === "TSAsExpression" ||
+      n.type === "ChainExpression"
+    ) {
       n = n.expression;
     } else {
       return undefined;

@@ -2,7 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import ts from "typescript5";
+import type {
+  BindingPattern,
+  CallExpression,
+  Directive,
+  Expression,
+  ObjectProperty,
+  Statement
+} from "oxc-parser";
 import {
   type Check,
   fileCheck,
@@ -13,6 +20,7 @@ import {
 import { erpModules, typescript } from "../sources/inputs";
 import { maskClientCode } from "../sources/server-files";
 import { loadSideEffectPackages } from "../sources/side-effect-packages";
+import { declarationOf, parseTypescript } from "../sources/syntax";
 import { lineOf } from "../sources/text";
 import { loadTypescriptFiles } from "../sources/typescript";
 
@@ -116,36 +124,68 @@ export const moduleShapeCheck: Check = {
 const SERVER_FILE =
   /^apps\/erp\/app\/modules\/([a-z-]+)\/\1(?:\.ee)?\.server\.ts$/;
 
-const isExported = (node: ts.Node) =>
-  ts.canHaveModifiers(node) &&
-  (ts.getModifiers(node) ?? []).some(
-    (m) => m.kind === ts.SyntaxKind.ExportKeyword
-  );
-
-const isDefineServiceFn = (init: ts.Expression | undefined) =>
-  !!init &&
-  ts.isCallExpression(init) &&
-  ts.isIdentifier(init.expression) &&
-  init.expression.text === "defineServiceFn";
+const isDefineServiceFn = (init: Expression | null): init is CallExpression =>
+  init?.type === "CallExpression" &&
+  init.callee.type === "Identifier" &&
+  init.callee.name === "defineServiceFn";
 
 /** The `permission: {}` of a service function's definition, if it has one. */
-const emptyPermission = (call: ts.CallExpression) => {
+const emptyPermission = (call: CallExpression) => {
   const definition = call.arguments[0];
-  if (!definition || !ts.isObjectLiteralExpression(definition)) return null;
+  if (definition?.type !== "ObjectExpression") return null;
   const property = definition.properties.find(
-    (p): p is ts.PropertyAssignment =>
-      ts.isPropertyAssignment(p) && p.name.getText() === "permission"
+    (p): p is ObjectProperty =>
+      p.type === "Property" &&
+      p.kind === "init" &&
+      !p.method &&
+      !p.shorthand &&
+      !p.computed &&
+      p.key.type === "Identifier" &&
+      p.key.name === "permission"
   );
-  const value = property?.initializer;
-  return value &&
-    ts.isObjectLiteralExpression(value) &&
-    value.properties.length === 0
+  const value = property?.value;
+  return value?.type === "ObjectExpression" && value.properties.length === 0
     ? value
     : null;
 };
 
-const isFunctionValue = (init: ts.Expression | undefined) =>
-  !!init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init));
+const isFunctionValue = (init: Expression | null) =>
+  init?.type === "ArrowFunctionExpression" ||
+  init?.type === "FunctionExpression";
+
+/** A binding as written, without its type annotation (`x`, `{ a, b }`). */
+const bindingText = (contents: string, id: BindingPattern) =>
+  id.type === "Identifier"
+    ? id.name
+    : contents.slice(id.start, id.typeAnnotation?.start ?? id.end).trimEnd();
+
+// The name a finding gives a statement that declares nothing it can name. The
+// check reported TypeScript's own names for these, so they are kept.
+const STATEMENT_NAMES: Record<string, string> = {
+  ExportNamedDeclaration: "ExportDeclaration",
+  ExportAllDeclaration: "ExportDeclaration",
+  ExportDefaultDeclaration: "ExportAssignment",
+  TSExportAssignment: "ExportAssignment",
+  TSNamespaceExportDeclaration: "NamespaceExportDeclaration",
+  TSImportEqualsDeclaration: "ImportEqualsDeclaration",
+  TSModuleDeclaration: "ModuleDeclaration",
+  TSGlobalDeclaration: "ModuleDeclaration",
+  TSDeclareFunction: "FunctionDeclaration",
+  BlockStatement: "Block",
+  DoWhileStatement: "DoStatement"
+};
+
+const statementName = (node: Directive | Statement) => {
+  if (
+    (node.type === "FunctionDeclaration" ||
+      node.type === "TSDeclareFunction" ||
+      node.type === "ClassDeclaration" ||
+      node.type === "TSEnumDeclaration") &&
+    node.id
+  )
+    return node.id.name;
+  return STATEMENT_NAMES[node.type] ?? node.type;
+};
 
 export const serviceFnFile = fileCheck(typescript, {
   id: "service-fn-file",
@@ -161,56 +201,55 @@ export const serviceFnFile = fileCheck(typescript, {
     const match = SERVER_FILE.exec(file);
     if (!match) return [];
     const module = match[1]!;
-    const source = ts.createSourceFile(
-      file,
-      contents,
-      ts.ScriptTarget.Latest,
-      true,
-      ts.ScriptKind.TS
-    );
+    const { program } = parseTypescript(file, contents);
     const violations: Violation[] = [];
-    const flag = (node: ts.Node, name: string, why: string) =>
+    const flag = (at: number, name: string, why: string) =>
       violations.push({
         file,
-        line:
-          source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1,
+        line: lineOf(contents, at),
         snippet: name,
         message: `${name}: ${why} Move it to ${module}.service.ts; ${module}.server.ts holds only service functions.`
       });
 
-    for (const statement of source.statements) {
+    for (const statement of program.body) {
+      const { node, exported } = declarationOf(statement);
       if (
-        ts.isImportDeclaration(statement) ||
-        ts.isTypeAliasDeclaration(statement) ||
-        ts.isInterfaceDeclaration(statement)
+        node.type === "ImportDeclaration" ||
+        node.type === "TSTypeAliasDeclaration" ||
+        node.type === "TSInterfaceDeclaration"
       ) {
         continue;
       }
-      if (ts.isVariableStatement(statement)) {
-        const exported = isExported(statement);
-        for (const declaration of statement.declarationList.declarations) {
-          const name = declaration.name.getText(source);
-          const init = declaration.initializer;
+      if (node.type === "VariableDeclaration") {
+        for (const declaration of node.declarations) {
+          const name = bindingText(contents, declaration.id);
+          const init = declaration.init;
           if (isDefineServiceFn(init)) {
             if (!exported) {
-              flag(declaration, name, "a service function nothing can call.");
+              flag(
+                declaration.start,
+                name,
+                "a service function nothing can call."
+              );
             }
-            const empty = emptyPermission(init as ts.CallExpression);
+            const empty = emptyPermission(init);
             if (empty) {
               violations.push({
                 file,
-                line:
-                  source.getLineAndCharacterOfPosition(empty.getStart(source))
-                    .line + 1,
+                line: lineOf(contents, empty.start),
                 snippet: `${name}: permission {}`,
                 message: `${name}: permission {} reads as "nothing required". Write "employee" for any employee of the company.`
               });
             }
           } else if (isFunctionValue(init)) {
-            flag(declaration, name, "a function, not a service function.");
+            flag(
+              declaration.start,
+              name,
+              "a function, not a service function."
+            );
           } else if (exported) {
             flag(
-              declaration,
+              declaration.start,
               name,
               "an export that is not a service function."
             );
@@ -218,14 +257,7 @@ export const serviceFnFile = fileCheck(typescript, {
         }
         continue;
       }
-      const name =
-        (ts.isFunctionDeclaration(statement) ||
-          ts.isClassDeclaration(statement) ||
-          ts.isEnumDeclaration(statement)) &&
-        statement.name
-          ? statement.name.text
-          : ts.SyntaxKind[statement.kind];
-      flag(statement, name, "not a service function.");
+      flag(statement.start, statementName(node), "not a service function.");
     }
     return violations;
   }

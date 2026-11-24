@@ -65,6 +65,11 @@ fails on any violation the committed baseline does not list.
   - Make the diagnostic `span` the callee, not the whole call: the baseline
     key is the matched source with comments and whitespace removed.
   - Test it in `src/sources/biome.test.ts` (`scanWith`).
+- **A rule that needs the syntax tree and cannot be a plugin reads oxc's.**
+  `src/sources/syntax.ts` gives `parseTypescript` and `walk` (`oxc-parser`:
+  ESTree with the TypeScript and JSX nodes, offsets into the text). A check
+  that compares files, or needs data from the repo, cannot be a Biome plugin.
+  Test whether the file can matter with a cheap text test before you parse it.
 - **A new check proves itself on the bug it exists for.** Its
   `provenance.incidents` names the commit of the past fix. Its test file names
   each sha in a case that replays the code from before the fix
@@ -127,7 +132,7 @@ The gate runs in four places with the same command
 | `src/run.ts` | `collectFindings` (runs `CHECKS` over one `repo`) and `newViolations` (minus the baseline) |
 | `src/repo.ts` | `openRepo`: reads each input once |
 | `src/conformance/` | One file per subject, with its tests in `<subject>.test.ts` |
-| `src/sources/` | Loaders several checks share; `sql.ts` (parsed SQL) and `biome.ts` (plugin findings) |
+| `src/sources/` | Loaders several checks share; `sql.ts` (parsed SQL), `syntax.ts` (parsed TypeScript) and `biome.ts` (plugin findings) |
 | `biome-plugins/` | The GritQL rules |
 | `src/baseline.ts`, `src/conformance/baseline.json` | The grandfathered violations |
 | `src/provenance.ts` | The rule that a check replays its past fix |

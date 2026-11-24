@@ -4,7 +4,12 @@
 
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import ts from "typescript5";
+import type {
+  BlockStatement,
+  CallExpression,
+  IfStatement,
+  Program
+} from "oxc-parser";
 import {
   type Check,
   type ConformanceCheck,
@@ -13,6 +18,12 @@ import {
   type SourceFile,
   type Violation
 } from "../check";
+import {
+  isNamedMember,
+  type Node,
+  parseTypescript,
+  walk
+} from "../sources/syntax";
 import { loadTestFiles } from "../sources/test-files";
 import { lineOf } from "../sources/text";
 
@@ -258,89 +269,62 @@ const MODIFIERS = new Set([
 ]);
 const ARG_MODIFIERS = new Set(["each", "for", "skipIf", "runIf"]);
 
-// Without parent pointers, which nothing here reads: parsing is a third faster.
-function parse(file: string, contents: string): ts.SourceFile {
-  return ts.createSourceFile(
-    file,
-    contents,
-    ts.ScriptTarget.Latest,
-    false,
-    file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-  );
-}
-
 /**
  * Whether calling `callee` declares a test case: one of `names` with any
  * modifier chain (`it.only`, `it.skipIf(c)`, `it.each\`…\``). `it.extend(…)`,
  * `test.describe` and `regex.test` do not.
  */
-function declaresCase(
-  callee: ts.Expression,
-  names: ReadonlySet<string>
-): boolean {
-  if (ts.isIdentifier(callee)) return names.has(callee.text);
-  if (ts.isPropertyAccessExpression(callee)) {
+function declaresCase(callee: Node, names: ReadonlySet<string>): boolean {
+  if (callee.type === "Identifier") return names.has(callee.name);
+  if (isNamedMember(callee)) {
     return (
-      MODIFIERS.has(callee.name.text) && declaresCase(callee.expression, names)
+      MODIFIERS.has(callee.property.name) && declaresCase(callee.object, names)
     );
   }
-  let configured: ts.Expression | undefined;
-  if (ts.isCallExpression(callee)) configured = callee.expression;
-  if (ts.isTaggedTemplateExpression(callee)) configured = callee.tag;
+  let configured: Node | undefined;
+  if (callee.type === "CallExpression") configured = callee.callee;
+  if (callee.type === "TaggedTemplateExpression") configured = callee.tag;
   return (
     configured !== undefined &&
-    ts.isPropertyAccessExpression(configured) &&
-    ARG_MODIFIERS.has(configured.name.text) &&
-    declaresCase(configured.expression, names)
+    isNamedMember(configured) &&
+    ARG_MODIFIERS.has(configured.property.name) &&
+    declaresCase(configured.object, names)
   );
 }
 
-/** Calls `visit` on `node` and every node under it, in source order. */
-function eachNode(node: ts.Node, visit: (node: ts.Node) => void): void {
-  visit(node);
-  ts.forEachChild(node, (child) => eachNode(child, visit));
-}
-
 /** Every call under `node` that declares a test case. */
-function caseCalls(
-  node: ts.Node,
-  names: ReadonlySet<string>
-): ts.CallExpression[] {
-  const out: ts.CallExpression[] = [];
-  eachNode(node, (child) => {
-    if (ts.isCallExpression(child) && declaresCase(child.expression, names)) {
+function caseCalls(node: Node, names: ReadonlySet<string>): CallExpression[] {
+  const out: CallExpression[] = [];
+  walk(node, (child) => {
+    if (child.type === "CallExpression" && declaresCase(child.callee, names)) {
       out.push(child);
     }
   });
   return out;
 }
 
-type NamedFunction = { name: string; node: ts.Node; exported: boolean };
+type NamedFunction = { name: string; node: Node; exported: boolean };
+
+const isExport = (node: Node | undefined) =>
+  node?.type === "ExportNamedDeclaration" ||
+  node?.type === "ExportDefaultDeclaration";
 
 /** Every function the file names, at any depth: `function f`, `const f = () =>`. */
-function namedFunctions(source: ts.SourceFile): NamedFunction[] {
+function namedFunctions(program: Program): NamedFunction[] {
   const out: NamedFunction[] = [];
-  const exported = (node: ts.HasModifiers) =>
-    ts
-      .getModifiers(node)
-      ?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) ?? false;
-  eachNode(source, (node) => {
-    if (ts.isFunctionDeclaration(node) && node.name) {
-      out.push({ name: node.name.text, node, exported: exported(node) });
+  walk(program, (node, ancestors) => {
+    const exported = isExport(ancestors.at(-1));
+    if (node.type === "FunctionDeclaration" && node.id) {
+      out.push({ name: node.id.name, node, exported });
     }
-    if (!ts.isVariableStatement(node)) return;
-    for (const { name, initializer } of node.declarationList.declarations) {
+    if (node.type !== "VariableDeclaration") return;
+    for (const { id, init } of node.declarations) {
       if (
-        ts.isIdentifier(name) &&
-        initializer &&
-        (ts.isArrowFunction(initializer) ||
-          ts.isFunctionExpression(initializer))
+        id.type === "Identifier" &&
+        (init?.type === "ArrowFunctionExpression" ||
+          init?.type === "FunctionExpression")
       ) {
-        out.push({
-          name: name.text,
-          node: initializer,
-          exported: exported(node)
-        });
+        out.push({ name: id.name, node: init, exported });
       }
     }
   });
@@ -373,73 +357,75 @@ function withWrappers(
  * `try` / `catch` / `finally` blocks (a database test that releases its
  * connection). An `else if` is at the level of its `if`.
  */
-function guardsIn(body: ts.Block, source: ts.SourceFile): ts.IfStatement[] {
-  const out: ts.IfStatement[] = [];
-  let before: ts.Statement | undefined;
-  for (const statement of body.statements) {
-    if (ts.isTryStatement(statement)) {
-      out.push(...guardsIn(statement.tryBlock, source));
-      if (statement.catchClause) {
-        out.push(...guardsIn(statement.catchClause.block, source));
+function guardsIn(body: BlockStatement, contents: string): IfStatement[] {
+  const out: IfStatement[] = [];
+  let before: Node | undefined;
+  for (const statement of body.body) {
+    if (statement.type === "TryStatement") {
+      out.push(...guardsIn(statement.block, contents));
+      if (statement.handler) {
+        out.push(...guardsIn(statement.handler.body, contents));
       }
-      if (statement.finallyBlock) {
-        out.push(...guardsIn(statement.finallyBlock, source));
+      if (statement.finalizer) {
+        out.push(...guardsIn(statement.finalizer, contents));
       }
     }
-    let branch: ts.Statement | undefined = statement;
-    while (branch && ts.isIfStatement(branch)) {
+    let branch: Node | null = statement;
+    while (branch?.type === "IfStatement") {
       if (
-        testsMissing(branch.expression) &&
-        returnsNothing(branch.thenStatement) &&
-        !narrowsJustAsserted(branch.expression, before, source)
+        testsMissing(branch.test) &&
+        returnsNothing(branch.consequent) &&
+        !narrowsJustAsserted(branch.test, before, contents)
       ) {
         out.push(branch);
       }
       // No statement runs just before an `else if`.
       before = undefined;
-      branch = branch.elseStatement;
+      branch = branch.alternate;
     }
     before = statement;
   }
   return out;
 }
 
-const isNullish = (e: ts.Expression) =>
-  e.kind === ts.SyntaxKind.NullKeyword ||
-  (ts.isIdentifier(e) && e.text === "undefined");
+const isNullish = (e: Node) =>
+  (e.type === "Literal" && e.value === null && e.raw === "null") ||
+  (e.type === "Identifier" && e.name === "undefined");
 
 /**
  * Whether `condition` tests that the thing a case needs is missing: `!x`,
  * `x == null`, `x === undefined`, `typeof x === "undefined"`,
  * `x.length === 0`, alone or in an `||`/`&&` chain.
  */
-function testsMissing(condition: ts.Expression): boolean {
-  if (ts.isPrefixUnaryExpression(condition)) {
-    return condition.operator === ts.SyntaxKind.ExclamationToken;
+function testsMissing(condition: Node): boolean {
+  if (condition.type === "UnaryExpression") return condition.operator === "!";
+  if (condition.type === "LogicalExpression") {
+    return (
+      condition.operator !== "??" &&
+      (testsMissing(condition.left) || testsMissing(condition.right))
+    );
   }
-  if (!ts.isBinaryExpression(condition)) return false;
-  const { left, operatorToken, right } = condition;
-  switch (operatorToken.kind) {
-    case ts.SyntaxKind.BarBarToken:
-    case ts.SyntaxKind.AmpersandAmpersandToken:
-      return testsMissing(left) || testsMissing(right);
+  if (condition.type !== "BinaryExpression") return false;
+  const { left, operator, right } = condition;
+  switch (operator) {
     // `x != null` tests for presence, yet it counts: the text scan before
     // this one counted it, and dropping it would change what the gate reports.
-    case ts.SyntaxKind.ExclamationEqualsToken:
-    case ts.SyntaxKind.ExclamationEqualsEqualsToken:
+    case "!=":
+    case "!==":
       return isNullish(left) || isNullish(right);
-    case ts.SyntaxKind.EqualsEqualsToken:
-    case ts.SyntaxKind.EqualsEqualsEqualsToken:
+    case "==":
+    case "===":
       return (
         isNullish(left) ||
         isNullish(right) ||
-        (ts.isTypeOfExpression(left) &&
-          ts.isStringLiteral(right) &&
-          right.text === "undefined") ||
-        (ts.isPropertyAccessExpression(left) &&
-          left.name.text === "length" &&
-          ts.isNumericLiteral(right) &&
-          right.text === "0")
+        (left.type === "UnaryExpression" &&
+          left.operator === "typeof" &&
+          right.type === "Literal" &&
+          right.value === "undefined") ||
+        (isNamedMember(left) &&
+          left.property.name === "length" &&
+          right.type === "Literal" &&
+          right.value === 0)
       );
     default:
       return false;
@@ -447,30 +433,28 @@ function testsMissing(condition: ts.Expression): boolean {
 }
 
 /** `return;` or `{ return; }`. */
-function returnsNothing(statement: ts.Statement): boolean {
+function returnsNothing(statement: Node): boolean {
   const only =
-    ts.isBlock(statement) && statement.statements.length === 1
-      ? statement.statements[0]
+    statement.type === "BlockStatement" && statement.body.length === 1
+      ? statement.body[0]
       : statement;
-  return (
-    only !== undefined &&
-    ts.isReturnStatement(only) &&
-    only.expression === undefined
-  );
+  return only?.type === "ReturnStatement" && only.argument === null;
 }
 
 /** `x` in `expect(x).toBe(…)` or `await expect(x).resolves…`. */
-function expectedValue(expression: ts.Expression): ts.Expression | undefined {
+function expectedValue(expression: Node): Node | undefined {
   let node = expression;
   for (;;) {
-    if (ts.isCallExpression(node)) {
-      if (ts.isIdentifier(node.expression) && node.expression.text === "expect")
+    if (node.type === "CallExpression") {
+      if (node.callee.type === "Identifier" && node.callee.name === "expect")
         return node.arguments[0];
-      node = node.expression;
-    } else if (
-      ts.isAwaitExpression(node) ||
-      ts.isPropertyAccessExpression(node)
-    ) {
+      node = node.callee;
+    } else if (node.type === "AwaitExpression") {
+      node = node.argument;
+    } else if (isNamedMember(node)) {
+      node = node.object;
+    } else if (node.type === "ChainExpression") {
+      // `expect(x)?.toBe(…)`: the tree wraps an optional chain in one node.
       node = node.expression;
     } else return undefined;
   }
@@ -482,30 +466,36 @@ function expectedValue(expression: ts.Expression): ts.Expression | undefined {
  * passing test.
  */
 function narrowsJustAsserted(
-  condition: ts.Expression,
-  before: ts.Statement | undefined,
-  source: ts.SourceFile
+  condition: Node,
+  before: Node | undefined,
+  contents: string
 ): boolean {
   if (
-    !ts.isPrefixUnaryExpression(condition) ||
-    condition.operator !== ts.SyntaxKind.ExclamationToken ||
-    !before ||
-    !ts.isExpressionStatement(before)
+    condition.type !== "UnaryExpression" ||
+    condition.operator !== "!" ||
+    before?.type !== "ExpressionStatement"
   )
     return false;
   const asserted = expectedValue(before.expression);
-  return asserted?.getText(source) === condition.operand.getText(source);
+  const textOf = (node: Node) => contents.slice(node.start, node.end);
+  return (
+    asserted !== undefined && textOf(asserted) === textOf(condition.argument)
+  );
 }
 
 /** The silent guards of each function expression in the file that has one. */
-function silentGuards(source: ts.SourceFile): Map<ts.Node, ts.IfStatement[]> {
-  const out = new Map<ts.Node, ts.IfStatement[]>();
-  eachNode(source, (node) => {
+function silentGuards(
+  program: Program,
+  contents: string
+): Map<Node, IfStatement[]> {
+  const out = new Map<Node, IfStatement[]>();
+  walk(program, (node) => {
     if (
-      (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) &&
-      ts.isBlock(node.body)
+      (node.type === "ArrowFunctionExpression" ||
+        node.type === "FunctionExpression") &&
+      node.body?.type === "BlockStatement"
     ) {
-      const guards = guardsIn(node.body, source);
+      const guards = guardsIn(node.body, contents);
       if (guards.length > 0) out.set(node, guards);
     }
   });
@@ -518,7 +508,7 @@ function silentGuards(source: ts.SourceFile): Map<ts.Node, ts.IfStatement[]> {
  */
 export function sharedTestWrappers(fixtures: SourceFile[]): string[] {
   const files = fixtures.map(({ file, contents }) =>
-    namedFunctions(parse(file, contents))
+    namedFunctions(parseTypescript(file, contents).program)
   );
   const found = new Set<string>();
   for (let grew = true; grew; ) {
@@ -555,7 +545,7 @@ const ABOUT = {
  * alone or in an `||`/`&&` chain. Both `if (…) return;` and
  * `if (…) { return; }` count. The `if` (or an `else if` of it) must sit at the
  * top level of a test case's callback, or in a `try`/`catch`/`finally` block
- * there. It reads the parsed TypeScript, so comments, strings and regex
+ * there. It reads the parsed tree, so comments, strings and regex
  * literals neither hide a case nor fake one.
  *
  * The incident: `cancel-job.test.ts` wrapped its cases in `cancelTest`, which
@@ -582,25 +572,24 @@ export function noSilentTestPass(
     scan(file: string, contents: string): Violation[] {
       // Without a `return` there is no guard to find, so the file is not parsed.
       if (!contents.includes("return")) return [];
-      const source = parse(file, contents);
+      const { program } = parseTypescript(file, contents);
       // The guards come first: the wrappers are worked out only for a file
       // that has one.
-      const guards = silentGuards(source);
+      const guards = silentGuards(program, contents);
       if (guards.size === 0) return [];
       const names = withWrappers(
         ["it", "test", ...sharedWrappers],
-        namedFunctions(source)
+        namedFunctions(program)
       );
       const violations: Violation[] = [];
-      for (const call of caseCalls(source, names)) {
+      for (const call of caseCalls(program, names)) {
         for (const callback of call.arguments) {
           for (const guard of guards.get(callback) ?? []) {
-            const start = guard.getStart(source);
             violations.push({
               file,
-              line: lineOf(contents, start),
+              line: lineOf(contents, guard.start),
               snippet: contents
-                .slice(start, guard.thenStatement.getEnd())
+                .slice(guard.start, guard.consequent.end)
                 .replace(/\s+/g, " "),
               message: SILENT_PASS_MESSAGE
             });

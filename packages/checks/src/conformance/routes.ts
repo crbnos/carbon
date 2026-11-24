@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { posix } from "node:path";
-import ts from "typescript5";
+import type { Program } from "oxc-parser";
 import {
   type Check,
   type ConformanceCheck,
@@ -14,6 +14,7 @@ import {
 } from "../check";
 import { pluginFindings, routeTypescript, typescript } from "../sources/inputs";
 import { loadModuleServerFiles } from "../sources/modules";
+import { type Node, parseTypescript, walk } from "../sources/syntax";
 import { lineOf } from "../sources/text";
 
 // Routes: rules for the React Router route modules of the apps. A route writes
@@ -210,18 +211,25 @@ export function wrappedBuildingBlocks(serverFiles: SourceFile[]): Set<string> {
   return wrapped;
 }
 
-function loaderBody(source: ts.SourceFile): ts.Node | undefined {
-  for (const statement of source.statements) {
+/** The `loader` the route declares at its top level, exported or not. */
+function loaderBody(program: Program): Node | null | undefined {
+  for (const topLevel of program.body) {
+    const statement =
+      (topLevel.type === "ExportNamedDeclaration" ||
+        topLevel.type === "ExportDefaultDeclaration") &&
+      topLevel.declaration
+        ? topLevel.declaration
+        : topLevel;
     if (
-      ts.isFunctionDeclaration(statement) &&
-      statement.name?.text === "loader"
+      (statement.type === "FunctionDeclaration" ||
+        statement.type === "TSDeclareFunction") &&
+      statement.id?.name === "loader"
     ) {
       return statement.body;
     }
-    if (ts.isVariableStatement(statement)) {
-      for (const d of statement.declarationList.declarations) {
-        if (ts.isIdentifier(d.name) && d.name.text === "loader")
-          return d.initializer;
+    if (statement.type === "VariableDeclaration") {
+      for (const d of statement.declarations) {
+        if (d.id.type === "Identifier" && d.id.name === "loader") return d.init;
       }
     }
   }
@@ -259,68 +267,61 @@ export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
     scan(file: string, contents: string): Violation[] {
       if (!LOADER_ROUTES.test(file) || !contents.includes(".service"))
         return [];
-      const source = ts.createSourceFile(
-        file,
-        contents,
-        ts.ScriptTarget.Latest,
-        true,
-        file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-      );
+      const { program } = parseTypescript(file, contents);
       // local name -> `<module>.<name>`, for value imports of a service file
       const imported = new Map<string, string>();
       // namespace name -> `<module>`, for `import * as x` of a service file
       const namespaces = new Map<string, string>();
-      for (const statement of source.statements) {
-        if (!ts.isImportDeclaration(statement)) continue;
-        const from = (statement.moduleSpecifier as ts.StringLiteral).text;
-        const module = SERVICE_IMPORT.exec(from)?.[1];
-        const clause = statement.importClause;
-        if (!module || !clause || clause.isTypeOnly) continue;
-        const named = clause.namedBindings;
-        if (named && ts.isNamespaceImport(named)) {
-          namespaces.set(named.name.text, module);
-          continue;
-        }
-        if (!named || !ts.isNamedImports(named)) continue;
-        for (const element of named.elements) {
-          if (element.isTypeOnly) continue;
-          const name = (element.propertyName ?? element.name).text;
-          imported.set(element.name.text, `${module}.${name}`);
+      for (const statement of program.body) {
+        if (statement.type !== "ImportDeclaration") continue;
+        const module = SERVICE_IMPORT.exec(statement.source.value)?.[1];
+        if (!module || statement.importKind === "type") continue;
+        for (const specifier of statement.specifiers) {
+          if (specifier.type === "ImportNamespaceSpecifier") {
+            namespaces.set(specifier.local.name, module);
+          }
+          if (
+            specifier.type !== "ImportSpecifier" ||
+            specifier.importKind === "type"
+          ) {
+            continue;
+          }
+          const name =
+            specifier.imported.type === "Literal"
+              ? specifier.imported.value
+              : specifier.imported.name;
+          imported.set(specifier.local.name, `${module}.${name}`);
         }
       }
-      const body = loaderBody(source);
+      const body = loaderBody(program);
       if (!body || imported.size + namespaces.size === 0) return [];
 
-      const calledBlock = (callee: ts.Expression): string | undefined => {
-        if (ts.isIdentifier(callee)) return imported.get(callee.text);
+      const calledBlock = (callee: Node): string | undefined => {
+        if (callee.type === "Identifier") return imported.get(callee.name);
         if (
-          ts.isPropertyAccessExpression(callee) &&
-          ts.isIdentifier(callee.expression)
+          callee.type === "MemberExpression" &&
+          !callee.computed &&
+          callee.object.type === "Identifier"
         ) {
-          const module = namespaces.get(callee.expression.text);
-          if (module) return `${module}.${callee.name.text}`;
+          const module = namespaces.get(callee.object.name);
+          if (module) return `${module}.${callee.property.name}`;
         }
         return undefined;
       };
 
       const violations: Violation[] = [];
-      const visit = (node: ts.Node) => {
-        if (ts.isCallExpression(node)) {
-          const block = calledBlock(node.expression);
-          if (block && wrapped.has(block)) {
-            violations.push({
-              file,
-              line:
-                source.getLineAndCharacterOfPosition(node.getStart(source))
-                  .line + 1,
-              snippet: block,
-              message: `Call ${block} through its service function: api.${block}(input), with api from authorize(request, gate)`
-            });
-          }
+      walk(body, (node) => {
+        if (node.type !== "CallExpression") return;
+        const block = calledBlock(node.callee);
+        if (block && wrapped.has(block)) {
+          violations.push({
+            file,
+            line: lineOf(contents, node.start),
+            snippet: block,
+            message: `Call ${block} through its service function: api.${block}(input), with api from authorize(request, gate)`
+          });
         }
-        ts.forEachChild(node, visit);
-      };
-      visit(body);
+      });
       return violations;
     }
   };
