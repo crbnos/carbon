@@ -79,6 +79,10 @@ import { noRawRevalidator } from "./conformance/no-raw-revalidator";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noServerCodeInClient } from "./conformance/no-server-code-in-client";
+import {
+  noSilentTestPass,
+  sharedTestWrappers
+} from "./conformance/no-silent-test-pass";
 import { noStateCopyOfLoaderData } from "./conformance/no-state-copy-of-loader-data";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 import { noUnmountingDialog } from "./conformance/no-unmounting-dialog";
@@ -86,6 +90,10 @@ import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-q
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+import {
+  findStaleOfflinePageCaches,
+  OFFLINE_PAGE_CACHE_BUMPED
+} from "./conformance/offline-page-cache-bumped";
 import {
   findProviderRoleDrift,
   PROVIDER_ROLE_BACKFILLED
@@ -129,9 +137,10 @@ import {
   loadModules,
   modulesDir
 } from "./sources/modules";
+import { loadOfflinePageSources } from "./sources/offline-page";
 import { loadServerFiles } from "./sources/server-files";
 import { loadSideEffectPackages } from "./sources/side-effect-packages";
-import { loadTestFiles } from "./sources/test-files";
+import { loadSharedTestFixtures, loadTestFiles } from "./sources/test-files";
 import {
   loadTypescriptFiles,
   REQUEST_HANDLING_ROOTS,
@@ -293,6 +302,9 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
       (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
     ),
+    ...findStaleOfflinePageCaches(loadOfflinePageSources(root)).map(
+      (violation) => ({ checkId: OFFLINE_PAGE_CACHE_BUMPED, violation })
+    ),
     ...findDroppedFunctionChanges(migrations).map((violation) => ({
       checkId: FUNCTION_REDEFINITION_KEEPS_CHANGES,
       violation
@@ -304,7 +316,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...findUndeclaredSideEffectImports(loadSideEffectPackages(root)).map(
       (violation) => ({ checkId: SIDE_EFFECT_IMPORT_DECLARED, violation })
     ),
-    ...scanAll(loadTestFiles(root), TEST_CHECKS),
+    ...scanAll(loadTestFiles(root), [
+      ...TEST_CHECKS,
+      noSilentTestPass(sharedTestWrappers(loadSharedTestFixtures(root)))
+    ]),
     ...findUnselectedListColumns(listSources.services, listSources.tables).map(
       (violation) => ({ checkId: LIST_SELECT_COVERS_COLUMNS, violation })
     ),

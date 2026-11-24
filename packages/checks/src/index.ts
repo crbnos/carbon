@@ -41,6 +41,10 @@ export { noRawRedirect } from "./conformance/no-raw-redirect";
 export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noServerCodeInClient } from "./conformance/no-server-code-in-client";
+export {
+  noSilentTestPass,
+  sharedTestWrappers
+} from "./conformance/no-silent-test-pass";
 export { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 export { routeActionShape } from "./conformance/route-action-shape";
@@ -92,5 +96,8 @@ export {
 } from "./sources/license-files";
 export { loadModules, modulesDir } from "./sources/modules";
 export { loadServerFiles } from "./sources/server-files";
-export { loadTestFiles } from "./sources/test-files";
+export {
+  loadSharedTestFixtures,
+  loadTestFiles
+} from "./sources/test-files";
 export { loadTypescriptFiles } from "./sources/typescript";

@@ -1389,8 +1389,6 @@
   "status-write-guarded::packages/jobs/src/inngest/functions/scheduled/cleanup.ts::cleanupFunction: purchasingRfq.status",
   "status-write-guarded::packages/jobs/src/inngest/functions/scheduled/cleanup.ts::cleanupFunction: quote.status",
   "status-write-guarded::packages/jobs/src/inngest/functions/scheduled/cleanup.ts::cleanupFunction: supplierQuote.status",
-  "test-mocks-own-module::apps/erp/app/modules/projects/move-action-pegs.test.ts::vi.mock(\"~/modules/items/items.service\")",
-  "test-mocks-own-module::apps/erp/app/modules/projects/move-action-pegs.test.ts::vi.mock(\"~/services/database.server\")",
   "test-mocks-own-module::apps/erp/app/modules/projects/transfer-planning-actions.test.ts::vi.mock(\"~/modules/items/items.service\")",
   "test-mocks-own-module::apps/erp/app/modules/projects/transfer-planning-actions.test.ts::vi.mock(\"~/services/database.server\")",
   "test-mocks-own-module::apps/erp/test/release-jobs.test.ts::vi.mock(\"../app/modules/production/production.service\")",

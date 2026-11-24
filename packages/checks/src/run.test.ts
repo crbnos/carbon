@@ -30,7 +30,7 @@ describe("conformance gate (real migrations vs baseline)", () => {
     const detail = fresh
       .map(
         (f) =>
-          `  ${f.checkId}  ${f.violation.file}:${f.violation.line}  ${f.violation.snippet}`
+          `  ${f.checkId}  ${f.violation.file}:${f.violation.line}  ${f.violation.snippet}\n    ${f.violation.message}`
       )
       .join("\n");
     expect(fresh, `New conformance violations:\n${detail}`).toHaveLength(0);
