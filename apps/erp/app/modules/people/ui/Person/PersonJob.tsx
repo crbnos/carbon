@@ -23,6 +23,7 @@ import {
 } from "~/components/Form";
 import { useSettings } from "~/hooks";
 import { employeeJobValidator, flsaStatuses } from "../../people.models";
+import { employeeJobHiddenFields } from "../../people.utils";
 
 type PersonJobProps = {
   initialValues: z.infer<typeof employeeJobValidator>;
@@ -39,7 +40,6 @@ const PersonJob = ({ initialValues, usesProjectTime }: PersonJobProps) => {
   const { t } = useLingui();
   const settings = useSettings();
   const isDcaa = settings.timekeepingControls === "DCAA";
-  const checkbox = (value: boolean | undefined) => (value ? "on" : "");
   const flsaLabels: Record<(typeof flsaStatuses)[number], string> = {
     Exempt: t`Exempt`,
     "Non-Exempt": t`Non-Exempt`
@@ -54,24 +54,14 @@ const PersonJob = ({ initialValues, usesProjectTime }: PersonJobProps) => {
       defaultValues={initialValues}
     >
       <Hidden name="intent" value="job" />
-      {!usesProjectTime && (
-        <>
-          <Hidden
-            name="laborCategoryId"
-            value={initialValues.laborCategoryId ?? ""}
-          />
-          <Hidden
-            name="timesheetRequired"
-            value={checkbox(initialValues.timesheetRequired)}
-          />
-        </>
-      )}
-      {!isDcaa && (
-        <>
-          <Hidden name="flsaStatus" value={initialValues.flsaStatus ?? ""} />
-          <Hidden name="isOfficer" value={checkbox(initialValues.isOfficer)} />
-        </>
-      )}
+      {Object.entries(
+        employeeJobHiddenFields(initialValues, {
+          projectTime: usesProjectTime,
+          dcaa: isDcaa
+        })
+      ).map(([name, value]) => (
+        <Hidden key={name} name={name} value={value} />
+      ))}
       <Card>
         <CardHeader>
           <CardTitle>
