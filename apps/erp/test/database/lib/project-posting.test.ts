@@ -9,6 +9,8 @@ import {
   buildProjectLedgerRow,
   isUnallowableCharge,
   ProjectChargeError,
+  projectExpenseRefusal,
+  projectExpenseRefusalOnEveryDate,
   type ProjectPostingAsset,
   type ProjectPostingContext,
   type ProjectPostingElement,
@@ -226,6 +228,105 @@ describe("resolveProjectPostingAccount: Capitalize", () => {
     expect(() => resolveProjectPostingAccount(ctx, "2026-03-01")).toThrow(
       "This capital project has no asset under construction. Release the project first."
     );
+  });
+});
+
+describe("projectExpenseRefusal", () => {
+  it.each(["Statistical", "Expense", "Contract"] as const)(
+    "lets an expense entry charge a %s project",
+    (costTreatment) => {
+      const ctx = context({ project: project({ costTreatment }) });
+      expect(projectExpenseRefusal(ctx, "2026-03-01")).toBeNull();
+    }
+  );
+
+  it("refuses an expense entry on a Capitalize project", () => {
+    const ctx = context({
+      project: project({ costTreatment: "Capitalize" }),
+      element: element()
+    });
+    expect(projectExpenseRefusal(ctx, "2026-03-01")).not.toBeNull();
+  });
+
+  it("refuses only on and after the date an ancestor's Capitalize takes effect", () => {
+    const parent = element({
+      id: "el-parent",
+      costTreatment: "Capitalize",
+      costTreatmentEffectiveFrom: "2026-03-01"
+    });
+    const ctx = context({
+      element: element({ parentId: "el-parent" }),
+      ancestors: [parent]
+    });
+    expect(projectExpenseRefusal(ctx, "2026-02-28")).toBeNull();
+    expect(projectExpenseRefusal(ctx, "2026-03-01")).not.toBeNull();
+  });
+
+  it("lets an element that expenses its own cost charge a Capitalize project", () => {
+    const ctx = context({
+      project: project({ costTreatment: "Capitalize" }),
+      element: element({ costTreatment: "Expense" })
+    });
+    expect(projectExpenseRefusal(ctx, "2026-03-01")).toBeNull();
+  });
+});
+
+describe("projectExpenseRefusalOnEveryDate", () => {
+  it("refuses a Capitalize project, and an undated Capitalize override under an Expense project", () => {
+    expect(
+      projectExpenseRefusalOnEveryDate(
+        context({
+          project: project({ costTreatment: "Capitalize" }),
+          element: element()
+        })
+      )
+    ).not.toBeNull();
+    expect(
+      projectExpenseRefusalOnEveryDate(
+        context({ element: element({ costTreatment: "Capitalize" }) })
+      )
+    ).not.toBeNull();
+  });
+
+  it("refuses a dated Capitalize override over a Capitalize project", () => {
+    const ctx = context({
+      project: project({ costTreatment: "Capitalize" }),
+      element: element({
+        costTreatment: "Capitalize",
+        costTreatmentEffectiveFrom: "2026-03-01"
+      })
+    });
+    expect(projectExpenseRefusalOnEveryDate(ctx)).not.toBeNull();
+  });
+
+  it("lets a dated Capitalize override through: the dates before it post", () => {
+    const ctx = context({
+      element: element({
+        costTreatment: "Capitalize",
+        costTreatmentEffectiveFrom: "2026-03-01"
+      })
+    });
+    expect(projectExpenseRefusalOnEveryDate(ctx)).toBeNull();
+  });
+
+  it("lets a window an ancestor's dated Expense opens under a Capitalize project through", () => {
+    const parent = element({
+      id: "el-parent",
+      costTreatment: "Expense",
+      costTreatmentEffectiveFrom: "2026-01-01"
+    });
+    const ctx = context({
+      project: project({ costTreatment: "Capitalize" }),
+      element: element({
+        parentId: "el-parent",
+        costTreatment: "Capitalize",
+        costTreatmentEffectiveFrom: "2026-03-01"
+      }),
+      ancestors: [parent]
+    });
+    expect(projectExpenseRefusal(ctx, "2025-12-31")).not.toBeNull();
+    expect(projectExpenseRefusal(ctx, "2026-03-01")).not.toBeNull();
+    expect(projectExpenseRefusalOnEveryDate(ctx)).toBeNull();
   });
 });
 
