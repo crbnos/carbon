@@ -71,3 +71,14 @@ export function groupDataByMonth<T extends object>(
 
   return result;
 }
+
+/**
+ * Whether a KPI's change on the previous period is good news: a fall when
+ * lower is better, else a rise. No change counts as good.
+ */
+export function isKpiChangeGood(
+  kpi: { lowerIsBetter: boolean },
+  change: number
+) {
+  return kpi.lowerIsBetter ? change <= 0 : change >= 0;
+}
