@@ -382,7 +382,10 @@ export class ExternalIntegrationMappingService {
       allowDuplicateExternalId: m.options?.allowDuplicateExternalId ?? false,
       companyId: this.companyId,
       metadata: m.options?.metadata ?? null,
-      lastSyncedAt: now,
+      lastSyncedAt:
+        m.options?.lastSyncedAt instanceof Date
+          ? m.options.lastSyncedAt.toISOString()
+          : (m.options?.lastSyncedAt ?? now),
       // Default to current timestamp if remoteUpdatedAt is not provided
       remoteUpdatedAt:
         m.options?.remoteUpdatedAt instanceof Date

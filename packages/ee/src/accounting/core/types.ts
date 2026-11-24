@@ -434,6 +434,23 @@ export interface SyncResult {
 }
 
 /**
+ * The version a push sent: the entity's `updatedAt` as read before the push.
+ * A mapping linked with it, rather than with the link time, stays older than
+ * an edit made while the push was in flight, so the next reconcile pushes that
+ * edit. Undefined when the entity has no readable `updatedAt` (the link then
+ * stamps the current time).
+ */
+export function getPushedVersion(localEntity: unknown): Date | undefined {
+  const updatedAt = (localEntity as { updatedAt?: unknown } | null | undefined)
+    ?.updatedAt;
+  if (!(typeof updatedAt === "string" || updatedAt instanceof Date)) {
+    return undefined;
+  }
+  const version = new Date(updatedAt);
+  return Number.isNaN(version.getTime()) ? undefined : version;
+}
+
+/**
  * Normalize a thrown value for SyncResult.error. A JournalEntrySyncError
  * keeps its structured failure envelope (errorCode/warning/metadata) so
  * the ledger drain records a Warning with machine-readable detail instead
@@ -555,7 +572,8 @@ export abstract class BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: Date
   ): Promise<void> {
     // Create a mapping service with the transaction
     const txMappingService = createMappingService(tx, this.companyId);
@@ -564,7 +582,7 @@ export abstract class BaseEntitySyncer<
       localId,
       this.provider.id,
       remoteId,
-      { remoteUpdatedAt }
+      { remoteUpdatedAt, lastSyncedAt }
     );
   }
 
@@ -740,7 +758,13 @@ export abstract class BaseEntitySyncer<
 
       // 6. Update mapping
       const remoteId = await withTriggersDisabled(this.database, async (tx) => {
-        await this.linkEntities(tx, entityId, id);
+        await this.linkEntities(
+          tx,
+          entityId,
+          id,
+          undefined,
+          getPushedVersion(localEntity)
+        );
         return id;
       });
 
@@ -961,16 +985,19 @@ export abstract class BaseEntitySyncer<
         entityId: string;
         integration: string;
         externalId: string;
+        options?: { lastSyncedAt: Date };
       }> = [];
 
       for (const { localId } of batchPayloads) {
         const remoteId = remoteIdMap.get(localId);
         if (remoteId) {
+          const lastSyncedAt = getPushedVersion(localEntities.get(localId));
           mappingsToLink.push({
             entityType: this.entityType,
             entityId: localId,
             integration: this.provider.id,
-            externalId: remoteId
+            externalId: remoteId,
+            ...(lastSyncedAt ? { options: { lastSyncedAt } } : {})
           });
           results.push({
             status: "success",

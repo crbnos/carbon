@@ -31,11 +31,13 @@ import {
   transitionOperation,
   type XeroProvider
 } from "@carbon/ee/accounting";
+import { buildIntegrationTopology } from "@carbon/ee/sync";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { PostgresDriver, sql } from "kysely";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { drainSyncOperations } from "./accounting-sync-operations";
+import { reconcileEntities } from "./reconcile-executor";
 
 const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
 
@@ -502,5 +504,47 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
       status: "Completed",
       attemptCount: 2
     });
+  });
+
+  it("an edit made while a customer's push is in flight is pushed afterwards", async () => {
+    const scope = await company();
+    const customerId = `${scope.prefix}-customer`;
+    await db
+      .insertInto("customer")
+      .values({
+        id: customerId,
+        name: "Before",
+        companyId: scope.companyId,
+        updatedAt: sql<string>`now() - interval '1 hour'`
+      })
+      .execute();
+    await enqueue(scope.companyId, "customer", customerId);
+
+    fake.next("hold");
+    const push = drain(scope);
+    await fake.heldCreate();
+    await db
+      .updateTable("customer")
+      .set({ name: "After", updatedAt: sql<string>`now()` })
+      .where("id", "=", customerId)
+      .execute();
+    fake.release(200);
+    await push;
+
+    const reconciled = await reconcileEntities({
+      client,
+      database: db,
+      companyId: scope.companyId,
+      providerId: "xero",
+      integrationMetadata: scope.metadata,
+      topology: buildIntegrationTopology([], []),
+      createdBy: "system",
+      scope: crypto.randomUUID(),
+      refs: [{ entityType: "customer", entityId: customerId }]
+    });
+    expect(reconciled.enqueued).toBe(1);
+
+    await drain(scope);
+    expect(fake.contacts.map((c) => c.Name)).toEqual(["After"]);
   });
 });
