@@ -72,6 +72,79 @@ async function setBackflushSettings(f: Fixture, settings: Settings) {
   if (settings.strict) await workCenterFixture(f);
 }
 
+// One unit of a job whose material takes 2 per unit (2 estimated) from a bin
+// holding 10.
+async function materialJob(f: Fixture) {
+  const item = `${f.prefix}-material`;
+  const bin = `${f.prefix}-bin`;
+  await seed(f, async (trx) => {
+    await trx
+      .insertInto("item")
+      .values({
+        id: item,
+        readableId: `${f.prefix}-MATERIAL`,
+        name: "material",
+        type: "Part",
+        itemTrackingType: "Inventory",
+        replenishmentSystem: "Buy",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("storageUnit")
+      .values({
+        id: bin,
+        name: "Bin",
+        locationId: f.locationId,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("itemLedger")
+      .values({
+        entryType: "Positive Adjmt.",
+        documentType: "Inventory Receipt",
+        itemId: item,
+        locationId: f.locationId,
+        storageUnitId: bin,
+        quantity: 10,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  const job = await jobFixture(f, "issue-race");
+  await f.db
+    .updateTable("jobMaterial")
+    .set({ itemId: item, storageUnitId: bin })
+    .where("id", "=", job.materialId)
+    .where("companyId", "=", f.companyId)
+    .execute();
+  return { item, job };
+}
+
+async function consumedAndIssued(f: Fixture, item: string, materialId: string) {
+  const consumed = await f.db
+    .selectFrom("itemLedger")
+    .select((eb) => eb.fn.sum<string>("quantity").as("quantity"))
+    .where("itemId", "=", item)
+    .where("documentType", "=", "Job Consumption")
+    .where("companyId", "=", f.companyId)
+    .executeTakeFirstOrThrow();
+  const material = await f.db
+    .selectFrom("jobMaterial")
+    .select("quantityIssued")
+    .where("id", "=", materialId)
+    .where("companyId", "=", f.companyId)
+    .executeTakeFirstOrThrow();
+  return {
+    consumed: Number(consumed.quantity),
+    quantityIssued: Number(material.quantityIssued)
+  };
+}
+
 // The job fixture makes one unit, its material 2 per unit and 2 estimated:
 // however the backflush and the completion interleave, 2 leave the bin.
 async function completionBehindBackflush(settings: Settings) {
@@ -84,53 +157,7 @@ async function completionBehindBackflush(settings: Settings) {
   let completing: Promise<unknown> | undefined;
   try {
     await setBackflushSettings(f, settings);
-    const item = `${f.prefix}-material`;
-    const bin = `${f.prefix}-bin`;
-    await seed(f, async (trx) => {
-      await trx
-        .insertInto("item")
-        .values({
-          id: item,
-          readableId: `${f.prefix}-MATERIAL`,
-          name: "material",
-          type: "Part",
-          itemTrackingType: "Inventory",
-          replenishmentSystem: "Buy",
-          companyId: f.companyId,
-          createdBy: USER
-        })
-        .execute();
-      await trx
-        .insertInto("storageUnit")
-        .values({
-          id: bin,
-          name: "Bin",
-          locationId: f.locationId,
-          companyId: f.companyId,
-          createdBy: USER
-        })
-        .execute();
-      await trx
-        .insertInto("itemLedger")
-        .values({
-          entryType: "Positive Adjmt.",
-          documentType: "Inventory Receipt",
-          itemId: item,
-          locationId: f.locationId,
-          storageUnitId: bin,
-          quantity: 10,
-          companyId: f.companyId,
-          createdBy: USER
-        })
-        .execute();
-    });
-    const job = await jobFixture(f, "issue-race");
-    await f.db
-      .updateTable("jobMaterial")
-      .set({ itemId: item, storageUnitId: bin })
-      .where("id", "=", job.materialId)
-      .where("companyId", "=", f.companyId)
-      .execute();
+    const { item, job } = await materialJob(f);
 
     const backflushPid = await backendPid(backflusher);
     const completionPid = await backendPid(f.db);
@@ -159,23 +186,10 @@ async function completionBehindBackflush(settings: Settings) {
     await backflushing;
     expect((await completion).error).toBeNull();
 
-    const consumed = await f.db
-      .selectFrom("itemLedger")
-      .select((eb) => eb.fn.sum<string>("quantity").as("quantity"))
-      .where("itemId", "=", item)
-      .where("documentType", "=", "Job Consumption")
-      .where("companyId", "=", f.companyId)
-      .executeTakeFirstOrThrow();
-    const material = await f.db
-      .selectFrom("jobMaterial")
-      .select("quantityIssued")
-      .where("id", "=", job.materialId)
-      .where("companyId", "=", f.companyId)
-      .executeTakeFirstOrThrow();
-    expect({
-      consumed: Number(consumed.quantity),
-      quantityIssued: Number(material.quantityIssued)
-    }).toEqual({ consumed: -2, quantityIssued: 2 });
+    expect(await consumedAndIssued(f, item, job.materialId)).toEqual({
+      consumed: -2,
+      quantityIssued: 2
+    });
   } finally {
     release.resolve();
     await backflushing?.catch(() => {});
@@ -199,4 +213,57 @@ databaseTest(
 databaseTest(
   "under strict backflush that may draw a bin negative, an operation completion that waited on the job's backflush issues nothing the backflush issued",
   () => completionBehindBackflush({ strict: true, preventNegative: false })
+);
+
+// The MES step backflush (backflushUntrackedMaterialsOnStepRecord) reads
+// quantityIssued with no lock, plans the unit's shortfall from it
+// (planStepBackflush) and posts it as a step issue. A completion that
+// committed in between has already issued the unit's material.
+databaseTest(
+  "a step issue planned before an operation completion committed issues nothing the completion issued",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const { item, job } = await materialJob(f);
+      const read = await f.db
+        .selectFrom("jobMaterial")
+        .select("quantityIssued")
+        .where("id", "=", job.materialId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const target = 2;
+      const shortfall = target - Number(read.quantityIssued ?? 0);
+
+      const completion = await invokePosting(
+        handlesOf(f.ctx),
+        "issue",
+        { type: "jobOperation", id: job.operationId, quantity: 1 },
+        issueMaterial
+      );
+      expect(completion.error).toBeNull();
+
+      const step = await invokePosting(
+        handlesOf(f.ctx),
+        "issue",
+        {
+          type: "partToOperation",
+          id: job.operationId,
+          itemId: item,
+          materialId: job.materialId,
+          quantity: shortfall,
+          adjustmentType: "Negative Adjmt.",
+          maxQuantityIssued: target
+        },
+        issueMaterial
+      );
+      expect(step.error).toBeNull();
+
+      expect(await consumedAndIssued(f, item, job.materialId)).toEqual({
+        consumed: -2,
+        quantityIssued: 2
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
 );

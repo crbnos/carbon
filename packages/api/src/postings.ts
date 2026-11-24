@@ -104,7 +104,12 @@ export const issueInput = z.discriminatedUnion("type", [
     jobOperationStepId: z.string().optional(),
     // An item scan: refuse an issue that takes the material above what the
     // job requires. The check runs under the material's lock.
-    refuseOverIssue: z.boolean().optional()
+    refuseOverIssue: z.boolean().optional(),
+    // A step backflush: the material's quantityIssued once this unit is
+    // issued. A consuming issue takes only what still reaches it, read under
+    // the material's lock, so an issue that committed since the caller
+    // planned `quantity` is not issued again.
+    maxQuantityIssued: z.number().optional()
   }),
   z.object({
     type: z.literal("scrapTrackedEntity"),

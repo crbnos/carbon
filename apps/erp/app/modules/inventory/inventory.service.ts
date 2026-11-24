@@ -32382,7 +32382,8 @@ export async function issueMaterial(
         materialId,
         jobOperationStepId,
         adjustmentType,
-        refuseOverIssue
+        refuseOverIssue,
+        maxQuantityIssued
       } = validatedPayload;
 
       // Written into jobMaterialStep for an unplanned part (no companyId there).
@@ -32702,11 +32703,21 @@ export async function issueMaterial(
               );
             }
           }
+          // A step backflush planned its quantity from an unlocked read: a
+          // completion or another step that issued since has covered part of
+          // it.
+          const consumingQuantity =
+            maxQuantityIssued === undefined
+              ? Number(quantity)
+              : Math.min(
+                  Number(quantity),
+                  Math.max(0, round(maxQuantityIssued) - previouslyIssued)
+                );
           const quantityToIssue = round(
             adjustmentType === "Positive Adjmt."
               ? Number(quantity)
               : adjustmentType === "Negative Adjmt."
-                ? Number(quantity)
+                ? consumingQuantity
                 : round(Number(quantity)) -
                   round(Number(material?.quantityIssued)) // set quantity
           );
