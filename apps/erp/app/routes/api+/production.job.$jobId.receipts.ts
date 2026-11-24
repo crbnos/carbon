@@ -4,7 +4,10 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getJobReceiptSnapshot } from "~/modules/production/production.service";
+import {
+  getJobReceiptHolds,
+  getJobReceiptSnapshot
+} from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 /**
@@ -27,18 +30,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const job = await getJobReceiptSnapshot(
-    getDatabaseClient(),
-    jobId,
-    companyId
-  );
-  if (!job) return { receipts: null };
-
-  return {
-    receipts: {
-      quantityReceivedToInventory: job.quantityReceivedToInventory ?? 0,
-      trackedEntityIds: job.trackedEntityIds,
-      issuedTrackedEntityIds: job.issuedTrackedEntityIds
-    }
-  };
+  return getDatabaseClient()
+    .transaction()
+    .setIsolationLevel("repeatable read")
+    .execute(async (db) => {
+      const job = await getJobReceiptSnapshot(db, jobId, companyId);
+      if (!job) return { receipts: null };
+      return {
+        receipts: {
+          quantityReceivedToInventory: job.quantityReceivedToInventory ?? 0,
+          trackedEntityIds: job.trackedEntityIds,
+          issuedTrackedEntityIds: job.issuedTrackedEntityIds,
+          holds: await getJobReceiptHolds(db, jobId, companyId)
+        }
+      };
+    });
 }

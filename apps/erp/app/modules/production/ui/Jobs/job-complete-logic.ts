@@ -22,6 +22,9 @@ export type JobSerialUnit = {
 export type JobReceiptSnapshot = {
   quantityReceivedToInventory: number;
   trackedEntityIds: string[];
+  holds: Awaited<
+    ReturnType<typeof import("../../production.service").getJobReceiptHolds>
+  >;
   /** The job's Consumed units that were booked out of stock (issued or shipped). */
   issuedTrackedEntityIds: string[];
 };

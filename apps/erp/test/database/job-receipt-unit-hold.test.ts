@@ -8,6 +8,7 @@
 // units are, and it follows once its issue is closed. A completion names no
 // unit (a finish by hand, the ERP's Complete), so the receipt itself decides.
 
+import { getJobReceiptHolds } from "../../app/modules/production/production.service";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
 import {
@@ -101,14 +102,14 @@ async function holdUnits(f: Fixture, on: boolean) {
 }
 
 /** An open issue linked to unit `number` (SN-00<number>). */
-async function raiseIssue(f: Fixture, number: number) {
-  const issueId = `${f.prefix}-issue-${number}`;
+async function raiseIssue(f: Fixture, number: number, issueNumber = number) {
+  const issueId = `${f.prefix}-issue-${issueNumber}`;
   await seed(f, async (trx) => {
     await trx
       .insertInto("nonConformanceType")
       .values({
-        id: `${f.prefix}-issue-type-${number}`,
-        name: `Defect ${number}`,
+        id: `${f.prefix}-issue-type-${issueNumber}`,
+        name: `Defect ${issueNumber}`,
         companyId: f.companyId,
         createdBy: USER
       })
@@ -117,11 +118,11 @@ async function raiseIssue(f: Fixture, number: number) {
       .insertInto("nonConformance")
       .values({
         id: issueId,
-        nonConformanceId: `NCR-${number}`,
+        nonConformanceId: `NCR-${issueNumber}`,
         name: "Cracked housing",
         source: "Internal",
         locationId: f.locationId,
-        nonConformanceTypeId: `${f.prefix}-issue-type-${number}`,
+        nonConformanceTypeId: `${f.prefix}-issue-type-${issueNumber}`,
         openDate: "2026-11-23",
         companyId: f.companyId,
         createdBy: USER
@@ -221,7 +222,20 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
         quantityReceivedToInventory: 3
       });
 
+      // A new issue on a unit already received must not appear as outstanding.
+      await raiseIssue(f, 1);
+      const otherIssue = await raiseIssue(f, 2, 9);
+      expect(await getJobReceiptHolds(f.db, job.jobId, f.companyId)).toEqual([
+        { id: `${f.prefix}-unit-2`, serial: "SN-002", issues: ["NCR-2", "NCR-9"] }
+      ]);
+      await closeIssue(f, otherIssue);
+      expect(await getJobReceiptHolds(f.db, job.jobId, f.companyId)).toEqual([
+        { id: `${f.prefix}-unit-2`, serial: "SN-002", issues: ["NCR-2"] }
+      ]);
+      expect(await getJobReceiptHolds(f.db, job.jobId, "another-company")).toEqual([]);
+
       await closeIssue(f, issueId);
+      expect(await getJobReceiptHolds(f.db, job.jobId, f.companyId)).toEqual([]);
       await completeToInventory(f, job.jobId, 4);
       expect(await received(f, job.jobId)).toEqual([
         "SN-001",
@@ -263,6 +277,7 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
       await stockPart(f, 20);
       const job = await serialJob(f, 4);
       await raiseIssue(f, 1);
+      expect(await getJobReceiptHolds(f.db, job.jobId, f.companyId)).toEqual([]);
 
       await completeToInventory(f, job.jobId, 3);
 

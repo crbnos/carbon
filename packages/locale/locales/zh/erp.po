@@ -3711,6 +3711,9 @@ msgstr "之后"
 msgid "After (calculation method)"
 msgstr "之后（计算方法）"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "质量部门放行后，重新打开工单，将该件产品入库。"
+
 msgid "After the correction"
 msgstr "纠正之后"
 
@@ -25150,7 +25153,9 @@ msgstr "接收到项目库存"
 msgid "Received"
 msgstr "已接收"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "已接收 {1} 中的 {0}"

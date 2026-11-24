@@ -3711,6 +3711,9 @@ msgstr "後"
 msgid "After (calculation method)"
 msgstr "後（計算方法）"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "品質部門が保留を解除したら、製造指図を再度開いて対象のユニットを入庫してください。"
+
 msgid "After the correction"
 msgstr "補正後"
 
@@ -25150,7 +25153,9 @@ msgstr "プロジェクト在庫として受け取る"
 msgid "Received"
 msgstr "受信済み"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "{1} のうち {0} を受領"

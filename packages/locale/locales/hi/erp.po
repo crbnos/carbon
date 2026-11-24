@@ -3711,6 +3711,9 @@ msgstr "के बाद"
 msgid "After (calculation method)"
 msgstr "बाद में (गणना विधि)"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "गुणवत्ता विभाग से इकाई को मंज़ूरी मिलने के बाद, उसे स्टॉक में लेने के लिए जॉब फिर से खोलें।"
+
 msgid "After the correction"
 msgstr "सुधार के बाद"
 
@@ -25150,7 +25153,9 @@ msgstr "परियोजना स्टॉक को प्राप्त �
 msgid "Received"
 msgstr "प्राप्त"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "{1} में से {0} प्राप्त"

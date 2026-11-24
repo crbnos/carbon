@@ -3422,6 +3422,84 @@ export async function getJobTrackedEntitiesPreview(
   };
 }
 
+/** Outstanding serials a job receipt must leave with Quality. */
+export async function getJobReceiptHolds(
+  db: Kysely<KyselyDatabase>,
+  jobId: string,
+  companyId: string
+) {
+  return db
+    .selectFrom("jobMakeMethod as method")
+    .innerJoin("companySettings as settings", "settings.id", "method.companyId")
+    .innerJoin("trackedEntity as unit", (join) =>
+      join
+        .onRef("unit.companyId", "=", "method.companyId")
+        .on((eb) =>
+          eb(
+            sql<string>`"unit".attributes->>'Job Make Method'`,
+            "=",
+            eb.ref("method.id")
+          )
+        )
+    )
+    .innerJoin("nonConformanceTrackedEntity as link", (join) =>
+      join
+        .onRef("link.trackedEntityId", "=", "unit.id")
+        .onRef("link.companyId", "=", "unit.companyId")
+    )
+    .innerJoin("nonConformance as issue", (join) =>
+      join
+        .onRef("issue.id", "=", "link.nonConformanceId")
+        .onRef("issue.companyId", "=", "link.companyId")
+    )
+    .select(["unit.id", "unit.readableId as serial"])
+    .select((eb) =>
+      eb.fn
+        .agg<string[]>("array_agg", ["issue.nonConformanceId"])
+        .distinct()
+        .orderBy("issue.nonConformanceId")
+        .as("issues")
+    )
+    .where("method.jobId", "=", jobId)
+    .where("method.companyId", "=", companyId)
+    .where("method.parentMaterialId", "is", null)
+    .where("method.requiresSerialTracking", "=", true)
+    .where("settings.holdUnitsWithOpenIssues", "=", true)
+    .where("unit.quantity", "=", 1)
+    .where("unit.status", "not in", ["Rejected", "Scrapped"])
+    .where((eb) =>
+      eb.or([
+        eb("unit.status", "!=", "Consumed"),
+        eb.exists(
+          eb
+            .selectFrom("itemLedger as issued")
+            .select("issued.id")
+            .whereRef("issued.trackedEntityId", "=", "unit.id")
+            .whereRef("issued.companyId", "=", "unit.companyId")
+            .where("issued.quantity", "<", 0)
+        )
+      ])
+    )
+    .where("issue.status", "!=", "Closed")
+    .where((eb) =>
+      eb.not(
+        eb.exists(
+          eb
+            .selectFrom("itemLedger as receipt")
+            .select("receipt.id")
+            .whereRef("receipt.trackedEntityId", "=", "unit.id")
+            .whereRef("receipt.companyId", "=", "method.companyId")
+            .whereRef("receipt.documentId", "=", "method.jobId")
+            .where("receipt.documentType", "=", "Job Receipt")
+        )
+      )
+    )
+    .groupBy(["unit.id", "unit.readableId"])
+    .orderBy("unit.readableId")
+    .orderBy("unit.id")
+    .execute();
+}
+
 /**
  * What a job has already received to inventory: its received quantity and the
  * tracked entities its receipts posted. One statement, so both come from the

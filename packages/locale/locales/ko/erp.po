@@ -3711,6 +3711,9 @@ msgstr "이후"
 msgid "After (calculation method)"
 msgstr "이후(계산 방법)"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "품질 부서에서 보류를 해제하면 작업을 다시 열어 해당 단위를 입고하세요."
+
 msgid "After the correction"
 msgstr "수정 후"
 
@@ -25150,7 +25153,9 @@ msgstr "프로젝트 재고로 수령"
 msgid "Received"
 msgstr "수령됨"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "{1} 중 {0} 입고됨"

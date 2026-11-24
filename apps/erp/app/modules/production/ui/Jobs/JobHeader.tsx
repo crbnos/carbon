@@ -37,7 +37,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import { chunkArray, formatDate } from "@carbon/utils";
+import { formatDate } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -167,6 +167,7 @@ const JobHeader = () => {
   const expediteModal = useDisclosure();
   const routeData = useRouteData<{
     job: Job;
+    receiptHolds: JobReceiptSnapshot["holds"];
     projectCharge?: JobProjectCharge | null;
     unbatchedBatchableOperations?: number;
   }>(path.to.job(jobId));
@@ -612,6 +613,20 @@ const JobHeader = () => {
           </>
         }
       />
+      {!!routeData?.receiptHolds.length && (
+        <Alert variant="warning" className="max-h-40 overflow-y-auto">
+          <LuTriangleAlert />
+          <AlertTitle>
+            {t`Received ${routeData.job.quantityReceivedToInventory ?? 0} of ${routeData.job.quantity ?? 0}`}
+          </AlertTitle>
+          <AlertDescription>
+            <ReceiptHoldList holds={routeData.receiptHolds} />
+            <Trans>
+              After Quality releases a unit, reopen the job to receive it.
+            </Trans>
+          </AlertDescription>
+        </Alert>
+      )}
       {releaseModal.openCount > 0 && (
         <JobStartModal
           key={`releaseModal-${releaseModal.openCount}`}
@@ -1464,6 +1479,23 @@ async function getJobReceipts(
   }
 }
 
+function ReceiptHoldList({ holds }: { holds: JobReceiptSnapshot["holds"] }) {
+  return (
+    <div>
+      <span>
+        <Trans>On Hold</Trans>
+      </span>
+      <ul>
+        {holds.map((unit) => (
+          <li key={unit.id}>
+            {unit.serial || unit.id} · {unit.issues.join(", ")}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function JobCompleteModal({
   open = true,
   job,
@@ -1490,7 +1522,9 @@ function JobCompleteModal({
   // How the quantity is chosen for a serial job: the serials a completion
   // takes, units numbered as they are received, or locked.
   // Units a serial completion leaves out: on hold for an open quality issue.
-  const [unitsOnHold, setUnitsOnHold] = useState(0);
+  const [unitsOnHold, setUnitsOnHold] = useState<JobReceiptSnapshot["holds"]>(
+    []
+  );
   const [serialChoice, setSerialChoice] = useState<SerialCompleteChoice>({
     mode: "locked"
   });
@@ -1584,51 +1618,13 @@ function JobCompleteModal({
         .order("readableId", { ascending: true })
         .order("id", { ascending: true });
 
-      // complete_job_to_inventory does not receive a serial unit on hold for
-      // an open quality issue (companySettings.holdUnitsWithOpenIssues), so the
-      // dialog does not offer it. A failed read offers it; the receipt still
-      // leaves it out.
-      const onHoldEntityIds = new Set<string>();
-      if (
-        makeMethod.data?.requiresSerialTracking &&
-        trackedEntities.data?.length
-      ) {
-        const settings = await carbon
-          .from("companySettings")
-          .select("holdUnitsWithOpenIssues")
-          .eq("id", company.id)
-          .maybeSingle();
-        if (settings.data?.holdUnitsWithOpenIssues) {
-          const links = await Promise.all(
-            chunkArray(
-              trackedEntities.data.map((entity) => entity.id),
-              100
-            ).map((ids) =>
-              carbon
-                .from("nonConformanceTrackedEntity")
-                .select("trackedEntityId, nonConformance!inner(status)")
-                .in("trackedEntityId", ids)
-                .eq("companyId", company.id)
-                .neq("nonConformance.status", "Closed")
-            )
-          );
-          for (const link of links) {
-            for (const row of link.data ?? []) {
-              if (row.nonConformance?.status !== "Closed") {
-                onHoldEntityIds.add(row.trackedEntityId);
-              }
-            }
-          }
-        }
-      }
-      setUnitsOnHold(onHoldEntityIds.size);
-      if (trackedEntities.data && onHoldEntityIds.size > 0) {
-        trackedEntities.data = trackedEntities.data.filter(
+      const holds = receipts?.holds ?? [];
+      const onHoldEntityIds = new Set(holds.map((unit) => unit.id));
+      setUnitsOnHold(holds);
+      if (trackedEntities.data?.length) {
+        const eligibleEntities = trackedEntities.data.filter(
           (entity) => !onHoldEntityIds.has(entity.id)
         );
-      }
-
-      if (trackedEntities.data?.length) {
         const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
         // Only a serial completion to inventory receives issued units.
         const issuedEntityIds = new Set(
@@ -1637,7 +1633,7 @@ function JobCompleteModal({
             : []
         );
         const availableQuantity = getFinishedQuantity(
-          trackedEntities.data,
+          eligibleEntities,
           issuedEntityIds
         );
 
@@ -1645,7 +1641,7 @@ function JobCompleteModal({
         // the dialog could offer a unit the job already received.
         const choice = makeMethod.data?.requiresSerialTracking
           ? getSerialCompleteChoice({
-              trackedEntities: trackedEntities.data,
+              trackedEntities: eligibleEntities,
               receivedEntityIds: receipts ? receivedEntityIds : null,
               issuedEntityIds,
               // complete_job_to_inventory numbers what the completion takes
@@ -1672,7 +1668,7 @@ function JobCompleteModal({
           setQuantityComplete(
             getDefaultSerialCompleteQuantity({
               finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
-                trackedEntities.data,
+                eligibleEntities,
                 receivedEntityIds,
                 issuedEntityIds
               ),
@@ -1832,21 +1828,23 @@ function JobCompleteModal({
                   }
                 />
 
-                {hasTrackedQuantity && !(quantityComplete > 0) && (
-                  <Alert variant="warning">
-                    <LuTriangleAlert />
-                    <AlertTitle>
-                      <Trans>Nothing completed in MES yet</Trans>
-                    </AlertTitle>
-                    <AlertDescription>
-                      <Trans>
-                        Complete serials/batches in MES before completing this
-                        job, or mark every operation Done to complete it
-                        automatically.
-                      </Trans>
-                    </AlertDescription>
-                  </Alert>
-                )}
+                {hasTrackedQuantity &&
+                  !(quantityComplete > 0) &&
+                  unitsOnHold.length === 0 && (
+                    <Alert variant="warning">
+                      <LuTriangleAlert />
+                      <AlertTitle>
+                        <Trans>Nothing completed in MES yet</Trans>
+                      </AlertTitle>
+                      <AlertDescription>
+                        <Trans>
+                          Complete serials/batches in MES before completing this
+                          job, or mark every operation Done to complete it
+                          automatically.
+                        </Trans>
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                 {serialChoice.mode === "numberOnReceipt" &&
                   quantityComplete > priorReceivedQuantity &&
@@ -1858,12 +1856,19 @@ function JobCompleteModal({
                     </span>
                   )}
 
-                {unitsOnHold > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    <Trans>
-                      Units on hold for an open quality issue are not received.
-                    </Trans>
-                  </span>
+                {unitsOnHold.length > 0 && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>
+                        Units on hold for an open quality issue are not
+                        received.
+                      </Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <ReceiptHoldList holds={unitsOnHold} />
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {receivableSerials &&
@@ -2028,6 +2033,8 @@ function JobCompleteModal({
               <Button
                 type="submit"
                 isDisabled={
+                  (unitsOnHold.length > 0 &&
+                    quantityComplete <= priorReceivedQuantity) ||
                   (hasLeftover && !leftoverAction) ||
                   // Completing a stocked item at zero receives nothing and
                   // consumes nothing; the database refuses it as well.

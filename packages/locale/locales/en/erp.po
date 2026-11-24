@@ -3711,6 +3711,9 @@ msgstr "After"
 msgid "After (calculation method)"
 msgstr "After (calculation method)"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "After Quality releases a unit, reopen the job to receive it."
+
 msgid "After the correction"
 msgstr "After the correction"
 
@@ -25150,7 +25153,9 @@ msgstr "Receive to project stock"
 msgid "Received"
 msgstr "Received"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "Received {0} of {1}"

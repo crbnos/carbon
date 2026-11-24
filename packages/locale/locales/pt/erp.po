@@ -3711,6 +3711,9 @@ msgstr "Após"
 msgid "After (calculation method)"
 msgstr "Depois (método de cálculo)"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "Quando a Qualidade liberar uma unidade, reabra a ordem de produção para recebê-la."
+
 msgid "After the correction"
 msgstr "Após a correção"
 
@@ -25150,7 +25153,9 @@ msgstr "Receber para estoque do projeto"
 msgid "Received"
 msgstr "Recebido"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "Recebido {0} de {1}"

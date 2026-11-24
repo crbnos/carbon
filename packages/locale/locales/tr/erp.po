@@ -3711,6 +3711,9 @@ msgstr "Sonra"
 msgid "After (calculation method)"
 msgstr "Sonra (hesaplama yöntemi)"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "Kalite birimi bir ürünü serbest bıraktığında, ürünü stoğa almak için iş emrini yeniden açın."
+
 msgid "After the correction"
 msgstr "Düzeltmeden sonra"
 
@@ -25150,7 +25153,9 @@ msgstr "Projeye stok al"
 msgid "Received"
 msgstr "Alındı"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "{1} öğeden {0} alındı"
