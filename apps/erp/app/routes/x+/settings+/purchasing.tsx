@@ -469,6 +469,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Attach Part Files Automatically`}
                 checked={includeSupplierPartFiles}
                 onCheckedChange={handleIncludeSupplierPartFilesToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -587,6 +588,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require a Promised Date to Finalize Purchase Orders`}
                 checked={requirePromisedDate}
                 onCheckedChange={handleRequirePromisedDateToggle}
                 disabled={toggleFetcher.state !== "idle"}

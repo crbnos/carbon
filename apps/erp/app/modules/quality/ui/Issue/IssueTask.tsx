@@ -278,7 +278,12 @@ export function TaskItem({
       showDragHandle={showDragHandle}
       dragControls={dragControls}
       statusBadge={
-        <IssueTaskStatus task={task} type={type} isDisabled={isDisabled} />
+        <IssueTaskStatus
+          task={task}
+          taskName={taskTitle ?? ""}
+          type={type}
+          isDisabled={isDisabled}
+        />
       }
       headerExtras={
         <>
@@ -431,6 +436,7 @@ function useTaskStatus({
 
 export function IssueTaskStatus({
   task,
+  taskName,
   type,
   className,
   onChange,
@@ -441,6 +447,7 @@ export function IssueTaskStatus({
     status: IssueActionTask["status"];
     assignee: string | null;
   };
+  taskName: string;
   type: "investigation" | "action" | "approval" | "review";
   className?: string;
   onChange?: (status: IssueActionTask["status"]) => void;
@@ -459,6 +466,7 @@ export function IssueTaskStatus({
 
   return (
     <ActionTaskStatusButton
+      taskName={taskName}
       status={currentStatus as ActionTaskStatus}
       onChange={(next) => onOperationStatusChange(task.id!, next)}
       isDisabled={statusDisabled}

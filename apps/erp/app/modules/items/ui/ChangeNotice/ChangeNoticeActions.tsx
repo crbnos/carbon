@@ -165,6 +165,7 @@ function ActionItem({
       dragControls={dragControls}
       statusBadge={
         <ActionTaskStatusButton
+          taskName={action.name ?? ""}
           status={status}
           onChange={onStatusChange}
           isDisabled={isDisabled}

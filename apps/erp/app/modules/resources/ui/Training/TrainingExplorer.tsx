@@ -654,6 +654,7 @@ function TrainingQuestionFormBody({
               </Label>
               <HStack>
                 <Switch
+                  aria-label={t`Correct Answer`}
                   checked={correctBoolean}
                   onCheckedChange={setCorrectBoolean}
                 />

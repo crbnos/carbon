@@ -6996,6 +6996,9 @@ msgstr "स्थिति बदलें"
 msgid "Change status"
 msgstr "स्थिति बदलें"
 
+msgid "Change status of {taskName}"
+msgstr "{taskName} की स्थिति बदलें"
+
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "आइटम प्रकार बदलें (जैसे भाग, सामग्री, उपकरण, आदि)"
 
@@ -23262,6 +23265,9 @@ msgstr "पिन"
 msgid "Pin {0}"
 msgstr "{0} को पिन करें"
 
+msgid "Pin {label}"
+msgstr "{label} को पिन करें"
+
 msgid "Pin or unpin"
 msgstr "पिन करें या अनपिन करें"
 
@@ -25924,6 +25930,9 @@ msgstr "{itemName} का क्रम बदलें"
 
 msgid "Reorder {itemName} in {listLabel}"
 msgstr "{listLabel} में {itemName} का क्रम बदलें"
+
+msgid "Reorder {label}"
+msgstr "{label} का क्रम बदलें"
 
 msgid "Reorder Group"
 msgstr "समूह को पुनः क्रमित करें"
@@ -33471,9 +33480,6 @@ msgstr "टॉगल करें"
 msgid "Toggle break active"
 msgstr "ब्रेक सक्रिय करें/निष्क्रिय करें"
 
-msgid "Toggle column"
-msgstr "कॉलम टॉगल करें"
-
 msgid "Toggle dark/light mode"
 msgstr "डार्क/लाइट मोड टॉगल करें"
 
@@ -34337,6 +34343,9 @@ msgstr "अनपिक {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "{0} को अनपिन करें"
+
+msgid "Unpin {label}"
+msgstr "{label} को अनपिन करें"
 
 msgid "Unposted Documents"
 msgstr "अपोस्ट किए गए दस्तावेज़"

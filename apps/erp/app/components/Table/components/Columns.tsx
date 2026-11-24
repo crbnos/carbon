@@ -110,6 +110,7 @@ const Columns = <T extends object>({
                   !prevColumn ||
                   prevColumn.getIsPinned() ||
                   !isColumnToggable(prevColumn);
+                const label = column.columnDef.header as string;
 
                 acc.push(
                   <Reorder.Item
@@ -119,16 +120,20 @@ const Columns = <T extends object>({
                   >
                     <HStack className="w-full">
                       <IconButton
-                        aria-label={t`Drag handle`}
+                        aria-label={t`Reorder ${label}`}
                         icon={<LuGripVertical />}
                         variant="ghost"
                       />
                       <span className="text-sm flex-grow flex items-center gap-2">
                         {column.columnDef.meta?.icon}
-                        <>{column.columnDef.header as string}</>
+                        {label}
                       </span>
                       <IconButton
-                        aria-label={t`Toggle column`}
+                        aria-label={
+                          column.getIsPinned()
+                            ? t`Unpin ${label}`
+                            : t`Pin ${label}`
+                        }
                         icon={column.getIsPinned() ? <LuPin /> : <LuPinOff />}
                         onClick={() => {
                           if (column.getIsPinned()) {
@@ -172,7 +177,11 @@ const Columns = <T extends object>({
                         disabled={!column.getIsPinned() && !canPin}
                       />
                       <IconButton
-                        aria-label={t`Toggle column`}
+                        aria-label={
+                          column.getIsVisible()
+                            ? t`Hide ${label}`
+                            : t`Show ${label}`
+                        }
                         icon={column.getIsVisible() ? <LuEye /> : <LuEyeOff />}
                         onClick={() => {
                           // When hiding a column, unpin it and move after pinned columns
