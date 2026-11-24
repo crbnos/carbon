@@ -46,7 +46,8 @@ import {
   convertDateStringToIsoString,
   formatDurationMilliseconds,
   formatRelativeTime,
-  pluckUnique
+  pluckUnique,
+  round
 } from "@carbon/utils";
 import { now, toCalendarDateTime } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -88,6 +89,7 @@ import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
 import { getWorkCentersListWithBlockingStatus } from "~/modules/resources/resources.service";
 import type { WorkCenter } from "~/modules/resources/types";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
+import { isKpiChangeGood } from "~/utils/chart";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
@@ -435,13 +437,16 @@ export default function ProductionDashboard() {
                   <p className="text-3xl font-medium tracking-tighter">
                     {formatValue(total)}
                   </p>
-                  {percentageChange >= 0 ? (
-                    <Badge variant="green">
-                      +{percentageChange.toFixed(0)}%
-                    </Badge>
-                  ) : (
-                    <Badge variant="red">{percentageChange.toFixed(0)}%</Badge>
-                  )}
+                  <Badge
+                    variant={
+                      isKpiChangeGood(selectedKpiData, percentageChange)
+                        ? "green"
+                        : "red"
+                    }
+                  >
+                    {percentageChange >= 0 ? "+" : ""}
+                    {round(percentageChange, 0)}%
+                  </Badge>
                 </>
               )}
             </VStack>

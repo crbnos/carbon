@@ -18302,6 +18302,32 @@ export async function assertPostable(
     );
   }
 }
+
+/**
+ * The first statement of a posting's transaction. The claim and
+ * `assertPostable` let a second post of a Pending document through; it waits
+ * here until the first commits, then sees it posted and refuses.
+ */
+export async function lockPostable(
+  trx: Transaction<KyselyDatabase>,
+  table: PostableTable,
+  id: string,
+  companyId: string
+): Promise<void> {
+  const document = await trx
+    .selectFrom(table)
+    .select(["status"])
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (document && !["Draft", "Pending"].includes(document.status ?? "")) {
+    throw new ServerFnError(
+      `Cannot post: it is already ${document.status}`,
+      409
+    );
+  }
+}
 // Manual accounting work (recognition runs here) runs only after the
 // company's accounting cutover: before it, journals are Provisional and count
 // nowhere (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 1). The ERP

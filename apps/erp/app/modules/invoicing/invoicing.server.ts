@@ -1122,12 +1122,13 @@ export const updatePurchaseInvoiceField = defineServiceFn({
  *
  * @remarks
  * The supplier must have a reachable contact when the company requires one.
- * The invoice is claimed (Draft or Pending to Pending; refused once posted)
- * and posted by the `post-purchase-invoice` server function, which receives
- * its lines; with `skipReceiptPost` the receipt is created but not posted,
- * for tracked items, and its id is returned as `receiptId`. When the company
- * updates purchase prices on invoice post, they are updated next. A failed
- * post or price update returns the invoice to Draft.
+ * The invoice is claimed (Draft to Pending; refused once posted or while
+ * another post holds it) and posted by the `post-purchase-invoice` server
+ * function, which receives its lines; with `skipReceiptPost` the receipt is
+ * created but not posted, for tracked items, and its id is returned as
+ * `receiptId`. When the company updates purchase prices on invoice post, they
+ * are updated next. A failed post returns the invoice to Draft; a failed
+ * price update is logged and leaves the posted invoice Open.
  *
  * @mcp
  */
@@ -1175,12 +1176,15 @@ export const postPurchaseInvoice = defineServiceFn({
     // amounts) runs in the posting itself, so Ramp's bill sync and every
     // other caller of `post-purchase-invoice` get the same refusal.
 
+    // Claim: only a Draft, as the sales invoice does. A Pending invoice is
+    // held by another post (a second click, Ramp's bill sync), and
+    // re-claiming it would run the posting twice.
     const claimed = await client
       .from("purchaseInvoice")
       .update({ status: "Pending" })
       .eq("id", invoiceId)
       .eq("companyId", companyId)
-      .in("status", ["Draft", "Pending"])
+      .eq("status", "Draft")
       .select("id");
     if (claimed.error) {
       return ctx.error(
@@ -1192,18 +1196,19 @@ export const postPurchaseInvoice = defineServiceFn({
     if (!claimed.data.length) {
       return ctx.error(
         "conflict",
-        "This purchase invoice has already been posted"
+        "This purchase invoice is no longer a draft — it may be posting already"
       );
     }
 
-    // Known gap, kept from the route: the price update runs after the post
-    // has committed, so a failed one sets a posted invoice back to Draft.
+    // Only from Pending: an invoice the post left Open keeps its journal, so
+    // it must not go back to Draft and be posted again.
     const backToDraft = async () => {
       const reverted = await client
         .from("purchaseInvoice")
         .update({ status: "Draft" })
         .eq("id", invoiceId)
-        .eq("companyId", companyId);
+        .eq("companyId", companyId)
+        .eq("status", "Pending");
       if (reverted.error) {
         logger.error("Failed to return a purchase invoice to Draft", {
           companyId,
@@ -1259,9 +1264,13 @@ export const postPurchaseInvoice = defineServiceFn({
           },
           purchasingPostings.updatePurchasedPrices
         );
+        // The post has committed: the invoice stays Open with its journal.
         if (prices.error) {
-          await backToDraft();
-          return ctx.error("internal", "Failed to update prices", prices.error);
+          logger.error("Failed to update purchased prices on invoice post", {
+            companyId,
+            invoiceId,
+            error: prices.error
+          });
         }
       }
     } catch (err) {

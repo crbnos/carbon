@@ -30680,6 +30680,10 @@ msgstr "बिक्रय टीम से बात करें"
 msgid "Target"
 msgstr "लक्ष्य"
 
+#. placeholder {0}: numberFormatter.format(effectiveTarget)
+msgid "Target ({0})"
+msgstr ""
+
 msgid "Target an item group."
 msgstr "एक आइटम समूह को लक्षित करें।"
 
