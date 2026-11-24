@@ -6,6 +6,11 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceFile } from "../check";
 import {
+  ACCOUNT_REFERENCE_POLICY_FILE,
+  type AccountReferencePolicy,
+  parseReferencePolicy
+} from "../conformance/account-fk-restrict";
+import {
   DEPLOYMENT_ENV_FILES,
   type DeploymentEnvSources
 } from "../conformance/deployments-set-required-env";
@@ -29,6 +34,14 @@ const readIfPresent = (root: string, files: string[]): SourceFile[] =>
   files
     .filter((file) => existsSync(join(root, file)))
     .map((f) => read(root, f));
+
+export function loadAccountReferencePolicy(
+  root: string
+): AccountReferencePolicy {
+  return parseReferencePolicy(
+    read(root, ACCOUNT_REFERENCE_POLICY_FILE).contents
+  );
+}
 
 /** Every module's `<m>.service.ts`, and the list tables `LIST_TABLES` names. */
 export function loadListSources(root: string) {

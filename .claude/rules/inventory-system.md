@@ -393,8 +393,13 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   backflushes issue it with no ledger row and no cost (`20261106213428_backflush-skips-non-inventory.sql`). The bin reads come from `getUntrackedBinStock`
   (`shared.service.ts`, one row per bin and stripe). Before it reads, each path locks every
   (location, item) it draws (`lockUntrackedDraws`, key `untracked-draw:<companyId>:<locationId>:<itemId>`,
-  `untrackedDrawLockKey`; the SQL locks the same keys in the same key-hash order outside strict
-  backflush), so two draws never plan from the same on-hand. A draw records what picked and
+  `untrackedDrawLockKey`; the SQL locks the same keys in the same key-hash order in every mode,
+  before the strict backflush keys, `20261124055757_backflush-draw-lock-in-strict.sql`), so two
+  draws never plan from the same on-hand. The SQL then locks a FIFO / LIFO stripe's open cost
+  layers and their open children in `calculateCOGS`'s order (`postingDate`, `createdAt`;
+  children by `createdAt`) before it reads them (`20261124060450_backflush-locks-cost-layers.sql`).
+  The MES step backflush sends `maxQuantityIssued` (its target), and `partToOperation` issues only
+  what still reaches it under the job material's lock. A draw records what picked and
   lineside budgets already took from a bin before it plans the rest. Pinned by
   `picked-consumption.test.ts`, `apps/erp/test/database/consumption-bins.test.ts` and
   `supabase/tests/backflush-split-across-bins.test.sql`.
@@ -402,7 +407,9 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   reads `quantityComplete + quantityScrapped` under the operation lock and issues
   `min(quantity × units, estimatedQuantity) − quantityIssued`, as `backflush_job_materials` does
   for the job. Material issued first by a manual or step issue counts, and a resent completion
-  issues nothing. A serial completion (`jobOperationSerialComplete`) locks the operation and
+  issues nothing. It takes the untracked draw locks and reads `quantityIssued` again under them
+  before it computes the draw, as the job's backflush reads it under the same locks, so a
+  backflush that committed meanwhile is not issued twice (`job-material-issue-concurrency.test.ts`). A serial completion (`jobOperationSerialComplete`) locks the operation and
   refuses a unit already complete on it ("This unit is already complete on this operation"), so
   a resent one writes no second production row. `partToOperation` locks the operation it was
   called for and the material's own operation (in id order; the material must be on that job),

@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildAssemblyToolStepLinks,
   computeStepTimings,
+  jobStatusMoment,
   maxToolQuantityByItem,
   planAssemblyStepMarkerRemap,
   planAssemblyStepMarkerSync,
@@ -338,5 +339,44 @@ describe("computeStepTimings", () => {
       ["c", 0]
     ]);
     expect(steps[1].averageSeconds).toBeNull();
+  });
+});
+
+describe("jobStatusMoment", () => {
+  it("announces a release when a Planned job is flipped to Ready", () => {
+    expect(
+      jobStatusMoment({
+        updated: true,
+        priorStatus: "Planned",
+        status: "Ready"
+      })
+    ).toBe("production.jobReleased");
+  });
+
+  it("announces a hold when an In Progress job is paused", () => {
+    expect(
+      jobStatusMoment({
+        updated: true,
+        priorStatus: "In Progress",
+        status: "Paused"
+      })
+    ).toBe("production.jobHeld");
+  });
+
+  it("announces nothing when the guarded write no longer matched the job", () => {
+    expect(
+      jobStatusMoment({
+        updated: false,
+        priorStatus: "Planned",
+        status: "Ready"
+      })
+    ).toBeNull();
+  });
+
+  it.each([
+    ["a re-save of the same status", "Ready", "Ready"],
+    ["a status that is neither a release nor a hold", "Ready", "Cancelled"]
+  ] as const)("announces nothing for %s", (_, priorStatus, status) => {
+    expect(jobStatusMoment({ updated: true, priorStatus, status })).toBeNull();
   });
 });

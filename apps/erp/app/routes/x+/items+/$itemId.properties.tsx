@@ -67,6 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .eq("id", itemId)
     .eq("companyId", caller.companyId)
     .maybeSingle();
+  if (item.error) throw new Response("Failed to load item", { status: 500 });
   const page = item.data ? pageOfRow("item", item.data) : undefined;
   // Own-key check: `in` also accepts inherited keys.
   if (

@@ -29,7 +29,8 @@ databaseTest(
         .limit(2)
         .execute();
       const ids = companies.map((company) => company.id);
-      if (ids.length === 0) return;
+      // With no company every assertion below would hold of nothing.
+      expect(ids).not.toHaveLength(0);
 
       type Row = Record<string, unknown> & { id: string; location: Row[] };
       const rows = await selectRows<"company", Row>(
@@ -87,12 +88,14 @@ databaseTest(
     const db = await connectLocalTestDatabase();
     const rollback = new Error("rollback");
     try {
-      const owner = await db
-        .selectFrom("userToCompany")
-        .select(["companyId", "userId"])
+      // The system user, not a member: a database with no users has no member
+      // row.
+      const { id: companyId } = await db
+        .selectFrom("company")
+        .select("id")
         .limit(1)
-        .executeTakeFirst();
-      if (!owner) return;
+        .executeTakeFirstOrThrow();
+      const owner = { companyId, userId: "system" };
       await db
         .transaction()
         .execute(async (trx) => {
@@ -175,7 +178,7 @@ databaseTest(
     const db = await connectLocalTestDatabase();
     try {
       const everyone = await selectRows(db, "company", {});
-      if (everyone.length === 0) return;
+      expect(everyone).not.toHaveLength(0);
       // If the object's `op` reached the statement this would match every row.
       const lookalike = { op: "= name OR TRUE --", value: "x" } as never;
       const matched = await selectRows(db, "company", {

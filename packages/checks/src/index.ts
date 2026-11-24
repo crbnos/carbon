@@ -10,6 +10,10 @@ export type {
   Violation
 } from "./check";
 export { findClobbers, objectRefs } from "./clobber";
+export {
+  accountFkClassified,
+  accountFkRestrict
+} from "./conformance/account-fk-restrict";
 export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 export { journalStatusFilter } from "./conformance/journal-status-filter";
@@ -18,6 +22,7 @@ export { moduleShape } from "./conformance/module-shape";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+export { noDiscardedQueryError } from "./conformance/no-discarded-query-error";
 export { noForeignKeyWithoutOnDelete } from "./conformance/no-foreign-key-without-on-delete";
 export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 export { noInlineUniqueViolation } from "./conformance/no-inline-unique-violation";
@@ -32,6 +37,10 @@ export { noRawRedirect } from "./conformance/no-raw-redirect";
 export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noServerCodeInClient } from "./conformance/no-server-code-in-client";
+export {
+  noSilentTestPass,
+  sharedTestWrappers
+} from "./conformance/no-silent-test-pass";
 export { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 export { routeActionShape } from "./conformance/route-action-shape";
@@ -76,5 +85,8 @@ export {
 } from "./sources/license-files";
 export { loadModules, modulesDir } from "./sources/modules";
 export { loadServerFiles } from "./sources/server-files";
-export { loadTestFiles } from "./sources/test-files";
+export {
+  loadSharedTestFixtures,
+  loadTestFiles
+} from "./sources/test-files";
 export { loadTypescriptFiles } from "./sources/typescript";

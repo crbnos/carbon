@@ -2358,6 +2358,7 @@ async function previewTaxCodes(
     .select(TAX_CODE_SUMMARY_SELECT)
     .eq("companyId", companyId)
     .in("id", taxCodeIds);
+  if (taxCodes.error) throw taxCodes.error;
   return taxCodes.data;
 }
 

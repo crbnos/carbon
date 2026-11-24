@@ -398,7 +398,10 @@ is refused with an error on its first row.
 - **Concurrency.** `writeGroup` locks the part's `item` row (`FOR NO KEY
   UPDATE`, so rows that reference the item can still be written) before it
   reads the versions, so two imports that create the same new version create
-  it once. It then locks the target `makeMethod` row
+  it once. It reads the versions through `lockItemMakeMethods`, which locks
+  all of them in id order, the order an activation takes them: a file that
+  writes two versions would otherwise hold one while an activation held the
+  other, and deadlock. It then locks the target `makeMethod` row
   (`FOR NO KEY UPDATE`) before it reads the version's lines, so two imports of
   one file write each line once. Not `FOR UPDATE`: that also blocks the
   `KEY SHARE` lock the `materialMakeMethodId` foreign key takes, so every BOM

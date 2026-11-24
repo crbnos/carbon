@@ -4580,6 +4580,19 @@ export async function createMakeMethodVersion(
 
   try {
     const draftId = await withTransaction(db, async (trx) => {
+      // Read under the lock an activation takes: the source goes Active only
+      // while no other version of the item is.
+      const setActive =
+        activate &&
+        !(
+          await sharedPostings.lockItemMakeMethods(trx, {
+            itemIds: [source.data.itemId],
+            companyId
+          })
+        ).some(
+          (method) => method.id !== copyFromId && method.status === "Active"
+        );
+
       const draft = await trx
         .insertInto("makeMethod")
         .values({
@@ -4595,7 +4608,7 @@ export async function createMakeMethodVersion(
         .returning("id")
         .executeTakeFirstOrThrow();
 
-      if (activate) {
+      if (setActive) {
         // A source set Active meanwhile, or archived behind a newer Active, is
         // not outranked by the new Draft either: nothing to refuse.
         await trx
@@ -11360,6 +11373,30 @@ export async function syncMakeMethod(
         await db
           .transaction()
           .execute(async (trx: Transaction<KyselyDatabase>) => {
+            // The statuses read above are read again under the lock, which
+            // an activation also takes: a version activated or archived
+            // since then is not written into.
+            const lockedStatus = new Map(
+              (
+                await sharedPostings.lockItemMakeMethods(trx, {
+                  itemIds: [
+                    topLevelItemId,
+                    ...existingMakeMethodsByItemId.keys()
+                  ],
+                  companyId
+                })
+              ).map((method) => [method.id, method.status])
+            );
+            if (lockedStatus.get(activeMakeMethodId) !== "Draft") {
+              throw new ServerFnError(
+                `${topLevelItem.data?.readableIdWithRevision ?? "This item"}: its make method version changed while the sync ran. Sync again.`,
+                409
+              );
+            }
+            for (const method of existingMakeMethodsByItemId.values()) {
+              method.status = lockedStatus.get(method.id) ?? method.status;
+            }
+
             // If we created a new draft for the top-level, copy operations from the active version
             if (topLevelSourceMakeMethodId) {
               await copyMakeMethodOperations(

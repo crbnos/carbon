@@ -4030,8 +4030,13 @@ export async function updateJobStatus(
   const updated =
     !result.error && (!fromStatuses || (result.data?.length ?? 0) > 0);
 
-  if (updated && prior.data && prior.data.status !== status) {
-    if (status === "Ready") {
+  if (prior.data) {
+    const moment = jobStatusMoment({
+      updated,
+      priorStatus: prior.data.status,
+      status
+    });
+    if (moment === "production.jobReleased") {
       await raiseMoment("production.jobReleased", {
         outputs: { job: { id }, releasedBy: { id: updatedBy } },
         companyId,
@@ -4045,7 +4050,7 @@ export async function updateJobStatus(
         priorStatus: prior.data.status,
         source
       });
-    } else if (status === "Paused") {
+    } else if (moment === "production.jobHeld") {
       await raiseMoment("production.jobHeld", {
         outputs: { job: { id }, heldBy: { id: updatedBy } },
         companyId,
@@ -4055,6 +4060,22 @@ export async function updateJobStatus(
   }
 
   return { ...result, updated };
+}
+
+/**
+ * `updated: false` (a guarded write that found the job moved on) announces
+ * nothing.
+ */
+export function jobStatusMoment(change: {
+  updated: boolean;
+  priorStatus: (typeof jobStatus)[number];
+  status: (typeof jobStatus)[number];
+}): "production.jobReleased" | "production.jobHeld" | null {
+  const { updated, priorStatus, status } = change;
+  if (!updated || priorStatus === status) return null;
+  if (status === "Ready") return "production.jobReleased";
+  if (status === "Paused") return "production.jobHeld";
+  return null;
 }
 
 export async function updateJobMaterialOrder(
