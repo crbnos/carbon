@@ -7,7 +7,7 @@
 
 ## Progress
 - [x] Task 1: Add the `yaml` dev dependency to `@carbon/checks`
-- [ ] Task 2: Write the scope module (triggers, globs, frontmatter)
+- [x] Task 2: Write the scope module (triggers, globs, frontmatter)
 - [ ] Task 3: Add `triggers` to every single-file check
 - [ ] Task 4: Write the file-set table for single-file checks
 - [ ] Task 5: Add `triggers:` and `summary:` to the 89 rules
