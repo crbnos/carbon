@@ -12,10 +12,15 @@ import {
   dependencyEdgesEqual,
   mergeCrossJobOperations,
   startedOperationHolds,
+  startedOperationsToHold,
   visibleReservations
 } from "./run-overlay.ts";
 import type { ReservationInterval } from "./slot-allocator.ts";
-import type { PlannedReservation, ScheduledOperation } from "./types.ts";
+import type {
+  BaseOperation,
+  PlannedReservation,
+  ScheduledOperation
+} from "./types.ts";
 import {
   type FiniteSchedulingContext,
   WorkCenterSelector
@@ -264,6 +269,97 @@ describe("startedOperationHolds", () => {
     ]);
   });
 
+  it("holds the operator working a started gated op, so an earlier job's gated op waits for them", () => {
+    // job-2's started op on wc1: 3h left, all hands-on, emp-1 clocked on it.
+    const holds = startedOperationHolds({
+      operations: [
+        {
+          jobId: "job-2",
+          readableJobId: "J2",
+          workCenterId: "wc1",
+          hours: 3,
+          attendedHours: 3,
+          employeeIds: ["emp-1"]
+        }
+      ],
+      windowsByWorkCenter: windows,
+      reservations: [],
+      now: start,
+      horizonEnd: start + 30 * 24 * HOUR,
+      timeZone: "UTC"
+    });
+
+    // job-1 runs first: a 2h gated op on a free machine (wc2) whose only
+    // qualified operator is emp-1. It sees job-2's holds, as
+    // buildFiniteContext hands Employee rows to the selector.
+    const free = [{ start, end: start + 30 * 24 * HOUR }];
+    const selector = new WorkCenterSelector(
+      {} as unknown as MasterDataProvider,
+      "loc1"
+    );
+    selector.setFiniteContext({
+      capacityByWorkCenter: new Map([
+        ["wc2", { workCenter: { id: "wc2" }, windows: free, reservations: [] }]
+      ]),
+      requirementByProcess: new Map([
+        ["proc", { abilityId: "ab1", abilityName: "Welding" }]
+      ]),
+      employeesByAbility: new Map([
+        ["ab1", [{ employeeId: "emp-1", expiresAt: null, windows: free }]]
+      ]),
+      reservationsByEmployee: new Map([
+        [
+          "emp-1",
+          holds
+            .filter((h) => h.resourceKind === "Employee")
+            .map((h) => ({ startAt: h.startAt, endAt: h.endAt }))
+        ]
+      ]),
+      dependencies: [],
+      now: start,
+      horizonDays: 365,
+      windowsEnd: start + 30 * 24 * HOUR,
+      peopleByWorkCenter: new Map(),
+      assignmentsByEmployee: new Map(),
+      requiresStaffing: false,
+      peopleBudgets: new Map(),
+      windowsByEmployee: new Map([["emp-1", free]]),
+      timeZone: "UTC",
+      operationsWithEvents: new Set()
+    });
+    const job1 = selector
+      .selectWorkCentersForOperations(
+        [
+          {
+            id: "op-1",
+            jobId: "job-1",
+            processId: "proc",
+            workCenterId: "wc2",
+            startDate: null,
+            dueDate: null,
+            priority: 1,
+            durationHours: 0,
+            durationDays: 1,
+            hasConflict: false,
+            conflictReason: null,
+            setupTime: 0,
+            laborTime: 2,
+            laborUnit: "Total Hours",
+            machineTime: 0,
+            operationQuantity: 1,
+            quantityComplete: 0,
+            status: "Ready"
+          }
+        ],
+        { jobDueDate: null }
+      )
+      .get("op-1");
+    expect([job1?.placedStart, job1?.placedEnd]).toEqual([
+      "2026-01-05T03:00:00.000Z",
+      "2026-01-05T05:00:00.000Z"
+    ]);
+  });
+
   it("queues two running ops on one machine in the order given", () => {
     const holds = startedOperationHolds({
       operations: [
@@ -292,5 +388,41 @@ describe("startedOperationHolds", () => {
       ["job-a", HOUR, 2 * HOUR],
       ["job-b", 2 * HOUR, 4 * HOUR]
     ]);
+  });
+});
+
+describe("startedOperationsToHold", () => {
+  const started = (overrides: Partial<BaseOperation>): BaseOperation => ({
+    id: "op",
+    jobId: "job",
+    processId: "proc",
+    workCenterId: "wc1",
+    status: "In Progress",
+    operationType: "Process",
+    setupTime: 0,
+    laborTime: 2,
+    laborUnit: "Total Hours",
+    machineTime: 0,
+    operationQuantity: 1,
+    quantityComplete: 0,
+    ...overrides
+  });
+  const holdIds = (operations: BaseOperation[]) =>
+    startedOperationsToHold({
+      jobs: [{ jobId: "job", readableJobId: "J", status: "Ready", operations }],
+      skipOperationIds: new Set(),
+      operationsWithEvents: new Set()
+    }).map((h) => h.operationId);
+
+  it("holds a started op on the work center the selector keeps it on", () => {
+    expect(holdIds([started({ id: "op-run" })])).toEqual(["op-run"]);
+  });
+
+  // The selector gives an op with no process no candidate, so it never runs
+  // on its stored machine this run: holding that machine idles it.
+  it("does not hold a started op that has no process", () => {
+    expect(holdIds([started({ id: "op-noproc", processId: null })])).toEqual(
+      []
+    );
   });
 });

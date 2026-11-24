@@ -245,7 +245,16 @@ Two Inngest functions listen on that event
   `serviceRole.functions.invoke("schedule", …)`).
   Each engine run clears its own job's stale stamp (no wave-side flag-clearing),
   but only a stamp no newer than the run's start (`runStartedAt`): a MARK that
-  lands mid-run stays for the next wave. Waves share the `"schedule:" + companyId`
+  lands mid-run stays for the next wave. Both sides use the DATABASE clock:
+  `runStartedAt` is `databaseNow` (`packages/planning/src/run-order.ts`, `SELECT now()`, microseconds, read
+  once before any input), and MARK and `nightly-replan.ts` stamp
+  `scheduleOutdatedAt = now()` through Kysely (`getJobDatabaseClient()`).
+  Newest read wins: under the location lock, `claimLocationSave`
+  (`persist-location.ts`) reads `locationScheduleRun.lastRunStartedAt` and applies the rule MRP uses (`newestRunSaves`, `run-order.ts`) against
+  `runStartedAt`; when a later-started run already saved, the run writes
+  nothing (batch pre-pass and final write alike) and returns `skipped: true`
+  with zero counts and no newly-late jobs; otherwise it records its start
+  there and writes. No caller treats a skipped run as a failure. Waves share the `"schedule:" + companyId`
   concurrency key; a user-triggered regen runs in-process in the ERP and does not,
   so `persistLocationWrites` and the batch pre-pass first take
   `pg_advisory_xact_lock(hashtextextended('schedule:location:<id>', 0))`
@@ -309,9 +318,13 @@ only; its output is read by nothing in the placement path (spec
   (`DEADLINE_PRIORITY`: ASAP → Hard Deadline → Soft Deadline → No Deadline), then
   `dueDate ASC NULLS LAST → job.priority ASC → createdAt ASC → id ASC` — so a no-due-date ASAP
   order claims capacity first. Before the jobs run, `provider.holdStartedOperations`
-  holds each STARTED op's machine (`isOperationStarted`, on its assigned work center, from
-  `now` for its remaining work; batch members and outside ops skipped; pure rule
-  `startedOperationHolds` in `run-overlay.ts`). A job sees the holds of the jobs not run
+  holds each STARTED op's machine from `now` for its remaining work, only where the
+  selector will keep it (`startedOperationWorkCenter`, the selector's own sticky rule:
+  a process and its stored work center; batch members and outside ops skipped; pure
+  rules `startedOperationsToHold` / `startedOperationHolds` in `run-overlay.ts`). A
+  gated op (process `requiresAbility`) also holds each person with an open Labor
+  `productionEvent` on it (one read for all held ops), as an `Employee` hold for the
+  hands-on part from the same start; no open labor event, no person hold. A job sees the holds of the jobs not run
   yet; `releaseHolds` drops a job's own holds as it runs, so a running op keeps its
   machine ahead of an earlier job's unstarted work while that job's unstarted ops keep
   their normal place. Each job's engine run **excludes the jobs not yet run
@@ -464,7 +477,8 @@ only; its output is read by nothing in the placement path (spec
   `productionEvent` exists on the op — anchored at `now`.
 - **Priority** = per-work-center dispatch sequence number (`priority-calculator.ts`): ops
   grouped by `workCenterId`, sorted by **placed start date ascending** (nulls last),
-  tie-broken by `job.priority` then deadline type, then numbered 1, 2, 3…. The dispatch
+  tie-broken by `job.priority` then deadline type, then numbered 1, 2, 3…. Outside
+  Processing ops are left out of every work center's numbering. The dispatch
   sequence IS the forward-ASAP placement order — one source of truth for what runs next.
   Boards sort by `priority` ascending. (Job-level `job.priority` is a separate fractional
   index set at job creation by `calculateJobPriority`.) There is **no configurable
@@ -485,7 +499,8 @@ only; its output is read by nothing in the placement path (spec
   `WorkCenter`/`Employee` kinds); and writes `job.projectedCompletionAt` (= the max
   placed end, the forecast finish) while clearing
   `scheduleOutdatedReason`/`scheduleOutdatedAt` for each job (unless stamped after
-  `runStartedAt`). The engine's `buildWrites` also computes the
+  `runStartedAt`), unless a later-started run already saved the location
+  (`claimLocationSave`: then nothing is written). The engine's `buildWrites` also computes the
   **newly-late** flag (was on-time-or-unforecast before, now projected past `dueDate`
   on the location calendar) for the wave's digest. Every due-date judgement — need-by
   targets, lateness conflicts, newly-late, the behind-target sentence — reads
@@ -515,7 +530,9 @@ split, so a pinned op's `startDate`/`projectedCompletionAt` are re-projected eve
 regen and may differ from its pin. The one exception is a pinned OUTSIDE-PROCESSING
 op, which skips placement and keeps its stored window, emitted as its placement (start
 of `startDate` to the end of `dueDate` in the job's timezone): it counts in the job's
-projected completion and lateness, and successors chain after it. Pins are set via `setJobOperationDueDate` (`production.server.ts`,
+projected completion and lateness, and successors chain after it. Its selection carries
+no work center (a stored one is a stale in-house machine), and `calculatePrioritiesByWorkCenter`
+numbers no Outside Processing op in any work center's queue. Pins are set via `setJobOperationDueDate` (`production.server.ts`,
 sets `manuallyScheduled`) from `OperationDueDatePicker` on the BOP.
 
 ## Conflict detection
@@ -544,7 +561,9 @@ anchor happened to fall in) for its work-content duration in calendar time, on
 the fallback WC. An op with NO candidate work center (no process, or a process no
 active work center at the location runs) takes the same branch: a conflict (plus
 the `error` quote-lead-time reads), no marker (there is no work center to draw it
-on), but successors still chain after its work content from its earliest start. It exists so the **Forecast** (which is 100% reservation-driven)
+on), but successors still chain after its work content from its earliest start, and
+its selection's `placeholderEnd` counts in `projectedFinishMs` (the job's projected
+completion, newly-late, the quote lead time) without being applied as a placement. It exists so the **Forecast** (which is 100% reservation-driven)
 shows the op instead of the job silently ending after its last placeable op, and
 so `job.projectedCompletionAt` extends to it and successors chain after it
 (`placedEndByOperation`). It is deliberately NOT added to the in-run

@@ -17,11 +17,7 @@ import {
   placeReleasedBatches
 } from "./batch-scheduler.ts";
 import { buildScheduledOperations } from "./date-calculator.ts";
-import {
-  businessDayFromMs,
-  msToInstantIso,
-  toInstantMs
-} from "./date-utils.ts";
+import { businessDayFromMs, msToInstantIso } from "./date-utils.ts";
 import { buildOperationDependencies } from "./dependency-manager.ts";
 import {
   buildFiniteContext,
@@ -43,6 +39,7 @@ import type {
 } from "./types.ts";
 import {
   type FiniteSchedulingContext,
+  projectedFinishMs,
   WorkCenterSelector
 } from "./work-center-selector.ts";
 
@@ -781,15 +778,11 @@ export async function runQuoteLeadTimeWhatIf(params: {
       jobDueDate: null,
       batchPlacements
     });
-    // Projected finish = the latest placed end across selections and the
-    // planned reservations, the same union selectWorkCenters() computes.
-    let finishMs: number | null = null;
-    const bump = (ms: number) => {
-      if (finishMs === null || ms > finishMs) finishMs = ms;
-    };
-    for (const s of selections.values()) {
-      if (s.placedEnd) bump(toInstantMs(s.placedEnd));
-    }
+    // Projected finish: the same rule the engine's projected completion uses.
+    const finishMs = projectedFinishMs(
+      selections.values(),
+      selector.getPlannedReservations()
+    );
     // The first placement conflict, if any. An op with no process or no work
     // center at this location comes back as `error` with nothing placed, so it
     // counts too — otherwise the finish silently omits it.
@@ -807,7 +800,6 @@ export async function runQuoteLeadTimeWhatIf(params: {
     let maxWait = -1;
     const wcLoad = new Map<string, { ms: number; ops: number }>();
     for (const p of selector.getPlannedReservations()) {
-      if (p.endAt > p.startAt) bump(p.endAt);
       if (p.scheduleNote) {
         const wait =
           p.earliestStartAt !== undefined ? p.startAt - p.earliestStartAt : 0;

@@ -2,8 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { CalendarWindow } from "./calendar-utils.ts";
+import { startedOperationWorkCenter } from "./apply-work-center-selections.ts";
+import { addWorkingTime, type CalendarWindow } from "./calendar-utils.ts";
 import { toIsoDate } from "./date-utils.ts";
+import { remainingWorkHours } from "./duration-calculator.ts";
 import type {
   CrossJobOperation,
   LiveReservation
@@ -154,14 +156,90 @@ export function mergeCrossJobOperations(
   return merged;
 }
 
+/** One started operation the run holds resources for before any job runs. */
+export type StartedOperationHold = {
+  jobId: string;
+  readableJobId: string;
+  operationId: string;
+  processId: string | null;
+  workCenterId: string;
+  /** The work left: setup (until it has an event) + max(labor, machine). */
+  hours: number;
+  /** The hands-on part of `hours` (setup + labor), done first. */
+  attendedHours: number;
+};
+
+/**
+ * The run's started operations whose machines are held before any job runs,
+ * in the run's job order. Only capacity-holding jobs; batch members
+ * (`skipOperationIds`) hold their batch's reservation instead, and outside
+ * operations hold nothing.
+ */
+export function startedOperationsToHold(args: {
+  jobs: {
+    jobId: string;
+    readableJobId: string;
+    status: string | null;
+    operations: BaseOperation[];
+  }[];
+  skipOperationIds: Set<string>;
+  operationsWithEvents: Set<string>;
+}): StartedOperationHold[] {
+  const held: StartedOperationHold[] = [];
+  for (const job of args.jobs) {
+    if (
+      !(capacityHoldingJobStatuses as readonly string[]).includes(
+        job.status ?? ""
+      )
+    ) {
+      continue;
+    }
+    // The selector's capacity set always holds the work centers the job's
+    // operations carry (`loadAvailabilityWindows` adds each one).
+    const capacity = new Set(
+      job.operations.flatMap((op) => (op.workCenterId ? [op.workCenterId] : []))
+    );
+    for (const op of job.operations) {
+      // Only where the selector will place it: the same rule it uses.
+      const workCenterId = startedOperationWorkCenter(op, capacity);
+      if (
+        !op.id ||
+        !workCenterId ||
+        op.status === "Done" ||
+        op.status === "Canceled" ||
+        op.operationType === "Outside Processing" ||
+        args.skipOperationIds.has(op.id)
+      ) {
+        continue;
+      }
+      const remaining = remainingWorkHours(
+        op,
+        args.operationsWithEvents.has(op.id)
+      );
+      held.push({
+        jobId: job.jobId,
+        readableJobId: job.readableJobId,
+        operationId: op.id,
+        processId: op.processId ?? null,
+        workCenterId,
+        hours: remaining.durationHours,
+        attendedHours: remaining.attendedHours
+      });
+    }
+  }
+  return held;
+}
+
 /**
  * Where the run's STARTED operations hold their machines before any job runs.
  * Jobs run in priority order, so a later job's running operation would
  * otherwise queue behind an earlier job's unstarted work on the same machine.
  * Each hold is the earliest span from `now` for the work the operation has
  * left on the work center it runs on, taken in the order given, around the
- * reservations no job of the run rewrites. A job sees the holds of the jobs
- * that have not run yet; its own run places the operation itself.
+ * reservations no job of the run rewrites. The people working a gated op
+ * (`employeeIds`) are held for its hands-on part from the same start. A job
+ * sees the holds of the jobs that have not run yet; its own run releases them
+ * and places the operation itself, so it never books against its own hold.
  */
 export function startedOperationHolds(args: {
   operations: {
@@ -169,6 +247,13 @@ export function startedOperationHolds(args: {
     readableJobId: string;
     workCenterId: string;
     hours: number;
+    /** The hands-on part of `hours`, done first. Defaults to `hours`. */
+    attendedHours?: number;
+    /**
+     * The people working the op now (an open Labor event), when its process
+     * requires an ability. Each is held for the hands-on part of the hold.
+     */
+    employeeIds?: string[];
   }[];
   windowsByWorkCenter: Map<string, CalendarWindow[]>;
   reservations: LiveReservation[];
@@ -213,6 +298,25 @@ export function startedOperationHolds(args: {
       readableJobId: op.readableJobId,
       jobOperationBatchId: null
     });
+    // The operator works the hands-on part first, on the machine's hours.
+    const attendedHours = Math.min(op.attendedHours ?? op.hours, op.hours);
+    const attendedEnd = Math.min(
+      addWorkingTime(slot.start, attendedHours * 3_600_000, capacity.windows) ??
+        slot.end,
+      slot.end
+    );
+    if (attendedEnd <= slot.start) continue;
+    for (const employeeId of new Set(op.employeeIds ?? [])) {
+      holds.push({
+        resourceKind: "Employee",
+        resourceId: employeeId,
+        startAt: slot.start,
+        endAt: attendedEnd,
+        jobId: op.jobId,
+        readableJobId: op.readableJobId,
+        jobOperationBatchId: null
+      });
+    }
   }
   return holds;
 }

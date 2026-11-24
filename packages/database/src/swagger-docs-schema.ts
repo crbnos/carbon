@@ -13236,6 +13236,131 @@ export default {
         tags: ["documentLabel"]
       }
     },
+    "/locationScheduleRun": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.locationScheduleRun.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.locationScheduleRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.locationScheduleRun.lastRunStartedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/locationScheduleRun"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        summary:
+          "Start of the last schedule run that saved each location (database clock). A run that started earlier skips its save. Written by the scheduler only.",
+        tags: ["locationScheduleRun"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.locationScheduleRun"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        summary:
+          "Start of the last schedule run that saved each location (database clock). A run that started earlier skips its save. Written by the scheduler only.",
+        tags: ["locationScheduleRun"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.locationScheduleRun.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.locationScheduleRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.locationScheduleRun.lastRunStartedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        summary:
+          "Start of the last schedule run that saved each location (database clock). A run that started earlier skips its save. Written by the scheduler only.",
+        tags: ["locationScheduleRun"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.locationScheduleRun.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.locationScheduleRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.locationScheduleRun.lastRunStartedAt"
+          },
+          {
+            $ref: "#/parameters/body.locationScheduleRun"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        summary:
+          "Start of the last schedule run that saved each location (database clock). A run that started earlier skips its save. Written by the scheduler only.",
+        tags: ["locationScheduleRun"]
+      }
+    },
     "/assemblyInstructionStepMaterial": {
       get: {
         parameters: [
@@ -121567,6 +121692,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.lastMrpRunStartedAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -121932,6 +122060,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.lastMrpRunStartedAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -122249,6 +122380,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.lastMrpRunStartedAt"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -149573,6 +149707,30 @@ export default {
         },
         companyId: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    locationScheduleRun: {
+      description:
+        "Start of the last schedule run that saved each location (database clock). A run that started earlier skips its save. Written by the scheduler only.",
+      required: ["locationId", "companyId", "lastRunStartedAt"],
+      properties: {
+        locationId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        lastRunStartedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -201582,6 +201740,12 @@ export default {
           enum: ["Ours First", "Theirs First", "Theirs Only", "Ours Only"],
           format: 'public."partNumberDisplay"',
           type: "string"
+        },
+        lastMrpRunStartedAt: {
+          description:
+            "Start of the last MRP run that saved (database clock). An MRP run that started earlier skips its save.",
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -209362,6 +209526,33 @@ export default {
     },
     "rowFilter.documentLabel.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.locationScheduleRun": {
+      name: "locationScheduleRun",
+      description: "locationScheduleRun",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/locationScheduleRun"
+      }
+    },
+    "rowFilter.locationScheduleRun.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.locationScheduleRun.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.locationScheduleRun.lastRunStartedAt": {
+      name: "lastRunStartedAt",
       required: false,
       in: "query",
       type: "string"
@@ -267257,6 +267448,14 @@ export default {
     },
     "rowFilter.companySettings.customerPartNumberDisplay": {
       name: "customerPartNumberDisplay",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.lastMrpRunStartedAt": {
+      name: "lastMrpRunStartedAt",
+      description:
+        "Start of the last MRP run that saved (database clock). An MRP run that started earlier skips its save.",
       required: false,
       in: "query",
       type: "string"

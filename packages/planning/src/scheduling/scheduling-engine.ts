@@ -17,12 +17,7 @@ import {
   composeBehindTarget
 } from "./conflict-messages.ts";
 import { buildScheduledOperations } from "./date-calculator.ts";
-import {
-  businessDay,
-  msToInstantIso,
-  toInstantIso,
-  toInstantMs
-} from "./date-utils.ts";
+import { businessDay, msToInstantIso, toInstantIso } from "./date-utils.ts";
 import {
   buildOperationDependencies,
   DependencyGraphImpl,
@@ -65,6 +60,7 @@ import { capacityHoldingJobStatuses } from "./types.ts";
 import {
   applyWorkCenterSelections,
   type FiniteSchedulingContext,
+  projectedFinishMs,
   WorkCenterSelector
 } from "./work-center-selector.ts";
 
@@ -595,19 +591,11 @@ export class SchedulingEngine {
     }
 
     // Projected completion = the latest finish across ALL of this run's
-    // placements: selection.placedEnd covers regular, pinned, and
-    // outside-processing ops (pins place normally now); the planned
-    // reservations are a belt-and-braces union over the same placements.
-    let maxEndMs: number | null = null;
-    const bump = (ms: number) => {
-      if (maxEndMs === null || ms > maxEndMs) maxEndMs = ms;
-    };
-    for (const selection of selections.values()) {
-      if (selection.placedEnd) bump(toInstantMs(selection.placedEnd));
-    }
-    for (const p of this.workCenterSelector.getPlannedReservations()) {
-      if (p.endAt > p.startAt) bump(p.endAt);
-    }
+    // placements and placeholders (`projectedFinishMs`).
+    const maxEndMs = projectedFinishMs(
+      selections.values(),
+      this.workCenterSelector.getPlannedReservations()
+    );
     this.projectedCompletionAt =
       maxEndMs === null ? null : msToInstantIso(maxEndMs);
 
@@ -684,7 +672,8 @@ export class SchedulingEngine {
             workCenterId: scheduled.workCenterId ?? null,
             durationHours: scheduled.durationHours ?? null,
             createdAt: toIsoOrNull(wcOp.createdAt),
-            projectedCompletionAt: scheduled.projectedCompletionAt ?? null
+            projectedCompletionAt: scheduled.projectedCompletionAt ?? null,
+            operationType: scheduled.operationType ?? null
           };
         }
         // Operation from another job - use DB data
@@ -708,7 +697,8 @@ export class SchedulingEngine {
             operationQuantity: wcOp.operationQuantity
           }),
           createdAt: toIsoOrNull(wcOp.createdAt),
-          projectedCompletionAt: toIsoOrNull(wcOp.projectedCompletionAt)
+          projectedCompletionAt: toIsoOrNull(wcOp.projectedCompletionAt),
+          operationType: wcOp.operationType ?? null
         };
       });
 
@@ -727,7 +717,8 @@ export class SchedulingEngine {
           workCenterId: op.workCenterId,
           durationHours: op.durationHours ?? null,
           createdAt: toIsoOrNull(op.createdAt),
-          projectedCompletionAt: op.projectedCompletionAt ?? null
+          projectedCompletionAt: op.projectedCompletionAt ?? null,
+          operationType: op.operationType ?? null
         });
       }
     }

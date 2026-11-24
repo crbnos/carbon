@@ -15,6 +15,7 @@ import {
   applyWorkCenterSelections,
   type FiniteSchedulingContext,
   hasPreassignedWorkCenter,
+  projectedFinishMs,
   WorkCenterSelector
 } from "./work-center-selector.ts";
 
@@ -1032,6 +1033,7 @@ it.each([
       workCenterId: null,
       priority: 0,
       error: expect.any(String),
+      placeholderEnd: "2026-01-05T04:00:00.000Z",
       conflict: expect.any(String)
     });
     // op-a's 4h of work, counted from now (00:00) in calendar time like a
@@ -1043,6 +1045,66 @@ it.each([
       placedEnd: "2026-01-05T08:00:00.000Z",
       conflict: null
     });
+  }
+);
+
+it.each([
+  ["first", "op-a"],
+  ["in the middle", "op-b"],
+  ["last", "op-c"]
+])(
+  "an op with no work center %s in its job counts in the projected finish and stays unplaced",
+  (_label, noWorkCenterId) => {
+    const selector = new WorkCenterSelector(
+      {} as unknown as MasterDataProvider,
+      "loc1"
+    );
+    selector.setFiniteContext(
+      makeContext({
+        dependencies: [
+          { jobId: "job-1", operationId: "op-b", dependsOnId: "op-a" },
+          { jobId: "job-1", operationId: "op-c", dependsOnId: "op-b" }
+        ]
+      })
+    );
+    // Three 4h ops in a chain on wc1 (their process has no pool, so each falls
+    // back to its center); the chosen one has no process, so no work center.
+    const ops = ["op-a", "op-b", "op-c"].map((id, order) =>
+      makeOp({
+        id,
+        order,
+        processId: id === noWorkCenterId ? null : "proc-1",
+        workCenterId: id === noWorkCenterId ? null : "wc1",
+        startDate: null,
+        dueDate: null,
+        setupTime: 0,
+        laborTime: 4,
+        laborUnit: "Total Hours",
+        machineTime: 0,
+        operationQuantity: 1,
+        quantityComplete: 0
+      })
+    );
+
+    const selections = selector.selectWorkCentersForOperations(ops, {
+      jobDueDate: null
+    });
+
+    // 3 × 4h from 00:00, the unplaced op counted for its work content.
+    expect(
+      projectedFinishMs(selections.values(), selector.getPlannedReservations())
+    ).toBe(utc("2026-01-05T12:00:00.000Z"));
+    // It is still not placed: no dates, a conflict.
+    const applied = applyWorkCenterSelections(
+      new Map(ops.map((op) => [op.id, op])),
+      selections
+    ).get(noWorkCenterId);
+    expect([
+      applied?.startDate,
+      applied?.projectedCompletionAt,
+      applied?.hasConflict,
+      applied?.workCenterId
+    ]).toEqual([null, undefined, true, null]);
   }
 );
 
@@ -1068,9 +1130,11 @@ it.each([
     );
     selector.setFiniteContext(makeContext({ timeZone: "America/Chicago" }));
 
+    // It still carries the in-house machine it had before it went outside.
     const outside = makeOp({
       id: "op-out",
       processId: "proc-out",
+      workCenterId: "wc-7",
       operationType: "Outside Processing",
       manuallyScheduled: true,
       startDate: "2026-01-07",

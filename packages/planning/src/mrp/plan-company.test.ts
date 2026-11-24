@@ -235,35 +235,6 @@ describe("planCompany", () => {
     ]);
   });
 
-  // A job's scrap allowance is expected to be lost, so it is not supply.
-  it("books a job's good units as supply, not its scrap allowance", () => {
-    const outputs = planCompany(
-      base({
-        productionLines: [
-          {
-            id: "job_1",
-            itemId: "item_new",
-            locationId: "loc_plant",
-            dueDate: "2026-10-14",
-            deadlineType: "Hard Deadline",
-            // productionQuantity 105 (100 + 5 scrap), nothing received
-            quantityToReceive: 105,
-            quantity: 100,
-            quantityReceivedToInventory: 0
-          }
-        ]
-      })
-    );
-    expect(
-      outputs.supplyActualUpserts.map((row) => [
-        row.itemId,
-        row.sourceType,
-        row.periodId,
-        Number(row.actualQuantity)
-      ])
-    ).toEqual([["item_new", "Production Order", "per_w2", 100]]);
-  });
-
   it("writes one actual row per segment for the same item, location and week", () => {
     const fixture = loadFixture("plan-company.project.json");
     const jobMaterial = {

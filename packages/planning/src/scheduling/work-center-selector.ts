@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { parseDate } from "@internationalized/date";
-import { isOperationStarted } from "./apply-work-center-selections.ts";
+import { startedOperationWorkCenter } from "./apply-work-center-selections.ts";
 import type { BatchPlacement } from "./batch-scheduler.ts";
 import {
   type CalendarWindow,
@@ -465,7 +465,9 @@ export class WorkCenterSelector {
             );
             placedEndByOperation.set(op.id, end);
             selections.set(op.id, {
-              workCenterId: op.workCenterId ?? null,
+              // It runs at the supplier: a stored work center is a stale
+              // in-house one and must not join that machine's queue.
+              workCenterId: null,
               priority: 0,
               placedStart: msToInstantIso(start),
               placedEnd: msToInstantIso(end),
@@ -534,30 +536,30 @@ export class WorkCenterSelector {
       // process has no mapped centers, fall back to the op's assigned center so
       // a misconfigured pool (or one deactivated since assignment) never strands
       // the op.
-      const started = isOperationStarted(op);
       const assignedWorkCenter =
         op.workCenterId && ctx.capacityByWorkCenter.has(op.workCenterId)
           ? op.workCenterId
           : null;
-      const pool = op.processId
-        ? this.getWorkCentersForProcess(op.processId)
-        : [];
-      const candidates = !op.processId
-        ? []
-        : started && assignedWorkCenter
-          ? [assignedWorkCenter]
+      // No work center to run on: it falls through to the unplaceable path
+      // below — a conflict, and successors wait for its work content.
+      let candidates: string[] = [];
+      let noCandidate: string | null = null;
+      if (!op.processId) {
+        noCandidate = "No process ID provided";
+      } else {
+        const sticky = startedOperationWorkCenter(op, ctx.capacityByWorkCenter);
+        const pool = this.getWorkCentersForProcess(op.processId);
+        candidates = sticky
+          ? [sticky]
           : pool.length > 0
             ? pool
             : assignedWorkCenter
               ? [assignedWorkCenter]
               : [];
-      // No work center to run on: it falls through to the unplaceable path
-      // below — a conflict, and successors wait for its work content.
-      const noCandidate = !op.processId
-        ? "No process ID provided"
-        : candidates.length === 0
-          ? `No work centers found for process ${op.processId}`
-          : null;
+        if (candidates.length === 0) {
+          noCandidate = `No work centers found for process ${op.processId}`;
+        }
+      }
 
       // Earliest feasible start: forward-ASAP from now, never before an in-run
       // predecessor placement. No backward-pass floor — the projected finish
@@ -946,6 +948,7 @@ export class WorkCenterSelector {
         // still makes successors wait for it (they can't run before it does).
         // An op with no work center at all gets no marker (there is no
         // resource to draw it on) but chains its successors the same way.
+        let placeholderEndMs: number | null = null;
         if (durationHours > 0) {
           // Snap the marker onto a working day so it never renders on a night or
           // weekend just because the earliest start fell there — it holds no
@@ -957,6 +960,7 @@ export class WorkCenterSelector {
             earliestMs
           );
           const placeholderEnd = placeholderStart + durationHours * 3_600_000;
+          placeholderEndMs = placeholderEnd;
           if (fallbackWc) {
             this.plannedReservations.push({
               resourceKind: "WorkCenter",
@@ -978,6 +982,11 @@ export class WorkCenterSelector {
           priority: 0,
           // quote-lead-time reads `error` for an op with nowhere to run
           ...(noCandidate ? { error: noCandidate } : {}),
+          // The job's finish counts it even with no marker to draw (no work
+          // center), so a last op cannot drop out of the forecast.
+          ...(placeholderEndMs !== null
+            ? { placeholderEnd: msToInstantIso(placeholderEndMs) }
+            : {}),
           conflict: conflictReason
         });
       }
@@ -1005,6 +1014,31 @@ export class WorkCenterSelector {
       }))
       .filter((m) => m.windows.length > 0);
   }
+}
+
+/**
+ * A run's projected finish: the latest end across its placements, its
+ * placeholders (an op with no work center has no reservation, only
+ * `placeholderEnd`) and its planned reservations. The engine's projected completion (and so the
+ * newly-late check) and the quote lead time both read it, so they agree.
+ * Null when nothing has an end. epoch-ms.
+ */
+export function projectedFinishMs(
+  selections: Iterable<WorkCenterSelection>,
+  plannedReservations: PlannedReservation[]
+): number | null {
+  let finishMs: number | null = null;
+  const bump = (ms: number) => {
+    if (finishMs === null || ms > finishMs) finishMs = ms;
+  };
+  for (const selection of selections) {
+    const end = selection.placedEnd ?? selection.placeholderEnd;
+    if (end) bump(toInstantMs(end));
+  }
+  for (const p of plannedReservations) {
+    if (p.endAt > p.startAt) bump(p.endAt);
+  }
+  return finishMs;
 }
 
 export {

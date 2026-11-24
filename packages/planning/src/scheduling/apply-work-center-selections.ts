@@ -43,6 +43,29 @@ export function isOperationStarted(op: {
   );
 }
 
+/**
+ * The work center a STARTED operation stays on: its stored one, when the
+ * selector can place there (`capacity` is the selector's capacity set) and
+ * the op has a process. Null when the selector will not keep it there: not
+ * started, no process (no candidate at all), or a stored work center outside
+ * the capacity set. The started-op hold uses the same rule, so it never holds
+ * a machine the op will not run on.
+ */
+export function startedOperationWorkCenter(
+  op: {
+    processId?: string | null;
+    workCenterId?: string | null;
+    status?: string | null;
+    quantityComplete?: number | null;
+  },
+  capacity: { has(workCenterId: string): boolean }
+): string | null {
+  if (!op.processId || !isOperationStarted(op)) return null;
+  return op.workCenterId && capacity.has(op.workCenterId)
+    ? op.workCenterId
+    : null;
+}
+
 export function applyWorkCenterSelections(
   operations: Map<string, ScheduledOperation>,
   selections: Map<string, WorkCenterSelection>,

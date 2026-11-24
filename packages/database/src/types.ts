@@ -8485,6 +8485,7 @@ export type Database = {
           invoiceNotificationGroup: string[]
           kanbanLabelSize: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput: Database["public"]["Enums"]["kanbanOutput"]
+          lastMrpRunStartedAt: string | null
           leaseDefaultDiscountRate: number
           leaseIncrementalBorrowingRate: number
           leaseMajorPartThresholdPercent: number
@@ -8589,6 +8590,7 @@ export type Database = {
           invoiceNotificationGroup?: string[]
           kanbanLabelSize?: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
+          lastMrpRunStartedAt?: string | null
           leaseDefaultDiscountRate?: number
           leaseIncrementalBorrowingRate?: number
           leaseMajorPartThresholdPercent?: number
@@ -8693,6 +8695,7 @@ export type Database = {
           invoiceNotificationGroup?: string[]
           kanbanLabelSize?: Database["public"]["Enums"]["kanbanLabelSize"]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
+          lastMrpRunStartedAt?: string | null
           leaseDefaultDiscountRate?: number
           leaseIncrementalBorrowingRate?: number
           leaseMajorPartThresholdPercent?: number
@@ -37576,6 +37579,60 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          }
+        ]
+      }
+      locationScheduleRun: {
+        Row: {
+          companyId: string
+          lastRunStartedAt: string
+          locationId: string
+        }
+        Insert: {
+          companyId: string
+          lastRunStartedAt: string
+          locationId: string
+        }
+        Update: {
+          companyId?: string
+          lastRunStartedAt?: string
+          locationId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locationScheduleRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locationScheduleRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locationScheduleRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "locationScheduleRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "locationScheduleRun_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
           }
         ]
       }

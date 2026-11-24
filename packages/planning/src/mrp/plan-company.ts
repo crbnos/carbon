@@ -102,14 +102,6 @@ export type PlanCompanyInputs = {
     Partial<
       Pick<Views["openProductionOrders"]["Row"], "id" | "ownerProjectId">
     > &
-    /**
-     * The job's good units (`job.quantity`) and what it has received.
-     * Supply is their difference: the view's `quantityToReceive` counts the
-     * scrap allowance. Absent: the view's figure.
-     */
-    Partial<
-      Pick<Tables["job"]["Row"], "quantity" | "quantityReceivedToInventory">
-    > &
     Segmented)[];
   purchaseOrderLines: (Pick<
     Views["openPurchaseOrderLines"]["Row"],
@@ -262,21 +254,6 @@ export function groupByProjectOf(
  */
 function segmentColumn(segmentId: string): { planningSegmentId?: string } {
   return segmentId === COMMON_SEGMENT ? {} : { planningSegmentId: segmentId };
-}
-
-/**
- * What an open job still brings to stock: its good units less what it has
- * received, as the planning actions measure a job. The scrap allowance is
- * expected to be lost, so it is not supply.
- */
-function jobSupplyQuantity(
-  line: PlanCompanyInputs["productionLines"][number]
-): number {
-  if (line.quantity == null) return line.quantityToReceive ?? 0;
-  return Math.max(
-    0,
-    Number(line.quantity) - (Number(line.quantityReceivedToInventory) || 0)
-  );
 }
 
 type DemandForecastSourceInsert =
@@ -454,8 +431,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     // an FK to location. A line with no location has nowhere to be planned and
     // would write locationId="" (via the ?? "" key fallback), violating
     // supplyActual_locationId_fkey and aborting the whole run. Skip it.
-    const quantity = jobSupplyQuantity(line);
-    if (!line.itemId || quantity <= 0 || !line.locationId) continue;
+    if (!line.itemId || !line.quantityToReceive || !line.locationId) continue;
 
     const dueDate = parseDate(jobCompletionDate(line, today.toString()));
 
@@ -470,7 +446,8 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     );
     jobSupplyByLocationPeriodItem.set(
       periodKey,
-      (jobSupplyByLocationPeriodItem.get(periodKey) ?? 0) + quantity
+      (jobSupplyByLocationPeriodItem.get(periodKey) ?? 0) +
+        line.quantityToReceive
     );
   }
 
@@ -1112,7 +1089,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
             segmentId: segmentOf(line.planningSegmentId, line.ownerProjectId),
             ownerProjectId: line.ownerProjectId ?? null,
             availableDate: jobCompletionDate(line, today.toString()),
-            quantity: jobSupplyQuantity(line)
+            quantity: line.quantityToReceive
           }))
         })
       : [];

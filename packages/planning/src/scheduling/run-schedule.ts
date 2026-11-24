@@ -5,9 +5,9 @@
 import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
+import { databaseNow } from "../run-order.ts";
 import type { BatchPlacement } from "./batch-scheduler.ts";
 import { placeReleasedBatches } from "./batch-scheduler.ts";
 import { toInstantMs } from "./date-utils.ts";
@@ -36,6 +36,12 @@ export type NewlyLateJob = {
 
 export type LocationScheduleResult = {
   locationId: string;
+  /**
+   * A run that started reading later already saved this location, so this
+   * one wrote nothing. Not a failure: the newer plan stands, and the counts
+   * below are zero.
+   */
+  skipped: boolean;
   jobsScheduled: number;
   jobsFailed: number;
   conflictsDetected: number;
@@ -151,9 +157,10 @@ export async function runLocationSchedule(
 ): Promise<LocationScheduleResult> {
   const { db, client, locationId, companyId, userId } = params;
 
-  // Before any input is read: a stale mark stamped after this instant may
-  // describe a change this run did not see, so the write keeps it.
-  const runStartedAt = datetime.timestamp();
+  // Before any input is read, on the database clock (the one every mark is
+  // stamped with): a stale mark stamped after this instant may describe a
+  // change this run did not see, so the write keeps it.
+  const runStartedAt = await databaseNow(db);
 
   const batch = await loadOrderedBatch(db, locationId, companyId);
 
@@ -182,7 +189,7 @@ export async function runLocationSchedule(
       userId,
       orderedJobIds: batch,
       horizonEnd,
-      persist: true
+      persist: { runStartedAt }
     });
   } catch (err) {
     log.error("Batch pre-pass failed; members place individually", {
@@ -250,15 +257,31 @@ export async function runLocationSchedule(
     }
   }
 
-  await persistLocationWrites(
+  const { skipped } = await persistLocationWrites(
     db,
     writes,
     { companyId, userId, locationId, runStartedAt },
     failedJobIds
   );
+  if (skipped) {
+    log.info("A newer schedule run already saved this location; skipped", {
+      locationId,
+      companyId,
+      runStartedAt
+    });
+    return {
+      locationId,
+      skipped: true,
+      jobsScheduled: 0,
+      jobsFailed: 0,
+      conflictsDetected: 0,
+      newlyLate: []
+    };
+  }
 
   return {
     locationId,
+    skipped: false,
     jobsScheduled: batch.length - failedJobIds.length,
     jobsFailed: failedJobIds.length,
     conflictsDetected,

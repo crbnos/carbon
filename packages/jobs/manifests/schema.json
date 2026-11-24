@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261124080141",
+  "schemaVersion": "20261124202324",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-24T01:59:59.650Z",
+  "exportedAt": "2026-11-24T20:30:58.708Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -523,7 +523,8 @@
         "receiptBatchNumbersFromPurchaseOrder",
         "sequenceWeekNumbering",
         "supplierPartNumberDisplay",
-        "customerPartNumberDisplay"
+        "customerPartNumberDisplay",
+        "lastMrpRunStartedAt"
       ]
     },
     {
@@ -1812,6 +1813,25 @@
         "skippedReason",
         "evidenceJournalId",
         "notes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "permission",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "employeeTypeId",
+        "userId",
+        "apiKeyId",
+        "module",
+        "page",
+        "level",
+        "convertedFrom",
         "createdBy",
         "createdAt",
         "updatedBy",
@@ -4195,6 +4215,11 @@
         "inspectionStorageUnitId",
         "rejectedStorageUnitId"
       ]
+    },
+    {
+      "name": "locationScheduleRun",
+      "rows": 0,
+      "columns": ["locationId", "companyId", "lastRunStartedAt"]
     },
     {
       "name": "nonConformance",
@@ -7614,8 +7639,8 @@
         "projectId",
         "projectElementId",
         "planningGroupId",
-        "partNumberDisplay",
-        "taxCodeId"
+        "taxCodeId",
+        "partNumberDisplay"
       ]
     },
     {

@@ -35,13 +35,19 @@ describe("jobsClearingReservations", () => {
 
 describe("persistLocationWrites", () => {
   // Records every statement; a transaction is run on the same connection.
+  // `rowsFor` answers the reads.
   class RecordingDriver extends DummyDriver {
     statements: CompiledQuery[] = [];
+    constructor(
+      private rowsFor: (query: CompiledQuery) => unknown[] = () => []
+    ) {
+      super();
+    }
     override async acquireConnection(): Promise<DatabaseConnection> {
       return {
         executeQuery: async <R>(query: CompiledQuery) => {
           this.statements.push(query);
-          return { rows: [] as R[] };
+          return { rows: this.rowsFor(query) as R[] };
         },
         // biome-ignore lint/correctness/useYield: never streamed
         streamQuery: async function* () {
@@ -97,4 +103,101 @@ describe("persistLocationWrites", () => {
     );
     expect(at && jobUpdate?.parameters[Number(at[1]) - 1]).toBe(runStartedAt);
   });
+
+  const kysely = (driver: RecordingDriver) =>
+    new Kysely<DB>({
+      dialect: {
+        createAdapter: () => new PostgresAdapter(),
+        createDriver: () => driver,
+        createIntrospector: (k) => new PostgresIntrospector(k),
+        createQueryCompiler: () => new PostgresQueryCompiler()
+      }
+    });
+  const writes = [
+    {
+      jobId: "job-a",
+      jobStatus: "Ready",
+      materialLinks: [],
+      dependencies: null,
+      readyOperationIds: ["op-1"],
+      placements: [],
+      reservations: [
+        {
+          resourceKind: "WorkCenter" as const,
+          resourceId: "wc1",
+          operationId: "op-1",
+          startAt: 0,
+          endAt: 3_600_000
+        }
+      ],
+      projectedCompletionAt: "2026-01-06T10:00:00.000Z"
+    }
+  ];
+  const runStartedAt = "2026-01-05T10:00:00.000000Z";
+  const isLastSavedRead = (q: CompiledQuery) =>
+    q.sql.includes('from "locationScheduleRun"');
+
+  // The start of the last run that saved the location: a microsecond after
+  // this run's start, one before it, or never saved.
+  it.each([
+    [
+      "a run that started later already saved",
+      "2026-01-05T10:00:00.000001Z",
+      true
+    ],
+    [
+      "the last saved run started earlier",
+      "2026-01-05T09:59:59.999999Z",
+      false
+    ],
+    ["no run has saved the location yet", null, false]
+  ])(
+    "when %s, the run decides whether to skip its save",
+    async (_label, startedAt, skipped) => {
+      const driver = new RecordingDriver((q) =>
+        isLastSavedRead(q) ? [{ startedAt }] : []
+      );
+
+      const result = await persistLocationWrites(
+        kysely(driver),
+        writes,
+        { companyId: "co", userId: "u", locationId: "loc", runStartedAt },
+        []
+      );
+
+      expect(result).toEqual({ skipped });
+      // The check reads the location's last saved start under the location lock.
+      const sqls = driver.statements.map((q) => q.sql.replace(/\s+/g, " "));
+      const read = driver.statements.findIndex(isLastSavedRead);
+      expect(read).toBeGreaterThan(
+        sqls.findIndex((q) => q.includes("pg_advisory_xact_lock"))
+      );
+      expect(driver.statements[read]?.parameters).toEqual(["loc", "co"]);
+      const writesAfter = sqls
+        .slice(read + 1)
+        .filter((q) => /^(update|insert|delete)/i.test(q.trim()))
+        .map((q) => q.trim().split(" ").slice(0, 3).join(" "));
+      if (skipped) {
+        // Nothing: no reservations, ops, jobs or marks, no new start recorded.
+        expect(writesAfter).toEqual([]);
+      } else {
+        expect(writesAfter).toEqual([
+          'insert into "locationScheduleRun"',
+          'update "jobOperation" set',
+          'delete from "capacityReservation"',
+          'insert into "capacityReservation"',
+          'update "job" as'
+        ]);
+        const record = driver.statements.find((q) =>
+          q.sql.startsWith('insert into "locationScheduleRun"')
+        );
+        expect(record?.parameters).toEqual([
+          "loc",
+          "co",
+          runStartedAt,
+          runStartedAt
+        ]);
+      }
+    }
+  );
 });

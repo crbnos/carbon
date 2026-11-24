@@ -5,6 +5,7 @@
 import type { DB } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import { type Kysely, sql, type Transaction } from "kysely";
+import { lastSavedScheduleRunStartedAt, newestRunSaves } from "../run-order.ts";
 import { msToInstantIso } from "./date-utils.ts";
 import {
   type JobWrites,
@@ -100,12 +101,43 @@ export async function lockLocationSchedule(
 }
 
 /**
+ * Newest read wins. Under `lockLocationSchedule`: when a run that started
+ * reading later than this one has already saved the location, this run read
+ * older inputs and must write nothing (false). Otherwise record this run's
+ * start as the location's last saved run (true) and let it write. MRP uses
+ * the same rule (`newestRunSaves`).
+ */
+export async function claimLocationSave(
+  trx: Transaction<DB>,
+  scope: { companyId: string; locationId: string; runStartedAt: string }
+): Promise<boolean> {
+  const { companyId, locationId, runStartedAt } = scope;
+  const lastSaved = await lastSavedScheduleRunStartedAt(trx, {
+    companyId,
+    locationId
+  });
+  if (!newestRunSaves(runStartedAt, lastSaved)) return false;
+  await trx
+    .insertInto("locationScheduleRun")
+    .values({ locationId, companyId, lastRunStartedAt: runStartedAt })
+    .onConflict((oc) =>
+      oc
+        .columns(["locationId", "companyId"])
+        .doUpdateSet({ lastRunStartedAt: runStartedAt })
+    )
+    .execute();
+  return true;
+}
+
+/**
  * Write a whole location run in ONE transaction: a partial write (one job's
  * reservations deleted but not re-inserted, or half the jobs on the new plan)
  * would free or double-book capacity for the next run.
  * `failedJobIds`: see `jobsClearingReservations`.
- * `runStartedAt`: the instant the run started, before it read anything. A
- * stale mark stamped after it is kept for the next wave.
+ * `runStartedAt`: the instant the run started, before it read anything
+ * (`databaseNow`). A stale mark stamped after it is kept for the next
+ * wave. When a run that started later already saved, nothing is written and
+ * the result is `skipped` (`claimLocationSave`).
  */
 export async function persistLocationWrites(
   db: Kysely<DB>,
@@ -117,12 +149,19 @@ export async function persistLocationWrites(
     runStartedAt: string;
   },
   failedJobIds: string[] = []
-): Promise<void> {
-  if (writes.length === 0 && failedJobIds.length === 0) return;
+): Promise<{ skipped: boolean }> {
+  if (writes.length === 0 && failedJobIds.length === 0) {
+    return { skipped: false };
+  }
   const { companyId, userId, locationId, runStartedAt } = scope;
 
-  await db.transaction().execute(async (trx) => {
+  return await db.transaction().execute(async (trx) => {
     await lockLocationSchedule(trx, locationId);
+    if (
+      !(await claimLocationSave(trx, { companyId, locationId, runStartedAt }))
+    ) {
+      return { skipped: true };
+    }
 
     const links = writes.flatMap((w) => w.materialLinks);
     for (const rows of chunks(links)) {
@@ -270,5 +309,6 @@ export async function persistLocationWrites(
           )
       `.execute(trx);
     }
+    return { skipped: false };
   });
 }
