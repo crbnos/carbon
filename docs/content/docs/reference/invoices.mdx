@@ -79,7 +79,7 @@ The sales invoice PDF prints the tax by component when there are two or more ent
 Under the totals, the invoice prints the **"Invoice Message"** of each code on it. In **"Invoice Details"** it prints "Seller Tax ID": your [tax registration](/docs/reference/accounting#tax-codes) for the company's country in force on the issue date (a national one first, else one for the company's own state). With no such registration, it prints the company's tax ID, but only once the company has an active tax code. A registration for another state never prints. Sales order and quote PDFs print the same tax summary, without the message or the seller tax ID.
 
 <Callout type="warn">
-Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
+Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history. A voided invoice's balance reads zero, so the invoice lists' Balance totals and exports leave it out.
 </Callout>
 
 ## Changing a posted line's account

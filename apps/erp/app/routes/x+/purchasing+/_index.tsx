@@ -90,11 +90,16 @@ import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 
 const OPEN_SUPPLIER_QUOTE_STATUSES = ["Active"] as const;
+// The purchaseInvoices view's statuses: it derives Partially Paid, Paid and
+// Overdue from settlements and the due date, so a paid bill stays Open in the
+// purchaseInvoice table.
 const OPEN_INVOICE_STATUSES = [
   "Draft",
   "Return",
   "Pending",
-  "Partially Paid"
+  "Open",
+  "Partially Paid",
+  "Overdue"
 ] as const;
 const OPEN_PURCHASE_ORDER_STATUSES = [
   "Draft",
@@ -185,7 +190,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("companyId", companyId)
       .limit(10),
     client
-      .from("purchaseInvoice")
+      .from("purchaseInvoices")
       .select("id, invoiceId, status, supplierId, assignee, createdAt", {
         count: "exact"
       })
