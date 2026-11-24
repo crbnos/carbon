@@ -191,5 +191,11 @@ Delete it or move it to the seam. Don't edit it until it passes again.
 
 - `test-reads-source`: a test reading `.sql`, `.ts` or `.tsx` files as text
 - `test-mocks-own-module`: `vi.mock` / `vi.doMock` of a relative or `~/` path
+- `no-silent-test-pass`: a bare `return` guarded by a missing-value test
+  (`if (!client) return;`, `== null`, `.length === 0`) at the top of a test
+  case's callback, which reports the case passed without running it. Use
+  `it.skipIf(!client)(…)`, `databaseTest` or `postgrestTest`, or assert the
+  value exists. Hooks may still return early: the cases they set up skip.
 
-Existing cases sit in the baseline. Don't add new ones.
+Existing cases of the first two sit in the baseline. Don't add new ones.
+`no-silent-test-pass` has no baseline.
