@@ -30719,6 +30719,10 @@ msgstr "与销售团队联系"
 msgid "Target"
 msgstr "目标"
 
+#. placeholder {0}: numberFormatter.format(effectiveTarget)
+msgid "Target ({0})"
+msgstr ""
+
 msgid "Target an item group."
 msgstr "针对一个项目组。"
 
