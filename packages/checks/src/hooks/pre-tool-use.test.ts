@@ -43,7 +43,8 @@ const SERVICE = join(
   root,
   "apps/erp/app/modules/sales/__hook-fixture.service.ts"
 );
-const TWO_WRITES = `${HEADER}await db.from("a").update({});\nawait db.from("b").update({});\n`;
+// Each write binds its result, so only the rule under test applies.
+const TWO_WRITES = `${HEADER}const a = await db.from("a").update({});\nif (a.error) throw a.error;\nconst b = await db.from("b").update({});\nif (b.error) throw b.error;\n`;
 
 describe("decide", () => {
   it("refuses a Write that adds a raw react-router redirect", () => {

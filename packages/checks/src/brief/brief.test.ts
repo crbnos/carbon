@@ -62,7 +62,7 @@ const HEADER =
 const RAW_REDIRECT = `${HEADER}import { redirect } from "react-router";\n`;
 const TWO_WRITES =
   HEADER +
-  'await client.from("a").update({}).eq("id", 1);\nawait client.from("b").update({}).eq("id", 2);\n';
+  'const a = await client.from("a").update({}).eq("id", 1);\nif (a.error) throw a.error;\nconst b = await client.from("b").update({}).eq("id", 2);\nif (b.error) throw b.error;\n';
 
 describe("brief", () => {
   it("selects a rule by its trigger in a file its paths do not cover", () => {

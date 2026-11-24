@@ -49,6 +49,7 @@ import { findNestedOutlets, noBareOutlet } from "./conformance/no-bare-outlet";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+import { noDiscardedQueryError } from "./conformance/no-discarded-query-error";
 import {
   findDuplicatedAppFiles,
   NO_DUPLICATED_APP_FILE,
@@ -161,6 +162,7 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noPostgresChanges,
   journalStatusFilter,
   mesUnitWriteResolvesUnit,
+  noDiscardedQueryError,
   noInlineUniqueViolation
 ];
 

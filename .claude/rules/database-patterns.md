@@ -108,7 +108,10 @@ DB logic lives in module files, **not** in route handlers:
 A building block takes the **client as its first argument** and returns the raw supabase
 `{ data, error }` (it does **not** throw). The service function that calls it reads `error`
 (`unwrap`, `paged` in `@carbon/api/service-tools.server`, or `ctx.error(...)`); a legacy
-route that calls it directly converts it with `flash(request, error(...))`.
+route that calls it directly converts it with `flash(request, error(...))`. Never read
+`data` without `error`, and never drop an awaited write's result: a failed read is
+`data: null`, and `?? []` turns it into "none". The `no-discarded-query-error` check
+(`@carbon/checks`) fails both.
 
 ```typescript
 import type { Database } from "@carbon/database";
