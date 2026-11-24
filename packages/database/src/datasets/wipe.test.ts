@@ -2,9 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { PoolClient } from "pg";
+import { parseDate } from "@internationalized/date";
+import { Client, type PoolClient } from "pg";
 import { describe, expect, it } from "vitest";
+import { seedCompanyReferenceData } from "./bootstrap.ts";
+import { insertId } from "./sql.ts";
 import type { Ctx } from "./types.ts";
+import { resolveCheckUserId } from "./verify.ts";
 import { wipeCompanyBusinessData } from "./wipe.ts";
 
 /**
@@ -88,4 +92,96 @@ describe("wipeCompanyBusinessData", () => {
       'DELETE FROM "journal" WHERE "companyId" = $1'
     );
   });
+});
+
+const databaseUrl = process.env.SUPABASE_DB_URL;
+const hasLocalDatabase =
+  databaseUrl &&
+  ["localhost", "127.0.0.1", "[::1]"].includes(new URL(databaseUrl).hostname);
+
+describe.skipIf(!hasLocalDatabase)("wiping payment requests", () => {
+  it.each(["Planned", "Paid"] as const)(
+    "removes %s requests with their invoices and payments",
+    async (status) => {
+      const client = new Client({ connectionString: databaseUrl });
+      await client.connect();
+      const pg = client as unknown as PoolClient;
+      try {
+        await client.query("BEGIN");
+        await client.query(`SET LOCAL "app.sync_in_progress" = 'true'`);
+        const userId = await resolveCheckUserId(pg);
+        if (!userId) throw new Error("A local test user is required");
+        const company = await seedCompanyReferenceData(pg, {
+          userId,
+          companyName: "Payment request wipe check"
+        });
+        const ctx = {
+          client: pg,
+          ...company,
+          userId,
+          anchor: parseDate("2026-11-23")
+        } as Ctx;
+        const supplierId = await insertId(ctx, "supplier", {
+          name: "Wipe check supplier",
+          currencyCode: "USD"
+        });
+        const supplierInteractionId = await insertId(
+          ctx,
+          "supplierInteraction",
+          {
+            supplierId
+          }
+        );
+        const purchaseInvoiceId = await insertId(ctx, "purchaseInvoice", {
+          invoiceId: "AP-WIPE",
+          supplierId,
+          supplierInteractionId,
+          currencyCode: "USD"
+        });
+        let paymentId: string | null = null;
+        if (status === "Paid") {
+          const bankAccount = await client.query<{ id: string }>(
+            `SELECT id FROM account WHERE "companyGroupId" = $1 AND number = '1010'`,
+            [company.companyGroupId]
+          );
+          paymentId = await insertId(ctx, "payment", {
+            paymentId: "PAY-WIPE",
+            paymentType: "Disbursement",
+            status: "Posted",
+            supplierId,
+            paymentDate: "2026-11-23",
+            currencyCode: "USD",
+            totalAmount: 100,
+            bankAccount: bankAccount.rows[0]?.id
+          });
+        }
+        await insertId(ctx, "paymentRequest", {
+          purchaseInvoiceId,
+          requestNumber: 1,
+          status,
+          amount: status === "Paid" ? 100 : null,
+          dueDate: status === "Paid" ? "2026-11-23" : null,
+          currencyCode: "USD",
+          paymentId
+        });
+
+        await wipeCompanyBusinessData(ctx);
+
+        const remaining = await client.query(
+          `SELECT
+             (SELECT count(*)::int FROM "paymentRequest" WHERE "companyId" = $1) AS requests,
+             (SELECT count(*)::int FROM "purchaseInvoice" WHERE "companyId" = $1) AS invoices,
+             (SELECT count(*)::int FROM payment WHERE "companyId" = $1) AS payments`,
+          [company.companyId]
+        );
+        expect(remaining.rows).toEqual([
+          { requests: 0, invoices: 0, payments: 0 }
+        ]);
+      } finally {
+        await client.query("ROLLBACK");
+        await client.end();
+      }
+    },
+    60_000
+  );
 });

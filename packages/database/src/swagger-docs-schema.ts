@@ -122112,6 +122112,267 @@ export default {
         tags: ["part"]
       }
     },
+    "/paymentRequest": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.purchaseInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.requestNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.dueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.documentPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.isAutomatic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.paymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/paymentRequest"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["paymentRequest"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.paymentRequest"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["paymentRequest"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.purchaseInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.requestNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.dueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.documentPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.isAutomatic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.paymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["paymentRequest"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.purchaseInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.requestNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.dueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.documentPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.isAutomatic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.paymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.paymentRequest.customFields"
+          },
+          {
+            $ref: "#/parameters/body.paymentRequest"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["paymentRequest"]
+      }
+    },
     "/jobCorrectionTrigger": {
       get: {
         parameters: [
@@ -200558,6 +200819,108 @@ export default {
       },
       type: "object"
     },
+    paymentRequest: {
+      required: [
+        "id",
+        "companyId",
+        "requestNumber",
+        "status",
+        "currencyCode",
+        "isAutomatic",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('preq'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseInvoiceId: {
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderId: {
+          format: "text",
+          type: "string"
+        },
+        requestNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        status: {
+          default: "Planned",
+          enum: ["Planned", "Ready", "Sent", "Paid", "Cancelled"],
+          format: 'public."paymentRequestStatus"',
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        dueDate: {
+          format: "date",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        documentPath: {
+          format: "text",
+          type: "string"
+        },
+        isAutomatic: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        paymentId: {
+          format: "text",
+          type: "string"
+        },
+        idempotencyKey: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     jobCorrectionTrigger: {
       required: [
         "id",
@@ -265999,6 +266362,129 @@ export default {
     },
     "rowFilter.part.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.paymentRequest": {
+      name: "paymentRequest",
+      description: "paymentRequest",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/paymentRequest"
+      }
+    },
+    "rowFilter.paymentRequest.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.purchaseInvoiceId": {
+      name: "purchaseInvoiceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.purchaseOrderId": {
+      name: "purchaseOrderId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.requestNumber": {
+      name: "requestNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.dueDate": {
+      name: "dueDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.documentPath": {
+      name: "documentPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.isAutomatic": {
+      name: "isAutomatic",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.paymentId": {
+      name: "paymentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.idempotencyKey": {
+      name: "idempotencyKey",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.paymentRequest.customFields": {
+      name: "customFields",
       required: false,
       in: "query",
       type: "string"

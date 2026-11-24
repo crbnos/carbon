@@ -4834,16 +4834,20 @@ export const getPaymentRequests = defineServiceFn({
     const supplierId = sql<string>`COALESCE(pi."supplierId", po."supplierId")`;
     let query = ctx.asSystem.pg
       .selectFrom("paymentRequest as r")
-      .leftJoin("purchaseInvoice as pi", "pi.id", "r.purchaseInvoiceId")
+      .leftJoin("purchaseInvoice as pi", (join) =>
+        join
+          .onRef("pi.id", "=", "r.purchaseInvoiceId")
+          .onRef("pi.companyId", "=", "r.companyId")
+      )
       .leftJoin("purchaseOrder as po", (join) =>
         join
           .onRef("po.id", "=", "r.purchaseOrderId")
           .onRef("po.companyId", "=", "r.companyId")
       )
       .leftJoin("supplier as s", (join) =>
-        join.on(
-          sql<boolean>`s."id" = COALESCE(pi."supplierId", po."supplierId")`
-        )
+        join
+          .on(sql<boolean>`s."id" = COALESCE(pi."supplierId", po."supplierId")`)
+          .onRef("s.companyId", "=", "r.companyId")
       )
       .select([
         "r.id",

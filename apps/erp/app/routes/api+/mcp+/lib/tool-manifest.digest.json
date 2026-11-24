@@ -375,7 +375,7 @@
     {"name":"invoicing_getOpenSalesInvoicesForCustomer","classification":"READ","schema":"e69e3359507b","response":"b3f1050da9d3","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getPayment","classification":"READ","schema":"671e893ba5f6","response":"1ffb0e4013ce","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getPaymentCurrencyConfiguration","classification":"READ","schema":"8775a38b3ca9","response":"35b15cbf37ce","permission":"invoicing:view","paginates":false},
-    {"name":"invoicing_getPaymentRequests","classification":"READ","schema":"686d634605ca","response":"a2fc58ffbf39","permission":"invoicing:view","paginates":false},
+    {"name":"invoicing_getPaymentRequests","classification":"READ","schema":"686d634605ca","response":"fb511675bf0a","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getPaymentRequestsForDocument","classification":"READ","schema":"ad3086a75a7c","response":"501a69a5af6a","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getPayments","classification":"READ","schema":"93a7ccbe4d83","response":"c2e7c9a1d792","permission":"invoicing:view","paginates":true},
     {"name":"invoicing_getPurchaseInvoice","classification":"READ","schema":"0f5da439c637","response":"e70f9dcd5a62","permission":"invoicing:view","paginates":false},

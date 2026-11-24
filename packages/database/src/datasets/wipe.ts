@@ -120,7 +120,10 @@ const PARENT_CHECK_TABLES = [
   // close journal (journal is preserved, the schedule row is not)
   "projectCostRelief",
   // shipmentFixedAssetLine_source_check: a sales order line OR a rental line
-  "shipmentFixedAssetLine"
+  "shipmentFixedAssetLine",
+  // Paid requests must go before their payments; their CHECK forbids clearing
+  // paymentId, and their payment FK blocks deleting the payment first.
+  "paymentRequest"
 ];
 
 type ForeignKey = {

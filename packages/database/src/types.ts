@@ -48627,17 +48627,17 @@ export type Database = {
           },
           {
             foreignKeyName: "paymentRequest_purchaseInvoiceId_fkey"
-            columns: ["purchaseInvoiceId"]
+            columns: ["purchaseInvoiceId", "companyId"]
             isOneToOne: false
             referencedRelation: "purchaseInvoice"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "paymentRequest_purchaseInvoiceId_fkey"
-            columns: ["purchaseInvoiceId"]
+            columns: ["purchaseInvoiceId", "companyId"]
             isOneToOne: false
             referencedRelation: "purchaseInvoices"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "paymentRequest_purchaseOrderId_companyId_fkey"
