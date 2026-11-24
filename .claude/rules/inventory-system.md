@@ -394,10 +394,10 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   (`shared.service.ts`, one row per bin and stripe). Before it reads, each path locks every
   (location, item) it draws (`lockUntrackedDraws`, key `untracked-draw:<companyId>:<locationId>:<itemId>`,
   `untrackedDrawLockKey`; the SQL locks the same keys in the same key-hash order in every mode,
-  before the strict backflush keys, `20261124055757_backflush-locks-draws-and-cost-layers.sql`), so two
+  before the strict backflush keys, `20261124055757_backflush-draw-lock-in-strict.sql`), so two
   draws never plan from the same on-hand. The SQL then locks a FIFO / LIFO stripe's open cost
   layers and their open children in `calculateCOGS`'s order (`postingDate`, `createdAt`;
-  children by `createdAt`) before it reads them (`20261124055757_backflush-locks-draws-and-cost-layers.sql`).
+  children by `createdAt`) before it reads them (`20261124060450_backflush-locks-cost-layers.sql`).
   The MES step backflush sends `maxQuantityIssued` (its target), and `partToOperation` issues only
   what still reaches it under the job material's lock. A draw records what picked and
   lineside budgets already took from a bin before it plans the rest. Pinned by
