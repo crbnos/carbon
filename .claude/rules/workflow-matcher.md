@@ -4,6 +4,21 @@ paths:
   - "packages/jobs/src/workflows/**"
   - "packages/jobs/src/inngest/functions/workflows/**"
   - "packages/ee/src/workflows/sync.ts"
+triggers:
+  - "matchAndQueue"
+  - "computeEventIds"
+  - "workflowTriggerEvent"
+  - "syncWorkflowTriggers"
+  - "workflowRunId"
+  - "MAX_CHAIN_DEPTH"
+  - "sourceEventId"
+  - "@carbon/workflows-core"
+summary:
+  - "Write from a workflow action only through the owner-scoped client (`getOwnerClient`); an untagged write blinds the origin filter and loop guards."
+  - "Record a blocked firing as a `Blocked` workflowRun; never drop it silently."
+  - "Derive workflow subscriptions with `syncWorkflowTriggers`; never hand-manage `workflow-<table>` subscription rows."
+  - "Pass `syncWorkflowTriggers` a `lockCompany` advisory lock; without it two publishes can delete a subscription the other needs."
+  - "Authorize before the sync: Kysely bypasses RLS, so the publish and unpublish routes gate on `workflows_update` first."
 ---
 
 # Workflow Matcher

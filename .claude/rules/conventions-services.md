@@ -4,6 +4,21 @@ paths:
   - "apps/erp/app/modules/**/*.server.ts"
   - "apps/erp/app/modules/*.server.ts"
   - "apps/mes/app/services/**"
+triggers:
+  - "defineServiceFn"
+  - "setGenericQueryFilters"
+  - "GenericQueryFilters"
+  - "sanitize("
+  - "ctx.asSystem"
+  - "ctx.transaction"
+  - "fetchAllFromTable"
+  - "searchFilter("
+summary:
+  - "Return the raw Supabase `{ data, error }` from a building block; do not throw and do not unwrap `data`."
+  - "Scope every list and every Kysely query by `companyId` in the query itself, also where RLS already scopes it."
+  - "Search several columns with `query.or(searchFilter([...], search))`, not a template literal inside `.or()`."
+  - "Never construct a Kysely client or `pg` pool in a service; take `db: Kysely<KyselyDatabase>`, which is `ctx.asSystem.pg` in an operation."
+  - "Wrap update payloads in `sanitize(...)`; use a Kysely transaction only for multi-row writes, since a single write is already atomic."
 ---
 
 # Services Conventions

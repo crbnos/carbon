@@ -6,6 +6,21 @@ paths:
   - "packages/jobs/src/scripts/plan-company.ts"
   - "apps/erp/app/routes/onboarding+/industry.tsx"
   - "apps/erp/app/services/onboarding.server.ts"
+triggers:
+  - "applyDataset("
+  - "wipeFirst"
+  - "ctx.refs"
+  - "resolveDate("
+  - "DayOffset"
+  - "carbon/company-template"
+  - "PARENT_CHECK_TABLES"
+  - "COVERAGE_FLOORS"
+summary:
+  - "Write every dataset date as a `DayOffset` against `ctx.anchor`; never use JavaScript `Date` or `CURRENT_DATE` in a tier."
+  - "Reach the dataset wipe only through `applyDataset({ wipeFirst: true })`; it keeps config that the restore wipe deletes."
+  - "Hand-author each posted document with the ledger, settlement and journal rows its posting would write, in the same tier."
+  - "Leave seeded make methods `Draft`; do not add a blanket release in tier 02."
+  - "When you remove seeded data, lower its `coverage.ts` floor in the same change; a new table needs a measured floor."
 ---
 
 # Onboarding Company Templates

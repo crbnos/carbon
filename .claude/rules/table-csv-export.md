@@ -8,6 +8,21 @@ paths:
   - "apps/erp/app/utils/table-jobs*.ts"
   - "packages/jobs/src/table-jobs/**"
   - "packages/jobs/src/inngest/functions/tasks/table-export.ts"
+triggers:
+  - "exportValue"
+  - "exportOnlyColumn"
+  - "filterHeader"
+  - "downloadCsv"
+  - "@carbon/files/csv"
+  - "useCsvDownload"
+  - "table-export"
+  - "accessorKey"
+summary:
+  - "Never put `_` in an `accessorKey`; `buildColumnMaps` throws and the table crashes."
+  - "Give a dot-path or JSX-header column a `meta.exportValue` (and a `filterHeader`); otherwise it exports blank or not at all."
+  - "Give an `itemId` column a `meta.exportValue` that returns the readable id; otherwise the id-to-name swap exports the name."
+  - "Encode CSV only with `downloadCsv` from `@carbon/files/csv`; it strips formula prefixes. Do not hand-roll an encoder."
+  - "Put a column's lookup in the list registry entry's `rows` or `exportValues`; the background export does not run `meta.exportValue`."
 ---
 
 # Table CSV export (ERP)

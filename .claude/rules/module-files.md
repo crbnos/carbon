@@ -6,6 +6,20 @@ paths:
   - "packages/checks/src/conformance/module-shape.ts"
   - "packages/checks/src/conformance/service-fn-file.ts"
   - "packages/checks/src/conformance/no-server-code-in-client.ts"
+triggers:
+  - "defineServiceFn"
+  - "@carbon/api/service-fn.server"
+  - "@carbon/api/carbon.server"
+  - "@carbon/api/service-tools.server"
+  - "invokePosting("
+  - "import * as service"
+  - "respond(args.request"
+summary:
+  - "Put only `defineServiceFn` consts, types and plain constants in `<module>.server.ts`; helpers, classes and queries go in `<module>.service.ts`."
+  - "Import from the file that defines a thing (`~/modules/sales/sales.models`), never from a module barrel; there is no `index.ts`."
+  - "Never value-import a `.service` or `.server` file from components, hooks, `ui/`, models, utils or types."
+  - "Write from a route through `api.<module>.<op>(input)` from `carbon(request)`, not with a client, Kysely or `invokePosting` in the route."
+  - "Renaming a service function renames its MCP tool and HTTP endpoint; list the rename in the changelog."
 ---
 
 # Module files: service functions, building blocks, no barrels

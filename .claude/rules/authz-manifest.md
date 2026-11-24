@@ -6,6 +6,21 @@ paths:
   - "packages/database/supabase/tests/authz-*.test.sql"
   - "packages/checks/src/conformance/no-authz-ddl-in-migrations.ts"
   - "packages/dev/src/services/migrations.ts"
+triggers:
+  - "CREATE POLICY"
+  - "ALTER POLICY"
+  - "ENABLE ROW LEVEL SECURITY"
+  - "attach_event_trigger"
+  - "attach_statement_handler"
+  - "set_event_triggers"
+  - "satisfies Manifest"
+  - "CREATE TRIGGER"
+summary:
+  - "Write RLS policies as rules in `packages/database/src/authz/manifest.ts`, not `CREATE POLICY` or `ALTER POLICY` in a migration."
+  - "Put a new interceptor or event-system function in its own `.sql` file under `src/event-system/`, never as a function in a migration."
+  - "Declare triggers in `event-system/attachments.ts`; a migration never calls `attach_event_trigger`, `attach_statement_handler` or `set_event_triggers`."
+  - "After a manifest change run `pnpm db:migrate`, then `pnpm --filter @carbon/database authz migration <name>`. Production does not run sync."
+  - "Never edit a generated authz migration or `baseline.json` by hand."
 ---
 
 # Authz manifest: RLS policies and helpers

@@ -5,6 +5,20 @@ paths:
   - "lingui.config.js"
   - "apps/erp/app/**"
   - "apps/mes/app/**"
+triggers:
+  - "@lingui/core/macro"
+  - "@lingui/react/macro"
+  - "<Trans"
+  - "<Plural"
+  - "plural("
+  - "msg`"
+  - "i18n._("
+summary:
+  - "Never `import { t }` from `@lingui/core/macro`; use `const { t } = useLingui()` from `@lingui/react/macro`."
+  - "Use `msg` from `@lingui/core/macro` for route breadcrumbs; it builds a descriptor and makes no i18n call."
+  - "Add `t` to the deps of a `useMemo` or `useCallback` that calls it."
+  - "Do not nest `plural()` in `t` inside an inline component such as `memo((props) => ...)`; build the string in a function-declaration hook."
+  - "Add a new locale to both `lingui.config.js` and `supportedLanguages` in `packages/locale/src/config.ts`."
 ---
 
 # i18n / Lingui System

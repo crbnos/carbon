@@ -3,6 +3,21 @@ paths:
   - "packages/ee/**"
   - "apps/erp/app/routes/x+/settings+/**"
   - "apps/erp/app/modules/users/**"
+triggers:
+  - "requireEntitlement"
+  - "companyHasFeature"
+  - "requireFeature("
+  - "usePlanGate"
+  - "EntitlementError"
+  - "FEATURE_PLANS"
+  - "companyHasPlan"
+  - "requirePlan("
+summary:
+  - "Put the feature body in `packages/ee` and call `requireEntitlement` at the top of each authoring function there, not as a check in an open route."
+  - "Use `companyHasFeature` on runtime paths that must degrade; `requireFeature` in a route is UX only, not the lock."
+  - "Do not use `companyHasPlan` or `requirePlan` for community-gated features; they no-op off Cloud."
+  - "Keep a gated feature visible with an upgrade overlay (`usePlanGate`); never hide it from the nav or redirect its list page away."
+  - "A file moved into or out of `packages/ee`, or renamed to gain or lose `.ee.`, needs its SPDX header swapped: rerun the license-headers fixer."
 ---
 
 # Commercial Feature Licensing & Entitlement Pattern

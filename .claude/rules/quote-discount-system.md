@@ -4,6 +4,21 @@ paths:
   - "apps/erp/app/modules/sales/sales.service.ts"
   - "apps/erp/app/modules/sales/ui/Quotes/QuoteLinePricing.tsx"
   - "apps/erp/app/modules/sales/ui/Pricing/*.tsx"
+triggers:
+  - "quoteLinePrice"
+  - "discountPercent"
+  - "pricingRule"
+  - "resolvePrice"
+  - "applyPriceRules"
+  - "upsertQuoteLinePrices"
+  - "priceTrace"
+  - "categoryMarkups"
+summary:
+  - "Store discountPercent as a fraction 0..1, not 0..100; categoryMarkups values are whole percent."
+  - "quoteLinePrice has no id column: its key is (quoteLineId, quantity)."
+  - "Run a cost rollup through resolvePrice as existingBasePrice; cost times markup alone drops the pricing rules and configuration prices."
+  - "Add any new user-entered quoteLinePrice column to resolvePreservedQuoteLinePriceFields, or the delete-and-reinsert resets it."
+  - "Store a priceTrace snapshot with every system price and null for a manual price; JSON.stringify it for a Kysely write."
 ---
 
 # Quote Discount & Pricing System

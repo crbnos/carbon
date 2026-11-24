@@ -8,6 +8,21 @@ paths:
   - "apps/*/app/components/RealtimeDataProvider.tsx"
   - "apps/*/app/stores/**"
   - "apps/erp/app/components/Table/useInfiniteRows.ts"
+triggers:
+  - "postgres_changes"
+  - "useRealtime("
+  - "useChangedRows"
+  - "useTableChanges"
+  - "carbon.channel("
+  - "broadcast_table_changes"
+  - "table_changes_since"
+  - "useRealtimeChannel"
+summary:
+  - "Never subscribe to `postgres_changes`; name the tables in the route's `handle.realtime`, and `RouteRealtime` reloads the page."
+  - "Declare which tables broadcast in `event-system/attachments.ts`, never in a migration."
+  - "Re-read changed rows by id through PostgREST; `payload.new` and `payload.old` do not exist."
+  - "Never call `carbon.channel(...)` or `useRealtimeChannel` for a broadcast topic; `RouteRealtime` owns one channel per topic."
+  - "Never add `useRealtime(table, 'id=in.(...)')` to a list table, and never key a client cache without the company."
 ---
 
 # Realtime: broadcast topics, route declarations, live lists
@@ -218,7 +233,7 @@ company) is the only reader, and the backup engine skips the table.
 ## Gotchas
 
 - `payload.new` / `payload.old` do not exist. Re-read by id.
-- Do not key a client cache without the company (`.ai/lessons.md`: an unkeyed
+- Do not key a client cache without the company (`.ai/lessons/`: an unkeyed
   IndexedDB copy once hydrated one company's pickers with another's rows).
 - The first message after the first-ever private join on a fresh Realtime
   server was not delivered in one test (the replication slot is created at that

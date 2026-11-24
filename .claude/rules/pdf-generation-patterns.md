@@ -3,6 +3,21 @@ paths:
   - "packages/documents/src/pdf/**"
   - "packages/documents/src/qr/**"
   - "apps/*/app/routes/file+/**/*[.]pdf.tsx"
+triggers:
+  - "@react-pdf/renderer"
+  - "renderToStream"
+  - "react-pdf-tailwind"
+  - "useTw("
+  - "generateQRCode"
+  - "generateBarcode"
+  - "getSafeFontFamily"
+  - "application/pdf"
+summary:
+  - "Use the `@react-pdf/renderer` v3 API, not v4 examples; the catalog pins v3.x."
+  - "Resolve QR codes, barcodes, images and fonts before render; the component tree is synchronous. Never call `generateQRCodeSync`."
+  - "Style blocks with `useTw()` semantic grays (`gray-600` heading, `gray-800` text), not raw `StyleSheet`."
+  - "Route every settings font through `getSafeFontFamily`, so an unregistered family can never throw."
+  - "Serve with `renderToStream`, not `renderToBuffer`, and register a new block-driven document in `DOCUMENT_PDFS` too."
 ---
 
 # PDF Generation Patterns

@@ -1,5 +1,18 @@
 ---
 paths: ["packages/database/supabase/functions/**"]
+triggers:
+  - "Deno.serve"
+  - "functions.invoke("
+  - "requireCaller"
+  - "requireServiceRole"
+  - "edge-runtime"
+  - "jsr:"
+summary:
+  - "Import nothing from outside the function's own directory; use pinned npm, jsr or node specifiers, never @carbon/* packages."
+  - "Define and call requireCaller or requireServiceRole in the function; verify_jwt alone lets the public anon key in."
+  - "Re-read any record id from the body under companyId, and return 404 on a miss."
+  - "Add the function to config.toml with verify_jwt = true; a missing entry still deploys."
+  - "Add a new edge function only when the work needs the edge runtime; postings, MRP and events belong in Node."
 ---
 
 # Workflow: Authoring a Supabase Edge Function

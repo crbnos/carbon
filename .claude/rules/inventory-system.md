@@ -3,6 +3,21 @@ paths:
   - "apps/erp/app/modules/inventory/**"
   - "packages/api/src/stock-stripes.ts"
   - "packages/database/supabase/migrations/**"
+triggers:
+  - "itemLedger"
+  - "costLedger"
+  - "calculateCOGS"
+  - "bookAdjustment"
+  - "get_inventory_quantities"
+  - "itemStockQuantities"
+  - "effectiveNettable"
+  - "itemInventory"
+summary:
+  - "Read on-hand from itemLedger or get_inventory_quantities, never by summing trackedEntity, and never read or write the dead itemInventory table."
+  - "Grep the NEWEST migration for a table or function: tables get renamed (shelf to storageUnit) and get_inventory_quantities has many revisions."
+  - "Stock in a non-nettable storage unit is on hand but not supply: planning and picking read quantityOnHand - quantityNonNettable."
+  - "Set a stock row's projectId stripe from its source; a draw sets the stripe it drew, and a reversal copies the row it reverses."
+  - "Move stock through the postings (postInventoryAdjustment, bookAdjustment), which write the ledger, cost layers and journal in one Kysely transaction."
 ---
 
 # Inventory System

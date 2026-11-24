@@ -1,6 +1,21 @@
 ---
 description: Workflow actions and operations — the two hand-written catalogue sources plus the entity `write` allowlists, and the job-side executors that carry them out as the workflow's owner. Read before adding an action, an operation, or anything a workflow can write or call.
 paths: ["packages/jobs/src/workflows/actions/**", "packages/ee/src/workflows/catalog/actions.ts", "packages/ee/src/workflows/catalog/operations.ts"]
+triggers:
+  - "setWorkflowDispatch"
+  - "createWorkflowServices"
+  - "getActionRoute"
+  - "existsInCompany"
+  - "checkOutboundUrl"
+  - "toPlainValue"
+  - "buildCatalog("
+  - "WORKFLOW_ACTION_CATALOG"
+summary:
+  - "Keep `write` in `entities.ts` an allowlist. Adding a column to `watch` never makes it writable."
+  - "Check every foreign-key field of an update with `existsInCompany`; without it a workflow can point a record at another company's row."
+  - "Route `runAction` off the catalog (`getActionRoute`), never off the shape of the action id."
+  - "Keep both SSRF layers, `checkOutboundUrl` and the `guardedLookup` dispatcher, and import `fetch` from `undici`, not the global."
+  - "Never hand-edit `actions.generated.ts`; run `pnpm run generate:workflow-catalog`."
 ---
 
 # Workflow Actions and Operations

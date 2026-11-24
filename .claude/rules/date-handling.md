@@ -6,6 +6,21 @@ paths:
   - "packages/form/src/**"
   - "packages/jobs/src/**"
   - "packages/utils/src/**"
+triggers:
+  - "new Date("
+  - "getLocalTimeZone()"
+  - "toISOString()"
+  - "toLocaleDateString"
+  - "@internationalized/date"
+  - "datetime.today("
+  - "CURRENT_DATE"
+  - "getCompanyTimeZone"
+summary:
+  - "Use `formatDate`, `parseDate` or `parseAbsolute`, not `new Date(str)` or `toLocaleDateString`, to parse or show a date."
+  - "In server code use `datetime.timestamp()`, `datetime.today(tz)` or `datetime.now(tz)`; `getLocalTimeZone()` is banned there."
+  - "Resolve `tz` with `getCompanyTimeZone` (ledger dates) or `getLocationTimeZone` (operations), never the server's zone."
+  - "Seed a form date that is saved as a business date with `useCompanyToday()`, not `today(getLocalTimeZone())`."
+  - "Use `company_today(...)` or `location_today(...)` in SQL for a stored business date, not `CURRENT_DATE`."
 ---
 
 # Date & Time Handling

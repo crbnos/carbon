@@ -6,6 +6,19 @@ paths:
   - "apps/erp/app/modules/purchasing/purchasing.service.ts"
   - "packages/database/src/supplier-part-price.ts"
   - "packages/database/supabase/migrations/*conversion*.sql"
+triggers:
+  - "conversionFactor"
+  - "purchaseUnitOfMeasureCode"
+  - "inventoryUnitOfMeasureCode"
+  - "supplierUnitPrice"
+  - "convertUnitPrice"
+  - "@carbon/database/supplier-part-price"
+summary:
+  - "Multiply a purchase quantity by `conversionFactor` for inventory units; divide the purchase unit price by it for inventory unit cost."
+  - "The generated price columns divide only by `exchangeRate`; apply the conversion factor in app or posting code, not in those columns."
+  - "Store a supplier part price per purchase unit in the part's currency; convert it with `convertUnitPrice` at the current rate, never store a copy."
+  - "Round a planned purchase quantity up: `round(inventoryQuantity / conversionFactor, 0, RoundingMode.Up)`."
+  - "Default a missing factor to 1 (`conversionFactor ?? 1`), and keep the line columns bare `NUMERIC` so the factor is stored as entered."
 ---
 
 # Purchasing Conversion Factors

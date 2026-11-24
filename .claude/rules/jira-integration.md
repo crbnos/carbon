@@ -4,6 +4,21 @@ paths:
   - packages/jobs/src/inngest/functions/integrations/jira.ts
   - apps/erp/app/routes/api+/integrations.jira.*.ts
   - apps/erp/app/components/ActionTasks/Jira/**
+triggers:
+  - "@carbon/ee/jira"
+  - "getJiraClient"
+  - "JiraClient"
+  - "adfToTiptap"
+  - "tiptapToAdf"
+  - "verifyJiraWebhook"
+  - "sync-issue-from-jira"
+  - "externalIntegrationMapping"
+summary:
+  - "Write and delete `externalIntegrationMapping` rows with `getCarbonServiceRole()`; the table has no UPDATE or DELETE policy."
+  - "Import client and service code from `@carbon/ee/jira.server`; `@carbon/ee/jira` is the client-safe subpath."
+  - "Search issues through `/search/jql`, not the deprecated `/search`."
+  - "Change a Jira status through a transition whose target category matches, not by setting the status."
+  - "Run inbound sync on Inngest (`sync-issue-from-jira`), not on Trigger.dev."
 ---
 
 # Jira Integration

@@ -2,6 +2,19 @@
 paths:
   - "apps/**"
   - "packages/**"
+triggers:
+  - { text: ".update(", minCount: 2 }
+  - ".delete()"
+  - '.eq("status"'
+  - "fetcher.submit("
+  - "CREATE OR REPLACE FUNCTION"
+  - "useEffect("
+summary:
+  - "End every guarded UPDATE or DELETE with `.select(\"id\")` or `.returning(...)`; an empty result means \"changed since read\", never success."
+  - "Every supabase-js write carries `.eq(\"companyId\", ...)`, including inside a helper you call."
+  - "Make a bulk write one statement or one transaction with `UPDATE ... FROM (VALUES ...)`, never a per-row loop."
+  - "Read every `{ error }`, each element of a `Promise.all` too; never call `.parse()` on request input."
+  - The server decides business rules; the UI may hint but must not be the only check.
 ---
 
 # Write-time checklist

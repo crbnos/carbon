@@ -5,6 +5,21 @@ paths:
   - "apps/erp/app/routes/x+/shared+/import.$tableId.tsx"
   - "apps/erp/app/modules/shared/shared.service.ts"
   - "apps/erp/app/modules/shared/journal-entry-import.ts"
+triggers:
+  - "importCsvTable"
+  - "importCsvFile"
+  - "importSchemas"
+  - "fieldMappings"
+  - "importPermissions"
+  - "importCSV="
+  - "upsertCsvMappings"
+  - "classifyImportRow"
+summary:
+  - "Declare every field of `fieldMappings[table]` in `importSchemas[table]` too; zod strips undeclared keys, so the mapped column is silently dropped."
+  - "Take an import's permission from its table's RLS INSERT policy, not from the list page gate; `importCsvTable` bypasses RLS."
+  - "A new import type adds its table to `importPermissions` and to `importCsvInput`'s `table` enum."
+  - "Stock imports call the same pure builders as `bookAdjustment` (`buildItemLedgerRow`, `buildCostLedgerRow`); do not fork a row shape into the importer."
+  - "Key returned ids by `entryNumber` or reference, not by position; a reordered `RETURNING` attaches rows to the wrong movement."
 ---
 
 # CSV Import System

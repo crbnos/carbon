@@ -4,6 +4,20 @@ paths:
   - "**/*.test.tsx"
   - "**/*.test.sql"
   - "**/*-test-fixture.ts"
+triggers:
+  - 'from "vitest"'
+  - "vi.mock("
+  - "vi.doMock("
+  - "toHaveBeenCalledWith"
+  - "databaseTest"
+  - "connectLocalTestDatabase"
+  - "toBeDefined()"
+summary:
+  - "Never mock a first-party module (`vi.mock(\"./x\")`, `vi.mock(\"~/...\")`); stub only the network, the clock, the filesystem or randomness."
+  - Write expected values as literals or identities, never with the formula or function the code under test uses.
+  - "Assert the whole result with `toEqual`, not `toBeDefined()` or `toBeTruthy()`."
+  - "Only `packages/checks` may read source or migration text in a test; a regex over a `.sql` or `.ts` file elsewhere is a change detector."
+  - "In a database test use `databaseTest`, never `if (!client) return;`, and call the real operation, not a raw insert."
 ---
 
 # Writing tests

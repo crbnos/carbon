@@ -8,6 +8,21 @@ paths:
   - "packages/database/src/stock-transfer.ts"
   - "packages/database/src/event-system/handlers/*kanban*.sql"
   - "packages/jobs/src/inngest/functions/tasks/kanban-level-check.ts"
+triggers:
+  - "\"kanban\""
+  - "\"kanbans\""
+  - "scanKanban"
+  - "replenishKanban"
+  - "kanbanOutput"
+  - "KanbanLabel"
+  - "replenishmentLevel"
+  - "kanbanReplenishmentSystem"
+summary:
+  - "Read kanbans from the `kanbans` view and write the `kanban` table. A new `kanban` column needs the view recreated."
+  - "Print one code per card (Create, Start or Complete), never several codes on one card."
+  - "Call `replenishKanban` from a scan as the scanner (`invokePosting` with the scanner's client and `{ as: replenishKanbanPermission }`); never drop either."
+  - "Refuse a non-nettable storage unit on kanban save and on scan. Do not add `Transfer` to `itemReplenishmentSystem`."
+  - "Use `storageUnitId` and `storageUnitName`, not `shelfId`, and scope every kanban query by `companyId`."
 ---
 
 # Kanban System

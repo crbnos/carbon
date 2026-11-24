@@ -11,6 +11,21 @@ paths:
   - "packages/database/src/quality.ts"
   - "packages/database/supabase/migrations/*inspection*.sql"
   - "apps/erp/app/modules/inventory/inventory.service.ts"
+triggers:
+  - "@carbon/database/quality"
+  - "dispositionInspection"
+  - "inspectionSample"
+  - "inspectionMeasurement"
+  - "itemInspectionDocumentAssignment"
+  - "check_inspection_hold"
+  - "app.inspection_release"
+  - "rejectInspection"
+summary:
+  - "Do not pass `requireOpen` from ERP receipt routes; only the MES disposition is one-shot, and the engine already decides a receipt lot once."
+  - "Do not add manual sample pass/fail UI to a document-driven lot; sample status is derived, and deviations resolve at disposition through the NCR."
+  - "Turn on `app.inspection_release` only for the write that IS the release, with `withInspectionRelease(trx, fn)`, not for the whole transaction."
+  - "Refuse in a hold check with a plain `RAISE` (P0001); any other SQLSTATE reads as a server failure and the API withholds its text."
+  - "Never map a grid position to `samples[index]` of a reloaded list; bind positions to sample ids with `placeSamples`."
 ---
 
 # Inspection System

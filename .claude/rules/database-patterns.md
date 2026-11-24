@@ -3,6 +3,21 @@ paths:
   - "packages/database/**"
   - "apps/erp/app/modules/**/*.service.ts"
   - "apps/mes/app/services/**/*.service.ts"
+triggers:
+  - { text: ".update(", minCount: 2 }
+  - { text: ".insert(", minCount: 2 }
+  - "getDatabaseClient("
+  - "ctx.asSystem.pg"
+  - "withTransaction("
+  - "updateTable("
+  - "count: \"exact\""
+  - "fetchAllFromTable"
+summary:
+  - "Do multi-row or multi-table writes in one Kysely transaction, not a chain of supabase-js calls or `Promise.all`. The client has no transaction."
+  - "Never query inside a loop: collect the ids and make one `.in()` call, an embed or a view. `Promise.all` over the loop is not a fix."
+  - "Scope every Kysely `updateTable` and `deleteFrom` by `companyId`, and by the parent id when row ids come from the request. Kysely bypasses RLS."
+  - "In a building block that can get a transaction, open one with `withTransaction(db, fn)`, not `db.transaction()`."
+  - "Count list endpoints with `{ count: LIST_COUNT }`, not `count: \"exact\"`, which materializes the whole filtered set."
 ---
 
 # Database Access Patterns

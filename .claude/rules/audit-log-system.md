@@ -6,6 +6,21 @@ paths:
   - packages/jobs/src/inngest/functions/events/audit.ts
   - packages/jobs/src/inngest/functions/scheduled/audit-archive.ts
   - apps/erp/app/components/AuditLog/**
+triggers:
+  - "auditLog_"
+  - "insert_audit_log_batch"
+  - "auditConfig"
+  - "get_entity_audit_log"
+  - "enableAuditLog"
+  - "fkDisplayRegistry"
+  - "@carbon/ee/audit"
+  - "useAuditLog"
+summary:
+  - "Queue audit rows through the AUDIT event pipeline (`events: true` in attachments.ts), never insert into `auditLog_{companyId}` directly."
+  - "Stamp `updatedBy`/`createdBy` on every Kysely write; a direct connection has no `auth.uid()`, so a write without them logs as System."
+  - "Start every audit RPC with `assert_audit_log_access(...)`; never swap it for `REVOKE EXECUTE`, which segfaults the backend."
+  - "Add `snapshotFields` for a column with no FK constraint; `get_foreign_key_map` cannot see it, so the diff shows a raw id."
+  - "Render diff rows with `ChangeRow`, not raw `change.old`/`change.new`, or FK names regress to bare ids."
 ---
 
 # Audit Log System
@@ -68,7 +83,7 @@ The RPCs are all SECURITY DEFINER, so each one begins with
 The guard only applies when `current_setting('role')` is `anon` or `authenticated`, so the service role
 and direct Postgres connections pass. **Never swap it for `REVOKE EXECUTE`**: on supabase/postgres
 15.14.1.112, calling any function the caller lacks EXECUTE on, as `anon`/`authenticated`, segfaults the
-backend (see `.ai/lessons.md`). The controlled-environment auto-enable in the `settings+/audit-logs.tsx`
+backend (see `.ai/lessons/`). The controlled-environment auto-enable in the `settings+/audit-logs.tsx`
 loader therefore runs as the service role, because that loader only requires `settings_view`.
 
 ## On-by-default in controlled environments (3.3.1)

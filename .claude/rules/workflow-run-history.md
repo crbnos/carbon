@@ -3,6 +3,20 @@ paths:
   - "apps/erp/app/modules/workflows/ui/Runs/**"
   - "packages/jobs/src/inngest/functions/scheduled/workflow-run-retention.ts"
   - "packages/jobs/src/workflows/retention.ts"
+triggers:
+  - "workflowRun"
+  - "workflowStepRun"
+  - "compactForLog"
+  - "redactForLog"
+  - "topologicalNodeOrder"
+  - "useNodeLabel"
+  - "failCrashedRun"
+summary:
+  - "Filter every retention pass on finished runs by a terminal status (Succeeded, Failed, Blocked, Skipped); never delete in-flight runs."
+  - "Age a run by COALESCE(completedAt, createdAt); Blocked and Skipped runs can be inserted with no completedAt."
+  - "Change a retention age in both the job constant and util.sweep_workflow_run_retention()."
+  - "Keep workflowStepRun.detail for diagnostics only, never node data, and set it only on Succeeded and Skipped steps."
+  - "Key step rows by node id, never the array index, and name them only through useNodeLabel()."
 ---
 
 # Workflow Run History

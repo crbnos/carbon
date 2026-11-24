@@ -3,6 +3,21 @@ paths:
   - "packages/documents/src/email/**"
   - "packages/jobs/src/inngest/functions/notifications/**"
   - "packages/jobs/src/inngest/functions/tasks/changelog-dispatch*"
+triggers:
+  - "@carbon/documents/email"
+  - "react-email"
+  - "EmailThemeProvider"
+  - "NotificationEmail"
+  - "sendEmail("
+  - "sendCompanyEmail"
+  - "darkModeMedia"
+  - "prefers-color-scheme"
+summary:
+  - "Never build email HTML by string concatenation; write a `.tsx` template in `@carbon/documents` and render it in the job."
+  - "Render with `render(SomeEmail({ ...props }))`, a function call, never JSX in `@carbon/jobs`."
+  - "Set backgrounds through `nf-*` classes, not inline `background-color`; write every dark rule through `darkModeMedia`."
+  - "Always send a `text` alternative with the `html`, and add the preview fixture in the same change."
+  - "Give content props no sample defaults; sample data lives only in the preview fixture."
 ---
 
 # Email Design — every email is the notification card

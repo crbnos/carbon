@@ -3,6 +3,21 @@ paths:
   - "packages/printing/**"
   - "packages/documents/**"
   - "packages/jobs/src/inngest/functions/tasks/print-job/**"
+triggers:
+  - "@carbon/printing"
+  - "print-job"
+  - "printJob"
+  - "getCachedPrinterConfig"
+  - "invalidatePrinterCache"
+  - "PrintButton"
+  - "printerRoute"
+  - "autoPrintOperationLabel"
+summary:
+  - "Enqueue every print with the print-job trigger; one Inngest task generates and a second delivers, both with retries 0."
+  - "Call invalidatePrinterCache(companyId) after any printer route upsert or delete, or any assignment update."
+  - "Keep the dedupe, the printer config and every job write inside the one create-print-jobs step, or only the first label prints."
+  - "Keep the ProxyBox API key in Vault (set_printer_api_key / get_printer_api_key), never in a column or in the browser."
+  - "A new MES path that completes a serial or batch unit must call autoPrintOperationLabel, or it mints serials with no label."
 ---
 
 # Printing System

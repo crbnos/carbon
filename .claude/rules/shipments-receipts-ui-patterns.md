@@ -4,6 +4,21 @@ paths:
   - apps/erp/app/routes/x+/{shipment,receipt}+/**
   - apps/erp/app/modules/shared/shared.service.ts
   - apps/erp/app/modules/inventory/inventory.{server,service}.ts
+triggers:
+  - "postShipment"
+  - "postReceipt"
+  - "invokePosting"
+  - "invokeCreate("
+  - "shipmentLine"
+  - "receiptLine"
+  - "shippableEntityStatuses"
+  - "setReceiptLineSerial"
+summary:
+  - "Create a shipment or receipt through the `create` posting (`invokeCreate`), never an `upsert`; the posting allocates the id and copies lines."
+  - "Put the logic in the `inventory.server.ts` operation; the route only parses the form and takes the document id from the URL."
+  - "Set `Pending` before the posting call and revert to `Draft` on failure; `Pending` is a transient state, not a workflow stage."
+  - "Keep the post modals and `lines.tracking` on `shippableEntityStatuses`, so a modal never rejects what tracking accepted."
+  - "Refuse a posting with `InvalidInputError`, never a plain `Error`, which the posting reads as a 500."
 ---
 
 # Shipments & Receipts UI + Posting Flow

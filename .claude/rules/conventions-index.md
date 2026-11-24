@@ -2,6 +2,19 @@
 paths:
   - "apps/**"
   - "packages/**"
+triggers:
+  - "defineServiceFn"
+  - "ValidatedForm"
+  - "carbon(request)"
+  - "respond(request"
+  - "schema.parse("
+  - "requirePermissions("
+summary:
+  - "Validate a form post with `validator(schema).request(args, ...)`, not `schema.parse()`."
+  - "Do multi-row writes in a Kysely transaction, not `Promise.all`."
+  - "Give every table `companyId`, a composite PK on id and companyId, and an `id('prefix')` default, never a raw UUID."
+  - "In a route action, validate, then make one call through `carbon(request)`."
+  - "Grep `packages/react/src/` and `apps/erp/app/components/` before writing UI; prefer existing components to ad-hoc `bg-*` classes."
 ---
 
 # Carbon Conventions Index

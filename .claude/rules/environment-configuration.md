@@ -6,6 +6,20 @@ paths:
   - "packages/auth/**"
   - ".env*"
   - "scripts/setup-env-files.ts"
+triggers:
+  - "process.env"
+  - "window.env"
+  - "getBrowserEnv"
+  - "@carbon/env"
+  - "getEnv("
+  - "SKIP_ENV_VALIDATION"
+  - "import.meta.env"
+summary:
+  - "Import the env constant from `@carbon/env` (or `@carbon/auth`), not `process.env` directly."
+  - "Declare every variable once in `packages/env/src/schema.ts`."
+  - "Expose a public variable with `browser: true`, an entry in `getBrowserEnv()` and the root-loader `env` object. Only those keys reach the client."
+  - "Do not put ports, URLs or Supabase, Redis or Inngest dev values in `.env`; `crbn up` owns them in `.env.local`. Never edit `.env.local` by hand."
+  - "Read feature flags only with `flags.*`, `evaluateBrowserFlags` or `useFeatureFlags().feature(key)`, never with an OpenFeature client."
 ---
 
 # Environment Configuration
@@ -105,7 +119,7 @@ Cloud on Vercel, else Turnstile if keyed) picks the login bot check (see
 root `.env` and reach GoTrue via docker-compose substitution (`GOTRUE_SAML_*`).
 Both `crbn up` and `crbn reload` preload `.env.local` then `.env` into
 process.env (`loadEnvFiles`, `packages/dev/src/env.ts`) before invoking compose so these survive a recreate; see the
-`crbn reload` lesson in `.ai/lessons.md`.
+`crbn reload` lesson in `.ai/lessons/`.
 
 **Stripe** — `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
 `STRIPE_CONNECT_WEBHOOK_SECRET` (all optional), `STRIPE_BYPASS_COMPANY_IDS`,

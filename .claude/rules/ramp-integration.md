@@ -8,6 +8,21 @@ paths:
   - apps/erp/app/routes/x+/invoicing+/charges*.tsx
   - apps/erp/app/routes/api+/integrations.ramp.oauth.ts
   - apps/erp/app/routes/api+/webhook.ramp.$companyId.ts
+triggers:
+  - "@carbon/ee/ramp"
+  - "RampClient"
+  - "rampOwnsCodingSurface"
+  - "ramp-sync"
+  - "entity_amount"
+  - "accounting_field_selections"
+  - "postCharge"
+  - "buildChargeJournal"
+summary:
+  - "Read a Ramp transaction's `entity_amount.value` (integer minor units), not the deprecated `amount`, which is a major-unit float."
+  - "Gate every Ramp `accounting:write` call on `rampOwnsCodingSurface(metadata)`; a push-only install may still hold the scope."
+  - "Write Ramp metadata only through `upsert_company_integration_patch` (`lib/state.ts`), never a raw read/merge/write or a whole Vault object."
+  - "The `account` table is company-group scoped and has no `companyId` column; never filter it with `.eq(\"companyId\")`."
+  - Never delete a bill mapping to force a re-push; the Ramp draft survives and the second create fails with 409.
 ---
 
 # Ramp Integration

@@ -6,6 +6,20 @@ paths:
   - "apps/erp/app/routes/file+/contract+/financing.$requestId[.]pdf.tsx"
   - "packages/database/src/deposit-scope.ts"
   - "packages/utils/src/payment-funding.ts"
+triggers:
+  - "@carbon/ee/contract-financing"
+  - "computeSf1443"
+  - "customerContractFinancing"
+  - "contractFinancingRequest"
+  - "FinancingError"
+  - "customerContractId"
+  - "expectedLiquidation"
+summary:
+  - "Call requireEntitlement first in every financing authoring function; refuse with FinancingError, which the routes flash."
+  - "A Draft request has no number; Submit takes nextRequestNumber, and a Withdrawn request keeps its number, so the series has no gap."
+  - "Allow overrides only on lines 12b, 14a, 14b, 14d, 20a, 21a, 21d, 23 and 26, and only on a Draft."
+  - "Use the one definition of a contract's invoices (header, line, or a line of the contract's sales order), as loadContractInvoiceIds does."
+  - "Keep the delivery invoice gross; liquidation is the deposit applied to it, not a reduction of the invoice."
 ---
 
 # Contract financing (progress payments and PBP)

@@ -2,6 +2,20 @@
 paths:
   - "apps/**"
   - "packages/**"
+triggers:
+  - "console.log("
+  - "console.error("
+  - "<Outlet"
+  - "shouldRevalidate"
+  - "redirectBeforeLoaders"
+  - "useResolved("
+  - "return json("
+summary:
+  - "Import `redirect` from `@carbon/utils`, not `react-router`; leave the origin only with `redirectExternal` and a URL the server built."
+  - "Render `<RecordOutlet />` in a route under `/x`, never a plain `<Outlet />`."
+  - "Never use `console.*`; log a failure once, in the layer that handles it, with `getLogger(...)`."
+  - "Return plain objects or `data(...)` from loaders and actions, never `json(...)`."
+  - "Do not export `shouldRevalidate` from a layout to skip its loader; make the loader faster."
 ---
 
 # Coding Conventions (General)

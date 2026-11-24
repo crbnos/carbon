@@ -5,6 +5,20 @@ paths:
   - packages/ee/src/accounting/providers/xero/models.ts
   - packages/ee/src/accounting/providers/xero/provider.ts
   - packages/ee/src/accounting/core/models.ts
+triggers:
+  - "ContactSyncer"
+  - "Xero.Contact"
+  - "PhoneType"
+  - "parseDotnetDate"
+  - "UpdatedDateUTC"
+  - "IsSupplier"
+  - "xero-tenant-id"
+summary:
+  - "Map Xero phones by `PhoneType`, never by `Phones[0]`."
+  - "Map the whole `Addresses` array in both directions, not only the first address."
+  - "Parse `UpdatedDateUTC` with `parseDotnetDate`; it is a serialized .NET date."
+  - "Run sync writes through `withTriggersDisabled` to stop the sync-trigger-sync loop."
+  - "Match an existing contact by exact `Name` before you create one; Xero names are unique among active contacts."
 ---
 
 # Xero Contact Structure & Carbon Mapping

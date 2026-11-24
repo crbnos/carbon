@@ -9,6 +9,21 @@ paths:
   - "apps/erp/app/modules/settings/settings.server.ts"
   - "apps/erp/app/components/ExternalSource.tsx"
   - "packages/jobs/src/inngest/functions/integrations/onshape-*"
+triggers:
+  - "ONSHAPE_V2_INTEGRATION_ID"
+  - "\"onshape-v2\""
+  - "\"onshape\""
+  - "getOnshapeClient("
+  - "requireOnshapePanelPermissions"
+  - "selectInBatches"
+  - "patchIntegrationState"
+  - "onshape-panel"
+summary:
+  - "Pass `ONSHAPE_V2_INTEGRATION_ID` to every panel read and write. A bare `\"onshape\"` literal in panel code is a bug."
+  - "Authenticate panel routes with `requireOnshapePanelPermissions`, not `requirePermissions`. Denials are 401 or 403, never redirects."
+  - "Write `companyIntegration.metadata` keys through `patchIntegrationState`; never write the whole column from an earlier read."
+  - "Send every `.in()` sized by CAD data through `selectInBatches` or `chunkFilterValues`. Never build a PostgREST `.or()` string from CAD values."
+  - "Never edit an Active make method; write into a Draft (`ensureDraftMakeMethod`). Never refresh a `modelUpload` row in place."
 ---
 
 # Onshape panel (`onshape-v2`, `onshape-v2-government`)

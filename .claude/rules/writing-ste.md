@@ -4,6 +4,19 @@ paths:
   - ".ai/plans/**"
   - ".ai/research/**"
   - ".ai/runs/**"
+triggers:
+  - "**Verify:**"
+  - "**Depends on:**"
+  - "**Steps:**"
+  - "**Out of scope:**"
+  - "## Open questions"
+  - "## Decisions"
+summary:
+  - "Keep an instruction sentence at most 20 words and a descriptive one at most 25; use the imperative and the active voice."
+  - "Write every sequence of actions as a numbered list, one action per item; put the condition before the action."
+  - "Write a number or a name, never 'some', 'various', 'etc.' or 'as appropriate'."
+  - "Use one name per concept in the whole document; use the glossary domain term, never a simpler synonym."
+  - "Do the STE-80 review pass yourself before the hand-off; never ask the human to check STE-80."
 ---
 
 # Writing style for specs, plans and explainers — "STE-80"

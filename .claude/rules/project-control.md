@@ -8,6 +8,21 @@ paths:
   - "apps/erp/app/routes/x+/job+/new.tsx"
   - "apps/erp/app/routes/x+/job+/$jobId.details.tsx"
   - "apps/erp/app/modules/projects/ui/Costs/ProjectEarnedValue.ee.tsx"
+triggers:
+  - "@carbon/ee/project-control"
+  - "checkProjectBudget"
+  - "checkTimesheetBudget"
+  - "budgetControl"
+  - "earnedValueTechnique"
+  - "stopWorkDate"
+  - "closeEarnedValuePeriod"
+  - "isControlAccount"
+summary:
+  - "Never refuse a timesheet for budget; `checkTimesheetBudget` only warns, and Block also notifies the project owner."
+  - "Call `requireEntitlement` first in every LOCK function; `checkBudgetAvailability` and `getEarnedValue` DEGRADE without the feature."
+  - "Leave `resumeWork` ungated, so a company that loses the feature can still release a stopped project."
+  - "Read budget data in grouped Kysely queries over every charged project, never one RPC per project."
+  - "Change the status only through Resume while `stopWorkDate` is set; `updateProjectStatus` refuses any other status."
 ---
 
 # Project control (Government Contracting Phase 5c)

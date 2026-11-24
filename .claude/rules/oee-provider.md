@@ -5,6 +5,21 @@ paths:
   - packages/jobs/src/inngest/functions/integrations/oee-*.ts
   - apps/erp/app/routes/api+/webhook.sense.$companyId.ts
   - packages/database/src/machine-time.ts
+triggers:
+  - "planMachineTime"
+  - "machineTimeRefusal"
+  - "unattributedMachineTime"
+  - "workCenterDevice"
+  - "workCenterLoad"
+  - "recordManualMachinePress"
+  - "@carbon/ee/oee"
+  - "lockMachinePress"
+summary:
+  - "Take the press locks in order: the device row `FOR UPDATE`, then the work center advisory lock; the reverse order deadlocks a sync."
+  - "Check permission in the route before any Machine write; those writes go through Kysely and skip RLS."
+  - "Never trim or rewrite a closed Machine event, which may be posted; trim only unattributed rows."
+  - "Decide if an operation can take machine time only with `machineTimeRefusal`; never infer a job from the schedule."
+  - "Post every Machine event a writer ended with `postEndedMachineEvents` after the commit; it logs a failure and never throws."
 ---
 
 # OEE Providers (machine monitoring)
@@ -46,7 +61,7 @@ checks it first ("Work center not found"). `machineStateChange` and
 | `packages/ee/src/sense/hooks.server.ts` | `senseOnSave` (`onInstall` and `onUpdate`: `ensureSenseWebhook`), `senseHealthcheck` (`provider.validate()`, then the webhook) and `senseOnUninstall` (registered in `packages/ee/src/hooks.server.ts`; see "Uninstalling Sense" and "The Sense webhook") |
 | `apps/erp/app/routes/api+/webhook.sense.$companyId.ts` | Receives the Sense webhook and sends `carbon/oee-device-sync` for a mapped station. Pinned by `webhook.sense.$companyId.test.ts` |
 | `packages/jobs/src/inngest/functions/integrations/oee-sweep.ts` | Cron `*/10 * * * *`, the fallback. Sends one `carbon/oee-sync` per (company, OEE integration) that is active and has at least 1 mapped device, then repairs each one's webhook (`repairOeeWebhook`, see "The Sense webhook") |
-| `packages/jobs/src/inngest/functions/integrations/oee-sync.ts` | Two functions on one device loop (`syncDevices`). `oee-sync` (`carbon/oee-sync`, from the sweep): every device of the integration in ONE `step.run`, `singleton` (skip) per company and integration. `oee-device-sync` (`carbon/oee-device-sync`, from the webhook and from rechecks): one device, with no `debounce`, which the local Inngest dev server cannot run (`.ai/lessons.md`); a repeated delivery costs one read of what the device's cursor has not seen. Both share an env-scoped concurrency key (`"oee:" + companyId`, limit 1), so a webhook run and a sweep run never overlap for one company |
+| `packages/jobs/src/inngest/functions/integrations/oee-sync.ts` | Two functions on one device loop (`syncDevices`). `oee-sync` (`carbon/oee-sync`, from the sweep): every device of the integration in ONE `step.run`, `singleton` (skip) per company and integration. `oee-device-sync` (`carbon/oee-device-sync`, from the webhook and from rechecks): one device, with no `debounce`, which the local Inngest dev server cannot run (`.ai/lessons/`); a repeated delivery costs one read of what the device's cursor has not seen. Both share an env-scoped concurrency key (`"oee:" + companyId`, limit 1), so a webhook run and a sweep run never overlap for one company |
 | `packages/jobs/src/inngest/functions/integrations/oee-sync-device.ts` | `syncOeeDevice`: read, store, then plan and apply under the device lock. Pinned by `oee-sync-device.database.test.ts` (needs `SUPABASE_DB_URL`) |
 | `packages/database/src/machine-time.ts` | `lockWorkCenterDevice` (`FOR UPDATE` on the device row), `lockMachinePress` (the device lock, then a transaction advisory lock per work center), `recordManualMachinePress` and `endSensorMachineTime` (both return the ended event ids for the caller to post after commit). Shared by the sync, the MES, the device mapping writes and the Sense uninstall hook. Pinned by `machine-time.test.ts` (needs `SUPABASE_DB_URL`) |
 | `apps/mes/app/services/operations.service.ts` | `startMachineProductionEvent` (press, event and tracked activity in one Kysely transaction), `endMachineProductionEvent` (press locks, then the open event's row lock), `postEndedProductionEvents` (posts the events a press ended), `endProductionEvent` (ends an open event, scoped by `companyId`) |

@@ -11,6 +11,21 @@ paths:
   - "apps/mes/app/utils/workUnit.ts"
   - "apps/mes/app/services/work-unit.server.ts"
   - "apps/mes/app/services/kanban-scan.server.ts"
+triggers:
+  - "resolveWorkUnit"
+  - "useWorkUnit"
+  - "useKeyboardWedge"
+  - "useTravelerScan"
+  - "abilityBlockRefusal"
+  - "getRequiredScanShortfall"
+  - "finishJobOperation"
+  - "jobOperationBatchId"
+summary:
+  - "Make every MES unit write call `resolveWorkUnit`, or list it in `UNIT_WRITE_ALLOW_LIST` with its reason."
+  - "Call `abilityBlockRefusal` in every production write route before it writes."
+  - "Add a new operation-loader read to the one `Promise.all` after `getJobOperationForCompany`, not as a step after it."
+  - "Put mutations in their own routes (`/x/start`, `/x/end`, `complete.tsx`), not as actions on the operation route."
+  - "Return `data({ completed: true })` from batch completion, not a redirect; a realtime revalidation drops a fetcher redirect."
 ---
 
 # MES Job Operation UI

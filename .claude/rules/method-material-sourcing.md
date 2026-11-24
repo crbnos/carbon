@@ -6,6 +6,19 @@ paths:
   - "apps/erp/app/modules/items/items.server.ts"
   - "apps/erp/app/modules/items/ui/Item/BillOfMaterial.tsx"
   - "packages/database/supabase/migrations/**"
+triggers:
+  - "sourcingType"
+  - "defaultMethodType"
+  - "\"methodMaterial\""
+  - "upsertMethodMaterial"
+  - "updateItemMethodAndSourcing"
+  - "deriveItemMethodUpdate"
+  - "setItemSourcing"
+summary:
+  - "Change sourcing on the component item, not the BOM row: `upsertMethodMaterial` re-derives `methodType` and `sourcingType` from the item."
+  - "Write `replenishmentSystem`, `defaultMethodType` or `sourcingType` through `setItemSourcing`, one field per call, not a direct item update."
+  - "Cascade item sourcing only onto `methodMaterial` rows of Draft make methods; Active and Archived methods stay frozen."
+  - "Map `Drop Ship` to `Purchase to Order` and `Ship from Inventory` to `Pull from Inventory`; `Specified` keeps the method type."
 ---
 
 # Method Material Sourcing & Method Type (item-level)

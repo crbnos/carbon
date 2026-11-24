@@ -3,6 +3,21 @@ description: The workflow engine — how a queued run walks its graph, one durab
 paths:
   - "packages/jobs/src/workflows/engine/**"
   - "packages/ee/src/workflows/runtime/**"
+triggers:
+  - "getUserScopedClient"
+  - "getJobDatabaseClient"
+  - "claimStep"
+  - "settleStep"
+  - "redactForLog"
+  - "EXECUTORS"
+  - "executeWorkflowRun"
+  - "workflowRunId"
+summary:
+  - "Mint the owner's client inside each step with `getUserScopedClient(ownerId, { workflowRunId })`; `workflowRunId` is not optional."
+  - "Use `getJobDatabaseClient` only for the two run-log tables; a business read through a privileged client is a security bug."
+  - "Add a node kind as one `EXECUTORS` registry entry, never as an extended `node.type` chain."
+  - "Make every `step.run` id deterministic, never a timestamp or counter; an `itemKey` is a record id or a value hash, never a list position."
+  - "Send everything written to the step-run `input`, `output`, `detail` or `error` columns through `redactForLog`."
 ---
 
 # Workflow Engine

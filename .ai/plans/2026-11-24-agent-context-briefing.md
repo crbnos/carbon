@@ -10,7 +10,7 @@
 - [x] Task 2: Write the scope module (triggers, globs, frontmatter)
 - [ ] Task 3: Add `triggers` to every single-file check
 - [ ] Task 4: Write the file-set table for single-file checks
-- [ ] Task 5: Add `triggers:` and `summary:` to the 89 rules
+- [x] Task 5: Add `triggers:` and `summary:` to the 89 rules
 - [ ] Task 6: Write the index builder
 - [ ] Task 7: Write the `brief` engine
 - [ ] Task 8: Write the `pnpm brief` command

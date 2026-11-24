@@ -11,6 +11,20 @@ paths:
   - "apps/erp/app/hooks/useAppBadge.ts"
   - "apps/erp/app/hooks/usePushSubscription.ts"
   - "packages/jobs/src/inngest/functions/notifications/send-push.ts"
+triggers:
+  - "navigator.serviceWorker"
+  - "SERVICE_WORKER_URL"
+  - "showNotification"
+  - "OFFLINE_CACHE"
+  - "SHELL_CACHE"
+  - "setAppBadge"
+  - "pushManager"
+summary:
+  - "Put push, offline and caching code in the one `public/service-worker.js` per app; a browser keeps one registration per scope."
+  - "Every change to `offline.html` bumps both offline caches (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`); the page sha256 test fails otherwise."
+  - "Never cache a page, loader data or a private file in a worker; nothing may outlive a sign-out."
+  - "Do not pass a `tag` to `showNotification`."
+  - "Workers in `public/` are plain JS with no Biome or typecheck; check them with `node --check`."
 ---
 
 # Service workers, the offline page, the app badge and installing
@@ -38,7 +52,7 @@ no Biome, no typecheck, no bundling. Check them with `node --check`.
   push never depends on it) and re-saved by `ensureOfflinePage()` after any page load
   that reached the network.
 - **Push:** `setBadge(payload.badge)`, then the notification (no `tag` passed to
-  `showNotification`, see `.ai/lessons.md`), icon `/icon-192.png`; `notificationclick`
+  `showNotification`, see `.ai/lessons/`), icon `/icon-192.png`; `notificationclick`
   focuses a controlled Carbon window and navigates it, else `clients.openWindow`;
   `pushsubscriptionchange` re-saves through `PUT /api/push-subscription`.
 

@@ -5,6 +5,20 @@ paths:
   - packages/dev/**
   - packages/env/src/index.ts
   - packages/dev/docker/docker-compose.dev.yml
+triggers:
+  - "@carbon/kv"
+  - "REDIS_URL"
+  - "ioredis"
+  - "Ratelimit"
+  - "withResilience"
+  - "getPermissionCacheKey"
+  - "pickRedisDb"
+  - "flushDb"
+summary:
+  - "Configure Redis with the one REDIS_URL variable; there is no REDIS_HOST / PORT / PASSWORD split and no in-code default."
+  - "Treat the @carbon/kv redis client as a cache that fails soft: a null read is a miss, so read through to the database, with no per-call try/catch."
+  - "In dev, isolate a worktree by its logical DB index on the shared carbon-redis container, not by its own container."
+  - "Flush only the worktree's own DB on a data-wiping teardown (flushDb), and start redis first so the next owner of the index reads no old keys."
 ---
 
 # Dev shared Redis

@@ -7,6 +7,21 @@ paths:
   - "apps/mes/app/services/service.service.ts"
   - "apps/erp/app/modules/inventory/receipt-service-return.ts"
   - "apps/erp/app/modules/inventory/shipment-service-return.ts"
+triggers:
+  - "serviceJob"
+  - "postServiceJob"
+  - "reconcileServiceJobTime"
+  - "editableServiceJob"
+  - "lockServiceJob"
+  - "laborBillRate"
+  - "serviceLaborCostRate"
+  - "createServiceInvoice"
+summary:
+  - "Send every child-row write through editableServiceJob or lockServiceJob(trx, { open: true }); Completed, Invoiced and Cancelled jobs are locked."
+  - "Change coverage only through setServiceJobCoverage (postServiceJob set-coverage), never through updateServiceJob."
+  - "Run reconcileServiceJobTime after every serviceJobTime write, and refuse a time write while serviceLaborCostRate is not set."
+  - "Post time and parts cost straight to the coverage account; a service job has no WIP."
+  - "A new people-by-days matrix must use the shared ScheduleMatrix, not its own DndContext."
 ---
 
 # Service Jobs and Customer Returns

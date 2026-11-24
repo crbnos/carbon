@@ -3,6 +3,19 @@ paths:
   - "apps/erp/app/modules/quality/ui/RiskRegister/**"
   - "apps/erp/app/routes/x+/quality+/risks*.tsx"
   - "packages/database/supabase/migrations/*risk*.sql"
+triggers:
+  - "\"riskRegister\""
+  - "\"riskRegisters\""
+  - "riskSource"
+  - "riskStatus"
+  - "riskRegisterValidator"
+  - "RiskRegisterCard"
+  - "upsertRisk"
+summary:
+  - "Store severity and likelihood as two separate 1-5 ratings. Never add a `score` column or a severity x likelihood calculation."
+  - "Read the list from the `riskRegisters` view; read single rows and entity cards from the `riskRegister` table."
+  - "Match the title-cased enum values (`Open`, `Item`, `Work Center`), not UPPER_SNAKE."
+  - "Filter an entity card on `source` and `sourceId`; an Item card also sets the `itemId` column."
 ---
 
 # Risk Register Module (Quality)
