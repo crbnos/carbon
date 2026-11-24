@@ -30680,6 +30680,10 @@ msgstr "영업팀에 문의"
 msgid "Target"
 msgstr "대상"
 
+#. placeholder {0}: numberFormatter.format(effectiveTarget)
+msgid "Target ({0})"
+msgstr ""
+
 msgid "Target an item group."
 msgstr "품목 그룹을 대상으로 지정합니다."
 

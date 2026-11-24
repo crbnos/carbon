@@ -30680,6 +30680,10 @@ msgstr "Talk to Sales"
 msgid "Target"
 msgstr "Target"
 
+#. placeholder {0}: numberFormatter.format(effectiveTarget)
+msgid "Target ({0})"
+msgstr "Target ({0})"
+
 msgid "Target an item group."
 msgstr "Target an item group."
 
