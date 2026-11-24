@@ -19,6 +19,7 @@ import {
   shownIds
 } from "../brief/brief";
 import { type BriefIndex, buildBriefIndex } from "../brief/index-builder";
+import { appendSignal, inboxPath } from "../learn/inbox";
 import { repoRoot } from "../sources/migrations";
 import { loadSeen, saveSeen } from "./session-state";
 
@@ -125,6 +126,32 @@ export function decide(
   };
 }
 
+/** One `refused-edit` signal per refusal. A write error never fails the hook. */
+export function recordRefusals(
+  briefing: Briefing,
+  context: { root: string; sessionId: string; file: string },
+  path = inboxPath()
+): void {
+  const at = new Date().toISOString();
+  for (const refusal of briefing.refusals) {
+    try {
+      appendSignal(
+        {
+          kind: "refused-edit",
+          at,
+          worktree: context.root,
+          checkId: refusal.checkId,
+          file: context.file,
+          sessionId: context.sessionId
+        },
+        path
+      );
+    } catch {
+      return;
+    }
+  }
+}
+
 function readStdin(): Promise<string> {
   return new Promise((resolve) => {
     let data = "";
@@ -152,6 +179,11 @@ async function main() {
   if (briefing) {
     for (const id of shownIds(briefing)) seen.add(id);
     saveSeen(stateDir, sessionId, seen);
+    recordRefusals(briefing, {
+      root,
+      sessionId,
+      file: relative(root, input.tool_input?.file_path ?? "")
+    });
   }
   if (output) process.stdout.write(JSON.stringify(output));
 }

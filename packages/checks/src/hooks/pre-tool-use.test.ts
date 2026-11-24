@@ -8,8 +8,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { shownIds } from "../brief/brief";
 import type { BriefIndex } from "../brief/index-builder";
+import { readSignals } from "../learn/inbox";
 import { repoRoot } from "../sources/migrations";
-import { decide, type HookDeps } from "./pre-tool-use";
+import { decide, type HookDeps, recordRefusals } from "./pre-tool-use";
 import { loadSeen, saveSeen } from "./session-state";
 
 const root = repoRoot();
@@ -115,4 +116,34 @@ describe("decide", () => {
     saveSeen(dir, "s1", seen);
     expect(decide(call, deps(loadSeen(dir, "s1"))).output).toBeNull();
   });
+});
+
+it("records one refused-edit signal per refusal", () => {
+  const { briefing } = decide(
+    {
+      tool_name: "Write",
+      tool_input: {
+        file_path: join(root, "apps/erp/app/routes/x+/__hook-fixture.tsx"),
+        content: `${HEADER}import { redirect } from "react-router";\n`
+      }
+    },
+    deps()
+  );
+  const inbox = join(mkdtempSync(join(tmpdir(), "inbox-")), "inbox.jsonl");
+  if (briefing) {
+    recordRefusals(
+      briefing,
+      { root: "/w", sessionId: "s1", file: "apps/erp/app/routes/x+/a.tsx" },
+      inbox
+    );
+  }
+  expect(readSignals(inbox).map(({ at: _at, ...signal }) => signal)).toEqual([
+    {
+      kind: "refused-edit",
+      worktree: "/w",
+      checkId: "no-raw-redirect",
+      file: "apps/erp/app/routes/x+/a.tsx",
+      sessionId: "s1"
+    }
+  ]);
 });
