@@ -13,6 +13,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
+import { resolveSalesDocumentTaxes } from "~/modules/sales/sales.service";
 import {
   type SalesOrderInvoiceSummary,
   summarizeSalesOrderInvoices
@@ -61,7 +62,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.salesOrder?.salesOrderId, "Sales Order");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(
+  const { client, companyId, api } = await authorize(
     request,
     { "sales.salesOrders": "View" },
     { bypassRls: true }
@@ -98,7 +99,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   ) as string[];
 
-  const [opportunity, customer, invoices, payments] = await Promise.all([
+  const [opportunity, customer, invoices, payments, tax] = await Promise.all([
     api.sales.getOpportunity({
       opportunityId: salesOrder.data?.opportunityId ?? null
     }),
@@ -110,7 +111,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null,
     invoiceIds.length > 0
       ? api.sales.getSalesOrderInvoicePaymentsByIds({ invoiceIds })
-      : null
+      : null,
+    resolveSalesDocumentTaxes(client, companyId, {
+      document: "salesOrder",
+      documentId: orderId
+    })
   ]);
 
   if (opportunity.error) {
@@ -202,7 +207,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     quote: quote?.data ?? null,
     invoiceSummary,
     originatedFromQuote: !!opportunity.data.quotes[0]?.id,
-    defaultCc
+    defaultCc,
+    // The tax a new line opens with (customer, ship-to, no item).
+    resolvedTax: tax.data
+      ? {
+          taxCodeId: tax.data.document.taxCodeId,
+          taxPercent: tax.data.document.taxPercent
+        }
+      : null,
+    // The date the line forms read a picked code's rate on.
+    taxDate: tax.data?.date ?? null
   };
 }
 

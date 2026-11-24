@@ -2,25 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import { type ActionFunctionArgs, useParams } from "react-router";
 import { useUser } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import {
   isPurchaseInvoiceLocked,
   purchaseInvoiceLineValidator
 } from "~/modules/invoicing/invoicing.models";
-import {
-  getPurchaseInvoice,
-  upsertPurchaseInvoiceLine
-} from "~/modules/invoicing/invoicing.service";
+import { getPurchaseInvoice } from "~/modules/invoicing/invoicing.service";
 import type { PurchaseInvoice } from "~/modules/invoicing/types";
 import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
-import { chargeNumberError } from "~/modules/projects/projects.service";
 import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -55,7 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, companyId, userId } = await authorize(request, {
+  const { api } = await authorize(request, {
     "invoicing.purchaseInvoices": "Create"
   });
 
@@ -68,37 +66,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
+  const { id: _id, ...d } = validation.data;
 
-  const chargeError = await chargeNumberError(client, companyId, d);
-  if (chargeError) {
-    return validationError({
-      fieldErrors: { [chargeError.field]: chargeError.message }
-    });
-  }
-
-  const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
+  // The operation checks the charge number and the order's funds, and
+  // decides the line's tax.
+  const result = await api.invoicing.createPurchaseInvoiceLine({
     ...d,
-    companyId,
-    createdBy: userId,
+    // The form posts the field: an empty one is a cleared code. A request
+    // that does not takes the supplier's code.
+    taxCodeId: formData.has("taxCodeId") ? (d.taxCodeId ?? "") : undefined,
     customFields: setCustomFields(formData)
   });
 
-  if (createPurchaseInvoiceLine.error) {
-    throw redirect(
-      path.to.purchaseInvoiceDetails(invoiceId),
-      await flash(
-        request,
-        error(
-          createPurchaseInvoiceLine.error,
-          "Failed to create purchase invoice line."
-        )
-      )
-    );
-  }
-
-  throw redirect(path.to.purchaseInvoiceDetails(invoiceId));
+  return respond(request, result).redirect(
+    path.to.purchaseInvoiceDetails(invoiceId)
+  );
 }
 
 export default function NewPurchaseInvoiceLineRoute() {
@@ -107,6 +89,7 @@ export default function NewPurchaseInvoiceLineRoute() {
   if (!invoiceId) throw new Error("Could not find purchase invoice id");
   const purchaseInvoiceData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
+    resolvedTax: LineTaxDecision | null;
   }>(path.to.purchaseInvoice(invoiceId));
 
   if (!invoiceId) throw new Error("Could not find purchase invoice id");
@@ -124,7 +107,9 @@ export default function NewPurchaseInvoiceLineRoute() {
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
-    taxPercent: 0,
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: purchaseInvoiceData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(purchaseInvoiceData?.resolvedTax?.taxPercent ?? 0),
     exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1
   };
 

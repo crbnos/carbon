@@ -11,6 +11,7 @@ import {
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import {
+  clearAuthCookies,
   flash,
   getAuthSession,
   updateCompanySession
@@ -101,6 +102,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     request
   );
   if (accept.error) {
+    // Signed in as someone else: sign them out and reopen the invite, so
+    // accepting it signs in as the invited address.
+    if ("code" in accept.error && accept.error.code === "email_mismatch") {
+      throw redirect(`/invite/${code}`, {
+        headers: await clearAuthCookies(request)
+      });
+    }
     logger.error("Failed to accept invite", { error: accept.error });
     throw redirect(
       path.to.root,

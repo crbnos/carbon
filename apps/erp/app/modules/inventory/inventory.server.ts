@@ -12,6 +12,7 @@ import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import { anyOf, type PageId, writersOf } from "@carbon/database/access";
 import * as materialRequests from "@carbon/database/material-request";
+import { syncReceiptBatchQuantities } from "@carbon/database/receipt-batch-numbers";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   dedupeViolations,
@@ -62,6 +63,7 @@ import {
   optionalTiptapDoc
 } from "~/modules/shared/shared.models";
 import {
+  clearShipmentTags,
   fromServerFn,
   getCompanyTimeZone,
   getLocationTimeZone,
@@ -807,7 +809,8 @@ export const updateReceiptLines = defineServiceFn({
                 "id",
                 "receiptId",
                 "receivedQuantity",
-                "requiresSerialTracking"
+                "requiresSerialTracking",
+                "requiresBatchTracking"
               ])
               .execute();
             if (updated.length === 0) return true;
@@ -820,11 +823,21 @@ export const updateReceiptLines = defineServiceFn({
               .where("status", "=", "Draft")
               .execute();
             for (const receipt of receipts) {
+              const lines = updated.filter((l) => l.receiptId === receipt.id);
               await service.reconcileReceiptSerialsInTransaction(trx, {
                 receiptId: receipt.id,
                 companyId: ctx.company.id,
                 isSalesReturn: receipt.sourceDocument === "Sales Return Order",
-                lines: updated.filter((l) => l.receiptId === receipt.id)
+                lines
+              });
+              await syncReceiptBatchQuantities(trx, {
+                receiptId: receipt.id,
+                companyId: ctx.company.id,
+                lines: lines.flatMap((l) =>
+                  l.requiresBatchTracking
+                    ? [{ id: l.id, receivedQuantity: l.receivedQuantity }]
+                    : []
+                )
               });
             }
             return true;
@@ -1464,6 +1477,10 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
  * A return order or rental agreement with a Draft shipment already returns
  * that shipment instead of a second one.
  *
+ * A sales order line filled from a serial job whose finished units are not
+ * yet in stock at the location is left off, and `warnings` says why; with
+ * no line left the create is refused with that message.
+ *
  * @mcp
  */
 export const createShipment = defineServiceFn({
@@ -1586,7 +1603,11 @@ export const createShipment = defineServiceFn({
         getErrorMessage(created.error, "Failed to create shipment")
       );
     }
-    return { id: created.data.id };
+    const warnings: string[] =
+      "warnings" in created.data && Array.isArray(created.data.warnings)
+        ? created.data.warnings
+        : [];
+    return { id: created.data.id, warnings };
   }
 });
 
@@ -1597,8 +1618,9 @@ export const createShipment = defineServiceFn({
  * A changed source document or location rebuilds the shipment's lines from
  * the new source (a sales order, a sales return order, a purchase order, a
  * purchase return order or an outbound transfer), and is refused once the
- * shipment is not Draft. Otherwise the fields are saved as sent. A rental
- * shipment keeps its rental agreement: changing it is refused.
+ * shipment is not Draft. A rebuild names in `warnings` the serial job lines
+ * it left off. Otherwise the fields are saved as sent. A rental shipment
+ * keeps its rental agreement: changing it is refused.
  *
  * @mcp
  */
@@ -1675,7 +1697,7 @@ export const updateShipment = defineServiceFn({
           updated.error
         );
       }
-      return { id };
+      return { id, warnings: [] as string[] };
     }
 
     const { locationId, sourceDocumentId } = shipment;
@@ -1732,7 +1754,11 @@ export const updateShipment = defineServiceFn({
         getErrorMessage(created.error, "Failed to create shipment")
       );
     }
-    return { id };
+    const warnings: string[] =
+      "warnings" in created.data && Array.isArray(created.data.warnings)
+        ? created.data.warnings
+        : [];
+    return { id, warnings };
   }
 });
 /**
@@ -1751,7 +1777,10 @@ export const updateShipment = defineServiceFn({
  *   2. Expired batches on the shipment: the company's expired-entity policy
  *      refuses the post (`Block`, `BlockWithOverride`), or posts it with a
  *      `warning` (`Warn`). Expiry is judged on the shipping location's
- *      calendar.
+ *      calendar. A serial line whose assigned serial numbers (in a status
+ *      the shipment may ship) do not match its shipped quantity is refused;
+ *      assign them, or change the quantity, first. A unit tagged to a line
+ *      the shipment no longer has is not on it, and posting clears its tag.
  *   3. The shipment is set Pending (only from Draft or Pending: `conflict`
  *      otherwise). A sales order shipment saves its packing slip on the
  *      order's opportunity.
@@ -1784,7 +1813,7 @@ export const postShipment = defineServiceFn({
       serviceRole
         .from("shipmentLine")
         .select(
-          "id, lineId, itemId, storageUnitId, shippedQuantity, locationId, shipmentId"
+          "id, lineId, itemId, storageUnitId, shippedQuantity, locationId, shipmentId, requiresSerialTracking"
         )
         .eq("shipmentId", shipmentId)
         .eq("companyId", companyId),
@@ -1800,6 +1829,13 @@ export const postShipment = defineServiceFn({
     if (!shipment.data) {
       logger.error("Shipment not found for company", { companyId, shipmentId });
       return ctx.error("notFound", SHIPMENT_NOT_FOUND);
+    }
+    if (lines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the shipment's lines",
+        lines.error
+      );
     }
 
     const isTransfer = shipment.data.sourceDocument === "Outbound Transfer";
@@ -1888,7 +1924,7 @@ export const postShipment = defineServiceFn({
     }
 
     // Expired batches, as post-stock-transfer and issue judge them.
-    const [settings, entities] = await Promise.all([
+    const [settings, tagged] = await Promise.all([
       serviceRole
         .from("companySettings")
         .select("inventoryShelfLife")
@@ -1896,10 +1932,22 @@ export const postShipment = defineServiceFn({
         .single(),
       serviceRole
         .from("trackedEntity")
-        .select("id, readableId, expirationDate")
-        .eq("attributes ->> Shipment", shipmentId)
+        .select("id, readableId, expirationDate, status, attributes")
+        .contains("attributes", { Shipment: shipmentId })
         .eq("companyId", companyId)
     ]);
+    if (tagged.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the shipment's tracked units",
+        tagged.error
+      );
+    }
+    // A unit tagged to a deleted line is not on the shipment.
+    const entities = utils.liveShipmentTags(
+      tagged.data ?? [],
+      (lines.data ?? []).map((line) => line.id)
+    );
     const policy: ExpiredEntityPolicy =
       (
         settings.data?.inventoryShelfLife as {
@@ -1917,7 +1965,7 @@ export const postShipment = defineServiceFn({
           )
         : await getCompanyTimeZone(serviceRole, companyId)
     );
-    const expired = (entities.data ?? []).filter((entity) => {
+    const expired = entities.filter((entity) => {
       if (!entity.expirationDate) return false;
       try {
         return parseDate(entity.expirationDate).compare(today) < 0;
@@ -1936,6 +1984,30 @@ export const postShipment = defineServiceFn({
         );
       }
       warning = `Posted shipment with expired ${batches}: ${ids}`;
+    }
+
+    // Before any write: a serial line ships exactly its assigned units.
+    const [shortfall] = utils.serialLineShortfalls(
+      shipment.data.sourceDocument,
+      lines.data ?? [],
+      entities
+    );
+    if (shortfall) {
+      const item = shortfall.itemId
+        ? await serviceRole
+            .from("item")
+            .select("readableIdWithRevision")
+            .eq("id", shortfall.itemId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null;
+      return ctx.error(
+        "rule",
+        utils.serialShortfallMessage(
+          shortfall,
+          item?.data?.readableIdWithRevision
+        )
+      );
     }
 
     const pending = await ctx.asCaller.supabase
@@ -1989,12 +2061,20 @@ export const postShipment = defineServiceFn({
     }
 
     if (!failure) {
-      await service.autoPrint(ctx, {
-        sourceDocument: "Shipment",
-        sourceDocumentId: shipmentId,
-        locationId: shipment.data.locationId,
-        context: "shipping"
-      });
+      await Promise.all([
+        service.autoPrint(ctx, {
+          sourceDocument: "Shipment",
+          sourceDocumentId: shipmentId,
+          locationId: shipment.data.locationId,
+          context: "shipping"
+        }),
+        service.autoPrint(ctx, {
+          sourceDocument: "PackingSlip",
+          sourceDocumentId: shipmentId,
+          locationId: shipment.data.locationId,
+          context: "documents"
+        })
+      ]);
       // The RETAINED shelf lots of a batch split are reprinted: their
       // quantity changed. The shipped child left Consumed and gets no label.
       await service.printEntityLabels(ctx, splitEntityIds);
@@ -3984,8 +4064,9 @@ export const setPickingListStatus = defineServiceFn({
  *
  * @remarks
  * Opens a material request at the operation's work center, at that work
- * center's location. The item and note are optional. The MES "Need material"
- * button writes through the same building block for any operator.
+ * center's location. Name the item, describe what is needed in the note, or
+ * both: a request with neither is refused. The MES "Need material" button
+ * writes through the same building block for any operator.
  *
  * @param jobOperationId - The job operation that needs the material.
  * @param itemId - The item it needs, when known.
@@ -4816,13 +4897,17 @@ export const deleteShipment = defineServiceFn({
     if (shipment.data.postingDate) {
       return ctx.error("rule", "Cannot delete a posted shipment");
     }
-    return unwrap(
-      ctx,
-      await service.deleteShipment(
-        ctx.asCaller.supabase,
-        input.shipmentId as never
-      )
+    const deleted = await service.deleteShipment(
+      ctx.asCaller.supabase,
+      input.shipmentId as never
     );
+    if (!deleted.error) {
+      await clearShipmentTags(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        shipmentId: input.shipmentId
+      });
+    }
+    return unwrap(ctx, deleted);
   }
 });
 
@@ -4840,7 +4925,7 @@ export const deleteShipmentLine = defineServiceFn({
   async run(ctx, input) {
     const line = await ctx.asCaller.supabase
       .from("shipmentLine")
-      .select("id, shipment!shipmentLine_shipmentId_fkey(status)")
+      .select("id, shipmentId, shipment!shipmentLine_shipmentId_fkey(status)")
       .eq("id", input.shipmentLineId)
       .eq("companyId", ctx.company.id)
       .maybeSingle();
@@ -4853,13 +4938,18 @@ export const deleteShipmentLine = defineServiceFn({
     if (line.data.shipment.status !== "Draft") {
       return ctx.error("rule", SHIPMENT_LOCKED);
     }
-    return unwrap(
-      ctx,
-      await service.deleteShipmentLine(
-        ctx.asCaller.supabase,
-        input.shipmentLineId as never
-      )
+    const deleted = await service.deleteShipmentLine(
+      ctx.asCaller.supabase,
+      input.shipmentLineId as never
     );
+    if (!deleted.error) {
+      await clearShipmentTags(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        shipmentId: line.data.shipmentId,
+        shipmentLineId: input.shipmentLineId
+      });
+    }
+    return unwrap(ctx, deleted);
   }
 });
 
@@ -7083,10 +7173,18 @@ export const createStorageUnit = defineServiceFn({
         "Stock in it is not supply: MRP and planning ignore it, and picking never sources from it."
       )
       .optional(),
+    kitRack: z
+      .boolean()
+      .describe(
+        "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+      )
+      .optional(),
     customFields: z.unknown().optional()
   }),
   permission: { "inventory.storageUnits": "Create" },
   async run(ctx, { id: _id, ...input }) {
+    const refused = await service.refuseLinesideKitRack(ctx, input);
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertStorageUnit(
@@ -7120,17 +7218,34 @@ export const updateStorageUnit = defineServiceFn({
           "Stock in it is not supply: MRP and planning ignore it, and picking never sources from it."
         )
         .optional(),
+      kitRack: z
+        .boolean()
+        .describe(
+          "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+        )
+        .optional(),
       customFields: z.unknown().optional(),
       id: z.string().describe("The storage unit to update.").optional()
     })
     .required({ id: true }),
   permission: { "inventory.storageUnits": "Edit" },
   async run(ctx, input) {
-    // The update matches by id alone: it must be this company's unit.
-    const owned = await refuseUnlessOwned(ctx, "storageUnit", {
-      id: input.id
+    // The update matches by id alone: it must be this company's unit. The
+    // same read gives the fields the update may leave as they are.
+    const current = await ctx.asCaller.supabase
+      .from("storageUnit")
+      .select("kitRack, workCenterId, parentId")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (!current.data) return ctx.error("notFound", NOT_FOUND, current.error);
+    // A key sent without a value clears the column; a key left out keeps it.
+    const refused = await service.refuseLinesideKitRack(ctx, {
+      ...current.data,
+      ...input,
+      kitRack: input.kitRack ?? current.data.kitRack
     });
-    if (owned) return owned;
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertStorageUnit(

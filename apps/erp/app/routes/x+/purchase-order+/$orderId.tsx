@@ -19,6 +19,7 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import {
+  datetime,
   getPreferenceHeaders,
   isOwnSignaturePath,
   redirect
@@ -161,6 +162,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+  // The tax a new line takes: the supplier's code (or bare percent), on the
+  // order's date.
+  const taxDate =
+    purchaseOrder.data?.orderDate ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
   const db = getDatabaseClient();
   const [
     supplier,
@@ -171,7 +177,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     currency,
     isAdmin,
     forceDeleteRequest,
-    forceDeleteReceipts
+    forceDeleteReceipts,
+    resolvedTax
   ] = await Promise.all([
     purchaseOrder.data?.supplierId
       ? api.purchasing.getSupplier({
@@ -214,6 +221,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // The receipts a force delete reverses, named in its modal and banner.
     api.purchasing.getPurchaseOrderForceDeleteReceipts({
       purchaseOrderId: orderId
+    }),
+    api.accounting.resolveLineTaxes({
+      source: "purchase",
+      supplierId: purchaseOrder.data?.supplierId,
+      date: taxDate
     })
   ]);
 
@@ -348,7 +360,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (receipt) => receipt.readableId
     ),
     defaultCc,
-    resolvedAttachments
+    resolvedAttachments,
+    resolvedTax: resolvedTax.data,
+    taxDate
   };
 }
 

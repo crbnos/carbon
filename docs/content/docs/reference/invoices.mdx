@@ -63,9 +63,37 @@ On a unit treated as a sale, rent and the purchase option credit net investment 
 
 <Term id="posting">Posting</Term> creates general-ledger entries: receivables against sales for a sales invoice, or payables against inventory or WIP for a purchase invoice. Before the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), those entries are Provisional and count in no balance. Posting also updates invoiced quantities on order lines and records the posting date.
 
+### Tax
+
+Each line carries a **"Tax Code"** and a **"Tax Percent"**. A new line takes them from the customer or supplier ([which code a line takes](/docs/reference/accounting#which-code-a-line-takes)), and an invoice made from an order copies the order line's code at its rate on the invoice date.
+
+- A **sales invoice** credits Tax Received once per <Term>tax component</Term>. Header shipping is taxed only when a line's code has **"Taxes Shipping"** on: that line's share of the shipping joins its tax base.
+- A **purchase invoice** posts the recoverable share of each component's tax to Tax Paid. The rest stays in the cost of the line. See [recoverable purchase tax](/docs/reference/accounting#recoverable-purchase-tax).
+
+On a draft sales invoice, the **"Recalculate taxes"** button beside **"Ship To"** works out each line's code and rate again from the saved ship-to, the customer and the item. Use it after you change the ship-to or the customer's tax code. It replaces the code and rate on every line that resolves to a code, including a code you changed or cleared on the line yourself. A line keeps a percent you typed only when no code applies. Rental and contract lines keep the tax of their agreement or contract.
+
+Posting also writes the [tax ledger](/docs/reference/accounting#the-tax-ledger), and voiding writes its negated rows.
+
+The sales invoice PDF prints the tax by component when there are two or more entries: one row per component and rate, with the amount it was charged on. With one entry it prints a single taxes row, as before. A posted invoice prints the rows its posting wrote to the tax ledger. A draft splits each line's tax across its code's components on the issue date. Every user who can open the invoice, and the emailed copy, print the same tax.
+
+Under the totals, the invoice prints the **"Invoice Message"** of each code on it. In **"Invoice Details"** it prints "Seller Tax ID": your [tax registration](/docs/reference/accounting#tax-codes) for the company's country in force on the issue date (a national one first, else one for the company's own state). With no such registration, it prints the company's tax ID, but only once the company has an active tax code. A registration for another state never prints. Sales order and quote PDFs print the same tax summary, without the message or the seller tax ID.
+
 <Callout type="warn">
-Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
+Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history. A voided invoice's balance reads zero, so it adds nothing to the invoice lists' Balance totals. The CSV and Excel exports still list it, with a balance of zero.
 </Callout>
+
+## Changing a posted line's account
+
+A posted line coded to the wrong account can move to another without a void. Open the line and click **Change GL Account**; the dialog shows the account the line's amount is posted to now. Pick the new account. Carbon posts a journal dated on the invoice's posting date that moves the line's posted amount from its old account to the new one, with the line's dimensions, and shows the new account on the line. Voiding the invoice later reverses the change with the rest of the posting.
+
+- **Sales invoices:** a line whose revenue posted to the Sales account moves to another Revenue account. Deferred service, contract, rental, service job and fixed asset lines cannot change account.
+- **Purchase invoices:** a **G/L Account** line moves to another Expense account. Item, fixed asset and lease lines, and a line charged to a project, cannot change account.
+- **Period:** the period of the invoice's posting date must be Open. In a Locked period, unlock it first; in a Closed one, [reopen it](/docs/reference/period-close#reopening).
+- **Permission:** invoicing update and accounting update. No approval is asked for.
+- **Before the cutover:** an invoice dated before the accounting cutover cannot change account; record a journal entry instead.
+- **An account the line already posts to:** a sales line cannot move to an account its posting already holds another amount on, such as the shipping revenue account its shipping charge posted to; choose another account.
+- **Identical lines:** when another line of the invoice posted the same amount with the same quantity and dimensions (item, location, project, cost center), Carbon cannot tell the two postings apart and refuses the change; record a journal entry instead.
+- **Accounting sync:** an invoice already synced to an accounting provider keeps its original account there.
 
 ## Settling an invoice
 
@@ -133,6 +161,12 @@ A database guard (same wording for sales invoices). Once an invoice leaves Draft
 
 ### "Cannot modify a confirmed purchase invoice." / "Cannot modify a locked sales invoice."
 Invoices lock the moment they leave Draft; posted numbers can't be edited in place. To change a posted invoice, void it and raise a new one (or issue a credit/debit note).
+
+### "Accounting period … is closed. Reopen it before changing the account."
+Changing a posted line's account posts on the invoice's posting date, and that period is Closed. Reopen the periods from the most recent back to this one, change the account, then close them again. A Locked period says "… is locked. Unlock it before changing the account."
+
+### "Only a line whose revenue posted to the Sales account can change account…" / "Only a G/L Account line can change account…"
+The line posts through accounts that schedules, inventory or assets read. Record a journal entry to move the amount instead.
 
 ### "Applications can only be edited while the payment is Draft"
 Once a payment is posted, its invoice applications are frozen. Reverse the payment and re-enter it to change how it's applied.

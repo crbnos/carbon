@@ -74,6 +74,7 @@ import {
   neq,
   newIds,
   notNull,
+  rpcValue,
   selectRow,
   selectRows,
   single,
@@ -3357,6 +3358,70 @@ export async function getTrackedEntitiesByJobId(
     .is("attributes ->> Split From Entity ID", null);
 }
 
+/** How many of a job's tracking numbers the job page shows as editable fields. */
+export const JOB_TRACKED_ENTITY_PREVIEW_LIMIT = 10;
+
+/**
+ * The first tracking numbers of a job, with how many it has and the last one,
+ * for the job page. A serial job holds one row per unit, and a page that drew
+ * every one of a 2,000-unit job's serials as an input froze the browser.
+ */
+export async function getJobTrackedEntitiesPreview(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  const jobMakeMethod = await client
+    .from("jobMakeMethod")
+    .select("id, companyId")
+    .eq("jobId", jobId)
+    .is("parentMaterialId", null)
+    .single();
+  if (jobMakeMethod.error) {
+    return {
+      data: null,
+      count: 0,
+      lastReadableId: null,
+      error: jobMakeMethod.error
+    };
+  }
+
+  const { id: makeMethodId, companyId } = jobMakeMethod.data;
+
+  // Unit-axis order, as getTrackedEntitiesByMakeMethodId. An exact count is
+  // cheap here: it counts one job's rows, never the company's.
+  const [first, last] = await Promise.all([
+    client
+      .from("trackedEntity")
+      .select("*", { count: "exact" })
+      .eq("attributes ->> Job Make Method", makeMethodId)
+      .eq("companyId", companyId)
+      .is("attributes ->> Split Entity ID", null)
+      .is("attributes ->> Split From Entity ID", null)
+      .order("createdAt", { ascending: true })
+      .order("readableId", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(JOB_TRACKED_ENTITY_PREVIEW_LIMIT),
+    client
+      .from("trackedEntity")
+      .select("readableId")
+      .eq("attributes ->> Job Make Method", makeMethodId)
+      .eq("companyId", companyId)
+      .is("attributes ->> Split Entity ID", null)
+      .is("attributes ->> Split From Entity ID", null)
+      .order("createdAt", { ascending: false })
+      .order("readableId", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
+  ]);
+
+  return {
+    data: first.data,
+    count: first.count ?? first.data?.length ?? 0,
+    lastReadableId: last.data?.[0]?.readableId ?? null,
+    error: first.error ?? last.error
+  };
+}
+
 /**
  * What a job has already received to inventory: its received quantity and the
  * tracked entities its receipts posted. One statement, so both come from the
@@ -5640,14 +5705,16 @@ export async function upsertJobMethod(
     { as: getMethodPermission }
   );
   if (getMethodResult.error) {
+    // `cause` keeps the database error, so the caller can say why it failed.
     return {
       data: null,
       error: {
         message: getErrorMessage(
           getMethodResult.error,
           "Failed to get job method"
-        )
-      } as PostgrestError
+        ),
+        cause: getMethodResult.error.cause ?? getMethodResult.error
+      } as PostgrestError & { cause?: unknown }
     };
   }
   return recalculateJobRequirements(client, db, {
@@ -7057,20 +7124,38 @@ export async function movePeopleAssignment(
 }
 
 /**
+ * The values two rows of one person, day, shift and station merge into: hours
+ * add (a whole-shift row absorbs the other) and the larger overtime is kept,
+ * since the scheduler reads a day's overtime as the maximum across its rows.
+ */
+function mergedPeopleAssignment(
+  a: { hours: number | null; overtimeHours: number },
+  b: { hours: number | null; overtimeHours: number }
+) {
+  return {
+    hours:
+      a.hours === null || b.hours === null
+        ? null
+        : Number(a.hours) + Number(b.hours),
+    overtimeHours: Math.max(Number(a.overtimeHours), Number(b.overtimeHours))
+  };
+}
+
+/**
  * Move one assignment row to another person and/or date at the SAME station
  * (the matrix's drag). If the person already has a row at that station for
  * the same effective shift on that date, the rows merge (hours add; a
- * whole-shift row absorbs the other). Refused, with nothing written, when the
- * person is absent that day (`"absent"`) or already holds that day's shift at
- * another station (`"taken"` — one row per person, day and shift).
+ * whole-shift row absorbs the other; the larger overtime is kept). Refused,
+ * with nothing written, when the person is absent that day (`"absent"`). A
+ * person who already works another station that day keeps it, and the moved
+ * row splits their day.
  * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleAssignmentCell(
   db: Kysely<KyselyDatabase>,
   args: { id: string; companyId: string; employeeId: string; date: string }
 ): Promise<
-  | { id: string; workCenterId: string; merged: boolean }
-  | { refused: "absent" | "taken" }
+  { id: string; workCenterId: string; merged: boolean } | { refused: "absent" }
 > {
   await requirePeopleBoardRefs(db, args.companyId, {
     employeeId: args.employeeId
@@ -7117,7 +7202,7 @@ export async function movePeopleAssignmentCell(
       null;
     let targetQuery = trx
       .selectFrom("peopleAssignment")
-      .select(["id", "hours"])
+      .select(["id", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("date", "=", args.date)
@@ -7125,16 +7210,13 @@ export async function movePeopleAssignmentCell(
     targetQuery = effectiveShiftId
       ? targetQuery.where(whereEffectiveShift(effectiveShiftId, args.companyId))
       : targetQuery.where("shiftId", "is", null);
-    const target = await targetQuery.executeTakeFirst();
+    // locked, so a concurrent merge into the same row reads this one's sum
+    const target = await targetQuery.forUpdate().executeTakeFirst();
 
     if (target) {
-      const mergedHours =
-        source.hours === null || target.hours === null
-          ? null
-          : Number(source.hours) + Number(target.hours);
       await trx
         .updateTable("peopleAssignment")
-        .set({ hours: mergedHours })
+        .set(mergedPeopleAssignment(source, target))
         .where("id", "=", target.id)
         .where("companyId", "=", args.companyId)
         .execute();
@@ -7145,20 +7227,6 @@ export async function movePeopleAssignmentCell(
         .execute();
       return { id: target.id, workCenterId: source.workCenterId, merged: true };
     }
-
-    // peopleAssignment_person_day_key: one row per person, date and stored
-    // shift — a row at another station holds the slot this one would take
-    let takenQuery = trx
-      .selectFrom("peopleAssignment")
-      .select("id")
-      .where("companyId", "=", args.companyId)
-      .where("employeeId", "=", args.employeeId)
-      .where("date", "=", args.date)
-      .where("id", "!=", source.id);
-    takenQuery = source.shiftId
-      ? takenQuery.where("shiftId", "=", source.shiftId)
-      : takenQuery.where("shiftId", "is", null);
-    if (await takenQuery.executeTakeFirst()) return { refused: "taken" };
 
     const moved = await trx
       .updateTable("peopleAssignment")
@@ -7527,11 +7595,9 @@ export async function assignPeopleWeek(
     }
     const weekEnd = addIsoDays(args.weekStart, 6);
     const [existing, absences, ownShift] = await Promise.all([
-      // Company-wide (NOT location-scoped): the unique index is
-      // peopleAssignment_person_day_key (companyId, employeeId, date,
-      // COALESCE(shiftId,'')) — a person already booked for this day+shift at
-      // ANY location/station collides, so a location-scoped skip let the bulk
-      // insert violate the constraint and fail the whole week assignment.
+      // Company-wide (NOT location-scoped): a person already booked for this
+      // day and shift at ANY location or station is not booked a second
+      // whole shift by a week assignment.
       trx
         .selectFrom("peopleAssignment")
         .select(["date", "shiftId"])
@@ -7555,9 +7621,9 @@ export async function assignPeopleWeek(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst()
     ]);
-    // A day is taken by a row in the same slot of the unique index, or by a
-    // row in the same EFFECTIVE shift (a shift-less row counts as the
-    // person's own), which the boards would show as a double booking.
+    // A day is taken by a row with the same stored shift, or by a row in the
+    // same EFFECTIVE shift (a shift-less row counts as the person's own),
+    // which the boards would show as a double booking.
     const slotKey = (date: string, shiftId: string | null) =>
       `${date}:${shiftId ?? ""}`;
     const personShiftId = ownShift?.shiftId ?? null;
@@ -7636,8 +7702,11 @@ export async function unassignPeopleWeek(
 
 /**
  * Move a person's whole week from one station to another. Days where they
- * already have a row at the target station keep the target row (the source
- * row is dropped); other days simply change station.
+ * already have a row at the target station for the same shift merge into it
+ * (hours add; a whole-shift row absorbs the other; the larger overtime is
+ * kept); other days simply change station. The source rows, then the target
+ * rows, are locked before the merge, so two moves into one station add both
+ * and a repeated request merges nothing twice.
  * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleWeek(
@@ -7658,7 +7727,7 @@ export async function movePeopleWeek(
   return db.transaction().execute(async (trx) => {
     let sourceQuery = trx
       .selectFrom("peopleAssignment")
-      .select(["id", "date", "shiftId"])
+      .select(["id", "date", "shiftId", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("workCenterId", "=", args.fromWorkCenterId)
@@ -7669,24 +7738,34 @@ export async function movePeopleWeek(
         whereEffectiveShift(args.shiftId, args.companyId)
       );
     }
-    const source = await sourceQuery.execute();
+    const source = await sourceQuery.forUpdate().execute();
 
     const target = await trx
       .selectFrom("peopleAssignment")
-      .select(["date", "shiftId"])
+      .select(["id", "date", "shiftId", "hours", "overtimeHours"])
       .where("companyId", "=", args.companyId)
       .where("employeeId", "=", args.employeeId)
       .where("workCenterId", "=", args.workCenterId)
       .where("date", ">=", args.weekStart)
       .where("date", "<=", weekEnd)
+      .forUpdate()
       .execute();
-    const occupied = new Set(
-      target.map((row) => `${toIsoDate(row.date)}:${row.shiftId ?? ""}`)
+    const occupied = new Map(
+      target.map((row) => [`${toIsoDate(row.date)}:${row.shiftId ?? ""}`, row])
     );
 
     let moved = 0;
     for (const row of source) {
-      if (occupied.has(`${toIsoDate(row.date)}:${row.shiftId ?? ""}`)) {
+      const existing = occupied.get(
+        `${toIsoDate(row.date)}:${row.shiftId ?? ""}`
+      );
+      if (existing) {
+        await trx
+          .updateTable("peopleAssignment")
+          .set(mergedPeopleAssignment(row, existing))
+          .where("id", "=", existing.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
         await trx
           .deleteFrom("peopleAssignment")
           .where("id", "=", row.id)
@@ -13869,6 +13948,214 @@ export async function requireJob(ctx: ServiceContext, jobId: string) {
   return job.data;
 }
 
+type ReplacedRows = "all" | string[];
+
+/**
+ * The make methods whose operations and materials Get Method deletes. A
+ * replaced bill of process deletes the operations of the target (every
+ * operation of a job); a replaced bill of material deletes the materials and,
+ * through them, every sub-assembly method below with its operations.
+ */
+function rowsReplacedByGetMethod(
+  methods: { id: string; parentId: string | null }[],
+  jobMakeMethodId: string | undefined,
+  parts: { billOfMaterial: boolean; billOfProcess: boolean }
+): { operations: ReplacedRows; materials: ReplacedRows } {
+  const below = (roots: string[]) => {
+    const found = new Set<string>();
+    let level = roots;
+    while (level.length > 0) {
+      const parents = new Set(level);
+      level = methods
+        .filter(
+          (m) => m.parentId && parents.has(m.parentId) && !found.has(m.id)
+        )
+        .map((m) => m.id);
+      for (const id of level) found.add(id);
+    }
+    return [...found];
+  };
+
+  if (!jobMakeMethodId) {
+    const subAssemblies = methods.filter((m) => m.parentId).map((m) => m.id);
+    return {
+      operations: parts.billOfProcess
+        ? "all"
+        : parts.billOfMaterial
+          ? subAssemblies
+          : [],
+      materials: parts.billOfMaterial ? "all" : []
+    };
+  }
+  const descendants = parts.billOfMaterial ? below([jobMakeMethodId]) : [];
+  return {
+    operations: [
+      ...(parts.billOfProcess ? [jobMakeMethodId] : []),
+      ...descendants
+    ],
+    materials: parts.billOfMaterial ? [jobMakeMethodId, ...descendants] : []
+  };
+}
+
+type MethodReplacementScope = { jobIds: string[]; jobMakeMethodId?: string };
+type ReplacedParts = { billOfMaterial: boolean; billOfProcess: boolean };
+
+/**
+ * Why Get Method cannot replace a job's method, or null: the operations it
+ * would delete have production or a supplier invoice recorded against them,
+ * or the materials it would delete are on a picking list or already issued.
+ * `jobMakeMethodId` narrows the check to that method and the sub-assemblies
+ * below it. With `lock`, inside the replace's own transaction, the rows it
+ * deletes are locked first: recording production on an operation takes a lock
+ * on its row, so nothing recorded after the check can be deleted with it.
+ */
+async function methodReplacementBlocker(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  scope: MethodReplacementScope,
+  parts: ReplacedParts,
+  { lock = false }: { lock?: boolean } = {}
+): Promise<string | null> {
+  if (scope.jobIds.length === 0) return null;
+  if (!parts.billOfMaterial && !parts.billOfProcess) return null;
+
+  const methods = await db
+    .selectFrom("jobMakeMethod")
+    .leftJoin("jobMaterial", (join) =>
+      join
+        .onRef("jobMaterial.id", "=", "jobMakeMethod.parentMaterialId")
+        .on("jobMaterial.companyId", "=", companyId)
+    )
+    .select(["jobMakeMethod.id", "jobMaterial.jobMakeMethodId as parentId"])
+    .where("jobMakeMethod.jobId", "in", scope.jobIds)
+    .where("jobMakeMethod.companyId", "=", companyId)
+    .execute();
+  const { operations, materials } = rowsReplacedByGetMethod(
+    methods,
+    scope.jobMakeMethodId,
+    parts
+  );
+
+  const replacedOperations = () => {
+    const query = db
+      .selectFrom("jobOperation")
+      .select("jobOperation.id")
+      .where("jobOperation.companyId", "=", companyId)
+      .where("jobOperation.jobId", "in", scope.jobIds);
+    return operations === "all"
+      ? query
+      : query.where("jobOperation.jobMakeMethodId", "in", operations);
+  };
+  const replacedMaterials = () => {
+    const query = db
+      .selectFrom("jobMaterial")
+      .select("jobMaterial.id")
+      .where("jobMaterial.companyId", "=", companyId)
+      .where("jobMaterial.jobId", "in", scope.jobIds);
+    return materials === "all"
+      ? query
+      : query.where("jobMaterial.jobMakeMethodId", "in", materials);
+  };
+  const checksOperations = operations === "all" || operations.length > 0;
+  const checksMaterials = materials === "all" || materials.length > 0;
+  if (lock) {
+    if (checksOperations) await replacedOperations().forUpdate().execute();
+    if (checksMaterials) await replacedMaterials().forUpdate().execute();
+  }
+
+  const [events, quantities, invoiceLines, pickLines, issued] =
+    await Promise.all([
+      checksOperations
+        ? db
+            .selectFrom("productionEvent")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("jobOperationId", "in", replacedOperations())
+            .limit(1)
+            .execute()
+        : [],
+      checksOperations
+        ? db
+            .selectFrom("productionQuantity")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("jobOperationId", "in", replacedOperations())
+            .limit(1)
+            .execute()
+        : [],
+      checksOperations
+        ? db
+            .selectFrom("purchaseInvoiceLine")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("jobOperationId", "in", replacedOperations())
+            .limit(1)
+            .execute()
+        : [],
+      checksMaterials
+        ? db
+            .selectFrom("pickingListLine")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("jobMaterialId", "in", replacedMaterials())
+            .limit(1)
+            .execute()
+        : [],
+      checksMaterials
+        ? db
+            .selectFrom("jobMaterial")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("id", "in", replacedMaterials())
+            .where("quantityIssued", ">", 0)
+            .limit(1)
+            .execute()
+        : []
+    ]);
+
+  if (events.length > 0 || quantities.length > 0) {
+    return "Production has been recorded on this job, so its method cannot be replaced";
+  }
+  if (invoiceLines.length > 0) {
+    return "A supplier has invoiced an operation on this job, so its method cannot be replaced";
+  }
+  if (pickLines.length > 0) {
+    return "This job has a picking list, so its bill of material cannot be replaced";
+  }
+  if (issued.length > 0) {
+    return "Material has been issued to this job, so its bill of material cannot be replaced";
+  }
+  return null;
+}
+
+/** The check before Get Method runs, as a refusal the caller can show. */
+export async function jobMethodReplacementRefusal(
+  ctx: ServiceContext,
+  scope: MethodReplacementScope,
+  parts: ReplacedParts
+): Promise<CarbonError | null> {
+  const message = await methodReplacementBlocker(
+    ctx.asSystem.pg,
+    ctx.company.id,
+    scope,
+    parts
+  );
+  return message ? ctx.error("rule", message) : null;
+}
+
+/** The same check inside Get Method's transaction, under its row locks. */
+async function refuseMethodReplacement(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  scope: MethodReplacementScope,
+  parts: ReplacedParts
+): Promise<void> {
+  const message = await methodReplacementBlocker(trx, companyId, scope, parts, {
+    lock: true
+  });
+  if (message) throw new InvalidInputError(message);
+}
+
 /**
  * Recalculate a job's requirements and operation dependencies (which also
  * reschedules its location). The first failure is returned.
@@ -14246,6 +14533,47 @@ export const closeJobInput = z.object({
  * `loadJobProjectCharge`) and its completion sweeps it, so its project rows
  * stay in the residual.
  */
+/**
+ * A `rule` refusal while a job has outside processing still to receive: a
+ * line of an outside processing order To Receive that is not received
+ * complete. The close writes the job's WIP off once and a receipt after it is
+ * refused, so the supplier's cost would never reach the job. Stopping the
+ * line's receiving releases it.
+ */
+export async function outsideProcessingToReceiveRefusal(
+  ctx: ServiceContext,
+  jobId: string
+): Promise<CarbonError | null> {
+  const companyId = ctx.company.id;
+  const orders = await ctx.asSystem.pg
+    .selectFrom(
+      sql<{
+        purchaseOrderLineId: string;
+      }>`job_receipt_line_references(${companyId}, ${jobId})`.as("ref")
+    )
+    .innerJoin("purchaseOrderLine as pol", (join) =>
+      join.onRef("pol.id", "=", "ref.purchaseOrderLineId")
+    )
+    .innerJoin("purchaseOrder as po", (join) =>
+      join
+        .onRef("po.id", "=", "pol.purchaseOrderId")
+        .onRef("po.companyId", "=", "pol.companyId")
+    )
+    .select("po.purchaseOrderId")
+    .distinct()
+    .where("pol.companyId", "=", companyId)
+    .where("pol.receivedComplete", "=", false)
+    .where("po.purchaseOrderType", "=", "Outside Processing")
+    .where("po.status", "in", ["To Receive", "To Receive and Invoice"])
+    .orderBy("po.purchaseOrderId")
+    .execute();
+  if (orders.length === 0) return null;
+  return ctx.error(
+    "rule",
+    `Outside processing on ${orders.map((order) => order.purchaseOrderId).join(", ")} is still to receive. Receive it, or stop receiving the line, before closing the job.`
+  );
+}
+
 export async function closeJob(
   ctx: ServiceContext,
   raw: z.input<typeof closeJobInput>
@@ -14291,34 +14619,13 @@ export async function closeJob(
       .executeTakeFirstOrThrow();
     const keepsWip = !job.consumeToProject && Boolean(job.fixedAssetId);
 
-    const wipBalance = await trx
-      .selectFrom("journalLine")
-      .innerJoin("journal", "journal.id", "journalLine.journalId")
-      .select((eb) => eb.fn.sum("journalLine.amount").as("balance"))
-      .where(
-        "journalLine.accountId",
-        "=",
-        accountDefaults.data!.workInProgressAccount
-      )
-      .where("journalLine.documentId", "=", jobId)
-      .where("journal.companyId", "=", companyId)
-      .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-      .$if(!keepsWip, (qb) =>
-        qb.where((eb) =>
-          eb.not(
-            eb.exists(
-              eb
-                .selectFrom("projectLedger")
-                .select("projectLedger.id")
-                .whereRef("projectLedger.journalLineId", "=", "journalLine.id")
-                .where("projectLedger.companyId", "=", companyId)
-            )
-          )
-        )
-      )
-      .executeTakeFirst();
+    const wipBalance = await rpcValue(trx, "job_wip_balance", {
+      p_job_id: jobId,
+      p_company_id: companyId,
+      p_exclude_project_lines: !keepsWip
+    });
 
-    const remainingWip = Number(wipBalance?.balance ?? 0);
+    const remainingWip = wipBalance.data ?? 0;
 
     if (Math.abs(remainingWip) < 0.01) return;
 
@@ -16539,6 +16846,12 @@ export async function getMethod(
             .execute();
         }
 
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [jobId] },
+          parts
+        );
         // Delete existing jobMakeMethod, jobMakeMethodOperation, jobMakeMethodMaterial
         await Promise.all([
           parts.billOfMaterial
@@ -17632,6 +17945,12 @@ export async function getMethod(
           treeItemIds(methodTree, supersessionRedirect)
         );
         const insertedJobMaterialIds: string[] = [];
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [jobMakeMethod.data.jobId], jobMakeMethodId },
+          parts
+        );
         // Delete existing jobMakeMethodOperation, jobMakeMethodMaterial
         await Promise.all([
           parts.billOfMaterial
@@ -20409,6 +20728,12 @@ export async function getMethod(
           trx,
           treeItemIds(jobMethodTree, supersessionRedirect)
         );
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [targetJobId] },
+          parts
+        );
         // Delete existing jobMakeMethods, jobMaterials, and jobOperations for the target job
         await Promise.all([
           parts.billOfMaterial
@@ -22226,6 +22551,12 @@ export async function getMethod(
         await itemDefaults.load(
           trx,
           treeItemIds(quoteMethodTree, supersessionRedirect)
+        );
+        await refuseMethodReplacement(
+          trx,
+          companyId,
+          { jobIds: [jobId] },
+          parts
         );
         // Delete existing jobMakeMethods, jobMaterials, and jobOperations for this job
         await Promise.all([

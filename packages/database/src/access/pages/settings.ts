@@ -61,7 +61,7 @@ export const PAGES = [
     id: "settings.printing",
     label: "Printing",
     maxLevel: "Full",
-    tables: ["printerRoute", "printJob"],
+    tables: ["printerRoute", "printJob", "labelTemplate"],
     paths: ["/x/settings/printing"]
   },
   {

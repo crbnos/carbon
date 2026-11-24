@@ -79,8 +79,8 @@ export const ROLE_NAMES = {
   intercompanyReceivablesAccount: "Intercompany Receivables",
   intercompanyPayablesAccount: "Intercompany Payables",
   leaseLiabilityAccount: "Lease Liabilities",
-  salesTaxPayableAccount: "Sales Tax Payable",
-  purchaseTaxPayableAccount: "Purchase Tax Payable",
+  taxReceivedAccount: "Tax Received",
+  taxPaidAccount: "Tax Paid",
   reverseChargeSalesTaxPayableAccount: "Reverse Charge Sales Tax",
   deferredTaxLiabilityAccountId: "Deferred Tax Liability",
   retainedEarningsAccount: "Retained Earnings",
@@ -199,6 +199,12 @@ export const REFERENCE_POLICY: readonly AccountReference[] = [
   { table: "payment", column: "bankAccount", policy: "repoint" },
   { table: "memo", column: "reasonAccount", policy: "repoint" },
   {
+    table: "taxCodeComponent",
+    column: "taxReceivedAccountId",
+    policy: "repoint"
+  },
+  { table: "taxCodeComponent", column: "taxPaidAccountId", policy: "repoint" },
+  {
     table: "journalLine",
     column: "accountId",
     policy: "repoint-if-parent-status",
@@ -281,6 +287,7 @@ const CLASS_OF_TYPE: Record<AccountType, AccountClass> = {
   Investments: "Asset",
   "Accounts Payable": "Liability",
   "Other Current Liability": "Liability",
+  "Credit Card": "Liability",
   "Long Term Liability": "Liability",
   Tax: "Liability",
   "Equity - No Close": "Equity",

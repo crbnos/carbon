@@ -4,6 +4,7 @@ paths:
   - "apps/erp/app/modules/shared/imports.models.ts"
   - "apps/erp/app/routes/x+/shared+/import.$tableId.tsx"
   - "apps/erp/app/modules/shared/shared.service.ts"
+  - "apps/erp/app/modules/shared/journal-entry-import.ts"
 ---
 
 # CSV Import System
@@ -52,9 +53,19 @@ Three exported maps, all keyed by table name:
       creatableLookup?: "supplierType" | "customerType" | "customerStatus";
       creatableForm?: "paymentTerm" | "shippingMethod";
       options?: readonly string[];                      // static options
+      askWhenMapped?: string;                           // another field of the table
     };
   }
   ```
+- **Enum steps.** After Field Mapping the wizard asks one step per enum field
+  (`isEnumStepAsked`, `ImportCSVModal/enumSteps.ts`). An enum field with
+  `enumData.askWhenMapped` is asked only while that other field's column is
+  mapped ("None" counts as unmapped), and a skipped step sends no
+  `enumMappings` entry, so a Default chosen before the column was unmapped
+  does not reach the import. Every other enum field is always asked. Only the
+  journal entry `dimensionN` fields use it (asked when `dimensionNValue` is
+  mapped). `imports.models.test.ts` checks each `askWhenMapped` names a field
+  of its own table.
 - `importPermissions` — table → the page that owns it in the access registry. The one map: `importCsvFile`'s gate reads it.
 - `importSchemas` — `Record<keyof fieldMappings, z.ZodObject>` for per-table validation.
 
@@ -82,7 +93,7 @@ Each table names the page that owns it in the access registry
 `serialQuantity` → `inventory.quantities`; `workCenter` → `resources.workCenters`;
 `process` → `resources.processes`; `scrapReason` → `production.scrapReasons`;
 `department` → `people.departments`; `payrollPeriodTotal` → `people.timecards`;
-`fixedAsset` → `accounting.assets`; the quote tables → `sales.quotes`.
+`fixedAsset` → `accounting.assets`; `journalEntry` → `accounting.journalEntries`; the quote tables → `sales.quotes`.
 
 An import's permission is the one its table's **RLS INSERT policy** requires, not
 the one that opens its list page. `importCsvTable` writes through a service-role
@@ -97,8 +108,8 @@ The import's own `table` enum (`importCsvInput`, `shared.service.ts`) accepts: `
 `workCenter`, `process`, `storageUnit`, `unitOfMeasure`, `itemPostingGroup`,
 `storageType`, `scrapReason`, `department`, `materialSubstance`, `materialForm`,
 `materialFinish`, `materialGrade`, `materialType`, `materialDimension`,
-`inventoryQuantity`, `batchQuantity`, `serialQuantity`, `payrollPeriodTotal`. Note it does
-**not** list `fixedAsset` (see Gotchas).
+`inventoryQuantity`, `batchQuantity`, `serialQuantity`, `payrollPeriodTotal`, `journalEntry`.
+Note it does **not** list `fixedAsset` (see Gotchas).
 
 ### Payroll totals import (upsert per employee and period)
 
@@ -112,6 +123,52 @@ of the file for the same employee and period is skipped ("Repeats the employee a
 of row N"), because one `INSERT … ON CONFLICT DO UPDATE` cannot touch a row twice. The
 upsert counts inserted and updated rows with `(xmax = 0)`; an update keeps `importedBy`
 and `importedAt`. Surfaced on People → Payroll Totals (`PayrollTotalsTable`).
+
+### Journal entry import (the manual journal entry's path)
+
+`journalEntry` (spec `.ai/specs/2026-11-14-journal-entry-import.md`) loads journals
+from another accounting system: one row per journal line, grouped into one journal
+by Journal Reference. Handled by `importJournalEntries`
+(`apps/erp/app/modules/shared/journal-entry-import.ts`), surfaced from Accounting →
+Journal Entries (`JournalEntriesTable`, shown with Edit on Accounting → Journal Entries).
+Gate: Edit on `accounting.journalEntries` (it holds create), what the manual entry's
+`createJournalEntry` and `saveJournalEntry` need.
+
+- **Columns**: `journalReference`, `postingDate` (real `YYYY-MM-DD`), `accountNumber`,
+  `debit` / `credit` (read by `parseTrialBalanceAmount`, `accounting/trial-balance-csv.ts`:
+  a comma is refused, not guessed), `description` (line), `journalDescription` (blank →
+  the reference), `status` (enum `Draft` | `Posted`, default `Draft`,
+  `journalEntryImportStatuses`), and three dimension slots `dimensionN` (enum of the
+  group's active dimensions, `dimensionFetcher`; usually left unmapped with the
+  dimension as its Default) + `dimensionNValue` (the value by name). The wizard
+  asks for `dimensionN` only when `dimensionNValue` is mapped (`askWhenMapped`);
+  `readJournalEntryRow` ignores a slot with no value, dimension or not.
+- **The plan is pure** (`planJournalEntryImport`, tested by
+  `shared.journal-entry-import.test.ts`): rows group by reference in first-appearance
+  order. A row needs one of a debit or a credit above 0 (`saveJournalEntry`'s rule) and
+  an active non-group account of the company group by number (the trial balance
+  import's filter). A dimension value matches case- and whitespace-insensitively the
+  label the journal form shows (`ENTITY_DIMENSION_SOURCES`: name, an item's
+  `readableIdWithRevision`, a chargeable project element's `readableId`, active
+  projects only); none or several is a row error. A journal is whole or nothing:
+  a refused row puts every row of its journal in `errors`, so the results download
+  holds whole journals. The journal's rows must share the date and status, balance
+  (`isBalanced`, `JOURNAL_BALANCE_TOLERANCE`), a Posted one needs a cutover
+  (`ACCOUNTING_NOT_STARTED`), and a date in a period `periodPostingRefusal(…,
+  "accounting")` refuses (Closed) is refused with that message, for a Draft too. A journal dated on or before the
+  newest `accountingPeriodBalance.endingBalanceDate` is refused too, a Draft
+  included: the balance readers add only journals after the newest snapshot.
+  A Locked period accepts it, as it accepts a manual journal.
+- **Writes go through the manual entry's building blocks**, one journal at a time:
+  `invokeCreate(ctx, { type: "journalEntry" })` (sequence, `sourceType` Manual,
+  Draft), `saveJournalEntryWithLines` and, for Posted, `postJournalEntry`, both on
+  `ctx.asCaller.supabase` as `saveJournalEntry` calls them. A journal that fails after
+  its create is deleted while still Draft. No bulk path: about a dozen round trips
+  per journal, so a large history is imported in several files.
+- **Idempotent by reference.** Each journal writes an `externalIntegrationMapping`
+  row (`integration` `csv`, `entityType` `journal`, `externalId` = the reference). A
+  reference whose mapped journal still exists is `skipped` ("was imported before as
+  JE…"); a deleted Draft's reference imports again (the upsert re-points it).
 
 ### Service import (rides the item path)
 
@@ -377,7 +434,8 @@ every other field is a column mapping) and calls `importCsvFile` (`shared.server
    needs (Inventory → Quantities at Edit). Two moved tables also admit the page that
    keeps writing them (`alsoWrittenBy`), as their screens do: `storageType` takes
    Parts too, `itemPostingGroup` Accounting → Default Accounts. A keyed rule holds one
-   page, so these two are `"employee"` there and `run` checks `importAnyOf` first.
+   page, so these two are `"employee"` there and `run` checks `importAnyOf` first. `journalEntry` needs Edit on Accounting → Journal Entries, which
+   holds the create and the save the manual entry needs.
 3. Validates `columnMappings` against `importSchemas[table]` (required fields mapped).
 4. Calls `importCsv(ctx, { table, filePath, columnMappings, enumMappings })`
    (quote tables go through `importQuotes` instead).

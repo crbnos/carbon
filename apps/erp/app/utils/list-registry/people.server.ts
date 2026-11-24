@@ -17,13 +17,11 @@ import { EMPLOYEES_PAGING } from "~/modules/users/users.service";
 import type { ListDefinition } from "./index.server";
 import { searchList } from "./index.server";
 
-// The people list searches with `?name=`, not `?search=`.
 export const peopleList = searchList({
   key: "people",
   gate: { "people.employees": "View" },
   paging: EMPLOYEES_PAGING,
-  service: getPeople,
-  params: { search: "name" }
+  service: getPeople
 });
 
 export const attributeCategoriesList = searchList({

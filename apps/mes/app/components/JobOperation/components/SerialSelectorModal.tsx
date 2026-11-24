@@ -26,6 +26,17 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCheck, LuList, LuQrCode, LuX } from "react-icons/lu";
 import type { TrackedEntity } from "~/services/types";
+import { parseTravelerCode } from "~/utils/traveler";
+
+/** The unit a typed or pasted value names: its id, its serial, or its label's traveler link. */
+function findEntity(entities: TrackedEntity[], value: string) {
+  const code = value.trim();
+  if (!code) return undefined;
+  const id = parseTravelerCode(code) ?? code;
+  return entities.find(
+    (entity) => entity.id === id || entity.readableId === code
+  );
+}
 
 export function SerialSelectorModal({
   availableEntities,
@@ -71,6 +82,7 @@ function SerialSelectorBody({
 }) {
   const { t } = useLingui();
   const [serial, setSerial] = useState("");
+  const match = findEntity(availableEntities, serial);
 
   return (
     <>
@@ -146,26 +158,27 @@ function SerialSelectorBody({
                   size="lg"
                   aria-label={t`Serial number`}
                   // The ✓/✗ beside the field is the only other cue.
-                  aria-invalid={
-                    serial &&
-                    !availableEntities.some(
-                      (entity) =>
-                        entity.id === serial || entity.readableId === serial
-                    )
-                      ? true
-                      : undefined
-                  }
+                  aria-invalid={serial && !match ? true : undefined}
                   placeholder={t`Scan or enter serial number`}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      const val = e.currentTarget.value;
-                      const entity = availableEntities.find(
-                        (entity) =>
-                          entity.id === val || entity.readableId === val
+                      const entity = findEntity(
+                        availableEntities,
+                        e.currentTarget.value
                       );
                       if (entity) {
                         onSelect(entity);
                       }
+                    }
+                  }}
+                  onPaste={(e) => {
+                    const entity = findEntity(
+                      availableEntities,
+                      e.clipboardData.getData("text")
+                    );
+                    if (entity) {
+                      e.preventDefault();
+                      onSelect(entity);
                     }
                   }}
                   value={serial}
@@ -173,10 +186,7 @@ function SerialSelectorBody({
                 />
                 <InputRightElement>
                   {serial &&
-                    (availableEntities.some(
-                      (entity) =>
-                        entity.id === serial || entity.readableId === serial
-                    ) ? (
+                    (match ? (
                       <LuCheck className="text-green-500" />
                     ) : (
                       <LuX className="text-red-500" />

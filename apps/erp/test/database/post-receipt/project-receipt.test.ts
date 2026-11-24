@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { sql } from "kysely";
 import { expect } from "vitest";
 import { postReceipt as postReceiptBody } from "../../../app/modules/inventory/inventory.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
@@ -398,6 +399,131 @@ databaseTest(
       expect(Number(reversal.quantity)).toEqual(-10);
       expect(reversal.projectId).toEqual(f.projectId);
       expect(await stock()).toEqual([[f.projectId, 0]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a capital job's outside processing receipt keeps WIP and writes the project's ledger row",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const { fixedAssetId } = await f.addCapitalAsset({
+        status: "Under Construction"
+      });
+      const { locationId, itemId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const job = await f.addConsumeToProjectJob("cap", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 1,
+        jobQuantity: 1,
+        consumeToProject: false
+      });
+      const po = await f.addPurchaseOrder("cap", {
+        locationId,
+        lines: [{ itemId: job.finishedItemId, quantity: 1, unitPrice: 50 }]
+      });
+      // A capital job: the project's charge number and its asset under
+      // construction, not consuming to the project. Its one operation is
+      // sent out on the order; an operation of our own follows it.
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .updateTable("job")
+          .set({
+            projectId: f.projectId,
+            projectElementId: f.elementId,
+            fixedAssetId,
+            status: "In Progress"
+          })
+          .where("id", "=", job.jobId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await trx
+          .updateTable("jobOperation")
+          .set({ operationType: "Outside Processing", operationQuantity: 1 })
+          .where("id", "=", job.operationId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await trx
+          .insertInto("jobOperation")
+          .values({
+            jobId: job.jobId,
+            jobMakeMethodId: job.makeMethodId,
+            processId: `${f.prefix}-process-cap`,
+            order: 2,
+            operationQuantity: 1,
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+        await trx
+          .updateTable("purchaseOrder")
+          .set({ purchaseOrderType: "Outside Processing", jobId: job.jobId })
+          .where("id", "=", po.purchaseOrderId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await trx
+          .updateTable("purchaseOrderLine")
+          .set({ jobId: job.jobId, jobOperationId: job.operationId })
+          .where("id", "=", po.lineIds[0]!)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+      const receipt = await f.addReceipt("cap", {
+        locationId,
+        purchaseOrderId: po.purchaseOrderId,
+        supplierId: po.supplierId,
+        lines: [
+          {
+            lineId: po.lineIds[0]!,
+            itemId: job.finishedItemId,
+            quantity: 1,
+            unitPrice: 50
+          }
+        ]
+      });
+
+      const posted = await postReceipt(f.ctx, { receiptId: receipt.receiptId });
+      expect(posted.error).toBeNull();
+
+      // The supplier's 50 stays in WIP, which the completion sweeps onto the
+      // asset; the project sees it through its ledger row on that WIP line.
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .innerJoin("journalLine", (join) =>
+          join
+            .onRef("journalLine.id", "=", "projectLedger.journalLineId")
+            .onRef("journalLine.companyId", "=", "projectLedger.companyId")
+        )
+        .select([
+          "projectLedger.costType",
+          "projectLedger.jobId",
+          "projectLedger.amount",
+          "journalLine.accountId"
+        ])
+        .where("projectLedger.companyId", "=", f.companyId)
+        .execute();
+      expect(ledger).toEqual([
+        {
+          costType: "Outside Processing",
+          jobId: job.jobId,
+          amount: 50,
+          accountId: f.account("wip")
+        }
+      ]);
+      // The job's completion writes the asset's cost row, not the receipt.
+      const cip = await f.db
+        .selectFrom("fixedAssetCipCost")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(cip).toEqual([]);
     } finally {
       await f.cleanup();
     }

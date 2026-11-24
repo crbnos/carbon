@@ -225,7 +225,7 @@ const GroupedContentSidebar = ({
               "justify-start flex-grow truncate active:scale-100",
               active
                 ? "shadow-none dark:shadow-button-base"
-                : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
+                : "hover:bg-transparent hover:text-active-foreground in-data-[hover-card]:text-active-foreground hover:scale-100 focus-visible:scale-100"
             )}
           >
             <PrefetchLink
@@ -375,7 +375,7 @@ const ViewsReorderGroup = ({
                   "justify-start text-sm pl-7 pr-7 truncate flex-grow !shadow-none",
                   active
                     ? "shadow-none border-active-foreground/30 dark:border-none dark:shadow-button-base"
-                    : "hover:bg-transparent hover:text-active-foreground"
+                    : "hover:bg-transparent hover:text-active-foreground in-data-[hover-card]:text-active-foreground"
                 )}
               >
                 <PrefetchLink to={view.to}>{view.name}</PrefetchLink>

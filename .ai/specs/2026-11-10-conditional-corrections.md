@@ -370,6 +370,12 @@ For the ERP editor the sibling is **operations on the Bill of Process**:
 
 ## Changelog
 
+- 2026-11-18: The operator's Rework modal (`ReworkModal`) lists the part's
+  corrections after the earlier operations, as the inspection-lot picker
+  does. An operator can now send a unit into a correction from any
+  operation, with no mapped step result. An example is a "send to rework
+  station" correction. `x+/trigger-rework.tsx` sends a `correction:` target
+  to the `trigger-correction` posting.
 - 2026-11-10: Created after resolving the open questions with Dane.
 - 2026-11-10: Phase 4 implemented. Past a correction's attempt limit the
   prompt offers Scrap unit and Raise quality issue (the operation and

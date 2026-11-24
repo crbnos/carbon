@@ -335,7 +335,8 @@ these fields. Each one is optional except `materialRequests`; omitted, the row i
 The validator checks them:
 
 - `operation` names a `bop` order of the same method.
-- A tracked shelf holds no Scrapped lot, and its lots sum to the `openingStock` at that shelf.
+- A tracked shelf's lots (On Hold, Rejected and Scrapped included) sum to the `openingStock` at that
+  shelf, and a Scrapped lot on it is scrapped from that same shelf.
 - `replenishmentLevel` is on a Transfer kanban, and it is an integer of 0 or more.
 - `serials` is on a Serial item, has one entry per unit, and repeats no serial and no other seeded
   tracked-entity id (`onHandTracked`, a receipt `lotNumber`, `genealogyInputs`, the
@@ -392,6 +393,37 @@ employee every people screen shows. Volume: `validate.ts` requires `MIN_JOBS` (1
 dataset, every open job due within `OPEN_JOB_DUE_WINDOW` (−3…+21 days), open operations on
 every plant work center and running work on several.
 
+## Tax codes follow the plant's state
+
+Tier 01 inserts `FoundationData.taxAuthorities`, then `taxCodes` with their
+components, BEFORE the customers. Then it writes `customerTax.taxCodeId` for each
+customer that names a `taxCode`. Each dataset seeds the codes of its own plant's state:
+
+| Dataset | Local code (components) |
+|---|---|
+| satellite | TX – Houston (6.25 + 2) |
+| robotics | PA – Allegheny (6 + 1) |
+| precision | IL – Rockford (6.25 + 2.5) |
+| motor | IN – State (7). Indiana has no local rate, so motor has one authority. |
+| defense | AL – Huntsville (4 + 0.5 + 4.5): Alabama, Madison County, City of Huntsville. Its Use Tax code has the same three components. |
+
+Every dataset also seeds "Out of State – Exempt" and a Use Tax code
+(`calculationType` Reverse Charge, 0% recoverable). Four customers per dataset
+get a code: the local code, except satellite's government customer (ORBSEC
+Defense), which gets the exempt code. Defense gives the exempt code to its two
+federal customers and its foreign buyer, and the local code to its prime
+contractor (Northgate Defense Systems). Suppliers get no code, so purchase postings
+fold tax into cost as before.
+
+- State percents the way people write them (6.25; an optional
+  `recoverablePercent` of 100 means fully recoverable). The tier divides by 100.
+- `validate.ts` resolves the `taxCode` and `taxAuthority` ref kinds.
+- The floors in `coverage.ts` are the measured minimum: `taxAuthority: 1`,
+  `taxCode: 3`, `taxCodeComponent: 3`.
+- Seeded document lines still carry only `taxPercent`, and the hand-authored posted
+  invoices write no `taxLedger` rows. The Tax Liability report of a demo company
+  therefore shows only what the user posts after the apply.
+
 ## The company has an accounting cutover
 
 Tier 01 sets `companySettings.accountingCutoverDate` to the first day of the earliest seeded
@@ -412,14 +444,23 @@ Data may already have its own. Kept, a later date would put up to eleven months 
 seeded Posted journals before the cutover, where a void is refused and the readers above
 assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
 `companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)
-runs `check_accounting_config_locked()` (redefined in
-`20261009145057_accounting-cutover-guards.sql`), which refuses a change of
+runs `check_accounting_config_locked()` (newest definition in
+`20261123192913_base-currency-change-before-first-transaction.sql`), which refuses a change of
 `accountingCutoverDate`, `accountingActivatedAt` or `accountingActivatedBy` once the OLD row's
 `accountingActivatedAt` is set, unless the transaction has set `app.dataset_apply` and the
 role is not an API role (`anon` / `authenticated`). `applyDatasetTiers` sets it with
 `SET LOCAL`, next to `app.sync_in_progress`, so the bypass ends with the apply's
-transaction and covers the cutover columns only — the base currency and fiscal year locks
-still hold. Pinned by `packages/database/supabase/tests/accounting-cutover-guards.test.sql`.
+transaction and covers the cutover columns only. The fiscal year lock (`fiscalYearSettings`
+branch, still keyed on `accountingActivatedAt`) holds. The base currency lock holds too, and
+it depends on the company's data, not on accounting activation: the `company` branch never
+reads `app.dataset_apply` or `accountingActivatedAt`, and refuses a `baseCurrencyCode`
+change for every role while `base_currency_change_blockers(companyId)` returns a row
+(`The base currency is locked: <reasons>`). When nothing blocks, it still refuses the change
+unless the transaction set `app.base_currency_change`, which only
+`updateCompanyWithBaseCurrencyChange` sets (never honoured for an API role). So a dataset that
+seeds journals, documents or ledger rows locks the company's base currency, and no tier changes
+it. Pinned by `packages/database/supabase/tests/accounting-cutover-guards.test.sql` and
+`base-currency-change.test.sql`.
 
 Demo-template companies that predate the cutover got theirs from section 7 of
 `20261009004448_accounting-cutover.sql`, which selects them by their `JE-SEED-%` journal (the

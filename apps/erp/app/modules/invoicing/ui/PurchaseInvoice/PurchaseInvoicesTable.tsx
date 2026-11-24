@@ -18,6 +18,7 @@ import {
   LuContainer,
   LuCreditCard,
   LuDollarSign,
+  LuHash,
   LuLayoutList,
   LuPencil,
   LuQrCode,
@@ -73,6 +74,10 @@ const PurchaseInvoicesTable = memo(
 
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
+    const supplierNames = useMemo(
+      () => new Map(suppliers.map((supplier) => [supplier.id, supplier.name])),
+      [suppliers]
+    );
     const customColumns =
       useCustomColumns<PurchaseInvoiceListItem>("purchaseInvoice");
 
@@ -111,6 +116,8 @@ const PurchaseInvoicesTable = memo(
           ),
           meta: {
             mobile: "P3",
+            exportValue: (row) =>
+              supplierNames.get(row.supplierId ?? "") ?? row.supplierId,
             filter: {
               type: "static",
               options: suppliers?.map((supplier) => ({
@@ -128,6 +135,9 @@ const PurchaseInvoicesTable = memo(
             <SupplierAvatar supplierId={row.original.invoiceSupplierId} />
           ),
           meta: {
+            exportValue: (row) =>
+              supplierNames.get(row.invoiceSupplierId ?? "") ??
+              row.invoiceSupplierId,
             filter: {
               type: "static",
               options: suppliers?.map((supplier) => ({
@@ -136,6 +146,16 @@ const PurchaseInvoicesTable = memo(
               }))
             },
             icon: <LuContainer />
+          }
+        },
+        {
+          id: "glCodes",
+          header: t`GL Codes`,
+          cell: ({ row }) => row.original.glCodes,
+          enableSorting: false,
+          meta: {
+            exportValue: (row) => row.glCodes,
+            icon: <LuHash />
           }
         },
         {
@@ -194,7 +214,7 @@ const PurchaseInvoicesTable = memo(
         },
         {
           accessorKey: "orderTotal",
-          header: t`Order Total`,
+          header: t`Invoice Total`,
           cell: (item) => currencyFormatter.format(item.getValue<number>()),
           meta: {
             mobile: "P2",
@@ -352,6 +372,7 @@ const PurchaseInvoicesTable = memo(
       customColumns,
       hasMultiplePurchaseOrders,
       people,
+      supplierNames,
       suppliers,
       t
     ]);
@@ -402,6 +423,11 @@ const PurchaseInvoicesTable = memo(
           data={data}
           {...lineItemRows}
           infinite={infinite}
+          serverExport={{
+            csv: `${path.to.invoicingPurchasing}.csv`,
+            xlsx: `${path.to.invoicingPurchasing}.xlsx`
+          }}
+          withCsvExport={false}
           defaultColumnPinning={{
             left: ["invoiceId"]
           }}

@@ -153,6 +153,10 @@ function OperationCard({
           <div className="flex justify-center max-md:hidden">
             <img
               src={getPrivateUrl(operation.thumbnailPath)}
+              loading="lazy"
+              decoding="async"
+              width={300}
+              height={300}
               alt={operation.jobReadableId}
               className="w-full h-auto rounded-lg"
             />

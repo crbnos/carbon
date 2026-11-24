@@ -13,6 +13,7 @@ import {
   getFailureModes,
   getLocations,
   getLocationsList,
+  getMaintenanceDispatches,
   getMaintenanceDispatchesByLocation,
   getMaintenanceSchedulesByLocation,
   getProcesses,
@@ -27,11 +28,15 @@ import {
   TRAININGS_PAGING,
   WORK_CENTERS_PAGING
 } from "~/modules/resources/resources.service";
-import type { ListDefinition } from "./index.server";
+import type {
+  MaintenanceDispatch,
+  MaintenanceDispatchByLocation
+} from "~/modules/resources/types";
+import type { ListDefinition, ListQueryResult } from "./index.server";
 import { searchList } from "./index.server";
 
 /**
- * The maintenance lists show one location: `?location=`, else the company's
+ * The location a maintenance list shows: `?location=`, else the company's
  * first location. Null when the company has no location.
  */
 export async function resolveMaintenanceLocationId(
@@ -74,14 +79,10 @@ export const maintenanceDispatchesList = {
     client,
     companyId,
     { params, limit, cursor, exactCount, sorts, filters }
-  ) => {
-    const locationId = await resolveMaintenanceLocationId(
-      client,
-      companyId,
-      params
-    );
-    if (!locationId) return { data: [], error: null, count: 0 };
-    return getMaintenanceDispatchesByLocation(client, companyId, locationId, {
+  ): Promise<
+    ListQueryResult<MaintenanceDispatch | MaintenanceDispatchByLocation>
+  > => {
+    const args = {
       search: params.get("search"),
       status: params.get("status") ?? undefined,
       limit,
@@ -89,7 +90,23 @@ export const maintenanceDispatchesList = {
       exactCount,
       sorts,
       filters
-    });
+    };
+    // `?location=all`: every location, as the dashboard counts them.
+    if (params.get("location") === "all") {
+      return getMaintenanceDispatches(client, companyId, args);
+    }
+    const locationId = await resolveMaintenanceLocationId(
+      client,
+      companyId,
+      params
+    );
+    if (!locationId) return { data: [], error: null, count: 0 };
+    return getMaintenanceDispatchesByLocation(
+      client,
+      companyId,
+      locationId,
+      args
+    );
   }
 } satisfies ListDefinition;
 

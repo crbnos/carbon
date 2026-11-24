@@ -74,6 +74,9 @@ export const motorLine: Dataset = {
       laborRate: 60,
       machineRate: 0
     },
+    // No customers, so no tax codes: the walkthrough sells nothing.
+    taxAuthorities: [],
+    taxCodes: [],
     customers: [],
     customerContacts: [],
     suppliers: SUPPLIERS.filter((s) => AJ3_SUPPLIERS.has(s.name)),

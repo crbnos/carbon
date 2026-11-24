@@ -76,6 +76,10 @@ msgstr "（この部門外）"
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
 msgstr "{0, plural, =0 {このプロセスには適格な作業者が必要であるため、誰かが追加されるまで工程をスケジュールすることはできません。} one {このプロセスには適格な作業者が必要です：# 工程は誰かが追加されるまでスケジュールできません。} other {このプロセスには適格な作業者が必要です：# 工程は誰かが追加されるまでスケジュールできません。}}"
 
+#. placeholder {0}: pending.approvalRules
+msgid "{0, plural, one {# approval rule} other {# approval rules}}"
+msgstr ""
+
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
 msgstr "{0, plural, one {# 部品表の明細は除外されています：その品目にはコスト記録がありません} other {# 部品表の明細は除外されています：それらの品目にはコスト記録がありません}}"
@@ -137,6 +141,14 @@ msgstr "{0, plural, one {# 要素} other {# 要素}}"
 msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
 msgstr "{0, plural, one {# タイプフィルタで非表示} other {# タイプフィルタで非表示}}"
 
+#. placeholder {0}: pending.itemCosts
+msgid "{0, plural, one {# item cost} other {# item costs}}"
+msgstr ""
+
+#. placeholder {0}: pending.itemPrices
+msgid "{0, plural, one {# item price} other {# item prices}}"
+msgstr ""
+
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, one {# 品目} other {# 品目}}"
@@ -185,6 +197,10 @@ msgstr "{0, plural, one {# 期限超過} other {# 期限超過}}"
 #. placeholder {0}: added.parameters
 msgid "{0, plural, one {# parameter} other {# parameters}}"
 msgstr "{0, plural, one {# パラメータ} other {# パラメータ}}"
+
+#. placeholder {0}: job.shortItems
+msgid "{0, plural, one {# part short} other {# parts short}}"
+msgstr "{0, plural, one {部品 # 点が不足} other {部品 # 点が不足}}"
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
@@ -266,6 +282,10 @@ msgstr "{0, plural, one {# 品目を移動} other {# 品目すべてを移動}}"
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {会計開始日前に日付した # ドキュメントを転記または削除してください。} other {会計開始日前に日付した # ドキュメントを転記または削除してください。}}"
 
+#. placeholder {0}: pending.workCenterRates
+msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
+msgstr ""
+
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 msgstr "{0, plural, one {このパスを削除すると、#件の接続も切断されます。} other {このパスを削除すると、#件の接続も切断されます。}}"
@@ -273,6 +293,10 @@ msgstr "{0, plural, one {このパスを削除すると、#件の接続も切断
 #. placeholder {0}: error.columns.length
 msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
 msgstr "{0, plural, one {ファイルに {columns} 列がありません。} other {ファイルに {columns} 列がありません。}}"
+
+#. placeholder {0}: check.leadTimeDays
+msgid "{0, plural, one {The lead time is # day.} other {The lead time is # days.}}"
+msgstr "{0, plural, one {リードタイムは#日です。} other {リードタイムは#日です。}}"
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -349,9 +373,22 @@ msgstr "{0} 利用可能"
 msgid "{0} available in {owner} here"
 msgstr "{0}は{owner}でここで利用可能です"
 
+#. placeholder {0}: formatQuantity(data?.quantityAvailable ?? 0)
+#. placeholder {1}: formatQuantity(data?.quantityCommitted ?? 0)
+msgid "{0} available, {1} committed"
+msgstr "利用可能 {0}、引当済 {1}"
+
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} BOM明細が一致しません: {names}"
+
+#. placeholder {0}: selected.label
+msgid "{0} by method version"
+msgstr "{0}（製法バージョン別）"
+
+#. placeholder {0}: selected.label
+msgid "{0} by operator"
+msgstr "{0}（作業者別）"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -395,6 +432,14 @@ msgstr "{0}日"
 #. placeholder {0}: file.name
 msgid "{0} deleted successfully"
 msgstr "{0}が正常に削除されました"
+
+#. placeholder {0}: selected.label
+msgid "{0} distribution"
+msgstr "{0}の分布"
+
+#. placeholder {0}: route.dpi
+msgid "{0} dpi"
+msgstr ""
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -582,6 +627,13 @@ msgstr "{memberCount}個の製造指図のうち{0}件がまだ完了してい�
 msgid "{0} of {whole} done"
 msgstr "{0} / {whole} 完了"
 
+#. placeholder {0}: m.readableId
+#. placeholder {1}: m.parentReadableId
+#. placeholder {2}: m.lineUnitOfMeasureCode
+#. placeholder {3}: m.stockUnitOfMeasureCode ?? "–"
+msgid "{0} on {1}: line in {2}, stocked in {3}"
+msgstr "{1}の{0}: 明細単位 {2}、在庫単位 {3}"
+
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "あなたのタイムカードの {0}"
@@ -653,6 +705,10 @@ msgstr "{0}は台帳が以下に保持されていると報告しています"
 msgid "{0} rows"
 msgstr "{0} 行"
 
+#. placeholder {0}: selected.label
+msgid "{0} runs over time"
+msgstr "{0}の実行推移"
+
 #. placeholder {0}: member.quantityScrapped
 msgid "{0} scrapped"
 msgstr "{0}廃棄"
@@ -662,6 +718,11 @@ msgstr "{0}廃棄"
 #. placeholder {0}: selected.size
 msgid "{0} selected"
 msgstr "{0} 件選択"
+
+#. placeholder {0}: short.length
+#. placeholder {1}: formatQuantity(data.targetQuantity)
+msgid "{0} short for {1}"
+msgstr "{1}に対して{0}不足"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -739,6 +800,10 @@ msgstr "{0} は {name} として保存されます"
 msgid "{0}-Year"
 msgstr "{0} 年"
 
+#. placeholder {0}: typeLabels[data.type]
+msgid "{0}, with the number of runs (n) above each operation. Select an operation to see how it changes."
+msgstr "{0}。各工程の上に実行回数（n）を表示しています。工程を選択すると、その変化を確認できます。"
+
 #. placeholder {0}: blocker.description
 msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
 msgstr "{0}: {dueDate}に支払期限のある支払はCarbon外で支払済とマークされていますが、リース債務からは何も除去されません。{dueDate}以前に「請求書発行元」を設定して、請求済にしてください。"
@@ -808,6 +873,9 @@ msgstr "{alreadyPlannedItemCount}個の部品はスキップ済 — 既に進行
 msgid "{amount} of {0} posted to {element}"
 msgstr "{0} の {amount} が {element} に転記されました"
 
+msgid "{amount} of the order line's charges not billed"
+msgstr "{amount}（受注明細の未請求料金）"
+
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}%の買掛金"
 
@@ -835,14 +903,29 @@ msgstr "{assigned, plural, one {# 営業日割当済} other {# 営業日割当�
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {目標より # 日遅れ} other {目標より # 日遅れ}}"
 
+msgid "{billedByContract, plural, one {# line is billed by a contract made from its order} other {# lines are billed by contracts made from their orders}}"
+msgstr "{billedByContract, plural, one {# 件の明細は、受注から作成された契約で請求されます} other {# 件の明細は、受注から作成された契約で請求されます}}"
+
 msgid "{billingReviewCount, plural, one {# billable item waits for review} other {# billable items wait for review}}"
 msgstr "{billingReviewCount, plural, one {# 個の請求対象項目がレビュー待ちです} other {# 個の請求対象項目がレビュー待ちです}}"
+
+msgid "{bucket2Start}-{b2} Days"
+msgstr "{bucket2Start}～{b2}日"
+
+msgid "{bucket3Start}-{b3} Days"
+msgstr "{bucket3Start}～{b3}日"
+
+msgid "{bucket4Start}+ Days"
+msgstr "{bucket4Start}日以上"
 
 msgid "{categoryLabel} markup for quantity {quantity}"
 msgstr "{categoryLabel}のマークアップ（数量 {quantity}）"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
+
+msgid "{chargesLeftOff, plural, one {# line leaves off add-ons or shipping from its order} other {# lines leave off add-ons or shipping from their order}}"
+msgstr "{chargesLeftOff, plural, one {# 件の明細には受注の追加料金・送料が含まれていません} other {# 件の明細には受注の追加料金・送料が含まれていません}}"
 
 msgid "{code} counted"
 msgstr "{code} がカウント済"
@@ -889,6 +972,12 @@ msgstr "{count, plural, other {{fenceLabel}以降の追加 # 件}}"
 
 msgid "{count, plural, one {# row} other {# rows}}"
 msgstr "{count, plural, one {# 行} other {# 行}}"
+
+msgid "{count, plural, one {# tool on this operation is not linked to a step, so it shows on every step.} other {# tools on this operation are not linked to a step, so they show on every step.}}"
+msgstr "{count, plural, other {この処理の # 個のツールはステップに紐付いていないため、すべてのステップに表示されます。}}"
+
+msgid "{count, plural, one {# warning} other {# warnings}}"
+msgstr "{count, plural, one {# 件の警告} other {# 件の警告}}"
 
 msgid "{count, plural, one {about # row} other {about # rows}}"
 msgstr "{count, plural, one {約# 行} other {約# 行}}"
@@ -953,6 +1042,9 @@ msgstr "{created} 件作成、{updated} 件更新されました。"
 msgid "{created} created."
 msgstr "{created} 件作成しました。"
 
+msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr "{customersWithoutTaxCode, plural, one {# 得意先は税率を持っていますが、税コードがありません。それを選択してから「税コードを割り当て」を選択してください。} other {# 得意先は税率を持っていますが、税コードがありません。それらを選択してから「税コードを割り当て」を選択してください。}}"
+
 msgid "{days}d"
 msgstr "{days}日"
 
@@ -982,6 +1074,9 @@ msgstr "{documentTypeLabel}承認ルール"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
+
+msgid "{dpi} dpi"
+msgstr ""
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {修正が必要な行 # 件} other {修正が必要な行 # 件}}"
@@ -1061,6 +1156,9 @@ msgstr "{jobsMissingStorageUnit, plural, one {#個のオープン製造指図に
 
 msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
 msgstr "{kept, plural, other {# 件の値を取得しました。}}"
+
+msgid "{keptBy} kept this date. The earliest delivery date is {earliest}."
+msgstr "{keptBy} がこの納期を維持しました。最短納期は {earliest} です。"
 
 msgid "{kpiLabel} by day"
 msgstr "日別の{kpiLabel}"
@@ -1176,6 +1274,12 @@ msgstr "{names}は一致する必要があります — 別ロード"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount}個の部品はスキップ済 — 製造する必要がありません"
 
+msgid "{noPrice, plural, one {# line has no price} other {# lines have no price}}"
+msgstr "{noPrice, plural, one {# 件の明細は価格が設定されていません} other {# 件の明細は価格が設定されていません}}"
+
+msgid "{noQuantity, plural, one {# line has no quantity} other {# lines have no quantity}}"
+msgstr "{noQuantity, plural, one {# 件の明細は数量が設定されていません} other {# 件の明細は数量が設定されていません}}"
+
 msgid "{numerator} of {denominator}"
 msgstr "{numerator} / {denominator}"
 
@@ -1198,12 +1302,18 @@ msgstr "オープン {openedTotal} 件、クローズ {closedTotal} 件"
 msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
 msgstr "{openTimeCount, plural, one {# 件のタイムエントリはまだ転記待ちです} other {# 件のタイムエントリはまだ転記待ちです}}"
 
+msgid "{order} has {amount} of shipping that is not on any invoice"
+msgstr "{order}には、どの請求書にも含まれていない送料が{amount}あります"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} はリビジョン {0} として編集のため再度オープンされます。仕入先に送信済みの文書は、ファイナライズして発注書を再送信するまで変更されません。"
 
 msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
 msgstr "{overdueBorrowCount, plural, one {# 件の貸与が返却期限を超過しています} other {# 件の貸与が返却期限を超過しています}}"
+
+msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
+msgstr "{overInvoiced, plural, one {# 件の明細で、受注の請求可能残高を超える請求が行われています} other {# 件の明細で、受注の請求可能残高を超える請求が行われています}}"
 
 msgid "{overrides} overridden"
 msgstr ""
@@ -1248,8 +1358,14 @@ msgstr "{quantity} シリアル番号なし"
 msgid "{reached}/{0} pages"
 msgstr ""
 
+msgid "{readyJobs, plural, =0 {No open job has every part} one {In production on # job with every part in stock} other {In production on # jobs with every part in stock}}"
+msgstr "{readyJobs, plural, =0 {全部品が揃っているオープンの製造指図はありません} one {全部品が在庫にある製造指図 # 件が生産中} other {全部品が在庫にある製造指図 # 件が生産中}}"
+
 msgid "{received} of {ordered}"
 msgstr "{ordered} 中 {received}"
+
+msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
+msgstr ""
 
 msgid "{ref} not found"
 msgstr "{ref}が見つかりません"
@@ -1298,6 +1414,9 @@ msgstr "{state} · {syncedAgo} に同期"
 
 msgid "{statusTotal, plural, one {# issue in total} other {# issues in total}}"
 msgstr "{statusTotal, plural, other {合計 # 件の不適合}}"
+
+msgid "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr "{suppliersWithoutTaxCode, plural, one {# 仕入先は税率を持っていますが、税コードがありません。それを選択してから「税コードを割り当て」を選択してください。} other {# 仕入先は税率を持っていますが、税コードがありません。それらを選択してから「税コードを割り当て」を選択してください。}}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ヶ月} other {# ヶ月}}"
@@ -1350,6 +1469,9 @@ msgstr "{unmapped} コンポーネントはBOM一致がありません — Match
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {残りの # 個の必須勘定科目をまずマップしてください。} other {残りの # 個の必須勘定科目をまずマップしてください。}}"
 
+msgid "{unmappedTaxCodeCount, plural, one {Map the # remaining tax code first.} other {Map the # remaining tax codes first.}}"
+msgstr "{unmappedTaxCodeCount, plural, one {残りの # 個の税コードをまずマップしてください。} other {残りの # 個の税コードをまずマップしてください。}}"
+
 msgid "{unread} unread"
 msgstr "{unread}件未読"
 
@@ -1364,6 +1486,9 @@ msgstr "{value, plural, one {# 日} other {# 日}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行が予想数量と異なります} other {# 行が予想数量と異なります}}"
+
+msgid "{waitingJobs, plural, =0 {No open job is short of parts} one {In production on # job short of parts} other {In production on # jobs short of parts}}"
+msgstr "{waitingJobs, plural, =0 {部品が不足しているオープンの製造指図はありません} one {部品不足の製造指図 # 件が生産中} other {部品不足の製造指図 # 件が生産中}}"
 
 msgid "{warnings} need a follow-up"
 msgstr "{warnings} 件のフォローアップが必要です"
@@ -1518,6 +1643,9 @@ msgstr "1 件の未転記文書"
 msgid "1 year"
 msgstr "1 年"
 
+msgid "1-{b1} Days"
+msgstr "1～{b1}日"
+
 msgid "12 monthly periods"
 msgstr "12ヶ月間の期間"
 
@@ -1535,6 +1663,9 @@ msgstr "SNSなどの2～6文字の大文字または数字"
 
 msgid "2 years"
 msgstr "2 年"
+
+msgid "25th"
+msgstr "25パーセンタイル"
 
 msgid "28 Days"
 msgstr "28日"
@@ -1622,6 +1753,9 @@ msgstr "5MBファイル制限"
 
 msgid "6 months"
 msgstr "6 ヶ月"
+
+msgid "75th"
+msgstr "75パーセンタイル"
 
 msgid "7D"
 msgstr "7日"
@@ -1730,6 +1864,9 @@ msgstr "消耗品は、部品を製造するために使用される物理的な
 
 msgid "A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN."
 msgstr "契約明細のCLIN（契約明細番号）：0001などの4桁。プロジェクト請求発票はCLINごとに別の金額を表示します。"
+
+msgid "A contract made from the order bills this line"
+msgstr "受注から作成された契約がこの明細を請求します"
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D税レポートの契約設定。資金提供契約下のDirect プロジェクトの原価は適格研究費ではありません。デフォルトでは、Cost Plus または Time & Materials 明細を持つ契約は資金提供されたと見なされます。"
@@ -1912,6 +2049,9 @@ msgstr "ジョブの開始日が変更されました"
 msgid "A job's status changes"
 msgstr "ジョブのステータスが変更されました"
 
+msgid "A journal dated on the invoice's posting date moves the line's posted amount to the new account. The period must be open."
+msgstr "請求書の転記日を日付とする仕訳は、明細の転記済金額を新しい勘定科目に移動します。会計期間が開いている必要があります。"
+
 msgid "A labor category sets the cost and bill rates of the people in it."
 msgstr "労務カテゴリは、その中にいる人々の原価および請求率を設定します。"
 
@@ -1961,6 +2101,9 @@ msgstr "製法バージョンを有効にする前に、各抽出材料に抽出
 
 msgid "A name is required to save a view"
 msgstr "ビューを保存するには名前が必要です"
+
+msgid "A named tax treatment, such as \"TX – Houston\", made of one or more tax components; a document line takes the combined rate of the components in force on its date."
+msgstr "「TX – Houston」のような名前の付いた税処理で、1つ以上の税成分で構成されています。文書明細は、その日付に有効な成分の複合レートを適用します。"
 
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "得意先、得意先タイプ、またはすべての得意先ごとに設定され、基本価格を完全に置き換える交渉済み価格で、オプションで数量スケールを含みます。"
@@ -2457,6 +2600,9 @@ msgstr "仕入先の税率が変更される"
 msgid "A supplier's type changes"
 msgstr "仕入先の種類が変更される"
 
+msgid "A tax component charged on the line amount plus the tax of the components before it, instead of on the line amount alone."
+msgstr "明細金額に、その前にあるコンポーネントの税額を加えた額に課税される税コンポーネント。明細金額のみに課税するのではありません。"
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "課税対象の追加料金（取扱、セットアップ、燃料）を行に追加し、課税ベースに含めます。"
 
@@ -2477,6 +2623,12 @@ msgstr "個は初めて作業、廃棄、受取される時に番号を引き出
 
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "以下のいずれかが当てはまる場合、個は売上として処理され、そうでない場合はレンタルとして処理されます。"
+
+msgid "a user"
+msgstr "ユーザー"
+
+msgid "A user keeps a sales order date that can't be met"
+msgstr "ユーザーが満たせない受注の納期を維持しました"
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "ユーザーは商品受取時に各バッチまたはシリアルの使用期限を記録します。仕入先が異なる使用期限のロットを出荷する場合に使用します。"
@@ -2594,6 +2746,9 @@ msgstr "アカウントと詳細"
 msgid "Account balances with debits and credits"
 msgstr "借方貸方を含む勘定残高"
 
+msgid "Account changed"
+msgstr "勘定科目を変更しました"
+
 msgid "Account for advance payments made before goods or services are received"
 msgstr "商品またはサービスの受領前に行われた前払金を記録します。"
 
@@ -2691,7 +2846,7 @@ msgid "Accounts Payable"
 msgstr "買掛金"
 
 msgid "Accounts payable billing address disabled"
-msgstr "買掛金請求先住所が無効になりました"
+msgstr "買掛金の請求先住所が無効にされました"
 
 msgid "Accounts payable billing address enabled"
 msgstr "買掛金請求先住所を有効化"
@@ -2706,7 +2861,7 @@ msgid "Accounts Receivable"
 msgstr "売掛金"
 
 msgid "Accounts receivable billing address disabled"
-msgstr "売掛金請求先住所が無効になりました"
+msgstr "売掛金の請求先住所が無効にされました"
 
 msgid "Accounts receivable billing address enabled"
 msgstr "売掛金請求先住所を有効化"
@@ -3121,6 +3276,9 @@ msgstr "句を追加"
 msgid "Add Company"
 msgstr "会社を追加"
 
+msgid "Add component"
+msgstr "構成部品を追加"
+
 msgid "Add components first"
 msgstr "最初にコンポーネントを追加"
 
@@ -3198,6 +3356,9 @@ msgstr "製造指図を追加"
 
 msgid "Add Journal Entry"
 msgstr "仕訳行を追加"
+
+msgid "Add Label Template"
+msgstr "ラベルテンプレートを追加"
 
 msgid "Add labor"
 msgstr "労務を追加"
@@ -3396,6 +3557,9 @@ msgstr "作業者ビューをプレビューするためにステップを追加
 msgid "Add Supplier"
 msgstr "仕入先を追加"
 
+msgid "Add Template"
+msgstr "テンプレートを追加"
+
 msgid "Add the charge numbers you worked on this week, then click a day to log time."
 msgstr "今週働いた割り当て番号を追加してから、日をクリックして時間を記録してください。"
 
@@ -3519,8 +3683,14 @@ msgstr "資産に計上されなかった原価を追加します。例えば、
 msgid "Adds to an existing batch"
 msgstr "既存のバッチに追加"
 
+msgid "Adjust"
+msgstr "調整"
+
 msgid "Adjust Cost"
 msgstr "原価を調整"
+
+msgid "Adjust for Rounding"
+msgstr "端数調整"
 
 msgid "Adjustment"
 msgstr "調整"
@@ -3628,6 +3798,9 @@ msgstr "すべての資産"
 msgid "All Audit Logs"
 msgstr "すべての監査ログ"
 
+msgid "All authorities"
+msgstr "すべての当局"
+
 msgid "All change requests"
 msgstr "すべての変更リクエスト"
 
@@ -3651,6 +3824,9 @@ msgstr "すべてのドキュメント"
 
 msgid "All gauges"
 msgstr "すべての測定器"
+
+msgid "All in stock"
+msgstr "すべて在庫あり"
 
 msgid "All item types"
 msgstr "すべての品目タイプ"
@@ -3826,6 +4002,9 @@ msgstr "契約担当官が承認した金額"
 msgid "Amount to apply for {0}"
 msgstr "{0}に適用する金額"
 
+msgid "Amount to match"
+msgstr "一致させる金額"
+
 msgid "Amount Type"
 msgstr "金額タイプ"
 
@@ -3853,8 +4032,14 @@ msgstr "このリストにアカウントがない場合、再接続されるま
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "部門または機能ごとに費用をグループ化する会計カテゴリで、総勘定元帳がアカウントだけでなくグループごとの支出を報告できます。"
 
+msgid "An accounting or spend integration is connected"
+msgstr ""
+
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "資本化資産の会計記録（費用化ではなく減価償却対象）。下書き → 有効 → 償却済 → 除却済。"
+
+msgid "An active tax code charges tax in these countries, but the company has no tax registration there."
+msgstr "有効な税コードがこれらの国で税を課しますが、会社にはそこに税登録がありません。"
 
 msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 msgstr "何かが人の注意が必要であることを示すアラート。carbon/notify イベントからアプリ内インボックスおよびオプションのメールと Slack にファンアウトされ、ユーザーごと、トピックごとにミュート可能です。"
@@ -4040,7 +4225,7 @@ msgid "An open-ended lease is short-term: activating it posts no journal, and ea
 msgstr "期限を定めないリースは短期です。これを有効化すると、仕訳が転記されず、各請求書は費用計上されます。"
 
 msgid "An operation cannot complete until every serial and batch part on it is issued."
-msgstr ""
+msgstr "工程は、そこに含まれるシリアル・バッチ管理の部品がすべて払い出されるまで完了できません。"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "社内作業区ではなく外部仕入先が実行する工程で、外注発注書でカバーされます。"
@@ -4128,6 +4313,9 @@ msgstr "レンタル料が割引される年間レート"
 msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "年間。会社の増分借入金利から開始します"
 
+msgid "Another company in the group has transactions"
+msgstr ""
+
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "この統合への別の接続がすでにその名前を持っています。別の名前を選択してください。"
 
@@ -4163,6 +4351,9 @@ msgstr "任意のアイテムグループ"
 
 msgid "Any item type"
 msgstr "任意の品目タイプ"
+
+msgid "Any promised date saves without a warning."
+msgstr "約束日はすべて警告なしで保存されます。"
 
 msgid "Anything not explicitly listed in scope above"
 msgstr "上記の範囲に明示的にリストされていないもの"
@@ -4219,7 +4410,7 @@ msgid "Applied"
 msgstr "適用"
 
 msgid "Applied {applied} planning actions"
-msgstr "{applied} 計画アクションを適用しました"
+msgstr "計画アクション{applied}件を適用しました"
 
 msgid "Applied 1 planning action"
 msgstr "1 計画処理を適用"
@@ -4256,6 +4447,9 @@ msgstr "すべての作業区に適用"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "独自のルールを持たない特性に適用され、この計画が検査を実施する場合はロットに適用されます。"
+
+msgid "Applies to invoices drafted from now on"
+msgstr ""
 
 msgid "Applies to Projects"
 msgstr "プロジェクトに適用"
@@ -4372,10 +4566,10 @@ msgid "Approve all"
 msgstr "すべて承認"
 
 msgid "Approve and delete"
-msgstr ""
+msgstr "承認して削除"
 
 msgid "Approve and Delete"
-msgstr ""
+msgstr "承認して削除"
 
 msgid "Approve Request"
 msgstr "リクエスト承認"
@@ -4393,19 +4587,19 @@ msgid "Approved On"
 msgstr "承認日"
 
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
-msgstr ""
+msgstr "承認すると、入荷 {receipts} も取り消されます。入荷によって受け入れた在庫は削除され、その転記も取り消されます。その後にその在庫が使用されていた場合、承認は拒否されます。"
 
 msgid "Approving deletes {readableId} now. This cannot be undone."
-msgstr ""
+msgstr "承認すると {readableId} は直ちに削除されます。この操作は元に戻せません。"
 
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
-msgstr ""
+msgstr "承認すると、発注書とそのすべての明細が直ちに削除されます。この操作は元に戻せません。"
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
-msgstr ""
+msgstr "承認すると {receipts} が取り消され、その後、発注書とそのすべての明細が削除されます。この操作は元に戻せません。"
 
 msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
-msgstr ""
+msgstr "承認すると {readableId} が取消され、その転記も取り消された上で削除されます。この操作は元に戻せません。"
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "概算 — スケジュール日付から派生; このエントリに対する容量予約は存在しません。"
@@ -4451,6 +4645,9 @@ msgstr "教育訓練をアーカイブ"
 
 msgid "Archived"
 msgstr "アーカイブ済み"
+
+msgid "Archived in the provider. Re-map it."
+msgstr "連携先でアーカイブ済みです。再マッピングしてください。"
 
 msgid "Archived Logs"
 msgstr "アーカイブ済ログ"
@@ -4780,6 +4977,13 @@ msgstr "仕入先段階「{0}」を削除してもよろしいですか？この
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "仕入先タイプ: {0} を削除してもよろしいですか?これは元に戻せません。"
 
+#. placeholder {0}: taxAuthority.name
+msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
+msgstr "税当局「{0}」を削除してもよろしいですか？これは取り消すことができません。"
+
+msgid "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+msgstr "税登録「{name}」を削除してもよろしいですか？これは取り消すことができません。"
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "本当に計測単位「{0}」を削除してもよろしいですか？この操作は取り消せません。"
@@ -5071,6 +5275,9 @@ msgstr "資産勘定"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "仕入先に対する前払い金の資産勘定（商品またはサービスが受け取られる前に行われた支払い）"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr "仕入時に支払った税の回収可能部分の資産勘定"
+
 msgid "Asset Acquisition Cost"
 msgstr "資産取得原価"
 
@@ -5140,6 +5347,9 @@ msgstr "読み込まれた工程に割り当てられていない機械加工時
 msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、在庫管理、かんばん、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
+msgid "Assign Tax Code"
+msgstr "税コードを割り当て"
+
 msgid "Assign To"
 msgstr "割り当て先"
 
@@ -5153,7 +5363,7 @@ msgid "Assigned"
 msgstr "割り当て済み"
 
 msgid "Assigned {changed} planning actions"
-msgstr "{changed} 計画アクションを割り当てました"
+msgstr "計画アクション{changed}件を割当済としました"
 
 msgid "Assigned 1 planning action"
 msgstr "1 計画処理を割当済"
@@ -5301,6 +5511,9 @@ msgstr "認証器アプリ"
 
 msgid "Authenticator QR code"
 msgstr "認証器QRコード"
+
+msgid "Authority"
+msgstr "当局"
 
 msgid "Authorization was refused. Try connecting again."
 msgstr "認可が拒否されました。もう一度接続してみてください。"
@@ -5545,6 +5758,9 @@ msgstr "銀行コード"
 msgid "Bank Name"
 msgstr "銀行名"
 
+msgid "Bank, Cash or Card Account"
+msgstr "銀行、現金またはカード口座"
+
 msgid "Banner content (optional)"
 msgstr "バナーの内容（任意）"
 
@@ -5599,6 +5815,9 @@ msgstr "バッチは利用可能ではありません"
 msgid "Batch items require a sales order"
 msgstr "バッチ品目は受注が必要です"
 
+msgid "Batch Label"
+msgstr "バッチラベル"
+
 msgid "Batch number"
 msgstr "バッチ番号"
 
@@ -5618,6 +5837,12 @@ msgstr "{itemReadableId} のバッチ番号"
 
 msgid "Batch number is required"
 msgstr "バッチ番号は必須です"
+
+msgid "Batch numbers are entered by hand"
+msgstr "バッチ番号は手入力します"
+
+msgid "Batch numbers are generated"
+msgstr "バッチ番号は自動採番されます"
 
 msgid "Batch or Serial Number"
 msgstr "バッチまたはシリアル番号"
@@ -5689,7 +5914,7 @@ msgid "Beginning"
 msgstr "開始"
 
 msgid "Being approved now…"
-msgstr ""
+msgstr "承認処理中…"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -5890,6 +6115,12 @@ msgstr "このエレメントおよびその下のエレメントに課金され
 
 msgid "Bills until it is cancelled"
 msgstr "キャンセルされるまで請求します。"
+
+msgid "BinderyPress template ID"
+msgstr "BinderyPress テンプレートID"
+
+msgid "BinderyPress templates by label type and media size. A printer uses the template for its media size; labels without one print with the built-in layout."
+msgstr "ラベル種別と用紙サイズごとの BinderyPress テンプレートです。プリンターは、その用紙サイズに対応するテンプレートを使用します。テンプレートがないラベルは、内蔵レイアウトで印刷されます。"
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "空白 = スキルの再認定期間から計算"
@@ -6121,6 +6352,9 @@ msgstr "ロールベースの教育訓練教材を構築"
 msgid "Build tailored, role-based training materials"
 msgstr "カスタマイズされたロールベースの教育訓練教材を構築"
 
+msgid "Buildable Quantity"
+msgstr "製造可能数量"
+
 msgid "Builds"
 msgstr "製造"
 
@@ -6288,6 +6522,12 @@ msgstr "最良ケースを計算中…"
 msgid "Calculation Method"
 msgstr "計算方法"
 
+msgid "Calculation type"
+msgstr "計算方式"
+
+msgid "Calculation Type"
+msgstr "計算方法"
+
 msgid "Calendar"
 msgstr "カレンダー"
 
@@ -6335,6 +6575,9 @@ msgstr ""
 
 msgid "can delete"
 msgstr ""
+
+msgid "Can Start More"
+msgstr "追加で着手可能"
 
 msgid "can update"
 msgstr ""
@@ -6413,7 +6656,7 @@ msgid "Cancel purchase order {target}"
 msgstr "発注書{target}をキャンセル"
 
 msgid "Cancel Request"
-msgstr ""
+msgstr "リクエストをキャンセル"
 
 msgid "Cancel Return"
 msgstr "返品をキャンセル"
@@ -6559,6 +6802,15 @@ msgstr "Carbonのみ"
 msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
 msgstr "Carbonはこのアカウントをその決済待ちアイテムから開きます。ここの金額はマイグレーション清算時にのみ比較されます。"
 
+msgid "Carbon part number only"
+msgstr "Carbonの部品番号のみ"
+
+msgid "Carbon part number, then customer part number"
+msgstr "Carbonの部品番号、次に得意先の部品番号"
+
+msgid "Carbon part number, then supplier part number"
+msgstr "Carbonの部品番号、次に仕入先の部品番号"
+
 msgid "Carbon Posted"
 msgstr "カーボン転記済み"
 
@@ -6701,6 +6953,9 @@ msgstr "チャンピオン"
 msgid "Change"
 msgstr "変更"
 
+msgid "Change Account"
+msgstr "勘定科目を変更"
+
 msgid "Change cancelled"
 msgstr "変更がキャンセルされました"
 
@@ -6709,6 +6964,9 @@ msgstr "変更日"
 
 msgid "Change Document"
 msgstr "変更文書"
+
+msgid "Change GL Account"
+msgstr "勘定科目を変更"
 
 msgid "Change Inspection Plan"
 msgstr "検査計画を変更"
@@ -6810,6 +7068,9 @@ msgstr "変更ログニュースレター"
 msgid "Changes"
 msgstr "変更"
 
+msgid "Changing the base currency converts no amounts"
+msgstr ""
+
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "コンポーネントを変更するとグループが再定義されます。モーション計画を再実行してステップに変更を適用してください。"
 
@@ -6888,6 +7149,9 @@ msgstr "各レンタル請求書明細に請求されます。"
 msgid "Charges"
 msgstr "カード請求"
 
+msgid "Charges invoice"
+msgstr ""
+
 msgid "Charging"
 msgstr "チャージ中"
 
@@ -6926,11 +7190,23 @@ msgstr "勘定科目表"
 msgid "Chat"
 msgstr "チャット"
 
+msgid "Check"
+msgstr "チェック"
+
 msgid "Check a module to override the type on all its pages, or expand it to override one page."
 msgstr ""
 
+msgid "Check before posting"
+msgstr "転記前に確認"
+
 msgid "Check operations on the left to build the batch."
 msgstr "左側の工程をチェックしてバッチを構築してください。"
+
+msgid "Check Quantity"
+msgstr "数量を確認"
+
+msgid "Check the details below. A posted invoice can't be edited."
+msgstr "下記の内容をご確認ください。転記済の請求書は編集できません。"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "期末時点で保有数量がマイナスの品目がないか品目台帳を確認してください — 通常、納品漏れまたは順序外の転記により、在庫価値および売上原価が歪む可能性があります。確認済みの場合はマーク完了し、スキップする場合は理由を記入してください。"
@@ -6950,6 +7226,15 @@ msgstr "この得意先の Stripe を確認中…"
 msgid "Checking the batch's jobs..."
 msgstr "バッチの製造指図を確認しています..."
 
+msgid "Checking the delivery date"
+msgstr "納期を確認しています"
+
+msgid "Checking the delivery date…"
+msgstr "納期を確認中…"
+
+msgid "Checking the shop's schedule…"
+msgstr "工場のスケジュールを確認しています…"
+
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe顧客リンクを確認中…"
 
@@ -6958,6 +7243,12 @@ msgstr "チェックポイント ·"
 
 msgid "Checkpoints"
 msgstr "チェックポイント"
+
+msgid "Checks free stock week by week, then the lead time."
+msgstr "空き在庫を週ごとに確認し、次にリードタイムを確認します。"
+
+msgid "Checks free stock, then the shop's schedule for made items."
+msgstr "空き在庫を確認し、製造品目は工場のスケジュールも確認します。"
 
 msgid "Children"
 msgstr "子要素"
@@ -7088,6 +7379,12 @@ msgstr "移動先を選択"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "品目、見積、製造指図上の部品表エクスプローラーが各明細を説明またはアイテムIDのどちらでラベル付けするかを選択します。"
+
+msgid "Choose which part numbers new purchase order lines print. A supplier can override this choice, and each line can change it."
+msgstr "新規の発注書明細に印刷する部品番号を選択します。仕入先ごとにこの設定を上書きでき、各明細でも変更できます。"
+
+msgid "Choose which part numbers new quote, order, invoice and packing slip lines print. A customer can override this choice."
+msgstr "新規の見積、受注、請求書、納品書の明細に印刷する部品番号を選択します。得意先ごとにこの設定を上書きできます。"
 
 msgid "Choose your style"
 msgstr "あなたのスタイルを選択"
@@ -7266,6 +7563,9 @@ msgstr "閉鎖ステータス"
 
 msgid "Closed"
 msgstr "クローズ"
+
+msgid "Closed {periodLabel}"
+msgstr "{periodLabel} クローズ済"
 
 msgid "Closed at"
 msgstr "完了時刻"
@@ -7541,6 +7841,9 @@ msgstr "比較対象を選択"
 msgid "Compares a submitted week with the employee's timecards."
 msgstr "提出された週を従業員のタイムカードと比較します。"
 
+msgid "Compares the date with the item's lead time, BOM included."
+msgstr "日付を品目のリードタイム（部品表を含む）と比較します。"
+
 msgid "Compatibility rules"
 msgstr "互換性ルール"
 
@@ -7603,7 +7906,7 @@ msgid "Completing"
 msgstr "完了中"
 
 msgid "Completing a job's first operation prints its unit labels."
-msgstr ""
+msgstr "製造指図の最初の工程を完了すると、その個品ラベルが印刷されます。"
 
 msgid "Completing this training grants or renews the selected ability."
 msgstr "この教育訓練を完了すると、選択されたスキルが付与または更新されます。"
@@ -7626,6 +7929,9 @@ msgstr "完了時間"
 msgid "Completion time by job"
 msgstr "製造指図ごとの完了時間"
 
+msgid "Component"
+msgstr "構成部品"
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "コンポーネント詳細: {0}"
@@ -7644,6 +7950,12 @@ msgstr "コンポーネント"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "このステップの再生中にのみ非表示になるコンポーネント（治具など）。コンポーネントタブの目のアイコンを使用して非表示にします。"
+
+msgid "Compound"
+msgstr "複合"
+
+msgid "Compound tax"
+msgstr "複合税"
 
 msgid "Compute Burden"
 msgstr "負担の計算"
@@ -8107,7 +8419,7 @@ msgid "Control how operators pick material and track time on the shop floor."
 msgstr "作業者が製造現場で材料をピッキングし時間を追跡する方法を制御します。"
 
 msgid "Control how parts and labels move from the pick to the finished unit."
-msgstr ""
+msgstr "部品とラベルが、ピッキングから完成品になるまでどのように移動するかを管理します。"
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 msgstr "アイテムID（部品、材料、消耗品、工具、およびサービス）に小文字を含めることができるかどうかを制御します。"
@@ -8677,6 +8989,12 @@ msgstr "{0}をリリースできませんでした: {1}"
 msgid "Could not save"
 msgstr "保存できませんでした"
 
+msgid "Couldn't calculate the buildable quantity"
+msgstr "製造可能数量を計算できませんでした"
+
+msgid "Couldn't check the delivery date. You can still save."
+msgstr "納期を確認できませんでしたが、保存はできます。"
+
 msgid "Couldn't check whether {appName} is connected."
 msgstr "{appName} が接続されているか確認できませんでした。"
 
@@ -8712,6 +9030,9 @@ msgstr "部品ファイルを読み込めなかったため、送信されるフ
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "プロバイダーのディメンションターゲットを読み込めませんでした。接続を確認して再度読み込んでください。"
+
+msgid "Couldn't load the provider's tax rates — check the connection and reload."
+msgstr "プロバイダーの税率を読み込めませんでした。接続を確認してリロードしてください。"
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "ジョブを再スケジュールできませんでした。もう一度お試しください。"
@@ -8766,6 +9087,9 @@ msgstr "集計中…"
 
 msgid "Country"
 msgstr "国"
+
+msgid "Country and state (tax code)"
+msgstr "国と州（税コード）"
 
 msgid "Country code"
 msgstr "国コード"
@@ -8911,7 +9235,7 @@ msgid "Create Operator"
 msgstr "作業者を作成"
 
 msgid "Create picking lists on release"
-msgstr ""
+msgstr "リリース時にピッキングリストを作成"
 
 msgid "Create PO Line"
 msgstr "発注書明細を作成"
@@ -9112,6 +9436,12 @@ msgstr "仕入先段階を作成しました"
 msgid "Created supplier: {0}"
 msgstr "仕入先を作成しました: {0}"
 
+msgid "Created tax authority"
+msgstr "税当局を作成しました"
+
+msgid "Created tax registration"
+msgstr "税登録を作成しました"
+
 msgid "Created tool"
 msgstr "ツールを作成しました"
 
@@ -9270,6 +9600,9 @@ msgstr "現在"
 msgid "Current"
 msgstr "現在"
 
+msgid "Current account: {account}"
+msgstr "現在の勘定科目: {account}"
+
 msgid "Current Net Book Value:"
 msgstr "現在の未償却残高:"
 
@@ -9284,6 +9617,10 @@ msgstr "現在の予測"
 
 msgid "Current quantity"
 msgstr "現在の数量"
+
+#. placeholder {0}: formatter.format(total)
+msgid "Current total: {0}"
+msgstr "現在の合計: {0}"
 
 msgid "Custom"
 msgstr "カスタム"
@@ -9400,7 +9737,7 @@ msgid "Customer contact email required"
 msgstr "得意先担当者のメールアドレスを必須にしました"
 
 msgid "Customer contact requirement disabled"
-msgstr "得意先担当者要求事項が無効化されました"
+msgstr "得意先担当者要件が無効にされました"
 
 msgid "Customer contact requirement enabled"
 msgstr "得意先担当者要件を有効化"
@@ -9479,6 +9816,12 @@ msgstr "得意先品番"
 
 msgid "Customer Part Number"
 msgstr "得意先品番"
+
+msgid "Customer part number only"
+msgstr "得意先の部品番号のみ"
+
+msgid "Customer part number, then Carbon part number"
+msgstr "得意先の部品番号、次にCarbonの部品番号"
 
 msgid "Customer Part Revision"
 msgstr "得意先品番リビジョン"
@@ -9569,6 +9912,9 @@ msgstr "得意先"
 
 msgid "Customers"
 msgstr "得意先"
+
+msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
+msgstr ""
 
 msgid "Customizations, training, and integrations"
 msgstr "カスタマイズ、教育訓練、連携"
@@ -9684,6 +10030,15 @@ msgstr "発行日"
 msgid "Date Issued"
 msgstr "発行日"
 
+msgid "Date kept"
+msgstr "納期維持"
+
+msgid "Date not confirmed"
+msgstr "納期未確定"
+
+msgid "Date not confirmed. The earliest delivery date is {earliest}."
+msgstr "納期未確定。最短納期は {earliest} です。"
+
 msgid "Date paid"
 msgstr "支払日"
 
@@ -9744,6 +10099,9 @@ msgstr "部品を注文してから利用可能になるまでの日数。計画
 
 msgid "Days Off"
 msgstr "休日"
+
+msgid "Days Past Due"
+msgstr "延滞日数"
 
 msgid "Days Remaining"
 msgstr "残り日数"
@@ -10428,9 +10786,20 @@ msgstr "仕入先段階を削除"
 msgid "Delete Supplier Type"
 msgstr "仕入先タイプを削除"
 
+msgid "Delete Tax Authority"
+msgstr "税当局を削除"
+
+msgid "Delete Tax Registration"
+msgstr "税登録を削除"
+
 #. placeholder {0}: formatDate(deleting.invoiceDate)
 msgid "Delete the {0} invoice"
 msgstr "{0}の請求書を削除"
+
+#. placeholder {0}: labelTypeNames[deleting.labelType]
+#. placeholder {1}: getMediaSizeLabel(deleting.mediaSizeId)
+msgid "Delete the {0} template for {1}? These labels will print with the built-in layout."
+msgstr "{1} 用の {0} テンプレートを削除しますか？ これらのラベルは内蔵レイアウトで印刷されます。"
 
 #. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
@@ -10547,6 +10916,12 @@ msgstr "配送先の国"
 
 msgid "Delivery Date"
 msgstr "納期"
+
+msgid "Delivery Date Check"
+msgstr "納期チェック"
+
+msgid "Delivery date check updated"
+msgstr "納期チェックを更新しました"
 
 msgid "Delivery Location"
 msgstr "配送先"
@@ -10840,6 +11215,9 @@ msgstr "無効にする"
 msgid "Disabled"
 msgstr "無効"
 
+msgid "Disbursement"
+msgstr "出金"
+
 msgid "Discard"
 msgstr "破棄"
 
@@ -10919,7 +11297,7 @@ msgid "Dismissed"
 msgstr "却下済"
 
 msgid "Dismissed {changed} planning actions"
-msgstr "{changed}個の計画アクションを却下しました"
+msgstr "計画アクション{changed}件を却下しました"
 
 msgid "Dismissed 1 planning action"
 msgstr "1 計画処理を破棄"
@@ -11069,6 +11447,9 @@ msgstr "パス編集完了"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "日常業務が私たちなしで円滑に進むようになったら完了"
 
+msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
+msgstr ""
+
 msgid "Double-click to open this sub-assembly"
 msgstr "ダブルクリックするとこのサブアセンブリが開きます"
 
@@ -11088,6 +11469,9 @@ msgstr "{0}行をダウンロードして修正"
 msgid "Download CSV"
 msgstr "CSVをダウンロード"
 
+msgid "Download Excel"
+msgstr "Excelをダウンロード"
+
 msgid "Download Labels"
 msgstr "ラベルをダウンロード"
 
@@ -11105,6 +11489,9 @@ msgstr "カウントをファイルとしてダウンロード記入用に"
 
 msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 msgstr "テンプレートをダウンロードしてください。各行は Carbon が転記するデフォルト勘定です。勘定番号に、自社の勘定科目表でそれを取得する勘定の番号を入力してください。Carbon はデフォルト勘定を更新して一致させます。"
+
+msgid "DPI"
+msgstr ""
 
 msgid "Draft"
 msgstr "下書き"
@@ -11126,6 +11513,9 @@ msgstr "支払期日の仕入先請求書は毎日下書きで作成されます
 
 msgid "Draft Request"
 msgstr "下書きリクエスト"
+
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "終了日後に既に請求された時間のクレジットメモを下書きします。"
@@ -11432,6 +11822,15 @@ msgstr "各明細はこの会社のデータから、それが所有していな
 msgid "Each line shows its item ID and revision."
 msgstr "各明細はアイテムIDとリビジョンを表示します。"
 
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
+
+msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
+msgstr "各明細には、発行日時点で請求書の出荷先に対して品目に適用される税コードと税率が設定されます。明細で消去した税コードは上書きされます。レンタルおよび契約の明細は、既存の税コードを維持します。"
+
+msgid "Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line."
+msgstr "各明細には、受注日時点で受注の出荷先に対して品目に適用される税コードと税率が設定されます。明細で消去した税コードは上書きされます。"
+
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
 msgstr "毎月、リース実行は各資産の利息と使用権償却を転記します。"
 
@@ -11465,8 +11864,11 @@ msgstr "各期間は1ヶ月で、月額レートが適用されます。"
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
 
+msgid "Each point is one run. The dotted lines are the average of each method version across the runs made with it."
+msgstr "各点は1回の実行を表します。点線は、各製法バージョンについて、その版で行われた実行の平均です。"
+
 msgid "Each released job gets one picking list. Its parts go to the lineside storage unit of each work center that uses them."
-msgstr ""
+msgstr "リリース済の製造指図ごとに1つのピッキングリストが作成されます。部品は、それを使用する各作業区のラインサイド保管ユニットへ配送されます。"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "各レンタル契約または契約の営業担当者（またはその作成者）は、毎日その請求書のサマリーを受け取ります。"
@@ -11610,6 +12012,9 @@ msgstr "料金の編集"
 msgid "Edit column visibility"
 msgstr "列の表示/非表示を編集"
 
+msgid "Edit company"
+msgstr ""
+
 msgid "Edit Component Group"
 msgstr "コンポーネントグループを編集"
 
@@ -11727,6 +12132,9 @@ msgstr "仕訳行を編集"
 
 msgid "Edit Kanban"
 msgstr "かんばんを編集"
+
+msgid "Edit Label Template"
+msgstr "ラベルテンプレートを編集"
 
 msgid "Edit labor"
 msgstr "労務を編集"
@@ -11923,6 +12331,15 @@ msgstr "仕入先段階を編集"
 msgid "Edit Supplier Type"
 msgstr "仕入先タイプを編集"
 
+msgid "Edit Tax Authority"
+msgstr "税当局を編集"
+
+msgid "Edit Tax Code"
+msgstr "税コードを編集"
+
+msgid "Edit Tax Registration"
+msgstr "税登録を編集"
+
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "ルールを編集して、\"すべてに適用\" フラグを削除します"
 
@@ -11982,11 +12399,18 @@ msgstr "編集中 <0>{0}</0>: {1}。変更はこの変更要求に保存され�
 msgid "Effective"
 msgstr "有効"
 
+msgid "Effective (tax component)"
+msgstr "適用開始日（税コンポーネント）"
+
 msgid "Effective Date"
 msgstr "有効日"
 
 msgid "Effective From"
 msgstr "有効開始日"
+
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Effective rate today: <0>{0}</0>"
+msgstr "本日の実効レート：<0>{0}</0>"
 
 msgid "EIN (49(a)): {einText}"
 msgstr "EIN (49(a)): {einText}"
@@ -12035,7 +12459,7 @@ msgid "Email notifications not configured"
 msgstr "メール通知が設定されていません"
 
 msgid "Email order on acceptance"
-msgstr ""
+msgstr "承諾時に受注をメール送信"
 
 msgid "Email recipients"
 msgstr "メール受信者"
@@ -12050,7 +12474,7 @@ msgid "Emails of the attendees (guests)"
 msgstr "参加者（ゲスト）のメールアドレス"
 
 msgid "Emails the sales order to the customer when they accept this quote online."
-msgstr ""
+msgstr "顧客がこの見積をオンラインで承諾すると、受注を顧客にメールで送信します。"
 
 msgid "Emoji"
 msgstr "絵文字"
@@ -12166,6 +12590,9 @@ msgstr "担当者または拠点がない仕入先の発行または転記をブ
 
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "税固有の減価償却方法を資産クラスで設定するために有効にします（例：MACRS、加速）。"
+
+msgid "Enable to fill in each purchase order receipt's batch numbers instead of typing them."
+msgstr "有効にすると、発注書の入荷ごとのバッチ番号を手入力する代わりに自動で入力します。"
 
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "有効にして、原材料のIDと説明を生成します。"
@@ -12357,6 +12784,10 @@ msgstr "認証アプリから6桁のコードを入力してください"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "認証器アプリから6桁のコードを入力して再開します。"
 
+#. placeholder {0}: formatter.format(MAX_ROUNDING_MINOR_UNITS / 10 ** decimals)
+msgid "Enter the amount the supplier charged. The difference is added as a line on the Rounding Account, up to {0}. Other lines keep their prices."
+msgstr "仕入先に請求された金額を入力してください。差額は端数調整勘定の明細として追加されます（上限 {0}）。他の明細の価格はそのままです。"
+
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "プライベートOAuthアプリケーションのOnshape URL、クライアントID、クライアントシークレットを入力して保存します。"
 
@@ -12418,7 +12849,7 @@ msgid "Entry"
 msgstr "仕訳"
 
 msgid "Entry added"
-msgstr "エントリーを追加しました"
+msgstr "エントリが追加されました"
 
 msgid "Entry Date"
 msgstr "エントリー日"
@@ -12593,7 +13024,7 @@ msgid "Event code"
 msgstr "イベントコード"
 
 msgid "Event saved"
-msgstr "イベントを保存しました"
+msgstr "イベントが保存されました"
 
 msgid "Event started"
 msgstr "イベント開始"
@@ -12674,8 +13105,11 @@ msgstr "すべての明細は請求する金額を認識しています。"
 msgid "Every match"
 msgstr "すべてのマッチ"
 
+msgid "Every other tax code. Pick a different provider rate to re-map."
+msgstr "他のすべての税コード。別の連携先税率を選択して再マッピングしてください。"
+
 msgid "Every part file starts ticked; untick any you don't want to send."
-msgstr "部品ファイルはすべて初期状態でチェックが入っています。送信しないファイルはチェックを外してください。"
+msgstr "部品ファイルは最初はすべてチェックされています。送信しないものはチェックを外してください。"
 
 msgid "Every part file starts unticked; tick the ones to send."
 msgstr "部品ファイルはすべて初期状態でチェックが外れています。送信するファイルにチェックを入れてください。"
@@ -12697,6 +13131,9 @@ msgstr "このタイプのすべての保管ユニットはMRP対象外です。
 
 msgid "Every supplier contact must have an email address. A contact with no email cannot be saved or imported. Existing contacts are not changed until they are next edited."
 msgstr "すべての仕入先担当者にメールアドレスが必要です。メールアドレスのない担当者は保存もインポートもできません。既存の担当者は、次に編集されるまで変更されません。"
+
+msgid "Every tax code in use is mapped"
+msgstr "使用中のすべての税コードがマップされています"
 
 msgid "Every unit has a rate."
 msgstr "すべての個にレートが設定されています。"
@@ -12785,8 +13222,14 @@ msgstr "経営幹部向けP&L"
 msgid "Exempt"
 msgstr "免除"
 
+msgid "Exempt customers, non-taxable items, untaxed shipping"
+msgstr "非課税の得意先、非課税の品目、非課税の配送料"
+
 msgid "Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted."
 msgstr "個人の製造指図タブで設定されている適格外または適格。DCAA モードでは、従業員が提出時に認証する認証テキストを選択し、適格外従業員の長時間週は希釈されます。"
+
+msgid "Exempt Sales"
+msgstr "免税売上"
 
 msgid "Exemption Certificate"
 msgstr "免除証明書"
@@ -12941,6 +13384,9 @@ msgstr "期限切れバッチ"
 
 msgid "Expires"
 msgstr "有効期限"
+
+msgid "Expires (tax component)"
+msgstr "失効日（税コンポーネント）"
 
 #. placeholder {0}: formatDate(batch.expirationDate)
 #. placeholder {0}: formatDate(expiresAt)
@@ -13205,6 +13651,14 @@ msgstr "仕入先段階の作成に失敗しました: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "仕入先を作成できませんでした: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax authority: {0}"
+msgstr "税当局の作成に失敗しました：{0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax registration: {0}"
+msgstr "税登録の作成に失敗しました：{0}"
 
 msgid "Failed to create the element"
 msgstr "要素の作成に失敗しました"
@@ -13714,6 +14168,9 @@ msgstr "完成先"
 msgid "Finish with material unpicked?"
 msgstr "ピッキングされていない材料のまま完了しますか？"
 
+msgid "Finished"
+msgstr "完了"
+
 msgid "Finished goods"
 msgstr "完成品"
 
@@ -13831,6 +14288,9 @@ msgstr "固定資産"
 msgid "Fixed Assets"
 msgstr "固定資産"
 
+msgid "Fixed assets exist"
+msgstr ""
+
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "バッチサイズが標準と異なる場合の固定原価配賦差異"
 
@@ -13919,22 +14379,22 @@ msgid "For Form 6765 Section E"
 msgstr "フォーム6765セクションE用"
 
 msgid "Force delete"
-msgstr ""
+msgstr "強制削除"
 
 msgid "Force Delete"
-msgstr ""
+msgstr "強制削除"
 
 msgid "Force Delete (Admin)"
-msgstr ""
+msgstr "強制削除（管理者）"
 
 msgid "Force delete {purchaseOrderReadableId}"
-msgstr ""
+msgstr "{purchaseOrderReadableId} を強制削除"
 
 msgid "Force delete {readableId}"
-msgstr ""
+msgstr "{readableId} を強制削除"
 
 msgid "Force delete waiting for another Admin's approval"
-msgstr ""
+msgstr "強制削除は別の管理者の承認を待っています"
 
 msgid "Forecast"
 msgstr "予測"
@@ -13986,10 +14446,13 @@ msgid "Foundation (everyone)"
 msgstr "基礎（全員）"
 
 msgid "Four-eyes enforcement disabled"
-msgstr "フォーアイズチェックが無効化されました"
+msgstr "牽制機能が無効にされました"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "四眼チェック制御を有効化"
+
+msgid "Free stock by {promised} is only {free}."
+msgstr "{promised} までの空き在庫は {free} のみです。"
 
 msgid "Freeze the old system, no new transactions"
 msgstr "古いシステムをフリーズし、新しいトランザクションを禁止"
@@ -14068,6 +14531,13 @@ msgstr "開始期間"
 msgid "From previous week"
 msgstr "前の週から"
 
+msgid "From stock no job or order has claimed"
+msgstr "どの製造指図・受注にも引き当てられていない在庫から"
+
+#. placeholder {0}: formatQuantity(data.quantityBuildableFromOnHand)
+msgid "From stock no job or order has claimed. {0} if committed stock were used"
+msgstr "どの製造指図・受注にも引き当てられていない在庫から。引当済在庫も使用できる場合は{0}"
+
 msgid "From Storage Unit"
 msgstr "保管ユニットから"
 
@@ -14094,6 +14564,9 @@ msgstr "氏名"
 
 msgid "Full setup and migrations"
 msgstr "完全なセットアップとマイグレーション"
+
+msgid "Full Year"
+msgstr "4桁の年"
 
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
@@ -14247,6 +14720,9 @@ msgstr "新しい 4 桁の PIN を生成します。作業者の現在の PIN �
 msgid "Generate and send customer invoices"
 msgstr "得意先請求書を生成して送信する"
 
+msgid "Generate Batch Numbers from the Purchase Order"
+msgstr "発注書からバッチ番号を生成"
+
 msgid "Generate Billable Items"
 msgstr "請求可能品目を生成"
 
@@ -14367,9 +14843,6 @@ msgstr "銀行のサービス料および同様の手数料用の勘定科目"
 msgid "GL account for interest income or expense."
 msgstr "利息収入または利息費用の勘定科目。"
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "仕入先に支払った購入税のGLアカウント（または回収可能）。"
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "買い手が自己評価する逆請求ルールに基づいて発生した税の勘定科目。"
 
@@ -14412,6 +14885,12 @@ msgstr "得意先に付与された早期支払割引が記録される勘定科
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "仕入先から受け取った早期支払割引が記録される勘定科目。"
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr "仕入先に支払った税の回収可能部分が借方に記入される総勘定元帳資産勘定。"
+
+msgid "GL Codes"
+msgstr "GLコード"
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "毎期減価償却が転記されるときにクレジットされ、固定資産が売却または除却されるときに全額がデビットされる対資産勘定科目。"
 
@@ -14433,8 +14912,8 @@ msgstr "固定資産の簿価が減損によって削減されるとき、つま
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "非在庫品購入（物資、外注サービス）のGL費用勘定。"
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "得意先から徴収した売上税がクレジットされるGL負債勘定。"
+msgid "GL liability account credited with tax collected from customers."
+msgstr "得意先から徴収した税が貸方に記入される総勘定元帳負債勘定。"
 
 msgid "GL tie-out"
 msgstr "GL試算表"
@@ -14575,6 +15054,9 @@ msgstr "緑"
 msgid "Grid layout"
 msgstr "グリッドレイアウト"
 
+msgid "Gross"
+msgstr "総額"
+
 msgid "Gross Profit"
 msgstr "総利益"
 
@@ -14713,6 +15195,9 @@ msgstr "図面を非表示"
 msgid "Hide lines"
 msgstr "明細を非表示"
 
+msgid "Hide menu"
+msgstr ""
+
 msgid "Hide monthly revenue"
 msgstr "計算を非表示"
 
@@ -14760,6 +15245,9 @@ msgstr "修正が必要な警告として仕訳を保留"
 
 msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr "ホールド、リリース、償却、または品目を再価格設定 <0>プロジェクト → 承認</0>の請求タブで。"
+
+msgid "Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside."
+msgstr "組立済みキットを保管します。デフォルトの保管ユニットがキットラックの品目は、ライン供給のキットになります。キットラックはラインサイドに置くことはできません。"
 
 msgid "Holiday"
 msgstr "祝日"
@@ -14847,6 +15335,9 @@ msgstr "時間/1000個"
 msgid "Hours/Piece"
 msgstr "時間/個"
 
+msgid "How {week} counts weeks in document, serial and batch numbers."
+msgstr "{week} が文書番号、シリアル番号、バッチ番号で週をどのように数えるかを示します。"
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "バッチ処理可能な工法がグループ化されたworkをどのように実行するかを示します：シーケンシャルは部品を1つの機械（のこぎりやレーザーテーブル）で次々と実行し、シミュルタネアスは1回の負荷でそれらを一緒に実行します（炉、オーブン、またはメッキ槽）。"
 
@@ -14861,6 +15352,12 @@ msgstr "契約または修正が継続売上高レポート用にどのように
 
 msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
 msgstr "レンタル契約がその開始日から請求期間をどのように区切るかについて：毎月は開始日からの1か月を期間とします（例：開始日が7日の場合は毎月7日から翌月6日まで）。カレンダー月（毎月をカレンダー期間に合わせたもの）はカレンダー月ごとに期間を区切ります。28日は連続した28日間の期間に区切ります。各期間は、独自の頻度で、全体の日、週、または月に対して1つのレートを請求します。一部期間での月額レートは日数で按分されます。"
+
+msgid "How a tax code charges tax: Normal adds it to the line; Reverse Charge charges none, and on a purchase Carbon self-assesses the tax and credits the Reverse Charge Sales Tax account."
+msgstr "税コードの課税方法。通常は明細に税を加算します。リバースチャージは税を課さず、仕入時にはCarbonが税額を自己申告し、リバースチャージ売上税勘定を貸方に計上します。"
+
+msgid "How a tax code's lines are classed on a tax return: Standard, Reduced, Zero-Rated, Exempt, Reverse Charge, Export or Out of Scope."
+msgstr "税コードの明細が税務申告でどの区分に分類されるか：標準税率、軽減税率、ゼロ税率、非課税、リバースチャージ、輸出、対象外。"
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "品目全体がどのように補充されるか(購入、内製、または購入・内製)。品目ごとに設定され、行ごとの供給方式とは異なります"
@@ -14883,8 +15380,8 @@ msgstr "このブラウザにおけるCarbonの表示方法。"
 msgid "How coverage is worked out"
 msgstr "カバレッジの計算方法"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "各明細が売上高を得る方法：日ごとに分散するか、毎月均等に、運用開始日またはその開始日から。"
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "各個のレンタル料がどのように期間に分割され、期間内のいつ請求されるかを説明します。"
@@ -15017,6 +15514,9 @@ msgstr "私たちの働き方"
 
 msgid "How We Work Together"
 msgstr "私たちの働き方"
+
+msgid "How weeks are numbered"
+msgstr "週の番号付けの方法"
 
 msgid "How will you use {integrationName}?"
 msgstr "{integrationName}をどのように使用しますか？"
@@ -15348,7 +15848,7 @@ msgid "Inactive categories cannot be picked for new time"
 msgstr "無効なカテゴリは新しい時間に対してピックできません"
 
 msgid "Inactive units are not offered when choosing a unit"
-msgstr ""
+msgstr "単位を選択する際、無効な単位は表示されません"
 
 msgid "Inbound inspection"
 msgstr "受入検査"
@@ -15380,6 +15880,9 @@ msgstr "現品票に材料を含める"
 
 msgid "Include operations on the traveler"
 msgstr "現品票に工程を含める"
+
+msgid "Include outliers"
+msgstr "外れ値を含める"
 
 msgid "Included"
 msgstr "含まれています"
@@ -15879,6 +16382,12 @@ msgstr "請求書ID"
 msgid "Invoice Location"
 msgstr "請求書の場所"
 
+msgid "Invoice message"
+msgstr "請求書メッセージ"
+
+msgid "Invoice Message"
+msgstr "請求書メッセージ"
+
 msgid "Invoice notification settings updated"
 msgstr "請求書通知設定を更新"
 
@@ -15951,6 +16460,9 @@ msgstr "請求書"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "会計を有効化すると、請求書と買掛金請求書が同期されます"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "請求書は毎日自動的に期日の来たものが作成されます。これを使用して期日の来たものをすぐに請求します — たとえば手数料を追加した後など。その後、請求書はこの契約の請求設定に従います。"
 
@@ -15974,6 +16486,15 @@ msgstr "請求書は下書き、転記、メール送信が自動的に行われ
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "請求書は下書き、転記、Stripeを通じて送信が自動的に行われます。"
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "請求書は、請求顧客にすでにリンクされているStripeの得意先に送信されます。"
@@ -16031,6 +16552,9 @@ msgstr "仕入先組織グループです"
 
 msgid "Is supplier type group"
 msgstr "仕入先タイプグループです"
+
+msgid "ISO 8601"
+msgstr "ISO 8601"
 
 msgid "Issue"
 msgstr "問題"
@@ -16147,7 +16671,7 @@ msgid "It decides what the next step asks for."
 msgstr "次のステップの要件を決定します。"
 
 msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
-msgstr ""
+msgstr "現在のステータスは {status} です。承認すると、まず取消され、その転記が取り消されます。取消が拒否された場合は、代わりに仕訳によって転記が取り消されます。"
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "承認済ですが適用できません。再オープンしてこれらの行を確認してから、もう一度提出してください。"
@@ -16159,13 +16683,13 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "「{table}」レコードで引き続き使用されています。先にそれを除去。"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr ""
+msgstr "仕入先側の帳簿には一切影響しません。先に、この注文の出荷と前払金を取消し、仕入先請求書からその明細を除去してください。それまで依頼は拒否されます。"
 
 msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
-msgstr ""
+msgstr "ステータスにかかわらず、{readableId} を完全に削除します。元に戻すことはできません。"
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
-msgstr ""
+msgstr "ステータスや承認状況にかかわらず、この発注書とそのすべての明細を完全に削除します。元に戻すことはできません。"
 
 msgid "It shows with no hours until you add some."
 msgstr "時間が追加されるまで表示されません"
@@ -16306,7 +16830,7 @@ msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "その売上高は各明細が計上待ちしている金額に戻ります。"
 
 msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
-msgstr ""
+msgstr "その後に使用されていた場合でも、在庫は取り出されます（手持数量がマイナスになる場合があります）。また、入荷した分は発注に戻されます。"
 
 msgid "Job"
 msgstr "ジョブ"
@@ -16399,11 +16923,17 @@ msgstr "{orderId}の製造指図"
 msgid "Jobs for {orderId}: {jobCount}, {jobsStatusLabel}"
 msgstr "{orderId}の製造指図: {jobCount}件, {jobsStatusLabel}"
 
+msgid "Jobs in Production"
+msgstr "生産中の製造指図"
+
 msgid "Jobs Required"
 msgstr "必要な製造指図"
 
 msgid "Jobs that have this item on their bill of materials"
 msgstr "この品目が部品表に含まれる製造指図"
+
+msgid "Jobs Waiting"
+msgstr "待機中の製造指図"
 
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
@@ -16444,6 +16974,9 @@ msgstr "1つだけ"
 
 msgid "Kanban"
 msgstr "かんばん"
+
+msgid "Kanban Card"
+msgstr "かんばんカード"
 
 msgid "Kanban for {kanbanName}"
 msgstr "{kanbanName}のかんばん"
@@ -16517,6 +17050,9 @@ msgstr "{total} 件中 {kept} 件を保持しました。{unresolved} 件は確�
 msgid "Kept {kept} of {total}."
 msgstr "{total} 件中 {kept} 件を保持しました。"
 
+msgid "Kept as entered and read in {toCode}:"
+msgstr ""
+
 msgid "Key"
 msgstr "キー"
 
@@ -16528,6 +17064,9 @@ msgstr "レコード種別"
 
 msgid "Kit"
 msgstr "キット"
+
+msgid "Kit rack"
+msgstr "キットラック"
 
 msgid "label"
 msgstr "ラベル"
@@ -16545,6 +17084,15 @@ msgstr "ラベルサイズ"
 msgid "Label Size"
 msgstr "ラベルサイズ"
 
+msgid "Label template created"
+msgstr "ラベルテンプレートを作成しました"
+
+msgid "Label template updated"
+msgstr "ラベルテンプレートを更新しました"
+
+msgid "Label Templates"
+msgstr "ラベルテンプレート"
+
 msgid "Label to complete the current operation for this kanban"
 msgstr "このかんばんの現在の工程を完了するためのラベル"
 
@@ -16555,11 +17103,14 @@ msgstr "このかんばんの{0}を作成するためのラベル"
 msgid "Label to start the next operation for this kanban"
 msgstr "このかんばんの次の工程を開始するためのラベル"
 
+msgid "Label Type"
+msgstr "ラベル種別"
+
 msgid "Labels"
 msgstr "ラベル"
 
 msgid "Labels print at the first operation"
-msgstr ""
+msgstr "ラベルは最初の工程で印刷されます"
 
 msgid "Labor"
 msgstr "労務"
@@ -16630,6 +17181,9 @@ msgstr "労務時間"
 
 msgid "Labor Time"
 msgstr "労務時間"
+
+msgid "Labor time per unit"
+msgstr "単位あたりの労務時間"
 
 msgid "Labor transfer"
 msgstr "労務転送"
@@ -16789,7 +17343,7 @@ msgid "Lead time updates are enabled"
 msgstr "リードタイム更新は有効です"
 
 msgid "Lead time updates on receipt disabled"
-msgstr "入荷時のリードタイム更新が無効化されました"
+msgstr "入荷時のリードタイム更新が無効にされました"
 
 msgid "Lead time updates on receipt enabled"
 msgstr "リードタイム（受領時）更新が有効化されました"
@@ -16882,9 +17436,6 @@ msgstr "コメントを残す..."
 msgid "Leave any related receipts untouched"
 msgstr "関連するすべての領収書はそのままにしておく"
 
-msgid "Leave blank for built-in"
-msgstr "組み込みの場合は空白のままにしてください"
-
 msgid "Leave blank to use the next revision automatically"
 msgstr "空白のままにして、次のリビジョンを自動的に使用します"
 
@@ -16899,6 +17450,9 @@ msgstr "空欄のままにすると、名前から色が選ばれます"
 
 msgid "Leave empty to use the account default"
 msgstr "空白のままにしてアカウントデフォルトを使用します"
+
+msgid "Leave empty to use the check in Settings → Sales."
+msgstr "空欄のままにすると、設定 → 販売のチェックが使用されます。"
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "空のままにするか、0を入力して、MRPが計画するすべてを表示します。"
@@ -16997,11 +17551,8 @@ msgstr "従業員への費用払戻に対する負債勘定です。未設定の
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "加速度的な減価償却による繰延税金の負債勘定"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "得意先から徴収した売上税の負債勘定"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "購入に支払う税金の負債勘定"
+msgid "Liability account for tax collected from customers"
+msgstr "得意先から徴収した税の負債勘定"
 
 msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 msgstr "プロジェクト契約がその価格以上のコストが予測されるときに負債が貸記される。認識実行によって調整される"
@@ -17044,6 +17595,9 @@ msgstr "ライツアウト（24/7）"
 
 msgid "Likelihood"
 msgstr "発生可能性"
+
+msgid "Limits To"
+msgstr "上限"
 
 msgid "Line"
 msgstr "行"
@@ -17101,6 +17655,12 @@ msgstr "明細 {position}"
 msgid "Line Add-On"
 msgstr "行アドオン"
 
+msgid "Line Customer Part ID"
+msgstr "明細の得意先品番"
+
+msgid "Line Customer Part Revision"
+msgstr "明細の得意先リビジョン"
+
 msgid "Line description"
 msgstr "明細の説明"
 
@@ -17117,7 +17677,7 @@ msgid "Line Details"
 msgstr "明細詳細"
 
 msgid "Line Flow"
-msgstr ""
+msgstr "ラインフロー"
 
 msgid "Line Item"
 msgstr "行アイテム"
@@ -17149,8 +17709,11 @@ msgstr "行の配送"
 msgid "Line Status"
 msgstr "ラインステータス"
 
-msgid "Line Supplier Part ID"
-msgstr "明細の仕入先部品ID"
+msgid "Line Supplier Part ID Row"
+msgstr "明細の仕入先部品ID行"
+
+msgid "Line Supplier Part Number"
+msgstr "明細の仕入先部品番号"
 
 msgid "Line Total"
 msgstr "行合計"
@@ -17354,6 +17917,9 @@ msgstr "ロケーション"
 msgid "Location / Item"
 msgstr "場所 / 品目"
 
+msgid "Location code"
+msgstr "拠点コード"
+
 msgid "Location Name"
 msgstr "ロケーション名"
 
@@ -17501,7 +18067,7 @@ msgid "Lot-based inspection of received goods against a sampling plan; the units
 msgstr "入荷商品をロット単位で抜取検査方式に従って検査します。受取時に単位が保留中に設定され、ロットが承諾済として処分されたら利用可能にリリースされます。"
 
 msgid "Lots merged"
-msgstr "ロットが統合されました"
+msgstr "ロットがマージされました"
 
 msgid "Lots merged into {readableId}"
 msgstr "ロットが{readableId}に統合されました"
@@ -17548,6 +18114,9 @@ msgstr "機械時間"
 msgid "Machine Time"
 msgstr "機械時間"
 
+msgid "Machine time per unit"
+msgstr "単位あたりの機械時間"
+
 msgid "Machine unit"
 msgstr "機械単位"
 
@@ -17568,6 +18137,9 @@ msgstr "MACRS規約"
 
 msgid "MACRS Property Class"
 msgstr "MACRS資産クラス"
+
+msgid "Made"
+msgstr "製造数"
 
 msgid "Magic link"
 msgstr "マジックリンク"
@@ -17759,6 +18331,9 @@ msgstr "製造がブロックされています"
 msgid "Map accounts"
 msgstr "勘定をマップ"
 
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate. A Reverse Charge code charges no tax on sales, so map it to a 0% rate such as zero-rated EC sales; its purchase documents go out with no tax and need no rate."
+msgstr "Carbon の税コードそれぞれを、販売用と仕入用の2回に分けて連携先の税率にマッピングしてください。送信される文書には、マッピングした税率で Carbon の税額が含まれます。リバースチャージのコードは販売で税を課さないため、0%の税率（例：ゼロ税率のEC販売）にマッピングしてください。仕入の文書は税なしで送信されるため、税率は不要です。"
+
 msgid "Map Extracted Invoice Lines"
 msgstr "抽出された請求書明細をマップ"
 
@@ -17767,6 +18342,15 @@ msgstr "抽出行をマップ"
 
 msgid "Map Lines Now"
 msgstr "今すぐラインをマップ"
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for purchases. Until then, exempt and zero-rated purchase lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "仕入用に「No tax code (exempt or non-taxable)」の行を対応付けてください。それまでは、税コードのない非課税・税率ゼロの仕入明細は税なしで同期され、VAT申告の対象外のままになります。"
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales and purchases. Until then, exempt and zero-rated lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "販売と仕入の両方について「No tax code (exempt or non-taxable)」の行を対応付けてください。それまでは、税コードのない非課税・税率ゼロの明細は税なしで同期され、VAT申告の対象外のままになります。"
+
+msgid "Map the \"No tax code (exempt or non-taxable)\" row for sales. Until then, exempt and zero-rated sales lines with no tax code sync with no tax and stay off the VAT return."
+msgstr "販売用に「No tax code (exempt or non-taxable)」の行を対応付けてください。それまでは、税コードのない非課税・税率ゼロの売上明細は税なしで同期され、VAT申告の対象外のままになります。"
 
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 msgstr "これらのアカウントを{providerName}の連携設定でマップしてからもう一度プルするか、以下に残高を入力してください。"
@@ -17901,6 +18485,9 @@ msgstr "コードで一致"
 msgid "Match by name"
 msgstr "名前で一致"
 
+msgid "Match by rate"
+msgstr "レートで一致"
+
 msgid "Match found: {matchedId}"
 msgstr "一致が見つかりました: {matchedId}"
 
@@ -17992,7 +18579,7 @@ msgid "Material planning shows only the actions and suggested orders due within 
 msgstr "材料計画は、今日からこの日数以内に期限が到来するアクションと提案注文のみを表示するため、先のニーズは重要になるまで支障が生じません。品目独自の計画期間がこのデフォルトをオーバーライドします。"
 
 msgid "Material pre-selection disabled"
-msgstr "材料の事前選択が無効になりました"
+msgstr "材料の事前選択が無効にされました"
 
 msgid "Material pre-selection enabled"
 msgstr "材料の事前選択が有効化されました"
@@ -18078,6 +18665,9 @@ msgstr "マトリックス"
 msgid "Maturity Analysis"
 msgstr "満期分析"
 
+msgid "Max"
+msgstr "最大"
+
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
 msgstr "1個あたり最大{0}"
@@ -18115,6 +18705,9 @@ msgstr "価格の最大シェア（PBP）"
 msgid "MCP Command"
 msgstr "MCPコマンド"
 
+msgid "Mean"
+msgstr "平均"
+
 msgid "Mean Time Between Failures"
 msgstr "平均故障間隔"
 
@@ -18126,6 +18719,9 @@ msgstr "計量標準"
 
 msgid "Media Size"
 msgstr "メディアサイズ"
+
+msgid "Median"
+msgstr "中央値"
 
 msgid "Medium"
 msgstr "中"
@@ -18320,6 +18916,9 @@ msgstr "不足時間"
 msgid "Missing:"
 msgstr "不足:"
 
+msgid "Mixed"
+msgstr "混在"
+
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
 msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
@@ -18332,7 +18931,7 @@ msgid "Mode"
 msgstr "モード"
 
 msgid "Model cache invalidated; re-converting from the source file"
-msgstr "モデルキャッシュが無効化されました。ソースファイルから再変換中です"
+msgstr "モデルキャッシュが無効化されました。ソースファイルから再変換しています"
 
 msgid "Model conversion started"
 msgstr "モデル変換が開始されました"
@@ -18566,6 +19165,9 @@ msgstr "別の保管ユニットへ移動"
 msgid "Move to Group"
 msgstr "グループに移動"
 
+msgid "Move to tax codes"
+msgstr "税コードに移動"
+
 msgid "Move to Trash"
 msgstr "ゴミ箱に移動"
 
@@ -18675,6 +19277,17 @@ msgstr "マイ保存ビュー"
 msgid "My Time"
 msgstr "私の時間"
 
+#. placeholder {0}: payload.count
+msgid "n = {0}"
+msgstr "n = {0}"
+
+#. placeholder {0}: payload.count
+#. placeholder {0}: row.count
+#. placeholder {1}: payload.excluded
+#. placeholder {1}: row.excluded
+msgid "n = {0}, {1} excluded"
+msgstr "n = {0}、{1}件を除外"
+
 msgid "Name"
 msgstr "名前"
 
@@ -18773,6 +19386,9 @@ msgstr "負の調整"
 msgid "Negative stock setting updated"
 msgstr "負の在庫の設定を更新しました"
 
+msgid "Net Amount"
+msgstr "正味額"
+
 msgid "Net book value"
 msgstr "未償却残高"
 
@@ -18781,6 +19397,9 @@ msgstr "未償却残高"
 
 msgid "Net Change"
 msgstr "純変化"
+
+msgid "Net Due"
+msgstr "支払額"
 
 msgid "Net Income"
 msgstr "純収益"
@@ -18968,6 +19587,9 @@ msgstr "新規測定器校正記録"
 msgid "New Gauge Type"
 msgstr "新規測定器タイプ"
 
+msgid "New GL Account"
+msgstr "新しい勘定科目"
+
 msgid "New Group"
 msgstr "新しいグループ"
 
@@ -19106,6 +19728,9 @@ msgstr "新しいプロジェクト在庫転送"
 msgid "New purchase order"
 msgstr "新しい発注書"
 
+msgid "New purchase order receipts fill in batch numbers. Receivers can still change them before posting."
+msgstr "新しい発注書の入荷では、バッチ番号が自動入力されます。転記前であれば、受入担当者がバッチ番号を変更できます。"
+
 msgid "New Quality Document"
 msgstr "新規品質文書"
 
@@ -19207,6 +19832,15 @@ msgstr "新規仕入先部品"
 
 msgid "New Supplier Return"
 msgstr "新規仕入先返品"
+
+msgid "New Tax Authority"
+msgstr "新しい税当局"
+
+msgid "New Tax Code"
+msgstr "新しい税コード"
+
+msgid "New Tax Registration"
+msgstr "新規税登録"
 
 msgid "New Timecard"
 msgstr "新しいタイムカード"
@@ -19403,6 +20037,9 @@ msgstr "アクティブなプランなし"
 msgid "No Active Quotes"
 msgstr "アクティブな見積がありません"
 
+msgid "No active tax code for {uncovered}"
+msgstr "{uncovered} の有効な税コードなし"
+
 msgid "No activity yet."
 msgstr "まだアクティビティはありません"
 
@@ -19445,6 +20082,9 @@ msgstr "まだ資産がありません。リースがカバーする各資産を
 
 msgid "No attachments."
 msgstr "添付ファイルがありません。"
+
+msgid "No authority"
+msgstr "当局がありません"
 
 msgid "No authorization code was returned"
 msgstr "認可コードが返されませんでした"
@@ -19733,6 +20373,9 @@ msgstr "従業員が見つかりません"
 msgid "No end"
 msgstr "終了日なし"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "見積明細がありません"
 
@@ -19780,6 +20423,9 @@ msgstr "ファイルがアップロードされていません"
 
 msgid "No findings"
 msgstr "検査結果がありません"
+
+msgid "No finished operations with clocked time in this range"
+msgstr "この期間に打刻時間のある完了済みの工程はありません"
 
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "カットオーバー日前に取得された固定資産がありません"
@@ -19856,6 +20502,9 @@ msgstr "製造指図は作成されませんでした"
 msgid "No journal lines in scope for this period"
 msgstr "この期間の対象仕訳明細がありません"
 
+msgid "No label templates. Every label prints with the built-in layout."
+msgstr "ラベルテンプレートがありません。すべてのラベルは組み込みのレイアウトで印刷されます。"
+
 msgid "No labels"
 msgstr "ラベルなし"
 
@@ -19870,6 +20519,9 @@ msgstr "リース実行はまだ転記済ではありません。"
 
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "休暇エレメントが設定されていません。間接プロジェクトで休暇時間のエレメントを開き、「休暇」をオンにしてください。"
+
+msgid "No line of this document has an item yet."
+msgstr "この帳票の明細には、まだ品目がありません。"
 
 msgid "No lines"
 msgstr "ラインなし"
@@ -20028,6 +20680,9 @@ msgstr "オプションが見つかりません。"
 msgid "No other employees found. Add employees to enable ownership transfer."
 msgstr "他の従業員が見つかりません。所有権の譲渡を有効にするために従業員を追加してください。"
 
+msgid "No other tax codes"
+msgstr "他の税コードはありません"
+
 msgid "No outstanding trainings"
 msgstr "未実施の教育訓練がありません"
 
@@ -20112,6 +20767,9 @@ msgstr "転記済の払戻明細がありません"
 msgid "No posted supplier invoice lines"
 msgstr "転記済の仕入先請求書明細がありません"
 
+msgid "No price"
+msgstr "価格未設定"
+
 msgid "No pricing for selected quantity"
 msgstr "選択した数量の価格設定がありません"
 
@@ -20162,6 +20820,9 @@ msgstr "プロジェクトがまだありません"
 
 msgid "No purchases in this period"
 msgstr "この期間に購入がありません"
+
+msgid "No quantity"
+msgstr "数量未設定"
 
 msgid "No Quote"
 msgstr "見積辞退"
@@ -20234,6 +20895,9 @@ msgstr "ここに行はありません。"
 
 msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
+
+msgid "No run in this range was worked by one operator alone"
+msgstr "この期間に、作業者1人だけで行われた実行はありません"
 
 msgid "No running job to cancel"
 msgstr "キャンセルする実行中の製造指図がありません"
@@ -20343,6 +21007,15 @@ msgstr "仕入先がまだありません"
 msgid "No sync operations yet"
 msgstr "まだ同期工程はありません"
 
+msgid "No tax code"
+msgstr "税コードなし"
+
+msgid "No tax code (exempt or non-taxable)"
+msgstr "税コードなし（免税・非課税）"
+
+msgid "No tax registration for {unregistered}"
+msgstr "{unregistered} の税登録なし"
+
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリがありません"
 
@@ -20382,6 +21055,9 @@ msgstr "個がまだありません。このアグリーメントでレンタル
 msgid "No unmapped accounts match a provider code"
 msgstr "マップされていない勘定科目でプロバイダーコードと一致するものがありません"
 
+msgid "No unmapped tax code matches exactly one provider rate"
+msgstr "マップされていない税コードで、プロバイダーレートと完全に一致するものはありません"
+
 msgid "No unmapped values match a provider option name"
 msgstr "マップされていない値がプロバイダーオプション名と一致しません"
 
@@ -20390,6 +21066,9 @@ msgstr "カットオーバーの前の日付の未転記文書がありません
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "この拠点のこの工法で未開始で未バッチの工程がありません"
+
+msgid "No upcoming invoice."
+msgstr ""
 
 msgid "No value"
 msgstr "値がありません"
@@ -20518,6 +21197,12 @@ msgstr "スケジューリングと容量計画が考慮する非稼働日"
 msgid "None"
 msgstr "なし"
 
+msgid "None (full page)"
+msgstr "なし（ページ全体）"
+
+msgid "None (Net {defaultTermDays})"
+msgstr "なし（ネット{defaultTermDays}日）"
+
 msgid "None available"
 msgstr "該当なし"
 
@@ -20572,11 +21257,17 @@ msgstr "未マッピング"
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "移動できませんでした: {0}。<0>{1}</0>に記録しました"
 
+msgid "Not needed"
+msgstr "不要"
+
 msgid "Not now"
 msgstr "後で"
 
 msgid "Not on the page"
 msgstr "ページにありません"
+
+msgid "Not posted"
+msgstr "未転記"
 
 msgid "Not Qualified"
 msgstr "適格外"
@@ -20616,6 +21307,9 @@ msgstr "会社設定で設定されていません"
 
 msgid "Not set up"
 msgstr "未設定"
+
+msgid "Not set: prints as before"
+msgstr "未設定：従来どおり印刷"
 
 msgid "Not started"
 msgstr "未開始"
@@ -20691,13 +21385,17 @@ msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
-msgstr ""
+msgstr "まだ何も削除されません。依頼は他の管理者の承認に回され、いずれかの管理者が承認した時点で削除されます。"
 
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
-msgstr ""
+msgstr "まだ削除されていません。リクエストは他の管理者の承認に回され、そのうちの1人が承認すると注文が削除されます。"
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "期限が来ていません。期間が到来すると請求書が自動作成されます。"
+
+#. placeholder {0}: formatQuantity(data.targetQuantity)
+msgid "Nothing is short for {0}"
+msgstr "{0}に対して不足はありません"
 
 msgid "Nothing is synced until you turn sync on."
 msgstr "同期を有効にするまで、何も同期されません。"
@@ -20787,6 +21485,9 @@ msgstr "現在"
 msgid "Number"
 msgstr "数字"
 
+msgid "Number each batch received against a purchase order with the purchase order and the day it was received, such as PO000123-20261116. A second delivery on the same day gets -2."
+msgstr "発注書に対して受け入れた各バッチには、発注書番号と入荷日を組み合わせて番号を付けます（例: PO000123-20261116）。同じ日に2回目の納品があった場合は -2 が付きます。"
+
 msgid "Number of inventory units per purchase unit"
 msgstr "購買単位あたりの在庫単位数"
 
@@ -20802,6 +21503,11 @@ msgstr "未実行タスクの数"
 msgid "Number of operations"
 msgstr "工程の数"
 
+#. placeholder {0}: formatSeconds(selected.mean)
+#. placeholder {1}: formatSeconds(selected.median)
+msgid "Number of runs by time taken. Average {0}, median {1}."
+msgstr "所要時間別の実行回数。平均 {0}、中央値 {1}。"
+
 msgid "Number weeks by calendar week"
 msgstr "週を暦週で番号付けする"
 
@@ -20810,6 +21516,9 @@ msgstr "週を今週から番号付けする"
 
 msgid "Numbering sequence"
 msgstr "採番"
+
+msgid "Numbers issued after you save count weeks this way. Numbers already issued keep their week."
+msgstr "保存後に発行される番号は、この方法で週を数えます。発行済みの番号は元の週番号を保持します。"
 
 msgid "OEE Impact"
 msgstr "OEE影響"
@@ -20926,6 +21635,9 @@ msgstr "製造指図に対して"
 msgid "On order"
 msgstr "発注済み"
 
+msgid "On Order"
+msgstr "発注残"
+
 msgid "On Production Demand"
 msgstr "生産所要量に対して"
 
@@ -21030,14 +21742,17 @@ msgstr "期間中の毎年1回の支払。"
 msgid "One payment for every three months."
 msgstr "3 ヶ月ごとに 1 回の支払。"
 
+msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
+msgstr "税コード内の1つのレート（州レートや市レートなど）で、独自の税当局、控除可能パーセンテージ、有効期間を持つ。"
+
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "特性ごとに1行"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "1件の請求書に1行、1つの明細に1列。日付または金額を変更し、請求書を追加または削除できます。"
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "1ヶ月1行、1つの明細1列。各明細は、その請求書が請求する正確な金額を認識します。"
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "部品ごとに1行"
@@ -21085,6 +21800,9 @@ msgstr "そこには{quantity}のみ"
 msgid "Only {quantity} with a serial number there"
 msgstr "そこにはシリアル番号付きの{quantity}のみ"
 
+msgid "Only {remaining} left to invoice on the order"
+msgstr "受注の請求可能残高は{remaining}のみです"
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "下書きの手順書のみが編集可能です。有効またはアーカイブ済の手順書を変更するには、新しいバージョンを作成してください。"
 
@@ -21114,6 +21832,9 @@ msgstr "資格のある従業員のみがこのプロセスをスケジュール
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "シリアル化された個のうち、固定資産として資本化されたもののみレンタルできます。追加するには、部品の在庫管理タブを開き、保管ユニット内でシリアル番号を見つけて、「固定資産として資本化」を選択してください。"
+
+msgid "Only the latest {RUN_LIMIT} runs are plotted."
+msgstr "グラフには直近の{RUN_LIMIT}件の実行のみを表示しています。"
 
 msgid "Only these employees can charge time to the project in DCAA timekeeping."
 msgstr "これらの従業員のみDCAA給時で当プロジェクトに時間を請求できます。"
@@ -21214,6 +21935,9 @@ msgstr "アカウントマッピングを開く"
 
 msgid "Open Actions"
 msgstr "オープンアクション"
+
+msgid "Open Amount"
+msgstr "未決済額"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを作成する"
@@ -21365,6 +22089,9 @@ msgstr "サブアセンブリを開く"
 msgid "Open task details"
 msgstr "タスク詳細を開く"
 
+msgid "Open Tax Rates"
+msgstr "オープン税率"
+
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "カットオーバー日で帳簿をオープンします。会計の有効化は一方向です。"
 
@@ -21394,9 +22121,6 @@ msgstr "ワークフローを開く"
 
 msgid "Open-ended"
 msgstr "無期限"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "期間指定なし:これまでの計画済請求書の合計値。"
 
 msgid "Opened"
 msgstr "開いている"
@@ -21474,8 +22198,11 @@ msgstr "オペレーション数量"
 msgid "Operation supplier process"
 msgstr "工程仕入先工法"
 
+msgid "Operation time overview"
+msgstr "工程時間の概要"
+
 msgid "Operation timer auto-start disabled"
-msgstr "工程タイマーの自動開始が無効になりました"
+msgstr "工程タイマー自動開始が無効にされました"
 
 msgid "Operation timer auto-start enabled"
 msgstr "工程タイマー自動開始が有効化されました"
@@ -21538,7 +22265,7 @@ msgid "Operators can use shared workstations with PIN authentication."
 msgstr "作業者は PIN 認証で共有ワークステーションを使用できます。"
 
 msgid "Operators see a warning about unissued serial and batch parts and can still complete."
-msgstr ""
+msgstr "作業者には、払出されていないシリアル品およびバッチ品についての警告が表示されますが、完了することはできます。"
 
 msgid "Operators start on the Scan tab"
 msgstr "作業者はスキャンタブで開始します。"
@@ -21669,6 +22396,9 @@ msgstr "オリジン"
 msgid "Original"
 msgstr "元"
 
+msgid "Original Amount"
+msgstr "当初金額"
+
 msgid "Original Count"
 msgstr "元のカウント"
 
@@ -21703,7 +22433,7 @@ msgid "Other Income GL account for the monthly interest earned on the net invest
 msgstr "セールスタイプリースのリース投資純額から得られる毎月利息の営業外収益勘定科目。"
 
 msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
-msgstr ""
+msgstr "それが充当または返金する他の支払は、先に消込が解除されます。転記済のまま残ります。"
 
 msgid "Other Type"
 msgstr "その他のタイプ"
@@ -21734,6 +22464,9 @@ msgstr "出荷"
 
 msgid "Outgoing"
 msgstr "発送"
+
+msgid "Outliers"
+msgstr "外れ値"
 
 msgid "Output"
 msgstr "出力"
@@ -21997,7 +22730,7 @@ msgid "Part files"
 msgstr "部品ファイル"
 
 msgid "Part files are attached automatically"
-msgstr "部品ファイルは自動で添付されます"
+msgstr "部品ファイルは自動的に添付されます"
 
 msgid "Part files are attached only when picked"
 msgstr "部品ファイルは、ピッキング済の場合のみ添付されます"
@@ -22022,6 +22755,18 @@ msgstr "部品のリードタイムは転記済の購買入荷から更新され
 
 msgid "Part Number"
 msgstr "部品番号"
+
+msgid "Part number display"
+msgstr "部品番号の表示"
+
+msgid "Part Numbers"
+msgstr "部品番号"
+
+msgid "Part Numbers on Documents"
+msgstr "帳票の部品番号"
+
+msgid "Part numbers on documents updated"
+msgstr "帳票の部品番号を更新しました"
 
 msgid "Part Supersession"
 msgstr "部品後継切替"
@@ -22233,14 +22978,14 @@ msgstr "仕入先への支払"
 msgid "Payments"
 msgstr "支払い"
 
-msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
-msgstr "この請求書に適用された支払とクレジット。適用済み金額と為替差損益は会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
+msgid "Payments and credits applied to this invoice. A pending row is from a Draft payment and pays nothing until it is posted. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "この請求書に適用された支払とクレジット。「待機中」の行は下書きの支払によるもので、転記されるまで支払額には含まれません。適用額と為替レートは会社の基準通貨で表示されています。行をクリックすると参照伝票を開きます。"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
-msgstr ""
+msgstr "それに充当されている支払とクレジットメモは、先に充当が解除されます。各支払は転記済のまま、他で充当するか強制削除できる未充当残高として残ります。そこから計上済の売上高は取り消されます。"
 
 msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
-msgstr ""
+msgstr "これに消込されている支払およびメモは、先に消込が解除されます。各支払は転記済のまま、未消込残高として他で消込するか、強制削除できます。資産計上された固定資産に加算された金額は戻し入れられます。計上済の減価償却はそのまま残ります。"
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "この日付より前の支払期日は Carbon 外で支払われました"
@@ -22302,6 +23047,9 @@ msgstr "検査待ち"
 
 msgid "Pending Inspection"
 msgstr "検査待ち"
+
+msgid "Pending payment, not posted"
+msgstr "待機中の支払（未転記）"
 
 msgid "People"
 msgstr "人員"
@@ -22552,13 +23300,13 @@ msgid "Picking Lists"
 msgstr "ピッキングリスト"
 
 msgid "Picking lists are created by hand"
-msgstr ""
+msgstr "ピッキングリストは手動で作成します"
 
 msgid "Picking lists on release disabled"
-msgstr ""
+msgstr "リリース時のピッキングリスト：無効"
 
 msgid "Picking lists on release enabled"
-msgstr ""
+msgstr "リリース時のピッキングリスト：有効"
 
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "ピッキングは追跡対象品目を使用期限が最も近い順に提供するため、期限切れが最も近い在庫がデフォルトで最初に出荷されます。"
@@ -22694,6 +23442,9 @@ msgstr "計画"
 
 msgid "Planning action"
 msgstr "計画提案"
+
+msgid "Planning and Sales"
+msgstr "計画と販売"
 
 msgid "Planning group"
 msgstr "計画グループ"
@@ -23002,6 +23753,9 @@ msgstr "プレビュー"
 msgid "Preview failed: {error}"
 msgstr "プレビューに失敗しました: {error}"
 
+msgid "Preview PDF"
+msgstr ""
+
 msgid "Preview Quantity"
 msgstr "プレビュー数量"
 
@@ -23138,7 +23892,7 @@ msgid "Print Label"
 msgstr "ラベルを印刷"
 
 msgid "Print label on completion"
-msgstr ""
+msgstr "完了時にラベルを印刷"
 
 msgid "Print Labels"
 msgstr "ラベルを印刷"
@@ -23152,10 +23906,10 @@ msgid "Print Output ({0})"
 msgstr "印刷出力 ({0})"
 
 msgid "Print this item's serial label when its job's last operation completes."
-msgstr ""
+msgstr "製造指図の最終工程が完了したら、その品目のシリアルラベルを印刷します。"
 
 msgid "Print travelers at the pick"
-msgstr ""
+msgstr "ピッキング時に現品票を印刷"
 
 msgid "Printed on the purchase orders you approve."
 msgstr "あなたが承認した発注書に印刷されています。"
@@ -23186,6 +23940,9 @@ msgstr "印刷"
 
 msgid "Prints as"
 msgstr "印刷内容"
+
+msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
+msgstr ""
 
 msgid "Priorities"
 msgstr "優先度"
@@ -23496,6 +24253,9 @@ msgstr "プロパティ（この明細のすべてのシリアル番号に適用
 msgid "Property"
 msgstr "プロパティ"
 
+msgid "Proposed matches where exactly one provider rate has the tax code's percentage, for sales and for purchases."
+msgstr "販売と購入で、プロバイダーレートが税コードのパーセンテージと完全に一致する提案されたマッチ。"
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Carbon勘定科目番号がプロバイダー勘定科目コードと正確に一致する提案されたマッチ。"
 
@@ -23537,6 +24297,9 @@ msgstr "{accountLabel}のプロバイダーアカウント"
 
 msgid "Provider option"
 msgstr "プロバイダーオプション"
+
+msgid "Provider rate"
+msgstr "プロバイダーレート"
 
 msgid "Provisional"
 msgstr "暫定"
@@ -23660,7 +24423,7 @@ msgid "Purchase order for {supplierName}"
 msgstr "{supplierName}向けの発注書"
 
 msgid "Purchase Order Force Delete"
-msgstr ""
+msgstr "発注書の強制削除"
 
 msgid "Purchase Order ID"
 msgstr "発注書ID"
@@ -23718,12 +24481,6 @@ msgstr "購入入荷"
 
 msgid "Purchase Return"
 msgstr "購買返品"
-
-msgid "Purchase Tax Payable"
-msgstr "仕入税金支払い（デフォルト）"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "仕入税支払相当額（デフォルト）"
 
 msgid "Purchase to Order"
 msgstr "受注購買"
@@ -23992,12 +24749,15 @@ msgstr "廃棄数量"
 msgid "Quantity shipped"
 msgstr "出荷数量"
 
+msgid "Quantity to check"
+msgstr "確認数量"
+
 msgid "Quantity to credit for line {lineNumber}"
 msgstr "明細 {lineNumber} の取消数量"
 
 #. placeholder {0}: item?.name ?? ""
 msgid "Quantity to pick of {0}"
-msgstr ""
+msgstr "{0} のピッキング数量"
 
 msgid "Quantity to return for {itemReadableId}"
 msgstr "{itemReadableId}の返品数量"
@@ -24115,6 +24875,9 @@ msgstr "仕入先がメールアドレスを持つ担当者と国を指定した
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "見積、受注、請求書および見積依頼"
 
+msgid "Quotes, orders, invoices or other documents exist"
+msgstr ""
+
 msgid "Quoting"
 msgstr "見積"
 
@@ -24227,7 +24990,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "見積、現場、財務間での再入力"
 
 msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
-msgstr "最初から計画し直します。完了時にステップが自動的に再構築されます。"
+msgstr "スクラッチから再計画—完了時にステップが自動的に再構築されます"
 
 msgid "Re-planning motions in the current step order — steps update when it finishes"
 msgstr "現在のステップ順序でモーション再計画—完了時にステップが更新されます"
@@ -24279,6 +25042,9 @@ msgstr "格納可能"
 
 msgid "Ready for Quote"
 msgstr "見積準備完了"
+
+msgid "Ready to Finish"
+msgstr "完成準備完了"
 
 msgid "ready to keep or revert"
 msgstr "保持または復元の準備完了"
@@ -24340,6 +25106,9 @@ msgstr "再計算"
 msgid "Recalculate Run"
 msgstr "再計算実行"
 
+msgid "Recalculate taxes"
+msgstr "税を再計算"
+
 msgid "Recalculate Unit Cost"
 msgstr "単位原価を再計算"
 
@@ -24348,6 +25117,12 @@ msgstr "計算中…"
 
 msgid "Receipt"
 msgstr "領収書"
+
+msgid "Receipt batch numbers are now entered by hand"
+msgstr "入荷のバッチ番号は手入力になりました"
+
+msgid "Receipt batch numbers are now generated"
+msgstr "入荷のバッチ番号は自動採番になりました"
 
 msgid "Receipt ID"
 msgstr "受取ID"
@@ -24616,6 +25391,18 @@ msgstr "原価を再査定"
 msgid "Recost {0}"
 msgstr "{0}の原価を再査定"
 
+msgid "Recoverable"
+msgstr "控除可能"
+
+msgid "Recoverable percent"
+msgstr "控除可能パーセンテージ"
+
+msgid "Recoverable Tax"
+msgstr "控除可能税"
+
+msgid "Recoverable: {amount}"
+msgstr "控除可能: {amount}"
+
 msgid "Recovery Period"
 msgstr "登録"
 
@@ -24773,6 +25560,12 @@ msgstr "却下時間"
 msgid "Rejected"
 msgstr "却下"
 
+msgid "Rejected at inspection"
+msgstr ""
+
+msgid "Rejected at Inspection"
+msgstr "検査で不合格"
+
 msgid "Rejected By"
 msgstr "却下者"
 
@@ -24864,13 +25657,16 @@ msgid "Released with problems: {0}"
 msgstr "リリース済（警告あり）: {0}"
 
 msgid "Releasing a job creates its picking list"
-msgstr ""
+msgstr "製造指図をリリースすると、そのピッキングリストが作成されます"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "バッチをリリースするとその製造指図がリリースされ、それぞれが製造現場に対応可能である必要があります。"
 
 msgid "Reload the page to try again."
 msgstr "ページを再度読み込んで、もう一度試してください。"
+
+msgid "Reload the page to try again. If it keeps failing, check this item's bill of materials."
+msgstr "ページを再読み込みして、もう一度お試しください。それでも失敗する場合は、この品目の部品表を確認してください。"
 
 msgid "Remaining"
 msgstr "残高"
@@ -24940,6 +25736,9 @@ msgstr "{label}を除去"
 msgid "Remove {name}"
 msgstr "{name}を除去"
 
+msgid "Remove API key"
+msgstr "APIキーを除去"
+
 msgid "Remove Asset"
 msgstr "資産を除去"
 
@@ -24954,6 +25753,9 @@ msgstr "条項を除去"
 
 msgid "Remove Completion"
 msgstr "完了を除去"
+
+msgid "Remove component"
+msgstr "構成部品を削除"
 
 msgid "Remove condition"
 msgstr "条件を除去"
@@ -25095,6 +25897,9 @@ msgstr "更新時の値上げ (%)"
 msgid "Rent"
 msgstr "賃料"
 
+msgid "Rent invoice"
+msgstr ""
+
 msgid "Rental"
 msgstr "レンタル"
 
@@ -25161,11 +25966,14 @@ msgstr "再オープン"
 msgid "Reopen as Revision"
 msgstr "リビジョンとして再オープン"
 
+msgid "Reopen Period"
+msgstr "会計期間を再オープン"
+
 msgid "Reopen Training"
 msgstr "教育訓練を再オープン"
 
 msgid "Reopened {changed} planning actions"
-msgstr "{changed}個の計画操作を再度開きました"
+msgstr "計画アクション{changed}件が再度開かれました"
 
 msgid "Reopened 1 planning action"
 msgstr "1個の計画操作を再度開きました"
@@ -25215,6 +26023,9 @@ msgstr "再注文数量"
 
 msgid "Reorder Quantity:"
 msgstr "リオーダー数量:"
+
+msgid "Reordering"
+msgstr "再発注"
 
 msgid "Reordering policy"
 msgstr "発注方針"
@@ -25303,6 +26114,12 @@ msgstr "レポート"
 msgid "Reporting"
 msgstr "レポーティング"
 
+msgid "Reporting category"
+msgstr "報告区分"
+
+msgid "Reporting Category"
+msgstr "報告カテゴリ"
+
 msgid "Reporting dimension"
 msgstr "報告ディメンション"
 
@@ -25339,7 +26156,7 @@ msgid "Request date"
 msgstr "リクエスト日付"
 
 msgid "Request Force Delete"
-msgstr ""
+msgstr "リクエストの強制削除"
 
 msgid "Request Quote"
 msgstr "見積を依頼"
@@ -25348,7 +26165,7 @@ msgid "Requested"
 msgstr "依頼済み"
 
 msgid "Requested by"
-msgstr ""
+msgstr "依頼者"
 
 msgid "Requested By"
 msgstr "要求者"
@@ -25424,7 +26241,7 @@ msgid "Require tiered sign-off on purchase orders, quality documents, suppliers,
 msgstr "金額しきい値と承認者グループに基づき、発注書、品質ドキュメント、仕入先、変更通知に多段階の承認を必須にします。"
 
 msgid "Require tracked parts before completion"
-msgstr ""
+msgstr "完了前に追跡対象部品を必須にする"
 
 msgid "Require two-factor authentication"
 msgstr "二要素認証が必要です"
@@ -25454,10 +26271,10 @@ msgid "Required in a controlled environment — audit logging cannot be turned o
 msgstr "管理された環境では必須です。監査ログはオフにできません。"
 
 msgid "Required tracked parts disabled"
-msgstr ""
+msgstr "必須の追跡対象部品: 無効"
 
 msgid "Required tracked parts enabled"
-msgstr ""
+msgstr "必須の追跡対象部品：有効"
 
 msgid "Requirement"
 msgstr "要求事項"
@@ -25683,6 +26500,23 @@ msgstr "利益剰余金"
 msgid "Retained Earnings (default)"
 msgstr "利益剰余金 (既定)"
 
+msgid "Retire"
+msgstr "廃止"
+
+#. placeholder {0}: taxCode.name
+msgid "Retire {0}"
+msgstr "{0} を廃止"
+
+msgid "Retire Tax Code"
+msgstr "税コードを廃止"
+
+#. placeholder {0}: taxCode.name
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it. A code still assigned to a customer, a supplier or a ship-to location cannot be retired."
+msgstr "税コード {0} を廃止しますか？ 新しい明細では選択できなくなります。既に使用している明細はそのまま保持されます。得意先、仕入先、または出荷先に割り当てられている税コードは廃止できません。"
+
+msgid "Retired, still on documents. Match by rate skips it"
+msgstr "廃止済みですが、まだ書類に残っています。税率での照合では対象外になります"
+
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "スクラップまたは販売により資産をサービスから除却し、利益または損失を未償却残高に対して計上し、ステータスを除却済に設定します。"
 
@@ -25857,6 +26691,9 @@ msgstr "レンタル期間にわたって直線法で認識する営業賃貸料
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "獲得する前に請求された売上高で、負債として保持され、サービス提供期間の経過により認識実行によって売上高に振替えられます。"
 
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "Revenue is previewed once the contract has lines."
 msgstr "契約に明細が追加されると売上高の予定が表示されます。"
 
@@ -25916,6 +26753,10 @@ msgstr "リバースチャージ売上税"
 
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "リバースチャージ売上税（デフォルト）"
+
+#. placeholder {0}: formatRate(0)
+msgid "Reverse Charge, {0} charged"
+msgstr "リバースチャージ、{0} 課税"
 
 msgid "Reverse Entry"
 msgstr "反対仕訳"
@@ -26148,6 +26989,9 @@ msgstr "丸めアカウント"
 msgid "Rounding Account (default)"
 msgstr "丸めアカウント (既定)"
 
+msgid "Rounding adjusted"
+msgstr "端数調整済み"
+
 msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
 msgstr "すべての買掛金請求書を、個別の購買担当者の代わりに、1つの住所（例：本社）にルーティングします。"
 
@@ -26268,8 +27112,14 @@ msgstr "24時間実行"
 msgid "Runs during every shift at the location."
 msgstr "ロケーションのすべてのシフト中に実行されます。"
 
+msgid "Runs far outside the usual range for their operation. Open the job's events to correct a wrong clock-in or clock-out."
+msgstr "実行時間が工程の通常範囲から大きく外れています。打刻の誤りを修正するには、製造指図のイベントを開いてください。"
+
 msgid "Runs only during the shifts you select."
 msgstr "選択したシフト中のみ実行されます。"
+
+msgid "Runs shared between operators are left out"
+msgstr "複数の作業者で分担した実行は除外されています"
 
 msgid "Runs to an end date. A unit still out after it keeps billing."
 msgstr "終了日まで実行されます。その後も返却されていない個は請求され続けます。"
@@ -26435,12 +27285,6 @@ msgstr "販売ルール"
 msgid "Sales shipments"
 msgstr "販売出荷"
 
-msgid "Sales Tax Payable"
-msgstr "支払い売上税"
-
-msgid "Sales Tax Payable (default)"
-msgstr "支払い売上税（デフォルト）"
-
 msgid "Sales-type lease"
 msgstr "セールスタイプリース"
 
@@ -26514,6 +27358,9 @@ msgstr "保存して上書き"
 msgid "Save and post"
 msgstr "保存して転記する"
 
+msgid "Save and Post"
+msgstr "保存して転記"
+
 msgid "Save applications"
 msgstr "アプリケーションを保存"
 
@@ -26555,7 +27402,11 @@ msgstr "保存済み"
 
 #. placeholder {0}: data.count
 msgid "Saved {0} dimension value mappings"
-msgstr "{0}個のディメンション値マッピングを保存しました"
+msgstr "{0}個のディメンション値マッピングが保存されました"
+
+#. placeholder {0}: data.count
+msgid "Saved {0} tax code mappings"
+msgstr "{0}個の税コードマッピングが保存されました"
 
 msgid "Saved {count} account mappings"
 msgstr "{count}個の勘定科目マッピングを保存しました"
@@ -26575,6 +27426,9 @@ msgstr "文書レイアウトを保存しました"
 msgid "Saved signature"
 msgstr "署名を保存しました"
 
+msgid "Saved tax code mapping"
+msgstr "{0}個のディメンション値マッピングを保存しました"
+
 msgid "Saved this document"
 msgstr "このドキュメントを保存しました"
 
@@ -26589,6 +27443,9 @@ msgstr "保存済みビュー"
 
 msgid "Saved Views"
 msgstr "保存済みビュー"
+
+msgid "Saved. Leave blank to keep it"
+msgstr "保存済み。変更しない場合は空欄のままにしてください。"
 
 #. placeholder {0}: bulkProgress.done
 #. placeholder {1}: bulkProgress.total
@@ -26974,6 +27831,9 @@ msgstr "検索..."
 msgid "Search…"
 msgstr "検索…"
 
+msgid "Second"
+msgstr "秒"
+
 msgid "Seconds to complete"
 msgstr "完了までの秒数"
 
@@ -27052,6 +27912,9 @@ msgstr "デフォルト承認者を選択"
 msgid "Select a document"
 msgstr "文書を選択"
 
+msgid "Select a label size"
+msgstr "ラベルサイズを選択"
+
 msgid "Select a new owner"
 msgstr "新しい責任者を選択"
 
@@ -27060,6 +27923,9 @@ msgstr "このアカウントの新しい親グループを選択してくださ
 
 msgid "Select a plan"
 msgstr "プランを選択"
+
+msgid "Select a plan to get started. Switch or cancel anytime."
+msgstr "プランを選択して開始します。いつでも切り替えまたはキャンセルできます。"
 
 #. placeholder {0}: plans[0].stripeTrialPeriodDays
 msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
@@ -27120,6 +27986,9 @@ msgstr "すべての行を選択"
 msgid "Select all service lines"
 msgstr "すべての外注サービス明細を選択"
 
+msgid "Select an account"
+msgstr "勘定科目を選択"
+
 msgid "Select an action…"
 msgstr "アクションを選択…"
 
@@ -27135,11 +28004,17 @@ msgstr "イベントを選択…"
 msgid "Select an issue type"
 msgstr "問題タイプを選択"
 
+msgid "Select an item"
+msgstr "品目を選択"
+
 msgid "Select an item and specify the quantity to issue"
 msgstr "アイテムを選択し、発行する数量を指定してください"
 
 msgid "Select an item first"
 msgstr "最初にアイテムを選択してください"
+
+msgid "Select an item to compare its operation times"
+msgstr "工程時間を比較する品目を選択"
 
 msgid "Select an item to configure"
 msgstr "設定するアイテムを選択"
@@ -27244,6 +28119,9 @@ msgstr "プリンターを選択"
 msgid "Select provider account"
 msgstr "プロバイダアカウントを選択"
 
+msgid "Select provider rate"
+msgstr "プロバイダーレートを選択"
+
 msgid "Select provider target"
 msgstr "プロバイダーターゲットを選択"
 
@@ -27324,6 +28202,13 @@ msgstr "選択済み: {selectedSum} / 分割後の残数: {0}"
 msgid "Self Managed"
 msgstr "自己管理"
 
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Self-assessed rate today: <0>{0}</0>. Lines using this code are charged no tax."
+msgstr "本日の自己申告税率: <0>{0}</0>. このコードを使用する明細に対して税は課されません。"
+
+msgid "Self-Assessed Tax"
+msgstr "自己申告税"
+
 msgid "Self-hosted or managed"
 msgstr "セルフホストまたはマネージド"
 
@@ -27347,6 +28232,9 @@ msgstr "得意先に{label}を販売"
 
 msgid "Sell to Customer"
 msgstr "得意先に売却"
+
+msgid "Seller Tax ID"
+msgstr "販売者の税務ID"
 
 msgid "Selling profit: <0/>"
 msgstr "売却利益: <0/>"
@@ -27373,7 +28261,7 @@ msgid "Send Notifications"
 msgstr "通知を送信"
 
 msgid "Send order confirmation"
-msgstr ""
+msgstr "注文確認を送信"
 
 msgid "Send Reminder"
 msgstr "リマインダーを送信"
@@ -27471,6 +28359,9 @@ msgstr "シリアル番号は利用できません"
 
 msgid "Serial number is required"
 msgstr "シリアル番号{0}"
+
+msgid "Serial Number Label"
+msgstr "シリアル番号ラベル"
 
 msgid "Serial Number:"
 msgstr "シリアル番号:"
@@ -27736,11 +28627,17 @@ msgstr "バージョン {0} をアクティブバージョンとして設定し�
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "プロフィール設定でデフォルトの場所を設定して、保管ユニットを選択してください。"
 
+msgid "Sets every line of this document when you save."
+msgstr "保存時に、この帳票のすべての明細に適用されます。"
+
 msgid "Sets the labor warranty of a serial when it ships"
 msgstr "シリアルが出荷される時に労務保証を設定します"
 
 msgid "Sets the parts warranty of a serial when it ships"
 msgstr "シリアルが出荷されるときの部品保証を設定します"
+
+msgid "Sets the tax percent to the code's rate"
+msgstr "税パーセンテージをコードのレートに設定します"
 
 msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "この個が在庫で計上されている価値を設定します。差額は在庫と支出元の勘定との間で計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
@@ -27776,6 +28673,9 @@ msgstr "段取り時間"
 
 msgid "Setup Time"
 msgstr "段取り時間"
+
+msgid "Setup time per run"
+msgstr "実行あたりの段取り時間"
 
 msgid "Setup unit"
 msgstr "セットアップ単位"
@@ -28087,6 +28987,9 @@ msgstr "不足 {0}"
 msgid "Short Description"
 msgstr "短い説明"
 
+msgid "Short for Jobs in Production"
+msgstr "生産中の製造指図の不足"
+
 msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
 
@@ -28178,6 +29081,9 @@ msgstr "キーボードショートカットを表示"
 msgid "Show lines"
 msgstr "明細を表示"
 
+msgid "Show menu"
+msgstr ""
+
 msgid "Show monthly revenue"
 msgstr "月別売上高を表示"
 
@@ -28222,6 +29128,12 @@ msgstr "{1}件中{0}件を表示中。検索して絞り込んでください。
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "{totalFiltered}中{0}を表示中 — 検索を絞り込む"
+
+msgid "Showing {shown} of {total}"
+msgstr ""
+
+msgid "Showing {shown} of {total}, through {last}"
+msgstr ""
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}で表示"
@@ -28377,7 +29289,7 @@ msgid "Skipped"
 msgstr "スキップ済"
 
 msgid "Skipped {count} sync operations"
-msgstr "{count}件の同期操作をスキップ済にしました"
+msgstr "{count}個の同期操作がスキップ済になりました"
 
 msgid "Skipped sync operation"
 msgstr "同期操作をスキップ済みにしました"
@@ -28651,7 +29563,7 @@ msgid "Staffing required"
 msgstr "スタッフが必要"
 
 msgid "Staffing requirement disabled"
-msgstr "人員配置要求事項が無効になりました"
+msgstr "人員要件が無効にされました"
 
 msgid "Staffing requirement enabled"
 msgstr "スタッフ要求事項が有効化されました"
@@ -28751,7 +29663,7 @@ msgid "Starting"
 msgstr "開始中"
 
 msgid "Starting a picking list prints one traveler per unit. The first operation prints no label."
-msgstr ""
+msgstr "ピッキングリストを開始すると、個数ごとに1枚の現品票が印刷されます。最初の工程ではラベルは印刷されません。"
 
 msgid "Starting…"
 msgstr "開始中…"
@@ -28888,10 +29800,13 @@ msgid "Stock and planning"
 msgstr "在庫と計画"
 
 msgid "Stock at:"
-msgstr ""
+msgstr "在庫場所："
 
 msgid "Stock Availability"
 msgstr "在庫可用性"
+
+msgid "Stock has been received, moved or used"
+msgstr ""
 
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "この保管ユニットの在庫は供給ではありません。MRPと計画画面はこれを数えず、ピッキングもここから取りません。親ユニットまたはそのストレージタイプのいずれかがMRP対象外の場合も、ユニットはMRP対象外になります。隔離・保留エリアに使用します。在庫転送で在庫を再び移動できます。"
@@ -29014,6 +29929,9 @@ msgstr "保管ユニット（オプション）"
 
 msgid "Storage unit for {itemName}"
 msgstr "{itemName}の保管ユニット"
+
+msgid "Storage Unit Label"
+msgstr "保管ユニットラベル"
 
 msgid "storage units"
 msgstr "保管ユニット"
@@ -29242,7 +30160,7 @@ msgid "Successfully created a new revision"
 msgstr "新しいリビジョンが正常に作成されました"
 
 msgid "Successfully resent invite"
-msgstr "招待を再送信しました"
+msgstr "招待を正常に再送信しました"
 
 msgid "Successfully revoked invites"
 msgstr "招待を正常に取り消しました"
@@ -29372,7 +30290,7 @@ msgid "Supplier contact email required"
 msgstr "仕入先担当者のメールアドレスを必須にしました"
 
 msgid "Supplier contact requirement disabled"
-msgstr "仕入先担当者要件が無効になりました"
+msgstr "仕入先担当者要件が無効にされました"
 
 msgid "Supplier contact requirement enabled"
 msgstr "仕入先担当者要求事項が有効化されました"
@@ -29438,6 +30356,9 @@ msgstr "仕入先の場所"
 msgid "Supplier Name"
 msgstr "仕入先名"
 
+msgid "Supplier or company default"
+msgstr "仕入先または会社のデフォルト"
+
 msgid "Supplier Order Number"
 msgstr "仕入先注文番号"
 
@@ -29456,11 +30377,20 @@ msgstr "仕入先品番"
 msgid "Supplier Part Number"
 msgstr "仕入先部品番号"
 
+msgid "Supplier part number only"
+msgstr "仕入先の部品番号のみ"
+
+msgid "Supplier part number, then Carbon part number"
+msgstr "仕入先の部品番号、次にCarbonの部品番号"
+
 msgid "Supplier Part Numbers"
 msgstr "仕入先品番"
 
 msgid "Supplier part updated"
 msgstr "仕入先部品が更新されました"
+
+msgid "Supplier Part: {supplierPartId}"
+msgstr "仕入先品番: {supplierPartId}"
 
 msgid "Supplier Parts"
 msgstr "仕入先部品"
@@ -29545,7 +30475,7 @@ msgid "supplier stage"
 msgstr "仕入先段階"
 
 msgid "Supplier stage"
-msgstr ""
+msgstr "仕入先ステージ"
 
 msgid "Supplier Stage"
 msgstr "仕入先段階"
@@ -29841,7 +30771,7 @@ msgid "Task Assignee"
 msgstr "タスク担当者"
 
 msgid "Task marked done"
-msgstr "タスクを完了とマークしました"
+msgstr "タスクが完了としてマークされました"
 
 msgid "Task skipped"
 msgstr "タスクがスキップ済みに設定されました"
@@ -29885,11 +30815,62 @@ msgstr "数量 {quantity} の税額"
 msgid "Tax and Fees"
 msgstr "税と手数料"
 
+msgid "Tax Authorities"
+msgstr "税当局"
+
+msgid "Tax authority"
+msgstr "税務当局"
+
+msgid "Tax Authority"
+msgstr "税当局"
+
 msgid "Tax Book Value"
 msgstr "税務帳簿価額"
 
+msgid "tax code"
+msgstr "税コード"
+
+msgid "Tax code"
+msgstr "税コード"
+
+msgid "Tax Code"
+msgstr "税コード"
+
+msgid "tax codes"
+msgstr "税コード"
+
+msgid "Tax codes"
+msgstr "税コード"
+
+msgid "Tax Codes"
+msgstr "税コード"
+
+msgid "Tax codes used on customers, suppliers or documents with no provider rate for that use. Sync stays off until they are mapped."
+msgstr "顧客、仕入先、またはドキュメントで使用される税コード。その用途のプロバイダーレートがありません。マップされるまで、同期はオフのままです。"
+
 msgid "Tax codes, rates"
 msgstr "税コード、レート"
+
+msgid "Tax Collected"
+msgstr "徴収税"
+
+msgid "Tax collected and recoverable by authority, and the net due"
+msgstr "当局による徴収税と控除可能税、および純額"
+
+msgid "Tax component"
+msgstr "税要素"
+
+msgid "Tax Component"
+msgstr "税構成要素"
+
+msgid "Tax Component Base"
+msgstr "税構成要素の課税ベース"
+
+msgid "Tax Component Rate"
+msgstr "税構成要素の税率"
+
+msgid "Tax coverage"
+msgstr "税の適用範囲"
 
 msgid "Tax Depreciation"
 msgstr "税務減価償却"
@@ -29912,6 +30893,12 @@ msgstr "税務ID"
 msgid "Tax Information"
 msgstr "税務情報"
 
+msgid "Tax ledger"
+msgstr "税台帳"
+
+msgid "Tax Liability"
+msgstr "税負債"
+
 msgid "Tax liability for reverse-charge transactions"
 msgstr "リバースチャージ取引の税務責任"
 
@@ -29921,6 +30908,18 @@ msgstr "税務方法"
 msgid "Tax Method (default)"
 msgstr "税務方法（デフォルト）"
 
+msgid "Tax Paid"
+msgstr "支払済み税"
+
+msgid "Tax Paid (default)"
+msgstr "支払済み税（デフォルト）"
+
+msgid "Tax Paid Account"
+msgstr "支払い税勘定"
+
+msgid "Tax Paid Account (component)"
+msgstr "税支払勘定（税コンポーネント）"
+
 msgid "Tax percent"
 msgstr "税率"
 
@@ -29929,6 +30928,27 @@ msgstr "税率"
 
 msgid "Tax percent for quantity {quantity}"
 msgstr "数量 {quantity} の税率"
+
+msgid "Tax Rates"
+msgstr "税率"
+
+msgid "Tax Received"
+msgstr "受取税"
+
+msgid "Tax Received (default)"
+msgstr "受取税（既定値）"
+
+msgid "Tax Received Account"
+msgstr "受取税勘定"
+
+msgid "Tax Received Account (component)"
+msgstr "税受取勘定（税コンポーネント）"
+
+msgid "Tax Registration"
+msgstr "税務登録"
+
+msgid "Tax Registrations"
+msgstr "税務登録"
 
 msgid "Tax Residual Value"
 msgstr "税務残存価額"
@@ -29957,11 +30977,26 @@ msgstr "税年度"
 msgid "Tax:"
 msgstr "税:"
 
+msgid "Taxable"
+msgstr "課税対象"
+
 msgid "Taxable for charge {chargeNumber}"
 msgstr "課税対象、追加料金 {chargeNumber}"
 
+msgid "Taxable Purchases"
+msgstr "課税仕入れ"
+
+msgid "Taxable Sales"
+msgstr "課税売上"
+
 msgid "Taxes"
 msgstr "税金"
+
+msgid "Taxes shipping"
+msgstr "配送料に課税"
+
+msgid "Taxes Shipping"
+msgstr "配送税"
 
 msgid "Team trained"
 msgstr "チームが訓練を受けた"
@@ -30072,6 +31107,9 @@ msgstr "文字色"
 msgid "Text size"
 msgstr "テキストサイズ"
 
+msgid "Text that prints on a sales invoice that uses the tax code, such as the reason a sale is exempt."
+msgstr "この税コードを使用する売上請求書に印刷されるテキスト（販売が非課税となる理由など）。"
+
 msgid "Text to edit"
 msgstr "編集するテキスト"
 
@@ -30136,6 +31174,12 @@ msgstr "Carbon全体で使用するアクセントカラー。"
 msgid "The account picked for {account} is no longer in the chart."
 msgstr "{account} に対して選択された勘定はもはや勘定科目表にありません。"
 
+msgid "The account this component's recoverable purchase tax is debited to; empty uses the Tax Paid default account."
+msgstr "このコンポーネントの回収可能な仕入税額を借方計上する勘定。空欄の場合は既定の税支払勘定を使用します。"
+
+msgid "The account this component's sales tax is credited to; empty uses the Tax Received default account."
+msgstr "このコンポーネントの売上税を貸方計上する勘定。空欄の場合は既定の税受取勘定を使用します。"
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "レポートと分析のためにアイテムを分類する会計ディメンション。"
 
@@ -30199,6 +31243,12 @@ msgstr "バックアップジョブがこのエラーを報告しました。"
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "その製造指図を時間通りに保つために、工程が終了する必要のある後方計算日であり、工程の期日に書き込まれます。進捗を測定するための安定した目標であり、配置の制約ではありません。"
 
+msgid "The base currency can't change because:"
+msgstr ""
+
+msgid "The base currency couldn't be loaded. Saving keeps it as it is."
+msgstr ""
+
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "バッチが製造現場に移動します。その製造指図は既にリリース済です。"
 
@@ -30208,6 +31258,9 @@ msgstr "バッチは{0}です、計画済ではありません"
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "バッチは最も急ぎのメンバーに合わせて実行され、他は前倒しになります"
+
+msgid "The bill of materials contains itself"
+msgstr "部品表が自身を含んでいます"
 
 msgid "The bill rate is locked: the estimate was sent to the customer."
 msgstr "請求単価がロック中です：見積が顧客に送信されました。"
@@ -30323,6 +31376,9 @@ msgstr "会社には既に転記済の期首残高仕訳があります。"
 msgid "The company has no account defaults."
 msgstr "会社に勘定科目のデフォルト設定がありません。"
 
+msgid "The company is registered in these countries, but no active tax code charges tax there."
+msgstr "この会社はこれらの国で登録されていますが、税を課す有効な税コードはありません。"
+
 msgid "The company template stays the same."
 msgstr "会社のテンプレートは変更されません。"
 
@@ -30382,6 +31438,9 @@ msgstr "CSVはインポートされませんでした。"
 
 msgid "The currencies you trade in and their rates"
 msgstr "あなたが取引する通貨とそのレート"
+
+msgid "The current account could not be loaded."
+msgstr "現在の勘定科目を読み込めませんでした。"
 
 msgid "The current plan changed under this change request"
 msgstr "この変更要求の下で現在の計画が変更されました"
@@ -30489,9 +31548,6 @@ msgstr "ピッキングが追跡対象エンティティを提供するデフォ
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "このパーツが製造される場合のデフォルト実行数量。計画ラウンドはこれの倍数まで補充を行います。"
 
-msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
-msgstr "得意先の見積および販売注文明細に適用される既定の税率。明細ごとの上書き前。管轄区域固有の税計算が上に実行されます。"
-
 msgid "The Deferred Revenue default account is empty."
 msgstr "繰延売上高のデフォルトアカウントが空です。"
 
@@ -30512,6 +31568,9 @@ msgstr "文書をダウンロードできませんでした。"
 
 msgid "The document could not be opened."
 msgstr "文書を開けませんでした。"
+
+msgid "The earliest delivery date is {earliest}."
+msgstr "最も早い納期は{earliest}です。"
 
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
@@ -30582,6 +31641,9 @@ msgstr "最初の3～4週間"
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "会社がCarbonで帳簿の記録を始める最初の日であり、会計設定時に一度だけ設定され、その後は変更されません。この日以降、転記するたびに転記済の仕訳が作成されます。"
 
+msgid "The first day a tax component applies; empty means it has always applied. A document takes the components in force on its own date."
+msgstr "税コンポーネントが適用される最初の日。空欄の場合は常に適用されます。文書は、その文書の日付時点で有効なコンポーネントを採用します。"
+
 msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
 msgstr "最後に転記済のリース実行の後の、支払期間が開始されるリース月の初日（{commencementDay}日）"
 
@@ -30632,6 +31694,9 @@ msgstr "この運送業者の料金が転記される勘定科目（送料費用
 
 msgid "The goal"
 msgstr "目標"
+
+msgid "The government body a tax component's tax is owed to, such as a state comptroller; the Tax Liability report totals the tax due to each one."
+msgstr "税コンポーネントの税金の納付先となる行政機関（州会計監査官など）。税金債務レポートでは、各機関に納付すべき税額を集計します。"
 
 msgid "The grades that classify your materials"
 msgstr "あなたの材料を分類するグレード"
@@ -30705,6 +31770,9 @@ msgstr "出荷が転記されるときに認識されるインベントリコス
 msgid "The invoice for this payment is drafted on this date"
 msgstr "この支払いの請求書は、この日付で下書きされます。"
 
+msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+msgstr "請求書は転記済みのため、変更内容も請求書の転記日付で端数調整勘定と買掛金に転記されます。"
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS（3、5、7、10、15、20、27.5、39年）に基づくこのアセットのIRS回収期間クラス。"
 
@@ -30771,6 +31839,9 @@ msgstr "あなたの会社が印刷するラベルおよび文書プリンター
 msgid "The labels every project can put on its elements."
 msgstr "すべてのプロジェクトが要素に付けることができるラベル。"
 
+msgid "The last day a tax component applies. To change a rate, set the old component to expire the day before the new one takes effect, then add the new one. Two components with the same name and authority cannot be in force on the same day."
+msgstr "税構成要素が適用される最終日。税率を変更するには、古い構成要素の終了日を新しい構成要素の適用開始日の前日に設定し、そのうえで新しい構成要素を追加してください。同じ名称と税務当局の組み合わせを持つ2つの税構成要素を、同じ日に有効にすることはできません。"
+
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
 msgstr "リース月の末日（{commencementDay}日の前日）、最後の転記済みリース実行後"
 
@@ -30796,6 +31867,9 @@ msgstr "リースの"
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
 msgstr "リースされた資産は行使日から減価償却される固定資産となります。その後の支払義務は除去されます。リースの他の資産は変わりません。"
+
+msgid "The ledger has entries"
+msgstr ""
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "商品を受け取る得意先と異なる請求先の法人エンティティ。親会社/子会社または第三者請求の場合に使用します。"
@@ -30823,6 +31897,9 @@ msgstr "この仕入先のライフサイクル状態 — 有効、無効、承�
 
 msgid "The lines could not be loaded."
 msgstr "明細を読み込めませんでした。"
+
+msgid "The lines print different part numbers. A pick sets every line."
+msgstr "明細ごとに異なる部品番号が印刷されています。いずれかを選択すると、すべての明細に適用されます。"
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "計画グループのオーダーの一部から 1 つのメンバーの需要へのリンク：オーダーが開いている間はソフト（MRP は移動する可能性があります）。受け取られたまたは完了したときはハード（移動しない）。またはプランナーが理由を付けて設定するときはマニュアル。"
@@ -31029,6 +32106,9 @@ msgstr "必要な親が構築される場合、部品は独自のジョブとし
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "部品はその親製品が製造されるときに既存在庫から取得されます。新しい製造指図または発注書は作成されません。"
 
+msgid "The part numbers of this document cannot change now."
+msgstr "この帳票の部品番号は、今は変更できません。"
+
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "政府が進捗支払または成果支払を回収するために納品支払から控除する部分。清算率 × 請求書で計算され、未清算融資額を超えません。"
 
@@ -31131,6 +32211,9 @@ msgstr "プロジェクトの在庫は同じ得意先のプロジェクトにの
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "プロバイダーはディメンションターゲットを提供していません。最初にプロバイダーで機能を有効にしてください(例:追跡カテゴリ、クラス追跡、またはフィールド)。"
 
+msgid "The provider returned no tax rates — check the connection and reload."
+msgstr "プロバイダーが税率を返していません。接続を確認して再度読み込んでください。"
+
 #. placeholder {0}: formatter.format(invoicedOption)
 msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
 msgstr "購入オプションはすでに{0}で請求済です。その価格で実行するか、最初に請求書を削除してください。"
@@ -31185,6 +32268,9 @@ msgstr "全資産の支払が割引される割合"
 
 msgid "The rate the burden run applies to project cost"
 msgstr "バーデン実行がプロジェクト原価に適用するレート"
+
+msgid "The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead."
+msgstr "この得意先の文書明細に税コードが適用されない場合に使用する税率です。会社に税コードがある場合は、代わりにその得意先に割り当ててください。"
 
 msgid "The rates the contract clause sets. A modification adds a rate from its effective date."
 msgstr "契約条項が設定するレート。修正は有効日からレートを追加します。"
@@ -31256,6 +32342,9 @@ msgstr "使用権資産とリース負債は貸借対照表に計上され、1�
 msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
 msgstr ""
 
+msgid "The sales order could not be read, so it was not checked against this invoice."
+msgstr "受注を読み込めなかったため、この請求書との照合は行われていません。"
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"
 
@@ -31292,8 +32381,14 @@ msgstr "外注サービスおよび請求書での表示方法"
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "このコントラクトが請求する外注サービス：1回限りの料金と定期的な料金。セルをクリックして変更してください。"
 
+msgid "The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought."
+msgstr "税コンポーネントの仕入税のうち、会社が回収できる部分です。これは支払い税勘定に転記され、残りは仕入原価に含まれます。"
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "在庫が物理的に置かれている棚とビン。"
+
+msgid "The shop cannot finish this by {promised}."
+msgstr "工場では{promised}までに完了できません。"
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "手元に保管する店舗用品と消耗品"
@@ -31388,6 +32483,9 @@ msgstr "このアイテムが購買される必要があるときに計画が最
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "このポータルアカウントがリンクする仕入先レコード。その仕入先上にある担当者のみが以下のアカウント保有者として選択できます。"
 
+msgid "The supplier you pay this authority's tax to"
+msgstr "この当局の税を支払う仕入先"
+
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "仕入先独自の見積/提案番号。この見積から変換されるPOのトレーサビリティのために記録されます。"
 
@@ -31414,6 +32512,9 @@ msgstr "会社が人員のログインを管理するシステム — Oktaまた
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "システムは、設定されたシステム内のすべてのスコープ内受け入れテストに合格し、データが検証され、サインオフされます。その後、本番環境に移行します。"
+
+msgid "The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax."
+msgstr "転記済請求書とメモが仕訳で書き込む税記録。明細と税コンポーネントごとに1行あり、課税ベース、税、回収可能税を含みます。"
 
 msgid "The terms & conditions printed on this document."
 msgstr "この文書に印刷される利用規約です。"
@@ -31625,6 +32726,9 @@ msgstr "これらの勘定には代替が必要です。"
 msgid "These are the record's own notes. Changing them here changes them on the record too."
 msgstr "これはレコード自体のメモです。ここで変更すると、レコードのメモも変更されます。"
 
+msgid "These bill of materials lines use a different unit than their item is stocked in, so they can't be compared with stock. Correct the line or the item's unit of measure."
+msgstr "これらの部品表明細は、品目の在庫単位と異なる単位を使用しているため、在庫と比較できません。明細または品目の単位を修正してください。"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "これらのカスタムフィールドは、同じタグを持つエンティティでのみ利用可能です"
 
@@ -31642,6 +32746,9 @@ msgstr "これらにはバッチ番号がないため、転送でピッキング
 
 msgid "These have no serial number, so a transfer can't pick them. Give each one a serial number to move it."
 msgstr "これらにはシリアル番号がないため、転送でピッキングできません。移動するには、それぞれにシリアル番号を割り当ててください。"
+
+msgid "These items are on, or below, a loop in the bill of materials, so it can't be exploded. Remove the line that makes an item a component of itself."
+msgstr "これらの品目は部品表のループ上またはループの下位にあるため、展開できません。品目を自身の構成部品にしている明細を除去してください。"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "これらの品目にはまだピッキングする材料があります。今完成にマークすると、リストを「一部」に設定します。"
@@ -31765,11 +32872,17 @@ msgstr "この得意先タイプのレート"
 msgid "This customer's rate"
 msgstr "この得意先のレート"
 
+msgid "This date cannot be met"
+msgstr "この納期は満たせません"
+
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "この部門は{locationName}に作業区がありません。別の部門または拠点を選択してください。"
 
 msgid "This department has no work centers at this location. Pick another department or location."
 msgstr "この部門はこの拠点に作業区がありません。別の部門または拠点を選択してください。"
+
+msgid "This download link has expired. Ask for a new one."
+msgstr "このダウンロードリンクは期限切れです。新しいリンクを依頼してください。"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
@@ -31827,6 +32940,9 @@ msgstr "この{0}への参加への招待は期限切れです。新しい招待
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "この請求書は使用可能な支払期日がありません。Stripe 用に 1 つ選択してください。"
 
+msgid "This invoice uses a rate of 1 for {currencyCode}, but today's rate is {currentRate}"
+msgstr "この請求書は {currencyCode} の為替レートとして 1 を使用していますが、本日の為替レートは {currentRate} です"
+
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
 
@@ -31846,7 +32962,7 @@ msgid "This is a unique identifier for the webhook"
 msgstr "これはWebhookの一意識別子です"
 
 msgid "This is an Admin override"
-msgstr ""
+msgstr "これは管理者による上書きです"
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "これはITAR管理環境です。アクセスは米国人に限定されています。"
@@ -31954,8 +33070,17 @@ msgstr "この部品のみ"
 msgid "This path only decides what runs next"
 msgstr "このパスは次に何が実行されるかだけを決定します"
 
+msgid "This payment did not post"
+msgstr "この支払は転記されませんでした"
+
+msgid "This payment is a Draft. Its applications do not pay the invoices until it is posted."
+msgstr "この支払は下書きです。転記されるまで、この支払の適用先の請求書は支払済みになりません。"
+
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "この期間には転記された仕訳がなく、永久に削除できます。この処理は取り消せません。"
+
+msgid "This period is closed, so its checklist is read-only."
+msgstr "この会計期間はクローズ済みのため、チェックリストは読み取り専用です。"
 
 msgid "This PIN will not be shown again."
 msgstr "このPINは再度表示されません。"
@@ -31968,6 +33093,9 @@ msgstr "このPINは再度表示されません。MES 端末でコンソール�
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "テキストが数値を変更しているため、このプレビューは一時停止しています。"
+
+msgid "This price break has a Reverse Charge tax code. A supplier charges no tax on a reverse charge, so its tax amount must be 0."
+msgstr "この価格スケールにはリバースチャージの税コードが設定されています。リバースチャージでは仕入先は税を請求しないため、税額は0でなければなりません。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "この価格は手動で入力されたため、価格設定ルールは適用されていません。"
@@ -32249,6 +33377,9 @@ msgstr "Time & Materials明細とコストプラス明細は、毎請求期間�
 msgid "Time & Materials and Cost Plus lines show here. Fixed Price lines bill on billing events."
 msgstr "Time & Materials明細とコストプラス明細がここに表示されます。固定価格明細は請求イベント時に請求されます。"
 
+msgid "Time Analysis"
+msgstr "時間分析"
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "資産クラス別のレンタル資産の時間・金額利用率"
 
@@ -32339,6 +33470,9 @@ msgstr "イベントのタイトル"
 msgid "Title passes to the customer when the term ends."
 msgstr "契約期間が終了すると、所有権が得意先に移転します。"
 
+msgid "to"
+msgstr "〜"
+
 msgid "To"
 msgstr "へ"
 
@@ -32384,6 +33518,9 @@ msgstr "出荷待ち"
 
 msgid "To Ship and Receive"
 msgstr "出荷待ちおよび入荷待ち"
+
+msgid "To Start More"
+msgstr "追加で着手するための必要数"
 
 msgid "To Storage Unit"
 msgstr "保管ユニットへ"
@@ -32678,10 +33815,10 @@ msgid "Tracked material is pre-selected by pick order (FEFO), even without a pic
 msgstr "追跡される材料は、ピッキングリストがない場合でも、ピック順（FEFO）によって事前に選択されます。"
 
 msgid "Tracked parts are not required"
-msgstr ""
+msgstr "追跡対象部品は必須ではありません"
 
 msgid "Tracked parts must be scanned in"
-msgstr ""
+msgstr "追跡対象部品はスキャンして登録が必要"
 
 msgid "Tracking"
 msgstr "追跡"
@@ -32807,16 +33944,16 @@ msgid "Travel"
 msgstr "旅行"
 
 msgid "Traveler labels disabled"
-msgstr ""
+msgstr "現品票ラベル: 無効"
 
 msgid "Traveler labels enabled"
-msgstr ""
+msgstr "現品票ラベル：有効"
 
 msgid "Traveler Link"
-msgstr ""
+msgstr "現品票リンク"
 
 msgid "Traveler materials disabled"
-msgstr "現品票の材料が無効になりました"
+msgstr "現品票材料が無効にされました"
 
 msgid "Traveler materials enabled"
 msgstr "現品票材料が有効化されました"
@@ -32828,7 +33965,7 @@ msgid "Traveler operations enabled"
 msgstr "現品票工程が有効化されました"
 
 msgid "Travelers print at the pick"
-msgstr ""
+msgstr "ピッキング時に現品票が印刷されます"
 
 msgid "Treatment"
 msgstr "会計処理"
@@ -32870,7 +34007,7 @@ msgid "Tuesday"
 msgstr "火曜日"
 
 msgid "Turn Off"
-msgstr ""
+msgstr "オフにする"
 
 msgid "Turn On"
 msgstr "オンにする"
@@ -32885,10 +34022,10 @@ msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
 
 msgid "Turn on to create one picking list for each job when it is released."
-msgstr ""
+msgstr "有効にすると、製造指図のリリース時に製造指図ごとにピッキングリストを1つ作成します。"
 
 msgid "Turned off sync"
-msgstr "同期をオフにしました"
+msgstr "同期がオフになりました"
 
 msgid "Turned on sync"
 msgstr "同期をオンにしました"
@@ -32943,10 +34080,10 @@ msgid "Type {0} to confirm"
 msgstr "{0}を入力して確認してください。"
 
 msgid "Type {purchaseOrderReadableId} to confirm"
-msgstr ""
+msgstr "確認のため {purchaseOrderReadableId} と入力してください"
 
 msgid "Type {readableId} to confirm"
-msgstr ""
+msgstr "確認のため {readableId} と入力"
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "変数を挿入するために {TRIGGER} を入力してください"
@@ -32977,6 +34114,9 @@ msgstr "タイプ:"
 
 msgid "Types"
 msgstr "タイプ"
+
+msgid "Typical"
+msgstr "標準"
 
 msgid "U.S. Person Attestation"
 msgstr "米国人証明"
@@ -33106,7 +34246,7 @@ msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "一意、大文字、スペースなし（最大10文字）"
 
 msgid "Unique, without spaces (max 10 characters), such as kg or BX"
-msgstr ""
+msgstr "スペースを含まない一意の値（10文字以内）。例: kg、BX"
 
 msgid "Unit"
 msgstr "単位"
@@ -33169,6 +34309,9 @@ msgstr "単価販売価格"
 
 msgid "Units"
 msgstr "単位"
+
+msgid "Units don't match"
+msgstr "単位が一致しません"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "この通貨の1単位あたりの基軸通貨の単位数。転記時の金額変換に使用します。"
@@ -33254,6 +34397,9 @@ msgstr "マップされていないディメンション値"
 
 msgid "Unmapped Extracted Lines"
 msgstr "マップされていない抽出行"
+
+msgid "Unmapped tax codes"
+msgstr "未割り当て税コード"
 
 msgid "Unmapped values"
 msgstr "マップされていない値"
@@ -33471,6 +34617,9 @@ msgstr "正常に更新されました"
 msgid "Updated task status"
 msgstr "タスクステータスが更新されました"
 
+msgid "Updating…"
+msgstr "更新中…"
+
 msgid "Upgrade"
 msgstr "アップグレード"
 
@@ -33585,6 +34734,9 @@ msgstr "緊急"
 msgid "URL"
 msgstr "URL"
 
+msgid "US"
+msgstr "US"
+
 msgid "Usage/Day (30d)"
 msgstr "使用量/日 (30日)"
 
@@ -33602,6 +34754,12 @@ msgstr "「...」を使用して次のパートIDを取得します"
 
 msgid "Use ... to get the next tool ID"
 msgstr "「...」を使用して次のツールIDを取得します"
+
+msgid "Use {earliest}"
+msgstr "{earliest}を使用"
+
+msgid "Use {suggestedName}"
+msgstr "{suggestedName}を使用"
 
 msgid "Use a different account"
 msgstr "別のアカウントを使用"
@@ -34201,6 +35359,9 @@ msgstr "待機中"
 msgid "Waiting for the first sync"
 msgstr "最初の同期を待っています"
 
+msgid "Waiting on Parts"
+msgstr "部品待ち"
+
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "チャンピオンと一緒に各エリアを確認し、範囲外のものをトグルしてください。コードはModule.Area.Numberを読みます（ACC.GL.01 = 会計、総勘定元帳、品目1）。"
 
@@ -34231,11 +35392,17 @@ msgstr "警告するが許可する"
 msgid "Warn this many days before expiry"
 msgstr "使用期限の何日前に警告"
 
+msgid "Warn when a sales order line's promised date can't be met. To use a different check for one item, set it on the item's Planning tab."
+msgstr "受注明細の約束日に間に合わない場合に警告します。特定の品目で別のチェックを使うには、その品目の「計画」タブで設定します。"
+
 msgid "Warn when the person inspecting an inbound item is the same person who received it."
 msgstr "受け取った人と同じ人が受け入れ品を検査する場合に警告します。"
 
 msgid "Warning"
 msgstr "警告"
+
+msgid "Warns when a sales order line's promised date can't be met, and suggests the earliest date that can."
+msgstr "受注明細の約束日に間に合わない場合に警告し、間に合う最も早い日付を提案します。"
 
 msgid "Warranty"
 msgstr "保証"
@@ -34313,6 +35480,9 @@ msgstr "水曜日"
 msgid "Week"
 msgstr "週"
 
+msgid "Week ({numbering})"
+msgstr "週（{numbering}）"
+
 #. placeholder {0}: d.week
 msgid "Week {0}"
 msgstr "第{0}週"
@@ -34325,6 +35495,9 @@ msgstr "週 {weekNumber} ({formattedDate})"
 
 msgid "Week 8 cutover"
 msgstr "第8週のカットオーバー"
+
+msgid "Week Numbering"
+msgstr "週番号の付け方"
 
 #. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
 msgid "Week of {0}"
@@ -34368,8 +35541,17 @@ msgstr "週は暦週で番号付けされます"
 msgid "Weeks are numbered from the present week"
 msgstr "週は今週から番号付けされます"
 
+msgid "Weeks are numbered in Settings → Company."
+msgstr "週の番号付けは「設定」→「会社」で行います。"
+
 msgid "Weeks Open"
 msgstr "開いている週数"
+
+msgid "Weeks start on Monday. Week 1 is the week with the year's first Thursday, so a week is never split: Friday 1 January 2027 is in week 53 of 2026."
+msgstr "週は月曜日に始まります。第1週は、その年の最初の木曜日を含む週です。そのため、1つの週が分割されることはありません。例えば、2027年1月1日（金）は2026年の第53週に含まれます。"
+
+msgid "Weeks start on Sunday. Week 1 is the week of 1 January, so the weeks around a new year are short: 1–2 January 2027 is week 1."
+msgstr "週は日曜日に始まります。第1週は1月1日を含む週です。そのため、年始の週は短くなります。2027年1月1～2日は第1週です。"
 
 msgid "Weighted Average"
 msgstr "加重平均"
@@ -34425,12 +35607,6 @@ msgstr "このアセットの初年度における各期の支払額"
 msgid "What employees read or watch before the questions"
 msgstr "質問の前に従業員が読むまたは視聴するもの"
 
-msgid "What happens to an invoice once it is created"
-msgstr "請求書が作成されたら何が起こるか"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "請求書が下書きになった後に何が起こるか"
-
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "レンタル契約と契約から毎日自動的に作成される請求書について説明します。賃貸料金、クレジット、取消済請求書の再請求、またはルール違反を含む請求書は常にレビュー待機中です。"
 
@@ -34448,6 +35624,9 @@ msgstr "{translatedTerm}とは何ですか?"
 
 msgid "What is leased, for example Forklift FL-12"
 msgstr "リースされている内容（例：Forklift FL-12など）"
+
+msgid "What is on hand at this location, which open jobs have the parts to finish, and what the others are short of. Starting more is checked through every level of the bill of materials, with each item's scrap."
+msgstr "この拠点の手持ち在庫、完成に必要な部品がそろっているオープンの製造指図、およびそれ以外の製造指図の不足部品を表示します。追加着手は部品表のすべての階層を、各品目のスクラップを含めて確認します。"
 
 msgid "What is the primary contact?"
 msgstr "主担当者はどなたですか？"
@@ -34469,6 +35648,9 @@ msgstr "このPOの種類（標準商品、外注サービス、外注加工、�
 
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "この見積の種類 — 標準仕入先見積、ブランケット契約価格見積、または契約製造見積。変換時にPOラインレイアウトを決定します。"
+
+msgid "What limits new jobs, from stock no job or order has claimed."
+msgstr "新規の製造指図の上限を決めているもの（どの製造指図・受注にも引き当てられていない在庫から）。"
 
 msgid "What posting this run will write, by account."
 msgstr "このランが勘定別に転記する内容。"
@@ -34493,6 +35675,9 @@ msgstr "得意先が支払う額で、明細の請求イベント時に請求さ
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "期日カウントダウンが開始される内容(請求書日付、月末など)。"
+
+msgid "What the jobs waiting on parts still need after stock. Buy or make these to finish them."
+msgstr "在庫を充当した後も部品待ちの製造指図になお必要な数量です。完成させるには、これらを購入または内製してください。"
 
 msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
 msgstr "リースが支払う金額とその時期。有効化により、リース債務がこれらの行から評価されます。セルをクリックして変更してください。"
@@ -34525,10 +35710,10 @@ msgid "What to set up"
 msgstr "セットアップする内容"
 
 msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
-msgstr ""
+msgstr "誤って入力された内容と、訂正も取消もできない理由"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
-msgstr ""
+msgstr "誤って入力された内容と、代わりに受注を修正またはクローズできない理由"
 
 msgid "What we're assuming"
 msgstr "私たちが想定していること"
@@ -34581,6 +35766,9 @@ msgstr "MRPがこの部品を旧部品の所要量に使用し始めるとき"
 msgid "When MRP uses the successor for new demand"
 msgstr "MRPが新しい所要量に対して後継品目を使用する場合"
 
+msgid "When on, a line's share of the document's header shipping joins its taxable amount, so the tax code taxes it at the same rate as the goods. A line's own shipping charge is always taxed."
+msgstr "オンにすると、ヘッダーの配送料のうち明細に按分された金額が課税対象額に含まれ、税コードが商品と同じ税率で課税します。明細自身の配送料は常に課税されます。"
+
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "有効にすると、このカテゴリーの属性がユーザーの公開プロフィールに表示されます。そうでない場合は、管理者のみが表示できます。"
 
@@ -34612,7 +35800,7 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "仕入先の回答が返信予定の日付。仕入先は見積依頼ポータルでこの日付を確認できます。Carbonはこの日付後の遅い回答の受け入れを中止します（設定可能）。"
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "購買担当者が品物を依頼した日です。仕入先は入荷回答納期に別の日付を回答し、納期には別の日付を転記することがあります。"
+msgstr "購買担当者が品を希望した日です。仕入先は入荷回答納期に別の日を回答することがあり、その後、納期に別の日を登録することもあります。"
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "購買担当者がこの明細の品物を受入場所に必要とする日です。新しい明細は、発注の入荷希望納期から始まります。計画では、この日付を在庫の利用可能性と外注工程のスケジュールに使用します。"
@@ -34712,6 +35900,9 @@ msgstr "出荷方法に基づき、品物の到着を見込む日です。参考
 
 msgid "When your fiscal and tax years start"
 msgstr "会計年度および税務年度の開始時期"
+
+msgid "Where a tax code applies: a customer's or supplier's Tax tab suggests the codes of its country and state, and a code with no state fits the whole country."
+msgstr "税コードの適用先：得意先または仕入先の「税」タブには、その国と州の税コードが提示されます。州が指定されていない税コードは国全体に適用されます。"
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
 msgstr "ワークフロー通知が配信される場所 — アプリ内は常に送信されますが、メールはビジネスプランまたはパートナープランが必要で、Slackはワークスペースが接続されている必要があります。"
@@ -34963,6 +36154,9 @@ msgstr "仕掛品"
 msgid "with {0} contingency"
 msgstr "{0}の予備費付き"
 
+msgid "With {week} and no {month} or {day}, the year is the year the week belongs to: 1 January 2027 is in week 53 of 2026."
+msgstr "{week} を使い、{month} や {day} を使わない場合、年はその週が属する年になります。2027年1月1日は2026年の第53週に含まれます。"
+
 msgid "With Previous"
 msgstr "前工程と同時"
 
@@ -35140,7 +36334,7 @@ msgid "Written with a warning"
 msgstr "警告付きで書かれている"
 
 msgid "Wrote the missing journal of 1 document"
-msgstr "1件のドキュメントの不足している仕訳を記述"
+msgstr "1個の文書の欠落している仕訳が書き込まれました"
 
 #. placeholder {0}: data.documents
 msgid "Wrote the missing journals of {0} documents"
@@ -35369,7 +36563,7 @@ msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"
 
 msgid "Your reason and the decision are kept in the audit log."
-msgstr ""
+msgstr "理由と決定内容は監査ログに保存されます。"
 
 msgid "Your session was locked after inactivity."
 msgstr "非アクティブのためセッションがロック中になりました。"

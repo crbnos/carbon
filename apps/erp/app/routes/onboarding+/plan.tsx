@@ -18,7 +18,7 @@ import {
   IconButton,
   VStack
 } from "@carbon/react";
-import { getCheckoutUrl } from "@carbon/stripe/stripe.server";
+import { getCheckoutUrl, hasUsedFreeTrial } from "@carbon/stripe/stripe.server";
 import { Edition, redirect, redirectExternal } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -91,17 +91,25 @@ export async function loader({ request }: ActionFunctionArgs) {
     throw redirect(path.to.authenticatedRoot);
   }
 
-  const plans = await api.settings.getPlans({});
-
   if (!companyId) {
     throw redirect(path.to.onboarding.company);
   }
+
+  const [plans, usedFreeTrial] = await Promise.all([
+    api.settings.getPlans({}),
+    hasUsedFreeTrial(companyId)
+  ]);
 
   if (plans.error || !plans.data) {
     throw new Error("Failed to load plans");
   }
 
-  return { plans: plans.data?.filter((p) => p.public), companyId };
+  return {
+    plans: plans.data
+      .filter((p) => p.public)
+      .map((p) => (usedFreeTrial ? { ...p, stripeTrialPeriodDays: 0 } : p)),
+    companyId
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -191,7 +199,9 @@ export default function OnboardingPlan() {
               <Trans>Select a plan</Trans>
             </CardTitle>
             <CardDescription>
-              {t`Select a plan to get started. You won't be charged for the first ${plans[0].stripeTrialPeriodDays} days. Switch or cancel anytime.`}
+              {plans[0].stripeTrialPeriodDays > 0
+                ? t`Select a plan to get started. You won't be charged for the first ${plans[0].stripeTrialPeriodDays} days. Switch or cancel anytime.`
+                : t`Select a plan to get started. Switch or cancel anytime.`}
             </CardDescription>
           </CardHeader>
         </div>

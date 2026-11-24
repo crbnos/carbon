@@ -173,6 +173,49 @@ BEGIN
   ASSERT NOT pg_temp.allows('country', 'SELECT', 'using', '{}'::jsonb), 'anon does not';
   RAISE NOTICE 'PASS authenticated';
 
+  -- apiKey: a request with a valid API key (one holding a grant) reads reference data (country, period); an
+  -- expired or unknown key, or none, does not. get_exchange_rate reads exchangeRate as the
+  -- caller, so a key must resolve a market rate (allows() ignores a policy's TO role list,
+  -- which is how exchangeRate used to keep keys out, so this calls the function instead).
+  DECLARE
+    live_key text := 'crbn_pieces_live_' || gen_random_uuid()::text;
+    old_key text := 'crbn_pieces_old_' || gen_random_uuid()::text;
+  BEGIN
+    RESET ROLE;
+    INSERT INTO "apiKey" (name, "companyId", "createdBy", "keyHash", "expiresAt") VALUES
+      ('Pieces live', company_a, u, encode(digest(live_key::bytea, 'sha256'), 'hex'), NULL),
+      ('Pieces old', company_a, u, encode(digest(old_key::bytea, 'sha256'), 'hex'), now() - interval '1 day');
+    INSERT INTO "exchangeRate" ("currencyCode", "effectiveDate", rate) VALUES
+      ('USD', '2000-01-03', 1), ('EUR', '2000-01-03', 0.99)
+      ON CONFLICT ("currencyCode", "effectiveDate") DO NOTHING;
+    -- A key counts only while it holds a grant (util.request_api_key).
+    INSERT INTO permission ("companyId", "apiKeyId", module, level, "createdBy")
+      SELECT company_a, k.id, 'Items', 'View', 'system'
+      FROM "apiKey" k
+      WHERE k."companyId" = company_a AND k.name IN ('Pieces live', 'Pieces old');
+    PERFORM set_config('request.jwt.claims', jsonb_build_object('role', 'anon')::text, true);
+
+    PERFORM set_config('request.headers', jsonb_build_object('carbon-key', live_key)::text, true);
+    SET LOCAL ROLE anon;
+    ASSERT pg_temp.allows('country', 'SELECT', 'using', '{}'::jsonb), 'a valid key reads countries';
+    ASSERT pg_temp.allows('period', 'SELECT', 'using', '{}'::jsonb), 'a valid key reads periods';
+    ASSERT get_exchange_rate(company_a, 'EUR') > 0, 'a valid key resolves a market exchange rate';
+
+    RESET ROLE;
+    PERFORM set_config('request.headers', jsonb_build_object('carbon-key', old_key)::text, true);
+    SET LOCAL ROLE anon;
+    ASSERT NOT pg_temp.allows('period', 'SELECT', 'using', '{}'::jsonb), 'an expired key does not';
+
+    RESET ROLE;
+    PERFORM set_config('request.headers', jsonb_build_object('carbon-key', 'crbn_unknown')::text, true);
+    SET LOCAL ROLE anon;
+    ASSERT NOT pg_temp.allows('period', 'SELECT', 'using', '{}'::jsonb), 'an unknown key does not';
+
+    RESET ROLE;
+    PERFORM set_config('request.headers', '{}', true);
+  END;
+  RAISE NOTICE 'PASS apiKey';
+
   -- projectModule: Projects → Projects in the project's company decides (projectElement,
   -- project, projectElementLabel via the element, timesheetEntry). Any employee still reads.
   DECLARE

@@ -5,18 +5,26 @@
 import type { Database } from "@carbon/database";
 import type { SalesInvoiceEmail } from "@carbon/documents/email";
 import { ensureFont, SalesInvoicePDF } from "@carbon/documents/pdf";
-import type { DocumentEdit, ResolvedSection } from "@carbon/documents/template";
+import type { DocumentEdit } from "@carbon/documents/template";
 import {
   collectSectionIds,
-  getBuiltInSection,
   resolveTemplate,
   templateShowsThumbnails
 } from "@carbon/documents/template";
-import { getContentType, getFileExtension, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getPrintedTemplate } from "./document-edit.server";
+import {
+  getBase64Image,
+  getCompany,
+  renderPdfToBuffer,
+  resolveSections,
+  withEmailLogos,
+  withPdfLogos
+} from "./document-data.server";
+import { getCompanyTemplate, getPrintedTemplate } from "./document-edit.server";
+import { loadTaxSummary } from "./sales-invoice-tax-summary.server";
+
+export { loadTaxSummary };
 
 const logger = getLogger("lib", "sales-invoice-document");
 
@@ -38,90 +46,53 @@ export type SalesInvoiceDocument = {
 
 type Client = SupabaseClient<Database>;
 
-const LOGO_FIELDS = [
-  "logoLight",
-  "logoDark",
-  "logoLightIcon",
-  "logoDarkIcon",
-  "logoWatermark"
-] as const;
-
-async function getCompanyWithPublicLogos(
-  client: Client,
-  companyId: string,
-  storageUrl: string
-) {
-  const company = await client
-    .from("company")
-    .select("*")
-    .eq("id", companyId)
-    .single();
-  if (company.error) return company;
-
-  const prefix = `${storageUrl}/storage/v1/object/public/public/`;
-  const data = { ...company.data };
-  for (const field of LOGO_FIELDS) {
-    data[field] = company.data[field]
-      ? `${prefix}${company.data[field]}`
-      : null;
-  }
-  return { data, error: null };
-}
-
-async function resolveSections(
-  client: Client,
-  companyId: string,
-  ids: string[]
-): Promise<Record<string, ResolvedSection>> {
-  if (ids.length === 0) return {};
-  const map: Record<string, ResolvedSection> = {};
-
-  // System sections live in code, not the DB. Seed them first so a stored row
-  // with the same id (a customized/forked default) overrides below.
-  for (const id of ids) {
-    const builtIn = getBuiltInSection(id);
-    if (builtIn) map[id] = builtIn;
-  }
-
-  const dbIds = ids.filter((id) => !map[id] || map[id]?.builtIn);
-  const { data } = await client
-    .from("documentSection")
-    .select("*")
-    .eq("companyId", companyId)
-    .in("id", dbIds);
-  for (const row of (data ?? []) as ResolvedSection[]) {
-    map[row.id] = {
-      id: row.id,
-      name: row.name,
-      placement: row.placement,
-      content: row.content,
-      config: row.config
-    };
-  }
-  return map;
-}
-
-async function getBase64Image(client: Client, path: string) {
-  // Legacy stored HEIC can't be decoded by the PDF renderer — serve the
-  // imgproxy JPEG rendition instead. Everything else passes through raw.
-  const extension = getFileExtension(path);
-  const heic = extension === "heic" || extension === "heif";
-
-  // Private object paths are prefixed with the owning company's id.
-  const companyId = path.split("/")[0];
-  if (!companyId) return null;
-
-  const { data } = await storage(client)
-    .company(companyId)
-    .download(path, heic ? { transform: { quality: 90 } } : undefined);
-  if (!data) return null;
-
-  const base64String = Buffer.from(await data.arrayBuffer()).toString("base64");
-
-  const contentType = heic ? "image/jpeg" : getContentType(extension);
-  const mimeType = contentType.startsWith("image/") ? contentType : "image/png";
-
-  return `data:${mimeType};base64,${base64String}`;
+/** The company-level reads every sales invoice PDF needs. */
+async function loadCompanyInvoiceData(client: Client, companyId: string) {
+  const [
+    company,
+    companySettings,
+    arBillingAddress,
+    terms,
+    paymentTerms,
+    shippingMethods,
+    shippingTerms
+  ] = await Promise.all([
+    getCompany(client, companyId),
+    client.from("companySettings").select("*").eq("id", companyId).single(),
+    client
+      .from("companyAccountsReceivableBillingAddress")
+      .select("*")
+      .eq("id", companyId)
+      .single(),
+    client.from("terms").select("salesTerms").eq("id", companyId).single(),
+    client
+      .from("paymentTerm")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name", { ascending: true }),
+    client
+      .from("shippingMethod")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name", { ascending: true }),
+    client
+      .from("shippingTerm")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name", { ascending: true })
+  ]);
+  return {
+    company,
+    companySettings,
+    arBillingAddress,
+    terms,
+    paymentTerms,
+    shippingMethods,
+    shippingTerms
+  };
 }
 
 /**
@@ -132,46 +103,47 @@ async function getBase64Image(client: Client, path: string) {
  */
 export async function loadSalesInvoiceDocument(args: {
   client: Client;
+  /**
+   * Service-role client for the tax reads, whose RLS needs accounting, sales
+   * or purchasing view, so an invoicing-only reader prints the same tax as the
+   * emailed copy. Pass it only after checking the caller's permission; a
+   * caller that already holds a service-role `client` passes it again.
+   */
+  taxClient: Client;
   companyId: string;
   companyGroupId: string;
   invoiceId: string;
   locale: string;
-  /** Base for public logo URLs (`SUPABASE_URL`). */
-  storageUrl: string;
   /** Draft edits to preview; omitted, the saved ones are read. */
   edit?: DocumentEdit | null;
 }): Promise<SalesInvoiceDocument> {
   const {
     client,
+    taxClient,
     companyId,
     companyGroupId,
     invoiceId,
     locale,
-    storageUrl,
     edit
   } = args;
 
   const [
-    company,
-    companySettings,
-    arBillingAddress,
+    {
+      company,
+      companySettings,
+      arBillingAddress,
+      terms,
+      paymentTerms,
+      shippingMethods,
+      shippingTerms
+    },
     salesInvoice,
     salesInvoiceLines,
     salesInvoiceLocations,
     salesInvoiceShipment,
-    terms,
-    paymentTerms,
-    shippingMethods,
-    shippingTerms,
     templateConfig
   ] = await Promise.all([
-    getCompanyWithPublicLogos(client, companyId, storageUrl),
-    client.from("companySettings").select("*").eq("id", companyId).single(),
-    client
-      .from("companyAccountsReceivableBillingAddress")
-      .select("*")
-      .eq("id", companyId)
-      .single(),
+    loadCompanyInvoiceData(client, companyId),
     client
       .from("salesInvoices")
       .select("*")
@@ -198,25 +170,6 @@ export async function loadSalesInvoiceDocument(args: {
       .eq("id", invoiceId)
       .eq("companyId", companyId)
       .single(),
-    client.from("terms").select("salesTerms").eq("id", companyId).single(),
-    client
-      .from("paymentTerm")
-      .select("id, name")
-      .eq("companyId", companyId)
-      .eq("active", true)
-      .order("name", { ascending: true }),
-    client
-      .from("shippingMethod")
-      .select("id, name")
-      .eq("companyId", companyId)
-      .eq("active", true)
-      .order("name", { ascending: true }),
-    client
-      .from("shippingTerm")
-      .select("id, name")
-      .eq("companyId", companyId)
-      .eq("active", true)
-      .order("name", { ascending: true }),
     getPrintedTemplate(
       client,
       { companyId, documentType: "salesInvoice", documentId: invoiceId },
@@ -345,13 +298,31 @@ export async function loadSalesInvoiceDocument(args: {
     contactEmail: invoiceContact?.data?.contact?.email ?? null
   };
 
-  // `company` (table, logos rewritten to public URLs) stands in for the
-  // `companies` view row the documents type against, as the routes always did.
-  const companyRow = company.data as unknown as SalesInvoicePDFProps["company"];
+  const tax = await loadTaxSummary({
+    taxClient,
+    companyId,
+    invoiceId,
+    company: company.data,
+    salesInvoice: salesInvoice.data,
+    lines: salesInvoiceLines.data ?? [],
+    headerShipping:
+      (salesInvoiceShipment.data?.shippingCost ?? 0) *
+      (salesInvoice.data.exchangeRate ?? 1),
+    currencyDecimals
+  });
+
+  // `company` (the table row) stands in for the `companies` view row the
+  // documents type against, as the routes always did.
+  const pdfCompany = withPdfLogos(
+    company.data
+  ) as unknown as SalesInvoicePDFProps["company"];
+  const emailCompany = withEmailLogos(
+    company.data
+  ) as unknown as SalesInvoicePDFProps["company"];
   const lines = salesInvoiceLines.data ?? [];
 
   const pdfProps: SalesInvoicePDFProps = {
-    company: companyRow,
+    company: pdfCompany,
     companySettings: companySettings.data,
     locale,
     currencyDecimals,
@@ -375,7 +346,9 @@ export async function loadSalesInvoiceDocument(args: {
     shippingTerms: shippingTerms.data ?? [],
     thumbnails,
     template: templateConfig,
-    sections
+    sections,
+    partNumberDisplayDraft: edit?.partNumberDisplay,
+    ...tax
   };
 
   // The view types every column nullable; the table's invoiceId never is.
@@ -384,7 +357,7 @@ export async function loadSalesInvoiceDocument(args: {
   return {
     pdfProps,
     email: {
-      company: companyRow,
+      company: emailCompany,
       currencyDecimals,
       salesInvoice: salesInvoice.data,
       salesInvoiceLines: lines,
@@ -394,6 +367,269 @@ export async function loadSalesInvoiceDocument(args: {
     },
     invoiceReadableId,
     fileName: `${company.data.name} - ${invoiceReadableId}.pdf`
+  };
+}
+
+/** An invoice that is not saved: its header and lines, computed by the caller. */
+export type UnsavedSalesInvoice = {
+  /** What prints as the invoice number, e.g. "Preview". */
+  invoiceId: string;
+  customerId: string;
+  /** Bill-to and ship-to, as a rental invoice drafts them. */
+  customerLocationId: string | null;
+  customerContactId: string | null;
+  paymentTermId: string | null;
+  currencyCode: string;
+  exchangeRate: number;
+  dateIssued: string;
+  dateDue: string | null;
+  subtotal: number;
+  totalTax: number;
+  totalAmount: number;
+  lines: {
+    id: string;
+    invoiceLineType: Database["public"]["Enums"]["salesInvoiceLineType"];
+    description: string;
+    unitPrice: number;
+    convertedUnitPrice: number;
+    taxPercent: number;
+    taxCodeId: string | null;
+  }[];
+};
+
+/**
+ * The PDF props of an invoice that exists only in memory — a preview of what
+ * a billing run will draft. Reads the company, the customer, its location and
+ * contact, and the company's sales invoice template (no per-document edit:
+ * there is no document). Writes nothing.
+ */
+export async function loadUnsavedSalesInvoiceDocument(args: {
+  client: Client;
+  /** Service-role client for the tax summary, as `loadSalesInvoiceDocument`. */
+  taxClient: Client;
+  companyId: string;
+  companyGroupId: string;
+  locale: string;
+  invoice: UnsavedSalesInvoice;
+}): Promise<{ pdfProps: SalesInvoicePDFProps; fileName: string }> {
+  const { client, taxClient, companyId, companyGroupId, locale, invoice } =
+    args;
+
+  const [
+    companyData,
+    customer,
+    customerTax,
+    location,
+    contact,
+    currency,
+    templateConfig
+  ] = await Promise.all([
+    loadCompanyInvoiceData(client, companyId),
+    client
+      .from("customer")
+      .select("name")
+      .eq("id", invoice.customerId)
+      .eq("companyId", companyId)
+      .single(),
+    client
+      .from("customerTax")
+      .select("taxId, vatNumber, eori")
+      .eq("customerId", invoice.customerId)
+      .maybeSingle(),
+    invoice.customerLocationId
+      ? client
+          .from("customerLocation")
+          .select(
+            "address(addressLine1, addressLine2, city, stateProvince, postalCode, countryCode, country(name))"
+          )
+          .eq("id", invoice.customerLocationId)
+          .eq("customerId", invoice.customerId)
+          .maybeSingle()
+      : null,
+    invoice.customerContactId
+      ? client
+          .from("customerContact")
+          .select("contact(fullName, email)")
+          .eq("id", invoice.customerContactId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    client
+      .from("currencies")
+      .select("decimalPlaces")
+      .eq("code", invoice.currencyCode)
+      .eq("companyGroupId", companyGroupId)
+      .maybeSingle(),
+    getCompanyTemplate(client, { companyId, documentType: "salesInvoice" })
+  ]);
+
+  const { company, companySettings, arBillingAddress, terms } = companyData;
+  // A failed address or contact read would print an invoice with no Bill To.
+  if (
+    company.error ||
+    customer.error ||
+    terms.error ||
+    customerTax.error ||
+    location?.error ||
+    contact?.error
+  ) {
+    logger.error("Failed to load the unsaved sales invoice", {
+      errors: [company, customer, terms, customerTax, location, contact]
+        .map((read) => read?.error)
+        .filter(Boolean)
+    });
+    throw new Error("Failed to load sales invoice");
+  }
+
+  const sections = await resolveSections(
+    client,
+    companyId,
+    collectSectionIds(templateConfig)
+  );
+
+  const address = location?.data?.address ?? null;
+  const pdfCompany = withPdfLogos(
+    company.data
+  ) as unknown as SalesInvoicePDFProps["company"];
+
+  // The PDF reads view rows an unsaved invoice has none of, so they are built
+  // here. `salesInvoiceLocations` mirrors the view's joins
+  // (`20261006221401_sales-invoice-discount-and-ship-to.sql`): keep them equal.
+  const salesInvoice = {
+    id: invoice.invoiceId,
+    invoiceId: invoice.invoiceId,
+    status: "Draft",
+    customerId: invoice.customerId,
+    invoiceCustomerId: invoice.customerId,
+    invoiceCustomerContactId: invoice.customerContactId,
+    invoiceCustomerLocationId: invoice.customerLocationId,
+    paymentTermId: invoice.paymentTermId,
+    currencyCode: invoice.currencyCode,
+    exchangeRate: invoice.exchangeRate,
+    dateIssued: invoice.dateIssued,
+    dateDue: invoice.dateDue,
+    subtotal: invoice.subtotal,
+    totalTax: invoice.totalTax,
+    totalDiscount: 0,
+    totalAmount: invoice.totalAmount,
+    customerReference: null,
+    externalNotes: null,
+    customFields: null,
+    companyId
+  } as unknown as SalesInvoicePDFProps["salesInvoice"];
+
+  const salesInvoiceLines = invoice.lines.map((line, index) => ({
+    id: line.id,
+    invoiceId: invoice.invoiceId,
+    invoiceLineType: line.invoiceLineType,
+    description: line.description,
+    itemId: null,
+    itemReadableId: null,
+    quantity: 1,
+    unitPrice: line.unitPrice,
+    convertedUnitPrice: line.convertedUnitPrice,
+    taxPercent: line.taxPercent,
+    taxCodeId: line.taxCodeId,
+    discountPercent: 0,
+    addOnCost: 0,
+    convertedAddOnCost: 0,
+    nonTaxableAddOnCost: 0,
+    convertedNonTaxableAddOnCost: 0,
+    shippingCost: 0,
+    convertedShippingCost: 0,
+    unitOfMeasureCode: "EA",
+    exchangeRate: invoice.exchangeRate,
+    sortOrder: index + 1,
+    companyId
+  })) as unknown as SalesInvoicePDFProps["salesInvoiceLines"];
+
+  const customerName = customer.data.name;
+  const salesInvoiceLocations = {
+    id: invoice.invoiceId,
+    customerName,
+    customerAddressLine1: null,
+    customerAddressLine2: null,
+    customerCity: null,
+    customerStateProvince: null,
+    customerPostalCode: null,
+    customerCountryCode: null,
+    customerCountryName: null,
+    customerTaxId: customerTax.data?.taxId ?? null,
+    customerVatNumber: customerTax.data?.vatNumber ?? null,
+    customerEori: customerTax.data?.eori ?? null,
+    invoiceCustomerName: customerName,
+    invoiceAddressLine1: address?.addressLine1 ?? null,
+    invoiceAddressLine2: address?.addressLine2 ?? null,
+    invoiceCity: address?.city ?? null,
+    invoiceStateProvince: address?.stateProvince ?? null,
+    invoicePostalCode: address?.postalCode ?? null,
+    invoiceCountryCode: address?.countryCode ?? null,
+    invoiceCountryName: address?.country?.name ?? null,
+    shipmentCustomerName: address ? customerName : null,
+    shipmentAddressLine1: address?.addressLine1 ?? null,
+    shipmentAddressLine2: address?.addressLine2 ?? null,
+    shipmentCity: address?.city ?? null,
+    shipmentStateProvince: address?.stateProvince ?? null,
+    shipmentPostalCode: address?.postalCode ?? null,
+    shipmentCountryCode: address?.countryCode ?? null,
+    shipmentCountryName: address?.country?.name ?? null,
+    contactName: contact?.data?.contact?.fullName ?? null,
+    contactEmail: contact?.data?.contact?.email ?? null
+  } as unknown as SalesInvoicePDFProps["salesInvoiceLocations"];
+
+  const salesInvoiceShipment = {
+    id: invoice.invoiceId,
+    customerLocationId: invoice.customerLocationId,
+    shippingCost: 0,
+    shippingMethodId: null,
+    shippingTermId: null,
+    companyId
+  } as unknown as SalesInvoicePDFProps["salesInvoiceShipment"];
+
+  // A draft's summary comes from its lines; the preview has no ledger rows.
+  const tax = await loadTaxSummary({
+    taxClient,
+    companyId,
+    invoiceId: invoice.invoiceId,
+    company: company.data,
+    salesInvoice,
+    lines: salesInvoiceLines,
+    headerShipping: 0,
+    currencyDecimals: currency.data?.decimalPlaces ?? null
+  });
+
+  const pdfProps: SalesInvoicePDFProps = {
+    company: pdfCompany,
+    companySettings: companySettings.data,
+    locale,
+    currencyDecimals: currency.data?.decimalPlaces ?? null,
+    meta: {
+      author: "Carbon",
+      keywords: "sales invoice preview",
+      subject: "Sales Invoice"
+    },
+    salesInvoice,
+    salesInvoiceLines,
+    salesOrderIds: [],
+    salesInvoiceLocations,
+    salesInvoiceShipment,
+    accountsReceivableBillingAddress: companySettings.data
+      ?.accountsReceivableAddress
+      ? arBillingAddress.data
+      : null,
+    terms: (terms.data?.salesTerms ?? {}) as SalesInvoicePDFProps["terms"],
+    paymentTerms: companyData.paymentTerms.data ?? [],
+    shippingMethods: companyData.shippingMethods.data ?? [],
+    shippingTerms: companyData.shippingTerms.data ?? [],
+    thumbnails: {},
+    template: templateConfig,
+    sections,
+    ...tax
+  };
+
+  return {
+    pdfProps,
+    fileName: `${company.data.name} - ${invoice.invoiceId}.pdf`
   };
 }
 
@@ -408,16 +644,5 @@ export async function renderSalesInvoicePdf(
 
   // Called as a function (it uses no hooks), as the post route calls
   // SalesInvoiceEmail, so this package needs no React/JSX toolchain of its own.
-  const stream = await renderToStream(SalesInvoicePDF(props));
-
-  return new Promise((resolve, reject) => {
-    const buffers: Uint8Array[] = [];
-    stream.on("data", (data) => {
-      buffers.push(data);
-    });
-    stream.on("end", () => {
-      resolve(Buffer.concat(buffers));
-    });
-    stream.on("error", reject);
-  });
+  return renderPdfToBuffer(SalesInvoicePDF(props));
 }

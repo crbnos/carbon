@@ -135,6 +135,14 @@ const ShipmentHeader = () => {
                 }}
               />
             )}
+            <PrintButton
+              sourceDocument="PackingSlip"
+              sourceDocumentId={shipmentId}
+              locationId={shipment.locationId ?? undefined}
+              context="documents"
+              format="pdf"
+              label={<Trans>Packing Slip</Trans>}
+            />
             {shipment.sourceDocument === "Sales Order" &&
               permissions.has({ "invoicing.salesInvoices": "View" }) && (
                 <InvoiceButton

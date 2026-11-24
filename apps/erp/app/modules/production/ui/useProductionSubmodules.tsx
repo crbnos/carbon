@@ -6,6 +6,7 @@ import { getIntegrationIdsByRole } from "@carbon/ee";
 import { useLingui } from "@lingui/react/macro";
 import {
   LuChartBarBig,
+  LuChartCandlestick,
   LuChartLine,
   LuCirclePlay,
   LuLayers,
@@ -54,6 +55,11 @@ export default function useProductionSubmodules() {
           to: path.to.operationBatches,
           icon: <LuLayers />,
           table: "jobOperationBatch"
+        },
+        {
+          name: t`Time Analysis`,
+          to: path.to.timeAnalysis,
+          icon: <LuChartCandlestick />
         },
         ...(hasOeeProvider
           ? [
@@ -145,8 +151,8 @@ export default function useProductionSubmodules() {
   };
 }
 
-/** Phones: the module's section switcher, for routes outside the module's
- *  own layout (`handle.compactSidebar`). */
+/** The module sidebar for its boards outside the module layout
+ *  (`handle.boardSidebar`): the phone switcher, and the desktop sidebar when shown. */
 export function ProductionSections() {
   const { groups } = useProductionSubmodules();
   return <GroupedContentSidebar groups={groups} />;

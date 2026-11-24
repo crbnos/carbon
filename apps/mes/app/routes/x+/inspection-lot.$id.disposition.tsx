@@ -13,7 +13,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
 import {
-  CORRECTION_TARGET_PREFIX,
+  correctionIdOfTarget,
   inspectionDispositionValidator
 } from "~/services/models";
 import {
@@ -353,11 +353,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (reworkTotal > 0 && targetOperationId && reworkReason) {
     // The target is an earlier operation, or one of the part's corrections.
-    const jobCorrectionId = targetOperationId.startsWith(
-      CORRECTION_TARGET_PREFIX
-    )
-      ? targetOperationId.slice(CORRECTION_TARGET_PREFIX.length)
-      : null;
+    const jobCorrectionId = correctionIdOfTarget(targetOperationId);
     const shared = {
       jobId: state.jobId,
       triggeredAtJobOperationId: state.jobOperationId,

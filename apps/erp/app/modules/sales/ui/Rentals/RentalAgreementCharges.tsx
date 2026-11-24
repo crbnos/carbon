@@ -239,6 +239,7 @@ const RentalAgreementCharges = ({
           description: "",
           amount: 0,
           taxPercent: rentalAgreement.taxPercent ?? 0,
+          taxCodeId: rentalAgreement.taxCodeId ?? undefined,
           invoiceSeparately: false
         }}
         currencyCode={rentalAgreement.currencyCode ?? ""}

@@ -417,7 +417,7 @@ export default function TrainingWizard() {
       spacing={8}
       className="w-full min-h-screen max-w-4xl mx-auto p-4 md:p-8 pb-24"
     >
-      <BarProgress progress={progress} gradient />
+      <BarProgress progress={progress} />
 
       <Card className="w-full">
         <CardHeader>

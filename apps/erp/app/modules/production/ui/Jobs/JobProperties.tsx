@@ -32,7 +32,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useState } from "react";
 import { LuCopy, LuKeySquare, LuLink, LuUnlink2 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
@@ -81,7 +80,11 @@ const JobProperties = () => {
     job: Job;
     projectCharge?: JobProjectCharge | null;
     tags: { name: string }[];
-    trackedEntities: Promise<PostgrestResponse<TrackedEntity>>;
+    trackedEntities: Promise<{
+      data: TrackedEntity[] | null;
+      count: number;
+      lastReadableId: string | null;
+    }>;
   }>(path.to.job(jobId));
 
   const unlinkDisclosure = useDisclosure();
@@ -291,7 +294,12 @@ const JobProperties = () => {
                 return null;
               }
 
+              // The loader sends the first few; a serial job can hold
+              // thousands, and one input each froze the page.
               const trackedEntities = entities?.data ?? [];
+              const shown = trackedEntities.length;
+              const total = entities?.count ?? shown;
+              const last = entities?.lastReadableId;
 
               return (
                 <>
@@ -329,6 +337,13 @@ const JobProperties = () => {
                       </ValidatedForm>
                     );
                   })}
+                  {total > shown && (
+                    <span className="text-xs text-muted-foreground">
+                      {last
+                        ? t`Showing ${shown} of ${total}, through ${last}`
+                        : t`Showing ${shown} of ${total}`}
+                    </span>
+                  )}
                 </>
               );
             }}

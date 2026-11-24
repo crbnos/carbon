@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { dataOrThrow } from "@carbon/api/carbon.server";
+import { dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -41,7 +41,8 @@ import {
   PaymentApplyTable,
   PaymentDocuments,
   PaymentForm,
-  PaymentHeader
+  PaymentHeader,
+  PaymentPostingNotice
 } from "~/modules/invoicing/ui";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
@@ -251,7 +252,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
+  const { client, companyId, userId, api } = await authorize(request, {
     "invoicing.payments": "Edit"
   });
   const { paymentId } = params;
@@ -321,6 +322,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {},
       await flash(request, error(update.error, "Failed to update payment"))
     );
+  }
+
+  if (formData.get("intent") === "post") {
+    const posted = await api.invoicing.postPayment({ paymentId });
+    return respond(request, posted).redirect(path.to.payment(paymentId), {
+      message: "Payment saved and posted",
+      onError: path.to.payment(paymentId)
+    });
   }
 
   throw redirect(
@@ -403,6 +412,11 @@ export default function PaymentDetailRoute() {
         readableId={payment.paymentId ?? payment.id}
         status={payment.status ?? "Draft"}
         forceDelete={{ isAdmin, forceDeleteRequest }}
+      />
+      <PaymentPostingNotice
+        status={payment.status}
+        postError={payment.postError}
+        hasApplications={applications.length > 0}
       />
       <PaymentForm
         key={payment.id}

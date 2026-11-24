@@ -56,7 +56,7 @@ import {
 import type { SalesInvoice, SalesInvoiceLine } from "../../types";
 import DeleteSalesInvoiceLine from "./DeleteSalesInvoiceLine";
 import SalesInvoiceLineForm from "./SalesInvoiceLineForm";
-import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
+import { useSalesInvoiceLineName } from "./useSalesInvoiceLineName";
 
 export default function SalesInvoiceExplorer() {
   const { t } = useLingui();
@@ -67,6 +67,7 @@ export default function SalesInvoiceExplorer() {
     salesInvoice: SalesInvoice;
     salesInvoiceLines: SalesInvoiceLine[];
     supplier: Supplier;
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
   }>(path.to.salesInvoice(invoiceId));
   const permissions = usePermissions();
 
@@ -79,7 +80,8 @@ export default function SalesInvoiceExplorer() {
     locationId:
       salesInvoiceData?.salesInvoice?.locationId ?? defaults.locationId ?? "",
     unitOfMeasureCode: "",
-    taxPercent: 0,
+    taxPercent: salesInvoiceData?.resolvedTax?.taxPercent ?? 0,
+    taxCodeId: salesInvoiceData?.resolvedTax?.taxCodeId ?? undefined,
     unitPrice: 0,
     discountPercent: 0,
     shippingCost: 0,
@@ -228,11 +230,8 @@ function SalesInvoiceLineBody({
   dragHandle?: DragHandleBindings;
   isOverlay?: boolean;
 }) {
-  const [items] = useItems();
-  // A Service line with no item is named by its description.
-  const readableId = isItemlessServiceLine(line)
-    ? (line.description ?? "")
-    : (getItemReadableId(items, line.itemId) ?? "");
+  const getLineName = useSalesInvoiceLineName();
+  const readableId = getLineName(line) ?? "";
   const description = distinctItemText(readableId, line.description);
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
@@ -268,7 +267,7 @@ function SalesInvoiceLineItem({
   if (!invoiceId) throw new Error("Could not find invoiceId");
   const permissions = usePermissions();
   const location = useOptimisticLocation();
-  const rentalLineTypeLabel = useRentalLineTypeLabel();
+  const getLineName = useSalesInvoiceLineName();
   const isRental = line.invoiceLineType === "Rental";
   // A service job's labor or fixed price line: its description names it.
   const isItemless = isItemlessServiceLine(line);
@@ -286,13 +285,7 @@ function SalesInvoiceLineItem({
             line.description
           );
 
-  const lineName = isRental
-    ? rentalLineTypeLabel(line.rentalLineType)
-    : line.invoiceLineType === "Fixed Asset"
-      ? (line as any).assetReadableId || "Fixed Asset"
-      : isItemless
-        ? line.description || t`Service`
-        : (getItemReadableId(items, line.itemId) ?? "");
+  const lineName = getLineName(line) ?? "";
 
   return (
     <VStack spacing={0} className="border-b">

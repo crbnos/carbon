@@ -25,7 +25,8 @@ import {
   insertCompany,
   seedCompany,
   unpackBackupArchive,
-  updateCompany
+  updateCompany,
+  updateCompanyWithBaseCurrencyChange
 } from "~/modules/settings/settings.service";
 import { invokePosting } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -222,9 +223,26 @@ export async function provisionOnboardingCompany(
     // rewrite the company by POSTing this step.
     await assertCanUpdateCompany(serviceRole, userId, company.id!);
 
+    // A new base goes through the change path, which moves the prices,
+    // rates and records written in the old one; the trigger refuses it
+    // anywhere else.
+    const { baseCurrencyCode, ...details } = companyData;
+    if (baseCurrencyCode && baseCurrencyCode !== company.baseCurrencyCode) {
+      try {
+        await updateCompanyWithBaseCurrencyChange(
+          getDatabaseClient(),
+          company.id!,
+          { baseCurrencyCode, updatedBy: userId }
+        );
+      } catch (error) {
+        logger.error("Failed to change the base currency", { error });
+        throw new Error("Fatal: failed to update company");
+      }
+    }
+
     const [companyUpdate, locationUpdate] = await Promise.all([
       updateCompany(serviceRole, company.id!, {
-        ...companyData,
+        ...details,
         updatedBy: userId
       }),
       upsertLocation(serviceRole, {

@@ -29,6 +29,7 @@ export const Constants = {
         "Other Current Asset",
         "Other Asset",
         "Other Current Liability",
+        "Credit Card",
         "Long Term Liability",
         "Equity - No Close",
         "Equity - Close",
@@ -137,6 +138,9 @@ export const Constants = {
         "Contraction",
       ],
       deadlineType: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"],
+      deliveryDateConstraint: ["Lead Time", "Stock", "Capacity"],
+      deliveryDateControl: ["None", "Lead Time", "Stock", "Capacity"],
+      deliveryDateStatus: ["Met", "Missed", "Pending"],
       demandForecastSourceType: [
         "Job Material",
         "Sales Order",
@@ -485,6 +489,7 @@ export const Constants = {
         "Consumable",
         "Fixture",
       ],
+      jobMaterialScrapReplacement: ["Shelf", "Water Spider"],
       jobOperationBatchStatus: ["Planned", "Active", "Completing", "Completed"],
       jobOperationStatus: [
         "Canceled",
@@ -719,6 +724,12 @@ export const Constants = {
         "Outside Processing",
       ],
       parameterSource: ["Manual", "Sum", "Min", "Max", "Formula", "Item"],
+      partNumberDisplay: [
+        "Ours First",
+        "Theirs First",
+        "Theirs Only",
+        "Ours Only",
+      ],
       payableLineType: [
         "Comment",
         "G/L Account",
@@ -1144,6 +1155,7 @@ export const Constants = {
         "Excluded",
       ],
       tableViewType: ["Public", "Private"],
+      taxCalculationType: ["Normal", "Reverse Charge"],
       taxDepreciationMethod: ["Straight Line", "Declining Balance", "MACRS"],
       taxExemptionReason: [
         "Resale",
@@ -1156,6 +1168,16 @@ export const Constants = {
         "Educational",
         "Religious",
         "Other",
+      ],
+      taxLedgerSource: ["Sales", "Purchase"],
+      taxReportingCategory: [
+        "Standard",
+        "Reduced",
+        "Zero-Rated",
+        "Exempt",
+        "Reverse Charge",
+        "Export",
+        "Out of Scope",
       ],
       testCaseVerdict: ["Not Run", "Pass", "Fail", "Inconclusive"],
       timekeepingControls: ["Standard", "DCAA"],

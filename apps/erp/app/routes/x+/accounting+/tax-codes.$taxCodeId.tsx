@@ -1,0 +1,94 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { respond } from "@carbon/api/carbon.server";
+import { notFound } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
+import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { taxCodeValidator } from "~/modules/accounting/accounting.models";
+import { TaxCodeForm } from "~/modules/accounting/ui/Tax";
+import { getParams, path } from "~/utils/path";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { api } = await authorize(request, {
+    "accounting.taxCodes": "View"
+  });
+
+  const { taxCodeId } = params;
+  if (!taxCodeId) throw notFound("taxCodeId not found");
+
+  const [taxCode, taxAuthorities] = await Promise.all([
+    api.accounting.getTaxCode({ taxCodeId }),
+    api.accounting.getTaxAuthoritiesList({})
+  ]);
+
+  if (!taxCode.data) throw notFound("Tax code not found");
+
+  return {
+    taxCode: taxCode.data,
+    taxAuthorities: taxAuthorities.data ?? []
+  };
+}
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(taxCodeValidator).request(args, {
+    params: ["taxCodeId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.accounting.updateTaxCode({
+    ...input.data,
+    id: input.params.taxCodeId
+  });
+  return respond(args.request, result).redirect(
+    `${path.to.taxCodes}?${getParams(args.request)}`,
+    { message: "Updated tax code" }
+  );
+}
+
+export default function EditTaxCodeRoute() {
+  const { taxCode, taxAuthorities } = useLoaderData<typeof loader>();
+  const dialog = useRouteDialog();
+
+  const initialValues = {
+    id: taxCode?.id ?? undefined,
+    name: taxCode?.name ?? "",
+    description: taxCode?.description ?? undefined,
+    calculationType: taxCode?.calculationType ?? ("Normal" as const),
+    reportingCategory: taxCode?.reportingCategory ?? ("Standard" as const),
+    taxesShipping: taxCode?.taxesShipping ?? false,
+    invoiceMessage: taxCode?.invoiceMessage ?? undefined,
+    countryCode: taxCode?.countryCode ?? undefined,
+    state: taxCode?.state ?? undefined,
+    active: taxCode?.active ?? true,
+    components: [...(taxCode?.taxCodeComponent ?? [])]
+      .sort((a, b) => a.sequence - b.sequence)
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        taxAuthorityId: c.taxAuthorityId ?? undefined,
+        taxPercent: c.taxPercent,
+        recoverablePercent: c.recoverablePercent,
+        sequence: c.sequence,
+        isCompound: c.isCompound,
+        taxReceivedAccountId: c.taxReceivedAccountId ?? undefined,
+        taxPaidAccountId: c.taxPaidAccountId ?? undefined,
+        effectiveDate: c.effectiveDate ?? undefined,
+        expirationDate: c.expirationDate ?? undefined
+      }))
+  };
+
+  return (
+    <TaxCodeForm
+      key={initialValues.id}
+      initialValues={initialValues}
+      taxAuthorities={taxAuthorities}
+      open={dialog.open}
+      onClose={dialog.close}
+    />
+  );
+}

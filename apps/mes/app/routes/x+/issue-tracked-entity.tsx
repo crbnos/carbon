@@ -11,7 +11,7 @@ import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { issueTrackedEntityValidator } from "~/services/models";
 import { abilityBlockRefusal } from "~/services/operations.service";
-import { resolveTravelerMaterial } from "~/services/traveler.server";
+import { resolveWorkUnit } from "~/services/work-unit.server";
 
 const log = getLogger("mes");
 
@@ -37,30 +37,36 @@ export async function action({ request }: ActionFunctionArgs) {
     unitNumber,
     overrideExpired,
     overrideReason,
-    travelerScan,
     allowOverIssue
   } = validation.data;
-  let { materialId, itemId, children } = validation.data;
+  const { materialId, itemId, children } = validation.data;
 
-  if (
-    travelerScan &&
-    (!jobOperationId || !parentTrackedEntityId || children.length !== 1)
-  ) {
+  if (batchId ? !itemId : !parentTrackedEntityId || !jobOperationId) {
     return data(
       { success: false, message: "Failed to validate payload" },
       { status: 400 }
     );
   }
 
-  if (batchId ? !itemId : !parentTrackedEntityId) {
-    return data(
-      { success: false, message: "Failed to validate payload" },
-      { status: 400 }
-    );
-  }
-
+  let parentId = parentTrackedEntityId;
   if (!batchId && jobOperationId) {
-    const refusal = await abilityBlockRefusal(await getCarbonServiceRole(), {
+    const serviceRole = getCarbonServiceRole();
+    const work = await resolveWorkUnit({
+      client: serviceRole,
+      companyId,
+      operationId: jobOperationId,
+      requestedUnitId: parentTrackedEntityId,
+      mode: "require"
+    });
+    if (work.kind === "refuse") {
+      return data(
+        { success: false, message: work.message, pickUnit: work.pickUnit },
+        { status: 409 }
+      );
+    }
+    if (work.kind === "unit") parentId = work.unitId;
+
+    const refusal = await abilityBlockRefusal(serviceRole, {
       operationId: jobOperationId,
       employeeId: userId,
       companyId
@@ -68,29 +74,6 @@ export async function action({ request }: ActionFunctionArgs) {
     if (refusal) {
       return data({ success: false, message: refusal }, { status: 403 });
     }
-  }
-
-  // Traveler scan: the scanned unit decides the material and quantity, so a
-  // wrong item, or one the unit already has, is refused before the posting.
-  if (travelerScan && jobOperationId && parentTrackedEntityId) {
-    const resolved = await resolveTravelerMaterial(
-      await getCarbonServiceRole(),
-      {
-        companyId,
-        jobOperationId,
-        trackedEntityId: children[0].trackedEntityId,
-        parentTrackedEntityId
-      }
-    );
-    if ("refusal" in resolved) {
-      return data(
-        { success: false, message: resolved.refusal },
-        { status: 400 }
-      );
-    }
-    materialId = resolved.materialId;
-    itemId = undefined;
-    children = [{ ...children[0], quantity: resolved.quantity }];
   }
 
   // Batch mode: one pick for the whole operation batch. The posting splits the
@@ -113,14 +96,12 @@ export async function action({ request }: ActionFunctionArgs) {
           materialId,
           jobOperationId,
           itemId,
-          parentTrackedEntityId: parentTrackedEntityId!,
+          parentTrackedEntityId: parentId!,
           children,
           jobOperationStepId,
           unitNumber,
           overrideExpired,
           overrideReason,
-          // The posting re-checks the requirement under a lock for a scan.
-          travelerScan,
           allowOverIssue
         }
   );

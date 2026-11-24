@@ -291,6 +291,12 @@ const JournalEntriesTable = memo(
           columns={columns}
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}
+          importCSV={
+            // The import creates and updates entries.
+            permissions.has({ "accounting.journalEntries": "Edit" })
+              ? [{ table: "journalEntry" as const, label: t`Journal Entries` }]
+              : undefined
+          }
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
           title={t`Journal Entries`}

@@ -14,6 +14,7 @@ import {
   abilityBlockRefusal,
   insertReworkQuantity
 } from "~/services/operations.service";
+import { resolveWorkUnit } from "~/services/work-unit.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -29,6 +30,17 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
+  const work = await resolveWorkUnit({
+    client: serviceRole,
+    companyId,
+    operationId: validation.data.jobOperationId,
+    requestedUnitId: validation.data.trackedEntityId,
+    mode: "require"
+  });
+  if (work.kind === "refuse") {
+    return data({}, await flash(request, error(null, work.message)));
+  }
+
   const refusal = await abilityBlockRefusal(serviceRole, {
     operationId: validation.data.jobOperationId,
     employeeId: userId,
@@ -40,6 +52,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const insertRework = await insertReworkQuantity(client, {
     ...validation.data,
+    trackedEntityId:
+      work.kind === "unit" ? work.unitId : validation.data.trackedEntityId,
     companyId,
     createdBy: userId
   });

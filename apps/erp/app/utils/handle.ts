@@ -27,6 +27,10 @@ export type Handle = {
   // Phones only: the section switcher for a route that is a module section
   // but has no desktop sidebar (desktop is unchanged). Makes it a root screen.
   compactSidebar?: ComponentType;
+  // A full-width board that is a section of its module. Phones get the
+  // section switcher; desktop hides the module sidebar until the person shows
+  // it with the menu button (one cookie for every board).
+  boardSidebar?: ComponentType;
   // Phones only: the app bar's subtitle under a record's ID ("Sales Order"),
   // in place of the list crumb. Child routes (a line page) inherit it.
   appBarSubtitle?: MessageDescriptor;

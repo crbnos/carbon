@@ -19,9 +19,12 @@ import {
   LuEuro,
   LuFileSpreadsheet,
   LuHandCoins,
+  LuIdCard,
   LuKeyRound,
+  LuLandmark,
   LuLayers,
   LuPercent,
+  LuReceiptText,
   LuScale,
   LuSheet,
   LuTruck
@@ -128,6 +131,31 @@ export default function useAccountingSubmodules() {
             to: path.to.fleet,
             icon: <LuTruck />,
             table: "fleetAssets"
+          }
+        ]
+      },
+      {
+        name: t`Tax`,
+        routes: [
+          {
+            name: t`Tax Codes`,
+            to: path.to.taxCodes,
+            icon: <LuReceiptText />
+          },
+          {
+            name: t`Tax Authorities`,
+            to: path.to.taxAuthorities,
+            icon: <LuLandmark />
+          },
+          {
+            name: t`Tax Registrations`,
+            to: path.to.taxRegistrations,
+            icon: <LuIdCard />
+          },
+          {
+            name: t`Tax Liability`,
+            to: path.to.taxLiability,
+            icon: <LuFileSpreadsheet />
           }
         ]
       },

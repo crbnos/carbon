@@ -382,13 +382,19 @@ export const urlSegments = (url: string): string[] =>
 /**
  * The URL a flat-routes file under `routes/x+/` serves:
  * `receipt+/$receiptId.details.tsx` → `/x/receipt/$receiptId/details`.
- * A `_` segment is pathless; a trailing `_` opts out of the parent layout.
+ * A `_` segment is pathless; a trailing `_` opts out of the parent layout;
+ * an escaped `[.]` is a literal dot (`sales[.]csv.tsx` → `/x/sales.csv`).
  */
 export function routeUrl(file: string): string {
   const segments = file
     .replace(/\.(tsx?|jsx?)$/, "")
     .split("/")
-    .flatMap((part) => part.replace(/\+$/, "").split("."))
+    .flatMap((part) =>
+      part
+        .replace(/\+$/, "")
+        .split(/(?<!\[)\.(?!\])/)
+        .map((segment) => segment.replaceAll("[.]", "."))
+    )
     .filter((segment) => !segment.startsWith("_"))
     .map((segment) => segment.replace(/_$/, ""));
   return ["/x", ...segments].join("/");

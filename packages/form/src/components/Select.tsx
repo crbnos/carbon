@@ -25,13 +25,18 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef } from "react";
 import { LuX } from "react-icons/lu";
 import { useControlField, useField } from "../hooks";
+import { useAutoSelectSingleOption } from "../internal/autoSelectSingleOption";
 import { useFormStateContext } from "../internal/formStateContext";
 import { useInlineField } from "../internal/inlineField";
 
 export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
+  /** Fill the field when it is empty and there is exactly one option. */
+  autoSelectSingleOption?: boolean;
   name: string;
   label?: string;
   termId?: TermId;
+  /** The label's ⓘ text when no glossary term fits; ignored with `termId`. */
+  labelHelp?: string;
   helperText?: string;
   isConfigured?: boolean;
   isOptional?: boolean;
@@ -48,9 +53,11 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
 };
 
 const Select = ({
+  autoSelectSingleOption = false,
   name,
   label,
   termId,
+  labelHelp,
   helperText,
   isConfigured = false,
   isOptional,
@@ -75,6 +82,14 @@ const Select = ({
     isReadOnly: isReadOnly || isDisabled
   });
 
+  useAutoSelectSingleOption({
+    enabled: autoSelectSingleOption,
+    options,
+    value,
+    setValue,
+    onChange: props.onChange
+  });
+
   const onChange = (value: string) => {
     if (value) {
       props?.onChange?.(options.find((o) => o.value === value) ?? null);
@@ -96,7 +111,9 @@ const Select = ({
           isConfigured={isConfigured}
           onConfigure={onConfigure}
         >
-          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
+          <LabelWithHelp termId={termId} text={labelHelp}>
+            {label}
+          </LabelWithHelp>
         </FormLabel>
       )}
 

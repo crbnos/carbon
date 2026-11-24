@@ -555,6 +555,12 @@ describe("routeUrl", () => {
     );
     expect(routeUrl("inventory+/_index.tsx")).toBe("/x/inventory");
   });
+
+  it("keeps an escaped dot inside its segment", () => {
+    expect(routeUrl("invoicing+/sales[.]csv.tsx")).toBe(
+      "/x/invoicing/sales.csv"
+    );
+  });
 });
 
 describe("urlCoverage", () => {

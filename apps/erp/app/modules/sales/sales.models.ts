@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { anyOf, type PageGate } from "@carbon/database/access";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   bicMatchesCountry,
   colorNames,
@@ -126,7 +127,8 @@ export const CUSTOMER_CONTACT_EMAIL_REQUIRED =
 export const customerLocationValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: zfd.text(z.string()),
-  ...address
+  ...address,
+  taxCodeId: zfd.text(z.string().optional())
 });
 
 export const customerValidator = z.object({
@@ -141,7 +143,9 @@ export const customerValidator = z.object({
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
   salesContactId: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional())
+  website: zfd.text(z.string().optional()),
+  // Empty: the company default applies.
+  partNumberDisplay: zfd.text(z.enum(PART_NUMBER_DISPLAYS).optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
 
@@ -156,7 +160,8 @@ export const customerTaxValidator = z
       (val) => (val === "" ? undefined : val),
       z.enum(taxExemptionReasons).optional().nullable()
     ),
-    taxExemptionCertificateNumber: zfd.text(z.string().optional())
+    taxExemptionCertificateNumber: zfd.text(z.string().optional()),
+    taxCodeId: zfd.text(z.string().optional())
   })
   .refine(
     (data) => !data.taxExempt || (data.taxExempt && data.taxExemptionReason),
@@ -573,6 +578,7 @@ export const quoteLineValidator = z.object({
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
+  taxCodeId: zfd.text(z.string().optional()),
   internalNotes: optionalTiptapDoc,
   externalNotes: optionalTiptapDoc,
   configuration: jsonInput(z.record(z.string(), z.any()).nullable().optional())
@@ -978,6 +984,9 @@ export const salesOrderShipmentValidator = z
     receiptRequestedDate: zfd.text(z.string().optional()),
     receiptPromisedDate: zfd.text(z.string().optional()),
     dropShipment: zfd.checkbox(),
+    // The order's own ship-to (`salesOrder.customerLocationId`); a drop
+    // shipment ships to `customerLocationId` below instead.
+    shipToCustomerLocationId: zfd.text(z.string().optional()),
     customerId: zfd.text(z.string().optional()),
     customerLocationId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
@@ -1047,6 +1056,8 @@ export const salesOrderLineValidator = z
     ),
     modelUploadId: zfd.text(z.string().optional()),
     promisedDate: zfd.text(z.string().optional()),
+    // The customer's wish, kept apart from the date the company promises.
+    requestedDate: zfd.text(z.string().optional()),
     saleQuantity: zfd.numeric(z.number().optional()),
     serviceId: zfd.text(z.string().optional()),
     serviceStartDate: zfd.text(z.string().optional()),
@@ -1059,6 +1070,7 @@ export const salesOrderLineValidator = z
         .min(0)
         .max(1, { message: "Tax percent must be between 0 and 1" })
     ),
+    taxCodeId: zfd.text(z.string().optional()),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     unitPrice: zfd.numeric(z.number().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
@@ -1233,6 +1245,18 @@ export const quoteLeadTimeValidator = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional()
     .nullable()
+});
+
+// A sales order line's delivery date check — a JSON body (not FormData), so
+// plain zod. The fields are the line's as the form holds them before a save.
+export const deliveryDateCheckValidator = z.object({
+  salesOrderLineId: z.string().optional().nullable(),
+  salesOrderLineType: z.enum(salesOrderLineType),
+  itemId: z.string().min(1),
+  locationId: z.string().optional().nullable(),
+  methodType: z.enum(methodType),
+  saleQuantity: z.number().positive(),
+  promisedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 });
 
 // Sales Order Locked Status
@@ -1590,6 +1614,7 @@ export const rentalAgreementValidator = z
         .min(0)
         .max(1, { message: "Tax percent must be between 0 and 1" })
     ),
+    taxCodeId: zfd.text(z.string().optional()),
     discountRate: zfd.numeric(
       z.number().min(0, { message: "Discount rate cannot be negative" })
     ),
@@ -1667,6 +1692,7 @@ export const rentalAgreementChargeValidator = z.object({
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
+  taxCodeId: zfd.text(z.string().optional()),
   /** Drafted on its own invoice, held for review, instead of with the rent. */
   invoiceSeparately: zfd.checkbox()
 });
@@ -2209,6 +2235,7 @@ const contractLineFields = {
   discountPercent: percentPoints("Discount"),
   discountEndsOn: zfd.text(z.string().optional()),
   taxPercent: percentPoints("Tax"),
+  taxCodeId: zfd.text(z.string().optional()),
   startDate: z.string().min(1, { message: "Start date is required" }),
   endDate: zfd.text(z.string().optional()),
   goLiveDate: zfd.text(z.string().optional()),
@@ -2804,6 +2831,8 @@ export const contractAmendmentChangeValidator = z.discriminatedUnion("op", [
     rateUnit: z.enum(contractRateUnits).optional(),
     discountPercent: z.number().min(0).max(100).optional(),
     taxPercent: z.number().min(0).max(100).optional(),
+    /** The line's new tax code; "" clears it. */
+    taxCodeId: z.string().optional(),
     description: z.string().optional(),
     revenueMethod: z.enum(contractRevenueMethods).optional(),
     projectId: z.string().optional()

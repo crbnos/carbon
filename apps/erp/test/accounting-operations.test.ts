@@ -6,6 +6,7 @@ import { createServiceContext } from "@carbon/api/service-fn.server";
 import { describe, expect, it } from "vitest";
 import {
   importChartOfAccounts,
+  reopenPeriod,
   saveJournalEntry
 } from "../app/modules/accounting/accounting.server";
 import { accountMoveRefusal } from "../app/modules/accounting/accounting.utils";
@@ -136,5 +137,20 @@ describe("moving an account", () => {
 
   it("allows a move under another group", () => {
     expect(accountMoveRefusal(chart, "cash", "assets")).toBeNull();
+  });
+});
+
+describe("reopenPeriod", () => {
+  it("needs Full on accounting periods, which lock and unlock do not", async () => {
+    const ctx = context({
+      "accounting.accountingPeriods": {
+        view: ["company-1"],
+        create: ["company-1"],
+        update: ["company-1"],
+        delete: []
+      }
+    });
+    const result = await reopenPeriod(ctx, { periodId: "period-1" });
+    expect(result.error).toMatchObject({ category: "forbidden" });
   });
 });

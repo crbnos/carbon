@@ -6,10 +6,11 @@
 // workflow caller: the same function, with the same checks, the route calls.
 
 import type { ManifestEntry } from "@carbon/api";
-import type {
-  ErrorCategory,
-  ServiceContext,
-  ServiceFn
+import {
+  type ErrorCategory,
+  refusalDetail,
+  type ServiceContext,
+  type ServiceFn
 } from "@carbon/api/service-fn.server";
 import { ORPCError } from "@orpc/server";
 import type { z } from "zod";
@@ -82,7 +83,7 @@ export async function callServiceFn<I extends z.ZodType>(
     throw new ORPCError(CODES[category], {
       status,
       message,
-      data: { category }
+      data: { category, ...refusalDetail(result.error) }
     });
   }
   if (meta.paginates) {

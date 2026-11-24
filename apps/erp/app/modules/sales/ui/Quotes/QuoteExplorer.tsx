@@ -81,6 +81,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
     quote: Quotation;
     lines: QuotationLine[];
     customer: Customer;
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
   }>(path.to.quote(quoteId));
 
   const permissions = usePermissions();
@@ -95,7 +96,11 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
     status: "Not Started" as const,
     quantity: [1],
     unitOfMeasureCode: "",
-    taxPercent: quoteData?.customer?.taxPercent ?? 0
+    taxPercent:
+      quoteData?.resolvedTax?.taxPercent ??
+      quoteData?.customer?.taxPercent ??
+      0,
+    taxCodeId: quoteData?.resolvedTax?.taxCodeId ?? undefined
   };
 
   const modelPaths = (quoteData?.lines ?? [])

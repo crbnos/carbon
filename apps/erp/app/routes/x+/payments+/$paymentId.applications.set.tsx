@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -26,7 +27,7 @@ const setApplicationsValidator = z.object({
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await authorize(request, {
+  const { api, companyId, userId } = await authorize(request, {
     "invoicing.payments": "Edit"
   });
 
@@ -104,6 +105,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
         message: getErrorMessage(e, "Failed to save applications")
       })
     );
+  }
+
+  // Save and Post: a failed post keeps the saved applications, and its
+  // reason stays on the payment.
+  if (formData.get("intent") === "post") {
+    const posted = await api.invoicing.postPayment({ paymentId });
+    return respond(request, posted).redirect(path.to.payment(paymentId), {
+      message: "Applications saved and payment posted",
+      onError: path.to.payment(paymentId)
+    });
   }
 
   throw redirect(

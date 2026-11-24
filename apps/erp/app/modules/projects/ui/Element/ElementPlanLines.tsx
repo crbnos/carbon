@@ -207,7 +207,8 @@ export function ElementPlanLines({
   addDisabledReason,
   onIssue,
   onLogTime,
-  onCharge
+  onCharge,
+  chargeDisabledReason
 }: {
   projectId: string;
   elementId: string;
@@ -228,6 +229,8 @@ export function ElementPlanLines({
   onLogTime?: (line: { laborCategoryId: string }) => void;
   /** Charge a cost against a cost line; absent when the user cannot. */
   onCharge?: (line: { description: string; amount: number }) => void;
+  /** Why Charge is off: the button shows disabled, with it as its tooltip. */
+  chargeDisabledReason?: string | null;
 }) {
   const { t } = useLingui();
   const formatMoney = useCurrencyFormatter();
@@ -444,6 +447,23 @@ export function ElementPlanLines({
           </Button>
         );
       }
+      if (chargeDisabledReason) {
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* A disabled button fires no pointer events: the span does. */}
+              <span tabIndex={0} className="inline-flex">
+                <Button variant="secondary" size="sm" isDisabled>
+                  <Trans>Charge</Trans>
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-72">
+              {chargeDisabledReason}
+            </TooltipContent>
+          </Tooltip>
+        );
+      }
       if (!onCharge) return null;
       return (
         <Button
@@ -460,7 +480,7 @@ export function ElementPlanLines({
         </Button>
       );
     },
-    [itemsById, onIssue, onLogTime, onCharge]
+    [itemsById, onIssue, onLogTime, onCharge, chargeDisabledReason]
   );
 
   const menu = (card: PlanCard) => {

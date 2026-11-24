@@ -121,6 +121,7 @@ export default function EditStorageUnitRoute() {
     workCenterId: storageUnit?.workCenterId ?? undefined,
     storageTypeIds: storageUnit?.storageTypeIds ?? [],
     nonNettable: storageUnit?.nettable === false,
+    kitRack: storageUnit?.kitRack ?? false,
     ...getCustomFields(storageUnit?.customFields)
   };
 

@@ -326,14 +326,12 @@ export default function FixedAssetDetailRoute() {
                   progress={depreciationPercent}
                   label={t`Book Depreciation`}
                   value={`${depreciationPercent.toFixed(1)}%`}
-                  gradient
                 />
                 {taxDepreciationEnabled && (
                   <BarProgress
                     progress={taxDepreciationPercent}
                     label={t`Tax Depreciation`}
                     value={`${taxDepreciationPercent.toFixed(1)}%`}
-                    gradient
                   />
                 )}
               </div>

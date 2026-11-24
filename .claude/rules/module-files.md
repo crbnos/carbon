@@ -165,9 +165,14 @@ export async function action(args: ActionFunctionArgs) {
 }
 ```
 
-`respond(request, result).redirect(to, { message, onError })` flashes the
-result's error, or `message`, and redirects; `onError` sends a refused call
-elsewhere.
+`respond(request, result).redirect(to, { message, onError })` redirects with
+`message` as the flash. A refused POST stays on its form: it returns
+`{ formError }` with the error as the flash, `ValidatedForm` shows it inline
+(`FormErrorAlert`), and the typed values are kept. `onError` sends a refused
+call to that page instead; a loader (GET, HEAD), and a POST from another page
+to an action-only route (Receive posts to the new receipt route), still
+redirect (`staysOnForm`, which compares the Referer with the action's URL).
+`useAction` treats `{ formError }` like field errors: neither callback runs.
 
 ## Checks
 

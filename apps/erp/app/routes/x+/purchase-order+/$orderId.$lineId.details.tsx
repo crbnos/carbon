@@ -116,6 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id: _id,
     requiredDate: _requiredDate,
     promisedDate: _promisedDate,
+    taxCodeId,
     ...d
   } = validation.data;
 
@@ -173,6 +174,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // goes above its approved amount back for approval.
   const result = await api.purchasing.updatePurchaseOrderLine({
     ...d,
+    // A posted empty field clears the code; an absent one keeps it.
+    ...(formData.has("taxCodeId") ? { taxCodeId: taxCodeId ?? "" } : {}),
     id: lineId,
     purchaseOrderId: orderId,
     customFields: setCustomFields(formData)
@@ -219,10 +222,12 @@ export default function EditPurchaseOrderLineRoute() {
     purchaseUnitOfMeasureCode: line?.purchaseUnitOfMeasureCode ?? "",
     storageUnitId: line?.storageUnitId ?? "",
     supplierPartId: line?.supplierPartId ?? "",
+    partNumberDisplay: line?.partNumberDisplay ?? undefined,
     supplierShippingCost: line?.supplierShippingCost ?? 0,
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     supplierUnitPrice: line?.supplierUnitPrice ?? 0,
     costCenterId: line?.costCenterId ?? "",
+    taxCodeId: line?.taxCodeId ?? undefined,
     projectId: chargeNumber?.projectId ?? "",
     projectElementId: chargeNumber?.projectElementId ?? "",
     taxPercent: line?.taxPercent ?? 0,

@@ -170,27 +170,32 @@ export const MaintenanceKPIs = [
   {
     key: "mttr",
     label: "Mean Time To Repair",
-    gate: { "resources.dispatches": "View" }
+    gate: { "resources.dispatches": "View" },
+    lowerIsBetter: true
   },
   {
     key: "mtbf",
     label: "Mean Time Between Failures",
-    gate: { "resources.dispatches": "View", "production.jobs": "View" }
+    gate: { "resources.dispatches": "View", "production.jobs": "View" },
+    lowerIsBetter: false
   },
   {
     key: "sparePartCost",
     label: "Spare Part Cost",
-    gate: { "resources.dispatches": "View" }
+    gate: { "resources.dispatches": "View" },
+    lowerIsBetter: true
   },
   {
     key: "worstPerformingMachines",
     label: "Worst Performing Machines",
-    gate: { "resources.dispatches": "View", "resources.workCenters": "View" }
+    gate: { "resources.dispatches": "View", "resources.workCenters": "View" },
+    lowerIsBetter: true
   },
   {
     key: "sparePartConsumption",
     label: "Spare Part Consumption",
-    gate: { "resources.dispatches": "View" }
+    gate: { "resources.dispatches": "View" },
+    lowerIsBetter: true
   }
 ] as const;
 

@@ -17,6 +17,7 @@ import {
   groupConflictClause,
   rebuildDerivedGroups
 } from "../../../backups/derived-groups";
+import { refreshReceiptInspectionStatuses } from "../../../backups/derived-receipts";
 import { applyTableRenames } from "../../../backups/renames";
 import { removeBucketPrefix } from "../../../backups/storage";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
@@ -154,6 +155,9 @@ export async function wipeAndLoad(
       await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
     }
     await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
+    // The triggers that fill a document line's part number display choice
+    // leave a backup's values as they are, also when replica mode is off.
+    await sql`SET LOCAL app.backup_load = 'on'`.execute(trx);
 
     // The company's groups before the wipe: memberships survive an own
     // restore, and any left pointing at a group that doesn't come back go.
@@ -273,6 +277,7 @@ export async function wipeAndLoad(
       companyId,
       wipedGroups.map((g) => g.id)
     );
+    await refreshReceiptInspectionStatuses(trx, companyId);
 
     // Every list an open client keeps a copy of has just been replaced. With
     // triggers off nothing logged that, so say it here: a null row id tells

@@ -765,9 +765,23 @@ function MaterialForm({
     }));
   }, [item.data.methodType, item.data.sourcingType]);
 
+  // An unsaved row lives only in temporaryItems: write each change there so a
+  // closed draft (Add Item, another row opened) reopens with what was typed.
+  const saveDraft = (patch: Partial<Material>) =>
+    setTemporaryItems((prev) =>
+      prev[item.id]
+        ? { ...prev, [item.id]: { ...prev[item.id], ...patch } }
+        : prev
+    );
+
   const onTypeChange = (value: MethodItemType | "Item") => {
     if (value === itemType) return;
     setItemType(value as MethodItemType);
+    saveDraft({
+      itemType: value as MethodItemType,
+      itemId: "",
+      description: ""
+    });
 
     setItemData({
       itemId: "",
@@ -827,6 +841,25 @@ function MaterialForm({
     if (item.data?.type) {
       setItemType(item.data.type as MethodItemType);
     }
+    saveDraft({
+      itemId,
+      ...(item.data?.type
+        ? { itemType: item.data.type as MethodItemType }
+        : {}),
+      description: item.data?.name ?? "",
+      unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
+      methodType: item.data?.defaultMethodType ?? "Pull from Inventory",
+      sourcingType: item.data?.sourcingType ?? "Specified",
+      kit: false,
+      item: {
+        name: item.data?.name ?? "",
+        itemTrackingType: item.data?.itemTrackingType ?? "Inventory",
+        replenishmentSystem: item.data?.replenishmentSystem ?? null,
+        defaultMethodType:
+          item.data?.defaultMethodType ?? "Pull from Inventory",
+        sourcingType: item.data?.sourcingType ?? "Specified"
+      }
+    });
   };
 
   const key = (field: string) => getFieldKey(field, item.id);
@@ -928,6 +961,9 @@ function MaterialForm({
         <Number
           name="quantity"
           label={t`Quantity`}
+          onChange={(quantity) => {
+            if (!globalThis.Number.isNaN(quantity)) saveDraft({ quantity });
+          }}
           isConfigured={rulesByField.has(key("quantity"))}
           onConfigure={
             configurable && !temporaryItems[item.id]
@@ -1159,13 +1195,12 @@ function MaterialForm({
             value={itemData.storageUnitIds[locationId ?? ""]}
             locationId={locationId}
             onChange={(value) => {
-              setItemData((d) => ({
-                ...d,
-                storageUnitIds: {
-                  ...d.storageUnitIds,
-                  [locationId ?? ""]: value?.id ?? ""
-                }
-              }));
+              const storageUnitIds = {
+                ...itemData.storageUnitIds,
+                [locationId ?? ""]: value?.id ?? ""
+              };
+              setItemData((d) => ({ ...d, storageUnitIds }));
+              saveDraft({ storageUnitIds });
             }}
             isOptional={!requiresPullFrom}
           />
@@ -1234,6 +1269,7 @@ function MaterialForm({
                 // Steps belong to an operation — clear them when the operation changes.
                 methodOperationStepIds: []
               }));
+              saveDraft({ methodOperationId: value?.value });
             }}
           />
           {/* Part ↔ step assignment now lives on the STEP (the BoP step editor's "Parts"
@@ -1268,6 +1304,7 @@ function MaterialForm({
                       ...d,
                       kit: value === "Kit"
                     }));
+                    saveDraft({ kit: value === "Kit" });
                   }}
                 >
                   <DropdownMenuRadioItem

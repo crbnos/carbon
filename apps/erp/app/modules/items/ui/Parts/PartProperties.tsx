@@ -69,6 +69,7 @@ import {
   FileBadge,
   ItemDescription,
   SourcingTypeProperty,
+  TaxableProperty,
   useIsComponentOfBuyAndMake
 } from "../Item";
 
@@ -138,6 +139,7 @@ const PartProperties = ({
   // When `data` is injected (subassembly context), this hook won't match a
   // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     partSummary: PartSummary;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -216,6 +218,7 @@ const PartProperties = ({
     (
       field:
         | "active"
+        | "taxable"
         | "defaultMethodType"
         | "sourcingType"
         | "itemTrackingType"
@@ -816,6 +819,14 @@ const PartProperties = ({
             />
           </ValidatedForm>
         </ItemChangeNoticeLock>
+      )}
+      {!embedded && (
+        <TaxableProperty
+          itemId={itemId}
+          taxable={routeDataFromRoute?.taxable}
+          onChange={(value) => onUpdate("taxable", value)}
+          isReadOnly={isReadOnly}
+        />
       )}
       {/* Manufacturer Part Number is a purchasing attribute — hidden on the CO
           affected-item card; it stays editable on the part page (non-embedded),

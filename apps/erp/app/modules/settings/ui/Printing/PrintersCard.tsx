@@ -2,7 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Input, Select, Submit, ValidatedForm } from "@carbon/form";
+import {
+  Boolean as BooleanField,
+  Input,
+  Password,
+  Select,
+  Submit,
+  ValidatedForm
+} from "@carbon/form";
 import type { PrinterRoute } from "@carbon/printing";
 import { printerRouteValidator } from "@carbon/printing";
 import { useAction } from "@carbon/query";
@@ -31,7 +38,13 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { getLabelSizeLabel, labelSizes } from "@carbon/utils";
+import {
+  DEFAULT_LABEL_DPI,
+  getLabelSizeLabel,
+  type LabelDpi,
+  labelDpis,
+  labelSizes
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
@@ -45,7 +58,12 @@ import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { path } from "~/utils/path";
 
-function getMediaSizeLabel(mediaSizeId: string): string {
+/** A select's value is a string; `printerRouteValidator` reads it back as a dpi. */
+function dpiFieldValue(dpi: LabelDpi): LabelDpi {
+  return String(dpi) as unknown as LabelDpi;
+}
+
+export function getMediaSizeLabel(mediaSizeId: string): string {
   const size = labelSizes.find((s) => s.id === mediaSizeId);
   return size ? getLabelSizeLabel(size) : mediaSizeId;
 }
@@ -93,6 +111,10 @@ export function PrintersCard({
         .map((s) => ({ value: s.id, label: getLabelSizeLabel(s) })),
     [selectedFormat]
   );
+  const dpiOptions = labelDpis.map((dpi) => ({
+    value: String(dpi),
+    label: t`${dpi} dpi`
+  }));
 
   return (
     <>
@@ -135,6 +157,11 @@ export function PrintersCard({
                     {route.mediaSizeId && (
                       <span className="text-xs text-muted-foreground">
                         {getMediaSizeLabel(route.mediaSizeId)}
+                      </span>
+                    )}
+                    {route.format === "zpl" && (
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>{route.dpi} dpi</Trans>
                       </span>
                     )}
                     <span className="text-xs text-muted-foreground font-mono truncate max-w-[300px]">
@@ -223,11 +250,10 @@ export function PrintersCard({
                     name: printerToEdit.name,
                     format: printerToEdit.format,
                     mediaSizeId: printerToEdit.mediaSizeId ?? undefined,
-                    printerUrl: printerToEdit.printerUrl,
-                    apiKey: printerToEdit.apiKey ?? undefined,
-                    templateId: printerToEdit.templateId ?? undefined
+                    dpi: dpiFieldValue(printerToEdit.dpi),
+                    printerUrl: printerToEdit.printerUrl
                   }
-                : { format: "zpl" }
+                : { format: "zpl", dpi: dpiFieldValue(DEFAULT_LABEL_DPI) }
             }
             className="flex flex-col h-full"
           >
@@ -274,23 +300,44 @@ export function PrintersCard({
                     name="mediaSizeId"
                     label={t`Media Size`}
                     options={mediaSizeOptions}
+                    isOptional={selectedFormat === "pdf"}
+                    placeholder={
+                      selectedFormat === "pdf"
+                        ? t`None (full page)`
+                        : t`Select a label size`
+                    }
                   />
-                  <Input
-                    name="templateId"
-                    label={t`Template ID`}
-                    placeholder={t`Leave blank for built-in`}
-                  />
-
+                  {/* Left out for a PDF printer, so saving one keeps its dpi. */}
+                  {selectedFormat === "zpl" && (
+                    <Select
+                      name="dpi"
+                      label={t`DPI`}
+                      helperText={t`Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi.`}
+                      options={dpiOptions}
+                      isOptional={false}
+                    />
+                  )}
                   <Input
                     name="printerUrl"
                     label={t`Printer URL`}
                     placeholder="https://pbx-XXXX.pbxz.cloud/api/v1/print/..."
                   />
-                  <Input
+                  <Password
                     name="apiKey"
                     label={t`API Key`}
-                    placeholder={t`Optional`}
+                    placeholder={
+                      printerToEdit?.hasApiKey
+                        ? t`Saved. Leave blank to keep it`
+                        : t`Optional`
+                    }
+                    autoComplete="new-password"
                   />
+                  {printerToEdit?.hasApiKey && (
+                    <BooleanField
+                      name="removeApiKey"
+                      label={t`Remove API key`}
+                    />
+                  )}
                 </div>
               </div>
             </ModalBody>

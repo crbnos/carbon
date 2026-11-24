@@ -15,7 +15,10 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
-import { streamItemSupersession } from "~/modules/items/items.service";
+import {
+  getItemTaxable,
+  streamItemSupersession
+} from "~/modules/items/items.service";
 import type { ItemFile, MaterialSummary } from "~/modules/items/types";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
@@ -47,6 +50,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
+  const taxable = getItemTaxable(client, itemId, companyId);
+
   const { supersession, supersededBy } = streamItemSupersession(
     client,
     itemId,
@@ -74,6 +79,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     materialSummary: materialSummary.data,
+    taxable: (await taxable).data?.taxable ?? true,
     supersession,
     supersededBy,
     files: api.items.getItemFiles({ itemId }).then(dataOrThrow),

@@ -198,9 +198,9 @@ const PrimaryNavigation = () => {
         disableHover={editMode.isEditing || isSearchModalOpen}
         // Phones switch company from the Profile sheet.
         header={isMobile ? undefined : <CompanySwitcher />}
+        sticky={canSearch ? <NavigationSearchButton /> : undefined}
         footer={footer}
       >
-        {canSearch && <NavigationSearchButton />}
         {editMode.isEditing ? null : (
           <ImplementationData>
             {(data) => {
@@ -293,13 +293,14 @@ const CustomizeModuleList = ({
 };
 
 // Hovering is what expands the rail, so the g-then-letter hint shows on the
-// hovered/focused row only.
+// hovered/focused row only: the row under the rail's hover card, which stays
+// on it while the pointer crosses the gap below.
 const GoToHint = ({ goToKey }: { goToKey: string }) => (
   <span
     aria-hidden
     className={cn(
       "flex items-center gap-0.5 opacity-0 transition-opacity duration-100",
-      "group-hover/item:opacity-100 group-focus-visible/item:opacity-100"
+      "group-hover/item:opacity-100 group-data-[hover-card]/item:opacity-100 group-focus-visible/item:opacity-100"
     )}
   >
     <ShortcutKey

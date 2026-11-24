@@ -13,6 +13,7 @@ import {
   sharedMailHeaders
 } from "@carbon/ee/email/delivery";
 import { resolveIntegrationSecrets } from "@carbon/ee/integrations/secrets";
+import { internalSupabaseUrl } from "@carbon/env";
 import {
   createSmtpTransport,
   DEFAULT_FROM,
@@ -52,7 +53,16 @@ export async function sendCompanyEmail(
   companyId: string,
   payload: CompanyEmailPayload
 ): Promise<SendEmailResult> {
-  const { document = false, ...message } = payload;
+  const { document = false, attachments, ...rest } = payload;
+  // A `path` attachment is fetched by this server, not by the recipient.
+  const message = {
+    ...rest,
+    attachments: attachments?.map((attachment) =>
+      "path" in attachment
+        ? { ...attachment, path: internalSupabaseUrl(attachment.path) }
+        : attachment
+    )
+  };
 
   const [integration, company] = await Promise.all([
     serviceClient

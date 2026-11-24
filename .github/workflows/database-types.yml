@@ -1,9 +1,11 @@
 name: Database types
 
 # The committed database types (packages/database/src/types.ts and
-# constants.ts) must match the committed migrations. This applies every
-# migration to an empty database, regenerates the types and fails on a
-# difference, so `crbn up` does not have to regenerate them on every boot.
+# constants.ts) and the swagger schema (swagger-docs-schema.ts) must match the
+# committed migrations. This applies every migration to an empty database,
+# regenerates them and fails on a difference, so `crbn up` does not have to
+# regenerate them on every boot. The Catalog and Lingui checks (check.yml)
+# hold the workflow catalog and its labels to the committed swagger schema.
 on:
   pull_request:
     branches: [main]
@@ -11,8 +13,11 @@ on:
       - "packages/database/supabase/migrations/**"
       - "packages/database/src/types.ts"
       - "packages/database/src/constants.ts"
+      - "packages/database/src/swagger-docs-schema.ts"
       - "scripts/generate-db-types.ts"
       - "scripts/lib/generate-db-types.ts"
+      - "scripts/generate-swagger-docs.ts"
+      - "scripts/lib/swagger-schema.ts"
       - "packages/dev/docker/**"
       - "packages/dev/src/**"
       - "pnpm-lock.yaml"
@@ -52,20 +57,21 @@ jobs:
 
       # Standalone `crbn migrate` boots the shared backend and migration services,
       # applies every migration to a fresh worktree database, regenerates its
-      # types, then stops the worktree services.
-      - name: Migrate an empty database and regenerate the types
+      # types, boots PostgREST and the gateway for the swagger schema, then
+      # stops the worktree services.
+      - name: Migrate an empty database and regenerate the types and swagger
         env:
           CARBON_DEV_YES: "1"
           # The stack's name; otherwise taken from the checkout directory.
           CARBON_WORKTREE: ci-types
         run: packages/dev/bin/crbn migrate
 
-      - name: Committed types match the migrations
+      - name: Committed types and swagger match the migrations
         run: |
-          files="packages/database/src/types.ts packages/database/src/constants.ts"
+          files="packages/database/src/types.ts packages/database/src/constants.ts packages/database/src/swagger-docs-schema.ts"
           if ! git diff --quiet -- $files || [ -n "$(git ls-files --others -- $files)" ]; then
             git --no-pager diff --stat -- $files
             git --no-pager diff -- $files | head -200
-            echo "::error::The committed database types do not match the migrations. Run pnpm db:migrate (or pnpm generate:types against a migrated database) and commit packages/database/src/types.ts and constants.ts." >&2
+            echo "::error::The committed database types or swagger schema do not match the migrations. Against a migrated database with the stack up (crbn up), run pnpm generate:types, pnpm generate:swagger, pnpm generate:workflow-catalog, then pnpm run lingui:extract && pnpm run lingui:clean, and commit what changed." >&2
             exit 1
           fi

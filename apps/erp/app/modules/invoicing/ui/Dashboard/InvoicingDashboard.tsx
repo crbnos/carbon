@@ -200,7 +200,7 @@ const InvoicingDashboard = ({
     `1–${b1}`,
     `${b1 + 1}–${b2}`,
     `${b2 + 1}–${b3}`,
-    `${b3}+`
+    `${b3 + 1}+`
   ];
 
   const arOverdue = overdueOf(ar);

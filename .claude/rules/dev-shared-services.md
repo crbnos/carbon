@@ -62,6 +62,14 @@ The containers then outlive any worktree.
   `.env.local`. Passed through, its `PG_MAX_CONNECTIONS=100` replaced the shared
   500, and other `MEM_*` values would recreate the containers every worktree
   uses.
+- Docker refuses a container whose `cpus:` limit is above its CPU count
+  (`docker info` `NCPU`; Docker Desktop's VM can have fewer than the host).
+  `prepareShared` writes `CPU_<NAME>=<count>` to `.env` for each
+  `${CPU_<NAME>:-<default>}` in the compose file above it
+  (`cpuLimitOverrides`), and nothing for limits that fit. `crbn up` does the
+  same for the worktree's files in `.env.local` (`worktreeCpuLimits`), less
+  the keys the user sets in `.env`. A limit is a ceiling, so the cap costs
+  nothing.
 
 ## Edge runtime
 

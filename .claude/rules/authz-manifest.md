@@ -68,11 +68,18 @@ which page owns a table, so a rule names only what differs from the default.
 - `parent(table, fk)` — the four policies through the FK; each action is the parent table's.
 - Pieces for `policies({...})`: `inCompany`, `inGroup`, `viaParent`, `exists` (optionally
   `sameCompany`), `through`, `throughIndexed`, `member`, `owner`, `portal.customer/supplier`,
-  `authenticated`, `isNull`/`isNotNull`, `where<"table">(eb => …)`, `or`, `and`.
+  `authenticated`, `apiKey`, `isNull`/`isNotNull`, `where<"table">(eb => …)`, `or`, `and`.
 - Each piece is compiled against the row it guards (`Row`: the registry table and the name
   SQL gives it). `exists(parent, fk, who)` resolves a bare action against the parent table and
   starts the parent's path at the parent row (`p`); `through` against its link table;
   `viaParent`, whose parent row is not in the query, against the guarded table.
+- `authenticated` never admits an API key: its request runs as `anon` with no
+  `auth.uid()`. `apiKey` is a valid, unexpired key of any company that holds a grant
+  (`util.request_api_key`). Reference data with no company that the API reads
+  (`attributeDataType`, `country`, `currencyCode`, `customFieldTable`, `exchangeRate`,
+  `industry`, `integration`, `period`, `webhookTable`) uses `referenceData` =
+  `or(authenticated, apiKey)` in the manifest. `config`, `plan`, `scriptRun` and
+  `ssoReservedDomain` stay `authenticated` only: no API read needs them.
 - `through` renders `col IN (SELECT …)`; `throughIndexed` renders
   `col = ANY (COALESCE((SELECT array_agg(…) …), '{}'))`. Postgres evaluates the array once and
   can use the column's index for it, where an `IN` subquery branch of an `OR` forces a scan of

@@ -127,7 +127,10 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
-import { StepLinkEditor } from "~/components/StepLinkEditor";
+import {
+  EveryStepToolsNote,
+  StepLinkEditor
+} from "~/components/StepLinkEditor";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import { useCurrencyDecimals, useImageUpload, useUser } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
@@ -3054,18 +3057,14 @@ function StepTools({
 
   const linkedToolIds = (tools ?? [])
     .filter((tl) =>
-      (
-        tl.methodOperationStepIds ??
-        (
-          (
-            tl as {
-              methodOperationToolStep?: { methodOperationStepId: string }[];
-            }
-          ).methodOperationToolStep ?? []
-        ).map((s) => s.methodOperationStepId)
-      ).some((stepId) => stepId === step.id)
+      (tl.methodOperationToolStep ?? []).some(
+        (s) => s.methodOperationStepId === step.id
+      )
     )
     .flatMap((tl) => (tl.toolId ? [tl.toolId] : []));
+  const everyStepCount = (tools ?? []).filter(
+    (tl) => !tl.methodOperationToolStep?.length
+  ).length;
 
   const toggle = (toolId: string, linked: boolean) => {
     if (!step.id) return;
@@ -3095,6 +3094,7 @@ function StepTools({
       busy={fetcher.state !== "idle"}
       onAdd={(id) => toggle(id, true)}
       onRemove={(id) => toggle(id, false)}
+      note={everyStepCount > 0 && <EveryStepToolsNote count={everyStepCount} />}
     />
   );
 }
@@ -3615,15 +3615,9 @@ function OperationPreview({
   // Tools scoped to this step + operation-level (no links) tools shown on every step
   // (tool ↔ step is many-to-many).
   const stepTools = tools.filter((tl) => {
-    const ids: string[] =
-      tl.methodOperationStepIds ??
-      (
-        (
-          tl as {
-            methodOperationToolStep?: { methodOperationStepId: string }[];
-          }
-        ).methodOperationToolStep ?? []
-      ).map((s) => s.methodOperationStepId);
+    const ids = (tl.methodOperationToolStep ?? []).map(
+      (s) => s.methodOperationStepId
+    );
     return ids.length === 0 || (!!step.id && ids.includes(step.id));
   });
 

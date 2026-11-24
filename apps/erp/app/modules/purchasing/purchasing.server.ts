@@ -21,6 +21,7 @@ import {
   convertUnitPrice,
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
+import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
   decideApprovalRequest,
@@ -47,11 +48,11 @@ import {
   applyRate,
   colorNames,
   datetime,
-  deriveRate,
   groupBy,
   isUniqueViolation,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   requireAffected,
+  round,
   SCALE,
   sanitize,
   taxableBase,
@@ -60,8 +61,18 @@ import {
 } from "@carbon/utils";
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import { z } from "zod";
-import { getExchangeRate } from "~/modules/accounting/accounting.service";
-import { upsertDocument } from "~/modules/documents/documents.service";
+import {
+  getExchangeRate,
+  getTaxCodeInputs
+} from "~/modules/accounting/accounting.service";
+import {
+  decideLineTax,
+  updatedTaxCodeId
+} from "~/modules/accounting/accounting.utils";
+import {
+  signRecordFileUrl,
+  upsertDocument
+} from "~/modules/documents/documents.service";
 import {
   postReceipt,
   RECEIPT_VOID_STOCK_MOVED_ERROR
@@ -93,7 +104,14 @@ import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
-import { incoterms, optionalTiptapDoc } from "~/modules/shared/shared.models";
+import {
+  incoterms,
+  optionalTiptapDoc,
+  purchaseOrderExternalNotesNote,
+  purchaseOrderLineDescriptionNote,
+  rfqLineDescriptionNote,
+  supplierQuoteLineDescriptionNote
+} from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
   INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
@@ -927,7 +945,9 @@ export const recordSupplierQuoteLinkVisit = defineServiceFn({
  *
  * @remarks
  * Every line must be the quote's. Writes the price of each selected quantity
- * (the tax rate derived from the amounts), sets the quote Active with who
+ * with its tax (`supplierQuotePriceTaxes`: a code's rate, else the rate
+ * derived from the amounts; a Reverse Charge code refuses a tax amount),
+ * sets the quote Active with who
  * submitted it, stamps the link, and notifies the company's supplier-quote
  * group. A failed notification is logged; the submission stands.
  */
@@ -963,10 +983,11 @@ export const submitDigitalSupplierQuote = defineServiceFn({
     // The line ids come from the link's visitor and every write below runs as
     // the service role: each line must be this quote's.
     const lineIds = [...new Set(prices.map(({ lineId }) => lineId))];
+    const itemByLine = new Map<string, string | null>();
     if (lineIds.length > 0) {
       const owned = await client
         .from("supplierQuoteLine")
-        .select("id")
+        .select("id, itemId")
         .eq("supplierQuoteId", supplierQuoteId)
         .eq("companyId", companyId)
         .in("id", lineIds);
@@ -980,13 +1001,14 @@ export const submitDigitalSupplierQuote = defineServiceFn({
       if (owned.data.length !== lineIds.length) {
         return ctx.error("validation", "Invalid selected lines data");
       }
+      for (const line of owned.data) itemByLine.set(line.id, line.itemId);
     }
 
     const existing =
       lineIds.length > 0
         ? await client
             .from("supplierQuoteLinePrice")
-            .select("supplierQuoteLineId, quantity")
+            .select("supplierQuoteLineId, quantity, taxCodeId")
             .eq("supplierQuoteId", supplierQuoteId)
             .in("supplierQuoteLineId", lineIds)
         : { data: [], error: null };
@@ -997,28 +1019,43 @@ export const submitDigitalSupplierQuote = defineServiceFn({
         existing.error
       );
     }
-    const stored = new Set(
-      existing.data.map((row) => `${row.supplierQuoteLineId}:${row.quantity}`)
+    const stored = new Map(
+      existing.data.map((row) => [
+        `${row.supplierQuoteLineId}:${row.quantity}`,
+        row.taxCodeId
+      ])
     );
+
+    // The share page collects amounts only. A price takes a code (its own,
+    // else the supplier's) at the code's rate; with none, the rate the
+    // amounts give over unit price × quantity + shipping.
+    const taxes = await service.supplierQuotePriceTaxes(client, {
+      companyId,
+      supplierId: quote.supplierId,
+      date:
+        quote.quotedDate ??
+        datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
+      prices: prices.map(({ lineId, quantity, line }) => ({
+        itemId: itemByLine.get(lineId) ?? null,
+        storedTaxCodeId: stored.get(`${lineId}:${quantity}`),
+        supplierTaxAmount: line.supplierTaxAmount ?? 0,
+        base: taxableBase(
+          line.supplierUnitPrice ?? 0,
+          quantity,
+          line.supplierShippingCost ?? 0
+        )
+      }))
+    });
+    if (taxes.error !== null) return ctx.error("validation", taxes.error);
 
     const now = datetime.timestamp();
     const userId = quote.createdBy;
-    const writes = prices.map(({ lineId, quantity, line }) => {
+    const writes = prices.map(({ lineId, quantity, line }, index) => {
       const fields = {
         supplierUnitPrice: line.supplierUnitPrice ?? 0,
         leadTime: line.leadTime ?? 0,
         supplierShippingCost: line.supplierShippingCost ?? 0,
-        supplierTaxAmount: line.supplierTaxAmount ?? 0,
-        // The share page collects amounts only: the rate is derived from the
-        // canonical denominator (unit price × quantity + shipping).
-        taxPercent: deriveRate(
-          line.supplierTaxAmount ?? 0,
-          taxableBase(
-            line.supplierUnitPrice ?? 0,
-            quantity,
-            line.supplierShippingCost ?? 0
-          )
-        )
+        ...taxes.data[index]
       };
       return stored.has(`${lineId}:${quantity}`)
         ? client
@@ -3985,7 +4022,7 @@ export const orderPlannedPurchases = defineServiceFn({
     if (location) return location;
     const ownedItems = await client
       .from("item")
-      .select("id, readableId, readableIdWithRevision")
+      .select("id, readableId, readableIdWithRevision, taxable")
       .in("id", Array.from(itemIds))
       .eq("companyId", companyId);
     if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
@@ -4156,6 +4193,42 @@ export const orderPlannedPurchases = defineServiceFn({
     let processedItems = 0;
     // Readable ids too, so the client can present a clickable toast.
     const poCache = new Map<string, { id: string; readableId: string }>();
+
+    // The tax a new line takes, by the resolver's own rule
+    // (`decideLineTax`): the supplier's tax code, else its bare percent,
+    // and none for a non-taxable item. Read once for the whole batch.
+    const taxDate = asOf.toString();
+    const itemTaxable = new Map(
+      ownedItems.data.map((item) => [item.id, item.taxable])
+    );
+    const supplierTaxes = await client
+      .from("supplierTax")
+      .select("supplierId, taxCodeId")
+      .in("supplierId", Array.from(supplierIds))
+      .eq("companyId", companyId);
+    const taxCodeIds = Array.from(
+      new Set(
+        (supplierTaxes.data ?? [])
+          .map((row) => row.taxCodeId)
+          .filter((id): id is string => !!id)
+      )
+    );
+    // A retired code a supplier still names keeps resolving, as everywhere.
+    const taxCodes = await getTaxCodeInputs(client, companyId, taxCodeIds);
+    if (supplierTaxes.error || taxCodes.error) {
+      return ctx.error(
+        "internal",
+        "Failed to retrieve supplier tax codes from database",
+        supplierTaxes.error ?? taxCodes.error
+      );
+    }
+    const taxCodeById = taxCodes.data;
+    const supplierTaxCode = new Map(
+      (supplierTaxes.data ?? []).map((row) => [
+        row.supplierId,
+        row.taxCodeId ? (taxCodeById.get(row.taxCodeId) ?? null) : null
+      ])
+    );
 
     // Every open PO an order may join, with its lines, in one read: the
     // suppliers' Draft / Planned purchase orders at this location, oldest
@@ -4353,8 +4426,18 @@ export const orderPlannedPurchases = defineServiceFn({
                     { currencyCode, exchangeRate: purchaseOrder.exchangeRate }
                   )
                 : 0;
-            const taxPercent = supplier.taxPercent ?? 0;
-            // supplier.taxPercent is a 0..1 fraction; the amount follows the
+            const tax = decideLineTax({
+              source: "purchase",
+              taxExempt: false,
+              taxExemptionReason: null,
+              itemTaxable: itemTaxable.get(itemId) ?? true,
+              locationTaxCode: null,
+              partyTaxCode: supplierTaxCode.get(supplierId) ?? null,
+              fallbackTaxPercent: Number(supplier.taxPercent ?? 0),
+              date: taxDate
+            });
+            const taxPercent = round(tax.taxPercent);
+            // taxPercent is a 0..1 fraction; the amount follows the
             // canonical denominator. Shipping is 0 on this path.
             const supplierTaxAmount = applyRate(
               taxableBase(supplierUnitPrice, adjustedQuantity, 0),
@@ -4374,6 +4457,7 @@ export const orderPlannedPurchases = defineServiceFn({
               conversionFactor,
               supplierUnitPrice,
               exchangeRate: purchaseOrder.exchangeRate,
+              taxCodeId: tax.taxCodeId ?? undefined,
               taxPercent,
               supplierTaxAmount,
               supplierShippingCost: 0,
@@ -6545,7 +6629,8 @@ export const updateSupplierTax = defineServiceFn({
       .nullable()
       .optional(),
     taxExemptionCertificateNumber: z.string().optional(),
-    taxExemptionCertificatePath: z.string().nullable().optional()
+    taxExemptionCertificatePath: z.string().nullable().optional(),
+    taxCodeId: z.string().optional()
   }),
   permission: { "purchasing.suppliers": "Edit" },
   async run(ctx, input) {
@@ -6556,6 +6641,67 @@ export const updateSupplierTax = defineServiceFn({
         payload(ctx, input).forUpdate() as never
       )
     );
+  }
+});
+
+/**
+ * Assign a tax code to suppliers
+ *
+ * @remarks
+ * Sets the tax code (`supplierTax.taxCodeId`) of each supplier to one active
+ * tax code of the company. New purchase lines for these suppliers default to
+ * it.
+ *
+ * @param ids - The suppliers to update.
+ * @param taxCodeId - An active tax code of the company.
+ *
+ * @mcp
+ */
+export const assignSupplierTaxCode = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string()),
+    taxCodeId: z.string().min(1, { message: "Select a tax code" })
+  }),
+  permission: { "purchasing.suppliers": "Edit" },
+  async run(ctx, { ids, taxCodeId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const [taxCode, suppliers] = await Promise.all([
+      client
+        .from("taxCode")
+        .select("id")
+        .eq("id", taxCodeId)
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .maybeSingle(),
+      client
+        .from("supplier")
+        .select("id")
+        .in("id", ids)
+        .eq("companyId", companyId)
+    ]);
+    if (taxCode.error) {
+      return ctx.error("internal", taxCode.error.message, taxCode.error);
+    }
+    if (!taxCode.data) return ctx.error("notFound", "Tax code not found");
+    if (suppliers.error) {
+      return ctx.error("internal", suppliers.error.message, suppliers.error);
+    }
+    const supplierIds = suppliers.data.map((supplier) => supplier.id);
+    if (supplierIds.length === 0) {
+      return ctx.error("notFound", "No suppliers found");
+    }
+
+    const upsert = await service.upsertSupplierTaxCodes(ctx.asSystem.supabase, {
+      supplierIds,
+      taxCodeId: taxCode.data.id,
+      companyId,
+      userId: ctx.auditUserId
+    });
+    if (upsert.error) {
+      return ctx.error("internal", upsert.error.message, upsert.error);
+    }
+    return { ids: supplierIds };
   }
 });
 
@@ -6586,7 +6732,7 @@ export const insertPurchaseOrder = defineServiceFn({
     receiptRequestedDate: z.string().optional(),
     supplierReference: z.string().optional(),
     notes: optionalTiptapDoc,
-    externalNotes: optionalTiptapDoc,
+    externalNotes: optionalTiptapDoc.describe(purchaseOrderExternalNotesNote),
     customFields: z.unknown().optional()
   }),
   permission: { "purchasing.purchaseOrders": "Create" },
@@ -6713,7 +6859,11 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
  * Create a purchase order line
  *
  * @remarks
- * Upsert purchase order line
+ * Upsert purchase order line. A line sent with no `taxCodeId` takes the
+ * supplier's tax code at the order date; an empty `taxCodeId` keeps the sent
+ * percent with no code. A sent code sets the rate (its rate on the order
+ * date), and a Reverse Charge code refuses a supplier tax amount. A
+ * non-taxable item carries no tax, whatever was sent.
  *
  * @mcp
  */
@@ -6735,7 +6885,10 @@ export const createPurchaseOrderLine = defineServiceFn({
     costCenterId: z.string().optional(),
     assetId: z.string().optional(),
     conversionFactor: z.number().optional(),
-    description: z.string().optional(),
+    description: z
+      .string()
+      .optional()
+      .describe(purchaseOrderLineDescriptionNote),
     exchangeRate: z.number().optional(),
     inventoryUnitOfMeasureCode: z.string().optional(),
     jobId: z.string().optional(),
@@ -6747,6 +6900,12 @@ export const createPurchaseOrderLine = defineServiceFn({
     requiredDate: z.string().optional(),
     storageUnitId: z.string().optional(),
     supplierPartId: z.string().optional(),
+    partNumberDisplay: z
+      .enum(PART_NUMBER_DISPLAYS)
+      .describe(
+        "Which part numbers the line prints. Omitted on a new line: the supplier's choice, else the company default."
+      )
+      .optional(),
     supplierShippingCost: z.number().optional(),
     supplierTaxAmount: z.number().optional(),
     supplierUnitPrice: z.number().optional(),
@@ -6758,6 +6917,12 @@ export const createPurchaseOrderLine = defineServiceFn({
       .describe(
         "Applied when creating; on update a field left out keeps its value."
       ),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe(
+        "Omit to take the supplier's tax code; an empty string keeps the sent percent with no code."
+      ),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -6765,11 +6930,34 @@ export const createPurchaseOrderLine = defineServiceFn({
       .optional()
   }),
   permission: { "purchasing.purchaseOrders": "Create" },
-  async run(ctx, { id: _id, ...input }) {
+  async run(ctx, { id: _id, ...fields }) {
     // Always a new line: an `id` would turn the write into an update of a
     // line on another order, past that order's own gate.
-    const held = await service.unreleasedChangeOrderRefusal(ctx, input.itemId);
+    const held = await service.unreleasedChangeOrderRefusal(ctx, fields.itemId);
     if (held) return held;
+    const jobId = await service.lineOperationJob(ctx, fields);
+    if (jobId instanceof CarbonError) return jobId;
+    const input = jobId ? { ...fields, jobId } : fields;
+    const client = ctx.asCaller.supabase;
+    // A new line takes the tax the form would have opened with: the
+    // supplier's code when none is sent, and none for a non-taxable item.
+    const tax = await service.resolvePurchaseLineTax(client, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseOrder",
+      documentId: input.purchaseOrderId,
+      lineId: null,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice ?? 0,
+        quantity: input.purchaseQuantity ?? 0,
+        shippingCost: input.supplierShippingCost ?? 0,
+        taxCodeId: input.taxCodeId,
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     return service.amendPurchaseOrder(
       ctx,
       input.purchaseOrderId,
@@ -6777,11 +6965,18 @@ export const createPurchaseOrderLine = defineServiceFn({
         unwrap(
           ctx,
           await service.upsertPurchaseOrderLine(
-            ctx.asCaller.supabase,
-            payload(ctx, input).forCreate() as never
+            client,
+            payload(ctx, {
+              ...input,
+              supplierTaxAmount: input.supplierTaxAmount ?? 0,
+              ...tax.data
+            }).forCreate() as never
           )
         ),
-      { restatesStatus: true }
+      {
+        restatesStatus: true,
+        setsPartNumberDisplay: input.partNumberDisplay !== undefined
+      }
     );
   }
 });
@@ -6790,7 +6985,10 @@ export const createPurchaseOrderLine = defineServiceFn({
  * Update a purchase order line
  *
  * @remarks
- * Upsert purchase order line
+ * Upsert purchase order line. A non-taxable item carries no tax, whatever was
+ * sent. A sent code (or the stored one, when only a percent is sent) sets
+ * the rate; an empty `taxCodeId` clears the code. A Reverse Charge code
+ * refuses a supplier tax amount.
  *
  * @mcp
  */
@@ -6813,7 +7011,10 @@ export const updatePurchaseOrderLine = defineServiceFn({
       costCenterId: z.string().optional(),
       assetId: z.string().optional(),
       conversionFactor: z.number().optional(),
-      description: z.string().optional(),
+      description: z
+        .string()
+        .optional()
+        .describe(purchaseOrderLineDescriptionNote),
       exchangeRate: z.number().optional(),
       inventoryUnitOfMeasureCode: z.string().optional(),
       jobId: z.string().optional(),
@@ -6825,6 +7026,10 @@ export const updatePurchaseOrderLine = defineServiceFn({
       requiredDate: z.string().optional(),
       storageUnitId: z.string().optional(),
       supplierPartId: z.string().optional(),
+      partNumberDisplay: z
+        .enum(PART_NUMBER_DISPLAYS)
+        .describe("Which part numbers the line prints. Omitted: unchanged.")
+        .optional(),
       supplierShippingCost: z.number().optional(),
       supplierTaxAmount: z.number().optional(),
       supplierUnitPrice: z.number().optional(),
@@ -6836,6 +7041,7 @@ export const updatePurchaseOrderLine = defineServiceFn({
           "Applied when creating; on update a field left out keeps its value."
         )
         .optional(),
+      taxCodeId: z.string().optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()
@@ -6844,7 +7050,12 @@ export const updatePurchaseOrderLine = defineServiceFn({
     })
     .required({ id: true }),
   permission: { "purchasing.purchaseOrders": "Edit" },
-  async run(ctx, input) {
+  async run(ctx, fields) {
+    const jobId = fields.jobOperationId
+      ? await service.lineOperationJob(ctx, fields)
+      : null;
+    if (jobId instanceof CarbonError) return jobId;
+    const input = jobId ? { ...fields, jobId } : fields;
     const line = await service.getPurchaseOrderLineForAmendment(ctx, input.id);
     if (line.error) {
       return ctx.error(
@@ -6856,6 +7067,25 @@ export const updatePurchaseOrderLine = defineServiceFn({
     if (!line.data || line.data.purchaseOrderId !== input.purchaseOrderId) {
       return ctx.error("notFound", "Purchase order line not found");
     }
+    // A non-taxable item carries no tax, a code its rate, and a Reverse
+    // Charge code no supplier tax. A field left out keeps its stored value.
+    const tax = await service.resolvePurchaseLineTax(ctx.asCaller.supabase, {
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      document: "purchaseOrder",
+      documentId: line.data.purchaseOrderId,
+      lineId: input.id,
+      sent: {
+        itemId: input.itemId,
+        unitPrice: input.supplierUnitPrice,
+        quantity: input.purchaseQuantity,
+        shippingCost: input.supplierShippingCost,
+        taxCodeId: updatedTaxCodeId(input),
+        taxPercent: input.taxPercent,
+        supplierTaxAmount: input.supplierTaxAmount
+      }
+    });
+    if (tax.error !== null) return ctx.error("validation", tax.error);
     if (input.itemId !== undefined && input.itemId !== line.data.itemId) {
       const held = await service.unreleasedChangeOrderRefusal(
         ctx,
@@ -6870,7 +7100,7 @@ export const updatePurchaseOrderLine = defineServiceFn({
         unwrap(
           ctx,
           await service.upsertPurchaseOrderLine(ctx.asCaller.supabase, {
-            ...payload(ctx, input).forUpdate(),
+            ...payload(ctx, { ...input, ...tax.data }).forUpdate(),
             companyId: ctx.company.id
           } as never)
         ),
@@ -6883,14 +7113,22 @@ export const updatePurchaseOrderLine = defineServiceFn({
             itemId: input.itemId,
             assetId: input.assetId,
             purchaseUnitOfMeasureCode: input.purchaseUnitOfMeasureCode,
-            conversionFactor: input.conversionFactor
+            conversionFactor: input.conversionFactor,
+            // A field the edit sends empty is written as null.
+            ...("jobId" in input ? { jobId: input.jobId ?? null } : {}),
+            ...("jobOperationId" in input
+              ? { jobOperationId: input.jobOperationId ?? null }
+              : {})
           },
           dates: {
             requiredDate: input.requiredDate,
             promisedDate: input.promisedDate
           }
         },
-        restatesStatus: true
+        restatesStatus: true,
+        setsPartNumberDisplay:
+          input.partNumberDisplay !== undefined &&
+          input.partNumberDisplay !== line.data.partNumberDisplay
       }
     );
   }
@@ -7003,6 +7241,13 @@ export const createSupplier = defineServiceFn({
     currencyCode: z.string().optional(),
     purchasingContactId: z.string().optional(),
     website: z.string().optional(),
+    partNumberDisplay: z
+      .enum(PART_NUMBER_DISPLAYS)
+      .describe(
+        "Which part numbers this supplier's new purchase order lines print. Null uses the company default."
+      )
+      .nullable()
+      .optional(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -7044,6 +7289,13 @@ export const updateSupplier = defineServiceFn({
       currencyCode: z.string().optional(),
       purchasingContactId: z.string().optional(),
       website: z.string().optional(),
+      partNumberDisplay: z
+        .enum(PART_NUMBER_DISPLAYS)
+        .describe(
+          "Which part numbers this supplier's new purchase order lines print. Null clears the supplier's choice, so the company default applies."
+        )
+        .nullable()
+        .optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()
@@ -7219,7 +7471,10 @@ export const createSupplierQuoteLine = defineServiceFn({
     itemId: z.string().optional(),
     accountId: z.string().optional(),
     costCenterId: z.string().optional(),
-    description: z.string().optional(),
+    description: z
+      .string()
+      .optional()
+      .describe(supplierQuoteLineDescriptionNote),
     supplierPartId: z.string().optional(),
     inventoryUnitOfMeasureCode: z.string().optional(),
     purchaseUnitOfMeasureCode: z.string().optional(),
@@ -7267,7 +7522,10 @@ export const updateSupplierQuoteLine = defineServiceFn({
       itemId: z.string().optional(),
       accountId: z.string().optional(),
       costCenterId: z.string().optional(),
-      description: z.string().optional(),
+      description: z
+        .string()
+        .optional()
+        .describe(supplierQuoteLineDescriptionNote),
       supplierPartId: z.string().optional(),
       inventoryUnitOfMeasureCode: z.string().optional(),
       purchaseUnitOfMeasureCode: z.string().optional(),
@@ -7535,7 +7793,7 @@ export const createPurchasingRFQLine = defineServiceFn({
   input: z.looseObject({
     purchasingRfqId: z.string(),
     itemId: z.string(),
-    description: z.string().optional(),
+    description: z.string().optional().describe(rfqLineDescriptionNote),
     quantity: z.array(z.number()),
     purchaseUnitOfMeasureCode: z.string(),
     inventoryUnitOfMeasureCode: z.string(),
@@ -7568,7 +7826,7 @@ export const updatePurchasingRFQLine = defineServiceFn({
     id: z.string(),
     purchasingRfqId: z.string(),
     itemId: z.string(),
-    description: z.string().optional(),
+    description: z.string().optional().describe(rfqLineDescriptionNote),
     quantity: z.array(z.number()),
     purchaseUnitOfMeasureCode: z.string(),
     inventoryUnitOfMeasureCode: z.string(),
@@ -8148,6 +8406,41 @@ export const createSupplierInteractionDocumentUploadUrl = defineServiceFn({
 });
 
 /**
+ * Get a signed download URL for a supplier interaction (purchase order/supplier quote/RFQ) document
+ *
+ * @remarks
+ * A signed link to a file on the supplier interaction's Files tab, valid for an
+ * hour (`expiresIn`, in seconds). The response carries the link, never the
+ * file. `name` is the file's name as
+ * `purchasing_getSupplierInteractionDocuments` lists it, or the name given to
+ * `purchasing_createSupplierInteractionDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is not
+ * there is not found.
+ *
+ * @mcp read
+ */
+export const getSupplierInteractionDocumentDownloadUrl = defineServiceFn({
+  input: z.object({
+    interactionId: z.string().min(1),
+    name: z.string().min(1)
+  }),
+  // Read for an invoice too: a cross-module reader.
+  permission: {
+    anyOf: [
+      { "purchasing.purchaseOrders": "View" },
+      { "invoicing.purchaseInvoices": "View" }
+    ]
+  },
+  async run(ctx, { interactionId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "supplier-interaction",
+      entityId: interactionId,
+      name
+    });
+  }
+});
+
+/**
  * Create a presigned upload URL for a supplier interaction LINE document
  *
  * @mcp
@@ -8163,6 +8456,32 @@ export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
         payload(ctx, input).forUpsert() as never
       )
     );
+  }
+});
+
+/**
+ * Get a signed download URL for a supplier interaction LINE document
+ *
+ * @remarks
+ * A signed link to a file on the line's Files tab, valid for an hour
+ * (`expiresIn`, in seconds). The response carries the link, never the file.
+ * `name` is the file's name as `purchasing_getSupplierInteractionLineDocuments`
+ * lists it, or the name given to
+ * `purchasing_createSupplierInteractionLineDocumentUploadUrl` (an image converted on upload, such as HEIC,
+ * is listed as `.jpg` or `.webp`). A file that is
+ * not there is not found.
+ *
+ * @mcp read
+ */
+export const getSupplierInteractionLineDocumentDownloadUrl = defineServiceFn({
+  input: z.object({ lineId: z.string().min(1), name: z.string().min(1) }),
+  permission: { "purchasing.purchaseOrders": "View" },
+  async run(ctx, { lineId, name }) {
+    return signRecordFileUrl(ctx, {
+      folder: "supplier-interaction-line",
+      entityId: lineId,
+      name
+    });
   }
 });
 

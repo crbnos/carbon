@@ -294,6 +294,12 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
   `RP_ID`.
 - `requireAuthSession` reads/validates; `getOrRefreshAuthSession` refreshes within
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
+- `refreshAccessToken` refreshes one refresh token once: concurrent callers in a
+  process share the GoTrue call, and later callers read its session from Redis
+  (`auth:refresh:<sha256 of the token>`, 10 s, the local GoTrue reuse interval). Every
+  loader and picker request on a page refreshes on its own, so without this a
+  burst of realtime reloads near expiry hit GoTrue's per-IP refresh limit (429)
+  and answered 503. A refused token is never shared.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.
 - `clearAuthCookies` (which `destroyAuthSession` and the login loader's
   expired-session branch call) also ends this browser's push notifications: it

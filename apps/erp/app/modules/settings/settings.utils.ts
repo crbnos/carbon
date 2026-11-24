@@ -7,13 +7,15 @@ import type {
   DocumentEditType,
   DocumentTemplateType
 } from "@carbon/documents/template";
+import type { PartNumberParty } from "@carbon/documents/utils";
 import { isJobLocked } from "@carbon/utils";
 import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
 import { isSalesInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import {
   isPurchaseOrderLocked,
   isPurchaseReturnOrderLocked,
-  isRfqLocked
+  isRfqLocked,
+  purchaseOrderPartNumberRefusal
 } from "~/modules/purchasing/purchasing.models";
 import { isIssueLocked } from "~/modules/quality/quality.models";
 import {
@@ -55,6 +57,30 @@ export interface DocumentEditRecord {
   readableId: string;
   isLocked: (status: string | null | undefined) => boolean;
   notesColumn: "externalNotes" | "notes" | "content" | null;
+  /**
+   * The lines that store a part number display choice: their table, the column
+   * that names the document, whose part number "theirs" is, and why the choice
+   * cannot change in a status the record's own lock allows (a purchase order
+   * waiting for approval). Absent: the document has no part number choice.
+   */
+  partNumberLines?: {
+    table:
+      | "quoteLine"
+      | "salesOrderLine"
+      | "salesInvoiceLine"
+      | "shipmentLine"
+      | "purchaseOrderLine";
+    documentColumn:
+      | "quoteId"
+      | "salesOrderId"
+      | "invoiceId"
+      | "shipmentId"
+      | "purchaseOrderId";
+    party: PartNumberParty;
+    refusal?: (status: string | null | undefined) => string | null;
+    /** A record column whose values mean the document prints no lines. */
+    noLinesWhen?: { column: "sourceDocument"; values: readonly string[] };
+  };
 }
 
 export const DOCUMENT_EDIT_RECORDS: Record<
@@ -65,7 +91,13 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     table: "purchaseOrder",
     readableId: "purchaseOrderId",
     isLocked: isPurchaseOrderLocked,
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "purchaseOrderLine",
+      documentColumn: "purchaseOrderId",
+      party: "supplier",
+      refusal: purchaseOrderPartNumberRefusal
+    }
   },
   purchaseReturnOrder: {
     table: "purchaseReturnOrder",
@@ -83,13 +115,23 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     table: "quote",
     readableId: "quoteId",
     isLocked: isQuoteLocked,
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "quoteLine",
+      documentColumn: "quoteId",
+      party: "customer"
+    }
   },
   salesOrder: {
     table: "salesOrder",
     readableId: "salesOrderId",
     isLocked: isSalesOrderLocked,
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "salesOrderLine",
+      documentColumn: "salesOrderId",
+      party: "customer"
+    }
   },
   salesReturnOrder: {
     table: "salesReturnOrder",
@@ -101,13 +143,29 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     table: "salesInvoice",
     readableId: "invoiceId",
     isLocked: isSalesInvoiceLocked,
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "salesInvoiceLine",
+      documentColumn: "invoiceId",
+      party: "customer"
+    }
   },
   packingSlip: {
     table: "shipment",
     readableId: "shipmentId",
     isLocked: (status) => status === "Posted" || status === "Voided",
-    notesColumn: "externalNotes"
+    notesColumn: "externalNotes",
+    partNumberLines: {
+      table: "shipmentLine",
+      documentColumn: "shipmentId",
+      party: "customer",
+      // A Delivery Ticket and a Receiving Report print rental units and
+      // contract lines, not the shipment's lines.
+      noLinesWhen: {
+        column: "sourceDocument",
+        values: ["Rental Agreement", "Customer Contract"]
+      }
+    }
   },
   stockTransfer: {
     table: "stockTransfer",
@@ -128,6 +186,21 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     notesColumn: "content"
   }
 };
+
+/**
+ * Why a document's lines cannot change which part numbers they print, else
+ * null: the record's lock, or a rule of the lines' own.
+ */
+export function partNumberLinesRefusal(
+  documentType: DocumentEditType,
+  status: string | null | undefined
+): string | null {
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+  return (
+    record.partNumberLines?.refusal?.(status) ??
+    (record.isLocked(status) ? "This document is locked." : null)
+  );
+}
 
 /**
  * The company terms setting a document's Terms block falls back to when it has

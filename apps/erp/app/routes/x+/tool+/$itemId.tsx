@@ -33,6 +33,7 @@ import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { isChangeNoticeOpen } from "~/modules/items/items.models";
 import {
   findChangeNoticesForItemOnce,
+  getItemTaxable,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
   getUnreleasedChangeOrderForItem,
@@ -70,6 +71,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
+
+  const taxable = getItemTaxable(client, itemId, companyId);
 
   const { supersession, supersededBy } = streamItemSupersession(
     client,
@@ -148,6 +151,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     toolSummary: toolSummary.data,
+    taxable: (await taxable).data?.taxable ?? true,
     supersession,
     supersededBy,
     files: api.items.getItemFiles({ itemId }).then(dataOrThrow),

@@ -821,9 +821,14 @@ export async function acceptInvite(
     email &&
     invite.data.email.trim().toLowerCase() !== email.trim().toLowerCase()
   ) {
-    throw new Error(
-      "Invite code does not match email. Please logout and try again."
-    );
+    return {
+      data: null,
+      error: {
+        code: "email_mismatch" as const,
+        message:
+          "Invite code does not match email. Please logout and try again."
+      }
+    };
   }
 
   const user = await getUserByEmail(invite.data.email);

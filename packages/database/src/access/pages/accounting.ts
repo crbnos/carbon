@@ -111,6 +111,35 @@ export const PAGES = [
     paths: ["/x/accounting/fleet"]
   },
   {
+    id: "accounting.taxCodes",
+    label: "Tax Codes",
+    maxLevel: "Full",
+    tables: ["taxCode", "taxCodeComponent"],
+    paths: ["/x/accounting/tax-codes"]
+  },
+  {
+    id: "accounting.taxAuthorities",
+    label: "Tax Authorities",
+    maxLevel: "Full",
+    tables: ["taxAuthority"],
+    paths: ["/x/accounting/tax-authorities"]
+  },
+  {
+    id: "accounting.taxRegistrations",
+    label: "Tax Registrations",
+    maxLevel: "Full",
+    tables: ["taxRegistration"],
+    paths: ["/x/accounting/tax-registrations"]
+  },
+  {
+    // Postings write the ledger; the report only reads it.
+    id: "accounting.taxLiability",
+    label: "Tax Liability",
+    maxLevel: "View",
+    tables: ["taxLedger"],
+    paths: ["/x/reports/tax-liability"]
+  },
+  {
     id: "accounting.assetClasses",
     label: "Asset Classes",
     maxLevel: "Full",

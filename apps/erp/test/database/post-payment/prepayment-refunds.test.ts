@@ -48,8 +48,18 @@ async function invoicingViewKey(
     .execute();
 }
 
-async function prepaymentFixture() {
+/**
+ * These tests are about amounts, not dates: every payment, refund and void
+ * happens on the payments' own date. A payment posts on its payment date,
+ * and a void on `today`, so `today` is that date too.
+ */
+async function sameDayPaymentFixture() {
   const f = await paymentFixture();
+  return { ...f, args: { ...f.args, today: "2026-09-01" } };
+}
+
+async function prepaymentFixture() {
+  const f = await sameDayPaymentFixture();
   const supplier = await f.db
     .insertInto("supplier")
     .values({ name: "Prepayment supplier", companyId: f.companyId })
@@ -1052,7 +1062,7 @@ databaseTest(
 
 
 async function customerDepositFixture() {
-  const f = await paymentFixture();
+  const f = await sameDayPaymentFixture();
   const order = await f.db.insertInto("salesOrder").values({
     salesOrderId: "SO-LEGACY-REFUND", customerId: f.customerId,
     companyId: f.companyId, createdBy: "system", currencyCode: "EUR", exchangeRate: 1.1

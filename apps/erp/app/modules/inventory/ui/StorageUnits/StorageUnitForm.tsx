@@ -201,6 +201,12 @@ const StorageUnitForm = ({
                         : t`MRP and picking ignore the stock in this unit and the units inside it. Use it for quarantine and hold areas.`
                   }
                 />
+                <Boolean
+                  name="kitRack"
+                  label={t`Kit rack`}
+                  bordered
+                  description={t`Holds built kits. An item whose default storage unit is a kit rack is a kit on the line feed. A kit rack cannot be lineside.`}
+                />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

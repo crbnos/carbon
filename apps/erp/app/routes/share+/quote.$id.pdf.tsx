@@ -15,7 +15,7 @@ import { getClientIp, stripSpecialCharacters } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getFinalizedQuotePdf,
-  getQuoteByExternalId,
+  getSharedQuote,
   isExternalQuoteExpired
 } from "~/modules/sales/sales.service";
 
@@ -38,23 +38,23 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!success) return new Response(null, { status: 429 });
 
   const serviceRole = getCarbonServiceRole();
-  const quote = await getQuoteByExternalId(serviceRole, id);
-  if (quote.error) return new Response(null, { status: 404 });
+  const quote = await getSharedQuote(serviceRole, id);
+  if (!quote) return new Response(null, { status: 404 });
 
-  if (isExternalQuoteExpired(quote.data)) {
+  if (isExternalQuoteExpired(quote)) {
     return new Response(null, { status: 404 });
   }
 
-  const pdf = await getFinalizedQuotePdf(serviceRole, quote.data);
+  const pdf = await getFinalizedQuotePdf(serviceRole, quote);
   if (!pdf) return new Response(null, { status: 404 });
 
   const file = await storage(serviceRole)
-    .company(quote.data.companyId)
+    .company(quote.companyId)
     .download(pdf.path);
   if (file.error) {
     logger.error("Failed to download the finalized quote PDF", {
-      companyId: quote.data.companyId,
-      quoteId: quote.data.id,
+      companyId: quote.companyId,
+      quoteId: quote.id,
       status: storageErrorStatus(file.error),
       error: file.error
     });
@@ -65,7 +65,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   headers.set(
     "Content-Disposition",
     `attachment; filename="${stripSpecialCharacters(
-      getQuoteDisplayId(quote.data)
+      getQuoteDisplayId(quote)
     )}.pdf"`
   );
   return new Response(file.data, { status: 200, headers });

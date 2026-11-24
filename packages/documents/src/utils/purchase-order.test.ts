@@ -10,10 +10,8 @@ type Line = Database["public"]["Views"]["purchaseOrderLines"]["Row"];
 const line = (overrides: Partial<Line>) =>
   ({ purchaseOrderLineType: "Part", ...overrides }) as Line;
 
-// `itemReadableId` is the view's `readableIdWithRevision`, so it is the only
-// place the revision reaches the document.
 describe("getLineDescription", () => {
-  it("shows the item id on its own when there is no supplier part number", () => {
+  it("shows the item id when there is no supplier part number", () => {
     expect(getLineDescription(line({ itemReadableId: "P000123.B" }))).toBe(
       "P000123.B"
     );
@@ -24,7 +22,7 @@ describe("getLineDescription", () => {
     ).toBe("P000123.B");
   });
 
-  it("keeps the item id and revision next to the supplier part number", () => {
+  it("prints a legacy line as the email did before the display choice", () => {
     expect(
       getLineDescription(
         line({ itemReadableId: "P000123.B", supplierPartId: "SUP-778" })
@@ -39,6 +37,23 @@ describe("getLineDescription", () => {
         })
       )
     ).toBe("P000123.B (SUP-778)");
+  });
+
+  it.each([
+    ["Ours First", "P000123.B (SUP-778)"],
+    ["Theirs First", "SUP-778 (P000123.B)"],
+    ["Theirs Only", "SUP-778"],
+    ["Ours Only", "P000123.B"]
+  ] as const)("prints the line's choice %s", (partNumberDisplay, expected) => {
+    expect(
+      getLineDescription(
+        line({
+          itemReadableId: "P000123.B",
+          supplierPartId: "SUP-778",
+          partNumberDisplay
+        })
+      )
+    ).toBe(expected);
   });
 
   it("falls back to the supplier part number when the line has no item", () => {

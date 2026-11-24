@@ -34,19 +34,23 @@ export const KPIs = [
     key: "utilization",
     label: "Work Center Utilization",
     emptyMessage: "No work center utilization data within range",
-    gate: { "production.jobs": "View" }
+    gate: { "production.jobs": "View" },
+    lowerIsBetter: false
   },
   {
+    // The change is actual time against estimated time: running over is bad.
     key: "estimatesVsActuals",
     label: "Estimates vs Actuals",
     emptyMessage: "No completed jobs within range",
-    gate: { "production.jobs": "View" }
+    gate: { "production.jobs": "View" },
+    lowerIsBetter: true
   },
   {
     key: "completionTime",
     label: "Completion Time",
     emptyMessage: "No completed jobs within range",
-    gate: { "production.jobs": "View" }
+    gate: { "production.jobs": "View" },
+    lowerIsBetter: true
   }
 ] as const;
 

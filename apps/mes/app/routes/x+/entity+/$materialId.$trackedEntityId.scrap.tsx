@@ -13,6 +13,7 @@ import {
   abilityBlockRefusal,
   getTrackedEntity
 } from "~/services/operations.service";
+import { resolveWorkUnit } from "~/services/work-unit.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {});
@@ -40,6 +41,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .eq("id", materialId)
     .eq("companyId", companyId)
     .maybeSingle();
+  // The parent is a unit of the operation (membership only: a subcomponent of
+  // a unit done here can still be scrapped).
+  const operationId =
+    material.data?.jobOperationId ?? url.searchParams.get("operationId");
+  let parentId = parentTrackedEntityId;
+  if (parentTrackedEntityId) {
+    if (!operationId) {
+      return data(
+        { success: false, message: "Failed to scrap entity" },
+        { status: 400 }
+      );
+    }
+    const work = await resolveWorkUnit({
+      client: serviceRole,
+      companyId,
+      operationId,
+      requestedUnitId: parentTrackedEntityId,
+      mode: "member"
+    });
+    if (work.kind === "refuse") {
+      return data({ success: false, message: work.message }, { status: 409 });
+    }
+    if (work.kind === "unit") parentId = work.unitId;
+  }
+
   const refusal = material.data?.jobOperationId
     ? await abilityBlockRefusal(serviceRole, {
         operationId: material.data.jobOperationId,
@@ -64,7 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     {
       trackedEntityId,
       materialId,
-      parentTrackedEntityId: parentTrackedEntityId!,
+      parentTrackedEntityId: parentId!,
       type: "scrapTrackedEntity",
       scrapReasonId: validation.data.scrapReasonId,
       makeReplacement: validation.data.makeReplacement

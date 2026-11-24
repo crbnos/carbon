@@ -80,7 +80,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .toString(),
       currencyCode,
       exchangeRate: 1,
-      amount: 0,
+      netAmount: 0,
+      taxCodeId: "",
       reference: "",
       notes: ""
     }
@@ -89,7 +90,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(
+  const { client, companyId, companyGroupId, userId } = await authorize(
     request,
     anyOf(["invoicing.supplierCredits", "invoicing.creditMemos"], "Create")
   );
@@ -125,6 +126,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ...memoData,
     memoId,
     companyId,
+    companyGroupId,
     createdBy: userId,
     customFields: setCustomFields(formData)
   });

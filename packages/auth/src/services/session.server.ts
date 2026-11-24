@@ -8,7 +8,8 @@ import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
 import {
   type CookieOptions,
   createCookie,
-  createCookieSessionStorage
+  createCookieSessionStorage,
+  data
 } from "react-router";
 
 import {
@@ -316,6 +317,11 @@ export async function flash(request: Request, result: Result) {
       })
     }
   };
+}
+
+/** An action response that stays on the page: `value` as its data, with the flash. */
+export async function flashData<T>(request: Request, result: Result, value: T) {
+  return data(value, await flash(request, result));
 }
 
 export async function getAuthSession(

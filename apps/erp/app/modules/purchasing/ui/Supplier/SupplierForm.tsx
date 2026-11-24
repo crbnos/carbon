@@ -27,6 +27,7 @@ import {
   Employee,
   Hidden,
   Input,
+  PartNumberDisplay,
   SequenceOrCustomId,
   Submit,
   SupplierContact,
@@ -217,6 +218,13 @@ const SupplierForm = ({
                     </>
                   )}
                   <Currency name="currencyCode" label={t`Currency`} />
+                  <PartNumberDisplay
+                    party="supplier"
+                    name="partNumberDisplay"
+                    label={t`Part Numbers on Documents`}
+                    isOptional
+                    placeholder={t`Company default`}
+                  />
                   <Input name="website" label={t`Website`} />
 
                   {/* <EmailRecipients name="defaultCc" label={t`Default CC`} /> */}

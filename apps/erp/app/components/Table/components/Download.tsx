@@ -4,6 +4,7 @@
 
 import { downloadCsv } from "@carbon/files/csv";
 import {
+  Button,
   IconButton,
   Tooltip,
   TooltipContent,
@@ -38,6 +39,7 @@ export type InfiniteExport = {
 };
 
 export type DownloadProps = {
+  href?: string;
   data: object[];
   columnAccessors: Record<string, string>;
   exportValues: Record<string, (row: any) => unknown>;
@@ -50,12 +52,9 @@ export type DownloadProps = {
 };
 
 /**
- * Builds the CSV of the table's rows (visible columns, view order) and
- * downloads it. The desktop Download button and the compact ⋯ menu share it.
- *
- * An infinite list first loads the rest of its rows, up to 1,000. Past 1,000,
- * a list with a `listKey` asks the server for a background export instead;
- * a list without one exports the first 1,000 rows.
+ * Client-side table export for lists without a direct download URL. The
+ * desktop Download button and the compact ⋯ menu share it. An infinite list
+ * loads up to 1,000 rows, or starts a background export for a larger list.
  */
 export function useCsvDownload({
   data,
@@ -224,7 +223,24 @@ function errorMessage(result: unknown): string | null {
   return typeof error === "string" && error.length > 0 ? error : null;
 }
 
-const Download = (props: DownloadProps) => {
+const Download = (props: DownloadProps) =>
+  props.href ? (
+    <ServerDownload href={props.href} />
+  ) : (
+    <ClientDownload {...props} />
+  );
+
+function ServerDownload({ href }: { href: string }) {
+  return (
+    <Button asChild variant="secondary" leftIcon={<LuDownload />}>
+      <a href={href}>
+        <Trans>Export</Trans>
+      </a>
+    </Button>
+  );
+}
+
+function ClientDownload(props: DownloadProps) {
   const { t } = useLingui();
   const { data } = props;
   const { onClick, isExporting } = useCsvDownload(props);
@@ -253,6 +269,6 @@ const Download = (props: DownloadProps) => {
       </TooltipContent>
     </Tooltip>
   );
-};
+}
 
 export default Download;

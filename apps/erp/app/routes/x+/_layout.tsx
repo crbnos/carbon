@@ -81,6 +81,7 @@ import {
   MobileBottomChrome,
   MobileDock
 } from "~/components/Layout/Mobile";
+import { isBoardSidebarShown } from "~/components/Layout/Navigation/moduleSidebar";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
 import ShortcutHelp from "~/components/ShortcutHelp";
@@ -363,6 +364,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       expiresAt
     },
     auditLogEnabled,
+    // The board pages' module sidebar choice, so the first paint matches it.
+    boardSidebarShown: isBoardSidebarShown(request.headers.get("cookie")),
     company,
     companies: companies.data ?? [],
     // Feature flags with `browser: true`, read with `useFeatureFlags().feature(key)`.

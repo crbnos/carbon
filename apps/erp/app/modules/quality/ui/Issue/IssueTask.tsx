@@ -70,7 +70,6 @@ export function ItemProgress({ items }: { items: IssueItem[] }) {
   return (
     <div className="flex flex-col items-end gap-2 pt-2 pr-14">
       <BarProgress
-        gradient
         progress={progressPercentage}
         value={`${completedOrSkippedItems}/${items.length}`}
       />

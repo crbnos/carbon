@@ -2,75 +2,31 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  isSalesOrderLocked,
-  salesOrderShipmentValidator
-} from "~/modules/sales/sales.models";
-import {
-  getSalesOrder,
-  upsertSalesOrderShipment
-} from "~/modules/sales/sales.service";
+import { salesOrderShipmentValidator } from "~/modules/sales/sales.models";
 import { setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { orderId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
-
-  const { client: viewClient } = await authorize(request, {
-    "sales.salesOrders": "View"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesOrderShipmentValidator).request(args, {
+    params: ["orderId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { orderId } = input.params;
 
-  const salesOrder = await getSalesOrder(viewClient, orderId);
-  await requireUnlocked({
-    request,
-    isLocked: isSalesOrderLocked(salesOrder.data?.status),
-    redirectTo: path.to.salesOrderDetails(orderId),
-    message: "Cannot modify a locked sales order. Reopen it first."
-  });
-
-  const { client, userId } = await authorize(request, {
+  const { api } = await authorize(args.request, {
     "sales.salesOrders": "Edit"
   });
-
-  const formData = await request.formData();
-  const validation = await validator(salesOrderShipmentValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const updateSalesOrderShipment = await upsertSalesOrderShipment(client, {
-    ...validation.data,
-    id: orderId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+  const result = await api.sales.updateSalesOrderShipping({
+    salesOrderId: orderId,
+    shipping: input.data,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-  if (updateSalesOrderShipment.error) {
-    throw redirect(
-      path.to.salesOrderDetails(orderId),
-      await flash(
-        request,
-        error(
-          updateSalesOrderShipment.error,
-          "Failed to update sales order shipment"
-        )
-      )
-    );
-  }
-
-  throw redirect(
+  return respond(args.request, result).redirect(
     path.to.salesOrderDetails(orderId),
-    await flash(request, success("Updated sales order shipment"))
+    { message: "Updated sales order shipment" }
   );
 }

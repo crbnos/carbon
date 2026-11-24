@@ -11,10 +11,10 @@
 import { permissionKey } from "../access/levels";
 import { ITEM_PAGES } from "../access/registry";
 import {
-  always,
   and,
   anyOf,
   anyPageOf,
+  apiKey,
   authenticated,
   company,
   custom,
@@ -39,6 +39,13 @@ import {
   viaParent,
   where
 } from "./rules";
+
+/**
+ * Reference data with no company that the API's own reads and writes need: any signed-in
+ * user, or a request with an API key. `get_exchange_rate` runs as the caller, so without the
+ * key branch on `exchangeRate` every foreign-currency document created over the API fails.
+ */
+const referenceData = or(authenticated, apiKey);
 
 /** Any one item page at `action`: for a row no one item decides. */
 const anyItemPage = (action: "create" | "update" | "delete") =>
@@ -263,7 +270,7 @@ export const manifest = {
   assemblyInstructionStepTool: company(),
   assemblyPlanJob: company({ read: "employee" }),
   assemblyUnit: company({ read: "employee" }),
-  attributeDataType: policies({ select: authenticated }),
+  attributeDataType: policies({ select: referenceData }),
   auditLogArchive: serviceOnly(),
   balloon: company({ read: "employee" }),
   batchProperty: company(),
@@ -371,9 +378,9 @@ export const manifest = {
   costLedger: policies({
     select: inCompany("companyId", "view")
   }),
-  country: policies({ select: authenticated }),
+  country: policies({ select: referenceData }),
   currency: group({ read: "employee" }),
-  currencyCode: policies({ select: authenticated }),
+  currencyCode: policies({ select: referenceData }),
   customer: policies({
     select: or(
       inCompany("companyId", "view"),
@@ -492,7 +499,7 @@ export const manifest = {
   }),
   customerType: company({ read: "member" }),
   customField: company({ read: "member" }),
-  customFieldTable: policies({ select: authenticated }),
+  customFieldTable: policies({ select: referenceData }),
   demandActual: company(),
   demandForecast: company(),
   demandForecastSource: company(),
@@ -634,7 +641,7 @@ export const manifest = {
     update: anyOf("update", "settings.auditLogs_update"),
     delete: anyOf("delete", "settings.auditLogs_update")
   }),
-  exchangeRate: policies({ select: always, to: "authenticated" }),
+  exchangeRate: policies({ select: referenceData }),
   exchangeRateOverride: company({
     read: "employee",
     create: "update",
@@ -702,7 +709,7 @@ export const manifest = {
     update: false,
     delete: false
   }),
-  industry: policies({ select: authenticated }),
+  industry: policies({ select: referenceData }),
   inspection: company(),
   inspectionDocument: company({ read: "employee" }),
   inspectionDocumentParameter: company({ read: "employee" }),
@@ -715,7 +722,7 @@ export const manifest = {
   inspectionSample: company(),
   inspectionSamplingPlan: company(),
   inspectionTrackedEntity: company(),
-  integration: policies({ select: authenticated }),
+  integration: policies({ select: referenceData }),
   // Read-only to API roles: a user-written row could claim another company's Slack
   // team_id or point secretRef at someone else's vault secret. The server writes it
   // with the service role after its own permission check.
@@ -864,6 +871,8 @@ export const manifest = {
   }),
   jobMakeMethod: company({ read: "employee" }),
   jobMaterial: company({ read: "employee" }),
+  // Written only by the scrapJobPart posting (system connection).
+  jobMaterialScrap: company({ create: false, update: false, delete: false }),
   jobMaterialStep: policies({
     select: exists("jobMaterial", "jobMaterialId", "employee"),
     insert: exists("jobMaterial", "jobMaterialId", "create"),
@@ -958,6 +967,7 @@ export const manifest = {
   kanban: company({ read: "employee" }),
   laborCategory: company({ read: "employee" }),
   laborCategoryRate: company({ read: "employee" }),
+  labelTemplate: company(),
   lease: company(),
   // Written only by post-lease and the lease run (Kysely); read-only over the API.
   leaseEvent: company({
@@ -1185,7 +1195,7 @@ export const manifest = {
   peopleAbsence: company({ read: "employee" }),
   performanceBasedPaymentEvent: company(),
   peopleAssignment: company({ read: "employee" }),
-  period: policies({ select: authenticated }),
+  period: policies({ select: referenceData }),
   // Read-only through the API: every write goes through writeAccessGrants (Kysely).
   permission: policies({ select: grantRows }),
   periodCloseTask: company({ read: "employee" }),
@@ -1754,6 +1764,29 @@ export const manifest = {
     update: false,
     delete: "update"
   }),
+  // Sales, Purchasing and Accounting documents all pick a tax code.
+  taxAuthority: company({
+    read: anyPageOf("accounting", "sales", "purchasing")
+  }),
+  // Retired, never deleted (deleteTaxCode): document lines keep their code.
+  taxCode: company({
+    read: anyPageOf("accounting", "sales", "purchasing"),
+    delete: false
+  }),
+  taxCodeComponent: company({
+    read: anyPageOf("accounting", "sales", "purchasing")
+  }),
+  // Written by the posting server functions in the journal's transaction.
+  // No API writes.
+  taxLedger: company({
+    read: anyPageOf("accounting", "sales", "purchasing"),
+    create: false,
+    update: false,
+    delete: false
+  }),
+  taxRegistration: company({
+    read: anyPageOf("accounting", "sales", "purchasing")
+  }),
   terms: company({
     create: false,
     delete: false,
@@ -1947,7 +1980,7 @@ export const manifest = {
   warehouseTransfer: company(),
   warehouseTransferLine: company(),
   webhook: company(),
-  webhookTable: policies({ select: authenticated }),
+  webhookTable: policies({ select: referenceData }),
   workCenter: company({ read: "employee" }),
   // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
   // functions, over Kysely and under the device lock: read-only through the API.

@@ -3,13 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import {
+  getAgingParams,
+  getApPendingPayments
+} from "~/modules/invoicing/invoicing.service";
 import { ARAPWorkbench } from "~/modules/invoicing/ui";
-import { getCompanyTimeZone } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -19,28 +22,16 @@ export const handle: Handle = {
   to: path.to.payables
 };
 
-function parseBuckets(raw: string | null): [number, number, number] {
-  const parts = (raw ?? "").split(",").map((n) => Number.parseInt(n, 10));
-  if (parts.length === 3 && parts.every((n) => Number.isFinite(n) && n > 0)) {
-    return [parts[0], parts[1], parts[2]];
-  }
-  return [30, 60, 90];
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
     "invoicing.payables": "View"
   });
 
-  const url = new URL(request.url);
-  const asOfDate =
-    url.searchParams.get("asOfDate") ??
-    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-  const agingMethod: "dueDate" | "documentDate" =
-    url.searchParams.get("agingMethod") === "documentDate"
-      ? "documentDate"
-      : "dueDate";
-  const bucketDays = parseBuckets(url.searchParams.get("bucketDays"));
+  const { asOfDate, agingMethod, bucketDays } = await getAgingParams(
+    client,
+    companyId,
+    request
+  );
 
   // GL tie-outs only mean something once journals count — skip them
   // entirely before the accounting cutover (result: null hides the
@@ -48,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const companySettings = await api.settings.getCompanySettings({});
   const accountingSetUp = hasAccountingCutover(companySettings.data);
 
-  const [tieOut, aging, open] = await Promise.all([
+  const [tieOut, aging, open, pending] = await Promise.all([
     accountingSetUp
       ? api.invoicing.getApTieOut({ asOfDate })
       : Promise.resolve({ data: null }),
@@ -56,7 +47,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       asOfDate,
       options: { agingMethod, bucketDays }
     }),
-    api.invoicing.getApOpenBySupplier({ asOfDate })
+    api.invoicing.getApOpenBySupplier({ asOfDate }),
+    getApPendingPayments(getDatabaseClient(), companyId)
   ]);
 
   return {
@@ -65,6 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     bucketDays,
     result: tieOut.data ?? null,
     aging: aging.data ?? [],
+    pending: Object.fromEntries(pending),
     open: (open.data ?? []).map((r) => ({
       ...r,
       invoiceId: r.documentId,
@@ -74,7 +67,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PayablesRoute() {
-  const { asOfDate, agingMethod, bucketDays, result, aging, open } =
+  const { asOfDate, agingMethod, bucketDays, result, aging, open, pending } =
     useLoaderData<typeof loader>();
   return (
     <ARAPWorkbench
@@ -82,6 +75,7 @@ export default function PayablesRoute() {
       result={result}
       aging={aging}
       open={open}
+      pending={pending}
       asOfDate={asOfDate}
       agingMethod={agingMethod}
       bucketDays={bucketDays}

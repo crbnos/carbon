@@ -18,14 +18,20 @@ import {
   InputLeftElement,
   MENU_ITEM_SHORTCUTS,
   PrefetchLink,
+  Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
   useMount,
   VStack
 } from "@carbon/react";
-import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { distinctItemText, formatDate, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { Suspense, useState } from "react";
 import {
+  LuCalendarX,
   LuChevronDown,
   LuChevronRight,
   LuCirclePlus,
@@ -63,6 +69,7 @@ import { itemType } from "~/modules/shared/shared.models";
 import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores/items";
+import { usePeople } from "~/stores/people";
 import { path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";
 import type {
@@ -134,6 +141,7 @@ export default function SalesOrderExplorer() {
     salesOrder: SalesOrder;
     lines: SalesOrderLine[];
     customer: Customer;
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
   }>(path.to.salesOrder(orderId));
   const permissions = usePermissions();
 
@@ -146,11 +154,16 @@ export default function SalesOrderExplorer() {
     nonTaxableAddOnCost: 0,
     locationId:
       salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
-    taxPercent: salesOrderData?.customer?.taxPercent ?? 0,
+    taxPercent:
+      salesOrderData?.resolvedTax?.taxPercent ??
+      salesOrderData?.customer?.taxPercent ??
+      0,
+    taxCodeId: salesOrderData?.resolvedTax?.taxCodeId ?? undefined,
     promisedDate:
       salesOrderData?.salesOrder?.receiptPromisedDate ??
       salesOrderData?.salesOrder?.receiptRequestedDate ??
       "",
+    requestedDate: salesOrderData?.salesOrder?.receiptRequestedDate ?? "",
     shippingCost: 0
   };
 
@@ -327,6 +340,61 @@ type SalesOrderLineItemProps = {
   onDelete: (line: SalesOrderLine) => void;
 };
 
+/**
+ * A mark on a line's delivery date check. A spinner while the background
+ * capacity check still runs (`Pending`). For a date the check failed: amber
+ * while nobody has confirmed it (a converted line), muted once a user saved
+ * the line and kept the date, naming that user.
+ */
+function DeliveryDateFlag({ line }: { line: SalesOrderLine }) {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  const [people] = usePeople();
+  if (line.deliveryDateStatus === "Pending") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="relative z-10 shrink-0 text-muted-foreground">
+            <Spinner
+              className="h-3 w-3"
+              aria-label={t`Checking the delivery date`}
+            />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{t`Checking the delivery date…`}</TooltipContent>
+      </Tooltip>
+    );
+  }
+  if (line.deliveryDateStatus !== "Missed") return null;
+  const earliest = formatDate(line.earliestDeliveryDate, undefined, locale);
+  const keptBy = line.deliveryDateOverriddenBy
+    ? (people.find((person) => person.id === line.deliveryDateOverriddenBy)
+        ?.name ?? t`a user`)
+    : null;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={cn(
+            "relative z-10 shrink-0",
+            keptBy ? "text-muted-foreground" : "text-amber-500"
+          )}
+        >
+          <LuCalendarX
+            className="h-3.5 w-3.5"
+            aria-label={keptBy ? t`Date kept` : t`Date not confirmed`}
+          />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        {keptBy
+          ? t`${keptBy} kept this date. The earliest delivery date is ${earliest}.`
+          : t`Date not confirmed. The earliest delivery date is ${earliest}.`}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function SalesOrderLineItem({
   line,
   isDisabled,
@@ -383,11 +451,14 @@ function SalesOrderLineItem({
             />
 
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.salesOrderLineType === "Fixed Asset"
-                  ? (line as any).assetReadableId || "Fixed Asset"
-                  : getItemReadableId(items, line.itemId)}
-              </span>
+              <HStack spacing={1} className="min-w-0">
+                <span className="font-semibold line-clamp-1">
+                  {line.salesOrderLineType === "Fixed Asset"
+                    ? (line as any).assetReadableId || "Fixed Asset"
+                    : getItemReadableId(items, line.itemId)}
+                </span>
+                <DeliveryDateFlag line={line} />
+              </HStack>
               {secondaryText && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">
                   {secondaryText}

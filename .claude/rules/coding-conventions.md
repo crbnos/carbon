@@ -143,7 +143,10 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   `<Outlet />`. React Router keeps a page mounted when only its params change, so
   a form's default values, an editor's content or a `useState` copy would stay the
   previous record's. `RecordOutlet` remounts the page for another record and
-  leaves it mounted when a drawer opens over it. Enforced by `no-bare-outlet`.
+  leaves it mounted when a drawer opens over it. A table or card the route
+  renders then has no outlet of its own, or the child route mounts in both and
+  its dialog opens twice. Enforced by `no-bare-outlet`, which follows the
+  route's imports to see a component's outlet.
 - An index route that only redirects (`/x/issue/:id` → `…/details`, a module root →
   its first page) also exports `middleware = [redirectBeforeLoaders(loader)]` from
   `@carbon/utils`. The loaders of a matched branch run in parallel, so without it every

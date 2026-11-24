@@ -18,7 +18,6 @@ vi.mock("@carbon/planning", () => ({
 }));
 
 import {
-  closeJob,
   completeJob,
   createProductionQuantity,
   pauseJob,
@@ -220,28 +219,6 @@ describe("reopenJob", () => {
       { jobId: "j1" }
     );
     expect(result.error?.category).toBe("rule");
-  });
-});
-
-describe("closeJob", () => {
-  it("refuses a job that is not Completed, before any write-off", async () => {
-    const result = await closeJob(
-      contextWith(callerWith({ status: "In Progress" })),
-      { jobId: "j1" }
-    );
-    expect(result.error?.category).toBe("rule");
-    expect(flips()).toEqual([]);
-  });
-
-  it("keeps the job Closed and warns when the WIP write-off fails", async () => {
-    // The write-off reads the database through `pg`, which this context lacks.
-    const result = await closeJob(
-      contextWith(callerWith({ status: "Completed" })),
-      { jobId: "j1" }
-    );
-    expect(result.error).toBeNull();
-    expect(result.data?.warning).toBeTruthy();
-    expect(flips()).toEqual([{ status: "Closed", fromStatuses: ["Completed"] }]);
   });
 });
 

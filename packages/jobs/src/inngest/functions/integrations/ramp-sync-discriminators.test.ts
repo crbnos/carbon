@@ -32,7 +32,7 @@ describe("rampBillPaymentRoute", () => {
     "ONE_TIME_CARD",
     "ONE_TIME_CARD_DELIVERY",
     "AUTOMATIC_CARD_PAYMENT"
-  ])("leaves card method %s to the card charge sync", (method) => {
+  ])("posts card method %s as a card payment", (method) => {
     expect(rampBillPaymentRoute(method)).toBe("card");
   });
 

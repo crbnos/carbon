@@ -7,7 +7,8 @@ import { sql } from "kysely";
 import { expect } from "vitest";
 import {
   closeAccountingPeriod,
-  postJournalEntry
+  postJournalEntry,
+  reopenAccountingPeriod
 } from "../../app/modules/accounting/accounting.service";
 import { postgrestTest } from "./fixtures/local-supabase";
 import { paymentFixture } from "./fixtures/payment";
@@ -293,6 +294,105 @@ postgrestTest(
       await closing?.catch(() => {});
       await postingResult?.catch(() => {});
       await instantiator.destroy();
+      await monitor.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a reopen of the period before a close in flight waits for the close, then refuses",
+  async (client) => {
+    const f = await paymentFixture();
+    const writer = await f.connect();
+    const reopener = await f.connect();
+    const monitor = await f.connect();
+    const held = signal();
+    const release = signal();
+    let writing: Promise<void> | undefined;
+    let closing: ReturnType<typeof closeAccountingPeriod> | undefined;
+    let reopening: ReturnType<typeof reopenAccountingPeriod> | undefined;
+    try {
+      // September is Locked and about to close; August, before it, is Closed.
+      const args = await prepareClose(f);
+      const august = await f.db
+        .insertInto("accountingPeriod")
+        .values({
+          startDate: "2026-08-01",
+          endDate: "2026-08-31",
+          status: "Inactive",
+          closeStatus: "Closed",
+          closedAt: "2026-09-05T00:00:00Z",
+          closedBy: "system",
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const pid = async (db: Kysely<KyselyDatabase>) =>
+        (await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(db))
+          .rows[0]!.pid;
+      const writerPid = await pid(writer);
+      const closePid = await pid(f.db);
+      const reopenPid = await pid(reopener);
+
+      // A posting's share lock on September holds the close inside its
+      // transaction.
+      writing = writer.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("accountingPeriod")
+          .select("id")
+          .where("id", "=", args.periodId)
+          .where("companyId", "=", f.companyId)
+          .forShare()
+          .executeTakeFirstOrThrow();
+        held.resolve();
+        await release.promise;
+      });
+      void writing.catch(() => {});
+      await Promise.race([held.promise, writing]);
+      closing = closeAccountingPeriod(client, f.db, args);
+      await waitForBlockedConnection(monitor, writerPid, closePid);
+
+      reopening = reopenAccountingPeriod(reopener, {
+        periodId: august.id,
+        companyId: f.companyId,
+        userId: "system"
+      });
+      void reopening.catch(() => {});
+      await waitForBlockedConnection(monitor, closePid, reopenPid);
+
+      release.resolve();
+      await writing;
+      expect(await closing).toEqual({
+        data: { id: args.periodId },
+        error: null
+      });
+      expect(await reopening).toEqual({
+        data: null,
+        error: {
+          message:
+            "Later periods must be reopened first (reopen from the most recent close backwards)"
+        }
+      });
+      expect(
+        await f.db
+          .selectFrom("accountingPeriod")
+          .select(["id", "closeStatus"])
+          .where("companyId", "=", f.companyId)
+          .orderBy("startDate")
+          .execute()
+      ).toEqual([
+        { id: august.id, closeStatus: "Closed" },
+        { id: args.periodId, closeStatus: "Closed" }
+      ]);
+    } finally {
+      release.resolve();
+      await writing?.catch(() => {});
+      await closing?.catch(() => {});
+      await reopening?.catch(() => {});
+      await writer.destroy();
+      await reopener.destroy();
       await monitor.destroy();
       await f.cleanup();
     }

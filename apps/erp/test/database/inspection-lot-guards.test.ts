@@ -297,3 +297,59 @@ databaseTest(
     expect((await create(plans[2].id)).error).toBeNull();
   }
 );
+
+databaseTest(
+  "an anonymous sample keeps the grid position it was created at",
+  async () => {
+    const { f, units } = await setup();
+    const lotId = await receiptLot(f, units);
+    const { lotSize } = await f.db
+      .selectFrom("inspection")
+      .select("lotSize")
+      .where("id", "=", lotId)
+      .executeTakeFirstOrThrow();
+    const last = Number(lotSize) - 1;
+    const save = (sampleId?: string, position?: number) =>
+      upsertInspectionSample(f.db, {
+        inspectionId: lotId,
+        sampleId,
+        position,
+        status: "Passed",
+        companyId: f.companyId,
+        inspectedBy: USER
+      });
+    const position = async (id: string) =>
+      (
+        await f.db
+          .selectFrom("inspectionSample")
+          .select("position")
+          .where("id", "=", id)
+          .executeTakeFirstOrThrow()
+      ).position;
+
+    const created = await save(undefined, last);
+    expect(created.error).toBeNull();
+    expect(await position(created.data!.id)).toBe(last);
+
+    // Another page re-saving the sample from another slot never moves it.
+    expect((await save(created.data!.id, 0)).error).toBeNull();
+    expect(await position(created.data!.id)).toBe(last);
+
+    // A serial sample keeps its scan order: no stored position.
+    const serial = await upsertInspectionSample(f.db, {
+      inspectionId: lotId,
+      trackedEntityId: units.entity("SN-1"),
+      position: 0,
+      status: "Pending",
+      companyId: f.companyId,
+      inspectedBy: USER
+    });
+    expect(serial.error).toBeNull();
+    expect(await position(serial.data!.id)).toBeNull();
+
+    // A position past the lot's last column is not stored: the grid never draws it.
+    const outside = await save(undefined, Number(lotSize));
+    expect(outside.error).toBeNull();
+    expect(await position(outside.data!.id)).toBeNull();
+  }
+);

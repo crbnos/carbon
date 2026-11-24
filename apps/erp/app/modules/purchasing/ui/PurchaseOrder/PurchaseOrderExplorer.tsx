@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLineSupplierPartId } from "@carbon/documents/utils";
 import {
   Button,
   cn,
@@ -18,7 +19,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
@@ -47,6 +48,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { itemType } from "~/modules/shared/shared.models";
 import type { ItemType } from "~/modules/shared/types";
@@ -68,6 +70,7 @@ export default function PurchaseOrderExplorer() {
     purchaseOrder: PurchaseOrder;
     lines: PurchaseOrderLine[];
     supplier: Supplier;
+    resolvedTax: LineTaxDecision | null;
   }>(path.to.purchaseOrder(orderId));
   const permissions = usePermissions();
 
@@ -83,7 +86,9 @@ export default function PurchaseOrderExplorer() {
     locationId:
       purchaseOrderData?.purchaseOrder?.locationId ?? defaults.locationId ?? "",
     supplierTaxAmount: 0,
-    taxPercent: 0,
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: purchaseOrderData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(purchaseOrderData?.resolvedTax?.taxPercent ?? 0),
     supplierShippingCost: 0,
     exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1,
     requiredDate:
@@ -286,15 +291,19 @@ function PurchaseOrderLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId);
+  // The supplier's number is what is printed on the package being received.
   const subtitle =
     line.purchaseOrderLineType === "G/L Account"
       ? "G/L Account"
       : line.purchaseOrderLineType === "Fixed Asset"
         ? (line as any).assetName || line.description
-        : distinctItemText(
-            getItemReadableId(items, line.itemId),
-            line.description
-          );
+        : [
+            getLineSupplierPartId(line, itemReadableId),
+            distinctItemText(itemReadableId, line.description)
+          ]
+            .filter(Boolean)
+            .join(" · ");
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
@@ -305,7 +314,7 @@ function PurchaseOrderLineBody({
               ? line.description || "Indirect Expense"
               : line.purchaseOrderLineType === "Fixed Asset"
                 ? (line as any).assetReadableId || "Fixed Asset"
-                : getItemReadableId(items, line.itemId)}
+                : itemReadableId}
           </span>
           {subtitle && (
             <span className="text-muted-foreground text-xs truncate line-clamp-1">

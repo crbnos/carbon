@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { SUPABASE_URL } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
@@ -199,11 +198,11 @@ export async function renderDocumentWithEdit(
     case "salesInvoice": {
       const { pdfProps, fileName } = await loadSalesInvoiceDocument({
         client,
+        taxClient: getCarbonServiceRole(),
         companyId,
         companyGroupId,
         invoiceId: id,
         locale,
-        storageUrl: SUPABASE_URL ?? "",
         edit
       });
       return pdfResponse({

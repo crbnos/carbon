@@ -17,7 +17,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { useCallback, useMemo } from "react";
 import { LuPencil, LuPlus, LuReceipt, LuTrash } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { useFetcher, useNavigate } from "react-router";
 import { Empty, Table } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import {
@@ -131,6 +131,15 @@ const ProjectContractLinesGrid = ({
   const isGovernmentContracting = useGovernmentContracting();
 
   const addLine = useDisclosure();
+  // The new line's default tax, from the line route's own loader, so a line
+  // added here takes the customer's code as one added on its page does.
+  const lineDefaults = useFetcher<{
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
+  }>();
+  const openAddLine = () => {
+    lineDefaults.load(path.to.newContractLine(contractId));
+    addLine.onOpen();
+  };
   const editing = useDrawerItem<ContractLine>();
   const { open: openEdit } = editing;
   const {
@@ -539,7 +548,7 @@ const ProjectContractLinesGrid = ({
             isDisabled={
               !permissions.has({ "sales.serviceContracts": "Create" })
             }
-            onClick={addLine.onOpen}
+            onClick={openAddLine}
           >
             <Trans>Add Line</Trans>
           </Button>
@@ -574,7 +583,7 @@ const ProjectContractLinesGrid = ({
               isDisabled={
                 !permissions.has({ "sales.serviceContracts": "Create" })
               }
-              onClick={addLine.onOpen}
+              onClick={openAddLine}
             >
               <Trans>Add Line</Trans>
             </Button>
@@ -582,17 +591,26 @@ const ProjectContractLinesGrid = ({
         </>
       )}
 
-      {addLine.openCount > 0 && (
-        <ContractLineForm
-          key={`addLine-${addLine.openCount}`}
-          open={addLine.isOpen}
-          type="modal"
-          initialValues={newContractLineFormValues(contract)}
-          currencyCode={currencyCode}
-          billingBasis="Project"
-          onClose={addLine.onClose}
-        />
-      )}
+      {addLine.openCount > 0 &&
+        lineDefaults.state === "idle" &&
+        lineDefaults.data && (
+          <ContractLineForm
+            key={`addLine-${addLine.openCount}`}
+            open={addLine.isOpen}
+            type="modal"
+            initialValues={{
+              ...newContractLineFormValues(contract),
+              // The form types percent points.
+              taxPercent: round(
+                (lineDefaults.data.resolvedTax?.taxPercent ?? 0) * 100
+              ),
+              taxCodeId: lineDefaults.data.resolvedTax?.taxCodeId ?? undefined
+            }}
+            currencyCode={currencyCode}
+            billingBasis="Project"
+            onClose={addLine.onClose}
+          />
+        )}
 
       {editing.item && (
         <ContractLineForm

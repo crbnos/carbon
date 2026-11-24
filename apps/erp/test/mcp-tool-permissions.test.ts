@@ -463,6 +463,18 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     ["sales.returns", "Edit"],
     ["service.jobs", "Edit"]
   ),
+  // Changing a posted invoice line's account edits the invoice AND posts a
+  // journal: Edit on the invoice page and on Journal Entries.
+  invoicing_changePurchaseInvoiceLineAccount: allOf(
+    EDIT,
+    ["accounting.journalEntries", "Edit"],
+    ["invoicing.purchaseInvoices", "Edit"]
+  ),
+  invoicing_changeSalesInvoiceLineAccount: allOf(
+    EDIT,
+    ["accounting.journalEntries", "Edit"],
+    ["invoicing.salesInvoices", "Edit"]
+  ),
   // Invoicing a completed service job needs Edit on Service Jobs AND
   // Create on Sales Invoices.
   service_createServiceInvoice: allOf(

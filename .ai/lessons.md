@@ -6,6 +6,55 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Aging report previews need seeded open documents
+
+**Context:** Sharing a local AR/AP aging UI preview.
+
+**Problem:** The dev server rendered the reports, but the default test company had no sales or purchase invoices, so both reports appeared empty. The dataset seed then failed on `inspectionDocument.drawingNumber`: the local database carried a newer schema from `main` than the branch's own code.
+
+**Rule:** Check the report RPCs for open rows before handing off a preview. Seed an isolated company when the current test company contains unrelated records, and verify both report counts after seeding. When a seed fails on a column, compare the branch's generated types with the local database before editing the dataset: merge `main` (or migrate a clean database) rather than changing the tier.
+
+**Applies to:** Local aging report previews and `packages/database/src/datasets/`.
+
+## Aging summary tables keep document headers inside the expansion
+
+**Context:** Showing AR/AP aging totals by customer or supplier with document details beneath each party.
+
+**Problem:** Putting transaction date, type, and original amount in the shared table header leaves blank cells across every party row and makes the report look unfinished.
+
+**Rule:** On aging report pages, show only party-level fields in the outer table. Render open documents and unapplied payments in an expanded table with its own column headers. Keep the receivables/payables workbench layout unchanged unless that page is explicitly in scope.
+
+**Applies to:** `ARAPWorkbench` on the AR/AP aging report routes.
+
+## Aging CSV exports must follow open documents
+
+**Context:** Exporting AR/AP aging from a summary RPC and a separate open-document RPC.
+
+**Problem:** A counterparty with offsetting open documents can have a zero net balance and disappear from the summary RPC while its documents remain open. Looking up names and building CSV rows only from summary parties silently drops those documents.
+
+**Rule:** Union counterparty IDs from the summary, open-document, and unapplied-payment RPCs. Export one row per open document or payment with the counterparty repeated, including parties whose net summary is zero. Resolve CSV headings from the request locale. Include any RPC migration in the tracked change before relying on regenerated types.
+
+**Applies to:** AR/AP aging CSV routes and report helpers.
+
+## File downloads can link directly to a resource route
+
+**Context:** The AR/AP aging table needs a complete server-generated CSV rather than its currently expanded browser rows.
+
+**Problem:** Adding a separate Export button required turning off the Table's own CSV control with `withCsvExport={false}`, leaving two download mechanisms to coordinate.
+
+**Rule:** For one format, give the Table the download URL and render its Download control as a plain anchor. For multiple formats on a report, use one Export menu whose links each make one browser GET to a server resource route; hide the Table's single-format control there. Keep the client-side Table export for lists without a download URL.
+
+**Applies to:** Table downloads backed by resource routes and AR/AP aging exports.
+
+## Vite plugin wrappers preserve the caller's type
+
+**Context:** Adding an ERP dependency refreshed pnpm peer resolutions, and CI then typechecked the MES Vitest config.
+
+**Problem:** The helper declared its input and output as `Plugin[]` from its own `vite` import. On a clean Linux install, Lingui supplied `Plugin[]` from a different Vite peer instance. Vite's private type members made the two declarations incompatible even though the hooks work the same way.
+
+**Rule:** A wrapper that only changes a plugin hook should infer and return the caller's plugin type. Cast locally only to inspect the hook shape; do not force another Vite instance's `Plugin[]` at the function boundary.
+
+**Applies to:** Vitest and Vite plugin wrappers such as `apps/mes/vitest.config.ts`.
 ## Issue-bin displays preserve stock stripes and picked ownership
 
 **Context:** A batched MES query reports the bins a job can issue from, including stock picked to a work center.
@@ -454,7 +503,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Problem:** Editable cells (`~/components/Editable/*`) persist via the input's native `onBlur`, but three things prevent that blur from ever firing on keyboard navigation: (1) the Table's key handler `preventDefault()`s Tab/Enter, so the browser never moves focus; (2) React unmounts the still-focused input when the selection moves, and browsers fire no blur on a removed element; (3) react-aria's NumberField swallows Enter entirely (`onKeyDownEnter` commits internally without `continuePropagation()`) and consumes ArrowUp/Down as spinbutton steps, so a bubble-phase table handler never sees those keys. Blurring at the input level without navigating drops `document.activeElement` to `body`, after which the table wrapper hears no further keys.
 
-**Rule:** The table container owns the Excel keyboard model: attach the handler with `onKeyDownCapture` (so it beats react-aria to Enter/arrows), `stopPropagation()` for handled keys while editing, blur `document.activeElement` to commit *before* `setSelectedCell`, and let the roving-tabindex cell ref (`useMovingCellRef`) refocus the newly selected cell. Skip events targeting portaled overlays (`[data-radix-popper-content-wrapper]`, `[role=menu|listbox|dialog]`) — those own their keys. Editors must keep blur as their *single* commit path (no keydown commits — they double-fire the mutation, as `EditableText` did in Grid).
+**Rule:** The table container owns the Excel keyboard model: attach the handler with `onKeyDownCapture` (so it beats react-aria to Enter/arrows), `stopPropagation()` for handled keys while editing, blur `document.activeElement` to commit *before* `setSelectedCell`, and let the roving-tabindex cell ref (`useMovingCellRef`) refocus the newly selected cell. Skip events targeting portaled overlays (`[data-radix-popper-content-wrapper]`, `[role=menu|listbox|dialog]`) — those own their keys. Editors must keep blur as their *single* commit path (no keydown commits — they double-fire the mutation, as `EditableText` did in Grid). Match Enter by `key`, not `code`: the number pad's Enter has `code` `NumpadEnter`, and react-aria's commit and the browser's implicit form submission both still treat it as Enter (`gridKeyCode`). `Grid` takes only Tab and Enter in the capture phase, and only while a cell is being edited (`takesKeyFromEditor`); every other key stays in the bubble phase, so a combobox list still selects on Enter before the grid moves on. Until it did, Enter in a Grid number cell inside a form submitted the form without the typed value.
 
 **Applies to:** `apps/erp/app/components/Table/Table.tsx`, `apps/erp/app/components/Grid/Grid.tsx`, `apps/erp/app/components/Editable/*`, any future inline-editable cell editor.
 
@@ -508,6 +557,20 @@ nothing. After merging main, list main's migrations newer than your branch's old
 them for every function and view your migrations define; for any hit, write a NEW migration
 dated after both that carries both changes (here, since folded into
 `20261006221601_complete-job-to-asset.sql`).
+
+**Context:** Adding aging detail columns to `get_ap_open_by_supplier` kept the
+supplier reference behavior, but changed the line breaks around fields added by
+its previous migration.
+
+**Problem:** `function-redefinition-keeps-changes` compares added SQL lines
+literally, so the harmless layout change failed both CI conformance and tests.
+
+**Rule:** When extending an RPC return shape, retain the exact lines introduced
+by its newest definition where possible, and run the conformance test before
+committing. Put new select expressions on separate lines.
+
+**Applies to:** `packages/database/supabase/migrations/` function redefinitions
+that add return columns.
 
 ## Job-completion side effects must live in complete_job_to_inventory, not in route actions
 
@@ -639,7 +702,7 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** Turbo builds dependency packages first, and a `@carbon/database` build step regenerated `src/types.ts` (nondeterministic FK-relationship ordering), `src/swagger-docs-schema.ts`, and `supabase/functions/lib/types.ts` — none of which the task touched. Committing them would mix generated-file drift into an unrelated PR; the drift can also reflect whatever local DB happens to be running, not migrations.
 
-**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/...`). Regenerate deliberately and separately when schema actually changed.
+**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/...`). Regenerate deliberately and separately when schema actually changed. A branch that adds migrations commits the regenerated `types.ts` and `swagger-docs-schema.ts`: the Database types CI job (`.github/workflows/database-types.yml`) fails when either lags the migrations, so never revert a swagger diff that traces to a migration.
 
 **Applies to:** `packages/database/src/types.ts`, `packages/database/src/swagger-docs-schema.ts`; any branch running turbo tasks that build `@carbon/database`.
 
@@ -965,7 +1028,7 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** Git auto-combined most of the generated output but left one view's relationship list conflicting. Hand-picking a side drops one branch's relationships (the view genuinely has all the columns); union-merging risks duplicating entries; either way the result may not match what the real generator emits from the COMBINED schema. Generated files are outputs, not source — resolving their conflict markers by hand is guessing at the generator.
 
-**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres (not the full stack; the chained swagger step needs PostgREST and can fail harmlessly). `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`swagger-docs-schema.ts`, `tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
+**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres. `swagger-docs-schema.ts` reads PostgREST: with the stack up, `pnpm generate:swagger`, then `pnpm generate:workflow-catalog`. No build regenerates it, and CI fails when it lags the migrations. `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
 
 **Applies to:** merging `main` into any branch with migrations on both sides; conflicts in `packages/database/src/types.ts`, `swagger-docs-schema.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`, and any committed generated artifact.
 
@@ -3418,6 +3481,16 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Applies to:** every `memo(…)` component in `apps/{erp,mes}/app` and `packages/{react,form}/src` (most ERP tables); any new use of `plural` / `select` from `@lingui/core/macro`.
 
+## Lingui: a string literal with braces inside `<Trans>` loses its braces
+
+**Context:** The sequence forms' week year warning named the tokens in its text: `<Trans>On 1 January 2027 {"%{yy}%{ww}"} gives 2753.</Trans>`.
+
+**Problem:** Lingui inlines a string literal expression into the message, so the msgid became `On 1 January 2027 %{yy}%{ww} gives 2753.` The braces then parse as ICU placeholders `{yy}` and `{ww}` with no value, and the page showed "On 1 January 2027 %% gives 2753." Typecheck, Biome and `lingui:extract` all pass.
+
+**Rule:** Text that contains `{` or `}` goes into `<Trans>` or `t` as a named variable (`const token = "%{yy}"; … {token}`), which Lingui keeps as a placeholder and fills at runtime. Read the rendered text once after adding such a string.
+
+**Applies to:** any `<Trans>` or `` t` ` `` that quotes sequence tokens, template syntax or JSON.
+
 ## A row stayed off a screen only because a column happened to be null
 
 **Context:** The MES Work Centers board, the ERP Priority board and the API read `get_active_job_operations_by_location`. Both boards group operations into work-center columns.
@@ -3892,6 +3965,16 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Before adding a unique index, list every writer of the table, interceptors included, and give each one `ON CONFLICT … DO NOTHING` or a conflict-safe update in the same change. When a composite unique key includes a nullable column, assume it deduplicates nothing for rows where that column is NULL.
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
+
+## The license-header fixer skips a file that is not staged
+
+**Context:** Multi-jurisdiction tax (2026-10-17). Two new files were committed with no SPDX header, although the fixer had run before each commit.
+
+**Problem:** `pnpm --filter @carbon/checks license-headers` walks `git ls-files --cached`. An untracked file is outside that walk, so the fixer reports "0 fixed" and the file stays bare. The conformance test then fails later, on someone else's run.
+
+**Rule:** Stage a new source file (`git add`) before you run the license-header fixer, then stage it again after the fixer writes the header.
+
+**Applies to:** every new source file, and `packages/checks/src/sources/license-files.ts`.
 
 ## A pick moves a job material's storage unit to lineside, so the line no longer names its Pull From
 
@@ -4773,6 +4856,38 @@ took 20 from the bin and left the 3. TypeScript `id !== null` and SQL
 **Applies to:** `packages/database/src/picked-consumption.ts`, `backflush_job_materials`,
 and any bin or stripe filter where `null` is both a key and "unset".
 
+## Localized CSV exports must translate row values as well as headings
+
+**Context:** The AR/AP aging CSV translated its column headings, while the document
+type column still contained raw `Invoice`, `Credit Memo`, and `Debit Memo` values.
+
+**Problem:** In a non-English locale, the downloaded report mixed translated
+headings with English document types even though the on-screen workbench and
+catalogs already translated those values.
+
+**Rule:** Resolve fixed display values through the same per-request catalog used
+for CSV headings, while retaining raw values for data logic and falling back to
+the raw value for an unknown type. Assert the exported row values with labels
+that differ from the source strings.
+
+**Applies to:** Server-generated localized CSV reports, including AR/AP aging.
+
+## Export permission must cover enrichment reads
+
+**Context:** AR/AP aging CSV downloads admit accounting or invoicing viewers, then
+look up customer or supplier names to label the rows.
+
+**Problem:** Customer RLS requires sales view and supplier RLS requires purchasing
+view. An otherwise authorized export received empty name results and silently
+fell back to party IDs.
+
+**Rule:** Trace every enrichment lookup against the route's permission contract.
+After authorizing the export, use a company-scoped privileged read when the
+related table has a narrower RLS gate than the export itself.
+
+**Applies to:** AR/AP aging CSV routes and other server exports that enrich
+authorized rows from tables protected by different module permissions.
+
 ## The desktop rail can be transparent, and a sortable row can be tall
 
 **Context:** Customize added a tree under each module row in `NavRail`. The rail scrolled as a whole, so the footer with Save and Cancel needed to stay in view.
@@ -5053,3 +5168,182 @@ changed-file check before claiming a typecheck improvement. Report those cases
 separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 
 **Applies to:** ERP typecheck performance work and other cached validation tasks.
+
+## A copy of an engine's rule reads the engine first
+
+**Context:** The sales order delivery date check walks the bill of materials with its own SQL to add up the cumulative lead time.
+
+**Problem:** MRP's explosion (`bomChildren`, `packages/planning/src/mrp/bom-children.ts`, and the `methodCorrectionId IS NULL` filter in `mrp.ts`) leaves out quantity-0 lines and correction materials. The copy did not. A configured item's other configurations, which sit at quantity 0, added their lead time: one test item went from 67 days to 407.
+
+**Rule:** Before you write a calculation that another engine already does (BOM explosion, stock netting, supply and due dates), read that engine and apply the same filters. Name the engine in a comment beside the copy, so the two stay in step.
+
+**Applies to:** Order promising, quote lead time, and any read outside MRP that walks a BOM or nets stock.
+
+## A condition added to one branch is tested on its mirror
+
+**Context:** The delivery date check decides two things from the same free stock: whether a date passes, and the earliest date it suggests.
+
+**Problem:** The rule "goods are usable from the day they arrive" went into the earliest date only. A date in the week of a delivery, but before it, still passed. In the same change, the whole-order check left every line it checked out of the order's demand. An undated line is never checked, so its demand disappeared and a dated line could be promised its stock.
+
+**Rule:** For each condition you add, list every other place that decides the same thing (the verdict and the suggestion; the rows you exclude because "they are handled elsewhere" and the rows that really are handled there). Test the case that falls between them.
+
+**Applies to:** Decision engines that return both a verdict and a suggested value, and any exclusion justified by another step.
+
+## A background job that reads, works, then writes compares before it writes
+
+**Context:** A sales order line saved at the Capacity level is checked by an Inngest job that reads the line, runs the shop schedule simulation, then writes the result.
+
+**Problem:** Reading the line at the start protects against an old event, not against a save that lands during the simulation. The job wrote a result for the old quantity over the newer one, and credited a newer kept date to the user whose save started the job.
+
+**Rule:** Walk the timeline read → slow work → write with a second save in the middle. Make the write conditional on the inputs that were read (`WHERE col IS NOT DISTINCT FROM v.col … RETURNING id`), and raise side effects only for the rows written. Put in the event what the triggering save wrote, so the job can tell when a later save has replaced it.
+
+**Applies to:** Every deferred check or recalculation that writes a result computed from a row a user can still edit.
+
+## Regenerated DB types carry whatever the local database holds
+
+**Context:** A worktree's local database is shared by every branch checked out in it. `pnpm db:migrate` regenerates `packages/database/src/types.ts` from that database, not from the branch's migrations.
+
+**Problem:** The regenerated types picked up another branch's table and columns on two SQL functions that no migration defines. CI's "Database types" job regenerates from migrations alone, so the committed types failed it. Applying the wanted hunks with `git apply --unidiff-zero` then put new function types inside an unrelated type, because zero-context hunks do not anchor in a 100k-line file.
+
+**Rule:** After regenerating, diff `types.ts` against the base branch and keep only the lines your migration explains; restore the rest. Move them by matching text (the table's `Row` / `Insert` / `Update` blocks, the function's alphabetical neighbour), never by zero-context patches. The typecheck and CI's "Database types" job are the proof.
+
+**Applies to:** Any branch with a migration, in a worktree whose database has run other branches' migrations.
+
+## Two `crbn up` in one worktree take each other down
+
+**Context:** `crbn up` records its pid in `~/.carbon/stacks/<slug>/up`, and its teardown first stops whichever `crbn up` that file names.
+
+**Problem:** An agent started `crbn up` in the background, then the user started another in the same worktree. The second overwrote the marker and reused the first's dev servers. Stopping the agent's run then SIGINT'd the user's run through the marker, and every app went down.
+
+**Rule:** Run one `crbn up` per worktree. Check `ps` for a running one (or ask) before starting it, and never stop it while someone else may be using it.
+
+**Applies to:** Agents and humans booting a stack in a shared worktree.
+
+## A server export mapping cannot add a column the browser omitted
+
+**Context:** Verifying sales-invoice customer names in the CSV (TCK-60).
+**Problem:** The registry resolved both names, but the table's Customer columns had only `id` and `cell`. `buildColumnMaps` excluded them, so the export request never asked for either name.
+**Rule:** A display column needs `meta.exportValue` to participate in CSV export. Check the actual request's column list and the generated file; a registry mapping alone does not prove the column exports.
+**Applies to:** ERP Table display columns, `buildColumnMaps`, and list-registry `exportValues`.
+
+## `openProductionOrders` is MRP supply, not "the open jobs for an item"
+
+**Context:** The Buildable Quantity card lists an item's open jobs and whether stock covers what each still has to issue.
+
+**Problem:** The jobs were read from `openProductionOrders`. That view leaves out every job made for a sales order (`salesOrderId IS NULL`) and every `consumeToProject` job, and its `quantityToReceive` is `productionQuantity` (quantity + scrap) less received. An item made to order showed no jobs in production, and a job with a scrap allowance showed more units than it will make.
+
+**Rule:** To list an item's open jobs, read `job` with the four open statuses. The good units left are `quantity − quantityReceivedToInventory − quantityShipped`, as `openSalesOrderLines` nets a job. Use `openProductionOrders` only where the question is "what supply does MRP count".
+
+**Applies to:** Any report, card or check that shows jobs in production or work in process for an item.
+
+## A posted document's void and anything that adds lines to its journal take one lock
+
+- **Context:** Change GL Account adds two journal lines to a posted sales or purchase invoice; the invoice void reverses every journal line of the document.
+- **Problem:** The change locked the invoice `FOR UPDATE`, but both voids read the lines they reverse before their transaction and never locked the invoice. A change that committed between the void's read and its write survived on a Voided invoice: its amount stayed on the new account with nothing left to reverse it.
+- **Rule:** Anything that adds journal lines to a posted document must be serialized with the void's read under the same lock. Lock the document row `FOR UPDATE` inside the void's transaction, then read and build the reversal from that locked state, taking the lock at the same point in the order as the writer (after the posting-status read, before the period) so neither deadlocks.
+- **Applies to:** `postSalesInvoice` / `postPurchaseInvoice` void, `changeInvoiceLineAccount`, and any future correction that posts onto an existing document's journal (memos, payments, receipts, shipments).
+
+## A gate on the buttons is not a gate: a rule needs one owner and a list of its writers
+
+- **Context:** On a later operation of a serial part, every write names a unit the operator picked or scanned.
+- **Problem:** The rule was copied into each entry point: buttons, scan hooks, the scan queue, a few routes. Nobody listed the writers, so three review rounds each found another one: a scan hook, the off-page traveler scan, then the kanban end route (and the start route still picked its own unit). The held unit lived only in the URL, which redirects, links, refresh and Back also write, so every fix filtered the URL after the fact and opened a new window. The two screens ran two different copies of the selection logic, and the tests checked helpers, not the routes.
+- **Rule:** Give a rule one owner per side and make a missed writer fail a check. On the server one function decides from the database and every writer calls it before it writes; a conformance check lists the writers and fails one that does not call it (or is not on an allow-list with its reason). On the client one pure decision is computed during render; the operator's pick is state set in the click or scan handler, and the URL only mirrors it. Test the write paths themselves over an in-memory client, and revert each call to see the test go red (not every route has such a test yet). An allow-list reason must be checked by code, not just written down (`unconsume` now checks the parts were consumed into the parent; "a manager override" did not cover writing a unit nobody picked, so complete-all now resolves its unit too). Gate a write by what the server accepts for it: a finished unit blocks `require` writes only, not `member` ones (unconsume, quality issue). The owner's reads, and the screens' reads of the same list, must not depend on PostgREST's 1000-row cap (one paged reader). A new gate must keep an older page's safe requests working: tablets keep the old bundle for hours, so a first-operation step with no unit still uses its index, and a timer naming a finished unit is not refused. When the server changes what a request named, it says so in the toast.
+- **Applies to:** MES `resolveWorkUnit` (`services/work-unit.server.ts`) and its `mes-unit-write-resolves-unit` check, `useWorkUnit` / `serialUnitSelection` (`~/utils/workUnit`) in `JobOperation` and `AssemblyView`, and any future rule on per-unit work.
+
+## A tag that points at a line is cleared by every write that removes the line
+
+- **Context:** A serial unit on a shipment carries `Shipment` and `Shipment Line` in `trackedEntity.attributes`; posting ships the units tagged to the shipment.
+- **Problem:** Deleting a line, deleting the shipment or re-sourcing a Draft removed the lines but left the tags. The post then shipped units no line asked for. A post-time filter hid the stale tag, so a test that checked only after posting still passed when the clear was removed.
+- **Rule:** A tag must name a live record. Every write that deletes or rebuilds the record clears its tags in the same place, and the reader still ignores tags to dead records. Test the clear right after the write, before any reader that would also hide it, and remove the clear once to see the test go red.
+- **Applies to:** `clearShipmentTags` callers (`deleteShipment`, `deleteShipmentLine`, the `create` re-source), `liveShipmentTags`, and any attribute that names another row (`Receipt Line`, `Job Make Method`).
+
+## A job's WIP is not only the lines documented against the job
+
+- **Context:** Finished goods from a job with an outside processing operation came out without the supplier's cost.
+- **Problem:** The receipt of an outside processing purchase order debits WIP with `documentId` = the receipt and the purchase order line in `documentLineReference`. The job completion, `closeJob` and `attachJob` each summed WIP `WHERE documentId = <job>`, so the supplier's cost was never moved to finished goods and never written off. And when the receipt finished the job's last operation, `postReceipt` set the operation Done before it wrote its journal, so the completion that update triggers ran before the debit existed.
+- **Rule:** Read a job's WIP with SQL `job_wip_balance`, never with a `documentId` filter of your own. A reader that cannot call it per job (a set-based read of every job, such as the accounting cutover's per-job WIP items) attributes lines through SQL `job_receipt_line_references`, the rule `job_wip_balance` uses. A posting that can trigger a job completion (any write that sets a `jobOperation` Done) writes its own journal first.
+- **Applies to:** `complete_job_to_inventory`, `closeJob`, `attachJob`, `postReceipt`, `getWorkInProgressItems` (`accounting-cutover/open-items.ts`), and any new reader of a job's cost or writer of a job operation's status.
+
+## A link minted for an API key names its creator, not the key
+
+- **Context:** `generateDownloadToken` signs a `/download/<token>` link for a user; the route re-checks access as that user on every download. For an API key caller, `ctx.auditUserId` is the key's creator.
+- **Problem:** A link without an expiry kept downloading after the key that asked for it was revoked: the creator still had access, and nothing in the token named the key. A link copied into an agent's log or transcript outlived the key.
+- **Rule:** Any link or token minted for an API or MCP caller carries an expiry (`expiresInSeconds`, as `FILE_LINK_SECONDS` sets). Re-checking the named user's access is not enough when that user is not the caller.
+- **Applies to:** `documents_getDocumentDownloadUrl` and any future operation that returns a shareable link, share token or signed URL to an API caller.
+
+## A `NonRetriableError` subclass must keep its name
+
+**Context:** `AssemblerJobError extends NonRetriableError` (`packages/jobs/.../tasks/assembler-client.ts`) set `this.name = "AssemblerJobError"`.
+
+**Problem:** `@carbon/lib` (which creates the Inngest client, so runs the functions) and `@carbon/jobs` resolve different installed copies of `inngest`, so `error instanceof NonRetriableError` is false inside the SDK. Its fallback is `error.name === "NonRetriableError"`, which the rename defeated. Every "give up" error was retried twice, as 500s from `/api/inngest`, before `onFailure` ran.
+
+**Rule:** Never set `name` on a subclass of an Inngest error class (`NonRetriableError`, `RetryAfterError`); carry what tells it apart in another field (`code`). Check it against the client's copy: `createRequire("packages/lib/package.json").resolve("inngest")`.
+
+**Applies to:** Every error class thrown from an Inngest function in `@carbon/jobs` or `@carbon/ee`.
+
+## A trigger that fills a default skips only a backup load
+
+**Context:** The part number display triggers (`20261121061455_supplier-part-number-display.sql` and the customer migration after it) first skipped when `app.sync_in_progress` was set, so the dataset apply could stamp the seeded lines itself. Then they skipped `app.dataset_apply`, and a TypeScript helper stamped the seeded lines after the tiers.
+
+**Problem:** `app.sync_in_progress` is also the accounting sync's flag (`withTriggersDisabled`, `@carbon/ee/accounting`). The Xero purchase order pull deletes and re-inserts every line under it, so every synced line came back with no display choice and no copy of the supplier part number. The `app.dataset_apply` skip needed a second copy of the trigger's rule in TypeScript, and that helper's company-wide UPDATE stamped a real company's legacy lines on a dev seed without a wipe.
+
+**Rule:** A trigger that fills a default for a new row skips only `app.backup_load`: a restore brings its own values. Let it run during a dataset apply: the tiers insert parents before children, so it gives seeded rows the values it gives any row. Use `app.sync_in_progress` only to skip side effects an external sync must not cause (events, webhooks, contact cleanup).
+
+**Applies to:** Every new BEFORE/AFTER row trigger or interceptor that fills or derives a value on insert.
+
+## `pg_temp.allows` cannot see a policy's role list
+
+**Context:** `authz-pieces.test.sql` evaluates a policy with `pg_temp.allows(table, command, clause, row)`, which reads the policy's `USING` or `WITH CHECK` text from `pg_policies` and runs it as the current role.
+
+**Problem:** It ignores `pg_policies.roles`. `exchangeRate` kept API keys out with `TO authenticated USING (true)`, so an `allows('exchangeRate', …)` assertion made as `anon` passed against the old policy: the test could not fail.
+
+**Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
+
+**Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A component's outlet beside the route's outlet mounts the child route twice
+
+- **Context:** List tables and record cards (`ApiKeysTable`, `WebhooksTable`, `SupplierProcesses`) rendered their own `<Outlet />` for their New/Edit drawers. #1855 then gave every route under `/x` a `<RecordOutlet />`, and these routes kept both.
+- **Problem:** Both outlets render the same child route, so New API Key opened two modals with the same `id="name"` input. Each Radix modal set `aria-hidden` on everything outside itself, so each hid the other: screen readers and `getByRole` found no Name field, checkbox or Save button, while a sighted user saw one dialog. The per-file `no-bare-outlet` scan reads routes only, so it did not see the component's outlet.
+- **Rule:** One outlet per route. A component rendered by a route that has `RecordOutlet` has no outlet of its own; adding `RecordOutlet` to a route whose table still renders `Outlet` means removing the table's. `findNestedOutlets` (`no-bare-outlet`) flags the pair across files.
+- **Applies to:** every component in `modules/*/ui/` or `components/` that renders `Outlet`, and every route that renders one.
+
+## Count invoices by the status the list shows, from its view
+
+**Context:** The purchasing dashboard's Open Purchase Invoices card counted `purchaseInvoice` rows by status, and its link opens the Purchase Invoices list filtered on the same statuses.
+
+**Problem:** The list reads the `purchaseInvoices` view, which derives `Partially Paid`, `Paid` and `Overdue` from settlements and the due date. The table stores the posted status (`Open`, or `Submitted` on sales) and keeps it once the invoice is paid. Counting the table missed every posted bill, and adding `Open` to the table filter would have counted paid bills too.
+
+**Rule:** Count, filter or badge invoices by status from `salesInvoices` / `purchaseInvoices`, the views the lists read. Read the table's `status` (the views' `baseStatus`) only for a rule about the stored state, such as whether the invoice is posted.
+
+**Applies to:** dashboards, KPIs and cards that count sales or purchase invoices by status.
+
+## A feature that lets a record repeat must widen the key that forbade it
+
+**Context:** Split hours (`20260731192616_people-split-hours.sql`) let one person's shift be dealt across several `peopleAssignment` rows, one per station. The table's unique key, added a week earlier (`peopleAssignment_person_day_key`), allowed one row per person, date and shift.
+
+**Problem:** The day editor, the free-hours drag and the matrix move each write a second row for the same shift, so each failed with a duplicate-key error. Later code treated the key as the rule: the matrix move refused the case (`"taken"`), and comments explained the refusal by the index, so the stale key spread instead of being fixed.
+
+**Rule:** When a feature lets a record hold several rows where it held one, find the unique keys over that record in the newest migrations and widen them in the same change. A refusal whose only reason is a unique index is a sign the index is stale: check it against the feature it contradicts before adding the refusal.
+
+**Applies to:** Any migration that relaxes a one-row-per-X rule, and any service code that refuses an action because a unique index would reject it.
+
+## A controlled field's starting value must equal its form default
+
+**Context:** An RMA line with no customer asset showed Unsaved changes on leaving, with nothing changed. The first diagnosis blamed the Disposition list, a bare Radix Select outside the form's state.
+
+**Problem:** The route passed `customerAssetId: line.customerAssetId ?? undefined` as the form default, and the form seeded its `useState` with `initialValues.customerAssetId ?? ""`. On mount, `Combobox` (`@carbon/form`) calls `setValue` with any value prop that is not null or undefined; `useControllableValue` marks the field touched when that value differs from the default by `!==`, so `""` against `undefined` touched it. `Submit` blocks navigation while any field is touched.
+
+**Rule:** Seed the state a controlled field reads (`Combobox`, `SelectControlled`, `NumberControlled`, `Item`, `TaxCode`) from the same value the form gets as its default: `useState(initialValues.x)`, or the same `?? ""` in both places. A caller that leaves a field out gets `undefined` as its default, so a state fallback such as `?? "Return to Stock"` needs the same value in that caller's defaults. To find the field behind a false Unsaved changes prompt, read each controlled field's starting value against its default, not the fields that look interactive.
+
+**Applies to:** Every `ValidatedForm` whose controlled fields read component state, and every route or modal that builds its `initialValues`.
+
+## A UI hint for a posting's refusal calls the posting's rule, at every entry point
+
+**Context:** Charge cost on the element page posts an expense entry, and `postProjectExpense` refuses one whose treatment on the entry date is Capitalize.
+
+**Problem:** The first write-up disabled the action on the project's treatment. The treatment resolves per element: the element, then its ancestors whose override is in effect on the date, then the project. A project-level check would refuse an element that expenses its own cost and offer the action on a capital element under an Expense project. The action also opened from a third place, the plan card's Charge button, beside the two menus the write-up named.
+
+**Rule:** Move the posting's check into a pure function of the posting context and the date. The posting refuses with it, and the loader calls it on the context the posting loads (`loadProjectPostingContexts`), never on a copy of the rule. Before gating an action, grep its opener (`charging.open`) for every entry point and give each the same disabled state and reason. Disable the action only when no input the user can still change (the entry date) makes it post, and keep the server refusal for the inputs that are refused: a dated override (`costTreatmentEffectiveFrom`) leaves the dates before it open, so a today-only check would block entries the posting accepts.
+
+**Applies to:** `projectExpenseRefusal` / `getChargeCostRefusal`, and any action the UI disables with a reason the server decides by cost treatment or date.

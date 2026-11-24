@@ -145,9 +145,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // `upsertContractLine` refuses a line of another contract, a contract that
-  // is not a Draft and an item that is not a Service.
+  // is not a Draft and an item that is not a Service, and decides the tax.
   const update = await upsertContractLine(client, {
     ...line,
+    // The form always posts the field: an empty one clears the code.
+    taxCodeId: formData.has("taxCodeId") ? (line.taxCodeId ?? null) : undefined,
     customerContractId: id,
     id: lineId,
     updatedBy: userId
@@ -209,6 +211,7 @@ export default function ContractLineRoute() {
         discountPercent: round(Number(line.discountPercent) * 100),
         discountEndsOn: line.discountEndsOn ?? undefined,
         taxPercent: round(Number(line.taxPercent) * 100),
+        taxCodeId: line.taxCodeId ?? undefined,
         startDate: line.startDate,
         endDate: line.endDate ?? undefined,
         goLiveDate: line.goLiveDate ?? undefined,

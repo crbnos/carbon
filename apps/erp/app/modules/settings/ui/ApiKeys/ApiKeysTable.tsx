@@ -219,29 +219,31 @@ const ApiKeysTable = memo((props: ApiKeysTableProps) => {
   );
 
   return (
-    <Table<ApiKeyRow>
-      data={data}
-      infinite={infinite}
-      columns={columns}
-      count={count ?? 0}
-      primaryAction={
-        <HStack>
-          {permissions.has(subjectGates("Edit").key) && (
-            <New
-              label={t`API Key`}
-              to={`${path.to.newApiKey}?${params.toString()}`}
-            />
-          )}
-          <Button leftIcon={<LuCode />} variant="secondary" asChild>
-            <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
-              <Trans>API Docs</Trans>
-            </a>
-          </Button>
-        </HStack>
-      }
-      renderContextMenu={renderContextMenu}
-      title={t`API Keys`}
-    />
+    <>
+      <Table<ApiKeyRow>
+        data={data}
+        infinite={infinite}
+        columns={columns}
+        count={count ?? 0}
+        primaryAction={
+          <HStack>
+            {permissions.has(subjectGates("Edit").key) && (
+              <New
+                label={t`API Key`}
+                to={`${path.to.newApiKey}?${params.toString()}`}
+              />
+            )}
+            <Button leftIcon={<LuCode />} variant="secondary" asChild>
+              <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
+                <Trans>API Docs</Trans>
+              </a>
+            </Button>
+          </HStack>
+        }
+        renderContextMenu={renderContextMenu}
+        title={t`API Keys`}
+      />
+    </>
   );
 });
 

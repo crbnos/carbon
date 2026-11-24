@@ -391,6 +391,15 @@ export const authenticated: Pred = pred(
   () => sql`(SELECT auth.role()) = 'authenticated'`
 );
 
+/**
+ * The request carries a valid, unexpired API key of any company. An API key request runs
+ * as `anon` with no auth.uid(), so `authenticated` never admits it. For reference data
+ * with no company column; a company's own rows use `inCompany`, which admits a key already.
+ */
+export const apiKey: Pred = pred(
+  () => sql`(SELECT get_company_id_from_api_key()) IS NOT NULL`
+);
+
 export const always: Pred = pred(() => sql`true`);
 
 export const isNull = (column: string): Pred =>

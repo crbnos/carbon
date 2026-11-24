@@ -10,6 +10,7 @@ AS $function$
   SELECT CASE p_page
     WHEN 'accounting.syncTieOut' THEN 'View'::public."permissionLevel"
     WHEN 'accounting.fleet' THEN 'View'::public."permissionLevel"
+    WHEN 'accounting.taxLiability' THEN 'View'::public."permissionLevel"
     WHEN 'inventory.traceability' THEN 'View'::public."permissionLevel"
     WHEN 'invoicing.payables' THEN 'Create'::public."permissionLevel"
     WHEN 'invoicing.receivables' THEN 'Create'::public."permissionLevel"

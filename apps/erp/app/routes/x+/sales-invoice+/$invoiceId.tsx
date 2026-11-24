@@ -27,7 +27,11 @@ import { getDocumentForceDeleteData } from "~/modules/invoicing/invoicing.servic
 import SalesInvoiceExplorer from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceExplorer";
 import SalesInvoiceHeader from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader";
 import SalesInvoiceProperties from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties";
-import { getCustomer, getOpportunity } from "~/modules/sales/sales.service";
+import {
+  getCustomer,
+  getOpportunity,
+  resolveSalesDocumentTaxes
+} from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -38,6 +42,8 @@ export const handle: Handle = {
   realtime: [
     { table: "salesInvoice", column: "id", param: "invoiceId" },
     { table: "salesInvoiceLine", column: "invoiceId", param: "invoiceId" },
+    // The Shipping section: the post summary shows its cost.
+    { table: "salesInvoiceShipment", column: "id", param: "invoiceId" },
     // What is applied to this invoice, and the payments behind it: voiding a
     // payment changes the payment row only.
     {
@@ -92,7 +98,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const [customer, opportunity, companySettings, orgHasCredits, currency] =
+  const [customer, opportunity, companySettings, orgHasCredits, currency, tax] =
     await Promise.all([
       salesInvoice.data?.customerId
         ? getCustomer(client, salesInvoice.data.customerId)
@@ -110,7 +116,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             companyGroupId,
             salesInvoice.data.currencyCode
           )
-        : null
+        : null,
+      resolveSalesDocumentTaxes(client, companyId, {
+        document: "salesInvoice",
+        documentId: invoiceId
+      })
     ]);
 
   const defaultCc = customer?.data?.defaultCc?.length
@@ -174,6 +184,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     defaultCc,
     orgHasCredits,
     stripeInvoiceUrl,
+    // The tax a new line opens with (customer, ship-to, no item).
+    resolvedTax: tax.data
+      ? {
+          taxCodeId: tax.data.document.taxCodeId,
+          taxPercent: tax.data.document.taxPercent
+        }
+      : null,
+    // The date the line forms read a picked code's rate on.
+    taxDate: tax.data?.date ?? null,
     ...forceDelete
   };
 }

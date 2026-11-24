@@ -18,7 +18,8 @@ const propertyForm = z.object({
 
 /**
  * One property of a rental agreement, saved from its properties panel.
- * Invoicing stays editable while Active; every other field is a Draft term.
+ * Invoicing, payment terms and tax percent stay editable while Active; every
+ * other field is a Draft term.
  */
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(propertyForm).request(args);

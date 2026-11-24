@@ -28,7 +28,12 @@ export const PAGES = [
       "purchaseInvoiceStatusHistory"
     ],
     readers: ["purchaseOrder"],
-    paths: ["/x/invoicing/purchasing", "/x/purchase-invoice/"]
+    paths: [
+      "/x/invoicing/purchasing",
+      "/x/invoicing/purchasing.csv",
+      "/x/invoicing/purchasing.xlsx",
+      "/x/purchase-invoice/"
+    ]
   },
   {
     id: "invoicing.supplierCredits",
@@ -75,7 +80,12 @@ export const PAGES = [
       "salesInvoiceFundingAllocation"
     ],
     readers: ["salesOrder"],
-    paths: ["/x/invoicing/sales", "/x/sales-invoice/"]
+    paths: [
+      "/x/invoicing/sales",
+      "/x/invoicing/sales.csv",
+      "/x/invoicing/sales.xlsx",
+      "/x/sales-invoice/"
+    ]
   },
   {
     id: "invoicing.creditMemos",

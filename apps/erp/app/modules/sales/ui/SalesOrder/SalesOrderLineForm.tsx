@@ -75,10 +75,13 @@ import {
   Number,
   NumberControlled,
   StorageUnit,
-  Submit
+  Submit,
+  TaxCode
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import {
+  useCompanyToday,
   useCurrencyDecimals,
   useCurrencyFormatter,
   usePercentFormatter,
@@ -101,6 +104,7 @@ import type {
   SalesOrderLineType
 } from "../../types";
 import { PriceTraceModal } from "../Pricing/PriceTraceModal";
+import { DeliveryDateCheckAlert } from "./DeliveryDateCheckAlert";
 
 type SalesOrderLineFormProps = {
   initialValues: z.infer<typeof salesOrderLineValidator> & {
@@ -141,7 +145,11 @@ const SalesOrderLineForm = ({
 
   const routeData = useRouteData<{
     salesOrder: SalesOrder;
+    taxDate: string | null;
   }>(path.to.salesOrder(orderId));
+  // A picked code's rate on the document's date, not today's.
+  const companyToday = useCompanyToday();
+  const taxCodeRateOn = useTaxCodeRateOn(routeData?.taxDate ?? companyToday);
 
   const isLocked = isSalesOrderLocked(routeData?.salesOrder?.status);
   const isEditable = !isLocked;
@@ -164,6 +172,10 @@ const SalesOrderLineForm = ({
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [saleQuantity, setSaleQuantity] = useState(
     initialValues.saleQuantity ?? 1
+  );
+  // Held so the delivery date check can offer its earliest date.
+  const [promisedDate, setPromisedDate] = useState<string | null>(
+    initialValues.promisedDate || null
   );
   const [isPriceResolving, setIsPriceResolving] = useState(false);
   const [itemData, setItemData] = useState<{
@@ -204,6 +216,13 @@ const SalesOrderLineForm = ({
   const isFixedAsset = initialValues.salesOrderLineType === "Fixed Asset";
   const [activeTab, setActiveTab] = useState<"item" | "asset">(
     isFixedAsset ? "asset" : "item"
+  );
+
+  const [itemTaxPercent, setItemTaxPercent] = useState(
+    initialValues.taxPercent ?? 0
+  );
+  const [itemTaxCodeId, setItemTaxCodeId] = useState(
+    initialValues.taxCodeId ?? ""
   );
 
   const [assetOptions, setAssetOptions] = useState<
@@ -393,7 +412,7 @@ const SalesOrderLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId, taxable"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -428,6 +447,11 @@ const SalesOrderLineForm = ({
 
     if (item.data?.type) {
       setLineType(item.data.type as typeof lineType);
+    }
+    // A non-taxable item takes no tax.
+    if (item.data?.taxable === false) {
+      setItemTaxCodeId("");
+      setItemTaxPercent(0);
     }
     setItemData({
       itemId,
@@ -782,11 +806,19 @@ const SalesOrderLineForm = ({
                             {/* A service is promised for the day it starts, so
                                 the server copies the start date across. */}
                             {!isService && (
-                              <DatePicker
-                                name="promisedDate"
-                                label={t`Promised Date`}
-                                termId="sales-order-line-promised-date"
-                              />
+                              <>
+                                <DatePicker
+                                  name="requestedDate"
+                                  label={t`Requested Date`}
+                                />
+                                <DatePicker
+                                  name="promisedDate"
+                                  label={t`Promised Date`}
+                                  termId="sales-order-line-promised-date"
+                                  value={promisedDate ?? undefined}
+                                  onChange={setPromisedDate}
+                                />
+                              </>
                             )}
                             {isService && (
                               <>
@@ -851,6 +883,20 @@ const SalesOrderLineForm = ({
                         <CustomFormFields table="salesOrderLine" />
                       </div>
 
+                      {!isService && (
+                        <DeliveryDateCheckAlert
+                          orderId={orderId}
+                          lineId={initialValues.id}
+                          lineType={lineType}
+                          itemId={itemData.itemId}
+                          methodType={itemData.methodType}
+                          quantity={saleQuantity}
+                          locationId={locationId}
+                          promisedDate={promisedDate}
+                          onUseEarliestDate={setPromisedDate}
+                        />
+                      )}
+
                       {lineType !== "Comment" && (
                         <div className="w-full">
                           <div className="w-full border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 mt-4">
@@ -862,11 +908,9 @@ const SalesOrderLineForm = ({
                                 <Trans>Tax &amp; Additional Costs</Trans>
                               </Label>
                               <HStack>
-                                {(initialValues?.taxPercent ?? 0) > 0 && (
+                                {itemTaxPercent > 0 && (
                                   <Badge variant="red">
-                                    {percentFormatter.format(
-                                      initialValues?.taxPercent ?? 0
-                                    )}{" "}
+                                    {percentFormatter.format(itemTaxPercent)}{" "}
                                     <Trans>Tax</Trans>
                                   </Badge>
                                 )}
@@ -927,9 +971,23 @@ const SalesOrderLineForm = ({
                                 costsDisclosure.isOpen ? "" : "hidden"
                               }`}
                             >
-                              <Number
+                              <TaxCode
+                                name="taxCodeId"
+                                label={t`Tax Code`}
+                                value={itemTaxCodeId}
+                                onChange={(option) => {
+                                  setItemTaxCodeId(option?.value ?? "");
+                                  if (option)
+                                    setItemTaxPercent(
+                                      taxCodeRateOn(option.value) ?? option.rate
+                                    );
+                                }}
+                              />
+                              <NumberControlled
                                 name="taxPercent"
                                 label={t`Tax Percent`}
+                                value={itemTaxPercent}
+                                onChange={setItemTaxPercent}
                                 minValue={0}
                                 maxValue={1}
                                 step={INPUT_STEP.percent}
@@ -1098,6 +1156,18 @@ const SalesOrderLineForm = ({
                               assetCostsDisclosure.isOpen ? "" : "hidden"
                             }`}
                           >
+                            <TaxCode
+                              name="taxCodeId"
+                              label={t`Tax Code`}
+                              onChange={(option) => {
+                                if (option)
+                                  setAssetData((d) => ({
+                                    ...d,
+                                    taxPercent:
+                                      taxCodeRateOn(option.value) ?? option.rate
+                                  }));
+                              }}
+                            />
                             <NumberControlled
                               name="taxPercent"
                               label={t`Tax Percent`}

@@ -64,7 +64,8 @@ import {
   type StackSize,
   sleepStack,
   tailServiceLogs,
-  tailSharedLogs
+  tailSharedLogs,
+  worktreeCpuLimits
 } from "../services/compose.js";
 import {
   APPS_IDLE_MINUTES,
@@ -469,7 +470,8 @@ async function provision(opts: {
           prefix,
           includeAssembler: opts.includeAssembler,
           mode,
-          database
+          database,
+          cpuLimits: await worktreeCpuLimits(root, mode)
         });
         const ports = stackPorts(slot.ports, mode);
         ctx = {

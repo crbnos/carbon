@@ -222,6 +222,47 @@ const employeeFetcher = async (
     .order("name");
 };
 
+const dimensionFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  const company = await client
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", companyId)
+    .single();
+  if (company.error) return { data: null, error: company.error };
+  if (!company.data.companyGroupId) return { data: [], error: null };
+  return client
+    .from("dimension")
+    .select("id, name")
+    .eq("companyGroupId", company.data.companyGroupId)
+    .eq("active", true)
+    .order("name");
+};
+
+export const journalEntryImportStatuses = ["Draft", "Posted"] as const;
+
+// Without values a dimension slot tags nothing, so the wizard asks for the
+// dimension only when its Value column is mapped.
+const journalEntryDimensionField = (slot: number) =>
+  ({
+    label: `Dimension ${slot}`,
+    required: false,
+    type: "enum",
+    enumData: {
+      description: `The dimension that Dimension ${slot} Value tags. Leave the column unmapped and choose the dimension as the Default to tag every line`,
+      fetcher: dimensionFetcher,
+      askWhenMapped: `dimension${slot}Value`
+    }
+  }) as const;
+const journalEntryDimensionValueField = (slot: number) =>
+  ({
+    label: `Dimension ${slot} Value`,
+    required: false,
+    type: "string"
+  }) as const;
+
 // Opening-stock imports (inventoryQuantity / batchQuantity / serialQuantity).
 // Additive only: every row posts one Positive Adjmt. for an existing item.
 const stockImportItemFields = {
@@ -862,6 +903,25 @@ export const fieldMappings = {
         }
       }
     },
+    taxCodeId: {
+      label: "Tax Code",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The customer's tax code (from your active tax codes)",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("taxCode")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .eq("active", true)
+            .order("name");
+        }
+      }
+    },
     fax: {
       label: "Fax",
       required: false,
@@ -999,6 +1059,25 @@ export const fieldMappings = {
             .from("supplierType")
             .select("id, name")
             .eq("companyId", companyId)
+            .order("name");
+        }
+      }
+    },
+    taxCodeId: {
+      label: "Tax Code",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The supplier's tax code (from your active tax codes)",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("taxCode")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .eq("active", true)
             .order("name");
         }
       }
@@ -1855,6 +1934,60 @@ export const fieldMappings = {
       type: "number"
     }
   },
+  journalEntry: {
+    journalReference: {
+      label: "Journal Reference",
+      required: true,
+      type: "string"
+    },
+    postingDate: {
+      label: "Posting Date",
+      required: true,
+      type: "string"
+    },
+    accountNumber: {
+      label: "Account Number",
+      required: true,
+      type: "string"
+    },
+    debit: {
+      label: "Debit",
+      required: false,
+      type: "number"
+    },
+    credit: {
+      label: "Credit",
+      required: false,
+      type: "number"
+    },
+    description: {
+      label: "Line Description",
+      required: false,
+      type: "string"
+    },
+    journalDescription: {
+      label: "Journal Description",
+      required: false,
+      type: "string"
+    },
+    status: {
+      label: "Status",
+      required: false,
+      type: "enum",
+      enumData: {
+        description:
+          "Draft keeps each journal for review, as a new manual journal entry starts; Posted posts it",
+        options: journalEntryImportStatuses,
+        default: "Draft"
+      }
+    },
+    dimension1: journalEntryDimensionField(1),
+    dimension1Value: journalEntryDimensionValueField(1),
+    dimension2: journalEntryDimensionField(2),
+    dimension2Value: journalEntryDimensionValueField(2),
+    dimension3: journalEntryDimensionField(3),
+    dimension3Value: journalEntryDimensionValueField(3)
+  },
   fixedAsset: {
     name: {
       label: "Name",
@@ -2113,6 +2246,7 @@ const importTargets: Record<keyof typeof fieldMappings, ImportTarget> = {
   scrapReason: ["scrapReason"],
   department: ["department"],
   payrollPeriodTotal: ["payrollPeriodTotal"],
+  journalEntry: ["journal"],
   fixedAsset: ["fixedAsset"],
   materialSubstance: ["materialSubstance"],
   materialForm: ["materialForm"],
@@ -2300,6 +2434,10 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The id of the customer's type/category"),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe("The id of the customer's tax code"),
     phone: z.string().optional().describe("The phone number of the customer"),
     fax: z.string().optional().describe("The fax number of the customer"),
     taxId: z
@@ -2389,6 +2527,10 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The id of the supplier's type/category"),
+    taxCodeId: z
+      .string()
+      .optional()
+      .describe("The id of the supplier's tax code"),
     phone: z.string().optional().describe("The phone number of the supplier"),
     fax: z.string().optional().describe("The fax number of the supplier"),
     taxId: z
@@ -2984,6 +3126,66 @@ export const importSchemas: Record<
       .string()
       .min(1, { message: "Hours Paid is required" })
       .describe("The hours paid for the period — 0 or more")
+  }),
+  journalEntry: z.object({
+    journalReference: z
+      .string()
+      .min(1, { message: "Journal Reference is required" })
+      .describe(
+        "The journal's number or reference in the source system; rows that share it are one journal entry"
+      ),
+    postingDate: z
+      .string()
+      .min(1, { message: "Posting Date is required" })
+      .describe("The journal's posting date as YYYY-MM-DD"),
+    accountNumber: z
+      .string()
+      .min(1, { message: "Account Number is required" })
+      .describe("The number of the account in the chart of accounts"),
+    debit: z
+      .string()
+      .optional()
+      .describe("The line's debit amount; a line has a debit or a credit"),
+    credit: z
+      .string()
+      .optional()
+      .describe("The line's credit amount; a line has a debit or a credit"),
+    description: z
+      .string()
+      .optional()
+      .describe("The line's description or memo"),
+    journalDescription: z
+      .string()
+      .optional()
+      .describe("The description of the whole journal entry"),
+    status: z
+      .string()
+      .optional()
+      .describe("Draft or Posted: what the journal entry is imported as"),
+    dimension1: z
+      .string()
+      .optional()
+      .describe("A dimension the line carries, such as a class or region"),
+    dimension1Value: z
+      .string()
+      .optional()
+      .describe("The line's value of Dimension 1, by name"),
+    dimension2: z
+      .string()
+      .optional()
+      .describe("A dimension the line carries, such as a class or region"),
+    dimension2Value: z
+      .string()
+      .optional()
+      .describe("The line's value of Dimension 2, by name"),
+    dimension3: z
+      .string()
+      .optional()
+      .describe("A dimension the line carries, such as a class or region"),
+    dimension3Value: z
+      .string()
+      .optional()
+      .describe("The line's value of Dimension 3, by name")
   }),
   fixedAsset: z.object({
     name: z

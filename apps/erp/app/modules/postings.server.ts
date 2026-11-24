@@ -54,6 +54,8 @@ export const postingPermissions = {
   "update-purchased-prices": purchasing.updatePurchasedPricesPermission,
   "kanban-replenish": inventory.replenishKanbanPermission,
   "create-rental-invoices": sales.createRentalInvoicesPermission,
+  "check-sales-order-delivery-dates":
+    sales.checkSalesOrderDeliveryDatesPermission,
   "create-contract-invoices": sales.createContractInvoicesPermission,
   "create-project-billing-invoices":
     sales.createProjectBillingInvoicesPermission,
@@ -141,6 +143,17 @@ export const postings: Postings = {
       {
         as: postingPermissions["kanban-replenish"],
         schema: inventory.kanbanReplenishInput
+      }
+    ),
+  "check-sales-order-delivery-dates": (handles, input) =>
+    invokePosting(
+      handles,
+      "check-sales-order-delivery-dates",
+      input,
+      sales.checkSalesOrderDeliveryDates,
+      {
+        as: postingPermissions["check-sales-order-delivery-dates"],
+        schema: sales.checkSalesOrderDeliveryDatesInput
       }
     ),
   "create-rental-invoices": (handles, input) =>

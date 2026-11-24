@@ -22,6 +22,7 @@ import { Hyperlink } from "~/components";
 import { Hidden, InspectionDocument, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import {
+  type InspectionDocumentStatus,
   inspectionDocumentUsages,
   itemInspectionDocumentAssignmentValidator
 } from "~/modules/quality/quality.models";
@@ -37,6 +38,7 @@ type ItemQualityViewProps = {
     fileName: string | null;
     name: string | null;
     version: number;
+    status: InspectionDocumentStatus;
   }[];
   assignments: ItemInspectionDocumentAssignment[];
 };
@@ -55,6 +57,9 @@ const ItemQualityView = ({
   const permissions = usePermissions();
   const canUpdate = permissions.has({ "quality.inspectionPlans": "Edit" });
   const newDocumentDisclosure = useDisclosure();
+  // Archived plans are retired versions — hide them from the list. They stay
+  // reachable from Quality → Inspection Plans.
+  const visibleDocuments = documents.filter((doc) => doc.status !== "Archived");
 
   return (
     <VStack spacing={4} className="w-full">
@@ -81,13 +86,13 @@ const ItemQualityView = ({
           </CardAction>
         </HStack>
         <CardContent>
-          {documents.length === 0 ? (
+          {visibleDocuments.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">
               <Trans>No inspection plans</Trans>
             </p>
           ) : (
             <VStack spacing={0} className="w-full">
-              {documents.map((doc) => (
+              {visibleDocuments.map((doc) => (
                 <HStack
                   key={doc.id}
                   className="w-full justify-between border-b py-2 last:border-b-0"

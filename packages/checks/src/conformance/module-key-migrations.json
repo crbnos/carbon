@@ -1407,6 +1407,7 @@
   "20261105210421_purchase-order-version-rls.sql",
   "20261105213627_supplier-prepayments.sql",
   "20261105214511_shipped-not-invoiced-close-task.sql",
+  "20261105215541_sales-invoice-customer-name-lookup.sql",
   "20261105223836_deposit-refund-settlements.sql",
   "20261105230630_backflush-split-across-bins.sql",
   "20261106153954_prepayment-integrity-guards.sql",
@@ -1431,5 +1432,8 @@
   "20261112182502_serial-traveler-authz.sql",
   "20261113015550_material-request-insert-scope.sql",
   "20261113122609_material-request-update-scope.sql",
-  "20261113135751_api-key-writes-server-only.sql"
+  "20261113135751_api-key-writes-server-only.sql",
+  "20261116142814_console-operator-claims.sql",
+  "20261119231544_multi-jurisdiction-tax-rls.sql",
+  "20261120052902_tax-code-no-delete-and-audit-events.sql"
 ]

@@ -183,7 +183,10 @@ Brad's decisions of 2026-10-11 (`.ai/runs/2026-10-11-merge-origin-main.md`,
   job's (a Contract project whose Project WIP is the WIP account) opens as ONE "Work in Progress" item with no
   document (`getWorkInProgressItems`, `accounting-cutover/open-items.ts`): the
   non-job WIP lines before the cutover, less the Cost Relief rows before it that
-  credit the WIP account (the enable's step 5 posts those with no journal).
+  credit the WIP account (the enable's step 5 posts those with no journal). A
+  line is a job's when its `documentId` is the job or it is a receipt of the
+  job's outside processing (SQL `job_receipt_line_references`, as
+  `job_wip_balance` reads it); each job opens its own item.
 - **Fixed assets.** `getCutoverFixedAssets` values an asset as it stood at the
   cutover: less its `fixedAssetCipCost` rows dated on or after it, in the class the
   first capitalization on or after it moved the asset from (`fromClassId`).
@@ -255,7 +258,10 @@ project the job's cost object in place of WIP:
   debits the project account. A job that is both consume-to-project and Make to Asset
   raises.
 - On an outside processing receipt, only the job decides the route
-  (`loadReceiptProjectRoutes`).
+  (`loadReceiptProjectRoutes`). A capital job's receipt also gets a route:
+  it keeps the WIP account, writes the project's `projectLedger` row on that
+  WIP line and no CIP row, since the job's completion sweeps the WIP onto its
+  asset (as `issue` and `post-production-event` do for a capital job).
 - `post-production-event` and the catch-up rows of `complete_job_to_inventory` stamp the
   employee's `employeeJob.laborCategoryId` on the Labor ledger row (D37 of
   `.ai/specs/2026-10-21-project-contracts.md`), so a T&M contract line prices shop hours by
@@ -334,8 +340,9 @@ matches. The CLIN reads its jobs by this column (`apps/erp/app/modules/sales/AGE
   Statistical project: `indirectCostAccount`, no ledger row) / Cr
   `employeeReimbursementsPayableAccount`, else `payablesAccount` (the same fallback a
   reimbursement has; a reversal credits what its original credited). A Capitalize
-  project is refused. The shared `postProjectJournal` (`projects/project-journal.ts`) posts
-  it.
+  treatment on the entry date is refused (`projectExpenseRefusal`, `project-posting.ts`,
+  on `resolveProjectTreatment`); a reversal is not. The shared `postProjectJournal`
+  (`projects/project-journal.ts`) posts it.
 - **Billable items.** `projectBillableItem` is what a charge will bill. A
   Contract project under a Time & Materials contract line writes them (`buildContractBillableItem`;
   project billing, below). `projectElement.fixedPrice` bills a node's whole subtree as
@@ -891,6 +898,14 @@ checks the budget (source `purchase`: Block refuses, Warn flashes), then `addPro
 (`projects.service.ts`) inserts a `projectExpenseEntry` and posts it through
 `post-project-expense` (Dr the project account / Cr the employee payable, one Other Direct ledger row). An
 entry that does not post is deleted again, so a refusal leaves nothing behind.
+`getProjectElementPage` returns `chargeCostRefusal`: `projectExpenseRefusalOnEveryDate`
+on the posting's own context (`loadProjectPostingContexts`), set only when no entry date
+can post. While it is set, the ⋯ menu, the Actual tab's Charge menu and the plan cards'
+**Charge** button show Charge cost disabled with it as the tooltip. The modal's date is
+free. Only an element override has an effective date (`costTreatmentEffectiveFrom`; no
+ERP screen or operation writes it), so only then do some dates post and others not: the
+action stays enabled, the posting refuses a Capitalize date, and the modal shows the
+refusal.
 
 The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,
 pure, tested) gives a box to each parent that has matching descendants. Dagre places the

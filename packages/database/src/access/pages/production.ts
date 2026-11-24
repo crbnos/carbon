@@ -17,6 +17,7 @@ export const PAGES = [
       "jobCorrectionTrigger",
       "jobMakeMethod",
       "jobMaterial",
+      "jobMaterialScrap",
       "jobMaterialStep",
       "jobOperation",
       "jobOperationNote",
@@ -33,7 +34,7 @@ export const PAGES = [
       "capacityReservation"
     ],
     readers: ["ability"],
-    paths: ["/x/production/jobs", "/x/job/"]
+    paths: ["/x/production/jobs", "/x/job/", "/x/production/time-analysis"]
   },
   {
     id: "production.batches",
