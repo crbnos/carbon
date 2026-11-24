@@ -3966,6 +3966,16 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
 
+## The license-header fixer skips a file that is not staged
+
+**Context:** Multi-jurisdiction tax (2026-10-17). Two new files were committed with no SPDX header, although the fixer had run before each commit.
+
+**Problem:** `pnpm --filter @carbon/checks license-headers` walks `git ls-files --cached`. An untracked file is outside that walk, so the fixer reports "0 fixed" and the file stays bare. The conformance test then fails later, on someone else's run.
+
+**Rule:** Stage a new source file (`git add`) before you run the license-header fixer, then stage it again after the fixer writes the header.
+
+**Applies to:** every new source file, and `packages/checks/src/sources/license-files.ts`.
+
 ## A pick moves a job material's storage unit to lineside, so the line no longer names its Pull From
 
 **Context:** Strict backflush (2026-10-16) consumed what no pick covered from `jobMaterial.storageUnitId`.
@@ -5243,3 +5253,23 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** Never set `name` on a subclass of an Inngest error class (`NonRetriableError`, `RetryAfterError`); carry what tells it apart in another field (`code`). Check it against the client's copy: `createRequire("packages/lib/package.json").resolve("inngest")`.
 
 **Applies to:** Every error class thrown from an Inngest function in `@carbon/jobs` or `@carbon/ee`.
+
+## A trigger that fills a default skips only a backup load
+
+**Context:** The part number display triggers (`20261121061455_supplier-part-number-display.sql` and the customer migration after it) first skipped when `app.sync_in_progress` was set, so the dataset apply could stamp the seeded lines itself. Then they skipped `app.dataset_apply`, and a TypeScript helper stamped the seeded lines after the tiers.
+
+**Problem:** `app.sync_in_progress` is also the accounting sync's flag (`withTriggersDisabled`, `@carbon/ee/accounting`). The Xero purchase order pull deletes and re-inserts every line under it, so every synced line came back with no display choice and no copy of the supplier part number. The `app.dataset_apply` skip needed a second copy of the trigger's rule in TypeScript, and that helper's company-wide UPDATE stamped a real company's legacy lines on a dev seed without a wipe.
+
+**Rule:** A trigger that fills a default for a new row skips only `app.backup_load`: a restore brings its own values. Let it run during a dataset apply: the tiers insert parents before children, so it gives seeded rows the values it gives any row. Use `app.sync_in_progress` only to skip side effects an external sync must not cause (events, webhooks, contact cleanup).
+
+**Applies to:** Every new BEFORE/AFTER row trigger or interceptor that fills or derives a value on insert.
+
+## `pg_temp.allows` cannot see a policy's role list
+
+**Context:** `authz-pieces.test.sql` evaluates a policy with `pg_temp.allows(table, command, clause, row)`, which reads the policy's `USING` or `WITH CHECK` text from `pg_policies` and runs it as the current role.
+
+**Problem:** It ignores `pg_policies.roles`. `exchangeRate` kept API keys out with `TO authenticated USING (true)`, so an `allows('exchangeRate', …)` assertion made as `anon` passed against the old policy: the test could not fail.
+
+**Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
+
+**Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.

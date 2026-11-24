@@ -9,6 +9,7 @@ import type {
   RemoteCandidate
 } from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
+import type { TaxRateOption } from "../../core/tax-mapping";
 import {
   parseXeroTrialBalance,
   type RemoteTrialBalanceRow,
@@ -458,6 +459,27 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     return (response.data?.TrackingCategories ?? []).filter(
       (category) =>
         category.Status === "ACTIVE" || category.Status === undefined
+    );
+  }
+
+  /**
+   * The organisation's ACTIVE tax rates, for the tax-rate mapping tab.
+   * [] on failure — a settings-surface read, same forgiving contract as
+   * listTrackingCategories.
+   */
+  async listTaxRates(): Promise<Xero.TaxRate[]> {
+    const response = await this.request<{ TaxRates: Xero.TaxRate[] }>(
+      "GET",
+      "/TaxRates"
+    );
+
+    if (response.error) {
+      logger.error("Failed to fetch Xero tax rates", { response });
+      return [];
+    }
+
+    return (response.data?.TaxRates ?? []).filter(
+      (rate) => rate.Status === "ACTIVE" || rate.Status === undefined
     );
   }
 
@@ -932,4 +954,39 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
 
     return { changes };
   }
+}
+
+/**
+ * The mapping tab's options from Xero's tax rates: a revenue rate is offered
+ * for sales, an expense rate for purchases. `EffectiveRate` is in percent
+ * points; the option rate is a 0..1 fraction. `ReportTaxType` and the
+ * `CanApplyTo*` flags ride along for the legacy-percent tie-break and the
+ * account-class check.
+ */
+export function toXeroTaxRateOptions(
+  rates: ReadonlyArray<Xero.TaxRate>
+): TaxRateOption[] {
+  return rates.flatMap((rate) => {
+    const base = {
+      id: rate.TaxType,
+      name: rate.Name,
+      rate: (rate.EffectiveRate ?? rate.DisplayTaxRate ?? 0) / 100,
+      reportTaxType: rate.ReportTaxType ?? null,
+      canApplyTo: {
+        asset: rate.CanApplyToAssets,
+        equity: rate.CanApplyToEquity,
+        expense: rate.CanApplyToExpenses,
+        liability: rate.CanApplyToLiabilities,
+        revenue: rate.CanApplyToRevenue
+      }
+    };
+    const options: TaxRateOption[] = [];
+    if (rate.CanApplyToRevenue !== false) {
+      options.push({ ...base, direction: "sales" });
+    }
+    if (rate.CanApplyToExpenses !== false) {
+      options.push({ ...base, direction: "purchase" });
+    }
+    return options;
+  });
 }

@@ -84,7 +84,9 @@ export default function ContractSetupInvoicingRoute() {
         description={
           <Trans>
             One row per invoice, one column per line. Change a date or an
-            amount, add an invoice or delete one.
+            amount, add an invoice or delete one. With no end date, these are
+            the invoices planned so far; a new one is added every billing
+            period.
           </Trans>
         }
       >

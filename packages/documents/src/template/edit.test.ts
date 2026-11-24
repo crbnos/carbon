@@ -275,6 +275,23 @@ describe("editToPrint", () => {
     settings: { ...template.settings, text: { title: "{nope}" } }
   };
 
+  it("passes the modal's display choice to an open record's print", async () => {
+    const result = await print({
+      draft: { ...template, partNumberDisplay: "Theirs Only" }
+    });
+    expect(result).toMatchObject({
+      edit: { partNumberDisplay: "Theirs Only" }
+    });
+  });
+
+  it("ignores a posted display choice on a locked record", async () => {
+    const result = await print({
+      locked: true,
+      draft: { ...template, partNumberDisplay: "Theirs Only" }
+    });
+    expect(result).toEqual({ edit: saved });
+  });
+
   it("prints a locked record's saved edit, whatever was posted", async () => {
     expect(await print({ locked: true, draft: typedTotal })).toEqual({
       edit: saved
