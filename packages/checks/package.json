@@ -13,6 +13,8 @@
     "clobbers": "tsx src/scripts/check-clobbers.ts",
     "invariants": "tsx src/scripts/run-invariants.ts",
     "learn:log-gate": "tsx src/scripts/log-gate-failure.ts",
+    "learn:mark": "tsx src/scripts/learn-mark.ts",
+    "learn:sweep": "tsx src/scripts/learn-sweep.ts",
     "license-headers": "tsx src/scripts/license-headers.ts",
     "lint": "biome lint --write ",
     "test": "vitest run",
