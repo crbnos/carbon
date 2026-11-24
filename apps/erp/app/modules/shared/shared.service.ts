@@ -9486,6 +9486,29 @@ async function billedPurchaseOrderCharges(
   };
 }
 
+/**
+ * Locks every make method version of the items, in id order, and returns
+ * them. A writer that changes a version's status, or writes into a version
+ * because of its status, reads the status here and not before: one id order
+ * for every writer means two of them wait rather than deadlock. NO KEY UPDATE
+ * leaves BOM lines elsewhere that point at these versions free to be written.
+ */
+export async function lockItemMakeMethods(
+  db: Kysely<DB>,
+  args: { itemIds: string[]; companyId: string }
+) {
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return [];
+  return db
+    .selectFrom("makeMethod")
+    .select(["id", "itemId", "version", "status", "changeOrderId"])
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", args.companyId)
+    .orderBy("id")
+    .forNoKeyUpdate()
+    .execute();
+}
+
 /** `id` for the three document-to-invoice conversions, `convertedId` for the rest. */
 export type ConvertResult = { id?: string; convertedId?: string };
 
@@ -9528,63 +9551,50 @@ export async function convertDocument(
       });
       if (makeMethod.error) throw new Error(makeMethod.error.message);
       if (!makeMethod.data) throw new NotFoundError("Make method not found");
+      const { itemId } = makeMethod.data;
 
       if (await isStrictBackflush(db, companyId)) {
         await assertMethodHasPullFrom(db, { makeMethodId, companyId });
       }
 
-      const [relatedMakeMethods, draftQuotes, draftJobs] = await inOrder([
-        () =>
-          many(db, "makeMethod", {
-            itemId: makeMethod.data?.itemId,
-            companyId
-          }),
+      const [draftQuotes, draftJobs] = await inOrder([
         () => many(db, "quote", { companyId, status: "Draft" }),
         () => many(db, "job", { companyId, status: "Draft" })
       ]);
 
-      if (relatedMakeMethods.error)
-        throw new Error(relatedMakeMethods.error.message);
-
       if (draftQuotes.error) throw new Error(draftQuotes.error.message);
       if (draftJobs.error) throw new Error(draftJobs.error.message);
 
-      const draftMakeMethodIds = relatedMakeMethods.data
-        ?.filter(
-          (makeMethod) =>
-            makeMethod.id !== makeMethodId && makeMethod.status === "Draft"
-        )
-        ?.map((makeMethod) => makeMethod.id);
-
-      const activeMakeMethodIds = relatedMakeMethods.data
-        ?.filter(
-          (makeMethod) =>
-            makeMethod.id !== makeMethodId && makeMethod.status === "Active"
-        )
-        ?.map((makeMethod) => makeMethod.id);
-
-      const relatedMakeMethodIds = [
-        ...(draftMakeMethodIds ?? []),
-        ...(activeMakeMethodIds ?? [])
-      ];
-
-      const [methodMaterials] = await inOrder([
-        () =>
-          many(db, "methodMaterial", {
-            materialMakeMethodId: relatedMakeMethodIds,
-            companyId
-          })
-      ]);
-
-      if (methodMaterials.error) throw new Error(methodMaterials.error.message);
-
       await db.transaction().execute(async (trx) => {
+        // The statuses are read under the lock: an activation that waited
+        // for another archives the version that one made Active.
+        const versions = await lockItemMakeMethods(trx, {
+          itemIds: [itemId],
+          companyId
+        });
+        if (!versions.some((version) => version.id === makeMethodId)) {
+          throw new NotFoundError("Make method not found");
+        }
+        const others = versions.filter(
+          (version) => version.id !== makeMethodId
+        );
+        const activeMakeMethodIds = others
+          .filter((version) => version.status === "Active")
+          .map((version) => version.id);
+        const relatedMakeMethodIds = others
+          .filter(
+            (version) =>
+              version.status === "Active" || version.status === "Draft"
+          )
+          .map((version) => version.id);
+
         if (activeMakeMethodIds.length > 0) {
           await trx
             .updateTable("makeMethod")
             .set({ status: "Archived" })
             .where("id", "in", activeMakeMethodIds)
             .where("companyId", "=", companyId)
+            .where("status", "=", "Active")
             .execute();
         }
 
