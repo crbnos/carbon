@@ -61,6 +61,7 @@ import type { action as batchPropertyAction } from "~/routes/x+/inventory+/batch
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
 import { batchPropertyValidator } from "../../inventory.models";
+import { batchPropertySortOrders } from "../../inventory.utils";
 import type { BatchProperty } from "../../types";
 
 export default function BatchPropertiesConfig({
@@ -87,8 +88,11 @@ export default function BatchPropertiesConfig({
       toastError(t`Failed to update batch property`, data.error)
   });
 
+  // A receipt passes the properties of every item on it.
   const propertiesById = new Map<string, BatchProperty>(
-    initialProperties.map((property) => [property.id, property])
+    initialProperties
+      .filter((property) => property.itemId === itemId)
+      .map((property) => [property.id, property])
   );
 
   const pendingProperties = usePendingProperties({ itemId });
@@ -253,44 +257,20 @@ export default function BatchPropertiesConfig({
 
     if (!over) return;
 
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
-
-    const activeIndex = properties.findIndex((p) => p.id === activeId);
-    const overIndex = properties.findIndex((p) => p.id === overId);
-
-    if (activeIndex === -1 || overIndex === -1) return;
-
-    const activeProperty = properties[activeIndex];
-    const overProperty = properties[overIndex];
-
-    let newSortOrder: number;
-
-    if (activeIndex > overIndex) {
-      // Moving up
-      const prevProperty = properties[overIndex - 1];
-      newSortOrder = prevProperty
-        ? (prevProperty.sortOrder + overProperty.sortOrder) / 2
-        : overProperty.sortOrder / 2;
-    } else {
-      // Moving down
-      const nextProperty = properties[overIndex + 1];
-      newSortOrder = nextProperty
-        ? (overProperty.sortOrder + nextProperty.sortOrder) / 2
-        : overProperty.sortOrder + 1;
-    }
+    const updates = batchPropertySortOrders(
+      properties,
+      String(active.id),
+      String(over.id)
+    );
+    if (!updates) return;
 
     submit(
-      {
-        id: activeProperty.id,
-        sortOrder: newSortOrder
-      },
+      { updates: JSON.stringify(updates) },
       {
         method: "post",
         action: path.to.batchPropertyOrder(itemId),
-        navigate: false
+        navigate: false,
+        fetcherKey: `batchPropertyOrder:${itemId}`
       }
     );
   }
@@ -509,9 +489,11 @@ function usePendingProperties({ itemId }: { itemId: string }) {
     .filter((fetcher): fetcher is PendingItem => {
       return fetcher.formAction === path.to.batchPropertyOrder(itemId);
     })
-    .map((fetcher) => {
-      let id = String(fetcher.formData.get("id"));
-      let sortOrder = Number(fetcher.formData.get("sortOrder"));
-      return { id, sortOrder };
+    .flatMap((fetcher) => {
+      const updates = fetcher.formData.get("updates");
+      if (typeof updates !== "string") return [];
+      return Object.entries(JSON.parse(updates) as Record<string, number>).map(
+        ([id, sortOrder]) => ({ id, sortOrder })
+      );
     });
 }

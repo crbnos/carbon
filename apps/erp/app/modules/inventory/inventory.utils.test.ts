@@ -7,6 +7,7 @@ import {
   batchPropertyColumnKey,
   batchPropertyColumns,
   batchPropertyFilter,
+  batchPropertySortOrders,
   batchPropertyValue,
   inventoryCountLineState,
   isShippableEntityStatus,
@@ -282,5 +283,41 @@ describe("batch property columns", () => {
     expect(batchPropertyFilter(column, "between", "2026-01-01,")).toBe(
       'and(attributes->>bp1.gte."2026-01-01")'
     );
+  });
+});
+
+describe("batchPropertySortOrders", () => {
+  // Every property added before its first drag was stored at sort order 1.
+  const neverDragged = [
+    { id: "heat", sortOrder: 1 },
+    { id: "mill", sortOrder: 1 },
+    { id: "grade", sortOrder: 1 },
+    { id: "coating", sortOrder: 1 }
+  ];
+
+  it("moves a property between two that share a sort order", () => {
+    expect(batchPropertySortOrders(neverDragged, "grade", "mill")).toEqual({
+      heat: 1,
+      grade: 2,
+      mill: 3,
+      coating: 4
+    });
+  });
+
+  it("moves a property down past the drop target", () => {
+    expect(batchPropertySortOrders(neverDragged, "heat", "grade")).toEqual({
+      mill: 1,
+      grade: 2,
+      heat: 3,
+      coating: 4
+    });
+  });
+
+  it.each([
+    ["onto itself", "mill", "mill"],
+    ["from outside the list", "other", "mill"],
+    ["onto a property outside the list", "mill", "other"]
+  ])("writes nothing for a drop %s", (_label, activeId, overId) => {
+    expect(batchPropertySortOrders(neverDragged, activeId, overId)).toBeNull();
   });
 });

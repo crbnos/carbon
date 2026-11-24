@@ -6931,27 +6931,50 @@ export const updateInventoryCountStatus = defineServiceFn({
 /**
  * Update batch property order
  *
+ * @remarks
+ * Sets the sort order of each listed property of the item. Each id must be
+ * one of the item's properties, listed once, or nothing is written.
+ *
  * @mcp
  */
 export const updateBatchPropertyOrder = defineServiceFn({
   input: z.looseObject({
-    id: z.string().min(1),
-    sortOrder: z.number().min(0),
-    batchPropertyGroupId: z.string().nullable().optional()
+    itemId: z.string().min(1),
+    updates: z.array(
+      z.looseObject({ id: z.string().min(1), sortOrder: z.number().min(0) })
+    )
   }),
   permission: { update: "inventory" },
   async run(ctx, input) {
-    // The update matches by id alone: it must be this company's property.
-    const owned = await refuseUnlessOwned(ctx, "batchProperty", {
-      id: input.id
-    });
-    if (owned) return owned;
-    return unwrap(
-      ctx,
-      await service.updateBatchPropertyOrder(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+    const ids = new Set(input.updates.map((update) => update.id));
+    const properties = await ctx.asSystem.supabase
+      .from("batchProperty")
+      .select("id")
+      .in("id", [...ids])
+      .eq("itemId", input.itemId)
+      .eq("companyId", ctx.company.id);
+    if (properties.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update sort order",
+        properties.error
+      );
+    }
+    if (
+      ids.size !== input.updates.length ||
+      properties.data.length !== ids.size
+    ) {
+      return ctx.error(
+        "rule",
+        "Each property must be listed once and belong to the item"
+      );
+    }
+    return await service.updateBatchPropertyOrder(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      ctx.auditUserId,
+      input.itemId,
+      input.updates
     );
   }
 });

@@ -547,6 +547,27 @@ export function batchPropertyColumns(
   );
 }
 
+/**
+ * The sort orders a batch property drag writes: the whole list in its new
+ * order, numbered from 1, so each drag stands alone when an earlier one is
+ * still in flight. A midpoint cannot separate properties that share a sort
+ * order. Null when the drop changes nothing.
+ */
+export function batchPropertySortOrders(
+  properties: { id: string }[],
+  activeId: string,
+  overId: string
+): Record<string, number> | null {
+  const from = properties.findIndex((p) => p.id === activeId);
+  const to = properties.findIndex((p) => p.id === overId);
+  if (from === -1 || to === -1 || from === to) return null;
+
+  const reordered = properties.map((p) => p.id);
+  const [moved] = reordered.splice(from, 1);
+  reordered.splice(to, 0, moved);
+  return Object.fromEntries(reordered.map((id, index) => [id, index + 1]));
+}
+
 /** A row's value for a property column: the one its item's property holds. */
 export function batchPropertyValue(
   column: BatchPropertyColumn,

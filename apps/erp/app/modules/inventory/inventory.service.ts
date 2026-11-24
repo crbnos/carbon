@@ -248,6 +248,7 @@ import {
   updatePickMethodDefaultStorageUnits,
   valueMovement
 } from "~/modules/shared/shared.service";
+import { updateSortOrder } from "~/modules/shared/sort-order";
 import {
   assertBinCovers,
   binCoverProblem,
@@ -282,7 +283,6 @@ import {
   stripeItemLedgerRows
 } from "./grouped-receipt";
 import type {
-  batchPropertyOrderValidator,
   batchPropertyValidator,
   inventoryAdjustmentValidator,
   inventoryCountLineValidator,
@@ -597,7 +597,9 @@ export async function getBatchProperties(
     .select("*")
     .in("itemId", itemIds)
     .eq("companyId", companyId)
-    .order("sortOrder");
+    .order("sortOrder")
+    .order("createdAt")
+    .order("id");
 }
 
 export const INVENTORY_ITEMS_PAGING: Paging = {
@@ -4433,24 +4435,20 @@ export async function updateInventoryCountStatus(
 }
 
 export async function updateBatchPropertyOrder(
-  client: SupabaseClient<Database>,
-  data: Omit<
-    z.infer<typeof batchPropertyOrderValidator>,
-    "batchPropertyGroupId"
-  > & {
-    batchPropertyGroupId?: string | null;
-    updatedBy: string;
-  }
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  userId: string,
+  itemId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  // batchProperty has no group column; the group is not stored.
-  const { batchPropertyGroupId: _group, ...order } = data;
-  return requireAffected(
-    client
-      .from("batchProperty")
-      .update(sanitize(order))
-      .eq("id", data.id)
-      .select("id")
-  );
+  return updateSortOrder(db, {
+    table: "batchProperty",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "itemId", id: itemId },
+    updates
+  });
 }
 
 /**
@@ -4559,8 +4557,19 @@ export async function upsertBatchProperty(
     );
   }
 
+  const last = await client
+    .from("batchProperty")
+    .select("sortOrder")
+    .eq("itemId", data.itemId)
+    .eq("companyId", data.companyId)
+    .order("sortOrder", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (last.error) return { data: null, error: last.error };
+
   return client.from("batchProperty").insert({
     ...data,
+    sortOrder: (last.data?.sortOrder ?? 0) + 1,
     createdBy: userId
   });
 }

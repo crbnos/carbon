@@ -2831,9 +2831,20 @@ export async function upsertConfigurationParameter(
     ungroupedGroupId = ungroupedGroupInsert.data.id;
   }
 
+  const lastParameter = await client
+    .from("configurationParameter")
+    .select("sortOrder")
+    .eq("itemId", data.itemId)
+    .eq("companyId", data.companyId)
+    .order("sortOrder", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (lastParameter.error) return { data: null, error: lastParameter.error };
+
   return client.from("configurationParameter").insert({
     ...data,
     key: data.key ?? "",
+    sortOrder: (lastParameter.data?.sortOrder ?? 0) + 1,
     createdBy: userId,
     configurationParameterGroupId: ungroupedGroupId
   });
