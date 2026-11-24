@@ -15,7 +15,7 @@ import {
   saveOpeningTrialBalance
 } from "@carbon/database/accounting-cutover-reads";
 import { sql } from "kysely";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import { issueMaterial as issue, postInventoryAdjustment } from "../../../../app/modules/inventory/inventory.service";
 import { databaseTest } from "../../fixtures/local-database";
 import { postCharge, activateAccounting } from "../../../../app/modules/accounting/accounting.service";
@@ -42,6 +42,14 @@ import {
 } from "../../fixtures/activation";
 import { invokePosting } from "../../../../app/modules/shared/shared.service";
 import { handlesOf } from "../../fixtures/handles";
+
+// The posting's funds gate reads the purchase orders through the service-role
+// client, which a posting run from handles builds from `@carbon/env`.
+vi.mock("@carbon/env", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...(await import("../../fixtures/local-supabase")).localServiceRoleEnv()
+}));
+
 type SourceType = Database["public"]["Enums"]["journalEntrySourceType"];
 
 const INVOICE_SOURCES: SourceType[] = ["Sales Invoice", "Purchase Invoice"];

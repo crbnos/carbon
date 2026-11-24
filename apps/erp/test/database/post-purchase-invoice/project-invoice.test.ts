@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import { postReceipt as postReceiptBody } from "../../../app/modules/inventory/inventory.service";
 import { postPurchaseInvoice as postPurchaseInvoiceBody } from "../../../app/modules/invoicing/invoicing.service";
 import { postProjectIssue } from "../../../app/modules/projects/projects.service";
@@ -10,6 +10,13 @@ import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
 import { projectPostingFixture } from "../fixtures/project-posting";
+
+// The posting's funds gate reads the purchase orders through the service-role
+// client, which a posting run from handles builds from `@carbon/env`.
+vi.mock("@carbon/env", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...(await import("../fixtures/local-supabase")).localServiceRoleEnv()
+}));
 
 type Ctx = Parameters<typeof handlesOf>[0];
 

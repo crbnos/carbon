@@ -14,7 +14,7 @@ import {
   saveOpeningTrialBalance
 } from "@carbon/database/accounting-cutover-reads";
 import { sql } from "kysely";
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import { databaseTest } from "../fixtures/local-database";
 import { postPurchaseInvoice } from "../../../app/modules/invoicing/invoicing.service";
 import { postReceipt } from "../../../app/modules/inventory/inventory.service";
@@ -29,6 +29,13 @@ import {
 } from "../fixtures/activation";
 import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
+
+// The posting's funds gate reads the purchase orders through the service-role
+// client, which a posting run from handles builds from `@carbon/env`.
+vi.mock("@carbon/env", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...(await import("../fixtures/local-supabase")).localServiceRoleEnv()
+}));
 
 /** A purchase order for 5 parts at `unitPrice`; returns its line id. */
 async function orderFiveParts(f: Fixture, unitPrice: number) {
