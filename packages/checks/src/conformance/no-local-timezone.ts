@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { loadServerFiles } from "../sources/server-files";
 
 /**
  * Server code must not derive calendar days from the process timezone. The
@@ -17,6 +18,12 @@ import type { ConformanceCheck, Violation } from "../check";
  * timestamps are timezone-free. UTC getters (getUTCDay etc.) and local getters
  * on a locally-constructed date (new Date(y, m, d).getFullYear() roundtrips)
  * are also fine and deliberately not matched.
+ *
+ * `loadServerFiles` (`sources/server-files.ts`) chooses the files: the server
+ * roots, ERP module `.service.ts`/`.server.ts`, and both apps' route trees. A
+ * route module is server and client in one file, so its browser half is
+ * blanked first (`maskClientCode`). The loaders, actions and the module-level
+ * helpers they call stay.
  */
 const BANNED = [
   {
@@ -44,7 +51,7 @@ const BANNED = [
   }
 ];
 
-export const noLocalTimezone: ConformanceCheck = {
+export const noLocalTimezone = fileCheck(loadServerFiles, {
   id: "no-local-timezone",
   description:
     "Server code derives calendar days via datetime.today(tz), never the process clock or UTC-slicing.",
@@ -64,4 +71,4 @@ export const noLocalTimezone: ConformanceCheck = {
     });
     return violations;
   }
-};
+});

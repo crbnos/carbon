@@ -2,12 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 import { maskClientCode } from "../sources/server-files";
 
 /**
- * Code that runs in the browser — components, hooks, a module's `ui/`, and
- * the client-safe module files (`*.models.ts`, `*.utils.ts`, `types.ts`) —
+ * Code that runs in the browser — components, hooks, stores, a module's `ui/`,
+ * and the client-safe module files (`*.models.ts`, `*.utils.ts`, `types.ts`) —
  * never imports a module's `.service`, `.server` or `.pdf` file. All three are
  * server-only (a `.pdf.tsx` renders with `@react-pdf/renderer` in Node):
  * a service file may import server-only packages, and React Router refuses a
@@ -20,7 +21,9 @@ import { maskClientCode } from "../sources/server-files";
  * `clientLoader`, components and hooks — what `maskClientCode` blanks). That
  * is how `LOCK_PERIOD_TASK_NAME` in a close-period component pulled the
  * accounting service, and its `@carbon/auth/auth.server` import, into the
- * client build.
+ * client build, and the build failed.
+ *
+ * See `.claude/rules/module-files.md`.
  */
 const CLIENT_FILE =
   /^apps\/erp\/app\/(?:components\/|hooks\/|stores\/|modules\/[a-z-]+\/(?:ui\/|[A-Za-z0-9.-]+\.(?:models|utils)\.tsx?$|types\.ts$))/;
@@ -100,7 +103,7 @@ function scanRoute(file: string, contents: string): Violation[] {
   return violations;
 }
 
-export const noServerCodeInClient: ConformanceCheck = {
+export const noServerCodeInClient = fileCheck(typescript, {
   id: "no-server-code-in-client",
   description:
     "Components, hooks, ui/, models, utils, types and a route's browser code never import a .service or .server file.",
@@ -124,4 +127,4 @@ export const noServerCodeInClient: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

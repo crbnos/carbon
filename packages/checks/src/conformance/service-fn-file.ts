@@ -3,10 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import ts from "typescript5";
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 /**
- * A module's `<module>.server.ts` is its API: every export is a
+ * A module's `<module>.server.ts` (or `<module>.ee.server.ts`) is its API: every export is a
  * `defineServiceFn` const, published as `<module>_<name>` and called by routes
  * as `api.<module>.<name>(input)`. Anything else — a helper function, a class,
  * an exported constant — is a building block and lives in
@@ -46,7 +47,7 @@ const emptyPermission = (call: ts.CallExpression) => {
 const isFunctionValue = (init: ts.Expression | undefined) =>
   !!init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init));
 
-export const serviceFnFile: ConformanceCheck = {
+export const serviceFnFile = fileCheck(typescript, {
   id: "service-fn-file",
   description:
     "A module's <module>.server.ts exports only defineServiceFn consts; every other function lives in <module>.service.ts.",
@@ -128,4 +129,4 @@ export const serviceFnFile: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

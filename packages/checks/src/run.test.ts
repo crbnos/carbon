@@ -3,34 +3,53 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { ConformanceCheck } from "./check";
-import { newViolations, scanAll } from "./run";
+import type { Check } from "./check";
+import { openRepo } from "./repo";
+import { newViolations, runChecks } from "./run";
 
-describe("scanAll", () => {
-  it("runs every check over every file and names the check of each violation", () => {
-    const flags = (id: string, word: string): ConformanceCheck => ({
+describe("runChecks", () => {
+  const words = () => ["red", "red blue", "green"];
+  const flags = (id: string, word: string): Check => ({
+    id,
+    description: "",
+    find: (repo) =>
+      repo
+        .read(words)
+        .flatMap((text, index) =>
+          text.includes(word)
+            ? [{ file: `${index}.sql`, line: 1, snippet: word, message: "" }]
+            : []
+        )
+  });
+
+  it("gives every violation of every check, under that check's id", () => {
+    const found = runChecks(
+      [flags("no-red", "red"), flags("no-blue", "blue")],
+      openRepo("/repo")
+    );
+    expect(found.map((f) => [f.checkId, f.violation.file])).toEqual([
+      ["no-red", "0.sql"],
+      ["no-red", "1.sql"],
+      ["no-blue", "1.sql"]
+    ]);
+  });
+
+  it("reads an input once however many checks ask for it", () => {
+    let reads = 0;
+    const input = (root: string) => {
+      reads++;
+      return [root];
+    };
+    const reader = (id: string): Check => ({
       id,
       description: "",
-      provenance: { deprecates: "", replacedBy: "" },
-      scan: (file, contents) =>
-        contents.includes(word)
-          ? [{ file, line: 1, snippet: word, message: "" }]
-          : []
+      find: (repo) => {
+        repo.read(input);
+        return [];
+      }
     });
-    const files = [
-      { file: "a.sql", contents: "red" },
-      { file: "b.sql", contents: "red blue" },
-      { file: "c.sql", contents: "green" }
-    ];
-    const found = scanAll(files, [
-      flags("no-red", "red"),
-      flags("no-blue", "blue")
-    ]);
-    expect(found.map((f) => [f.checkId, f.violation.file])).toEqual([
-      ["no-red", "a.sql"],
-      ["no-red", "b.sql"],
-      ["no-blue", "b.sql"]
-    ]);
+    runChecks([reader("a"), reader("b")], openRepo("/repo"));
+    expect(reads).toBe(1);
   });
 });
 

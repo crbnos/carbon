@@ -2,13 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
 import {
   classifyFile,
   type HeaderStatus,
   inspectLicenseHeader,
   LICENSE_HEADERS
 } from "../license-headers";
+import { loadLicenseFiles } from "../sources/license-files";
 
 // Every first-party source file opens with an SPDX header naming its license:
 // AGPL-3.0-only, or LicenseRef-Carbon-Commercial for the Enterprise files
@@ -27,7 +28,7 @@ const MESSAGES: Record<Exclude<HeaderStatus, "ok">, string> = {
     "Carries a third-party notice (SPDX id, @license or copyright) — add it to PATH_EXCLUSIONS in license-headers.ts with its reason, or fix the header by hand"
 };
 
-export const spdxLicenseHeader: ConformanceCheck = {
+export const spdxLicenseHeader = fileCheck(loadLicenseFiles, {
   id: "spdx-license-header",
   description:
     "Every first-party source file starts with its SPDX license header",
@@ -50,4 +51,4 @@ export const spdxLicenseHeader: ConformanceCheck = {
       }
     ];
   }
-};
+});

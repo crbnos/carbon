@@ -4,8 +4,11 @@
 
 import { describe, expect, it } from "vitest";
 import { repoRoot } from "../sources/migrations";
-import { loadSharedTestFixtures } from "../sources/test-files";
-import { noSilentTestPass, sharedTestWrappers } from "./no-silent-test-pass";
+import {
+  loadSharedTestFixtures,
+  noSilentTestPass,
+  sharedTestWrappers
+} from "./no-silent-test-pass";
 
 const scan = (contents: string) =>
   noSilentTestPass(["databaseTest", "postgrestTest"]).scan(

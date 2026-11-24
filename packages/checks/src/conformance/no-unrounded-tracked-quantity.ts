@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 /**
  * A tracked entity's quantity is the physical truth about a lot on a shelf, and
@@ -146,7 +147,7 @@ const COMPARE_PATTERNS = [
   )
 ];
 
-export const noUnroundedTrackedQuantity: ConformanceCheck = {
+export const noUnroundedTrackedQuantity = fileCheck(typescript, {
   id: "no-unrounded-tracked-quantity",
   description:
     "A tracked entity's quantity is rounded at the persist boundary (round/settleQuantity) and split gates compare through isFullDraw — never raw float arithmetic or a raw ===/< on a stored quantity.",
@@ -232,4 +233,4 @@ export const noUnroundedTrackedQuantity: ConformanceCheck = {
 
     return violations;
   }
-};
+});

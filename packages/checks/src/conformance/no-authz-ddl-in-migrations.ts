@@ -2,9 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
 import type { Node } from "libpg-query";
-import type { ConformanceCheck, Violation } from "../check";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  type SourceFile,
+  type Violation
+} from "../check";
+import { migrations } from "../sources/inputs";
+import { loadSqlFiles } from "../sources/migrations";
 import { nameParts, sqlNodes } from "../sources/sql";
 
 /**
@@ -116,9 +126,37 @@ function functionsTouched(node: Node): { verb: string; parts: string[] }[] {
   return [];
 }
 
-export const noAuthzDdlInMigrations = (
-  functions: ManagedFunction[]
-): ConformanceCheck => ({
+/**
+ * The managed functions: one `<name>.sql` (or `<schema>.<name>.sql`) file each.
+ * The list is read from the directories, so it cannot drift from the files.
+ */
+export function loadManagedFunctions(root: string): ManagedFunction[] {
+  return MANAGED_FUNCTION_SETS.flatMap(({ dir, since }) =>
+    readdirSync(join(root, dir))
+      .filter((file) => file.endsWith(".sql"))
+      .map((file) => {
+        const [first = "", second] = file.replace(/\.sql$/, "").split(".");
+        return {
+          schema: second ? first : "public",
+          name: second ?? first,
+          file: `${dir}/${file}`,
+          since
+        };
+      })
+  );
+}
+
+/** The managed function files, read with their repo paths. */
+export function loadManagedFunctionFiles(root: string): SourceFile[] {
+  return MANAGED_FUNCTION_SETS.flatMap(({ dir }) =>
+    loadSqlFiles(join(root, dir)).map(({ file, contents }) => ({
+      file: `${dir}/${file}`,
+      contents
+    }))
+  );
+}
+
+const ABOUT = {
   id: "no-authz-ddl-in-migrations",
   description:
     "Policies, RLS helpers, event-system functions and event triggers are authored as files, not migrations.",
@@ -127,7 +165,14 @@ export const noAuthzDdlInMigrations = (
     replacedBy:
       "packages/database/src/authz (manifest.ts + helpers/*.sql) and packages/database/src/event-system/functions/*.sql",
     since: SINCE
-  },
+  }
+};
+
+/** The check for a given set of managed functions: tests pass their own. */
+export const noAuthzDdlInMigrations = (
+  functions: ManagedFunction[]
+): ConformanceCheck => ({
+  ...ABOUT,
   scan(file, contents) {
     const timestamp = /^(\d{14})_/.exec(file)?.[1];
     if (
@@ -190,3 +235,12 @@ export const noAuthzDdlInMigrations = (
     return violations;
   }
 });
+
+export const noAuthzDdlInMigrationsCheck: Check = {
+  ...ABOUT,
+  find: (repo) =>
+    eachFile(
+      repo.read(migrations),
+      noAuthzDdlInMigrations(repo.read(loadManagedFunctions)).scan
+    )
+};

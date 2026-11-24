@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { SourceFile, Violation } from "../check";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import type { Check, SourceFile, Violation } from "../check";
 import { sqlNodes } from "../sources/sql";
 
 export const DOCUMENT_SEQUENCE_SYNCED = "document-sequence-synced";
@@ -12,6 +14,23 @@ export const ATTACHMENTS_FILE =
   "packages/database/src/event-system/attachments.ts";
 export const INTERCEPTOR_FILE =
   "packages/database/src/event-system/handlers/sync_advance_document_sequence.sql";
+
+/** The three files `findUnsyncedDocumentSequences` compares. */
+export function loadDocumentSequenceSources(root: string): {
+  seedData: SourceFile;
+  attachments: SourceFile;
+  interceptor: SourceFile;
+} {
+  const load = (file: string): SourceFile => ({
+    file,
+    contents: readFileSync(join(root, file), "utf-8")
+  });
+  return {
+    seedData: load(SEED_DATA_FILE),
+    attachments: load(ATTACHMENTS_FILE),
+    interceptor: load(INTERCEPTOR_FILE)
+  };
+}
 
 const INTERCEPTOR = "sync_advance_document_sequence";
 
@@ -152,3 +171,11 @@ export function findUnsyncedDocumentSequences(sources: {
 
   return out;
 }
+
+export const documentSequenceSynced: Check = {
+  id: DOCUMENT_SEQUENCE_SYNCED,
+  description:
+    "Every counter is either kept ahead of saved numbers by sync_advance_document_sequence or exempt with a reason, and the interceptor's table list matches the tables it is attached to.",
+  find: (repo) =>
+    findUnsyncedDocumentSequences(repo.read(loadDocumentSequenceSources))
+};

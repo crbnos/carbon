@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // A Radix dialog plays its closing animation only while it stays on the page
 // and its `open` prop turns false. Two patterns removed it in the same render
@@ -13,10 +14,33 @@ import type { ConformanceCheck, Violation } from "../check";
 //   - a route rendered as a dialog and closed with `useCloseRoute()`: the
 //     navigation removes the route. `useRouteDialog()` closes the dialog
 //     first and navigates when it is off the page.
+//
+// A conditional dialog fails when the condition removes it in the render it
+// closes in:
+//   - its tag passes no real `open`/`isOpen` (a bare `open` or `open={true}`
+//     does not count);
+//   - the condition is its own open state, under any name
+//     (`sel && <D isOpen={!!sel} />`);
+//   - its own close handler clears the record the condition guards on.
+// It also fails `if (!isOpen) return null` in a file that renders a dialog
+// primitive, and any `useCloseRoute(` call. `packages/react/src/hooks/` is
+// skipped: `useCloseRoute` and `useRouteDialog` are defined there.
+//
+// The fix: pass the `open` prop, and keep per-open state in a body inside the
+// content (`.claude/rules/conventions-ui.md`, Modals and Drawers).
+//
+// The check reads text only. It does not see a dialog named otherwise, a
+// `*Form` whose modal mode is not a literal `type="modal"`, or a route closed
+// with `navigate(...)`.
+//
+// The baselined sites were each reviewed: trigger components that hold their
+// own open state (the Linear and Jira issue dialogs, `ActionTaskAddModal`,
+// `WorkflowLockModal`), full pages that call `useCloseRoute`, a polling modal
+// (`JobProgressModal`) and a dead modal (`MaintenanceDispatchProperties`).
 
 // A component that renders a dialog: the primitives, the `Confirm*` /
 // `Delete*` confirms, and the `*Modal` / `*Drawer` / `*Dialog` components
-// built on them.
+// built on them. A `*Form` with `type="modal"` is a dialog too (see `scan`).
 const DIALOG_NAME =
   /^(?:Modal|ModalCard|Drawer|ModalDrawer|Confirm\w*|Delete\w*|[A-Z]\w*(?:Modal|Drawer|Dialog))$/;
 
@@ -208,7 +232,7 @@ function clearsGuardOnClose(
 const lineOf = (contents: string, index: number) =>
   contents.slice(0, index).split("\n").length;
 
-export const noUnmountingDialog: ConformanceCheck = {
+export const noUnmountingDialog = fileCheck(typescript, {
   id: "no-unmounting-dialog",
   description:
     "A modal or drawer stays mounted and closes through its open prop, so its closing animation plays",
@@ -271,4 +295,4 @@ export const noUnmountingDialog: ConformanceCheck = {
 
     return violations;
   }
-};
+});

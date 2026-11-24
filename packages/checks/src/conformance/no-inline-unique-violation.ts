@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 const UNIQUE_VIOLATION = /["']23505["']/;
 
@@ -15,7 +16,11 @@ const EXEMPT_FILES = new Set([
   "packages/utils/src/error-reason.ts"
 ]);
 
-export const noInlineUniqueViolation: ConformanceCheck = {
+/**
+ * The literals that existed when the check landed are baselined. Each one
+ * should move to `isUniqueViolation`; the baseline does not make them right.
+ */
+export const noInlineUniqueViolation = fileCheck(typescript, {
   id: "no-inline-unique-violation",
   description:
     'Branch on a unique violation with isUniqueViolation(), never a literal "23505".',
@@ -38,4 +43,4 @@ export const noInlineUniqueViolation: ConformanceCheck = {
     });
     return violations;
   }
-};
+});

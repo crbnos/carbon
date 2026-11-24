@@ -3,7 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { posix } from "node:path";
-import type { ConformanceCheck, SourceFile, Violation } from "../check";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  type SourceFile,
+  type Violation
+} from "../check";
+import { typescript } from "../sources/inputs";
 
 // React Router keeps a route's components mounted when only its params change
 // (part A to part B, one order line to the next). Whatever the page seeded once
@@ -14,7 +21,7 @@ import type { ConformanceCheck, SourceFile, Violation } from "../check";
 const ROUTES = /^apps\/(?:erp|mes)\/app\/routes\/x\+\//;
 const OUTLET = /<Outlet(?=[\s/>])([^>]*)>/g;
 
-export const noBareOutlet: ConformanceCheck = {
+export const noBareOutlet: ConformanceCheck & Check = {
   id: "no-bare-outlet",
   description:
     "a route under /x renders RecordOutlet, which remounts its page when the record changes",
@@ -42,7 +49,11 @@ export const noBareOutlet: ConformanceCheck = {
       });
     }
     return violations;
-  }
+  },
+  find: (repo) => [
+    ...eachFile(repo.read(typescript), noBareOutlet.scan),
+    ...findNestedOutlets(repo.read(typescript))
+  ]
 };
 
 // A file that renders its own outlet must not also render a component that
@@ -55,6 +66,14 @@ export const noBareOutlet: ConformanceCheck = {
 // component. An import names a component by its file (`~/…/ApiKeysTable`,
 // `./ApiKeysTable`), or by its file's name through a barrel above it
 // (`{ ApiKeysTable }` from `~/modules/settings/ui`).
+//
+// The same bug opened New Webhook and a supplier's New Process twice. Because
+// the import names the file, a same-named component elsewhere is not taken
+// for it. A barrel that renames its export is not followed. The finder reads
+// the whole file, not its branches: an outlet behind an early return is
+// flagged too, because the rule is one outlet per route. The baselined
+// supplier processes route keeps its `SupplierProcesses` outlet until that
+// card gets its own fix.
 const APP_TSX = /^apps\/(erp|mes)\/app\/.+\.tsx$/;
 const ROUTE_TSX = /^apps\/(?:erp|mes)\/app\/routes\//;
 const ANY_OUTLET = /<(?:Record)?Outlet(?=[\s/>])/;

@@ -3,8 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Node } from "libpg-query";
-import type { ConformanceCheck, Violation } from "../check";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  type Violation
+} from "../check";
 import { blankComments } from "../sources/comments";
+import { migrations, typescript } from "../sources/inputs";
 import { nameParts, nodesIn, sqlFragments } from "../sources/sql";
 
 // A journal reader that filters `status <> 'Draft'` counts every non-Draft
@@ -13,18 +19,18 @@ import { nameParts, nodesIn, sqlFragments } from "../sources/sql";
 // instead: GL (Posted, Reversed), document, or open item.
 //
 // The check works per STATEMENT, not per file: a not-Draft filter is flagged
-// only when the statement that holds it reads the journal table. A statement
-// is the text between two semicolons, comments blanked — in SQL that is one
-// statement (a plpgsql body splits into its own statements), in TypeScript it
-// is one query chain, or one raw SQL text in a sql`` template or a
+// only when the statement that holds it reads the journal table. In a
+// migration, a statement is one the SQL parser returns (see `scanSql`). In
+// TypeScript, a statement is the text between two semicolons, comments
+// blanked: one query chain, or one raw SQL text in a sql`` template or a
 // `client.query(...)` string. A chain built across several variables
 // (`let q = …; q = q.where(…)`) is split at its first `;` and escapes the
 // check.
 
-// Migrations older than the one that changed the GL readers have false
-// positives (`j` is also the alias of `job`), so the SQL side starts there.
-// Migration filenames start with a 14-digit timestamp, so string order is
-// chronological.
+// Migrations older than the one that changed the GL readers hold the old
+// `status <> 'Draft'` readers, which later migrations replace. They are
+// history, so the SQL side starts there. Migration filenames start with a
+// 14-digit timestamp, so string order is chronological.
 const SINCE_MIGRATION = "20261009005144";
 
 /**
@@ -262,7 +268,7 @@ function scanSql(file: string, contents: string): Violation[] {
   return violations.sort((a, b) => a.line - b.line);
 }
 
-export const journalStatusFilter: ConformanceCheck = {
+export const journalStatusFilter: ConformanceCheck & Check = {
   id: "journal-status-filter",
   description:
     "Journal readers filter status with a named status list, not `status <> 'Draft'`",
@@ -282,5 +288,9 @@ export const journalStatusFilter: ConformanceCheck = {
       ...TS_NOT_DRAFT,
       ...SQL_NOT_DRAFT
     ]);
-  }
+  },
+  find: (repo) => [
+    ...eachFile(repo.read(migrations), journalStatusFilter.scan),
+    ...eachFile(repo.read(typescript), journalStatusFilter.scan)
+  ]
 };

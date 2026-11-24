@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { SourceFile, Violation } from "../check";
+import type { Check, SourceFile, Violation } from "../check";
+import { loadSideEffectPackages } from "../sources/side-effect-packages";
 
 // A bare import (`import "./x"`) runs a file for what it does, not for what it
 // exports. In a package whose package.json says `"sideEffects": false`, or
@@ -11,6 +12,10 @@ import type { SourceFile, Violation } from "../check";
 // server bundle, so every `carbon()` call threw "the app has not called
 // registerCarbon", and `z.config({ jitless: true })` never ran in either app.
 // Typecheck, tests and the dev server (which does not tree-shake) cannot see it.
+//
+// Only a bare import of a file in the importer's own package is checked
+// (`./x`, `../x`, `~/x`). A bare import of another package is left to that
+// package's own `sideEffects`. A `.css` import is ignored.
 export const SIDE_EFFECT_IMPORT_DECLARED = "side-effect-import-declared";
 
 export type SideEffectPackage = {
@@ -92,3 +97,11 @@ export function findUndeclaredSideEffectImports(
   }
   return violations;
 }
+
+export const sideEffectImportDeclared: Check = {
+  id: SIDE_EFFECT_IMPORT_DECLARED,
+  description:
+    'In a package whose package.json says `"sideEffects": false`, or lists only some files, the production bundler drops a bare import of any file it does not list.',
+  find: (repo) =>
+    findUndeclaredSideEffectImports(repo.read(loadSideEffectPackages))
+};

@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import {
   PAGES,
   pagesOfUrl,
@@ -9,7 +11,7 @@ import {
   urlCoverage,
   urlSegments
 } from "@carbon/database/access";
-import type { Violation } from "../check";
+import type { Check, Violation } from "../check";
 
 export const ROUTE_MAPS_TO_PAGE = "route-maps-to-page";
 
@@ -18,6 +20,25 @@ export const ERP_ROUTES_DIR = "apps/erp/app/routes/x+";
 
 const THIS_FILE = "packages/checks/src/conformance/route-maps-to-page.ts";
 const PAGES_DIR = "packages/database/src/access/pages";
+
+/**
+ * The ERP route files under `x+` that `findRoutePageGaps` maps, relative to
+ * `x+`: the files remix-flat-routes builds routes from (`apps/erp/app/routes.ts`
+ * ignores dot folders, `__` names and `.server`/`.client`/`.test` files).
+ */
+export function loadErpRouteFiles(root: string): string[] {
+  return (
+    readdirSync(join(root, ERP_ROUTES_DIR), { recursive: true }) as string[]
+  )
+    .map((file) => file.split("\\").join("/"))
+    .filter(
+      (file) =>
+        /\.(tsx?|jsx?)$/.test(file) &&
+        !file.split("/").some((part) => part.startsWith(".")) &&
+        !/(^|\/)__|\.(server|client|test)\./.test(file)
+    )
+    .sort();
+}
 
 /**
  * Routes under `x+` that belong to no one page, with the reason. A key that
@@ -167,3 +188,10 @@ export function findRoutePageGaps(
 
   return violations;
 }
+
+export const routeMapsToPage: Check = {
+  id: ROUTE_MAPS_TO_PAGE,
+  description:
+    "Every ERP route under `x+` belongs to one page of the access registry, so a gate, the sidebar and `pageOfUrl` agree on whose screen it is, or is listed in `UNPAGED_ROUTES` with the reason.",
+  find: (repo) => findRoutePageGaps(repo.read(loadErpRouteFiles))
+};

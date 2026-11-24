@@ -2,8 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Provenance, Violation } from "../check";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  type Provenance,
+  type Violation
+} from "../check";
 import { blankComments } from "../sources/comments";
+import { loadDbTableColumnTypes } from "../sources/db-columns";
+import { typescript } from "../sources/inputs";
 import {
   chainCalls,
   locksBefore,
@@ -32,12 +40,13 @@ import {
  * did not cover the backflush, which is why a lock on ANOTHER table does not
  * pass this check.
  *
- * A write is flagged when its literal row object sets a counter column of that
- * table (`COUNTER_COLUMNS`, numeric in the generated types) to a value that
- * reads the same column back from JavaScript — `x.quantityIssued`, directly or
- * through one local (`const issued = line.quantityIssued + q;` …
- * `{ quantityIssued: issued }`). A value built with `sql` or Kysely's `eb` is
- * relative SQL and passes. The function passes when, before the write, it
+ * A write is flagged when its row (read as `row-writes.ts` says) sets a counter
+ * column of that table (`COUNTER_COLUMNS`, numeric in the generated types) to a
+ * value that reads the same column back from JavaScript — `x.quantityIssued`,
+ * directly or through up to `LOCAL_HOPS` locals (`const issued =
+ * line.quantityIssued + q;` … `{ quantityIssued: issued }`). A value built with
+ * `sql` or Kysely's `eb` is relative SQL and passes. The function passes when,
+ * before the write, it
  *  - locked a row of the written table (`.selectFrom(t)…forUpdate()`, raw SQL
  *    `FOR UPDATE`, or a same-file helper that does), or
  *  - took a named lock (`lock…(` / `pg_advisory_xact_lock`) and only then read
@@ -45,6 +54,16 @@ import {
  *    `selectAll`) — the f92d1b24fa fix.
  * It cannot tell whether every other writer takes that lock; the formal models
  * in `packages/models` are where a protocol with several writers is checked.
+ *
+ * The test replays the parent revisions of both fixes. It passes the
+ * f92d1b24fa fix, and still flags the ca513209d8 fix, because that one raced.
+ *
+ * The snippet is `<function>: <table>.<column>`, with no line. So a new
+ * unguarded write in a function and table that are already baselined is
+ * grandfathered too. The baseline holds the sites on main when the check was
+ * added: mostly the order-line totals in the receipt, shipment and invoice
+ * postings, and the job material issue, whose fix is on the models branch. See
+ * `.claude/rules/concurrency.md`.
  */
 
 export const COUNTER_COLUMNS = new Set([
@@ -167,14 +186,18 @@ export const COUNTER_WRITE_RELATIVE_PROVENANCE: Provenance = {
   incidents: ["ca513209d8", "f92d1b24fa"]
 };
 
+const ABOUT = {
+  id: COUNTER_WRITE_RELATIVE,
+  description:
+    "A running total is added to in SQL, or read under the row lock — an absolute value computed in JavaScript from an earlier read loses or doubles a concurrent writer's change.",
+  provenance: COUNTER_WRITE_RELATIVE_PROVENANCE
+};
+
 export function counterWriteRelative(
   columnTypes: Map<string, Map<string, string>>
 ): ConformanceCheck {
   return {
-    id: COUNTER_WRITE_RELATIVE,
-    description:
-      "A running total is added to in SQL, or read under the row lock — an absolute value computed in JavaScript from an earlier read loses or doubles a concurrent writer's change.",
-    provenance: COUNTER_WRITE_RELATIVE_PROVENANCE,
+    ...ABOUT,
     scan(file, contents) {
       if (!/\.updateTable|\.update\s*\(|updateRows/.test(contents)) return [];
       const text = blankComments(contents);
@@ -229,3 +252,12 @@ export function counterWriteRelative(
     }
   };
 }
+
+export const counterWriteRelativeCheck: Check = {
+  ...ABOUT,
+  find: (repo) =>
+    eachFile(
+      repo.read(typescript),
+      counterWriteRelative(repo.read(loadDbTableColumnTypes)).scan
+    )
+};

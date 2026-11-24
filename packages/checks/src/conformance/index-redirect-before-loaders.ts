@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { routeTypescript } from "../sources/inputs";
 
 // An index route that renders nothing exists to redirect (`/x/issue/:id` →
 // `…/details`). React Router runs the loaders of a matched branch in parallel,
@@ -17,7 +18,7 @@ const REDIRECT = /\bredirect\s*\(/;
 const MIDDLEWARE =
   /^export\s+const\s+middleware\b[^;]*\bredirectBeforeLoaders\s*\(\s*loader\s*\)/m;
 
-export const indexRedirectBeforeLoaders: ConformanceCheck = {
+export const indexRedirectBeforeLoaders = fileCheck(routeTypescript, {
   id: "index-redirect-before-loaders",
   description:
     "An index route that only redirects must run the redirect before its parents' loaders",
@@ -48,4 +49,4 @@ export const indexRedirectBeforeLoaders: ConformanceCheck = {
       }
     ];
   }
-};
+});

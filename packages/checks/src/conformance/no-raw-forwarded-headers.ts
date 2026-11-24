@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { requestHandlingTypescript } from "../sources/inputs";
 
 // The client IP, protocol, host and origin come from the proxy in front of the
 // app, and each proxy we run behind writes those headers differently: the ALB
@@ -15,7 +16,7 @@ const RAW_READ =
 
 const HELPERS = "packages/utils/src/headers.ts";
 
-export const noRawForwardedHeaders: ConformanceCheck = {
+export const noRawForwardedHeaders = fileCheck(requestHandlingTypescript, {
   id: "no-raw-forwarded-headers",
   description:
     "Read the client IP / protocol / host / origin with the @carbon/utils request helpers",
@@ -41,4 +42,4 @@ export const noRawForwardedHeaders: ConformanceCheck = {
     });
     return violations;
   }
-};
+});

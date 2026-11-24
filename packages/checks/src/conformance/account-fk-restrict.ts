@@ -2,7 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  fileCheck,
+  type Violation
+} from "../check";
+import { read } from "../sources/cross-file";
+import { migrations } from "../sources/inputs";
 import { ancestorsOf, nameParts, relationName, sqlNodes } from "../sources/sql";
 
 /** The migration that made every foreign key to `account` RESTRICT. Older ones are history. */
@@ -47,6 +55,14 @@ export function parseReferencePolicy(source: string): AccountReferencePolicy {
     )
   ].map(([, ref]) => ref as string);
   return { classified, unclassified };
+}
+
+export function loadAccountReferencePolicy(
+  root: string
+): AccountReferencePolicy {
+  return parseReferencePolicy(
+    read(root, ACCOUNT_REFERENCE_POLICY_FILE).contents
+  );
 }
 
 type AccountReference = {
@@ -97,7 +113,23 @@ const provenance = {
   since: "20261013005642_account-delete-restrict.sql"
 };
 
-export const accountFkRestrict: ConformanceCheck = {
+/**
+ * Fails a foreign key to `account` that is not `ON DELETE RESTRICT`: inline, a
+ * table-level `FOREIGN KEY`, or `ALTER TABLE … ADD CONSTRAINT`. `SET NULL` let
+ * a deleted account silently empty Draft and Provisional journal lines. `NO
+ * ACTION` and no `ON DELETE` fail too, because the default is not a stated
+ * decision.
+ *
+ * Only the table `account` matches, with or without `public.`.
+ * `accountingPeriod`, `accountDefault`, a quoted `"Account"` and another
+ * schema's `account` do not. Migrations before `SINCE` are history.
+ *
+ * The baselined keys (`project.costAccountId`, `projectElement.costAccountId`,
+ * `purchaseOrderLineVersion.accountId`, all `ON DELETE SET NULL`) were reviewed
+ * and wait for a decision. Each fix is a schema change, so the user decides. A
+ * version snapshot may want `history` rather than `RESTRICT` semantics.
+ */
+export const accountFkRestrict = fileCheck(migrations, {
   id: "account-fk-restrict",
   description: "A foreign key to account must be ON DELETE RESTRICT.",
   provenance,
@@ -112,21 +144,33 @@ export const accountFkRestrict: ConformanceCheck = {
           "A foreign key to account must be ON DELETE RESTRICT: SET NULL lets a deleted account silently empty Draft and Provisional lines, and no ON DELETE leaves the choice unstated. Add ON DELETE RESTRICT, and classify the column in REFERENCE_POLICY (packages/database/src/account-import.ts)."
       }));
   }
+});
+
+const ABOUT = {
+  id: "account-fk-classified",
+  description:
+    "A column with a foreign key to account must be classified in REFERENCE_POLICY.",
+  provenance
 };
 
 /**
  * The apply-account-import live test checks the catalog; this catches a
  * missing class without a database.
+ *
+ * Fails a column with a foreign key to `account` that `REFERENCE_POLICY` does
+ * not list. `UNCLASSIFIED_ACCOUNT_REFERENCES` exempts `accountDefault`,
+ * `fixedAssetClass` and `account.parentId`; the live test imports the same
+ * list. The column is named from the enclosing `CREATE TABLE` or `ALTER TABLE`
+ * and the `FOREIGN KEY (…)` list or the column definition. A key whose table or
+ * column it cannot name, or one built by `EXECUTE format(...)`, is skipped; the
+ * live test still covers it.
  */
 export function accountFkClassified({
   classified,
   unclassified
 }: AccountReferencePolicy): ConformanceCheck {
   return {
-    id: "account-fk-classified",
-    description:
-      "A column with a foreign key to account must be classified in REFERENCE_POLICY.",
-    provenance,
+    ...ABOUT,
     scan(file, contents) {
       const violations: Violation[] = [];
       for (const { line, snippet, ref } of accountReferences(file, contents)) {
@@ -148,3 +192,12 @@ export function accountFkClassified({
     }
   };
 }
+
+export const accountFkClassifiedCheck: Check = {
+  ...ABOUT,
+  find: (repo) =>
+    eachFile(
+      repo.read(migrations),
+      accountFkClassified(repo.read(loadAccountReferencePolicy)).scan
+    )
+};

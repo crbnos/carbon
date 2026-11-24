@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { loadTestFiles } from "../sources/test-files";
 
 // A test that mocks its own module's neighbours pins the wiring between them:
 // it passes while the rule is wrong and fails when the code is reorganised.
@@ -10,7 +11,7 @@ import type { ConformanceCheck, Violation } from "../check";
 const OWN_MODULE_MOCK =
   /\bvi\.(mock|doMock)\(\s*(?:import\(\s*)?(["'`])((?:\.{1,2}|~)\/[^"'`]*)\2/g;
 
-export const testMocksOwnModule: ConformanceCheck = {
+export const testMocksOwnModule = fileCheck(loadTestFiles, {
   id: "test-mocks-own-module",
   description: "Tests do not vi.mock a first-party module by relative path",
   provenance: {
@@ -29,4 +30,4 @@ export const testMocksOwnModule: ConformanceCheck = {
         "Do not mock our own modules; extract the decision into a pure function and test it by value (.claude/rules/testing.md → Mocks)"
     }));
   }
-};
+});

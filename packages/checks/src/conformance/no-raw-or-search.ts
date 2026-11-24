@@ -2,14 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // Text interpolated into a PostgREST `.or()` filter is parsed as filter
 // syntax: a search for "a,b" ended the filter at the comma and the request
 // failed with PGRST100. `searchFilter` (`@carbon/utils`) quotes the term.
 const RAW_OR_SEARCH = /\.or\(\s*`[^`]*\.ilike\.%?\$\{/g;
 
-export const noRawOrSearch: ConformanceCheck = {
+export const noRawOrSearch = fileCheck(typescript, {
   id: "no-raw-or-search",
   description:
     "Search text goes into an .or() filter through searchFilter, which quotes it",
@@ -32,4 +33,4 @@ export const noRawOrSearch: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

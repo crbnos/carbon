@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // Modal and Drawer hide their close button when they are held open with no
 // `onOpenChange`. A handler that does nothing defeats that: the dialog still
@@ -10,7 +11,7 @@ import type { ConformanceCheck, Violation } from "../check";
 const NOOP_HANDLER =
   /onOpenChange=\{\s*(?:\(\w*\)\s*=>\s*(?:\{\s*(?:\/\*[\s\S]*?\*\/|\/\/[^\n]*)?\s*\}|undefined|null|void 0)|noop)\s*\}/g;
 
-export const noNoopOpenChange: ConformanceCheck = {
+export const noNoopOpenChange = fileCheck(typescript, {
   id: "no-noop-open-change",
   description:
     "A dialog that cannot be dismissed omits onOpenChange instead of passing a handler that does nothing",
@@ -33,4 +34,4 @@ export const noNoopOpenChange: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

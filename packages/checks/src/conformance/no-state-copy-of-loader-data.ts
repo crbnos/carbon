@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // `useState(initial)` reads `initial` once. Seeded from loader or route data,
 // the state is a copy that no reload updates: a quote's totals kept a deleted
@@ -52,7 +53,7 @@ function argument(contents: string, open: number): string {
   return "";
 }
 
-export const noStateCopyOfLoaderData: ConformanceCheck = {
+export const noStateCopyOfLoaderData = fileCheck(typescript, {
   id: "no-state-copy-of-loader-data",
   description:
     "state must not be seeded from loader or route data: it is a copy no reload updates",
@@ -86,4 +87,4 @@ export const noStateCopyOfLoaderData: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

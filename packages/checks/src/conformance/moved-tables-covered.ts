@@ -11,7 +11,8 @@ import {
   moduleOf,
   ownersOf
 } from "@carbon/database/access";
-import type { SourceFile, Violation } from "../check";
+import type { Check, SourceFile, Violation } from "../check";
+import { migrations } from "../sources/inputs";
 import { sqlNodes } from "../sources/sql";
 
 export const MOVED_TABLES_COVERED = "moved-tables-covered";
@@ -141,3 +142,10 @@ export function findMovedTableGaps(
   }
   return violations;
 }
+
+export const movedTablesCovered: Check = {
+  id: MOVED_TABLES_COVERED,
+  description:
+    "A table whose page is now in another module than one its policies checked before page permissions keeps that module's holders.",
+  find: (repo) => findMovedTableGaps(livePolicies(repo.read(migrations)))
+};

@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 import { maskCommentsAndStrings } from "./no-default-on-effects";
 
 /**
@@ -319,7 +320,47 @@ function requestEnd(text: string, from: number): number {
   return close === -1 ? m.index + m[0].length : close + 1;
 }
 
-export const noDiscardedQueryError: ConformanceCheck = {
+/**
+ * A supabase-js result is never read without its `error`. The incidents:
+ * - the consolidated ledger drill-down read every company when its
+ *   company-group read failed (cfdc4f9299);
+ * - a price-list export ended early instead of failing (b399972472);
+ * - an approval check read a failed query as "nothing pending" (c0b85077ee);
+ * - the RFQ-line `customerPartToItem` upsert failed on every call, because its
+ *   result was never bound (22c9b98508).
+ *
+ * It reads an awaited chain that calls `.from(…)`, `.rpc(…)` or
+ * `.functions.invoke(…)`, so `.storage.from(…)` counts too. A chain whose head
+ * is PascalCase (`Array.from`) is skipped. So is a chain with a Kysely
+ * `.execute…()`, `.compile()` or `.stream()`. It fails four shapes:
+ * 1. A destructure that binds `data` or `count` and not `error`. A `...rest`
+ *    counts as binding `error`.
+ * 2. `(await …).data` or `(await …).count`.
+ * 3. `const r = await …` when the enclosing block reads `r.data` or `r.count`,
+ *    never reads `r.error`, and never hands `r` on (returns, passes, spreads or
+ *    reassigns it). The receiver may check the error.
+ * 4. An awaited `.from(…).insert/update/upsert/delete(…)` used as a bare
+ *    statement.
+ *
+ * The fix: bind `error`, and return or throw on it. A best-effort write still
+ * binds its result and logs the error.
+ *
+ * Left to others: a bound `error` that is never read fails Biome's
+ * `noUnusedVariables`. What the code does with the error is beyond a text
+ * check.
+ *
+ * Known gaps: a query builder kept in a variable (`const q = client.from(…);
+ * await q`, the second half of b399972472), `Promise.all` results, and the
+ * `{ data }` result of a service function (`await getX(client)`).
+ *
+ * There is no allow comment: the baseline holds each deliberate exception.
+ * Two hits with the same snippet in one file share one baseline key.
+ *
+ * It reads browser code too. About a quarter of the hits were there, and the
+ * sampled ones were real: a notes autosave that dropped a failed update, and a
+ * picker that showed an empty list on a failed read.
+ */
+export const noDiscardedQueryError = fileCheck(typescript, {
   id: "no-discarded-query-error",
   description:
     "A supabase-js result is never read without its error: no `{ data }` destructure without `error`, no `(await …).data`, no `r.data` from a result whose `r.error` is never read, and no awaited write whose result is dropped.",
@@ -399,4 +440,4 @@ export const noDiscardedQueryError: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

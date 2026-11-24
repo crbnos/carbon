@@ -3,7 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import ts from "typescript5";
-import type { ConformanceCheck, SourceFile, Violation } from "../check";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  type SourceFile,
+  type Violation
+} from "../check";
+import { routeTypescript } from "../sources/inputs";
+import { loadModuleServerFiles } from "../sources/modules";
 
 const ROUTES = /^apps\/erp\/app\/routes\//;
 const SERVER_FILE =
@@ -47,23 +55,32 @@ function loaderBody(source: ts.SourceFile): ts.Node | undefined {
 
 export const LOADER_READS_THROUGH_API = "loader-reads-through-api";
 
+const ABOUT = {
+  id: LOADER_READS_THROUGH_API,
+  description:
+    "An ERP route loader calls a wrapped building block through its service function, not directly",
+  provenance: {
+    deprecates:
+      "a loader that calls a `.service` building block a service function wraps",
+    replacedBy: "`api.<module>.<fn>(input)` from `authorize(request, gate)`",
+    since: "2026-10-18"
+  }
+};
+
 /**
  * An ERP route loader reads through the service functions
  * (`api.<module>.<fn>(input)`, `const { api } = await authorize(request, gate)`), never by calling a
  * building block that a service function wraps: the loader and an API or
  * MCP caller then pass the same permission gate.
+ *
+ * Only the `loader` is read; actions are not scanned. The baseline holds the
+ * reads that stay direct on purpose: service-role reads, reads for another
+ * company of the group, reads whose page derives its types from the building
+ * block, and the write-on-GET `upsertPickMethod` calls.
  */
 export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
   return {
-    id: LOADER_READS_THROUGH_API,
-    description:
-      "An ERP route loader calls a wrapped building block through its service function, not directly",
-    provenance: {
-      deprecates:
-        "a loader that calls a `.service` building block a service function wraps",
-      replacedBy: "`api.<module>.<fn>(input)` from `authorize(request, gate)`",
-      since: "2026-10-18"
-    },
+    ...ABOUT,
     scan(file: string, contents: string): Violation[] {
       if (!ROUTES.test(file) || !contents.includes(".service")) return [];
       const source = ts.createSourceFile(
@@ -132,3 +149,16 @@ export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
     }
   };
 }
+
+export const loaderReadsThroughApiCheck: Check = {
+  ...ABOUT,
+  find: (repo) =>
+    eachFile(
+      repo.read(routeTypescript),
+      loaderReadsThroughApi(
+        wrappedBuildingBlocks(
+          repo.read(loadModuleServerFiles).map((f) => f.server)
+        )
+      ).scan
+    )
+};

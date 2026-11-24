@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 /**
  * A `*.service.ts` file must never CONSTRUCT a database connection, pool, or
@@ -40,7 +41,7 @@ const BANNED = [
 
 const COMMENT_LINE = /^\s*(?:\/\/|\/?\*)/;
 
-export const noDbClientInService: ConformanceCheck = {
+export const noDbClientInService = fileCheck(typescript, {
   id: "no-db-client-in-service",
   description:
     "A *.service.ts never constructs or fetches a DB pool/Kysely client — its caller passes one in as `db` (ctx.asSystem.pg in a service function, getDatabaseClient() in a route).",
@@ -65,4 +66,4 @@ export const noDbClientInService: ConformanceCheck = {
     });
     return violations;
   }
-};
+});

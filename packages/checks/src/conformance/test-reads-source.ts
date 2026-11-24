@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { loadTestFiles } from "../sources/test-files";
 
 // A test that regexes source or migration text is a change detector: an
 // applied migration never changes, a later one can redefine the object, and a
@@ -100,7 +101,7 @@ function context(text: string, decls: Map<string, string>): string {
   return out;
 }
 
-export const testReadsSource: ConformanceCheck = {
+export const testReadsSource = fileCheck(loadTestFiles, {
   id: "test-reads-source",
   description: "Tests do not read source or migration text",
   provenance: {
@@ -183,4 +184,4 @@ export const testReadsSource: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

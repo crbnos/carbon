@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
 import { blankComments } from "../sources/comments";
+import { typescript } from "../sources/inputs";
 import { maskCommentsAndStrings } from "./no-default-on-effects";
 
 // On a later operation of a serial part, a write names the unit the operator
@@ -11,6 +12,12 @@ import { maskCommentsAndStrings } from "./no-default-on-effects";
 // (apps/mes/app/services/work-unit.server.ts) owns that rule, so every
 // top-level function that writes a unit calls it, or is listed below with the
 // reason it does not need to. Only the resolver picks a unit on the server.
+//
+// A nested callback counts as the top-level function it sits in. The test
+// holds the allow-lists to the repo (`unitWriters`, `unitPickers`): every
+// entry must still name a function that writes or picks, so a stale entry
+// cannot pre-approve a later one. The check proves that the function calls
+// the resolver, not that it honours the resolver's refusal.
 const SCOPE = /^apps\/mes\/app\/(?:routes\/x\+|services)\//;
 const RESOLVER = "apps/mes/app/services/work-unit.server.ts";
 
@@ -216,7 +223,7 @@ function analyze(file: string, contents: string): Analysis {
   return { regions, writes, picks, resolving };
 }
 
-export const mesUnitWriteResolvesUnit: ConformanceCheck = {
+export const mesUnitWriteResolvesUnit = fileCheck(typescript, {
   id: "mes-unit-write-resolves-unit",
   description:
     "An MES function that writes a serial unit calls resolveWorkUnit, and only the resolver picks a unit on the server",
@@ -256,7 +263,7 @@ export const mesUnitWriteResolvesUnit: ConformanceCheck = {
     }
     return violations;
   }
-};
+});
 
 /** The functions in scope (`file#function`) that write a unit: what an allow-list entry must still name. */
 export function unitWriters(files: { file: string; contents: string }[]) {

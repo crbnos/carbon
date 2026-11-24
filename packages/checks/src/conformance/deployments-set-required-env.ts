@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { SourceFile, Violation } from "../check";
+import { validateEnv } from "@carbon/env/validate";
+import type { Check, SourceFile, Violation } from "../check";
+import { read } from "../sources/cross-file";
 
 export const DEPLOYMENTS_SET_REQUIRED_ENV = "deployments-set-required-env";
 
@@ -19,6 +21,15 @@ export type DeploymentEnvSources = Record<
   keyof typeof DEPLOYMENT_ENV_FILES,
   SourceFile
 >;
+
+export function loadDeploymentEnvSources(root: string): DeploymentEnvSources {
+  return Object.fromEntries(
+    Object.entries(DEPLOYMENT_ENV_FILES).map(([key, file]) => [
+      key,
+      read(root, file)
+    ])
+  ) as DeploymentEnvSources;
+}
 
 type Deployment = { name: string; file: string; keys: string[] };
 
@@ -80,3 +91,15 @@ export function findDeploymentEnvGaps(
     )
   );
 }
+
+export const deploymentsSetRequiredEnv: Check = {
+  id: DEPLOYMENTS_SET_REQUIRED_ENV,
+  description:
+    "A variable that stops startup when missing must already be set by every deployment, or adding it takes production down.",
+  find: (repo) =>
+    findDeploymentEnvGaps(repo.read(loadDeploymentEnvSources), (env) =>
+      validateEnv(env)
+        .problems.filter((p) => p.level === "error")
+        .map((p) => p.name)
+    )
+};

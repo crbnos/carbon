@@ -2,11 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { migrations } from "../sources/inputs";
 import { nameParts, sqlNodes } from "../sources/sql";
 import { GENERATED_AUTHZ_MIGRATION } from "./no-authz-ddl-in-migrations";
 
-export const noLegacyRls: ConformanceCheck = {
+export const noLegacyRls = fileCheck(migrations, {
   id: "no-legacy-rls",
   description:
     "Use get_companies_with_employee_permission(...), not has_role()/has_company_permission().",
@@ -34,4 +35,4 @@ export const noLegacyRls: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // A form that asks for everything on one screen overloads the user: the
 // project contract's Add Line had 17 fields in one three-column grid, with
@@ -24,7 +25,7 @@ const GROUPED =
 
 export const FORM_FIELD_BUDGET = 14;
 
-export const formFieldBudget: ConformanceCheck = {
+export const formFieldBudget = fileCheck(typescript, {
   id: "form-field-budget",
   description: `a form with more than ${FORM_FIELD_BUDGET} fields groups them (FormGroup / FormFold) or steps them (FormStep*)`,
   provenance: {
@@ -55,4 +56,4 @@ export const formFieldBudget: ConformanceCheck = {
       }
     ];
   }
-};
+});

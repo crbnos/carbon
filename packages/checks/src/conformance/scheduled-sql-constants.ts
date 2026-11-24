@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { SourceFile, Violation } from "../check";
+import type { Check, SourceFile, Violation } from "../check";
+import { readIfPresent } from "../sources/cross-file";
+import { migrations } from "../sources/inputs";
 import { nameParts, sqlNodes } from "../sources/sql";
 
 export const SCHEDULED_SQL_CONSTANTS = "scheduled-sql-constants";
@@ -37,6 +39,13 @@ export const SCHEDULED_WORK_CHECKS = [
     ]
   }
 ];
+
+export function loadScheduledConstantSources(root: string): SourceFile[] {
+  return readIfPresent(
+    root,
+    SCHEDULED_WORK_CHECKS.map(({ constants }) => constants)
+  );
+}
 
 /** `export const NAME = 5` and `export const NAME = ["a", "b"] as const`. */
 function constantsOf(contents: string): Map<string, string> {
@@ -110,3 +119,14 @@ export function findScheduledSqlDrift(
   }
   return out;
 }
+
+export const scheduledSqlConstants: Check = {
+  id: SCHEDULED_SQL_CONSTANTS,
+  description:
+    "pg_cron wakes a scheduled function only when its `util.*_has_work()` says a run would do something, and that SQL repeats the function's constants.",
+  find: (repo) =>
+    findScheduledSqlDrift(
+      repo.read(migrations),
+      repo.read(loadScheduledConstantSources)
+    )
+};

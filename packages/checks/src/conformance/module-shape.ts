@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { StructureCheck, Violation } from "../check";
+import type { Check, StructureCheck, Violation } from "../check";
+import { erpModules } from "../sources/inputs";
 
 /** Literal entries every module must contain. Edit this to grow the rule. */
 const REQUIRED_ENTRIES = ["types.ts", "ui"];
@@ -79,4 +80,11 @@ export const moduleShape: StructureCheck = {
 
     return violations;
   }
+};
+
+export const moduleShapeCheck: Check = {
+  id: moduleShape.id,
+  description: moduleShape.description,
+  provenance: moduleShape.provenance,
+  find: (repo) => repo.read(erpModules).flatMap((m) => moduleShape.inspect(m))
 };

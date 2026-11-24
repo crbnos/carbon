@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Node } from "libpg-query";
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { migrations } from "../sources/inputs";
 import {
   ancestorsOf,
   nameParts,
@@ -20,8 +21,33 @@ import { GENERATED_AUTHZ_MIGRATION } from "./no-authz-ddl-in-migrations";
 // The deploy runner re-runs a failed migration over what it already committed
 // (a migration may `COMMIT` part way), so a statement that errors on an object
 // already there, or already gone, fails every later deploy (`cb75027fc2`).
+//
+// The runner is `ci/src/migrations.ts` (`supabase db push --include-all`). A
+// migration may commit part way, for example after `ALTER TYPE … ADD VALUE`.
+// An unguarded statement then fails every deploy until someone edits the
+// applied file (`cb75027fc2`, `25243520b4`, `11a7a60999`, `f47e4a25bf`).
+//
+// The check reads the parsed statements that run when the migration is
+// applied (`migrationSteps`). A `DROP` without `IF EXISTS` is reported once,
+// by the DROP rule, never again at the `CREATE` after it. Only an earlier
+// `DROP` with the same name makes a `CREATE` safe. A generated authz
+// migration is skipped: it drops every policy of a table first.
+//
+// Out of scope:
+//  - A guard on the wrong key. `751aea1a2b`'s `INSERT … WHERE NOT EXISTS`
+//    tested `accountType` while the unique key is the name, so it failed on
+//    its first run, not on a re-run. Requiring `ON CONFLICT` on every
+//    `INSERT` would catch it, but adds many false positives.
+//  - Assumptions about the data: a unique index over duplicate rows
+//    (`5d02351492`), or chart groups that were renamed (`11a7a60999`).
 
-/** Migrations up to here are applied history and cannot be edited. */
+/**
+ * Migrations up to here are applied history and cannot be edited. This was
+ * the newest migration when the rule was written. After the 2026-06
+ * idempotency pass (`c64c3be9a5`), many older migrations still broke the
+ * rule, and a sample of them had no false positives. Applied history cannot
+ * change, so they are not checked and have no baseline entries.
+ */
 const LAST_UNCHECKED = "20261119125737";
 
 /** `"public".x` and `x` are one object. */
@@ -554,7 +580,7 @@ export function scanReplaySafety(file: string, contents: string): Violation[] {
   return violations.sort((a, b) => a.line - b.line);
 }
 
-export const migrationReplaySafe: ConformanceCheck = {
+export const migrationReplaySafe = fileCheck(migrations, {
   id: "migration-replay-safe",
   description:
     "Every migration statement must succeed when the migration is re-run over a failed deploy's partial state.",
@@ -570,4 +596,4 @@ export const migrationReplaySafe: ConformanceCheck = {
     if (!timestamp || timestamp <= LAST_UNCHECKED) return [];
     return scanReplaySafety(file, contents);
   }
-};
+});

@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // A submit button that stays live while its own submission is in flight posts
 // again on every extra click, and each POST runs to completion on the server —
@@ -21,6 +22,15 @@ import type { ConformanceCheck, Violation } from "../check";
 //
 // The absent spinner matters as much as the absent disable: with no feedback,
 // clicking again is the reasonable thing for a user to do.
+//
+// The baselined buttons were each reviewed. A second click is harmless on all
+// of them:
+//   - logout, company switch, theme and console toggle: idempotent.
+//   - delete and rule unassign: a second delete does nothing.
+//   - the two chat composers: a `flushSync` clear plus an empty-message return
+//     guard them.
+//   - `ConfiguratorForm`: its submit is an `onSubmit` callback, so the
+//     in-flight state lives at the caller.
 
 // An in-flight SIGNAL, not merely the presence of `isDisabled`. The quote bug
 // was `isDisabled={loading}`, where `loading` was the modal's data-fetch flag —
@@ -154,7 +164,7 @@ function inValidatedForm(contents: string, index: number): boolean {
 const lineOf = (contents: string, index: number) =>
   contents.slice(0, index).split("\n").length;
 
-export const noUnguardedSubmit: ConformanceCheck = {
+export const noUnguardedSubmit = fileCheck(typescript, {
   id: "no-unguarded-submit",
   description:
     'A submit button must disable while its submission is in flight — use <Submit> inside a ValidatedForm, or isDisabled={fetcher.state !== "idle"} with isLoading',
@@ -196,4 +206,4 @@ export const noUnguardedSubmit: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

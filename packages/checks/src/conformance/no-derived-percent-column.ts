@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Node } from "libpg-query";
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { migrations } from "../sources/inputs";
 import { nameParts, nodesIn, sqlNodes } from "../sources/sql";
 
 // A generated `*Percent`/`*Rate` column whose expression DIVIDES is a lossy
@@ -21,7 +22,7 @@ function divides(expression: Node | undefined): boolean {
   return false;
 }
 
-export const noDerivedPercentColumn: ConformanceCheck = {
+export const noDerivedPercentColumn = fileCheck(migrations, {
   id: "no-derived-percent-column",
   description:
     "Percent/rate columns must be plain stored values, never GENERATED expressions that divide",
@@ -56,4 +57,4 @@ export const noDerivedPercentColumn: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

@@ -3,7 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import ts from "typescript5";
-import type { SourceFile, Violation } from "../check";
+import type { Check, SourceFile, Violation } from "../check";
+import { loadDbTableColumns } from "../sources/db-columns";
+import { loadModuleServerFiles } from "../sources/modules";
 
 export const STAMP_MATCHES_COLUMNS = "stamp-matches-columns";
 
@@ -21,8 +23,11 @@ export const STAMP_MATCHES_COLUMNS = "stamp-matches-columns";
  * Follows each `payload(...)` chain in `<module>.server.ts` into the `service.<fn>(...)`
  * it is passed to, finds that function in `<module>.service.ts`, and reads
  * the writes whose row is the parameter itself (`insert([p])`, `...p`,
- * `sanitize(p)`). A field of a nested object (`...p.contact`) is never added
- * by `payload`, so it is not followed.
+ * `sanitize(p)`, or one local initialized from it). A field of a nested object
+ * (`...p.contact`) is never added by `payload`, so it is not followed.
+ *
+ * The added fields follow `payload`'s own rules: a list gets only `createdBy`,
+ * and `forUpdate` drops `createdBy`.
  */
 export function findStampColumnMismatches(
   modules: { server: SourceFile; service: SourceFile }[],
@@ -264,3 +269,14 @@ function fromTable(node: ts.Expression): string | undefined {
     }
   }
 }
+
+export const stampMatchesColumns: Check = {
+  id: STAMP_MATCHES_COLUMNS,
+  description:
+    "A service function's `payload(ctx, value)…forCreate()` (or `forUpdate`, `forUpsert`, `for(op)`, `build`) adds identity fields to the payload it hands a building block.",
+  find: (repo) =>
+    findStampColumnMismatches(
+      repo.read(loadModuleServerFiles),
+      repo.read(loadDbTableColumns)
+    )
+};

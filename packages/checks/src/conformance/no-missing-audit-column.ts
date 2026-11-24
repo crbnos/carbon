@@ -2,7 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  type Violation
+} from "../check";
+import { loadDbTableColumns } from "../sources/db-columns";
+import { typescript } from "../sources/inputs";
 
 /**
  * A write must not name `createdBy` / `updatedBy` on a table that has no such
@@ -240,19 +247,29 @@ function rowKeys(
   return keys;
 }
 
+const ABOUT = {
+  id: "no-missing-audit-column",
+  description:
+    "A write never names createdBy/updatedBy on a table that has no such column — PostgREST rejects the statement with PGRST204 and TypeScript does not catch it.",
+  provenance: {
+    deprecates:
+      "stamping createdBy/updatedBy on a table without audit columns (the customerPartToItem upsert in sales-rfq.$rfqId.map-lines.ts, which failed every call)",
+    replacedBy: "writing only the columns the table has",
+    since: "PGRST204 on items_upsertItemCustomerPart"
+  }
+};
+
+/**
+ * The check is closed over each table's columns, which `loadDbTableColumns`
+ * reads from the generated `Row:` blocks. The I/O stays in `sources/`, so
+ * `scan` stays pure and a test passes its own map. The one site it found was
+ * fixed when the check landed, so any finding is new.
+ */
 export function noMissingAuditColumn(
   columns: Map<string, Set<string>>
 ): ConformanceCheck {
   return {
-    id: "no-missing-audit-column",
-    description:
-      "A write never names createdBy/updatedBy on a table that has no such column — PostgREST rejects the statement with PGRST204 and TypeScript does not catch it.",
-    provenance: {
-      deprecates:
-        "stamping createdBy/updatedBy on a table without audit columns (the customerPartToItem upsert in sales-rfq.$rfqId.map-lines.ts, which failed every call)",
-      replacedBy: "writing only the columns the table has",
-      since: "PGRST204 on items_upsertItemCustomerPart"
-    },
+    ...ABOUT,
     scan(file, contents) {
       const violations: Violation[] = [];
       TARGET_RE.lastIndex = 0;
@@ -282,3 +299,12 @@ export function noMissingAuditColumn(
     }
   };
 }
+
+export const noMissingAuditColumnCheck: Check = {
+  ...ABOUT,
+  find: (repo) =>
+    eachFile(
+      repo.read(typescript),
+      noMissingAuditColumn(repo.read(loadDbTableColumns)).scan
+    )
+};

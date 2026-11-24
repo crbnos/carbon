@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Node } from "libpg-query";
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { migrations } from "../sources/inputs";
 import { nameParts, sqlFragments, typeNamesIn } from "../sources/sql";
 
 /** The integer a type modifier holds: the `10` of `NUMERIC(10,2)`. */
@@ -11,7 +12,7 @@ function integerOf(modifier: Node): number | undefined {
   return "A_Const" in modifier ? modifier.A_Const.ival?.ival : undefined;
 }
 
-export const noNumericPrecision: ConformanceCheck = {
+export const noNumericPrecision = fileCheck(migrations, {
   id: "no-numeric-precision",
   description: "Use bare NUMERIC, not NUMERIC(x,y).",
   provenance: {
@@ -40,4 +41,4 @@ export const noNumericPrecision: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

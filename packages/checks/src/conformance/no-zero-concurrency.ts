@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { loadServerFiles } from "../sources/server-files";
 
 /**
  * Matches `limit: 0` inside an Inngest `concurrency` block.
@@ -18,7 +19,7 @@ import type { ConformanceCheck, Violation } from "../check";
  */
 const ZERO_CONCURRENCY = /concurrency\s*:\s*\{[^{}]*?\blimit\s*:\s*0\b/g;
 
-export const noZeroConcurrency: ConformanceCheck = {
+export const noZeroConcurrency = fileCheck(loadServerFiles, {
   id: "no-zero-concurrency",
   description: "Inngest concurrency.limit must be >= 1.",
   provenance: {
@@ -38,4 +39,4 @@ export const noZeroConcurrency: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // zod v4 changed `.default()` semantics: on `undefined` input the default value
 // is returned AS-IS — it is no longer parsed through the schema. On a chain that
@@ -115,7 +116,7 @@ function receiverBefore(text: string, dotIndex: number): string {
   return text.slice(i + 1, dotIndex);
 }
 
-export const noDefaultOnEffects: ConformanceCheck = {
+export const noDefaultOnEffects = fileCheck(typescript, {
   id: "no-default-on-effects",
   description:
     "`.default()` on a schema with transforms/refinements/pipes is not re-parsed in zod v4 — use `.prefault()` when the default must run through the schema",
@@ -147,4 +148,4 @@ export const noDefaultOnEffects: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

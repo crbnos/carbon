@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // Realtime runs on private broadcast topics (@carbon/query). The
 // `supabase_realtime` publication is empty, so a `postgres_changes`
@@ -11,9 +12,10 @@ import type { ConformanceCheck, Violation } from "../check";
 // finished on the shop floor. A table name that has no broadcast handler does
 // not compile (`RealtimeTable` is derived from the attachments manifest), so
 // this string is the only way left to write a subscription that stays silent.
+// See .claude/rules/realtime-system.md.
 const POSTGRES_CHANGES = /["'`]postgres_changes["'`]/g;
 
-export const noPostgresChanges: ConformanceCheck = {
+export const noPostgresChanges = fileCheck(typescript, {
   id: "no-postgres-changes",
   description:
     "Realtime subscriptions use broadcast topics, never postgres_changes",
@@ -38,4 +40,4 @@ export const noPostgresChanges: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

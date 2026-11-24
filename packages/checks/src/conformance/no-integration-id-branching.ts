@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // Integration ids are DATA, not control flow. Which integrations are accounting
 // providers was answered five different ways before `providerRole` existed —
@@ -55,7 +56,7 @@ const EXCLUDED = [
   /^packages\/ee\/src\/(xero|quickbooks|rillet|ramp|slack|jira|linear|onshape|paperless-parts|email|sage|stripe-connect|sense)\//
 ];
 
-export const noIntegrationIdBranching: ConformanceCheck = {
+export const noIntegrationIdBranching = fileCheck(typescript, {
   id: "no-integration-id-branching",
   description:
     "Branch on an integration's declared providerRole or the resolved topology, never on its id",
@@ -86,4 +87,4 @@ export const noIntegrationIdBranching: ConformanceCheck = {
     });
     return violations;
   }
-};
+});

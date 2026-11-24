@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { migrations } from "../sources/inputs";
 import {
   relationName,
   type SqlStatement,
@@ -37,7 +38,7 @@ function writesOnDelete(statement: SqlStatement, location: number): boolean {
   return false;
 }
 
-export const noForeignKeyWithoutOnDelete: ConformanceCheck = {
+export const noForeignKeyWithoutOnDelete = fileCheck(migrations, {
   id: "no-foreign-key-without-on-delete",
   description:
     "A foreign key must state ON DELETE. The default (NO ACTION) is a decision nobody made.",
@@ -67,4 +68,4 @@ export const noForeignKeyWithoutOnDelete: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

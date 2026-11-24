@@ -2,7 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, SourceFile, Violation } from "../check";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  type SourceFile,
+  type Violation
+} from "../check";
+import { loadTestFiles } from "../sources/test-files";
 import { maskCommentsAndStrings } from "./no-default-on-effects";
 
 // vitest reports a case whose callback returns before asserting as PASSED:
@@ -11,6 +20,16 @@ const MESSAGE =
   "A test that returns early passes without running: use `it.skipIf(!x)(…)` / `databaseTest` so it reports skipped, or assert the value exists (.claude/rules/testing.md → Database tests)";
 
 export const SHARED_TEST_FIXTURES_DIR = "apps/erp/test/database/fixtures";
+
+export function loadSharedTestFixtures(root: string): SourceFile[] {
+  return readdirSync(join(root, SHARED_TEST_FIXTURES_DIR))
+    .filter((name) => /\.tsx?$/.test(name))
+    .sort()
+    .map((name) => {
+      const file = `${SHARED_TEST_FIXTURES_DIR}/${name}`;
+      return { file, contents: readFileSync(join(root, file), "utf8") };
+    });
+}
 
 // Modifiers chained onto `it`/`test` that still declare a case. The ones in
 // ARG_MODIFIERS take their own argument list before the case's.
@@ -312,20 +331,47 @@ export function sharedTestWrappers(fixtures: SourceFile[]): string[] {
   return found;
 }
 
+const ABOUT = {
+  id: "no-silent-test-pass",
+  description:
+    "A test case does not return early when what it needs is missing; it skips",
+  provenance: {
+    deprecates:
+      "`if (!client) return;` at the top of a test callback, which reports the case passed without running it",
+    replacedBy:
+      "`it.skipIf(!client)(…)`, `databaseTest` or `postgrestTest` (.claude/rules/testing.md → Database tests)",
+    since: "2026-11-23"
+  }
+};
+
+/**
+ * Fails a bare `return` guarded by a test that a value is missing: `!x`,
+ * `x == null`, `x === undefined`, `x.length === 0`, alone or in an `||`/`&&`
+ * chain. Both `if (…) return;` and `if (…) { return; }` count. The `if` must sit
+ * at the top level of a test case's callback, or in a `try`/`catch`/`finally`
+ * block there.
+ *
+ * The incident: `cancel-job.test.ts` wrapped its cases in `cancelTest`, which
+ * ran `databaseTest(name, async () => { if (!caller) return; … })`. With no
+ * local stack, all five cases passed without running.
+ *
+ * A test case is one of these:
+ * - `it(` or `test(` with any modifier chain (`.only`, `.concurrent`,
+ *   `.each(…)(`, `.skipIf(…)(`).
+ * - A `(name, fn)` wrapper that `apps/erp/test/database/fixtures/` exports
+ *   (`databaseTest`, `postgrestTest`). `sharedTestWrappers` finds them, so a new
+ *   wrapper needs no list entry.
+ * - A `(name, fn)` wrapper declared in the same file whose body declares a
+ *   case. The search repeats until nothing new is found, so a wrapper of a
+ *   wrapper counts.
+ *
+ * Hooks, `describe` and functions nested inside the callback are not read.
+ */
 export function noSilentTestPass(
   sharedWrappers: readonly string[]
 ): ConformanceCheck {
   return {
-    id: "no-silent-test-pass",
-    description:
-      "A test case does not return early when what it needs is missing; it skips",
-    provenance: {
-      deprecates:
-        "`if (!client) return;` at the top of a test callback, which reports the case passed without running it",
-      replacedBy:
-        "`it.skipIf(!client)(…)`, `databaseTest` or `postgrestTest` (.claude/rules/testing.md → Database tests)",
-      since: "2026-11-23"
-    },
+    ...ABOUT,
     scan(file: string, contents: string): Violation[] {
       const masked = maskCommentsAndStrings(contents);
       const wrappers = [
@@ -372,3 +418,13 @@ export function noSilentTestPass(
     }
   };
 }
+
+export const noSilentTestPassCheck: Check = {
+  ...ABOUT,
+  find: (repo) =>
+    eachFile(
+      repo.read(loadTestFiles),
+      noSilentTestPass(sharedTestWrappers(repo.read(loadSharedTestFixtures)))
+        .scan
+    )
+};

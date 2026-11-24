@@ -3,7 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Node } from "libpg-query";
-import type { SourceFile, Violation } from "../check";
+import type { Check, SourceFile, Violation } from "../check";
+import { loadIntegrationConfigs } from "../sources/cross-file";
+import { migrations } from "../sources/inputs";
 import { nameParts, nodesIn, relationName, sqlNodes } from "../sources/sql";
 
 export const PROVIDER_ROLE_BACKFILLED = "provider-role-backfilled";
@@ -112,3 +114,14 @@ export function findProviderRoleDrift(
   }
   return out;
 }
+
+export const providerRoleBackfilled: Check = {
+  id: PROVIDER_ROLE_BACKFILLED,
+  description:
+    "An integration's providerRole in its config matches the role the migrations set on its row.",
+  find: (repo) =>
+    findProviderRoleDrift(
+      repo.read(loadIntegrationConfigs),
+      repo.read(migrations)
+    )
+};

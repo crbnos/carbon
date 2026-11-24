@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // React Router's `revalidate()` during an action drops the fetcher's redirect,
 // and during the navigation that follows a save it restarts that navigation
@@ -13,7 +14,7 @@ const ROUTER_IMPORT =
 // The wrapper itself: the one place that takes React Router's.
 const DEFINITION = "packages/react/src/hooks/useRevalidator.ts";
 
-export const noRawRevalidator: ConformanceCheck = {
+export const noRawRevalidator = fileCheck(typescript, {
   id: "no-raw-revalidator",
   description:
     "useRevalidator must come from @carbon/query, which holds a revalidation while a save is in flight",
@@ -38,4 +39,4 @@ export const noRawRevalidator: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

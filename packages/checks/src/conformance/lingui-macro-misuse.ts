@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { requestHandlingTypescript } from "../sources/inputs";
 
 // No `runtimeConfigModule` is configured, so `t` from @lingui/core/macro
 // compiles to a call on the global i18n instance, which is never activated:
@@ -14,7 +15,7 @@ const CORE_T_IMPORT =
 // descriptor built elsewhere, `i18n._(descriptor)`, is fine and not matched.
 const UNWRAPPED_MSG = /[._]\(\s*msg`|\bt\(\s*msg\(/g;
 
-export const linguiMacroMisuse: ConformanceCheck = {
+export const linguiMacroMisuse = fileCheck(requestHandlingTypescript, {
   id: "lingui-macro-misuse",
   description:
     "Translate with useLingui().t / <Trans>; never the global t, never i18n._(msg`...`)",
@@ -42,4 +43,4 @@ export const linguiMacroMisuse: ConformanceCheck = {
       }))
     ];
   }
-};
+});

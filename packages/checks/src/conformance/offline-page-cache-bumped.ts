@@ -3,7 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { createHash } from "node:crypto";
-import type { SourceFile, Violation } from "../check";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import type { Check, SourceFile, Violation } from "../check";
 
 export const OFFLINE_PAGE_CACHE_BUMPED = "offline-page-cache-bumped";
 
@@ -41,6 +43,23 @@ export type OfflinePageSources = Record<
   { page: SourceFile; worker: SourceFile }
 >;
 
+export function loadOfflinePageSources(root: string): OfflinePageSources {
+  const load = (file: string): SourceFile => ({
+    file,
+    contents: readFileSync(join(root, file), "utf-8")
+  });
+  return {
+    erp: {
+      page: load(OFFLINE_APPS.erp.page),
+      worker: load(OFFLINE_APPS.erp.worker)
+    },
+    mes: {
+      page: load(OFFLINE_APPS.mes.page),
+      worker: load(OFFLINE_APPS.mes.worker)
+    }
+  };
+}
+
 const APPS = Object.keys(OFFLINE_APPS) as OfflineApp[];
 
 function nextCacheName(name: string): string {
@@ -53,6 +72,20 @@ function lineOf(contents: string, text: string): number {
   return index === -1 ? 0 : contents.slice(0, index).split("\n").length;
 }
 
+/**
+ * Fails when either app's `offline.html` does not hash to
+ * `OFFLINE_PAGE.sha256`, or when a `service-worker.js` does not declare the
+ * cache name pinned with it. A worker saves the page only when it installs.
+ * It installs only when its own file changes. So an edited page with no renamed
+ * cache never reaches a browser that already has the worker.
+ *
+ * Both apps share one pinned hash, so ERP and MES keep serving the same page.
+ * The message names the next cache names and the new sha256: update
+ * `OFFLINE_PAGE` in the same change. See `.claude/rules/service-workers.md`.
+ *
+ * Do not baseline a finding. The snippet carries the page's hash, so a
+ * baseline entry could never match a later edit.
+ */
 export function findStaleOfflinePageCaches(
   sources: OfflinePageSources,
   pinned: typeof OFFLINE_PAGE = OFFLINE_PAGE
@@ -92,3 +125,10 @@ export function findStaleOfflinePageCaches(
 
   return out;
 }
+
+export const offlinePageCacheBumped: Check = {
+  id: OFFLINE_PAGE_CACHE_BUMPED,
+  description:
+    "A worker re-caches offline.html only when it reinstalls, which takes a change to service-worker.js: a new page needs new cache names.",
+  find: (repo) => findStaleOfflinePageCaches(repo.read(loadOfflinePageSources))
+};

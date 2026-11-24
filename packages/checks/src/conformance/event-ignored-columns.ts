@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { SourceFile, Violation } from "../check";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+import type { Check, SourceFile, Violation } from "../check";
+import { read } from "../sources/cross-file";
 import { nodesIn, sqlFragments } from "../sources/sql";
 
 export const EVENT_IGNORED_COLUMNS = "event-ignored-columns";
@@ -10,6 +13,16 @@ export const EVENT_IGNORED_COLUMNS = "event-ignored-columns";
 export const EVENT_FUNCTIONS_DIR =
   "packages/database/src/event-system/functions";
 export const AUDIT_CONFIG_FILE = "packages/database/src/audit.config.ts";
+
+export function loadEventFunctionSources(root: string) {
+  return {
+    functions: readdirSync(join(root, EVENT_FUNCTIONS_DIR))
+      .filter((file) => file.endsWith(".sql"))
+      .sort()
+      .map((file) => read(root, `${EVENT_FUNCTIONS_DIR}/${file}`)),
+    auditConfig: read(root, AUDIT_CONFIG_FILE)
+  };
+}
 
 /**
  * The event triggers drop an UPDATE that changes only bookkeeping columns
@@ -60,3 +73,13 @@ export function findIgnoredColumnDrift(
   }
   return out;
 }
+
+export const eventIgnoredColumns: Check = {
+  id: EVENT_IGNORED_COLUMNS,
+  description:
+    "The event triggers drop an UPDATE that changes only bookkeeping columns before it is queued, broadcast or logged, because the audit diff would discard it anyway (`auditConfig.skipFields`).",
+  find: (repo) => {
+    const { functions, auditConfig } = repo.read(loadEventFunctionSources);
+    return findIgnoredColumnDrift(functions, auditConfig);
+  }
+};

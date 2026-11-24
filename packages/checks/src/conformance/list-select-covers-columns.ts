@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { SourceFile, Violation } from "../check";
+import type { Check, SourceFile, Violation } from "../check";
+import { readIfPresent } from "../sources/cross-file";
+import { loadModules, modulesDir } from "../sources/modules";
 
 export const LIST_SELECT_COVERS_COLUMNS = "list-select-covers-columns";
 
@@ -42,6 +44,19 @@ export const LIST_TABLES: Record<string, string> = {
 // Lists checked for their cursor columns only: their tables read embedded
 // records (`location.name`), not flat accessors.
 export const SORT_ONLY_LISTS = new Set(["FIXED_ASSETS_LIST_COLUMNS"]);
+
+/** Every module's `<m>.service.ts`, and the list tables `LIST_TABLES` names. */
+export function loadListSources(root: string) {
+  return {
+    services: readIfPresent(
+      root,
+      loadModules(modulesDir(root)).map(
+        ({ name }) => `apps/erp/app/modules/${name}/${name}.service.ts`
+      )
+    ),
+    tables: readIfPresent(root, Object.values(LIST_TABLES))
+  };
+}
 
 const LIST_CONSTANT = /const ([A-Z_]+_LIST_COLUMNS) =\s*"([^"]*)"/g;
 
@@ -153,3 +168,13 @@ export function findUnselectedListColumns(
   }
   return out;
 }
+
+export const listSelectCoversColumns: Check = {
+  id: LIST_SELECT_COVERS_COLUMNS,
+  description:
+    "Every list table's accessorKeys, and the columns its cursor reads, are in the columns its endpoint selects.",
+  find: (repo) => {
+    const { services, tables } = repo.read(loadListSources);
+    return findUnselectedListColumns(services, tables);
+  }
+};

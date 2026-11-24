@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
 import { blankComments } from "../sources/comments";
+import { typescript } from "../sources/inputs";
 
 /**
  * Every Kysely `updateTable` / `deleteFrom` must carry a `companyId` predicate.
@@ -31,6 +32,16 @@ import { blankComments } from "../sources/comments";
  * settings. Tables shared by a company GROUP carry no `companyId` at all
  * (`GROUP_SCOPED_TABLES`); their tenant key is `companyGroupId`, so a write to
  * one must name that instead.
+ *
+ * Only a `.where` counts: a `companyId` in `.set()` scopes nothing. A link
+ * table with no `companyId` column passes when the statement scopes through
+ * its parent in a subquery, because the parent's `.where("companyId", …)` is
+ * part of the statement's text.
+ *
+ * The baselined sites write `companyGroup`, which has no `companyId` column:
+ * its `id` is the tenant-group key. They are the delete in the scheduled
+ * `purge-company` job, and the owner transfer in `setCompanyGroupOwner`, which
+ * keys on the caller's own group and its current owner.
  *
  * Scope: Node code that holds the superuser `db` — the ERP's modules and
  * routes, the MES app and `packages/jobs`. The remaining Deno edge functions
@@ -134,7 +145,7 @@ function literalTable(text: string, openParen: number): string | null {
   return m?.[1] ?? null;
 }
 
-export const noUnscopedKyselyWrite: ConformanceCheck = {
+export const noUnscopedKyselyWrite = fileCheck(typescript, {
   id: "no-unscoped-kysely-write",
   description:
     "Every Kysely updateTable/deleteFrom in app/jobs code carries a companyId predicate — Kysely bypasses RLS, so the statement's own WHERE is the only tenant boundary.",
@@ -207,4 +218,4 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

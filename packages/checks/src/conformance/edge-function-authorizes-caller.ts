@@ -2,16 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { loadEdgeFunctions } from "../sources/edge-functions";
 
 /**
  * The gates each self-contained edge function defines for itself. Each one
  * throws for the bare anon key, which verify_jwt alone lets through: it is a
  * validly signed JWT, and the apps publish it in their HTML.
+ *
+ * A function passes only when it calls one of them; the declaration alone
+ * does not count. The call may be in any of the function's own `.ts` files
+ * (see `loadEdgeFunctions`).
  */
 const AUTH_CALL = /(?<!function\s+)\b(requireCaller|requireServiceRole)\s*\(/;
 
-export const edgeFunctionAuthorizesCaller: ConformanceCheck = {
+export const edgeFunctionAuthorizesCaller = fileCheck(loadEdgeFunctions, {
   id: "edge-function-authorizes-caller",
   description:
     "Every edge function authorizes its caller in-function (requireCaller / requireServiceRole).",
@@ -31,4 +36,4 @@ export const edgeFunctionAuthorizesCaller: ConformanceCheck = {
     };
     return [violation];
   }
-};
+});

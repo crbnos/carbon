@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { SourceFile, Violation } from "../check";
+import type { Check, SourceFile, Violation } from "../check";
+import { loadTypescriptFiles } from "../sources/typescript";
 
 // ERP and MES grew the same components and hooks by copying them, so a fix
 // landed in one app and not the other — the login route's lost redirect was
@@ -17,6 +18,9 @@ export const SHARED_APP_DIRS = [
   "apps/mes/app/components",
   "apps/mes/app/hooks"
 ];
+
+const sharedAppTypescript = (root: string) =>
+  loadTypescriptFiles(root, SHARED_APP_DIRS);
 
 // Names every folder has; they hold different things in each app.
 const GENERIC = new Set(["index.ts", "index.tsx", "types.ts", "utils.ts"]);
@@ -48,3 +52,10 @@ export function findDuplicatedAppFiles(files: SourceFile[]): Violation[] {
   }
   return violations;
 }
+
+export const noDuplicatedAppFile: Check = {
+  id: NO_DUPLICATED_APP_FILE,
+  description:
+    "A component or hook needed by both ERP and MES lives in a package; each app may keep a file of that name that only re-exports it.",
+  find: (repo) => findDuplicatedAppFiles(repo.read(sharedAppTypescript))
+};

@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { requestHandlingTypescript } from "../sources/inputs";
 
 // An error log's message is exported as a span attribute and is what errors are
 // grouped by. A value interpolated into it (`Failed to upload ${file.name}`)
@@ -10,7 +11,7 @@ import type { ConformanceCheck, Violation } from "../check";
 // Name it instead: "Failed to upload {fileName}", { fileName: file.name }.
 const INTERPOLATED = /\b\w*[lL]og(?:ger)?\.(?:error|fatal)\(\s*`[^`]*\$\{/g;
 
-export const noInterpolatedErrorLog: ConformanceCheck = {
+export const noInterpolatedErrorLog = fileCheck(requestHandlingTypescript, {
   id: "no-interpolated-error-log",
   description:
     "Error log messages name their values as {placeholders}, never interpolate them",
@@ -31,4 +32,4 @@ export const noInterpolatedErrorLog: ConformanceCheck = {
       };
     });
   }
-};
+});

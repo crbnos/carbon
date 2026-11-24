@@ -6,9 +6,17 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ACTIONS, MODULES, pageById } from "@carbon/database/access";
-import type { ConformanceCheck, Violation } from "../check";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  type Violation
+} from "../check";
 import { blankComments } from "../sources/comments";
+import { migrations } from "../sources/inputs";
 import { nameParts, sqlFragments } from "../sources/sql";
+import { loadTypescriptFiles } from "../sources/typescript";
+import { loadManagedFunctionFiles } from "./no-authz-ddl-in-migrations";
 
 /**
  * Phase 3 of page-level permissions: no module key decides access. A module
@@ -24,9 +32,10 @@ import { nameParts, sqlFragments } from "../sources/sql";
  *   of a `permission:` property (service functions and the workflow catalog,
  *   whose permissions are `{ page, action }`). That covers `{ inventory:
  *   "Edit" }`, the old `{ view: "inventory" }` and `{ module: "inventory" }`.
- * In SQL (comments blanked), it fails a `<module>_<action>` token in a managed
- * function file and in every migration not in `MODULE_KEY_MIGRATIONS` (see
- * its doc). A list, not a date: a branch opened earlier can land a migration
+ * In SQL, it fails a `<module>_<action>` token in a managed function file and
+ * in every migration not in `MODULE_KEY_MIGRATIONS` (see its doc). The SQL is
+ * parsed: it reads every string constant and every name (a policy may be named
+ * after its key), with a name cut at 63 bytes as Postgres stores it. A list, not a date: a branch opened earlier can land a migration
  * dated before the cutoff, and it is checked.
  *
  * It skips:
@@ -54,6 +63,16 @@ export const LAST_MODULE_KEY_MIGRATION = "20261110050010";
  * it), plus migrations merged from main later that the generated
  * page-permissions migration, sorting after them, re-ships with page keys: the
  * only ones that may still name a module key. Add nothing else to it.
+ *
+ * Add a migration only when both are true:
+ * 1. It already landed on main, so its history cannot be edited.
+ * 2. The generated page-permissions migration sorts after it and re-ships its
+ *    tables with page keys. Regenerate that migration in the same change.
+ * A listed migration dated after the cutoff must be a generated authz
+ * migration, and the test checks its header. `unshipped` in
+ * `@carbon/database`'s `migration.test.ts` then proves the re-ship. The first
+ * migrations added this way came from main #2179 (two dated before the cutoff,
+ * from a branch opened earlier) and main #2190.
  */
 export const MODULE_KEY_MIGRATIONS: ReadonlySet<string> = new Set(
   JSON.parse(
@@ -225,7 +244,7 @@ function scanSql(file: string, contents: string): Violation[] {
   return violations;
 }
 
-export const noModulePermissionKey: ConformanceCheck = {
+export const noModulePermissionKey: ConformanceCheck & Check = {
   id: "no-module-permission-key",
   description:
     "Permission checks name a page (<module>.<page>_<action>, { page: Level }), never a module",
@@ -239,7 +258,16 @@ export const noModulePermissionKey: ConformanceCheck = {
   scan(file, contents) {
     if (file.endsWith(".sql")) return scanSql(file, contents);
     return scanTypescript(file, contents);
-  }
+  },
+  find: (repo) =>
+    eachFile(
+      [
+        ...repo.read(migrations),
+        ...repo.read(loadManagedFunctionFiles),
+        ...repo.read(moduleKeyTypescript)
+      ],
+      noModulePermissionKey.scan
+    )
 };
 
 /** Where module keys are looked for in TypeScript: every gate and client check, and the workflow engine. */
@@ -255,3 +283,6 @@ export const MODULE_KEY_ROOTS = [
   "packages/ee/src/workflows",
   "packages/jobs/src/workflows"
 ];
+
+const moduleKeyTypescript = (root: string) =>
+  loadTypescriptFiles(root, MODULE_KEY_ROOTS);

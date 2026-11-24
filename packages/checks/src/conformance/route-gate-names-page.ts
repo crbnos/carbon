@@ -10,7 +10,15 @@ import {
   routeUrl
 } from "@carbon/database/access";
 import ts from "typescript5";
-import type { ConformanceCheck, SourceFile, Violation } from "../check";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  type SourceFile,
+  type Violation
+} from "../check";
+import { routeTypescript } from "../sources/inputs";
+import { loadTypescriptFiles } from "../sources/typescript";
 
 export const ROUTE_GATE_NAMES_PAGE = "route-gate-names-page";
 
@@ -225,6 +233,19 @@ function gateOfCall(
   return undefined;
 }
 
+const ABOUT = {
+  id: ROUTE_GATE_NAMES_PAGE,
+  description:
+    "An ERP route's authorize gate names the page its URL maps to in the access registry",
+  provenance: {
+    deprecates:
+      "a route gate that names another page than the registry `paths` give its URL",
+    replacedBy:
+      "gate on `pageOfUrl(route)`, move the URL in the registry, or list the route in ROUTE_GATE_EXCEPTIONS with the reason",
+    since: "2026-11-10"
+  }
+};
+
 /**
  * A route's gate, the `authorize` gate or the gate of the list it loads with
  * `loadListPage`, names the page its URL belongs to (`pageOfUrl`), or a list
@@ -236,16 +257,7 @@ export function routeGateNamesPage(
   lists: ReadonlyMap<string, readonly string[]> = new Map()
 ): ConformanceCheck {
   return {
-    id: ROUTE_GATE_NAMES_PAGE,
-    description:
-      "An ERP route's authorize gate names the page its URL maps to in the access registry",
-    provenance: {
-      deprecates:
-        "a route gate that names another page than the registry `paths` give its URL",
-      replacedBy:
-        "gate on `pageOfUrl(route)`, move the URL in the registry, or list the route in ROUTE_GATE_EXCEPTIONS with the reason",
-      since: "2026-11-10"
-    },
+    ...ABOUT,
     scan(file: string, contents: string): Violation[] {
       const route = ROUTE.exec(file)?.[1];
       if (
@@ -283,3 +295,21 @@ export function routeGateNamesPage(
     }
   };
 }
+
+const erpModuleTypescript = (root: string) =>
+  loadTypescriptFiles(root, ["apps/erp/app/modules"]);
+
+const listRegistryTypescript = (root: string) =>
+  loadTypescriptFiles(root, ["apps/erp/app/utils/list-registry"]);
+
+export const routeGateNamesPageCheck: Check = {
+  ...ABOUT,
+  find: (repo) =>
+    eachFile(
+      repo.read(routeTypescript),
+      routeGateNamesPage(
+        gateConstants(repo.read(erpModuleTypescript)),
+        listGates(repo.read(listRegistryTypescript))
+      ).scan
+    )
+};

@@ -2,8 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Provenance, Violation } from "../check";
+import {
+  type Check,
+  type ConformanceCheck,
+  eachFile,
+  type Provenance,
+  type Violation
+} from "../check";
 import { blankComments } from "../sources/comments";
+import { loadDbTableColumnTypes } from "../sources/db-columns";
+import { typescript } from "../sources/inputs";
 import {
   lockedRead,
   namesColumn,
@@ -52,6 +60,33 @@ import {
  *
  * `updateRowsById` has no predicate of its own, so a status it writes passes
  * only under a lock.
+ *
+ * The snippet is `<function>: <table>.<column>`, with no line. So a new
+ * unguarded write in a function and table that are already baselined is
+ * grandfathered too. For example, the `postSalesInvoice: salesInvoice.status`
+ * entry, baselined for the post branch, also covers its void branch.
+ *
+ * Two baselined sites need their reason:
+ *  - `activate` is a false positive. The agreement's lock and Draft check
+ *    guard its rental lines.
+ *  - the accounting providers' `upsertLocal` functions mirror a status the
+ *    remote system already decided.
+ *
+ * The tests replay the parent revisions of de82a88cc6, 2c9ef0dd8f and
+ * 578c411ffe. On main, 578c411ffe was squashed into b6ca51d4e1, so
+ * `incidents` names both.
+ *
+ * Two more rules were measured and not built:
+ *  - a claim that accepts `Pending` (`.in("status", ["Draft", "Pending"])`
+ *    before it sets Pending). Every hit was a receipt, shipment or purchase
+ *    invoice claim, whose posting re-checks the status under a lock. So every
+ *    hit would be a false positive.
+ *  - a side effect inside a transaction body. When measured, no
+ *    `transaction().execute` body held a direct email, print, trigger or event
+ *    call. The real side effects are calls into other functions, which a text
+ *    check cannot follow.
+ *
+ * See `.claude/rules/concurrency.md`.
  */
 
 const BLIND_LOCK_MESSAGE = (table: string, column: string) =>
@@ -127,15 +162,19 @@ export const STATUS_WRITE_GUARDED_PROVENANCE: Provenance = {
   incidents: ["de82a88cc6", "2c9ef0dd8f", "578c411ffe", "b6ca51d4e1"]
 };
 
+const ABOUT = {
+  id: STATUS_WRITE_GUARDED,
+  description:
+    "An UPDATE that sets a lifecycle status column carries a predicate on that column, or runs after the function locked the row — a status checked in code and written by id alone overwrites a concurrent change.",
+  provenance: STATUS_WRITE_GUARDED_PROVENANCE
+};
+
 export function statusWriteGuarded(
   columnTypes: Map<string, Map<string, string>>
 ): ConformanceCheck {
   const columns = statusColumns(columnTypes);
   return {
-    id: STATUS_WRITE_GUARDED,
-    description:
-      "An UPDATE that sets a lifecycle status column carries a predicate on that column, or runs after the function locked the row — a status checked in code and written by id alone overwrites a concurrent change.",
-    provenance: STATUS_WRITE_GUARDED_PROVENANCE,
+    ...ABOUT,
     scan(file, contents) {
       if (!/\.updateTable|\.update\s*\(|updateRows/.test(contents)) return [];
       const text = blankComments(contents);
@@ -190,3 +229,12 @@ export function statusWriteGuarded(
     }
   };
 }
+
+export const statusWriteGuardedCheck: Check = {
+  ...ABOUT,
+  find: (repo) =>
+    eachFile(
+      repo.read(typescript),
+      statusWriteGuarded(repo.read(loadDbTableColumnTypes)).scan
+    )
+};

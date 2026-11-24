@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // dnd-kit's `useSensor(sensor, options)` memoizes on the options object. An
 // inline literal is a new object on every render, so the sensor is new, and
@@ -12,7 +13,7 @@ import type { ConformanceCheck, Violation } from "../check";
 // stuttered (frames over 100 ms with 82 cards).
 const INLINE_OPTIONS = /^useSensor\(\s*\w+\s*,\s*\{/;
 
-export const noInlineSensorOptions: ConformanceCheck = {
+export const noInlineSensorOptions = fileCheck(typescript, {
   id: "no-inline-sensor-options",
   description:
     "useSensor options must be a module constant, not an object literal created on every render",
@@ -42,4 +43,4 @@ export const noInlineSensorOptions: ConformanceCheck = {
     });
     return violations;
   }
-};
+});

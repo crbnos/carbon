@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { migrations } from "../sources/inputs";
 import { nameParts, relationName, sqlNodes } from "../sources/sql";
 
 // Only `ALTER TABLE … ADD COLUMN` is checked. A `NOT NULL` column in a
@@ -21,7 +22,7 @@ const SUPPLIES_A_VALUE = new Set([
 ]);
 const SERIAL_TYPES = new Set(["smallserial", "serial", "bigserial"]);
 
-export const noRequiredColumnWithoutDefault: ConformanceCheck = {
+export const noRequiredColumnWithoutDefault = fileCheck(migrations, {
   id: "no-required-column-without-default",
   description:
     "A new NOT NULL column must ship a DEFAULT, so existing backups stay restorable.",
@@ -58,4 +59,4 @@ export const noRequiredColumnWithoutDefault: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

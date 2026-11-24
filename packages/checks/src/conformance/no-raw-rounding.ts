@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // Raw JS rounding on value-bearing numbers loses the numeric standard's
 // guarantees: Math.round breaks tie parity with Postgres, Math.ceil on a
@@ -16,7 +17,7 @@ const RAW_ROUNDING = /Math\.(?:round|ceil|floor)\(|\.toFixed\(/;
 // The precision module IS the implementation of rounding.
 const EXCLUDED_FILES = new Set(["packages/database/src/precision.ts"]);
 
-export const noRawRounding: ConformanceCheck = {
+export const noRawRounding = fileCheck(typescript, {
   id: "no-raw-rounding",
   description:
     "Value-bearing rounding goes through @carbon/utils round/scrapAllowance/applyRate/deriveRate, not Math.round/ceil/floor or toFixed",
@@ -45,4 +46,4 @@ export const noRawRounding: ConformanceCheck = {
     });
     return violations;
   }
-};
+});

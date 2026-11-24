@@ -2,8 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
-import type { Violation } from "../check";
+import {
+  REGISTRY_HELPERS_DIR,
+  renderRegistryHelpers
+} from "@carbon/database/authz-registry-sql";
+import type { Check, Violation } from "../check";
+import { loadRegistryHelperFiles } from "../sources/authz-registry";
 
 export const REGISTRY_HELPERS_FRESH = "registry-helpers-fresh";
 
@@ -41,3 +45,24 @@ export function findStaleRegistryHelpers(
   }
   return violations;
 }
+
+const registryHelpers = (root: string) => {
+  const rendered = renderRegistryHelpers();
+  return {
+    rendered,
+    files: loadRegistryHelperFiles(
+      root,
+      rendered.map((helper) => helper.name)
+    )
+  };
+};
+
+export const registryHelpersFresh: Check = {
+  id: REGISTRY_HELPERS_FRESH,
+  description:
+    "The managed helpers whose bodies are the registry (every file `renderRegistryHelpers()` renders) are written from `access/pages` by `authz sync`.",
+  find: (repo) => {
+    const { rendered, files } = repo.read(registryHelpers);
+    return findStaleRegistryHelpers(rendered, files);
+  }
+};

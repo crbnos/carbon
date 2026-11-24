@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Node } from "libpg-query";
-import type { SourceFile, Violation } from "../check";
+import type { Check, SourceFile, Violation } from "../check";
+import { migrations } from "../sources/inputs";
 import { nameParts, sqlNodes } from "../sources/sql";
 
 export const FUNCTION_REDEFINITION_KEEPS_CHANGES =
@@ -21,6 +22,7 @@ const MIN_DROPPED = 2;
  * from an older migration, and its `CREATE OR REPLACE` silently undid the two
  * migrations between them: every company posting job costing (always-post) and
  * the lock on the production events a completion posts.
+ * `20261015161847_job-receipt-takes-issued-serial-units` restored both.
  *
  * For each redefinition, the lines the previous definition ADDED over its own
  * predecessor must still be in the new body. A rewrite that drops them on
@@ -82,7 +84,8 @@ const PRINTED_TYPES: Record<string, string> = {
 /**
  * What identifies a function besides its name: the types of its input
  * arguments (an OUT or TABLE column is not one), as the parser resolves them,
- * so `int` and `integer` are the same function.
+ * so `int` and `integer` are the same function. Argument names, defaults and
+ * type modifiers are not part of it.
  */
 function argumentTypes(parameters: Node[] | undefined): string[] {
   return (parameters ?? []).flatMap((parameter) => {
@@ -137,3 +140,10 @@ function functionBodies(
   }
   return out;
 }
+
+export const functionRedefinitionKeepsChanges: Check = {
+  id: FUNCTION_REDEFINITION_KEEPS_CHANGES,
+  description:
+    "A migration that redefines a function must start from its newest definition.",
+  find: (repo) => findDroppedFunctionChanges(repo.read(migrations))
+};

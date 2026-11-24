@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Node, RangeVar } from "libpg-query";
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { migrations } from "../sources/inputs";
 import { sqlNodes } from "../sources/sql";
 
 // Every view in "public" is a PostgREST endpoint reachable with the anon key the
@@ -17,6 +18,16 @@ import { sqlNodes } from "../sources/sql";
 // visible decision rather than an omission. A materialized view is not a
 // `CREATE VIEW` statement and cannot run as its caller at all (it must have
 // SELECT revoked from anon and authenticated instead).
+//
+// `CREATE OR REPLACE VIEW` replaces the view's options too, so a redefinition
+// that leaves out the clause turns an invoker view back into an owner-rights
+// view. Every redefinition must state it again.
+//
+// The check reads the parsed statements, so it sees a view created in a DO
+// block or in an `EXECUTE` of a plain string. A view built by
+// `EXECUTE format(...)` still escapes it. The invariant
+// `src/invariants/view-without-security-invoker.sql` is the backstop: it reads
+// the live catalog, whatever created the view.
 
 function namesInvoker(options: Node[] | undefined): boolean {
   return (options ?? []).some(
@@ -32,7 +43,7 @@ function quoted(view: RangeVar | undefined): string {
     .join(".");
 }
 
-export const noViewWithoutInvoker: ConformanceCheck = {
+export const noViewWithoutInvoker = fileCheck(migrations, {
   id: "no-view-without-invoker",
   description:
     "A view must state security_invoker, or it runs as its owner and bypasses RLS.",
@@ -79,4 +90,4 @@ export const noViewWithoutInvoker: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { requestHandlingTypescript } from "../sources/inputs";
 
 // React Router's redirect goes wherever it is told. A destination read from a
 // query string or a form then sends the browser off-site unless the call site
@@ -12,7 +13,7 @@ import type { ConformanceCheck, Violation } from "../check";
 const RAW_IMPORT =
   /import\s*\{[^}]*?\b(redirect|redirectDocument|replace)\b[^}]*\}\s*from\s*["']react-router["']/g;
 
-export const noRawRedirect: ConformanceCheck = {
+export const noRawRedirect = fileCheck(requestHandlingTypescript, {
   id: "no-raw-redirect",
   description: "Redirect with redirect / redirectExternal from @carbon/utils",
   provenance: {
@@ -37,4 +38,4 @@ export const noRawRedirect: ConformanceCheck = {
     }
     return violations;
   }
-};
+});

@@ -2,12 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConformanceCheck, Violation } from "../check";
+import { fileCheck, type Violation } from "../check";
+import { typescript } from "../sources/inputs";
 
 // Call sites never pick digit counts — they pick a NAMED KIND (money, price,
 // percent, quantity) whose digits are defined once in @carbon/utils format.ts.
 // Editable inputs must use INPUT_FORMAT.* because react-aria's blur commit
 // runs parse(format(x)) — the input formatter is part of arithmetic.
+// See .claude/rules/numeric-precision.md.
 const INLINE_DIGITS = /minimumFractionDigits|maximumFractionDigits/;
 
 // Naming NO digits is the same violation, and the one that hid longest: a bare
@@ -37,7 +39,7 @@ const CURRENCY_STYLE_ALLOWED = new Set([
 // to catch rather than something to exempt.
 const EXCLUDED_FILES = new Set(["packages/utils/src/format.ts"]);
 
-export const noInlineFractionDigits: ConformanceCheck = {
+export const noInlineFractionDigits = fileCheck(typescript, {
   id: "no-inline-fraction-digits",
   description:
     "Pick a named kind from @carbon/utils format.ts (money/price/percent/quantity, INPUT_FORMAT.*) instead of passing digits",
@@ -75,4 +77,4 @@ export const noInlineFractionDigits: ConformanceCheck = {
     });
     return violations;
   }
-};
+});

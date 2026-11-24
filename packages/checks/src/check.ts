@@ -56,3 +56,49 @@ export type StructureCheck = {
   provenance: Provenance;
   inspect(module: ModuleDir): Violation[];
 };
+
+/**
+ * The repository a check reads. `read(load)` runs a loader once and keeps its
+ * result, so checks that read the same input (every migration, the app's
+ * TypeScript) share one read. A loader is any `(root) => T`; give one a name
+ * at module level so every check that uses it passes the same function.
+ */
+export type Repo = {
+  root: string;
+  read<T>(load: (root: string) => T): T;
+};
+
+/**
+ * One rule over the repository: what it is, and how to find where it is
+ * broken. `find` says which inputs the rule reads, so adding a check is one
+ * object and one line in `checks.ts`.
+ */
+export type Check = {
+  id: string;
+  description: string;
+  /** The change that retired the old pattern; absent on a check that states an invariant. */
+  provenance?: Provenance;
+  find(repo: Repo): Violation[];
+};
+
+/** Every violation `scan` finds in `files`. */
+export function eachFile(
+  files: SourceFile[],
+  scan: (file: string, contents: string) => Violation[]
+): Violation[] {
+  return files.flatMap(({ file, contents }) => scan(file, contents));
+}
+
+/**
+ * A check that reads one file at a time: `check.scan` stays as it is (tests
+ * call it with a fixture string), and `input` says which files it runs over.
+ */
+export function fileCheck(
+  input: (root: string) => SourceFile[],
+  check: ConformanceCheck
+): ConformanceCheck & Check {
+  return {
+    ...check,
+    find: (repo) => eachFile(repo.read(input), check.scan)
+  };
+}
