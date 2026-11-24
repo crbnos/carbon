@@ -5303,6 +5303,26 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 
 **Applies to:** Any migration that relaxes a one-row-per-X rule, and any service code that refuses an action because a unique index would reject it.
 
+## A controlled field's starting value must equal its form default
+
+**Context:** An RMA line with no customer asset showed Unsaved changes on leaving, with nothing changed. The first diagnosis blamed the Disposition list, a bare Radix Select outside the form's state.
+
+**Problem:** The route passed `customerAssetId: line.customerAssetId ?? undefined` as the form default, and the form seeded its `useState` with `initialValues.customerAssetId ?? ""`. On mount, `Combobox` (`@carbon/form`) calls `setValue` with any value prop that is not null or undefined; `useControllableValue` marks the field touched when that value differs from the default by `!==`, so `""` against `undefined` touched it. `Submit` blocks navigation while any field is touched.
+
+**Rule:** Seed the state a controlled field reads (`Combobox`, `SelectControlled`, `NumberControlled`, `Item`, `TaxCode`) from the same value the form gets as its default: `useState(initialValues.x)`, or the same `?? ""` in both places. A caller that leaves a field out gets `undefined` as its default, so a state fallback such as `?? "Return to Stock"` needs the same value in that caller's defaults. To find the field behind a false Unsaved changes prompt, read each controlled field's starting value against its default, not the fields that look interactive.
+
+**Applies to:** Every `ValidatedForm` whose controlled fields read component state, and every route or modal that builds its `initialValues`.
+
+## A UI hint for a posting's refusal calls the posting's rule, at every entry point
+
+**Context:** Charge cost on the element page posts an expense entry, and `postProjectExpense` refuses one whose treatment on the entry date is Capitalize.
+
+**Problem:** The first write-up disabled the action on the project's treatment. The treatment resolves per element: the element, then its ancestors whose override is in effect on the date, then the project. A project-level check would refuse an element that expenses its own cost and offer the action on a capital element under an Expense project. The action also opened from a third place, the plan card's Charge button, beside the two menus the write-up named.
+
+**Rule:** Move the posting's check into a pure function of the posting context and the date. The posting refuses with it, and the loader calls it on the context the posting loads (`loadProjectPostingContexts`), never on a copy of the rule. Before gating an action, grep its opener (`charging.open`) for every entry point and give each the same disabled state and reason. Disable the action only when no input the user can still change (the entry date) makes it post, and keep the server refusal for the inputs that are refused: a dated override (`costTreatmentEffectiveFrom`) leaves the dates before it open, so a today-only check would block entries the posting accepts.
+
+**Applies to:** `projectExpenseRefusal` / `getChargeCostRefusal`, and any action the UI disables with a reason the server decides by cost treatment or date.
+
 ## A stock-out with no bin chosen takes the bin that holds the stock, never NULL
 
 **Context:** Project Issue with the Storage Unit left empty counted only stock with no bin and booked the issue at "no storage unit". "No bin" went negative while named bins held the parts. The same gap sat in the maintenance spare-part issue, the direct sales invoice, the warehouse transfer shipment, the return shipments and the NCR close. A stock transfer pick also never checked that its From bin still held the stock.

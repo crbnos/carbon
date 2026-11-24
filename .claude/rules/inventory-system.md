@@ -440,7 +440,9 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   reads `quantityComplete + quantityScrapped` under the operation lock and issues
   `min(quantity × units, estimatedQuantity) − quantityIssued`, as `backflush_job_materials` does
   for the job. Material issued first by a manual or step issue counts, and a resent completion
-  issues nothing. A serial completion (`jobOperationSerialComplete`) locks the operation and
+  issues nothing. It takes the untracked draw locks and reads `quantityIssued` again under them
+  before it computes the draw, as the job's backflush reads it under the same locks, so a
+  backflush that committed meanwhile is not issued twice (`job-material-issue-concurrency.test.ts`). A serial completion (`jobOperationSerialComplete`) locks the operation and
   refuses a unit already complete on it ("This unit is already complete on this operation"), so
   a resent one writes no second production row. `partToOperation` locks the operation it was
   called for and the material's own operation (in id order; the material must be on that job),
