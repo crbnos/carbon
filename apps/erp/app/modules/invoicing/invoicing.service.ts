@@ -285,6 +285,8 @@ import {
   loadTaxCodes,
   loadTaxCodesInForce,
   lockContractPositions,
+  lockOrderLines,
+  lockOrderLinesAsRead,
   lockPostable,
   negateDocumentTaxLedger,
   PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
@@ -10559,6 +10561,13 @@ export async function postSalesInvoice(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOrderLinesAsRead(
+            trx,
+            "salesOrderLine",
+            companyId,
+            salesOrderLines,
+            "A sales order line changed while this invoice was posting. Post the invoice again."
+          );
           // The movements above were computed from positions read before
           // this transaction; refuse if another writer moved one since.
           if (contractPositionsRead.size > 0) {
@@ -11386,6 +11395,13 @@ export async function postSalesInvoice(
             companyId,
             invoiceId,
             SALES_INVOICE_SETTLED_VOID_ERROR
+          );
+          await lockOrderLinesAsRead(
+            trx,
+            "salesOrderLine",
+            companyId,
+            salesOrderLines,
+            "A sales order line changed while this invoice was voiding. Void the invoice again."
           );
           const journalEntries = await documentJournalLines(trx, companyId, {
             documentId: invoiceId,
@@ -18155,6 +18171,14 @@ export async function postPurchaseInvoice(
           invoiceId,
           PURCHASE_INVOICE_SETTLED_VOID_ERROR
         );
+        // Every line of the orders: the order's status is set from them.
+        await lockOrderLinesAsRead(
+          trx,
+          "purchaseOrderLine",
+          companyId,
+          purchaseOrderLinesVoid.data,
+          "A purchase order line changed while this invoice was voiding. Void the invoice again."
+        );
         const originalJournalLines = await documentJournalLines(
           trx,
           companyId,
@@ -19509,6 +19533,13 @@ export async function postPurchaseInvoice(
           throw new ServerFnError(lockedFundsRefused.message, 422);
         }
       }
+      await lockOrderLinesAsRead(
+        trx,
+        "purchaseOrderLine",
+        companyId,
+        purchaseOrderLines.data,
+        "A purchase order line changed while this invoice was posting. Post the invoice again."
+      );
 
       await fixedAssetWrites.apply(trx, companyId);
       if (receiptLineInserts.length > 0) {
@@ -21696,6 +21727,14 @@ async function restorePurchaseOrderInvoiced(
     .where("purchaseOrderLineId", "is not", null)
     .execute();
   if (invoiceLines.length === 0) return;
+  // The orders before every line of them, as each writer of the lines'
+  // counters takes them.
+  await lockOrderLines(
+    tx as Kysely<KyselyDatabase>,
+    "purchaseOrderLine",
+    companyId,
+    invoiceLines.map((line) => line.purchaseOrderLineId as string)
+  );
   const orderLines = await tx
     .selectFrom("purchaseOrderLine")
     .selectAll()
@@ -21711,6 +21750,7 @@ async function restorePurchaseOrderInvoiced(
           invoiceLines.map((line) => line.purchaseOrderLineId as string)
         )
     )
+    .orderBy("id")
     .forUpdate()
     .execute();
   const invoicedByLine = new Map<string, number>();
@@ -21805,6 +21845,14 @@ async function restoreSalesOrderInvoiced(
       .where("salesOrderLineId", "is not", null)
       .execute()
   ]);
+  // The orders before every line of them and before their shipments, as an
+  // invoice post takes them.
+  await lockOrderLines(
+    tx as Kysely<KyselyDatabase>,
+    "salesOrderLine",
+    companyId,
+    invoiceLines.map((line) => line.salesOrderLineId as string)
+  );
 
   await tx
     .updateTable("shipment")
@@ -21847,6 +21895,7 @@ async function restoreSalesOrderInvoiced(
         .where("l.companyId", "=", companyId)
         .where("l.id", "in", [...invoicedByLine.keys()])
     )
+    .orderBy("id")
     .forUpdate()
     .execute();
   const updated = orderLines.map((line) => {

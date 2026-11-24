@@ -14,6 +14,10 @@ import type {
   Violation
 } from "./check";
 import {
+  accountFkClassified,
+  accountFkRestrict
+} from "./conformance/account-fk-restrict";
+import {
   DEPLOYMENTS_SET_REQUIRED_ENV,
   findDeploymentEnvGaps
 } from "./conformance/deployments-set-required-env";
@@ -49,6 +53,7 @@ import { findNestedOutlets, noBareOutlet } from "./conformance/no-bare-outlet";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+import { noDiscardedQueryError } from "./conformance/no-discarded-query-error";
 import {
   findDuplicatedAppFiles,
   NO_DUPLICATED_APP_FILE,
@@ -102,6 +107,7 @@ import {
 import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 import { testReadsSource } from "./conformance/test-reads-source";
 import {
+  loadAccountReferencePolicy,
   loadDeploymentEnvSources,
   loadEventFunctionSources,
   loadIntegrationConfigs,
@@ -134,7 +140,8 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noRequiredColumnWithoutDefault,
   noViewWithoutInvoker,
   noForeignKeyWithoutOnDelete,
-  journalStatusFilter
+  journalStatusFilter,
+  accountFkRestrict
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */
@@ -161,6 +168,7 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noPostgresChanges,
   journalStatusFilter,
   mesUnitWriteResolvesUnit,
+  noDiscardedQueryError,
   noInlineUniqueViolation
 ];
 
@@ -235,7 +243,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
-      noAuthzDdlInMigrations(loadManagedFunctions(root))
+      noAuthzDdlInMigrations(loadManagedFunctions(root)),
+      accountFkClassified(loadAccountReferencePolicy(root))
     ]),
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
