@@ -7,7 +7,10 @@ import { expect, test } from "vitest";
 import { databaseTest } from "../fixtures/local-database";
 import { paymentFixture } from "../fixtures/payment";
 import {
+  lockRecognitionProposals,
+  previewRevenueRecognitionRun,
   proposeRevenueRecognitionRunInput, proposeRevenueRecognitionRun, recalculateRevenueRecognitionRun } from "../../../app/modules/accounting/accounting.service";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   dropRecognitionRuns,
   holdInDraftRun
@@ -426,6 +429,103 @@ databaseTest(
         [ids.rentA, ids.rentB].sort()
       );
     } finally {
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);
+
+/** Waits until `count` connections are queued behind `blockerPid`, directly or
+ *  behind another waiter. */
+async function waitForBlockedConnections(
+  db: Kysely<KyselyDatabase>,
+  blockerPid: number,
+  count: number
+) {
+  const deadline = performance.now() + 15_000;
+  while (performance.now() < deadline) {
+    const { rows } = await sql<{ blocked: number }>`
+      WITH RECURSIVE waiting AS (
+        SELECT ${blockerPid}::int AS pid
+        UNION
+        SELECT a.pid FROM pg_stat_activity a, waiting w
+        WHERE w.pid = ANY(pg_blocking_pids(a.pid))
+      )
+      SELECT count(*)::int - 1 AS blocked FROM waiting
+    `.execute(db);
+    if ((rows[0]?.blocked ?? 0) >= count) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error(`Expected ${count} connections to wait for the held lock`);
+}
+
+databaseTest(
+  "recalculating a Draft while the period is previewed does not deadlock",
+  async () => {
+    const f = await paymentFixture();
+    const blocker = await f.connect();
+    const recalculating = await f.connect();
+    const previewing = await f.connect();
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let holding: Promise<void> | undefined;
+    try {
+      const ids = await deferrals(f, [
+        { key: "sep-15", scheduledDate: "2026-09-15", amount: 100 }
+      ]);
+      const runId = await holdInDraftRun(f.db, f.companyId, [ids["sep-15"]]);
+      const {
+        rows: [blockerPid]
+      } = await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+        blocker
+      );
+
+      // A proposal in flight holds the proposal lock, so the recalculation
+      // and the preview both queue up before either takes the second lock.
+      let held!: () => void;
+      const isHeld = new Promise<void>((resolve) => {
+        held = resolve;
+      });
+      holding = blocker.transaction().execute(async (trx) => {
+        await lockRecognitionProposals(trx, f.companyId);
+        held();
+        await released;
+      });
+      await isHeld;
+
+      const handles = (db: Kysely<KyselyDatabase>) =>
+        handlesOf({ db, companyId: f.companyId, userId: "system" });
+      const recalculation = invokePosting(
+        handles(recalculating),
+        "recalculate-revenue-recognition-run",
+        { runId },
+        recalculateRevenueRecognitionRun
+      );
+      await waitForBlockedConnections(f.db, blockerPid!.pid, 1);
+      const preview = invokePosting(
+        handles(previewing),
+        "preview-revenue-recognition-run",
+        { periodEnd: "2026-09-30", type: "Revenue Recognition" as const },
+        previewRevenueRecognitionRun
+      );
+      await waitForBlockedConnections(f.db, blockerPid!.pid, 2);
+      release();
+      await holding;
+
+      const [recalculated, previewed] = await Promise.all([
+        recalculation,
+        preview
+      ]);
+      expect([recalculated.error, previewed.error]).toEqual([null, null]);
+      expect(previewed.data).toEqual({ count: 0, amount: 0 });
+    } finally {
+      release();
+      await holding?.catch(() => {});
+      await blocker.destroy();
+      await recalculating.destroy();
+      await previewing.destroy();
       await dropRecognitionRuns(f.db, f.companyId);
       await f.cleanup();
     }

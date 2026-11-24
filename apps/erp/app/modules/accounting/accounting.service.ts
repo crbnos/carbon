@@ -24211,9 +24211,12 @@ export async function recalculateRevenueRecognitionRun(
     // The synthesizers' locks, in their order, before anything else: a
     // concurrent proposal cannot claim a row between the release and the
     // claim below, and an invoice void (which takes the position lock and
-    // then deletes held run lines) cannot deadlock with the release.
-    await lockRecognitionProposals(trx, companyId);
+    // then deletes held run lines) cannot deadlock with the release. The
+    // position lock goes first: a revenue recognition proposal or preview
+    // takes it in the project and contract synthesizers, before the service
+    // job synthesizer takes the proposal lock.
     await lockContractPositions(trx, companyId);
+    await lockRecognitionProposals(trx, companyId);
 
     // Release the run's own rows BEFORE the synthesizers. A synthesizer
     // that drops a held row (a contract month an amendment replaced) keeps
