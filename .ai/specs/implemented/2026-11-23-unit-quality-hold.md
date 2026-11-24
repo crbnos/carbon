@@ -75,8 +75,8 @@ held passed serial after release, even after the lot closes.
 
 One column: `companySettings.holdUnitsWithOpenIssues BOOLEAN NOT NULL DEFAULT
 false`. No new table. `complete_job_to_inventory` is redefined with the rule
-in `20261124065150_close_quality_hold_write_paths.sql`; the shared posting body
-moved to `util.receive_job_output` in `20261124075228_automatic_receipt_for_worked_serials.sql`. The setting controls
+in `20261124083716_close_quality_hold_write_paths.sql`; the shared posting body
+moved to `util.receive_job_output` in `20261124083717_automatic_receipt_for_worked_serials.sql`. The setting controls
 serial holds. Separately, closing a job WIP issue as Scrap or Return to
 Supplier only deducts finished stock when the unit entered inventory. Normal
 job outputs have an Item source and identify the job and make method in their

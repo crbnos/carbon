@@ -22,7 +22,7 @@ LEFT JOIN public."nonConformanceType" typ ON typ.id = nc."nonConformanceTypeId" 
 WHERE (nc.status <> 'Closed' AND affected.disposition IS NULL)
    OR (nc.status = 'Closed' AND affected.disposition IS NOT NULL);
 
--- Forked from 20261124035931_unit-hold-job-receipt.sql. The receipt checks
+-- Forked from 20261124083714_unit-hold-job-receipt.sql. The receipt checks
 -- the same per-serial quality decisions as MES, including closed rejections.
 -- Intentionally replaces the previous three open-NCR-only subqueries with
 -- unitQualityHold. The cap now admits unheld replacement serials, and the

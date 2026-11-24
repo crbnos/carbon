@@ -161,7 +161,7 @@ BEGIN ATOMIC
       WHERE te."companyId" = p_company_id AND te.attributes->>'Job Make Method' = p_make_method_id));
 END;
 
--- Forked from 20261124052513. Replace the three independent hold reads and
+-- Forked from 20261124083715. Replace the three independent hold reads and
 -- the plan-minus-held cap with a single locked set and actual receipt capacity.
 -- Keep the posting, financial and numbering logic from that predecessor.
 CREATE OR REPLACE FUNCTION public.complete_job_to_inventory(p_job_id text, p_quantity_complete numeric, p_storage_unit_id text DEFAULT NULL::text, p_location_id text DEFAULT NULL::text, p_company_id text DEFAULT NULL::text, p_user_id text DEFAULT NULL::text)

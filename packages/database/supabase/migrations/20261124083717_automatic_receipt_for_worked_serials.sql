@@ -1,6 +1,6 @@
 -- Share the full stock/capitalization posting implementation between the
 -- public quantity-only RPC and a final operation that knows its worked units.
--- Based on 20261124065150_close_quality_hold_write_paths, retaining the same
+-- Based on 20261124083716_close_quality_hold_write_paths, retaining the same
 -- actor, tenant, inventory, accounting and numbering checks in both flows.
 CREATE OR REPLACE FUNCTION util.receive_job_output(p_job_id text, p_quantity_complete numeric, p_storage_unit_id text, p_location_id text, p_company_id text, p_user_id text, p_worked_unit_ids text[])
  RETURNS void

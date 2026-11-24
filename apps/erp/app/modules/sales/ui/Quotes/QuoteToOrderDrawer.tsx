@@ -162,11 +162,12 @@ const QuoteToOrderDrawer = ({
         logger.error("Failed to update the opportunity", { error });
         toastError(t`Failed to update opportunity with purchase order`, error);
       } else {
+        // Stays on this step: the PO number was filled from the file name and
+        // is checked or corrected here before Next.
         setTimeout(() => {
           setPurchaseOrder(file);
           setUploading(false);
         }, 2000);
-        setStep(1);
       }
     }
   };
