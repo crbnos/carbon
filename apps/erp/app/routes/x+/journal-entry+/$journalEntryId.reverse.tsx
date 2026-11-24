@@ -8,6 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { reverseJournalEntry } from "~/modules/accounting/accounting.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -19,10 +20,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { journalEntryId } = params;
   if (!journalEntryId) throw new Error("Could not find journalEntryId");
 
-  const result = await reverseJournalEntry(client, journalEntryId, {
-    companyId,
-    userId
-  });
+  const result = await reverseJournalEntry(
+    client,
+    getDatabaseClient(),
+    journalEntryId,
+    {
+      companyId,
+      userId
+    }
+  );
 
   if (result.error) {
     throw redirect(

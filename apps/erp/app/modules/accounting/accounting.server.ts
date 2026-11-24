@@ -4213,6 +4213,7 @@ export const reverseJournalEntry = defineServiceFn({
       ctx,
       await service.reverseJournalEntry(
         ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         input.id as never,
         payload(ctx, input.data).withUser().build() as never
       )

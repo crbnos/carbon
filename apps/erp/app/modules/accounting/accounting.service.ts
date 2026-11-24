@@ -8051,13 +8051,16 @@ export async function postJournalEntry(
 
 export async function reverseJournalEntry(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   id: string,
   data: {
     journalEntryId?: string;
     companyId: string;
     userId: string;
   }
-) {
+): Promise<
+  { data: { id: string }; error: null } | { data: null; error: unknown }
+> {
   const cutover = await requireAccountingCutover(client, data.companyId);
   if (cutover.error) return { data: null, error: cutover.error };
 
@@ -8083,27 +8086,7 @@ export async function reverseJournalEntry(
     };
   }
 
-  // 2. Generate sequence if not provided
-  let journalEntryId: string;
-  if (data.journalEntryId) {
-    journalEntryId = data.journalEntryId;
-  } else {
-    const seq = await client.rpc("get_next_sequence", {
-      sequence_name: "journalEntry",
-      company_id: data.companyId
-    });
-    if (seq.error || !seq.data) {
-      return {
-        data: null,
-        error: seq.error ?? {
-          message: "Failed to generate journalEntry sequence"
-        }
-      };
-    }
-    journalEntryId = seq.data;
-  }
-
-  // 2b. The reversing entry is dated today and posts as an "accounting" source,
+  // 2. The reversing entry is dated today and posts as an "accounting" source,
   // so it lands in the current period (never the original's, which may be
   // Closed). A Closed current period rejects; a Locked one still accepts.
   const postingDate = datetime
@@ -8119,63 +8102,109 @@ export async function reverseJournalEntry(
     return { data: null, error: period.error };
   }
 
-  // 3. Create reversing entry as Posted
-  const reversed = await client
-    .from("journal")
-    .insert({
-      journalEntryId,
-      companyId: data.companyId,
-      description: `Reversal of ${original.data.journalEntryId}`,
-      postingDate,
-      accountingPeriodId: period.data,
-      sourceType: "Manual" as const,
-      reversalOfId: id,
-      status: "Posted" as const,
-      postedAt: new Date().toISOString(),
-      postedBy: data.userId,
-      createdBy: data.userId
-    })
-    .select("id")
-    .single();
+  // 3. One transaction under the original's row lock: two reversals at once
+  // both read Posted above, and only the first may write. The loser re-reads
+  // Reversed and is refused.
+  const refusal = (message: string) => ({
+    data: null,
+    error: { message }
+  });
+  try {
+    return await db.transaction().execute(async (trx) => {
+      const locked = await trx
+        .selectFrom("journal")
+        .select(["journalEntryId", "status"])
+        .where("id", "=", id)
+        .where("companyId", "=", data.companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!locked) return refusal("Journal entry not found");
+      if (locked.status !== "Posted") {
+        return refusal("Can only reverse posted journal entries");
+      }
 
-  if (reversed.error) return reversed;
+      const journalEntryId =
+        data.journalEntryId ||
+        (await getNextSequenceInTransaction(
+          trx,
+          "journalEntry",
+          data.companyId
+        ));
+      const now = datetime.timestamp();
+      const reversed = await trx
+        .insertInto("journal")
+        .values({
+          journalEntryId,
+          companyId: data.companyId,
+          description: `Reversal of ${locked.journalEntryId}`,
+          postingDate,
+          accountingPeriodId: period.data,
+          sourceType: "Manual",
+          reversalOfId: id,
+          status: "Posted",
+          postedAt: now,
+          postedBy: data.userId,
+          createdBy: data.userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
 
-  // 3. Copy lines with negated amounts
-  const lines = (original.data.journalLine ?? []).map((line) => ({
-    journalId: reversed.data.id,
-    accountId: line.accountId,
-    companyId: line.companyId,
-    description: line.description,
-    amount: -Number(line.amount),
-    // The original stays in its document's balance as Reversed; the reversal
-    // nets it only if it names the same document (a job's WIP, for one).
-    documentType: line.documentType,
-    documentId: line.documentId,
-    documentLineReference: line.documentLineReference,
-    journalLineReference: crypto.randomUUID()
-  }));
+      // Lines read back in the order they were created, as getJournalEntry does.
+      const lines = await trx
+        .selectFrom("journalLine")
+        .select([
+          "accountId",
+          "description",
+          "amount",
+          "documentType",
+          "documentId",
+          "documentLineReference"
+        ])
+        .where("journalId", "=", id)
+        .where("companyId", "=", data.companyId)
+        .orderBy("createdAt")
+        .orderBy("id")
+        .execute();
+      if (lines.length > 0) {
+        await trx
+          .insertInto("journalLine")
+          .values(
+            lines.map((line) => ({
+              journalId: reversed.id,
+              accountId: line.accountId,
+              companyId: data.companyId,
+              description: line.description,
+              amount: -Number(line.amount),
+              // The original stays in its document's balance as Reversed; the
+              // reversal nets it only if it names the same document (a job's
+              // WIP, for one).
+              documentType: line.documentType,
+              documentId: line.documentId,
+              documentLineReference: line.documentLineReference,
+              journalLineReference: crypto.randomUUID()
+            }))
+          )
+          .execute();
+      }
 
-  if (lines.length > 0) {
-    const linesResult = await client.from("journalLine").insert(lines);
-    if (linesResult.error) return linesResult;
+      // 4. Mark original as Reversed and store back-reference
+      await trx
+        .updateTable("journal")
+        .set({
+          status: "Reversed",
+          reversedById: reversed.id,
+          updatedBy: data.userId
+        })
+        .where("id", "=", id)
+        .where("companyId", "=", data.companyId)
+        .where("status", "=", "Posted")
+        .execute();
+
+      return { data: { id: reversed.id }, error: null };
+    });
+  } catch (error) {
+    return { data: null, error };
   }
-
-  // 4. Mark original as Reversed and store back-reference
-  const updateResult = await requireAffected(
-    client
-      .from("journal")
-      .update({
-        status: "Reversed" as const,
-        reversedById: reversed.data.id,
-        updatedBy: data.userId
-      })
-      .eq("id", id)
-      .select("id")
-  );
-
-  if (updateResult.error) return updateResult;
-
-  return reversed;
 }
 
 // -- Asset Classes --
