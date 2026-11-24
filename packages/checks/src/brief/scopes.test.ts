@@ -148,6 +148,18 @@ describe("lessons", () => {
     }).toEqual({ duplicateIds: [], empty: [] });
   });
 
+  it("the topic files are exactly the ones the README's table lists", () => {
+    const listed = [
+      ...readFileSync(join(root, ".ai/lessons/README.md"), "utf8").matchAll(
+        /^\| `([a-z0-9-]+\.md)` \|/gm
+      )
+    ].map((m) => m[1]);
+    const files = readdirSync(join(root, ".ai/lessons")).filter(
+      (name) => name.endsWith(".md") && name !== "README.md"
+    );
+    expect(files.sort()).toEqual(listed.sort());
+  });
+
   it("every topic file holds at least one lesson", () => {
     const files = readdirSync(join(root, ".ai/lessons")).filter(
       (name) => name.endsWith(".md") && name !== "README.md"

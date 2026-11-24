@@ -49,9 +49,8 @@ regression guard.
 Make the bug from question 1 in the code, run the test, and watch it fail. Then
 put the code back. A test that stays green is not a guard.
 
-A 2026-11 prune of the whole repo deleted about 300 tests and rewrote about 300
-more. These are the patterns it removed. Each one passed when the code was
-wrong, or failed when nothing a user sees had changed:
+Each of these patterns passed when the code was wrong, or failed when nothing
+a user sees had changed:
 
 - **The expected value comes from the code under test.** One test expected
   `cutoverDateReason(...)`, the function it was testing. Another compared the

@@ -33,12 +33,10 @@ the Activepieces piece uses. Google's token response came back with
 showed "Reconnect needed" the second it connected. Google Calendar's piece has the same alias
 and was never caught only because its first connections predate scope recording.
 
-**Rule:** Every scope in an allowlist row (and anything else that feeds `requiredScopesFor`)
-is spelled exactly as the vendor echoes it in the token response — for Google the full
-`https://www.googleapis.com/auth/…` URL. When a piece's own list uses an alias, override
-`oauth.scope` with the canonical form (same set of permissions). `oauth.test.ts` refuses
-`email` / `profile` / `openid` on any row. When a "reconnect needed" appears on a freshly
-connected account, diff `metadata.scopes` against `requiredScopesFor` before anything else.
+**Rule:** `oauth.test.ts` refuses `email` / `profile` / `openid` on any row. When a
+"reconnect needed" appears on a freshly connected account, diff `metadata.scopes` against
+`requiredScopesFor` before anything else. The rest (spell each scope as the vendor reports
+it) is in `.claude/rules/workflow-integrations.md`.
 
 **Applies to:** `packages/jobs/src/workflows/integrations/allowlist.ts` `oauth.scope`,
 `packages/ee/src/integrations/connections.ts` `missingScopes`, any future vendor whose token
@@ -56,7 +54,7 @@ triggers: ["DEV_CACHEABLE_PATHS","ONSHAPE_DEV_CACHE"]
 
 **Problem:** Caching every GET poisoned the translation poll loop: `GET /translations/{id}` was cached while `requestState` was still `ACTIVE`, so `waitForTranslation` saw the same in-flight state forever and the export never completed. The failure looks like a hung job, not a cache bug.
 
-**Rule:** A dev-mode response cache must be an explicit allow-list of stable content reads (`DEV_CACHEABLE_PATHS` in `packages/ee/src/onshape/lib/client.ts`). Never add a polling or status endpoint. When adding a cacheable path, ask: can two reads of this URL legitimately differ within the TTL?
+**Rule:** When adding a cacheable path, ask: can two reads of this URL legitimately differ within the TTL? If they can, leave it out. The rest (the `DEV_CACHEABLE_PATHS` allow-list, no polling endpoint) is in `.claude/rules/onshape-panel.md`.
 
 **Applies to:** `packages/ee/src/onshape/lib/client.ts`, any dev-mode HTTP cache in front of a third-party API.
 
@@ -72,7 +70,7 @@ triggers: ["issueOAuthState","consumeOAuthStateByValue","oauth-state.server","cr
 
 **Problem:** Two mechanisms meant two sets of binding, expiry and single-use rules to keep correct, and a review had to check both. The pieces share one callback route, so that route cannot know which integration's entry to consume before it reads the state.
 
-**Rule:** Issue every OAuth state with `issueOAuthState`. Carry extra facts (`mode`, `name`, `connectionId`) as `OAuthStateExtras`, never in the query string. Pass the request, so the other integrations' pending entries survive the Set-Cookie. A callback that serves several integrations calls `consumeOAuthStateByValue`; it finds the entry that holds the value and takes the integration id from that entry. Do not add a second signer.
+**Rule:** Do not add a second OAuth state signer (an HMAC helper beside the cookie-bound state). The rest (`issueOAuthState`, `OAuthStateExtras`, `consumeOAuthStateByValue`) is in `.claude/rules/workflow-integrations.md` and `.claude/rules/environment-configuration.md`.
 
 **Applies to:** `api+/integrations.connections.$piece.connect.ts`, `api+/integrations.connections.callback.ts`, `api+/integrations.$id.connect.ts`, and any new OAuth connect or callback route.
 
@@ -100,13 +98,13 @@ paths: ["packages/ee/src/ramp/entities/*.ts"]
 triggers: ["RampApiError","externalIntegrationMapping"]
 ```
 
-**Context:** Carbon retracts a pushed Ramp bill after its local invoice settles, then marks the external mapping archived so the action does not repeat.
+**Context:** Carbon archives a mapped Ramp purchase order once it is Closed (`RampPurchaseOrderSyncer`, `packages/ee/src/ramp/entities/purchase-order.ts`), and the drain records the result on the external mapping.
 
-**Problem:** The archive helper swallowed every provider error—including authentication, rate-limit, server, and not-found failures—and permanently marked the mapping archived even though no response proved the bill was gone.
+**Problem:** An earlier archive helper swallowed every provider error—including authentication, rate-limit, server, and not-found failures—and permanently marked the mapping archived even though no response proved the remote document was gone.
 
 **Rule:** Persist completion metadata only after a successful provider response or a specifically documented idempotent response contract. Error text, status guesses, and hoped-for remote state are not confirmation; propagate unknown failures so the workflow remains retryable.
 
-**Applies to:** Ramp bill archival and every external integration that records a local completion flag after a remote mutation.
+**Applies to:** Ramp purchase-order archival and every external integration that records a local completion flag after a remote mutation.
 
 ## Financial discriminators require explicit verified allowlists
 
@@ -124,38 +122,6 @@ triggers: ["rampBillPaymentRoute","payment_method"]
 
 **Applies to:** Ramp bills, reimbursements, repayments, and every integration enum that selects accounts, settlement state, or document type.
 
-## Integration money shapes are contracts, not interchangeable numbers
-
-```scope
-id: integration-money-shapes-are-contracts-not-interchangeable-n
-paths: ["packages/ee/src/ramp/**"]
-triggers: ["fromMinorUnits","currency_code","entity_amount"]
-```
-
-**Context:** Ramp returns signed `{ value, currency }` and `{ amount, currency_code }` values in minor units, while its deprecated transaction `amount` fallback is a major-unit decimal. Several inbound families also still expose unverified bare-number fields.
-
-**Problem:** One generic converter treated every number as minor units, understating a `$123.45` fallback to `$1.23`; missing values became zero, unknown currency precision became two decimals, and unresolved foreign exchange rates became one. Those defaults turned malformed or incomplete provider payloads into apparently valid financial documents.
-
-**Rule:** Normalize each provider money field through a helper tied to its verified wire shape. Reject missing, non-finite, fractional-minor, currency-mismatched, or unverified bare-number values per item. Currency precision and exchange rates are required accounting facts; never guess them or silently post foreign currency at par.
-
-**Applies to:** Ramp charges, transfers, cashbacks, bills, bill payments, reimbursements, repayments, and future provider payloads with multiple monetary representations.
-
-## One-shot stores: peek for validation, take only for the write
-
-```scope
-id: one-shot-stores-peek-for-validation-take-only-for-the-write
-paths: ["packages/ee/src/onshape/lib/panel-plan-store.ts"]
-triggers: ["GETDEL","getdel"]
-```
-
-**Context:** The Onshape panel's plan/apply split stores a reviewed plan in Redis and consumes it with GETDEL so a double-submitted apply cannot write twice.
-
-**Problem:** Taking the plan before validating the user's edits meant a 422 (one bad field) destroyed the review; the corrected retry hit 410 and forced a fresh Onshape read. The one-shot guarantee and the validation step were fighting over the same read.
-
-**Rule:** For any GETDEL-style one-shot record, validate against a peek (plain GET) and take the record only immediately before the first write. A rejected request must leave the record exactly as it was.
-
-**Applies to:** `packages/ee/src/onshape/lib/panel-plan-store.ts`, any Redis-backed one-shot token/plan/challenge consumed by a request that also validates input.
-
 ## Unbounded mapping sets require bounded status reads
 
 ```scope
@@ -164,13 +130,13 @@ paths: ["packages/ee/src/ramp/**"]
 triggers: ["chunk(","archivePurchaseOrder"]
 ```
 
-**Context:** Ramp archive-on-settlement loads every unarchived external mapping, then reads the corresponding Carbon invoice statuses through PostgREST.
+**Context:** An earlier Ramp sweep loaded every unarchived external mapping, then read the matching Carbon statuses through PostgREST before it changed remote documents.
 
 **Problem:** One `.in()` request could exceed both URL limits and the API's 1,000-row response cap. A settled invoice after the cap could be omitted on every sweep, while lookup and archive errors were not fully reflected in the family result.
 
 **Rule:** Chunk unbounded identifier sets below transport and response limits, finish all prerequisite reads before remote writes, and count every failed remote mutation in the owning family result.
 
-**Applies to:** Ramp settlement archival and any integration that joins unbounded mappings to API-backed status reads before external side effects.
+**Applies to:** Any integration that joins unbounded mappings to API-backed status reads before external side effects.
 
 ## Unverified write contracts need a code-level release gate
 
@@ -268,22 +234,6 @@ triggers: ["externalIntegrationMapping"]
 
 **Applies to:** Ramp charges, transfers, cashback, and any mapped inbound document whose provider data can change before local finalization.
 
-## Legacy adoption must prove the entire document identity
-
-```scope
-id: legacy-adoption-must-prove-the-entire-document-identity
-paths: ["packages/jobs/src/inngest/functions/integrations/ramp-sync-reimbursement*.ts"]
-triggers: ["RampReimbursementDraft"]
-```
-
-**Context:** Ramp reimbursement retries may encounter an untracked purchase-invoice Draft created by the older non-transactional writer before its external mapping was saved.
-
-**Problem:** A supplier/reference match alone could adopt a user document, a finalized invoice, an incomplete Draft, or a document already linked to another Ramp source; silently repairing it could overwrite ambiguous business data.
-
-**Rule:** Legacy adoption is a narrow compatibility proof, not a fuzzy lookup. Require one unposted system Draft with the canonical external reference, matching dates/currency, intact supporting rows, exact financial/coding/provenance lines, and no conflicting mapping. Reject mismatches without mutation.
-
-**Applies to:** Ramp reimbursement Draft adoption and any retry migration that links pre-idempotency records by business keys.
-
 ## Onshape individual release assets need the complete source identity
 
 ```scope
@@ -294,24 +244,8 @@ triggers: ["partIds"]
 
 **Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.
 
-**Problem:** Omitting `partIds` and `configuration` exports the whole studio; `getElementThumbnail` also depicts the entire element. Refreshing raw data under the same model ID leaves successful optimized artifacts in place and allows old background jobs to overwrite repaired assets.
+**Problem:** Omitting `partIds` and `configuration` exports the whole studio; an element thumbnail also depicts the entire element. Refreshing raw data under the same model ID leaves successful optimized artifacts in place and allows old background jobs to overwrite repaired assets.
 
 **Rule:** Resolve one exact released document/version/element/revision and propagate its part ID and configuration. Never fall back to a version-only match or unselected Part Studio export. Render the selected model's thumbnail after optimization. Give corrected individual-part sources deterministic immutable model generations, preserving item IDs and manufacturing records; repeat repairs reuse that generation. Repair existing items with explicit per-release events, not a company-wide backfill or new CAD releases.
 
 **Applies to:** Onshape revision sync, backfill, model export and attachment helpers in `packages/jobs/src/inngest/functions/integrations/`.
-
-## Prerequisite lookup failures must hold outbound cursors
-
-```scope
-id: prerequisite-lookup-failures-must-hold-outbound-cursors
-paths: ["packages/jobs/src/inngest/functions/integrations/ramp-sync-outbound.ts"]
-triggers: ["isEmployeeParty","RampCursors"]
-```
-
-**Context:** Ramp outbound purchase-order and invoice families batch-load suppliers and supplier types before deciding whether and how to export each document.
-
-**Problem:** Query errors were treated like empty results. The workflow could skip documents, misclassify an Employee reimbursement as a vendor bill, and still advance the family cursor beyond the unread data.
-
-**Rule:** Distinguish an empty successful lookup from a failed lookup. If data required for eligibility or payload construction cannot be read, fail the family before remote effects and keep its cursor unchanged so the same page replays after recovery.
-
-**Applies to:** Ramp outbound suppliers and classifications, and every cursor-based exporter with prerequisite database reads.

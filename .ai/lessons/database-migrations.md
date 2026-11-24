@@ -37,7 +37,7 @@ triggers: ["DROP TABLE","RENAME TO","TABLE_RENAMES"]
 
 **Problem:** A restore that meets an unmapped missing table refuses by design (`applyTableRenames` → `assertBackupImportable`), so every customer backup taken before the merge would stop restoring the moment it shipped. The pre-commit `db:check:backups` gate that catches this only runs against a migrated LOCAL database — on a worktree with no dev stack the hook skips with a warning, which is exactly the state a reviewer or merge-fixer is in.
 
-**Rule:** A migration that renames or drops any tenant-scoped table needs, in the same commit: (1) a `TABLE_RENAMES` entry (`packages/jobs/src/backups/renames.ts` — new name, or `null` if the feature died), (2) a default (or nullability) on any NEW NOT-NULL column of the rename target so old backup rows can load, and (3) a regenerated `manifests/schema.json`, which requires running `pnpm db:migrate` + `pnpm db:check:backups` against a live local DB. If the DB isn't running, say so — a skipped hook is not a passed check.
+**Rule:** Before you commit a table rename or drop, run `pnpm db:migrate` + `pnpm db:check:backups` against a live local DB, so the check runs and `manifests/schema.json` regenerates. Without a dev stack the hook skips with a warning: if the DB isn't running, say so — a skipped hook is not a passed check. The rest is in `.claude/rules/company-backup-restore.md` and `.claude/rules/workflow-database-migration.md`.
 
 **Applies to:** `packages/database/supabase/migrations/**` table renames/drops, `packages/jobs/src/backups/renames.ts`, `packages/jobs/manifests/schema.json`, `.claude/rules/workflow-database-migration.md` step 3b.
 
@@ -101,7 +101,7 @@ triggers: ["auditConfig","syncAuditSubscriptions"]
 
 **Problem:** `auditConfig.entities.changeOrder` listed its 4 tables, and `syncAuditSubscriptions` created AUDIT subscriptions for them. But `packages/database/src/event-system/attachments.ts` gave `changeOrder` only a statement broadcast and the 3 child tables no entry at all, so no async event trigger existed and nothing reached the event queue. Every check looked green: subscriptions present, sweeper succeeding, queue empty.
 
-**Rule:** When you add an entity to `audit.config.ts`, give each of its tables `events: true` in `attachments.ts` and ship it with `pnpm --filter @carbon/database authz migration <name>`. To debug an empty audit log, first check `pg_trigger` for `trg_event_async_*` on the table.
+**Rule:** To debug an empty audit log, first check `pg_trigger` for `trg_event_async_*` on the table: AUDIT subscriptions alone record nothing. The rest is in `.claude/rules/audit-log-system.md`.
 
 **Applies to:** `packages/database/src/audit.config.ts`, `packages/database/src/event-system/attachments.ts`.
 
@@ -133,7 +133,7 @@ triggers: ["CREATE OR REPLACE VIEW"]
 
 **Problem:** A migration merged with a timestamp OLDER than already-deployed migrations gets applied out of order on remotes: the remote had already run `20260630095023` (drops `purchaseInvoice.balance`), so the backdated view recreation referenced a dropped column. Worse, the newer `20260630*` batch had forked its view body from a pre-fix definition, silently reverting the backdated migration's fix (`supplierShippingCost` multiply vs divide) — the backdated migration was both broken AND dead code.
 
-**Rule:** Never merge a migration whose timestamp is older than the newest migration already on `main`/deployed. Before writing a view/RPC recreation, fork from the NEWEST definition of that view (grep all migrations, take the last). When rescuing a failed backdated migration, strip the superseded parts and re-land the still-wanted change in a fresh forward-dated migration; don't rename already-partially-applied files (re-applies them).
+**Rule:** Never merge a migration whose timestamp is older than the newest migration already on `main`/deployed. When rescuing a failed backdated migration, strip the superseded parts and re-land the still-wanted change in a fresh forward-dated migration; don't rename already-partially-applied files (re-applies them). The rest is in `.claude/rules/database-migration-patterns.md`.
 
 **Applies to:** `packages/database/supabase/migrations/`, `ci/src/migrations.ts`, any long-lived branch adding migrations.
 
@@ -155,10 +155,9 @@ into an owner-rights one. Owner rights bypass RLS on every table underneath, and
 view is a PostgREST endpoint. Nothing failed: the app filters by `companyId` itself, so every
 screen still looked right.
 
-**Rule:** Every `CREATE [OR REPLACE] VIEW` states `security_invoker` — copy a view's definition
-from its NEWEST migration, and re-check the `WITH` clause when you do. Test a view the way an
-attacker reads it: `SET LOCAL ROLE anon; SELECT count(*) FROM "view";` must be 0. Join on
-`companyId` too, so a view is tenant-consistent on its own.
+**Rule:** Test a view the way an attacker reads it: `SET LOCAL ROLE anon; SELECT count(*) FROM "view";`
+must be 0. Join on `companyId` too, so a view is tenant-consistent on its own. The rest is in the
+`no-view-without-invoker` check and `.claude/rules/database-migration-patterns.md`.
 
 **Applies to:** `packages/database/supabase/migrations/**`; enforced by the
 `no-view-without-invoker` conformance check and the `view-without-security-invoker` invariant.
@@ -297,7 +296,7 @@ triggers: ["CREATE OR REPLACE FUNCTION","sync_insert_company_related_records"]
 
 **Problem:** The interceptor inserts `companySettings` with only its id. The trigger it replaced also set `useMetric` from the company's country (`20250725212215_metric-default.sql`) and created the two billing address rows (`20260304112615_purchasing-info.sql`). For six months every new company started imperial, and nothing failed: the column has a default and the address reads use `maybeSingle`.
 
-**Rule:** Before porting a function, find its newest definition (`grep -l "FUNCTION <name>" migrations/*.sql | tail -1`) and carry every statement across, or drop one on purpose with a note. A behavior that only sets a default value has no test to fail when it is lost: pin it with one (`seed-company.test.ts` pins `useMetric` per country).
+**Rule:** When a port gives the function a new name or moves it into a handler file, carry every statement of the newest definition across, or drop one on purpose with a note: `function-redefinition-keeps-changes` compares only redefinitions of the same function in migrations. A behavior that only sets a default value has no test to fail when it is lost: pin it with one (`seed-company.test.ts` pins `useMetric` per country). The rest is in `.claude/rules/database-migration-patterns.md`.
 
 **Applies to:** `packages/database/src/event-system/handlers/*.sql`, any migration that replaces a trigger function.
 
@@ -309,11 +308,11 @@ paths: ["apps/erp/app/modules/shared/shared.service.ts"]
 triggers: ["assertCompanyRecords","FOREIGN KEY"]
 ```
 
-**Context:** `jobOperationBatch` shipped with `locationId`/`processId`/`workCenterId` FKs referencing only the parent's `id`. The `batch-operations` edge fn wrote `payload.locationId`/`workCenterId` straight into the row after `requirePermissions` — which authorizes the CALLER for a company, not the record ids in the body.
+**Context:** `jobOperationBatch` shipped with `locationId`/`processId`/`workCenterId` FKs referencing only the parent's `id`. The `batch-operations` edge function (since ported to `batchOperation` in `apps/erp/app/modules/production/production.service.ts`) wrote `payload.locationId`/`workCenterId` straight into the row after the permission check — which authorizes the CALLER for a company, not the record ids in the body.
 
-**Problem:** A single-column FK checks only that the id EXISTS, so a company-A row pointing at company-B's location/work center satisfies it, and a service-role edge fn bypasses RLS — the write lands, mis-filing the batch and stamping foreign work centers onto job operations. Nothing fails until an export or a human notices.
+**Problem:** A single-column FK checks only that the id EXISTS, so a company-A row pointing at company-B's location/work center satisfies it, and a service-role write bypasses RLS — the write lands, mis-filing the batch and stamping foreign work centers onto job operations. Nothing fails until an export or a human notices.
 
-**Rule:** In a server function, re-read every payload record id under `companyId` and refuse on a miss (`assertCompanyRecords`, `apps/erp/app/modules/shared/shared.service.ts`). Structurally, make tenant-scoped FKs composite — `(<col>, "companyId") REFERENCES parent(id, "companyId")` — adding `UNIQUE (id, "companyId")` on parents whose PK is single-column, and using PG15 `ON DELETE SET NULL (<col>)` for nullable FKs so `companyId` survives. Precedents: `20260703143904_composite-tenant-fks.sql`, `20260901132702_batch-composite-tenant-fks.sql`.
+**Rule:** In a server function, re-read every payload record id under `companyId` and refuse on a miss (`assertCompanyRecords`, `apps/erp/app/modules/shared/shared.service.ts`). Structurally, make tenant-scoped FKs composite — `(<col>, "companyId") REFERENCES parent(id, "companyId")` — adding `UNIQUE (id, "companyId")` on parents whose PK is single-column, and using PG15 `ON DELETE SET NULL (<col>)` for nullable FKs so `companyId` survives. Precedents: `20260703143904_composite-tenant-fks.sql`, `20260905132037_job-operation-batching.sql`.
 
 **Applies to:** postings (`apps/erp/app/modules/*/*.service.ts`) taking record ids in the input; any migration adding an FK from a `companyId`-scoped table to another tenant-scoped parent.
 
@@ -331,7 +330,7 @@ triggers: ["CARBON_SKIP_BACKUP_CHECK","TABLE_RENAMES"]
 
 **Rule:** When `db:check:backups` blocks on a missing table, first verify the table exists in ANY migration (`grep -r <table> packages/database/supabase/migrations/`). No migration ⇒ baseline pollution, not your break: regenerate `schema.json` from a clean fully-migrated database (the catalog code in `src/backups/schema.ts` + the manifest shape in `check-backups.ts`), commit it with `CARBON_SKIP_BACKUP_CHECK=1`, and say why in the commit message. Never add a rename entry for a table that never shipped.
 
-**Applies to:** `packages/jobs/manifests/schema.json`, `packages/jobs/src/scripts/check-backups.ts`, `.husky/pre-commit`.
+**Applies to:** `packages/jobs/manifests/schema.json`, `packages/jobs/src/scripts/check-backups.ts`, `scripts/git-hooks/pre-commit`.
 
 ## The migration ledger must travel with the schema it describes
 
@@ -377,7 +376,7 @@ triggers: ["CREATE OR REPLACE FUNCTION","create_audit_log_table","insert_audit_l
 
 **Problem:** `CREATE TRIGGER` fires PostgREST's `pgrst_ddl_watch` event trigger, which reloads the schema cache. With one audit table and one search table per company that reload took 10-13 s in production, and every request with an embed waited for it: 480+ reloads a day, each one stalling joins for every company. No test or review could see it, because each fork looked like a small diff against a file nobody reads end to end. `dispatch_event_batch` lost its composite-key pairing the same way once.
 
-**Rule:** A function that changes more than once is authored as a single file, not as a chain of forks. The event system's functions live in `packages/database/src/event-system/functions/<name>.sql`; edit the file and run `pnpm --filter @carbon/database authz migration <name>`. A function on a write path must not run DDL: check the catalog first and only repair what is missing (`audit-log-no-ddl-on-write.test.sql` asserts the trigger and policy oids do not change across writes).
+**Rule:** A function on a write path must not run DDL: check the catalog first and only repair what is missing (`audit-log-no-ddl-on-write.test.sql` asserts the trigger and policy oids do not change across writes). The rest is in `.claude/rules/event-system.md` and the `no-authz-ddl-in-migrations` check.
 
 **Applies to:** `packages/database/src/event-system/functions/`, `packages/database/src/authz/helpers/`, `no-authz-ddl-in-migrations` (`@carbon/checks`).
 
@@ -476,23 +475,9 @@ triggers: ["SECURITY DEFINER","security definer","net.http_post","REVOKE EXECUTE
 
 **Problem:** Every `public` function is auto-exposed as a PostgREST RPC (`/rest/v1/rpc/<name>`), reachable by `anon`. Worse than mere exposure: referencing such a function as a **non-superuser** role segfaults the backend (pg_net 0.20 / PG15) — reproducible via `SET ROLE authenticated; EXPLAIN SELECT public.wake_event_queue();`, which crashed even though `EXPLAIN` never runs the body and the role lacked EXECUTE. The crash happens at plan/permission-resolution time, **before** the ACL check — so `REVOKE ALL … FROM PUBLIC, anon, authenticated` does NOT protect: an unauthenticated `POST /rpc/wake_event_queue` crash-loops the whole DB (postmaster reinitializes all backends → "database system is in recovery mode" for every client). Same-body call as superuser was fine, which is why the trigger/cron paths worked and masked it in end-to-end testing.
 
-**Rule:** Never define an internal SECURITY DEFINER helper (especially one calling `net.http_post` / pg_net) in `public`. Put it in the internal `util` schema (the existing Carbon/Supabase convention — cf. `util.process_embeddings`), where `anon`/`authenticated` have no `USAGE`, so the API can't reference it at all and a hostile call fails cleanly with `permission denied for schema util` before any crash-prone planning. Callers that are triggers/pg_cron run as owner and reach `util` fine; update their bodies to `util.<fn>()`. Keep `REVOKE ALL … FROM PUBLIC` on the util function as defense-in-depth, but the schema-USAGE gate is the real fix. Verify with `SET ROLE authenticated; SELECT util.<fn>();` → must be a clean `permission denied`, not a dropped connection. Note PostgREST-exposed schemas exclude `util`/`pgmq` but include `public`/`net` (`has_schema_privilege('anon', <schema>, 'USAGE')`).
+**Rule:** After you put an internal SECURITY DEFINER helper in `util`, verify it with `SET ROLE authenticated; SELECT util.<fn>();` → must be a clean `permission denied for schema util`, not a dropped connection. PostgREST-exposed schemas exclude `util`/`pgmq` but include `public`/`net` (`has_schema_privilege('anon', <schema>, 'USAGE')`). The rest is in `.claude/rules/event-system.md` (Why `util`, not `public`) and `.claude/rules/database-migration-patterns.md` (Restricting a function).
 
 **Applies to:** any new SECURITY DEFINER function that calls pg_net/`net.http_post` or is meant to be trigger/cron-only (`packages/database/supabase/migrations/`). Trigger functions returning `trigger` are not RPC-exposed (safe in public), but VOID/scalar helpers are.
-
-**Update (2026-09-24):** pg_net is not required. On `supabase/postgres:15.14.1.112`, a plain
-`LANGUAGE sql` function (`select 1`) with `REVOKE EXECUTE … FROM PUBLIC, anon, authenticated`
-segfaults the backend (signal 11) when called under `SET ROLE authenticated` or `anon`. This was
-reproduced in a fresh container of that image. A missing table privilege, a `RAISE`, and "must be owner"
-are all ordinary errors. So `REVOKE EXECUTE` on any function in `public` is itself an unauthenticated DoS
-(`POST /rest/v1/rpc/<fn>`). Gate API access INSIDE the function instead, and raise on
-`current_setting('role', true) IN ('anon','authenticated')` without the permission — see
-`assert_audit_log_access` in `20260924171942_audit-log-company-scope.sql`. When you test a revoke, use a
-throwaway container (`docker run --rm supabase/postgres:<tag>`), never a shared dev database. The crash
-restarts every backend. `20260924192316_api-function-guards-not-revokes.sql` replaced the six existing public-function
-revokes (integration secrets, `upsert_company_integration_patch`, the job-completion helpers). A nested
-helper of a SECURITY DEFINER function cannot use the role-GUC guard, because `current_setting('role')`
-still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER` instead.
 
 ## A RAISE in a completion RPC aborts the UPDATE that triggered it
 
@@ -599,7 +584,7 @@ triggers: ["fkDisplayRegistry","fkDisplayHops","snapshotFields","get_foreign_key
 
 **Problem:** Three distinct shapes made raw ids reach the UI. (1) `get_foreign_key_map` reads `pg_constraint`, so reference columns **without a real FK constraint** are invisible to it — no snapshot no matter what the registry says. This schema has many: `salesOrder.salesPersonId`, `salesInvoice.assignee`, line-level `locationId`s on `purchaseOrderLine`/`salesOrderLine`/`salesInvoiceShipment`, `inventoryCountLine.storageUnitId`, etc. (2) Junction targets (`customerContact`/`supplierContact`, `opportunity`, `fulfillment`…) have no displayable columns of their own — the name lives one hop away (`contact.fullName`), which single-hop resolution can't reach. (3) A target table simply missing from `fkDisplayRegistry` silently degrades to the raw id — no error anywhere.
 
-**Rule:** When adding a reference column to an audited table, either give it a real FK constraint (registry/hops then cover it automatically) or declare a per-column `snapshotFields` override on that table's audit config. For targets whose display value lives on another table, use `fkDisplayHops` (two-stage batched lookup). Resolution precedence is override > hop > registry; hops and registry must stay disjoint, and overrides must not target hop tables — both invariants are enforced by tests in `fk-snapshots.test.ts`. Snapshots are frozen at write time: config changes never backfill existing audit rows.
+**Rule:** Hops and registry must stay disjoint, and overrides must not target hop tables — both invariants are enforced by tests in `fk-snapshots.test.ts`. Snapshots are frozen at write time: config changes never backfill existing audit rows. The rest is in `.claude/rules/audit-log-system.md`.
 
 **Applies to:** `packages/database/src/audit.config.ts` (`fkDisplayRegistry`, `fkDisplayHops`, `snapshotFields`), `packages/jobs/src/inngest/functions/events/fk-snapshots.ts` + `audit.ts`, and any migration adding reference columns to tables listed in `auditConfig.entities`.
 
@@ -631,7 +616,7 @@ triggers: ["get_next_sequence","SequenceOrCustomId","document_sequence_pattern",
 
 **Problem:** A supplied number never moved the `sequence` row. Once the counter reached a number an agent or a user had already used, every new document failed on the unique constraint ("Failed to insert sales order") until someone moved the counter by hand.
 
-**Rule:** The counter is kept ahead in the database, not in app code: the `sync_advance_document_sequence` after-interceptor moves `sequence.next` past any number saved in the sequence's format, on insert and on a number change. A new numbered table must be added to that interceptor's `CASE` and given the interceptor in `attachments.ts`; the `document-sequence-synced` conformance check fails CI for a new counter that is neither covered nor in its `EXEMPT_COUNTERS`. Never "fix" a collision by retrying `get_next_sequence`.
+**Rule:** Never "fix" a collision by retrying `get_next_sequence`; the `sync_advance_document_sequence` after-interceptor keeps the counter ahead in the database. The rest is in the `document-sequence-synced` check.
 
 **Applies to:** `packages/database/src/event-system/handlers/sync_advance_document_sequence.sql`, `util.document_sequence_pattern`, any table with a readable document number.
 
@@ -663,7 +648,7 @@ triggers: ["REFERENCES \"account\"","REFERENCE_POLICY","applyAccountImport","rep
 
 **Problem:** `journalLine.accountId` and the order, invoice and supplier quote line FKs were `ON DELETE SET NULL`. Deleting an account with Draft or Provisional lines succeeded and silently emptied the lines' account; Posted lines only refused by accident, through the immutability trigger. The import also has to know, for every column that names an account, whether a merge may move it.
 
-**Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-draft`, `repoint-if-unposted-journal` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `SOFT_REFERENCES` and the apply's `repointReferences`.
+**Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-status`, `repoint-if-parent-status` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `softReferenceBranches` (`packages/database/src/account-import-reads.ts`) and the apply's `repointReferences` (`accounting.service.ts`).
 
 **Applies to:** migrations that add a column referencing `account`; `packages/database/src/account-import.ts`; `applyAccountImport` (`apps/erp/app/modules/accounting/accounting.service.ts`) and its live test `apps/erp/test/database/apply-account-import.test.ts`.
 
@@ -679,7 +664,7 @@ triggers: ["CREATE OR REPLACE FUNCTION","complete_job_to_inventory","backflush_j
 
 **Problem:** two later migrations had redefined the function: `20261009010412` (every company posts job costing, Provisional before the cutover) and `20261014135003` (lock the production events a completion posts). The fork's `CREATE OR REPLACE` replaced the whole body, so both changes were silently undone: a company with no cutover got no Job Receipt journal, and a concurrent production-event post could double-post. The SQL tests that would have caught it either predated always-post or failed already and were not run. "Fork from the newest definition" also fails when the author greps only for the migration that matters to their change. They miss later redefinitions that added unrelated branches. A dropped branch gives no error. The wrong behavior shows only when someone uses the other feature.
 
-**Rule:** list every migration that touches the function (`grep -l '<fn_name>' migrations/*.sql | sort`). Copy the body from its NEWEST definition (`grep -l "FUNCTION <name>" migrations | tail -1`). Then diff your body against that exact file (`diff <(sed -n 'a,bp' newest.sql) <(...)`), so the only hunks are your intended edits. A branch you do not understand (an `itemTrackingType` guard, a feature flag) is load-bearing: carry it forward. Never rebuild the body from an older file or from memory. The `function-redefinition-keeps-changes` check fails a redefinition that drops lines its predecessor added. Run the SQL tests that call the function (`scripts/run-local-accounting-check.ts psql -f …`).
+**Rule:** list every migration that touches the function (`grep -l '<fn_name>' migrations/*.sql | sort`), not only the one that matters to your change. Diff your body against the newest definition (`diff <(sed -n 'a,bp' newest.sql) <(...)`), so the only hunks are your intended edits. A branch you do not understand (an `itemTrackingType` guard, a feature flag) is load-bearing: carry it forward. Run the SQL tests that call the function (`scripts/run-local-accounting-check.ts psql -f …`). The rest is in `.claude/rules/database-migration-patterns.md` and the `function-redefinition-keeps-changes` check.
 
 **Applies to:** `packages/database/supabase/migrations/`: any migration with `CREATE OR REPLACE FUNCTION` on a function defined more than once, especially the long posting functions (`complete_job_to_inventory`, `backflush_job_materials`, `get_inventory_quantities`) and sync interceptors. Also reviews of migrations that redefine shared functions.
 
@@ -715,7 +700,7 @@ triggers: ["get_available_tracked_entities","sortLotsByPickMethod","RETURNS SETO
 
 **Problem:** The Postgres planner **inlines** simple `LANGUAGE sql` functions into the calling query; when the caller (here, PostgREST via `client.rpc(...)`) supplies no outer `ORDER BY`, the inlined subquery's `ORDER BY` can be optimized away. Ordering that leads with a real indexed/leading column (expiration for FEFO) may survive by luck; ordering whose only key is a trailing column silently does not. Unit tests and typecheck can't catch this — only real-data querying does.
 
-**Rule:** Do not rely on a `LANGUAGE sql` set-returning function's internal `ORDER BY` to reach the app. Either (a) sort authoritatively in the app after the RPC returns (return the sort columns and order in TS — see `apps/mes/app/services/allocation.ts` `sortLotsByPickMethod`, applied in `getSuggestedAllocationForMaterial`), or (b) if ordering must live in SQL, use `LANGUAGE plpgsql` with `RETURN QUERY ... ORDER BY` (plpgsql is never inlined). Always verify RPC ordering against seeded real data, not just unit tests.
+**Rule:** Do not rely on any `LANGUAGE sql` set-returning function's internal `ORDER BY` to reach the app. Either sort authoritatively in the app after the RPC returns, or, if ordering must live in SQL, use `LANGUAGE plpgsql` with `RETURN QUERY ... ORDER BY` (plpgsql is never inlined). Always verify RPC ordering against seeded real data, not just unit tests. The rest is in `.claude/rules/traceability-model.md`.
 
 **Applies to:** `packages/database/supabase/migrations/` set-returning `LANGUAGE sql` functions consumed via `client.rpc(...)`; any app code that greedy-fills / picks "the first row" from an RPC result.
 
@@ -803,15 +788,15 @@ paths: []
 triggers: ["VALIDATE CONSTRAINT","NOT VALID"]
 ```
 
-**Context:** The currency refactor added `CHECK ("exchangeRate" > 0)` + `VALIDATE` on 12 document tables. Review found `get-method` had been writing `exchangeRate: l.exchangeRate ?? 0` into `quoteLinePrice` for every legacy null-rate quote line, and the old `NUMERIC(10,4)` clamp had stored sub-0.00005 rates as literal `0.0000`.
+**Context:** The currency refactor added `CHECK ("exchangeRate" > 0)` + `VALIDATE` on 12 document tables. Review found the `get-method` edge function (since ported to `getMethod` in `apps/erp/app/modules/production/production.service.ts`, which now falls back to the quote's rate) had been writing `exchangeRate: l.exchangeRate ?? 0` into `quoteLinePrice` for every legacy null-rate quote line, and the old `NUMERIC(10,4)` clamp had stored sub-0.00005 rates as literal `0.0000`.
 
-**Problem:** `VALIDATE CONSTRAINT` scans existing rows mid-deploy — one violating row anywhere fails the whole migration in production, and post-deploy the unfixed writer fails at runtime (a whole edge-function transaction). A constraint that is obviously true "going forward" says nothing about years of rows written by code paths you didn't grep.
+**Problem:** `VALIDATE CONSTRAINT` scans existing rows mid-deploy — one violating row anywhere fails the whole migration in production, and post-deploy the unfixed writer fails at runtime (the writer's whole transaction). A constraint that is obviously true "going forward" says nothing about years of rows written by code paths you didn't grep.
 
-**Rule:** Before adding a CHECK on an existing column: (1) grep EVERY writer of that column — app services, edge functions, triggers, seeds — and fix any that can produce a violating value in the same change set; (2) repair existing violating rows in the same migration, before the VALIDATE (`UPDATE … WHERE <violates>` with an explainable value); (3) remember old NUMERIC(p,s) clamps — a widened column can still hold rounded-to-zero values from its clamped era.
+**Rule:** Before adding a CHECK on an existing column: (1) grep EVERY writer of that column — app services, postings, triggers, seeds — and fix any that can produce a violating value in the same change set; (2) repair existing violating rows in the same migration, before the VALIDATE (`UPDATE … WHERE <violates>` with an explainable value); (3) remember old NUMERIC(p,s) clamps — a widened column can still hold rounded-to-zero values from its clamped era.
 
 **Applies to:** any `ADD CONSTRAINT … CHECK` + `VALIDATE` migration; posting writers (`apps/erp/app/modules/*/*.service.ts`) of the constrained column.
 
-## Changing `seed.data.ts` only reaches NEW companies — existing companies need a reconciling migration
+## Changing `seed-data.ts` only reaches NEW companies — existing companies need a reconciling migration
 
 ```scope
 id: changing-seed-data-ts-only-reaches-new-companies-existing-co
@@ -819,11 +804,11 @@ paths: ["packages/database/src/seed-data.ts","packages/database/src/seed-dev.ts"
 triggers: ["periodCloseTaskDefinition","seedCompany","seed-data"]
 ```
 
-**Context:** The period-close checklist changed (dropped "Close the period", reclassified two Auto/Manual tasks to Action). Those edits went into `packages/database/supabase/functions/lib/seed.data.ts` (+ `seed-company` / `seed-dev`), which only run on **company creation**. Existing companies — seeded by the original migration's `INSERT … FROM company` — kept the old task set, so the fixes never reached them.
+**Context:** The period-close checklist changed (dropped "Close the period", reclassified two Auto/Manual tasks to Action). Those edits went into the company seed data (now `packages/database/src/seed-data.ts`, read by `seedCompany` and `seed-dev.ts`), which only runs on **company creation**. Existing companies — seeded by the original migration's `INSERT … FROM company` — kept the old task set, so the fixes never reached them.
 
-**Problem:** Seed data (`seed.data.ts` + `seed-company`) and migration-time seeds (`INSERT … FROM company`) are two different populate paths. Editing the former fixes new companies; existing companies are frozen at whatever the migration inserted. The two silently drift.
+**Problem:** Seed data (`seed-data.ts` + `seedCompany`) and migration-time seeds (`INSERT … FROM company`) are two different populate paths. Editing the former fixes new companies; existing companies are frozen at whatever the migration inserted. The two silently drift.
 
-**Rule:** When you change seeded per-company template rows (`periodCloseTaskDefinition`, `paymentTerm`, `accountDefault`, …) in `seed.data.ts`, also write an idempotent **reconciling migration** for existing companies (`INSERT … FROM company … ON CONFLICT DO UPDATE`, plus deletes for removed rows), guarded on the `system` user for the `createdBy` FK. Validate it in a rolled-back psql txn that simulates the old state. Deleting instance rows to force re-instantiation is fine when no real data depends on them (confirm first).
+**Rule:** When you change seeded per-company template rows (`periodCloseTaskDefinition`, `paymentTerm`, `accountDefault`, …) in `seed-data.ts`, also write an idempotent **reconciling migration** for existing companies (`INSERT … FROM company … ON CONFLICT DO UPDATE`, plus deletes for removed rows), guarded on the `system` user for the `createdBy` FK. Validate it in a rolled-back psql txn that simulates the old state. Deleting instance rows to force re-instantiation is fine when no real data depends on them (confirm first).
 
 **Applies to:** any change to `packages/database/src/seed-data.ts` per-company templates; `seedCompany` (`apps/erp/app/modules/settings/settings.service.ts`), `seed-dev.ts`.
 
@@ -859,22 +844,6 @@ triggers: ["p_new->>'updatedBy'","NEW.\"updatedBy\"","p_user_id"]
 
 **Applies to:** `packages/database/supabase/migrations/` — all `sync_*` interceptors and any PL/pgSQL function writing `createdBy`/`updatedBy`/`postedBy`; reviews of new event-system interceptors.
 
-## Postgres transition tables are visible ONLY to the function the trigger invokes directly
-
-```scope
-id: postgres-transition-tables-are-visible-only-to-the-function
-paths: ["packages/database/supabase/migrations/20260812002453_*.sql"]
-triggers: ["batched_new","batched_old","attach_statement_handler","REFERENCING NEW TABLE"]
-```
-
-**Context:** The `itemStockQuantities` aggregate needed a statement-level handler on `itemLedger` so a bulk posting is one upsert instead of N. The event system already builds statement-level triggers (`trg_event_async_*` with `REFERENCING NEW TABLE AS batched_new`), so the obvious move was to have `dispatch_event_batch()` forward to a custom function.
-
-**Problem:** A nested call cannot see the transition tables. A plain function called from the trigger function fails with `relation "batched_new" does not exist` — and this holds for dynamic SQL too (`EXECUTE 'SELECT count(*) FROM batched_new'` fails identically), because the ephemeral named relation lives in the trigger function's own query environment and is not propagated. The only ways to hand a batch onward are materializing it into a temp table per statement (real cost on a hot write path) or not nesting at all. Separately, `dispatch_event_batch()` early-returns when a table has no active subscription and when `app.sync_in_progress` is set — both correct for queueing, fatal for an aggregate that must always be maintained.
-
-**Rule:** A function that needs `batched_new`/`batched_old` must be attached as the trigger's own function. Use `attach_statement_handler(table, functions[])` (`20260812002453`), the statement-level sibling of the row-level interceptors; it does not enqueue to PGMQ. Handlers are attached for INSERT/UPDATE/DELETE and must branch on `TG_OP` — only `batched_new` exists on INSERT, only `batched_old` on DELETE (PL/pgSQL plans lazily, so an unexecuted branch never resolves its missing table). Note also that adding a defaulted parameter to `attach_event_trigger` is a trap: two overloads are live, and a third with defaults makes existing 2-arg calls ambiguous.
-
-**Applies to:** `packages/database/supabase/migrations/20260812002453_event-system-statement-handlers.sql`, `.claude/rules/event-system.md`, any statement-level trigger work under `packages/database/supabase/migrations/`.
-
 ## Re-applying demo data runs code a first apply never reaches
 
 ```scope
@@ -887,7 +856,7 @@ triggers: ["PARENT_CHECK_TABLES"]
 
 **Problem:** Settings → Demo Data on a company that already had data failed with "new row … violates check constraint". The wipe that runs first nulls every nullable FK pointing at a table it clears, which emptied both columns. `pnpm db:check:datasets` stayed green: it applied each dataset once, to an empty scratch company, so the wipe never met a seeded row.
 
-**Rule:** A seeded table whose CHECK needs one of several nullable FKs goes in `PARENT_CHECK_TABLES` (`packages/database/src/datasets/wipe.ts`). The dataset check now re-applies each dataset over itself, so this fails before commit. When a test only exercises the first run of an idempotent operation, also run it a second time.
+**Rule:** When a test only exercises the first run of an idempotent operation, also run it a second time. The rest is in `.claude/rules/onboarding-company-templates.md`.
 
 **Applies to:** `packages/database/src/datasets/` (wipe, verify), migrations that add CHECKs over nullable FK columns.
 

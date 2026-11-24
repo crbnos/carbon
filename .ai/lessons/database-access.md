@@ -70,9 +70,9 @@ triggers: [{"text":".insert(","minCount":2},{"text":".update(","minCount":2},{"t
 
 **Problem:** Every statement was its own PostgREST request (about 34 ms each), and a failure partway left quotes without lines or half a price list while the action still reported success. The checks that made the write safe (every line priced, the RFQ still Draft) lived in the route, so the API tool for the same operation skipped them.
 
-**Rule:** A write that spans tables is a posting (a building block in its module's `<module>.service.ts`) with one Kysely transaction. Its preconditions are checked inside it, on a locked read of the document (`forUpdate()`), so a double submit and every other caller get the same answer. The route keeps only what is about the request: the form, the flash, the email.
+**Rule:** Check a multi-table write's preconditions inside its transaction, on a locked read of the document (`forUpdate()`), so a double submit and every other caller get the same answer. The route keeps only what is about the request: the form, the flash, the email. The rest is in `AGENTS.md` (Never: chained Supabase-client writes) and the `route-action-shape` check.
 
-**Applies to:** any route action with more than one write; `finalize-purchasing-rfq`, `finalize-supplier-quote`.
+**Applies to:** any route action with more than one write; `finalizePurchasingRfq` and `finalizeSupplierQuote` in `apps/erp/app/modules/purchasing/purchasing.service.ts`.
 
 ## Kysely writes in a server function bypass RLS — every one needs an explicit companyId, even when it looks batch-scoped
 
@@ -82,11 +82,11 @@ paths: ["apps/erp/app/modules/*/*.service.ts"]
 triggers: [".updateTable(",".deleteFrom(","assertAllOperationsClaimed"]
 ```
 
-**Context:** The `batch-operations` edge function's `remove`/`update`/`dissolve` cases updated `jobOperation` rows filtered only by `jobOperationBatchId` (from the caller's payload). `requirePermissions` proved the caller held `production_update` in *their own* company; the following batch-scoped update carried no `companyId`.
+**Context:** The `batch-operations` code (then an edge function, now in `apps/erp/app/modules/production/production.service.ts`) had `remove`/`update`/`dissolve` cases that updated `jobOperation` rows filtered only by `jobOperationBatchId` (from the caller's payload). `requirePermissions` proved the caller held `production_update` in *their own* company; the following batch-scoped update carried no `companyId`.
 
-**Problem:** Edge functions run on the service-role Kysely handle, which bypasses RLS entirely — the app-layer permission check is the ONLY gate, and it does not scope the rows a subsequent write touches. A caller passing their own `companyId` (to pass the gate) plus another company's `batchId` (a `nanoid`, not enumerable, but leakable) could detach or re-point the victim's operations; the companyId-scoped batch delete right after matched 0 rows but the transaction still committed the unscoped write. A batch-id predicate is not a tenant boundary.
+**Problem:** That code ran on the service-role Kysely handle, which bypasses RLS entirely — the app-layer permission check is the ONLY gate, and it does not scope the rows a subsequent write touches. A caller passing their own `companyId` (to pass the gate) plus another company's `batchId` (a `nanoid`, not enumerable, but leakable) could detach or re-point the victim's operations; the companyId-scoped batch delete right after matched 0 rows but the transaction still committed the unscoped write. A batch-id predicate is not a tenant boundary.
 
-**Rule:** In a server function, EVERY Kysely read and write carries `.where("companyId","=",companyId)` — even ones that already filter by a scoped foreign key. Assert the row count of a batch-scoped claim (`assertAllOperationsClaimed`) so a concurrent or cross-tenant mismatch rolls back instead of committing a partial. And a two-phase resumable flow must re-validate membership on the resume path exactly as the first pass does — a phase-2 step that flips rows batch-wide but iterates only the payload will strand the rows the short payload omitted.
+**Rule:** Assert the row count of a batch-scoped claim (`assertAllOperationsClaimed`) so a concurrent or cross-tenant mismatch rolls back instead of committing a partial. And a two-phase resumable flow must re-validate membership on the resume path exactly as the first pass does — a phase-2 step that flips rows batch-wide but iterates only the payload will strand the rows the short payload omitted. The rest is in the `no-unscoped-kysely-write` check and `.claude/rules/conventions-services.md`.
 
 **Applies to:** postings in `apps/erp/app/modules/*/*.service.ts` (any service-role Kysely write), resumable multi-phase flows.
 
@@ -130,13 +130,13 @@ paths: ["packages/auth/src/lib/supabase/client.ts","apps/erp/app/routes/x+/quote
 triggers: ["functions.invoke","storageReadFetch"]
 ```
 
-**Context:** Duplicating a quote (`quoteToQuote` in `get-method`) kept failing with a generic toast while silently leaving 3-4 duplicate quotes behind — recurring across three separate production incidents, including twice AFTER the underlying jsonb-serialisation bug (see the lesson above) had already been fixed and deployed. Vercel logs showed exactly ONE incoming `POST .../duplicate.data` per incident, always HTTP 200 (the route swallows `copy.error` into a generic `{success:false}` and never throws, so the response code tells you nothing), with zero attached application logs.
+**Context:** Duplicating a quote (`quoteToQuote`, then in the `get-method` edge function, now in `apps/erp/app/modules/production/production.service.ts`) kept failing with a generic toast while silently leaving 3-4 duplicate quotes behind — recurring across three separate production incidents, including twice AFTER the underlying jsonb-serialisation bug (see the lesson above) had already been fixed and deployed. Vercel logs showed exactly ONE incoming `POST .../duplicate.data` per incident, always HTTP 200 (the route swallows `copy.error` into a generic `{success:false}` and never throws, so the response code tells you nothing), with zero attached application logs.
 
-**Problem:** `getCarbonServiceRole()` (and every other Supabase client) goes through `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`), which blindly retries ANY 5xx response — including `client.functions.invoke(...)` calls into Edge Functions — up to `MAX_RETRIES` (2) more times. `quoteToQuote` is not idempotent (it always creates a brand-new quote/opportunity/externalLink) and runs across two separate Kysely transactions, so a deterministic failure partway through the second transaction lets the first transaction's insert commit on EVERY retry attempt before failing again — one incoming request, N internal retries, N duplicate quotes, and the client still reports failure because the last attempt also failed. This is a structural flaw independent of whatever is actually throwing: fixing one root cause (the jsonb bug) only stops the retries from being triggered by THAT cause — any other exception in the same code path reproduces the identical multiply-duplicate symptom, which is exactly what happened on the two later incidents.
+**Problem:** At the time, every Supabase client went through a retry wrapper that retried ANY 5xx response — including `client.functions.invoke(...)` calls into Edge Functions — up to 2 more times. `quoteToQuote` is not idempotent (it always creates a brand-new quote/opportunity/externalLink) and ran across two separate Kysely transactions, so a deterministic failure partway through the second transaction let the first transaction's insert commit on EVERY retry attempt before failing again — one incoming request, N internal retries, N duplicate quotes, and the client still reported failure because the last attempt also failed. Fixing one root cause (the jsonb bug) only stopped THAT cause from triggering the retries; any other exception in the same code path reproduced the same symptom.
 
-**Rule:** Obsolete for `get-method`, `convert` and the `post-*` functions: they are server functions now, called in-process, so no HTTP retry sits in front of them. Still true: the `isEdgeFunctionInvoke` carve-out in `fetchWithRetry` stays for the remaining edge functions, and a retry wrapper must never blindly retry a write with real side effects and no idempotency key. Original rule: A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
+**Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. Retry reads only, as `storageReadFetch` (`packages/auth/src/lib/supabase/client.ts`) does for storage reads. When debugging "op failed but extra copies appeared," check for this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
 
-**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry` and `isEdgeFunctionInvoke` were removed with the supabase-js 2.117 upgrade; `storageReadFetch` retries storage reads only and never touches `/functions/v1/`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
+**Applies to:** `packages/auth/src/lib/supabase/client.ts` and any future retry/timeout wrapper placed in front of a write or `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from the logs alone.
 
 ## A cast to an OPTIONAL property silently yields `undefined` on a type that lacks it
 
@@ -160,19 +160,19 @@ triggers: [".original as {",".from(\"account\")","pool.end()"]
 
 **Problem:** The `account` (chart of accounts) table is scoped by **`companyGroupId`, not `companyId`** — it has **no `companyId` column** and its PK is `id` alone (globally unique). Four separate sites wrote `.from("account")…​.eq("companyId", companyId)`, which PostgREST rejects ("column companyId does not exist"). Each caller either 500'd or swallowed the error and behaved as if zero accounts existed. The bug was invisible to unit tests (they mock the data, never hit the query) and recurred because a well-meaning "add companyId scoping everywhere" self-review pass applied the standard multi-tenant pattern to a table that breaks it. Same class as `item` (single-column PK, globally unique).
 
-**Rule:** Before scoping any query by `companyId`, confirm the table HAS a `companyId` column. Group-shared config tables — `account` (chart of accounts), and check others — are scoped by `companyGroupId`; resolve it from `company.companyGroupId` (or `ctx.companyGroupId`) and filter by that, or by `id` alone when the ids already come from this company's own rows. `account.id` is globally unique, so an `.in("id", ids)` lookup is correct and tenant-safe on its own.
+**Rule:** Before scoping any query by `companyId`, confirm the table HAS a `companyId` column. A group-shared table is scoped by `companyGroupId`; resolve it from `company.companyGroupId` (or `ctx.companyGroupId`) and filter by that, or by `id` alone when the ids already come from this company's own rows. The rest (`account` has no `companyId`) is in `.claude/rules/ramp-integration.md`.
 
-**Applies to:** any `.from("account")` in services/edge-functions/jobs; the general check "does this table actually have companyId?" before applying the multi-tenant scoping pattern (mirror of the `item` single-column-PK lesson).
+**Applies to:** any `.from("account")` in services and jobs; the general check "does this table actually have companyId?" before applying the multi-tenant scoping pattern (mirror of the `item` single-column-PK lesson).
 
 ---
 
 **Context:** ramp-sync's card family silently created 0 transactions every run; the error "Cannot use a pool after calling end on the pool" was swallowed by family-failure isolation (2026-08-28).
 
-**Problem:** `getJobDatabaseClient(size)` (packages/jobs/src/db.ts) caches a Kysely client over the shared pool from `getPostgresConnectionPool(size)`. Three accounting sweeps (`accounting-outbound-sweep` cron 15,45, `-consolidation`, `-reconciliation`) call `getPostgresConnectionPool(5)` and `pool.end()` it in a `finally`. `getPostgresConnectionPool` evicts an ended pool for ITS callers, but `getJobDatabaseClient` kept a SEPARATE client cache still wrapping the dead pool — so after any sweep ran, every later `getJobDatabaseClient(5)` job broke until process restart.
+**Problem:** `getJobDatabaseClient` (packages/jobs/src/db.ts) cached a Kysely client over a shared pool. Three accounting sweeps ended that pool in a `finally`. The pool factory evicted an ended pool for ITS callers, but `getJobDatabaseClient` kept a SEPARATE client cache still wrapping the dead pool — so after any sweep ran, every later job that used it broke until process restart.
 
-**Rule:** A cached client over a shared, end-able pool must detect the ended pool and rebuild — cache the pool alongside the client and check `pool.ending` (node-postgres) before returning the cached client. More generally, never `pool.end()` a pool obtained from a shared cache (`getPostgresConnectionPool`) unless every cache that wraps it also re-derives on end.
+**Rule:** A cached client over the shared, end-able pool must detect the ended pool and rebuild. `getProcessPool()` (`@carbon/database/client`) replaces a pool that is `ending`, and `getJobDatabaseClient` caches the pool alongside the client and rebuilds when `getProcessPool()` returns another one. Any new cache over `getProcessPool()` does the same. Never `pool.end()` the process pool unless every cache that wraps it also re-derives on end.
 
-**Applies to:** `packages/jobs/src/db.ts` and any code calling `pool.end()` on a `getPostgresConnectionPool(...)` result.
+**Applies to:** `packages/jobs/src/db.ts`, any cache over `getProcessPool()`, and any code calling `pool.end()`.
 
 ## A generated column is writable in the Supabase Insert type but rejected at runtime
 
@@ -186,7 +186,7 @@ triggers: ["purchaseInvoiceLine","supplierQuoteLinePrice","supplierUnitPrice","G
 
 **Problem:** `supabase gen types` lists STORED generated columns in the `Insert`/`Update` types as optional, so `unitPrice: line.amount` typechecks — but Postgres rejects a non-DEFAULT write to a generated column at runtime, and the value never reaches `supplierUnitPrice`, so `post-purchase-invoice` (which posts `quantity * unitPrice`, unitPrice already base) had nothing to post. The path also hardcoded `exchangeRate: 1`, so even when it did post, a foreign-currency bill posted at par. Both are invisible to typecheck and to unit tests that mock the insert.
 
-**Rule:** Write purchase amounts to the `supplier*` document-currency columns (`supplierUnitPrice`, `supplierShippingCost`, `supplierTaxAmount`) plus the real `exchangeRate` (foreign-per-base, from `get_exchange_rate`); never write the generated unprefixed `unitPrice`/`totalAmount`/`shippingCost`/`taxAmount`. A column being present in the generated `Insert` type is NOT proof it is writable — check the migration for `GENERATED ALWAYS`. The generated base column then derives correctly and posts in base currency.
+**Rule:** A column being present in the generated `Insert` type is NOT proof it is writable — check the migration for `GENERATED ALWAYS` before you write a value to it. The rest (write the `supplier*` columns plus the real `exchangeRate`, never the generated price columns) is in `.claude/rules/ramp-integration.md` and `.claude/rules/purchasing-conversion-factors.md`.
 
 **Applies to:** any code inserting `purchaseInvoiceLine` / `purchaseOrderLine` / `supplierQuoteLinePrice` rows (Ramp `syncBill`/reimbursement path, CSV import, AI extraction), and the general "is this Insert-typed column actually generated?" check before writing a value-bearing purchase column.
 
@@ -205,10 +205,12 @@ item row and `itemCost` in one Kysely transaction.
 without `parts_update` in the company, or naming another company's material,
 would still write.
 
-**Rule:** Before a Kysely transaction on rows a caller names, run one UPDATE
-through the caller's supabase client, filtered by id and `companyId`, with
-`.select().single()`, and stop on its error (`requireMaterialUpdatable`). Pick
-a row whose policy also covers the other rows the transaction writes.
+**Rule:** In ANY service, not only materials: before a Kysely transaction on
+rows a caller names, run one UPDATE through the caller's supabase client,
+filtered by id and `companyId`, with `.select().single()`, and stop on its
+error. Pick a row whose policy also covers the other rows the transaction
+writes. The rest (`requireMaterialUpdatable`) is in
+`.claude/rules/material-tables.md`.
 
 **Applies to:** any service that takes both `client` and `db` and writes with
 `db` on behalf of an API or MCP caller.
@@ -230,11 +232,11 @@ deploy does NOT run `authz sync` (nothing in `ci/src/migrations.ts` or
 `.github/workflows/` calls it). A branch that renames a table also strands its
 `baseline.json` entry, which must NOT be regenerated.
 
-**Rule:** When a branch renames or adds a table, treat `packages/database/src/authz/manifest.ts`
-as part of the schema change: rename/add the entry, then
-`pnpm --filter @carbon/database authz migration <name>` (it scopes itself to the
-unshipped set — it will not sweep up unrelated drift), then `authz check` until it
-reports 0 tables. Verify a hand-written policy and its manifest entry agree by
+**Rule:** When a branch RENAMES a table, rename its entry in
+`packages/database/src/authz/manifest.ts` too, then `authz check` until it
+reports 0 tables (`authz migration` scopes itself to the unshipped set — it will
+not sweep up unrelated drift). The rest of the shipping steps are in
+`.claude/rules/authz-manifest.md`. Verify a hand-written policy and its manifest entry agree by
 rendering both rather than reading them: alias (`p` vs `h`), the enum cast Postgres
 adds, and an omitted `WITH CHECK` on UPDATE are all cosmetic, but a missing clause
 is not. A two-hop parent check needs `custom()` — nested `exists()` aliases its
@@ -309,9 +311,9 @@ public tables to `anon`/`authenticated` by default. Edited rules would silently 
 Separately, a test of a missing UPDATE `WITH CHECK` passed against the broken policy: a
 filtered `UPDATE … WHERE` checks the new row against the SELECT policy too.
 
-**Rule:** Anything applied outside migrations needs a CI gate that proves the deploy path
-carries it (`migration.test.ts` → `authz migration`). Test a WITH CHECK with an unfiltered
-UPDATE or by evaluating the policy expression directly, and prove the test red first.
+**Rule:** Anything applied outside migrations, not only authz, needs a CI gate that proves
+the deploy path carries it. Prove a policy test red first. The rest (the authz gate, testing
+a WITH CHECK with an unfiltered UPDATE) is in `.claude/rules/authz-manifest.md`.
 
 **Applies to:** `packages/database/src/authz/**`, `packages/database/supabase/tests/authz-*.sql`.
 
@@ -323,13 +325,13 @@ paths: ["packages/database/src/strict-backflush.ts"]
 triggers: ["@carbon/database/strict-backflush","@carbon/database/rows","inOrder(","from \"kysely\""]
 ```
 
-**Context:** Strict backflush (2026-10-16). `@carbon/database/strict-backflush` is imported by BoM UI components and by `settings.service.ts`, which the module barrel bundles for the browser.
+**Context:** Strict backflush (2026-10-16). `@carbon/database/strict-backflush` is imported by UI components (`BillOfMaterial.tsx`, `JobBillOfMaterial.tsx`, `BatchReleaseModal.tsx`), so the browser bundles it.
 
 **Problem:** Using `inOrder` from `@carbon/database/rows` there would have imported `kysely` at runtime into the client bundle; typecheck does not see it. Separately, `settings.server.ts` gained an import of `~/utils/query`, which imports the `@carbon/auth` barrel. That barrel runs a Lingui `msg` macro, which plain vitest cannot compile, so 2 unrelated test files stopped loading.
 
 **Rule:** In a client-bundled module, import only types from `kysely` and `./client`. Run two awaits instead of `inOrder`. Raw `sql` belongs in a server-only file. Before adding an import to a file that tests import, check what that import's barrel pulls in, then run the module's tests.
 
-**Applies to:** `@carbon/database` subpaths read by UI, `{module}.service.ts`, `{module}.server.ts` imported by vitest files.
+**Applies to:** `@carbon/database` subpaths read by UI, `{module}.server.ts` imported by vitest files.
 
 ## A `@ts-expect-error` on generated DB types is evidence of a dropped column, not a type quirk
 
@@ -339,7 +341,7 @@ paths: ["apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx","apps/e
 triggers: ["@ts-expect-error","@ts-ignore","get_inventory_quantities"]
 ```
 
-**Context:** `InventoryTable.tsx` read `row.original.tags` behind a `// @ts-expect-error TS2339`. The suppression was correct that the property was missing — `20260713235406` had forked `get_inventory_quantities` and dropped the `tags` output added by `20260113122437` (the sibling-branch failure mode above). The regression then hid in plain sight for months: the Tags column silently rendered empty, and the Tags filter sent `.overlaps("tags", …)` → PostgREST 42703 against a nonexistent column.
+**Context:** `InventoryTable.tsx` read `row.original.tags` behind a `// @ts-expect-error TS2339`. The suppression was correct that the property was missing — `20260713235406` had forked `get_inventory_quantities` and dropped the `tags` output added by `20260113122437` (the failure mode in the `database-migrations.md` lesson "A function redefinition forked from an old copy reverts every migration between"). The regression then hid in plain sight for months: the Tags column silently rendered empty, and the Tags filter sent `.overlaps("tags", …)` → PostgREST 42703 against a nonexistent column.
 
 **Problem:** Generated types are mechanically derived from the live schema, so TS2339 on a generated Row/Returns type is never a false positive — it is the type system reporting that the column does not exist. Suppressing it converts a compile-time regression signal into a silent runtime one. The blast radius was widened by `quantities.tsx` calling `redirect(...)` without `throw`, which discarded the resulting PostgREST error and rendered an empty table instead of surfacing it.
 
@@ -403,7 +405,7 @@ ids.
 ```scope
 id: comparing-a-kysely-timestamp-against-a-postgrest-one-is-sile
 paths: ["packages/jobs/src/inngest/functions/integrations/reconcile*.ts","packages/ee/src/accounting/core/**"]
-triggers: ["instantMs","lastSyncedAt","has_any_company_permission","SECURITY DEFINER","REVOKE EXECUTE","assert_company_access"]
+triggers: ["instantMs","lastSyncedAt","has_any_company_permission"]
 ```
 
 **Context:** "Why does this one vendor resync every 30 minutes?" — the v5 reconciler's
@@ -457,28 +459,7 @@ roles when only the server writes them. Also check `pg_policies` for `qual = 'tr
 
 ---
 
-**Context:** A security report: with only the published anon key, a caller could reach 84+
-SECURITY DEFINER functions through `/rest/v1/rpc` — inventory valuation, claims, document
-sequences, the event interceptors — for any company, plus a SQL injection in
-`get_company_id_from_foreign_key`. Table RLS held on all 438 tables; the functions went around it.
-
-**Problem:** Every function in `public` is an RPC endpoint, and a SECURITY DEFINER one bypasses
-RLS. Guards were written inline as `IF NOT (has_role(...) OR ...)`, which is NULL — not true —
-when a lookup finds nothing, so they never raised. The obvious fix, `REVOKE EXECUTE`, segfaults
-this Postgres image on the next anon call (`20260924192316`); a first draft of the fix did exactly
-that and only a rule file caught it, because its test checked `has_function_privilege` instead of
-making the call.
-
-**Rule:** Never `REVOKE EXECUTE` on a public function. A SECURITY DEFINER function that takes a
-company id calls `assert_company_access` first; one that only servers call raises on
-`current_setting('role')`; everything internal (helpers, event interceptors) is SECURITY INVOKER.
-Never trust a user id parameter without relating it to `auth.uid()`. Test a guard by CALLING the
-function as `anon` and as another company's user, not by reading the catalog. Edge functions:
-`verify_jwt` accepts the anon key, so authorize in-function (`requireCaller` / `requireServiceRole`).
-
-**Applies to:** every `CREATE FUNCTION` in `packages/database/supabase/migrations/**`,
-`packages/database/supabase/functions/*/index.ts`; enforced by the
-`public-definer-function-authorizes-caller` invariant and `supabase/tests/rpc-privileges.test.sql`.
+The SECURITY DEFINER section moved out. The rest is in the `public-definer-function-authorizes-caller` invariant, the `edge-function-authorizes-caller` check and `.claude/rules/authz-manifest.md`.
 
 ## Copying child rows onto a new record can make that record undeletable
 
@@ -520,7 +501,7 @@ paths: []
 triggers: [".values(rows",".values([","quoteLineToJob"]
 ```
 
-**Context:** `get-method`'s `quoteLineToJob` builds every `jobMaterial` row into one array, then inserts them with a single `trx.insertInto("jobMaterial").values(rows)`. Only rows whose item had an effective supersession successor carried a `unitCost` key; the rest omitted it, on the assumption that omitting a key lets the column default apply.
+**Context:** `quoteLineToJob` (then in the `get-method` edge function, now in `apps/erp/app/modules/production/production.service.ts`) builds every `jobMaterial` row into one array, then inserts them with a single `trx.insertInto("jobMaterial").values(rows)`. Only rows whose item had an effective supersession successor carried a `unitCost` key; the rest omitted it, on the assumption that omitting a key lets the column default apply.
 
 **Problem:** Kysely derives the INSERT's column list from the union of keys across ALL rows, not per row. The moment one swapped row carries `unitCost`, the column joins the statement and every row that omitted the key is written `NULL`. `jobMaterial.unitCost` is `NOT NULL DEFAULT 0`, so the whole insert failed with a 23502 and job creation died — and because it is one statement in one transaction, a single swapped line took down the entire job. The column default is only reached when NO row in the batch has the key, which is why it worked until the first quote-to-job with a superseded line. It was invisible to typecheck, to 157 unit tests, and to three review agents; it surfaced the first time a human clicked the flow in a browser.
 
@@ -540,25 +521,9 @@ triggers: ["fetchAllFromTable","fetchAllRecords","select(\"*\")","max_rows"]
 
 **Problem:** `packages/database/supabase/config.toml` sets `max_rows = 1000`, so PostgREST truncates responses in production. The crbn dev stack runs its own `postgrest` container without `PGRST_DB_MAX_ROWS`, so locally the same query returns everything — verified: a view with 2,497 rows returned all 2,497 locally. Two production tenants exceeded the cap on `openJobMaterialLines` (2,497 and 1,495 rows) and a third on `demandActual` (9,391), so MRP silently planned on truncated demand and its zeroing pass missed stale actuals. The bug is structurally invisible to local testing.
 
-**Rule:** Any PostgREST read that can exceed 1000 rows must paginate — `fetchAllFromTable`/`fetchAllRecords` from `@carbon/database` in app code, `fetchAll` (`@carbon/database/fetch-all`, source `packages/database/src/fetch-all.ts`) in server functions, `@carbon/planning` and edge functions — and must carry a stable `.order()` so pages don't shift between requests. Do not conclude "it returns everything" from a local run; check the row count against `max_rows` in `config.toml` instead.
+**Rule:** Outside MRP too, any PostgREST read that can exceed 1000 rows pages: `fetchAllFromTable`/`fetchAllRecords` from `@carbon/database` in app code, `fetchAll` (`@carbon/database/fetch-all`) in server functions and `@carbon/planning`. The rest (a stable `.order()`, the 1000-row cap that dev does not enforce) is in `.claude/rules/mrp-system.md`.
 
 **Applies to:** `packages/planning/src/mrp/mrp.ts`, `packages/database/src/fetch-all.ts`, `packages/database/supabase/config.toml`, any `.select()` in `packages/planning/src/**` or `apps/erp/app/modules/**`.
-
-## Node-side re-exports from the Deno functions tree must dodge lib/database.ts
-
-```scope
-id: node-side-re-exports-from-the-deno-functions-tree-must-dodge
-paths: ["packages/database/src/client.ts","packages/database/src/sampling.ts","packages/database/src/quality.ts"]
-triggers: ["lib/database.ts","supabase/functions/shared"]
-```
-
-**Context:** `@carbon/database` re-exports code from `packages/database/supabase/functions/` into the node world (`src/client.ts` → `lib/postgres/index.ts`). The shared inspection engine (`src/quality.ts`) needed `getNextSequence` from `supabase/functions/shared/get-next-sequence.ts`, which imported its `DB` type from `../lib/database.ts`.
-
-**Problem:** `lib/database.ts` imports `./driver.ts` — the Deno-postgres driver whose types (`queryObject`, deno `Pool`) don't typecheck under the node tsconfig. Pulling any `shared/*.ts` helper that touches `lib/database.ts` into a `src/*` file breaks `pnpm --filter @carbon/database typecheck`, even though the runtime graph would have been fine.
-
-**Rule:** Obsolete: `src/client.ts` is now the Node-only implementation and nothing in `packages/database/src` imports the Deno tree. Original rule: when making a Deno-tree helper importable from `packages/database/src/*`, its type-only imports must come from `../lib/postgres/index.ts` (node-clean, already the `src/client.ts` re-export source), never `../lib/database.ts`. `import type { KyselyDatabase as DB } from "../lib/postgres/index.ts"` is behavior-neutral for Deno. Check the full import chain (`lib/utils.ts` is safe; `lib/database.ts`/`lib/driver.ts` are not) before re-exporting.
-
-**Applies to:** `packages/database/src/{client,sampling,quality}.ts`.
 
 ## A client swap can change runtime value types (Kysely once returned NUMERIC as a string)
 
@@ -572,7 +537,7 @@ triggers: ["upsertQuoteLinePrices","setTypeParser","getPostgresClient"]
 
 **Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsc` cannot see it — the mismatch exists only at runtime.
 
-**Rule:** NUMERIC (oid 1700) decodes to a JS number: `packages/database/src/client.ts` registers the `setTypeParser` override once, so runtime matches the generated types. Do not wrap a NUMERIC read in `Number(...)`; the wrappers still at Kysely call sites are from before the parser and do nothing. `BIGINT` and float8 still arrive as strings, as does a NUMERIC from a pool that is not built through the shared factory. Do not convert those for tidiness: `Number()` on a `BIGINT` loses precision past `Number.MAX_SAFE_INTEGER`. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically. Exercise it against a real database.
+**Rule:** `BIGINT` still arrives as a string, as does a NUMERIC from a pool that is not built through the shared factory. Do not convert those for tidiness: `Number()` on a `BIGINT` loses precision past `Number.MAX_SAFE_INTEGER`. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically. Exercise it against a real database. The rest (the NUMERIC parser, no `Number(...)` wrappers, float8) is in `.claude/rules/numeric-precision.md` ("Runtime type decoding").
 
 **Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**`, and the `getPostgresClient` pool in `packages/database/src/client.ts`.
 
@@ -588,7 +553,7 @@ triggers: ["createMakeMethodVersion","copyMakeMethod","makeMethodToMakeMethod","
 
 **Problem:** When the copy failed it rolled back only its own rows. The empty Draft stayed, numbered above a source that was now Active and read-only. A first fix deleted them again after the failure; that cleanup could fail too, and it needed a delete the caller may not be allowed to make.
 
-**Rule:** Put the header insert, any status change and the copy in ONE Kysely transaction and pass the transaction to `copyMakeMethod` as `db`. A function that may be handed a transaction opens its own through `withTransaction` (`@carbon/database/client`), never `db.transaction()`: Kysely refuses `transaction()` on a `Transaction`. Every get-method body, and `createMakeMethodVersion` itself, joins that way, so a caller can add its own writes to the same commit (the change notice writes its `changeOrderId` in the insert; the Onshape Draft adds its line ownership and marker) instead of a second write after the commit that can fail alone. Kysely bypasses RLS, so check the policy's permission through the caller's client first (`requireCompanyPermission`), as `createRevision` does.
+**Rule:** Put the header insert, any status change and the copy in ONE Kysely transaction and pass the transaction to `copyMakeMethod` as `db`. Every get-method body, and `createMakeMethodVersion` itself, joins a transaction it is handed, so a caller can add its own writes to the same commit (the change notice writes its `changeOrderId` in the insert; the Onshape Draft adds its line ownership and marker) instead of a second write after the commit that can fail alone. Kysely bypasses RLS, so check the policy's permission through the caller's client first (`requireCompanyPermission`), as `createRevision` does. The rest (`withTransaction`, never `db.transaction()`) is in `.claude/rules/database-patterns.md`.
 
 **Applies to:** `createMakeMethodVersion` (`items.service.ts`) and its callers (`createMethodVersion`, `createChangeNoticeDraftMethod`, `ensureDraftMakeMethod`); any other header insert followed by a get-method copy (quote and job duplication, revisions).
 
@@ -602,8 +567,8 @@ triggers: ["priceTrace","toJsonColumns","toJson(","toTiptapDoc","internalNotes",
 
 **Context:** `quoteLinePrice.priceTrace` (a `PriceTraceStep[]`) is written both through
 supabase-js (PostgREST) and through Kysely (`rewriteQuoteLinePrices`,
-`saveQuoteLineWithPrices`, `get-method`). Quote → sales order conversion (the `convert`
-edge function) reads the quote with supabase-js and re-inserts its `internalNotes` /
+`saveQuoteLineWithPrices`, the get-method copies in `production.service.ts`). Quote → sales
+order conversion (`convertDocument` in `shared.service.ts`, then the `convert` edge function) reads the quote with supabase-js and re-inserts its `internalNotes` /
 `externalNotes` into `salesOrder` through Kysely inside the transaction. One quote had
 `internalNotes` stored as a JSON string scalar, not a tiptap document. An API path wrote it,
 and that path's validator typed `notes` as `z.any()`.
@@ -630,9 +595,8 @@ the same transaction as the `quote` / `quoteLine` / `quoteLinePrice` inserts, so
 cleanly (no duplicate).
 
 **Rule:** On a Kysely write, `JSON.stringify` any jsonb value that can be an array (or a bare
-string). In Deno use `toJson` / `toJsonColumns` (`functions/lib/json.ts`). In a server
-function, send every `json`/`jsonb` value through `toJson()` (`@carbon/database/json`, source
-`packages/database/src/json.ts`). It pre-serialises every non-null shape, so the wire value is
+string). Send every `json`/`jsonb` value through `toJson()` (or a row through
+`toJsonColumns`) from `@carbon/database/json` (source `packages/database/src/json.ts`). It pre-serialises every non-null shape, so the wire value is
 valid JSON text. A validator for a rich-text column is never `z.any()`. Use the shared
 `optionalTiptapDoc` / `toTiptapDoc` in `shared.models.ts`: it turns text, a JSON-encoded doc
 or a doc object into a tiptap document and rejects the rest. Put `.optional()` AFTER the
@@ -656,11 +620,9 @@ paths: ["packages/ee/src/issue-sync/maps.ts"]
 triggers: ["hashText","createHash(","fingerprint"]
 ```
 
-**Context:** The issue sync stores a hash of a record's rich text (Tiptap JSON) to tell its own writes from real changes (2026-10-19).
+**Context:** The issue sync's echo guard hashed `JSON.stringify` of a written rich text, and a JSONB read returned its keys re-ordered, so every inbound change echoed back (2026-10-19).
 
-**Problem:** `projectElement.description` is JSONB, which re-sorts object keys; action-task `notes` is JSON, which keeps them. A hash of `JSON.stringify` of the written object did not match the hash of the row read back, so every inbound description change looked like a new Carbon change and echoed back to the tracker.
-
-**Rule:** Fingerprint JSON with sorted keys (`hashText` in `packages/ee/src/issue-sync/maps.ts`), never with plain `JSON.stringify`, when one side of the comparison may be a JSONB read.
+**Rule:** Outside the issue sync too, fingerprint JSON with sorted keys, never with plain `JSON.stringify`, when one side of the comparison may be a JSONB read. The rest (`hashText`) is in `.claude/rules/issue-sync.md`.
 
 **Applies to:** snapshot, dedupe or change-detection hashes over JSON/JSONB columns.
 
@@ -672,11 +634,9 @@ paths: []
 triggers: ["!inner(","user(email)",".in(\"user."]
 ```
 
-**Context:** The Linear and Jira inbound sync matched an issue's assignee to a Carbon employee with `userToCompany.select("userId,user(email)").in("user.email", [email])` (2026-10-19).
+**Context:** The Linear and Jira inbound sync filtered `user.email` on a plain `user(email)` embed, so every synced issue went to the company's first employee (2026-10-19). Typecheck and a "returns rows" check both pass.
 
-**Problem:** Without `!inner`, PostgREST applies the filter to the embed only: every `userToCompany` row comes back, with `user` set to null where the email did not match. The job took `employees[0]`, so every synced issue assigned the task to the company's first employee. Typecheck and a "returns rows" check both pass.
-
-**Rule:** When a filter on an embedded column must restrict the parent rows, embed it as `relation!inner(...)`. Test it with a non-matching value and expect zero rows.
+**Rule:** On EVERY query, not only `getCompanyEmployees`: when a filter on an embedded column must restrict the parent rows, embed it as `relation!inner(...)`. Test it with a non-matching value and expect zero rows. The rest is in `.claude/rules/linear-integration.md`.
 
 **Applies to:** every `.eq/.in/.ilike("embed.column", …)` on a Supabase select.
 
@@ -746,15 +706,8 @@ Ramp rejected every draft bill with `422 DEVELOPER_7001 "Not a valid date"`. Typ
 did not catch it — the syncer's local type declared `string | null` and the Kysely row
 was assigned straight in. Unit tests did not catch it either; only a live push did.
 
-**Rule:** FIXED AT THE SOURCE for `date` columns — node-postgres now decodes OID 1082 to
-the raw `YYYY-MM-DD` string, so a Kysely row matches the generated types
-(`packages/database/src/client.ts`, pinned by
-`packages/database/src/postgres-type-parsers.test.ts`). `timestamp`/`timestamptz`
-(1114 / 1184) are deliberately still `Date`s — Postgres' wire text for those differs in
-SHAPE from PostgREST's (`… 16:36:52.677+00` vs `…T16:36:52.677+00:00`), so identity
-would make the two clients disagree. So: when moving a query from the Supabase client to
-Kysely, treat every TIMESTAMP column as a value whose runtime type just changed, and
-normalize with `toPostingDateString` before it reaches a wire payload or a `.slice`.
+**Rule:** The rest (DATE decodes to a string, timestamps are still `Date`s, normalize with
+`toPostingDateString`) is in `.claude/rules/date-handling.md`.
 
 **The deeper rule:** a runtime/type mismatch that the GENERATED types already paper over
 is invisible to typecheck by construction. Fix it at the driver, not with a helper at
@@ -762,22 +715,6 @@ every call site — the helper is what 34 call sites and ~16 `instanceof Date` g
 
 **Applies to:** any `packages/ee` syncer or `packages/jobs` function reading timestamp
 columns through Kysely and sending them to a provider API.
-
-## Multi-tenancy: every query must scope by companyId
-
-```scope
-id: multi-tenancy-every-query-must-scope-by-companyid
-paths: ["apps/erp/app/modules/*/*.service.ts"]
-triggers: ["selectFrom(","updateTable(","deleteFrom("]
-```
-
-**Context:** Writing service functions that query the database.
-
-**Problem:** Forgetting to include `.eq("companyId", companyId)` in a query exposes cross-tenant data. RLS provides a safety net, but defense in depth requires application-level scoping too.
-
-**Rule:** Every database query in a service function MUST include `companyId` scoping. Never rely solely on RLS for tenant isolation — treat it as a backup, not the primary guard.
-
-**Applies to:** All `*.service.ts` files, any Kysely or Supabase query.
 
 ## Never build PostgREST `.or()` filter strings from external values
 
@@ -821,14 +758,14 @@ Kysely transactions, `insertInto(...).values([...])`, seeds.
 
 ```scope
 id: ts-expect-error-ts2589-on-supabase-joined-selects-is-fragile
-paths: ["apps/erp/app/routes/x+/*+/$itemId.purchasing.$supplierPartId.delete.tsx"]
+paths: []
 triggers: ["TS2589"]
 ```
 
-**Context:** The `$itemId.purchasing.$supplierPartId.delete.tsx` routes (material / tool / consumable / part / …) each do `client.from("supplierPart").select("id, supplierId, supplier:supplierId(name)")`. Some carried `// @ts-expect-error TS2589 — … type instantiation too deep`. Adding an unrelated new route file (`periods.generate.tsx`) flipped which file the checker reported: `material` went from TS2578 (unused directive) to clean, `tool` went from clean to TS2589 — a whack-a-mole that broke `erp` typecheck without touching those files.
+**Context:** A set of sibling routes each ran the same Supabase joined select. Some carried `// @ts-expect-error TS2589 — … type instantiation too deep`. Adding an unrelated new route file (`periods.generate.tsx`) flipped which file the checker reported: `material` went from TS2578 (unused directive) to clean, `tool` went from clean to TS2589 — a whack-a-mole that broke `erp` typecheck without touching those files.
 
 **Problem:** TS2589 ("type instantiation is excessively deep") on PostgREST joined-select types is **order/threshold dependent** — it surfaces at whichever file crosses a cumulative-depth limit during a given check pass, so which file errors changes as files are added/removed elsewhere. `@ts-expect-error` *requires* an error on the next line, so a directive that was "used" becomes an "unused directive" (TS2578) the moment the trigger moves — and the newly-triggering file now lacks a directive (TS2589). Swapping directives just moves the problem.
 
-**Rule:** Don't manage TS2589 on Supabase joined-selects with `@ts-expect-error` — it *requires* an error, so it flips to TS2578 the moment the trigger moves to another file. Use `@ts-ignore` instead (the codebase's choice on the `supplierPart` delete routes): it suppresses the error when it fires and stays green when it doesn't, and it preserves the inferred `result` type. A localized `(client as any)` cast is the heavier alternative — it removes the file from the cumulative-depth pool entirely but drops the result's type; prefer `@ts-ignore` unless you specifically need to break the inference chain.
+**Rule:** Don't manage TS2589 on Supabase joined-selects with `@ts-expect-error` — it *requires* an error, so it flips to TS2578 the moment the trigger moves to another file. Use `@ts-ignore` instead: it suppresses the error when it fires and stays green when it doesn't, and it preserves the inferred `result` type. A localized `(client as any)` cast is the heavier alternative — it removes the file from the cumulative-depth pool entirely but drops the result's type; prefer `@ts-ignore` unless you specifically need to break the inference chain.
 
-**Applies to:** the `supplierPart` joined-select delete routes and any similar `alias:fkColumn(...)` embed that trips TS2589; `apps/erp/app/routes/x+/{material,tool,consumable,part}+/...delete.tsx`.
+**Applies to:** any Supabase joined select or embed that trips TS2589.

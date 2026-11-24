@@ -22,7 +22,7 @@ triggers: ["buildConsumeFirstHops","successorItemId","parentMaterialId"]
   gets a cycle test of the smallest loop (two nodes) before anything else,
   and the guard checks termination of the WHOLE chain, not just the part the
   function happens to traverse.
-- **Applies to:** `lib/supersession-pick.ts` chain builders, BOM walkers,
+- **Applies to:** `packages/database/src/supersession-pick.ts` chain builders, BOM walkers,
   anything keyed on `successorItemId` or `parentMaterialId`.
 
 ## A reservation class that must outlive job status needs an explicit escape in EVERY snapshot filter
@@ -37,9 +37,9 @@ triggers: ["getLiveReservations","capacityHoldingJobStatuses","capacityReservati
 
 **Problem:** `getLiveReservations` quietly filters `j."status" IN capacityHoldingJobStatuses` at the END of the query builder — separate from the `excludeJobIds` filter that had already been made batch-aware. The batch row vanished from every snapshot whenever its anchor job was unreleased: the machine looked free and every other job over-booked straight through the batch window.
 
-**Rule:** When a reservation (or any capacity-holding row) must survive independently of its anchor row's status, grep EVERY filter in the read path — not just the one you were pointed at — and give each an explicit escape (`OR "jobOperationBatchId" IS NOT NULL`). A snapshot read with two filters a hundred lines apart is two bugs, not one.
+**Rule:** When a reservation (or any capacity-holding row) must survive independently of its anchor row's status, grep EVERY filter in the read path — not just the one you were pointed at — and give each an explicit escape. A snapshot read with two filters a hundred lines apart is two bugs, not one. The rest is in `.claude/rules/scheduling-data-structures.md` ("Three predicate rules keep the coalesced row alive").
 
-**Applies to:** `packages/ee/src/planning/scheduling/master-data-provider.ts` `getLiveReservations`, any future scenario/what-if reservation reads, and generally any row whose lifecycle is owned by a different entity than its FK anchor.
+**Applies to:** `packages/planning/src/scheduling/master-data-provider.ts` `getLiveReservations`, any future scenario/what-if reservation reads, and generally any row whose lifecycle is owned by a different entity than its FK anchor.
 
 ## A scheduler decision is only stored when every write-back guard agrees
 
@@ -53,7 +53,7 @@ triggers: ["applyWorkCenterSelections","placementWrites","buildWrites"]
 
 **Problem:** Two separate "never overwrite a stored work center" guards sat between the decision and the database: one in `applyWorkCenterSelections`, one in the engine's `buildWrites`. Fixing the first one alone changed nothing in the database. The `capacityReservation` row named the chosen station while `jobOperation.workCenterId` kept the old one, and every unit test still passed.
 
-**Rule:** When you change what the scheduler decides, trace the value to the write (`placementWrites`, `run-overlay.ts`). Test the decision and the write together, then remove the write fix and confirm a test goes red.
+**Rule:** When you change what the scheduler decides, test the decision and the write together, then remove the write fix and confirm a test goes red. The rest is in `.claude/rules/scheduling-data-structures.md`.
 
 **Applies to:** `packages/planning/src/scheduling/` — `apply-work-center-selections.ts`, `run-overlay.ts`, `scheduling-engine.ts`.
 
@@ -92,13 +92,13 @@ paths: ["apps/erp/app/modules/inventory/supersession-pick.ts","packages/planning
 triggers: ["substitutedFromItemId","redirectedFromItemId","generatePickingList","get_picking_schedule","resolvePickRule"]
 ```
 
-**Context:** Supersession swaps a `jobMaterial` to its successor when the job is created (`substitutedFromItemId` records the predecessor). Picking then looked up `itemSupersession` by `jobMaterial.itemId` — which is now the successor, which has no row — so `resolvePickTarget` returned "pick the item unchanged" and `Consume First` never consumed the predecessor's stock. The picking-side branch was dead code for every job created after the effectivity date, and the unit tests (which passed a material still on the predecessor) could not see it. A second writer appeared later: a line pulled back onto a stocked predecessor stores the SUCCESSOR in `substitutedFromItemId`. Picking looked the rule up on that column first. That was correct for the forward case. But when the successor had a rule of its own (NEW → NEWER), the pulled-back line resolved NEW's rule, the roles inverted, and the pick went back to NEW.
+**Context:** Supersession swaps a `jobMaterial` to its successor when the job is created, and picking first looked the rule up by the row's current item. The unit tests passed a material still on the predecessor, so they could not see it. A second writer (a line pulled back onto a stocked predecessor) later stored the SUCCESSOR in `substitutedFromItemId`.
 
 **Problem:** The rule lives on the OLD item; the row already names the NEW one. Any later stage that re-reads the rule by the row's current item silently finds nothing, and "no rule" is a valid, quiet outcome. "Column set ⇒ rule lives there" was true only until the second writer appeared. The only thing that distinguishes the two shapes is the relation between the row's own item and the column: on a pulled-back line, the row's own rule NAMES the column as its successor.
 
-**Rule:** When a row is rewritten by a rule and carries a provenance column (`substitutedFromItemId`, `redirectedFromItemId`, …), every downstream lookup of that rule must use the provenance column, in BOTH the TS and SQL mirrors. When only one direction of a swap writes the column, key on `COALESCE(provenance, current)`. When more than one direction can write it, resolve by relation, not by presence: prefer the row's own rule when it points at the column; only then fall back to the column's rule. Mirror the precedence in every SQL twin (`ORDER BY (own AND successor = column) IS TRUE DESC, …`). Or give the two directions distinct columns. Test the swapped shape explicitly, in each direction — a fixture that stops at "rule set, nothing swapped yet" proves nothing about what happens after the swap.
+**Rule:** When a row is rewritten by a rule and carries a provenance column (`substitutedFromItemId`, `redirectedFromItemId`, …), every downstream lookup of that rule must use the provenance column, in BOTH the TS and SQL mirrors. When only one direction of a swap writes the column, key on `COALESCE(provenance, current)`. When more than one direction can write it, resolve by relation, not by presence, or give the two directions distinct columns. Test the swapped shape explicitly, in each direction — a fixture that stops at "rule set, nothing swapped yet" proves nothing about what happens after the swap. The rest (the `resolvePickRule` precedence and its SQL twin) is in `.claude/rules/supersession-system.md`.
 
-**Applies to:** `apps/erp/app/modules/inventory/supersession-pick.ts` (`resolvePickRule`) / `generatePickingList`, `get_picking_schedule`, `packages/ee/src/planning/mrp/mrp.ts` (redirected BOM children), any reader of `jobMaterial.substitutedFromItemId` / `redirectedFromItemId`.
+**Applies to:** `apps/erp/app/modules/inventory/supersession-pick.ts` (`resolvePickRule`) / `generatePickingList`, `get_picking_schedule`, `packages/planning/src/mrp/mrp.ts` (redirected BOM children), any reader of `jobMaterial.substitutedFromItemId` / `redirectedFromItemId`.
 
 ## A degenerate-input guard on a scheduling surface is a silent-vanish bug, not defensive coding
 
@@ -114,7 +114,7 @@ triggers: ["isPlaceholder","conflictReason","capacityReservation"]
 
 **Rule:** In the scheduling engine, degenerate input never `continue`s past a persistence step — it emits the flagged placeholder shape (`isPlaceholder = true`, honest `workHours`, a `conflictReason` naming the DATA gap and its fix) so the entity stays visible and self-diagnosing. Match the unplaceable-op precedent; give the placeholder a nominal drawable window when true content is zero.
 
-**Applies to:** `packages/ee/src/planning/scheduling/batch-scheduler.ts`, `work-center-selector.ts` placeholder branches, and any future pre-pass/what-if that turns entities into reservations or timeline rows.
+**Applies to:** `packages/planning/src/scheduling/batch-scheduler.ts`, `work-center-selector.ts` placeholder branches, and any future pre-pass/what-if that turns entities into reservations or timeline rows.
 
 ## Consume First is one rule for bought and made parts (2026-09-16)
 
@@ -125,25 +125,18 @@ triggers: ["consumeFirstRedirect","explodeBom","settleConsumeFirstLines","loadSu
 ```
 
 - **Context:** the Consume First stock-netting was written for bought parts
-  only. A made predecessor always swapped to its successor — at job creation
-  (`loadSupersessionRedirect`'s Make exclusion) and in MRP (full BOM swap) —
-  because the post-explosion pass that moved the bought shortfall could not
-  explode a made successor's BOM.
-- **Problem:** stocked old sub-assemblies were never used: a job named the new
-  bracket while old brackets sat on the shelf, and planning bought the new
-  bracket's ingredients for the whole quantity. The two "made" special cases
-  were a workaround for where the netting lived, not a product decision.
-- **Rule:** put the netting where the successor can still be planned as
-  itself. In MRP that is INSIDE `explodeBom` (`consumeFirstRedirect`): the old
-  part nets its running balance and moves the shortfall to the successor,
-  which then explodes or buys at a deeper level (a synthetic leveling edge
-  keeps it below the predecessor). In job creation the per-line settle pass is
-  the authority for every Pull from Inventory line, and the item-level filter
-  is provisional. When a rule has a replenishment-specific exception, ask
-  whether the exception is a product decision or an artefact of where the
-  code sits.
-- **Applies to:** `lib/mrp-engine.ts`, `packages/ee/src/planning/mrp/mrp.ts`,
-  `get-method` `settleConsumeFirstLines` / `loadSupersessionRedirect`.
+  only, so a made predecessor always swapped to its successor, at job
+  creation and in MRP.
+- **Problem:** stocked old sub-assemblies were never used. The two "made"
+  special cases were a workaround for where the netting lived, not a product
+  decision.
+- **Rule:** when a rule has a replenishment-specific exception, ask whether
+  the exception is a product decision or an artefact of where the code sits.
+  The rest (where MRP and job creation net Consume First) is in
+  `.claude/rules/supersession-system.md`.
+- **Applies to:** `packages/database/src/mrp-engine.ts` (`explodeBom`),
+  `packages/planning/src/mrp/mrp.ts`, `settleConsumeFirstLines` /
+  `loadSupersessionRedirect` in `apps/erp/app/modules/production/production.service.ts`.
 
 ## `openProductionOrders` is MRP supply, not "the open jobs for an item"
 
@@ -192,23 +185,3 @@ triggers: ["bomChildren","methodCorrectionId","WITH RECURSIVE"]
 **Rule:** Before you write a calculation that another engine already does (BOM explosion, stock netting, supply and due dates), read that engine and apply the same filters. Name the engine in a comment beside the copy, so the two stay in step.
 
 **Applies to:** Order promising, quote lead time, and any read outside MRP that walks a BOM or nets stock.
-
-## Consume First splits are per assembly, not per unit (2026-09-15)
-
-```scope
-id: consume-first-splits-are-per-assembly-not-per-unit-2026-09-1
-paths: ["packages/database/src/supersession-pick.ts"]
-triggers: ["consumableInWholeAssemblies","Consume First","supersessionMode"]
-```
-
-- **Context:** the Consume First partial-stock split picked the predecessor for
-  every unit the warehouse had and the successor for the rest.
-- **Problem:** with 2 per assembly and 3 on the shelf that put one old and one
-  new part on the same unit. A customer would rather leave the odd part in
-  stock than fit a mismatched pair; units of a batch may differ, one unit never.
-- **Rule:** round a predecessor's usable on-hand DOWN to a multiple of the
-  line's per-assembly quantity (`consumableInWholeAssemblies`) everywhere the
-  split is computed — job creation, picking, the SQL schedule, the job
-  materials note, Order Status, the planning list, MRP. A quantity rule that
-  lives in seven places needs one helper, or the sites drift.
-- **Applies to:** any allocation of a per-unit component across a batch.

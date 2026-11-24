@@ -10,11 +10,7 @@ paths: ["apps/erp/app/root.tsx","apps/mes/app/root.tsx","packages/env/src/index.
 triggers: ["getBrowserEnv","window.env"]
 ```
 
-**Context:** The Stripe Connect integration card stayed "Coming soon" even with `STRIPE_SECRET_KEY` set server-side. `getBrowserEnv()` (`packages/env/src/index.ts`) already exposed `STRIPE_CONNECT_ENABLED` and the `Window.env` interface declared it, so it looked fully wired — but the browser gate `window.env?.STRIPE_CONNECT_ENABLED === "true"` still read `undefined`.
-
-**Problem:** `apps/erp/app/root.tsx`'s loader does NOT pass `getBrowserEnv()` through — it destructures specific keys and rebuilds an `env: { ... }` object by hand, and `window.env` is populated from THAT loader object on the normal render path (`const env = loaderData?.env ?? {}` → `<Document env={env}>`). The new flag was added to `getBrowserEnv()` but never added to the loader's manual list, so it was silently dropped client-side. (The ErrorBoundary path uses `getBrowserEnv()` directly, which masks the gap during casual reading.)
-
-**Rule:** Adding a browser-safe var is THREE edits, not one: the `getEnv` export, `getBrowserEnv()` + the `Window.env` interface, AND the consuming app's root-loader `env` object (destructure + literal) for every app that needs it client-side. The loader's hand-curated `env` is the real source of `window.env` on the happy path — a key present in `getBrowserEnv()` but absent there is `undefined` in the browser. When an env-driven feature is dark despite the server value being set, diff `getBrowserEnv()`'s keys against the loader's `env` object before touching anything else.
+**Rule:** The root loader's hand-built `env` object, not `getBrowserEnv()`, is what fills `window.env` on the normal render path (the ErrorBoundary path uses `getBrowserEnv()` directly, which hides the gap). When an env-driven feature is dark although the server value is set, diff `getBrowserEnv()`'s keys against the loader's `env` object before touching anything else. The rest is in `.claude/rules/environment-configuration.md`.
 
 **Applies to:** `apps/erp/app/root.tsx` (and `apps/mes/app/root.tsx`) loader `env` objects, `packages/env/src/index.ts` `getBrowserEnv()`, any `window.env`-gated integration/feature flag.
 
@@ -26,11 +22,7 @@ paths: ["apps/*/app/root.tsx","packages/query/src/invalidation.ts"]
 triggers: ["createInvalidationMiddleware"]
 ```
 
-**Context:** The invalidation middleware factory lived in `invalidate.client.ts`, next to `flash.client.ts`. `root.tsx` calls `createInvalidationMiddleware(...)` while the module is evaluated.
-
-**Problem:** React Router replaces a `.client` module's exports with `undefined` on the server. `flash.client.ts` survives because `root.tsx` only REFERENCES its export; a factory is CALLED, so SSR died with "is not a function". Typecheck, lint and unit tests passed.
-
-**Rule:** A module whose export is called at module load of a route must not be named `.client` or `.server`. After adding anything to `root.tsx` or a shell layout, load the page from a running dev server before calling it done.
+**Rule:** Typecheck, lint and unit tests do not see a module that is empty on the server. After adding anything to `root.tsx` or a shell layout, load the page from a running dev server before calling it done. The rest is in `.claude/rules/clientAction-patterns.md`.
 
 **Applies to:** `apps/*/app/root.tsx`, `packages/query/src/invalidation.ts`, any shared module imported by a route.
 
@@ -97,15 +89,9 @@ paths: ["apps/*/app/routes/**/_layout.tsx","packages/utils/src/revalidate.ts","a
 triggers: ["export const shouldRevalidate","shouldRevalidate","defaultShouldRevalidate","useResolved"]
 ```
 
-**Context:** 186 layouts exported `shouldRevalidate` and skipped a GET navigation that left their params unchanged (`isUnaffectedByNavigation`, 2026-10-01), to save a layout loader run on each click. The skip came from a slow click: a click on a BOM node under a part (`/x/part/:itemId/make/:makeMethodId.data`) took 2.8 s in production. The Vercel log showed about 68 PostgREST calls for that one click, and about 10 belonged to the page being opened.
+**Rule:** To see which loaders a navigation asked for, read the `_routes` query of its `.data` request. The rest is in `.claude/rules/coding-conventions.md` (Routes: a layout does not export `shouldRevalidate`).
 
-**Problem:** React Router 7 single fetch passes `defaultShouldRevalidate = true` for every GET navigation, so every reused ancestor loader re-runs unless its route exports `shouldRevalidate`. Before the skip, the app shell (`x+/_layout.tsx`, about 20 queries plus an auth round-trip) only opted out for same-pathname navigations, and the part layouts did not opt out at all. The burst is what makes each call slow: the first concurrent wave ran about 200 ms per call, later ones 30 to 60 ms.
-
-The skip rule inferred "nothing changed" from `formMethod`. React Router passes a fetcher's submission to the first navigation after it only, so a delete that redirected to a record's bare URL, whose index route redirects again, arrived as a plain navigation and every layout kept its data (2026-10-06). An earlier patch had fixed the same blind spot for a revalidation restarting a navigation. 154 of the 186 layouts also declared no realtime tables, so another user's change did not show until the record changed. A module-level "a save happened" flag closed the redirect case and was rejected: one package set it, another cleared it, a third read it.
-
-**Rule:** Layouts do not skip their loaders. Do not export `shouldRevalidate` from a layout to save a loader run; make the loader cheaper instead (one query, the direct connection, shared work through middleware context). The root and the app shell are the only exceptions. To see which loaders a navigation asked for, read the `_routes` query of its `.data` request. Estimated cost of removing the skip, from production traces: 100 to 300 ms on a click that used to skip, until the dozen slow record loaders are optimised. Data in a shell loader that does not gate rendering is returned as a promise and read with `useResolved` (`~/hooks/useResolved`), never awaited.
-
-**Applies to:** every layout route, and every route with children under `apps/{erp,mes}/app/routes/x+` (the app shell `x+/_layout.tsx`, `$id.tsx` with tabs, and list pages that parent a drawer, `foo.tsx` + `foo.new.tsx`); `packages/utils/src/revalidate.ts`; the record loaders (`purchase-order+/$orderId`, `supplier+/$supplierId`, `sales-invoice+/$invoiceId`, `part+/$itemId`, `sales-order+/$orderId`, `quote+/$quoteId`).
+**Applies to:** every layout route, and every route with children under `apps/{erp,mes}/app/routes/x+`; `packages/utils/src/revalidate.ts`.
 
 ## A per-request memo keyed on the `Request` object never hits — React Router doesn't share one across loaders
 
@@ -138,22 +124,6 @@ triggers: ["well-known","pathname.startsWith"]
 **Rule:** A path check in the server entry silently outranks routing for everything under it. If you short-circuit a prefix, derive the exemptions from the build manifest (`build.routes`) rather than assuming the prefix stays route-free — a comment asserting "no app route" is a claim that rots the moment somebody adds one. Three false leads to skip next time this shape appears: it reproduces identically on Vercel AND `react-router-serve` (so it is not the platform); `/.foo` and `/.env` return normal 404s (so it is not dotfile handling); and `matchRoutes` against the full route table picks the RIGHT route and passes WITH the bug present (so a matcher test proves nothing). The tell was that percent-encoding the dot (`/%2Ewell-known/...`) returned `200 application/json` — `new URL().pathname` leaves the escape undecoded so `startsWith` missed, while the router decodes and matched.
 
 **Applies to:** `apps/erp/server/app.ts`, `apps/mes/server/*`, and any request-handler wrapper that inspects `pathname` before delegating.
-
-## A service worker's install-time cache can come out empty and stay empty
-
-```scope
-id: a-service-worker-s-install-time-cache-can-come-out-empty-and
-paths: ["apps/erp/public/service-worker.js","apps/mes/public/service-worker.js"]
-triggers: ["caches.open","ensureOfflinePage","fallbackOfflinePage"]
-```
-
-**Context:** The ERP worker saves `offline.html` when it installs, and installs anyway when the save fails, so push never depends on it (2026-10-22).
-
-**Problem:** A user toggled offline while an updated worker was installing. The save failed, the new worker activated and deleted the previous cache, and every later offline page load got the browser's "This site can't be reached": the worker had nothing to answer with, and it only reinstalls when its own file changes.
-
-**Rule:** Never trust that install filled a cache. Re-check it from the fetch handler after a page load that reached the network (`ensureOfflinePage`), and give the worker a built-in last-resort response (`fallbackOfflinePage`) so a cache miss never surfaces as the browser's error.
-
-**Applies to:** `apps/{erp,mes}/public/service-worker.js`; any worker that precaches on install.
 
 ## Chrome on macOS drops an installed app's Dock badge when its window closes
 
@@ -195,11 +165,7 @@ paths: ["packages/query/src/cache.ts","apps/*/app/routes/x+/_layout.tsx"]
 triggers: ["document.cookie","getCompanyId","setClientCompanyId"]
 ```
 
-**Context:** The client cache scoped its keys with `getCompanyId()`, which parsed `document.cookie` for `companyId`.
-
-**Problem:** That cookie is httpOnly, so JavaScript never sees it. Every key was scoped to the string `"null"`, and an invalidation that matched on the real company id matched nothing. It went unnoticed because a company switch reloads the page and empties the in-memory cache.
-
-**Rule:** Never read a session cookie from `document.cookie`. A value the browser needs comes from loader data: the shell layout calls `setClientCompanyId(company.id)` during render (`@carbon/query/cache`).
+**Rule:** Never read a session cookie from `document.cookie`. A value the browser needs comes from loader data. The rest is in `.claude/rules/clientAction-patterns.md` (The company in the key).
 
 **Applies to:** `packages/query/src/cache.ts`, both `apps/*/app/routes/x+/_layout.tsx`, any new client-side tenant scoping.
 
@@ -211,13 +177,9 @@ paths: ["apps/erp/public/service-worker.js"]
 triggers: ["showNotification","getNotifications"]
 ```
 
-**Context:** Browser push notifications (`apps/erp/public/push-worker.js`) passed each notification's `tag` (`job-assignment:<id>`, `carbon-test`) to `showNotification`, so a second push about the same thing would replace the first instead of stacking.
+**Rule:** To replace an earlier notification, close it yourself (`registration.getNotifications()`, match on `notification.data.tag`), then show the new one with no `tag`. To debug a push that "does not arrive", read the send's status code first, then the macOS notification log (`log show --predicate 'process == "usernoted"'`, look for `updatedExisting: true`), before changing code. The rest is in `.claude/rules/service-workers.md`.
 
-**Problem:** On macOS the browser hands the tag to the OS as the notification's identifier, and the OS replaces a notification with the same identifier silently: no banner, only an updated entry in Notification Center. The first test arrived while banners were still off, and every later test replaced it without a sound, so push looked broken although every send returned `201` (2026-10-08). `renotify: true` did not change it. The cause was only visible in the macOS log (`log show --predicate 'process == "usernoted"'`): `updatedExisting: true`.
-
-**Rule:** Never pass a reused `tag` to `showNotification` when the user must see the repeat. Close the older notifications yourself (`registration.getNotifications()`, match on `notification.data.tag`), then show the new one with no `tag`, so it gets a fresh identifier. To debug a push that "does not arrive", read the send's status code first, then the OS notification log, before changing code.
-
-**Applies to:** `apps/erp/public/service-worker.js` (was `push-worker.js`); any future service worker or Notification API caller.
+**Applies to:** `apps/erp/public/service-worker.js`; any future service worker or Notification API caller.
 
 ## React Router's instrumentation API can observe a request, not change it
 
@@ -234,35 +196,6 @@ triggers: ["instrumentations","requestMiddleware","timedMiddleware"]
 **Rule:** Instrumentation is for spans and measurements. Anything that sets a header, provides context to downstream code or reads the request stays a middleware; merge middlewares into one (`requestMiddleware`) instead of moving them. A middleware's own cost is recorded by `timedMiddleware` as `carbon.middleware.<name>.ms`, not by a span, because a middleware span contains everything it calls.
 
 **Applies to:** `packages/logger/src/middleware.server.ts`, `packages/logger/src/tracing.server.ts`, both apps' `root.tsx`.
-
-## State seeded from loaded data is a copy that nothing updates
-
-```scope
-id: state-seeded-from-loaded-data-is-a-copy-that-nothing-updates
-paths: []
-triggers: ["useLoaderData","useRouteData"]
-```
-
-**Context:** A route's components stay mounted when only its params change, and loaded data changes under a mounted component constantly: a save's revalidation, a realtime reload, a layout that reloads after its page has mounted.
-
-**Problem:** `useState(valueFromLoaderData)` reads the value once. Two bugs came from it (2026-10-06). The quote summary summed its totals from lines copied into state at mount, so a deleted line stayed in the subtotal until a reload. And a notes editor seeded from record A stayed mounted on record B: B showed A's notes, and the first keystroke saved A's text into B. An audit of 467 seeded `useState` calls found 17 confirmed cases. Reloading every layout on every navigation had hidden most of the first kind, not fixed it.
-
-**Rule:** Do not copy loaded data into state. A value computed from the data is computed during render (`useMemo`). The user's choices over the data are the only state, combined with the current data during render (`selectQuoteLines`). A draft the user edits is fine as state because the page it lives in remounts for another record: every route under `/x` renders `RecordOutlet` (`@carbon/react`), never a plain `<Outlet>`. Do not write an effect that copies the data into state again. Checks: `no-bare-outlet` and `no-state-copy-of-loader-data` (`@carbon/checks`; the second sees only a hook result used by name in the same file, not a copy seeded from a prop).
-
-**Applies to:** every component that reads `useLoaderData`, `useRouteData` or props that come from them; every route with a param in its path.
-
-## A component's outlet beside the route's outlet mounts the child route twice
-
-```scope
-id: a-component-s-outlet-beside-the-route-s-outlet-mounts-the-ch
-paths: []
-triggers: ["<Outlet","RecordOutlet"]
-```
-
-- **Context:** List tables and record cards (`ApiKeysTable`, `WebhooksTable`, `SupplierProcesses`) rendered their own `<Outlet />` for their New/Edit drawers. #1855 then gave every route under `/x` a `<RecordOutlet />`, and these routes kept both.
-- **Problem:** Both outlets render the same child route, so New API Key opened two modals with the same `id="name"` input. Each Radix modal set `aria-hidden` on everything outside itself, so each hid the other: screen readers and `getByRole` found no Name field, checkbox or Save button, while a sighted user saw one dialog. The per-file `no-bare-outlet` scan reads routes only, so it did not see the component's outlet.
-- **Rule:** One outlet per route. A component rendered by a route that has `RecordOutlet` has no outlet of its own; adding `RecordOutlet` to a route whose table still renders `Outlet` means removing the table's. `findNestedOutlets` (`no-bare-outlet`) flags the pair across files.
-- **Applies to:** every component in `modules/*/ui/` or `components/` that renders `Outlet`, and every route that renders one.
 
 ## A "did my job finish?" baseline must include the rows a FAILED run left behind
 
@@ -326,15 +259,9 @@ paths: ["apps/mes/app/hooks/useRealtime.tsx","packages/react/src/hooks/useRevali
 triggers: ["revalidate()","useRevalidator","useRealtimeRevalidator","shouldRevalidate"]
 ```
 
-**Context:** MES "Complete Batch" posts through a `useFetcher` to an action that runs for several seconds and ends in `redirect(path.to.operations)`. The operation page also subscribes to realtime changes on `jobOperation`/`job` and calls `revalidate()` on each. In the ERP, realtime calls `revalidate()` 300 ms after a broadcast. At that time 186 layouts exported `shouldRevalidate` and skipped a GET navigation that left their params unchanged.
+**Rule:** Before you explain a skipped loader, log what `shouldRevalidate` received: wrap the route's `shouldRevalidate` on `window.__reactRouterDataRouter.routes` and read `formMethod`, `defaultShouldRevalidate` and both URLs for each call. In single fetch `defaultShouldRevalidate` is `true` for every route on every navigation; do not assume it is `false` after a redirect. The rest is in the `no-raw-revalidator` check (`@carbon/checks`) and `.claude/rules/mes-job-operation-ui.md` (`useRealtimeRevalidator`).
 
-**Problem:** The completion's own writes fired the realtime `revalidate()` mid-action. React Router (`handleFetcherAction`) ignores a fetcher's redirect when `pendingNavigationLoadId > originatingLoadId` — any navigation or revalidation started after the submit wins. The redirect was silently discarded, the fetcher went idle, and the page sat on stale loader data from the mid-run revalidation (the batch still "Completing", button reading "Retry Completion") even though the work had landed.
-
-A revalidation during the navigation after a save loses the save too. A save's own broadcast arrives while its redirect is still loading. `revalidate()` during a loading navigation restarts it with `overrideNavigation: state.navigation`, and for a fetcher submission that carries no `formMethod`. The restarted navigation looks like a plain one, so each layout returned `false` and kept its data from before the save: a new quote line was missing from the quote's explorer until a reload (2026-10-05). In single fetch `defaultShouldRevalidate` is `true` for every route on every navigation, so a predicate cannot tell a forced reload from a plain one. A first fix assumed React Router's default was `false` after a redirect with no cookie. Logging the predicate's arguments in the browser showed the default was `true`, and the first pass did include the layout.
-
-**Rule:** Realtime listeners must not revalidate while a fetcher on the page is submitting — use `useRealtimeRevalidator()` (`apps/mes/app/hooks/useRealtime.tsx`), never a bare `useRevalidator().revalidate()` in a realtime callback. Skipping loses nothing: the router revalidates after every action, which is why `revalidate()` already no-ops during a navigation submission. The same race also reached single-operation completion: finishing a job's last operation completes the job, the job UPDATE revalidated the operation loader mid-action, its floor gate redirected with "This operation's job has not been released to the floor", and the operator saw that error instead of "Operation finished successfully" (reproduced 2 of 10 runs before the guard, 0 of 8 after). Batch completion additionally returns `data({ completed: true })` and navigates client-side. Never call React Router's `revalidate()` directly. Import `useRevalidator` from `@carbon/query`: it holds a call made while a navigation is in flight or a fetcher is submitting, and runs it when the router is idle. The `no-raw-revalidator` check (`@carbon/checks`) fails an import of React Router's. Before you explain a skipped loader, log what `shouldRevalidate` received: wrap the route's `shouldRevalidate` on `window.__reactRouterDataRouter.routes` and read `formMethod`, `defaultShouldRevalidate` and both URLs for each call.
-
-**Applies to:** every realtime- or interval-driven `revalidate()` on a page that submits fetchers — MES `useOperation`, `AssemblyView`, `useRealtime`; `packages/react/src/hooks/useRevalidator.ts`; every `revalidate()` call (realtime, polling timers, upload callbacks); every route that exports `shouldRevalidate`.
+**Applies to:** every realtime- or interval-driven `revalidate()` on a page that submits fetchers — MES `useOperation`, `AssemblyView`, `useRealtime`; `packages/react/src/hooks/useRevalidator.ts`; every route that exports `shouldRevalidate`.
 
 ## A flash returned with `data()` from a page loader never shows
 
@@ -344,11 +271,7 @@ paths: []
 triggers: ["await flash(","flashData(","flashMiddleware"]
 ```
 
-**Context:** The kanban scan (2026-10-19) returned `data(result, await flash(request, error(…)))` from its loader, and its page then navigated to the job with `window.location`.
-
-**Problem:** The message never appeared. The root's `flashMiddleware` reads and clears the flash on every request. It ran on the scan's own document request and cleared the cookie the loader had just set. Typecheck and unit tests cannot see this; only the browser did.
-
-**Rule:** To carry a message to another page, throw `redirect(path, await flash(request, …))` from the loader or action, as every other route does. Do not return a flash with `data()` from a page loader and expect a later page to show it.
+**Rule:** Do not return a flash with `data()` from a page loader and expect a later page to show it: the root's `flashMiddleware` reads and clears the flash on that page's own document request. The rest is in `.claude/rules/flash-system.md`.
 
 **Applies to:** any loader or action that sets a flash for the page it sends the user to.
 
@@ -360,13 +283,9 @@ paths: ["apps/erp/public/service-worker.js","apps/mes/public/service-worker.js"]
 triggers: ["notificationclick","clients.matchAll","openWindow"]
 ```
 
-**Context:** `push-worker.js` handled `notificationclick` with `clients.matchAll({ type: "window", includeUncontrolled: true })`, then `focus()` and `navigate()` on the first Carbon tab (2026-10-09).
+**Rule:** `WindowClient.navigate()` rejects for a tab the worker does not control, so do not pass `includeUncontrolled` to `matchAll` when you will call `navigate()`. Focus first, because the click allows focus for a short time only. Wrap the focus and the navigation in `try`, and call `clients.openWindow()` when either fails. The rest is in `.claude/rules/service-workers.md` (Push).
 
-**Problem:** `WindowClient.navigate()` rejects for a tab the worker does not control: a tab opened before the worker was installed, or a hard-reloaded one. The rejection ended the click handler, so the click opened nothing. No error reached the page.
-
-**Rule:** Call `matchAll({ type: "window" })` without `includeUncontrolled` when you will call `navigate()`. Focus first, because the click allows focus for a short time only. Wrap the focus and the navigation in `try`, and call `clients.openWindow()` when either fails or no tab exists.
-
-**Applies to:** `apps/erp/public/service-worker.js` (was `push-worker.js`); any service worker that navigates a client.
+**Applies to:** `apps/erp/public/service-worker.js`; any service worker that navigates a client.
 
 ## A server-only value in a route component, or a dropped side-effect import, fails only the production build
 
@@ -376,32 +295,9 @@ paths: []
 triggers: [".service\"","\"sideEffects\"","LOCK_PERIOD_TASK_NAME"]
 ```
 
-**Context:** The service-function migration (2026-10-16) made every `<module>.service.ts` server-only: it may import server-only packages (`@carbon/auth/auth.server`, `@carbon/ee/*.server`, `@carbon/jobs`).
-
-**Problem:** Two mistakes passed typecheck, the tests and the dev server, and broke only `react-router build`:
-
-1. A route component used a value from a `.service.ts` (`LOCK_PERIOD_TASK_NAME` in a close-period component). React Router strips a route's loader and action from the client build, not its component, so the service file and its server-only imports entered the browser graph and the build failed.
-2. A bare side-effect import (`import "./modules/carbon.server"`, `import "./zod.client"`) in a package whose `package.json` sets `"sideEffects": false`, or does not list the file. The production bundler dropped the import, so every `carbon()` call threw in production and `z.config({ jitless: true })` never ran. The dev server does not tree-shake, so nothing showed it locally.
-
-**Rule:** A value the browser uses goes in `<module>.utils.ts` (or `models.ts` / `types.ts`), never in `.service.ts` or `.server.ts`. A file imported only for its side effects is listed in its package's `sideEffects` array. The `no-server-code-in-client` check (ERP components, hooks, `ui/`, client-safe module files and the browser half of routes) and the `side-effect-import-declared` check enforce both. Run `pnpm --filter erp build` before you call a change to imports or module files done.
+**Rule:** Both mistakes pass typecheck, the tests and the dev server, and break only `react-router build`. Run `pnpm --filter erp build` before you call a change to imports or module files done. The rest is in the `no-server-code-in-client` and `side-effect-import-declared` checks (`@carbon/checks`).
 
 **Applies to:** ERP and MES modules and routes; every `package.json` that sets `sideEffects`.
-
-## Changing a precached file without bumping the cache name changes nothing
-
-```scope
-id: changing-a-precached-file-without-bumping-the-cache-name-cha
-paths: ["apps/*/public/offline.html","apps/*/public/service-worker.js"]
-triggers: ["OFFLINE_CACHE","SHELL_CACHE"]
-```
-
-**Context:** `offline.html` was edited several times (the game, the text wrapping), and each time existing browsers kept showing the old page (2026-10-22).
-
-**Problem:** A worker saves the file only when it installs, and it reinstalls only when `service-worker.js` itself changes. Editing `offline.html` alone leaves every browser that already has the worker on the old copy, and the self-heal only fills a missing entry, it never replaces one.
-
-**Rule:** Every change to `offline.html` bumps the offline cache in both workers (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`). `offline-page.test.ts` in each app pins the page's hash to the cache name, so a change that skips the bump fails.
-
-**Applies to:** `apps/{erp,mes}/public/offline.html` and `service-worker.js`.
 
 ## Client-side entity caches must be company-keyed in a multi-tenant app
 
@@ -443,11 +339,7 @@ paths: ["apps/*/app/entry.client.tsx"]
 triggers: ["addEventListener(\"load\"","serviceWorker.register"]
 ```
 
-**Context:** The ERP and MES service workers were registered from `entry.client.tsx` with `window.addEventListener("load", register)`, the pattern most guides show (2026-10-22).
-
-**Problem:** On the dev server React Router imports `entry.client` late: by the time the module runs, the page has already fired `load` (`document.readyState === "complete"`), so the listener never ran and no worker was registered. The offline page never appeared and nothing logged an error.
-
-**Rule:** Register immediately when `document.readyState === "complete"`, and on `load` otherwise. Check `navigator.serviceWorker.getRegistrations()` in the browser after any change to how a worker is registered.
+**Rule:** Check `navigator.serviceWorker.getRegistrations()` in the browser after any change to how a worker is registered; a worker that never registered logs no error. The rest is in `.claude/rules/service-workers.md`.
 
 **Applies to:** `apps/erp/app/entry.client.tsx`, `apps/mes/app/entry.client.tsx`; any code in an entry module that waits for `load`.
 
@@ -491,13 +383,13 @@ paths: ["scripts/lib/input-docs.ts","packages/api/src/service-fn.server.ts"]
 triggers: [".default("]
 ```
 
-**Context:** API and MCP input schemas are generated from the form validators, whose `.default(0)` was written for a form that submits every field. The dispatcher applied none of them.
+**Context:** API and MCP input schemas come from each service function's `input` validator, whose `.default(0)` was often written for a form that submits every field.
 
-**Problem:** A caller reading `taxPercent: default 0` leaves the field out and expects 0. On a read typed from a validator's output that crashed (`state: {}` on a pivot); on an update, filling it would overwrite a stored value the caller never mentioned. And a default that looked safe to fill was not: list reads published `limit: default 100`, but the service pages only when it is handed a limit, so filling it would have cut every unpaged list read to 100 rows.
+**Problem:** A caller reading `taxPercent: default 0` leaves the field out and expects 0. On a read typed from a validator's output an unfilled default crashed (`state: {}` on a pivot); on an update, filling it overwrites a stored value the caller never mentioned. And a default that looked safe to fill was not: list reads published `limit: default 100`, but the service pages only when it is handed a limit, so filling it would have cut every unpaged list read to 100 rows.
 
-**Rule:** A default is filled or it is not published (`defaultsPolicy` / `publishDefaults`): always for a read, a create or an action, on create only for an upsert, never for an update. Before publishing or filling one, read what the service does when the field is absent, and compare with the column's own database default.
+**Rule:** A default in a service function's `input` is both published and filled: `defineServiceFn` (`packages/api/src/service-fn.server.ts`) parses every call with that schema. So give a field a default only where filling it is right (a read, a create or an action), never on an update input, where it overwrites a stored value the caller left out. Before adding one, read what the service does when the field is absent, and compare with the column's own database default.
 
-**Applies to:** `scripts/lib/service-metadata.ts`, `apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`, any validator default that reaches an API schema.
+**Applies to:** `packages/api/src/service-fn.server.ts`, `scripts/lib/input-docs.ts`, any validator default that reaches an API schema.
 
 ## A realtime subscription to a table that is not published fails silently
 
@@ -507,42 +399,7 @@ paths: ["packages/query/src/useRealtime.tsx"]
 triggers: ["postgres_changes","supabase_realtime","useRealtime","useChangedRows"]
 ```
 
-**Context:** The ERP job page did not show an operation completed in the MES until a reload. It subscribed with `postgres_changes` to `jobOperationStep` and `jobOperationStepRecord`, which were never in the `supabase_realtime` publication, and it had no subscription to `jobOperation` or `job` at all.
+**Rule:** Verify a "live" page by changing the row while the page is open, not by reading the subscription code. The rest is in `.claude/rules/realtime-system.md` and the `no-postgres-changes` check (`@carbon/checks`).
 
-**Problem:** Realtime accepts a `postgres_changes` subscription for any table name. For an unpublished table it joins, delivers nothing and reports nothing. The code looked wired and typecheck, lint and tests were all green.
+**Applies to:** `apps/*/app/routes/**` `handle.realtime`, `useRealtime`, `useChangedRows`.
 
-**Rule:** Realtime goes through broadcast topics (`@carbon/query`). Declare a route's tables in `handle.realtime`; the table type is derived from `event-system/attachments.ts`, so a table with no broadcast handler does not compile, and `no-postgres-changes` fails the old API. Verify a "live" page by changing the row while the page is open, not by reading the subscription code.
-
-**Applies to:** `apps/*/app/routes/**` `handle.realtime`, `useRealtime`, `useChangedRows`, `.claude/rules/realtime-system.md`.
-
-## Two hooks that open the same Realtime topic close each other's channel
-
-```scope
-id: two-hooks-that-open-the-same-realtime-topic-close-each-other
-paths: ["packages/query/src/useRealtime.tsx"]
-triggers: ["carbon.channel(","useRealtimeChannel","removeChannel"]
-```
-
-**Context:** The shell, the live lists and individual components each called `carbon.channel(topic)` for `company:<id>:<table>`.
-
-**Problem:** `RealtimeClient.channel()` returns the EXISTING channel when the topic is already open. Two hooks then hold one channel object, and the first to unmount calls `removeChannel` and silences the other. A customers page that declared `customer` while the customer list also followed it would have lost one of them at random.
-
-**Rule:** One owner per topic. Listeners register in the registry in `packages/query/src/useRealtime.tsx` (`useTopic`, `useTableChanges`) and `RouteRealtime` owns the channels. Do not call `carbon.channel` or `useRealtimeChannel` for a broadcast topic directly.
-
-**Applies to:** `packages/query/src/useRealtime.tsx`, any new realtime listener.
-
-## Work a request does not await is frozen with the instance on Vercel
-
-```scope
-id: work-a-request-does-not-await-is-frozen-with-the-instance-on
-paths: ["apps/erp/app/entry.server.tsx","apps/mes/app/entry.server.tsx","packages/lib/src/telemetry/capture.ts","packages/stripe/src/stripe.server.ts"]
-triggers: ["async.background","onBackground","waitUntil"]
-```
-
-**Context:** Work-event capture (PostHog) and the GTM forward were started and not awaited, so the response would not wait for them.
-
-**Problem:** A Vercel function instance is frozen once its response is sent. The unawaited call stopped mid-flight and finished only when the next request woke the instance, so traces showed analytics calls of 10 s and more, and on an instance that was never reused the event was lost. `request.signal` does not help either: without `supportsCancellation` it never aborts on Vercel.
-
-**Rule:** Anything a request leaves running goes through `async.background(task, onError)` from `@carbon/utils`. Each app registers the host's `waitUntil` once with `async.onBackground` in `entry.server.tsx`, which keeps the instance up until that work settles. Never a bare unawaited promise, a `void` IIFE, or a `.then` chain.
-
-**Applies to:** `apps/{erp,mes}/app/entry.server.tsx`, `packages/lib/src/telemetry/capture.ts`, `packages/stripe/src/stripe.server.ts`, any new fire-and-forget call.

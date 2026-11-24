@@ -26,9 +26,9 @@ paths: ["apps/erp/app/routes/api+/v1+/lib/*.server.ts"]
 triggers: []
 ```
 
-**Context:** The API dispatcher decides whether an upsert creates or updates from the
-record's `id`. It looked for `id` at the top level and then inside any nested object, to
-support `{ job: { id } }`.
+**Context:** An earlier API dispatcher decided whether an upsert creates or updates from
+the record's `id`. It looked for `id` at the top level and then inside any nested object,
+to support `{ job: { id } }`. That dispatcher no longer exists.
 
 **Problem:** `{ name: "x", customFields: { id: "z" } }` matched the nested `id`, so a
 create was stamped as an update and went down the service's update branch.
@@ -37,8 +37,8 @@ create was stamped as an update and went down the service's update branch.
 named by the service's payload parameter. A search that descends into arbitrary objects
 will eventually match user data.
 
-**Applies to:** `resolveUpsertOperation` / `recordField` in
-`apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`.
+**Applies to:** any code in `apps/erp/app/routes/api+/v1+/lib/` that reads a key or an id
+out of a caller's payload.
 
 ## Bind authorization to the authenticated subject
 
@@ -76,17 +76,15 @@ triggers: ["isSelfSignupBlockedForEmail","signInWithOAuth"]
 
 ```scope
 id: a-constant-between-mcp-read-and-its-function-drops-the-mcp-t
-paths: ["apps/erp/app/modules/*/*.server.ts","apps/erp/app/modules/*/*.service.ts","apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json","scripts/lib/service-fn-metadata.ts"]
+paths: ["apps/erp/app/modules/*/*.server.ts","apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json","scripts/lib/service-fn-metadata.ts"]
 triggers: ["@mcp","_PAGING"]
 ```
 
-**Context:** Cursor paging (2026-10-13) gave each paged list service an exported `*_DEFAULT_SORTS` constant. The list registry and the loaders read it, so it sits next to the service function.
+**Context:** Cursor paging (2026-10-13) gave each paged list an exported `*_PAGING` constant. Twice during that work, a constant went between a doc block and its function, and the function silently stopped being an MCP tool. Typecheck, tests and the build all passed.
 
-**Problem:** Twice during that work, the constant went between the doc block and the function. TypeScript attaches a doc comment to the declaration directly under it, so the `@mcp read` tag then belonged to the constant. The generator reads the doc block of exported functions only (`getJsDocs()` in `scripts/lib/service-ast.ts`); it skips a constant that is not a function. The function silently stopped being a tool and left `tool-manifest.digest.json`. Typecheck, tests and the build all passed.
+**Rule:** After you edit the doc blocks or the declarations of a `*.server.ts` file, run `pnpm run generate:mcp`. Then diff the tool names in `tool-manifest.digest.json`. A tool name that disappears is a displaced tag until you prove otherwise. The generator reads the doc block of the `defineServiceFn` variable statement (`leafDocs` in `scripts/lib/service-fn-metadata.ts`). The rest is in `.claude/rules/table-infinite-scroll.md`.
 
-**Rule:** Put a new constant ABOVE the doc block of a service function, never between the block and the function. After you edit a `*.service.ts` file, run `pnpm run generate:mcp`. Then diff the tool names in `tool-manifest.digest.json`. A tool name that disappears is a displaced tag until you prove otherwise.
-
-**Applies to:** `apps/erp/app/modules/*/*.service.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
+**Applies to:** `apps/erp/app/modules/*/*.server.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
 
 ## A link minted for an API key names its creator, not the key
 
@@ -96,10 +94,8 @@ paths: []
 triggers: ["generateDownloadToken","FILE_LINK_SECONDS","expiresInSeconds","createSignedUrl"]
 ```
 
-- **Context:** `generateDownloadToken` signs a `/download/<token>` link for a user; the route re-checks access as that user on every download. For an API key caller, `ctx.auditUserId` is the key's creator.
-- **Problem:** A link without an expiry kept downloading after the key that asked for it was revoked: the creator still had access, and nothing in the token named the key. A link copied into an agent's log or transcript outlived the key.
-- **Rule:** Any link or token minted for an API or MCP caller carries an expiry (`expiresInSeconds`, as `FILE_LINK_SECONDS` sets). Re-checking the named user's access is not enough when that user is not the caller.
-- **Applies to:** `documents_getDocumentDownloadUrl` and any future operation that returns a shareable link, share token or signed URL to an API caller.
+- **Rule:** Any NEW operation that returns a shareable link, share token or signed URL to an API or MCP caller carries an expiry (`expiresInSeconds`, as `FILE_LINK_SECONDS` sets), not only the document download. Re-checking the named user's access is not enough when that user is not the caller. The rest is in `.claude/rules/mcp-tools-reference.md` ("File downloads").
+- **Applies to:** any future operation that returns a link or token to an API caller.
 
 ## A shared executor acquires callers nobody planned for — grep every importer before deleting one
 
@@ -109,7 +105,7 @@ paths: ["apps/erp/app/routes/api+/v1+/lib/call.server.ts","packages/jobs/src/wor
 triggers: ["setWorkflowDispatch","callOperation"]
 ```
 
-**Context:** The oRPC migration plan said MCP `call_tool` and the in-app agent were the two consumers of the MCP `direct-executor.ts`, so once both moved to `callOperation` the file could be deleted. A pre-deletion grep found a THIRD caller: `apps/erp/app/routes/api+/inngest.ts` registered `executeFunction` as the workflow engine's `setWorkflowDispatch` seam — every customer workflow `*.create` action ran through it.
+**Context:** The oRPC migration plan said MCP `call_tool` and the in-app agent were the two consumers of the old MCP executor, so once both moved to `callOperation` its file could be deleted. A pre-deletion grep found a THIRD caller: `apps/erp/app/routes/api+/inngest.ts` registered the executor as the workflow engine's `setWorkflowDispatch` seam — every customer workflow `*.create` action ran through it.
 
 **Problem:** A convenient shared function gets wired into new seams (dependency-injection slots, dispatchers, adapters) without its own file ever changing, so the mental list of "who uses this" goes stale. Deleting it on the strength of the plan's caller list would have broken customer workflow create actions in production while every named caller kept working.
 
@@ -132,22 +128,6 @@ triggers: ["getCurrentPath","makeRedirectToFromHere","redirectTo="]
 **Rule:** A "return to where you were" target is `pathname + search`, never `pathname`. When it is passed on inside another URL, encode it (`encodeURIComponent` / `URLSearchParams`), or its own `&` splits it. Test the round trip with a URL that has a query string. Drop React Router's `_routes` param from it, and only when present: middleware sees that param (loaders do not), a page URL that carries it limits which loaders later data requests run, and `searchParams.delete` re-encodes the whole query even when it removes nothing. Whatever sends the target on must be matched by something that reads it: three of the four callbacks ignored the `redirectTo` their login page sent.
 
 **Applies to:** `packages/auth/src/utils/http.ts` (`getCurrentPath`, `makeRedirectToFromHere`), `requireAuthSession` / `refreshAuthSession`, every app's `login.tsx` callback URL and the `callback.tsx` that consumes it.
-
-## `error(cause, …)` shows the cause to the user
-
-```scope
-id: error-cause-shows-the-cause-to-the-user
-paths: ["apps/*/app/routes/_public+/**","apps/*/app/routes/_auth+/**","apps/*/app/routes/share+/**","apps/*/app/routes/api+/login*"]
-triggers: ["flashClientMiddleware"]
-```
-
-**Context:** Error toasts gained a second line with the real reason. `error(cause, title)` in `@carbon/auth` now reads the cause with `describeCause` and the flash shows it (2026-10-29).
-
-**Problem:** The change reached every app, but the sweep covered ERP and MES only. The Academy and Starter sign-in pages passed `user.error` from a `.single()` read. An unknown email then showed "No matching record was found." and an inactive account showed nothing, so an outsider could tell whether an account existed.
-
-**Rule:** On a page an outsider can reach (sign-in, invite, verify, callback, MFA, SSO, a share link), log the real error with the module logger and pass `null` as the cause. Everywhere else, pass the real error object, never `params`, a result wrapper or a string that repeats the title.
-
-**Applies to:** every `error(` call in `apps/*/app/routes/_public+`, `_auth+`, `share+` and `api+/login*`, and any new app that registers `flashClientMiddleware`.
 
 ## Export permission must cover enrichment reads
 
@@ -180,18 +160,15 @@ triggers: ["setGenericQueryFilters","appliesGenericFilters"]
 ```
 
 **Context:** A review asked to move the customer portal reads from `shared.service.ts` to
-`sales.service.ts`. `shared_getCustomerPortals` (in `shared.server.ts`) calls the list read.
-
-**Problem:** The MCP generator gives a published list tool its `filters` and `sorts` inputs
-only when its `run` calls `service.<name>(…)` and `<name>` calls `setGenericQueryFilters` in
-the same module's `.service.ts` (`appliesGenericFilters`, `scripts/lib/input-docs.ts`). After
-the move the tool silently lost both inputs. Typecheck and tests stayed green; only the
-`schema` hash in `tool-manifest.digest.json` changed.
+`sales.service.ts`. After the move, `shared_getCustomerPortals` silently lost its `filters`
+and `sorts` inputs. Typecheck and tests stayed green; only the `schema` hash in
+`tool-manifest.digest.json` changed.
 
 **Rule:** A list building block stays in the `.service.ts` of the module whose `.server.ts`
 publishes it. After moving any building block, check `git diff` on
 `tool-manifest.digest.json`: a changed `schema` hash is a changed public contract, so
-regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.json`.
+regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.json`. The rest
+is in `.claude/rules/mcp-tools-reference.md` (`appliesGenericFilters`).
 
 **Applies to:** any building block a `defineServiceFn` with `@mcp` calls, `scripts/lib/input-docs.ts`.
 
@@ -210,8 +187,8 @@ company membership (`permission: {}`).
 operations let a key with only `sales_view` write time and post labor cost under the name of
 the person who created the key. The manifest shows no permission, so nothing looks wrong.
 
-**Rule:** A write gated on `{}` starts with `refuseKeyWithout(ctx, required)`. Before you tag
-an operation `@mcp`, ask what its gate means for a key, not only for a person.
+**Rule:** Before you tag an operation `@mcp`, ask what its gate means for a key, not only for
+a person. The rest is in `.claude/rules/mcp-tools-reference.md` (`refuseKeyWithout`).
 
 **Applies to:** `permission: {}` on any published write, `packages/api/src/permissions.ts`.
 
@@ -225,11 +202,11 @@ triggers: ["scopesFromPermissions","asSystem.pg"]
 
 **Context:** A 2026-10 security disclosure: an OAuth (MCP connector) token for a user with no accounting permission could create draft GL journals through `inventory_createInventoryReconciliationJournal`.
 
-**Problem:** Two gaps stacked. The oRPC `gate()` skipped OAuth callers on the theory that RLS bounds them, but a service whose manifest asks for `db` gets `getDatabaseClient()`, the direct connection, which bypasses RLS. And a tool's default permission is its own module plus its verb's action, so the journal tool was gated on `inventory:create` while the Reconcile screen requires `accounting:create`. Supplier and customer bank accounts (`purchasing`/`sales` vs `accounting`) and return-order credits (`purchasing`/`sales` vs `invoicing`) had the same mismatch, for API keys as well.
+**Problem:** Two gaps stacked. The oRPC `gate()` skipped OAuth callers on the theory that RLS bounds them, but a service handed `db` got the direct connection, which bypasses RLS. And a tool's default permission was then its own module plus its verb's action, so the journal tool was gated on `inventory:create` while the Reconcile screen requires `accounting:create`. Supplier and customer bank accounts (`purchasing`/`sales` vs `accounting`) and return-order credits (`purchasing`/`sales` vs `invoicing`) had the same mismatch, for API keys as well.
 
-**Rule:** Every non-session caller (API key AND OAuth) is gated per operation, OAuth on the user's live permissions in the token's company (`scopesFromPermissions`). When a tool does what an ERP route does, its permission must equal that route's `requirePermissions`: add `@mcp permission` where the default differs, regenerate, and pin it in `OVERRIDES` in `mcp-tool-permissions.test.ts`. Never reason "RLS will catch it" for a tool whose `contextParams` include `db`.
+**Rule:** Every non-session caller (API key AND OAuth) is gated per operation, OAuth on the user's live permissions in the token's company (`scopesFromPermissions`). When a tool does what an ERP route does, its permission must equal that route's `requirePermissions`: set the service function's own `permission` to it (the generator reads that gate, `leafPermission` in `scripts/lib/service-fn-metadata.ts`), regenerate, and pin it in `OVERRIDES` in `mcp-tool-permissions.test.ts`. Never reason "RLS will catch it" for a tool that writes through `ctx.asSystem.pg` or `db`.
 
-**Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service taking `db: Kysely<KyselyDatabase>`.
+**Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service function that uses `ctx.asSystem.pg` or a building block taking `db: Kysely<KyselyDatabase>`.
 
 ## A service-role job must check that a stored path belongs to the row's company
 

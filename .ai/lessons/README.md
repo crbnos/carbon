@@ -28,7 +28,9 @@ file in that lesson's scope.
 | `auth-and-security.md` | Auth, sessions, permissions, API keys, headers, secrets, the MCP and API surface |
 
 Put a new lesson in the topic where a writer of that code needs it. If two
-topics fit, choose the one whose code the mistake was made in.
+topics fit, choose the one whose code the mistake was made in. Never create a
+new topic file: if no topic fits, ask the human. A new topic file needs a row
+in this table, or `scopes.test.ts` fails.
 
 ## Lesson format
 

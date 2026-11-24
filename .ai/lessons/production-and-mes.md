@@ -35,13 +35,13 @@ paths: ["apps/mes/app/components/JobOperation/**"]
 triggers: ["BatchCompleteModal"]
 ```
 
-**Context:** MES batch completion. `BatchCompleteModal` submitted the completion and was meant to swap itself for a "merge these lots?" prompt when the action returned one.
+**Context:** MES batch completion. `BatchCompleteModal` submitted the completion with its own fetcher and was meant to show what the action returned after success.
 
-**Problem:** The modal is rendered `{batch && batchCompleteModal.isOpen && …}`, and `batch` is only passed by the loader while the batch is `Active`/`Completing`. Completing it — the very thing that produces the prompt — revalidates the loader, `batch` becomes null, and the modal unmounts with its `useFetcher` still holding the response. The prompt could never render, and the symptom was indistinguishable from the server never sending it (the page just sat there, because a `data()` reply does not navigate).
+**Problem:** The modal is rendered only while `batch` is set, and `batch` is only passed by the loader while the batch is `Active`/`Completing`. Completing it — the very thing that produces the prompt — revalidates the loader, `batch` becomes null, and the modal unmounts with its `useFetcher` still holding the response. The prompt could never render, and the symptom was indistinguishable from the server never sending it (the page just sat there, because a `data()` reply does not navigate).
 
-**Rule:** When an action's response drives UI that appears AFTER success, own the fetcher in a component that outlives the state change — here `JobOperation`, passing the fetcher down into the modal and rendering the prompt itself, ungated by `batch`. Before wiring a post-success view, ask which component the success unmounts.
+**Rule:** When an action's response drives UI that appears AFTER success, own the fetcher in a component that outlives the state change — here `JobOperation` owns `batchCompleteFetcher`, passes it down into the modal and acts on its result itself, ungated by `batch`. Before wiring a post-success view, ask which component the success unmounts.
 
-**Applies to:** MES `JobOperation` + `BatchCompleteModal`/`BatchMergePrompt`; any modal gated on loader data that its own submit invalidates.
+**Applies to:** MES `JobOperation` + `BatchCompleteModal`; any modal gated on loader data that its own submit invalidates.
 
 ## A row stayed off a screen only because a column happened to be null
 
@@ -69,7 +69,7 @@ triggers: ["status: \"Ready\"","SET status = 'Ready'","updateJobStatus"]
 
 **Context:** Strict backflush (2026-10-17). Release had to refuse a job with a line that had no storage unit. The check was added where the release check already ran: the Release dialog, bulk release, batch release.
 
-**Problem:** Two more paths set a job to Ready without any check. The kanban scan with auto-release wrote `status: "Ready"` straight to the job with the service role. The MCP / API tool `production_updateJobStatus` wrote any status. A search for callers of the release function cannot find a direct write. A self-review on a fixed file list did not look outside it, and the docs then claimed "every release path".
+**Problem:** Two more paths set a job to Ready without any check. The kanban scan with auto-release wrote `status: "Ready"` straight to the job with the service role. An MCP / API tool that wrapped the job status update wrote any status. A search for callers of the release function cannot find a direct write. A self-review on a fixed file list did not look outside it, and the docs then claimed "every release path".
 
 **Rule:** To guard a state change, first list every writer of that state: grep for the value being written (`status: "Ready"`, `SET status = 'Ready'` in SQL) and for every caller of the write function, including MCP tools. Put the check where all writers meet, or give each writer the check. Keep the unchecked write out of the API (no `@mcp` tag). Do not claim "every path" without that list.
 
@@ -101,7 +101,7 @@ triggers: ["resolveWorkUnit","useWorkUnit","serialUnitSelection"]
 
 - **Context:** On a later operation of a serial part, every write names a unit the operator picked or scanned.
 - **Problem:** The rule was copied into each entry point: buttons, scan hooks, the scan queue, a few routes. Nobody listed the writers, so three review rounds each found another one: a scan hook, the off-page traveler scan, then the kanban end route (and the start route still picked its own unit). The held unit lived only in the URL, which redirects, links, refresh and Back also write, so every fix filtered the URL after the fact and opened a new window. The two screens ran two different copies of the selection logic, and the tests checked helpers, not the routes.
-- **Rule:** Give a rule one owner per side and make a missed writer fail a check. On the server one function decides from the database and every writer calls it before it writes; a conformance check lists the writers and fails one that does not call it (or is not on an allow-list with its reason). On the client one pure decision is computed during render; the operator's pick is state set in the click or scan handler, and the URL only mirrors it. Test the write paths themselves over an in-memory client, and revert each call to see the test go red (not every route has such a test yet). An allow-list reason must be checked by code, not just written down (`unconsume` now checks the parts were consumed into the parent; "a manager override" did not cover writing a unit nobody picked, so complete-all now resolves its unit too). Gate a write by what the server accepts for it: a finished unit blocks `require` writes only, not `member` ones (unconsume, quality issue). The owner's reads, and the screens' reads of the same list, must not depend on PostgREST's 1000-row cap (one paged reader). A new gate must keep an older page's safe requests working: tablets keep the old bundle for hours, so a first-operation step with no unit still uses its index, and a timer naming a finished unit is not refused. When the server changes what a request named, it says so in the toast.
+- **Rule:** Give a rule one owner per side and make a missed writer fail a check. On the client one pure decision is computed during render; the operator's pick is state set in the click or scan handler, and the URL only mirrors it. Test the write paths themselves over an in-memory client, and revert each call to see the test go red (not every route has such a test yet). An allow-list reason must be checked by code, not just written down (`unconsume` now checks the parts were consumed into the parent; "a manager override" did not cover writing a unit nobody picked, so complete-all now resolves its unit too). Gate a write by what the server accepts for it: a finished unit blocks `require` writes only, not `member` ones (unconsume, quality issue). The owner's reads, and the screens' reads of the same list, must not depend on PostgREST's 1000-row cap (one paged reader). A new gate must keep an older page's safe requests working: tablets keep the old bundle for hours, so a first-operation step with no unit still uses its index, and a timer naming a finished unit is not refused. When the server changes what a request named, it says so in the toast. The rest (every MES unit writer calls `resolveWorkUnit` or is allow-listed with its reason) is enforced by the `mes-unit-write-resolves-unit` check.
 - **Applies to:** MES `resolveWorkUnit` (`services/work-unit.server.ts`) and its `mes-unit-write-resolves-unit` check, `useWorkUnit` / `serialUnitSelection` (`~/utils/workUnit`) in `JobOperation` and `AssemblyView`, and any future rule on per-unit work.
 
 ## A Make to Order line is never picked, and never split for Consume First (2026-09-16)
@@ -123,17 +123,14 @@ triggers: ["get_picking_schedule","generatePickingList","itemToJobMakeMethod","i
   "always swap" meant stocked old sub-assemblies were never used. The obvious
   fix — split the line into "pick 3 old" + "build 2 new" — dies at the next
   `recalculate`, which rebuilds every line as per-assembly × parent quantity.
-- **Rule:** a Make to Order line follows the bought Consume First rule by
-  CHANGING METHOD TYPE, not by splitting: when the predecessor covers one whole
-  assembly it becomes a Pull from Inventory line on the predecessor (decided in
-  the row builder, before insert, so no sub-method row is ever created), and
-  picking splits per unit as for any picked line; otherwise it swaps and is
-  built. Picking excludes Make to Order lines everywhere (SQL + TS). When a
-  fix needs two rows where the BOM has one, check what `recalculate` will do
-  to them before writing it.
-- **Applies to:** `get-method` row builders (`itemToJob`,
-  `itemToJobMakeMethod`), `generatePickingList`, `get_picking_schedule`,
-  `lib/job-quantities-engine.ts`.
+- **Rule:** when a fix needs two rows where the BOM has one, check what
+  `recalculate` will do to them before writing it. The rest (a Make to Order
+  line changes method type instead of splitting, and picking never stages
+  one) is in `.claude/rules/supersession-system.md`.
+- **Applies to:** the row builders `itemToJob` and `itemToJobMakeMethod`
+  (`apps/erp/app/modules/production/production.service.ts`),
+  `generatePickingList`, `get_picking_schedule`,
+  `packages/database/src/job-quantities-engine.ts`.
 
 ## A save that reconciles a whole set must be shown the whole set, whatever the page filters
 
@@ -163,7 +160,7 @@ triggers: ["complete_job_to_inventory","sync_finish_job_operation","sync_update_
 
 **Problem:** Job completion has multiple entry points — the ERP Complete button AND the interceptor cascade that auto-completes when the last operation flips to Done (fired from MES quantity recording or ERP production quantities). Any completion side effect hooked at the app layer silently misses the interceptor path.
 
-**Rule:** Side effects that must accompany job completion (fulfillment, status propagation, posting) go INSIDE `complete_job_to_inventory` — the single choke point every path crosses. Place them before the `accountingEnabled` / zero-WIP early returns if they must run unconditionally. App-layer completion hooks are only valid for effects the SQL function cannot perform (edge-function invocation — cf. `returnAllocatedRemaindersAtJobComplete`, orchestrated in TS for exactly that reason).
+**Rule:** Side effects that must accompany job completion (fulfillment, status propagation, posting) go INSIDE `complete_job_to_inventory` — the single choke point every path crosses. Place them before the `accountingEnabled` / zero-WIP early returns if they must run unconditionally. App-layer completion hooks are only valid for effects the SQL function cannot perform (a posting call — cf. `returnPickedRemaindersForJob` in `production.service.ts`, orchestrated in TS for exactly that reason).
 
 **Applies to:** `complete_job_to_inventory`; `apps/erp/app/routes/x+/job+/$jobId.complete.tsx`; `sync_finish_job_operation`; any future completion-triggered behavior (rev-rec POC recognition events).
 
@@ -179,7 +176,7 @@ triggers: ["workCenterLoad","loadedJobOperationId"]
 
 **Problem:** The unload cleared `loadedAt` with the pointer. That timestamp was the only watermark that ordered loads: the rule "an older start never replaces a newer load" compared against it. After an unload there was nothing to compare, so a late event (a start older than the unload) loaded the operation that had been replaced, and opened a history row that overlapped its neighbours. The pointer and the history then disagreed, and the sync gave run time to the wrong operation.
 
-**Rule:** Keep one source for a fact. When a history exists, the current value is a row of it (here the open `workCenterLoad` row), not a second column to keep in step. Order writes against the history itself: refuse a write that is older than the newest boundary (any `loadedAt` or `unloadedAt`), and back it with constraints (a CHECK that an interval does not end before it starts, a partial unique index for one open row).
+**Rule:** Keep one source for a fact. When a history exists, the current value is a row of it, not a second column to keep in step, and writes are ordered against the history itself. The rest (the open `workCenterLoad` row, refusing older starts, the CHECK and the one-open-row index) is in `.claude/rules/oee-provider.md` ("The loaded operation").
 
 **Applies to:** `workCenterLoad` and its interceptors (`sync_load_work_center_operation`, `sync_unload_work_center_operation`), and any "current pointer + history" pair (statuses with a status log, assignments with an assignment history).
 
@@ -207,7 +204,7 @@ paths: ["apps/erp/app/modules/production/production.service.ts"]
 triggers: ["itemToJobMakeMethod","buildConsumeFirstHops","settleConsumeFirstLine"]
 ```
 
-**Context:** `pullConsumeFirstPredecessors` in `get-method` ran after every jobMaterial insert and read `WHERE jobId = …`. Three of the four flows rebuild the whole job, so that read was equivalent — but `itemToJobMakeMethod` rebuilds ONE sub-method, and the pass rewrote lines on every other sub-method too, including rows that already had issued quantity in the successor's units.
+**Context:** The Consume First settle pass (now `settleConsumeFirstLines` in `production.service.ts`) ran after every jobMaterial insert and read `WHERE jobId = …`. Three of the four flows rebuild the whole job, so that read was equivalent — but `itemToJobMakeMethod` rebuilds ONE sub-method, and the pass rewrote lines on every other sub-method too, including rows that already had issued quantity in the successor's units.
 
 **Problem:** A pass keyed on the parent id is correct for the flow it was written next to and silently over-broad for any flow that rebuilds a subset. Nothing fails: the rewritten row has plausible numbers and a plausible provenance column, and only the units disagree with what was already issued.
 

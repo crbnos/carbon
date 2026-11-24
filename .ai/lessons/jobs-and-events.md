@@ -74,11 +74,11 @@ paths: ["packages/jobs/src/inngest/functions/**"]
 triggers: ["step.run("]
 ```
 
-**Context:** The `notify` function's step `filter-recipients-by-preference` returned `{ emailRecipientIds, slackRecipientIds }`. Browser notifications added `pushRecipientIds` to the same step, under the same step id, and the code after it read `pushRecipientIds.length` (2026-10-08).
+**Context:** The `notify` function's step `filter-recipients-by-preference` returned `{ emailRecipientIds, slackRecipientIds }`. A change added a third recipient-id key to the same step, under the same step id, and the code after it read that key's `.length` (2026-10-08).
 
-**Problem:** Inngest replays a completed step from its memoized output. A run that started before the deploy and resumes after it gets the OLD output, with no `pushRecipientIds`, so `.length` throws and the notification fails. Typecheck cannot see it: the type describes the new code, not the stored output. Self-review caught it before merge.
+**Problem:** Inngest replays a completed step from its memoized output. A run that started before the deploy and resumes after it gets the OLD output, without the new key, so `.length` throws and the notification fails. Typecheck cannot see it: the type describes the new code, not the stored output. Self-review caught it before merge.
 
-**Rule:** When a step's return grows a key, read that key with a default (`pushRecipientIds = []`) and comment why, or rename the step id so old runs re-execute it (only when the step is idempotent). Never assume a memoized step output has the current shape. (The `pushRecipientIds` key was removed again later, when push stopped having a per-topic switch; the example stays as the pattern.)
+**Rule:** When a step's return grows a key, read that key with a default (`newKey = []`) and comment why, or rename the step id so old runs re-execute it (only when the step is idempotent). Never assume a memoized step output has the current shape.
 
 **Applies to:** every `step.run` in `packages/jobs/src/inngest/functions/**` whose return shape changes.
 
@@ -94,15 +94,15 @@ triggers: ["dispatch_event_batch","is distinct from","IS DISTINCT FROM"]
 traces). The audit handler's log was mostly "Skipping: no meaningful diff for UPDATE on
 jobOperation".
 
-**Problem:** The scheduler's `persistChanges` issued one `UPDATE jobOperation` per operation on
+**Problem:** The scheduler's write step issued one `UPDATE jobOperation` per operation on
 every regen, always setting `updatedAt`, and re-stamped `status = 'Ready'` on operations that
 were already Ready. `dispatch_event_batch()` queued every one of those updates, the drainer
 sent them to Inngest ten at a time, and the audit, search and embedding handlers then threw
 them away. Nothing was wrong in any single place; the waste was the sum.
 
-**Rule:** A bulk writer guards its UPDATE on the values it writes (`isDistinctFromAny` in
-`scheduling-engine.ts` compares in Postgres, so DATE and timestamptz are matched in their own
-type) rather than writing every row and bumping `updatedAt`. The trigger is the backstop: an
+**Rule:** A bulk writer guards its UPDATE on the values it writes (`updatePlacements` in
+`persist-location.ts` adds an `is distinct from` test per written column, cast to the column's
+type, so DATE and timestamptz are matched in their own type) rather than writing every row and bumping `updatedAt`. The trigger is the backstop: an
 UPDATE that changes only `updatedAt` / `updatedBy` / `embedding` is not queued for AUDIT,
 SEARCH or EMBEDDING (`20261001195204`). When forking `dispatch_event_batch()` into a new
 migration, fork the NEWEST definition; the `event-ignored-columns` check (`@carbon/checks`)
@@ -152,11 +152,7 @@ paths: ["packages/jobs/src/inngest/functions/events/queue.ts"]
 triggers: ["debounce:"]
 ```
 
-**Context:** The push-based event-queue drainer (`packages/jobs/src/inngest/functions/events/queue.ts`) was configured with `debounce: { period: "2s", timeout: "10s" }` to coalesce bursts of `carbon/event-queue.process` wake events into one run.
-
-**Problem:** The Dockerized dev server (`inngest/inngest:v1.19.4`, run by `crbn up`) logs `error unmarshalling debounce item: json: cannot unmarshal array into Go struct field DebounceItem.e.data of type map[string]interface {}` on every debounced event, fails to coalesce (a 20-write burst produced 21 runs, not ~1), and spams the error each time the function is triggered (including every pg_cron sweeper tick). Fails open — events still process, queue still drains, nothing is lost — but the optimization is absent in dev and the logs are noisy. Inngest Cloud honors debounce; the dev server does not.
-
-**Rule:** Don't rely on `debounce` for Carbon Inngest functions validated against the local dev server — it's broken there. For the event queue the coalescing was moved upstream: `dispatch_event_batch()` wakes at most once per transaction (txn-local GUC `carbon.event_wake_sent`), so the important bulk case (a CSV import = one transaction) is already one wake; `concurrency: 1` + loop-until-empty drain absorbs the rest (extra runs from many separate transactions are cheap no-ops that read an empty queue). If you must coalesce many *separate* transactions in a burst, do it at the DB/application layer, not with `debounce`. Verify any flow-control choice by watching `docker logs <inngest container>` for `error handling queue item` during a burst, not just by trusting the config.
+**Rule:** Don't rely on `debounce` for any Carbon Inngest function validated against the local dev server — it's broken there. If you must coalesce many *separate* transactions in a burst, do it at the DB/application layer, not with `debounce`. Verify any flow-control choice by watching `docker logs <inngest container>` for `error handling queue item` during a burst, not just by trusting the config. The rest is in `.claude/rules/event-system.md`.
 
 **Applies to:** `packages/jobs/src/inngest/functions/events/queue.ts`; any new Inngest function reaching for `debounce`/flow-control that will be exercised in local dev.
 
@@ -168,11 +164,7 @@ paths: ["packages/jobs/src/inngest/functions/**/*sweep*.ts","packages/jobs/src/i
 triggers: ["runIsolatedCompanyStep","AccountingAuthError","cron:"]
 ```
 
-**Context:** `accounting-pull-sweep` looped `for (target of targets) await step.run(...)` over every active accounting integration; `mrp` ran every company inside ONE `step.run`. One Xero tenant's refresh token died (`invalid_grant` "Refresh token not found"); one MRP run outgrew Vercel's function timeout.
-
-**Problem:** An Inngest step that exhausts its retries throws into the function and fails the run, so the dead-token company silently skipped every company after it on every sweep — for weeks, with no notification. The single-step MRP was one Vercel invocation for all tenants, timed out, and every retry restarted from company #1. In both cases the run's status said what happened to the run, not to the tenants.
-
-**Rule:** One `step.run` per tenant, wrapped in `try/catch` that records `{ error }` and continues; return the per-tenant outcomes so the run output says who failed. Classify terminal failures (a refused OAuth grant is `AccountingAuthError`) and return them from the step instead of throwing — retries cannot fix them and only delay the next tenant. Pair the per-tenant step with a `maxDuration` on the serve route: a step's ceiling is that function's ceiling.
+**Rule:** Every cron with a per-company loop, not only the accounting ones, runs one `step.run` per tenant, wrapped in `try/catch` that records `{ error }` and continues, and returns the per-tenant outcomes so the run output says who failed. The rest is in `.claude/rules/accounting-sync-handlers.md` (Per-tenant isolation) and `.claude/rules/mrp-system.md` (the MRP cron and the step ceiling).
 
 **Applies to:** `packages/jobs/src/inngest/functions/**` — every cron with a per-company loop (`accounting-*-sweep`, `accounting-reconciliation`, `accounting-consolidation`, `scheduled/mrp.ts`); use `runIsolatedCompanyStep` (`integrations/accounting-auth-failure.ts`) for the accounting ones.
 
@@ -184,11 +176,7 @@ paths: ["packages/jobs/src/inngest/functions/tasks/company-restore.ts"]
 triggers: ["session_replication_role","wipeAndLoad","CHANGE_LOGGED_TABLES","REALTIME_TABLES"]
 ```
 
-**Context:** Backup restore and template revert reload a company through `wipeAndLoad` with triggers off (`session_replication_role = replica`). The live lists (items, customers, suppliers, people) are kept in the browser and updated from broadcasts; the change log (`tableChange`) is what a tab reads when it loads or reconnects.
-
-**Problem:** With triggers off nothing was broadcast. `wipeAndLoad` wrote a reset row to the change log, but an open tab only reads the log when a broadcast tells it to, or once an hour. After a demo template was reverted and applied again, a tab's part picker held the reverted parts next to the new ones, and creating a job with a reverted part returned 404 (2026-10-06, production). The first reproductions missed it because they applied a template (triggers on), which broadcasts correctly.
-
-**Rule:** A writer that turns triggers off does both halves itself: a null-`rowId` row per `CHANGE_LOGGED_TABLES` entry, and a null-`ids` broadcast on every `REALTIME_TABLES` topic of the company, inside the same transaction. When a stale client list is suspected, compare the ids in `window.clientCache.getQueryData(["live", companyId, name])` with the database before reading code.
+**Rule:** When a stale client list is suspected, compare the ids in `window.clientCache.getQueryData(["live", companyId, name])` with the database before reading code. The rest is in `.claude/rules/realtime-system.md`.
 
 **Applies to:** `packages/jobs/src/inngest/functions/tasks/company-restore.ts` (`wipeAndLoad`); any new job that sets `session_replication_role`.
 
@@ -216,11 +204,9 @@ paths: ["packages/checks/src/conformance/no-zero-concurrency.ts"]
 triggers: ["concurrency:"]
 ```
 
-**Context:** Moving webhooks onto the event system. The `WEBHOOK` handler had never actually run — webhooks went through 39 pg_net triggers, so the handler was dead code. Once a subscription made it live, every delivery sat in `QUEUED` forever and nothing reached the endpoint.
+**Context:** Moving webhooks onto the event system. The `WEBHOOK` handler had never actually run — webhooks went through 39 pg_net triggers, so the handler was dead code. `webhook.ts` declared `concurrency: { limit: 0 }`, and once a subscription made it live, every delivery sat in `QUEUED` forever.
 
-**Problem:** `webhook.ts` declared `concurrency: { limit: 0, key: "<table>-<recordId>" }`. `limit: 0` reads like "unlimited" and is almost certainly what the author meant, but Inngest treats it as zero capacity: runs are accepted, grouped by key, and never scheduled. The failure is silent and looks like the event never fired — the drainer completes, the queue empties, `pgmq` shows nothing pending, and only the run list reveals runs parked in `QUEUED` while sibling handlers from the same drain show `COMPLETED`. A controlled test confirmed it: three runs stuck at `limit: 0`, and changing only that value to `1` released them. Two more instances existed — `workflow.ts` (a stub, latent) and `reschedule-job.ts` (`schedule-job`, live, called from `production.server.ts` and `production.service.ts`).
-
-**Rule:** Inngest `concurrency.limit` must be `>= 1`; to mean "unlimited", omit the `concurrency` block entirely. With a `key`, `limit: 1` is the usual intent — serialize per record/company. Enforced by the `no-zero-concurrency` conformance check in `@carbon/checks`. More generally: a handler with zero subscriptions is dead code whose config is never exercised, so any bug in it surfaces only when something makes it live — when wiring an existing-but-unused handler, fire it end-to-end rather than trusting that it worked before.
+**Rule:** A handler with zero subscriptions is dead code whose config is never exercised, so any bug in it surfaces only when something makes it live — when wiring an existing-but-unused handler, fire it end-to-end rather than trusting that it worked before. With a concurrency `key`, `limit: 1` is the usual intent — serialize per record/company. The rest is in the `no-zero-concurrency` check (`@carbon/checks`).
 
 **Applies to:** `packages/jobs/src/inngest/**` `createFunction` options; `packages/checks/src/conformance/no-zero-concurrency.ts`.
 

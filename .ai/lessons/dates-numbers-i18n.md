@@ -46,7 +46,7 @@ triggers: ["plural(","@lingui/core/macro"]
 
 **Problem:** Lingui 6.9.0's macro transform folds a nested `plural()` into the surrounding `t` only when the component or hook is a function declaration or a plain `const X = () => …`. When the function is an inline ARGUMENT of a call (`memo((props) => …)`), the `plural()` is expanded on its own into `i18n._(…)` on the global `@lingui/core` instance, and the outer `t` becomes `{0}` with that call as its value. The global instance is never activated here (see `.claude/rules/i18n-lingui-system.md`), so the string throws "Attempted to call a translation function without setting a locale" the first time it is built. Typecheck, Biome and `lingui:extract` all pass: the catalog shows a normal ICU plural msgid. Only the compiled output shows it.
 
-**Rule:** Do not call `plural()` (or `select()`) from `@lingui/core/macro` inside a component passed inline to `memo(…)` or any other call. Use `<Plural>` in JSX. For a string (a toast), either build it in a function-declaration hook (`function useX() { const { t } = useLingui(); return (n: number) => t`${plural(n, …)}`; }`), or choose between two whole `t` phrases (``n === 1 ? t`Released 1 job` : t`Released ${n} jobs` ``) — both phrases are extracted and translated, but a locale with more plural forms gets only two. When in doubt, read the compiled module (Vite `transformRequest` on the file) and check for an import of `i18n` from `@lingui/core`.
+**Rule:** `select()` from `@lingui/core/macro` inside a `memo(…)` component has the same defect as `plural()`. For a string (a toast), besides a function-declaration hook, you can choose between two whole `t` phrases (``n === 1 ? t`Released 1 job` : t`Released ${n} jobs` ``) — both phrases are extracted and translated, but a locale with more plural forms gets only two. The rest is in `.claude/rules/i18n-lingui-system.md` (Plurals).
 
 **Applies to:** every `memo(…)` component in `apps/{erp,mes}/app` and `packages/{react,form}/src` (most ERP tables); any new use of `plural` / `select` from `@lingui/core/macro`.
 
@@ -175,15 +175,14 @@ one can only ever be imported by Vite-built app code — importing it from plain
 Node throws, which would break the phase-3 matcher in `packages/jobs`, every
 `tsx` script, and any vitest run that touches the catalog.
 
-**Rule:** Split the artifact: `events.generated.ts` carries the runtime data and
-imports nothing from `@lingui/*`; `labels.generated.ts` carries only `msg``
-descriptors keyed by id and is excluded from the package barrel. Tooling that
-must read the labels reads the file as **text** (regex the keys) rather than
-importing it — `scripts/check-workflow-catalog.ts` does exactly that. Never put a
-`label` field on the runtime type; it would always be undefined.
+**Rule:** Tooling that must read the labels reads `labels.generated.ts` as **text**
+(regex the keys) rather than importing it — `scripts/check-workflow-catalog.ts`
+does exactly that. The same split holds for any future generated file that needs
+both translatable strings and a Node-side consumer. The rest is in
+`.claude/rules/workflow-event-catalog.md` (Labels are a separate file).
 
-**Applies to:** `packages/workflows/src/catalog/`, and any future generated file
-that needs both translatable strings and a Node-side consumer.
+**Applies to:** `packages/ee/src/workflows/catalog/`, `scripts/check-workflow-catalog.ts`,
+and any future generated file that needs both translatable strings and a Node-side consumer.
 
 ## `useNumberFormatter()` with no argument is a new formatter on every render
 

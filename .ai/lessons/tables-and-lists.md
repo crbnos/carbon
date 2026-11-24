@@ -12,7 +12,7 @@ triggers: ["buildColumnMaps","exportValue"]
 
 **Context:** Verifying sales-invoice customer names in the CSV (TCK-60).
 **Problem:** The registry resolved both names, but the table's Customer columns had only `id` and `cell`. `buildColumnMaps` excluded them, so the export request never asked for either name.
-**Rule:** A display column needs `meta.exportValue` to participate in CSV export. Check the actual request's column list and the generated file; a registry mapping alone does not prove the column exports.
+**Rule:** Check the actual request's column list and the generated file; a registry mapping alone does not prove the column exports. The rest is in `.claude/rules/table-csv-export.md`.
 **Applies to:** ERP Table display columns, `buildColumnMaps`, and list-registry `exportValues`.
 
 ## Aging CSV exports must follow open documents

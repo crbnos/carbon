@@ -42,7 +42,7 @@ paths: ["apps/erp/app/modules/*/[a-z]*.models.ts","packages/api/src/errors.ts","
 triggers: ["getErrorMessage","itemLedgerTypes"]
 ```
 
-**Context:** The 1,495-operation API sweep triaged all 274 WRITE-op 400s as "reached the DB, expected FK rejections" and flagged only 500s. `inventory_insertManualInventoryAdjustment` came back 400 with `"Failed to create manual inventory adjustment"` and was waved through — but that string is the service's FALLBACK for an edge-function error whose real message was suppressed. A customer later hit exactly this: the published schema advertised 12 `adjustmentType` values (the validator spread `itemLedgerTypes` into its enum) while the `post-inventory-adjustment` edge function accepts 5, so every LLM-guided "add stock" call failed undiagnosably.
+**Context:** The 1,495-operation API sweep triaged all 274 WRITE-op 400s as "reached the DB, expected FK rejections" and flagged only 500s. The manual inventory adjustment write (today `adjustInventory` in `inventory.server.ts`) came back 400 with `"Failed to create manual inventory adjustment"` and was waved through — but that string is the service's FALLBACK for a posting error whose real message was suppressed. A customer later hit exactly this: the published schema advertised 12 `adjustmentType` values (the validator spread `itemLedgerTypes` into its enum) while the posting accepted 5, so every LLM-guided "add stock" call failed undiagnosably.
 
 **Problem:** Bucketing sweep results by status code alone treats "the request was validly rejected" and "the error was swallowed somewhere in the chain" as the same outcome. The ops most likely to be broken-by-contract-drift are precisely the ones that fail with a generic message, because the generic message IS the symptom of a suppressed real error.
 
@@ -65,22 +65,6 @@ triggers: ["pg_temp.allows"]
 **Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
-
-## A test that stays green when you break the code guards nothing
-
-```scope
-id: a-test-that-stays-green-when-you-break-the-code-guards-nothi
-paths: ["**/*.test.ts","**/*.test.tsx"]
-triggers: []
-```
-
-**Context:** A 2026-11 prune of every test file in the repo (1,268 files) deleted about 300 tests and rewrote about 300 more.
-
-**Problem:** Most of them passed when the code was wrong. Some had an expected value computed by the function under test. Some checked only that two legs sum to zero, which still passes with the signs swapped. Some never reached the branch their name describes, and some ran a fake that ignores the filter it tests. Others failed when nothing a user sees had changed: pinned UI copy, call order, a constant echoed back. A test that only guarded the same rule in another package doubled the upkeep.
-
-**Rule:** Before you commit a test, make the bug it names in the code and watch the test fail. Write expected values as literals. Grep for an existing test of the same rule first. The full list of patterns is in `.claude/rules/testing.md` → "Before you commit one: break the code".
-
-**Applies to:** every committed `*.test.ts` / `*.test.tsx`, including the regression test of a fix.
 
 ## An SQL test that inserts an employee needs the company's root group first
 
@@ -140,22 +124,6 @@ triggers: ["INSERT INTO \"item\"","get_material_details","get_part_details","get
 
 **Applies to:** any psql/SQL test-fixture item creation; `get_material_details` / `get_part_details` / `get_tool_details` consumers; `apps/erp/app/routes/x+/items+/$itemId.properties.tsx`.
 
-## A mock of a function in the same file does not intercept
-
-```scope
-id: a-mock-of-a-function-in-the-same-file-does-not-intercept
-paths: ["apps/erp/test/**","apps/erp/app/modules/**/*.test.ts"]
-triggers: ["vi.mock(","vi.spyOn("]
-```
-
-**Context:** The migration moved callers into the same module file as the functions they call (2026-10-16).
-
-**Problem:** `vi.mock` replaces a module's exports for importers in other files. A call from one function to another inside the same file goes to the real function, so tests that mocked the callee started calling the database, or passed while testing nothing.
-
-**Rule:** Stub only a real boundary (the Supabase client, `fetch`, the clock), as `.claude/rules/testing.md` says. A test that only checks which internal functions were called gets deleted, not repointed.
-
-**Applies to:** tests under `apps/erp/test/` and `apps/erp/app/modules/**`.
-
 ## A tested `assert*` helper that is never imported is worse than none — it reads as a guard that is not there
 
 ```scope
@@ -164,7 +132,7 @@ paths: ["packages/utils/src/batch-time-split.ts"]
 triggers: ["export function assert","export const assert"]
 ```
 
-**Context:** `batch-time-split.ts` exported `assertAllOperationsClaimed` (concurrent-claim race guard) and `assertBatchWorkCenterMutable` (completed-batch immutability guard), both unit-tested. Neither was ever imported by the `batch-operations` edge function — the `update` branch happily re-pointed a Completed batch's work center, and the claim had no `IS NULL` race guard.
+**Context:** `batch-time-split.ts` exported `assertAllOperationsClaimed` (concurrent-claim race guard) and `assertBatchWorkCenterMutable` (completed-batch immutability guard), both unit-tested. Neither was imported by the code that ran batch operations at the time — the `update` branch happily re-pointed a Completed batch's work center, and the claim had no `IS NULL` race guard.
 
 **Problem:** The presence of a well-named, tested guard function signals "this invariant is enforced." A reviewer (and the author) reads the export list and assumes coverage. Dead safety helpers give false confidence precisely where the risk is highest.
 
@@ -180,29 +148,11 @@ paths: ["apps/erp/test/database/fixtures/**"]
 triggers: ["SUPABASE_DB_URL","databaseTest"]
 ```
 
-**Context:** Running the `post-reimbursement` Deno tests with the
-`SUPABASE_DB_URL` I found first gave `16 passed | 12 failed`. Re-running the
-UNTOUCHED `post-charge` suite gave `19 passed | 16 failed` — the same shape,
-failing at the same fixture line. The connection string was wrong, not the code.
+**Context:** Database tests in a worktree failed in fixtures they never touch: `relation "companyGroup" does not exist`, also on unedited files. The connection string was wrong, not the code.
 
-**Problem:** Each `crbn` worktree gets its OWN Postgres container on a random
-host port (`docker ps` showed `0.0.0.0:49921->5432`), written to `.env.local`.
-The root `.env` still carries the stock `54322`, and it WINS — the same
-precedence trap that produced the `db:check:backups` fix in `c1c5e7c138`. Port
-54322 is often another worktree's live stack, so you don't get "connection
-refused"; you connect to a real database with the wrong schema and read the
-failures as a bug in your own change.
+**Problem:** `crbn` loads `.env.local` over `.env` for itself, but a test runner does not use that loader. Vitest and the Deno tests read `SUPABASE_DB_URL` from the root `.env`, which points at the shared Postgres on 54322 with the stock `postgres` database. A worktree's schema lives in its own `wt_<slug>` database, named in that worktree's `.env.local`. The host is local, so `databaseTest` does not skip: the tests connect to a real database with the wrong schema, and the failures look like a bug in your change.
 
-**Rule:** Get the port from `docker ps --format '{{.Names}}\t{{.Ports}}' | grep
-postgres` (or this worktree's `.env.local`) and pass it explicitly. Before
-believing a Deno/DB test failure is yours, run a NEIGHBOURING suite you did not
-touch — `post-charge` next to `post-reimbursement`. Identical failure counts in
-untouched code means the environment, not the diff.
-
-Vitest reads `SUPABASE_DB_URL` from the root `.env` too, so DB-backed vitest suites
-(`databaseTest` in `apps/erp/test/database/fixtures/local-database.ts`) connect to the stale port: they do not skip, because the host is still local. Export the
-worktree's URL before you run them:
-`export SUPABASE_DB_URL="$(grep -h '^SUPABASE_DB_URL' .env.local | cut -d= -f2- | tr -d '"')"`.
+**Rule:** Before you run database tests, export this worktree's URL: `export SUPABASE_DB_URL="$(grep -h '^SUPABASE_DB_URL' .env.local | cut -d= -f2- | tr -d '"')"`. If `.env.local` is missing, the worktree has no database yet: run `crbn up`. Before you believe a failure is yours, run a neighbouring suite you did not touch. The same failures in untouched code mean the environment, not the diff.
 
 **Applies to:** DB-backed tests (`apps/erp/test/database/fixtures/`, vitest `databaseTest`); any `pnpm db:check:*` or psql work inside
 a Conductor worktree.

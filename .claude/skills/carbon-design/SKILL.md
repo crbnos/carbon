@@ -85,7 +85,7 @@ once per task.
 Name the **precedent screen** before anything else: the existing Carbon screen this one copies,
 by route or component path, and take a screenshot of it. If no screen fits, stop and ask —
 autonomous runs that skipped this built bespoke, crowded screens that were rejected
-(`.ai/lessons/ui-components-and-forms.md#every-ui-task-names-its-precedent-screen-and-is-checked-by-s`, worked example 4).
+(worked example 4).
 Pick the archetype (`page-archetypes.md` §15) and open its exemplar files. Also find the
 closest existing screen *in the same module*. Read their actual code — the exemplar is the
 spec. Read its **routes** too (`$id.new`, `$id.$lineId.details`, `update.tsx`, `status`,

@@ -10,21 +10,11 @@ paths: ["packages/jobs/src/workflows/engine/loader.ts","packages/ee/src/workflow
 triggers: ["triggerOutputs","EntityCache","RuntimeValue"]
 ```
 
-**Context:** The workflow engine caches loaded records per run, keyed
-`${entity}:${id}`, and a record trigger hands out `record`, `before` and `after`.
-
-**Problem:** All three are the same row id. Seeding one cache from all three
-means whichever is written last wins, so `before.orderTotal <= 10000` silently
-reads the **new** total — quietly defeating the PRD's whole "went up" case. Both
-the spec and the plan missed this.
-
-**Rule:** An entity `RuntimeValue` carries an optional inline `row`.
-`triggerOutputs` attaches each trigger row to its own value, and seeds the shared
-cache with the **current** state only (`record`/`after`). Never put a historical
-snapshot into a cache keyed by identity alone.
+**Rule:** Never put a historical snapshot into a cache keyed by identity alone.
+The rest is in `.claude/rules/workflow-engine.md`.
 
 **Applies to:** `packages/jobs/src/workflows/engine/loader.ts`,
-`packages/workflows/src/runtime/`, and any future cache of "the record as it is"
+`packages/ee/src/workflows/runtime/`, and any future cache of "the record as it is"
 that also has to represent "the record as it was".
 
 ## A `default:` arm silently defeats discriminated-union exhaustiveness
@@ -49,7 +39,7 @@ key is a `TS2741` error. Where a switch is genuinely right, omit `default:` and 
 with a `never` assertion. A `Record<Union, T>` gives the same guarantee — that is
 what caught the missing `OPERATOR_LABELS` entries when `Operator` was extended.
 
-**Applies to:** `packages/workflows/src/definition/nodes.ts`, and any
+**Applies to:** `packages/ee/src/workflows/definition/nodes.ts`, and any
 `switch (x.type)` over a zod discriminated union.
 
 ## A generated catalog must key entity refs off the schema, not off a hand-written hint
@@ -79,7 +69,7 @@ foreign key present in the schema, and only uses `ref` where the schema is
 genuinely silent. Audit every existing hint against the real source before
 trusting a slate that came from a design document.
 
-**Applies to:** `packages/workflows/src/catalog/build.ts`, and any hand-curated
+**Applies to:** `packages/ee/src/workflows/catalog/build.ts`, and any hand-curated
 overlay on generated schema data (`packages/database/src/audit.config.ts`'s
 `snapshotFields` / `fkDisplayRegistry`).
 
@@ -93,9 +83,9 @@ triggers: ["formatVersion","migrateDefinition","FORMAT_VERSION"]
 
 **Context:** Versioned JSON documents stored in a JSONB column with a
 `formatVersion` sibling column, upgraded on read so stored rows never need a
-backfill (`packages/documents/src/template/`, `packages/workflows/`).
+backfill (`packages/documents/src/template/`, `packages/ee/src/workflows/`).
 
-**Problem:** `packages/workflows` originally parsed the row against the *current*
+**Problem:** The workflow definition reader originally parsed the row against the *current*
 zod schema and only then called `migrateDefinition`. A document old enough to need
 migrating cannot satisfy the current schema by definition, so it failed the parse
 and never reached the migration — the seam was dead on arrival. Worse, the parse
@@ -110,7 +100,7 @@ greater than current as an explicit failure, and return a discriminated
 refuse to save over a row it could not read.
 
 **Applies to:** any read-time `migrate*(payload, _from)` seam —
-`packages/workflows/src/definition/normalize.ts`,
+`packages/ee/src/workflows/definition/normalize.ts`,
 `packages/documents/src/template/defaults.ts`.
 
 ## Never hand-measure React Flow handle positions; and never `stopPropagation` inside a node
@@ -153,21 +143,9 @@ paths: ["packages/jobs/src/workflows/actions/update.ts"]
 triggers: ["userToCompany","existsInCompany","selectInCompany"]
 ```
 
-**Context:** The workflow update executor must prove that every entity-typed
-value it writes belongs to the acting company, or a workflow could point a row at
-another tenant's record. The plan specified one generic
-`select id where id = ? and companyId = ?` for that check.
-
-**Problem:** Every entity-typed writable column in the workflow catalogue is an
-assignee, and they all point at `user` — which is one of the few Carbon tables
-with **no** `companyId` column. The literal check would have 400'd on every
-assignee write, i.e. on every workflow that assigns anybody.
-
-**Rule:** Membership for `user` is `userToCompany(userId, companyId)`, not a
-column on the row. Route those entities through that join instead of skipping the
-check — dropping it is the tenancy hole the check exists to close. Before writing
-a "every table has `companyId`" helper, confirm it for the specific tables it
-will actually receive.
+**Rule:** Before writing a "every table has `companyId`" helper, confirm it for
+the specific tables it will actually receive. The rest is in
+`.claude/rules/workflow-actions.md`.
 
 **Applies to:** `packages/jobs/src/workflows/actions/update.ts`, and any generic
 company-scoping helper that takes a table name at run time.

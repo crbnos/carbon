@@ -2,21 +2,21 @@
 
 Uploads, storage, media and HEIC, CAD and STEP, the 3D viewer, Rust crates, PDFs and printing.
 
-## A functions/shared source with npm deps must register them twice
+## A module's own type declarations must sit next to it, behind a triple-slash reference
 
 ```scope
 id: a-functions-shared-source-with-npm-deps-must-register-them-t
-paths: ["packages/files/src/media/image-pipeline.ts","packages/database/supabase/functions/deno.json"]
+paths: ["packages/files/src/media/image-pipeline.ts","packages/files/src/media/wasm-codecs.d.ts"]
 triggers: ["libheif-js","@jsquash/"]
 ```
 
-**Context:** `functions/shared/image-pipeline.ts` follows the `precision.ts` pattern (source under `supabase/functions/`, re-exported by a Node package) but, unlike precision, imports npm packages (`libheif-js`, `@jsquash/*`).
+**Context:** `packages/files/src/media/image-pipeline.ts` imports `libheif-js`, which ships no types. Its declarations are in `wasm-codecs.d.ts` beside it.
 
-**Problem:** Module resolution follows the FILE's location, not the importer's. Deno resolves the bare specifiers via `functions/deno.json` `imports`; Node/Vite resolve them from `packages/database/node_modules` — not from the re-exporting package. Registering the dep in only one place typechecks in one world and crashes in the other, and the versions can silently drift.
+**Problem:** An ambient `.d.ts` file loads only for a program that includes it. Another package or app that compiles the module without that file fails to typecheck.
 
-**Rule:** Obsolete: the pipeline moved to `@carbon/files` (`packages/files/src/media/image-pipeline.ts`, its deps in that package.json) and `functions/deno.json` no longer pins any deps. Still true: type declarations a module needs sit next to it (triple-slash reference) — ambient `.d.ts` files only load for programs that include them.
+**Rule:** Put the type declarations a module needs next to it, and load them with a triple-slash reference (`/// <reference path="./wasm-codecs.d.ts" />`).
 
-**Applies to:** `packages/files/src/media/image-pipeline.ts`.
+**Applies to:** `packages/files/src/media/image-pipeline.ts`, and any module that declares types for an untyped dependency.
 
 ## A wrapper that narrows a result type needs its call sites re-read, not re-cast
 
@@ -27,7 +27,7 @@ triggers: ["CompanyBucket","as FileObject[]"]
 ```
 
 **Context:** Replacing the free-function storage helpers
-(`listCompanyPrivateObjects` and friends) with a fluent
+(the company-object list helpers) with a fluent
 `storage(client).company(id)` client in `@carbon/files`. The old helpers
 returned `{ data: StorageFileLike[]; errors: [] }` — `data` never null, entries
 structurally typed — so ~10 call sites carried `as FileObject[]` /
@@ -132,9 +132,9 @@ triggers: ["fastener_name_re","classify_fasteners","removal_priority","reselect_
 
 **Problem:** Fastener detection is name-only; real CAD names carry fastener-ish tokens in structural parts (pin counts, "M8 slot pattern" spec suffixes). A false positive is fail-open: it changes scheduling, exemptions, and base selection everywhere at once.
 
-**Rule:** Never classify on ambiguous single tokens — "pin" is out (dowel pins still match via "dowel"). Back the name test with physical sanity in `_classify_fasteners`: a name-matched part spanning more than `max(100mm, 0.35 × assembly diagonal)` keeps its structural role. When ordering goes absurd on a new model, print the `fasteners` cohort first — one misclassified structural part explains a scrambled sequence.
+**Rule:** Never classify on ambiguous single tokens — "pin" is out (dowel pins still match via "dowel"). Back the name test with physical sanity in `classify_fasteners`: a name-matched part spanning more than `max(100mm, 0.35 × assembly diagonal)` keeps its structural role. When ordering goes absurd on a new model, print the `fasteners` cohort first — one misclassified structural part explains a scrambled sequence.
 
-**Applies to:** `crates/planner/src` (`FASTENER_NAME_RE`, `_classify_fasteners`, `removal_priority`, `_reselect_base`); future classification heuristics.
+**Applies to:** `crates/planner/src` (`fastener_name_re()`, `classify_fasteners`, `removal_priority`, `reselect_base`); future classification heuristics.
 
 ## Profile the planner before optimizing — the flood was pass-through, not self-collision
 
@@ -144,29 +144,29 @@ paths: ["crates/planner/src/**"]
 triggers: ["path_blockers","contacts_at"]
 ```
 
-**Context:** Motion planning took ~3 min (seat rail) / >30 min (harness). A micro-benchmark showed a 2,000× per-sample cost for a part colliding with its own seated copy (it stays registered in the manager), so the "obvious" fix was to unregister the moving part during its own sweeps. Implemented, byte-identical output — and **zero real-model speedup** (191→211s). cProfile told the truth: 86% of total time was `_contacts_at` under `_path_blockers`, dominated by **pass-through enumeration** — sweeping a part THROUGH its blockers enumerates the blocker's full triangle-contact set (53M contact objects on a 31-part model) at every sample for the whole travel, when all `_path_blockers` needs is each blocker's identity, discovered once.
+**Context:** Motion planning took ~3 min (seat rail) / >30 min (harness). A micro-benchmark showed a 2,000× per-sample cost for a part colliding with its own seated copy (it stays registered in the manager), so the "obvious" fix was to unregister the moving part during its own sweeps. Implemented, byte-identical output — and **zero real-model speedup** (191→211s). A profile of the real model told the truth: 86% of total time was `contacts_at` under `path_blockers`, dominated by **pass-through enumeration** — sweeping a part THROUGH its blockers enumerates the blocker's full triangle-contact set (53M contact objects on a 31-part model) at every sample for the whole travel, when all `path_blockers` needs is each blocker's identity, discovered once.
 
 **Problem:** Micro-benchmarks measure the mechanism you built them around, not the workload. Self-collision flooding is real but self-overlap ends early in most sweeps; deep pass-throughs persist for hundreds of samples and were the actual cost. The two look identical from the outside (both are "too many contacts").
 
-**Rule:** For planner performance work, cProfile the real model FIRST (`cProfile.run('plan_step(...)')` — 30s of setup) and read cumtime by caller before choosing a lever. The winning fix: in `_path_blockers`, once a partner is recorded as a blocker, unregister it from the broadphase for the remainder of the sweep and re-register before returning (`registerObject`/`unregisterObject` on the SAME CollisionObject rebuilds nothing — the BVH lives on the geometry). Seat rail 191–211s → 20–26s (8×), harness >30min → 9.5min, byte-identical sequences. Keep the self-unregister too (it's what makes the synthetic test suite 8× faster), but don't mistake it for the fix.
+**Rule:** For planner performance work, profile the real model FIRST and read the cumulative time by caller before choosing a lever. The winning fix: in `path_blockers`, once a partner is recorded as a blocker, cull it from every later sample of the sweep (`contacts_at_excluding`). Culling a body rebuilds nothing — the BVH lives on the geometry. Seat rail 191–211s → 20–26s (8×), harness >30min → 9.5min, byte-identical sequences. Keep the self-unregister too (it's what makes the synthetic test suite 8× faster), but don't mistake it for the fix.
 
-**Applies to:** `crates/planner/src` sweep functions (`_path_blockers`, `_contacts_at`, `_unregistered`); any future "collect all X along a path" collision query.
+**Applies to:** `crates/planner/src/collide.rs` sweep functions (`path_blockers`, `contacts_at`, `contacts_at_excluding`); any future "collect all X along a path" collision query.
 
 ## Sweeping storage call sites by one literal misses named-constant buckets
 
 ```scope
 id: sweeping-storage-call-sites-by-one-literal-misses-named-cons
 paths: []
-triggers: ["\"private\"","temp-staging","company-templates","storage.from("]
+triggers: ["temp-staging","company-templates","storage.from("]
 ```
 
-**Context:** The company-private-bucket migration swept every `storage.from("private")` call in the repo to per-company buckets. The literal grep found ~160 call sites and missed six more: `RAW_DURABLE_BUCKET = "private"` (assembler-client), `STORAGE_BUCKET = "private"` (company-backup/export), `BUCKET = "private"` (onshape-attach), `DOCUMENTS_BUCKET = "private"` (download.$token), `archiveBucket: "private"` (audit.config), and the `["private", "temp-staging"]` probe arrays in both apps' model.artifacts/model.download routes.
+**Context:** The company-private-bucket migration swept every `storage.from("private")` call in the repo to per-company buckets. The literal grep found ~160 call sites and missed six more: five named constants or config fields that held the bucket name (`X_BUCKET = "private"`, `archiveBucket: "private"`), and the bucket-name probe arrays in both apps' model.artifacts/model.download routes.
 
 **Problem:** Each miss was a real defect, not noise — new CAD raws kept landing in the legacy bucket, backups silently skipped assets uploaded to company buckets, restores wrote assets back into the legacy bucket, and token downloads / audit-archive reads would 404 on new files once the legacy fallback is removed.
 
 **Rule:** When migrating a string-keyed resource (a bucket, a queue, a topic), grep for the VALUE in every syntactic position — `= "x"`, `: "x"`, `"x",`, `("x"`, and type unions — not just the one call pattern you are rewriting. Constants exist precisely to hide the literal from the call site.
 
-**Applies to:** any repo-wide sweep keyed on a string literal; storage buckets (`private`, `temp-staging`, `company-templates`), PGMQ queue names, Inngest event names.
+**Applies to:** any repo-wide sweep keyed on a string literal; storage buckets (`temp-staging`, `company-templates`), PGMQ queue names, Inngest event names.
 
 ## unpdf ships a dead 1.5 MB engine chunk unless aliased away
 
@@ -285,16 +285,16 @@ triggers: [".upload(","stripSpecialCharacters","parseJobFilePath"]
 ```scope
 id: synthetic-box-meshes-fake-huge-penetration-under-sustained-s
 paths: ["crates/planner/tests/**"]
-triggers: ["trimesh"]
+triggers: ["box_part"]
 ```
 
-**Context:** Writing planner ordering tests (`test_part_with_blocked_insertion_is_not_demoted`) with raw `trimesh.creation.box` parts: a slider seated 0.05mm into a channel floor read as depth **29.8mm** against the rail at every sweep sample, so the planner declared it inseparable and rigid-merged it.
+**Context:** Writing planner ordering tests with raw 12-triangle box parts (`box_part` in `crates/planner/tests/synthetic_plan.rs`): a slider seated 0.05mm into a channel floor read as depth **29.8mm** against the rail at every sweep sample, so the planner declared it inseparable and rigid-merged it.
 
 **Problem:** FCL reports per-triangle-pair local penetration. A box face is two giant triangles; two near-coplanar giant triangles overlapping 0.05mm in the normal direction report a depth spanning their tangential overlap. Real STEP models never hit this — tessellation at `linearDeflection` keeps triangles small, so local depths stay bounded by element scale. The artifact only appears in synthetic tests whose parts sustain face-on-face sliding contact; brief seated contact that separates immediately (stacked boxes lifting off) is fine.
 
-**Rule:** In planner tests, any part that must SLIDE while touching another needs `mesh.subdivide_to_size(5.0)` on both meshes — and prefer seating the moving part against a face perpendicular to its travel (contact vanishes on the first sample) over a face parallel to it (contact persists the whole sweep). Also avoid geometry where a seated bite must scrape past an opening sill: that is a real interference, not an artifact.
+**Rule:** In planner tests, any part that must SLIDE while touching another needs both meshes subdivided to triangles of about 5 mm (`crates/planner` has no subdivide helper yet) — and prefer seating the moving part against a face perpendicular to its travel (contact vanishes on the first sample) over a face parallel to it (contact persists the whole sweep). Also avoid geometry where a seated bite must scrape past an opening sill: that is a real interference, not an artifact.
 
-**Applies to:** `crates/planner/tests` synthetic fixtures; debugging any "cannot separate / planned as one rigid unit" result on hand-built trimesh geometry.
+**Applies to:** `crates/planner/tests` synthetic fixtures; debugging any "cannot separate / planned as one rigid unit" result on hand-built box geometry.
 
 ## The three.js rotate gizmo grabs whatever sits under its center
 
@@ -312,19 +312,19 @@ triggers: ["TransformControls","PivotControls"]
 
 **Applies to:** any `TransformControls` / `PivotControls` placed on top of an existing pointer handle in `packages/viewer`.
 
-## trimesh CollisionManager rebuilds BVHs on every single-object query
+## A collision query that builds a BVH per call rebuilds it on every sample
 
 ```scope
 id: trimesh-collisionmanager-rebuilds-bvhs-on-every-single-objec
 paths: ["crates/planner/src/**"]
-triggers: ["_contacts_at","_self_exempt"]
+triggers: ["contacts_at","self_exempt"]
 ```
 
-**Context:** Re-planning the 31-part seat rail took ~2 hours; the old planner took ~59s. `manager.in_collision_single(mesh, transform)` builds a fresh FCL BVH for the queried mesh on EVERY call, and the greedy loop also removed/re-added parts per attempt (another BVH rebuild each).
+**Context:** Re-planning the 31-part seat rail took ~2 hours; the old planner took ~59s. The single-object collision query built a fresh FCL BVH for the queried mesh on EVERY call, and the greedy loop also removed/re-added parts per attempt (another BVH rebuild each).
 
-**Rule:** For sampled sweeps, cache the FCL BVH per mesh (`mesh_to_BVH` once, `fcl.CollisionObject` per query) and collide against `manager._manager` directly; never remove/re-add a manager object to "exclude" it — filter its contacts by name with an infinite allowance instead. Bound sampling by the AABB separation distance (beyond it, disjointness is provable).
+**Rule:** For sampled sweeps, build the FCL BVH once per mesh (`Component::bvh`) and reuse it for every query; never remove/re-add a manager object to "exclude" it — filter its contacts by name with an infinite allowance instead. Bound sampling by the AABB separation distance (beyond it, disjointness is provable).
 
-**Applies to:** `crates/planner/src` (`_contacts_at`, `_self_exempt`), any trimesh/fcl sampling loop.
+**Applies to:** `crates/planner/src/collide.rs` (`contacts_at`, `self_exempt`), any FCL sampling loop.
 
 ## "What is drawn" and "what blocks the view" must be derived from one predicate
 
@@ -392,16 +392,16 @@ triggers: ["graph.json","model.glb","trimesh"]
 ```scope
 id: ordering-heuristics-must-be-gated-on-a-large-noisy-model-not
 paths: ["crates/planner/src/**"]
-triggers: ["removal_priority","_sandwiched_parts"]
+triggers: ["removal_priority","sandwiched_parts"]
 ```
 
 **Context:** The weakly-secured-last + sandwich-gasket refactor validated green on 47 unit tests and a byte-identical 31-part seat-rail baseline, then made real planning slower with worse results. A 20-line classification probe on the 118-part SA Mando & Battery Harness immediately showed why: 4 sandwich detections — ALL false positives, including a 33mm "thin" part (ratio-only thinness cap) and two 10.4mm isotropic pass-through allowances (uncapped observed depth granted as "compliant squish").
 
 **Problem:** The seat rail is a best-case model: named fasteners, clean contacts, no ambiguous plate stacks. Proxy signals calibrated there (name-only fastener detection, contact counts, thinness ratios) explode on models with unnamed hardware, clearance fits, and interpenetrating CAD. Two failure classes: (1) a *preference* wired into the greedy removal priority is not a preference — that ranking schedules expensive removal attempts and picks flag/merge victims, so fronting hard-to-remove parts multiplies failed sweeps (slower); (2) any heuristic that grants collision allowances fails open — one false positive corrupts collision truth for every sweep it touches (worse).
 
-**Rule:** Before shipping a planner ordering/allowance heuristic: (a) run the classification-only probe (`.ai/scratch/geometry-probe.py`) on a large noisy model (harness/BCU class) and eyeball every cohort member and every allowance value — a 10mm "squish" is a bug, not a gasket; (b) keep display preferences in the topo sort only, never in `removal_priority`; (c) cap and axis-gate anything that relaxes collision tolerance, and prefer fail-closed (reject classification) over fail-open (grant allowance) when evidence is out of range.
+**Rule:** Before shipping a planner ordering/allowance heuristic: (a) run a classification-only probe (print each cohort and each allowance, no planning) on a large noisy model (harness/BCU class) and eyeball every cohort member and every allowance value — a 10mm "squish" is a bug, not a gasket; (b) keep display preferences in the topo sort only, never in `removal_priority`; (c) cap and axis-gate anything that relaxes collision tolerance, and prefer fail-closed (reject classification) over fail-open (grant allowance) when evidence is out of range.
 
-**Applies to:** `crates/planner/src` ordering preferences, `_sandwiched_parts`-style classifiers, any future exempt/allowance mechanism.
+**Applies to:** `crates/planner/src` ordering preferences, `sandwiched_parts`-style classifiers, any future exempt/allowance mechanism.
 
 ## Penetration tolerances must stay far below sample spacing
 
@@ -448,14 +448,14 @@ page's text back (pdfjs). A single render can land away from the boundary.
 
 ```scope
 id: verify-what-actually-rendered-before-root-causing-a-bad-moti
-paths: ["packages/viewer/src/AssemblyPlayer.tsx","packages/viewer/src/fallback.ts","packages/viewer/src/validate-motion.ts","crates/planner/src/**"]
+paths: ["packages/viewer/src/AssemblyPlayer.tsx","packages/viewer/src/display.ts","packages/viewer/src/fallback.ts","packages/viewer/src/validate-motion.ts","crates/planner/src/**"]
 triggers: ["displayMotionForStep","synthesizeFallbackMotion","assemblyPlanJob"]
 ```
 
 **Context:** A user reported step 4's screw+washer "colliding through the 3D MARKETING and seat rail clamp" and asked for a motion-planning refactor. A trimesh/FCL sweep of the STORED motion against the real GLB meshes showed it was collision-free against the entire model — and the only geometrically feasible insertion (the reverse sense jams the washer into the clamp bore by 3.4mm). The visible garbage came from elsewhere: a re-motion job was still running, so steps played stale/"none" motions through the collision-blind AABB display fallback, on top of 26 never-installed components being rendered solid.
 
-**Problem:** A "the animation collides" report conflates at least four layers: the stored plan motion, the display-time fallback synthesis (`displayMotionForStep` → `synthesizeFallbackMotion`), display adjustments (`exaggerateMotion`), and the visibility model (what else is on canvas). Root-causing the planner first is attacking the strongest layer — the geometry service's motion had `verified: true` and meant it.
+**Problem:** A "the animation collides" report conflates at least four layers: the stored plan motion, the display-time fallback synthesis (`displayMotionForStep` → `synthesizeFallbackMotion`), display adjustments (`display.ts`), and the visibility model (what else is on canvas). Root-causing the planner first is attacking the strongest layer — the geometry service's motion had `verified: true` and meant it.
 
 **Rule:** Before touching planner code for a visual-collision report: (1) check `assemblyPlanJob.status` — Queued/Processing means the user watched placeholder motions; (2) dump the step's stored `motion` from `assemblyInstructionStep` and sweep it against the GLB (the `collision` crate, or a small trimesh script; storage files live in the storage container under `/var/lib/storage/stub/stub/<bucket>/...`); (3) only if the stored motion itself collides is it a planner problem — otherwise it's fallback/visibility/display-layer work in `packages/viewer`.
 
-**Applies to:** assembly-instruction motion bug reports; `packages/viewer/src/{motion,fallback,AssemblyPlayer}`; `crates/planner/src`.
+**Applies to:** assembly-instruction motion bug reports; `packages/viewer/src/{display,fallback,AssemblyPlayer}`; `crates/planner/src`.

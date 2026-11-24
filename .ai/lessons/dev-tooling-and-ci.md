@@ -66,11 +66,11 @@ paths: ["scripts/lib/service-ast.ts"]
 triggers: ["memberName","Object.hasOwn"]
 ```
 
-**Context:** The MCP generator decided "is this call a database write" with
-`WRITES[memberName]` over an object literal.
+**Context:** The MCP generator once decided "is this call a database write" by
+indexing an object literal with `memberName`.
 
 **Problem:** `memberName` comes from the code being analysed, so `x.toString()` looked up
-`WRITES["toString"]`, found `Object.prototype.toString`, and counted as a write. Five read
+the `"toString"` key, found `Object.prototype.toString`, and counted as a write. Five read
 tools silently left the manifest until the digest diff showed them missing.
 
 **Rule:** When the key is arbitrary input (an identifier from parsed source, a column name,
@@ -104,11 +104,11 @@ paths: ["packages/dev/vite.js","apps/*/vite.config.ts"]
 triggers: ["linguiWithoutIdQuery","basename(id)"]
 ```
 
-**Context:** Lingui 6.9.0's native macro transform chooses its parser from `path.basename(id)`.
+**Context:** Lingui's native macro transform chooses its parser from the module id's file name.
 
-**Problem:** React Router loads route modules as `route.tsx?__react-router-build-client-route`. The extension no longer ends the name, the file is parsed as plain JS, and the build fails with hundreds of "Expected ','" errors on `import type`. vitest and non-route files never show it.
+**Problem:** Only route modules carry a query after the extension. vitest and non-route files never show the failure.
 
-**Rule:** When a transform plugin misbehaves only on route modules, look at the id's query. Verify a build-plugin change with a real `react-router build` of ERP, not with vitest.
+**Rule:** When a transform plugin misbehaves only on route modules, look at the id's query. Verify a build-plugin change with a real `react-router build` of ERP, not with vitest. The rest is in `.claude/rules/i18n-lingui-system.md`.
 
 **Applies to:** `packages/dev/vite.js` (`linguiWithoutIdQuery`), `apps/*/vite.config.ts`.
 
@@ -122,9 +122,9 @@ triggers: ["loadEnvFiles","docker compose","force-recreate"]
 
 **Context:** Enabling GoTrue SAML via `${SAML_ENABLED:-false}` / `${SAML_PRIVATE_KEY:-}` in docker-compose.dev.yml, values kept in root `.env`.
 
-**Problem:** `crbn reload <service>` invoked `docker compose up -d --force-recreate` with only `--env-file .env.local` and no dotenv preload. Root `.env` vars referenced by compose substitution resolved to their defaults, and — worse — recreating ANY service also reconciles other services whose definition changed, so a `crbn reload kong` recreated gotrue with SAML silently OFF even though the user's earlier `crbn up` had it on. (`crbn up` was immune only because it loads `.env.local` then `.env` into process.env first, and shell env wins compose interpolation.)
+**Problem:** `crbn reload <service>` once ran `docker compose up -d --force-recreate` without root `.env` in process.env, so compose substitution fell back to the defaults. Recreating ANY service also reconciles every other service whose definition changed. So a `crbn reload kong` recreated gotrue with SAML silently OFF.
 
-**Rule:** Any crbn command that invokes docker compose must preload BOTH env files into process.env the way `up.ts` does (`loadDotenv(.env.local)` then `loadDotenv(.env)`, both `override: false`). `reload.ts` now does this. After any reload, still verify the dependent feature's health endpoint (e.g. `curl .../sso/saml/metadata` → 200), not just container status.
+**Rule:** Any crbn command that invokes docker compose must call `loadEnvFiles` (`packages/dev/src/env.ts`) first, as `up.ts` and `reload.ts` do. After any reload, verify the dependent feature's health endpoint (e.g. `curl .../sso/saml/metadata` → 200), not just container status. The rest is in `.claude/rules/environment-configuration.md`.
 
 **Applies to:** packages/dev reload/compose commands; any GoTrue/Kong/storage env sourced from root `.env`.
 
@@ -142,8 +142,7 @@ could see the columns, then "restored" with `git checkout -- …/types.ts`. Mean
 user had run `pnpm db:migrate`, which regenerated that file with the real columns.
 
 **Problem:** The checkout reverted the user's regeneration to `HEAD`, silently leaving the
-repo with types that no longer matched the live schema (the Deno copy,
-`functions/lib/types.ts`, was untouched, so the two outputs disagreed). The first symptom
+repo with types that no longer matched the live schema. The first symptom
 was a wall of `Duplicate identifier` errors from re-applying the throwaway patch on top of
 the regenerated file.
 
@@ -153,7 +152,6 @@ checkout; if there is no stack, keep the throwaway patch in a scratch copy rathe
 tracked file.
 
 **Applies to:** `packages/database/src/types.ts`,
-`packages/database/supabase/functions/lib/types.ts`,
 `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`, any generated artifact.
 
 ## Parallel subagents each running the heavy checks exhaust the machine
@@ -166,7 +164,7 @@ triggers: ["heavy-lock","max-old-space-size","generate:mcp","subagent"]
 
 - **Context:** A review fanned out to six subagents. Each ran the `erp` typecheck, `generate:mcp` or a raw `tsc` in `apps/erp` to verify its own part.
 - **Problem:** The `erp` typecheck peaks near 10 GB and `generate:mcp` near 5 GB. Five of them at once took about 28 GB.
-- **Rule:** Only the main agent runs the heavy checks, once, after its subagents finish. Never raise `--max-old-space-size` to make one fit. `packages/dev/bin/heavy-lock` queues them machine-wide, so an extra run waits instead of running in parallel. A waiting run prints `heavy-lock: waiting for …`: that is the queue working, not a hang. Do not kill it.
+- **Rule:** Never raise `--max-old-space-size` to make one fit. A waiting run prints `heavy-lock: waiting for …`: that is the queue working, not a hang. Do not kill it. The rest is in `AGENTS.md` (Always).
 - **Applies to:** Any skill or workflow that dispatches subagents (review, execute, fix, conductor).
 
 ## Regenerating `src/email/previews/` fixtures requires a follow-up biome format pass
@@ -262,9 +260,9 @@ paths: ["apps/erp/app/components/**","apps/mes/app/components/**"]
 triggers: []
 ```
 
-**Context:** Added a `BatchMergePrompt` component: edited the importing file first, created the new file a moment later.
+**Context:** Added a new component: edited the importing file first, created the new file a moment later.
 
-**Problem:** The SSR module graph cached the failed resolution, so every request 500'd with `Failed to load url ./components/BatchMergePrompt … Does the file exist?` even though it did. `docker exec … grep` and `ls` both confirmed the file, which sends you hunting a phantom bug in the import path.
+**Problem:** The SSR module graph cached the failed resolution, so every request 500'd with `Failed to load url ./components/<NewComponent> … Does the file exist?` even though it did. `docker exec … grep` and `ls` both confirmed the file, which sends you hunting a phantom bug in the import path.
 
 **Rule:** Create the new module BEFORE the code that imports it. If the overlay already says "Does the file exist?" and it does, `touch` the new file and its importer to force re-resolution — the file's presence alone will not invalidate the cached miss.
 
@@ -553,13 +551,13 @@ paths: ["packages/database/src/types.ts","packages/database/src/swagger-docs-sch
 triggers: ["<<<<<<<","generate:types","generate:swagger"]
 ```
 
-**Context:** Merging `origin/main` into a long-lived feature branch where both sides had added migrations. The only conflicts were generated outputs: `packages/database/src/types.ts` + `functions/lib/types.ts` (one FK-relationship hunk each) and `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`.
+**Context:** Merging `origin/main` into a long-lived feature branch where both sides had added migrations. The only conflict was a generated output: one FK-relationship hunk in `packages/database/src/types.ts`.
 
 **Problem:** Git auto-combined most of the generated output but left one view's relationship list conflicting. Hand-picking a side drops one branch's relationships (the view genuinely has all the columns); union-merging risks duplicating entries; either way the result may not match what the real generator emits from the COMBINED schema. Generated files are outputs, not source — resolving their conflict markers by hand is guessing at the generator.
 
-**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres. `swagger-docs-schema.ts` reads PostgREST: with the stack up, `pnpm generate:swagger`, then `pnpm generate:workflow-catalog`. No build regenerates it, and CI fails when it lags the migrations. `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
+**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres. `swagger-docs-schema.ts` reads PostgREST: with the stack up, `pnpm generate:swagger`, then `pnpm generate:workflow-catalog`. No build regenerates it, and CI fails when it lags the migrations. `git add` the regenerated files to resolve. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
 
-**Applies to:** merging `main` into any branch with migrations on both sides; conflicts in `packages/database/src/types.ts`, `swagger-docs-schema.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`, and any committed generated artifact.
+**Applies to:** merging `main` into any branch with migrations on both sides; conflicts in `packages/database/src/types.ts`, `swagger-docs-schema.ts`, and any committed generated artifact.
 
 ## Scripted source patches must assert their anchors
 
@@ -637,13 +635,12 @@ triggers: ["userWorkers.create"]
 dispatcher (`packages/dev/docker/edge-main/index.ts`) passing each request's
 worktree API as `SUPABASE_URL` in `EdgeRuntime.userWorkers.create({ envVars })`.
 
-**Problem:** The runtime keeps a live worker per pool key and returns it for the
-next `create` with the same key (`crates/base/src/worker/pool.rs`). The key
-defaults to the service path, so a worker created with worktree A's env would
-serve worktree B's next request with A's `SUPABASE_URL`. Nothing errors.
+**Problem:** With the default pool key, a worker created with worktree A's env
+served worktree B's next request with A's `SUPABASE_URL`. Nothing errors.
 
-**Rule:** A dispatcher that varies `envVars` per request must pass `poolKey` that
-includes every value that varies (here `${api} ${servicePath}`).
+**Rule:** A dispatcher that varies `envVars` per request must pass a `poolKey`
+that includes every value that varies (here `${api} ${servicePath}`). The rest
+is in `.claude/rules/dev-shared-services.md`.
 
 **Applies to:** `packages/dev/docker/edge-main/index.ts` and any other
 `--main-service` dispatcher.
@@ -683,7 +680,7 @@ triggers: ["turbo run","generate:types"]
 
 **Context:** Running `pnpm exec turbo run typecheck --filter=erp` and `turbo run test --filter=@carbon/jobs` to verify unrelated changes (notification filter, invite-link fix).
 
-**Problem:** Turbo builds dependency packages first, and a `@carbon/database` build step regenerated `src/types.ts` (nondeterministic FK-relationship ordering), `src/swagger-docs-schema.ts`, and `supabase/functions/lib/types.ts` — none of which the task touched. Committing them would mix generated-file drift into an unrelated PR; the drift can also reflect whatever local DB happens to be running, not migrations.
+**Problem:** Turbo builds dependency packages first, and a `@carbon/database` build step regenerated `src/types.ts` (nondeterministic FK-relationship ordering) and `src/swagger-docs-schema.ts` — neither of which the task touched. Committing them would mix generated-file drift into an unrelated PR; the drift can also reflect whatever local DB happens to be running, not migrations.
 
 **Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/...`). Regenerate deliberately and separately when schema actually changed. A branch that adds migrations commits the regenerated `types.ts` and `swagger-docs-schema.ts`: the Database types CI job (`.github/workflows/database-types.yml`) fails when either lags the migrations, so never revert a swagger diff that traces to a migration.
 
@@ -754,7 +751,7 @@ paths: ["packages/utils/src/rules.ts","packages/utils/src/rule-filters.ts","pack
 triggers: ["ItemFilter","ruleAppliesToItem","SalesRule"]
 ```
 
-**Context:** Renaming the "Item Rules" feature to "Sales Rules" was done with a repo-wide `ItemRule` → `SalesRule` string sweep. It also caught `ItemRuleFilter` / `toItemRuleFilter` in `packages/utils` — a shared item-scoping matcher where "Item" meant *the item being filtered*, not the feature. The result was `toSalesRuleFilter`, imported by the **storage** evaluator, with a docstring still reading "Normalize a raw `storageRule` row". Nothing failed: types, tests, and lint were all green, because a wrong name is not a type error.
+**Context:** Renaming the "Item Rules" feature to "Sales Rules" was done with a repo-wide `ItemRule` → `SalesRule` string sweep. It also caught the shared item-scoping filter in `packages/utils` (today `ItemFilter` / `toItemFilter` in `rule-filters.ts`), where "Item" meant *the item being filtered*, not the feature. The result was a `SalesRule`-named normalizer, imported by the **storage** evaluator, with a docstring still reading "Normalize a raw `storageRule` row". Nothing failed: types, tests, and lint were all green, because a wrong name is not a type error.
 
 **Problem:** A string-match rename cannot distinguish "the feature named X" from "the noun X used as a domain word". Shared code is exactly where the two collide, and the damage is invisible to every automated gate — it only shows up when the next reader trusts the name.
 
@@ -820,7 +817,7 @@ never from the package `pnpm --filter` dropped it in. Verify a hook-driven `git 
 by reading `git show --stat HEAD` after the commit, not by running the script by hand.
 
 **Applies to:** `check-backups.ts`, `scripts/generate-mcp.ts`'s digest staging, the
-lingui staging in `.husky/pre-commit`, and any future hook step that writes and stages
+lingui staging in `scripts/git-hooks/pre-commit`, and any future hook step that writes and stages
 a generated file from inside a workspace package.
 
 ## A limiter must hand a freed slot to the next waiter, not decrement and let it race
@@ -887,7 +884,7 @@ triggers: ["isolation: \"worktree\"","git merge-base"]
 
 **Applies to:** any `Agent` call with `isolation: "worktree"` whose work builds on unmerged branch state; PR base selection for agent-produced branches.
 
-## `apps/erp` targets ES2019, so `packages/workflows` cannot use BigInt literals
+## `apps/erp` targets ES2019, so a package it compiles cannot use BigInt literals
 
 ```scope
 id: apps-erp-targets-es2019-so-packages-workflows-cannot-use-big
@@ -900,17 +897,15 @@ and the plan specified FNV-1a via `BigInt`.
 
 **Problem:** `apps/erp/tsconfig.json` sets `"target": "ES2019"` and compiles
 workspace package **source**, not built output. A `0xcbf29ce484222325n` literal
-in `packages/workflows` fails the erp typecheck with TS2737 even though the
-package's own `tsc --noEmit` passes — the package config targets `esnext`.
+fails the erp typecheck with TS2737 even though the package's own
+`tsc --noEmit` passes — the shared base config targets `esnext`.
 
-**Rule:** Anything in a package `apps/erp` imports must be ES2019-safe. Reach for
-`Math.imul` and two 32-bit passes rather than one 64-bit BigInt pass. Always run
-`pnpm exec turbo run typecheck --filter=erp` after touching a shared package —
-the package's own typecheck is not the binding constraint.
+**Rule:** Anything in a package `apps/erp` imports must be ES2019-safe, not only
+`packages/ee/src/workflows`. Always run `pnpm exec turbo run typecheck --filter=erp`
+after touching a shared package — the package's own typecheck is not the binding
+constraint. The rest is in `.claude/rules/workflow-engine.md`.
 
-**Applies to:** every `packages/*` that `apps/erp` imports; `packages/workflows`
-doubly so, since the phase-7 builder also compiles it for the browser
-(no `node:crypto` either).
+**Applies to:** every `packages/*` that `apps/erp` imports.
 
 ## Biome drops quotes from valid identifier keys, so a drift check that greps for `"key":` misses them
 
@@ -960,29 +955,13 @@ paths: ["packages/database/src/seed-dev.ts","packages/dev/src/services/apps.ts"]
 triggers: ["NODE_EXTRA_CA_CERTS","db:seed:dev","SELF_SIGNED_CERT_IN_CHAIN"]
 ```
 
-**Context:** Seeding `motor-line` for the serial traveler (2026-11-12) on a portless stack (`https://api.<prefix>.dev`).
+**Context:** Seeding a dataset on a portless stack (`https://api.<prefix>.dev`).
 
-**Problem:** `pnpm db:seed:dev` failed with "Failed to create user: fetch failed". Two causes stacked: the stack had hibernated (gotrue and the API gateway were exited, `crbn status` shows "hibernated"), and Node's `fetch` refused the portless certificate (`SELF_SIGNED_CERT_IN_CHAIN`). `curl` worked, because it trusts the system store; Node does not. The dev servers get `NODE_EXTRA_CA_CERTS` from `packages/dev/src/services/apps.ts`, but a script run from a shell does not.
+**Problem:** `pnpm db:seed:dev` failed with "Failed to create user: fetch failed". Two causes stacked: the portless certificate, and a hibernated stack (gotrue and the API gateway were exited, `crbn status` shows "hibernated"). `curl` worked, so the cause was not plain to see.
 
-**Rule:** Before a script that calls the local Supabase API over portless, wake the stack (one request to the ERP URL), then run it with `NODE_EXTRA_CA_CERTS=$HOME/.portless/ca.pem`.
+**Rule:** Before a script that calls the local Supabase API over portless, wake the stack (one request to the ERP URL). The rest is in `.claude/rules/onboarding-company-templates.md`.
 
 **Applies to:** `pnpm db:seed:dev`, and any `tsx` script that calls `SUPABASE_URL` on a portless stack.
-
-## Deno edge functions are not deno-check-clean — gate on own-file error deltas, not exit code
-
-```scope
-id: deno-edge-functions-are-not-deno-check-clean-gate-on-own-fil
-paths: ["packages/database/supabase/functions/**"]
-triggers: ["deno check"]
-```
-
-**Context:** Verifying new/edited Supabase edge functions (`post-inventory-adjustment`, `post-inventory-count`) with `deno check`.
-
-**Problem:** `deno check` on ANY edge function fails with ~10–20 pre-existing errors from the shared dependency graph (TS2589 in `shared/get-next-sequence.ts`, kysely pool-config type skew, supabase-js generic inference collapsing to implicit-any callbacks). CI never runs `deno check`, so committed, working functions fail it — a red exit code proves nothing about the change, and chasing those errors means rewriting shared files out of scope.
-
-**Rule:** Obsolete: the two remaining edge functions (`embedding`, `thumbnail`) are self-contained and `deno check`-clean, and CI's `edge-functions` job runs `deno check` on both — keep them clean; a red exit code is now a real failure.
-
-**Applies to:** `packages/database/supabase/functions/**` verification; `.claude/skills/check-and-commit` runs touching edge functions.
 
 ## Dual-major deps of workspace source packages crash the SSR bundle when the shared dep is externalized
 
@@ -1010,9 +989,9 @@ triggers: ["retryStrategy","ioredis"]
 
 **Context:** Making the Redis client (`@carbon/kv`) resilient to outages (issue #1076).
 
-**Problem:** A `retryStrategy` that returns `null` after N attempts (e.g. `if (times > 3) return null`) tells ioredis to **stop reconnecting permanently**. Once Redis is briefly unreachable the client gives up and every later command fails with "Connection is closed." even after Redis is healthy again — the app never recovers without a process restart. Command-level timeouts/try-catch cannot fix this; it is a connection-lifecycle setting. Unit tests with `ioredis-mock` do NOT catch it — only a real kill-and-restart test does.
+**Problem:** A `retryStrategy` that returns `null` after N attempts stops reconnection for good, and the app never recovers without a restart. Unit tests with `ioredis-mock` do NOT catch it — only a real kill-and-restart test does.
 
-**Rule:** For long-running servers, `retryStrategy` must keep reconnecting with capped backoff (`min(times * 200, 5000)`) and never return null. Bound per-command latency elsewhere (`maxRetriesPerRequest` + a timeout wrapper), not by abandoning reconnection. Verify recovery by stopping and restarting a real Redis, not just mocks.
+**Rule:** Verify a change to the Redis connection config by stopping and restarting a real Redis, not with mocks. The rest is in `.claude/rules/dev-shared-redis.md`.
 
 **Applies to:** `packages/kv/src/client.ts`, `packages/kv/src/resilient.ts`, any ioredis client config.
 
@@ -1048,16 +1027,13 @@ triggers: ["carbon-shared","local-edge-runtime","container_name"]
 **Context:** Envoy's `functions` cluster listed the worktree's private
 `edge-runtime` first and the shared `carbon-edge-runtime` second.
 
-**Problem:** crbn-shared's service is also called `edge-runtime` and joins
-`carbon-shared`, which every worktree's gateway joins too. With no private runtime
-the bare name resolved to the shared one; with one, Docker happened to answer with
-the private one only. "Private first" depended on Docker's DNS order, and the
-fallback was never used.
+**Problem:** With no private runtime the bare name resolved to the shared one;
+with one, Docker happened to answer with the private one only. A test with one
+side up showed nothing wrong.
 
-**Rule:** A worktree container on `carbon-shared` reaches its own services by a
-`local-*` alias on its default network (`local-meta`, `local-edge-runtime`), and
-shared ones by `container_name` (`carbon-*`). Check a new name with
-`docker exec <api-gw> getent ahostsv4 <name>` with and without the other side up.
+**Rule:** Check a new name with `docker exec <api-gw> getent ahostsv4 <name>`
+with and without the other side up. The rest is in
+`.claude/rules/dev-shared-services.md`.
 
 **Applies to:** `packages/dev/docker/envoy/cds.template.yaml`,
 `packages/dev/docker/docker-compose.dev.yml`, `.claude/rules/dev-shared-services.md`.
@@ -1070,7 +1046,7 @@ paths: ["scripts/one-off/**","ci/src/one-off-scripts.ts"]
 triggers: ["readdirSync"]
 ```
 
-**Context:** A cleanup pass listed `scripts/one-off/recopy-private-buckets.ts` as dead because nothing referenced it by name.
+**Context:** A cleanup pass listed a script in `scripts/one-off/` as dead because nothing referenced it by name.
 
 **Problem:** `ci/src/one-off-scripts.ts` runs every `.ts` file in that folder once per database on deploy; the folder IS the reference. Deleting a file there changes what the next deploy does.
 

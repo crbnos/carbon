@@ -51,6 +51,7 @@ Existing hits go in the baseline only with a human yes.
 at most 160 characters each, so replace the weakest line if it is full.
 
 **c) Lesson.** Pick the topic file from the table in `.ai/lessons/README.md`.
+🛑 Never create a new topic file. If no topic fits, ask the human.
 Add a `## ` section in the format shown there: a `scope` block with a unique
 `id`, then Context, Problem, Rule and Applies to. Give it at least one path or
 one trigger. Each trigger has at least 4 characters.

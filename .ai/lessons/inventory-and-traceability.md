@@ -30,9 +30,9 @@ triggers: ["SharedTakes","recordSharedTakes","splitTakeByBin","getPickedBudgets"
 
 **Problem:** The budget's `available` was the sum of two pools — the material's OWN pick (private) and the bin's UNCLAIMED stock (shared) — and the fix subtracted a per-item running total of whole takes from that sum. Material A consuming its own private pick therefore zeroed material B's private pick, and B fell back to the warehouse while its staged stock sat at the machine. The fix was written to the reviewer's wording ("subtract it from available"), it had no test with a non-empty running total, and the follow-up review comment landed after the fix was pushed and was never re-polled.
 
-**Rule:** When a value is a sum of pools with different sharing scopes, never subtract a merged total from it. Keep the pools apart on the type, attribute each take to a pool, and subtract a take only from the pool it came from. Every fix that adds a cross-iteration accumulator gets a pure test with the accumulator non-empty before it is committed. After pushing review fixes, re-read the PR's open threads — the reviewer's follow-up is on the FIX commit, not the original diff.
+**Rule:** When a value is a sum of pools with different sharing scopes, subtract a take only from the pool it came from. Every fix that adds a cross-iteration accumulator gets a pure test with the accumulator non-empty before it is committed. After pushing review fixes, re-read the PR's open threads — the reviewer's follow-up is on the FIX commit, not the original diff. The rest (the `own` and `unclaimed` pools, `SharedTakes`) is in `.claude/rules/supersession-system.md` ("A budget is two pools, and only one is shared").
 
-**Applies to:** `lib/picked-consumption.ts` (`SharedTakes`, `recordSharedTakes`, `splitTakeByBin`), `generatePickingList`'s `unclaimedRemaining`, `getPickedBudgets` callers, and any loop that allocates from a shared balance before persisting.
+**Applies to:** `packages/database/src/picked-consumption.ts` (`SharedTakes`, `recordSharedTakes`, `splitTakeByBin`), `generatePickingList`'s `unclaimedRemaining`, `getPickedBudgets` callers, and any loop that allocates from a shared balance before persisting.
 
 ## Issue-bin displays preserve stock stripes and picked ownership
 
@@ -58,11 +58,11 @@ paths: ["apps/erp/app/modules/inventory/inventory.service.ts","packages/utils/sr
 triggers: ["resolveTrackedEntityBin","trackedEntitiesToOperation","unconsumeTrackedEntities","trackedEntityId"]
 ```
 
-**Context:** Building "return unused picks at job complete" surfaced a pre-existing bug in the `issue` edge function (`trackedEntitiesToOperation`). Consuming a batch that had been picked to a lineside shelf booked the Consumption + split `itemLedger` rows against `itemLedgers.find(il => il.trackedEntityId === id)?.storageUnitId` — the FIRST row for the entity in a `createdBy`-ordered list, i.e. an arbitrary bin. A picked entity has ledger rows in BOTH its warehouse source and its lineside bin, so consumption landed on the warehouse bin, leaving the entity at −N on-hand in one bin / +N in another: a per-bin-negative, internally inconsistent ledger, and the un-consumed remainder (a split entity) stranded on the wrong bin.
+**Context:** Consuming a batch picked to a lineside shelf (`trackedEntitiesToOperation`) booked its rows against `itemLedgers.find(il => il.trackedEntityId === id)?.storageUnitId`, the first row in a `createdBy`-ordered list. The entity was left at −N in one bin and +N in another.
 
 **Problem:** For a tracked entity that has moved between bins (pick/transfer), "which bin holds the stock" is NOT the first ledger row — it's the bin whose net on-hand is positive. Picking any row's `storageUnitId` silently misplaces consumption and breaks any downstream feature that reasons about physical location (e.g. returning lineside remainder to source).
 
-**Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/utils/src/resolve-tracked-entity-bin.ts`, pure + test-covered; exported by `@carbon/utils`). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths.
+**Rule:** Every movement row for a tracked entity, not only consumption and split, resolves the storage unit from net on-hand per bin (`resolveTrackedEntityBin`, `packages/utils/src/resolve-tracked-entity-bin.ts`). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths. The rest (consumption and split rows book at the entity's on-hand bin) is in `.claude/rules/traceability-model.md`.
 
 **Applies to:** `issueMaterial` (`apps/erp/app/modules/inventory/inventory.service.ts`) and any posting inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
 
@@ -84,12 +84,12 @@ triggers: ["linesideCredit","get_lineside_credit","generatePickingList","get_pic
   this job?" with a different formula, and none of them was wrong in
   isolation. The trial found it in minutes because real shop floors leave
   material at the machine in every way except a clean pick.
-- **Rule:** when picking, scheduling and consumption all read the same bin,
-  write the definition ONCE as a pure function (`linesideCredit`), mirror it
-  in SQL under the same name (`get_lineside_credit`), and make every reader
-  call it. Then enumerate the ways stock reaches a bin — pick, cancelled
-  pick, sub-job output, manual transfer, return — and test each against the
-  definition before calling the feature done.
+- **Rule:** when several readers share one definition of what is in a bin,
+  enumerate the ways stock reaches a bin — pick, cancelled pick, sub-job
+  output, manual transfer, return — and test each against the definition
+  before calling the feature done. The rest (`linesideCredit` and its SQL
+  twin `get_lineside_credit`) is in `.claude/rules/supersession-system.md`
+  ("Lineside credit").
 - **Applies to:** `generatePickingList`, `get_picking_schedule`,
   `getPickedBudgets` / `issue`, `post-picking`.
 
@@ -119,7 +119,7 @@ triggers: ["clearShipmentTags","liveShipmentTags","\"Shipment Line\"","\"Receipt
 
 - **Context:** A serial unit on a shipment carries `Shipment` and `Shipment Line` in `trackedEntity.attributes`; posting ships the units tagged to the shipment.
 - **Problem:** Deleting a line, deleting the shipment or re-sourcing a Draft removed the lines but left the tags. The post then shipped units no line asked for. A post-time filter hid the stale tag, so a test that checked only after posting still passed when the clear was removed.
-- **Rule:** A tag must name a live record. Every write that deletes or rebuilds the record clears its tags in the same place, and the reader still ignores tags to dead records. Test the clear right after the write, before any reader that would also hide it, and remove the clear once to see the test go red.
+- **Rule:** Any attribute that names another row follows the same rule as the `Shipment` tag. Test the clear right after the write, before any reader that would also hide it, and remove the clear once to see the test go red. The rest (which writes clear shipment tags, `liveShipmentTags`) is in `.claude/rules/shipments-receipts-ui-patterns.md`.
 - **Applies to:** `clearShipmentTags` callers (`deleteShipment`, `deleteShipmentLine`, the `create` re-source), `liveShipmentTags`, and any attribute that names another row (`Receipt Line`, `Job Make Method`).
 
 ## A void reverses only what is still where the posting put it
@@ -134,7 +134,7 @@ triggers: ["lockPostedReceipt","assertReceivedStockOnHand","assertNoRejectedUntr
 
 **Problem:** The void set every tracked entity back to Available at its received quantity, so a lot that was never received stayed pickable. It also reversed each ledger row at the receipt's bin with only a cost-layer check. A serial moved to another bin, picked to lineside or shipped (Standard and Average cost never draw a layer down) passed that check, so the receipt bin went negative while the unit stayed counted where it went. And the receipt's inspection lot stayed open: Accept made the voided batch Available again, and Reject wrote the reversed stock off a second time.
 
-**Rule:** A reversal checks, inside its transaction, that the stock it removes is still at the position the posting wrote: per serial or batch for tracked rows. It closes every record that hangs off the document (here the inspection lot) or refuses while one has acted. It drains the document's tracked entities to quantity 0. To keep `Rejected` at zero, write the status directly: `settleQuantity` only preserves `Scrapped` and turns `Rejected` into `Consumed`.
+**Rule:** Every void that reverses item ledger rows checks, inside its transaction, that the stock is still where the posting put it, and closes or refuses on every record that hangs off the document. To keep `Rejected` at zero, write the status directly: `settleQuantity` only preserves `Scrapped` and turns `Rejected` into `Consumed`. The rest (the purchase receipt void's checks) is in `.claude/rules/shipments-receipts-ui-patterns.md`.
 
 **Applies to:** the `postReceipt` void (`lockPostedReceipt`, `assertReceivedStockOnHand`, `assertNoRejectedUntrackedLot` in `inventory.service.ts`), and any other void that reverses item ledger rows (shipments, stock transfers, adjustments).
 
@@ -150,7 +150,7 @@ triggers: ["quantityPicked","quantityReturned","update_picking_list_status","ret
 
 **Problem:** `update_picking_list_status` (AFTER UPDATE ROW on `pickingListLine`, newest body `20260728120100`) fires on any `quantityPicked` change. After the decrement the line satisfies `quantityPicked < quantityToPick`, so the trigger's work-remains branch moves a `Completed`/`Partial` picking-list header back to **In Progress** — the automatic job-complete sweep was silently reopening completed picking lists. The demotion is CORRECT for an operator unpick (work regression); it is wrong for a post-completion return.
 
-**Rule:** Book returns on `pickingListLine.quantityReturned` (added `20260804111631`) and leave `quantityPicked` as gross-picked; net staged at lineside = `quantityPicked − quantityReturned`. Only genuine unpicks (operator reversing work) may decrement `quantityPicked`. Any new writer of `pickingListLine.quantityPicked`/`status` must first check what `update_picking_list_status` will do with the change. `pickingListLineTrackedEntity` allocations are different — returns DO decrement those (availability RPCs net them out; no trigger watches that table).
+**Rule:** On a return, leave `quantityPicked` as gross-picked; net staged at lineside = `quantityPicked − quantityReturned`. Only genuine unpicks (operator reversing work) may decrement `quantityPicked`. Any new writer of `pickingListLine.quantityPicked`/`status` must first check what `update_picking_list_status` will do with the change. `pickingListLineTrackedEntity` allocations are different — returns DO decrement those (availability RPCs net them out; no trigger watches that table). The rest (returns book `pickingListLine.quantityReturned`) is in `.claude/rules/mes-job-operation-ui.md`.
 
 **Applies to:** `postPicking` (`apps/erp/app/modules/inventory/inventory.service.ts`, all return/unpick cases), `update_picking_list_status` migrations, any code mutating `pickingListLine` quantities.
 
@@ -182,7 +182,7 @@ triggers: ["withInspectionRelease","setInspectionRelease","app.sync_in_progress"
 
 **Problem:** A posting that moves stock out of an inspection unit without `setInspectionRelease` is refused with "held for inspection". The quick way out was to set `app.sync_in_progress`, which also switches the hold off. But that flag also stops the event queue, the contact and address sync handlers, the kanban and PMI queues and `queue_model_pipeline`. A company restore set it for its whole load and silenced all of them.
 
-**Rule:** The release flag covers only the write that IS the release: run it through `withInspectionRelease(trx, fn)` (the lot's decision, the NCR's close, a void's cancelled lots), and let the stock moves that follow run with the guard on. A decided lot holds nothing, so the guard lets its stock go and still refuses what another lot holds. A flag left on for a whole posting let an NCR close scrap units of an open lot and a void drain another receipt's held stock. `setInspectionRelease(trx)` for a whole transaction is only for a posting that records reality (a count) or re-checks the hold itself (a return shipment). Never set `app.sync_in_progress` only to get past the hold or to silence events. A company restore or import sets `app.inspection_release` in its load transaction. A posting that runs under the release flag but must not take an open lot's stock checks that itself (`refuseShippingOpenLotStock`).
+**Rule:** Never set `app.sync_in_progress` only to get past the hold or to silence events. A flag left on for a whole posting let an NCR close scrap units of an open lot and a void drain another receipt's held stock. The rest (`withInspectionRelease`, `setInspectionRelease`, the restore's `app.inspection_release`) is in `.claude/rules/inventory-system.md` and `.claude/rules/inspection-system.md`.
 
 **Applies to:** Any new posting that writes negative `itemLedger` rows in a non-nettable unit; `company-restore.ts`, `company-import.ts`; every hold interceptor (each honours both flags).
 
@@ -214,7 +214,7 @@ triggers: ["resolveTrackedEntityBin","getTrackedEntityBins","p_filter_storage_un
 
 **Problem:** A document line's bin is a default for untracked stock. For a serial or batch the ledger already knows the bin, and ignoring it corrupts two bins at once. `resolveTrackedEntityBin` skips the unassigned bin (`null`), so a unit moved into "no storage unit" resolves back to the named bin it left. And `NULL` as a filter value cannot also mean "no filter".
 
-**Rule:** Book a tracked entity's outbound row against its actual bin: `resolveTrackedEntityBins` (`@carbon/utils`, null-aware) through `getTrackedEntityBins` (`apps/erp/app/modules/shared/shared.service.ts`). Refuse when it has no stock anywhere rather than falling back to the line's bin. A void reverses into the bin the posting used (read the posted `itemLedger` rows), not the line's. A bin filter that must express "no storage unit" takes an explicit switch (`p_filter_storage_unit` on `get_available_tracked_entities`) and compares with `IS NOT DISTINCT FROM`.
+**Rule:** Use the null-aware `resolveTrackedEntityBins` (`@carbon/utils`), never `resolveTrackedEntityBin`, where a unit can sit in "no storage unit". A bin filter that must express "no storage unit" takes an explicit switch (`p_filter_storage_unit` on `get_available_tracked_entities`) and compares with `IS NOT DISTINCT FROM`. The rest (a shipment books at `getTrackedEntityBins`, refuses with no stock, and voids into the posted bin) is in `.claude/rules/shipments-receipts-ui-patterns.md`.
 
 **Applies to:** `post-shipment` (Sales Order post/void, serial + batch), `post-stock-transfer` (`assertInSourceBin`), the stock transfer picker. Return and outbound-transfer shipments still use the line's bin.
 

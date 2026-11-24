@@ -28,7 +28,7 @@ triggers: ["placeSamples","inspectionSample(","referencedTable"]
 
 - **Context:** Inspection grids (ERP `InspectionMeasurementGrid`, MES `InspectionMeasurementMatrix`) map each column or row to an `inspectionSample`.
 - **Problem:** The loader embedded `inspectionSample(*)` with no order, and an UPDATE moves a row. Each save broadcasts `inspectionSample`, so the page reloaded and `samples[index]` named another sample: the next reading was saved on the wrong part. A stubbed harness never showed it; only the running stack (realtime + Postgres) did.
-- **Rule:** Order embedded children explicitly (`.order(col, { referencedTable })`). Bind a UI position to the record's id once (`placeSamples`), key per-cell state by that id, and never re-derive a position from a reloaded array's index. Test write paths on `crbn up`, not only against a stub.
+- **Rule:** In any loader whose list a UI addresses by position, order embedded children explicitly (`.order(col, { referencedTable })`). Test write paths on `crbn up`, not only against a stub. The rest is in `.claude/rules/inspection-system.md`.
 - **Applies to:** any grid or list that writes through positions over data a realtime reload can reorder.
 
 ## A new record type copies its sibling's UI, not the generic archetype
@@ -43,7 +43,7 @@ triggers: []
 
 **Problem:** The plan named the sibling for the server side (post-lease mirrors the rental functions) but not for the UI, and the design skill's "where create opens" rule sent a record with a workspace to a Card form. The setup wizard was documented nowhere, so the subagent that built the UI followed the generic rule faithfully.
 
-**Rule:** Before designing a record type, name its closest sibling — the record users would call "the same kind of thing" (rental agreement ↔ lease ↔ contract; sales order ↔ purchase order; RMA ↔ supplier return) — and copy its routes and components file for file: `new`, `$id`, `$id._index`, the setup or detail routes, the module's `ui/` components. The spec and plan state the sibling and the files copied. A deviation from it is a design decision and is asked about first. When the sibling's pattern is missing from `carbon-design`, add it there in the same change (Archetype J was added for this one).
+**Rule:** When the sibling's pattern is missing from `carbon-design`, add it there in the same change (Archetype J was added for this one). The rest is in the root `AGENTS.md` (Always) and `.claude/skills/plan/SKILL.md`.
 
 **Applies to:** `/spec-writing`, `/plan`, `carbon-design`, and any subagent prompt that builds UI.
 
@@ -105,13 +105,13 @@ paths: ["packages/utils/src/themes.ts","apps/*/app/services/theme.server.ts","ap
 triggers: ["SeasonalTheme","seasonalThemes","resolveTheme("]
 ```
 
-**Context:** Halloween had to be the theme for everyone while in season (2026-10). The first cut replaced the cookie read in all three apps' `getTheme` (`services/theme.server.ts`) with `resolveTheme(halloweenTheme.name)`.
+**Context:** A seasonal theme had to be the theme for everyone while in season (2026-10). The first cut replaced the cookie read in all three apps' `getTheme` (`services/theme.server.ts`) with a `resolveTheme` call that named the seasonal theme.
 
-**Problem:** Undoing it meant rewriting three deleted cookie reads from memory, and nothing pointed at them: deleting `halloween-theme.ts` would just break the imports. The mesh colors in `MeshGradientBackground.tsx` (a `Record<string, …>`, so no compile error) and a test that imported the theme directly had the same shape. The removal checklist went stale twice as pieces were added.
+**Problem:** Undoing it meant rewriting three deleted cookie reads from memory, and nothing pointed at them: deleting the theme's file would just break the imports. The mesh colors in `MeshGradientBackground.tsx` (a `Record<string, …>`, so no compile error) and a test that imported the theme directly had the same shape. The removal checklist went stale twice as pieces were added.
 
-**Rule:** Put a seasonal or temporary behaviour on the removable unit itself (its `available` window and `mesh` on the `SeasonalTheme`, read by the shared resolver) and keep callers generic, so deleting the unit turns the behaviour off. Test the mechanism on a fixture, not on the instance. Keep ONE removal checklist, next to the code, and make every other comment point to it.
+**Rule:** Any temporary behaviour (a feature flag, a promo, seasonal UI) lives on the removable unit itself, and its callers stay generic, so deleting the unit turns the behaviour off. Keep ONE removal checklist, next to the code, and make every other comment point to it. The rest, for seasonal themes, is in `.claude/rules/coding-conventions.md` (Theme System).
 
-**Applies to:** `packages/utils/src/themes.ts` seasonal themes, `packages/react/src/Halloween/`, any feature flag, promo or seasonal UI.
+**Applies to:** `packages/utils/src/themes.ts` seasonal themes, any feature flag, promo or seasonal UI.
 
 ## An inline editor built in a memo with changing dependencies drops keystrokes
 
@@ -161,22 +161,6 @@ triggers: ["useResizeObserver"]
 - **Rule:** When a box's content takes its size from the box, keep the scrollbar's space fixed (`overflow-y-scroll`) so the width cannot depend on the content's height.
 - **Applies to:** Any `useResizeObserver` width that sizes content inside the observed scroll box.
 
-## Every UI task names its precedent screen and is checked by screenshot against it
-
-```scope
-id: every-ui-task-names-its-precedent-screen-and-is-checked-by-s
-paths: [".ai/plans/*.md",".ai/specs/*.md"]
-triggers: []
-```
-
-**Context:** The Projects, Field Service, project billing and government contracting UI (2026-10-07 to 10-11), built by autonomous executors from plans whose UI tasks said what each screen shows but not which existing Carbon screen it copies. Brad reviewed the result on 2026-10-12: "completely over the top, incoherent, and overly complicated". The rebuild plan is `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`; the rejected patterns are `.ai/scratch/ui-reference/bad-*.jpg`.
-
-**Problem:** With no precedent named, each executor invented its own layout. Typecheck, Biome and the tests all passed, and every screen "worked", but the screens did not look like Carbon: an 8-tab strip and about 28 header controls on the project, two header rows, a panel inside a panel for an element, boxed number inputs in a timesheet table, dashed empty cards, striped progress bars, several primary buttons per screen, a `Subheading` on every section, and collapsible sidebar groups. Nothing in the gates looks at a screen, so nothing stopped it.
-
-**Rule:** Every UI task in a plan or spec names its precedent: the existing screen it copies (a route or component path, for example Settings → Inventory, the inventory count grid, `IssueProperties`, the Revenue Recognition runs list) and a screenshot of that screen. The executor screenshots the new screen at 1440 px with the same data, puts it next to the precedent, and answers the seven questions of the plan's *screenshot check* (one toolbar row, at most one primary action, no input box in a table, secondary actions in a ⋯ or row menu, advanced fields collapsed or hidden). A "no" is a failed task, the same as a failed test. When no Carbon screen fits, the executor stops and asks; it does not invent a layout. Before a UI task, read `.claude/skills/carbon-design/SKILL.md`.
-
-**Applies to:** every plan, spec and autonomous run (`/execute`, `/conductor`, overnight executors) that adds or changes UI in `apps/erp`, `apps/mes`, `packages/react` or `packages/form`.
-
 ## `form.submit()` bypasses React Router; `ValidatedForm` needs a real submitter
 
 ```scope
@@ -205,7 +189,7 @@ triggers: ["formatOptions={{","useStableFormatOptions","react-aria-components"]
 
 **Problem:** `useNumberFieldState` (`@react-stately/numberfield`) guards with `formatOptions !== prevFormatOptions` — a **reference** check — and on a change calls `setInputValue(format(numberValue))`, replacing whatever is in the input with the last *committed* number. `react-aria-components`' `NumberField` spreads caller props straight through, so an inline object literal is a new reference every render. Any parent re-render while the user is mid-edit destroys the in-progress text. Commit only happens on blur/Enter/stepper, so a single digit usually survives but a decimal (`1.` → `1.5`, two-plus keystrokes) reliably does not. It reads as "the field doesn't support decimals" even though the format options, the zod validator, and the numeric DB column all allow them.
 
-**Rule:** Never let an unstable `Intl.NumberFormatOptions` reference reach react-aria. `packages/react/src/Number.tsx`'s `NumberField` now stabilizes it via `useStableFormatOptions` / `areNumberFormatOptionsEqual` (shallow value compare — exact, since the options are all primitives), so call sites are free to pass literals. If you build another react-aria wrapper that forwards `formatOptions`, do the same; do not "fix" this class of bug by only adding/adjusting `formatOptions` at the call site — that is what introduced it here. Also note the same trap for any react-aria prop compared by identity.
+**Rule:** If you build another react-aria wrapper that forwards `formatOptions`, stabilize it by value as `packages/react/src/Number.tsx` does (`useStableFormatOptions` / `areNumberFormatOptionsEqual`). Do not "fix" this class of bug by only adding/adjusting `formatOptions` at the call site — that is what introduced it here. The same trap holds for any react-aria prop compared by identity. The rest is in `.claude/rules/numeric-precision.md`.
 
 **Applies to:** `packages/react/src/Number.tsx`; every `formatOptions={{ ... }}` call site in `apps/erp` / `apps/mes` (~144); `packages/form/src/components/{Number,NumberControlled,ArrayNumeric}.tsx`, whose `rest.formatOptions ?? ({ ... })` default also allocates a fresh object each render.
 
@@ -241,38 +225,6 @@ triggers: ["closestCenter","pointerWithin"]
 
 **Applies to:** `packages/react/src/NavRail.tsx`, `apps/erp/app/components/Layout/Navigation/`.
 
-## The theme a page renders is not the theme the user picked
-
-```scope
-id: the-theme-a-page-renders-is-not-the-theme-the-user-picked
-paths: ["packages/utils/src/themes.ts","apps/*/app/services/theme.server.ts"]
-triggers: ["getTheme","themeColorValidator","resolveTheme","seasonalThemes"]
-```
-
-**Context:** A seasonal theme made `getTheme` (`services/theme.server.ts`) return the seasonal name for everyone in season (2026-10).
-
-**Problem:** The ERP's onboarding theme step and `x+/account+/theme.tsx` also read `getTheme` to seed and post back the user's own pick. In season they posted the seasonal name, `themeColorValidator` refused it, and onboarding could not get past the theme step. The theme pickers meanwhile painted a chosen theme onto `<body>` while the server kept rendering the seasonal one.
-
-**Rule:** Keep "what to render" (`getTheme` → `resolveTheme`) and "what the user chose" (`getStoredTheme` → `storedTheme`) as two reads, and decide the season once, in the root loader (`Document` renders the name with `themeByName`). A picker that cannot take effect is disabled and says why (`useSeasonalTheme`, `SeasonalThemeNotice`).
-
-**Applies to:** `packages/utils/src/themes.ts`, every app's `services/theme.server.ts` and `root.tsx`, every theme picker.
-
-## ValidatedForm needs the validator, not the raw schema
-
-```scope
-id: validatedform-needs-the-validator-not-the-raw-schema
-paths: ["packages/form/src/ValidatedForm.tsx"]
-triggers: ["<ValidatedForm","validator("]
-```
-
-**Context:** Building forms with zod validation.
-
-**Problem:** Passing a raw zod schema to `ValidatedForm` instead of wrapping it with `validator()` from `@carbon/form` results in silent validation failures — the form submits without client-side validation.
-
-**Rule:** Always use `validator(schema)` from `@carbon/form`, not the raw zod schema. Validate with `validator(schema).validate(formData)`, not `schema.parse()`.
-
-**Applies to:** All forms in `apps/erp/app/routes/`, `packages/form/`.
-
 ## A bare FormLabel outside FormControl 500s the whole route
 
 ```scope
@@ -288,22 +240,6 @@ triggers: ["<FormLabel","<FormError","useFormControlContext"]
 **Rule:** `FormLabel`/`FormError` are only valid inside a `<FormControl>`. For a standalone section heading in a form, use a plain `<label>`/heading element. When a page 500s with no server error, check the browser console for context-hook throws before suspecting the loader — and treat "form renders but Save does nothing" as a possible sibling-render crash, not a submit bug.
 
 **Applies to:** any usage of `packages/react/src/Form/{FormLabel,FormError}.tsx`; form components under `apps/erp/app/modules/*/ui/`.
-
-## A clickable row made keyboard-reachable must not wrap its own controls
-
-```scope
-id: a-clickable-row-made-keyboard-reachable-must-not-wrap-its-ow
-paths: []
-triggers: ["role=\"button\"","useKeyWithClickEvents","noStaticElementInteractions","isBareKeyForAnotherControl","tabIndex={0}"]
-```
-
-**Context:** Turning on Biome's `useKeyWithClickEvents` / `noStaticElementInteractions` meant giving every clickable `div` a role, `tabIndex` and an Enter/Space handler.
-
-**Problem:** The quick fix, `role="button"` on the row, was applied to rows that already held a link, a chevron button or a date picker (document line summaries, share pages, the BOM list title). A button's children are presentational, so a screen reader hears one button named after the whole row and cannot reach the controls inside. A keyboard user gets two tab stops for one toggle. And a row handler that calls `preventDefault()` on Enter with no target check swallows Enter on the link inside, which then opens the row instead of following the link. Lint, typecheck and tests all pass.
-
-**Rule:** Before adding `role="button"`, look inside the element. If it holds a link, button or field, keep the row pointer-only (`biome-ignore` with the reason, ignore clicks on `a, button`) and make the existing chevron or a stretched link the control. Any `role="button"` Enter/Space handler starts with `if (e.target !== e.currentTarget) return;`. A page-wide bare-key shortcut (MES Space) checks `isBareKeyForAnotherControl` in its guard.
-
-**Applies to:** every a11y lint fix on a clickable container; `conventions-ui.md` → Accessibility tree.
 
 ## A cookie that was only ever written is not a stored preference
 
@@ -335,7 +271,7 @@ triggers: ["useSortable","useSensor("]
 
 **Problem:** A drag stuttered: with 82 cards, six frames of a 90-frame sweep took over 100 ms. Two causes. dnd-kit re-renders every `useSortable` consumer when the drop target changes, and the hook sat inside the card, so every card's whole body rendered each time. And `useSensor(KeyboardSensor, { coordinateGetter })` passed a new options object on every render: dnd-kit memoizes the sensor on it, so every draggable got new `listeners`, which defeats `memo` on anything that takes them.
 
-**Rule:** A sortable card is a thin shell that calls `useSortable` and a `memo`ized body that takes plain props (`sortableCardProps` in `Schedule/Kanban/cardShell.ts`). `useSensor` options are a module constant (`no-inline-sensor-options` check). A context every card reads must have a stable value. To find what re-renders, count renders per component during a scripted drag; do not guess.
+**Rule:** A sortable card is a thin shell that calls `useSortable` and a `memo`ized body that takes plain props (`sortableCardProps` in `Schedule/Kanban/cardShell.ts`). A context every card reads must have a stable value. To find what re-renders, count renders per component during a scripted drag; do not guess. The rest is in the `no-inline-sensor-options` check.
 
 **Applies to:** `apps/erp/app/modules/production/ui/Schedule/Kanban/**`; any dnd-kit board or list with more than a few dozen items.
 
@@ -383,7 +319,7 @@ triggers: ["animate-in","animate-out"]
 
 **Problem:** `tailwindcss-animate`'s `animate-in` / `animate-out` set `animation-duration` themselves (the 150ms default). They are used as `data-[state=open]:animate-in`, and a state-variant rule comes after a plain `duration-300` in the CSS, so the plain duration never applied. Only the closing durations, already written as `data-[state=closed]:duration-200`, worked. Nothing looked wrong: the motion was simply shorter than the class said.
 
-**Rule:** Time an enter/exit animation on its state variant — `data-[state=open]:duration-300 data-[state=closed]:duration-200` — never with a bare `duration-*` beside `animate-in`. Verify with `getComputedStyle(el).animationDuration` in each state, not by reading the class list. The motion scale is in `.claude/rules/conventions-ui.md` (Animations).
+**Rule:** Verify an enter/exit duration with `getComputedStyle(el).animationDuration` in each state, not by reading the class list. The rest is in `.claude/rules/conventions-ui.md` (Animations).
 
 **Applies to:** `Modal.tsx`, `Drawer.tsx`, `BottomSheet.tsx` (fixed), and any component that pairs `animate-in`/`animate-out` with a duration.
 
@@ -444,7 +380,7 @@ has to be tracked by hand. Do NOT add the inset to viewport-fixed/body-portaled 
 (dialogs, drawers) or to `PrimaryNavigation`, which live outside the panel.
 
 **Applies to:** every `calc(100dvh-var(--topbar-height)...)` in `apps/erp/app`, the shared
-`components/Layout/Panels.tsx` + `Navigation/CollapsibleSidebar.tsx`, and any new
+`components/Layout/Panels.tsx` + `components/Layout/Navigation/CollapsibleSidebar.tsx`, and any new
 full-screen ERP route.
 
 ## position:sticky inside a horizontal board needs a content-width row and a clamped scroll root
@@ -459,7 +395,7 @@ triggers: ["sticky left-0","BoardContainer","MeasuringStrategy"]
 
 **Problem:** Sticky elements only stick within their parent's bounds. The flex row inside the Radix ScrollArea was viewport-width (columns overflowed it), so the sticky column ran out of parent after one screenful. Adding `min-w-max` fixed that but let the ScrollArea (a flex item, which sizes to content) exceed ITS parent, pushing overflow to the page.
 
-**Rule:** The sizing contract for a sticky column in a scrollable flex board is three layers: scroll root clamped (`w-full min-w-0 max-w-full`) > row content-width (`min-w-max`) > column `sticky left-0 z-10` with an opaque background. With dnd-kit on top, add `measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}` — cached droppable rects assume elements move with the scroll, and sticky ones don't.
+**Rule:** Clamp the scroll root around the `min-w-max` row (`w-full min-w-0 max-w-full`), so the row cannot push overflow to the page, and make the column `sticky left-0 z-10` with an opaque background. The rest is in `.claude/rules/scheduling-data-structures.md`.
 
 **Applies to:** `BoardContainer` (`ColumnCard.tsx`) and any kanban wanting a pinned column; any dnd-kit board with sticky droppables.
 
@@ -475,7 +411,7 @@ triggers: ["formatOptions","NumberControlled","EditableNumberCell","INPUT_FORMAT
 
 **Problem:** react-aria NumberField commits on blur by running `parse(format(value))` — whatever `formatOptions` the input carries re-rounds the committed number. A currency-formatted amount input rounds to cents on blur; the old bidirectional tax pair (amount edit → percent = amount/subtotal, percent edit → amount = subtotal×percent) then overwrote the typed 6.25% with 0.56/9.00 = 6.22%. Nothing in zod, the column type, or the service was wrong — the INPUT FORMATTER did the rounding, and the coupling propagated it.
 
-**Rule:** Editable numeric inputs must use the named `INPUT_FORMAT.*` kinds from `@carbon/utils` (rate max 3 percent-digits, quantity max 5, money/price at the currency's decimals) so the blur round-trip preserves the stored scale. **Round a derived value to the scale of the field that will hold it BEFORE putting it there** — that is the actual fix. An unrounded 0.5625 in a cents-formatted input is re-committed as 0.56 on blur, which registers as a genuine change and feeds back through any coupling; a value derived through `applyRate` at the currency's decimals commits identically and triggers nothing. With that in place a value pair can safely stay coupled in both directions (`TaxFields` does, so the stored pair is always consistent), accepting that a rate derived back from an amount is limited by the amount's scale. When an input's digits look like a display preference, remember they are arithmetic on the persisted value.
+**Rule:** **Round a derived value to the scale of the field that will hold it BEFORE putting it there**, in any input, not only the tax pair. An unrounded 0.5625 in a cents-formatted input is re-committed as 0.56 on blur, which registers as a genuine change and feeds back through any coupling. The rest is in `.claude/rules/numeric-precision.md`.
 
 **Applies to:** every `formatOptions` on an editable `NumberField`/`NumberControlled`/`EditableNumberCell`; `apps/erp/app/components/Form/TaxFields.tsx`; `.claude/rules/numeric-precision.md`; the `no-inline-fraction-digits` conformance check.
 
@@ -577,11 +513,10 @@ element is `DrawerPortal`'s positioning div, which had no animation, so even a m
 drawer with an exit animation on its panel was removed at once. Adding the exit classes to
 the panel alone changed nothing; the frame-by-frame trace still showed zero closing frames.
 
-**Rule:** A drawer that should animate closed stays mounted and is driven by `open`; keep the
-record it shows until the next open (`useDrawerItem`), and key it per open so each open
-still starts fresh. When a Radix exit animation does not play, check every element between
+**Rule:** When a Radix exit animation does not play, check every element between
 the portal and the animated node — each `Presence` looks only at its own child. Verify with
-a trace of `data-state` and `getBoundingClientRect()` per frame, not by eye.
+a trace of `data-state` and `getBoundingClientRect()` per frame, not by eye. The rest is in
+`.claude/rules/conventions-ui.md` (Modals and Drawers).
 
 **Applies to:** `packages/react/src/Drawer.tsx` (`portalVariants` + `sheetVariants` closing
 durations must match), `useDrawerItem` (`apps/erp/app/hooks`), both planning tables, and every
@@ -636,16 +571,11 @@ removed the route, so `open` never turned false. And about 300 call sites render
 `{disclosure.isOpen && <ConfirmDelete />}`. The modal backdrop also closed in 150ms while the
 box closed in 200ms, and Radix removes both when the backdrop ends.
 
-**Rule:** A route dialog uses `useRouteDialog()` (`@carbon/react`): `close` sets `open` false
-and navigates only when Radix has removed the dialog. With unsaved changes it navigates at once,
-so the `Submit` blocker asks over the open dialog — closing first would unmount the blocker and
-lose the edits silently. A conditional dialog passes its condition as `open`/`isOpen` and keeps
-its record until the next open. State or a mount-time fetch that must be fresh per open goes in a
-body component inside `ModalContent` / `DrawerContent`, which Radix unmounts on close. A `key` that
-counts opens is only for state that cannot move there (a `ModalCard` form, or `Modal` /
-`ModalContent` props that read it). The first attempt keyed about 150 dialogs per open: it worked,
-but it fought Radix's own unmount, and the guard around it mounted nothing until the first open for
-no reason. Enforced by `no-unmounting-dialog`.
+**Rule:** `useRouteDialog()` (`@carbon/react`) `close` sets `open` false and navigates only when
+Radix has removed the dialog. With unsaved changes it navigates at once, so the `Submit` blocker
+asks over the open dialog — closing first would unmount the blocker and lose the edits silently.
+Keep that order when you change the hook. The rest is in `.claude/rules/conventions-ui.md`
+(Modals and Drawers) and the `no-unmounting-dialog` check.
 
 **Applies to:** every `Modal`, `Drawer`, `ModalDrawer`, `Confirm`, `ConfirmDelete` and
 `*Modal`/`*Drawer` component; `ModalOverlay` and `ModalContent` durations must match.
@@ -692,27 +622,26 @@ violations must be able to reopen the modal, but nothing replaced the guard.
 `useShortcutKeys` already treated it as disabling — so a spinning button refused Enter but
 still took a mouse click, and every call site guarding a submit with
 `isLoading={fetcher.state !== "idle"}` was showing a spinner over a live button.
-(3) `fetchWithRetry` replayed every method on a 5xx or a 25 s timeout. PostgREST commits
-before it answers, so a retried insert is a duplicate row and a retried `.rpc()` re-runs a
-transaction. The `quoteToQuote` incidents had already produced the rule — *"a retry wrapper
-must never blindly retry a write with real side effects and no idempotency key"* — but the
-fix carved out only `/functions/v1/`, leaving every PostgREST write still replaying.
+(3) The Supabase client's retry wrapper replayed every method on a 5xx or a 25 s timeout.
+PostgREST commits before it answers, so a retried insert is a duplicate row and a retried
+`.rpc()` re-runs a transaction. The `quoteToQuote` incidents had already produced the rule —
+*"a retry wrapper must never blindly retry a write with real side effects and no idempotency
+key"* — but the fix carved out only `/functions/v1/`, leaving every PostgREST write still
+replaying.
 
-**Rule:** A submit path needs a guard at each layer that can replay it. The button disables
-while its own submission is in flight (`<Submit>`, or `isLoading` bound to the fetcher's
-state); `ValidatedForm` drops a re-entrant submit so the form holds even when a button
-forgets; a retry wrapper replays only idempotent methods; and a job retries only failures
+**Rule:** A submit path needs a guard at each layer that can replay it, not only at the
+button. A retry wrapper replays only idempotent methods, and a job retries only failures
 that provably had no effect — for an SMTP send that means connect/greet/auth errors only,
 never an ambiguous `ETIMEDOUT` that may have been delivered. When triaging "the operation
-failed but extra copies appeared", check all four before assuming a browser double-submit.
-`isDisabled` bound to any-old-boolean is not a guard: name the submit state.
+failed but extra copies appeared", check the button, the form, the retry wrapper and the job
+before assuming a browser double-submit. The button and form guards are in
+`.claude/rules/conventions-forms.md` and the `no-unguarded-submit` check.
 
 **Applies to:** `packages/react/src/Button.tsx`, `packages/form/src/ValidatedForm.tsx`,
-`packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isReplayable` — both
-since removed: database reads now use supabase-js's own retry, which never replays a
-write, and only storage reads go through `storageReadFetch`),
+`packages/auth/src/lib/supabase/client.ts` (database reads now use supabase-js's own retry,
+which never replays a write, and only storage reads go through `storageReadFetch`),
 `packages/jobs/src/inngest/functions/notifications/send-{email,slack}.ts`, and any
-`<Button type="submit">` — enforced by `no-unguarded-submit` (`@carbon/checks`).
+`<Button type="submit">`.
 
 ## A zod `.refine` that returns an object instead of a boolean silently disables the check
 
@@ -722,7 +651,7 @@ paths: ["apps/erp/app/modules/*/*.models.ts","apps/mes/app/services/models.ts"]
 triggers: [".refine("]
 ```
 
-**Context:** Cross-field validation in module `*.models.ts` zod schemas (real case: `processValidator` in `apps/erp/app/modules/resources/resources.models.ts`, lines 305–319).
+**Context:** Cross-field validation in module `*.models.ts` zod schemas (real case: `processValidator` in `apps/erp/app/modules/resources/resources.models.ts`, the two `.refine` calls after the object, near line 372).
 
 **Problem:** `.refine((data) => { if (bad) return { workCenters: ["..."] }; return true; })` looks like it reports a field error, but `.refine`'s callback is coerced to a boolean — any non-empty object is **truthy**, so the "failure" branch returns a value that passes validation. Both `processValidator` refinements (work-center-required and standard-factor-required) never fire: the object was meant to be an error map, but `.refine` has no such API. The schema typechecks and the form submits, so the missing validation is invisible until bad data lands.
 
@@ -840,32 +769,9 @@ triggers: [{"text":"<ValidatedForm","minCount":2}]
 
 **Problem:** Both branches render a `<ValidatedForm>` (same element type) at the **same JSX position**, so React reconciles them as **one component instance** and just swaps props — no unmount/remount. `@carbon/form`'s RVF store seeds `controlledFields.values` from `defaultValues` **only on first hydration** (`syncFormProps`: `if (!state.isHydrated) { … }`). The instance hydrates on the initial branch (B, `changeType` default `Version`), so when the user switches to A, A's Select defaults are **never** seeded — `useControlledFieldValue` returns the store value (`undefined`) once `isHydrated`, not the `defaultValue`. Uncontrolled fields (`InputControlled`) were unaffected because they write their own value via effect. `defaultValues` object identity was a red herring: `ValidatedForm` already `useDeepEqualsMemo`s it, and `syncFormProps` ignores later `defaultValues` changes post-hydration.
 
-**Rule:** When two `ValidatedForm`s occupy the same conditional slot (`cond ? <VF/> : <VF/>`), give each a distinct, stable `key` (`key="new-part"` / `key="existing-item"`) so switching forces a fresh mount + fresh store that hydrates with the correct branch's `defaultValues`. Consequence: the fresh mount also needs any Select value the branch relies on seeded in its own `defaultValues` (e.g. `changeType: "New Part"`, added to `changeOrderNewPartValidator`) — a value the shared store previously carried over from the user's click is gone after remount. Symptom to watch for: a controlled Select rendering blank / submitting `""` right after a branch switch.
+**Rule:** When two `ValidatedForm`s occupy the same conditional slot (`cond ? <VF/> : <VF/>`), give each a distinct, stable `key` (`key="new-part"` / `key="existing-item"`) so switching forces a fresh mount + fresh store that hydrates with the correct branch's `defaultValues`. Consequence: the fresh mount also needs any Select value the branch relies on seeded in its own `defaultValues` (e.g. `changeType: "New Part"`, added to `changeNoticeNewPartValidator`) — a value the shared store previously carried over from the user's click is gone after remount. Symptom to watch for: a controlled Select rendering blank / submitting `""` right after a branch switch.
 
-**Applies to:** `apps/erp/app/modules/items/ui/ChangeOrder/AffectedItemForm.tsx`; any conditional twin-`ValidatedForm` pattern; `@carbon/form` controlled fields (`Select`/`Combobox`/anything on `useControlField`) that rely on `defaultValues` seeding.
-
-## Unmounting a collapsed panel throws away the state inside it
-
-```scope
-id: unmounting-a-collapsed-panel-throws-away-the-state-inside-it
-paths: ["apps/erp/app/routes/share+/supplier-quote.$id.tsx"]
-triggers: ["AnimatePresence","transitionEnd"]
-```
-
-**Context:** Collapsed line panels on the document summaries stayed mounted at
-height 0, so their controls stayed in the tab order. The fix renders the panel
-only while open.
-
-**Problem:** On `share+/supplier-quote.$id.tsx` the panel's `LinePricing` holds
-the supplier's typed prices in local state. Unmounting it on collapse would
-reset them to the saved values, and the screen and the submission would
-disagree.
-
-**Rule:** Before unmounting a collapsed panel, check what state lives inside
-it. If any must survive, keep it mounted and end the Motion collapse with
-`transitionEnd: { display: "none" }`; that also takes it out of the tab order.
-
-**Applies to:** every expand/collapse panel built with Motion.
+**Applies to:** `apps/erp/app/modules/items/ui/ChangeNotice/AffectedItemForm.tsx`; any conditional twin-`ValidatedForm` pattern; `@carbon/form` controlled fields (`Select`/`Combobox`/anything on `useControlField`) that rely on `defaultValues` seeding.
 
 ## `w-full` on a flex item ignores its siblings — use `flex-1 min-w-0`
 
