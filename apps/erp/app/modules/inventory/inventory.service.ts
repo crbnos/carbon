@@ -236,6 +236,7 @@ import {
   type JournalLineDimensionValues,
   journalLineDimensionRows,
   leavingTrackedEntityIds,
+  lockOrderLinesAsRead,
   lockUntrackedDraws,
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
@@ -15746,6 +15747,14 @@ export async function postReceipt(
             .execute();
           await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // Every line of the order: its status is set from them.
+          await lockOrderLinesAsRead(
+            trx,
+            "purchaseOrderLine",
+            companyId,
+            purchaseOrderLinesVoid.data,
+            "A purchase order line changed while this receipt was voiding. Void the receipt again."
+          );
           await lockOutsideProcessingJobs(trx, companyId, outsideLineIdsVoid);
           await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
           await removeUnpickedPutAways(trx, companyId, receiptId);
@@ -17155,9 +17164,19 @@ export async function postReceipt(
             (line.quantityReceived ?? 0) * (line.conversionFactor ?? 1)
           ])
         );
+        const receivedLinesRead = purchaseOrderLines.data.filter(
+          (line) => line.id in purchaseOrderLineUpdates
+        );
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await lockOrderLinesAsRead(
+            trx,
+            "purchaseOrderLine",
+            companyId,
+            receivedLinesRead,
+            "A purchase order line changed while this receipt was posting. Post the receipt again."
+          );
           await lockOutsideProcessingJobs(trx, companyId, outsideLineIds);
           if (!isOutsideProcessing) {
             const unheld = await unheldInspectedLineRefusal(trx, companyId, {
@@ -18303,6 +18322,16 @@ export async function postReceipt(
             );
           }
 
+          await lockOrderLinesAsRead(
+            trx,
+            "salesReturnOrderLine",
+            companyId,
+            (salesReturnOrderLines.data ?? []).filter(
+              (line) => line.id in returnLineUpdates
+            ),
+            "A return order line changed while this receipt was posting. Post the receipt again."
+          );
+
           // A return type change takes this same lock. Re-read the return
           // types under it, so a line is never posted by the rule of a type
           // it no longer has.
@@ -18693,6 +18722,14 @@ export async function postReceipt(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          // Every line of the transfer: its status is set from them.
+          await lockOrderLinesAsRead(
+            trx,
+            "warehouseTransferLine",
+            companyId,
+            warehouseTransferLines.data,
+            "A warehouse transfer line changed while this receipt was posting. Post the receipt again."
+          );
           // Update warehouse transfer lines
           await updateRowsById(
             trx,
@@ -20612,8 +20649,18 @@ export async function postShipment(
                 ? await getCurrentAccountingPeriod(companyId, db, today)
                 : null;
 
+            const shippedLinesRead = salesOrderLines.data.filter(
+              (line) => line.id in salesOrderLineUpdates
+            );
             await db.transaction().execute(async (trx) => {
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              await lockOrderLinesAsRead(
+                trx,
+                "salesOrderLine",
+                companyId,
+                shippedLinesRead,
+                "A sales order line changed while this shipment was posting. Post the shipment again."
+              );
               await fixedAssetWrites.apply(trx, companyId);
               await updateRowsById(
                 trx,
@@ -21159,6 +21206,15 @@ export async function postShipment(
               }, {}) ?? {};
 
             await db.transaction().execute(async (trx) => {
+              await lockOrderLinesAsRead(
+                trx,
+                "purchaseOrderLine",
+                companyId,
+                purchaseOrderLines.data.filter(
+                  (line) => line.id in purchaseOrderLineUpdates
+                ),
+                "A purchase order line changed while this shipment was posting. Post the shipment again."
+              );
               await updateRowsById(
                 trx,
                 "purchaseOrderLine",
@@ -21473,6 +21529,14 @@ export async function postShipment(
             }
 
             await db.transaction().execute(async (trx) => {
+              // Every line of the transfer: its status is set from them.
+              await lockOrderLinesAsRead(
+                trx,
+                "warehouseTransferLine",
+                companyId,
+                warehouseTransferLines.data,
+                "A warehouse transfer line changed while this shipment was posting. Post the shipment again."
+              );
               // Update warehouse transfer lines
               await updateRowsById(
                 trx,
@@ -22334,6 +22398,17 @@ export async function postShipment(
                   `Cannot ship against a return order in ${lockedOrder.status} status`
                 );
               }
+              // The write-off restores below follow from what the lines had
+              // shipped when they were read.
+              await lockOrderLinesAsRead(
+                trx,
+                "purchaseReturnOrderLine",
+                companyId,
+                (purchaseReturnOrderLines.data ?? []).filter(
+                  (line) => line.id in returnLineUpdates
+                ),
+                "A return order line changed while this shipment was posting. Post the shipment again."
+              );
 
               // Put back what the inspection reject wrote off, at the write-off's
               // own cost (Dr Inventory / Cr Scrap) and where it was written off,
@@ -23101,8 +23176,18 @@ export async function postShipment(
                 ? await getCurrentAccountingPeriod(companyId, db, today)
                 : null;
 
+            const shippedLinesRead = (salesOrderLines.data ?? []).filter(
+              (line) => line.id in salesOrderLineUpdates
+            );
             await db.transaction().execute(async (trx) => {
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              await lockOrderLinesAsRead(
+                trx,
+                "salesOrderLine",
+                companyId,
+                shippedLinesRead,
+                "A sales order line changed while this shipment was voiding. Void the shipment again."
+              );
               await fixedAssetWrites.apply(trx, companyId);
               // Update sales order lines to reverse shipped quantities
               await updateRowsById(
@@ -23509,6 +23594,15 @@ export async function postShipment(
             }
 
             await db.transaction().execute(async (trx) => {
+              await lockOrderLinesAsRead(
+                trx,
+                "purchaseOrderLine",
+                companyId,
+                purchaseOrderLines.data.filter(
+                  (line) => line.id in purchaseOrderLineUpdates
+                ),
+                "A purchase order line changed while this shipment was voiding. Void the shipment again."
+              );
               // Update purchase order lines to reverse shipped quantities
               await updateRowsById(
                 trx,
@@ -23714,6 +23808,14 @@ export async function postShipment(
             }
 
             await db.transaction().execute(async (trx) => {
+              // Every line of the transfer: its status is set from them.
+              await lockOrderLinesAsRead(
+                trx,
+                "warehouseTransferLine",
+                companyId,
+                warehouseTransferLines.data,
+                "A warehouse transfer line changed while this shipment was voiding. Void the shipment again."
+              );
               // Update warehouse transfer lines
               await updateRowsById(
                 trx,

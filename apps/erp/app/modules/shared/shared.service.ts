@@ -18377,6 +18377,116 @@ export async function lockUntrackedDraws(
   );
 }
 
+/** Each order line table, its order, and the counters documents post into it. */
+const ORDER_LINE_COUNTERS = {
+  purchaseOrderLine: {
+    order: "purchaseOrder",
+    orderId: "purchaseOrderId",
+    counters: [
+      "quantityReceived",
+      "quantityInvoiced",
+      "quantityShipped",
+      "receivedComplete",
+      "invoicedComplete"
+    ]
+  },
+  salesOrderLine: {
+    order: "salesOrder",
+    orderId: "salesOrderId",
+    counters: [
+      "quantitySent",
+      "quantityInvoiced",
+      "sentComplete",
+      "invoicedComplete"
+    ]
+  },
+  salesReturnOrderLine: {
+    order: "salesReturnOrder",
+    orderId: "salesReturnOrderId",
+    counters: ["quantityReceived", "quantityShipped"]
+  },
+  purchaseReturnOrderLine: {
+    order: "purchaseReturnOrder",
+    orderId: "purchaseReturnOrderId",
+    counters: ["quantityShipped"]
+  },
+  warehouseTransferLine: {
+    order: "warehouseTransfer",
+    orderId: "transferId",
+    counters: ["shippedQuantity", "receivedQuantity"]
+  }
+} as const;
+
+export type OrderLineTable = keyof typeof ORDER_LINE_COUNTERS;
+
+/**
+ * Locks the orders of `lineIds`, then the lines, each FOR UPDATE in id order.
+ * Every writer of an order line's counters takes these locks first, in this
+ * order, so two documents on one line run one after the other and never
+ * deadlock. Returns the lines as they read under the lock.
+ */
+export async function lockOrderLines(
+  db: Kysely<DB>,
+  table: OrderLineTable,
+  companyId: string,
+  lineIds: readonly string[]
+): Promise<Map<string, Record<string, unknown>>> {
+  const ids = [...new Set(lineIds)];
+  const locked = new Map<string, Record<string, unknown>>();
+  if (ids.length === 0) return locked;
+  const { order, orderId } = ORDER_LINE_COUNTERS[table];
+  await sql`
+    SELECT 1 FROM ${sql.table(order)}
+    WHERE "companyId" = ${companyId}
+      AND id IN (
+        SELECT ${sql.ref(orderId)} FROM ${sql.table(table)}
+        WHERE "companyId" = ${companyId} AND id = ANY(${ids}::text[])
+      )
+    ORDER BY id
+    FOR UPDATE
+  `.execute(db);
+  const { rows } = await sql<Record<string, unknown>>`
+    SELECT * FROM ${sql.table(table)}
+    WHERE "companyId" = ${companyId} AND id = ANY(${ids}::text[])
+    ORDER BY id
+    FOR UPDATE
+  `.execute(db);
+  for (const row of rows) locked.set(row.id as string, row);
+  return locked;
+}
+
+/**
+ * {@link lockOrderLines}, then refuses when a counter of a line in `read`
+ * moved since it was read: the document planned its counters, and the
+ * journal lines that follow from them, from that read.
+ */
+export async function lockOrderLinesAsRead(
+  db: Kysely<DB>,
+  table: OrderLineTable,
+  companyId: string,
+  read: readonly { id: string }[],
+  refusal: string
+): Promise<void> {
+  const locked = await lockOrderLines(
+    db,
+    table,
+    companyId,
+    read.map((line) => line.id)
+  );
+  const counters: readonly string[] = ORDER_LINE_COUNTERS[table].counters;
+  const moved = read.some((line) => {
+    const now = locked.get(line.id);
+    return counters.some((counter) => {
+      const before = (line as Record<string, unknown>)[counter];
+      const after = now?.[counter];
+      return typeof before === "boolean" || typeof after === "boolean"
+        ? Boolean(before) !== Boolean(after)
+        : Number(before ?? 0) !== Number(after ?? 0);
+    });
+  });
+  if (moved) throw new InvalidInputError(refusal);
+}
+
 // Each item's untracked on-hand per bin and stripe at a location. `nettable`:
 // a guess may take from it (active, nettable, not lineside; no storage unit
 // always is).
