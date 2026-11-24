@@ -146,6 +146,8 @@ import {
   loadProjectPostingContexts,
   loadReturnableIssueRows,
   ProjectChargeError,
+  projectExpenseRefusal,
+  projectExpenseRefusalOnEveryDate,
   projectPostingKey,
   resolveProjectPostingAccount,
   resolveProjectTreatment,
@@ -7376,6 +7378,12 @@ export async function postProjectExpense(
           .then((result) => result.rows[0] ?? null)
       : null;
 
+    // Before the account: a Capitalize date with no asset yet must give this
+    // reason, not the missing asset's.
+    const refusal = original?.accountId
+      ? null
+      : projectExpenseRefusal(context, entry.entryDate);
+    if (refusal) throw new ProjectChargeError(refusal);
     // A reversal undoes what its original booked: the account its debit
     // line was on, whatever the project's treatment is today.
     const resolved = original?.accountId
@@ -7384,11 +7392,6 @@ export async function postProjectExpense(
           accountId: original.accountId
         }
       : resolveProjectPostingAccount(context, entry.entryDate);
-    if (!original?.accountId && resolved.treatment === "Capitalize") {
-      throw new ProjectChargeError(
-        "An expense entry cannot charge a capital project. Use a charge or a purchase invoice."
-      );
-    }
     const isStatistical =
       !original?.accountId && resolved.treatment === "Statistical";
     const amount = round(Number(entry.amount));
@@ -7983,10 +7986,18 @@ export async function postProjectIssue(
       cost: round(bookedRows.reduce((sum, row) => sum + row.cost, 0))
     };
     // A unit with no cost would charge the project nothing: the item needs a
-    // cost first. The throw rolls the whole issue back.
+    // cost first. The throw rolls the whole issue back. FIFO / LIFO cost the
+    // issue from the stock's own layers, so a Unit Cost set after stock came
+    // in at 0 does not reach it.
     if (isIssue && booked.cost <= 0) {
+      const { costingMethod, unitCost } = itemCostResult.data;
+      const stockAtZero =
+        (costingMethod === "FIFO" || costingMethod === "LIFO") &&
+        Number(unitCost ?? 0) > 0;
       throw new InvalidInputError(
-        `${itemLabel} has no cost. Set its unit cost before you issue it.`
+        stockAtZero
+          ? `${itemLabel} has no cost: its stock on hand came in at no cost and keeps that cost, even with a Unit Cost set.`
+          : `${itemLabel} has no cost. Set Unit Cost on the item's Accounting tab (Costing & Posting), then issue it.`
       );
     }
 
@@ -13244,6 +13255,38 @@ export async function getProjectCostTotals(
 }
 
 /**
+ * Why no expense entry on the element can post, whatever its date
+ * (`projectExpenseRefusalOnEveryDate`, on the rule `postProjectExpense`
+ * applies), or null. Null too when the element has no row yet or the read
+ * fails: the posting still refuses a refused date.
+ */
+export async function getChargeCostRefusal(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    projectId: string;
+    elementId: string;
+  }
+): Promise<string | null> {
+  try {
+    const contexts = await loadProjectPostingContexts(db, args.companyId, [
+      { projectId: args.projectId, projectElementId: args.elementId }
+    ]);
+    const context = contexts.get(
+      projectPostingKey(args.projectId, args.elementId)
+    );
+    return context ? projectExpenseRefusalOnEveryDate(context) : null;
+  } catch (error) {
+    logger.error("Failed to read the element's cost treatment", {
+      companyId: args.companyId,
+      elementId: args.elementId,
+      error
+    });
+    return null;
+  }
+}
+
+/**
  * Everything the element page (the peek and the full page) shows, read in
  * parallel: the element, every element of its project (for the children,
  * the parent pickers and the subtree roll-up), its comments, its plan lines,
@@ -13345,6 +13388,13 @@ export async function getProjectElementPage(
     }
     costRates.set(rate.laborCategoryId, Number(rate.costRate));
   }
+
+  // Started here, read at the end: it never rejects.
+  const chargeCostRefusal = getChargeCostRefusal(db, {
+    companyId: args.companyId,
+    projectId: args.projectId,
+    elementId: args.elementId
+  });
 
   const [verification, qualityDocuments, itemHistory] = await Promise.all([
     getProjectVerification(client, {
@@ -13451,7 +13501,8 @@ export async function getProjectElementPage(
       ...verification.data,
       qualityDocuments: qualityDocuments.data ?? [],
       itemFields,
-      itemHistory: itemHistory.data ?? null
+      itemHistory: itemHistory.data ?? null,
+      chargeCostRefusal: await chargeCostRefusal
     },
     error: null
   };

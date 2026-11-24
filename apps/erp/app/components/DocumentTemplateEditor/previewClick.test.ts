@@ -126,6 +126,31 @@ describe("findPrintedText", () => {
     expect(at(19, 0)).toBe("terms:termsAndConditions");
   });
 
+  it("finds a text with a line break on each of its lines", () => {
+    const broken = printedTexts(
+      "purchaseOrder",
+      blocks.map((block) =>
+        block.type === "terms"
+          ? { ...block, text: { termsAndConditions: "Terms\n\nand more" } }
+          : block
+      ),
+      {}
+    );
+    const lines: PageRun[][] = [
+      ...page.slice(0, 18),
+      line("TERMS"),
+      line("AND MORE"),
+      line("Goods remain the property of the buyer.")
+    ];
+    const hit = (lineIndex: number) => {
+      const found = findPrintedText(lines, { line: lineIndex, run: 0 }, broken);
+      return found && `${found.scope}:${found.key}`;
+    };
+    expect(hit(18)).toBe("terms:termsAndConditions");
+    expect(hit(19)).toBe("terms:termsAndConditions");
+    expect(hit(20)).toBe("terms:termsAndConditions");
+  });
+
   it("points a value outside a table at the label or heading before it", () => {
     expect(at(4, 2)).toBe("parties:supplierTaxId");
     expect(at(3, 0)).toBe("parties:supplier");

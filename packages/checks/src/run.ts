@@ -45,7 +45,7 @@ import {
   type ManagedFunction,
   noAuthzDdlInMigrations
 } from "./conformance/no-authz-ddl-in-migrations";
-import { noBareOutlet } from "./conformance/no-bare-outlet";
+import { findNestedOutlets, noBareOutlet } from "./conformance/no-bare-outlet";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
@@ -231,6 +231,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
   const migrations = loadSqlFiles(migrationsDir(root));
   const listSources = loadListSources(root);
   const eventSources = loadEventFunctionSources(root);
+  const typescriptFiles = loadTypescriptFiles(root);
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
@@ -241,7 +242,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     // noMissingAuditColumn needs the real column list, so it is built from the
     // generated types here rather than sitting in TS_CHECKS — the same shape as
     // noAuthzDdlInMigrations above, which keeps every `scan` pure.
-    ...scanAll(loadTypescriptFiles(root), [
+    ...scanAll(typescriptFiles, [
       ...TS_CHECKS,
       noMissingAuditColumn(loadDbTableColumns(root))
     ]),
@@ -251,7 +252,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noRawRedirect,
       linguiMacroMisuse
     ]),
-    ...scanAll(loadTypescriptFiles(root), [
+    ...scanAll(typescriptFiles, [
       noRawOrSearch,
       noRawRevalidator,
       noInlineSensorOptions,
@@ -259,6 +260,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noStateCopyOfLoaderData,
       formFieldBudget
     ]),
+    ...findNestedOutlets(typescriptFiles).map((violation) => ({
+      checkId: noBareOutlet.id,
+      violation
+    })),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders
     ]),

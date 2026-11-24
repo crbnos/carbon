@@ -4434,6 +4434,9 @@ msgstr "Tüm iş merkezlerine uygulanır"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Kendi kuralı olmayan özelliklere ve bu kontrol planı bir muayene başlattığında lota uygulanır."
 
+msgid "Applies to invoices drafted from now on"
+msgstr ""
+
 msgid "Applies to Projects"
 msgstr "Projelere uygulanır"
 
@@ -7122,6 +7125,9 @@ msgstr "Her kiralama faturası satırında ücretlendirilir"
 
 msgid "Charges"
 msgstr "Harcamalar"
+
+msgid "Charges invoice"
+msgstr ""
 
 msgid "Charging"
 msgstr "Masraf yapılıyor"
@@ -11488,6 +11494,9 @@ msgstr "Vadesi gelen ödemeler için her gün Taslak alış faturaları oluştur
 msgid "Draft Request"
 msgstr "Taslak İstek"
 
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Bitiş Tarihinden Sonra Zaten Faturalandırılan Zaman İçin Bir Alacak Dekontu Taslağı Oluşturur."
 
@@ -11789,6 +11798,9 @@ msgstr "Her satır, bu şirketin verilerinden sahibi olmadığı bir satıra bir
 
 msgid "Each line shows its item ID and revision."
 msgstr "Her satır stok kartı kimliğini ve revizyonunu gösterir."
+
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
 
 msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
 msgstr "Her satır, fatura düzenleme tarihinde faturanın teslimat lokasyonunda stok kartının alacağı vergi kodunu ve oranı alır. Bu işlem, bir satırda temizlediğiniz vergi kodunun üzerine yazar. Kiralama ve sözleşme satırları kendi vergi kodlarını korur."
@@ -15338,8 +15350,8 @@ msgstr "Carbon'un bu tarayıcıda nasıl göründüğü."
 msgid "How coverage is worked out"
 msgstr "Kapasite nasıl hesaplanır"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "Her satırın hasılatını nasıl kazandığı: gün bazında dağıtılmış veya ayda eşit olarak, yayın başlangıcından veya başlangıç tarihinden."
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Her adetin kirası dönemlere nasıl bölündüğü ve bir dönem içinde ne zaman faturalandırıldığı."
@@ -16418,6 +16430,9 @@ msgstr "Faturalar"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Muhasebeleştirmeyi etkinleştirdikten sonra faturalar senkronize olur"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Faturalar her gün vadesini gelen her şey için otomatik olarak oluşturulur. Bunu, örneğin masraf ekledikten sonra, vadesini gelen şeyi hemen faturalandırmak için kullanın. Faturalar sonra bu anlaşmanın faturalama ayarını takip eder."
 
@@ -16441,6 +16456,15 @@ msgstr "Faturalar otomatik olarak oluşturulur, muhasebeleştirilir ve e-posta i
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "Faturalar otomatik olarak oluşturulur, muhasebeleştirilir ve Stripe aracılığıyla gönderilir."
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "Faturalar, faturalandırma müşterisiyle zaten bağlı olan Stripe müşterisine gönderilir."
@@ -20322,6 +20346,9 @@ msgstr "Hiç çalışan bulunamadı"
 msgid "No end"
 msgstr "Bitiş tarihi yok"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "Tahmin satırı yok"
 
@@ -21013,6 +21040,9 @@ msgstr "Cutover'dan ön tarihlenen muhasebeleştirilmemiş belgeler yok"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Bu konumdaki bu işlemde başlatılmamış, toplu işe eklenmemiş operasyon yok."
 
+msgid "No upcoming invoice."
+msgstr ""
+
 msgid "No value"
 msgstr "Değer yok"
 
@@ -21688,14 +21718,14 @@ msgstr "Her üç ay için bir ödeme."
 msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 msgstr "Bir vergi kodu içindeki, eyalet oranı veya şehir oranı gibi, kendi vergi dairesi, geri alınabilir yüzde ve yürürlüğe giriş tarihleri olan bir oran."
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "Özellik başına bir satır"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "Her fatura için bir satır, her satır için bir sütun. Bir tarihi veya tutarı değiştirin, bir fatura ekleyin veya silin."
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "Her ay için bir satır, her satır için bir sütun. Her satır, faturalarının faturalandırdığını tam olarak tanır."
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "Parça başına bir satır"
@@ -22064,9 +22094,6 @@ msgstr "İş Akışını Aç"
 
 msgid "Open-ended"
 msgstr "Açık Uçlu"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "Sonu belirsiz: şimdiye kadarki planlanmış faturaların değeri."
 
 msgid "Opened"
 msgstr "Açık"
@@ -23705,6 +23732,9 @@ msgstr "Önizle"
 msgid "Preview failed: {error}"
 msgstr "Önizleme başarısız oldu: {error}"
 
+msgid "Preview PDF"
+msgstr ""
+
 msgid "Preview Quantity"
 msgstr "Önizleme Miktarı"
 
@@ -23889,6 +23919,9 @@ msgstr "Baskı"
 
 msgid "Prints as"
 msgstr "Şu şekilde yazdırılır"
+
+msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
+msgstr ""
 
 msgid "Priorities"
 msgstr "Öncelikler"
@@ -25852,6 +25885,9 @@ msgstr "Yenileme Artışı (%)"
 msgid "Rent"
 msgstr "Kira"
 
+msgid "Rent invoice"
+msgstr ""
+
 msgid "Rental"
 msgstr "Kiralama"
 
@@ -26645,6 +26681,9 @@ msgstr "Kira döneminde doğrusal olarak muhasebeleştirilen işletme kira gelir
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Kazanılmadan önce faturalandırılmış hasılat, borç hesabında tutulur ve muhasebeleştirme çalıştırması tarafından hizmet dönemi geçerken hasılata aktarılır."
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "Sözleşmede satırlar eklendikten sonra hasılat önizlemesi gösterilir."
@@ -30667,6 +30706,10 @@ msgstr "Satın Alma Ekibi ile Görüşün"
 
 msgid "Target"
 msgstr "Hedef"
+
+#. placeholder {0}: numberFormatter.format(effectiveTarget)
+msgid "Target ({0})"
+msgstr ""
 
 msgid "Target an item group."
 msgstr "Bir ürün grubunu hedefleyin."
@@ -35555,12 +35598,6 @@ msgstr "İlk yılda bu varlık için her dönemin ödeme tutarı"
 
 msgid "What employees read or watch before the questions"
 msgstr "Çalışanların soruları cevaplamadan önce okuduğu veya izlediği şey"
-
-msgid "What happens to an invoice once it is created"
-msgstr "Fatura oluşturulduktan sonra ne olur"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "Bir fatura taslaklandıktan sonra ne olur"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "Kiralama anlaşmaları ve sözleşmelerden her gün otomatik olarak oluşturulan faturaların işlenmesi. Kiralama ücretleri, krediler, hükümsüz faturaların yeniden faturalandırılması veya kural ihlalleri içeren faturalar her zaman inceleme için bekler."

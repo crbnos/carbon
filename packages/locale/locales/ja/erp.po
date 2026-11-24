@@ -4434,6 +4434,9 @@ msgstr "すべての作業区に適用"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "独自のルールを持たない特性に適用され、この計画が検査を実施する場合はロットに適用されます。"
 
+msgid "Applies to invoices drafted from now on"
+msgstr ""
+
 msgid "Applies to Projects"
 msgstr "プロジェクトに適用"
 
@@ -7122,6 +7125,9 @@ msgstr "各レンタル請求書明細に請求されます。"
 
 msgid "Charges"
 msgstr "カード請求"
+
+msgid "Charges invoice"
+msgstr ""
 
 msgid "Charging"
 msgstr "チャージ中"
@@ -11488,6 +11494,9 @@ msgstr "支払期日の仕入先請求書は毎日下書きで作成されます
 msgid "Draft Request"
 msgstr "下書きリクエスト"
 
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "終了日後に既に請求された時間のクレジットメモを下書きします。"
 
@@ -11789,6 +11798,9 @@ msgstr "各明細はこの会社のデータから、それが所有していな
 
 msgid "Each line shows its item ID and revision."
 msgstr "各明細はアイテムIDとリビジョンを表示します。"
+
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
 
 msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
 msgstr "各明細には、発行日時点で請求書の出荷先に対して品目に適用される税コードと税率が設定されます。明細で消去した税コードは上書きされます。レンタルおよび契約の明細は、既存の税コードを維持します。"
@@ -15338,8 +15350,8 @@ msgstr "このブラウザにおけるCarbonの表示方法。"
 msgid "How coverage is worked out"
 msgstr "カバレッジの計算方法"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "各明細が売上高を得る方法：日ごとに分散するか、毎月均等に、運用開始日またはその開始日から。"
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "各個のレンタル料がどのように期間に分割され、期間内のいつ請求されるかを説明します。"
@@ -16418,6 +16430,9 @@ msgstr "請求書"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "会計を有効化すると、請求書と買掛金請求書が同期されます"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "請求書は毎日自動的に期日の来たものが作成されます。これを使用して期日の来たものをすぐに請求します — たとえば手数料を追加した後など。その後、請求書はこの契約の請求設定に従います。"
 
@@ -16441,6 +16456,15 @@ msgstr "請求書は下書き、転記、メール送信が自動的に行われ
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "請求書は下書き、転記、Stripeを通じて送信が自動的に行われます。"
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "請求書は、請求顧客にすでにリンクされているStripeの得意先に送信されます。"
@@ -20322,6 +20346,9 @@ msgstr "従業員が見つかりません"
 msgid "No end"
 msgstr "終了日なし"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "見積明細がありません"
 
@@ -21013,6 +21040,9 @@ msgstr "カットオーバーの前の日付の未転記文書がありません
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "この拠点のこの工法で未開始で未バッチの工程がありません"
 
+msgid "No upcoming invoice."
+msgstr ""
+
 msgid "No value"
 msgstr "値がありません"
 
@@ -21688,14 +21718,14 @@ msgstr "3 ヶ月ごとに 1 回の支払。"
 msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 msgstr "税コード内の1つのレート（州レートや市レートなど）で、独自の税当局、控除可能パーセンテージ、有効期間を持つ。"
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "特性ごとに1行"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "1件の請求書に1行、1つの明細に1列。日付または金額を変更し、請求書を追加または削除できます。"
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "1ヶ月1行、1つの明細1列。各明細は、その請求書が請求する正確な金額を認識します。"
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "部品ごとに1行"
@@ -22064,9 +22094,6 @@ msgstr "ワークフローを開く"
 
 msgid "Open-ended"
 msgstr "無期限"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "期間指定なし:これまでの計画済請求書の合計値。"
 
 msgid "Opened"
 msgstr "開いている"
@@ -23705,6 +23732,9 @@ msgstr "プレビュー"
 msgid "Preview failed: {error}"
 msgstr "プレビューに失敗しました: {error}"
 
+msgid "Preview PDF"
+msgstr ""
+
 msgid "Preview Quantity"
 msgstr "プレビュー数量"
 
@@ -23889,6 +23919,9 @@ msgstr "印刷"
 
 msgid "Prints as"
 msgstr "印刷内容"
+
+msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
+msgstr ""
 
 msgid "Priorities"
 msgstr "優先度"
@@ -25852,6 +25885,9 @@ msgstr "更新時の値上げ (%)"
 msgid "Rent"
 msgstr "賃料"
 
+msgid "Rent invoice"
+msgstr ""
+
 msgid "Rental"
 msgstr "レンタル"
 
@@ -26645,6 +26681,9 @@ msgstr "レンタル期間にわたって直線法で認識する営業賃貸料
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "獲得する前に請求された売上高で、負債として保持され、サービス提供期間の経過により認識実行によって売上高に振替えられます。"
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "契約に明細が追加されると売上高の予定が表示されます。"
@@ -30667,6 +30706,10 @@ msgstr "営業に相談してください"
 
 msgid "Target"
 msgstr "対象"
+
+#. placeholder {0}: numberFormatter.format(effectiveTarget)
+msgid "Target ({0})"
+msgstr ""
 
 msgid "Target an item group."
 msgstr "アイテムグループをターゲットにします。"
@@ -35555,12 +35598,6 @@ msgstr "このアセットの初年度における各期の支払額"
 
 msgid "What employees read or watch before the questions"
 msgstr "質問の前に従業員が読むまたは視聴するもの"
-
-msgid "What happens to an invoice once it is created"
-msgstr "請求書が作成されたら何が起こるか"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "請求書が下書きになった後に何が起こるか"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "レンタル契約と契約から毎日自動的に作成される請求書について説明します。賃貸料金、クレジット、取消済請求書の再請求、またはルール違反を含む請求書は常にレビュー待機中です。"

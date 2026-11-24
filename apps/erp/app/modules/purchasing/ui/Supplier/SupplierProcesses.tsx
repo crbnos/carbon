@@ -23,7 +23,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
 import { LuEllipsisVertical, LuPencil, LuTrash } from "react-icons/lu";
-import { Outlet, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { New } from "~/components";
 import { EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
@@ -180,7 +180,6 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
           />
         </CardContent>
       </Card>
-      <Outlet />
     </>
   );
 };

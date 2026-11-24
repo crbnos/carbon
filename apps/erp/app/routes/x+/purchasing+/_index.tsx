@@ -7,6 +7,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type { ApprovalRequest } from "@carbon/ee/approvals";
 import { getPendingApprovalsForApprover } from "@carbon/ee/approvals.server";
+import { getLogger } from "@carbon/logger";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -89,12 +90,19 @@ import type { loader as kpiLoader } from "~/routes/api+/purchasing.kpi.$key";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "purchasing", "dashboard");
+
 const OPEN_SUPPLIER_QUOTE_STATUSES = ["Active"] as const;
+// The purchaseInvoices view's statuses: it derives Partially Paid, Paid and
+// Overdue from settlements and the due date, so a paid bill stays Open in the
+// purchaseInvoice table.
 const OPEN_INVOICE_STATUSES = [
   "Draft",
   "Return",
   "Pending",
-  "Partially Paid"
+  "Open",
+  "Partially Paid",
+  "Overdue"
 ] as const;
 const OPEN_PURCHASE_ORDER_STATUSES = [
   "Draft",
@@ -185,12 +193,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("companyId", companyId)
       .limit(10),
     client
-      .from("purchaseInvoice")
+      .from("purchaseInvoices")
       .select("id, invoiceId, status, supplierId, assignee, createdAt", {
         count: "exact"
       })
       .in("status", OPEN_INVOICE_STATUSES)
       .eq("companyId", companyId)
+      .order("createdAt", { ascending: false })
+      .order("id", { ascending: false })
       .limit(10),
     client
       .from("supplierQuote")
@@ -238,6 +248,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .in("id", approvalDocumentForceDeleteIds)
       : { data: [], error: null }
   ]);
+
+  // A failed count must not read as "no open invoices".
+  if (openPurchaseInvoices.error) {
+    logger.error("Failed to load open purchase invoices", {
+      companyId,
+      error: openPurchaseInvoices.error
+    });
+    throw new Response("Failed to load open purchase invoices", {
+      status: 500
+    });
+  }
 
   const assignedToMePromise = getPurchasingDocumentsAssignedToMe(
     client,

@@ -4434,6 +4434,9 @@ msgstr "모든 작업장에 적용"
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "자신의 규칙이 없는 특성과 이 계획이 검사를 실행하는 로트에 적용됩니다."
 
+msgid "Applies to invoices drafted from now on"
+msgstr ""
+
 msgid "Applies to Projects"
 msgstr "프로젝트에 적용됨"
 
@@ -7122,6 +7125,9 @@ msgstr "각 렌트 송장 라인에서 청구됩니다"
 
 msgid "Charges"
 msgstr "청구"
+
+msgid "Charges invoice"
+msgstr ""
 
 msgid "Charging"
 msgstr "청구 중"
@@ -11488,6 +11494,9 @@ msgstr "매일 지불할 매입 송장 초안이 생성됩니다. 이를 사용�
 msgid "Draft Request"
 msgstr "초안 요청"
 
+msgid "Drafted on <0/>. Nothing is saved until then."
+msgstr ""
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "종료일 이후 이미 청구된 시간에 대해 대변전표를 작성합니다."
 
@@ -11789,6 +11798,9 @@ msgstr "각 라인은 이 회사 데이터에서 소유하지 않은 행으로�
 
 msgid "Each line shows its item ID and revision."
 msgstr "각 라인에 품목 ID 및 리비전이 표시됩니다."
+
+msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
+msgstr ""
 
 msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
 msgstr "각 라인은 발행일 기준으로 송장 배송지에서 해당 품목이 적용받는 세금 코드와 세율을 가져옵니다. 라인에서 비워 둔 세금 코드는 이 작업으로 덮어씌워집니다. 대여 및 계약 라인은 기존 세금 코드를 유지합니다."
@@ -15338,8 +15350,8 @@ msgstr "이 브라우저에서 Carbon이 표시되는 방식"
 msgid "How coverage is worked out"
 msgstr "배치가 어떻게 계산되는지"
 
-msgid "How each line earns its revenue: spread by the day or evenly per month, from go-live or its start date."
-msgstr "각 라인이 매출을 얻는 방법: 일별 분산 또는 월별 균등 배분, 출시일 또는 시작일부터."
+msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
+msgstr ""
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "각 단위의 렌트가 기간으로 나뉘는 방식과 기간 내 언제 송장이 발행되는지입니다."
@@ -16418,6 +16430,9 @@ msgstr "송장"
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "회계를 활성화한 후 송장과 청구서가 동기화됩니다"
 
+msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
+msgstr ""
+
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "송장은 매일 자동으로 생성됩니다. 현재 청구해야 할 항목을 청구하려면 이것을 사용하세요 — 예를 들어 요금을 추가한 후. 송장은 이 계약의 송장 관리 설정을 따릅니다."
 
@@ -16441,6 +16456,15 @@ msgstr "송장은 자동으로 초안 작성되고, 전기되고, 이메일로 �
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "송장은 자동으로 초안 작성되고, 전기되고, Stripe을 통해 발송됩니다."
+
+msgid "Invoices are posted and emailed to the contact as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted and sent through Stripe as soon as they are created."
+msgstr ""
+
+msgid "Invoices are posted as soon as they are created. Nothing is emailed."
+msgstr ""
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "송장은 청구 고객에 이미 연결된 Stripe 고객에게 발송됩니다."
@@ -20322,6 +20346,9 @@ msgstr "직원이 없습니다"
 msgid "No end"
 msgstr "종료 없음"
 
+msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
+msgstr ""
+
 msgid "No estimate lines"
 msgstr "견적 라인 없음"
 
@@ -21013,6 +21040,9 @@ msgstr "정산일 이전 날짜의 전기되지 않은 문서가 없습니다."
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "이 위치의 이 공정에서 시작되지 않은 배치 처리되지 않은 작업이 없습니다."
 
+msgid "No upcoming invoice."
+msgstr ""
+
 msgid "No value"
 msgstr "값 없음"
 
@@ -21688,14 +21718,14 @@ msgstr "3개월마다 1회 지불입니다."
 msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 msgstr "주 세금율 또는 시 세금율과 같이 세금 코드 내의 하나의 세금율이며 자신의 세금 당국, 회수 가능 백분율 및 유효 날짜를 가집니다."
 
+msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
+msgstr ""
+
 msgid "One row per characteristic"
 msgstr "특성당 한 행"
 
-msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
-msgstr "송장당 한 행, 라인당 한 열. 날짜 또는 금액을 변경하거나 송장을 추가 또는 삭제하세요."
-
-msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
-msgstr "월당 한 행, 라인당 한 열. 각 라인은 그 송장이 청구하는 것을 정확히 인식합니다."
+msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
+msgstr ""
 
 msgid "One row per part"
 msgstr "부품당 한 행"
@@ -22064,9 +22094,6 @@ msgstr "워크플로우 열기"
 
 msgid "Open-ended"
 msgstr "무기한"
-
-msgid "Open-ended: the value of the invoices planned so far."
-msgstr "개방형: 지금까지 계획된 송장의 가치."
 
 msgid "Opened"
 msgstr "열림"
@@ -23705,6 +23732,9 @@ msgstr "미리보기"
 msgid "Preview failed: {error}"
 msgstr "미리보기 실패: {error}"
 
+msgid "Preview PDF"
+msgstr ""
+
 msgid "Preview Quantity"
 msgstr "미리보기 수량"
 
@@ -23889,6 +23919,9 @@ msgstr "인쇄"
 
 msgid "Prints as"
 msgstr "인쇄 내용"
+
+msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
+msgstr ""
 
 msgid "Priorities"
 msgstr "우선순위"
@@ -25852,6 +25885,9 @@ msgstr "갱신 인상률 (%)"
 msgid "Rent"
 msgstr "임차료"
 
+msgid "Rent invoice"
+msgstr ""
+
 msgid "Rental"
 msgstr "임차"
 
@@ -26645,6 +26681,9 @@ msgstr "렌탈 기간에 걸쳐 직선법으로 인식되는 운영 렌탈 수�
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "실현되기 전에 송장 발행된 매출로, 부채로 유지되며 서비스 기간이 경과함에 따라 수익 인식 실행이 이를 매출로 인식합니다."
+
+msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
+msgstr ""
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "계약에 라인이 있으면 매출을 미리 볼 수 있습니다."
@@ -30667,6 +30706,10 @@ msgstr "영업팀에 문의"
 
 msgid "Target"
 msgstr "대상"
+
+#. placeholder {0}: numberFormatter.format(effectiveTarget)
+msgid "Target ({0})"
+msgstr ""
 
 msgid "Target an item group."
 msgstr "품목 그룹을 대상으로 지정합니다."
@@ -35555,12 +35598,6 @@ msgstr "첫 해에 이 자산에 대한 각 기간의 지불액"
 
 msgid "What employees read or watch before the questions"
 msgstr "질문 전에 직원이 읽거나 보는 것"
-
-msgid "What happens to an invoice once it is created"
-msgstr "송장이 생성된 후 어떤 일이 일어나는지"
-
-msgid "What happens to an invoice once it is drafted"
-msgstr "송장이 초안되면 어떻게 되는가"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "임차료 계약 및 계약에서 매일 자동으로 생성되는 송장에 일어나는 일. 임차료 요금, 적립, 무효 처리된 송장 재청구 또는 규칙 위반이 있는 송장은 항상 검토를 기다립니다."
