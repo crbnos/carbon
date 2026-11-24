@@ -8,6 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
   getAccount,
   getAccountLedgerPage
@@ -30,12 +31,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
-  const companiesParam = searchParams.get("companies");
+  // Parsed as the report does, so a malformed date falls back to its defaults.
+  const parsed = financialReportParamsValidator.safeParse(
+    Object.fromEntries(searchParams.entries())
+  );
+  const report = parsed.success ? parsed.data : null;
+  const companiesParam = report?.companies ?? null;
   // The balance sheet is an as-of statement: the window is inception → endDate,
   // and endDate defaults to the company's today, as the report's does.
   const startDate = null;
   const endDate =
-    searchParams.get("endDate") ||
+    report?.endDate ??
     datetime.today(await getCompanyTimeZone(client, companyId)).toString();
   const isConsolidated = companiesParam === "all";
   const selectedCompanyId = isConsolidated

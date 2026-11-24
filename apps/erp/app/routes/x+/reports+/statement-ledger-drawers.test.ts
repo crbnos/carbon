@@ -90,7 +90,8 @@ describe("income statement ledger drawer", () => {
   it.each([
     ["no dates", "", "2026-06-01", "2026-11-23"],
     ["an end date only", "?endDate=2026-03-31", "2025-10-01", "2026-03-31"],
-    ["a start date only", "?startDate=2026-01-01", "2026-01-01", "2026-11-23"]
+    ["a start date only", "?startDate=2026-01-01", "2026-01-01", "2026-11-23"],
+    ["a malformed end date", "?endDate=last-month", "2026-06-01", "2026-11-23"]
   ])(
     "reads the report's window when the URL has %s",
     async (_case, search, from, to) => {
@@ -104,11 +105,17 @@ describe("income statement ledger drawer", () => {
 });
 
 describe("balance sheet ledger drawer", () => {
-  it("reads through the company's today when the URL has no end date", async () => {
-    expect(await openDrawer(balanceSheetLedger, "")).toEqual({
-      shown: { startDate: null, endDate: "2026-11-23" },
-      lines: { from: expect.any(String), to: "2026-11-23" },
-      summary: { from: expect.any(String), to: "2026-11-23" }
-    });
-  });
+  it.each([
+    ["no end date", ""],
+    ["a malformed end date", "?endDate=last-month"]
+  ])(
+    "reads through the company's today when the URL has %s",
+    async (_case, search) => {
+      expect(await openDrawer(balanceSheetLedger, search)).toEqual({
+        shown: { startDate: null, endDate: "2026-11-23" },
+        lines: { from: expect.any(String), to: "2026-11-23" },
+        summary: { from: expect.any(String), to: "2026-11-23" }
+      });
+    }
+  );
 });
