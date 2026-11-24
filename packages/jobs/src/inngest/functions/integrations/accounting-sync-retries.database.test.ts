@@ -10,7 +10,9 @@
 // The fake Xero keeps the documents it created, so a second create is visible,
 // and honours an `Idempotency-Key` for six minutes, as Xero does. Its clock
 // moves only when a test moves it: a Retry or a stale reclaim comes ten or
-// more minutes after the first attempt, past that window. Ledger rows go
+// more minutes after the first attempt, past that window. The fake QuickBooks
+// keeps its customers and answers a repeated `requestid` with the first
+// create's response, as Intuit does. Ledger rows go
 // through the local PostgREST, as in production, so each test commits its rows
 // under a company of its own and the suite deletes them afterwards.
 
@@ -27,6 +29,7 @@ import {
   getProviderIntegration,
   getSyncOperationsByIds,
   ProviderID,
+  type QboProvider,
   type SyncOperation,
   transitionOperation,
   type XeroProvider
@@ -199,6 +202,82 @@ class FakeXero {
   }
 }
 
+/**
+ * QuickBooks Online at the HTTP boundary: the customers it stores, the
+ * `requestid` replay (Intuit answers a repeated requestid with the original
+ * create's response) and a fate for the next create's response.
+ */
+class FakeQuickBooks {
+  customers: Json[] = [];
+  private replies = new Map<string, Json>();
+  private fates: Fate[] = [];
+  private sequence = 0;
+
+  /** The fate of the next create; later creates are delivered. */
+  next(...fates: Fate[]) {
+    this.fates.push(...fates);
+  }
+
+  async handle(url: URL, init: RequestInit): Promise<Response> {
+    const method = (init.method ?? "GET").toUpperCase();
+    const path = url.pathname.replace(/^\/v3\/company\/[^/]+/, "");
+    if (method === "GET" && path === "/query") {
+      const statement = url.searchParams.get("query") ?? "";
+      const match = statement.match(
+        /^SELECT \* FROM Customer(?: WHERE DisplayName = '((?:[^'\\]|\\.)*)')? STARTPOSITION/
+      );
+      if (!match) throw new Error(`fake QuickBooks: query ${statement}`);
+      const name = match[1]?.replace(/\\'/g, "'");
+      return json({
+        QueryResponse: {
+          Customer: this.customers.filter(
+            (customer) => name === undefined || customer.DisplayName === name
+          )
+        }
+      });
+    }
+    const read = path.match(/^\/customer\/([^/]+)$/);
+    if (method === "GET" && read) {
+      const customer = this.customers.find((c) => c.Id === read[1]);
+      return customer
+        ? json({ Customer: customer })
+        : json({ Fault: { Error: [{ Message: "Object Not Found" }] } }, 400);
+    }
+    if (method === "POST" && path === "/customer") {
+      const body = JSON.parse(String(init.body)) as Json;
+      if (body.Id) {
+        const existing = this.customers.find((c) => c.Id === body.Id);
+        if (!existing)
+          throw new Error("fake QuickBooks: update of no customer");
+        Object.assign(existing, body, {
+          SyncToken: String(Number(existing.SyncToken) + 1)
+        });
+        return json({ Customer: existing });
+      }
+      const requestId = url.searchParams.get("requestid");
+      const replay = requestId ? this.replies.get(requestId) : undefined;
+      if (replay) return json(replay);
+      const created: Json = {
+        ...body,
+        Id: String(++this.sequence),
+        SyncToken: "0",
+        MetaData: { LastUpdatedTime: "2026-11-02T00:00:00Z" }
+      };
+      this.customers.push(created);
+      const reply = { Customer: { ...created } };
+      if (requestId) this.replies.set(requestId, reply);
+      if ((this.fates.shift() ?? "deliver") === "lose") {
+        return json(
+          { Fault: { Error: [{ Message: "Gateway Timeout" }] } },
+          504
+        );
+      }
+      return json(reply);
+    }
+    throw new Error(`fake QuickBooks: ${method} ${path}`);
+  }
+}
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -220,6 +299,7 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
   let client: SupabaseClient<Database>;
   const companies: string[] = [];
   let fake: FakeXero;
+  let quickBooks: FakeQuickBooks;
   let consolidateIntegration: typeof import("./accounting-consolidation")["consolidateIntegration"];
 
   beforeAll(async () => {
@@ -239,9 +319,11 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     ({ consolidateIntegration } = await import("./accounting-consolidation"));
     vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(typeof input === "string" ? input : input.toString());
-      return url.hostname === "api.xero.com"
-        ? fake.handle(url, init ?? {})
-        : realFetch(input, init);
+      if (url.hostname === "api.xero.com") return fake.handle(url, init ?? {});
+      if (url.hostname === "quickbooks.api.intuit.com") {
+        return quickBooks.handle(url, init ?? {});
+      }
+      return realFetch(input, init);
     });
   });
 
@@ -360,7 +442,56 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
       ProviderID.XERO,
       metadata as never
     ) as XeroProvider;
-    return { companyId, prefix, provider, metadata };
+    return { companyId, prefix, provider, metadata, integration: "xero" };
+  }
+
+  /** A QuickBooks-connected company, with nothing mapped. */
+  async function quickBooksCompany() {
+    quickBooks = new FakeQuickBooks();
+    const prefix = `syncretry-${crypto.randomUUID().replaceAll("-", "").slice(0, 10)}`;
+    const companyId = `${prefix}-company`;
+    const groupId = `${prefix}-group`;
+    companies.push(companyId);
+    const metadata = {
+      credentials: {
+        type: "oauth2",
+        accessToken: "fake-access",
+        refreshToken: "fake-refresh",
+        providerMetadata: { realmId: "fake-realm" }
+      }
+    };
+    await db.transaction().execute(async (trx) => {
+      await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+      await trx
+        .insertInto("companyGroup")
+        .values({ id: groupId, name: prefix, createdBy: "system" })
+        .execute();
+      await trx
+        .insertInto("company")
+        .values({
+          id: companyId,
+          name: prefix,
+          companyGroupId: groupId,
+          baseCurrencyCode: "USD"
+        })
+        .execute();
+      await trx
+        .insertInto("companyIntegration")
+        .values({
+          id: "quickbooks",
+          companyId,
+          active: true,
+          metadata: JSON.stringify(metadata)
+        })
+        .execute();
+    });
+    const provider = getProviderIntegration(
+      client,
+      companyId,
+      ProviderID.QUICKBOOKS,
+      metadata as never
+    ) as QboProvider;
+    return { companyId, prefix, provider, metadata, integration: "quickbooks" };
   }
 
   async function postedJournal(
@@ -401,11 +532,12 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     companyId: string,
     entityType: string,
     entityId: string,
-    metadata?: Json
+    metadata?: Json,
+    integration = "xero"
   ): Promise<SyncOperation> {
     const result = await enqueueSyncOperation(client, {
       companyId,
-      integration: "xero",
+      integration,
       entityType,
       entityId,
       direction: "push-to-accounting",
@@ -441,14 +573,15 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
 
   function drain(scope: {
     companyId: string;
-    provider: XeroProvider;
+    provider: XeroProvider | QboProvider;
     metadata: unknown;
+    integration: string;
   }) {
     return drainSyncOperations({
       client,
       database: db,
       companyId: scope.companyId,
-      integration: "xero",
+      integration: scope.integration,
       provider: scope.provider,
       integrationMetadata: scope.metadata
     });
@@ -556,6 +689,74 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
 
     await drain(scope);
     expect(fake.contacts.map((c) => c.Name)).toEqual(["After"]);
+  });
+
+  // QuickBooks keys a create by its requestid. A customer created under the
+  // same key as before the rename was answered with the first create's
+  // replayed response, the old name, and linked as the renamed version.
+  it("a QuickBooks customer renamed after a create whose response was lost is pushed with its new name", async () => {
+    const scope = await quickBooksCompany();
+    const customerId = `${scope.prefix}-customer`;
+    await db
+      .insertInto("customer")
+      .values({
+        id: customerId,
+        name: "Before",
+        companyId: scope.companyId,
+        updatedAt: sql<string>`now() - interval '1 hour'`
+      })
+      .execute();
+    const op = await enqueue(
+      scope.companyId,
+      "customer",
+      customerId,
+      undefined,
+      "quickbooks"
+    );
+
+    quickBooks.next("lose");
+    await drain(scope);
+    expect((await operation(scope.companyId, op.id)).status).toBe("Failed");
+    // The create reached QuickBooks; only its response was lost.
+    expect(quickBooks.customers.map((c) => c.DisplayName)).toEqual(["Before"]);
+
+    await db
+      .updateTable("customer")
+      .set({ name: "After", updatedAt: sql<string>`now()` })
+      .where("id", "=", customerId)
+      .execute();
+    await transitionOperation(client, {
+      id: op.id,
+      companyId: scope.companyId,
+      to: "Pending",
+      userId: "system"
+    });
+    await drain(scope);
+    // Whatever the retry linked, a reconcile pushes an edit it did not.
+    await reconcileEntities({
+      client,
+      database: db,
+      companyId: scope.companyId,
+      providerId: "quickbooks",
+      integrationMetadata: scope.metadata,
+      topology: buildIntegrationTopology([], []),
+      createdBy: "system",
+      scope: crypto.randomUUID(),
+      refs: [{ entityType: "customer", entityId: customerId }]
+    });
+    await drain(scope);
+
+    const mapping = await db
+      .selectFrom("externalIntegrationMapping")
+      .select("externalId")
+      .where("companyId", "=", scope.companyId)
+      .where("integration", "=", "quickbooks")
+      .where("entityType", "=", "customer")
+      .where("entityId", "=", customerId)
+      .executeTakeFirstOrThrow();
+    expect(
+      quickBooks.customers.find((c) => c.Id === mapping.externalId)?.DisplayName
+    ).toBe("After");
   });
 
   it("a consolidation that died after creating the day's summary journal does not create a second one", async () => {
