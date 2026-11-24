@@ -43,7 +43,7 @@ export default function PersonProfileRoute() {
     <ProfileForm
       user={user}
       action={path.to.person(user.id)}
-      photo={{ action: path.to.api.accountProfile, companyId: company.id }}
+      photo={{ action: path.to.person(user.id), companyId: company.id }}
     />
   );
 }

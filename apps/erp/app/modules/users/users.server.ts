@@ -23,13 +23,13 @@ import {
   datetime,
   Edition,
   isAllowedAvatarValue,
-  isOwnAvatarUpload,
   isOwnSignaturePath,
   requireAffected,
   requiresItarEntityCertification
 } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
+import { isActiveCompanyEmployee } from "~/modules/shared/shared.service";
 import {
   createOperatorValidator,
   employeeTypePermissionsValidator,
@@ -1405,6 +1405,34 @@ export const getSuppliers = defineServiceFn({
   }
 });
 
+/**
+ * Change a person's avatar to a generated avatar or a photo uploaded for them.
+ *
+ * @remarks
+ * For the person page. Refuses a person who is not an active employee of the
+ * company, and any value other than a generated avatar or that person's own
+ * upload. Runs as the caller: the `avatars` and `user` policies also check
+ * `users_update` in a company the person works for.
+ */
+export const updatePersonAvatar = defineServiceFn({
+  input: z.object({ userId: z.string(), path: z.string() }),
+  permission: { update: ["people", "users"] },
+  async run(ctx, { userId, path }) {
+    if (!isAllowedAvatarValue(userId, path)) {
+      return ctx.error("validation", "Invalid avatar path");
+    }
+    const client = ctx.asCaller.supabase;
+    if (!(await isActiveCompanyEmployee(client, ctx.company.id, userId))) {
+      return ctx.error("notFound", "The person is not an employee here");
+    }
+    const saved = await service.replaceAvatar(client, userId, path);
+    if (saved.error) {
+      return ctx.error("internal", "Failed to update avatar", saved.error);
+    }
+    return { avatarUrl: path };
+  }
+});
+
 // The caller's own account: every operation acts on the signed-in user (an
 // API key's creator).
 
@@ -1428,10 +1456,8 @@ export const updateOwnProfile = defineServiceFn({
  * Change the caller's avatar to a generated avatar or their own upload.
  *
  * @remarks
- * Refuses any other value: it could point at another user's file. Saves the
- * new value first, then deletes the uploaded photo it replaced, so a failed
- * save never leaves the avatar pointing at a deleted file. A failed delete
- * only leaves an orphan file, so it is logged, not returned.
+ * Refuses any other value: it could point at another user's file. Then
+ * `replaceAvatar` saves it and deletes the uploaded photo it replaced.
  */
 export const updateOwnAvatar = defineServiceFn({
   input: z.object({ path: z.string() }),
@@ -1441,33 +1467,13 @@ export const updateOwnAvatar = defineServiceFn({
     if (!isAllowedAvatarValue(userId, path)) {
       return ctx.error("validation", "Invalid avatar path");
     }
-
-    const client = ctx.asCaller.supabase;
-    // Only the replaced avatar is needed: the narrow reader, not `select("*")`.
-    const previous = await service.getCurrentUser(client, userId);
-    if (previous.error) {
-      logger.error("Failed to read the avatar being replaced", {
-        userId,
-        error: previous.error
-      });
-    }
-    const saved = await service.updateAvatar(client, userId, path);
+    const saved = await service.replaceAvatar(
+      ctx.asCaller.supabase,
+      userId,
+      path
+    );
     if (saved.error) {
       return ctx.error("internal", "Failed to update avatar", saved.error);
-    }
-
-    const previousPath = previous.data?.avatarUrl;
-    if (isOwnAvatarUpload(userId, previousPath) && previousPath !== path) {
-      const removal = await client.storage
-        .from("avatars")
-        .remove([previousPath]);
-      if (removal.error) {
-        logger.error("Failed to remove the replaced avatar photo", {
-          userId,
-          path: previousPath,
-          error: removal.error
-        });
-      }
     }
     return { avatarUrl: path };
   }

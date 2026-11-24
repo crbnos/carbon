@@ -29,7 +29,7 @@ const maxSizeMB = 10;
 
 export type ProfilePhotoFormProps = {
   user: Account;
-  /** The account profile action that saves `avatarUrl`. */
+  /** The action that saves `avatarUrl` for `user`. */
   action: string;
   /** The company whose private bucket stages the upload while it is resized. */
   companyId: string;
