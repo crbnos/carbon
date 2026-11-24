@@ -3300,21 +3300,6 @@ importers:
         specifier: 'catalog:'
         version: 4.1.12(@opentelemetry/api@1.9.0)(@types/node@24.12.2)(jsdom@26.1.0)(vite@8.3.3)
 
-  packages/models:
-    devDependencies:
-      '@carbon/config':
-        specifier: workspace:*
-        version: link:../config
-      rimraf:
-        specifier: 'catalog:'
-        version: 5.0.10
-      typescript:
-        specifier: 'catalog:'
-        version: 7.1.0-beta
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.12(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
-
   packages/notifications:
     devDependencies:
       '@carbon/config':

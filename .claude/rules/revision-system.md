@@ -145,7 +145,7 @@ Make methods are independently **versioned** (`20250603011801_make-method-versio
   still Active under that lock, so two activations at once leave one Active.
   Every writer that reads a version's status to decide (the method import,
   the Onshape sync, a new version that sets its source Active) takes the same
-  lock in the same order. Modelled in `packages/models/src/make-method-versions.ts`.
+  lock in the same order (`make-method-version-concurrency.test.ts`).
   No unique index enforces one Active version per item.
 - `jobMakeMethod.version` / `quoteMakeMethod.version` denormalize the method version
   at job/quote creation. Don't conflate method `version` (per-item recipe) with item
