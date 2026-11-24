@@ -89,6 +89,7 @@ export type WorkUnit =
   | { kind: "refuse"; pickUnit: boolean; message: string };
 
 export type OperationUnitFacts = {
+  jobId: string;
   jobMakeMethodId: string | null;
   serial: boolean;
   batch: boolean;
@@ -114,7 +115,7 @@ export async function readOperationUnitFacts(
   const read = await client
     .from("jobOperation")
     .select(
-      "id, jobMakeMethodId, operationQuantity, jobMakeMethod(requiresSerialTracking, requiresBatchTracking), priors:jobOperationDependency!jobOperationDependency_operationId_fk(dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk(jobMakeMethodId))"
+      "id, jobId, jobMakeMethodId, operationQuantity, jobMakeMethod(requiresSerialTracking, requiresBatchTracking), priors:jobOperationDependency!jobOperationDependency_operationId_fk(dependsOn:jobOperation!jobOperationDependency_dependsOnId_fk(jobMakeMethodId))"
     )
     .in("id", ids)
     .eq("companyId", args.companyId);
@@ -129,6 +130,7 @@ export async function readOperationUnitFacts(
     (read.data ?? []).map((row) => [
       row.id,
       {
+        jobId: row.jobId,
         jobMakeMethodId: row.jobMakeMethodId,
         serial: !!row.jobMakeMethod?.requiresSerialTracking,
         batch: !!row.jobMakeMethod?.requiresBatchTracking,
@@ -353,6 +355,7 @@ export async function resolveWorkUnit({
   }
 
   const units = await getOperationUnitAxis(client, {
+    jobId: facts.jobId,
     operationId,
     jobMakeMethodId: facts.jobMakeMethodId,
     includeSerialOutputs: facts.serial && mode !== "member",

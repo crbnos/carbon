@@ -5822,6 +5822,13 @@ export type Database = {
             foreignKeyName: "capacityReservation_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "capacityReservation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -10652,6 +10659,13 @@ export type Database = {
             foreignKeyName: "costLedger_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "costLedger_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           }
@@ -11407,6 +11421,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "shipment"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerAsset_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "customerAsset_trackedEntityId_fkey"
@@ -16488,6 +16509,13 @@ export type Database = {
             foreignKeyName: "demandForecastSource_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "demandForecastSource_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -20784,6 +20812,13 @@ export type Database = {
             foreignKeyName: "fixedAsset_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "fixedAsset_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -20994,6 +21029,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixedAssetCipCost_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "fixedAssetCipCost_jobId_fkey"
@@ -21769,6 +21811,13 @@ export type Database = {
             foreignKeyName: "fixedAssetTransfer_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "fixedAssetTransfer_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -21834,6 +21883,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "fixedAssetTransfer_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "fixedAssetTransfer_trackedEntityId_fkey"
@@ -22603,6 +22659,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fulfillment_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "fulfillment_jobId_fkey"
@@ -26542,6 +26605,13 @@ export type Database = {
             foreignKeyName: "inboundInspectionSample_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "inboundInspectionSample_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -26870,6 +26940,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "inspection"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "inspectionTrackedEntity_trackedEntityId_fkey"
@@ -29349,6 +29426,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "itemLedger_trackedEntityId_fkey"
@@ -31901,6 +31985,13 @@ export type Database = {
             foreignKeyName: "jobCorrection_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobCorrection_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -32159,6 +32250,13 @@ export type Database = {
             foreignKeyName: "jobFavorites_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobFavorites_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -32378,6 +32476,13 @@ export type Database = {
             foreignKeyName: "jobMakeMethod_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -32408,6 +32513,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "openJobMaterialLines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "jobMakeMethod_trackedEntityId_fkey"
@@ -32662,6 +32774,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "jobMaterial_jobId_fkey"
@@ -32945,6 +33064,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "scrapReason"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialScrap_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "jobMaterialScrap_trackedEntityId_fkey"
@@ -33292,6 +33418,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "jobOperation_jobId_fkey"
@@ -33715,6 +33848,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_jobId_fk"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "jobOperationDependency_jobId_fk"
@@ -34943,6 +35083,13 @@ export type Database = {
             foreignKeyName: "jobOperationTrackedEntity_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "jobOperationTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -35734,6 +35881,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "kanban_jobId_fkey"
@@ -38674,6 +38828,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "maintenanceDispatchItem"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenanceDispatchItemTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "maintenanceDispatchItemTrackedEntity_trackedEntityId_fkey"
@@ -44518,6 +44679,13 @@ export type Database = {
             foreignKeyName: "nciTrackedEntity_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "nciTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -44665,6 +44833,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceJobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "nonConformanceJobOperation_jobId_fkey"
@@ -46524,6 +46699,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "unitQualityHold"
             referencedColumns: ["issueId"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "nonConformanceTrackedEntity_trackedEntityId_fkey"
@@ -50448,6 +50630,13 @@ export type Database = {
             foreignKeyName: "pickingListLine_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "pickingListLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -50608,6 +50797,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pickingListLine"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickingListLineTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "pickingListLineTrackedEntity_trackedEntityId_fkey"
@@ -51095,6 +51291,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningAction_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "planningAction_jobId_fkey"
@@ -55097,6 +55300,13 @@ export type Database = {
             foreignKeyName: "projectElement_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "projectElement_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -56089,6 +56299,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "projectElementMaterial_jobId_fkey"
@@ -57788,6 +58005,13 @@ export type Database = {
             foreignKeyName: "projectStockTransferLine_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -59434,6 +59658,13 @@ export type Database = {
             foreignKeyName: "purchaseOrder_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "purchaseOrder_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -60353,6 +60584,13 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -60829,6 +61067,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "purchaseOrderLineVersion_jobId_fkey"
@@ -62503,6 +62748,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseReturnOrderLineTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "purchaseReturnOrderLineTrackedEntity_trackedEntityId_fkey"
@@ -68898,6 +69150,13 @@ export type Database = {
             foreignKeyName: "rentalAgreementLine_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "rentalAgreementLine_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -70455,6 +70714,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rework_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "rework_jobId_fkey"
@@ -74255,6 +74521,13 @@ export type Database = {
             foreignKeyName: "salesReturnOrderLineTrackedEntity_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "salesReturnOrderLineTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -75757,6 +76030,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesReturnOrderLine"
             referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "serviceJob_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "serviceJob_trackedEntityId_fkey"
@@ -78647,6 +78927,13 @@ export type Database = {
             foreignKeyName: "stockTransferLine_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "stockTransferLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -78705,6 +78992,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stockTransferLine_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "stockTransferLine_trackedEntityId_fkey"
@@ -84633,6 +84927,13 @@ export type Database = {
             foreignKeyName: "timesheetEntry_job_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_job_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -85271,6 +85572,13 @@ export type Database = {
             foreignKeyName: "trackedActivityInput_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -85409,6 +85717,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "trackedActivity"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "trackedActivityOutput_trackedEntityId_fkey"
@@ -92660,6 +92975,13 @@ export type Database = {
             foreignKeyName: "fixedAsset_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "fixedAsset_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -94516,6 +94838,13 @@ export type Database = {
             foreignKeyName: "itemLedger_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
+          },
+          {
+            foreignKeyName: "itemLedger_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -94989,6 +95318,13 @@ export type Database = {
             foreignKeyName: "jobMaterial_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -95144,6 +95480,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "jobOperation_jobId_fkey"
@@ -95487,6 +95830,13 @@ export type Database = {
             foreignKeyName: "jobOperation_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -95810,6 +96160,13 @@ export type Database = {
             foreignKeyName: "jobOperation_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "jobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -95938,6 +96295,43 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
             referencedColumns: ["id"]
+          }
+        ]
+      }
+      jobReceivedSerial: {
+        Row: {
+          companyId: string | null
+          jobId: string | null
+          trackedEntityId: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "job_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
           }
         ]
       }
@@ -96992,6 +97386,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "kanban_jobId_fkey"
@@ -98071,6 +98472,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "jobMaterial_jobId_fkey"
@@ -100302,6 +100710,13 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -100879,6 +101294,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrder_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
           },
           {
             foreignKeyName: "purchaseOrder_jobId_fkey"
@@ -107007,6 +107429,13 @@ export type Database = {
             foreignKeyName: "stockTransferLine_jobId_fkey"
             columns: ["jobId"]
             isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["jobId"]
+          },
+          {
+            foreignKeyName: "stockTransferLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -107051,6 +107480,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stockTransferLine_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "jobReceivedSerial"
+            referencedColumns: ["trackedEntityId"]
           },
           {
             foreignKeyName: "stockTransferLine_trackedEntityId_fkey"
@@ -112831,6 +113267,15 @@ export type Database = {
           projectId: string
           quantity: number
         }[]
+      }
+      split_serial_units_for_completion: {
+        Args: {
+          p_company_id: string
+          p_count: number
+          p_job_id: string
+          p_make_method_id: string
+        }
+        Returns: number
       }
       storage_unit_block_location_change_with_children: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }

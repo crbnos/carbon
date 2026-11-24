@@ -83,6 +83,7 @@ const GATE_READS = [
   "trackedEntity",
   "jobOperationTrackedEntity",
   "trackedActivityOutput",
+  "jobReceivedSerial",
   "companySettings"
 ];
 

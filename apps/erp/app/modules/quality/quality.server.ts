@@ -199,7 +199,7 @@ export const createIssue = defineServiceFn({
           trackedEntityIds
         });
       } catch (err) {
-        const removed = await service.deleteIssue(serviceRole, issueId);
+        const removed = await service.deleteIssue(ctx, issueId);
         if (removed.error) {
           logger.error("Failed to remove an issue whose units did not link", {
             companyId,
@@ -228,7 +228,7 @@ export const createIssue = defineServiceFn({
 
     const tasks = await service.createIssueTasks(ctx, issueId);
     if (tasks.error) {
-      await service.deleteIssue(serviceRole, issueId);
+      await service.deleteIssue(ctx, issueId);
       return ctx.error("internal", "Failed to create tasks", tasks.error);
     }
 
@@ -864,11 +864,20 @@ export const createIssueAssociation = defineServiceFn({
         }
         break;
       }
+      case "jobOperations": {
+        const refusal = await service.attachJobOperationToIssue(ctx, {
+          nonConformanceId,
+          jobId: id,
+          jobOperationId: lineId!
+        });
+        if (refusal) return refusal;
+        break;
+      }
       default: {
         const { table, readable, noun } = service.associationHeaders[type];
         let headerQuery = client
-          .from(table as "job")
-          .select(`id, ${readable}${table === "job" ? ", itemId" : ""}`)
+          .from(table as "purchaseOrder")
+          .select(`id, ${readable}`)
           .eq("id", id);
         // The return orders were the only headers the route scoped; RLS
         // scopes the rest.
@@ -886,14 +895,6 @@ export const createIssueAssociation = defineServiceFn({
           readableId: row[readable] ?? null
         });
         if (insert.error) return failed(noun, insert.error);
-
-        if (type === "jobOperations") {
-          await service.linkJobOperationContext(ctx, {
-            nonConformanceId,
-            jobItemId: row.itemId ?? null,
-            jobOperationId: lineId!
-          });
-        }
       }
     }
 
@@ -2570,13 +2571,7 @@ export const deleteIssue = defineServiceFn({
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteIssue(
-        ctx.asCaller.supabase,
-        input.nonConformanceId as never
-      )
-    );
+    return unwrap(ctx, await service.deleteIssue(ctx, input.nonConformanceId));
   }
 });
 

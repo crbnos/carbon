@@ -2553,6 +2553,7 @@ export function isSerialEntityIncompleteForOperation(
 type TrackedEntityRow = Database["public"]["Tables"]["trackedEntity"]["Row"];
 
 type OperationUnitRead = {
+  jobId: string;
   operationId: string;
   jobMakeMethodId: string;
   companyId: string;
@@ -2598,7 +2599,7 @@ async function readOperationUnits<T extends { id: string }>(
   args: OperationUnitRead,
   columns: string
 ) {
-  const [entities, scope, outputs] = await Promise.all([
+  const [entities, scope, outputs, receipts] = await Promise.all([
     fetchAll<T>(() =>
       client
         .from("trackedEntity")
@@ -2632,6 +2633,16 @@ async function readOperationUnits<T extends { id: string }>(
             .order("trackedActivityId")
             .order("trackedEntityId")
         )
+      : { data: [], error: null },
+    args.includeSerialOutputs
+      ? fetchAll<{ trackedEntityId: string }>(() =>
+          client
+            .from("jobReceivedSerial")
+            .select("trackedEntityId")
+            .eq("companyId", args.companyId)
+            .eq("jobId", args.jobId)
+            .order("trackedEntityId")
+        )
       : { data: [], error: null }
   ]);
 
@@ -2639,8 +2650,12 @@ async function readOperationUnits<T extends { id: string }>(
   if (scope.error) return { data: null, error: scope.error };
 
   if (outputs.error) return { data: null, error: outputs.error };
+  if (receipts.error) return { data: null, error: receipts.error };
   const scopedIds = new Set(scope.data?.map((row) => row.trackedEntityId));
   const completedIds = new Set(outputs.data?.map((row) => row.trackedEntityId));
+  for (const receipt of receipts.data ?? []) {
+    completedIds.add(receipt.trackedEntityId);
+  }
   return {
     data: (entities.data ?? []).map((entity) => ({
       ...entity,

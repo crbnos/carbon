@@ -27734,6 +27734,7 @@ export async function triggerRework(
 
   const result = await db.transaction().execute(async (trx) => {
     await assertUnitsOfMakeMethod(trx, {
+      jobId: body.jobId,
       trackedEntityIds: body.trackedEntityIds ?? [],
       quantity: body.quantity,
       jobMakeMethodId: operations.find(
@@ -27770,6 +27771,7 @@ export async function triggerRework(
 async function assertUnitsOfMakeMethod(
   db: Transaction<KyselyDatabase>,
   args: {
+    jobId: string;
     trackedEntityIds: string[];
     quantity: number;
     jobMakeMethodId: string | null | undefined;
@@ -27804,6 +27806,7 @@ async function assertUnitsOfMakeMethod(
     );
   }
   if (ids.length === 0) return;
+  await inventoryPostings.lockProductionJob(db, args.jobId, args.companyId);
   const units = args.jobMakeMethodId
     ? await db
         .selectFrom("trackedEntity")
@@ -27938,6 +27941,7 @@ export async function triggerCorrection(
 
   const result = await db.transaction().execute(async (trx) => {
     await assertUnitsOfMakeMethod(trx, {
+      jobId: input.jobId,
       trackedEntityIds,
       quantity: input.quantity,
       jobMakeMethodId: triggeringOperation.jobMakeMethodId,

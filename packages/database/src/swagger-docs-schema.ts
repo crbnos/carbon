@@ -39090,6 +39090,57 @@ export default {
         tags: ["jobMakeMethod"]
       }
     },
+    "/jobReceivedSerial": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobReceivedSerial.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobReceivedSerial.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobReceivedSerial.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobReceivedSerial"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["jobReceivedSerial"]
+      }
+    },
     "/salesRfqLine": {
       get: {
         parameters: [
@@ -136722,6 +136773,62 @@ export default {
         tags: ["(rpc) get_supplier_ids_with_supplier_permission"]
       }
     },
+    "/rpc/split_serial_units_for_completion": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              description:
+                "Deprecated. Splits eligible units for completion, keeping held and previously received units intact. Job receipt now splits units automatically.",
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_count: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_make_method_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_job_id",
+                "p_make_method_id",
+                "p_company_id",
+                "p_count"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        summary:
+          "Deprecated. Splits eligible units for completion, keeping held and previously received units intact. Job receipt now splits units automatically.",
+        tags: ["(rpc) split_serial_units_for_completion"]
+      }
+    },
     "/rpc/attach_event_trigger": {
       post: {
         parameters: [
@@ -161432,6 +161539,27 @@ export default {
             "Scrap percentage from itemReplenishment at time of job creation",
           format: "numeric",
           type: "number"
+        }
+      },
+      type: "object"
+    },
+    jobReceivedSerial: {
+      properties: {
+        jobId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        trackedEntityId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -222686,6 +222814,33 @@ export default {
       name: "itemScrapPercentage",
       description:
         "Scrap percentage from itemReplenishment at time of job creation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.jobReceivedSerial": {
+      name: "jobReceivedSerial",
+      description: "jobReceivedSerial",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobReceivedSerial"
+      }
+    },
+    "rowFilter.jobReceivedSerial.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobReceivedSerial.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobReceivedSerial.trackedEntityId": {
+      name: "trackedEntityId",
       required: false,
       in: "query",
       type: "string"

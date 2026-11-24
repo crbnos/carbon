@@ -371,6 +371,7 @@ export async function getInspectionOutcomeState(
       ? await getTrackedEntitiesForOperation(serviceRole, {
           operationId: jobOperationId,
           jobMakeMethodId: operation.jobMakeMethodId,
+          jobId: operation.jobId,
           includeSerialOutputs: true,
           companyId: args.companyId
         })

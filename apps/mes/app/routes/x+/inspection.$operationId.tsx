@@ -226,6 +226,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInspectionMeasurements(serviceRole, lot.data.id, companyId),
     getIssueTypesList(serviceRole, companyId),
     getTrackedEntitiesForOperation(serviceRole, {
+      jobId: scopedOperation.data.jobId,
       includeSerialOutputs:
         scopedOperation.data.jobMakeMethod?.requiresSerialTracking === true,
       operationId,

@@ -10,7 +10,7 @@ DECLARE
   v_sales_order_id TEXT;
   v_quantity_complete NUMERIC;
   v_worked_unit_ids TEXT[];
-  v_missing_worked_units BOOLEAN;
+  v_inconsistent_units BOOLEAN;
   v_quantity_lost NUMERIC;
   v_quantity_received NUMERIC;
   v_job_status TEXT;
@@ -75,8 +75,8 @@ BEGIN
     -- This runs BEFORE the update is written, so the table still holds the
     -- finishing operation's old row: its quantity comes from p_new. An outside
     -- processing receipt sets Done and quantityComplete in one update.
-    -- Replace the count-only MIN/SUM query with the same quantities plus the
-    -- worked serial IDs. Quantity-only finishes still use the original receipt selection.
+    -- Replace the all-quantity fallback with named units plus the anonymous
+    -- remainder. A single ambiguous historical output cannot erase its peers.
     WITH terminal AS MATERIALIZED (
       SELECT jo.id, jo."jobMakeMethodId", jo."reworkId", jmm."requiresSerialTracking",
              CASE WHEN jo.id = p_new->>'id' THEN COALESCE((p_new->>'quantityComplete')::NUMERIC, 0)
@@ -97,7 +97,7 @@ BEGIN
       -- genealogy. Each serial must represent exactly one unit of this operation.
       SELECT op.id AS operation_id, op."reworkId", output."trackedEntityId" AS unit_id,
              count(*) = 1 AND sum(output.quantity) = 1 AND
-             bool_and((te.attributes->>'Job Make Method') IS NOT DISTINCT FROM op."jobMakeMethodId") AS valid
+             bool_and(te.quantity = 1 AND (te.attributes->>'Job Make Method') IS NOT DISTINCT FROM op."jobMakeMethodId") AS valid
       FROM terminal op
       JOIN "trackedActivity" a ON a."sourceDocument" = 'Job Operation' AND a."sourceDocumentId" = op.id
         AND a.type IN ('Complete', 'Produce') AND a."companyId" = p_new->>'companyId'
@@ -110,41 +110,61 @@ BEGIN
       FROM terminal op
       JOIN "trackedEntity" te ON te."companyId" = p_new->>'companyId'
         AND te.attributes->>'Job Make Method' = op."jobMakeMethodId"
-        AND te.attributes ? ('Operation ' || op.id)
+        AND te.quantity = 1 AND te.attributes ? ('Operation ' || op.id)
       WHERE op."requiresSerialTracking"
       UNION
-      SELECT operation_id, "reworkId", unit_id FROM activity_units
+      SELECT operation_id, "reworkId", unit_id FROM activity_units WHERE valid
+    ), counts AS MATERIALIZED (
+      SELECT op.*, (SELECT count(*) FROM worked w WHERE w.operation_id = op.id) AS named
+      FROM terminal op
+    ), normal_units AS MATERIALIZED (
+      -- A fully identified parallel operation rules out every other serial.
+      -- A quantity-only or partly named operation can cover a peer's named
+      -- serial with one of its anonymous completions.
+      SELECT w.unit_id
+      FROM worked w JOIN counts op ON op.id = w.operation_id
+      WHERE op."reworkId" IS NULL
+      GROUP BY w.unit_id
+      HAVING count(*) FILTER (WHERE op.named = op.quantity) = (
+        SELECT count(*) FROM counts
+        WHERE "reworkId" IS NULL AND quantity > 0 AND named = quantity
+      )
     ), credited AS (
-      -- Each normal terminal operation must have completed the same unit.
-      SELECT unit_id FROM worked WHERE "reworkId" IS NULL
-      GROUP BY unit_id
-      HAVING count(*) = (SELECT count(*) FROM terminal WHERE "reworkId" IS NULL AND quantity > 0)
-      UNION
+      SELECT unit_id FROM normal_units
+      UNION ALL
       SELECT unit_id FROM worked WHERE "reworkId" IS NOT NULL
+    ), totals AS (
+      SELECT COALESCE(MIN(quantity) FILTER (WHERE "reworkId" IS NULL AND quantity > 0), 0) AS normal,
+             COALESCE(SUM(quantity) FILTER (WHERE "reworkId" IS NOT NULL), 0) AS reworked
+      FROM counts
     )
-    SELECT COALESCE(MIN(quantity) FILTER (WHERE "reworkId" IS NULL AND quantity > 0), 0)
-         + COALESCE(SUM(quantity) FILTER (WHERE "reworkId" IS NOT NULL), 0),
-      CASE WHEN EXISTS (SELECT 1 FROM worked) THEN ARRAY(SELECT unit_id FROM credited ORDER BY unit_id) END,
-      EXISTS (SELECT 1 FROM activity_units WHERE valid IS NOT TRUE) OR
-      EXISTS (SELECT 1 FROM terminal op WHERE op."requiresSerialTracking"
-        AND COALESCE(op.quantity, 0) <> (SELECT count(*) FROM worked w WHERE w.operation_id = op.id))
-    INTO v_quantity_complete, v_worked_unit_ids, v_missing_worked_units
-    FROM terminal;
+    SELECT normal + reworked, (SELECT array_agg(unit_id ORDER BY unit_id) FROM credited),
+      (SELECT count(*) FROM normal_units) > normal
+      OR EXISTS (SELECT 1 FROM credited GROUP BY unit_id HAVING count(*) > 1)
+      -- With no fully named operation, a serial named only on a longer
+      -- parallel branch might be one of its excess completions.
+      OR (NOT EXISTS (
+        SELECT 1 FROM counts WHERE "reworkId" IS NULL AND quantity > 0 AND named = quantity
+      ) AND EXISTS (
+        SELECT 1 FROM normal_units n WHERE NOT EXISTS (
+          SELECT 1 FROM worked w JOIN counts op ON op.id = w.operation_id
+          WHERE w.unit_id = n.unit_id AND op."reworkId" IS NULL AND op.quantity = normal
+        )
+      ))
+      OR EXISTS (
+        SELECT 1 FROM counts op WHERE op.named > op.quantity OR (
+          op."requiresSerialTracking" AND op."reworkId" IS NULL AND op.quantity > 0
+          AND normal > op.quantity - op.named + (
+            SELECT count(*) FROM worked w JOIN normal_units n USING (unit_id)
+            WHERE w.operation_id = op.id
+          )
+        )
+      )
+    INTO v_quantity_complete, v_worked_unit_ids, v_inconsistent_units
+    FROM totals;
 
-    -- When a final operation does not name a serial for every unit it
-    -- completed (some recorded by quantity alone, in the ERP or by an edited
-    -- production row), receive by quantity as before: the receipt still keeps
-    -- held units out. Refusing here would block the Done update itself.
-    -- Serials that disagree across parallel final operations are a data
-    -- error the operator must correct, so that still refuses.
-    IF v_worked_unit_ids IS NOT NULL AND (
-      v_missing_worked_units OR cardinality(v_worked_unit_ids) <> v_quantity_complete
-    ) THEN
-      IF v_missing_worked_units THEN
-        v_worked_unit_ids := NULL;
-      ELSE
-        RAISE EXCEPTION 'The final operations do not identify the serials for every completed unit';
-      END IF;
+    IF v_inconsistent_units THEN
+      RAISE EXCEPTION 'The final operations do not identify the serials for every completed unit';
     END IF;
 
     IF COALESCE(v_quantity_complete, 0) = 0 THEN

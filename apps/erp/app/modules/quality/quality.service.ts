@@ -170,17 +170,54 @@ export async function deleteGaugeType(
 }
 
 export async function deleteIssue(
-  client: SupabaseClient<Database>,
+  ctx: ServiceContext,
   nonConformanceId: string
 ) {
-  return requireAffected(
-    client
-      .from("nonConformance")
-      .delete()
-      .eq("id", nonConformanceId)
-      .neq("status", "Closed")
-      .select("id")
-  );
+  const companyId = ctx.company.id;
+  try {
+    return await requireAffected(
+      withTransaction(ctx.asSystem.pg, async (trx) => {
+        const issue = await trx
+          .selectFrom("nonConformance")
+          .select("id")
+          .where("id", "=", nonConformanceId)
+          .where("companyId", "=", companyId)
+          .where("status", "!=", "Closed")
+          .forUpdate()
+          .executeTakeFirst();
+        if (!issue) return { data: [], error: null };
+
+        // The delete cascades both sets of links. Retain the first link time
+        // for each unit so release can distinguish a later, unrelated hold.
+        const links = await sql<{ trackedEntityId: string; linkedAt: string }>`
+          SELECT "trackedEntityId", MIN("createdAt")::text AS "linkedAt"
+          FROM (
+            SELECT "trackedEntityId", "createdAt" FROM "nonConformanceTrackedEntity"
+            WHERE "nonConformanceId" = ${nonConformanceId} AND "companyId" = ${companyId}
+            UNION ALL
+            SELECT "trackedEntityId", "createdAt" FROM "nonConformanceItemTrackedEntity"
+            WHERE "nonConformanceId" = ${nonConformanceId} AND "companyId" = ${companyId}
+          ) links
+          GROUP BY "trackedEntityId"
+        `.execute(trx);
+        await lockIssueUnits(
+          trx,
+          companyId,
+          links.rows.map((link) => link.trackedEntityId)
+        );
+        const removed = await trx
+          .deleteFrom("nonConformance")
+          .where("id", "=", nonConformanceId)
+          .where("companyId", "=", companyId)
+          .returning("id")
+          .execute();
+        await releaseAcceptedUnits(trx, companyId, links.rows);
+        return { data: removed, error: null };
+      })
+    );
+  } catch (error) {
+    return { data: null, error };
+  }
 }
 
 const issueAssociationTables = {
@@ -240,6 +277,34 @@ export async function deleteIssueAssociation(
         );
       }
     }
+    // Deleting an item association also removes the units on its disposition
+    // row. Keep the link times for the release check after the delete.
+    const links =
+      type === "trackedEntities" || type === "items"
+        ? await trx
+            .selectFrom(
+              type === "trackedEntities"
+                ? "nonConformanceTrackedEntity"
+                : "nonConformanceItemTrackedEntity"
+            )
+            .select([
+              "trackedEntityId",
+              sql<string>`"createdAt"::text`.as("linkedAt")
+            ])
+            .where("companyId", "=", companyId)
+            .where("nonConformanceId", "=", association.nonConformanceId)
+            .where(
+              type === "trackedEntities" ? "id" : "nonConformanceItemId",
+              "=",
+              associationId
+            )
+            .execute()
+        : [];
+    await lockIssueUnits(
+      trx,
+      companyId,
+      links.map((link) => link.trackedEntityId)
+    );
     const removed = await trx
       .deleteFrom(table)
       .where("id", "=", associationId)
@@ -247,9 +312,9 @@ export async function deleteIssueAssociation(
       .where("nonConformanceId", "=", association.nonConformanceId)
       .returning("id")
       .execute();
-    return removed.length
-      ? { data: removed, error: null }
-      : errResult("Issue association not found");
+    if (!removed.length) return errResult("Issue association not found");
+    await releaseAcceptedUnits(trx, companyId, links);
+    return { data: removed, error: null };
   });
 }
 
@@ -2841,11 +2906,27 @@ const trackedEntityBinsKey = (read: {
   readKey([...read.stocked].sort()) +
   readKey([...read.jobOutputs].sort());
 
+async function lockIssueUnits(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  ids: string[]
+) {
+  if (ids.length === 0) return;
+  await trx
+    .selectFrom("trackedEntity")
+    .select("id")
+    .where("id", "in", ids)
+    .where("companyId", "=", companyId)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+}
+
 /**
  * Sets Available the serial units in stock that an earlier close accepted
  * (Use As Is or Rework) but left held because another issue was open on them.
- * An issue that names a unit only at its header has no disposition to replay,
- * so its close releases the unit here, once no issue (`unitQualityHold`) and
+ * Closing a header-only issue or removing the final association releases the
+ * unit here, once no issue (`unitQualityHold`) and
  * no open inspection lot holds it. The acceptance must be the unit's latest
  * disposition and no lot may have decided the unit since. This issue must
  * have linked the unit before the acceptance, or the unit has not moved
@@ -2854,17 +2935,15 @@ const trackedEntityBinsKey = (read: {
  */
 async function releaseAcceptedUnits(
   trx: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    nonConformanceId: string;
-    trackedEntityIds: string[];
-  }
+  companyId: string,
+  links: { trackedEntityId: string; linkedAt: string }[]
 ): Promise<string[]> {
-  const { companyId, nonConformanceId, trackedEntityIds } = args;
-  if (trackedEntityIds.length === 0) return [];
+  if (links.length === 0) return [];
   const candidates = await sql<{ id: string }>`
     SELECT te.id
-    FROM "trackedEntity" te
+    FROM jsonb_to_recordset(${JSON.stringify(links)}::jsonb)
+      AS link("trackedEntityId" text, "linkedAt" timestamptz)
+    INNER JOIN "trackedEntity" te ON te.id = link."trackedEntityId"
     INNER JOIN "item" i ON i.id = te."itemId" AND i."companyId" = te."companyId"
     CROSS JOIN LATERAL (
       SELECT a."createdAt", a.attributes->>'Disposition' AS disposition
@@ -2878,8 +2957,7 @@ async function releaseAcceptedUnits(
       ORDER BY a."createdAt" DESC, a.id DESC
       LIMIT 1
     ) accepted
-    WHERE te.id = ANY(${trackedEntityIds}::text[])
-      AND te."companyId" = ${companyId}
+    WHERE te."companyId" = ${companyId}
       AND te.status IN ('On Hold', 'Rejected')
       AND i."itemTrackingType" = 'Serial'
       AND accepted.disposition IN ('Use As Is', 'Rework')
@@ -2909,13 +2987,7 @@ async function releaseAcceptedUnits(
           )
       )
       AND (
-        EXISTS (
-          SELECT 1 FROM "nonConformanceTrackedEntity" link
-          WHERE link."nonConformanceId" = ${nonConformanceId}
-            AND link."companyId" = te."companyId"
-            AND link."trackedEntityId" = te.id
-            AND link."createdAt" < accepted."createdAt"
-        )
+        link."linkedAt" < accepted."createdAt"
         OR NOT EXISTS (
           SELECT 1 FROM "itemLedger" ledger
           WHERE ledger."trackedEntityId" = te.id
@@ -5413,31 +5485,22 @@ export async function closeIssue(
       const dispositionedIds = new Set(
         linkRows.map((link) => link.trackedEntityId)
       );
-      const headerOnlyIds = [
-        ...new Set(
-          (
-            await trx
-              .selectFrom("nonConformanceTrackedEntity")
-              .select("trackedEntityId")
-              .where("nonConformanceId", "=", nonConformanceId)
-              .where("companyId", "=", companyId)
-              .execute()
-          ).map((link) => link.trackedEntityId)
-        )
-      ].filter((id) => !dispositionedIds.has(id));
-      const lockedEntityIds = [
-        ...new Set([...linkedEntityIds, ...headerOnlyIds])
-      ];
-      if (lockedEntityIds.length > 0) {
-        await trx
-          .selectFrom("trackedEntity")
-          .select("id")
-          .where("id", "in", lockedEntityIds)
-          .where("companyId", "=", companyId)
-          .orderBy("id")
-          .forUpdate()
-          .execute();
-      }
+      const headerLinks = await trx
+        .selectFrom("nonConformanceTrackedEntity")
+        .select([
+          "trackedEntityId",
+          sql<string>`"createdAt"::text`.as("linkedAt")
+        ])
+        .where("nonConformanceId", "=", nonConformanceId)
+        .where("companyId", "=", companyId)
+        .execute();
+      const headerOnlyLinks = headerLinks.filter(
+        (link) => !dispositionedIds.has(link.trackedEntityId)
+      );
+      await lockIssueUnits(trx, companyId, [
+        ...linkedEntityIds,
+        ...headerOnlyLinks.map((link) => link.trackedEntityId)
+      ]);
       if (linkedEntityIds.length > 0) {
         const fresh = await readTrackedEntityBins(
           trx,
@@ -5736,11 +5799,7 @@ export async function closeIssue(
       }
 
       // Reads the issue as Closed, so its own hold no longer counts.
-      await releaseAcceptedUnits(trx, {
-        companyId,
-        nonConformanceId,
-        trackedEntityIds: headerOnlyIds
-      });
+      await releaseAcceptedUnits(trx, companyId, headerOnlyLinks);
 
       return { id: updated.id, closedNow: true };
     });
@@ -6302,21 +6361,6 @@ export async function linkIssueTrackedEntities(
 }
 
 /**
- * The output units of a job operation that its new issue links. Naming some
- * of them narrows the issue to those units, so their siblings stay free. The
- * other entities an issue can name (a component lot, a purchased part) are
- * not the operation's output, so they leave its whole output on the issue.
- */
-export function operationLotEntities<T extends { id: string }>(
-  outputs: T[],
-  namedIds: readonly string[] = []
-): T[] {
-  const named = new Set(namedIds);
-  const namedOutputs = outputs.filter((unit) => named.has(unit.id));
-  return namedOutputs.length > 0 ? namedOutputs : outputs;
-}
-
-/**
  * Links the lot a job operation's make method produced to a new issue: the
  * issue-level tracked-entity links, then the item's disposition row (found
  * or created) under the issue lock every link writer shares. Failures are
@@ -6334,78 +6378,52 @@ export async function linkJobOperationLot(
     trackedEntityIds?: string[];
   }
 ) {
-  const client = ctx.asSystem.supabase;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  const operation = await client
-    .from("jobOperation")
-    .select("jobMakeMethodId")
-    .eq("id", jobOperationId)
-    .eq("companyId", companyId)
-    .single();
-  const jobMakeMethodId = operation.data?.jobMakeMethodId ?? null;
-  if (!jobMakeMethodId) return;
-
-  const makeMethod = await client
-    .from("jobMakeMethod")
-    .select("itemId")
-    .eq("id", jobMakeMethodId)
-    .eq("companyId", companyId)
-    .single();
-  const itemId = makeMethod.data?.itemId ?? null;
-  if (!itemId) return;
-
-  const entities = await client
-    .from("trackedEntity")
-    .select("id, quantity")
-    .eq("attributes->>Job Make Method", jobMakeMethodId)
-    .eq("companyId", companyId);
-  if (entities.error) {
-    logger.error("Issue creation step failed", { error: entities.error });
-    return;
-  }
-  const lotEntities = operationLotEntities(
-    (entities.data ?? []) as { id: string; quantity: number | null }[],
-    trackedEntityIds
-  );
-  if (lotEntities.length === 0) return;
-
-  const entityIds = lotEntities.map((e) => e.id);
-  const existingLinks = await client
-    .from("nonConformanceTrackedEntity")
-    .select("trackedEntityId")
-    .eq("nonConformanceId", nonConformanceId)
-    .in("trackedEntityId", entityIds);
-  const alreadyLinked = new Set(
-    (existingLinks.data ?? []).map((r) => r.trackedEntityId as string)
-  );
-  const linkRows = entityIds
-    .filter((id) => !alreadyLinked.has(id))
-    .map((trackedEntityId) => ({
-      nonConformanceId,
-      trackedEntityId,
-      companyId,
-      createdBy: userId
-    }));
-  if (linkRows.length > 0) {
-    const inserted = await client
-      .from("nonConformanceTrackedEntity")
-      .insert(linkRows);
-    if (inserted.error) {
-      logger.error("Issue creation step failed", { error: inserted.error });
-      return;
-    }
-  }
-
   try {
-    await ctx.asSystem.pg.transaction().execute(async (trx) => {
-      await lockIssueDispositions(trx, { nonConformanceId, companyId });
+    await withTransaction(ctx.asSystem.pg, async (trx) => {
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId,
+        companyId
+      });
+      if (isIssueLocked(status)) return;
+      const method = await trx
+        .selectFrom("jobOperation as op")
+        .innerJoin("jobMakeMethod as method", (join) =>
+          join
+            .onRef("method.id", "=", "op.jobMakeMethodId")
+            .onRef("method.companyId", "=", "op.companyId")
+        )
+        .select(["method.id", "method.itemId"])
+        .where("op.id", "=", jobOperationId)
+        .where("op.companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!method?.itemId) return;
+
+      const outputs = trx
+        .selectFrom("trackedEntity")
+        .select(["id", "quantity"])
+        .where("companyId", "=", companyId)
+        .where(sql<string>`attributes->>'Job Make Method'`, "=", method.id);
+      const named = trackedEntityIds?.length
+        ? await outputs.where("id", "in", trackedEntityIds).execute()
+        : [];
+      // A component or purchased lot can be named too. Only a named output
+      // narrows the operation's disposition to specific units.
+      const lotEntities = named.length > 0 ? named : await outputs.execute();
+      if (lotEntities.length === 0) return;
+      await linkMissingTrackedEntities(trx, {
+        nonConformanceId,
+        companyId,
+        userId,
+        trackedEntityIds: lotEntities.map((unit) => unit.id)
+      });
       await linkEntitiesToIssueItemRow(trx, {
         nonConformanceId,
         companyId,
         userId,
-        itemId,
+        itemId: method.itemId,
         entities: lotEntities.map((e) => ({
           id: e.id,
           quantity: Number(e.quantity ?? 1)
@@ -6419,7 +6437,6 @@ export async function linkJobOperationLot(
 
 /** The header a line association names: its id and readable id. */
 export const associationHeaders = {
-  jobOperations: { table: "job", readable: "jobId", noun: "job operation" },
   purchaseOrderLines: {
     table: "purchaseOrder",
     readable: "purchaseOrderId",
@@ -6468,13 +6485,6 @@ export function insertLineAssociation(
   const client = ctx.asCaller.supabase;
   const { lineId, headerId, readableId, ...audit } = row;
   switch (type) {
-    case "jobOperations":
-      return client.from("nonConformanceJobOperation").insert({
-        ...audit,
-        jobOperationId: lineId,
-        jobId: headerId,
-        jobReadableId: readableId
-      });
     case "purchaseOrderLines":
       return client.from("nonConformancePurchaseOrderLine").insert({
         ...audit,
@@ -6521,61 +6531,103 @@ export function insertLineAssociation(
   }
 }
 
-// Auto-linking after a job operation association: it surfaces context into
-// the issue explorer (the job's item, the tracked entities its make method
-// produced), so its failures are logged, never returned.
-export async function linkJobOperationContext(
+/** Attaches an operation, its job item and all of its output to the issue. */
+export async function attachJobOperationToIssue(
   ctx: ServiceContext,
-  args: {
+  {
+    nonConformanceId,
+    jobId,
+    jobOperationId
+  }: {
     nonConformanceId: string;
-    jobItemId: string | null;
+    jobId: string;
     jobOperationId: string;
   }
-) {
-  const client = ctx.asCaller.supabase;
-  const { nonConformanceId, jobItemId, jobOperationId } = args;
-
-  if (jobItemId) {
-    const existing = await client
-      .from("nonConformanceItem")
-      .select("id")
-      .eq("nonConformanceId", nonConformanceId)
-      .eq("itemId", jobItemId)
-      .maybeSingle();
-    if (!existing.data) {
-      const result = await client.from("nonConformanceItem").insert({
-        itemId: jobItemId,
-        nonConformanceId,
-        createdBy: ctx.auditUserId,
-        companyId: ctx.company.id,
-        quantity: 0
-      });
-      if (result.error) {
-        logger.error("Failed to create association", { error: result.error });
-      }
-    }
+): Promise<CarbonError | null> {
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  // The former caller-side insert required quality_create in addition to the
+  // operation's quality_update permission. The job, operation and output
+  // entities share the employee/company read policy.
+  if (!ctx.can({ create: "quality" })) {
+    return ctx.error("forbidden", "You do not have permission to do this");
   }
-
-  const operation = await client
+  const visible = await ctx.asCaller.supabase
     .from("jobOperation")
-    .select("jobMakeMethodId")
+    .select("id, job!inner(id)")
     .eq("id", jobOperationId)
-    .single();
-  const jobMakeMethodId = operation.data?.jobMakeMethodId ?? null;
-  if (!jobMakeMethodId) return;
+    .eq("companyId", companyId)
+    .eq("job.id", jobId)
+    .eq("job.companyId", companyId)
+    .maybeSingle();
+  if (visible.error) {
+    return ctx.error(
+      "internal",
+      "Failed to load the job operation",
+      visible.error
+    );
+  }
+  if (!visible.data) return ctx.error("notFound", "Job operation not found");
 
-  const entities = await client
-    .from("trackedEntity")
-    .select("id")
-    .eq("attributes->>Job Make Method", jobMakeMethodId)
-    .eq("companyId", ctx.company.id);
-  await linkMissingTrackedEntities(ctx.asSystem.pg, {
-    nonConformanceId,
-    companyId: ctx.company.id,
-    userId: ctx.auditUserId,
-    trackedEntityIds: (entities.data ?? []).map((e) => e.id)
-  }).catch((error) => {
-    logger.error("Failed to create association", { error });
+  return withTransaction(ctx.asSystem.pg, async (trx) => {
+    const { status } = await lockIssueDispositions(trx, {
+      companyId,
+      nonConformanceId
+    });
+    if (isIssueLocked(status)) return ctx.error("rule", issueLocked);
+    const operation = await trx
+      .selectFrom("jobOperation as op")
+      .innerJoin("job", (join) =>
+        join
+          .onRef("job.id", "=", "op.jobId")
+          .onRef("job.companyId", "=", "op.companyId")
+      )
+      .select(["op.jobMakeMethodId", "job.jobId as readableId", "job.itemId"])
+      .where("op.id", "=", jobOperationId)
+      .where("op.jobId", "=", jobId)
+      .where("op.companyId", "=", companyId)
+      .forShare()
+      .executeTakeFirst();
+    if (!operation) return ctx.error("notFound", "Job operation not found");
+
+    const existing = await trx
+      .selectFrom("nonConformanceJobOperation")
+      .select("id")
+      .where("nonConformanceId", "=", nonConformanceId)
+      .where("jobOperationId", "=", jobOperationId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!existing) {
+      await trx
+        .insertInto("nonConformanceJobOperation")
+        .values({
+          nonConformanceId,
+          jobOperationId,
+          jobId,
+          jobReadableId: operation.readableId,
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+    }
+    if (operation.itemId) {
+      await linkEntitiesToIssueItemRow(trx, {
+        nonConformanceId,
+        companyId,
+        userId,
+        itemId: operation.itemId,
+        entities: []
+      });
+    }
+    if (operation.jobMakeMethodId) {
+      await linkMissingTrackedEntities(trx, {
+        nonConformanceId,
+        companyId,
+        userId,
+        jobMakeMethodId: operation.jobMakeMethodId
+      });
+    }
+    return null;
   });
 }
 
@@ -6585,32 +6637,29 @@ async function linkMissingTrackedEntities(
     nonConformanceId: string;
     companyId: string;
     userId: string;
-    trackedEntityIds: string[];
-  }
+  } & ({ trackedEntityIds: string[] } | { jobMakeMethodId: string })
 ) {
-  const { nonConformanceId, companyId, userId, trackedEntityIds } = args;
-  if (trackedEntityIds.length === 0) return;
-  const existing = await db
-    .selectFrom("nonConformanceTrackedEntity")
-    .select("trackedEntityId")
-    .where("nonConformanceId", "=", nonConformanceId)
-    .where("companyId", "=", companyId)
-    .where("trackedEntityId", "in", trackedEntityIds)
-    .execute();
-  const linked = new Set(existing.map((row) => row.trackedEntityId));
-  const missing = trackedEntityIds.filter((id) => !linked.has(id));
-  if (missing.length === 0) return;
-  await db
-    .insertInto("nonConformanceTrackedEntity")
-    .values(
-      missing.map((trackedEntityId) => ({
-        nonConformanceId,
-        trackedEntityId,
-        companyId,
-        createdBy: userId
-      }))
+  const { nonConformanceId, companyId, userId } = args;
+  if ("trackedEntityIds" in args && args.trackedEntityIds.length === 0) return;
+  const candidates =
+    "trackedEntityIds" in args
+      ? sql`SELECT DISTINCT unnest(${args.trackedEntityIds}::text[]) AS id`
+      : sql`SELECT id FROM "trackedEntity"
+          WHERE "companyId" = ${companyId}
+            AND attributes->>'Job Make Method' = ${args.jobMakeMethodId}`;
+  await sql`
+    INSERT INTO "nonConformanceTrackedEntity"
+      ("nonConformanceId", "trackedEntityId", "companyId", "createdBy")
+    SELECT ${nonConformanceId}, unit.id, ${companyId}, ${userId}
+    FROM (${candidates}) unit
+    WHERE NOT EXISTS (
+      SELECT 1 FROM "nonConformanceTrackedEntity" link
+      WHERE link."companyId" = ${companyId}
+        AND link."nonConformanceId" = ${nonConformanceId}
+        AND link."trackedEntityId" = unit.id
     )
-    .execute();
+    ORDER BY unit.id
+  `.execute(db);
 }
 
 /**

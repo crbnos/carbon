@@ -30859,9 +30859,9 @@ export async function lockProductionOutputsForPosting(
   return entities;
 }
 
-// Production on a final operation and replacement after scrap may both write
-// the job. Take its lock before any operation or output unit.
-function lockProductionJob(
+// Production, rework and receipts can all write the job. Take its lock
+// before any operation or output unit.
+export function lockProductionJob(
   trx: Transaction<KyselyDatabase>,
   jobId: string,
   companyId: string
@@ -31835,20 +31835,14 @@ export async function issueMaterial(
           (job.quantityReceivedToInventory ?? 0) > 0 &&
           trackedEntity.quantity === 1
         ) {
-          const priorReceipt = await sql`
-            SELECT 1 FROM util.received_job_serials(${jobOperation.jobId}, ${companyId}) AS received(id)
-            WHERE received.id = ${trackedEntityId}
-              -- A historic bulk seed receipt cannot identify the individual
-              -- serials. Final receipt reconciles its entire worked set.
-              AND NOT EXISTS (
-                SELECT 1 FROM "itemLedger" il
-                WHERE il."companyId" = ${companyId} AND il."documentId" = ${jobOperation.jobId}
-                  AND il."documentType" = 'Job Receipt' AND il."trackedEntityId" = received.id
-                HAVING SUM(il.quantity) > 1
-              )
-            LIMIT 1
-          `.execute(trx);
-          if (priorReceipt.rows.length) {
+          const priorReceipt = await trx
+            .selectFrom("jobReceivedSerial")
+            .select("trackedEntityId")
+            .where("companyId", "=", companyId)
+            .where("jobId", "=", jobOperation.jobId)
+            .where("trackedEntityId", "=", trackedEntityId)
+            .executeTakeFirst();
+          if (priorReceipt) {
             throw new InvalidInputError(
               "This serial has already been received for this job."
             );

@@ -7,7 +7,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { assignSerialNumbers } from "../../app/modules/production/production.service";
-import { closeIssue } from "../../app/modules/quality/quality.service";
+import {
+  createIssueAssociation,
+  deleteIssue
+} from "../../app/modules/quality/quality.server";
+import {
+  closeIssue,
+  deleteIssueAssociation,
+  linkJobOperationLot
+} from "../../app/modules/quality/quality.service";
 import {
   alwaysPostFixture,
   type Fixture,
@@ -21,7 +29,7 @@ import {
   raiseIssueOnUnit,
   serialJob
 } from "./fixtures/job-unit-hold";
-import { postgrestTest } from "./fixtures/local-supabase";
+import { operationContext, postgrestTest } from "./fixtures/local-supabase";
 
 /** Puts the unit on a disposition row of the issue, and starts the issue. */
 async function addDisposition(
@@ -126,6 +134,131 @@ async function rejectedStockedSerial(f: Fixture) {
 }
 
 postgrestTest(
+  "an issue on a serial outside the first page of job output links only that serial",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await serialJob(f, 1001);
+      const page = await client
+        .from("trackedEntity")
+        .select("id, quantity")
+        .eq("attributes->>Job Make Method", job.makeMethodId)
+        .eq("companyId", f.companyId)
+        .limit(1000)
+        .throwOnError();
+      expect(page.data).toHaveLength(1000);
+      const paged = new Set(page.data.map((unit) => unit.id));
+      const selected = Array.from(
+        { length: 1001 },
+        (_, n) => `${f.prefix}-unit-${n + 1}`
+      ).find((id) => !paged.has(id))!;
+      const issue = await raiseIssueOnUnit(f, selected, 1);
+      await linkJobOperationLot(operationContext(f, client, USER), {
+        nonConformanceId: issue,
+        jobOperationId: job.operationId,
+        trackedEntityIds: [selected]
+      });
+      for (const table of [
+        "nonConformanceTrackedEntity",
+        "nonConformanceItemTrackedEntity"
+      ] as const) {
+        const links = await f.db
+          .selectFrom(table)
+          .select("trackedEntityId")
+          .where("companyId", "=", f.companyId)
+          .where("nonConformanceId", "=", issue)
+          .execute();
+        expect(links).toEqual([{ trackedEntityId: selected }]);
+      }
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "attaching an operation to an existing issue holds all 1,001 output serials",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      await holdUnits(f, true);
+      const job = await serialJob(f, 1001);
+      const issue = await raiseIssueOnUnit(f, `${f.prefix}-unit-1`, 1);
+      await f.db
+        .deleteFrom("nonConformanceTrackedEntity")
+        .where("nonConformanceId", "=", issue)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const attached = await createIssueAssociation(
+        operationContext(f, client, USER),
+        {
+          nonConformanceId: issue,
+          type: "jobOperations",
+          id: job.jobId,
+          lineId: job.operationId
+        }
+      );
+      expect(attached.error).toBeNull();
+      const held = await f.db
+        .selectFrom("unitQualityHold")
+        .select("trackedEntityId")
+        .where("issueId", "=", issue)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(held).toHaveLength(1001);
+      expect(new Set(held.map((row) => row.trackedEntityId))).toEqual(
+        new Set(
+          Array.from({ length: 1001 }, (_, n) => `${f.prefix}-unit-${n + 1}`)
+        )
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "an issue naming only a component links the whole operation output for disposition",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await serialJob(f, 3);
+      const component = await f.db
+        .insertInto("trackedEntity")
+        .values({
+          itemId: f.partId,
+          quantity: 1,
+          companyId: f.companyId,
+          createdBy: USER,
+          sourceDocument: "Item",
+          sourceDocumentId: f.partId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const issue = await raiseIssueOnUnit(f, component.id, 1);
+      await linkJobOperationLot(operationContext(f, client, USER), {
+        nonConformanceId: issue,
+        jobOperationId: job.operationId,
+        trackedEntityIds: [component.id]
+      });
+      const links = await f.db
+        .selectFrom("nonConformanceItemTrackedEntity")
+        .select("trackedEntityId")
+        .where("companyId", "=", f.companyId)
+        .where("nonConformanceId", "=", issue)
+        .orderBy("trackedEntityId")
+        .execute();
+      expect(links.map((link) => link.trackedEntityId)).toEqual(
+        [1, 2, 3].map((n) => `${f.prefix}-unit-${n}`)
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
   "the last issue to close releases a stocked serial that an earlier close accepted",
   async (client) => {
     const f = await alwaysPostFixture();
@@ -146,6 +279,65 @@ postgrestTest(
       expect(await statusOf(f, unit)).toBe("Rejected");
       // The last one names the unit only at its header and still releases it.
       expect((await close(f, client, headerOnly[1])).error).toBeNull();
+      expect(await statusOf(f, unit)).toBe("Available");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "unlinking a stocked serial releases its earlier acceptance only after the last association is gone",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      await holdUnits(f, true);
+      const unit = await rejectedStockedSerial(f);
+      const accepting = await raiseIssueOnUnit(f, unit, 1);
+      await addDisposition(f, accepting, unit, "Use As Is");
+      const other = await raiseIssueOnUnit(f, unit, 2);
+      await addDisposition(f, other, unit, "Scrap");
+      expect((await close(f, client, accepting)).error).toBeNull();
+      expect(await statusOf(f, unit)).toBe("Rejected");
+      const ctx = systemServiceOf(f.ctx, f.groupId);
+      for (const [type, table, expected] of [
+        ["items", "nonConformanceItem", "Rejected"],
+        ["trackedEntities", "nonConformanceTrackedEntity", "Available"]
+      ] as const) {
+        const link = await f.db
+          .selectFrom(table)
+          .select("id")
+          .where("nonConformanceId", "=", other)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow();
+        expect(
+          (await deleteIssueAssociation(ctx, type, link.id)).error
+        ).toBeNull();
+        expect(await statusOf(f, unit)).toBe(expected);
+      }
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "deleting the last holding issue releases a stocked serial accepted by an earlier issue",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      await holdUnits(f, true);
+      const unit = await rejectedStockedSerial(f);
+      const accepting = await raiseIssueOnUnit(f, unit, 1);
+      await addDisposition(f, accepting, unit, "Use As Is");
+      const holding = await raiseIssueOnUnit(f, unit, 2);
+
+      expect((await close(f, client, accepting)).error).toBeNull();
+      expect(await statusOf(f, unit)).toBe("Rejected");
+      const deleted = await deleteIssue(operationContext(f, client, USER), {
+        nonConformanceId: holding
+      });
+      expect(deleted.error).toBeNull();
       expect(await statusOf(f, unit)).toBe("Available");
     } finally {
       await f.cleanup();

@@ -20,6 +20,7 @@ import {
 
 const op = "op_2";
 const facts = (over: Partial<OperationUnitFacts> = {}): OperationUnitFacts => ({
+  jobId: "job",
   jobMakeMethodId: "jmm",
   serial: true,
   batch: false,
@@ -539,6 +540,19 @@ describe("resolveWorkUnit", () => {
     });
   });
 
+  it("advances a reopened job past its received serial and preserves the next unit's step index", async () => {
+    const fake = fakeClient({
+      ...tables(false),
+      jobReceivedSerial: [
+        { companyId: "co", jobId: "job", trackedEntityId: "u1" },
+        { companyId: "co", jobId: "other", trackedEntityId: "u2" }
+      ]
+    });
+    expect(
+      await resolve(fake.client, { requestedUnitId: null, mode: "advance" })
+    ).toMatchObject({ kind: "unit", unitId: "u2", unitIndex: 1 });
+  });
+
   it("counts historical credits toward the target while allowing Quality to review the serial", async () => {
     const fake = fakeClient({
       ...tables(false),
@@ -587,6 +601,7 @@ describe("resolveWorkUnit", () => {
       "trackedEntity",
       "jobOperationTrackedEntity",
       "trackedActivityOutput",
+      "jobReceivedSerial",
       "companySettings"
     ]);
     for (const call of fake.calls) {

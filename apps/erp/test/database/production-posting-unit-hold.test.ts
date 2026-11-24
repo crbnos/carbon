@@ -30,7 +30,10 @@ import {
 } from "./fixtures/job-unit-hold";
 import { postgrestTest } from "./fixtures/local-supabase";
 import { stepRecordsForSelection } from "../../app/modules/inventory/ui/Traceability/stepRecords";
-import { databaseTest } from "./fixtures/local-database";
+import {
+  connectLocalTestDatabase,
+  databaseTest
+} from "./fixtures/local-database";
 
 async function attachBatch(f: Fixture, operationId: string, batchId: string) {
   await seed(f, async (trx) => {
@@ -488,9 +491,44 @@ databaseTest(
           targetJobOperationId: job.operationId
         })
       ).rejects.toThrow("NCR-4");
-      await expect(
-        triggerCorrection(ctx, { ...dispatch, jobCorrectionId: correctionId })
-      ).rejects.toThrow("NCR-4");
+      const receipt = await connectLocalTestDatabase();
+      let refused: Promise<void> | undefined;
+      try {
+        const {
+          rows: [worker]
+        } = await sql<{ pid: number }>`
+          SELECT pg_backend_pid() AS pid
+        `.execute(f.db);
+        await receipt.transaction().execute(async (trx) => {
+          // The receipt has the job. A correction waiting for it must leave
+          // the serial free for the receipt's next lock.
+          await trx
+            .selectFrom("job")
+            .select("id")
+            .where("id", "=", job.jobId)
+            .forUpdate()
+            .executeTakeFirstOrThrow();
+          refused = expect(
+            triggerCorrection(ctx, { ...dispatch, jobCorrectionId: correctionId })
+          ).rejects.toThrow("NCR-4");
+          await expect.poll(async () => {
+            const { rows } = await sql<{ waiting: boolean }>`
+              SELECT pg_backend_pid() = ANY(pg_blocking_pids(${worker!.pid})) AS waiting
+            `.execute(trx);
+            return rows[0]?.waiting;
+          }).toBe(true);
+          await trx
+            .selectFrom("trackedEntity")
+            .select("id")
+            .where("id", "=", unitId)
+            .forUpdate()
+            .noWait()
+            .executeTakeFirstOrThrow();
+        });
+      } finally {
+        await receipt.destroy();
+        await refused;
+      }
       await expect(
         triggerRework(ctx, {
           ...dispatch,

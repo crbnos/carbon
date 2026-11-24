@@ -654,10 +654,10 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
           3
         );
         if (ambiguous) {
-          // A multi-unit output names no serial, so the job receives by
-          // quantity: available units in serial number order.
+          // The multi-unit output is anonymous. The later SN-003 posting
+          // identifies one unit and only the other slot uses serial order.
           expect(result.error).toBeNull();
-          expect(await received(f, job.jobId)).toEqual(["SN-001", "SN-002"]);
+          expect(await received(f, job.jobId)).toEqual(["SN-001", "SN-003"]);
         } else {
           expect(result.error).toBeNull();
           expect(await received(f, job.jobId)).toEqual(["SN-002", "SN-003"]);
@@ -671,102 +671,275 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
     });
   }
 
-  it("receives by quantity after a quantity-only receipt shared one serial seed", async () => {
+  it.each(["named completions", "anonymous work and a held serial"])(
+    "reconciles a prior grouped receipt with %s",
+    async (scenario) => {
+      const f = await alwaysPostFixture();
+      try {
+        const job = await terminalJob(f, 3);
+        const seedId = f.prefix + "-unit-1";
+        const singles = await f.db
+          .selectFrom("trackedEntity")
+          .selectAll()
+          .where("companyId", "=", f.companyId)
+          .where("id", "in", [f.prefix + "-unit-2", f.prefix + "-unit-3"])
+          .execute();
+        await seed(f, async (trx) => {
+          await trx
+            .deleteFrom("trackedEntity")
+            .where(
+              "id",
+              "in",
+              singles.map((unit) => unit.id)
+            )
+            .execute();
+          await trx
+            .updateTable("trackedEntity")
+            .set({ quantity: 3, status: "Reserved" })
+            .where("id", "=", seedId)
+            .execute();
+        });
+        await completeToInventory(f, job.jobId, 2);
+        expect(
+          await f.db
+            .selectFrom("itemLedger")
+            .select(["trackedEntityId", "quantity"])
+            .where("documentType", "=", "Job Receipt")
+            .where("documentId", "=", job.jobId)
+            .execute()
+        ).toEqual([{ trackedEntityId: seedId, quantity: 2 }]);
+
+        await seed(f, async (trx) => {
+          await trx
+            .updateTable("job")
+            .set({ status: "In Progress" })
+            .where("id", "=", job.jobId)
+            .execute();
+          await trx
+            .updateTable("jobOperation")
+            .set({
+              status: "In Progress",
+              quantityComplete: 0,
+              operationQuantity: 3,
+              targetQuantity: 3
+            })
+            .where("id", "=", job.operationId)
+            .execute();
+          await trx
+            .updateTable("trackedEntity")
+            .set({ quantity: 1 })
+            .where("id", "=", seedId)
+            .execute();
+          await trx.insertInto("trackedEntity").values(singles).execute();
+        });
+        if (scenario === "anonymous work and a held serial") {
+          const named = await postSerial(
+            f,
+            "jobOperationSerialComplete",
+            job.operationId,
+            3
+          );
+          expect(named.error).toBeNull();
+          await raiseIssue(f, 3);
+          // The grouped receipt already accounts for both anonymous completions.
+          // Only SN-003 remains outstanding, and it is now held.
+          await expect(
+            f.db
+              .insertInto("productionQuantity")
+              .values({
+                jobOperationId: job.operationId,
+                quantity: 2,
+                type: "Production",
+                companyId: f.companyId,
+                createdBy: USER
+              })
+              .execute()
+          ).rejects.toThrow(/blocked by a quality issue/);
+          expect(await received(f, job.jobId)).toEqual(["SN-001"]);
+          return;
+        }
+        for (const unit of [1, 2]) {
+          expect(
+            (
+              await postSerial(
+                f,
+                "jobOperationSerialComplete",
+                job.operationId,
+                unit
+              )
+            ).error
+          ).toBeNull();
+        }
+        const prior = await f.db
+          .selectFrom("jobOperation")
+          .select(["quantityComplete", "status", "targetQuantity"])
+          .where("id", "=", job.operationId)
+          .executeTakeFirstOrThrow();
+        expect(prior).toMatchObject({
+          status: "In Progress",
+          quantityComplete: 2,
+          targetQuantity: 3
+        });
+        const attempt = await postSerial(
+          f,
+          "jobOperationSerialComplete",
+          job.operationId,
+          3
+        );
+        const state = await jobQuantities(f, job.jobId);
+        // The seed's receipt of 2 cannot be ascribed to worked serials, so the
+        // third completion receives the one unit the job still owes.
+        expect({
+          error: attempt.error,
+          status: state.status,
+          quantity: state.quantityReceivedToInventory
+        }).toEqual({ error: null, status: "Completed", quantity: 3 });
+        expect(await received(f, job.jobId)).toEqual(["SN-001", "SN-002"]);
+      } finally {
+        await sql`SELECT set_config('app.sync_in_progress', 'true', false)`.execute(
+          f.db
+        );
+        await f.cleanup();
+      }
+    }
+  );
+
+  it("applies a prior receipt to the anonymous completion when a reopened job names a different serial", async () => {
     const f = await alwaysPostFixture();
     try {
-      const job = await terminalJob(f, 3);
-      const seedId = f.prefix + "-unit-1";
-      const singles = await f.db
-        .selectFrom("trackedEntity")
-        .selectAll()
-        .where("companyId", "=", f.companyId)
-        .where("id", "in", [f.prefix + "-unit-2", f.prefix + "-unit-3"])
-        .execute();
-      await seed(f, async (trx) => {
-        await trx
-          .deleteFrom("trackedEntity")
-          .where(
-            "id",
-            "in",
-            singles.map((unit) => unit.id)
-          )
-          .execute();
-        await trx
-          .updateTable("trackedEntity")
-          .set({ quantity: 3, status: "Reserved" })
-          .where("id", "=", seedId)
-          .execute();
-      });
-      await completeToInventory(f, job.jobId, 2);
-      expect(
-        await f.db
-          .selectFrom("itemLedger")
-          .select(["trackedEntityId", "quantity"])
-          .where("documentType", "=", "Job Receipt")
-          .where("documentId", "=", job.jobId)
-          .execute()
-      ).toEqual([{ trackedEntityId: seedId, quantity: 2 }]);
-
+      const job = await terminalJob(f, 2);
+      await completeToInventory(f, job.jobId, 1);
+      expect(await received(f, job.jobId)).toEqual(["SN-001"]);
       await seed(f, async (trx) => {
         await trx
           .updateTable("job")
           .set({ status: "In Progress" })
           .where("id", "=", job.jobId)
+          .where("companyId", "=", f.companyId)
           .execute();
         await trx
           .updateTable("jobOperation")
           .set({
             status: "In Progress",
             quantityComplete: 0,
-            operationQuantity: 3,
-            targetQuantity: 3
+            targetQuantity: 2
           })
           .where("id", "=", job.operationId)
+          .where("companyId", "=", f.companyId)
           .execute();
-        await trx
-          .updateTable("trackedEntity")
-          .set({ quantity: 1 })
-          .where("id", "=", seedId)
-          .execute();
-        await trx.insertInto("trackedEntity").values(singles).execute();
       });
-      for (const unit of [1, 2]) {
-        expect(
-          (
-            await postSerial(
-              f,
-              "jobOperationSerialComplete",
-              job.operationId,
-              unit
-            )
-          ).error
-        ).toBeNull();
-      }
-      const prior = await f.db
-        .selectFrom("jobOperation")
-        .select(["quantityComplete", "status", "targetQuantity"])
-        .where("id", "=", job.operationId)
-        .executeTakeFirstOrThrow();
-      expect(prior).toMatchObject({
-        status: "In Progress",
-        quantityComplete: 2,
-        targetQuantity: 3
-      });
-      const attempt = await postSerial(
+      await f.db
+        .insertInto("productionQuantity")
+        .values({
+          jobOperationId: job.operationId,
+          quantity: 1,
+          type: "Production",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      const result = await postSerial(
         f,
         "jobOperationSerialComplete",
         job.operationId,
         3
       );
-      const state = await jobQuantities(f, job.jobId);
-      // The seed's receipt of 2 cannot be ascribed to worked serials, so the
-      // third completion receives the one unit the job still owes.
-      expect({
-        error: attempt.error,
-        status: state.status,
-        quantity: state.quantityReceivedToInventory
-      }).toEqual({ error: null, status: "Completed", quantity: 3 });
-      expect(await received(f, job.jobId)).toEqual(["SN-001", "SN-002"]);
+      expect(result.error).toBeNull();
+      expect(await received(f, job.jobId)).toEqual(["SN-001", "SN-003"]);
+      expect(await jobQuantities(f, job.jobId)).toMatchObject({
+        status: "Completed",
+        quantityReceivedToInventory: 2
+      });
+    } finally {
+      await sql`SELECT set_config('app.sync_in_progress', 'true', false)`.execute(
+        f.db
+      );
+      await f.cleanup();
+    }
+  });
+
+  it("fills only the anonymous slot when a previously completed serial goes on hold", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await terminalJob(f, 2);
+      const result = await postSerial(
+        f,
+        "jobOperationSerialComplete",
+        job.operationId,
+        3
+      );
+      expect(result.error).toBeNull();
+      await raiseIssue(f, 3);
+      await f.db
+        .insertInto("productionQuantity")
+        .values({
+          jobOperationId: job.operationId,
+          quantity: 1,
+          type: "Production",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      expect(await received(f, job.jobId)).toEqual(["SN-001"]);
+      expect(await jobQuantities(f, job.jobId)).toMatchObject({
+        status: "Completed",
+        quantityReceivedToInventory: 1
+      });
+    } finally {
+      await sql`SELECT set_config('app.sync_in_progress', 'true', false)`.execute(
+        f.db
+      );
+      await f.cleanup();
+    }
+  });
+
+  it("refuses to guess which named serial on a longer parallel operation finished the shorter one", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await terminalJob(f, 2);
+      await seed(f, async (trx) => {
+        const final = await trx
+          .selectFrom("jobOperation")
+          .select("processId")
+          .where("id", "=", job.operationId)
+          .executeTakeFirstOrThrow();
+        const other = await trx
+          .insertInto("jobOperation")
+          .values({
+            jobId: job.jobId,
+            jobMakeMethodId: job.makeMethodId,
+            description: "Longer parallel check",
+            processId: final.processId,
+            status: "Done",
+            quantityComplete: 3,
+            operationQuantity: 3,
+            targetQuantity: 3,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await sql`UPDATE "trackedEntity" SET attributes = attributes || jsonb_build_object(${"Operation " + other.id}::text, 1)
+          WHERE id = ${f.prefix + "-unit-2"} AND "companyId" = ${f.companyId}`.execute(
+          trx
+        );
+        await trx
+          .updateTable("jobOperation")
+          .set({ quantityComplete: 1 })
+          .where("id", "=", job.operationId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+      const result = await postSerial(
+        f,
+        "jobOperationSerialComplete",
+        job.operationId,
+        3
+      );
+      expect(result.error?.message).toMatch(
+        /final operations do not identify/i
+      );
+      expect(await received(f, job.jobId)).toEqual([]);
     } finally {
       await sql`SELECT set_config('app.sync_in_progress', 'true', false)`.execute(
         f.db
@@ -851,16 +1024,15 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
           .where("id", "=", job.operationId)
           .executeTakeFirstOrThrow();
         if (!parallel) {
-          // An anonymous completion: receive by quantity, available units in
-          // serial number order. A held worked serial: receive the other one
-          // and leave the held one out.
+          // SN-003 is named in both cases. Only anonymous work can take
+          // another eligible serial.
           expect({ error: result.error, status: last.status }).toEqual({
             error: null,
             status: "Done"
           });
           expect(await received(f, job.jobId)).toEqual(
             scenario === "mixed named and anonymous output"
-              ? ["SN-001", "SN-002"]
+              ? ["SN-001", "SN-003"]
               : ["SN-003"]
           );
           return;
@@ -869,7 +1041,10 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
           /final operations do not identify/i
         );
         expect(await received(f, job.jobId)).toEqual([]);
-        expect(last).toMatchObject({ status: "In Progress", quantityComplete: 0 });
+        expect(last).toMatchObject({
+          status: "In Progress",
+          quantityComplete: 0
+        });
         const unit = await f.db
           .selectFrom("trackedEntity")
           .select("attributes")
@@ -916,6 +1091,64 @@ describe.skipIf(!hasLocalDatabase)("job receipt with a unit on hold", () => {
     }
   });
 });
+
+postgrestTest(
+  "MES Finish refuses an all-held job when its worked serial is also Rejected",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await terminalJob(f, 3);
+      const worked = await postSerial(
+        f,
+        "jobOperationSerialComplete",
+        job.operationId,
+        3
+      );
+      expect(worked.error).toBeNull();
+      for (const number of [1, 2, 3]) await raiseIssue(f, number);
+      await seed(f, (trx) =>
+        trx
+          .updateTable("trackedEntity")
+          .set({ status: "Rejected" })
+          .where("id", "=", f.prefix + "-unit-3")
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+
+      const finish = await client.rpc("finish_mes_job_operation", {
+        p_job_operation_id: job.operationId,
+        p_company_id: f.companyId,
+        p_user_id: USER
+      });
+      const operation = await f.db
+        .selectFrom("jobOperation")
+        .select(["status", "quantityComplete"])
+        .where("id", "=", job.operationId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect({
+        error: finish.error?.message,
+        operation,
+        job: await jobQuantities(f, job.jobId),
+        receipts: await received(f, job.jobId)
+      }).toEqual({
+        error: expect.stringMatching(/blocked by a quality issue/i),
+        operation: { status: "In Progress", quantityComplete: 1 },
+        job: {
+          status: "In Progress",
+          quantityComplete: 1,
+          quantityReceivedToInventory: 0
+        },
+        receipts: []
+      });
+    } finally {
+      await sql`SELECT set_config('app.sync_in_progress', 'true', false)`.execute(
+        f.db
+      );
+      await f.cleanup();
+    }
+  }
+);
 
 for (const disposition of ["Scrap", "Return to Supplier"] as const) {
   postgrestTest(
@@ -1108,7 +1341,6 @@ for (const disposition of ["Scrap", "Return to Supplier"] as const) {
     }
   );
 }
-
 
 for (const decision of ["Use As Is", "Scrap", "Return to Supplier"] as const) {
   postgrestTest(

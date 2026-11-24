@@ -7,6 +7,7 @@
 // job's units stay unnumbered until first touched, and completing the job is a
 // first touch: completeJob splits and numbers the units the receipt takes.
 
+import { createHash } from "node:crypto";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import {
   assignSerialNumberIfMissing,
@@ -39,7 +40,10 @@ import { connectLocalTestDatabase } from "./fixtures/local-database";
 import { handlesOf } from "./fixtures/handles";
 import { holdUnits, raiseIssueOnUnit } from "./fixtures/job-unit-hold";
 import { hasLocalDatabase } from "./fixtures/local-database";
-import { localServiceRoleClient } from "./fixtures/local-supabase";
+import {
+  localApiKeyClient,
+  localServiceRoleClient
+} from "./fixtures/local-supabase";
 
 // Release recalculates the job and numbers it through postings, and the
 // posting gate tells the system by its key.
@@ -191,6 +195,21 @@ async function units(f: Fixture, makeMethodId: string) {
     .execute();
 }
 
+async function inventoryIntegration(f: Fixture) {
+  const rawKey = `crbn_split_${crypto.randomUUID()}`;
+  await f.db
+    .insertInto("apiKey")
+    .values({
+      name: "Inventory integration",
+      companyId: f.companyId,
+      createdBy: USER,
+      keyHash: createHash("sha256").update(rawKey).digest("hex"),
+      scopes: JSON.stringify({ inventory_update: [f.companyId] })
+    })
+    .execute();
+  return localApiKeyClient(rawKey)!;
+}
+
 async function receivedUnits(f: Fixture, jobId: string) {
   const rows = await f.db
     .selectFrom("itemLedger")
@@ -219,6 +238,92 @@ describe.skipIf(!client)("serial number timing", () => {
       expect(await getSerialNumberTiming(f.db, `${f.companyId}-none`)).toBe(
         "jobCreation"
       );
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("keeps the published split RPC available and honors a hold the caller cannot read", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "split", 3);
+      const [seedUnit] = await units(f, job.makeMethodId);
+      await holdUnits(f, true);
+      await raiseIssueOnUnit(f, seedUnit!.id, 1);
+
+      const caller = await inventoryIntegration(f);
+      const hidden = await caller
+        .from("unitQualityHold")
+        .select("trackedEntityId")
+        .eq("trackedEntityId", seedUnit!.id);
+      expect(hidden.error).toBeNull();
+      expect(hidden.data).toEqual([]);
+
+      const split = () =>
+        caller.rpc("split_serial_units_for_completion", {
+          p_job_id: job.jobId,
+          p_make_method_id: job.makeMethodId,
+          p_company_id: f.companyId,
+          p_count: 2
+        });
+      const held = await split();
+      expect(held.error).toBeNull();
+      expect(held.data).toBe(0);
+      expect(await units(f, job.makeMethodId)).toEqual([seedUnit]);
+
+      await holdUnits(f, false);
+      const released = await split();
+      expect(released.error).toBeNull();
+      expect(released.data).toBe(2);
+      const quantities = (await units(f, job.makeMethodId)).map((u) => u.quantity);
+      expect(quantities).toEqual([1, 1, 1]);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("preserves a partly received seed when the split RPC caller cannot read the ledger", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await f.db
+        .updateTable("item")
+        .set({ itemTrackingType: "Serial" })
+        .where("id", "=", f.assemblyId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const job = await untouchedSerialJob(f, "partly-received", 3);
+      await completeToInventory(f.db, {
+        jobId: job.jobId,
+        companyId: f.companyId,
+        quantityComplete: 2
+      });
+      expect(await receivedUnits(f, job.jobId)).toEqual([
+        { readableId: null, quantity: 2 }
+      ]);
+      const before = await units(f, job.makeMethodId);
+      expect(before).toEqual([expect.objectContaining({ quantity: 3 })]);
+
+      // Numbering is enabled after both units were received against the seed.
+      await serialSetup(f, "production");
+      const caller = await inventoryIntegration(f);
+      const hidden = await caller
+        .from("itemLedger")
+        .select("trackedEntityId")
+        .eq("documentId", job.jobId);
+      expect(hidden.error).toBeNull();
+      expect(hidden.data).toEqual([]);
+
+      const split = await caller.rpc("split_serial_units_for_completion", {
+        p_job_id: job.jobId,
+        p_make_method_id: job.makeMethodId,
+        p_company_id: f.companyId,
+        p_count: 2
+      });
+      expect(split.error).toBeNull();
+      expect(split.data).toBe(0);
+      expect(await units(f, job.makeMethodId)).toEqual(before);
     } finally {
       await f.cleanup();
     }
