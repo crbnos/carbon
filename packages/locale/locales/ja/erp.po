@@ -21115,6 +21115,9 @@ msgstr "このアイテムの倉庫在庫は記録されていません。それ
 msgid "No work center"
 msgstr "作業区が未設定"
 
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "この拠点の作業区には、この工程を実行できるものがないため、スケジュールに表示されません。その工法を実行する作業区を割り当てるか、この拠点の作業区に工法を追加してください。"
+
 msgid "No work center utilization data within range"
 msgstr "範囲内の作業区の稼働率データがありません"
 
@@ -33075,9 +33078,6 @@ msgstr "今月"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "この工程はまだスケジュールできません — バーは競合が解決されたら実行される場所をマークします。容量を保持していません。"
-
-msgid "This operation has no work center, so it can't be scheduled. Give it a work center that runs its process, or add its process to a work center at this location."
-msgstr "この工程には作業区が設定されていないため、スケジュールを組めません。この工程の工法を実行する作業区を割り当てるか、この拠点の作業区に工法を追加してください。"
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
 msgstr "この工程はバッチにありますが、その材料が他のものと一致しません — 除去するか、一緒に実行することを確認してください。"

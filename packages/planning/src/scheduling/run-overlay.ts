@@ -237,9 +237,10 @@ export function startedOperationsToHold(args: {
  * Each hold is the earliest span from `now` for the work the operation has
  * left on the work center it runs on, taken in the order given, around the
  * reservations no job of the run rewrites. The people working a gated op
- * (`employeeIds`) are held for its hands-on part from the same start. A job
- * sees the holds of the jobs that have not run yet; its own run releases them
- * and places the operation itself, so it never books against its own hold.
+ * (`employeeIds`) are held for its hands-on part from the same start, only
+ * inside the machine's open windows. A job sees the holds of the jobs that
+ * have not run yet; its own run releases them and places the operation
+ * itself, so it never books against its own hold.
  */
 export function startedOperationHolds(args: {
   operations: {
@@ -306,16 +307,26 @@ export function startedOperationHolds(args: {
       slot.end
     );
     if (attendedEnd <= slot.start) continue;
+    // Only while the machine is open: a closed gap inside the span (a night,
+    // a break) leaves the person free for other work.
+    const attended: { startAt: number; endAt: number }[] = [];
+    for (const w of capacity.windows) {
+      const startAt = Math.max(w.start, slot.start);
+      const endAt = Math.min(w.end, attendedEnd);
+      if (endAt > startAt) attended.push({ startAt, endAt });
+    }
     for (const employeeId of new Set(op.employeeIds ?? [])) {
-      holds.push({
-        resourceKind: "Employee",
-        resourceId: employeeId,
-        startAt: slot.start,
-        endAt: attendedEnd,
-        jobId: op.jobId,
-        readableJobId: op.readableJobId,
-        jobOperationBatchId: null
-      });
+      for (const { startAt, endAt } of attended) {
+        holds.push({
+          resourceKind: "Employee",
+          resourceId: employeeId,
+          startAt,
+          endAt,
+          jobId: op.jobId,
+          readableJobId: op.readableJobId,
+          jobOperationBatchId: null
+        });
+      }
     }
   }
   return holds;

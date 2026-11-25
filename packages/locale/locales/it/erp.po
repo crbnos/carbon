@@ -21115,6 +21115,9 @@ msgstr "Non c'è giacenza in deposito registrata per questo articolo. Puoi comun
 msgid "No work center"
 msgstr "Nessun centro di lavoro"
 
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "Nessun centro di lavoro di questa ubicazione può eseguire questa operazione, quindi non compare nel programma. Assegnagli un centro di lavoro che esegue il suo processo, oppure aggiungi il suo processo a un centro di lavoro di questa ubicazione."
+
 msgid "No work center utilization data within range"
 msgstr "Nessun dato di utilizzo del centro di lavoro nell'intervallo"
 
@@ -33075,9 +33078,6 @@ msgstr "Questo Mese"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "Questa operazione non può ancora essere programmata — la barra segna dove verrebbe eseguita una volta risolto il conflitto. Non sta trattenendo la capacità."
-
-msgid "This operation has no work center, so it can't be scheduled. Give it a work center that runs its process, or add its process to a work center at this location."
-msgstr "Questa operazione non ha un centro di lavoro, quindi non può essere pianificata. Assegnale un centro di lavoro che esegua il suo processo, oppure aggiungi il suo processo a un centro di lavoro di questa ubicazione."
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
 msgstr "Questa operazione è nel lotto di produzione, ma il suo materiale non corrisponde agli altri — rimuovila, o conferma che viene eseguita insieme"

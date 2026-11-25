@@ -21115,6 +21115,9 @@ msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden d
 msgid "No work center"
 msgstr "İş merkezi yok"
 
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "Bu lokasyondaki hiçbir iş merkezi bu operasyonu çalıştıramaz, bu yüzden çizelgede yer almıyor. Ona, prosesini çalıştıran bir iş merkezi atayın ya da bu lokasyondaki bir iş merkezine prosesini ekleyin."
+
 msgid "No work center utilization data within range"
 msgstr "Belirlenen aralıkta iş merkezi kullanım verisi yok"
 
@@ -33075,9 +33078,6 @@ msgstr "Bu Ay"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "Bu operasyon henüz zamanlanmaz — bar, çakışma çözüldüğünde nerede çalışacağını işaretler. Kapasiteyi tutmaz."
-
-msgid "This operation has no work center, so it can't be scheduled. Give it a work center that runs its process, or add its process to a work center at this location."
-msgstr "Bu operasyonun iş merkezi yok, bu nedenle planlanamaz. Ona bu prosesi yürütebilen bir iş merkezi atayın ya da bu lokasyondaki bir iş merkezine bu prosesi ekleyin."
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
 msgstr "Bu operasyon partide ancak malzemesi diğerleriyle eşleşmiyor — kaldırın veya birlikte çalışacağını onaylayın"

@@ -1037,6 +1037,10 @@ export class WorkCenterSelector {
             });
           }
           placedEndByOperation.set(op.id, placeholderEnd);
+        } else {
+          // No work to lay down: it ends where it could start, so a successor
+          // still waits for this op's own predecessors.
+          placedEndByOperation.set(op.id, earliestMs);
         }
 
         selections.set(op.id, {

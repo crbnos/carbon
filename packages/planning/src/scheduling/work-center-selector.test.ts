@@ -1403,6 +1403,63 @@ it("an op with no work center lays its work on the location's working hours", ()
   ]);
 });
 
+it("an op with no work center and no work still makes its successor wait for its predecessor", () => {
+  const selector = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  const open = [
+    {
+      start: utc("2026-01-05T00:00:00.000Z"),
+      end: utc("2026-02-05T00:00:00.000Z")
+    }
+  ];
+  selector.setFiniteContext(
+    makeContext({
+      capacityByWorkCenter: new Map(
+        ["wc1", "wc2"].map((id) => [
+          id,
+          { workCenter: { id }, windows: open, reservations: [] }
+        ])
+      ),
+      dependencies: [
+        { jobId: "job-1", operationId: "op-b", dependsOnId: "op-a" },
+        { jobId: "job-1", operationId: "op-c", dependsOnId: "op-b" }
+      ]
+    })
+  );
+  const work = {
+    startDate: null,
+    dueDate: null,
+    setupTime: 0,
+    laborUnit: "Total Hours" as const,
+    machineTime: 0,
+    operationQuantity: 1,
+    quantityComplete: 0
+  };
+  const ops = [
+    makeOp({
+      id: "op-a",
+      order: 1,
+      workCenterId: "wc1",
+      laborTime: 4,
+      ...work
+    }),
+    // No process and no hours: nowhere to run and nothing to lay down.
+    makeOp({ id: "op-b", order: 2, processId: null, laborTime: 0, ...work }),
+    makeOp({ id: "op-c", order: 3, workCenterId: "wc2", laborTime: 2, ...work })
+  ];
+
+  const selections = selector.selectWorkCentersForOperations(ops, {
+    jobDueDate: null
+  });
+
+  expect([
+    selections.get("op-a")?.placedEnd,
+    selections.get("op-c")?.placedStart
+  ]).toEqual(["2026-01-05T04:00:00.000Z", "2026-01-05T04:00:00.000Z"]);
+});
+
 // --- a running op is not placed after its unfinished predecessors -----------
 
 it("a running op starts now ahead of its unstarted predecessor; its successor chains after it", () => {

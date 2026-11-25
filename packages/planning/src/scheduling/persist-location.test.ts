@@ -137,6 +137,43 @@ describe("persistLocationWrites", () => {
   const isLastSavedRead = (q: CompiledQuery) =>
     q.sql.includes('from "locationScheduleRun"');
 
+  it("records the start of a run with no jobs, under the location lock, and writes nothing else", async () => {
+    const driver = new RecordingDriver();
+
+    const result = await persistLocationWrites(
+      kysely(driver),
+      [],
+      { companyId: "co", userId: "u", locationId: "loc", runStartedAt },
+      []
+    );
+
+    // An older run that saves after it then finds this start and skips.
+    expect(result).toEqual({ skipped: false });
+    // Each statement as its leading words and its parameters.
+    const sqls = driver.statements.map((q) =>
+      q.sql.replace(/\s+/g, " ").trim()
+    );
+    expect(
+      driver.statements.map((q, i) => [
+        isLastSavedRead(q)
+          ? "read last saved start"
+          : sqls[i]!.split(" ").slice(0, 3).join(" "),
+        q.parameters
+      ])
+    ).toEqual([
+      [
+        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+        ["schedule:location:loc"]
+      ],
+      ["read last saved start", ["loc", "co"]],
+      [
+        'insert into "locationScheduleRun"',
+        ["loc", "co", runStartedAt, runStartedAt]
+      ]
+    ]);
+    expect(sqls.filter((q) => q.includes("in ()"))).toEqual([]);
+  });
+
   // The start of the last run that saved the location: a microsecond after
   // this run's start, one before it, or never saved.
   it.each([

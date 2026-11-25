@@ -364,6 +364,42 @@ describe("startedOperationHolds", () => {
     ]);
   });
 
+  it("holds the operator only while the machine is open, not through its closed gap", () => {
+    // wc1 opens 08:00-09:00 and 11:00-13:00; a 2h op, all hands-on.
+    const holds = startedOperationHolds({
+      operations: [
+        {
+          jobId: "job-2",
+          readableJobId: "J2",
+          workCenterId: "wc1",
+          hours: 2,
+          attendedHours: 2,
+          employeeIds: ["emp-1"]
+        }
+      ],
+      windowsByWorkCenter: new Map([
+        [
+          "wc1",
+          [
+            { start: start + 8 * HOUR, end: start + 9 * HOUR },
+            { start: start + 11 * HOUR, end: start + 13 * HOUR }
+          ]
+        ]
+      ]),
+      reservations: [],
+      now: start,
+      horizonEnd: start + 30 * 24 * HOUR,
+      timeZone: "UTC"
+    });
+    expect(
+      holds.map((h) => [h.resourceKind, h.startAt - start, h.endAt - start])
+    ).toEqual([
+      ["WorkCenter", 8 * HOUR, 12 * HOUR],
+      ["Employee", 8 * HOUR, 9 * HOUR],
+      ["Employee", 11 * HOUR, 12 * HOUR]
+    ]);
+  });
+
   it("queues two running ops on one machine in the order given", () => {
     const holds = startedOperationHolds({
       operations: [

@@ -1214,13 +1214,16 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         );
       }
     }
+    // All at once: awaited one by one, the first failure would leave the
+    // other entries' rejections unobserved, and Node exits on those.
+    const entries = (await Promise.all(
+      employeeIds.map((id) => cache.get(key(id)))
+    )) as (CalendarWindow[] | undefined)[];
     const result = new Map<string, CalendarWindow[]>();
-    for (const id of employeeIds) {
-      const windows = (await cache.get(key(id))) as
-        | CalendarWindow[]
-        | undefined;
+    employeeIds.forEach((id, i) => {
+      const windows = entries[i];
       if (windows) result.set(id, windows);
-    }
+    });
     return result;
   }
 
@@ -1347,13 +1350,15 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         );
       }
     }
+    // All at once, as in getEmployeeAvailability: no rejection left unobserved.
+    const entries = (await Promise.all(
+      workCenterIds.map((id) => cache.get(key(id)))
+    )) as (CalendarWindow[] | undefined)[];
     const result = new Map<string, CalendarWindow[]>();
-    for (const id of workCenterIds) {
-      const windows = (await cache.get(key(id))) as
-        | CalendarWindow[]
-        | undefined;
+    workCenterIds.forEach((id, i) => {
+      const windows = entries[i];
       if (windows) result.set(id, windows);
-    }
+    });
     return result;
   }
 

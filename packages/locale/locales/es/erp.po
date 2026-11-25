@@ -21115,6 +21115,9 @@ msgstr "No hay stock de almacén registrado para este artículo. Aún puedes rec
 msgid "No work center"
 msgstr "Sin centro de trabajo"
 
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "Ningún centro de trabajo de esta ubicación puede realizar esta operación, así que no aparece en el programa. Asígnele un centro de trabajo que ejecute su proceso, o agregue su proceso a un centro de trabajo de esta ubicación."
+
 msgid "No work center utilization data within range"
 msgstr "No hay datos de utilización del centro de trabajo dentro del rango"
 
@@ -33075,9 +33078,6 @@ msgstr "Este Mes"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "Esta operación aún no se puede programar — la barra marca dónde se ejecutaría una vez que se resuelva el conflicto. No está manteniendo capacidad."
-
-msgid "This operation has no work center, so it can't be scheduled. Give it a work center that runs its process, or add its process to a work center at this location."
-msgstr "Esta operación no tiene centro de trabajo, así que no se puede programar. Asígnele un centro de trabajo que ejecute su proceso, o agregue su proceso a un centro de trabajo en esta ubicación."
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
 msgstr "Esta operación está en el lote pero su material no coincide con los otros — quítela o confirme que se ejecuta junto con ellos."

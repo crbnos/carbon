@@ -150,9 +150,9 @@ export async function persistLocationWrites(
   },
   failedJobIds: string[] = []
 ): Promise<{ skipped: boolean }> {
-  if (writes.length === 0 && failedJobIds.length === 0) {
-    return { skipped: false };
-  }
+  // No early return for a run with no jobs: it still records its start, so an
+  // older run that saves after it finds a newer start and skips. Every write
+  // below loops over `chunks`, which yields nothing for an empty list.
   const { companyId, userId, locationId, runStartedAt } = scope;
 
   return await db.transaction().execute(async (trx) => {

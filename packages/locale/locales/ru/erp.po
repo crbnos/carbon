@@ -21115,6 +21115,9 @@ msgstr "На складе нет записей о наличии этого т�
 msgid "No work center"
 msgstr "Нет рабочего центра"
 
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "На этой площадке ни один рабочий центр не может выполнить эту операцию, поэтому она не попадает в график. Назначьте ей рабочий центр, который выполняет её процесс, или добавьте процесс в рабочий центр на этой площадке."
+
 msgid "No work center utilization data within range"
 msgstr "Нет данных об использовании рабочего центра в указанном диапазоне"
 
@@ -33075,9 +33078,6 @@ msgstr "Этот месяц"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "Эта операция не может быть запланирована пока — полоса отмечает, где она будет выполняться после разрешения конфликта. Она не занимает мощность."
-
-msgid "This operation has no work center, so it can't be scheduled. Give it a work center that runs its process, or add its process to a work center at this location."
-msgstr "У этой операции нет рабочего центра, поэтому её невозможно запланировать. Назначьте операции рабочий центр, который выполняет её процесс, или добавьте процесс в рабочий центр на этой площадке."
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
 msgstr "Эта операция находится в серии, но ее материал не совпадает с другими — убрать ее или подтвердить, что она работает вместе"

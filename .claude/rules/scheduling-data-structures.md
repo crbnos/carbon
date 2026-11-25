@@ -254,7 +254,8 @@ Two Inngest functions listen on that event
   `runStartedAt`; when a later-started run already saved, the run writes
   nothing (batch pre-pass and final write alike) and returns `skipped: true`
   with zero counts and no newly-late jobs; otherwise it records its start
-  there and writes. No caller treats a skipped run as a failure. Waves share the `"schedule:" + companyId`
+  there and writes. A run with no jobs to write still takes the lock and records its
+  start, so an older run that saves after it skips. No caller treats a skipped run as a failure. Waves share the `"schedule:" + companyId`
   concurrency key; a user-triggered regen runs in-process in the ERP and does not,
   so `persistLocationWrites` and the batch pre-pass first take
   `pg_advisory_xact_lock(hashtextextended('schedule:location:<id>', 0))`
@@ -325,8 +326,9 @@ only; its output is read by nothing in the placement path (spec
   rules `startedOperationsToHold` / `startedOperationHolds` in `run-overlay.ts`). A
   gated op (process `requiresAbility`) also holds each person with an open Labor
   `productionEvent` on it (one read for all held ops, `getClockedInEmployees`), as an
-  `Employee` hold for the hands-on part from the same start; no open labor event, no
-  person hold. When the op's own job runs, those clocked-in people stay eligible for it
+  `Employee` hold for the hands-on part from the same start, one per open machine window
+  it spans, so a closed gap inside it (a night, a break) leaves the person free; no open
+  labor event, no person hold. When the op's own job runs, those clocked-in people stay eligible for it
   whatever the manning board says (`clockedInByOperation` on the finite context: they
   join pass 1 on the machine's hours), so the running op books them and later jobs wait. A job sees the holds of the jobs not run
   yet; `releaseHolds` drops a job's own holds as it runs, so a running op keeps its
@@ -580,13 +582,15 @@ chain after its work content from its earliest start, laid on the job location's
 calendar (`locationWindows` on the finite context, the calendar people with no shift use)
 rather than clock hours, and
 its selection's `placeholderEnd` counts in `projectedFinishMs` (the job's projected
-completion, newly-late, the quote lead time) without being applied as a placement. It exists so the **Forecast** (which is 100% reservation-driven)
+completion, newly-late, the quote lead time) without being applied as a placement. The placeholder exists so the **Forecast** (which is 100% reservation-driven)
 shows the op instead of the job silently ending after its last placeable op, and
 so `job.projectedCompletionAt` extends to it and successors chain after it
 (`placedEndByOperation`). It is deliberately NOT added to the in-run
 `capacity.reservations` blocking set, and `getLiveReservations` filters
 `isPlaceholder IS NOT true`, so it never holds the machine against other jobs or
-the next regen. The Forecast surfaces it with a red "can't be scheduled" alert
+the next regen. An unplaceable op with no work left (0 hours) gets no marker and no
+`placeholderEnd`, but ends at its earliest start for chaining, so a successor still
+waits for that op's predecessors. The Forecast surfaces the placeholder with a red "can't be scheduled" alert
 (`LuBan`) in the TREE status column — via `GanttEvent.data.isUnschedulable`, set
 on BOTH the work-center lane (any unplaceable child) and the operation row, so it
 reports at the work-center level AND per operation (in a Compact lane the
@@ -594,10 +598,14 @@ placeholders get their own bottom strip, overlapping ones merged into one
 "N can't be scheduled" chip, `groupOverlaps`); clicking either row opens the
 detail sidebar ("Unschedulable" chip + reason + "where it would run"
 explanation). Plus a separate "{n} can't be scheduled" header count. An op with
-no work center at all has no reservation to draw, so the Forecast loader also reads
-the location's open, non-outside ops with no `workCenterId` on jobs it schedules
-(`getOperationsWithoutWorkCenter`, `production.service.ts`, one read, capped at 200)
-and shows them in a "No work center" lane (`lane:NoWorkCenter`, `resourceTimeline.ts`)
+no work center at all has no reservation to draw, and neither does one whose stored
+work center or process the scheduler cannot use at the job's location (it keeps the
+stored id and gets a conflict). So the Forecast loader also reads the location's open,
+non-outside ops on jobs it schedules with no `workCenterId` or with `hasConflict`, drops
+every one a live reservation draws (its own, a placeholder, or its Released batch's;
+`getUnreservedOperations` + `withoutLiveReservation`, `production.service.ts`, one
+candidate read and one chunked reservation read, capped at 200) and shows them in a
+"No work center" lane (`lane:NoWorkCenter`, `resourceTimeline.ts`)
 spanning the window, counted in the header total, with the conflict reason in the
 detail sidebar. (Placed-but
 -LATE ops keep a real reservation, show the generic `isError` triangle, and are

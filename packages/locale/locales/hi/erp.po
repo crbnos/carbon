@@ -21115,6 +21115,9 @@ msgstr "इस आइटम के लिए कोई गोदाम स्ट
 msgid "No work center"
 msgstr "कोई वर्क सेंटर नहीं"
 
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "इस स्थान पर कोई भी वर्क सेंटर इस ऑपरेशन को नहीं चला सकता, इसलिए यह शेड्यूल में नहीं है। इसे ऐसा वर्क सेंटर दें जो इसकी प्रक्रिया चलाता हो, या इस स्थान के किसी वर्क सेंटर में इसकी प्रक्रिया जोड़ें।"
+
 msgid "No work center utilization data within range"
 msgstr "सीमा के भीतर कोई वर्क सेंटर उपयोग डेटा नहीं"
 
@@ -33075,9 +33078,6 @@ msgstr "इस महीने"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "इस ऑपरेशन को अभी तक शेड्यूल नहीं किया जा सकता — बार उस स्थान को चिन्हित करता है जहां यह चलेगा एक बार विवाद समाधान हो जाएगा। यह क्षमता धारण नहीं कर रहा है।"
-
-msgid "This operation has no work center, so it can't be scheduled. Give it a work center that runs its process, or add its process to a work center at this location."
-msgstr "इस ऑपरेशन में कोई वर्क सेंटर नहीं है, इसलिए इसे शेड्यूल नहीं किया जा सकता। इसे ऐसा वर्क सेंटर दें जो इसकी प्रक्रिया चलाता हो, या इस स्थान के किसी वर्क सेंटर में इसकी प्रक्रिया जोड़ें।"
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
 msgstr "यह ऑपरेशन बैच में है लेकिन इसकी सामग्री दूसरों से मेल नहीं खाती — इसे निकालें, या पुष्टि करें कि यह एक साथ चलता है"
