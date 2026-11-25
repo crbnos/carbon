@@ -106,6 +106,7 @@ DECLARE
   v_wip_account text; v_finished_account text; v_labor_account text; v_other_account text;
   v_fleet_account text; v_cip_account text;
   v_fleet_class text; v_cip_class text; v_cip_asset text; v_journal text;
+  v_issue text; v_type text; v_held text; v_eligible text; v_seed text;
   v_assets int; v_transfers int; v_journals int; v_activities int;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Job to asset test', 'system') RETURNING id INTO v_group_id;
@@ -284,7 +285,53 @@ BEGIN
   ASSERT v_error LIKE 'Job LJ targets fixed asset % which is not in a Construction in Progress class%', 'A live asset target must be refused, got: ' || COALESCE(v_error, 'success');
   ASSERT (SELECT "acquisitionCost" FROM "fixedAsset" WHERE "companyId" = v_company_id AND "serialNumber" = 'FJ-01') = 42000, 'A refused sweep must not touch the asset';
 
-  RAISE NOTICE 'ALL JOB COMPLETION TO ASSET CASES PASSED (serial fleet job priced from WIP, no stock/cost layer, Asset Transfer journal, units consumed, re-completion no-op, untracked class job refused at any quantity, untracked CIP job of 2 refused, CIP sweep, live asset refused)';
+  -- The named-serial preview must agree with the actual capitalized units.
+  -- The first serial is held. A stale preview must roll back even the asset
+  -- and genealogy for the eligible peer that the normal posting would pick.
+  UPDATE "companySettings" SET "holdUnitsWithOpenIssues" = true WHERE id = v_company_id;
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'HJ', 2);
+  UPDATE job SET "fixedAssetClassId" = v_fleet_class WHERE id = v_job;
+  SELECT id INTO STRICT v_held FROM "trackedEntity" WHERE "readableId" = 'HJ-01' AND "companyId" = v_company_id;
+  SELECT id INTO STRICT v_eligible FROM "trackedEntity" WHERE "readableId" = 'HJ-02' AND "companyId" = v_company_id;
+  INSERT INTO "nonConformanceType" (name, "companyId", "createdBy") VALUES ('Defect', v_company_id, 'system') RETURNING id INTO v_type;
+  INSERT INTO "nonConformance" ("nonConformanceId", name, source, "locationId", "nonConformanceTypeId", "openDate", "companyId", "createdBy")
+    VALUES ('NCR-HJ', 'Scratched housing', 'Internal', v_location_id, v_type, current_date, v_company_id, 'system') RETURNING id INTO v_issue;
+  INSERT INTO "nonConformanceTrackedEntity" ("nonConformanceId", "trackedEntityId", "companyId", "createdBy")
+    VALUES (v_issue, v_held, v_company_id, 'system');
+  v_error := NULL;
+  BEGIN
+    PERFORM complete_job_to_inventory_previewed(v_job, 1, v_company_id, 'system', ARRAY[v_held]);
+  EXCEPTION WHEN OTHERS THEN
+    v_error := SQLERRM;
+  END;
+  ASSERT v_error LIKE 'The serials available for this receipt changed%', 'Stale asset preview returned ' || COALESCE(v_error, 'success');
+  ASSERT NOT EXISTS (SELECT 1 FROM util.received_job_serials(v_job, v_company_id)), 'A rejected preview must not capitalize its peer';
+  PERFORM complete_job_to_inventory_previewed(v_job, 1, v_company_id, 'system', ARRAY[v_eligible]);
+  ASSERT (SELECT array_agg(id) FROM util.received_job_serials(v_job, v_company_id) id) = ARRAY[v_eligible],
+    'Only the eligible unit is capitalized';
+
+  -- Four planned units: one held serial, one eligible serial and two on a
+  -- seed without a numbering sequence. Only the named eligible unit can be
+  -- turned into an asset. The two units on the seed retain their identity.
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'HSEED', 4);
+  UPDATE job SET "fixedAssetClassId" = v_fleet_class WHERE id = v_job;
+  ASSERT NOT EXISTS (SELECT 1 FROM "itemSerialSequence" WHERE "companyId" = v_company_id AND "itemId" = v_serial_item);
+  SELECT id INTO STRICT v_held FROM "trackedEntity" WHERE "readableId" = 'HSEED-01' AND "companyId" = v_company_id;
+  SELECT id INTO STRICT v_eligible FROM "trackedEntity" WHERE "readableId" = 'HSEED-02' AND "companyId" = v_company_id;
+  DELETE FROM "trackedEntity" WHERE "readableId" = 'HSEED-04' AND "companyId" = v_company_id;
+  UPDATE "trackedEntity" SET "readableId" = NULL, quantity = 2 WHERE "readableId" = 'HSEED-03' AND "companyId" = v_company_id
+    RETURNING id INTO STRICT v_seed;
+  INSERT INTO "nonConformanceTrackedEntity" ("nonConformanceId", "trackedEntityId", "companyId", "createdBy")
+    VALUES (v_issue, v_held, v_company_id, 'system');
+  v_error := pg_temp.try_complete(v_job, 4);
+  ASSERT v_error IS NULL, 'Mixed asset receipt at four planned units failed: ' || COALESCE(v_error, '');
+  ASSERT (SELECT "quantityComplete" FROM job WHERE id = v_job) = 1, 'Only one asset can be completed';
+  ASSERT (SELECT array_agg(id) FROM util.received_job_serials(v_job, v_company_id) id) = ARRAY[v_eligible],
+    'Only the eligible named serial can be capitalized';
+  ASSERT (SELECT quantity = 2 AND "readableId" IS NULL AND status = 'Reserved' FROM "trackedEntity" WHERE id = v_seed),
+    'The unnumbered seed must remain on the job';
+
+  RAISE NOTICE 'ALL JOB COMPLETION TO ASSET CASES PASSED (serial fleet job priced from WIP, no stock/cost layer, Asset Transfer journal, units consumed, re-completion no-op, untracked class job refused at any quantity, untracked CIP job of 2 refused, CIP sweep, live asset refused, stale and current held-unit previews)';
 END;
 $cases$;
 ROLLBACK;

@@ -3734,6 +3734,9 @@ msgstr "के बाद"
 msgid "After (calculation method)"
 msgstr "बाद में (गणना विधि)"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "गुणवत्ता विभाग से इकाई को मंज़ूरी मिलने के बाद, उसे स्टॉक में लेने के लिए जॉब फिर से खोलें।"
+
 msgid "After the correction"
 msgstr "सुधार के बाद"
 
@@ -7898,7 +7901,7 @@ msgstr "पूर्ण तारीख"
 msgid "Completed Qty"
 msgstr "पूर्ण मात्रा"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "अचल संपत्ति वर्ग {0} को पूर्ण करता है"
 
@@ -8965,6 +8968,9 @@ msgstr "ऑपरेशन लोड नहीं कर सके"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "MRP से बाहर स्टोरेज यूनिट लोड नहीं हो सकीं। कुछ मार्कर गायब हो सकते हैं।"
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr ""
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName} पर चलने वाले डेटा को लोड नहीं कर सके।"
@@ -16661,6 +16667,9 @@ msgstr "प्रकार के अनुसार समस्याएँ, �
 msgid "Issues opened and closed by week"
 msgstr "सप्ताह के अनुसार खुली और बंद समस्याएँ"
 
+msgid "Issues: Hold Units"
+msgstr "समस्याएं: इकाइयां होल्ड पर रखें"
+
 msgid "It could not start. Try again."
 msgstr "यह शुरू नहीं हो सका। फिर से प्रयास करें।"
 
@@ -22005,6 +22014,12 @@ msgstr "खुले मुद्दे"
 msgid "Open issues by criticality and weeks open"
 msgstr "गंभीरता और खुले सप्ताहों के अनुसार खुली समस्याएँ"
 
+msgid "Open issues do not stop work"
+msgstr "खुली समस्याएं काम नहीं रोकतीं"
+
+msgid "Open issues no longer stop work"
+msgstr "खुली समस्याएं अब काम नहीं रोकतीं"
+
 msgid "Open item details"
 msgstr "आइटम विवरण खोलें"
 
@@ -25207,7 +25222,9 @@ msgstr "परियोजना स्टॉक को प्राप्त �
 msgid "Received"
 msgstr "प्राप्त"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "{1} में से {0} प्राप्त"
@@ -29872,6 +29889,9 @@ msgstr "प्राप्ति को रोकें"
 msgid "Stop Shipping"
 msgstr "शिपिंग बंद करें"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "जब तक सीरियल नंबर वाली इकाई से जुड़ी कोई समस्या खुली है, उस पर शॉप फ्लोर का काम रोकता है।"
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "इस चरण में {0} का उपयोग बंद करें"
@@ -30574,7 +30594,7 @@ msgstr "संदिग्ध विफलता मोड"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "लागत को संपत्ति {0} में स्वीप करता है"
 
@@ -34323,6 +34343,9 @@ msgstr "इकाइयाँ"
 msgid "Units don't match"
 msgstr "इकाइयाँ मेल नहीं खातीं"
 
+msgid "Units excluded from this receipt"
+msgstr "इस प्राप्ति से बाहर रखी गई इकाइयाँ"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "मूल मुद्रा की इकाइयाँ प्रति इस मुद्रा की एक इकाई; पोस्टिंग पर राशि का अनुवाद करने के लिए उपयोग किया जाता है।"
 
@@ -34340,6 +34363,12 @@ msgstr "जो इकाइयाँ नमूने में विफल र�
 
 msgid "Units this customer owns show here once registered."
 msgstr "इस ग्राहक की इकाइयाँ एक बार पंजीकृत होने के बाद यहाँ दिखाई देती हैं।"
+
+msgid "Units with an open issue are now on hold"
+msgstr "खुली समस्या वाली इकाइयां अब होल्ड पर रहती हैं"
+
+msgid "Units with an open issue are on hold"
+msgstr "खुली समस्या वाली इकाइयां होल्ड पर हैं"
 
 msgid "Unknown"
 msgstr "अज्ञात"
@@ -35767,6 +35796,9 @@ msgstr "जब आस्थगित, संचित और पट्टा-ब
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "जब किराये के समझौते या अनुबंध की प्रत्येक बिलिंग अवधि बिलिंग के लिए आती है: अग्रिम में इसके पहले दिन, अवधि का उपयोग करने से पहले, या बकाया इसके अंतिम दिन, इसे अर्जित करने के बाद।"
 
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "यह विकल्प चालू होने पर स्क्रैप या आपूर्तिकर्ता को वापसी के लिए चिह्नित इकाइयाँ समस्या बंद होने के बाद भी अवरुद्ध रहती हैं।"
+
 msgid "When expired stock is used"
 msgstr "जब समाप्त हो चुका स्टॉक उपयोग किया जाता है"
 
@@ -36399,15 +36431,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "आप इस कुंजी को केवल एक बार देख सकते हैं। इसे सुरक्षित रूप से संग्रहीत करें।"
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "आप {leftoverQuantity} अधिक \n"
-"                        {0} को {1} की ऑर्डर की गई \n"
-"                        मात्रा से पूरा कर चुके हैं। आप अतिरिक्त पार्ट्स के साथ \n"
-"                        क्या करना चाहेंगे?"
+msgstr ""
 
 msgid "You do not have permission to do this"
 msgstr "आपके पास यह करने की अनुमति नहीं है"

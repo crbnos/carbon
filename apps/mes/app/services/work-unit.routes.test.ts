@@ -21,6 +21,7 @@ import { issueTravelerUnit } from "./traveler.server";
 import { SELECT_UNIT_FIRST } from "./work-unit.server";
 import {
   fakeClient,
+  operationOutput,
   serialOperation,
   serialUnits
 } from "./work-unit-test-fixture";
@@ -32,10 +33,12 @@ const caller = { companyId: "co", userId: "user" };
 function floor({
   later = true,
   allDone = false,
+  firstDone = true,
   extra = {}
 }: {
   later?: boolean;
   allDone?: boolean;
+  firstDone?: boolean;
   extra?: Record<string, Record<string, unknown>[]>;
 } = {}) {
   return fakeClient({
@@ -52,7 +55,7 @@ function floor({
     job: [{ id: "job", companyId: "co", status: "In Progress" }],
     jobOperationStep: [{ id: "step", companyId: "co", operationId: op }],
     trackedEntity: serialUnits("jmm", op, [
-      { id: "u1", done: true },
+      { id: "u1", done: firstDone },
       { id: "u2", done: allDone },
       { id: "u3", done: allDone }
     ])
@@ -70,13 +73,38 @@ async function toast(response: unknown) {
   return flash?.result.message;
 }
 
-/** The reads up to the unit check: the operation, its unit rule, its units. */
+/**
+ * The reads up to the unit check: the operation, its unit rule, its units,
+ * and whether the company holds units with an open quality issue.
+ */
 const GATE_READS = [
   "jobOperation",
   "jobOperation",
   "trackedEntity",
-  "jobOperationTrackedEntity"
+  "jobOperationTrackedEntity",
+  "trackedActivityOutput",
+  "jobReceivedSerial",
+  "companySettings"
 ];
+
+/** Unit `unitId` has an open quality issue, and the company holds such units. */
+const onHold = (unitId: string, disposition?: string) => ({
+  companySettings: [{ id: "co", holdUnitsWithOpenIssues: true }],
+  unitQualityHold: [
+    {
+      trackedEntityId: unitId,
+      companyId: "co",
+      issueId: "nc_1",
+      issueNumber: "NCR-1",
+      name: "Cracked housing",
+      description: null,
+      status: disposition ? "Closed" : "Registered",
+      disposition,
+      createdAt: "2026-01-01T00:00:00Z",
+      issueType: "Defect"
+    }
+  ]
+});
 
 const get = (path: string) => new Request(`http://mes.test${path}`);
 const post = (path: string, fields: Record<string, string>) => {
@@ -128,6 +156,52 @@ describe("kanban Complete scan (end route)", () => {
       operationId: op
     });
     expect(fake.posts.map((p) => p.input.trackedEntityId)).toEqual(["u2"]);
+  });
+
+  it.each(["Complete", "Produce"])(
+    "skips a serial credited only by a prior %s when the QR names no unit",
+    async (type) => {
+      const fake = floor({
+        later: false,
+        firstDone: false,
+        extra: {
+          trackedActivityOutput: [
+            operationOutput("u1", op, type),
+            operationOutput("u2", "other-op", "Produce"),
+            operationOutput("u2", op, "Unconsume")
+          ]
+        }
+      });
+      await endOperationByScan(fake, {
+        ...caller,
+        request: get(`/x/end/${op}`),
+        operationId: op
+      });
+      expect(fake.posts.map((post) => post.input.trackedEntityId)).toEqual([
+        "u2"
+      ]);
+    }
+  );
+
+  it("completes nothing for a unit on hold for an open quality issue", async () => {
+    const fake = floor({ extra: onHold("u3") });
+    const response = await endOperationByScan(fake, {
+      ...caller,
+      request: get(`/x/end/${op}?trackedEntityId=u3`),
+      operationId: op
+    });
+    expect(location(response)).toBe(`/x/operation/${op}?trackedEntityId=u3`);
+    expect(fake.writes()).toEqual([]);
+  });
+
+  it("skips a unit on hold for the next unit on the first operation", async () => {
+    const fake = floor({ later: false, extra: onHold("u2") });
+    await endOperationByScan(fake, {
+      ...caller,
+      request: get(`/x/end/${op}`),
+      operationId: op
+    });
+    expect(fake.posts.map((p) => p.input.trackedEntityId)).toEqual(["u3"]);
   });
 });
 
@@ -181,6 +255,55 @@ describe("Log completed (complete route)", () => {
     // It stops at the unit check: the operation, its rule, its units.
     expect(fake.calls.map((call) => call.table)).toEqual(GATE_READS);
   });
+
+  it("refuses the empty serial from a stale first-Assembly Complete form even with one eligible sibling", async () => {
+    const fake = floor({ later: false, extra: onHold("u2") });
+    const response = await completeOperationQuantity(deps(fake), {
+      ...caller,
+      permissions: {},
+      request: post("/x/complete", {
+        jobOperationId: op,
+        quantity: "1",
+        trackingType: "Serial",
+        trackedEntityId: ""
+      })
+    });
+    expect(await toast(response)).toBe(SELECT_UNIT_FIRST);
+    expect(fake.posts).toEqual([]);
+    expect(fake.writes()).toEqual([]);
+  });
+
+  it("refuses a unit on hold for an open quality issue", async () => {
+    const fake = floor({ extra: onHold("u2") });
+    await completeOperationQuantity(deps(fake), {
+      ...caller,
+      permissions: {},
+      request: post("/x/complete", {
+        jobOperationId: op,
+        quantity: "1",
+        trackedEntityId: "u2"
+      })
+    });
+    expect(fake.writes()).toEqual([]);
+  });
+
+  it.each(["Scrap", "Return to Supplier"])(
+    "refuses a serial dispositioned %s",
+    async (disposition) => {
+      const fake = floor({ extra: onHold("u2", disposition) });
+      const response = await completeOperationQuantity(deps(fake), {
+        ...caller,
+        permissions: {},
+        request: post("/x/complete", {
+          jobOperationId: op,
+          quantity: "1",
+          trackedEntityId: "u2"
+        })
+      });
+      expect(await toast(response)).toContain(disposition);
+      expect(fake.writes()).toEqual([]);
+    }
+  );
 
   it("refuses a unit already complete here", async () => {
     const fake = floor();
@@ -297,6 +420,19 @@ describe("traveler scan claim (traveler.scan route)", () => {
       retryable: false,
       pickUnit: true
     });
+    expect(fake.writes()).toEqual([]);
+  });
+
+  it("refuses a named parent already credited at the claim's operation", async () => {
+    const fake = floor({
+      extra: { trackedActivityOutput: [operationOutput("u3", op, "Produce")] }
+    });
+    const result = await issueTravelerUnit(
+      fake.client,
+      { ...caller, trackedEntityId: "part", claim, heldUnitId: "u3" },
+      fake.post
+    );
+    expect(result.error).toMatch(/already complete/i);
     expect(fake.writes()).toEqual([]);
   });
 
