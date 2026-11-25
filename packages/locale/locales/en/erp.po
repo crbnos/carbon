@@ -21112,6 +21112,9 @@ msgstr "No video added"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
+msgid "No work center"
+msgstr "No work center"
+
 msgid "No work center utilization data within range"
 msgstr "No work center utilization data within range"
 
@@ -33072,6 +33075,9 @@ msgstr "This Month"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
+
+msgid "This operation has no work center, so it can't be scheduled. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "This operation has no work center, so it can't be scheduled. Give it a work center that runs its process, or add its process to a work center at this location."
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
 msgstr "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"

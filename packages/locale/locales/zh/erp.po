@@ -21112,6 +21112,9 @@ msgstr "未添加视频"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库存将变为负数，直到盘点协调。"
 
+msgid "No work center"
+msgstr "未指定工作中心"
+
 msgid "No work center utilization data within range"
 msgstr "范围内没有工作中心利用率数据"
 
@@ -33072,6 +33075,9 @@ msgstr "本月"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "该工序暂时无法排程 — 条形图标记一旦冲突解决后它将运行的位置。它不占用产能。"
+
+msgid "This operation has no work center, so it can't be scheduled. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "此工序未指定工作中心，因此无法排程。请为其指定一个可执行该工艺的工作中心，或将该工艺添加到本地点的某个工作中心。"
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
 msgstr "此工序在生产批次中，但其原材料与其他不匹配 — 移除它或确认它一起运行"

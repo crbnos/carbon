@@ -320,11 +320,15 @@ only; its output is read by nothing in the placement path (spec
   order claims capacity first. Before the jobs run, `provider.holdStartedOperations`
   holds each STARTED op's machine from `now` for its remaining work, only where the
   selector will keep it (`startedOperationWorkCenter`, the selector's own sticky rule:
-  a process and its stored work center; batch members and outside ops skipped; pure
+  a process and a stored work center active at the run's location
+  (`getActiveWorkCenters`); batch members and outside ops skipped; pure
   rules `startedOperationsToHold` / `startedOperationHolds` in `run-overlay.ts`). A
   gated op (process `requiresAbility`) also holds each person with an open Labor
-  `productionEvent` on it (one read for all held ops), as an `Employee` hold for the
-  hands-on part from the same start; no open labor event, no person hold. A job sees the holds of the jobs not run
+  `productionEvent` on it (one read for all held ops, `getClockedInEmployees`), as an
+  `Employee` hold for the hands-on part from the same start; no open labor event, no
+  person hold. When the op's own job runs, those clocked-in people stay eligible for it
+  whatever the manning board says (`clockedInByOperation` on the finite context: they
+  join pass 1 on the machine's hours), so the running op books them and later jobs wait. A job sees the holds of the jobs not run
   yet; `releaseHolds` drops a job's own holds as it runs, so a running op keeps its
   machine ahead of an earlier job's unstarted work while that job's unstarted ops keep
   their normal place. Each job's engine run **excludes the jobs not yet run
@@ -379,18 +383,25 @@ only; its output is read by nothing in the placement path (spec
   topological order** (`topologicalPlacementOrder`, Kahn's algorithm over the dependency
   edges; the ready set is ordered by `jobOperation."order"` then id). Each op is placed
   forward from `max(now, placed-dependency-ends)` — **no backward-pass floor** — into the
-  first feasible span. Two finite resources gate it: the work center (capacity 1 — one op
+  first feasible span. A started in-house op (`isOperationStarted`, not a batch member) is
+  running: it ignores its predecessors, is placed first, and starts from `now`; its
+  successors still chain after it. Two finite resources gate it: the work center (capacity 1 — one op
   at a time, decided by actual `capacityReservation` intervals) AND, for ability-gated
   processes, ≥1 qualified employee on shift and unreserved. **Only a started op is
   sticky** (`isOperationStarted`, `apply-work-center-selections.ts`: status In Progress
   or Paused, or `quantityComplete > 0`): it stays on its `workCenterId`. An op that has
   not started gets earliest-finish selection across its process's work centers, even
   when it carries a work center (the stored one is the fallback when the process has no
-  mapped centers). `applyWorkCenterSelections` then puts the chosen work center on a
-  placed op that has not started, and `placementWrites` (`run-overlay.ts`) writes it,
-  so `jobOperation.workCenterId` and the op's `capacityReservation` always name the
-  same station. A started op and a placeholder
-  keep the stored one; an op with no work center gets one either way. Consequence: a
+  mapped centers). Pool, sticky and fallback all take only work centers active at the
+  job's location: `initialize` filters the pool by `getActiveWorkCenters(locationId)`
+  and `loadAvailabilityWindows` leaves a stored center that is not in that set out of
+  the capacity set, so a center moved to another location or deactivated is neither
+  sticky nor a fallback (no candidate → the no-work-center conflict).
+  `applyWorkCenterSelections` then puts the chosen work center on every placed op
+  (a started op is only moved off a center not valid here), and `placementWrites`
+  (`run-overlay.ts`) writes it, so `jobOperation.workCenterId` and the op's
+  `capacityReservation` always name the same station. A placeholder
+  keeps the stored one; an op with no work center gets one either way. Consequence: a
   card dragged to another column on the operations board can move back at the next
   regen when another station finishes it earlier. A placement past the job's
   `dueDate` sets `hasConflict`/`conflictReason` but keeps the placement.
@@ -547,7 +558,10 @@ windows, missing/expired operator qualification, or calendar exhaustion —
 `dueDate`** (the overdue verdict; `jobDueDate` is passed into the selector — the
 per-op need-by targets are NOT a lateness input and NEVER set `hasConflict`; an op
 behind its target only gets the informational amber state). Conflicts
-surface; scheduling never hard-fails. The read RPCs roll it up per job with
+surface; scheduling never hard-fails. The cause (`classifyLatePlacement`,
+`conflict-messages.ts`) is the predecessor, not the work center, when the op starts at
+its work center's first working instant at or after its dominant predecessor's end
+(`startsWhenDependencyEnds`): the wait was only closed hours. The read RPCs roll it up per job with
 `BOOL_OR(...)` so the board shows a red flag.
 
 **Unplaceable ops leave a placeholder (`work-center-selector.ts` `best === null`
@@ -561,7 +575,10 @@ anchor happened to fall in) for its work-content duration in calendar time, on
 the fallback WC. An op with NO candidate work center (no process, or a process no
 active work center at the location runs) takes the same branch: a conflict (plus
 the `error` quote-lead-time reads), no marker (there is no work center to draw it
-on), but successors still chain after its work content from its earliest start, and
+on; its conflict names the process by name, or "No process set"), but successors still
+chain after its work content from its earliest start, laid on the job location's working
+calendar (`locationWindows` on the finite context, the calendar people with no shift use)
+rather than clock hours, and
 its selection's `placeholderEnd` counts in `projectedFinishMs` (the job's projected
 completion, newly-late, the quote lead time) without being applied as a placement. It exists so the **Forecast** (which is 100% reservation-driven)
 shows the op instead of the job silently ending after its last placeable op, and
@@ -576,7 +593,13 @@ reports at the work-center level AND per operation (in a Compact lane the
 placeholders get their own bottom strip, overlapping ones merged into one
 "N can't be scheduled" chip, `groupOverlaps`); clicking either row opens the
 detail sidebar ("Unschedulable" chip + reason + "where it would run"
-explanation). Plus a separate "{n} can't be scheduled" header count. (Placed-but
+explanation). Plus a separate "{n} can't be scheduled" header count. An op with
+no work center at all has no reservation to draw, so the Forecast loader also reads
+the location's open, non-outside ops with no `workCenterId` on jobs it schedules
+(`getOperationsWithoutWorkCenter`, `production.service.ts`, one read, capped at 200)
+and shows them in a "No work center" lane (`lane:NoWorkCenter`, `resourceTimeline.ts`)
+spanning the window, counted in the header total, with the conflict reason in the
+detail sidebar. (Placed-but
 -LATE ops keep a real reservation, show the generic `isError` triangle, and are
 the "conflict" count.)
 

@@ -44,12 +44,12 @@ export function isOperationStarted(op: {
 }
 
 /**
- * The work center a STARTED operation stays on: its stored one, when the
- * selector can place there (`capacity` is the selector's capacity set) and
- * the op has a process. Null when the selector will not keep it there: not
- * started, no process (no candidate at all), or a stored work center outside
- * the capacity set. The started-op hold uses the same rule, so it never holds
- * a machine the op will not run on.
+ * The work center a STARTED operation stays on: its stored one, when it is
+ * active at the job's location (`validHere`: the selector's capacity set, or
+ * the location's active work centers for the hold) and the op has a process.
+ * Null when the selector will not keep it there: not started, no process (no
+ * candidate at all), or a stored work center not valid here. The started-op
+ * hold uses the same rule, so it never holds a machine the op will not run on.
  */
 export function startedOperationWorkCenter(
   op: {
@@ -58,10 +58,10 @@ export function startedOperationWorkCenter(
     status?: string | null;
     quantityComplete?: number | null;
   },
-  capacity: { has(workCenterId: string): boolean }
+  validHere: { has(workCenterId: string): boolean }
 ): string | null {
   if (!op.processId || !isOperationStarted(op)) return null;
-  return op.workCenterId && capacity.has(op.workCenterId)
+  return op.workCenterId && validHere.has(op.workCenterId)
     ? op.workCenterId
     : null;
 }
@@ -81,13 +81,14 @@ export function applyWorkCenterSelections(
     }
 
     const updated: ScheduledOperation = { ...op };
-    // Store the station the plan books an unstarted op on. A started op stays
-    // on its machine; a placeholder's fallback is only where it WOULD run.
+    // Store the station the plan books the op on. The selector keeps a
+    // started op on its machine, and moves it only when that machine is not
+    // active at the job's location. A placeholder's fallback is only where it
+    // WOULD run.
     const placed = Boolean(selection.placedStart && selection.placedEnd);
     if (
       selection.workCenterId &&
-      (!hasPreassignedWorkCenter(op.workCenterId) ||
-        (placed && !isOperationStarted(op)))
+      (!hasPreassignedWorkCenter(op.workCenterId) || placed)
     ) {
       updated.workCenterId = selection.workCenterId;
     }

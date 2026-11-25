@@ -205,6 +205,7 @@ export async function runLocationSchedule(
   // Jobs run in priority order, so a running operation would otherwise queue
   // behind an earlier job's unstarted work on its own machine.
   await provider.holdStartedOperations({
+    locationId,
     skipOperationIds: new Set(batchPlacements?.keys() ?? []),
     timeZone: await provider.getLocationTimeZone(locationId),
     horizonEnd

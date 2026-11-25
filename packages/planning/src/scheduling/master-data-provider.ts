@@ -86,6 +86,8 @@ export type RootMakeMethod = {
 
 export type ProcessWorkCenters = {
   id: string | null;
+  /** Names the process in conflict messages. */
+  name?: string | null;
   workCenters: string[] | null;
 };
 
@@ -207,6 +209,8 @@ export interface MasterDataProvider {
   /** The subset of the given operation ids that have ≥1 production event
    * (used by remaining-work netting to decide setup is already done). */
   getOperationsWithEvents(operationIds: string[]): Promise<Set<string>>;
+  /** Operation id -> the people with an open Labor event on it. */
+  getClockedInEmployees(operationIds: string[]): Promise<Map<string, string[]>>;
   getProcessRequirements(
     processIds: string[]
   ): Promise<ProcessRequirementRow[]>;
@@ -653,7 +657,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   private async loadProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]> {
     return await this.db
       .selectFrom("processes")
-      .select(["id", "workCenters"])
+      .select(["id", "name", "workCenters"])
       .where("companyId", "=", this.companyId)
       .execute();
   }
@@ -772,6 +776,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
    * (`skipOperationIds`) already hold their batch's reservation.
    */
   async holdStartedOperations(args: {
+    locationId: string;
     skipOperationIds: Set<string>;
     timeZone: string;
     horizonEnd: number;
@@ -779,6 +784,11 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     const run = this.run;
     const preload = this.preload;
     if (!run || !preload) return;
+    const validWorkCenterIds = new Set(
+      (await this.getActiveWorkCenters(args.locationId)).flatMap((wc) =>
+        wc.id ? [wc.id] : []
+      )
+    );
 
     // preload.jobIds keeps the run's job order.
     const operations = startedOperationsToHold({
@@ -796,7 +806,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         ];
       }),
       skipOperationIds: args.skipOperationIds,
-      operationsWithEvents: preload.operationsWithEvents
+      operationsWithEvents: preload.operationsWithEvents,
+      validWorkCenterIds
     });
     if (operations.length === 0) return;
 
@@ -814,31 +825,17 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       ])
     ]);
     const gatedProcessIds = new Set(requirements.map((r) => r.processId));
-    const gatedOperationIds = operations
-      .filter((o) => o.processId && gatedProcessIds.has(o.processId))
-      .map((o) => o.operationId);
-    const workersByOperation = groupBy(
-      gatedOperationIds.length === 0
-        ? []
-        : await this.db
-            .selectFrom("productionEvent")
-            .select(["jobOperationId", "employeeId"])
-            .where("companyId", "=", this.companyId)
-            .where("jobOperationId", "in", gatedOperationIds)
-            .where("type", "=", "Labor")
-            .where("endTime", "is", null)
-            .where("employeeId", "is not", null)
-            .execute(),
-      (row) => row.jobOperationId
+    const workersByOperation = await this.getClockedInEmployees(
+      operations
+        .filter((o) => o.processId && gatedProcessIds.has(o.processId))
+        .map((o) => o.operationId)
     );
 
     const holdsByJob = new Map<string, LiveReservation[]>();
     for (const hold of startedOperationHolds({
       operations: operations.map((o) => ({
         ...o,
-        employeeIds: (workersByOperation[o.operationId] ?? []).flatMap((row) =>
-          row.employeeId ? [row.employeeId] : []
-        )
+        employeeIds: workersByOperation.get(o.operationId) ?? []
       })),
       windowsByWorkCenter,
       reservations: run.fixedReservations,
@@ -994,6 +991,34 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       readableJobId: r.readableJobId,
       jobOperationBatchId: r.jobOperationBatchId ?? null
     }));
+  }
+
+  async getClockedInEmployees(
+    operationIds: string[]
+  ): Promise<Map<string, string[]>> {
+    const result = new Map<string, string[]>();
+    // Chunk the IN list — one query per chunk, never per-row (N+1 rule).
+    const CHUNK = 200;
+    for (let i = 0; i < operationIds.length; i += CHUNK) {
+      const rows = await this.db
+        .selectFrom("productionEvent")
+        .select(["jobOperationId", "employeeId"])
+        .where("companyId", "=", this.companyId)
+        .where("jobOperationId", "in", operationIds.slice(i, i + CHUNK))
+        .where("type", "=", "Labor")
+        .where("endTime", "is", null)
+        .where("employeeId", "is not", null)
+        .orderBy("jobOperationId")
+        .orderBy("employeeId")
+        .execute();
+      for (const row of rows) {
+        if (!row.employeeId) continue;
+        const list = result.get(row.jobOperationId) ?? [];
+        if (!list.includes(row.employeeId)) list.push(row.employeeId);
+        result.set(row.jobOperationId, list);
+      }
+    }
+    return result;
   }
 
   async getOperationsWithEvents(operationIds: string[]): Promise<Set<string>> {

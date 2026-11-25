@@ -184,6 +184,8 @@ export function startedOperationsToHold(args: {
   }[];
   skipOperationIds: Set<string>;
   operationsWithEvents: Set<string>;
+  /** The work centers active at the run's location (the selector's rule). */
+  validWorkCenterIds: Set<string>;
 }): StartedOperationHold[] {
   const held: StartedOperationHold[] = [];
   for (const job of args.jobs) {
@@ -194,14 +196,12 @@ export function startedOperationsToHold(args: {
     ) {
       continue;
     }
-    // The selector's capacity set always holds the work centers the job's
-    // operations carry (`loadAvailabilityWindows` adds each one).
-    const capacity = new Set(
-      job.operations.flatMap((op) => (op.workCenterId ? [op.workCenterId] : []))
-    );
     for (const op of job.operations) {
       // Only where the selector will place it: the same rule it uses.
-      const workCenterId = startedOperationWorkCenter(op, capacity);
+      const workCenterId = startedOperationWorkCenter(
+        op,
+        args.validWorkCenterIds
+      );
       if (
         !op.id ||
         !workCenterId ||

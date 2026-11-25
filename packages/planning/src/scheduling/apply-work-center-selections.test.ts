@@ -212,7 +212,9 @@ it.each([
   ["Paused", 0],
   ["Ready", 2]
 ])(
-  "a started op (status %s, %i complete) keeps its work center",
+  // The selector keeps a started op on its machine; it moves one only off a
+  // machine not active at the job's location, and the row must follow.
+  "a started op (status %s, %i complete) is stored where the plan placed it",
   (status, quantityComplete) => {
     assertEquals(
       appliedWorkCenter(
@@ -223,7 +225,7 @@ it.each([
         },
         { workCenterId: "wc-tig", ...PLACED }
       ),
-      "wc-cnc"
+      "wc-tig"
     );
   }
 );

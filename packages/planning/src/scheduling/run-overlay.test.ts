@@ -199,6 +199,8 @@ describe("startedOperationHolds", () => {
       requiresStaffing: false,
       peopleBudgets: new Map(),
       windowsByEmployee: new Map(),
+      locationWindows: [],
+      clockedInByOperation: new Map(),
       timeZone: "UTC",
       operationsWithEvents: new Set()
     };
@@ -324,6 +326,8 @@ describe("startedOperationHolds", () => {
       requiresStaffing: false,
       peopleBudgets: new Map(),
       windowsByEmployee: new Map([["emp-1", free]]),
+      locationWindows: [],
+      clockedInByOperation: new Map(),
       timeZone: "UTC",
       operationsWithEvents: new Set()
     });
@@ -407,11 +411,15 @@ describe("startedOperationsToHold", () => {
     quantityComplete: 0,
     ...overrides
   });
-  const holdIds = (operations: BaseOperation[]) =>
+  const holdIds = (
+    operations: BaseOperation[],
+    validWorkCenterIds = new Set(["wc1"])
+  ) =>
     startedOperationsToHold({
       jobs: [{ jobId: "job", readableJobId: "J", status: "Ready", operations }],
       skipOperationIds: new Set(),
-      operationsWithEvents: new Set()
+      operationsWithEvents: new Set(),
+      validWorkCenterIds
     }).map((h) => h.operationId);
 
   it("holds a started op on the work center the selector keeps it on", () => {
@@ -422,6 +430,14 @@ describe("startedOperationsToHold", () => {
   // on its stored machine this run: holding that machine idles it.
   it("does not hold a started op that has no process", () => {
     expect(holdIds([started({ id: "op-noproc", processId: null })])).toEqual(
+      []
+    );
+  });
+
+  // The selector does not keep it there either: holding it books a plant job
+  // on another location's machine.
+  it("does not hold a started op on a work center that is not active at the location", () => {
+    expect(holdIds([started({ id: "op-moved" })], new Set(["wc2"]))).toEqual(
       []
     );
   });

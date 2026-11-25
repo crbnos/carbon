@@ -21112,6 +21112,9 @@ msgstr "Kein Video hinzugefügt"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Kein Lagerbestand für diesen Artikel ist erfasst. Sie können ihn trotzdem kommissionieren — der verfügbare Bestand wird negativ, bis die Inventur abgestimmt ist."
 
+msgid "No work center"
+msgstr "Kein Arbeitsplatz"
+
 msgid "No work center utilization data within range"
 msgstr "Keine Auslastungsdaten des Arbeitsplatzes im Bereich vorhanden"
 
@@ -33072,6 +33075,9 @@ msgstr "Dieser Monat"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "Dieser Arbeitsgang kann noch nicht geplant werden - der Balken markiert, wo er laufen würde, sobald der Konflikt behoben ist. Er belegt keine Kapazität."
+
+msgid "This operation has no work center, so it can't be scheduled. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "Dieser Arbeitsgang hat keinen Arbeitsplatz und kann daher nicht eingeplant werden. Ihm einen Arbeitsplatz zuweisen, der sein Verfahren ausführt, oder sein Verfahren einem Arbeitsplatz an diesem Standort hinzufügen."
 
 msgid "This operation is in the batch but its material doesn't match the others — remove it, or confirm it runs together"
 msgstr "Dieser Arbeitsgang ist im Los, aber sein Werkstoff passt nicht zu den anderen — entfernen Sie ihn, oder bestätigen Sie, dass er zusammen läuft"
