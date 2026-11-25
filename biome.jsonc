@@ -21,7 +21,8 @@
       "contrib/building/examples/**/*"
     ]
   },
-  "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2 },
+  // oxfmt formats (.oxfmtrc.jsonc); Biome only lints.
+  "formatter": { "enabled": false },
   "linter": {
     "enabled": true,
     "rules": {
@@ -149,8 +150,7 @@
     },
     {
       // Keep the typed path helpers alphabetically sorted. Applies on
-      // `biome check --write` (pre-commit lint-staged + CI), not plain
-      // `biome format`, which does not run assists.
+      // `biome check --write` (pre-commit lint-staged + CI).
       "includes": ["**/erp/app/utils/path.ts", "**/mes/app/utils/path.ts"],
       "assist": { "actions": { "source": { "useSortedKeys": "on" } } }
     },
@@ -205,6 +205,6 @@
   },
   "assist": {
     "enabled": true,
-    "actions": { "source": { "organizeImports": "on" } }
+    "actions": { "source": { "organizeImports": "off" } }
   }
 }

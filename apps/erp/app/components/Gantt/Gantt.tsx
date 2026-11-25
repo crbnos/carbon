@@ -202,14 +202,13 @@ const Gantt = ({
   // An inline bar (`data.items`) is not a tree node, so the tree cannot hold
   // its selection — the Gantt does. Selecting a row clears it and vice versa.
   // Seeded once from `selectedId`, like the tree's own selection.
-  const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
-    () =>
-      selectedId &&
-      events.some((event) =>
-        event.data.items?.some((item) => item.id === selectedId)
-      )
-        ? selectedId
-        : undefined
+  const [selectedItemId, setSelectedItemId] = useState<string | undefined>(() =>
+    selectedId &&
+    events.some((event) =>
+      event.data.items?.some((item) => item.id === selectedId)
+    )
+      ? selectedId
+      : undefined
   );
   const onTreeSelectedIdChanged = (id: string | undefined) => {
     // The tree letting go because an inline bar took the selection.

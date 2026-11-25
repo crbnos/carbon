@@ -85,8 +85,8 @@ import {
 } from "../../production.models";
 import type { Job } from "../../types";
 import { getDeadlineIcon } from "./Deadline";
-import JobStatus from "./JobStatus";
 import { JOB_LIST_EXPORT_VALUES } from "./job-list-export";
+import JobStatus from "./JobStatus";
 
 // A row of the jobs list, with the values the loader adds per page.
 type JobRow = Job & {

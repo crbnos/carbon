@@ -1198,7 +1198,7 @@ const unitScan = (contents: string, file = ROUTE) =>
     .scan(file, contents)
     .map((v) => `${v.line}:${v.snippet}`);
 
-/** A top-level function with the given body lines, as Biome formats it. */
+/** A top-level function with the given body lines, as oxfmt formats it. */
 const fn = (name: string, ...body: string[]) =>
   [`export async function ${name}(args) {`, ...body.map((l) => `  ${l}`), "}"]
     .join("\n")

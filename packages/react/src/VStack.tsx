@@ -25,8 +25,7 @@ const vStackVariants = cva("flex flex-col w-full items-start", {
 });
 
 export interface VStackProps
-  extends ComponentProps<"div">,
-    VariantProps<typeof vStackVariants> {}
+  extends ComponentProps<"div">, VariantProps<typeof vStackVariants> {}
 
 const VStack = forwardRef<HTMLDivElement, VStackProps>(
   ({ className, children, spacing, ...props }, ref) => {

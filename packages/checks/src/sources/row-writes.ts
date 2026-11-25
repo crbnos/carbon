@@ -22,7 +22,7 @@ import { IDENT_PART, IDENT_START } from "./text";
  * `reduce` into a map passed as `Object.entries(map)`. A row that arrives as a
  * parameter, or is built in another function, is invisible.
  *
- * A function is a top-level statement: Biome puts each at column 0 and indents
+ * A function is a top-level statement: oxfmt puts each at column 0 and indents
  * everything inside it, so a line that starts with an identifier character
  * opens the next one (as `mes-unit-write-resolves-unit` reads it). A class is
  * split into its methods.
@@ -508,7 +508,7 @@ export function rowWrites(text: string, regions: Region[]): RowWrite[] {
 const DECLARATION =
   /^(?:export\s+)?(?:default\s+)?(?:abstract\s+)?(?:async\s+)?(?:function\*?\s+([\w$]+)|(?:const|let|var)\s+([\w$]+)|class\s+([\w$]+)|([\w$]+))/;
 
-/** A class member at Biome's two-space indent: `  async name(`, `  name = (`. */
+/** A class member at oxfmt's two-space indent: `  async name(`, `  name = (`. */
 const METHOD =
   /^ {2}(?:(?:public|private|protected|static|async|override|readonly|get|set)\s+)*([\w$]+)\s*(?:<[^>]*>)?\s*(?:\(|=\s*(?:async\s*)?\()/;
 

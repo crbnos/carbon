@@ -257,8 +257,7 @@ function useFormControlProvider(props: FormControlContextType) {
 }
 
 export interface FormControlProps
-  extends ComponentProps<"div">,
-    FormControlContextType {}
+  extends ComponentProps<"div">, FormControlContextType {}
 
 /**
  * FormControl provides context such as

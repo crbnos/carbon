@@ -16,9 +16,9 @@ import {
   getUnattributedMachineTimes,
   UNATTRIBUTED_MACHINE_TIMES_PAGING
 } from "~/modules/production/production.service";
+import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
 import MachineTimeTable from "~/modules/production/ui/MachineTime/MachineTimeTable.ee";
 import MachineTimeUpgradeOverlay from "~/modules/production/ui/MachineTime/MachineTimeUpgradeOverlay.ee";
-import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
 import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";

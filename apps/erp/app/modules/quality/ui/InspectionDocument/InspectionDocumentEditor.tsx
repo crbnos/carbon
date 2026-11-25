@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
+import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -22,21 +24,19 @@ import {
   useDisclosure,
   usePaneResize
 } from "@carbon/react";
+import { ModelUploadPreview } from "@carbon/viewer/model-upload-preview";
 import { useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { storage } from "@carbon/files";
-import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
-import { ModelUploadPreview } from "@carbon/viewer/model-upload-preview";
+import { nanoid } from "nanoid";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuChevronUp,
   LuPlus,
   LuSlidersHorizontal
 } from "react-icons/lu";
+import { Document, Page, pdfjs } from "react-pdf";
 import Grid from "~/components/Grid";
 import { ConfirmDelete } from "~/components/Modals";
 import {
@@ -54,8 +54,8 @@ import { path } from "~/utils/path";
 import AnnotationPopover from "./AnnotationPopover";
 import { newFeatureId, type ParameterRow } from "./autosave";
 import DrawingOverlay from "./DrawingOverlay";
-import DrawingToolbar from "./DrawingToolbar";
 import { buildInspectionDocumentPdfWithOverlaysBytes } from "./drawingRaster";
+import DrawingToolbar from "./DrawingToolbar";
 import {
   buildFeatureRowsFromLoader,
   type FeatureRow,

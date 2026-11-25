@@ -35,11 +35,11 @@ import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { Table as DataTable, DateTime } from "~/components";
 import { setupGridHeight } from "~/components/Setup";
 import { useDateFormatter } from "~/hooks";
+import { contractLineName, lineColumnKey } from "./contractGrid";
 import ContractMoney from "./ContractMoney";
 import ContractRevenueGrid, {
   ContractRecognitionGrid
 } from "./ContractRevenueGrid";
-import { contractLineName, lineColumnKey } from "./contractGrid";
 import type { ContractLine, ContractRouteData } from "./types";
 
 type ContractRevenueProps = Pick<

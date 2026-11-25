@@ -1264,7 +1264,7 @@ export function planElementDrop<
     e.parentId && byId.has(e.parentId) ? e.parentId : null;
 
   // The target may not sit in the dragged element's subtree.
-  for (let id: string | null = targetId; id; ) {
+  for (let id: string | null = targetId; id;) {
     if (id === elementId) return null;
     const current = byId.get(id);
     id = current ? parentOf(current) : null;

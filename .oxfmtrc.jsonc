@@ -1,0 +1,64 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "trailingComma": "none",
+  "sortPackageJson": false,
+  // Biome's import order: node: first, then packages, then ~/ aliases, then
+  // relative paths, with no blank lines added. Blank lines and comments keep
+  // splitting a block as they did.
+  "sortImports": {
+    "newlinesBetween": false,
+    "partitionByNewline": true,
+    "partitionByComment": true,
+    "customGroups": [
+      {
+        "groupName": "protocol",
+        "elementNamePattern": [
+          "node:*",
+          "node:*/**",
+          "bun:*",
+          "jsr:*",
+          "jsr:*/**",
+          "npm:*",
+          "npm:*/**"
+        ]
+      }
+    ],
+    "groups": [
+      "protocol",
+      ["builtin", "external"],
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      "unknown"
+    ]
+  },
+  // Route files named `….d.$id….ts` are not declaration files.
+  "associations": [{ "files": ["**/*.d.*.ts"], "language": "typescript" }],
+  // Formats only what Biome formatted: JSON, the apps' app/ and the packages'
+  // src/ TypeScript, and the contrib examples. Everything else is ignored, even
+  // when named on the command line.
+  "ignorePatterns": [
+    "*",
+    "!*/",
+    "!**/*.json",
+    "!biome.jsonc",
+    "!apps/**/app/**/*.ts",
+    "!apps/**/app/**/*.tsx",
+    "!packages/**/src/**/*.ts",
+    "!packages/**/src/**/*.tsx",
+    "!contrib/building/examples/**/*.js",
+    "!contrib/building/examples/**/*.mjs",
+    "!contrib/building/examples/**/*.ts",
+    "!contrib/building/examples/**/*.tsx",
+    "!contrib/building/examples/**/*.css",
+    "!contrib/building/examples/**/*.webmanifest",
+    "/.vscode/",
+    "packages/database/src/types.ts",
+    "packages/database/src/constants.ts",
+    "**/mcp*/lib/tools/",
+    "**/mcp*/lib/server.ts",
+    "**/mcp*/lib/tool-metadata.json",
+    // One line per operation keeps a changed schema a one-line hunk.
+    "**/mcp*/lib/tool-manifest.digest.json"
+  ]
+}

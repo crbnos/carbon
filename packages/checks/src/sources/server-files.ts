@@ -86,7 +86,7 @@ const isSingleLineDeclaration = (line: string): boolean =>
  * server half of a route module. Line numbering is preserved so violations
  * still point at the real line. A region runs from its declaration to the next
  * column-0 `}` or `)` (`}` for block bodies, `)` for paren-wrapped
- * expression-bodied arrows) — reliable because the repo is Biome-formatted, so
+ * expression-bodied arrows) — reliable because the repo is oxfmt-formatted, so
  * a top-level closer is never indented.
  */
 export function maskClientCode(contents: string): string {

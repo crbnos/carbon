@@ -75,6 +75,13 @@ import {
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "../shared/shared.service";
 import { getUser } from "../users/users.service";
+import { planServiceJobInvoiceLines } from "./service-job-invoice-plan";
+import {
+  buildCoverageReclassLines,
+  buildServiceTimeCostGroups,
+  type ServiceJobJournalLine,
+  serviceCoverageAccount
+} from "./service-job-plan";
 import type {
   customerAssetPatchValidator,
   customerAssetValidator,
@@ -96,13 +103,6 @@ import {
   type serviceJobUpdateFields,
   serviceWorkSites
 } from "./service.models";
-import { planServiceJobInvoiceLines } from "./service-job-invoice-plan";
-import {
-  buildCoverageReclassLines,
-  buildServiceTimeCostGroups,
-  type ServiceJobJournalLine,
-  serviceCoverageAccount
-} from "./service-job-plan";
 
 type Client = SupabaseClient<Database>;
 

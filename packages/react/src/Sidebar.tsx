@@ -16,8 +16,8 @@ import { useShortcutKeys } from "./hooks/useShortcutKeys";
 import { IconButton } from "./IconButton";
 import { Input } from "./Input";
 import { Separator } from "./Separator";
-import { Skeleton } from "./Skeleton";
 import { SHORTCUTS } from "./shortcuts";
+import { Skeleton } from "./Skeleton";
 import {
   Tooltip,
   TooltipContent,

@@ -19,11 +19,11 @@ import {
   OnshapeWVMType,
   onshapeFailure
 } from "@carbon/ee/onshape";
-import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import {
   readAssemblyProperties,
   readPartProperties
 } from "@carbon/ee/onshape.server";
+import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";

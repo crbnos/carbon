@@ -49,7 +49,8 @@ const inputGroupVariants = cva(
 );
 
 export interface InputGroupProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "size">,
+  extends
+    Omit<InputHTMLAttributes<HTMLInputElement>, "size">,
     VariantProps<typeof inputGroupVariants> {
   isDisabled?: boolean;
   isInvalid?: boolean;
@@ -181,7 +182,8 @@ export const inputVariants = cva(
 );
 
 export interface InputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "size">,
+  extends
+    Omit<InputHTMLAttributes<HTMLInputElement>, "size">,
     VariantProps<typeof inputVariants> {
   isFirstChild?: boolean;
   isLastChild?: boolean;
@@ -313,7 +315,8 @@ const inputAddonVariants = cva(
 );
 
 export interface InputAddonProps
-  extends HTMLAttributes<HTMLDivElement>,
+  extends
+    HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof inputAddonVariants> {
   isDisabled?: boolean;
 }
@@ -384,7 +387,8 @@ const inputElementVariants = cva(
 );
 
 export interface InputElementProps
-  extends HTMLAttributes<HTMLDivElement>,
+  extends
+    HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof inputElementVariants> {
   isFirstChild?: boolean;
   isLastChild?: boolean;

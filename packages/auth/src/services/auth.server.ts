@@ -43,12 +43,12 @@ import {
 import { logAuthEvent } from "./auth-events.server";
 import { getCompanyPlanId, isCarbonOwnedCompany } from "./company.server";
 import { resolveConsolePinIn } from "./console-pin.server";
+import { sessionAccess } from "./session-access";
 import {
   destroyAuthSession,
   flash,
   requireAuthSession
 } from "./session.server";
-import { sessionAccess } from "./session-access";
 import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 

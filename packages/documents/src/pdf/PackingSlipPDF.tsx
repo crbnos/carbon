@@ -14,8 +14,8 @@ import {
 import type { PDF } from "../types";
 import type { PartNumberDisplay } from "../utils/part-number";
 import { resolveRegistrationLine } from "../utils/shared";
-import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
+import { DocumentPage } from "./blocks/DocumentPage";
 import type {
   PackingSlipData,
   PackingSlipDocumentType,

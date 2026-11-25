@@ -77,6 +77,7 @@ pnpm run check:workflow-catalog             # must exit 0
 
 # Gate 2 — format + lint (auto-fixes in place)
 pnpm exec biome check --write --no-errors-on-unmatched <changed paths>
+pnpm exec oxfmt --no-error-on-unmatched-pattern <changed paths>
 
 # Gate 2b — conformance checks (only if CONFORMANCE_RELEVANT; ~5 s)
 [ -f packages/config/dist/vitest.mjs ] || pnpm --filter @carbon/config build
@@ -119,7 +120,7 @@ translations by invoking the **translate skill** (`/translate`), not by hand:
 
 | Failure | Action |
 |---------|--------|
-| Biome formatting/import order | Already fixed by `--write`; re-run to confirm clean |
+| oxfmt formatting/import order | Already fixed by `oxfmt`; re-run `pnpm exec oxfmt --check` to confirm clean |
 | Type error from stale generated types | Run Gate 1, re-run typecheck |
 | Type/test error caused by this change | Fix the code, re-run |
 | Conformance violation (Gate 2b) | Fix the code. Never add it to `packages/checks/src/conformance/baseline.json`; the baseline grandfathers old code only |

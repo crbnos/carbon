@@ -47,9 +47,8 @@ vi.mock("./verification.server", () => ({
   checkDomainVerification: checkDomainVerificationMock
 }));
 
-const { getSsoProviderIdFromSession, getSsoProviderIdFromUser } = await import(
-  "./session.server"
-);
+const { getSsoProviderIdFromSession, getSsoProviderIdFromUser } =
+  await import("./session.server");
 const {
   addSsoDomain,
   getSsoAwareInviteLink,

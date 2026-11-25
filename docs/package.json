@@ -10,8 +10,8 @@
     "postinstall": "fumadocs-mdx",
     "clean": "rimraf .cache .turbo .next .source node_modules",
     "lint": "biome lint --write .",
-    "format": "biome format --write .",
-    "check": "biome check --write .",
+    "format": "oxfmt .",
+    "check": "biome check --write . && oxfmt .",
     "typecheck": "node scripts/generate-api-docs.mjs && fumadocs-mdx && tsc --noEmit",
     "generate:changelog-thumbnails": "node scripts/generate-changelog-thumbnail.mjs"
   },

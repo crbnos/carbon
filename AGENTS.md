@@ -50,6 +50,7 @@ Choose the smallest relevant set for the change:
 ```bash
 pnpm exec turbo run typecheck --filter=<pkg>   # TypeScript (scoped — whole-repo typecheck OOMs)
 pnpm run lint                # Biome linting
+pnpm run format              # oxfmt formatting + import order (`pnpm exec oxfmt --check` to verify)
 pnpm run test                # Unit tests
 pnpm run build               # Full build
 pnpm db:migrate:new <name>   # Create new migration

@@ -30,6 +30,8 @@ import {
   type jobStatus
 } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
+import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
+import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   BeyondFenceButton,
@@ -46,8 +48,6 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
-import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
-import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
@@ -209,21 +209,19 @@ export const ProductionPlanningOrderDrawer = memo(
 
         setOpenJobs(
           (jobs.data ?? [])
-            .map(
-              (job): OpenProductionOrder => ({
-                existingId: job.id,
-                existingReadableId: job.jobId,
-                // a Draft job is not supply yet, so all of it is new to the chart
-                existingQuantity: job.status === "Draft" ? 0 : job.quantity,
-                existingStatus: job.status,
-                startDate: job.startDate ?? null,
-                dueDate: job.dueDate ?? null,
-                quantity: job.quantity,
-                loadedQuantity: job.quantity,
-                isASAP: job.deadlineType === "ASAP",
-                periodId: periodIdFor(periods, job.dueDate)
-              })
-            )
+            .map((job): OpenProductionOrder => ({
+              existingId: job.id,
+              existingReadableId: job.jobId,
+              // a Draft job is not supply yet, so all of it is new to the chart
+              existingQuantity: job.status === "Draft" ? 0 : job.quantity,
+              existingStatus: job.status,
+              startDate: job.startDate ?? null,
+              dueDate: job.dueDate ?? null,
+              quantity: job.quantity,
+              loadedQuantity: job.quantity,
+              isASAP: job.deadlineType === "ASAP",
+              periodId: periodIdFor(periods, job.dueDate)
+            }))
             .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
         );
       })();

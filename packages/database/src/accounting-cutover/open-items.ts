@@ -571,8 +571,8 @@ async function getUnappliedPaymentItems(
     const isDeposit = isAR
       ? Boolean(
           payment.rentalAgreementId ??
-            payment.salesOrderId ??
-            payment.customerContractId
+          payment.salesOrderId ??
+          payment.customerContractId
         )
       : Boolean(payment.purchaseOrderId);
     const own = ownReleased.get(payment.id);

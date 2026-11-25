@@ -12,7 +12,7 @@ File naming: `.ai/plans/improve/NNN-short-slug.md`, numbered in recommended exec
 
 **Carbon command rules the plan must respect** (bake into every plan):
 - Typecheck is **scoped to one package**: `turbo run typecheck --filter=<pkg>`. NEVER a whole-repo typecheck (it OOMs).
-- Lint read-only: `pnpm exec biome lint <paths>`. Format only if the plan explicitly intends it: `pnpm exec biome format --write <paths>`.
+- Lint read-only: `pnpm exec biome lint <paths>`. Format only if the plan explicitly intends it: `pnpm exec oxfmt <paths>`.
 - Tests: `pnpm --filter <pkg> test` (vitest).
 - **The executor never runs database migrations/seeds/rebuilds** (`pnpm db:migrate`, `db:seed`, `db:types`, `crbn migrate`). If a plan adds a migration, the executor writes the SQL file per `.claude/rules/workflow-database-migration.md`; **the user applies it**. State this explicitly.
 

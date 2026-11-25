@@ -34,8 +34,8 @@ import {
   getImplementationNavItem,
   ImplementationData
 } from "~/hooks/useImplementationNavItem";
-import { useModuleLinks } from "~/hooks/useModuleSubmodules";
 import { useAllModules, useSettingsModule } from "~/hooks/useModules";
+import { useModuleLinks } from "~/hooks/useModuleSubmodules";
 import { moduleOfMatches } from "~/utils/nav";
 import { path } from "~/utils/path";
 import { AddCompanyModal } from "../Navigation/AddCompanyModal";

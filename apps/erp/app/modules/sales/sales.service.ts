@@ -23530,8 +23530,8 @@ async function cancelContractWrites(
           const idByReadableId = new Map(
             memos.map((memo) => [memo.memoId, memo.id])
           );
-          memoIds = memoReadableIds.map(
-            (readableId) => idByReadableId.get(readableId)!
+          memoIds = memoReadableIds.map((readableId) =>
+            idByReadableId.get(readableId)!
           );
           adjustmentMemoIds = credit.memoIndexOfAdjustment.map(
             (index) => memoIds[index]!

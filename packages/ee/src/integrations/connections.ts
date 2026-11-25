@@ -342,9 +342,10 @@ export async function createConnection(
     .select("id, accountLabel, metadata")
     .eq("companyId", args.companyId)
     .eq("pieceName", args.pieceName);
-  const existing = await (args.connectionId === undefined
-    ? lookup.eq("name", args.name)
-    : lookup.eq("id", args.connectionId)
+  const existing = await (
+    args.connectionId === undefined
+      ? lookup.eq("name", args.name)
+      : lookup.eq("id", args.connectionId)
   ).maybeSingle();
   if (existing.error) throw existing.error;
 

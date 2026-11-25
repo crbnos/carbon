@@ -688,13 +688,13 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Applies to:** `BoardContainer` (`ColumnCard.tsx`) and any kanban wanting a pinned column; any dnd-kit board with sticky droppables.
 
-## Regenerating `src/email/previews/` fixtures requires a follow-up biome format pass
+## Regenerating `src/email/previews/` fixtures requires a follow-up format pass
 
 **Context:** Adding ChangeOrder* entries to `packages/documents/scripts/generate-notification-previews.mjs` and re-running it to emit the per-event preview fixtures.
 
-**Problem:** The generator writes raw `JSON.stringify(..., null, 6)` output (quoted keys, 6-space indent), but the committed fixtures are biome-formatted (unquoted keys, 2-space indent). Re-running the script therefore rewrites **all** existing fixtures into the raw style — 28 files of pure formatting churn drowning the 3 intended new files in the diff.
+**Problem:** The generator writes raw `JSON.stringify(..., null, 6)` output (quoted keys, 6-space indent), but the committed fixtures are formatted (unquoted keys, 2-space indent). Re-running the script therefore rewrites **all** existing fixtures into the raw style — 28 files of pure formatting churn drowning the 3 intended new files in the diff.
 
-**Rule:** After running `generate-notification-previews.mjs`, always run `pnpm exec biome check --write packages/documents/src/email/previews/` before reviewing the diff. Only intended fixture changes should remain; if pre-existing fixtures still show as modified, something else changed.
+**Rule:** After running `generate-notification-previews.mjs`, always run `pnpm exec oxfmt packages/documents/src/email/previews/` before reviewing the diff. Only intended fixture changes should remain; if pre-existing fixtures still show as modified, something else changed.
 
 **Applies to:** `packages/documents/scripts/generate-notification-previews.mjs`, `packages/documents/src/email/previews/*`, and any generator whose committed output is formatter-normalized.
 
@@ -921,7 +921,7 @@ company-scoping helper that takes a table name at run time.
 catalogue matches what the generator would produce, partly by grepping the label
 file for its keys.
 
-**Problem:** The generator emits `"notify":` but Biome formats the committed file
+**Problem:** The generator emits `"notify":` but the formatter rewrites the committed file
 to `notify:`. A regex anchored on `^ {2}"([^"]+)":` therefore skipped exactly the
 keys that happen to be valid JS identifiers — the check passed while genuinely
 missing entries.
@@ -931,7 +931,7 @@ formatter's output, not the generator's. Make the quotes optional
 (`^ {2}"?([^":\s]+)"?:`), or compare parsed data rather than text.
 
 **Applies to:** `scripts/check-workflow-catalog.ts` and any future drift check
-that greps a Biome-formatted generated file.
+that greps a formatted generated file.
 
 ## Never hand-measure React Flow handle positions; and never `stopPropagation` inside a node
 
@@ -3861,9 +3861,9 @@ Never edit main's migration to make it apply.
 
 **Context:** The chart of accounts import (2026-10-12) committed with `git -c core.hooksPath=/dev/null` so the Lingui catalogs, which the hook stages into any commit with `.ts` changes, could land in their own commit.
 
-**Problem:** The hook also runs lint-staged. Bypassing it skipped Biome's formatter, and a test file reached the branch unformatted. The self-review caught it, not the commit.
+**Problem:** The hook also runs lint-staged. Bypassing it skipped the formatter, and a test file reached the branch unformatted. The self-review caught it, not the commit.
 
-**Rule:** Before a commit with the hook off, run `pnpm biome check --write` on the staged files and the checks the hook would run (`pnpm --silent check:manifest`, `pnpm --silent db:check:datasets` for `packages/database`, `pnpm --silent db:check:backups` for migrations). Prefer committing the catalogs last with the hook on.
+**Rule:** Before a commit with the hook off, run `pnpm exec biome check --write` and `pnpm exec oxfmt` on the staged files and the checks the hook would run (`pnpm --silent check:manifest`, `pnpm --silent db:check:datasets` for `packages/database`, `pnpm --silent db:check:backups` for migrations). Prefer committing the catalogs last with the hook on.
 
 **Applies to:** any commit made with `--no-verify` or `core.hooksPath=/dev/null`.
 

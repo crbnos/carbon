@@ -32,9 +32,4 @@ export {
   type LicenseKind
 } from "./license-headers";
 export { openRepo } from "./repo";
-export {
-  collectFindings,
-  type Finding,
-  newViolations,
-  runChecks
-} from "./run";
+export { collectFindings, type Finding, newViolations, runChecks } from "./run";

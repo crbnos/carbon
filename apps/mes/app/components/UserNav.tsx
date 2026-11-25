@@ -147,9 +147,9 @@ export function useUserNav({
   const sessionUserId = routeData?.user?.id;
   const isOperatorPinnedIn = Boolean(
     consoleMode &&
-      pinnedInUser &&
-      sessionUserId &&
-      pinnedInUser.userId !== sessionUserId
+    pinnedInUser &&
+    sessionUserId &&
+    pinnedInUser.userId !== sessionUserId
   );
   const showingOperator = isOperatorPinnedIn ? pinnedInUser : null;
   const displayName = showingOperator ? showingOperator.name : stationName;

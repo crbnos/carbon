@@ -48,8 +48,8 @@ import { SearchEmptyState } from "~/components/Layout/Topbar/Search/SearchEmptyS
 import { SearchFilterChips } from "~/components/Layout/Topbar/Search/SearchFilterChips";
 import type { EntityTypeFilter } from "~/components/Layout/Topbar/Search/types";
 import { useModules, useSettingsModule, useUser } from "~/hooks";
-import { useModuleSubmodules } from "~/hooks/useModuleSubmodules";
 import { useSubmoduleLayout } from "~/hooks/useModules";
+import { useModuleSubmodules } from "~/hooks/useModuleSubmodules";
 import useSettingsSubmodules from "~/modules/settings/ui/useSettingsSubmodules";
 import type { SearchResponse } from "~/routes/api+/search";
 import { useUIStore } from "~/stores/ui";

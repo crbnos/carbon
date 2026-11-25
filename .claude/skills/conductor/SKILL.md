@@ -107,6 +107,7 @@ a. **Floor gates** — format first, then the harness gate suite (lint +
 
    ```bash
    pnpm exec biome check --write --no-errors-on-unmatched <changed paths>
+   pnpm exec oxfmt --no-error-on-unmatched-pattern <changed paths>
    pnpm --filter @carbon/harness gates
    pnpm exec turbo run typecheck --filter=<pkg>   # per touched package, never whole-repo
    ```

@@ -269,9 +269,8 @@ function ConfiguratorBody({
       );
 
       // Rules run in the same QuickJS sandbox as get-method, never in this page's engine.
-      const { runConfigurationRule } = await import(
-        "@carbon/database/configuration-rule"
-      );
+      const { runConfigurationRule } =
+        await import("@carbon/database/configuration-rule");
       const result: any = await runConfigurationRule(jsCode, parametersObj);
 
       // Verify return type

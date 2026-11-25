@@ -340,7 +340,7 @@ function withWrappers(
   functions: NamedFunction[]
 ): Set<string> {
   const out = new Set(names);
-  for (let grew = true; grew; ) {
+  for (let grew = true; grew;) {
     grew = false;
     for (const { name, node } of functions) {
       if (!out.has(name) && caseCalls(node, out).length > 0) {
@@ -511,7 +511,7 @@ export function sharedTestWrappers(fixtures: SourceFile[]): string[] {
     namedFunctions(parseTypescript(file, contents).program)
   );
   const found = new Set<string>();
-  for (let grew = true; grew; ) {
+  for (let grew = true; grew;) {
     grew = false;
     for (const functions of files) {
       const wrappers = withWrappers(["it", "test", ...found], functions);

@@ -15,7 +15,6 @@ import {
 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { AssemblyViewer } from "./AssemblyViewer";
-import { PmiLayer } from "./PmiLayer";
 import {
   type PmiBounds,
   type PmiDisplayUnit,
@@ -24,6 +23,7 @@ import {
   pmiViewBounds,
   visibleItemIds
 } from "./pmi";
+import { PmiLayer } from "./PmiLayer";
 import { useAssembly } from "./useAssembly";
 import { cn } from "./utils";
 

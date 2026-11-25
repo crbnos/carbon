@@ -180,6 +180,7 @@ pnpm run generate:types
 
 # 2. Format + lint the files you touched
 pnpm exec biome check --write <changed paths>
+pnpm exec oxfmt --no-error-on-unmatched-pattern <changed paths>
 
 # 3. Typecheck each touched package — NEVER whole-repo (it OOMs)
 pnpm exec turbo run typecheck --filter=<pkg>

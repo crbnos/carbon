@@ -62,6 +62,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - run: pnpm exec biome check
+      - run: pnpm exec oxfmt --check
       - name: Conformance checks
         run: |
           pnpm --filter @carbon/config build

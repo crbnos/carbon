@@ -39,10 +39,10 @@ import {
   activityKindFor,
   entityStatusMeta
 } from "./metadata";
-import { NodeSearchDialog } from "./NodeSearchDialog";
 import { ActivityNode } from "./nodes/ActivityNode";
 import { EntityGroupNode } from "./nodes/EntityGroupNode";
 import { EntityNode } from "./nodes/EntityNode";
+import { NodeSearchDialog } from "./NodeSearchDialog";
 import { useTraceabilityStore } from "./store";
 import { type ActivityOrder, TraceabilityTable } from "./TraceabilityTable";
 import {
