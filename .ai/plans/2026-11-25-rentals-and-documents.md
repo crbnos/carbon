@@ -1,7 +1,7 @@
 # Rentals and documents fixes — implementation plan
 **Spec / source:** .ai/specs/2026-11-25-rentals-and-documents.md
 **Branch:** fix/rentals-and-documents
-> **Later changes (after the browser test and review rounds).** The branch has 4 migrations, not 2: `20261125091117_invoice-automation-manual-agreements-only.sql` (a CHECK keeps Manual off the company setting and contracts) and `20261125121101_quote-send-via-email.sql` (`quote.sendViaEmail`). The Won step now starts from the Send Via picked at Finalize (it no longer starts on None); the sales order Confirm dialog still starts on None. The sales order Ship To prints for a drop shipment only. The Rental Site sets the bill-to and the ship-to of later invoices. Early invoices carry a hold. The spec is the source of truth for these.
+> **Later changes (after the browser test and review rounds).** The branch has 4 migrations, not 2: `20261125131414_invoice-automation-manual-agreements-only.sql` (a CHECK keeps Manual off the company setting and contracts) and `20261125121101_quote-send-via-email.sql` (`quote.sendViaEmail`). The Won step now starts from the Send Via picked at Finalize (it no longer starts on None); the sales order Confirm dialog still starts on None. The sales order Ship To prints for a drop shipment only. The Rental Site sets the bill-to and the ship-to of later invoices. Early invoices carry a hold. The spec is the source of truth for these.
 
 ## Progress
 - [x] Task 0: Cherry-pick #2362 (done: commit 3aeadf5238)

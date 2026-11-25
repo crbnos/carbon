@@ -188,9 +188,9 @@
 - 2026-11-25: Manual is offered on the rental agreement only, never on the company setting or a contract. The dialog bills due charges alone with N = 0 when no period is left (AC 15, 16). Recorded the plan's decisions: Manual still cuts periods and drafts credit memos; every line is billed, a Returned line included; the fixed-term limit is the periods left; the Ship To comes from view columns; samples may need a third variant; contract tax also shows on the contract page.
 - 2026-11-25: Implemented (plan `.ai/plans/2026-11-25-rentals-and-documents.md`). What shipped:
   - Early invoice: `invoiceRentalAgreementPeriods` and the read-only `previewRentalAgreementInvoice` (`sales.server.ts`) call `draftEarlyRentalInvoice` (`sales.service.ts`). An open-ended line is cut with `generatePeriodsForPending`. The UI is `RentalInvoiceModal`, with the preview route `api+/rental-agreement.$id.invoice-preview.ts`.
-  - Manual: migration `20261125054030_invoice-automation-manual.sql`. `invoiceAutomationPosts` (`@carbon/utils`) is false for Draft Only and Manual. Contracts and the company setting use `inheritableInvoiceAutomations`, and a CHECK refuses Manual on both (`20261125091117_invoice-automation-manual-agreements-only.sql`).
+  - Manual: migration `20261125131412_invoice-automation-manual.sql`. `invoiceAutomationPosts` (`@carbon/utils`) is false for Draft Only and Manual. Contracts and the company setting use `inheritableInvoiceAutomations`, and a CHECK refuses Manual on both (`20261125131414_invoice-automation-manual-agreements-only.sql`).
   - Rental Site: `customerLocationId` is in `rentalActiveTerms`. `refuseForeignRentalSite` refuses another customer's location with `RENTAL_SITE_WRONG_CUSTOMER`.
-  - Sales order Ship To: migration `20261125054031_sales-order-ship-to.sql` adds the `shipTo*` columns to `salesOrderLocations`. `PartiesBlock` prints them under Customer.
+  - Sales order Ship To: migration `20261125131413_sales-order-ship-to.sql` adds the `shipTo*` columns to `salesOrderLocations`. `PartiesBlock` prints them under Customer.
   - Send Via: both dialogs start on None. `CustomerContact` takes `emailNotice` for the warning line.
   - Contract tax: `contractInvoiceTax` (`ui/Contracts/contractTerms.ts`) feeds `ContractSummary`.
 - 2026-11-25: Deviations from the design:
@@ -201,7 +201,7 @@
 - 2026-11-25: Fixes after the browser test. Rental invoice lines print dates as "Oct 7, 2026" (`rentLineDescription`), not ISO dates. Older lines keep their text. The contract Confirm dialog shows totals with tax. The location picker reopens after "Create" by design, so it stays as it is.
 - 2026-11-25: Fixes after the code review.
   - Ship To prints only for a drop shipment (§5, AC 11). For every other order it repeated the Customer block's address.
-  - A CHECK on `companySettings` and `customerContract` refuses Manual (migration `20261125091117_invoice-automation-manual-agreements-only.sql`). The app lists alone did not stop a direct API write. `inheritableInvoiceAutomations` (`settings.models.ts`) is the one list of every mode but Manual.
+  - A CHECK on `companySettings` and `customerContract` refuses Manual (migration `20261125131414_invoice-automation-manual-agreements-only.sql`). The app lists alone did not stop a direct API write. `inheritableInvoiceAutomations` (`settings.models.ts`) is the one list of every mode but Manual.
   - A run bills a Manual agreement only with `billManual` (Sell to Customer). Before, any run for one agreement billed it.
   - The early invoice preview takes no lock. The dialog posts the preview's `firstPeriodStart` as `fromPeriodStart`, and the server refuses when another period comes first. So a resubmit or a retried MCP call never bills the following periods.
   - Contract tax follows the drafting's rule (§7).

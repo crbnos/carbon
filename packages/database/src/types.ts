@@ -110942,6 +110942,13 @@ export type Database = {
         Args: { company_id: string; item_id: string }
         Returns: Json
       }
+      get_items_used_in: {
+        Args: { company_id: string; item_ids: string[] }
+        Returns: {
+          itemId: string
+          usedIn: Json
+        }[]
+      }
       get_job_issue_bins: {
         Args: { p_company_id: string; p_item_ids: string[]; p_job_id: string }
         Returns: {
