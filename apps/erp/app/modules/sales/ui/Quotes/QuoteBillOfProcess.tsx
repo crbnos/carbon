@@ -4,7 +4,12 @@
 
 "use client";
 import { useCarbon } from "@carbon/auth";
-import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
+import {
+  Array as ArrayInput,
+  Input,
+  useControlField,
+  ValidatedForm
+} from "@carbon/form";
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -48,7 +53,7 @@ import type { DragControls } from "motion/react";
 import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   LuActivity,
   LuChevronRight,
@@ -125,6 +130,7 @@ import {
   operationTypes,
   procedureStepType
 } from "~/modules/shared/shared.models";
+import { workCenterForProcess } from "~/modules/shared/shared.utils";
 import type {
   OperationParameter,
   OperationStep,
@@ -1691,6 +1697,11 @@ function OperationForm({
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
+  const formId = useId();
+  const [workCenterId, setWorkCenterId] = useControlField<string | undefined>(
+    "workCenterId",
+    formId
+  );
 
   const machineDisclosure = useDisclosure();
   const assemblyDisclosure = useDisclosure();
@@ -1761,6 +1772,15 @@ function OperationForm({
       workCenters?.data?.filter((wc) => Boolean(wc.workCenter)) ?? [];
 
     if (process.error) throw new Error(process.error.message);
+
+    setWorkCenterId(
+      workCenterForProcess({
+        workCenterId,
+        processWorkCenters: activeWorkCenters.flatMap((wc) =>
+          wc.workCenter ? [wc.workCenter] : []
+        )
+      })
+    );
 
     setProcessData((p) => ({
       ...p,
@@ -1863,6 +1883,7 @@ function OperationForm({
           ? path.to.newQuoteOperation(quoteId, lineId)
           : path.to.quoteOperation(quoteId, lineId, item.id!)
       }
+      id={formId}
       method="post"
       defaultValues={item.data}
       validator={quoteOperationValidator}

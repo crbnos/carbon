@@ -111,6 +111,9 @@ export function TimelineDetail({
   const isUnschedulablePlaceholder =
     detail.kind === "reservation" && !!detail.unschedulable;
 
+  // An operation with no work center: nothing to place it on, and no time.
+  const hasNoWorkCenter = !!detail.noWorkCenter;
+
   const kindLabel: Record<TimelineNodeDetail["kind"], string> = {
     job: t`Job`,
     assembly: t`Assembly`,
@@ -172,15 +175,16 @@ export function TimelineDetail({
   };
 
   // Header status chip — mirrors the board legend so the panel reads at a glance.
-  const status: { tone: StatusTone; label: string } = isUnschedulablePlaceholder
-    ? { tone: "conflict", label: t`Unschedulable` }
-    : detail.conflictReason
-      ? { tone: "conflict", label: t`Conflict` }
-      : isUnscheduled
-        ? { tone: "conflict", label: t`Unscheduled` }
-        : detail.approximate
-          ? { tone: "estimated", label: t`Estimated` }
-          : { tone: "scheduled", label: t`Scheduled` };
+  const status: { tone: StatusTone; label: string } =
+    isUnschedulablePlaceholder || hasNoWorkCenter
+      ? { tone: "conflict", label: t`Unschedulable` }
+      : detail.conflictReason
+        ? { tone: "conflict", label: t`Conflict` }
+        : isUnscheduled
+          ? { tone: "conflict", label: t`Unscheduled` }
+          : detail.approximate
+            ? { tone: "estimated", label: t`Estimated` }
+            : { tone: "scheduled", label: t`Scheduled` };
 
   // A zone-agnostic "starts in 3 days / 2 days ago" for booked rows.
   const relative =
@@ -311,6 +315,16 @@ export function TimelineDetail({
               </Trans>
             </p>
           ))}
+
+        {hasNoWorkCenter && (
+          <p className="text-sm italic text-muted-foreground text-pretty">
+            <Trans>
+              This operation has no work center, so it can't be scheduled. Give
+              it a work center that runs its process, or add its process to a
+              work center at this location.
+            </Trans>
+          </p>
+        )}
 
         {isUnschedulablePlaceholder && detail.qualifiedPeople && (
           <div className="space-y-1.5">

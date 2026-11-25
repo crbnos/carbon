@@ -271,6 +271,7 @@ import {
   type procedureValidator,
   type productionEventValidator,
   type productionQuantityValidator,
+  SCHEDULED_JOB_STATUSES,
   type scrapReasonValidator,
   WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
@@ -1662,6 +1663,37 @@ export async function getCapacityReservationsForResources(
   }
 
   return query.order("startAt");
+}
+
+/** The most operations without a work center one Forecast load lists. */
+const OPERATIONS_WITHOUT_WORK_CENTER_LIMIT = 200;
+
+/**
+ * Open operations of the jobs the scheduler places at a location that have no
+ * work center: no process, or a process no work center there runs. They get no
+ * capacity reservation, so the Forecast reads them here. Outside Processing has
+ * no work center by design and is left out.
+ */
+export async function getOperationsWithoutWorkCenter(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(
+      `id, jobId, description, conflictReason,
+       job!inner(jobId, status, locationId),
+       jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))`
+    )
+    .eq("companyId", companyId)
+    .is("workCenterId", null)
+    .neq("operationType", "Outside Processing")
+    .not("status", "in", '("Done","Canceled")')
+    .eq("job.locationId", locationId)
+    .in("job.status", SCHEDULED_JOB_STATUSES)
+    .order("id")
+    .limit(OPERATIONS_WITHOUT_WORK_CENTER_LIMIT);
 }
 
 export async function getMaintenanceDowntimeForResources(

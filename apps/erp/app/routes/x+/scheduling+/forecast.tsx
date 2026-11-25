@@ -21,7 +21,7 @@ import {
   toCalendarDate
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
-import { Plural, Trans } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import { LuBan, LuTriangleAlert } from "react-icons/lu";
@@ -39,6 +39,7 @@ import { getShiftsWithTimesByIds } from "~/modules/people/people.service";
 import {
   getForecastNonWorkingIntervals,
   getHolidayDates,
+  getOperationsWithoutWorkCenter,
   getQualifiedPeopleByProcess,
   getWorkCenterNonWorkingIntervals
 } from "~/modules/production/production.service";
@@ -52,6 +53,7 @@ import {
   buildResourceTimeline,
   collapseToLanes,
   forecastCounts,
+  NO_WORK_CENTER_LANE_ID,
   workCenterIdFromLaneId,
   workCenterLaneId
 } from "~/modules/production/ui/Schedule/resourceTimeline";
@@ -216,7 +218,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // from the SAME availability ladder the scheduler uses — so the shaded
   // background can't disagree with the bars. Shades the axis so a reservation
   // spanning several days no longer reads as 24h/day.
-  const [reservations, maintenanceResult, holidays] = await Promise.all([
+  const [
+    reservations,
+    maintenanceResult,
+    holidays,
+    operationsWithoutWorkCenterResult
+  ] = await Promise.all([
     api.production.getCapacityReservationsForResources({
       locationId,
       window: {
@@ -228,12 +235,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getHolidayDates(client, companyId, {
       from: toCalendarDate(fromAbsolute(windowStartMs, timeZone)).toString(),
       to: toCalendarDate(fromAbsolute(windowEndMs, timeZone)).toString()
-    })
+    }),
+    // A department scopes the board to its stations; an operation with no
+    // work center belongs to none of them.
+    departmentId
+      ? Promise.resolve({ data: [], error: null })
+      : getOperationsWithoutWorkCenter(client, companyId, locationId)
   ]);
   if (holidays.error) {
     throw redirect(
       path.to.production,
       await flash(request, error(holidays.error, "Failed to load holidays"))
+    );
+  }
+  if (operationsWithoutWorkCenterResult.error) {
+    throw redirect(
+      path.to.production,
+      await flash(
+        request,
+        error(
+          operationsWithoutWorkCenterResult.error,
+          "Failed to load operations without a work center"
+        )
+      )
     );
   }
   const nonWorkingIntervals = getForecastNonWorkingIntervals({
@@ -405,10 +429,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
         rangeStart: windowStartMs,
         rangeEnd: windowEndMs
       })
-    ].map(([workCenterId, intervals]) => [
-      workCenterLaneId(workCenterId),
-      intervals
-    ])
+    ]
+      .map(([workCenterId, intervals]) => [
+        workCenterLaneId(workCenterId),
+        intervals
+      ])
+      // An op with no work center has no working hours to split on: its bar is
+      // one unbroken "can't be scheduled" row, not one per day.
+      .concat([[NO_WORK_CENTER_LANE_ID, []]])
   );
 
   // A department scopes the board to its work centers and their reservations —
@@ -579,6 +607,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
     maintenance: maintenance.filter((m) =>
       departmentWorkCenterIds.has(m.workCenterId)
     ),
+    operationsWithoutWorkCenter: (
+      operationsWithoutWorkCenterResult.data ?? []
+    ).map((op) => ({
+      operationId: op.id,
+      jobId: op.jobId,
+      jobReadableId: op.job?.jobId ?? op.jobId,
+      operationDescription: op.description ?? null,
+      itemReadableId: op.jobMakeMethod?.item?.readableIdWithRevision ?? null,
+      itemName: op.jobMakeMethod?.item?.name ?? null,
+      itemThumbnailPath: op.jobMakeMethod?.item?.thumbnailPath ?? null,
+      itemType: op.jobMakeMethod?.item?.type ?? null,
+      conflictReason: op.conflictReason
+    })),
     window: { start: windowStartMs, end: windowEndMs }
   });
 
@@ -696,24 +737,28 @@ export default function ResourceGanttView() {
 
   const { isGated } = usePlanGate({ feature: "FORECAST" });
 
+  const { t } = useLingui();
   const { locale } = useLocale();
   const navigate = useNavigate();
   const { location, replaceSearchParam } = useReplaceLocation();
   const selectedSpanId = getSpanId(location);
   const view = getView(location);
+  // The loader builds the board untranslated; its one lane that names no
+  // resource is titled here.
+  const noWorkCenterTitle = t`No work center`;
 
   // Compact (the default) puts each work center on one row with its operations
   // side by side; detailed is the full Location > Work Center > Operation >
   // People tree. Switched in the browser — both come from the same events.
-  const events = useMemo(
-    () =>
-      trace
-        ? view === "compact"
-          ? collapseToLanes(trace.events)
-          : trace.events
-        : [],
-    [trace, view]
-  );
+  const events = useMemo(() => {
+    if (!trace) return [];
+    const titled = trace.events.map((event) =>
+      event.id === NO_WORK_CENTER_LANE_ID
+        ? { ...event, data: { ...event.data, message: noWorkCenterTitle } }
+        : event
+    );
+    return view === "compact" ? collapseToLanes(titled) : titled;
+  }, [trace, view, noWorkCenterTitle]);
 
   // Axis labels are 24-hour clock times for a day/shift and dates for a week,
   // both in the plant's timezone (the company fallback is resolved server-side).
@@ -770,9 +815,12 @@ export default function ResourceGanttView() {
     replaceSearchParam("span", selectedSpan);
   }, 250);
 
-  const selectedDetail = selectedSpanId
-    ? detailsById[selectedSpanId]
-    : undefined;
+  const selectedDetail =
+    selectedSpanId === NO_WORK_CENTER_LANE_ID && detailsById[selectedSpanId]
+      ? { ...detailsById[selectedSpanId], title: noWorkCenterTitle }
+      : selectedSpanId
+        ? detailsById[selectedSpanId]
+        : undefined;
 
   const nextWorkDate = nextScheduledDate
     ? formatDate(

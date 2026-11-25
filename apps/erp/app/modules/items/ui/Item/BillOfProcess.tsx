@@ -6,7 +6,12 @@
 import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
-import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
+import {
+  Array as ArrayInput,
+  Input,
+  useControlField,
+  ValidatedForm
+} from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -56,7 +61,7 @@ import type { DragControls } from "motion/react";
 import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuActivity,
@@ -147,6 +152,7 @@ import {
   procedureStepType,
   standardFactorType
 } from "~/modules/shared/shared.models";
+import { workCenterForProcess } from "~/modules/shared/shared.utils";
 import type {
   OperationParameter,
   OperationStep,
@@ -993,6 +999,11 @@ function OperationForm({
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
+  const formId = useId();
+  const [workCenterId, setWorkCenterId] = useControlField<string | undefined>(
+    "workCenterId",
+    formId
+  );
 
   useEffect(() => {
     // Remove from temporary items after successful submission
@@ -1062,16 +1073,31 @@ function OperationForm({
 
   const onProcessChange = async (processId: string) => {
     if (!carbon || !processId) return;
-    const [process, supplierProcesses] = await Promise.all([
+    const [process, workCenters, supplierProcesses] = await Promise.all([
       carbon.from("process").select("*").eq("id", processId).single(),
+      carbon
+        .from("workCenterProcess")
+        .select("workCenter(id, locationId, active)")
+        .eq("processId", processId)
+        .eq("workCenter.active", true),
       carbon.from("supplierProcess").select("*").eq("processId", processId)
     ]);
 
     if (process.error) throw new Error(process.error.message);
+    if (workCenters.error) throw new Error(workCenters.error.message);
+
+    const nextWorkCenterId = workCenterForProcess({
+      workCenterId,
+      processWorkCenters: workCenters.data.flatMap((wc) =>
+        wc.workCenter ? [wc.workCenter] : []
+      )
+    });
+    setWorkCenterId(nextWorkCenterId);
 
     setProcessData((p) => ({
       ...p,
       processId,
+      workCenterId: nextWorkCenterId,
       procedureId: "",
       description: process.data?.name ?? "",
       laborUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
@@ -1126,6 +1152,7 @@ function OperationForm({
           ? path.to.newMethodOperation
           : path.to.methodOperation(item.id!)
       }
+      id={formId}
       method="post"
       defaultValues={item.data}
       validator={methodOperationValidator}
