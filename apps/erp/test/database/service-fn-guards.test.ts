@@ -11,6 +11,7 @@ import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   connectLocalTestDatabase,
+  DATABASE_TEST_TIMEOUT,
   hasLocalDatabase
 } from "./fixtures/local-database";
 import * as inventory from "../../app/modules/inventory/inventory.server";
@@ -19,7 +20,8 @@ import { LOCKED_REVISION_MESSAGE } from "../../app/modules/items/items.service";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
-const describeLocal = describe.skipIf(!client);
+const describeLocal = (name: string, fn: () => void) =>
+  describe.skipIf(!client)(name, { timeout: DATABASE_TEST_TIMEOUT }, fn);
 
 const prefix = `sfguard-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 const ids = {
