@@ -415,7 +415,7 @@ export abstract class QboEntitySyncer<
     localId: string,
     remoteId: string,
     remoteUpdatedAt?: Date,
-    lastSyncedAt?: Date
+    lastSyncedAt?: string
   ): Promise<void> {
     const seen = this.seenRemoteMeta.get(remoteId);
     const effectiveUpdatedAt =

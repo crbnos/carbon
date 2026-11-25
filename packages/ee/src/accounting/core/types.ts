@@ -5,6 +5,7 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import { fromDate, parseAbsolute } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
 import type {
@@ -49,7 +50,12 @@ import type {
   SyncProviderID
 } from "./models";
 import { JournalEntrySyncError } from "./posting";
-import { AccountingApiError, withTriggersDisabled } from "./utils";
+import {
+  AccountingApiError,
+  AccountingAuthError,
+  RatelimitError,
+  withTriggersDisabled
+} from "./utils";
 
 const logger = getLogger("ee", "accounting");
 
@@ -423,7 +429,17 @@ export interface SyncContext {
   provider: SyncProvider;
   config: EntityConfig;
   entityType: AccountingEntityType;
+  /**
+   * The local ids an earlier push attempt may already have created remotely
+   * (`getAttemptedEntityIds`). Only these pay a provider's recovery read
+   * before their create. Absent when the caller does not know, and then
+   * every create reads first.
+   */
+  attemptedIds?: ReadonlySet<string>;
 }
+
+/** A batch upsert's outcome for one document: its remote id, or why it failed. */
+export type RemoteUpsertOutcome = string | { error: unknown };
 
 export interface SyncResult {
   status: "success" | "skipped" | "error";
@@ -437,17 +453,27 @@ export interface SyncResult {
  * The version a push sent: the entity's `updatedAt` as read before the push.
  * A mapping linked with it, rather than with the link time, stays older than
  * an edit made while the push was in flight, so the next reconcile pushes that
- * edit. Undefined when the entity has no readable `updatedAt` (the link then
- * stamps the current time).
+ * edit. Returned as a UTC ISO instant. Undefined when the entity has no
+ * readable `updatedAt` (the link then stamps the current time).
  */
-export function getPushedVersion(localEntity: unknown): Date | undefined {
+export function getPushedVersion(localEntity: unknown): string | undefined {
   const updatedAt = (localEntity as { updatedAt?: unknown } | null | undefined)
     ?.updatedAt;
-  if (!(typeof updatedAt === "string" || updatedAt instanceof Date)) {
-    return undefined;
+  try {
+    if (updatedAt instanceof Date) {
+      return fromDate(updatedAt, "UTC").toAbsoluteString();
+    }
+    if (typeof updatedAt === "string") {
+      // Postgres text output separates the date and the time with a space.
+      return parseAbsolute(
+        updatedAt.replace(" ", "T"),
+        "UTC"
+      ).toAbsoluteString();
+    }
+  } catch {
+    // An unparseable value has no version.
   }
-  const version = new Date(updatedAt);
-  return Number.isNaN(version.getTime()) ? undefined : version;
+  return undefined;
 }
 
 /**
@@ -555,6 +581,14 @@ export abstract class BaseEntitySyncer<
     );
   }
 
+  /**
+   * Whether an earlier attempt may have created `localId` remotely, so its
+   * create must first look for that document. A first attempt skips the read.
+   */
+  protected mayExistRemotely(localId: string): boolean {
+    return this.context.attemptedIds?.has(localId) ?? true;
+  }
+
   /** The key every attempt at creating `localId` remotely sends. */
   protected createKey(
     localId: string,
@@ -586,7 +620,7 @@ export abstract class BaseEntitySyncer<
     localId: string,
     remoteId: string,
     remoteUpdatedAt?: Date,
-    lastSyncedAt?: Date
+    lastSyncedAt?: string
   ): Promise<void> {
     // Create a mapping service with the transaction
     const txMappingService = createMappingService(tx, this.companyId);
@@ -676,11 +710,43 @@ export abstract class BaseEntitySyncer<
 
   /**
    * Upsert multiple remote entities in a single API call.
-   * Returns a Map of localId -> remoteId.
+   * Returns a Map of localId -> remoteId, or -> the error of a document that
+   * failed on its own.
    */
   protected abstract upsertRemoteBatch(
     data: Array<{ localId: string; payload: Omit<TRemote, TOmit> }>
-  ): Promise<Map<string, string>>;
+  ): Promise<Map<string, RemoteUpsertOutcome>>;
+
+  /**
+   * `upsertRemoteBatch` for a provider with no batch endpoint: one request per
+   * document. A document that fails reports its own error, and the ones
+   * already created are still returned, so they are linked. A rate limit or a
+   * dead grant stops the batch, and the documents not tried report it.
+   */
+  protected async upsertRemoteEach(
+    data: Array<{ localId: string; payload: Omit<TRemote, TOmit> }>
+  ): Promise<Map<string, RemoteUpsertOutcome>> {
+    const outcomes = new Map<string, RemoteUpsertOutcome>();
+    let stoppedBy: unknown;
+    for (const { localId, payload } of data) {
+      if (stoppedBy !== undefined) {
+        outcomes.set(localId, { error: stoppedBy });
+        continue;
+      }
+      try {
+        outcomes.set(localId, await this.upsertRemote(payload, localId));
+      } catch (error) {
+        outcomes.set(localId, { error });
+        if (
+          error instanceof RatelimitError ||
+          error instanceof AccountingAuthError
+        ) {
+          stoppedBy = error;
+        }
+      }
+    }
+    return outcomes;
+  }
 
   /**
    * Optional method to determine if an entity should be synced.
@@ -998,11 +1064,21 @@ export abstract class BaseEntitySyncer<
         entityId: string;
         integration: string;
         externalId: string;
-        options?: { lastSyncedAt: Date };
+        options?: { lastSyncedAt: string };
       }> = [];
 
       for (const { localId } of batchPayloads) {
-        const remoteId = remoteIdMap.get(localId);
+        const outcome = remoteIdMap.get(localId);
+        if (outcome !== undefined && typeof outcome !== "string") {
+          results.push({
+            status: "error",
+            action: "none",
+            localId,
+            error: toSyncResultError(outcome.error)
+          });
+          continue;
+        }
+        const remoteId = outcome;
         if (remoteId) {
           const lastSyncedAt = getPushedVersion(localEntities.get(localId));
           mappingsToLink.push({

@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { remoteCreateKey } from "../../core/create-key";
 import { DEFAULT_SYNC_CONFIG } from "../../core/models";
 import { AccountingApiError } from "../../core/utils";
 import {
@@ -569,6 +570,95 @@ describe("XeroProvider tax rates", () => {
     expect(option).toMatchObject({
       reportTaxType: "INPUT",
       canApplyTo: { asset: true, liability: false, expense: true }
+    });
+  });
+});
+
+describe("XeroProvider.upsertInvoiceDocument", () => {
+  const key = remoteCreateKey({
+    companyId: "company-1",
+    operation: "bill",
+    localId: "bill-1"
+  });
+  const payload = {
+    Type: "ACCPAY",
+    InvoiceNumber: "AP000001",
+    Contact: { ContactID: "contact-1" },
+    LineItems: [{ Description: "Edited", Quantity: 1, UnitAmount: 12 }]
+  } as never;
+
+  function sent(call: number) {
+    const [url, init] = fetchMock.mock.calls[call] ?? [];
+    return {
+      method: init?.method,
+      url: String(url).replace("https://api.xero.com/api.xro/2.0", ""),
+      key: (init?.headers as Record<string, string>)["Idempotency-Key"],
+      body: init?.body ? JSON.parse(String(init.body)) : undefined
+    };
+  }
+
+  // An earlier attempt may have sent an older payload before its response
+  // was lost: the bill it left is brought up to date, not returned as is.
+  it("updates a bill an earlier attempt created with the payload this attempt sends", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          Invoices: [
+            {
+              InvoiceID: "bill-remote",
+              Type: "ACCPAY",
+              InvoiceNumber: "AP000001",
+              Contact: { ContactID: "contact-1" },
+              Status: "AUTHORISED"
+            }
+          ]
+        })
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ Invoices: [{ InvoiceID: "bill-remote" }] })
+      );
+
+    const id = await makeProvider().upsertInvoiceDocument({
+      type: "ACCPAY",
+      data: payload,
+      existingRemoteId: null,
+      mayExist: true,
+      key
+    });
+
+    expect(id).toBe("bill-remote");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(sent(0)).toMatchObject({ method: "GET" });
+    expect(sent(1)).toEqual({
+      method: "POST",
+      url: "/Invoices?unitdp=4",
+      key: undefined,
+      body: {
+        Invoices: [{ ...(payload as object), InvoiceID: "bill-remote" }]
+      }
+    });
+  });
+
+  it("creates an invoice on a first attempt without looking it up", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Invoices: [{ InvoiceID: "invoice-remote" }] })
+    );
+
+    const id = await makeProvider().upsertInvoiceDocument({
+      type: "ACCREC",
+      data: payload,
+      existingRemoteId: null,
+      mayExist: false,
+      key
+    });
+
+    expect(id).toBe("invoice-remote");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(sent(0)).toEqual({
+      method: "POST",
+      url: "/Invoices?unitdp=4",
+      key,
+      body: { Invoices: [payload] }
     });
   });
 });

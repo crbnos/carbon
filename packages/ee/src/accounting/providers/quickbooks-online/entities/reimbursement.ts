@@ -313,7 +313,8 @@ export class QboReimbursementSyncer extends ChargeSyncerBase<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const seen = this.remoteMetaById.get(remoteId);
     await createMappingService(tx, this.companyId).link(
@@ -324,6 +325,7 @@ export class QboReimbursementSyncer extends ChargeSyncerBase<
       {
         remoteUpdatedAt:
           remoteUpdatedAt ?? parseQboDate(seen?.lastUpdatedTime) ?? undefined,
+        lastSyncedAt,
         ...(seen?.syncToken !== undefined
           ? { metadata: { syncToken: seen.syncToken } }
           : {})

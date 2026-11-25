@@ -20,6 +20,7 @@ import {
   type Accounting,
   BaseEntitySyncer,
   type BatchSyncResult,
+  type RemoteUpsertOutcome,
   type ShouldSyncContext,
   type SyncResult
 } from "../../../core/types";
@@ -173,12 +174,14 @@ export class BillSyncer extends BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     // Use the mapping service to link bill -> purchaseInvoice
     const txMappingService = createMappingService(tx, this.companyId);
     await txMappingService.link("bill", localId, this.provider.id, remoteId, {
-      remoteUpdatedAt
+      remoteUpdatedAt,
+      lastSyncedAt
     });
   }
 
@@ -892,50 +895,13 @@ export class BillSyncer extends BaseEntitySyncer<
     data: Omit<Xero.Invoice, "UpdatedDateUTC">,
     localId: string
   ): Promise<string> {
-    const existingRemoteId = await this.getRemoteId(localId);
-    if (!existingRemoteId) {
-      // The bill's InvoiceNumber names it (Reference is dropped on ACCPAY),
-      // so an attempt whose create reached Xero but whose link never did
-      // finds that bill here.
-      const recovered =
-        data.InvoiceNumber && data.Contact?.ContactID
-          ? await this.xeroProvider.recoverInvoice({
-              type: "ACCPAY",
-              invoiceNumber: data.InvoiceNumber,
-              contactId: data.Contact.ContactID
-            })
-          : null;
-      if (recovered) return recovered;
-    }
-
-    const result = existingRemoteId
-      ? await this.xeroProvider.request<{
-          Invoices: Xero.Invoice[];
-        }>("POST", "/Invoices?unitdp=4", {
-          body: JSON.stringify({
-            Invoices: [{ ...data, InvoiceID: existingRemoteId }]
-          })
-        })
-      : await this.xeroProvider.createDocument<{ Invoices: Xero.Invoice[] }>(
-          "/Invoices?unitdp=4",
-          { Invoices: [data] },
-          this.createKey(localId)
-        );
-
-    if (result.error) {
-      throwXeroApiError(
-        existingRemoteId ? "update bill" : "create bill",
-        result
-      );
-    }
-
-    if (!result.data?.Invoices?.[0]?.InvoiceID) {
-      throw new Error(
-        "Xero API returned success but no InvoiceID was returned for bill"
-      );
-    }
-
-    return result.data.Invoices[0].InvoiceID;
+    return this.xeroProvider.upsertInvoiceDocument({
+      type: "ACCPAY",
+      data,
+      existingRemoteId: await this.getRemoteId(localId),
+      mayExist: this.mayExistRemotely(localId),
+      key: this.createKey(localId)
+    });
   }
 
   /** One bill per request, so each create carries its own key and recovery read. */
@@ -944,11 +910,7 @@ export class BillSyncer extends BaseEntitySyncer<
       localId: string;
       payload: Omit<Xero.Invoice, "UpdatedDateUTC">;
     }>
-  ): Promise<Map<string, string>> {
-    const result = new Map<string, string>();
-    for (const { localId, payload } of data) {
-      result.set(localId, await this.upsertRemote(payload, localId));
-    }
-    return result;
+  ): Promise<Map<string, RemoteUpsertOutcome>> {
+    return this.upsertRemoteEach(data);
   }
 }

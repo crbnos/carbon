@@ -171,6 +171,38 @@ describe("QBO charge durability", () => {
     );
   });
 
+  // The mapping records the version the create sent. Stamped with the link
+  // time instead, an edit saved while the create was in flight looks synced.
+  it("pushes an edit saved while the charge's create was in flight", async () => {
+    let updatedAt = "2026-09-10T00:00:00.000Z";
+    const createPurchase = vi.fn(async () => {
+      updatedAt = "2026-09-10T00:00:01.000Z";
+      return { Id: "remote-a", SyncToken: "0" } as Qbo.Purchase;
+    });
+    const updatePurchase = vi.fn(
+      async () => ({ Id: "remote-a", SyncToken: "1" }) as Qbo.Purchase
+    );
+    const syncer = setup({
+      createPurchase,
+      updatePurchase,
+      getPurchase: async () => ({ Id: "remote-a", SyncToken: "0" })
+    });
+    vi.mocked(syncer.fetchLocal).mockImplementation(async () => ({
+      ...local("a"),
+      updatedAt
+    }));
+
+    expect(await syncer.pushToAccounting("a")).toMatchObject({
+      action: "created"
+    });
+    expect(mappingOf("a")?.lastSyncedAt).toBe("2026-09-10T00:00:00.000Z");
+    expect(await syncer.pushToAccounting("a")).toMatchObject({
+      status: "success",
+      action: "updated"
+    });
+    expect(updatePurchase).toHaveBeenCalledTimes(1);
+  });
+
   it("does not persist a phantom mapping after an ambiguous create response", async () => {
     const syncer = setup({ createPurchase: async () => ({}) });
     expect(await syncer.pushToAccounting("a")).toMatchObject({

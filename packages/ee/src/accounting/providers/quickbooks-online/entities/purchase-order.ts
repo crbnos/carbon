@@ -446,6 +446,9 @@ export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
         "in",
         orderRows.map((o) => o.id)
       )
+      // The create key covers the payload, so the lines go out in one order.
+      .orderBy("purchaseOrderLine.sortOrder")
+      .orderBy("purchaseOrderLine.id")
       .execute();
 
     // Supplier external IDs (entityType "vendor" — what the vendor syncer

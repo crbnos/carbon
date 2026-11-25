@@ -41,6 +41,7 @@ import {
   completeOperation,
   enqueueSyncOperation,
   failOperation,
+  getAttemptedEntityIds,
   getJournalEntrySyncEntityId,
   getJournalPostingPolicyDecision,
   insertTerminalSyncOperation,
@@ -1057,6 +1058,22 @@ export async function drainSyncOperations(args: {
       const { entityType, direction } = first;
 
       try {
+        // Only an entity an earlier attempt may have created pays the
+        // provider's recovery read before its create.
+        const attempted =
+          direction === "push-to-accounting"
+            ? await getAttemptedEntityIds(args.client, {
+                companyId: args.companyId,
+                integration: args.integration,
+                operations
+              })
+            : null;
+        if (attempted?.error) {
+          throw new Error(
+            `Failed to read earlier sync attempts: ${attempted.error}`
+          );
+        }
+
         const syncer = SyncFactory.getSyncer({
           database: args.database,
           companyId: args.companyId,
@@ -1064,7 +1081,8 @@ export async function drainSyncOperations(args: {
           config: args.provider.getSyncConfig(
             entityType as AccountingEntityType
           ),
-          entityType: entityType as AccountingEntityType
+          entityType: entityType as AccountingEntityType,
+          ...(attempted ? { attemptedIds: attempted.data } : {})
         });
 
         const entityIds = operations.map((operation) => operation.entityId);

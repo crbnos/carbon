@@ -594,6 +594,38 @@ describe("Xero posted facts and monetary representation", () => {
   );
 });
 
+// One invoice's failure must not discard the ones the batch already created:
+// returned, they are linked; dropped, the next attempt creates them again.
+it("returns the invoices a batch created when a later one fails", async () => {
+  const syncer = reviewSyncer();
+  let creates = 0;
+  (syncer as any).provider = Object.assign(
+    Object.create(XeroProvider.prototype),
+    {
+      request: async (method: string) => {
+        if (method === "GET") return { data: { Invoices: [] } };
+        creates++;
+        return creates === 2
+          ? { data: null, error: true, code: 400, message: "Rejected" }
+          : { data: { Invoices: [{ InvoiceID: `remote-${creates}` }] } };
+      }
+    }
+  );
+  const payload = await syncer.mapToRemote(invoice());
+
+  const outcomes: Map<string, unknown> = await (
+    syncer as any
+  ).upsertRemoteBatch([
+    { localId: "si_1", payload },
+    { localId: "si_2", payload },
+    { localId: "si_3", payload }
+  ]);
+
+  expect(outcomes.get("si_1")).toBe("remote-1");
+  expect(outcomes.get("si_2")).toEqual({ error: expect.any(Error) });
+  expect(outcomes.get("si_3")).toBe("remote-3");
+});
+
 it("preserves an exact extended net when the source unit price has four decimals", async () => {
   const source = fxInvoice();
   source.subtotal = 59.997;

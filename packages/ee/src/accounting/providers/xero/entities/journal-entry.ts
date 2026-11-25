@@ -112,7 +112,8 @@ export type XeroJournalDimensionArgs = {
   optionIdsByValue: ReadonlyMap<string, string>;
 };
 
-const XERO_REDATED_NARRATION = " | original date ";
+/** Appended to a Narration, before the original date, when the lock date moved the push. */
+export const XERO_REDATED_NARRATION = " | original date ";
 
 /**
  * Both Narrations an earlier push of the same journal may have used: with and
@@ -135,16 +136,21 @@ export function getXeroJournalNarrations(
  * Create the journal in Xero once. Its Narration names it, so an attempt whose
  * create reached Xero but whose link never did finds that journal here and
  * returns it; Xero's six-minute `Idempotency-Key` covers only a quick retry.
+ * The lookup runs only when an earlier attempt may have created it
+ * (`mayExist`), so a first attempt is one POST.
  */
 export async function createManualJournalOnce(
   provider: XeroProvider,
   data: Omit<Xero.ManualJournal, "UpdatedDateUTC">,
-  key: RemoteCreateKey
+  key: RemoteCreateKey,
+  mayExist: boolean
 ): Promise<string> {
-  const recovered = await provider.recoverManualJournal(
-    getXeroJournalNarrations(data.Narration, data.Date)
-  );
-  if (recovered) return recovered.ManualJournalID;
+  if (mayExist) {
+    const recovered = await provider.recoverManualJournal(
+      getXeroJournalNarrations(data.Narration, data.Date)
+    );
+    if (recovered) return recovered.ManualJournalID;
+  }
 
   const { ManualJournalID: _unmapped, ...journal } = data;
   const created = await provider.createManualJournal(journal, key);
@@ -734,7 +740,8 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
     return createManualJournalOnce(
       this.xeroProvider,
       data,
-      this.createKey(localId)
+      this.createKey(localId),
+      this.mayExistRemotely(localId)
     );
   }
 

@@ -589,6 +589,62 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
   }
 
   /**
+   * Write a sales invoice (ACCREC) or bill (ACCPAY): an update of
+   * `existingRemoteId` when it is mapped, else a create under `key`. When an
+   * earlier attempt may have created it (`mayExist`), the create first looks
+   * it up by its InvoiceNumber, and a document found there is updated with
+   * this payload, since the earlier attempt may have sent an older one.
+   * Returns the InvoiceID.
+   */
+  async upsertInvoiceDocument(args: {
+    type: "ACCREC" | "ACCPAY";
+    data: Omit<Xero.Invoice, "UpdatedDateUTC">;
+    existingRemoteId: string | null;
+    mayExist: boolean;
+    key: RemoteCreateKey;
+  }): Promise<string> {
+    const { data } = args;
+    const label = args.type === "ACCPAY" ? "bill" : "invoice";
+    const remoteId =
+      args.existingRemoteId ??
+      (args.mayExist && data.InvoiceNumber && data.Contact?.ContactID
+        ? await this.recoverInvoice({
+            type: args.type,
+            invoiceNumber: data.InvoiceNumber,
+            contactId: data.Contact.ContactID
+          })
+        : null);
+
+    const result = remoteId
+      ? await this.request<{ Invoices: Xero.Invoice[] }>(
+          "POST",
+          "/Invoices?unitdp=4",
+          {
+            body: JSON.stringify({
+              Invoices: [{ ...data, InvoiceID: remoteId }]
+            })
+          }
+        )
+      : await this.createDocument<{ Invoices: Xero.Invoice[] }>(
+          "/Invoices?unitdp=4",
+          { Invoices: [data] },
+          args.key
+        );
+
+    if (result.error) {
+      throwXeroApiError(`${remoteId ? "update" : "create"} ${label}`, result);
+    }
+
+    const invoiceId = result.data?.Invoices?.[0]?.InvoiceID;
+    if (!invoiceId) {
+      throw new Error(
+        `Xero API returned success but no InvoiceID was returned for the ${label}`
+      );
+    }
+    return invoiceId;
+  }
+
+  /**
    * The manual journals whose Narration is exactly `narration`
    * (GET /ManualJournals?where=Narration=="…"), the recovery read for a
    * journal create whose response was lost.

@@ -117,6 +117,10 @@ export class QboVendorSyncer extends QboEntitySyncer<
       .where("supplier.id", "in", ids)
       .where("supplier.companyId", "=", this.companyId)
       .orderBy(contactsWithEmailFirst)
+      // The create key covers the payload, so its first contact and its
+      // addresses come out in one order.
+      .orderBy("contact.id")
+      .orderBy("supplierLocation.id")
       .execute();
 
     return this.groupAndTransformRows(rows as SupplierRow[]);

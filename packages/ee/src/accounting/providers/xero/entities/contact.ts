@@ -93,7 +93,7 @@ export class ContactSyncer extends BaseEntitySyncer<
     localId: string,
     remoteId: string,
     remoteUpdatedAt?: Date,
-    lastSyncedAt?: Date
+    lastSyncedAt?: string
   ): Promise<void> {
     // Use the syncer's configured entityType so the mapping is consistent
     // with what the base class queries for. The syncer is configured with

@@ -546,6 +546,62 @@ export async function getSyncOperationsByIds(
 }
 
 /**
+ * The entities among `operations` (claimed rows of one entity type and
+ * direction) that an earlier push attempt may already have created remotely:
+ * the row was claimed before (a Retry or a stale reclaim), or another row for
+ * the same entity was (the reconciler enqueues a new row after a failure, or
+ * when a Completed push left no mapping). Only these need a provider's
+ * recovery read before their create.
+ */
+export async function getAttemptedEntityIds(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integration: string;
+    operations: Array<
+      Pick<
+        SyncOperation,
+        "id" | "entityType" | "entityId" | "direction" | "attemptCount"
+      >
+    >;
+  }
+): Promise<{ data: Set<string>; error: string | null }> {
+  const attempted = new Set(
+    args.operations
+      .filter((operation) => operation.attemptCount > 1)
+      .map((operation) => operation.entityId)
+  );
+  const firstAttempts = args.operations.filter(
+    (operation) => !attempted.has(operation.entityId)
+  );
+  const first = firstAttempts[0];
+  if (!first) return { data: attempted, error: null };
+
+  const earlier = await syncOperationTable(client)
+    .select("entityId")
+    .eq("companyId", args.companyId)
+    .eq("integration", args.integration)
+    .eq("entityType", first.entityType)
+    .eq("direction", first.direction)
+    .in(
+      "entityId",
+      firstAttempts.map((operation) => operation.entityId)
+    )
+    .not(
+      "id",
+      "in",
+      `(${firstAttempts.map((operation) => quoteFilterValue(operation.id)).join(",")})`
+    )
+    .gt("attemptCount", 0);
+  if (earlier.error) return { data: attempted, error: earlier.error.message };
+
+  for (const row of (earlier.data ?? []) as Array<{ entityId: string }>) {
+    attempted.add(row.entityId);
+  }
+  return { data: attempted, error: null };
+}
+
+/**
  * The attempt a write speaks for: the operation as its claim returned it. A
  * stale reclaim moves `attemptCount` on, so an attempt still running after its
  * row was reclaimed writes nothing, instead of overwriting the newer attempt's

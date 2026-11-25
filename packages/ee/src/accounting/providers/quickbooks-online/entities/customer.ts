@@ -125,6 +125,10 @@ export class QboCustomerSyncer extends QboEntitySyncer<
       .where("customer.id", "in", ids)
       .where("customer.companyId", "=", this.companyId)
       .orderBy(contactsWithEmailFirst)
+      // The create key covers the payload, so its first contact and its
+      // addresses come out in one order.
+      .orderBy("contact.id")
+      .orderBy("customerLocation.id")
       .execute();
 
     return this.groupAndTransformRows(rows as CustomerRow[]);

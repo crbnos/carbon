@@ -534,7 +534,8 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const seen = this.remoteMetaById.get(remoteId);
     const applied = this.appliedSettlementIds.get(localId) ?? [];
@@ -547,6 +548,7 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
       {
         remoteUpdatedAt:
           remoteUpdatedAt ?? parseQboDate(seen?.lastUpdatedTime) ?? undefined,
+        lastSyncedAt,
         metadata: {
           ...(seen?.syncToken !== undefined
             ? { syncToken: seen.syncToken }

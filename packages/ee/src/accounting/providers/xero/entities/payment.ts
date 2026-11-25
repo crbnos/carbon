@@ -306,10 +306,14 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
     }
 
     // The Reference names the Carbon payment, so an attempt whose create
-    // reached Xero but whose link never did finds that payment here.
+    // reached Xero but whose link never did finds that payment here. A first
+    // attempt has nothing to find.
     const reference = `Carbon payment ${context.carbonPaymentId}`;
+    const recovered = this.mayExistRemotely(context.carbonPaymentId)
+      ? await this.xeroProvider.recoverPayment(documentRemoteId, reference)
+      : null;
     const remoteId =
-      (await this.xeroProvider.recoverPayment(documentRemoteId, reference)) ??
+      recovered ??
       (await this.xeroProvider.createPayment(
         {
           Invoice: { InvoiceID: documentRemoteId },

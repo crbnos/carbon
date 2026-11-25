@@ -246,7 +246,8 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const seen = this.remoteMetaById.get(remoteId);
     const docNumberSource = this.docNumberSourceByLocalId.get(localId);
@@ -264,6 +265,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       {
         remoteUpdatedAt:
           remoteUpdatedAt ?? parseQboDate(seen?.lastUpdatedTime) ?? undefined,
+        lastSyncedAt,
         ...(Object.keys(metadata).length > 0 ? { metadata } : {})
       }
     );

@@ -73,6 +73,21 @@ const hasLocalStack = (() => {
 })();
 
 const realFetch = globalThis.fetch;
+/** When set and it returns true for a request, the ledger client's request fails as a 500. */
+let failLedgerRequest: ((url: string, init: RequestInit) => boolean) | null =
+  null;
+function ledgerFetch(input: RequestInfo | URL, init?: RequestInit) {
+  const url = typeof input === "string" ? input : input.toString();
+  if (failLedgerRequest?.(url, init ?? {})) {
+    return Promise.resolve(
+      new Response(JSON.stringify({ message: "connection reset" }), {
+        status: 500,
+        headers: { "content-type": "application/json" }
+      })
+    );
+  }
+  return realFetch(input, init);
+}
 const MINUTE = 60_000;
 /** Xero keeps an Idempotency-Key for six minutes. */
 const XERO_KEY_WINDOW_MS = 6 * MINUTE;
@@ -100,6 +115,8 @@ class FakeXero {
   now = 0;
   journals: Json[] = [];
   contacts: Json[] = [];
+  /** Every request, as `METHOD /path`. */
+  requests: string[] = [];
   private keys = new Map<string, { at: number; body: Json }>();
   private fates: Fate[] = [];
   private held: Array<(status: number) => void> = [];
@@ -128,6 +145,7 @@ class FakeXero {
     const method = (init.method ?? "GET").toUpperCase();
     const path = url.pathname.replace("/api.xro/2.0", "");
     const where = url.searchParams.get("where");
+    this.requests.push(`${method} ${path}`);
     if (method === "GET" && path === "/Organisation") {
       return json({ Organisations: [{ Name: "Fake" }] });
     }
@@ -308,7 +326,7 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
       env.SUPABASE_SERVICE_ROLE_KEY!,
       {
         auth: { autoRefreshToken: false, persistSession: false },
-        global: { fetch: realFetch }
+        global: { fetch: ledgerFetch }
       }
     );
     // The consolidation module builds its service-role and Redis clients at
@@ -558,16 +576,20 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     return data[0]!;
   }
 
-  /** The attempt was abandoned this long ago: what a stale reclaim sees. */
-  async function age(companyId: string, minutes: number) {
-    await db
+  /**
+   * The attempt was abandoned this long ago: what a stale reclaim sees.
+   * Operations in `fresh` keep their attempt time.
+   */
+  async function age(companyId: string, minutes: number, fresh: string[] = []) {
+    let update = db
       .updateTable("accountingSyncOperation")
       .set({
         lastAttemptAt: sql`"lastAttemptAt" - make_interval(mins => ${minutes})`
       })
       .where("companyId", "=", companyId)
-      .where("status", "=", "In Flight")
-      .execute();
+      .where("status", "=", "In Flight");
+    if (fresh.length > 0) update = update.where("id", "not in", fresh);
+    await update.execute();
     fake.now += minutes * MINUTE;
   }
 
@@ -610,6 +632,44 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     ]);
     expect(await operation(scope.companyId, op.id)).toMatchObject({
       status: "Completed",
+      externalId: "ManualJournals-1"
+    });
+  });
+
+  it("a journal's first push makes one call to Xero", async () => {
+    const scope = await company();
+    const journalId = await postedJournal(scope, "first");
+    await enqueue(scope.companyId, "journalEntry", journalId);
+
+    await drain(scope);
+
+    // The organisation read is the lock date, which every push reads.
+    expect(fake.requests.filter((r) => r !== "GET /Organisation")).toEqual([
+      "POST /ManualJournals"
+    ]);
+  });
+
+  // The reconciler enqueues a new row for an entity whose push failed: that
+  // row's first attempt still looks for what the failed one created.
+  it("a journal whose lost create is pushed again under a new operation is created once", async () => {
+    const scope = await company();
+    const journalId = await postedJournal(scope, "requeued");
+    const lost = await enqueue(scope.companyId, "journalEntry", journalId);
+
+    fake.next("lose");
+    await drain(scope);
+    expect((await operation(scope.companyId, lost.id)).status).toBe("Failed");
+
+    fake.now += 10 * MINUTE;
+    const again = await enqueue(scope.companyId, "journalEntry", journalId);
+    await drain(scope);
+
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+    expect(await operation(scope.companyId, again.id)).toMatchObject({
+      status: "Completed",
+      attemptCount: 1,
       externalId: "ManualJournals-1"
     });
   });
@@ -759,24 +819,16 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     ).toBe("After");
   });
 
-  it("a consolidation that died after creating the day's summary journal does not create a second one", async () => {
+  /** A company that consolidates Transfer Receipts daily, with one posted journal per name queued. */
+  async function dailyCompany(...names: string[]) {
     const scope = await company({
       sourceTypes: {
         "Transfer Receipt": { enabled: true, granularity: "daily-summary" }
       }
     });
-    const members = [
-      await postedJournal(scope, "day-1"),
-      await postedJournal(scope, "day-2")
-    ];
-    const ops = [];
-    for (const journalId of members) {
-      ops.push(
-        await enqueue(scope.companyId, "journalEntry", journalId, {
-          granularity: "daily-summary"
-        })
-      );
-    }
+    const ops: SyncOperation[] = [];
+    for (const name of names) ops.push(await queueMember(scope, name));
+    // A fresh provider per run, as each cron run builds its own.
     const consolidate = () =>
       consolidateIntegration({
         client,
@@ -784,9 +836,40 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
         companyId: scope.companyId,
         providerId: ProviderID.XERO,
         integrationMetadata: scope.metadata,
-        provider: scope.provider,
+        provider: getProviderIntegration(
+          client,
+          scope.companyId,
+          ProviderID.XERO,
+          scope.metadata as never
+        ) as XeroProvider,
         createdBy: "system"
       });
+    return { scope, ops, consolidate };
+  }
+
+  async function queueMember(
+    scope: { companyId: string; prefix: string },
+    name: string
+  ) {
+    return enqueue(
+      scope.companyId,
+      "journalEntry",
+      await postedJournal(scope, name),
+      { granularity: "daily-summary" }
+    );
+  }
+
+  async function marker(companyId: string) {
+    return db
+      .selectFrom("accountingSyncOperation")
+      .select(["status", "externalId", "metadata"])
+      .where("companyId", "=", companyId)
+      .where("entityId", "like", "daily:%")
+      .executeTakeFirstOrThrow();
+  }
+
+  it("a consolidation that died after creating the day's summary journal does not create a second one", async () => {
+    const { scope, ops, consolidate } = await dailyCompany("day-1", "day-2");
 
     fake.next("hold");
     const died = consolidate();
@@ -796,6 +879,181 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     await consolidate();
     fake.release(500);
     await died;
+
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+    for (const op of ops) {
+      expect(await operation(scope.companyId, op.id)).toMatchObject({
+        status: "Completed",
+        externalId: "ManualJournals-1"
+      });
+    }
+  });
+  // The members of a summary already in Xero are booked by it, even when a
+  // later run would refuse to push them now (here: an account was unmapped).
+  it("a died run's members are completed against its summary even when they would now be ejected", async () => {
+    const { scope, ops, consolidate } = await dailyCompany(
+      "eject-1",
+      "eject-2"
+    );
+
+    fake.next("hold");
+    const died = consolidate();
+    await fake.heldCreate();
+    await db
+      .deleteFrom("externalIntegrationMapping")
+      .where("companyId", "=", scope.companyId)
+      .where("entityType", "=", "account")
+      .where("entityId", "=", `${scope.prefix}-Liability`)
+      .execute();
+
+    await age(scope.companyId, 24 * 60);
+    await consolidate();
+    fake.release(500);
+    await died;
+
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+    for (const op of ops) {
+      expect(await operation(scope.companyId, op.id)).toMatchObject({
+        status: "Completed",
+        externalId: "ManualJournals-1"
+      });
+    }
+  });
+
+  // A member the recovering run did not claim is still in the summary: it
+  // must never go out again as a journal of its own. The first run's process
+  // dies during the create, so its response never arrives.
+  it("a member of a recovered summary that the recovering run did not claim is never pushed on its own", async () => {
+    const {
+      scope,
+      ops: [first, second],
+      consolidate
+    } = await dailyCompany("unclaimed-1", "unclaimed-2");
+
+    fake.next("hold");
+    void consolidate();
+    await fake.heldCreate();
+
+    await age(scope.companyId, 24 * 60, [second!.id]);
+    await consolidate();
+    expect(await operation(scope.companyId, first!.id)).toMatchObject({
+      status: "Completed",
+      externalId: "ManualJournals-1"
+    });
+
+    await age(scope.companyId, 24 * 60);
+    await consolidate();
+
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+    expect(await operation(scope.companyId, second!.id)).toMatchObject({
+      status: "Completed",
+      externalId: "ManualJournals-1"
+    });
+  });
+
+  it("a recovering run that claims only the day's marker closes it as the summary its members are in", async () => {
+    const { scope, ops, consolidate } = await dailyCompany(
+      "stray-1",
+      "stray-2"
+    );
+
+    fake.next("hold");
+    void consolidate();
+    await fake.heldCreate();
+
+    await age(
+      scope.companyId,
+      24 * 60,
+      ops.map((op) => op.id)
+    );
+    await consolidate();
+    await age(scope.companyId, 24 * 60);
+    await consolidate();
+
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+    for (const op of ops) {
+      expect(await operation(scope.companyId, op.id)).toMatchObject({
+        status: "Completed",
+        externalId: "ManualJournals-1"
+      });
+    }
+  });
+
+  // Two runs at once: the second claims a member that arrived after the
+  // first claimed the day's marker. Only the marker's holder pushes the day.
+  it("a run that did not claim the day's marker leaves the day to the run that holds it", async () => {
+    const { scope, ops, consolidate } = await dailyCompany("held-1", "held-2");
+
+    fake.next("hold");
+    const first = consolidate();
+    await fake.heldCreate();
+    const arrived = await queueMember(scope, "held-3");
+
+    await consolidate();
+    expect(fake.journals).toHaveLength(1);
+
+    fake.release(200);
+    await first;
+    expect(await marker(scope.companyId)).toMatchObject({
+      status: "Completed",
+      externalId: "ManualJournals-1",
+      metadata: expect.objectContaining({
+        journalIds: ops.map((op) => op.entityId)
+      })
+    });
+    expect((await operation(scope.companyId, arrived.id)).status).toBe(
+      "In Flight"
+    );
+  });
+
+  it("a day whose push could not be recorded fails its members instead of leaving them In Flight", async () => {
+    const { scope, ops, consolidate } = await dailyCompany("unrecorded-1");
+
+    failLedgerRequest = (url, init) =>
+      url.includes("/accountingSyncOperation") &&
+      init.method === "PATCH" &&
+      String(init.body).includes('"push"');
+    try {
+      await consolidate();
+    } finally {
+      failLedgerRequest = null;
+    }
+
+    expect(fake.journals).toEqual([]);
+    expect((await operation(scope.companyId, ops[0]!.id)).status).toBe(
+      "Failed"
+    );
+  });
+
+  // A failed day keeps its marker; retried members are consolidated under it.
+  it("members retried after the day's push failed are consolidated once", async () => {
+    const { scope, ops, consolidate } = await dailyCompany(
+      "retry-1",
+      "retry-2"
+    );
+
+    fake.next("lose");
+    await consolidate();
+    expect((await marker(scope.companyId)).status).toBe("Failed");
+
+    fake.now += 10 * MINUTE;
+    for (const op of ops) {
+      await transitionOperation(client, {
+        id: op.id,
+        companyId: scope.companyId,
+        to: "Pending",
+        userId: "system"
+      });
+    }
+    await consolidate();
 
     expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
       "ManualJournals-1"

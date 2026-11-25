@@ -29,7 +29,9 @@ import {
   type SyncContext,
   SyncFactory,
   type SyncOperation,
+  transitionOperation,
   updateOperationMetadata,
+  XERO_REDATED_NARRATION,
   type XeroProvider
 } from "@carbon/ee/accounting";
 import { getLogger } from "@carbon/logger";
@@ -121,6 +123,23 @@ function readConsolidationPush(
     )
   };
 }
+
+/** The journals a Completed marker's summary booked (empty for a day closed with none). */
+function readBookedJournalIds(marker: SyncOperation): string[] {
+  const journalIds = (marker.metadata as { journalIds?: unknown } | null)
+    ?.journalIds;
+  return Array.isArray(journalIds)
+    ? journalIds.filter((id): id is string => typeof id === "string")
+    : [];
+}
+
+/** A marker a run may take again: Pending, In Flight and Completed rows are not reopened. */
+const REOPENABLE_MARKER_STATUSES: ReadonlyArray<SyncOperation["status"]> = [
+  "Failed",
+  "Warning",
+  "Skipped",
+  "Excluded"
+];
 
 type ConsolidationSummary = {
   claimed: number;
@@ -325,9 +344,21 @@ export async function consolidateIntegration(args: {
   };
 
   // Batches whose summary already went out (marker Completed): members push
-  // individually instead
+  // individually instead, except the ones that summary booked
   const consolidatedBatchKeys = new Set<string>();
   const markersByBatchKey = new Map<string, SyncOperation>();
+  const bookedJournals = new Map<
+    string,
+    { batchKey: string; externalId: string | null }
+  >();
+  const recordBooked = (batchKey: string, marker: SyncOperation) => {
+    for (const journalId of readBookedJournalIds(marker)) {
+      bookedJournals.set(journalId, {
+        batchKey,
+        externalId: marker.externalId ?? null
+      });
+    }
+  };
 
   for (const group of candidateGroups) {
     const marker = await enqueueMarker(group);
@@ -340,9 +371,31 @@ export async function consolidateIntegration(args: {
     }
     if (marker.data.status === "Completed") {
       consolidatedBatchKeys.add(group.batchKey);
-    } else {
-      markersByBatchKey.set(group.batchKey, marker.data);
+      recordBooked(group.batchKey, marker.data);
+      continue;
     }
+    if (REOPENABLE_MARKER_STATUSES.includes(marker.data.status)) {
+      // A day whose push failed keeps its marker. Reopen it so the claim
+      // below takes it: a run writes only a marker it claimed.
+      const reopened = await transitionOperation(client, {
+        id: marker.data.id,
+        companyId,
+        to: "Pending",
+        userId: createdBy
+      });
+      if (reopened.error) {
+        logger.warning(
+          "Could not reopen a failed consolidation marker; its day waits for a later run",
+          {
+            companyId,
+            providerId,
+            batchKey: group.batchKey,
+            error: reopened.error
+          }
+        );
+      }
+    }
+    markersByBatchKey.set(group.batchKey, marker.data);
   }
 
   // ── 3. Claim (include-only journalEntry) ─────────────────────────────────
@@ -427,6 +480,27 @@ export async function consolidateIntegration(args: {
    */
   const pushIndividually = async (operations: SyncOperation[]) => {
     for (const operation of operations) {
+      // In a summary already in the provider: pushing it again would book it
+      // twice. A member a recovering run did not claim arrives here.
+      const { journalId, reversal } = parseJournalEntrySyncEntityId(
+        operation.entityId
+      );
+      const booked = reversal ? undefined : bookedJournals.get(journalId);
+      if (booked) {
+        summary.membersCompleted++;
+        await completeOperation(client, {
+          id: operation.id,
+          companyId: operation.companyId,
+          attemptCount: operation.attemptCount,
+          ...(booked.externalId ? { externalId: booked.externalId } : {}),
+          metadata: {
+            ...(operation.metadata ?? {}),
+            consolidatedInto: booked.batchKey
+          }
+        });
+        continue;
+      }
+
       const syncResult = await syncer.pushToAccounting(operation.entityId);
 
       if (syncResult.status === "error") {
@@ -472,13 +546,68 @@ export async function consolidateIntegration(args: {
   // ── 7. One aggregated push per candidate (source type, date) group ───────
   const processedMarkerIds = new Set<string>();
 
+  /**
+   * Whole-batch failure: every member records the error (Warning when
+   * user-fixable, from a pre-flight) plus the full member list, and so does
+   * the marker.
+   */
+  const failBatch = async (
+    marker: SyncOperation,
+    date: string,
+    batchKey: string,
+    operations: SyncOperation[],
+    memberJournalIds: string[],
+    error: unknown
+  ) => {
+    const failure =
+      error instanceof JournalEntrySyncError ? error.failure : null;
+    const errorMessage =
+      failure?.message ??
+      (error instanceof Error ? error.message : String(error));
+
+    summary.batchesFailed++;
+    for (const operation of operations) {
+      summary.membersFailed++;
+      await failOperation(client, {
+        id: operation.id,
+        companyId: operation.companyId,
+        attemptCount: operation.attemptCount,
+        errorMessage,
+        ...(failure
+          ? { errorCode: failure.errorCode, warning: failure.warning }
+          : {}),
+        metadata: {
+          ...(operation.metadata ?? {}),
+          ...(failure?.metadata ?? {}),
+          consolidationBatch: batchKey,
+          memberJournalIds
+        }
+      });
+    }
+
+    await failOperation(client, {
+      id: marker.id,
+      companyId: marker.companyId,
+      attemptCount: marker.attemptCount,
+      errorMessage: `Daily consolidation for ${date} failed: ${errorMessage}`,
+      ...(failure
+        ? { errorCode: failure.errorCode, warning: failure.warning }
+        : {}),
+      metadata: {
+        ...(marker.metadata ?? {}),
+        postingDate: date,
+        memberJournalIds
+      }
+    });
+  };
+
   for (const group of [...partition.byGroup.values()].sort((a, b) =>
     a.batchKey.localeCompare(b.batchKey)
   )) {
     const { batchKey, postingDate: date, operations } = group;
 
-    let marker = markersByBatchKey.get(batchKey);
-    if (!marker) {
+    let reserved = markersByBatchKey.get(batchKey);
+    if (!reserved) {
       // Group surfaced by the claim race (enqueued between pre-scan and
       // claim) — reserve its marker now
       const lateMarker = await enqueueMarker(group);
@@ -490,15 +619,95 @@ export async function consolidateIntegration(args: {
         continue;
       }
       if (lateMarker.data.status === "Completed") {
+        recordBooked(batchKey, lateMarker.data);
         await pushIndividually(operations);
         continue;
       }
-      marker = lateMarker.data;
+      reserved = lateMarker.data;
     }
-    // The marker was reserved before the claim; its closes speak for the
-    // attempt this run's claim took, when it took one.
-    marker = claimedMarkerById.get(marker.id) ?? marker;
+
+    // A run writes only a marker its own claim took: one it did not claim
+    // is another run's (or the claim cap held it back), and that run pushes
+    // the day. The members claimed here go stale and a later run takes them.
+    const claimedMarker = claimedMarkerById.get(reserved.id);
+    if (!claimedMarker) {
+      logger.info(
+        "Another run holds this day's consolidation marker; leaving the day to it",
+        { companyId, providerId, batchKey, operations: operations.length }
+      );
+      continue;
+    }
+    let marker: SyncOperation = claimedMarker;
     processedMarkerIds.add(marker.id);
+
+    // A run that died after its create may have left the summary in Xero
+    // without closing anything here: find it by the push it recorded. Every
+    // journal that push named is booked by it, whatever its state now, so
+    // this comes before any member is skipped, ejected or pushed.
+    const previousPush = readConsolidationPush(marker.metadata);
+    if (previousPush) {
+      let previousJournal: Awaited<
+        ReturnType<XeroProvider["recoverManualJournal"]>
+      >;
+      try {
+        previousJournal = await provider.recoverManualJournal([
+          previousPush.narration
+        ]);
+      } catch (error) {
+        if (error instanceof RatelimitError) throw error;
+        await failBatch(
+          marker,
+          date,
+          batchKey,
+          operations,
+          previousPush.journalIds,
+          error
+        );
+        continue;
+      }
+      if (previousJournal) {
+        const booked = new Set(previousPush.journalIds);
+        const late: SyncOperation[] = [];
+        for (const operation of operations) {
+          const { journalId } = parseJournalEntrySyncEntityId(
+            operation.entityId
+          );
+          if (!booked.has(journalId)) {
+            late.push(operation);
+            continue;
+          }
+          summary.membersCompleted++;
+          await completeOperation(client, {
+            id: operation.id,
+            companyId: operation.companyId,
+            attemptCount: operation.attemptCount,
+            externalId: previousJournal.ManualJournalID,
+            metadata: {
+              ...(operation.metadata ?? {}),
+              consolidatedInto: batchKey
+            }
+          });
+        }
+        const completed = await completeOperation(client, {
+          id: marker.id,
+          companyId: marker.companyId,
+          attemptCount: marker.attemptCount,
+          externalId: previousJournal.ManualJournalID,
+          metadata: {
+            ...(marker.metadata ?? {}),
+            consolidation: true,
+            postingDate: date,
+            journalIds: previousPush.journalIds,
+            journalCount: previousPush.journalIds.length
+          }
+        });
+        if (completed.data) recordBooked(batchKey, completed.data);
+        // Not in the summary already booked: they go out on their own, as
+        // members arriving after a Completed marker do.
+        await pushIndividually(late);
+        continue;
+      }
+    }
 
     // Fetch + gate each member exactly like the syncer's shouldSync would
     const members: Array<{
@@ -633,51 +842,6 @@ export async function consolidateIntegration(args: {
     const memberJournalIds = members.map(({ journal }) => journal.id);
 
     try {
-      // A run that died after its create may have left the summary in Xero
-      // without closing anything here: find it by the push it recorded.
-      const previousPush = readConsolidationPush(marker.metadata);
-      const previousJournal = previousPush
-        ? await provider.recoverManualJournal([previousPush.narration])
-        : null;
-      if (previousPush && previousJournal) {
-        const booked = new Set(previousPush.journalIds);
-        const late: SyncOperation[] = [];
-        for (const { operation, journal } of members) {
-          if (!booked.has(journal.id)) {
-            late.push(operation);
-            continue;
-          }
-          summary.membersCompleted++;
-          await completeOperation(client, {
-            id: operation.id,
-            companyId: operation.companyId,
-            attemptCount: operation.attemptCount,
-            externalId: previousJournal.ManualJournalID,
-            metadata: {
-              ...(operation.metadata ?? {}),
-              consolidatedInto: batchKey
-            }
-          });
-        }
-        await completeOperation(client, {
-          id: marker.id,
-          companyId: marker.companyId,
-          attemptCount: marker.attemptCount,
-          externalId: previousJournal.ManualJournalID,
-          metadata: {
-            ...(marker.metadata ?? {}),
-            consolidation: true,
-            postingDate: date,
-            journalIds: previousPush.journalIds,
-            journalCount: previousPush.journalIds.length
-          }
-        });
-        // Not in the summary already booked: they go out on their own, as
-        // members arriving after a Completed marker do.
-        await pushIndividually(late);
-        continue;
-      }
-
       const aggregate = aggregateJournalEntriesForDate({
         batchId: batchKey,
         companyId,
@@ -709,7 +873,7 @@ export async function consolidateIntegration(args: {
           redatedFromDate: preflight.redatedFromDate
         });
         const narration = preflight.redatedFromDate
-          ? `${aggregate.narration} | original date ${preflight.redatedFromDate}`
+          ? `${aggregate.narration}${XERO_REDATED_NARRATION}${preflight.redatedFromDate}`
           : aggregate.narration;
 
         // Recorded before the create, so a run that dies after it can find
@@ -723,10 +887,23 @@ export async function consolidateIntegration(args: {
             push: { narration, journalIds: memberJournalIds }
           }
         });
-        if (recorded.error || !recorded.data) {
+        if (recorded.error) {
+          // Nothing was created: fail the day so its members can be retried,
+          // rather than leaving them In Flight with no record.
+          logger.error("Could not record the consolidation push", {
+            companyId,
+            providerId,
+            batchKey,
+            error: recorded.error
+          });
+          throw new Error(
+            `Could not record the push before creating it: ${recorded.error}`
+          );
+        }
+        if (!recorded.data) {
           logger.warning(
             "The consolidation marker was taken over by a newer run; leaving its batch to it",
-            { companyId, providerId, batchKey, error: recorded.error }
+            { companyId, providerId, batchKey }
           );
           continue;
         }
@@ -784,65 +961,58 @@ export async function consolidateIntegration(args: {
         // become re-claimable once stale
         throw error;
       }
-
-      const failure =
-        error instanceof JournalEntrySyncError ? error.failure : null;
-      const errorMessage =
-        failure?.message ??
-        (error instanceof Error ? error.message : String(error));
-
-      summary.batchesFailed++;
-
-      // Whole-batch failure: every member records the pre-flight errorCode
-      // (Warning when user-fixable) plus the full member list
-      for (const { operation } of members) {
-        summary.membersFailed++;
-        await failOperation(client, {
-          id: operation.id,
-          companyId: operation.companyId,
-          attemptCount: operation.attemptCount,
-          errorMessage,
-          ...(failure
-            ? { errorCode: failure.errorCode, warning: failure.warning }
-            : {}),
-          metadata: {
-            ...(operation.metadata ?? {}),
-            ...(failure?.metadata ?? {}),
-            consolidationBatch: batchKey,
-            memberJournalIds
-          }
-        });
-      }
-
-      await failOperation(client, {
-        id: marker.id,
-        companyId: marker.companyId,
-        attemptCount: marker.attemptCount,
-        errorMessage: `Daily consolidation for ${date} failed: ${errorMessage}`,
-        ...(failure
-          ? { errorCode: failure.errorCode, warning: failure.warning }
-          : {}),
-        metadata: {
-          ...(marker.metadata ?? {}),
-          postingDate: date,
-          memberJournalIds
-        }
-      });
+      await failBatch(
+        marker,
+        date,
+        batchKey,
+        members.map(({ operation }) => operation),
+        memberJournalIds,
+        error
+      );
     }
   }
 
   // ── 8. Stray markers (claimed, but their date had no members this run —
   // e.g. a user retried an old marker row). Close them: the date is
   // settled and future arrivals push individually. ──────────────────────────
+  // A marker that recorded a push may have a summary in the provider whose
+  // members this run did not claim: it closes as that summary, so they are
+  // completed against it when a later run claims them.
   for (const operation of partition.markers) {
     if (processedMarkerIds.has(operation.id)) continue;
+    const recordedPush = readConsolidationPush(operation.metadata);
+    let summaryJournal: Awaited<
+      ReturnType<XeroProvider["recoverManualJournal"]>
+    > = null;
+    if (recordedPush) {
+      try {
+        summaryJournal = await provider.recoverManualJournal([
+          recordedPush.narration
+        ]);
+      } catch (error) {
+        if (error instanceof RatelimitError) throw error;
+        logger.error(
+          "Could not look up a consolidation marker's recorded push; leaving the marker for a later run",
+          { companyId, providerId, markerId: operation.id, error }
+        );
+        continue;
+      }
+    }
     await completeOperation(client, {
       id: operation.id,
       companyId: operation.companyId,
       attemptCount: operation.attemptCount,
+      ...(summaryJournal ? { externalId: summaryJournal.ManualJournalID } : {}),
       metadata: {
         ...(operation.metadata ?? {}),
-        note: "Marker closed without members by the consolidation cron"
+        ...(summaryJournal && recordedPush
+          ? {
+              journalIds: recordedPush.journalIds,
+              journalCount: recordedPush.journalIds.length
+            }
+          : {
+              note: "Marker closed without members by the consolidation cron"
+            })
       }
     });
   }

@@ -172,13 +172,15 @@ export class QboBillSyncer extends BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const seen = this.remoteMetaById.get(remoteId);
     const txMappingService = createMappingService(tx, this.companyId);
     await txMappingService.link("bill", localId, this.provider.id, remoteId, {
       remoteUpdatedAt:
         remoteUpdatedAt ?? parseQboDate(seen?.lastUpdatedTime) ?? undefined,
+      lastSyncedAt,
       ...(seen?.syncToken !== undefined
         ? { metadata: { syncToken: seen.syncToken } }
         : {})

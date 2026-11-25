@@ -166,7 +166,8 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
     tx: KyselyTx,
     localId: string,
     remoteId: string,
-    remoteUpdatedAt?: Date
+    remoteUpdatedAt?: Date,
+    lastSyncedAt?: string
   ): Promise<void> {
     const txMapping = createMappingService(tx, this.companyId);
     const existing = await txMapping.getByExternalId(
@@ -179,11 +180,18 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
         "payment",
         existing.entityId,
         this.provider.id,
-        remoteUpdatedAt
+        remoteUpdatedAt,
+        lastSyncedAt
       );
       return;
     }
-    await super.linkEntities(tx, localId, remoteId, remoteUpdatedAt);
+    await super.linkEntities(
+      tx,
+      localId,
+      remoteId,
+      remoteUpdatedAt,
+      lastSyncedAt
+    );
   }
 
   async pullFromAccounting(remoteId: string): Promise<SyncResult> {
