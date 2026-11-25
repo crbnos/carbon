@@ -2,8 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCarbon } from "@carbon/auth";
-import { RefreshRate, useLoaderQuery, useRevalidator } from "@carbon/query";
+import {
+  cachedApiQuery,
+  type LoaderData,
+  RefreshRate,
+  useLoaderQuery,
+  useRevalidator
+} from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -37,6 +42,7 @@ import {
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
+import type { Dispatch, SetStateAction } from "react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCircleCheck, LuCirclePlus, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
@@ -75,6 +81,7 @@ import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-ord
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { loader as openLinesLoader } from "~/routes/api+/purchasing.planning-open-lines";
+import type { loader as supplierPartsLoader } from "~/routes/api+/purchasing.planning-supplier-parts";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { path } from "~/utils/path";
 import type {
@@ -159,7 +166,7 @@ type PurchasingPlanningOrderDrawerProps = {
     item: PurchasingPlanningItem,
     orders: DrawerPlannedOrder[]
   ) => void;
-  setSelectedItem: (item: PurchasingPlanningItem) => void;
+  setSelectedItem: Dispatch<SetStateAction<PurchasingPlanningItem | null>>;
 };
 
 export const PurchasingPlanningOrderDrawer = memo(
@@ -193,7 +200,6 @@ export const PurchasingPlanningOrderDrawer = memo(
     const fetcher = useFetcher<typeof bulkUpdateAction>();
     const pastStartToast = usePastStartToast();
     const { revalidate } = useRevalidator();
-    const { carbon } = useCarbon();
 
     const formatQuantity = useQuantityFormatter();
     const unitOfMeasureOptions = useUnitOfMeasure();
@@ -218,6 +224,37 @@ export const PurchasingPlanningOrderDrawer = memo(
         onPlannedOrdersLoaded(selectedItem, plannedOrders),
       [onPlannedOrdersLoaded, selectedItem]
     );
+
+    // A supplier part was added on the Suppliers tab: the drawer's row is the
+    // grid's row as it was when opened, so read the item's suppliers again.
+    // The first supplier of an item is also chosen for its orders.
+    const onSupplierPartSaved = useCallback(async () => {
+      const itemId = selectedItem.id;
+      if (!itemId) return;
+      let suppliers: SupplierPart[];
+      try {
+        ({ suppliers } = await cachedApiQuery<
+          LoaderData<typeof supplierPartsLoader>
+        >(path.to.api.planningSupplierParts(itemId), { staleTime: 0 }));
+      } catch (error) {
+        toastError(t`Failed to load the suppliers`, error);
+        return;
+      }
+      setSelectedItem((prev) =>
+        prev?.id === itemId ? { ...prev, suppliers } : prev
+      );
+      if (suppliers.length !== 1) return;
+      onSupplierChange(itemId, suppliers[0].supplierId);
+      setOrders(
+        selectedItem,
+        orders.map((order) => ({
+          ...order,
+          supplierId: suppliers[0].supplierId
+        }))
+      );
+      toast.success(t`Supplier added and selected`);
+      setActiveTab("ordering");
+    }, [selectedItem, setSelectedItem, onSupplierChange, setOrders, orders, t]);
 
     // ── Open orders: the item's existing PO lines ───────────────────────────
     // Not in the grid's draft list: a cell edit on one of these is SAVED
@@ -818,49 +855,8 @@ export const PurchasingPlanningOrderDrawer = memo(
                           conversionFactor: 1
                         }}
                         unitOfMeasureCode={selectedItem.unitOfMeasureCode ?? ""}
-                        onClose={() => {
-                          if (carbon && selectedItem.id) {
-                            carbon
-                              ?.from("supplierPart")
-                              .select("*")
-                              .eq("itemId", selectedItem.id)
-                              .then(({ data }) => {
-                                if (data) {
-                                  setSelectedItem(
-                                    // @ts-expect-error
-                                    (prev: PurchasingPlanningItem) => {
-                                      return {
-                                        ...prev,
-                                        suppliers: data as SupplierPart[]
-                                      };
-                                    }
-                                  );
-
-                                  // Auto-select the newly added supplier if it's the only one
-                                  if (data.length === 1 && selectedItem.id) {
-                                    onSupplierChange(
-                                      selectedItem.id,
-                                      data[0].supplierId
-                                    );
-
-                                    const updatedOrders = orders.map(
-                                      (order) => ({
-                                        ...order,
-                                        supplierId: data[0].supplierId
-                                      })
-                                    );
-                                    setOrders(selectedItem, updatedOrders);
-
-                                    toast.success(
-                                      t`Supplier added and selected`
-                                    );
-                                    setActiveTab("ordering");
-                                  }
-                                }
-                              });
-                          }
-                          supplierDisclosure.onClose();
-                        }}
+                        onSaved={onSupplierPartSaved}
+                        onClose={supplierDisclosure.onClose}
                       />
                     )}
                   </div>

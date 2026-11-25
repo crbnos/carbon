@@ -345,6 +345,8 @@ export const path = {
         locationId: string;
       }) =>
         `${api}/purchasing/planning-open-lines?${new URLSearchParams(args)}`,
+      planningSupplierParts: (itemId: string) =>
+        `${api}/purchasing/planning-supplier-parts?${new URLSearchParams({ itemId })}`,
       procedures: `${api}/production/procedures`,
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>

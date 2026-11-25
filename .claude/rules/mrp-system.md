@@ -19,6 +19,7 @@ paths:
   - "apps/erp/app/routes/api+/production.planned-orders.ts"
   - "apps/erp/app/routes/api+/production.planning-open-jobs.ts"
   - "apps/erp/app/routes/api+/purchasing.planning-open-lines.ts"
+  - "apps/erp/app/routes/api+/purchasing.planning-supplier-parts.ts"
   - "apps/erp/app/modules/production/production.service.ts"
   - "apps/erp/app/modules/production/production.server.ts"
   - "apps/erp/app/modules/purchasing/purchasing.service.ts"
@@ -1277,7 +1278,12 @@ never offered a Cancel, Defer or Expedite.
     weeks. A router action (Apply, an order placed, a PO reopened or
     finalized, Recalculate) marks the reads stale; the production drawer's
     `openJobsVersion` refetches after Plan (a plain `fetch`) and Release, and
-    a cell save refetches the list it edited (both drawers).
+    a cell save refetches the list it edited (both drawers). The purchasing
+    drawer's Suppliers tab shows the row's `suppliers` as the drawer opened
+    on it; after `SupplierPartForm` saves (`onSaved`, never on Cancel) it reads
+    `api+/purchasing.planning-supplier-parts.ts` (the item's active supplier
+    parts, as the caller) into the drawer row, and an item's first supplier
+    is chosen for its orders.
     `updateLine` / `updateJob` refuse another location's record with 409.
     A cell edit SAVES that one field (optimistic, reverted with a toast on
     failure) through `planning.update`'s `updateLine` / `updateJob` action,
