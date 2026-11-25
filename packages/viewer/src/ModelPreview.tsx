@@ -196,7 +196,6 @@ export function ModelPreview({
   pmiSelectedRef.current = pmiSelectedId;
   // A new document starts with nothing picked. The ref is cleared with it, so
   // a controlled selection (below) is applied again to the new document.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: resets on a new document without reading it
   useEffect(() => {
     pmiSelectedRef.current = null;
     setPmiViewId(null);
@@ -229,7 +228,6 @@ export function ModelPreview({
   );
   // A controlled selection follows the host, also once the document arrives
   // (a new document resets the selection above).
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reacts to the host's id and a new document only
   useEffect(() => {
     if (selectedPmiItemId === undefined || !pmi) return;
     if (selectedPmiItemId === null) {
@@ -242,6 +240,7 @@ export function ModelPreview({
     ) {
       focusPmiItem(selectedPmiItemId);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- reacts to the host's id and a new document only
   }, [selectedPmiItemId, pmi]);
   const selectPmiView = useCallback(
     (viewId: string | null) => {

@@ -108,7 +108,6 @@ import {
 import type { JobProjectCharge } from "../../production.service";
 import { getJobMethodTree } from "../../production.utils";
 import type { Job } from "../../types";
-import JobStatus from "./JobStatus";
 import {
   getReceiptConfirmation,
   getTrackedReceiptQuantity,
@@ -121,6 +120,7 @@ import {
   makeMethodsMissingOperations,
   materialsWithoutStorageUnit
 } from "./job-release-logic";
+import JobStatus from "./JobStatus";
 import { type JobRelease, useJobRelease } from "./useJobRelease";
 
 const JobHeader = () => {
@@ -663,8 +663,9 @@ const JobHeader = () => {
         action={path.to.deleteJob(jobId)}
         isOpen={deleteJobModal.isOpen}
         name={routeData?.job?.jobId!}
-        text={`Are you sure you want to delete ${routeData?.job
-          ?.jobId!}? This cannot be undone.`}
+        text={`Are you sure you want to delete ${
+          routeData?.job?.jobId!
+        }? This cannot be undone.`}
         onCancel={() => {
           deleteJobModal.onClose();
         }}

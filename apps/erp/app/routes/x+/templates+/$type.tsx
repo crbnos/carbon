@@ -17,7 +17,10 @@ import { DocumentTemplateEditor } from "~/components/DocumentTemplateEditor";
 import { usePermissions } from "~/hooks";
 import { documentTemplateValidator } from "~/modules/settings/settings.models";
 import { listPreviewEntities } from "~/modules/settings/settings.service";
-import { DOCUMENT_TERMS_FIELD } from "~/modules/settings/settings.utils";
+import {
+  customFieldNames,
+  DOCUMENT_TERMS_FIELD
+} from "~/modules/settings/settings.utils";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -62,10 +65,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       undefined)
     : undefined;
 
-  const customFields = (
-    ((customFieldSchemas.data ?? []).find((t) => t.table === documentType)
-      ?.fields ?? []) as { id: string; name: string }[]
-  ).map((f) => ({ id: f.id, name: f.name }));
+  const customFields = customFieldNames(
+    customFieldSchemas.data ?? [],
+    documentType
+  );
 
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate(

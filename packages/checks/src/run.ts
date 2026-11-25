@@ -2,426 +2,154 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { readdirSync } from "node:fs";
-import { join } from "node:path";
-import { renderRegistryHelpers } from "@carbon/database/authz-registry-sql";
-import { validateEnv } from "@carbon/env/validate";
+import { createRequire } from "node:module";
+import { availableParallelism } from "node:os";
+import { fileURLToPath } from "node:url";
+import { Worker } from "node:worker_threads";
 import { keyOf, loadBaseline } from "./baseline";
-import type {
-  ConformanceCheck,
-  ModuleDir,
-  SourceFile,
-  StructureCheck,
-  Violation
-} from "./check";
-import {
-  accountFkClassified,
-  accountFkRestrict
-} from "./conformance/account-fk-restrict";
-import { counterWriteRelative } from "./conformance/counter-write-relative";
-import {
-  DEPLOYMENTS_SET_REQUIRED_ENV,
-  findDeploymentEnvGaps
-} from "./conformance/deployments-set-required-env";
-import {
-  DOCUMENT_SEQUENCE_SYNCED,
-  findUnsyncedDocumentSequences
-} from "./conformance/document-sequence-synced";
-import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
-import {
-  EVENT_IGNORED_COLUMNS,
-  findIgnoredColumnDrift
-} from "./conformance/event-ignored-columns";
-import { formFieldBudget } from "./conformance/form-field-budget";
-import {
-  FUNCTION_REDEFINITION_KEEPS_CHANGES,
-  findDroppedFunctionChanges
-} from "./conformance/function-redefinition-keeps-changes";
-import { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
-import { journalStatusFilter } from "./conformance/journal-status-filter";
-import { linguiMacroMisuse } from "./conformance/lingui-macro-misuse";
-import {
-  findUnselectedListColumns,
-  LIST_SELECT_COVERS_COLUMNS
-} from "./conformance/list-select-covers-columns";
-import {
-  loaderReadsThroughApi,
-  wrappedBuildingBlocks
-} from "./conformance/loader-reads-through-api";
-import { mesUnitWriteResolvesUnit } from "./conformance/mes-unit-write-resolves-unit";
-import { migrationReplaySafe } from "./conformance/migration-replay-safe";
-import { moduleShape } from "./conformance/module-shape";
-import {
-  findMovedTableGaps,
-  livePolicies,
-  MOVED_TABLES_COVERED
-} from "./conformance/moved-tables-covered";
-import {
-  MANAGED_FUNCTION_SETS,
-  type ManagedFunction,
-  noAuthzDdlInMigrations
-} from "./conformance/no-authz-ddl-in-migrations";
-import { findNestedOutlets, noBareOutlet } from "./conformance/no-bare-outlet";
-import { noDbClientInService } from "./conformance/no-db-client-in-service";
-import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
-import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
-import { noDiscardedQueryError } from "./conformance/no-discarded-query-error";
-import {
-  findDuplicatedAppFiles,
-  NO_DUPLICATED_APP_FILE,
-  SHARED_APP_DIRS
-} from "./conformance/no-duplicated-app-file";
-import { noForeignKeyWithoutOnDelete } from "./conformance/no-foreign-key-without-on-delete";
-import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
-import { noInlineSensorOptions } from "./conformance/no-inline-sensor-options";
-import { noInlineUniqueViolation } from "./conformance/no-inline-unique-violation";
-import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
-import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
-import { noLegacyRls } from "./conformance/no-legacy-rls";
-import { noLocalTimezone } from "./conformance/no-local-timezone";
-import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
-import {
-  MODULE_KEY_ROOTS,
-  noModulePermissionKey
-} from "./conformance/no-module-permission-key";
-import { noNoopOpenChange } from "./conformance/no-noop-open-change";
-import { noNumericPrecision } from "./conformance/no-numeric-precision";
-import { noPostgresChanges } from "./conformance/no-postgres-changes";
-import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
-import { noRawOrSearch } from "./conformance/no-raw-or-search";
-import { noRawRedirect } from "./conformance/no-raw-redirect";
-import { noRawRevalidator } from "./conformance/no-raw-revalidator";
-import { noRawRounding } from "./conformance/no-raw-rounding";
-import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
-import { noServerCodeInClient } from "./conformance/no-server-code-in-client";
-import {
-  noSilentTestPass,
-  sharedTestWrappers
-} from "./conformance/no-silent-test-pass";
-import { noStateCopyOfLoaderData } from "./conformance/no-state-copy-of-loader-data";
-import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
-import { noUnmountingDialog } from "./conformance/no-unmounting-dialog";
-import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
-import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
-import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
-import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
-import {
-  findStaleOfflinePageCaches,
-  OFFLINE_PAGE_CACHE_BUMPED
-} from "./conformance/offline-page-cache-bumped";
-import {
-  findProviderRoleDrift,
-  PROVIDER_ROLE_BACKFILLED
-} from "./conformance/provider-role-backfilled";
-import {
-  findStaleRegistryHelpers,
-  REGISTRY_HELPERS_FRESH
-} from "./conformance/registry-helpers-fresh";
-import { routeActionShape } from "./conformance/route-action-shape";
-import {
-  gateConstants,
-  listGates,
-  routeGateNamesPage
-} from "./conformance/route-gate-names-page";
-import {
-  findRoutePageGaps,
-  ROUTE_MAPS_TO_PAGE
-} from "./conformance/route-maps-to-page";
-import {
-  findScheduledSqlDrift,
-  SCHEDULED_SQL_CONSTANTS
-} from "./conformance/scheduled-sql-constants";
-import { serviceFnFile } from "./conformance/service-fn-file";
-import {
-  findUndeclaredSideEffectImports,
-  SIDE_EFFECT_IMPORT_DECLARED
-} from "./conformance/side-effect-import-declared";
-import { spdxLicenseHeader } from "./conformance/spdx-license-header";
-import {
-  findStampColumnMismatches,
-  STAMP_MATCHES_COLUMNS
-} from "./conformance/stamp-matches-columns";
-import { statusWriteGuarded } from "./conformance/status-write-guarded";
-import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
-import { testReadsSource } from "./conformance/test-reads-source";
-import {
-  loadErpRouteFiles,
-  loadRegistryHelperFiles
-} from "./sources/authz-registry";
-import {
-  loadAccountReferencePolicy,
-  loadDeploymentEnvSources,
-  loadEventFunctionSources,
-  loadIntegrationConfigs,
-  loadListSources,
-  loadScheduledConstantSources
-} from "./sources/cross-file";
-import {
-  loadDbTableColumns,
-  loadDbTableColumnTypes
-} from "./sources/db-columns";
-import { loadDocumentSequenceSources } from "./sources/document-sequences";
-import { loadEdgeFunctions } from "./sources/edge-functions";
-import { loadLicenseFiles } from "./sources/license-files";
-import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
-import {
-  loadModuleServerFiles,
-  loadModules,
-  modulesDir
-} from "./sources/modules";
-import { loadOfflinePageSources } from "./sources/offline-page";
-import { loadServerFiles } from "./sources/server-files";
-import { loadSideEffectPackages } from "./sources/side-effect-packages";
-import { loadSharedTestFixtures, loadTestFiles } from "./sources/test-files";
-import {
-  loadTypescriptFiles,
-  REQUEST_HANDLING_ROOTS,
-  ROUTE_ROOTS
-} from "./sources/typescript";
-
-export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
-  noNumericPrecision,
-  noLegacyRls,
-  noDerivedPercentColumn,
-  noRequiredColumnWithoutDefault,
-  noViewWithoutInvoker,
-  noForeignKeyWithoutOnDelete,
-  journalStatusFilter,
-  migrationReplaySafe,
-  accountFkRestrict
-];
-
-/** Checks that run over server-side TS, not SQL migrations. */
-export const SERVER_CHECKS: ConformanceCheck[] = [
-  noLocalTimezone,
-  noZeroConcurrency,
-  routeActionShape
-];
-
-/** Checks that run over ALL app + shared-package TS (client and server). */
-export const TS_CHECKS: ConformanceCheck[] = [
-  noRawRounding,
-  noInlineFractionDigits,
-  noDbClientInService,
-  noServerCodeInClient,
-  serviceFnFile,
-  noDefaultOnEffects,
-  noUnroundedTrackedQuantity,
-  noIntegrationIdBranching,
-  noUnscopedKyselyWrite,
-  noUnguardedSubmit,
-  noNoopOpenChange,
-  noUnmountingDialog,
-  noPostgresChanges,
-  journalStatusFilter,
-  mesUnitWriteResolvesUnit,
-  noDiscardedQueryError,
-  noInlineUniqueViolation
-];
-
-/** Checks that run over git-tracked vitest files (apps, packages, scripts, docs). */
-export const TEST_CHECKS: ConformanceCheck[] = [
-  testReadsSource,
-  testMocksOwnModule
-];
-
-/** Checks that run once per edge function, over all of its .ts files. */
-export const EDGE_FUNCTION_CHECKS: ConformanceCheck[] = [
-  edgeFunctionAuthorizesCaller
-];
-
-export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
+import type { Check, Repo, Violation } from "./check";
+import { CHECKS } from "./checks";
+import { repoRoot } from "./sources/migrations";
 
 export type Finding = { checkId: string; violation: Violation };
 
-export function scanAll(
-  files: SourceFile[],
-  checks: ConformanceCheck[] = CONFORMANCE_CHECKS
-): Finding[] {
-  const out: Finding[] = [];
-  for (const { file, contents } of files) {
-    for (const check of checks) {
-      for (const violation of check.scan(file, contents)) {
-        out.push({ checkId: check.id, violation });
-      }
-    }
-  }
-  return out;
-}
-
-export function scanModules(
-  modules: ModuleDir[],
-  checks: StructureCheck[] = STRUCTURE_CHECKS
-): Finding[] {
-  const out: Finding[] = [];
-  for (const m of modules) {
-    for (const check of checks) {
-      for (const violation of check.inspect(m)) {
-        out.push({ checkId: check.id, violation });
-      }
-    }
-  }
-  return out;
-}
-
-/** The managed functions: one `<name>.sql` (or `<schema>.<name>.sql`) file each. */
-export function loadManagedFunctions(root: string): ManagedFunction[] {
-  return MANAGED_FUNCTION_SETS.flatMap(({ dir, since }) =>
-    readdirSync(join(root, dir))
-      .filter((file) => file.endsWith(".sql"))
-      .map((file) => {
-        const [first = "", second] = file.replace(/\.sql$/, "").split(".");
-        return {
-          schema: second ? first : "public",
-          name: second ?? first,
-          file: `${dir}/${file}`,
-          since
-        };
-      })
+/** What `checks` find in `repo`, each violation under the id of its check. */
+export function runChecks(checks: Check[], repo: Repo): Finding[] {
+  return checks.flatMap((check) =>
+    check.run(repo).map((violation) => ({ checkId: check.id, violation }))
   );
 }
 
-/** The managed function files, read with their repo paths. */
-function loadManagedFunctionFiles(root: string): SourceFile[] {
-  return MANAGED_FUNCTION_SETS.flatMap(({ dir }) =>
-    loadSqlFiles(join(root, dir)).map(({ file, contents }) => ({
-      file: `${dir}/${file}`,
-      contents
-    }))
+// Each worker reads its own inputs and parses the SQL itself, so a worker costs
+// memory (about 0.4 GB) and repeats work. Measured on a busy 14-core machine,
+// 4 workers were faster than 2, and 6 were slower than 4.
+const MAX_WORKERS = 4;
+
+const WORKER = fileURLToPath(new URL("./run.worker.ts", import.meta.url));
+// The package runs its TypeScript source directly. tsx's ESM hooks do not reach
+// a worker thread on Node 22 (`--import tsx` fails there), its require hook does.
+const TSX = createRequire(import.meta.url).resolve("tsx/cjs");
+
+type FromWorker =
+  | { ready: true }
+  | { checkId: string; violations: Violation[] }
+  | { checkId: string; error: unknown };
+
+/**
+ * `checkIds` grouped by the input each check declares first, each group in
+ * `checkIds` order. A check that declares nothing is a group of its own.
+ */
+function groupByFirstInput(checkIds: readonly string[]): string[][] {
+  const groups = new Map<unknown, string[]>();
+  for (const checkId of checkIds) {
+    const check = CHECKS.find((candidate) => candidate.id === checkId);
+    const input = check?.reads[0] ?? checkId;
+    const group = groups.get(input);
+    if (group) group.push(checkId);
+    else groups.set(input, [checkId]);
+  }
+  return [...groups.values()];
+}
+
+/**
+ * What the checks of `CHECKS` named by `checkIds` find under `root`, run on
+ * `workers` worker threads, in `checkIds` order. Each worker takes the next id
+ * when it finishes one, from the checks that declare the same first input.
+ * Rejects, naming the check, when a check throws.
+ */
+export function findOnWorkers(
+  checkIds: readonly string[],
+  root: string,
+  workers: number
+): Promise<Finding[]> {
+  const groups = groupByFirstInput(checkIds);
+  const groupOf = new Map<Worker, string[]>();
+  // Each worker has its own loader and SQL-parse caches, so an input is read
+  // and parsed again on every worker that runs a check of it. The groups come
+  // from what the checks declare, so no check runs to be grouped; a check that
+  // also reads the migrations declares them first, to share their parse. A
+  // worker keeps to its group, then takes the largest group no other worker is
+  // on. It does not help with a group another worker has: reading that
+  // group's input again took longer than the help saved.
+  const nextFor = (worker: Worker): string | undefined => {
+    let group = groupOf.get(worker);
+    if (!group?.length) {
+      const left = groups
+        .filter((candidate) => candidate.length > 0)
+        .sort((a, b) => b.length - a.length);
+      const taken = new Set(groupOf.values());
+      group = left.find((candidate) => !taken.has(candidate));
+      if (!group) return undefined;
+      groupOf.set(worker, group);
+    }
+    return group.shift();
+  };
+  const found = new Map<string, Violation[]>();
+  let running = checkIds.length;
+  const started: Worker[] = [];
+  return new Promise<Finding[]>((resolve, reject) => {
+    let settled = false;
+    const settle = (result: Finding[] | Error) => {
+      if (settled) return;
+      settled = true;
+      for (const worker of started) worker.terminate();
+      if (result instanceof Error) reject(result);
+      else resolve(result);
+    };
+    if (checkIds.length === 0) return settle([]);
+
+    for (let i = 0; i < Math.min(workers, checkIds.length); i++) {
+      const worker = new Worker(WORKER, {
+        workerData: { root },
+        execArgv: ["--require", TSX]
+      });
+      started.push(worker);
+      worker.on("message", (message: FromWorker) => {
+        if ("error" in message) {
+          const { checkId, error } = message;
+          const reason = error instanceof Error ? error.message : String(error);
+          return settle(
+            new Error(`Check ${checkId} threw: ${reason}`, { cause: error })
+          );
+        }
+        if ("violations" in message) {
+          found.set(message.checkId, message.violations);
+          running--;
+        }
+        const next = nextFor(worker);
+        if (next !== undefined) worker.postMessage(next);
+        else if (running === 0) {
+          settle(
+            checkIds.flatMap((checkId) =>
+              (found.get(checkId) ?? []).map((violation) => ({
+                checkId,
+                violation
+              }))
+            )
+          );
+        }
+      });
+      worker.on("error", settle);
+      worker.on("exit", (code) =>
+        settle(new Error(`A check worker exited early (exit code ${code})`))
+      );
+    }
+  });
+}
+
+/** Every finding of every check in `CHECKS` under `root`. */
+export function collectFindings(root: string = repoRoot()): Promise<Finding[]> {
+  return findOnWorkers(
+    CHECKS.map((check) => check.id),
+    root,
+    Math.min(availableParallelism(), MAX_WORKERS)
   );
 }
 
-/** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions + license headers under `root`. */
-export function collectFindings(root: string = repoRoot()): Finding[] {
-  const migrations = loadSqlFiles(migrationsDir(root));
-  const listSources = loadListSources(root);
-  const eventSources = loadEventFunctionSources(root);
-  const registryHelpers = renderRegistryHelpers();
-  const typescriptFiles = loadTypescriptFiles(root);
-  const columnTypes = loadDbTableColumnTypes(root);
-  return [
-    ...scanAll(loadSqlFiles(migrationsDir(root)), [
-      ...CONFORMANCE_CHECKS,
-      noAuthzDdlInMigrations(loadManagedFunctions(root)),
-      accountFkClassified(loadAccountReferencePolicy(root))
-    ]),
-    ...scanModules(loadModules(modulesDir(root))),
-    ...scanAll(loadServerFiles(root), SERVER_CHECKS),
-    // noMissingAuditColumn, statusWriteGuarded and counterWriteRelative need
-    // the real columns, so they are built from the generated types here rather
-    // than sitting in TS_CHECKS — the same shape as noAuthzDdlInMigrations
-    // above, which keeps every `scan` pure.
-    ...scanAll(typescriptFiles, [
-      ...TS_CHECKS,
-      noMissingAuditColumn(loadDbTableColumns(root)),
-      statusWriteGuarded(columnTypes),
-      counterWriteRelative(columnTypes)
-    ]),
-    ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
-      noRawForwardedHeaders,
-      noInterpolatedErrorLog,
-      noRawRedirect,
-      linguiMacroMisuse
-    ]),
-    ...scanAll(typescriptFiles, [
-      noRawOrSearch,
-      noRawRevalidator,
-      noInlineSensorOptions,
-      noBareOutlet,
-      noStateCopyOfLoaderData,
-      formFieldBudget
-    ]),
-    ...findNestedOutlets(typescriptFiles).map((violation) => ({
-      checkId: noBareOutlet.id,
-      violation
-    })),
-    ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
-      indexRedirectBeforeLoaders,
-      loaderReadsThroughApi(
-        wrappedBuildingBlocks(loadModuleServerFiles(root).map((f) => f.server))
-      ),
-      routeGateNamesPage(
-        gateConstants(loadTypescriptFiles(root, ["apps/erp/app/modules"])),
-        listGates(
-          loadTypescriptFiles(root, ["apps/erp/app/utils/list-registry"])
-        )
-      )
-    ]),
-    ...scanAll(
-      [
-        ...loadSqlFiles(migrationsDir(root)),
-        ...loadManagedFunctionFiles(root),
-        ...loadTypescriptFiles(root, MODULE_KEY_ROOTS)
-      ],
-      [noModulePermissionKey]
-    ),
-    ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
-    ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),
-    ...findDuplicatedAppFiles(loadTypescriptFiles(root, SHARED_APP_DIRS)).map(
-      (violation) => ({ checkId: NO_DUPLICATED_APP_FILE, violation })
-    ),
-    ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
-      (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
-    ),
-    ...findStaleRegistryHelpers(
-      registryHelpers,
-      loadRegistryHelperFiles(
-        root,
-        registryHelpers.map((helper) => helper.name)
-      )
-    ).map((violation) => ({ checkId: REGISTRY_HELPERS_FRESH, violation })),
-    ...findMovedTableGaps(livePolicies(migrations)).map((violation) => ({
-      checkId: MOVED_TABLES_COVERED,
-      violation
-    })),
-    ...findRoutePageGaps(loadErpRouteFiles(root)).map((violation) => ({
-      checkId: ROUTE_MAPS_TO_PAGE,
-      violation
-    })),
-    ...findStaleOfflinePageCaches(loadOfflinePageSources(root)).map(
-      (violation) => ({ checkId: OFFLINE_PAGE_CACHE_BUMPED, violation })
-    ),
-    ...findDroppedFunctionChanges(migrations).map((violation) => ({
-      checkId: FUNCTION_REDEFINITION_KEEPS_CHANGES,
-      violation
-    })),
-    ...findStampColumnMismatches(
-      loadModuleServerFiles(root),
-      loadDbTableColumns(root)
-    ).map((violation) => ({ checkId: STAMP_MATCHES_COLUMNS, violation })),
-    ...findUndeclaredSideEffectImports(loadSideEffectPackages(root)).map(
-      (violation) => ({ checkId: SIDE_EFFECT_IMPORT_DECLARED, violation })
-    ),
-    ...scanAll(loadTestFiles(root), [
-      ...TEST_CHECKS,
-      noSilentTestPass(sharedTestWrappers(loadSharedTestFixtures(root)))
-    ]),
-    ...findUnselectedListColumns(listSources.services, listSources.tables).map(
-      (violation) => ({ checkId: LIST_SELECT_COVERS_COLUMNS, violation })
-    ),
-    ...findProviderRoleDrift(loadIntegrationConfigs(root), migrations).map(
-      (violation) => ({ checkId: PROVIDER_ROLE_BACKFILLED, violation })
-    ),
-    ...findIgnoredColumnDrift(
-      eventSources.functions,
-      eventSources.auditConfig
-    ).map((violation) => ({ checkId: EVENT_IGNORED_COLUMNS, violation })),
-    ...findScheduledSqlDrift(
-      migrations,
-      loadScheduledConstantSources(root)
-    ).map((violation) => ({ checkId: SCHEDULED_SQL_CONSTANTS, violation })),
-    ...findDeploymentEnvGaps(loadDeploymentEnvSources(root), (env) =>
-      validateEnv(env)
-        .problems.filter((p) => p.level === "error")
-        .map((p) => p.name)
-    ).map((violation) => ({ checkId: DEPLOYMENTS_SET_REQUIRED_ENV, violation }))
-  ];
-}
-
-/** Findings in the real migrations/modules that are NOT grandfathered by the baseline. */
-export function newViolations(): Finding[] {
+/** The findings that the committed baseline does not grandfather. */
+export async function newViolations(): Promise<Finding[]> {
   const baseline = loadBaseline();
-  return collectFindings().filter(
+  return (await collectFindings()).filter(
     (f) => !baseline.has(keyOf(f.checkId, f.violation))
   );
 }

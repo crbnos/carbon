@@ -59,8 +59,10 @@ export interface ActionDeclarationLike {
  * allowlist and never by hand. Inputs work exactly as an action's — only how the
  * step RUNS differs, which is why `piece` is required here and absent above.
  */
-export interface IntegrationDeclarationLike
-  extends Omit<ActionDeclarationLike, "call" | "update"> {
+export interface IntegrationDeclarationLike extends Omit<
+  ActionDeclarationLike,
+  "call" | "update"
+> {
   /** See `CatalogIntegration.batchable`. */
   batchable: false;
   /** `label` is the APP's own name — see `integrationAppLabelKey`. */

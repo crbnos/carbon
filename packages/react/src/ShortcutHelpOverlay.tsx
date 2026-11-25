@@ -16,8 +16,8 @@ import {
   ModalTitle
 } from "./Modal";
 import { ShortcutKey } from "./ShortcutKey";
-import { Subheading } from "./Subheading";
 import { MENU_ITEM_SHORTCUTS, SHORTCUTS } from "./shortcuts";
+import { Subheading } from "./Subheading";
 import { cn } from "./utils/cn";
 
 export type ShortcutHelpEntry = {

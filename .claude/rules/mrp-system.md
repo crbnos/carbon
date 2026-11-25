@@ -531,7 +531,7 @@ to child demand. Note current `methodType` enum is
 ## Source views (open demand/supply)
 
 Newest defs: `openPurchaseOrderLines` in `20261117123417_open-po-lines-exclude-outside-processing.sql`,
-`openProductionOrders` in `20261124200937_open-production-orders-good-units.sql`,
+`openProductionOrders` in `20261125153018_open-production-orders-good-units.sql`,
 `openJobMaterialLines` in `20260926093417_open-job-material-lines-invoker.sql`,
 `openSalesOrderLines` in `20261006130001_demand-forecast-consumption.sql`.
 All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`,

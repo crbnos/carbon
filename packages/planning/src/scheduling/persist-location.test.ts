@@ -49,7 +49,7 @@ describe("persistLocationWrites", () => {
           this.statements.push(query);
           return { rows: this.rowsFor(query) as R[] };
         },
-        // biome-ignore lint/correctness/useYield: never streamed
+        // oxlint-disable-next-line require-yield -- never streamed
         streamQuery: async function* () {
           throw new Error("not streamed");
         }

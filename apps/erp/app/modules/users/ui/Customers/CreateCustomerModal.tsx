@@ -153,7 +153,6 @@ const CustomerContact = ({
     Awaited<ReturnType<typeof getCustomerContacts>>
   >(customer ? path.to.api.customerContacts(customer) : null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (initialLoad.current) {
       initialLoad.current = false;
@@ -163,6 +162,7 @@ const CustomerContact = ({
         onChange(null);
       }
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [customer]);
 
   const options = useMemo(
@@ -190,11 +190,11 @@ const CustomerContact = ({
   };
 
   // so that we can call onChange on load
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (value && value === defaultValue) {
       handleChange(value);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [value, customerContactFetcher.data?.data]);
 
   return (

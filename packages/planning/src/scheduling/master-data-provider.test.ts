@@ -22,7 +22,7 @@ describe("per-id cached availability", () => {
         executeQuery: async () => {
           throw new Error("connection lost");
         },
-        // biome-ignore lint/correctness/useYield: never streamed
+        // oxlint-disable-next-line require-yield -- never streamed
         streamQuery: async function* () {
           throw new Error("not streamed");
         }

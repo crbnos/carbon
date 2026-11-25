@@ -57,6 +57,11 @@ export default function ContractSetupDetailsRoute() {
   const routeData = useRouteData<ContractRouteData>(path.to.contract(id));
   if (!routeData) return null;
   const { contract } = routeData;
+  // A CHECK keeps Manual off a contract; this narrows the DB enum's type.
+  const invoiceAutomation =
+    contract.invoiceAutomation === "Manual"
+      ? undefined
+      : (contract.invoiceAutomation ?? undefined);
 
   if (contract.billingBasis === "Project") {
     return (
@@ -89,7 +94,7 @@ export default function ContractSetupDetailsRoute() {
           firstInvoiceDate: contract.firstInvoiceDate ?? undefined,
           billedThrough: contract.billedThrough ?? undefined,
           recognizeRevenueFrom: contract.recognizeRevenueFrom ?? undefined,
-          invoiceAutomation: contract.invoiceAutomation ?? undefined,
+          invoiceAutomation,
           paymentTermId: contract.paymentTermId ?? undefined,
           currencyCode: contract.currencyCode,
           notes: TiptapText(contract.notes).toString() || undefined,
@@ -135,7 +140,7 @@ export default function ContractSetupDetailsRoute() {
         firstInvoiceDate: contract.firstInvoiceDate ?? undefined,
         billedThrough: contract.billedThrough ?? undefined,
         recognizeRevenueFrom: contract.recognizeRevenueFrom ?? undefined,
-        invoiceAutomation: contract.invoiceAutomation ?? undefined,
+        invoiceAutomation,
         paymentTermId: contract.paymentTermId ?? undefined,
         currencyCode: contract.currencyCode,
         notes: TiptapText(contract.notes).toString() || undefined,

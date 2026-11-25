@@ -169,7 +169,6 @@ export function CompactList<T>({
 
   // Only the columns desktop shows (a hidden column never fills a slot).
   const columnVisibility = table.getState().columnVisibility;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: visibility changes re-resolve the slots
   const slots = useMemo(
     () =>
       resolveSlots(
@@ -178,6 +177,7 @@ export function CompactList<T>({
           .filter((c) => c.getIsVisible() && !c.columnDef.meta?.exportOnly),
         tableName ?? title
       ),
+    // oxlint-disable-next-line react/exhaustive-deps -- visibility changes re-resolve the slots
     [table, tableName, title, columnVisibility]
   );
 
@@ -194,7 +194,6 @@ export function CompactList<T>({
     table.resetRowSelection();
     setSelecting(false);
   };
-  // biome-ignore lint/correctness/useExhaustiveDependencies: rebuilt when the selection or its count changes
   const override = useMemo(
     () =>
       selecting
@@ -208,6 +207,7 @@ export function CompactList<T>({
             )
           }
         : null,
+    // oxlint-disable-next-line react/exhaustive-deps -- rebuilt when the selection or its count changes
     [selecting, selectionLabel]
   );
   useSetAppBarOverride(override);
@@ -232,7 +232,6 @@ export function CompactList<T>({
   const [listOffset, setListOffset] = useState(0);
   // The scroll element is found again when the layout changes: a list that
   // grows past its drawer's edge starts to scroll with the drawer.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the list mounts with the first row
   useEffect(() => {
     const root = rootRef.current;
     if (!root || typeof ResizeObserver === "undefined") return;
@@ -251,6 +250,7 @@ export function CompactList<T>({
     const observer = new ResizeObserver(update);
     observer.observe(root);
     return () => observer.disconnect();
+    // oxlint-disable-next-line react/exhaustive-deps -- the list mounts with the first row
   }, [rows.length > 0]);
 
   // The group header above the first row in view stays rendered, so it can

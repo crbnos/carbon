@@ -15,7 +15,7 @@ A new agreement opens a five-step setup. **"Next"** on the first step saves it a
 
 <Steps>
 <Step>
-**Details.** The customer, **"Rental Site"** and **"Shipping Location"**, the [contacts](#contacts), then the term: *Open-ended* or *Fixed Term* with its **"End Date"**, from the **"Start Date"**. Under **More Details**, the sales person, currency and notes.
+**Details.** The customer, **"Rental Site"** (the bill-to and ship-to of each invoice, which can still change after activation) and **"Shipping Location"**, the [contacts](#contacts), then the term: *Open-ended* or *Fixed Term* with its **"End Date"**, from the **"Start Date"**. Under **More Details**, the sales person, currency and notes.
 </Step>
 <Step>
 **Units.** **"Add Units"** adds several available fleet units at once, each at its [rate on file](#rates) for the frequency you choose, or at no rate when there is none. Click a cell to change a unit's **"Rate Frequency"** or **"Rate"**. A serial number missing from the list is not in the fleet yet: on the part's **Inventory** tab, find it under **Storage Units** and choose **"Capitalize as Fixed Asset"**.
@@ -68,7 +68,9 @@ The agreement is laid out like a sales order. Its units are listed down the left
 
 The agreement's ID in the header opens the agreement as a whole: a summary of its units, with their rates and the shipment and receipt that moved each one, then what has been billed, what is unbilled, the monthly rent, the deposit and what falls due next, then how the units will be accounted for, and every charge, billing period and deposit.
 
-The terms (customer, dates, billing cycle and timing, payment terms, currency, deposit, tax and the accounting-treatment inputs) are in the **Properties** panel on the right, editable while the agreement is a draft. Once it is active, only **"Payment Terms"**, **"Tax Code"**, **"Tax Percent"** and **"Invoicing"** can still change. Each invoice copies the payment terms and tax when it is drafted, so a change applies to invoices drafted afterwards; invoices already drafted or posted keep theirs, and so do charges already recorded.
+The terms (customer, dates, billing cycle and timing, payment terms, currency, deposit, tax and the accounting-treatment inputs) are in the **Properties** panel on the right, editable while the agreement is a draft. Once it is active, only **"Payment Terms"**, **"Tax Code"**, **"Tax Percent"**, **"Rental Site"** and **"Invoicing"** can still change.
+
+Each invoice copies the payment terms, the tax and the Rental Site (its bill-to and its ship-to) when it is drafted, so a change applies to invoices drafted afterwards; invoices already drafted or posted keep theirs, and so do charges already recorded. A reprinted delivery ticket shows the new Rental Site. The Rental Site must be one of the agreement customer's locations.
 
 Each unit on the agreement moves through its own status: **"Pending"** until delivered, **"On Rent"** once delivered, then **"Returned"**, or **"Sold"** when the customer buys a unit treated as a sale on its purchase option. On an active agreement, a second badge beside the agreement's status sums the units up: **"To Deliver"**, **"Partially Delivered"**, **"On Rent"**, **"Partially Returned"** or **"Returned"**. A sold unit counts as returned. The Fleet register reflects the same thing from the asset's side: a unit on a draft or an undelivered line reads **Reserved**, a delivered one reads **<Term>On Rent</Term>**, and a unit can only be on one live agreement at a time.
 
@@ -136,22 +138,51 @@ Every amount billed is rounded to the agreement currency's decimals: a part mont
 
 ## Invoicing
 
-A daily job invoices every billing period due on or before today (in the company's timezone) and every charge dated on or before today. **"Invoice"** on an active agreement does the same on demand, for example right after adding a charge.
+A daily job invoices every billing period due on or before today (in the company's timezone) and every charge dated on or before today. What happens next follows the invoicing setting: the company default on **Settings → Invoicing** (**"Recurring Invoices"**, **Post and email** unless changed), or the agreement's own **"Invoicing"** property.
 
-What happens next follows the invoicing setting: the company default on **Settings → Invoicing** (**"Recurring Invoices"**, **Post and email** unless changed), or the agreement's own **"Invoicing"** property.
-
+- **Manual**: while the agreement is active, the daily job creates no invoice for its rental units or its charges. You bill them with [**"Invoice"**](#invoicing-ahead), and **"Sell to Customer"** still drafts its own invoice. A unit treated as a sale is the exception: Invoice leaves its lease payments out, so the daily job still drafts each one when it falls due. Those drafts are never posted or emailed on their own. Once the agreement is closed, the daily job drafts what a voided invoice returned to be billed, as for any agreement, because Invoice does not take a closed agreement. Only the agreement's own **"Invoicing"** property offers Manual; the company setting and contracts do not.
 - **Draft only**: one draft invoice per agreement; a person reviews and posts it.
 - **Post**: rent is posted automatically.
 - **Post and email**: rent is posted and emailed to the agreement's contact, with the PDF attached, from the company's name, replying to the receivables email. It needs a contact with an email; without one the invoice is posted and marked **"Not sent"**.
 - **Post and send via Stripe**: rent is posted and sent through your connected Stripe account, which emails it with a payment link. It needs Stripe connected and the billing customer linked to a Stripe customer; without them the invoice is posted and marked **"Not sent"**.
 
-Under every mode except **Draft only**, charges and purchase options go on a separate invoice that is always held for review, and so is a rent invoice re-billing a voided invoice. An early-return credit is never on an invoice: it is a draft credit memo in every mode, posted by a person. Sales-rule violations, a missing required contact and posting errors also hold an invoice. Held and unsent invoices carry a yellow **Needs Review** badge in the **Sales Invoices** list, which can be filtered on **Needs Review**. Each agreement's salesperson (or its creator) gets a daily summary of what was posted, emailed and held; **"Also notify"** on the settings page adds more people.
+Under every mode except **Manual** and **Draft only**, charges and purchase options go on a separate invoice that is always held for review, and so is a rent invoice re-billing a voided invoice. An early-return credit is never on an invoice: it is a draft credit memo in every mode, Manual included, posted by a person. Sales-rule violations, a missing required contact and posting errors also hold an invoice.
+
+Held and unsent invoices carry a yellow **Needs Review** badge in the **Sales Invoices** list, which can be filtered on **Needs Review**. Each agreement's salesperson (or its creator) gets a daily summary of what was posted, emailed and held; **"Also notify"** on the settings page adds more people.
+
+### Invoicing ahead
+
+**"Invoice"** in the header of an active agreement bills ahead of the daily job: the next periods of every unit, on one draft invoice. Use it to check an invoice before it falls due, or to bill a customer who pays several months up front.
+
+<Steps>
+<Step>
+Choose **"Invoice"**. The dialog reads "Invoice the next [N] periods", with N at 1.
+</Step>
+<Step>
+Set N. On a fixed-term agreement, **"All remaining"** sets N to the periods left, and N cannot go past them. An open-ended agreement bills at most 12 periods ahead of today, counting periods an earlier **"Invoice"** already billed ahead; Carbon cuts the periods it has not cut yet.
+</Step>
+<Step>
+Check the lines, the subtotal, the tax and the total, then choose **"Create Draft Invoice"**. The new invoice opens.
+</Step>
+</Steps>
+
+The invoice takes the next N periods of each unit, including a returned unit that still owes a period, and every unbilled charge dated today or earlier. A unit treated as a sale is left out: its periods are lease payments, and the daily job bills them when they fall due. The periods left, and **"All remaining"**, count only the other units. It stays a draft whatever the agreement's **"Invoicing"** mode, so nothing is posted or emailed: it is held with the reason "Created early: review and post it yourself" and shows the **Needs Review** badge until you post it. The daily job never bills those periods again, and deleting the draft puts them back. If an early-return credit is due, Invoice also drafts it on its own draft credit memo, as the daily job would.
+
+When no period is left to bill, N starts at 0 and Invoice drafts what is due alone: the due charges, an early-return credit memo, or both. With only a credit due, the credit memo opens instead of an invoice. While a unit is out past the end date, Carbon keeps cutting holdover periods, so a period is always left and N stays at 1 or more.
+
+<Screenshot label="Invoice dialog on an active rental agreement with the next 2 periods chosen, listing each period line with its tax and the subtotal, tax and total" />
+
+Invoice needs permission to edit rental agreements and to create sales invoices. When an early-return credit is due, it also needs permission to create credit memos; without it, Invoice is refused and drafts nothing.
+
+Through the API or MCP, a call that bills 1 or more periods must name the first period it expects to bill (`fromPeriodStart`). Carbon refuses the call when another period comes first, so a retried call never bills the following periods. A call for the due charges alone (0 periods) needs none.
 
 ### Next invoice
 
-On an active agreement, the **"Next Invoice"** card above **"Billing Periods"** shows the invoice the next billing pass will draft, before it exists: the day it will be drafted, each line, the tax and the total. When charges go on their own held invoice, the card shows both. **"Preview PDF"** opens that invoice in the company's sales invoice template, numbered "Preview", so the tax and the layout can be checked ahead of time. Nothing is saved; the real invoice is drafted on that day as usual. **"Preview PDF"** needs permission to view invoicing.
+On an active agreement, the **"Next Invoice"** card above **"Billing Periods"** shows the invoice the next billing pass will draft, before it exists: the day it will be drafted, each line, the tax and the total. When charges go on their own held invoice, the card shows both. On a Manual agreement the card says that the daily run only bills units treated as a sale.
 
-Each period becomes a read-only **Rental** line, such as "2026-10-01 – 2026-10-28 · 28 days · 1 × Month rate", taxed at the agreement's **"Tax Percent"**. With a **"Tax Code"**, each line takes the code's rate on the invoice date instead, as every other invoice line does.
+**"Preview PDF"** opens that invoice in the company's sales invoice template, numbered "Preview", so the tax and the layout can be checked ahead of time. Nothing is saved; the real invoice is drafted on that day as usual. **"Preview PDF"** needs permission to view invoicing.
+
+Each period becomes a read-only **Rental** line, such as "Oct 1, 2026 – Oct 28, 2026 · 28 days · 1 × Month rate", taxed at the agreement's **"Tax Percent"**. With a **"Tax Code"**, each line takes the code's rate on the invoice date instead, as every other invoice line does.
 
 **"Add Charge"** records a variable charge against one unit (mileage, damage, cleaning), billed with the first invoice drafted on or after its date. Deleting a draft invoice releases its periods and charges for the next pass.
 
@@ -350,10 +381,10 @@ The agreement has no units, or a line has no fleet unit.
 Close blocker, checked first. A Draft or Pending rental shipment or receipt of the agreement still holds a unit. Post it or delete it, then close.
 
 ### "Every unit must be returned or sold before the agreement closes" / "Every billing period must be invoiced before the agreement closes" / "Every charge must be invoiced before the agreement closes"
-Close blockers. Return units, then use **"Invoice"** (and post any held invoice) for the remaining periods and charges. Note a charge dated in the future is not billed until its date.
+Close blockers. Return units, then use **"Invoice"** (All remaining on a fixed term) to draft an invoice for the remaining periods and due charges, and a credit memo for any early-return credit. Post them and any held invoice. Note a charge dated in the future is not billed until its date.
 
-### "A unit is on rent; return it before cancelling the agreement" / "The agreement has been invoiced; it can be closed, not cancelled" / "Rental income has been recognized on this agreement; it can be closed, not cancelled" / "A unit on this agreement was sold"
-Cancel blockers. Once anything is billed or accrued the agreement is closed instead.
+### Cancelling a rental agreement is refused
+Cancel blockers: "A unit is on rent; return it before cancelling the agreement", "The agreement has been invoiced; it can be closed, not cancelled", "Rental income has been recognized on this agreement; it can be closed, not cancelled", "A unit on this agreement was sold". Once anything is billed or accrued the agreement is closed instead.
 
 ### "Only a Draft rental agreement can be deleted. Cancel it instead."
 Delete is Draft-only.
@@ -383,13 +414,22 @@ Charges are added on Draft or Active agreements; an invoiced charge cannot be de
 The contacts save (`saveRentalAgreementContacts`) refuses with "Contacts can only change on a Draft or Active rental agreement" (`RENTAL_CONTACT_STATUS`), "This contact does not belong to the agreement's customer" (`RENTAL_CONTACT_WRONG_CUSTOMER`) or "Add a contact with an email to send invoices" (`RENTAL_INVOICE_EMAIL_NO_CONTACT`). A Closed or Cancelled agreement's contacts are its record. Every contact, the primary one included, must be the agreement's customer's. While invoices are posted and emailed, a new primary contact needs an email.
 
 ### "Only a Draft rental agreement's terms can be edited" / "Units can only be added or changed on a Draft rental agreement" / "Units can only be removed from a Draft rental agreement" / "This unit does not belong to this rental agreement"
-Service-level guards in `sales.service.ts` (these writers are also MCP tools), returned as `RENTAL_AGREEMENT_NOT_DRAFT` / `RENTAL_LINE_WRONG_AGREEMENT`. Terms and units are fixed at activation; return a unit or cancel the agreement instead. On an active agreement the properties panel refuses every term except payment terms, tax code and tax percent with "Only the payment terms and tax of an Active rental agreement can be changed".
+Service-level guards in `sales.service.ts` (these writers are also MCP tools), returned as `RENTAL_AGREEMENT_NOT_DRAFT` / `RENTAL_LINE_WRONG_AGREEMENT`. Terms and units are fixed at activation; return a unit or cancel the agreement instead. On an active agreement the properties panel refuses every term except payment terms, tax code, tax percent and Rental Site with "Only the payment terms, tax and Rental Site of an Active rental agreement can be changed".
+
+### "The Rental Site must be a location of the agreement's customer"
+`RENTAL_SITE_WRONG_CUSTOMER`, from `insertRentalAgreement`, `updateRentalAgreement` and `updateRentalAgreementInvoiceTerms` (`refuseForeignRentalSite`), on Draft and Active agreements. Pick one of the customer's own locations.
 
 ### "Sales invoice line not found on this invoice" / "Cannot delete a line of a sales invoice with status "STATUS". Only Draft invoices can be edited."
 Deleting an invoice line (`deleteSalesInvoiceLineReleasingRentals`) requires the line to belong to the invoice in the URL and that invoice to be Draft; releasing a posted line's rental stamps would bill its period again.
 
-### "Nothing is due on this agreement yet"
-**"Invoice"** found no Pending period with a due date on or before today and no charge dated on or before today. The **"Next Invoice"** card shows what will be drafted on the next due date.
+### Invoice dialog refusals
+`invoiceRentalAgreementPeriods` / `previewRentalAgreementInvoice` (`draftEarlyRentalInvoice`, `RentalEarlyInvoiceRefusal`). The dialog shows the refusal in place of the preview.
+- "Only an active rental agreement can be invoiced": the agreement is Draft, Closed or Cancelled.
+- "An open-ended agreement is invoiced at most 12 periods ahead": N > 12 without an end date, or N plus the periods already invoiced ahead of today passes 12 on a unit.
+- "These periods were invoiced in the meantime. Check the agreement and try again": another invoice billed the periods the preview showed (a resubmit or a retried call).
+- "Only N periods are left to invoice": N is more than the Pending periods left on a fixed term (the line with the most).
+- "Choose at least one period: periods are still left to invoice": N = 0 while a Pending period is left. N = 0 bills due charges alone only when no period is left; while a unit is out past the end date, holdover periods keep being cut, so this never applies then.
+- "No billing periods are left. Choose 0 to draft what is due" / "Nothing is due to invoice on this agreement" / "Nothing is left to invoice on this agreement": no Pending period, with or without a charge dated today or earlier or a due early-return credit. A charge dated in the future is not billed until its date.
 
 ### "Asset … is on rent on rental agreement …; return it from the agreement first"
 Return to Inventory (post-asset-transfer `return`) refuses a unit on a live rental line (Pending or On Rent).
@@ -422,7 +462,7 @@ A unit treated as a sale whose agreement starts before the first of the activati
 Voiding a posted early-return credit memo deletes its Planned Deferral rows (`revenueRecognitionSchedule.memoId`) and returns its adjustment periods to Pending. Once a run holds or has posted one of those rows, reverse or delete that run first.
 
 ### "This credit memo is for X, but the early returns it credits come to Y; delete it and invoice the agreement again"
-A rental credit memo's amount was edited after it was drafted. Its amount must equal its adjustment periods (`rentalBillingPeriod.memoId`). Delete the draft memo, which returns the adjustments, and run **"Invoice"** again.
+A rental credit memo's amount was edited after it was drafted. Its amount must equal its adjustment periods (`rentalBillingPeriod.memoId`). Delete the draft memo, which returns the adjustments; **"Invoice"** or the next daily job drafts it again.
 
 ### "A purchase option that is reasonably certain needs an end date"
 Agreement form validation: "Purchase option reasonably certain" needs an End Date (an open-ended agreement is always treated as a Rental).

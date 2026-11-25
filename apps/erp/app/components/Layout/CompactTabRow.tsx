@@ -32,7 +32,6 @@ export function CompactTabRow({
   const activeId = items.find((item) => item.active)?.id;
 
   // Keep the current tab in view in the scrolling row.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when the active tab changes
   useEffect(() => {
     rowRef.current
       ?.querySelector('[data-active="true"]')

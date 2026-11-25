@@ -10,7 +10,7 @@
  *
  * Labels are a separate file because `msg` is a build-time macro that throws when
  * plain Node imports it. Emitted source is unformatted; the script pipes it
- * through `biome check --write`.
+ * through `oxlint --fix` and `oxfmt`.
  */
 import fs from "node:fs";
 import path from "node:path";

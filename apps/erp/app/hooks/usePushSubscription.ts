@@ -223,46 +223,55 @@ export function usePushSubscription({
 
   const turnOn = useCallback(
     () =>
-      run(async () => {
-        if (!publicKey) return;
-        const permission = await Notification.requestPermission();
-        if (permission === "denied") {
-          setState("denied");
-          return;
-        }
-        if (permission !== "granted") return;
+      run(
+        async () => {
+          if (!publicKey) return;
+          const permission = await Notification.requestPermission();
+          if (permission === "denied") {
+            setState("denied");
+            return;
+          }
+          if (permission !== "granted") return;
 
-        const { subscription, replacedEndpoint } = await subscribe(publicKey);
-        const response = await saveSubscription(subscription, replacedEndpoint);
-        if (!response.ok) {
-          await subscription.unsubscribe();
-          setState("off");
-          toast.error(t`Failed to enable browser notifications`);
-          return;
-        }
-        rememberBrowserNotifications(true);
-        setState("on");
-      }, t`Failed to enable browser notifications`),
+          const { subscription, replacedEndpoint } = await subscribe(publicKey);
+          const response = await saveSubscription(
+            subscription,
+            replacedEndpoint
+          );
+          if (!response.ok) {
+            await subscription.unsubscribe();
+            setState("off");
+            toast.error(t`Failed to enable browser notifications`);
+            return;
+          }
+          rememberBrowserNotifications(true);
+          setState("on");
+        },
+        t`Failed to enable browser notifications`
+      ),
     [publicKey, run, t]
   );
 
   const turnOff = useCallback(
     () =>
-      run(async () => {
-        const subscription = await currentSubscription();
-        if (subscription) {
-          const response = await sendSubscription("DELETE", {
-            endpoint: subscription.endpoint
-          });
-          // Keep the browser on when its row could not be deleted.
-          if (!response.ok) {
-            throw new Error(`DELETE returned ${response.status}`);
+      run(
+        async () => {
+          const subscription = await currentSubscription();
+          if (subscription) {
+            const response = await sendSubscription("DELETE", {
+              endpoint: subscription.endpoint
+            });
+            // Keep the browser on when its row could not be deleted.
+            if (!response.ok) {
+              throw new Error(`DELETE returned ${response.status}`);
+            }
+            await subscription.unsubscribe();
           }
-          await subscription.unsubscribe();
-        }
-        rememberBrowserNotifications(false);
-        setState("off");
-      }, t`Failed to disable browser notifications`),
+          rememberBrowserNotifications(false);
+          setState("off");
+        },
+        t`Failed to disable browser notifications`
+      ),
     [run, t]
   );
 

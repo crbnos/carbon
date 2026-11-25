@@ -82,7 +82,7 @@
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external react",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

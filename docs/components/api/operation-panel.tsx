@@ -139,7 +139,6 @@ export function OperationPanel({
         <CopyButton
           text={applyConfig(samples[key], base, apiKey, false, appBase)}
         />
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: build-time shiki HTML */}
         <div
           className="api-shiki"
           dangerouslySetInnerHTML={{
@@ -176,7 +175,6 @@ export function OperationPanel({
                 />
               </svg>
             </summary>
-            {/* biome-ignore lint/security/noDangerouslySetInnerHtml: build-time shiki HTML */}
             <div
               className="api-shiki"
               dangerouslySetInnerHTML={{ __html: responseHtml }}

@@ -171,7 +171,6 @@ const useJiraProjects = (
     defaults?: IssueDefaults | null;
   }>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: not necessary
   useEffect(() => {
     const params = new URLSearchParams({
       actionId: record.taskId,
@@ -179,6 +178,7 @@ const useJiraProjects = (
     });
     if (projectKey) params.set("projectKey", projectKey);
     fetcher.load(`${path.to.api.jiraCreateIssue}?${params}`);
+    // oxlint-disable-next-line react/exhaustive-deps -- not necessary
   }, [projectKey]);
 
   return {

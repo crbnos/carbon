@@ -19,9 +19,8 @@ vi.mock("@carbon/content/glossary", () => ({
   terms: {}
 }));
 
-const { ssoConnectionValidator, ssoDomainValidator } = await import(
-  "./settings.models"
-);
+const { ssoConnectionValidator, ssoDomainValidator } =
+  await import("./settings.models");
 
 // Form-shaped input: zfd.text turns "" into undefined exactly like an empty
 // form field, so tests pass strings the way the route action receives them.

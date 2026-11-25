@@ -314,7 +314,7 @@ export default function TrainingWizard() {
     if (actionData && !actionData.error) {
       setIsSubmitted(true);
       if (actionData.passed && audioRef.current) {
-        // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
+        // oxlint-disable-next-line no-empty-function -- suppressed due to migration
         audioRef.current.play().catch(() => {});
       }
     }

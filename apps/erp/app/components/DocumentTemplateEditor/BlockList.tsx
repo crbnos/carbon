@@ -411,7 +411,7 @@ function BlockRow({ id }: { id: string }) {
   const label = blockLabel(block, sections, t`Shared Section (deleted)`);
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here
     <div
       ref={setNodeRef}
       style={{
@@ -540,7 +540,7 @@ function StaticBlockRow({ id }: { id: string }) {
   const label = blockLabel(block, sections, t`Shared Section (deleted)`);
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- mouse-sized hit area only; the inner label <button> is the keyboard/AT control
     <div
       onClick={() => pickBlock(id)}
       className={cn(
@@ -653,7 +653,7 @@ function HeaderLogoRow() {
 
   return (
     <div className="ml-3 border-l border-border/60 pl-2">
-      {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here */}
+      {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here */}
       <div
         onClick={() => pickBlock(HEADER_LOGO_ID)}
         className={cn(
@@ -745,7 +745,7 @@ function ChromeRow({
 }) {
   const { isDocument } = useDocumentModeFlags();
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here
     <div
       onClick={onSelect}
       className={cn(

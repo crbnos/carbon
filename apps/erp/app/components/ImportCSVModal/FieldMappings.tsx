@@ -135,7 +135,6 @@ export function FieldMapping({
     }, {})
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (!fileColumns || !firstRows || initialized.current) return;
 
@@ -176,6 +175,7 @@ export function FieldMapping({
         encType: "application/json"
       }
     );
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [fileColumns, firstRows]);
 
   const enumFields: [
@@ -480,7 +480,6 @@ function EnumMappingStep({
     }
   }, [enumData, carbon, company.id, showReadableId]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if ("fetcher" in enumData && carbon) {
       fetchOptions();
@@ -490,7 +489,6 @@ function EnumMappingStep({
   // Auto-match CSV values to options once when options become available.
   // Ref guard prevents clobbering user edits on re-render.
   const autoMatchedRef = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot effect
   useEffect(() => {
     if (autoMatchedRef.current) return;
     if (options.length === 0 || uniqueValues.length === 0) return;
@@ -502,6 +500,7 @@ function EnumMappingStep({
       if (matched) onEnumMappingChange(name, csvValue, matched);
     }
     autoMatchedRef.current = true;
+    // oxlint-disable-next-line react/exhaustive-deps -- one-shot effect
   }, [options, mappedColumn]);
 
   // Inline create-and-link for name-only lookups (e.g. supplier type). Created
@@ -539,7 +538,6 @@ function EnumMappingStep({
   const [formCreatedName, setFormCreatedName] = useState("");
   const pendingFormCsvValueRef = useRef<string | null>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: link once options refresh
   useEffect(() => {
     const csvValue = pendingFormCsvValueRef.current;
     if (csvValue === null || !formCreatedName) return;
@@ -549,6 +547,7 @@ function EnumMappingStep({
       pendingFormCsvValueRef.current = null;
       setFormCreatedName("");
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- link once options refresh
   }, [options]);
 
   return (

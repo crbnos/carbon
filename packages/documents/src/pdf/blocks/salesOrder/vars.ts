@@ -116,6 +116,15 @@ export function buildSalesOrderVars(
       postalCode: loc?.paymentPostalCode,
       country: loc?.paymentCountryName
     }),
+    ...addressVars("shipTo", {
+      name: loc?.shipToCustomerName,
+      addressLine1: loc?.shipToAddressLine1,
+      addressLine2: loc?.shipToAddressLine2,
+      city: loc?.shipToCity,
+      stateProvince: loc?.shipToStateProvince,
+      postalCode: loc?.shipToPostalCode,
+      country: loc?.shipToCountryName
+    }),
 
     ...companyVars(data.company)
   };

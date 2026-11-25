@@ -202,7 +202,6 @@ const ReceiptLines = () => {
     }, {});
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     setSerialNumbersByLineId(
       receiptLines.reduce((acc, line) => {
@@ -237,9 +236,9 @@ const ReceiptLines = () => {
         };
       }, {})
     );
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [routeData?.receipt?.sourceDocumentId, routeData?.receiptLines?.length]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateReceiptLine = useCallback(
     async ({
       lineId,
@@ -267,6 +266,7 @@ const ReceiptLines = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     []
   );
 

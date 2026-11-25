@@ -257,8 +257,9 @@ const SalesRFQHeader = () => {
         action={path.to.deleteSalesRfq(rfqId)}
         isOpen={deleteRFQModal.isOpen}
         name={routeData?.rfqSummary?.rfqId!}
-        text={t`Are you sure you want to delete ${routeData?.rfqSummary
-          ?.rfqId!}? This cannot be undone.`}
+        text={t`Are you sure you want to delete ${
+          routeData?.rfqSummary?.rfqId!
+        }? This cannot be undone.`}
         onCancel={() => {
           deleteRFQModal.onClose();
         }}
@@ -309,9 +310,9 @@ function NoQuoteReasonModal({
     );
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: load the reasons each time the modal opens
   useEffect(() => {
     if (open) fetchReasons();
+    // oxlint-disable-next-line react/exhaustive-deps -- load the reasons each time the modal opens
   }, [open]);
 
   return (

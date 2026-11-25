@@ -109,6 +109,7 @@ const SALES_ORDER_MERGE_FIELDS = [
   value("customer.vatNumber", "Customer VAT", "Customer"),
   value("customer.eori", "Customer EORI", "Customer"),
   ...addressFields("billTo", "Bill To"),
+  ...addressFields("shipTo", "Ship To"),
   ...COMPANY_MERGE_FIELDS
 ] as const satisfies readonly MergeField[];
 

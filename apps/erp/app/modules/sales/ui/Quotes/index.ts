@@ -17,8 +17,8 @@ import QuoteMaterialForm from "./QuoteMaterialForm";
 import QuotePaymentForm from "./QuotePaymentForm";
 import QuoteProperties from "./QuoteProperties";
 import QuoteShipmentForm from "./QuoteShipmentForm";
-import QuoteSummary from "./QuoteSummary";
 import QuotesTable from "./QuotesTable";
+import QuoteSummary from "./QuoteSummary";
 import { useLineCosts } from "./useLineCosts";
 
 export {

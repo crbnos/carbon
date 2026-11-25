@@ -114,9 +114,9 @@ export default function RuleBuilder({
 
   // Keep parents in sync with the live condition list. `onConditionsChange`
   // identity isn't tracked — parents wrap in `useCallback` if they need it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: callback identity intentionally untracked
   useEffect(() => {
     onConditionsChange?.(conditions);
+    // oxlint-disable-next-line react/exhaustive-deps -- callback identity intentionally untracked
   }, [conditions]);
 
   const handleChange = useCallback(

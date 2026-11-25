@@ -1302,13 +1302,11 @@ const getItemFiles = async (
 
     if (!res.data?.length) return null;
 
-    return res.data.map(
-      (f): StorageItem => ({
-        ...f,
-        bucket: "parts",
-        itemId: id
-      })
-    );
+    return res.data.map((f): StorageItem => ({
+      ...f,
+      bucket: "parts",
+      itemId: id
+    }));
   };
 
   const elems = items.map((el) => getFile(el.itemId));
@@ -1636,14 +1634,12 @@ export async function getBatchWorkInstructions(
         const listed = await storage(client)
           .company(args.companyId)
           .list(folder);
-        return (listed.data ?? []).map(
-          (file): BatchFile => ({
-            ...file,
-            bucket: "job",
-            storagePath: `${folder}/${file.name}`,
-            jobReadableId: job.readableId
-          })
-        );
+        return (listed.data ?? []).map((file): BatchFile => ({
+          ...file,
+          bucket: "job",
+          storagePath: `${folder}/${file.name}`,
+          jobReadableId: job.readableId
+        }));
       })
     ),
     Promise.all(
@@ -1652,15 +1648,13 @@ export async function getBatchWorkInstructions(
         const listed = await storage(client)
           .company(args.companyId)
           .list(folder);
-        return (listed.data ?? []).map(
-          (file): BatchFile => ({
-            ...file,
-            bucket: "parts",
-            itemId,
-            storagePath: `${folder}/${file.name}`,
-            jobReadableId: null
-          })
-        );
+        return (listed.data ?? []).map((file): BatchFile => ({
+          ...file,
+          bucket: "parts",
+          itemId,
+          storagePath: `${folder}/${file.name}`,
+          jobReadableId: null
+        }));
       })
     )
   ]);

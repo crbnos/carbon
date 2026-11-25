@@ -528,7 +528,7 @@ const JobBillOfProcess = ({
 }: JobBillOfProcessProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
   const sortOrderFetcher = useAction();
   const deleteOperationFetcher = useAction();
@@ -1386,7 +1386,6 @@ function StepsForm({
 
   // When the new step is created, attach any buffered slides to it, then revalidate so they
   // show on the step and reset the buffer for the next step.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftSlides.length === 0 || !carbon) return;
@@ -1420,10 +1419,10 @@ function StepsForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered parts, then revalidate + reset.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftParts.length === 0 || !carbon) return;
@@ -1454,13 +1453,13 @@ function StepsForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered tools, then revalidate + reset.
   // Goes through the step-tool route (not a direct insert) because the buffer holds
   // tool ITEM ids and the operation tool row may not exist yet — the route creates
   // it before linking. Sequential so a repeated tool never races its own creation.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftTools.length === 0 || !carbon) return;
@@ -1491,6 +1490,7 @@ function StepsForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   if (isDisabled && temporaryItems[operationId]) {
@@ -2157,7 +2157,7 @@ function StepsListItem({
     }
     try {
       return JSON.parse(attribute.description);
-      // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+      // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
     } catch (e) {
       return {};
     }
@@ -4239,7 +4239,7 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const { t } = useLingui();
   const [isLoading, setIsLoading] = useState(false);
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
 
   const fetchChat = async () => {

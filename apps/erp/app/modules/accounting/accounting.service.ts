@@ -4152,23 +4152,20 @@ export async function getPeriodRunPreview(
       { periodEnd, type },
       previewRevenueRecognitionRun
     )
-      .then(
-        (result): RunPreview =>
-          result.error
-            ? {
-                count: 0,
-                amount: 0,
-                error: previewError(result.error, fallback)
-              }
-            : { ...result.data, error: null }
+      .then((result): RunPreview =>
+        result.error
+          ? {
+              count: 0,
+              amount: 0,
+              error: previewError(result.error, fallback)
+            }
+          : { ...result.data, error: null }
       )
-      .catch(
-        (error): RunPreview => ({
-          count: 0,
-          amount: 0,
-          error: previewError(error, fallback)
-        })
-      );
+      .catch((error): RunPreview => ({
+        count: 0,
+        amount: 0,
+        error: previewError(error, fallback)
+      }));
   const [revenue, lease, depreciation] = await Promise.all([
     previewRun("Revenue Recognition", "Failed to preview revenue recognition"),
     previewRun("Lease", "Failed to preview the lease run"),
@@ -4194,13 +4191,11 @@ export async function getPeriodRunPreview(
           error: null
         };
       })
-      .catch(
-        (error): RunPreview => ({
-          count: 0,
-          amount: 0,
-          error: previewError(error, "Failed to calculate depreciation")
-        })
-      )
+      .catch((error): RunPreview => ({
+        count: 0,
+        amount: 0,
+        error: previewError(error, "Failed to calculate depreciation")
+      }))
   ]);
   return { revenue, lease, depreciation };
 }
@@ -9587,8 +9582,8 @@ export async function getLeaseNetInvestment(
     // Not commenced yet on `asOf`.
     if (!agreement?.startDate || agreement.startDate > asOf) continue;
 
-    const lineSchedule = [...(scheduleByLine.get(line.id) ?? [])].sort(
-      (a, b) => (a.periodDate < b.periodDate ? -1 : 1)
+    const lineSchedule = [...(scheduleByLine.get(line.id) ?? [])].sort((a, b) =>
+      a.periodDate < b.periodDate ? -1 : 1
     );
 
     // Accumulate at full precision; round once per figure.
@@ -20400,27 +20395,25 @@ async function loadRecognitionRows(
     if (isAccountClass(account.class)) classById.set(account.id, account.class);
   }
 
-  const rows = scheduled.map(
-    (row): RecognitionRow => ({
-      scheduleId: row.scheduleId,
-      runId: row.runId,
-      runReadableId: row.runReadableId,
-      runPeriodEnd: row.runPeriodEnd,
-      runType: row.runType,
-      // Every journal takes its own month: there is no period yet.
-      postingDate: monthEndOf(row.scheduledDate),
-      type: row.type,
-      amount: Number(row.amount),
-      debitAccountId: row.debitAccountId,
-      creditAccountId: row.creditAccountId,
-      salesInvoiceLineId: row.salesInvoiceLineId,
-      rentalAgreementLineId: row.rentalAgreementLineId,
-      customerContractLineId: row.customerContractLineId,
-      rentalLeaseScheduleLineId: row.rentalLeaseScheduleLineId,
-      leaseId: row.leaseId,
-      leaseScheduleLineId: row.leaseScheduleLineId
-    })
-  );
+  const rows = scheduled.map((row): RecognitionRow => ({
+    scheduleId: row.scheduleId,
+    runId: row.runId,
+    runReadableId: row.runReadableId,
+    runPeriodEnd: row.runPeriodEnd,
+    runType: row.runType,
+    // Every journal takes its own month: there is no period yet.
+    postingDate: monthEndOf(row.scheduledDate),
+    type: row.type,
+    amount: Number(row.amount),
+    debitAccountId: row.debitAccountId,
+    creditAccountId: row.creditAccountId,
+    salesInvoiceLineId: row.salesInvoiceLineId,
+    rentalAgreementLineId: row.rentalAgreementLineId,
+    customerContractLineId: row.customerContractLineId,
+    rentalLeaseScheduleLineId: row.rentalLeaseScheduleLineId,
+    leaseId: row.leaseId,
+    leaseScheduleLineId: row.leaseScheduleLineId
+  }));
   return {
     rows,
     sources: {
@@ -22347,8 +22340,8 @@ async function recostProjectIssues(
   const byIssue = Map.groupBy(issues, (issue) => issue.id);
   const adjustments = [...byIssue.values()].flatMap((rows) => {
     const issue = rows[0]!;
-    const entries = rows.map(
-      (row) => recostByCostLedger.get(row.costLedgerId)!
+    const entries = rows.map((row) =>
+      recostByCostLedger.get(row.costLedgerId)!
     );
     const amount = round(
       entries.reduce((sum, entry) => sum + entry.delta.delta, 0)

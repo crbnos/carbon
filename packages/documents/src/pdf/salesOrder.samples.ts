@@ -89,7 +89,22 @@ export const SAMPLE_SALES_ORDER = {
     customerCity: "Chicago",
     customerStateProvince: "IL",
     customerPostalCode: "60601",
-    customerCountryName: "United States"
+    customerCountryName: "United States",
+    // A separate bill-to customer, and a drop-ship address unlike the customer's.
+    paymentCustomerName: "Globex Holdings",
+    paymentAddressLine1: "200 Finance Plaza",
+    paymentAddressLine2: "Suite 400",
+    paymentCity: "Chicago",
+    paymentStateProvince: "IL",
+    paymentPostalCode: "60603",
+    paymentCountryName: "United States",
+    shipToCustomerName: "Globex Corporation",
+    shipToAddressLine1: "88 Harbor Road",
+    shipToAddressLine2: "Dock 3",
+    shipToCity: "Springfield",
+    shipToStateProvince: "IL",
+    shipToPostalCode: "62701",
+    shipToCountryName: "United States"
   },
   paymentTerms: [{ id: "net30", name: "Net 30" }],
   shippingMethods: [{ id: "ground", name: "Ground" }],

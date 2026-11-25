@@ -86,14 +86,6 @@ import type { jobStatus } from "../../production.models";
 import type { BatchCandidate } from "../../types";
 import JobStatus from "../Jobs/JobStatus";
 import {
-  BatchOutputLots,
-  initialOutputLots,
-  type OutputLotsState,
-  outputLotsPayload,
-  outputLotsProblem
-} from "./BatchOutputLots";
-import { BatchReleaseModal } from "./BatchReleaseModal";
-import {
   type BatchAddTarget,
   batchPlanBreakdown,
   candidateValueSets,
@@ -116,6 +108,14 @@ import {
   resolveRepCapacity,
   type Suggestion
 } from "./batch-builder-logic";
+import {
+  BatchOutputLots,
+  initialOutputLots,
+  type OutputLotsState,
+  outputLotsPayload,
+  outputLotsProblem
+} from "./BatchOutputLots";
+import { BatchReleaseModal } from "./BatchReleaseModal";
 
 // The candidate list is fetched whole (no server paging) and neither view
 // virtualizes, so cap the DOM and say so when truncated.

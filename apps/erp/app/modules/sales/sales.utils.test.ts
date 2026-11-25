@@ -2,11 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { TaxCodeInput, TaxComponentInput } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
   applyPriceRules,
   configurationSurcharge,
   configuredQuoteBasePrice,
+  contractInvoiceTotals,
   customerPortalEarliestExpiry,
   customerPortalExpired,
   customerPortalExpiresAt,
@@ -19,6 +21,7 @@ import {
   leaseCommencementPreview,
   leaseTermMonths,
   nextDeliveryDateRecord,
+  plannedContractInvoices,
   previewLeaseClassification,
   priceListOverrideScopes,
   priceOverrideScopeError,
@@ -31,6 +34,7 @@ import {
   resolvePreservedQuoteLinePriceFields,
   saveIsCurrent,
   toMatchedRule,
+  untaxedContractInvoices,
   withBasePriceSource
 } from "./sales.utils";
 import type { MatchedRule } from "./types";
@@ -1130,5 +1134,204 @@ describe("saveIsCurrent", () => {
 
   it("applies an event sent without the saved values", () => {
     expect(saveIsCurrent(row, {})).toBe(true);
+  });
+});
+
+describe("contractInvoiceTotals", () => {
+  const component = (
+    overrides: Partial<TaxComponentInput>
+  ): TaxComponentInput => ({
+    id: "component",
+    name: "VAT",
+    taxAuthorityId: null,
+    taxPercent: 0.1,
+    recoverablePercent: 1,
+    sequence: 1,
+    isCompound: false,
+    taxReceivedAccountId: null,
+    taxPaidAccountId: null,
+    effectiveDate: null,
+    expirationDate: null,
+    ...overrides
+  });
+  // 10% throughout, plus 5% from 1 February.
+  const vat: TaxCodeInput = {
+    id: "vat",
+    calculationType: "Normal",
+    taxesShipping: false,
+    components: [
+      component({ id: "state" }),
+      component({
+        id: "city",
+        taxPercent: 0.05,
+        sequence: 2,
+        effectiveDate: "2026-02-01"
+      })
+    ]
+  };
+  const reverseCharge: TaxCodeInput = {
+    id: "reverse",
+    calculationType: "Reverse Charge",
+    taxesShipping: false,
+    components: [component({ id: "eu", taxPercent: 0.2 })]
+  };
+  const taxCodes = new Map([
+    [vat.id, vat],
+    [reverseCharge.id, reverseCharge]
+  ]);
+  const line = (id: string, taxCodeId: string | null, taxPercent: number) => ({
+    id,
+    quantity: 2,
+    discountPercent: 0.1,
+    taxCodeId,
+    taxPercent
+  });
+  const invoice = (invoiceDate: string, lineIds: string[]) => ({
+    invoiceDate,
+    // 2 × 50 at 10% off = 90 per row.
+    rows: lineIds.map((lineId) => ({ lineId, unitPrice: 50, amount: 90 }))
+  });
+
+  it("taxes a coded line at its code's rate on the invoice date, not its stored percent", () => {
+    expect(
+      contractInvoiceTotals({
+        invoices: [
+          invoice("2026-01-01", ["coded"]),
+          invoice("2026-02-01", ["coded"])
+        ],
+        lines: [line("coded", "vat", 0.02)],
+        taxCodes,
+        today: "2026-01-01"
+      })
+    ).toEqual([
+      {
+        invoiceDate: "2026-01-01",
+        net: 90,
+        tax: 9,
+        taxPercents: { coded: 0.1 }
+      },
+      {
+        invoiceDate: "2026-02-01",
+        net: 90,
+        tax: 13.5,
+        taxPercents: { coded: 0.15 }
+      }
+    ]);
+  });
+
+  it("charges no tax on a Reverse Charge line and the stored percent on a line with no code", () => {
+    expect(
+      contractInvoiceTotals({
+        invoices: [invoice("2026-01-01", ["reverse", "uncoded"])],
+        lines: [line("reverse", "reverse", 0.2), line("uncoded", null, 0.08)],
+        taxCodes,
+        today: "2026-01-01"
+      })
+    ).toEqual([
+      {
+        invoiceDate: "2026-01-01",
+        net: 180,
+        tax: 7.2,
+        taxPercents: { reverse: 0, uncoded: 0.08 }
+      }
+    ]);
+  });
+
+  it("taxes an invoice whose date has passed on today's rate, the day the run drafts it", () => {
+    expect(
+      contractInvoiceTotals({
+        invoices: [invoice("2026-01-01", ["coded"])],
+        lines: [line("coded", "vat", 0.1)],
+        taxCodes,
+        today: "2026-03-01"
+      })[0]!.tax
+    ).toBe(13.5);
+  });
+});
+
+describe("plannedContractInvoices", () => {
+  const stored = [
+    {
+      status: "Invoiced",
+      invoiceDate: "2026-01-01",
+      customerContractInvoiceLine: [
+        { customerContractLineId: "l1", unitPrice: "100", amount: "100" }
+      ]
+    },
+    {
+      status: "Planned",
+      invoiceDate: "2026-02-01",
+      customerContractInvoiceLine: [
+        { customerContractLineId: "l1", unitPrice: "100", amount: "90" }
+      ]
+    },
+    {
+      status: "Billed Externally",
+      invoiceDate: "2025-12-01",
+      customerContractInvoiceLine: []
+    }
+  ];
+
+  it("reads the stored Planned invoices, as numbers", () => {
+    expect(
+      plannedContractInvoices({ computedSchedule: null, invoices: stored })
+    ).toEqual([
+      {
+        invoiceDate: "2026-02-01",
+        rows: [{ lineId: "l1", unitPrice: 100, amount: 90 }]
+      }
+    ]);
+  });
+
+  it("reads the live schedule of an unedited Draft instead of the stored one", () => {
+    expect(
+      plannedContractInvoices({
+        computedSchedule: [
+          {
+            status: "Planned",
+            invoiceDate: "2026-03-01",
+            rows: [{ lineId: "l2", unitPrice: 50, amount: 50 }]
+          },
+          { status: "Billed Externally", invoiceDate: "2026-01-01", rows: [] }
+        ],
+        invoices: stored
+      })
+    ).toEqual([
+      {
+        invoiceDate: "2026-03-01",
+        rows: [{ lineId: "l2", unitPrice: 50, amount: 50 }]
+      }
+    ]);
+  });
+});
+
+describe("untaxedContractInvoices", () => {
+  it("sums each Planned invoice's row amounts, with no tax", () => {
+    expect(
+      untaxedContractInvoices({
+        computedSchedule: null,
+        invoices: [
+          {
+            status: "Planned",
+            invoiceDate: "2026-02-01",
+            customerContractInvoiceLine: [
+              { customerContractLineId: "l1", unitPrice: "100", amount: "90" },
+              {
+                customerContractLineId: "l2",
+                unitPrice: "10.1",
+                amount: "10.1"
+              }
+            ]
+          },
+          {
+            status: "Invoiced",
+            invoiceDate: "2026-01-01",
+            customerContractInvoiceLine: [
+              { customerContractLineId: "l1", unitPrice: "100", amount: "100" }
+            ]
+          }
+        ]
+      })
+    ).toEqual([{ invoiceDate: "2026-02-01", net: 100.1 }]);
   });
 });

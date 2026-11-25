@@ -149,7 +149,6 @@ const JobMaterialsTable = memo(
       return map;
     }, [items]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<JobMaterial>[]>(() => {
       return [
         {
@@ -677,6 +676,7 @@ const JobMaterialsTable = memo(
           }
         }
       ];
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, [
       items,
       jobId,

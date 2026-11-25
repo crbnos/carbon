@@ -31,7 +31,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: id is never set on create
   const { id, ...rest } = validation.data;
 
   const create = await upsertAssemblyInstructionStepTool(client, {

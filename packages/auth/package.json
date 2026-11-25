@@ -56,7 +56,7 @@
   "private": true,
   "scripts": {
     "clean": "rimraf .turbo node_modules",
-    "lint": "biome lint --fix",
+    "lint": "oxlint --fix",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

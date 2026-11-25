@@ -92,12 +92,12 @@ const QuoteLeadTimeBody = ({
 
   // Predict on mount (queued + best case). The target verdict needs a due date,
   // so it is only requested when the estimator picks one.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   useEffect(() => {
     fetcher.submit(
       { quantities },
       { method: "post", encType: "application/json", action: leadTimeAction }
     );
+    // oxlint-disable-next-line react/exhaustive-deps -- run once on mount
   }, []);
 
   const onTargetDateChange = (date: CalendarDate | null) => {

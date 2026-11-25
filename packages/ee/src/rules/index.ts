@@ -12,8 +12,5 @@
 export * from "./sales";
 export * from "./storage/context";
 export * from "./storage/service";
-export {
-  type RuleViolationPayload,
-  useRuleViolations
-} from "./use-violations";
+export { type RuleViolationPayload, useRuleViolations } from "./use-violations";
 export { default as RuleViolationModal } from "./violation-modal";
