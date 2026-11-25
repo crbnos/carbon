@@ -78,8 +78,11 @@ and the create refuses a derived pair that differs. Each distinct size is one it
 size is the initial revision `0`). A requested item group or unit cost that is not saved
 (`itemCost` row count short) fails and rolls back the whole create. The `material` row is an
 insert `ON CONFLICT (id, "companyId") DO UPDATE`: no code deletes it when its items are deleted,
-so a re-created ID takes over the row left behind. The pick method and shelf life are written
-after the commit, as on update. Because the join is on `readableId`, one material can have
+so a re-created ID takes over the row left behind. The create takes `lockMaterialReadableId`
+(`items.service.ts`, an advisory lock on the company and readable id) before it looks for live
+revisions, so a second create of the same ID refuses without adding any. The pick method and shelf
+life are written in the same transaction: a refused shelf life rolls the create back and leaves the
+ID free. Because the join is on `readableId`, one material can have
 multiple item **revisions** (and per-size item rows); the `materials` view de-dupes to the latest
 item per `(readableId, companyId)` and aggregates the revisions.
 
@@ -110,7 +113,7 @@ the service loads the rows they read and writes what they decide.
   itemCost to the same transaction. A create has its own transaction (`insertMaterial`, see "Item
   linkage"). Kysely bypasses RLS, so `requireMaterialUpdatable` first runs
   an UPDATE through the caller's client (material's policy is Edit on `parts.materials` in the company, which
-  also grants the item and itemCost rows). A taken readable id is refused on rename and on create.
+  also grants the item and itemCost rows). A taken readable id is refused on rename and on create; both decide under `lockMaterialReadableId`, so a rename and a create of one ID run one after the other.
 - `upsertMaterial` updates write only the keys present on the payload (a present-but-undefined key,
   a cleared form field, clears). The MCP schema requires `replenishmentSystem`,
   `defaultMethodType`, `itemTrackingType` and `unitOfMeasureCode`, so those are always sent;

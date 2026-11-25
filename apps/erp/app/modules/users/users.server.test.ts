@@ -42,6 +42,8 @@ vi.mock("@carbon/ee/plan.server", async (importOriginal) => ({
 // Redis is over the network: deactivating clears the cached claims there.
 vi.mock("@carbon/kv", () => ({ redis: { del: vi.fn(async () => 1) } }));
 
+import { batchTrigger } from "@carbon/jobs";
+import { redis } from "@carbon/kv";
 import { nonOperatorPinResetPermission } from "./users.models";
 import {
   bulkUpdatePermissions,
@@ -58,6 +60,7 @@ import {
 import {
   canReAddDeactivatedEmployee,
   pinResetRefusal,
+  readInviteRevocations,
   refuseUninvitableContact
 } from "./users.service";
 
@@ -428,7 +431,8 @@ describe("the request's origin", () => {
             type: "resend",
             companyId: COMPANY,
             location: "Oslo",
-            ip: "203.0.113.9"
+            ip: "203.0.113.9",
+            revokedAt: null
           }
         }))
       }
@@ -607,6 +611,70 @@ describe("revoking an invite", () => {
       }
     ]);
     expect(tables.invite?.[0]?.revokedAt).toBeUndefined();
+  });
+
+  // Clearing the cached claims comes after the account writes: a failure
+  // there keeps the invite revoked, and the job runs the deactivation again.
+  it("hands a deactivation that threw after its writes to the job", async () => {
+    queued.length = 0;
+    vi.mocked(redis.del).mockRejectedValueOnce(new Error("Redis is down"));
+    const tables = invitedEmployees(["usr_1"]);
+    const { ctx, rpcs } = requestContext(
+      { users: { delete: [COMPANY] } },
+      tables
+    );
+
+    const result = await revokeInvites(ctx, { userIds: ["usr_1"] });
+
+    expect(result).toEqual({ data: { revoked: 1 }, error: null });
+    expect(tables.invite?.[0]?.revokedAt).toEqual(expect.any(String));
+    expect(queued).toEqual([
+      {
+        name: "user-admin",
+        events: [
+          {
+            payload: {
+              id: "usr_1",
+              type: "deactivate",
+              companyId: COMPANY,
+              actorId: "usr_admin",
+              ip: "203.0.113.9"
+            }
+          }
+        ]
+      }
+    ]);
+    const audit = rpcs.find((call) => call.name === "insert_audit_log_batch");
+    expect(
+      (audit?.args.p_entries as { entityId: unknown }[]).map(
+        (entry) => entry.entityId
+      )
+    ).toEqual(["inv_usr_1"]);
+  });
+
+  // The send can reject after Inngest accepted the events: an invite whose
+  // deactivation may still run is never reopened.
+  it("keeps the invites revoked when queuing their deactivation fails", async () => {
+    vi.mocked(batchTrigger).mockRejectedValueOnce(new Error("Timed out"));
+    const tables = invitedEmployees(["usr_1", "usr_2"]);
+    const { ctx, rpcs } = requestContext(
+      { users: { delete: [COMPANY] } },
+      tables
+    );
+
+    const result = await revokeInvites(ctx, { userIds: ["usr_1", "usr_2"] });
+
+    expect(result.error?.category).toBe("internal");
+    expect(tables.invite?.map((invite) => invite.revokedAt)).toEqual([
+      expect.any(String),
+      expect.any(String)
+    ]);
+    const audit = rpcs.find((call) => call.name === "insert_audit_log_batch");
+    expect(
+      (audit?.args.p_entries as { entityId: unknown }[]).map(
+        (entry) => entry.entityId
+      )
+    ).toEqual(["inv_usr_1", "inv_usr_2"]);
   });
 
   it("refuses a user who has an account in the company", async () => {
@@ -791,6 +859,7 @@ describe("changing a group", () => {
 // Resending clears the invite's acceptance, and accepting it again merges
 // the invite's grants back over what an admin removed since.
 describe("sending an invite again", () => {
+  const REVOKED_AT = "2026-11-24T11:00:00.000000+00:00";
   const resend = (tables: Record<string, Row[]>, userIds: string[]) =>
     resendInvites(
       requestContext({ users: { create: [COMPANY] } }, tables).ctx,
@@ -859,6 +928,78 @@ describe("sending an invite again", () => {
       code: "code-sent",
       acceptedAt: "2026-11-24T10:00:00.000000+00:00"
     });
+  });
+
+  // The job runs later: it may clear only the revocation the request saw.
+  it("queues each invite's revocation as the request read it", async () => {
+    queued.length = 0;
+    const tables = invitedEmployees(["usr_1", "usr_2"]);
+    Object.assign(tables.invite?.[1] ?? {}, { revokedAt: REVOKED_AT });
+
+    const result = await resend(tables, ["usr_1", "usr_2"]);
+
+    expect(result).toEqual({ data: { queued: true }, error: null });
+    expect(
+      queued.flatMap(({ events }) =>
+        (events as { payload: { id: string; revokedAt: unknown } }[]).map(
+          ({ payload }) => [payload.id, payload.revokedAt]
+        )
+      )
+    ).toEqual([
+      ["usr_1", null],
+      ["usr_2", REVOKED_AT]
+    ]);
+  });
+
+  // A revoke after the check keeps the invite revoked: no new code, no email.
+  it("refuses an invite revoked after the check and keeps it revoked", async () => {
+    const tables = invitedEmployees(["usr_1"], {
+      company: [{ id: COMPANY, name: "Acme" }]
+    });
+    Object.assign(tables.invite?.[0] ?? {}, { code: "code-sent" });
+    const { ctx } = requestContext(
+      { users: { create: [COMPANY] } },
+      tables,
+      {},
+      null,
+      (read) => {
+        if (read === "company") {
+          Object.assign(tables.invite?.[0] ?? {}, { revokedAt: REVOKED_AT });
+        }
+      }
+    );
+
+    const result = await resendInvites(ctx, { userIds: ["usr_1"] });
+
+    expect(result.error?.category).toBe("conflict");
+    expect(tables.invite?.[0]).toMatchObject({
+      code: "code-sent",
+      revokedAt: REVOKED_AT
+    });
+  });
+
+  // The table's bulk Send Invites queues through this read: another
+  // company's invite says nothing about this one.
+  it("reads each user's revocation from the company's invite", async () => {
+    const tables = invitedEmployees(["usr_1", "usr_2"]);
+    Object.assign(tables.invite?.[0] ?? {}, { companyId: "cmp_2" });
+    tables.invite?.push({
+      id: "inv_usr_1_here",
+      email: "usr_1@example.com",
+      companyId: COMPANY,
+      revokedAt: REVOKED_AT
+    });
+
+    const revokedAt = await readInviteRevocations(
+      memoryClient(tables).client as never,
+      COMPANY,
+      ["usr_1", "usr_2", "usr_1"]
+    );
+
+    expect([...revokedAt]).toEqual([
+      ["usr_1", REVOKED_AT],
+      ["usr_2", null]
+    ]);
   });
 
   it("refuses a user with no invite in the company", async () => {

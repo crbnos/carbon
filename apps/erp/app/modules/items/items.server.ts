@@ -4066,6 +4066,10 @@ export const updateDefaultRevision = defineServiceFn({
 /**
  * Update configuration parameter order
  *
+ * @remarks
+ * A `configurationParameterGroupId` must be one of the parameter's item's
+ * groups.
+ *
  * @mcp
  */
 export const updateConfigurationParameterOrder = defineServiceFn({
@@ -4200,8 +4204,9 @@ export const updateRevision = defineServiceFn({
  * @remarks
  * As the configuration card's Add Parameter and parameter edit forms do:
  * without `id` it adds a parameter to the item's Ungrouped group; with `id`
- * it saves that parameter of the item. Needs Edit on the page of the item's
- * type, which also holds the Create an add needs.
+ * it saves that parameter of the item. A `configurationParameterGroupId` must
+ * be one of the item's groups. Needs Edit on the page of the item's type,
+ * which also holds the Create an add needs.
  *
  * @mcp
  */
@@ -4230,10 +4235,26 @@ export const upsertConfigurationParameter = defineServiceFn({
     // only that the item exists.
     const owned = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
     if (owned) return owned;
+    const group = unwrap(
+      ctx,
+      await service.requireItemConfigurationGroup(ctx.asSystem.supabase, {
+        groupId: input.configurationParameterGroupId,
+        itemId: input.itemId,
+        companyId: ctx.company.id
+      })
+    );
+    if (group instanceof CarbonError) return group;
+    // The input keeps unknown keys: an edit must not rewrite who created the
+    // parameter, or when.
+    const {
+      createdBy: _createdBy,
+      createdAt: _createdAt,
+      ...parameter
+    } = input;
     return unwrap(
       ctx,
       await service.upsertConfigurationParameter(ctx.asCaller.supabase, {
-        ...input,
+        ...parameter,
         companyId: ctx.company.id,
         userId: ctx.auditUserId
       } as never)

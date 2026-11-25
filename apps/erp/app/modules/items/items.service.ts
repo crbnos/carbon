@@ -60,7 +60,7 @@ import {
   withPathIds
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { Transaction } from "kysely";
+import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { data } from "react-router";
 import { z } from "zod";
@@ -2852,6 +2852,37 @@ export async function updateDefaultRevision(
     .in("itemId", itemIds);
 }
 
+/**
+ * Refuses a configuration group that is not one of the item's. The foreign key
+ * checks only that the group exists, and a parameter in another item's group
+ * is hidden from its own item's card. No group (Ungrouped) passes.
+ */
+export async function requireItemConfigurationGroup(
+  client: SupabaseClient<Database>,
+  args: {
+    groupId: string | null | undefined;
+    itemId: string;
+    companyId: string;
+  }
+): Promise<{ data: null; error: ServiceError | null }> {
+  if (args.groupId == null) return { data: null, error: null };
+  const group = await client
+    .from("configurationParameterGroup")
+    .select("id")
+    .eq("id", args.groupId)
+    .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (group.error) return { data: null, error: group.error };
+  if (!group.data) {
+    return {
+      data: null,
+      error: ruleError("The group is not one of this item's groups")
+    };
+  }
+  return { data: null, error: null };
+}
+
 export async function updateConfigurationParameterOrder(
   client: SupabaseClient<Database>,
   data: Omit<
@@ -2862,6 +2893,23 @@ export async function updateConfigurationParameterOrder(
     updatedBy: string;
   }
 ) {
+  if (data.configurationParameterGroupId != null) {
+    const parameter = await client
+      .from("configurationParameter")
+      .select("itemId, companyId")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (parameter.error) return { data: null, error: parameter.error };
+    // A missing parameter is refused by the update below.
+    if (parameter.data) {
+      const group = await requireItemConfigurationGroup(client, {
+        groupId: data.configurationParameterGroupId,
+        itemId: parameter.data.itemId,
+        companyId: parameter.data.companyId
+      });
+      if (group.error) return group;
+    }
+  }
   return requireAffected(
     client
       .from("configurationParameter")
@@ -3318,6 +3366,125 @@ export async function upsertItemShelfLife(
   });
 }
 
+/** The shelf-life fields a form or call sends. An undefined `mode` leaves the
+ *  item's policy alone. */
+type ShelfLifeSetup = {
+  mode?: (typeof shelfLifeModes)[number];
+  days?: number;
+  triggerProcessId?: string;
+  triggerTiming?: (typeof shelfLifeTriggerTimings)[number];
+  calculateFromBom?: boolean;
+};
+
+/** A shelf-life setup the person must correct; its message is for them. */
+class ShelfLifeRefusal extends Error {}
+
+/**
+ * Writes one item's shelf-life policy inside the caller's transaction, with
+ * the rules of {@link upsertItemShelfLife}. Throws {@link ShelfLifeRefusal}
+ * for a trigger process that is not on the item's recipe.
+ */
+async function writeItemShelfLife(
+  trx: KyselyTx,
+  args: {
+    itemId: string;
+    companyId: string;
+    userId: string;
+    updatedAt: string;
+    shelfLife: ShelfLifeSetup;
+  }
+): Promise<void> {
+  const { updatedAt } = args;
+  const { mode, days, triggerProcessId, triggerTiming, calculateFromBom } =
+    args.shelfLife;
+
+  // mode undefined = caller didn't surface the field; leave any existing
+  // row alone (matches upsertItemShelfLife semantics).
+  if (mode === undefined) return;
+
+  if (mode === "NotManaged") {
+    await trx
+      .deleteFrom("itemShelfLife")
+      .where("itemId", "=", args.itemId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    return;
+  }
+
+  const normalizedDays = mode === "Fixed Duration" ? (days ?? null) : null;
+  const normalizedTriggerProcess =
+    mode === "Fixed Duration" ? (triggerProcessId ?? null) : null;
+  const normalizedTriggerTiming = normalizedTriggerProcess
+    ? (triggerTiming ?? "After")
+    : "After";
+  const normalizedCalcFromBom =
+    mode === "Fixed Duration" ? (calculateFromBom ?? false) : false;
+
+  // Reject trigger processes that aren't on the item's active recipe.
+  // The set-shelf-life helper gates on processId equality, so picking a
+  // process the recipe never runs would silently never set the expiry.
+  if (normalizedTriggerProcess) {
+    const recipeProcessIds = await trx
+      .selectFrom("methodOperation as mo")
+      .innerJoin("activeMakeMethods as amm", "amm.id", "mo.makeMethodId")
+      .select("mo.processId")
+      .where("amm.itemId", "=", args.itemId)
+      .where("amm.companyId", "=", args.companyId)
+      .where("mo.processId", "is not", null)
+      .where("mo.methodCorrectionId", "is", null)
+      .execute();
+    const allowed = new Set(
+      recipeProcessIds
+        .map((r) => r.processId)
+        .filter((id): id is string => !!id)
+    );
+    if (!allowed.has(normalizedTriggerProcess)) {
+      throw new ShelfLifeRefusal(
+        "Shelf-life trigger process must be one of the operations on this item's recipe"
+      );
+    }
+  }
+
+  const existing = await trx
+    .selectFrom("itemShelfLife")
+    .select("itemId")
+    .where("itemId", "=", args.itemId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+
+  if (existing) {
+    await trx
+      .updateTable("itemShelfLife")
+      .set({
+        mode,
+        days: normalizedDays,
+        triggerProcessId: normalizedTriggerProcess,
+        triggerTiming: normalizedTriggerTiming,
+        calculateFromBom: normalizedCalcFromBom,
+        updatedBy: args.userId,
+        updatedAt
+      })
+      .where("itemId", "=", args.itemId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    return;
+  }
+
+  await trx
+    .insertInto("itemShelfLife")
+    .values({
+      itemId: args.itemId,
+      mode,
+      days: normalizedDays,
+      triggerProcessId: normalizedTriggerProcess,
+      triggerTiming: normalizedTriggerTiming,
+      calculateFromBom: normalizedCalcFromBom,
+      companyId: args.companyId,
+      createdBy: args.userId
+    })
+    .execute();
+}
+
 /**
  * Atomic counterpart to {@link upsertPickMethod} + {@link upsertItemShelfLife}.
  *
@@ -3337,13 +3504,7 @@ export async function upsertPickMethodWithShelfLife(
     customFields?: Json;
     companyId: string;
     userId: string;
-    shelfLife: {
-      mode?: (typeof shelfLifeModes)[number];
-      days?: number;
-      triggerProcessId?: string;
-      triggerTiming?: (typeof shelfLifeTriggerTimings)[number];
-      calculateFromBom?: boolean;
-    };
+    shelfLife: ShelfLifeSetup;
   }
 ) {
   const updatedAt = datetime.timestamp();
@@ -3377,94 +3538,13 @@ export async function upsertPickMethodWithShelfLife(
       .where("companyId", "=", args.companyId)
       .execute();
 
-    const { mode, days, triggerProcessId, triggerTiming, calculateFromBom } =
-      args.shelfLife;
-
-    // mode undefined = caller didn't surface the field; leave any existing
-    // row alone (matches upsertItemShelfLife semantics).
-    if (mode === undefined) return;
-
-    if (mode === "NotManaged") {
-      await trx
-        .deleteFrom("itemShelfLife")
-        .where("itemId", "=", args.itemId)
-        .where("companyId", "=", args.companyId)
-        .execute();
-      return;
-    }
-
-    const normalizedDays = mode === "Fixed Duration" ? (days ?? null) : null;
-    const normalizedTriggerProcess =
-      mode === "Fixed Duration" ? (triggerProcessId ?? null) : null;
-    const normalizedTriggerTiming = normalizedTriggerProcess
-      ? (triggerTiming ?? "After")
-      : "After";
-    const normalizedCalcFromBom =
-      mode === "Fixed Duration" ? (calculateFromBom ?? false) : false;
-
-    // Reject trigger processes that aren't on the item's active recipe.
-    // The set-shelf-life helper gates on processId equality, so picking a
-    // process the recipe never runs would silently never set the expiry.
-    if (normalizedTriggerProcess) {
-      const recipeProcessIds = await trx
-        .selectFrom("methodOperation as mo")
-        .innerJoin("activeMakeMethods as amm", "amm.id", "mo.makeMethodId")
-        .select("mo.processId")
-        .where("amm.itemId", "=", args.itemId)
-        .where("amm.companyId", "=", args.companyId)
-        .where("mo.processId", "is not", null)
-        .where("mo.methodCorrectionId", "is", null)
-        .execute();
-      const allowed = new Set(
-        recipeProcessIds
-          .map((r) => r.processId)
-          .filter((id): id is string => !!id)
-      );
-      if (!allowed.has(normalizedTriggerProcess)) {
-        throw new Error(
-          "Shelf-life trigger process must be one of the operations on this item's recipe"
-        );
-      }
-    }
-
-    const existing = await trx
-      .selectFrom("itemShelfLife")
-      .select("itemId")
-      .where("itemId", "=", args.itemId)
-      .where("companyId", "=", args.companyId)
-      .executeTakeFirst();
-
-    if (existing) {
-      await trx
-        .updateTable("itemShelfLife")
-        .set({
-          mode,
-          days: normalizedDays,
-          triggerProcessId: normalizedTriggerProcess,
-          triggerTiming: normalizedTriggerTiming,
-          calculateFromBom: normalizedCalcFromBom,
-          updatedBy: args.userId,
-          updatedAt
-        })
-        .where("itemId", "=", args.itemId)
-        .where("companyId", "=", args.companyId)
-        .execute();
-      return;
-    }
-
-    await trx
-      .insertInto("itemShelfLife")
-      .values({
-        itemId: args.itemId,
-        mode,
-        days: normalizedDays,
-        triggerProcessId: normalizedTriggerProcess,
-        triggerTiming: normalizedTriggerTiming,
-        calculateFromBom: normalizedCalcFromBom,
-        companyId: args.companyId,
-        createdBy: args.userId
-      })
-      .execute();
+    await writeItemShelfLife(trx, {
+      itemId: args.itemId,
+      companyId: args.companyId,
+      userId: args.userId,
+      updatedAt,
+      shelfLife: args.shelfLife
+    });
   });
 }
 
@@ -5867,22 +5947,20 @@ export async function getGeneratedMaterialIdentity(
   return { data: plan.data.generated, error: null };
 }
 
-async function materialIdIsTaken(
-  client: SupabaseClient<Database>,
-  readableId: string,
-  companyId: string
-): Promise<
-  { data: boolean; error: null } | { data: null; error: ServiceError }
-> {
-  const taken = await client
-    .from("item")
-    .select("id")
-    .eq("readableId", readableId)
-    .eq("companyId", companyId)
-    .eq("type", "Material")
-    .limit(1);
-  if (taken.error) return { data: null, error: taken.error };
-  return { data: taken.data.length > 0, error: null };
+/**
+ * Serializes the creates of one material ID in a company, so each decides
+ * under it whether the ID is free. Two creates of a new ID with different
+ * sizes would both find it free, both add revisions and share one material
+ * row. Transaction-scoped: released at commit.
+ */
+export async function lockMaterialReadableId(
+  trx: KyselyTx,
+  companyId: string,
+  readableId: string
+): Promise<void> {
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`material-id:${companyId}:${readableId}`}, 0))`.execute(
+    trx
+  );
 }
 
 // Kysely bypasses RLS, so the caller's client must be able to update the
@@ -5916,7 +5994,12 @@ function writeError(error: unknown): ServiceError {
 }
 
 function materialWriteError(error: unknown): ServiceError {
-  if (error instanceof MaterialRuleViolation) return ruleError(error.message);
+  if (
+    error instanceof MaterialRuleViolation ||
+    error instanceof ShelfLifeRefusal
+  ) {
+    return ruleError(error.message);
+  }
   return writeError(error);
 }
 
@@ -5943,6 +6026,8 @@ async function writeMaterialIdentity(
 
   const updatedAt = datetime.timestamp();
   if (renamed) {
+    // A create of the same ID takes this lock before its own check.
+    await lockMaterialReadableId(trx, companyId, newReadableId);
     const taken = await trx
       .selectFrom("item")
       .select("id")
@@ -6280,17 +6365,6 @@ export async function insertMaterial(
     };
   }
 
-  // An existing id would take the new item rows as extra revisions and
-  // overwrite its material row; sizes on an update add revisions instead.
-  const taken = await materialIdIsTaken(client, readableId, companyId);
-  if (taken.error) return { data: null, error: taken.error };
-  if (taken.data) {
-    return {
-      data: null,
-      error: ruleError(`Material ${readableId} already exists`)
-    };
-  }
-
   const costUpdate: { itemPostingGroupId?: string | null; unitCost?: number } =
     {};
   if (material.postingGroupId) {
@@ -6309,11 +6383,27 @@ export async function insertMaterial(
   );
   if (permitted.error) return { data: null, error: permitted.error };
 
-  // The item revisions, their cost and the material row land together, so a
-  // failed write leaves no item holding the ID against a retry.
-  let newItemIds: string[];
+  // The item revisions, their cost, the material row, the pick method and the
+  // shelf life land together, so a refused or failed write leaves no item
+  // holding the ID against a retry.
   try {
-    newItemIds = await db.transaction().execute(async (trx) => {
+    await db.transaction().execute(async (trx) => {
+      // An existing ID would take the new item rows as extra revisions and
+      // overwrite its material row; sizes on an update add revisions instead.
+      await lockMaterialReadableId(trx, companyId, readableId);
+      const taken = await trx
+        .selectFrom("item")
+        .select("id")
+        .where("readableId", "=", readableId)
+        .where("companyId", "=", companyId)
+        .where("type", "=", "Material")
+        .executeTakeFirst();
+      if (taken) {
+        throw new MaterialRuleViolation(
+          `Material ${readableId} already exists`
+        );
+      }
+
       const items = await trx
         .insertInto("item")
         .values(
@@ -6371,36 +6461,69 @@ export async function insertMaterial(
           oc.columns(["id", "companyId"]).doUpdateSet(properties)
         )
         .execute();
-      return ids;
+
+      // Kysely bypasses RLS: the pick method and shelf life rows ask for the
+      // same create on the item's page, checked above.
+      const updatedAt = datetime.timestamp();
+      if (material.defaultStorageUnitId) {
+        const storageUnit = await trx
+          .selectFrom("storageUnit")
+          .select("locationId")
+          .where("id", "=", material.defaultStorageUnitId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (!storageUnit) {
+          throw new MaterialRuleViolation(
+            `Storage unit ${material.defaultStorageUnitId} not found`
+          );
+        }
+        await trx
+          .insertInto("pickMethod")
+          .values(
+            ids.map((itemId) => ({
+              itemId,
+              locationId: storageUnit.locationId,
+              defaultStorageUnitId: material.defaultStorageUnitId,
+              companyId,
+              createdBy,
+              updatedBy: createdBy,
+              updatedAt
+            }))
+          )
+          .execute();
+      }
+      for (const itemId of ids) {
+        await writeItemShelfLife(trx, {
+          itemId,
+          companyId,
+          userId: createdBy,
+          updatedAt,
+          shelfLife: {
+            mode: material.shelfLifeMode,
+            days: material.shelfLifeDays,
+            triggerProcessId: material.shelfLifeTriggerProcessId,
+            triggerTiming: material.shelfLifeTriggerTiming,
+            calculateFromBom: material.shelfLifeCalculateFromBom
+          }
+        });
+      }
     });
   } catch (error) {
-    logger.error("Failed to create material", {
-      companyId,
-      readableId,
-      error
-    });
-    return { data: null, error: materialWriteError(error) };
-  }
-
-  for (const itemId of newItemIds) {
-    const pickMethod = await upsertItemDefaultPickMethod(client, {
-      itemId,
-      userId: createdBy,
-      storageUnitId: material.defaultStorageUnitId
-    });
-    if (pickMethod.error) return { data: null, error: pickMethod.error };
-
-    const shelfLife = await upsertItemShelfLife(client, {
-      itemId,
-      userId: createdBy,
-      companyId,
-      mode: material.shelfLifeMode,
-      days: material.shelfLifeDays,
-      triggerProcessId: material.shelfLifeTriggerProcessId,
-      triggerTiming: material.shelfLifeTriggerTiming,
-      calculateFromBom: material.shelfLifeCalculateFromBom
-    });
-    if (shelfLife.error) return { data: null, error: shelfLife.error };
+    const refusal = materialWriteError(error);
+    if (refusal.code === SERVICE_RULE_ERROR_CODE) {
+      logger.warning("Material create refused", {
+        companyId,
+        readableId,
+        error
+      });
+    } else {
+      logger.error("Failed to create material", {
+        companyId,
+        readableId,
+        error
+      });
+    }
+    return { data: null, error: refusal };
   }
 
   const newMaterial = await client

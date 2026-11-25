@@ -213,8 +213,48 @@ describe("scanKanban for an API key", () => {
       }
     }
   );
-  const scan = (actor: Actor, card = makeCard("J-1")) => {
-    const caller = filteringSupabase({ kanbans: [card] });
+  // A Buy card for a supplier with a Draft order: the scan adds a line to it.
+  const buyCard = {
+    id: "kb-1",
+    companyId: "company-1",
+    replenishmentSystem: "Buy",
+    itemId: "item-1",
+    supplierId: "supplier-1",
+    locationId: "location-1",
+    storageUnitId: null,
+    quantity: 4,
+    purchaseUnitOfMeasureCode: "EA",
+    conversionFactor: 1
+  };
+  const draftOrder = {
+    purchaseOrder: [
+      {
+        id: "po-1",
+        companyId: "company-1",
+        supplierId: "supplier-1",
+        status: "Draft",
+        currencyCode: "USD",
+        exchangeRate: 1
+      }
+    ],
+    item: [
+      {
+        id: "item-1",
+        companyId: "company-1",
+        type: "Part",
+        unitOfMeasureCode: "EA",
+        itemCost: [{ unitCost: 2 }],
+        itemReplenishment: { conversionFactor: 1 }
+      }
+    ],
+    company: [{ id: "company-1", baseCurrencyCode: "USD" }]
+  };
+  const scan = (
+    actor: Actor,
+    card: Record<string, unknown> = makeCard("J-1"),
+    tables: Record<string, unknown[]> = {}
+  ) => {
+    const caller = filteringSupabase({ kanbans: [card], ...tables });
     const ctx = createServiceContext({
       actor,
       company: { id: "company-1", groupId: "group-1" },
@@ -249,5 +289,65 @@ describe("scanKanban for an API key", () => {
       })
     );
     expect(await result).toEqual({ data: { type: "collision" }, error: null });
+  });
+
+  // The release runs as the system and moves the job to Ready, which the
+  // app's release needs Edit for.
+  it("refuses an auto-release Make card to a key without Edit on production.jobs", async () => {
+    const { result, writes } = scan(
+      key({
+        inventory: { update: ["company-1"] },
+        production: { create: ["company-1"] }
+      }),
+      { ...makeCard(null), autoRelease: true }
+    );
+    expect((await result).error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
+  });
+
+  it("scans an auto-release Make card for a key with Edit on production.jobs", async () => {
+    const { result } = scan(
+      key({
+        inventory: { update: ["company-1"] },
+        production: {
+          view: ["company-1"],
+          create: ["company-1"],
+          update: ["company-1"]
+        }
+      }),
+      { ...makeCard("J-1"), autoRelease: true }
+    );
+    expect(await result).toEqual({ data: { type: "collision" }, error: null });
+  });
+
+  it("refuses a Buy card to a key without Create on purchasing.purchaseOrders", async () => {
+    const { result, writes } = scan(
+      key({
+        inventory: { update: ["company-1"] },
+        purchasing: { view: ["company-1"] }
+      }),
+      buyCard,
+      draftOrder
+    );
+    expect((await result).error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
+  });
+
+  it("adds a Buy card's line to the supplier's Draft order for a key with Create on purchasing.purchaseOrders", async () => {
+    const { result, writes } = scan(
+      key({
+        inventory: { update: ["company-1"] },
+        purchasing: { view: ["company-1"], create: ["company-1"] }
+      }),
+      buyCard,
+      draftOrder
+    );
+    expect(await result).toEqual({
+      data: { type: "purchaseOrder", purchaseOrderId: "po-1" },
+      error: null
+    });
+    expect(
+      writes.filter((write) => write.op === "insert").map((write) => write.table)
+    ).toEqual(["purchaseOrderLine"]);
   });
 });

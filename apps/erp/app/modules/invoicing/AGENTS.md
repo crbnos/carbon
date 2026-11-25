@@ -374,13 +374,20 @@ How they behave:
 - A failure after the main write (seeding a payment's applications, applying or posting a
   reimbursement payout, the lines of an adjusting entry) keeps the write and returns
   `warning`.
-- The `*Field` operations require `update: invoicing` for both invoice kinds: the
+- The `*Field` operations require Edit on Sales Invoices or Purchase Invoices: the
   properties panels enable their fields on it, and the tables' RLS asks for it.
   An id they write (customer, supplier, contact, location, payment term) must name a row
   of the company, checked with the service role before any write
   (`INVOICE_FIELD_REFERENCES` and `partyCurrency`, `invoicing.service.ts`): most of
   these foreign keys name the id alone. A new sales invoice customer is checked before
   its ship-to is cleared.
+- The issue date cannot be cleared, as in the panels. The due date a new issue date or
+  payment term recomputes reads the term with the service role: `paymentTerm` is read
+  by accounting, sales and purchasing pages, not invoicing's, and a term the caller
+  cannot see would fall back to Net 30. With no issue date the due date is kept.
+- A new sales invoice customer and the ship-to it clears are one Kysely transaction
+  (`changeSalesInvoiceCustomer`): the invoices are locked `FOR UPDATE` and must still
+  be Draft, and only an invoice whose customer changes loses its ship-to.
 
 ## Related Modules
 

@@ -43,7 +43,7 @@ export const userAdminFunction = inngest.createFunction(
           }
           break;
         case "resend":
-          const { id: userId, companyId, location, ip } = payload;
+          const { id: userId, companyId, location, ip, revokedAt } = payload;
           logger.info("Resending an invite", { id: payload.id });
           const [company, user] = await Promise.all([
             serviceRole
@@ -62,13 +62,14 @@ export const userAdminFunction = inngest.createFunction(
             throw new Error("Failed to load company or user");
           }
 
-          // The request checked the invite was re-sendable; an acceptance
-          // while this waited in the queue fails the refresh, and no email
-          // goes out.
+          // The request checked the invite was re-sendable; an acceptance or
+          // a revoke while this waited in the queue fails the refresh, and
+          // no email goes out.
           const refreshed = await refreshResentInvite(serviceRole, {
             userId,
             email: user.data.email,
-            companyId
+            companyId,
+            revokedAt
           });
           if ("failure" in refreshed) {
             return { success: false, message: refreshed.message };

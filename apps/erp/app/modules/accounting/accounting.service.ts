@@ -254,7 +254,7 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import { months } from "../shared/shared.models";
 import {
   allocateJournalLineIds,
@@ -3895,14 +3895,35 @@ export async function getFiscalStartMonth(
   };
 }
 
+/**
+ * `startMonth` is the month the caller showed the range from: the Generate
+ * Fiscal Year dialog reads it when it opens, so a change saved after that
+ * would create periods other than the ones it showed. A different stored
+ * month is refused; left out, the stored month is used.
+ */
 export async function createFiscalYearPeriods(
   client: SupabaseClient<Database>,
-  args: { companyId: string; fiscalYear: number; userId: string },
+  args: {
+    companyId: string;
+    fiscalYear: number;
+    userId: string;
+    startMonth?: number;
+  },
   system: SupabaseClient<Database> = getCarbonServiceRole()
 ) {
   const fiscalStart = await getFiscalStartMonth(args.companyId, system);
   if (fiscalStart.error) return { data: null, error: fiscalStart.error };
   const startMonth = fiscalStart.data;
+  if (args.startMonth !== undefined && args.startMonth !== startMonth) {
+    return {
+      data: null,
+      error: ruleError(
+        `The fiscal year now starts in ${months[startMonth - 1]}, not ${
+          months[args.startMonth - 1]
+        }. Open Generate Fiscal Year again to see the periods it creates.`
+      )
+    };
+  }
 
   const existing = await client
     .from("accountingPeriod")

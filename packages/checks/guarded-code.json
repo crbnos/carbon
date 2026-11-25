@@ -55,6 +55,32 @@
       "tests": [
         "packages/jobs/src/inngest/functions/integrations/accounting-sync-retries.database.test.ts"
       ]
+    },
+    {
+      "file": "apps/erp/app/modules/invoicing/invoicing.service.ts",
+      "functions": ["changeSalesInvoiceCustomer"],
+      "tests": ["apps/erp/test/database/sales-invoice-field.test.ts"]
+    },
+    {
+      "file": "apps/erp/app/modules/items/items.service.ts",
+      "functions": [
+        "lockMaterialReadableId",
+        "insertMaterial",
+        "writeMaterialIdentity"
+      ],
+      "tests": ["apps/erp/test/database/item-write-transactions.test.ts"]
+    },
+    {
+      "file": "apps/erp/app/modules/settings/settings.service.ts",
+      "functions": ["updateRecordCustomFields"],
+      "tests": ["apps/erp/test/database/record-custom-fields.test.ts"]
+    },
+    {
+      "file": "apps/erp/app/modules/inventory/inventory.service.ts",
+      "functions": ["postInventoryAdjustment"],
+      "tests": [
+        "apps/erp/test/database/post-inventory-adjustment/lot-draw-concurrency.test.ts"
+      ]
     }
   ]
 }

@@ -753,7 +753,8 @@ describe("a location's staffing requirement", () => {
 
 describe("setting a record's custom field values", () => {
   // The boundary is PostgREST: a real supabase-js client whose fetch answers
-  // the custom field table's module and the UPDATE with the rows it changed.
+  // the custom field table's module and the save (`set_record_custom_fields`)
+  // with the rows it changed.
   function recordCustomFields({
     actor = {
       type: "user",
@@ -807,7 +808,10 @@ describe("setting a record's custom field values", () => {
       pg: () => ({}) as never,
       kv: () => ({}) as never
     });
-    const updates = () => sent.filter((request) => request.method === "PATCH");
+    const updates = () =>
+      sent.filter((request) =>
+        request.url.pathname.endsWith("/rpc/set_record_custom_fields")
+      );
     return { ctx, updates };
   }
 
@@ -839,11 +843,39 @@ describe("setting a record's custom field values", () => {
     const result = await setRecordCustomFields(ctx, partValues);
 
     expect(result).toEqual({ data: { ids: ["P-1"] }, error: null });
-    const [update] = updates();
-    expect(update?.url.pathname).toBe("/rest/v1/part");
-    expect(update?.url.searchParams.get("companyId")).toBe("eq.company-1");
-    expect(update?.url.searchParams.get("id")).toBe("in.(P-1,P-2)");
-    expect(update?.body).toMatchObject({ customFields: { color: "Red" } });
+    expect(updates().map((update) => update.body)).toEqual([
+      {
+        p_table: "part",
+        p_ids: ["P-1", "P-2"],
+        p_scope_column: "companyId",
+        p_scope_id: "company-1",
+        p_set: { color: "Red" },
+        p_clear: [],
+        p_updated_by: "user-1"
+      }
+    ]);
+  });
+
+  // The panel sends the one field it changed; writing that as the whole map
+  // dropped every field another person saved since the panel loaded.
+  it("writes only the fields sent, and clears a field sent as null", async () => {
+    const { ctx, updates } = recordCustomFields({
+      fields: [
+        { id: "color", dataTypeId: DataType.Text, listOptions: null },
+        { id: "due", dataTypeId: DataType.Date, listOptions: null }
+      ]
+    });
+
+    const result = await setRecordCustomFields(ctx, {
+      table: "part",
+      ids: ["P-1"],
+      customFields: { color: "Red", due: null }
+    });
+
+    expect(result.error).toBeNull();
+    expect(updates().map((update) => update.body)).toEqual([
+      expect.objectContaining({ p_set: { color: "Red" }, p_clear: ["due"] })
+    ]);
   });
 
   it("scopes a table shared by the company group by the group", async () => {
@@ -858,9 +890,12 @@ describe("setting a record's custom field values", () => {
       customFields: {}
     });
 
-    const [update] = updates();
-    expect(update?.url.searchParams.get("companyGroupId")).toBe("eq.group-1");
-    expect(update?.url.searchParams.has("companyId")).toBe(false);
+    expect(updates().map((update) => update.body)).toEqual([
+      expect.objectContaining({
+        p_scope_column: "companyGroupId",
+        p_scope_id: "group-1"
+      })
+    ]);
   });
 
   it.each([
@@ -917,7 +952,7 @@ describe("setting a record's custom field values", () => {
     expect(updates()).toEqual([]);
   });
 
-  it("sends back a deleted field's stored value unchanged, as the panel does", async () => {
+  it("takes a deleted field's stored value sent back unchanged", async () => {
     const { ctx, updates } = recordCustomFields({
       stored: [{ id: "P-1", customFields: { color: "Blue", retired: "x" } }]
     });

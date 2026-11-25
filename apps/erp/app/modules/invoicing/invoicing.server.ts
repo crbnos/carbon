@@ -128,12 +128,12 @@ const salesInvoiceFields = [
  * paid dates. A new invoice customer brings its currency at today's rate
  * (a customer with none keeps the invoice's) and clears the invoice contact
  * and address. A new customer clears the ship-to of each invoice whose
- * customer changes; the customer and the invoice customer cannot be
- * cleared. A new issue date or payment term recomputes the due date, so it
- * takes one invoice at a time. A new currency brings today's exchange rate.
- * An empty value clears any other field. A customer, contact, location or
- * payment term must be the company's. Refused when none of the invoices is
- * the company's.
+ * customer changes; the customer, the invoice customer and the issue date
+ * cannot be cleared. A new issue date or payment term recomputes the due
+ * date, so it takes one invoice at a time. A new currency brings today's
+ * exchange rate. An empty value clears any other field. A customer, contact,
+ * location or payment term must be the company's. Refused when none of the
+ * invoices is the company's.
  *
  * @param ids - The sales invoices to change. See invoicing_getSalesInvoices.
  * @param field - The field to set.
@@ -185,55 +185,13 @@ export const updateSalesInvoiceField = defineServiceFn({
     if (field === "customerId") {
       // The panel's customer field is required, as the column is.
       if (!value) return ctx.error("validation", "Customer is required");
-      // Before the ship-to is cleared: a customer the write would refuse
-      // must not leave the invoices without their ship-to.
+      // A customer's company never changes, so this read needs no lock.
       const refused = await refuseUnlessOwned(ctx, "customer", { id: value });
       if (refused) return refused;
-      // A ship-to is one of the old customer's locations, so a customer
-      // change clears it (sales rules would otherwise evaluate an address
-      // that is not the new customer's).
-      const changed = await client
-        .from("salesInvoice")
-        .select("id")
-        .in("id", ids)
-        .eq("companyId", companyId)
-        .neq("customerId", value);
-      if (changed.error) {
-        return ctx.error(
-          "internal",
-          "Failed to load the invoices",
-          changed.error
-        );
-      }
-      const changedIds = changed.data.map((row) => row.id);
-      if (changedIds.length > 0) {
-        const cleared = await client
-          .from("salesInvoiceShipment")
-          .update({ customerLocationId: null, ...audit })
-          .in("id", changedIds)
-          .eq("companyId", companyId);
-        if (cleared.error) {
-          return ctx.error(
-            "internal",
-            "Failed to clear the ship-to",
-            cleared.error
-          );
-        }
-      }
-      const update = await client
-        .from("salesInvoice")
-        .update({ customerId: value, ...audit })
-        .in("id", ids)
-        .eq("companyId", companyId)
-        .select("id");
-      if (update.error) {
-        return ctx.error(
-          "internal",
-          "Failed to update the invoices",
-          update.error
-        );
-      }
-      return service.updatedInvoices(ctx, update.data);
+      return service.changeSalesInvoiceCustomer(ctx, {
+        ids,
+        customerId: value
+      });
     }
 
     return service.writeInvoiceField(ctx, "salesInvoice", {
@@ -1083,8 +1041,9 @@ const purchaseInvoiceFields = [
  * Refused when any of the invoices is posted, except for the issue, due and
  * paid dates. A new invoice supplier brings its currency at today's rate
  * (a supplier with none keeps the invoice's) and clears the invoice contact
- * and address; the invoice supplier cannot be cleared. A new issue date or
- * payment term recomputes the due date, so it takes one invoice at a time.
+ * and address; the invoice supplier and the issue date cannot be cleared. A
+ * new issue date or payment term recomputes the due date, so it takes one
+ * invoice at a time.
  * A new currency brings today's exchange rate. An empty value clears any
  * other field. A supplier, contact, location or payment term must be the
  * company's. Refused when none of the invoices is the company's.

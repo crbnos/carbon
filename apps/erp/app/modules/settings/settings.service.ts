@@ -790,10 +790,11 @@ export function unwritableCustomFieldKeys(
 
 /**
  * The custom field keys a save may not write: the unwritable ones, unless
- * every record already holds that value. The properties panel posts the whole
- * stored map with one value changed, so a deleted field's value, or one stored
- * in another shape, goes back unchanged and is kept. Values compare as JSON:
- * an object's members in any order, an array's items in theirs.
+ * every record already holds that value. A caller that sends back the stored
+ * map (a panel loaded before the panel sent only its changed field, an API
+ * caller) sends a deleted field's value, or one stored in another shape,
+ * unchanged, and it is kept. Values compare as JSON: an object's members in
+ * any order, an array's items in theirs.
  */
 export function refusedCustomFieldKeys(
   sent: Record<string, unknown>,
@@ -831,9 +832,24 @@ export async function getRecordsCustomFields(
 }
 
 /**
- * Write one table's custom field values on the records of one company (or, for
- * a table a company group shares, of its group). The table is named at run
- * time, so the client is untyped here; RLS on the table still applies.
+ * The change a save makes to a record's custom fields: the values it sets,
+ * and the keys a null clears. Keys it does not name are left as stored.
+ */
+function customFieldsPatch(customFields: Record<string, unknown>) {
+  const set: Record<string, unknown> = {};
+  const clear: string[] = [];
+  for (const [key, value] of Object.entries(customFields)) {
+    if (value === null) clear.push(key);
+    else if (value !== undefined) set[key] = value;
+  }
+  return { set, clear };
+}
+
+/**
+ * Set some custom field values on the records of one company (or, for a table
+ * a company group shares, of its group), as one UPDATE that merges them into
+ * each record's stored map (`set_record_custom_fields`): a value another save
+ * wrote to a field this one does not name is kept. RLS on the table applies.
  */
 export async function updateRecordCustomFields(
   client: SupabaseClient<Database>,
@@ -846,17 +862,17 @@ export async function updateRecordCustomFields(
     updatedBy: string;
   }
 ) {
-  const { data, error } = await (client as unknown as SupabaseClient)
-    .from(args.table)
-    .update({
-      customFields: args.customFields,
-      updatedBy: args.updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .in("id", args.ids)
-    .eq(args.scopeColumn, args.scopeId)
-    .select("id");
-  return { data: (data ?? null) as { id: string }[] | null, error };
+  const { set, clear } = customFieldsPatch(args.customFields);
+  const { data, error } = await client.rpc("set_record_custom_fields", {
+    p_table: args.table,
+    p_ids: args.ids,
+    p_scope_column: args.scopeColumn,
+    p_scope_id: args.scopeId,
+    p_set: set as Json,
+    p_clear: clear,
+    p_updated_by: args.updatedBy
+  });
+  return { data: data ?? null, error };
 }
 
 export async function getIntegration(

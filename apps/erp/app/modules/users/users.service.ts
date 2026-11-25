@@ -2564,16 +2564,20 @@ export async function refuseUnlessPendingInvites(
  * the account the invite is for. Resending clears the invite's acceptance, so
  * an active account accepting it again would get the invite's grants back
  * over what an admin removed since. A deactivated customer or supplier has no
- * account left, and its link could never be accepted.
+ * account left, and its link could never be accepted. Returns each user's
+ * invite `revokedAt` as read here: the refresh clears only that revocation,
+ * never one saved after the request.
  */
 export async function refuseUnlessReinvitable(
   ctx: ServiceContext,
   userIds: string[]
-): Promise<CarbonError | null> {
+): Promise<Result<Map<string, string | null>>> {
   const companyId = ctx.company.id;
   const serviceRole = ctx.asSystem.supabase;
   const active: string[] = [];
   const deactivatedContacts: string[] = [];
+  const revokedAt = new Map<string, string | null>();
+  const refuse = (error: CarbonError) => ({ data: null, error });
   for (const chunk of chunkArray([...new Set(userIds)], 100)) {
     const [users, members, employees, customers, suppliers] = await Promise.all(
       [
@@ -2607,34 +2611,38 @@ export async function refuseUnlessReinvitable(
       customers.error ||
       suppliers.error
     ) {
-      return ctx.error(
-        "internal",
-        "Failed to read the users",
-        users.error ??
-          members.error ??
-          employees.error ??
-          customers.error ??
-          suppliers.error
+      return refuse(
+        ctx.error(
+          "internal",
+          "Failed to read the users",
+          users.error ??
+            members.error ??
+            employees.error ??
+            customers.error ??
+            suppliers.error
+        )
       );
     }
     if (users.data.length !== chunk.length) {
-      return ctx.error("notFound", "User not found");
+      return refuse(ctx.error("notFound", "User not found"));
     }
 
     const invites = await serviceRole
       .from("invite")
-      .select("email, role")
+      .select("email, role, revokedAt")
       .eq("companyId", companyId)
       .in(
         "email",
         users.data.map((user) => user.email)
       );
     if (invites.error) {
-      return ctx.error("internal", "Failed to read the invites", invites.error);
+      return refuse(
+        ctx.error("internal", "Failed to read the invites", invites.error)
+      );
     }
 
-    const roleByEmail = new Map(
-      invites.data.map((invite) => [invite.email, invite.role])
+    const inviteByEmail = new Map(
+      invites.data.map((invite) => [invite.email, invite])
     );
     const memberIds = new Set(members.data.map((member) => member.userId));
     const accountIds = {
@@ -2643,29 +2651,79 @@ export async function refuseUnlessReinvitable(
       supplier: new Set(suppliers.data.map((row) => row.id))
     };
     for (const user of users.data) {
-      const role = roleByEmail.get(user.email);
-      if (!role)
-        return ctx.error("notFound", "No invite record found for user");
+      const invite = inviteByEmail.get(user.email);
+      if (!invite) {
+        return refuse(ctx.error("notFound", "No invite record found for user"));
+      }
+      revokedAt.set(user.id, invite.revokedAt ?? null);
       if (memberIds.has(user.id)) active.push(user.email);
-      else if (!accountIds[role].has(user.id)) {
+      else if (!accountIds[invite.role].has(user.id)) {
         deactivatedContacts.push(user.email);
       }
     }
   }
 
   if (active.length > 0) {
-    return ctx.error(
-      "rule",
-      `${active.join(", ")} already ${active.length === 1 ? "has" : "have"} an active account in the company. An invite is sent again only to an invited or deactivated person.`
+    return refuse(
+      ctx.error(
+        "rule",
+        `${active.join(", ")} already ${active.length === 1 ? "has" : "have"} an active account in the company. An invite is sent again only to an invited or deactivated person.`
+      )
     );
   }
   if (deactivatedContacts.length > 0) {
-    return ctx.error(
-      "rule",
-      `${deactivatedContacts.join(", ")}: the customer or supplier account was deactivated. Invite the contact again from the customer's or supplier's contacts.`
+    return refuse(
+      ctx.error(
+        "rule",
+        `${deactivatedContacts.join(", ")}: the customer or supplier account was deactivated. Invite the contact again from the customer's or supplier's contacts.`
+      )
     );
   }
-  return null;
+  return { data: revokedAt, error: null };
+}
+
+/**
+ * Each user's invite `revokedAt` in the company, read as their resends are
+ * queued: the job's refresh clears only that revocation, never one saved
+ * while the event waited. Throws when a read fails.
+ */
+export async function readInviteRevocations(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  userIds: string[]
+): Promise<Map<string, string | null>> {
+  const revokedAt = new Map<string, string | null>();
+  for (const chunk of chunkArray([...new Set(userIds)], 100)) {
+    const users = await serviceRole
+      .from("user")
+      .select("id, email")
+      .in("id", chunk);
+    if (users.error) {
+      throw new Error("Failed to read the users of a resend", {
+        cause: users.error
+      });
+    }
+    const invites = await serviceRole
+      .from("invite")
+      .select("email, revokedAt")
+      .eq("companyId", companyId)
+      .in(
+        "email",
+        users.data.map((user) => user.email)
+      );
+    if (invites.error) {
+      throw new Error("Failed to read the invites of a resend", {
+        cause: invites.error
+      });
+    }
+    const byEmail = new Map(
+      invites.data.map((invite) => [invite.email, invite.revokedAt ?? null])
+    );
+    for (const user of users.data) {
+      revokedAt.set(user.id, byEmail.get(user.email) ?? null);
+    }
+  }
+  return revokedAt;
 }
 
 /**
@@ -3813,6 +3871,11 @@ export async function queueInviteResends(args: {
   location: string;
   ip: string;
 }) {
+  const revokedAt = await readInviteRevocations(
+    getCarbonServiceRole(),
+    args.companyId,
+    args.userIds
+  );
   await batchTrigger(
     "user-admin",
     args.userIds.map((id) => ({
@@ -3821,7 +3884,8 @@ export async function queueInviteResends(args: {
         type: "resend" as const,
         companyId: args.companyId,
         location: args.location,
-        ip: args.ip
+        ip: args.ip,
+        revokedAt: revokedAt.get(id) ?? null
       }
     }))
   );

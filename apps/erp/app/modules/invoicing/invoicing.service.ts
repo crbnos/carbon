@@ -6367,8 +6367,8 @@ const INVOICE_FIELD_REFERENCES: Partial<
 /**
  * Write one field on invoices of either kind. A new issue date or payment
  * term recomputes the due date, so it takes one invoice; a new currency
- * brings today's exchange rate; an empty value clears the field. An id must
- * name a row of this company.
+ * brings today's exchange rate; an empty value clears the field, except the
+ * issue date. An id must name a row of this company.
  */
 export async function writeInvoiceField(
   ctx: ServiceContext,
@@ -6379,6 +6379,11 @@ export async function writeInvoiceField(
   const companyId = ctx.company.id;
   let changes: Record<string, unknown> = { [field]: value || null };
 
+  // The panels' issue date is required: a cleared one would keep the due
+  // date it set.
+  if (field === "dateIssued" && !value) {
+    return ctx.error("validation", "Invoice date is required");
+  }
   // Each invoice's due date follows its own issue date and term.
   if (
     (field === "dateIssued" || field === "paymentTermId") &&
@@ -6408,7 +6413,11 @@ export async function writeInvoiceField(
     if (!invoice.data) {
       return ctx.error("notFound", "None of the invoices was found");
     }
-    const dateDue = await computeInvoiceDateDue(client, {
+    // Read the term as the system: the write is gated on invoicing, and the
+    // term table needs accounting, sales or purchasing view, without which
+    // the term would read as missing and the due date fall back to Net 30.
+    // The read is scoped by companyId.
+    const dateDue = await computeInvoiceDateDue(ctx.asSystem.supabase, {
       dateIssued: field === "dateIssued" ? value : invoice.data.dateIssued,
       paymentTermId:
         field === "paymentTermId" ? value : invoice.data.paymentTermId,
@@ -6443,6 +6452,65 @@ export async function writeInvoiceField(
     return ctx.error("internal", "Failed to update the invoices", update.error);
   }
   return updatedInvoices(ctx, update.data);
+}
+
+/**
+ * Set the customer of sales invoices, and clear the ship-to of each whose
+ * customer changes: a ship-to is one of the old customer's locations, which
+ * sales rules would otherwise evaluate. One transaction, so a failed write
+ * keeps both. The invoices are locked, then must still be Draft: a post that
+ * claimed one since the caller's check keeps its customer.
+ */
+export async function changeSalesInvoiceCustomer(
+  ctx: ServiceContext,
+  { ids, customerId }: { ids: string[]; customerId: string }
+) {
+  const companyId = ctx.company.id;
+  if (ids.length === 0) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  const audit = {
+    updatedBy: ctx.auditUserId,
+    updatedAt: datetime.timestamp()
+  };
+  const settled = await ctx.transaction(async (tx) => {
+    const db = tx.asSystem.pg;
+    const invoices = await db
+      .selectFrom("salesInvoice")
+      .select(["id", "status", "customerId"])
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .orderBy("id")
+      .forUpdate()
+      .execute();
+    if (invoices.length === 0) {
+      return tx.error("notFound", "None of the invoices was found");
+    }
+    if (invoices.some((invoice) => isSalesInvoiceLocked(invoice.status))) {
+      return tx.error("rule", "Cannot modify a locked sales invoice.");
+    }
+    const reached = invoices.map((invoice) => invoice.id);
+    const changed = invoices
+      .filter((invoice) => invoice.customerId !== customerId)
+      .map((invoice) => invoice.id);
+    if (changed.length > 0) {
+      await db
+        .updateTable("salesInvoiceShipment")
+        .set({ customerLocationId: null, ...audit })
+        .where("id", "in", changed)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await db
+      .updateTable("salesInvoice")
+      .set({ customerId, ...audit })
+      .where("id", "in", reached)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { ids: reached };
+  });
+  if (settled.error) return settled.error;
+  return settled.data;
 }
 
 /**

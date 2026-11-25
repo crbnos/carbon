@@ -25202,7 +25202,8 @@ export async function postInventoryAdjustment(
     // The stock stripe of the row: a project id, or null for common stock.
     projectId: string | null;
   };
-  const trackingRows = (storageUnitQuantities.data ??
+  // Reassigned for one lot by lockLotStock, under that lot's row lock.
+  let trackingRows = (storageUnitQuantities.data ??
     []) as TrackingQuantityRow[];
 
   const fullest = (rows: TrackingQuantityRow[]) =>
@@ -25215,7 +25216,7 @@ export async function postInventoryAdjustment(
     trackingRows.filter((q) => q.trackedEntityId === lotId);
   // Non-empty when the payload names a lot that already has stock movements
   // here. That lot is then the target: a batch number is not unique per lot.
-  const lotRows = trackedEntityId ? rowsOfLot(trackedEntityId) : [];
+  let lotRows = trackedEntityId ? rowsOfLot(trackedEntityId) : [];
   // An entity that exists but has no movement of this item at this location
   // (another item's lot, a lot at another location, a job's reserved unit)
   // is not the lot to adjust here: an increase would insert its id again and
@@ -25246,6 +25247,31 @@ export async function postInventoryAdjustment(
       );
     }
     return total;
+  };
+  // Locks a lot, then reads its stock at the location again, and returns
+  // its status. An adjustment that settles the lot takes its checks, the
+  // entity's quantity and its ledger rows from this read: a draw that
+  // committed after the read above (a maintenance or service issue, a pick)
+  // would otherwise be lost from the entity's quantity.
+  const lockLotStock = async (
+    trx: Transaction<KyselyDatabase>,
+    lotId: string
+  ) => {
+    const status = await currentEntityStatus(trx, lotId, companyId);
+    const now = await rpcRows(trx, "get_item_quantities_by_tracking_id", {
+      item_id: itemId,
+      company_id: companyId,
+      location_id: locationId ?? ""
+    });
+    const lotNow = (now.data as TrackingQuantityRow[]).filter(
+      (q) => q.trackedEntityId === lotId
+    );
+    trackingRows = [
+      ...trackingRows.filter((q) => q.trackedEntityId !== lotId),
+      ...lotNow
+    ];
+    if (lotId === trackedEntityId) lotRows = lotNow;
+    return status;
   };
   // A tracked entity's movements stay in the stripe that holds it: the
   // stripe of its row with the most on-hand. Untracked stock, and a new
@@ -25394,6 +25420,10 @@ export async function postInventoryAdjustment(
       );
 
       if (trackedEntityId) {
+        // The lot, its quantity and the bin it is scrapped from are read
+        // under its lock. A lot with no stock movement here is refused
+        // above, or does not exist.
+        if (lotRows.length > 0) await lockLotStock(trx, trackedEntityId);
         const entity = await trx
           .selectFrom("trackedEntity")
           .select([
@@ -25427,7 +25457,7 @@ export async function postInventoryAdjustment(
         // the row holding most of it (a serial UI sends no bin). The scrap
         // leaves that row's bin and stripe.
         const scrappedFrom =
-          [lotRowIn(storageUnitId), entityHolding].find(
+          [lotRowIn(storageUnitId), fullest(lotRows)].find(
             (row) => (row?.quantity ?? 0) > 0
           ) ?? null;
         const bin =
@@ -25822,6 +25852,8 @@ export async function postInventoryAdjustment(
     }
 
     if (isStorageUnitTransfer) {
+      // What leaves the bin is read under the lot's lock.
+      if (lotRows.length > 0) await lockLotStock(trx, trackedEntityId!);
       if (readableId !== undefined && readableId !== null) {
         await trx
           .updateTable("trackedEntity")
@@ -25875,6 +25907,11 @@ export async function postInventoryAdjustment(
     // row in the payload's bin (one row per lot, bin and stripe), else the
     // loose lookup. A lot elsewhere at the location has nothing in this bin.
     const namesLot = lotRows.length > 0;
+    // Set only for a named lot, which is measured on its stock read again
+    // under its lock.
+    const lockedStatus = namesLot
+      ? await lockLotStock(trx, trackedEntityId!)
+      : null;
     const adjustedRow = namesLot ? lotRowIn(storageUnitId) : currentQuantity;
     const adjustedOnHand = adjustedRow?.quantity ?? 0;
 
@@ -25921,7 +25958,13 @@ export async function postInventoryAdjustment(
       // is the shared rule, so a Scrapped lot stays Scrapped.
       const reduceLotOf = async (row: TrackingQuantityRow, rename?: string) => {
         const lotId = row.trackedEntityId as string;
-        if (round(adjustmentQuantity) > round(row.quantity ?? 0)) {
+        const status = await lockLotStock(trx, lotId);
+        // The row's bin and stripe, as read under the lock.
+        const held = rowsOfLot(lotId).find(
+          (q) =>
+            q.storageUnitId == row.storageUnitId && q.projectId == row.projectId
+        );
+        if (round(adjustmentQuantity) > round(held?.quantity ?? 0)) {
           throw new InvalidInputError(
             "Insufficient quantity for negative adjustment"
           );
@@ -25931,7 +25974,7 @@ export async function postInventoryAdjustment(
           .set({
             ...settleQuantity({
               quantity: lotOnHandAfter(lotId, -adjustmentQuantity),
-              status: await currentEntityStatus(trx, lotId, companyId)
+              status
             }),
             ...(rename ? { readableId: rename } : {})
           })
@@ -26040,13 +26083,8 @@ export async function postInventoryAdjustment(
     }
 
     if (trackedEntityId) {
-      if (namesLot) {
-        // Locked before the serial balance is read.
-        const status = await currentEntityStatus(
-          trx,
-          trackedEntityId,
-          companyId
-        );
+      if (lockedStatus) {
+        // Locked (lockLotStock) before the serial balance is read.
         if (item.itemTrackingType === "Serial" && signedQuantity > 0) {
           await refuseSerialAboveOneUnit(
             trx,
@@ -26062,7 +26100,7 @@ export async function postInventoryAdjustment(
         // Settled on the lot's total, so stock in another bin keeps it open.
         const entityUpdate: Record<string, unknown> = settleQuantity({
           quantity: lotOnHandAfter(trackedEntityId, signedQuantity),
-          status
+          status: lockedStatus
         });
         if (readableId !== undefined && readableId !== null) {
           entityUpdate.readableId = readableId;

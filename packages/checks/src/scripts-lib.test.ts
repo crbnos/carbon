@@ -212,7 +212,7 @@ describe("buildManifestDigest", () => {
   const tool = (permission: {
     module: string | null;
     actions: ("view" | "create" | "update" | "delete")[];
-    scopes?: string[];
+    allOf?: { page: string; level: string }[];
   }) => ({
     name: "projects_makeJob",
     module: "projects",

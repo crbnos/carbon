@@ -48,7 +48,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     "accounting.accountingPeriods": "View"
   });
 
-  // The month the action generates from, so the preview shows that year.
+  // The month the preview shows the range from. The form sends it back, and
+  // the action refuses when the settings changed since.
   const fiscalStart = await getFiscalStartMonth(companyId);
   if (fiscalStart.error) {
     throw redirect(
@@ -89,6 +90,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const result = await createFiscalYearPeriods(client, {
     companyId,
     fiscalYear: validation.data.fiscalYear,
+    startMonth: validation.data.startMonth,
     userId
   });
   if (result.error) {
@@ -164,6 +166,7 @@ export default function GenerateFiscalYearRoute() {
           </ModalHeader>
           <ModalBody>
             <input type="hidden" name="intent" value="generate" />
+            <input type="hidden" name="startMonth" value={startMonth} />
             <VStack spacing={2}>
               <div className="w-full">
                 <label

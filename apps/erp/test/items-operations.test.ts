@@ -503,6 +503,29 @@ describe("upsertConfigurationParameter", () => {
       }
     ]);
   });
+
+  it("never writes the creation audit fields an edit sends", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: { id: "i1" } });
+
+    const result = await upsertConfigurationParameter(
+      contextFor(client, {
+        system: () => system.client,
+        actions: ["view", "update"]
+      }),
+      {
+        ...parameter,
+        id: "p1",
+        createdBy: "user-2",
+        createdAt: "2020-01-01T00:00:00Z"
+      }
+    );
+
+    expect(result.error).toBeNull();
+    expect(writes).toHaveLength(1);
+    expect(writes[0]!.values).not.toHaveProperty("createdBy");
+    expect(writes[0]!.values).not.toHaveProperty("createdAt");
+  });
 });
 
 describe("upsertConfigurationParameterGroup", () => {

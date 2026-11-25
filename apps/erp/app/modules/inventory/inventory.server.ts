@@ -4368,8 +4368,9 @@ export type KanbanScan =
  * order, or a new Draft one, priced from the supplier part in the order's
  * currency. Transfer: releases a stock transfer to the kanban's storage unit
  * (`kanban-replenish`, as the scanner). Any employee may scan a card. An API
- * key needs Edit on inventory.kanbans, and Create on production.jobs for a
- * Make kanban.
+ * key needs Edit on inventory.kanbans; for a Make kanban, Create on
+ * production.jobs (Edit when it auto-releases); for a Buy kanban, Create on
+ * purchasing.purchaseOrders.
  *
  * @param kanbanId - The kanban's id (`id`, not the printed `kanbanId`); see
  *   `inventory_getKanbans`.
@@ -4381,8 +4382,8 @@ export type KanbanScan =
 export const scanKanban = defineServiceFn({
   input: z.object({ kanbanId: z.string() }),
   // The card's route admits every employee. A key's pages are checked in
-  // `run`, because a Make card needs production.jobs as well and creates its
-  // job as the system.
+  // `run`, because they depend on the card: a Make card needs production.jobs
+  // and creates its job as the system, a Buy card purchasing.purchaseOrders.
   permission: "employee",
 
   async run(ctx, { kanbanId }): Promise<KanbanScan | CarbonError> {
@@ -4400,12 +4401,20 @@ export const scanKanban = defineServiceFn({
     }
     const card = kanban.data;
 
-    if (card.replenishmentSystem === "Make") {
-      const makeRefused = refuseKeyWithout(ctx, {
-        "production.jobs": "Create"
-      });
-      if (makeRefused) return makeRefused;
-    }
+    // A key needs the page the app's own route needs for what the card
+    // makes, before anything is read or written. A Make card creates its
+    // job, and with auto-release releases it, as the system. A Buy card
+    // writes as the key, but RLS refuses a new order only after its number
+    // is taken.
+    const cardRefused =
+      card.replenishmentSystem === "Make"
+        ? refuseKeyWithout(ctx, {
+            "production.jobs": card.autoRelease ? "Edit" : "Create"
+          })
+        : card.replenishmentSystem === "Buy"
+          ? refuseKeyWithout(ctx, { "purchasing.purchaseOrders": "Create" })
+          : null;
+    if (cardRefused) return cardRefused;
 
     // replenishKanban checks a Transfer card's units itself, for scans and
     // level checks alike.

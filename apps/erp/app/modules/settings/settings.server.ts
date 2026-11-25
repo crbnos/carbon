@@ -2784,24 +2784,25 @@ export const setRecordTags = defineServiceFn({
  * Set the custom field values of some records of one table.
  *
  * @remarks
- * Replaces the `customFields` of each record with the values sent, as a
- * record's properties panel does: send every value the record keeps. Only the
- * company's records change, and row-level security decides which of them the
- * caller may change. A table that takes no custom fields is refused. So is a
- * key that is not one of the table's custom fields, and a value its field's
- * input never sends, unless the records already hold that value (the panel
- * sends back the stored values unchanged). The values each data type takes:
- * Yes/No "on" or ""; Date a YYYY-MM-DD date or null; List one of the field's
- * options or null; Numeric a number, a numeric string or null; Text any
- * string; Link a web address or ""; User, Customer and Supplier an id. A File
- * field takes none. A call that changes no record is refused. An API key
- * needs Edit on the page that owns the table (Parts for part, Materials for
- * material; any item page for a table every item type shares, such as
- * makeMethod).
+ * Sets the fields sent on each record, as a record's properties panel saves
+ * one field: a field not sent keeps its stored value, so two saves of
+ * different fields of one record both stand, and a null removes a field of
+ * a type that takes null.
+ * Only the company's records change, and row-level security decides which of
+ * them the caller may change. A table that takes no custom fields is refused.
+ * So is a key that is not one of the table's custom fields, and a value its
+ * field's input never sends, unless the records already hold that value. The
+ * values each data type takes: Yes/No "on" or ""; Date a YYYY-MM-DD date or
+ * null; List one of the field's options or null; Numeric a number, a numeric
+ * string or null; Text any string; Link a web address or ""; User, Customer
+ * and Supplier an id. A File field takes none. A call that changes no record
+ * is refused. An API key needs Edit on the page that owns the table (Parts
+ * for part, Materials for material; any item page for a table every item type
+ * shares, such as makeMethod).
  *
  * @param table - A table with custom fields, such as part, customer, salesOrder or job. See settings_getCustomFieldsTables.
  * @param ids - The records to change, at most 100.
- * @param customFields - The values, keyed by custom field id. See settings_getCustomFields.
+ * @param customFields - The fields to set, keyed by custom field id. See settings_getCustomFields.
  *
  * @returns The ids of the records changed.
  *

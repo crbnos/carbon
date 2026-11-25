@@ -28,6 +28,11 @@ type CustomFormInlineFieldsProps = {
   table: string;
   tags?: string[];
   isDisabled?: boolean;
+  /**
+   * The changed field alone, as JSON `{ [fieldId]: value }`: the save merges it
+   * into the stored values, so a field someone else saved since this panel
+   * loaded is kept.
+   */
   onUpdate: (value: string) => void | Promise<void>;
 };
 
@@ -83,7 +88,6 @@ const CustomFormInlineFields = ({
                     onChange={(value) => {
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: value ? "on" : ""
                         })
                       );
@@ -113,7 +117,6 @@ const CustomFormInlineFields = ({
                         date === null ? null : date.split("T")[0];
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: modifiedDate
                         })
                       );
@@ -149,7 +152,6 @@ const CustomFormInlineFields = ({
                     onChange={(value) => {
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: value?.value ?? null
                         })
                       );
@@ -180,7 +182,6 @@ const CustomFormInlineFields = ({
                     onChange={(value) => {
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: value
                         })
                       );
@@ -210,7 +211,6 @@ const CustomFormInlineFields = ({
                     onBlur={(e) => {
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: e.target.value
                         })
                       );
@@ -249,7 +249,6 @@ const CustomFormInlineFields = ({
                     onBlur={(e) => {
                       onUpdate(
                         JSON.stringify({
-                          ...fields,
                           [field.id]: e.target.value
                         })
                       );
@@ -278,7 +277,6 @@ const CustomFormInlineFields = ({
                       if (value?.value) {
                         onUpdate(
                           JSON.stringify({
-                            ...fields,
                             [field.id]: value.value
                           })
                         );
@@ -308,7 +306,6 @@ const CustomFormInlineFields = ({
                       if (value?.value) {
                         onUpdate(
                           JSON.stringify({
-                            ...fields,
                             [field.id]: value.value
                           })
                         );
@@ -338,7 +335,6 @@ const CustomFormInlineFields = ({
                       if (value?.value) {
                         onUpdate(
                           JSON.stringify({
-                            ...fields,
                             [field.id]: value.value
                           })
                         );

@@ -159,3 +159,29 @@ postgrestTest(
     }
   }
 );
+
+// The dialog showed April 2026 – March 2027; the settings moved the start to
+// July before Generate, so the periods would have run July – June.
+postgrestTest(
+  "refuses a fiscal year shown from another start month, and creates no period",
+  async (system) => {
+    const f = await companyFixture("July");
+    try {
+      const refused = await createFiscalYearPeriods(contextOf(f, system), {
+        fiscalYear: 2027,
+        startMonth: 4
+      });
+      expect(refused.error?.category).toBe("rule");
+      expect(await f.periods()).toEqual([]);
+
+      const created = await createFiscalYearPeriods(contextOf(f, system), {
+        fiscalYear: 2027,
+        startMonth: 7
+      });
+      expect(created.error).toBeNull();
+      expect(created.data!.ids).toHaveLength(12);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

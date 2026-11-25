@@ -236,7 +236,9 @@ describe("setting an invoice header field", () => {
 
   it.each([
     ["the customer", "customerId", null],
-    ["the invoice customer", "invoiceCustomerId", ""]
+    ["the invoice customer", "invoiceCustomerId", ""],
+    // The panel's date is required; a cleared one would keep its due date.
+    ["the issue date", "dateIssued", ""]
   ] as const)("does not clear %s of a sales invoice", async (_, field, value) => {
     const { client, writes } = filteringSupabase(invoices());
     const result = await updateSalesInvoiceField(as(client, invoicingUpdate), {
@@ -304,19 +306,5 @@ describe("setting an invoice header field", () => {
         : await updatePurchaseInvoiceField(ctx, input);
     expect(result.error).toMatchObject({ category: "notFound" });
     expect(writes).toEqual([]);
-  });
-
-  it("clears the ship-to and sets the customer when the customer is the company's", async () => {
-    const { ctx, writes } = withReferences();
-    const result = await updateSalesInvoiceField(ctx, {
-      ids: ["inv-1"],
-      field: "customerId",
-      value: "own"
-    });
-    expect(result).toEqual({ data: { ids: ["inv-1"] }, error: null });
-    expect(writes.map(({ table, op }) => [table, op])).toEqual([
-      ["salesInvoiceShipment", "update"],
-      ["salesInvoice", "update"]
-    ]);
   });
 });

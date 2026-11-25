@@ -3699,9 +3699,11 @@ export const insertGauge = defineServiceFn({
  * Update gauge
  *
  * @remarks
- * Saves the fields sent; a field left out keeps its value. The calibration
- * status comes from the gauge's dates after the save, as the gauge form
- * decides it (see quality_insertGauge); the form has no status field.
+ * Saves the fields sent; a field left out keeps its value. A call that sends
+ * a calibration date sets the calibration status from the gauge's dates after
+ * the save, as the gauge form decides it (see quality_insertGauge), a failed
+ * calibration's status included; a call that sends neither date keeps the
+ * stored status. The form has no status field.
  *
  * @mcp
  */
@@ -3726,6 +3728,11 @@ export const updateGauge = defineServiceFn({
   permission: { "quality.gauges": "Edit" },
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
+    // The form sends both dates on every save, so it always re-derives the
+    // status, a failed calibration's included. A save with no date keeps it.
+    const datesSent =
+      input.lastCalibrationDate !== undefined ||
+      input.nextCalibrationDate !== undefined;
     const [stored, timeZone] = await Promise.all([
       client
         .from("gauge")
@@ -3733,33 +3740,34 @@ export const updateGauge = defineServiceFn({
         .eq("id", input.id)
         .eq("companyId", ctx.company.id)
         .maybeSingle(),
-      getCompanyTimeZone(client, ctx.company.id)
+      datesSent ? getCompanyTimeZone(client, ctx.company.id) : null
     ]);
     if (stored.error) {
       return ctx.error("internal", "Failed to load the gauge", stored.error);
     }
     if (!stored.data) return ctx.error("notFound", "Gauge not found");
-    const dates = {
-      lastCalibrationDate:
-        input.lastCalibrationDate !== undefined
-          ? input.lastCalibrationDate
-          : stored.data.lastCalibrationDate,
-      nextCalibrationDate:
-        input.nextCalibrationDate !== undefined
-          ? input.nextCalibrationDate
-          : stored.data.nextCalibrationDate
-    };
+    const status = timeZone
+      ? {
+          gaugeCalibrationStatus: gaugeCalibrationStatusFromDates(
+            {
+              lastCalibrationDate:
+                input.lastCalibrationDate !== undefined
+                  ? input.lastCalibrationDate
+                  : stored.data.lastCalibrationDate,
+              nextCalibrationDate:
+                input.nextCalibrationDate !== undefined
+                  ? input.nextCalibrationDate
+                  : stored.data.nextCalibrationDate
+            },
+            datetime.today(timeZone)
+          )
+        }
+      : {};
     return unwrap(
       ctx,
       await service.updateGauge(
         client,
-        payload(ctx, {
-          ...input,
-          gaugeCalibrationStatus: gaugeCalibrationStatusFromDates(
-            dates,
-            datetime.today(timeZone)
-          )
-        }).forUpdate() as never
+        payload(ctx, { ...input, ...status }).forUpdate() as never
       )
     );
   }

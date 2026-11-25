@@ -336,11 +336,13 @@ describe("gauges", () => {
     expect(statusWritten(written)).toBe("In-Calibration");
   });
 
-  it("an update derives the status from the stored dates, not from a sent one", async () => {
+  // A failed calibration leaves the gauge Out-of-Calibration while its next
+  // date is still ahead; a rename must not put it back In-Calibration.
+  it("an update that sends no date keeps the stored status, and ignores a sent one", async () => {
     const { ctx, written } = contextWith({
       gauge: {
-        lastCalibrationDate: "1999-01-01",
-        nextCalibrationDate: "2000-01-01"
+        lastCalibrationDate: "2026-01-01",
+        nextCalibrationDate: "2999-01-01"
       },
       gauges: { id: "g-1" }
     });
@@ -349,6 +351,24 @@ describe("gauges", () => {
       manufacturer: "Mitutoyo",
       gaugeCalibrationStatus: "In-Calibration"
     } as never);
+    expect(result.error).toBeNull();
+    const update = written.find((write) => write.table === "gauges")?.values;
+    expect(update).toMatchObject({ manufacturer: "Mitutoyo" });
+    expect(update).not.toHaveProperty("gaugeCalibrationStatus");
+  });
+
+  it("an update that sends one date derives the status from it and the stored other", async () => {
+    const { ctx, written } = contextWith({
+      gauge: {
+        lastCalibrationDate: "2026-01-01",
+        nextCalibrationDate: "2999-01-01"
+      },
+      gauges: { id: "g-1" }
+    });
+    const result = await updateGauge(ctx, {
+      id: "g-1",
+      nextCalibrationDate: "2000-01-01"
+    });
     expect(result.error).toBeNull();
     expect(statusWritten(written)).toBe("Out-of-Calibration");
   });

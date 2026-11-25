@@ -71,15 +71,16 @@ describe.skipIf(!hasLocalDatabase)("a service job's lot draw", () => {
   /** A lot of the spare, its quantity the sum of its stock rows. */
   async function lot(stock: LotStockRow[]) {
     const id = `${f.prefix}-lot-${++lots}`;
+    const readableId = `LOT-${lots}`;
     await seedLot(f.db, {
       id,
-      readableId: `LOT-${lots}`,
+      readableId,
       itemId,
       companyId: f.companyId,
       createdBy: PROJECT_TEST_USER,
       stock
     });
-    return id;
+    return { id, readableId };
   }
 
   const draw = (
@@ -107,7 +108,7 @@ describe.skipIf(!hasLocalDatabase)("a service job's lot draw", () => {
   databaseTest(
     "draws from the job's location when the lot has more elsewhere",
     async () => {
-      const lotId = await lot([
+      const { id: lotId } = await lot([
         { locationId, storageUnitId: binA, quantity: 5 },
         { locationId: otherLocationId, storageUnitId: otherBin, quantity: 7 }
       ]);
@@ -126,7 +127,7 @@ describe.skipIf(!hasLocalDatabase)("a service job's lot draw", () => {
   );
 
   databaseTest("refuses a lot that is in stock at another location", async () => {
-    const lotId = await lot([
+    const { id: lotId, readableId } = await lot([
       { locationId: otherLocationId, storageUnitId: otherBin, quantity: 5 }
     ]);
     const job = await f.addJob({ locationId });
@@ -134,7 +135,7 @@ describe.skipIf(!hasLocalDatabase)("a service job's lot draw", () => {
     const result = await draw(job.id, [{ trackedEntityId: lotId, quantity: 2 }]);
 
     expect(result.error?.message).toBe(
-      "LOT-2 is in stock at another location. Transfer it to this location first."
+      `${readableId} is in stock at another location. Transfer it to this location first.`
     );
     expect(await stockOf(lotId)).toEqual([
       { locationId: otherLocationId, storageUnitId: otherBin, quantity: 5 }
@@ -145,7 +146,7 @@ describe.skipIf(!hasLocalDatabase)("a service job's lot draw", () => {
   databaseTest(
     "refuses a draw larger than the storage unit that holds most of the lot",
     async () => {
-      const lotId = await lot([
+      const { id: lotId, readableId } = await lot([
         { locationId, storageUnitId: binA, quantity: 6 },
         { locationId, storageUnitId: binB, quantity: 4 }
       ]);
@@ -156,7 +157,7 @@ describe.skipIf(!hasLocalDatabase)("a service job's lot draw", () => {
       ]);
 
       expect(result.error?.message).toBe(
-        "LOT-3 has 6 in one storage unit at this location. Draw no more than that, or move the rest into that storage unit first."
+        `${readableId} has 6 in one storage unit at this location. Draw no more than that, or move the rest into that storage unit first.`
       );
       expect(await stockOf(lotId)).toEqual([
         { locationId, storageUnitId: binA, quantity: 6 },
@@ -170,7 +171,7 @@ describe.skipIf(!hasLocalDatabase)("a service job's lot draw", () => {
   databaseTest(
     "lets one of two concurrent draws of a lot take its quantity",
     async () => {
-      const lotId = await lot([
+      const { id: lotId, readableId } = await lot([
         { locationId, storageUnitId: binA, quantity: 10 }
       ]);
       const [first, second] = [
@@ -191,7 +192,7 @@ describe.skipIf(!hasLocalDatabase)("a service job's lot draw", () => {
       ).toEqual(
         [
           null,
-          "LOT-4 has 4 in one storage unit at this location. Draw no more than that, or move the rest into that storage unit first."
+          `${readableId} has 4 in one storage unit at this location. Draw no more than that, or move the rest into that storage unit first.`
         ].sort()
       );
       expect(await stockOf(lotId)).toEqual([
