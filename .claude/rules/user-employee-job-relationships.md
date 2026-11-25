@@ -134,22 +134,28 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   `TEXT REFERENCES "user"("id")`, so the database accepts any user's id, including another
   company's). A route saves one only after `isActiveCompanyEmployee(client, companyId, userId)`
   (`apps/erp/app/modules/shared/shared.service.ts`), which fails closed on a read error.
-- **Revoke Invite deactivates, so it takes only pending invites.** `revokeInvites`
+- **Revoke Invite deactivates, so it takes only invites never accepted.** `revokeInvites`
   (`users.server.ts`, gate `users.accounts` at Full, as the Employees, Customers and Suppliers
-  lists show Revoke Invite only at Full) first stamps `revokedAt` on the invites still pending
-  (`acceptedAt` and `revokedAt` NULL), then deactivates only the users whose invite it stamped,
-  directly for one and by job for several. A deactivation that returns a failed account write
-  clears the stamp; one that throws after its writes is handed to the `carbon/user-admin` job, and
-  a rejected queue send keeps the invites revoked, since the batch may have been accepted.
-  `refuseUnlessPendingInvites` (`users.service.ts`) refuses unless every user has a pending
-  invite in the company and no `userToCompany` row there, the rows those lists offer the action
-  on. `acceptInvite` and the SSO migration require `revokedAt IS NULL` under the invite's row
-  lock, so no acceptance lands after the stamp. An active account goes through Deactivate instead.
+  lists show Revoke Invite only at Full) stamps `revokedAt` on the invites still pending
+  (`acceptedAt` and `revokedAt` NULL), then deactivates the users whose invite it stamped and
+  those whose invite was revoked earlier (not re-stamped), directly for one and by job for
+  several. A deactivation that returns a failed account write clears the stamp; one that throws
+  after its writes is handed to the `carbon/user-admin` job, and a rejected queue send keeps the
+  invites revoked, since the batch may have been accepted: sending the revoke again finishes it.
+  `refuseUnlessPendingInvites` (`users.service.ts`) refuses unless every user has an unaccepted
+  invite in the company and no `userToCompany` row there; a user with neither is `notFound`.
+  The queued deactivate event carries the `revokedAt` it acts on, and the job deactivates only
+  while `revocationStands` (`packages/jobs/src/invite-refresh.ts`: that stamp, unaccepted, no
+  membership). `acceptInvite` and the SSO migration require `revokedAt IS NULL` under the
+  invite's row lock, so no acceptance lands after the stamp unless a resend clears it, which
+  that check covers. An active account goes through Deactivate instead.
 - **A resend clears only the revocation it read.** `resendInvites` and `queueInviteResends` capture
   each invite's `revokedAt` when the resend is asked for, and the `carbon/user-admin` resend event
   carries it; `refreshResentInvite` (`packages/jobs/src/invite-refresh.ts`) updates only while
   `revokedAt` still holds that value, so a revoke saved while the resend waits stays in effect
-  (`revoked` failure, a `conflict` for the caller).
+  (`revoked` failure, a `conflict` for the caller). The job refreshes in its own `refresh-invite`
+  step and delivers in `send-invite` only while the invite still holds the refreshed code
+  (`resendInvite`), so a retried delivery sends that code and never refreshes again.
 - An API key inviting an employee (`inviteEmployee`) also needs `users.accounts` at Edit and
   `people.employees` at Create (`refuseKeyWithout`), the two the first-time insert needs under RLS
   and the re-add checks (`canReAddDeactivatedEmployee`). The re-add reads the key creator's

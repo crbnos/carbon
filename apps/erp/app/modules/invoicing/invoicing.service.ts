@@ -6341,7 +6341,7 @@ export async function refuseLockedInvoices(
  * The invoices a field write reached. None is a refusal: the ids are not
  * the company's, or the caller's RLS hides them.
  */
-export function updatedInvoices(ctx: ServiceContext, rows: { id: string }[]) {
+function updatedInvoices(ctx: ServiceContext, rows: { id: string }[]) {
   if (rows.length === 0) {
     return ctx.error("notFound", "None of the invoices was found");
   }
@@ -6368,7 +6368,8 @@ const INVOICE_FIELD_REFERENCES: Partial<
  * Write one field on invoices of either kind. A new issue date or payment
  * term recomputes the due date, so it takes one invoice; a new currency
  * brings today's exchange rate; an empty value clears the field, except the
- * issue date. An id must name a row of this company.
+ * issue date. An id must name a row of this company. A field only a Draft
+ * takes is written by `writeDraftInvoices`.
  */
 export async function writeInvoiceField(
   ctx: ServiceContext,
@@ -6436,6 +6437,9 @@ export async function writeInvoiceField(
     changes = { currencyCode: value, exchangeRate: rate.data };
   }
 
+  if (!POSTED_INVOICE_FIELDS.includes(field)) {
+    return writeDraftInvoices(ctx, table, ids, changes);
+  }
   const update = await client
     .from(table as "salesInvoice")
     .update(
@@ -6452,6 +6456,65 @@ export async function writeInvoiceField(
     return ctx.error("internal", "Failed to update the invoices", update.error);
   }
   return updatedInvoices(ctx, update.data);
+}
+
+/** The refusal of a field a posted invoice no longer takes. */
+const LOCKED_INVOICE_MESSAGES: Record<InvoiceTable, string> = {
+  salesInvoice: "Cannot modify a locked sales invoice.",
+  purchaseInvoice: "Cannot modify a confirmed purchase invoice."
+};
+
+/**
+ * Write `changes` on invoices that are still Draft. The invoices are locked
+ * `FOR UPDATE`, then must still be Draft: a post that claimed one after the
+ * caller's `refuseLockedInvoices` read keeps the invoice it posts. One
+ * transaction, so a refusal writes none of them.
+ */
+export async function writeDraftInvoices(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  ids: string[],
+  changes: Record<string, unknown>
+) {
+  const companyId = ctx.company.id;
+  if (ids.length === 0) {
+    return ctx.error("notFound", "None of the invoices was found");
+  }
+  const settled = await ctx.transaction(async (tx) => {
+    const db = tx.asSystem.pg;
+    // Both tables hold `status` and the audit columns; the cast only names
+    // one for Kysely.
+    const invoices = await db
+      .selectFrom(table as "salesInvoice")
+      .select(["id", "status"])
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .orderBy("id")
+      .forUpdate()
+      .execute();
+    if (invoices.length === 0) {
+      return tx.error("notFound", "None of the invoices was found");
+    }
+    if (invoices.some((invoice) => isSalesInvoiceLocked(invoice.status))) {
+      return tx.error("rule", LOCKED_INVOICE_MESSAGES[table]);
+    }
+    const reached = invoices.map((invoice) => invoice.id);
+    await db
+      .updateTable(table as "salesInvoice")
+      .set(
+        unchecked({
+          ...changes,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .where("id", "in", reached)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { ids: reached };
+  });
+  if (settled.error) return settled.error;
+  return settled.data;
 }
 
 /**

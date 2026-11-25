@@ -14,7 +14,7 @@ const logger = getLogger("erp", "itemid-parameter-order");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await authorize(request, {
+  const { client, companyId, userId } = await authorize(request, {
     "parts.parts": "Edit"
   });
 
@@ -43,6 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       validation.data.configurationParameterGroupId == "null"
         ? null
         : (validation.data.configurationParameterGroupId ?? null),
+    companyId,
     updatedBy: userId
   });
 

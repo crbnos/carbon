@@ -3563,6 +3563,110 @@ postgrestTest(
 );
 
 postgrestTest(
+  "a contract line change that waits for a Confirm holding the contract is refused once the contract is Active",
+  async (client) => {
+    const f = await contractFixture();
+    const holder = await connectLocalTestDatabase();
+    try {
+      const { rows } = await sql<{
+        pid: number;
+      }>`SELECT pg_backend_pid() AS pid`.execute(holder);
+      let change: ReturnType<typeof sales.updateContractLine> | undefined;
+      let settled = false;
+      // Confirm locks the contract (`loadContractForUpdate`) and makes it
+      // Active before it commits; the change reads Draft first.
+      await holder.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("customerContract")
+          .select("id")
+          .where("id", "=", f.contractId)
+          .where("companyId", "=", f.companyId)
+          .forUpdate()
+          .execute();
+        await trx
+          .updateTable("customerContract")
+          .set({ status: "Active" })
+          .where("id", "=", f.contractId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        change = sales
+          .updateContractLine(operationContext(f, client, USER), {
+            id: f.seatsLineId,
+            customerContractId: f.contractId,
+            rate: 55
+          })
+          .finally(() => {
+            settled = true;
+          });
+        await waitForLockWait(trx, rows[0]!.pid, () => settled);
+      });
+
+      const notDraft = {
+        category: "rule",
+        message:
+          "Lines can only be added or changed on a Draft contract — use Amend"
+      };
+      const saved = await change!;
+      expect(saved.data).toBeNull();
+      expect(saved.error).toMatchObject(notDraft);
+      const line = await f.db
+        .selectFrom("customerContractLine")
+        .select(["rate", "itemId"])
+        .where("id", "=", f.seatsLineId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(line.rate)).toBe(40);
+
+      // Once Active, the read before the write refuses a change or a new
+      // line the same way.
+      const ctx = operationContext(f, client, USER);
+      const again = await sales.updateContractLine(ctx, {
+        id: f.seatsLineId,
+        customerContractId: f.contractId,
+        rate: 55
+      });
+      expect(again.error).toMatchObject(notDraft);
+      const added = await sales.createContractLine(ctx, {
+        customerContractId: f.contractId,
+        revenueType: "One-time",
+        itemId: line.itemId,
+        quantity: 1,
+        rate: 100,
+        discountPercent: 0,
+        taxPercent: 0,
+        startDate: "2026-11-01",
+        revenueMethod: "Daily"
+      });
+      expect(added.error).toMatchObject(notDraft);
+    } finally {
+      await holder.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+/** Waits until another connection waits on a lock `holder` (backend `pid`)
+ *  holds. Throws, before the holder releases it, when `done` settles first
+ *  or no wait is seen: the run did not take the order the test is about. */
+async function waitForLockWait(
+  holder: Kysely<KyselyDatabase>,
+  pid: number,
+  done: () => boolean
+) {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    if (done()) {
+      throw new Error("The operation finished without waiting for the lock");
+    }
+    const { rows } = await sql<{ count: number }>`
+      SELECT count(*)::int AS count FROM pg_stat_activity
+      WHERE ${pid}::int = ANY(pg_blocking_pids(pid))`.execute(holder);
+    if (rows[0]!.count > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error("No connection waited for the lock");
+}
+
+postgrestTest(
   "an unedited Draft's planned schedule reads every line past the API's row cap",
   async (client) => {
     const f = await contractFixture();

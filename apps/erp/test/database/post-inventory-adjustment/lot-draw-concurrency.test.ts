@@ -9,7 +9,7 @@
 // pick) must count: the adjustment reads the lot again under the lock, so
 // its check, the entity's quantity and the ledger agree.
 
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect } from "vitest";
 import { postInventoryAdjustment as postInventoryAdjustmentBody } from "../../../app/modules/inventory/inventory.service";
@@ -151,11 +151,39 @@ describe.skipIf(!hasLocalDatabase)("an adjustment during a draw", () => {
     return { itemId, lotId };
   }
 
-  /** Runs the adjustment while another connection draws 6 from the lot
-   *  under its row lock, and commits the draw once the adjustment waits. */
+  /** A draw of 6 from the lot of ten in the bin. */
+  async function drawSix(
+    trx: KyselyTx,
+    lot: { itemId: string; lotId: string }
+  ) {
+    await trx
+      .insertInto("itemLedger")
+      .values({
+        itemId: lot.itemId,
+        trackedEntityId: lot.lotId,
+        quantity: -6,
+        locationId: f.locationId,
+        storageUnitId: bin,
+        entryType: "Negative Adjmt.",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .updateTable("trackedEntity")
+      .set({ quantity: 4 })
+      .where("id", "=", lot.lotId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+  }
+
+  /** Runs the adjustment while another connection writes the lot under its
+   *  row lock (by default it draws 6 from it), and commits that write once
+   *  the adjustment waits. */
   async function adjustDuringDraw(
     lot: { itemId: string; lotId: string },
-    input: Input
+    input: Input,
+    write: (trx: KyselyTx) => Promise<unknown> = (trx) => drawSix(trx, lot)
   ) {
     const drawer = await connectLocalTestDatabase();
     const adjuster = await connectLocalTestDatabase();
@@ -178,25 +206,7 @@ describe.skipIf(!hasLocalDatabase)("an adjustment during a draw", () => {
         await sql`SELECT 1 FROM "trackedEntity" WHERE id = ${lot.lotId} FOR UPDATE`.execute(
           trx
         );
-        await trx
-          .insertInto("itemLedger")
-          .values({
-            itemId: lot.itemId,
-            trackedEntityId: lot.lotId,
-            quantity: -6,
-            locationId: f.locationId,
-            storageUnitId: bin,
-            entryType: "Negative Adjmt.",
-            companyId: f.companyId,
-            createdBy: USER
-          })
-          .execute();
-        await trx
-          .updateTable("trackedEntity")
-          .set({ quantity: 4 })
-          .where("id", "=", lot.lotId)
-          .where("companyId", "=", f.companyId)
-          .execute();
+        await write(trx);
         held();
         await released;
       });
@@ -320,6 +330,47 @@ describe.skipIf(!hasLocalDatabase)("an adjustment during a draw", () => {
       }
     );
   }
+
+  // The lookup by number reads before the lock, the rename commits in the
+  // gap: the decrease wrote the old number back over the rename.
+  databaseTest(
+    "a decrease by a batch number renamed meanwhile is refused and keeps the new number",
+    async () => {
+      const lot = await lotOfTen("renamed");
+      const result = await adjustDuringDraw(
+        lot,
+        {
+          adjustmentType: "Negative Adjmt.",
+          itemId: lot.itemId,
+          locationId: f.locationId,
+          storageUnitId: bin,
+          readableId: "renamed-B1",
+          quantity: 2
+        },
+        (trx) =>
+          trx
+            .updateTable("trackedEntity")
+            .set({ readableId: "renamed-B2" })
+            .where("id", "=", lot.lotId)
+            .where("companyId", "=", f.companyId)
+            .execute()
+      );
+
+      expect(result.error?.status).toBe(400);
+      const entity = await f.db
+        .selectFrom("trackedEntity")
+        .select("readableId")
+        .where("id", "=", lot.lotId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(entity.readableId).toBe("renamed-B2");
+      expect(await lotState(lot.lotId)).toEqual({
+        entity: 10,
+        status: "Available",
+        ledger: 10
+      });
+    }
+  );
 
   databaseTest(
     "a partial scrap of a lot leaves it what the draw and the scrap left",

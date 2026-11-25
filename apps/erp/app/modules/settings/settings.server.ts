@@ -2791,14 +2791,15 @@ export const setRecordTags = defineServiceFn({
  * Only the company's records change, and row-level security decides which of
  * them the caller may change. A table that takes no custom fields is refused.
  * So is a key that is not one of the table's custom fields, and a value its
- * field's input never sends, unless the records already hold that value. The
- * values each data type takes: Yes/No "on" or ""; Date a YYYY-MM-DD date or
- * null; List one of the field's options or null; Numeric a number, a numeric
- * string or null; Text any string; Link a web address or ""; User, Customer
- * and Supplier an id. A File field takes none. A call that changes no record
- * is refused. An API key needs Edit on the page that owns the table (Parts
- * for part, Materials for material; any item page for a table every item type
- * shares, such as makeMethod).
+ * field's input never sends, unless the records already hold that value,
+ * which the call then leaves as it is. The values each data type takes:
+ * Yes/No "on" or ""; Date a YYYY-MM-DD date or null; List one of the field's
+ * options or null; Numeric a number, a numeric string or null; Text any
+ * string; Link a web address or ""; User, Customer and Supplier an id. A File
+ * field takes none. A call that changes no record is refused. An API key needs
+ * Edit on the page that owns the table (Parts for part, Materials for
+ * material; any item page for a table every item type shares, such as
+ * makeMethod).
  *
  * @param table - A table with custom fields, such as part, customer, salesOrder or job. See settings_getCustomFieldsTables.
  * @param ids - The records to change, at most 100.
@@ -2859,9 +2860,11 @@ export const setRecordCustomFields = defineServiceFn({
       );
     }
     const fieldTypes = fields.data ?? [];
-    if (
-      service.unwritableCustomFieldKeys(customFields, fieldTypes).length > 0
-    ) {
+    const unwritable = service.unwritableCustomFieldKeys(
+      customFields,
+      fieldTypes
+    );
+    if (unwritable.length > 0) {
       const stored = await service.getRecordsCustomFields(
         ctx.asCaller.supabase,
         { table, ids, scopeColumn, scopeId }
@@ -2896,6 +2899,9 @@ export const setRecordCustomFields = defineServiceFn({
       }
     }
 
+    // A value taken only because every record already holds it is left out
+    // of the write, neither set nor cleared: written back, it would undo a
+    // save another person made to that field since this caller read it.
     const { data, error } = await service.updateRecordCustomFields(
       ctx.asCaller.supabase,
       {
@@ -2903,7 +2909,11 @@ export const setRecordCustomFields = defineServiceFn({
         ids,
         scopeColumn,
         scopeId,
-        customFields,
+        customFields: Object.fromEntries(
+          Object.entries(customFields).filter(
+            ([key]) => !unwritable.includes(key)
+          )
+        ),
         updatedBy: ctx.auditUserId
       }
     );

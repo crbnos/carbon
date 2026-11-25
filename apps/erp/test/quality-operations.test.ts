@@ -522,4 +522,26 @@ describe("changing a risk", () => {
     expect(result).toEqual({ data: { id: "risk-1" }, error: null });
     expect(writes).toEqual(["update:riskRegister"]);
   });
+
+  // Written back, the assignee read before the save would undo another
+  // save's reassignment made since.
+  it("leaves an unchanged assignee and notes left out out of the write", async () => {
+    const { ctx, written } = contextWith({
+      riskRegister: { id: "risk-1", assignee: "user-9" }
+    });
+    const result = await updateRisk(ctx, { ...risk, assignee: "user-9" });
+    expect(result.error).toBeNull();
+    const [update] = written;
+    expect(update?.values).not.toHaveProperty("assignee");
+    expect(update?.values).not.toHaveProperty("notes");
+  });
+
+  it("clears an assignee the form sends empty", async () => {
+    const { ctx, written } = contextWith({
+      riskRegister: { id: "risk-1", assignee: "user-9" }
+    });
+    const result = await updateRisk(ctx, { ...risk, assignee: undefined });
+    expect(result.error).toBeNull();
+    expect(written[0]?.values).toHaveProperty("assignee", null);
+  });
 });

@@ -2851,7 +2851,8 @@ const contractLineAmounts = jsonField(
 const scheduleInvoiceDate = z
   .string()
   .min(1, { message: "Invoice date is required" })
-  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Use YYYY-MM-DD" });
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Use YYYY-MM-DD" })
+  .refine(isCalendarDate, { message: "Enter a valid date" });
 
 const moveScheduleEdit = z.object({
   intent: z.literal("move"),

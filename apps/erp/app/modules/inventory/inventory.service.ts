@@ -25460,6 +25460,11 @@ export async function postInventoryAdjustment(
           [lotRowIn(storageUnitId), fullest(lotRows)].find(
             (row) => (row?.quantity ?? 0) > 0
           ) ?? null;
+        // The scrap is booked on that one row, so it takes no more than the
+        // row holds: the lot's stock in another bin or stripe stays put.
+        if (scrapQuantity > round(scrappedFrom?.quantity ?? 0)) {
+          throw new InvalidInputError("Insufficient quantity for scrap");
+        }
         const bin =
           (scrappedFrom ? scrappedFrom.storageUnitId : storageUnitId) ?? null;
 
@@ -25956,7 +25961,11 @@ export async function postInventoryAdjustment(
       // Reduces the lot of a resolved on-hand row, in that row's bin and
       // stripe. Draining the lot's total to zero Consumes it; settleQuantity
       // is the shared rule, so a Scrapped lot stays Scrapped.
-      const reduceLotOf = async (row: TrackingQuantityRow, rename?: string) => {
+      const reduceLotOf = async (
+        row: TrackingQuantityRow,
+        // The serial or batch number the row was found by, if any.
+        foundBy?: string
+      ) => {
         const lotId = row.trackedEntityId as string;
         const status = await lockLotStock(trx, lotId);
         // The row's bin and stripe, as read under the lock.
@@ -25964,6 +25973,11 @@ export async function postInventoryAdjustment(
           (q) =>
             q.storageUnitId == row.storageUnitId && q.projectId == row.projectId
         );
+        // A rename that committed before the lock: the number no longer
+        // names this lot, as if it had been renamed before the lookup.
+        if (foundBy && held?.readableId !== foundBy) {
+          throw new InvalidInputError("Serial number not found");
+        }
         if (round(adjustmentQuantity) > round(held?.quantity ?? 0)) {
           throw new InvalidInputError(
             "Insufficient quantity for negative adjustment"
@@ -25971,13 +25985,12 @@ export async function postInventoryAdjustment(
         }
         await trx
           .updateTable("trackedEntity")
-          .set({
-            ...settleQuantity({
+          .set(
+            settleQuantity({
               quantity: lotOnHandAfter(lotId, -adjustmentQuantity),
               status
-            }),
-            ...(rename ? { readableId: rename } : {})
-          })
+            })
+          )
           .where("id", "=", lotId)
           .where("companyId", "=", companyId)
           .execute();
@@ -29748,12 +29761,15 @@ function roundedChildTotal(children: { quantity: number | string }[]): number {
 
 // A maintenance or service job draw takes a lot only where it is in stock:
 // at the draw's location, from the unit there holding most of it, and no more
-// than that unit holds. Returns the unit a draw books in.
+// than that unit holds. Returns the unit a draw books in. The draw books
+// unassigned stock (its rows carry no project), so only the lot's unassigned
+// stock counts: a lot split across stripes in one unit holds less there.
 function trackedDrawBin(
   ledgers: Array<{
     trackedEntityId: string | null;
     locationId: string | null;
     storageUnitId: string | null;
+    projectId: string | null;
     quantity: number | string | null;
   }>,
   entities: Array<{ id: string; readableId: string | null; quantity: number }>,
@@ -29773,7 +29789,9 @@ function trackedDrawBin(
     locationId
   );
   const bins = resolveTrackedEntityBins(
-    locationId ? ledgers.filter((l) => l.locationId === locationId) : ledgers
+    ledgers.filter(
+      (l) => (!locationId || l.locationId === locationId) && l.projectId == null
+    )
   );
   return (entity: { id: string; readableId: string | null }, draw: number) => {
     const held = bins.get(entity.id);
@@ -30547,6 +30565,9 @@ async function consumeTrackedEntitiesIntoOperation(
 }> {
   let expiredWarning: string | undefined;
 
+  // Locked (id order, as every lot draw takes them) before the quantity and
+  // the ledger are read: a partial draw writes the lot's quantity as an
+  // absolute value, so an adjustment that committed meanwhile must count.
   const trackedEntities = await trx
     .selectFrom("trackedEntity")
     .where(
@@ -30556,6 +30577,8 @@ async function consumeTrackedEntitiesIntoOperation(
     )
     .where("companyId", "=", companyId)
     .selectAll()
+    .orderBy("id")
+    .forUpdate()
     .execute();
 
   const itemLedgers = await trx
@@ -34319,6 +34342,23 @@ export async function issueMaterial(
             .filter((m) => m.jobMakeMethodId)
             .map((m) => [m.jobMakeMethodId as string, m.id])
         );
+
+        // Every picked lot, locked in id order before the material rows: each
+        // member's draw locks its lots again, and a single-operation issue
+        // locks its lots before its job material, so both take the locks in
+        // one order.
+        await trx
+          .selectFrom("trackedEntity")
+          .select("id")
+          .where(
+            "id",
+            "in",
+            children.map((child) => child.trackedEntityId)
+          )
+          .where("companyId", "=", companyId)
+          .orderBy("id")
+          .forUpdate()
+          .execute();
 
         // Lock the member material rows so a concurrent batch pick (or a
         // member-level manual issue) cannot double-allocate the remaining

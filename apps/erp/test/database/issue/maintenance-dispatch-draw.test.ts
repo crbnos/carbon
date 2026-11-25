@@ -17,7 +17,12 @@ import {
 } from "../fixtures/always-post";
 import { handlesOf } from "../fixtures/handles";
 import { databaseTest, hasLocalDatabase } from "../fixtures/local-database";
-import { type LotStockRow, lotStock, seedLot } from "../fixtures/lot-stock";
+import {
+  type LotStockRow,
+  lotStock,
+  lotStripesIn,
+  seedLot
+} from "../fixtures/lot-stock";
 import { raceBehindRowLock } from "../fixtures/row-lock-race";
 
 describe.skipIf(!hasLocalDatabase)("a maintenance dispatch's lot draw", () => {
@@ -27,6 +32,7 @@ describe.skipIf(!hasLocalDatabase)("a maintenance dispatch's lot draw", () => {
   let binA: string;
   let binB: string;
   let otherBin: string;
+  let projectId: string;
 
   beforeAll(async () => {
     f = await alwaysPostFixture();
@@ -34,7 +40,21 @@ describe.skipIf(!hasLocalDatabase)("a maintenance dispatch's lot draw", () => {
     binA = `${f.prefix}-bin-a`;
     binB = `${f.prefix}-bin-b`;
     otherBin = `${f.prefix}-bin-other`;
+    projectId = `${f.prefix}-project`;
     await seed(f, async (trx) => {
+      await trx
+        .insertInto("project")
+        .values({
+          id: projectId,
+          name: "Stocked project",
+          identifier: "SP",
+          status: "Released",
+          costTreatment: "Expense",
+          projectStock: true,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
       await trx
         .insertInto("storageUnit")
         .values([
@@ -174,6 +194,35 @@ describe.skipIf(!hasLocalDatabase)("a maintenance dispatch's lot draw", () => {
         { locationId: f.locationId, storageUnitId: binA, quantity: 6 },
         { locationId: f.locationId, storageUnitId: binB, quantity: 4 }
       ]);
+    }
+  );
+
+  // The draw books unassigned stock. Against the unit's 10 over both stripes,
+  // a draw of 8 left the unassigned stock at -2.
+  databaseTest(
+    "draws no more than the lot's unassigned stock in the storage unit",
+    async () => {
+      const { id: lotId, readableId } = await lot([
+        { locationId: f.locationId, storageUnitId: binA, quantity: 6 },
+        {
+          locationId: f.locationId,
+          storageUnitId: binA,
+          quantity: 4,
+          projectId
+        }
+      ]);
+
+      const refused = await draw([{ trackedEntityId: lotId, quantity: 8 }]);
+      expect(refused.error?.message).toBe(
+        `${readableId} has 6 in one storage unit at this location. Draw no more than that, or move the rest into that storage unit first.`
+      );
+
+      const drawn = await draw([{ trackedEntityId: lotId, quantity: 6 }]);
+      expect(drawn.error).toBeNull();
+      expect(await lotStripesIn(f.db, f.companyId, lotId, binA)).toEqual({
+        common: 0,
+        [projectId]: 4
+      });
     }
   );
 

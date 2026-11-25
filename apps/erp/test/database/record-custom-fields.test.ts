@@ -43,7 +43,8 @@ async function companyFixture() {
       .values([
         { id: "color", dataTypeId: DataType.Text },
         { id: "size", dataTypeId: DataType.Text },
-        { id: "due", dataTypeId: DataType.Date }
+        { id: "due", dataTypeId: DataType.Date },
+        { id: "tone", dataTypeId: DataType.List, listOptions: ["Red"] }
       ].map((field) => ({
         ...field,
         id: `${prefix}-${field.id}`,
@@ -101,7 +102,7 @@ async function companyFixture() {
     companyId,
     groupId,
     customerId,
-    field: (name: "color" | "size" | "due") => `${prefix}-${name}`,
+    field: (name: "color" | "size" | "due" | "tone") => `${prefix}-${name}`,
     keyWith,
     async stored() {
       const row = await db
@@ -222,6 +223,57 @@ postgrestTest(
         [f.field("color")]: "Red",
         [f.field("size")]: "L",
         [f.field("due")]: "2026-01-01"
+      });
+    } finally {
+      await holder.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+// A List keeps a value its options have since dropped. Sent back unchanged
+// beside another field, it is taken but not written, so a save that changed
+// it while this one waited on the record stands.
+postgrestTest(
+  "a stored value sent back unchanged leaves alone a save made while it waited",
+  async (system) => {
+    const f = await companyFixture();
+    const holder = await connectLocalTestDatabase();
+    const tone = f.field("tone");
+    try {
+      const ctx = contextOf(f, await f.keyWith("Edit"), system);
+      const merge = (values: Record<string, string>) =>
+        sql`UPDATE "customer"
+          SET "customFields" = "customFields"::jsonb || ${JSON.stringify(values)}::jsonb
+          WHERE "id" = ${f.customerId} AND "companyId" = ${f.companyId}`;
+      await merge({ [tone]: "Blue" }).execute(f.db);
+
+      let saving!: Promise<{ error: unknown }>;
+      await holder.transaction().execute(async (trx) => {
+        // Another save sets Red and holds the record until this one waits.
+        await merge({ [tone]: "Red" }).execute(trx);
+        saving = save(f, ctx, { [tone]: "Blue", [f.field("size")]: "L" });
+        for (let attempt = 0; ; attempt++) {
+          await sql`SELECT pg_stat_clear_snapshot()`.execute(trx);
+          const waiting = await sql<{ count: number }>`
+            SELECT count(*)::int AS count FROM pg_stat_activity
+            WHERE "datname" = current_database()
+              AND "wait_event_type" = 'Lock'
+              AND "query" LIKE '%set_record_custom_fields%'`.execute(trx);
+          if (waiting.rows[0]!.count === 1) break;
+          if (attempt > 100) {
+            throw new Error("The save never waited on the lock");
+          }
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+      });
+
+      expect((await saving).error).toBeNull();
+      expect(await f.stored()).toEqual({
+        [f.field("color")]: "Blue",
+        [f.field("size")]: "L",
+        [f.field("due")]: "2026-01-01",
+        [tone]: "Red"
       });
     } finally {
       await holder.destroy();

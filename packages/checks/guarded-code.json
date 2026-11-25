@@ -58,7 +58,7 @@
     },
     {
       "file": "apps/erp/app/modules/invoicing/invoicing.service.ts",
-      "functions": ["changeSalesInvoiceCustomer"],
+      "functions": ["changeSalesInvoiceCustomer", "writeDraftInvoices"],
       "tests": ["apps/erp/test/database/sales-invoice-field.test.ts"]
     },
     {
@@ -80,6 +80,30 @@
       "functions": ["postInventoryAdjustment"],
       "tests": [
         "apps/erp/test/database/post-inventory-adjustment/lot-draw-concurrency.test.ts"
+      ]
+    },
+    {
+      "file": "apps/erp/app/modules/quality/quality.service.ts",
+      "functions": ["saveGaugeCalibrationRecord", "latestCalibrationPatch"],
+      "tests": ["apps/erp/test/database/gauge-calibration-record.test.ts"]
+    },
+    {
+      "file": "apps/erp/app/modules/settings/settings.server.ts",
+      "functions": ["setRecordCustomFields"],
+      "tests": ["apps/erp/test/database/record-custom-fields.test.ts"]
+    },
+    {
+      "file": "apps/erp/app/modules/sales/sales.service.ts",
+      "functions": ["upsertContractLine", "writeDraftContractLine"],
+      "tests": [
+        "apps/erp/test/database/post-customer-contract/contract-lifecycle.test.ts"
+      ]
+    },
+    {
+      "file": "apps/erp/app/modules/inventory/inventory.service.ts",
+      "functions": ["consumeTrackedEntitiesIntoOperation"],
+      "tests": [
+        "apps/erp/test/database/tracked-consumption-concurrency.test.ts"
       ]
     }
   ]

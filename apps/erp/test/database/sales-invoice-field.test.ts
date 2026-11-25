@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The sales invoice header writes of the properties panel, run as the
-// operation: the due date a new issue date takes, and a new customer with the
-// ship-to it clears. Runs against the local stack; skipped without one.
+// The invoice header writes of the properties panels, run as the operations:
+// the due date a new issue date takes, a new customer with the ship-to it
+// clears, and the party fields a post claims while they wait. Runs against
+// the local stack; skipped without one.
 
 import { createHash } from "node:crypto";
 import { createServiceContext } from "@carbon/api/service-fn.server";
@@ -13,7 +14,10 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { updateSalesInvoiceField } from "../../app/modules/invoicing/invoicing.server";
+import {
+  updatePurchaseInvoiceField,
+  updateSalesInvoiceField
+} from "../../app/modules/invoicing/invoicing.server";
 import { alwaysPostFixture, seed, USER } from "./fixtures/always-post";
 import {
   connectLocalTestDatabase,
@@ -178,7 +182,8 @@ async function salesInvoicesKey(f: InvoiceFixture) {
 }
 
 /** Waits until a statement of another connection waits on a lock `holder`
- *  holds, or `done` settles first. */
+ *  holds. Throws, before the holder releases it, when `done` settles first
+ *  or no wait is seen: the run did not take the order the test is about. */
 async function blockedBy(
   holder: Kysely<KyselyDatabase>,
   done: () => boolean
@@ -186,12 +191,98 @@ async function blockedBy(
   const { rows } = await sql<{
     pid: number;
   }>`SELECT pg_backend_pid() AS pid`.execute(holder);
-  for (let attempt = 0; attempt < 200 && !done(); attempt++) {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    if (done()) {
+      throw new Error("The operation finished without waiting for the lock");
+    }
     const waiting = await sql<{ count: number }>`
       SELECT count(*)::int AS count FROM pg_stat_activity
       WHERE ${rows[0]!.pid}::int = ANY(pg_blocking_pids(pid))`.execute(holder);
     if (waiting.rows[0]!.count > 0) return;
     await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error("No connection waited for the lock");
+}
+
+/** A Draft purchase invoice of the fixture's supplier, and a second
+ *  supplier. */
+async function purchaseInvoiceFixture(f: InvoiceFixture) {
+  const purchaseInvoiceId = `${f.prefix}-purchase-invoice`;
+  const otherSupplierId = `${f.prefix}-supplier-2`;
+  await seed(f, async (trx) => {
+    await trx
+      .insertInto("supplier")
+      .values({
+        id: otherSupplierId,
+        readableId: `${f.prefix}-S2`,
+        name: `${f.prefix} supplier 2`,
+        companyId: f.companyId
+      })
+      .execute();
+    const interaction = await trx
+      .insertInto("supplierInteraction")
+      .values({ supplierId: f.supplierId, companyId: f.companyId })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await trx
+      .insertInto("purchaseInvoice")
+      .values({
+        id: purchaseInvoiceId,
+        invoiceId: "PI-1",
+        supplierId: f.supplierId,
+        invoiceSupplierId: f.supplierId,
+        supplierInteractionId: interaction.id,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        status: "Draft",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  return {
+    purchaseInvoiceId,
+    otherSupplierId,
+    /** The invoice's supplier and invoice supplier. */
+    async state() {
+      return f.db
+        .selectFrom("purchaseInvoice")
+        .select(["supplierId", "invoiceSupplierId"])
+        .where("id", "=", purchaseInvoiceId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+    }
+  };
+}
+
+/** Runs `operation` while `holder` holds the post's claim (Draft to Pending)
+ *  on `table`'s invoice, uncommitted: the operation reads Draft first. The
+ *  claim commits once the operation waits on it. */
+async function underPostClaim<R>(
+  f: InvoiceFixture,
+  table: "salesInvoice" | "purchaseInvoice",
+  invoiceId: string,
+  operation: () => Promise<R>
+) {
+  const holder = await connectLocalTestDatabase();
+  try {
+    let pending: Promise<R> | undefined;
+    let settled = false;
+    await holder.transaction().execute(async (trx) => {
+      await trx
+        .updateTable(table as "salesInvoice")
+        .set({ status: "Pending" })
+        .where("id", "=", invoiceId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      pending = operation().finally(() => {
+        settled = true;
+      });
+      await blockedBy(trx, () => settled);
+    });
+    return await pending!;
+  } finally {
+    await holder.destroy();
   }
 }
 
@@ -306,30 +397,18 @@ postgrestTest(
   "an invoice a post claims while the customer change waits for it keeps its customer and ship-to",
   async (system) => {
     const f = await invoiceFixture(["1"]);
-    const holder = await connectLocalTestDatabase();
     try {
-      let change: ReturnType<typeof updateSalesInvoiceField> | undefined;
-      let settled = false;
-      // The post's claim (Draft to Pending) holds the invoice until it
-      // commits; the change starts after the claim and reads Draft first.
-      await holder.transaction().execute(async (trx) => {
-        await trx
-          .updateTable("salesInvoice")
-          .set({ status: "Pending" })
-          .where("id", "=", f.invoiceIds[0]!)
-          .where("companyId", "=", f.companyId)
-          .execute();
-        change = updateSalesInvoiceField(contextOf(f, system, system), {
-          ids: f.invoiceIds,
-          field: "customerId",
-          value: f.otherCustomerId
-        }).finally(() => {
-          settled = true;
-        });
-        await blockedBy(trx, () => settled);
-      });
-
-      const result = await change!;
+      const result = await underPostClaim(
+        f,
+        "salesInvoice",
+        f.invoiceIds[0]!,
+        () =>
+          updateSalesInvoiceField(contextOf(f, system, system), {
+            ids: f.invoiceIds,
+            field: "customerId",
+            value: f.otherCustomerId
+          })
+      );
       expect(result.error).toMatchObject({ category: "rule" });
       expect(await f.state()).toEqual([
         {
@@ -339,7 +418,125 @@ postgrestTest(
         }
       ]);
     } finally {
-      await holder.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "an invoice a post claims while the invoice customer change waits for it keeps its invoice customer",
+  async (system) => {
+    const f = await invoiceFixture(["1"]);
+    try {
+      const result = await underPostClaim(
+        f,
+        "salesInvoice",
+        f.invoiceIds[0]!,
+        () =>
+          updateSalesInvoiceField(contextOf(f, system, system), {
+            ids: f.invoiceIds,
+            field: "invoiceCustomerId",
+            value: f.otherCustomerId
+          })
+      );
+      expect(result.error).toMatchObject({ category: "rule" });
+      const invoice = await f.db
+        .selectFrom("salesInvoice")
+        .select("invoiceCustomerId")
+        .where("id", "=", f.invoiceIds[0]!)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(invoice.invoiceCustomerId).not.toBe(f.otherCustomerId);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a purchase invoice a post claims while the invoice supplier change waits for it keeps its invoice supplier",
+  async (system) => {
+    const f = await invoiceFixture(["1"]);
+    try {
+      const p = await purchaseInvoiceFixture(f);
+      const result = await underPostClaim(
+        f,
+        "purchaseInvoice",
+        p.purchaseInvoiceId,
+        () =>
+          updatePurchaseInvoiceField(contextOf(f, system, system), {
+            ids: [p.purchaseInvoiceId],
+            field: "invoiceSupplierId",
+            value: p.otherSupplierId
+          })
+      );
+      expect(result.error).toMatchObject({ category: "rule" });
+      expect(await p.state()).toEqual({
+        supplierId: f.supplierId,
+        invoiceSupplierId: f.supplierId
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a purchase invoice a post claims while the supplier change waits for it keeps its supplier",
+  async (system) => {
+    const f = await invoiceFixture(["1"]);
+    try {
+      const p = await purchaseInvoiceFixture(f);
+      const result = await underPostClaim(
+        f,
+        "purchaseInvoice",
+        p.purchaseInvoiceId,
+        () =>
+          updatePurchaseInvoiceField(contextOf(f, system, system), {
+            ids: [p.purchaseInvoiceId],
+            field: "supplierId",
+            value: p.otherSupplierId
+          })
+      );
+      expect(result.error).toMatchObject({ category: "rule" });
+      expect(await p.state()).toEqual({
+        supplierId: f.supplierId,
+        invoiceSupplierId: f.supplierId
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a Draft purchase invoice takes a new invoice supplier, and a write that reaches no invoice is refused",
+  async (system) => {
+    const f = await invoiceFixture(["1"]);
+    try {
+      const p = await purchaseInvoiceFixture(f);
+      const ctx = contextOf(f, system, system);
+      const result = await updatePurchaseInvoiceField(ctx, {
+        ids: [p.purchaseInvoiceId, `${f.prefix}-missing`],
+        field: "invoiceSupplierId",
+        value: p.otherSupplierId
+      });
+      expect(result).toEqual({
+        data: { ids: [p.purchaseInvoiceId] },
+        error: null
+      });
+      expect(await p.state()).toEqual({
+        supplierId: f.supplierId,
+        invoiceSupplierId: p.otherSupplierId
+      });
+
+      const none = await updatePurchaseInvoiceField(ctx, {
+        ids: [`${f.prefix}-missing`],
+        field: "supplierReference",
+        value: "PO-9"
+      });
+      expect(none.error).toMatchObject({ category: "notFound" });
+    } finally {
       await f.cleanup();
     }
   }

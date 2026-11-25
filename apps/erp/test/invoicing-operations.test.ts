@@ -205,17 +205,19 @@ describe("setting an invoice header field", () => {
     const { client } = filteringSupabase(invoices());
     const ctx = as(client, invoicingUpdate);
 
+    // A date a posted invoice still takes is written by the caller's client;
+    // the fields only a Draft takes are written under a row lock.
     const reached = await updateSalesInvoiceField(ctx, {
       ids: ["inv-1", "inv-9"],
-      field: "customerReference",
-      value: "PO-9"
+      field: "datePaid",
+      value: "2026-11-02"
     });
     expect(reached).toEqual({ data: { ids: ["inv-1"] }, error: null });
 
     const none = await updatePurchaseInvoiceField(ctx, {
       ids: ["inv-9"],
-      field: "supplierReference",
-      value: "PO-9"
+      field: "datePaid",
+      value: "2026-11-02"
     });
     expect(none.error).toMatchObject({ category: "notFound" });
   });

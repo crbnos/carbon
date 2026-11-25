@@ -8,7 +8,9 @@
 
 import { SERVICE_RULE_ERROR_CODE } from "@carbon/api";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as items from "../../app/modules/items/items.server";
@@ -17,7 +19,10 @@ import {
   connectLocalTestDatabase,
   hasLocalDatabase
 } from "./fixtures/local-database";
-import { localServiceRoleClient } from "./fixtures/local-supabase";
+import {
+  localServiceRoleClient,
+  localServiceRoleEnv
+} from "./fixtures/local-supabase";
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
 const describeLocal = describe.skipIf(!client);
@@ -37,24 +42,53 @@ const ids = {
   otherCompany: `${prefix}-other`,
   otherGroup: `${prefix}-other-group`,
   otherPart: `${prefix}-other-part`,
-  otherCompanyGroup: `${prefix}-other-cpg`
+  otherCompanyGroup: `${prefix}-other-cpg`,
+  otherParameter: `${prefix}-cp-other`,
+  postingGroup: `${prefix}-ipg`,
+  otherPostingGroup: `${prefix}-other-ipg`
 };
 
 type Db = Awaited<ReturnType<typeof connectLocalTestDatabase>>;
 let db: Db;
 
 // The system, so the permission gate passes: what refuses is the operation.
-const ctx = () =>
+const ctx = ({
+  pg = db,
+  caller = client!
+}: {
+  pg?: Kysely<KyselyDatabase>;
+  caller?: SupabaseClient<Database>;
+} = {}) =>
   createServiceContext({
     actor: { type: "system", onBehalfOf: "system" },
     company: { id: ids.company, groupId: ids.group },
-    caller: client!,
+    caller,
     system: () => client!,
-    pg: () => db,
+    pg: () => pg,
     kv: () => {
       throw new Error("No operation here reads the cache");
     }
   });
+
+/** The local service-role client, with every read of the `materials` view
+ *  held until `until` settles. */
+function holdingMaterialsReads(until: Promise<unknown>) {
+  const env = localServiceRoleEnv();
+  return createClient<Database>(
+    env.SUPABASE_URL!,
+    env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: {
+        fetch: async (input, init) => {
+          const url = input instanceof Request ? input.url : String(input);
+          if (new URL(url).pathname === "/rest/v1/materials") await until;
+          return fetch(input, init);
+        }
+      }
+    }
+  );
+}
 
 /** Runs `fn` with the interceptors on, as the app does: an item insert then
  *  creates the item's cost row. */
@@ -187,7 +221,28 @@ beforeAll(async () => {
         parameter("height", ids.part, ids.sizeGroup),
         parameter("length", ids.part, ids.ungrouped),
         parameter("weight", ids.part, ids.ungrouped),
-        parameter("depth", ids.partWithoutUngrouped, ids.orphanGroup)
+        parameter("depth", ids.partWithoutUngrouped, ids.orphanGroup),
+        {
+          ...parameter("other", ids.otherPart, ids.otherCompanyGroup),
+          companyId: ids.otherCompany
+        }
+      ])
+      .execute();
+    await trx
+      .insertInto("itemPostingGroup")
+      .values([
+        {
+          id: ids.postingGroup,
+          name: "Raw stock",
+          companyId: ids.company,
+          createdBy
+        },
+        {
+          id: ids.otherPostingGroup,
+          name: "Raw stock",
+          companyId: ids.otherCompany,
+          createdBy
+        }
       ])
       .execute();
   });
@@ -339,6 +394,27 @@ describeLocal("reordering a configuration parameter", () => {
     expect(result.error).toBeNull();
     expect(await groupOf("weight")).toBeNull();
   });
+
+  it("refuses another company's parameter and leaves it where it was", async () => {
+    const result = await items.updateConfigurationParameterOrder(ctx(), {
+      id: ids.otherParameter,
+      sortOrder: 7,
+      configurationParameterGroupId: ids.otherCompanyGroup
+    });
+
+    expect(result.error).not.toBeNull();
+    expect(
+      await db
+        .selectFrom("configurationParameter")
+        .select(["companyId", "sortOrder", "configurationParameterGroupId"])
+        .where("id", "=", ids.otherParameter)
+        .executeTakeFirstOrThrow()
+    ).toEqual({
+      companyId: ids.otherCompany,
+      sortOrder: 1,
+      configurationParameterGroupId: ids.otherCompanyGroup
+    });
+  });
 });
 
 function signal() {
@@ -399,6 +475,165 @@ describeLocal("creating a material", () => {
       .where("companyId", "=", ids.company)
       .executeTakeFirst()) !== undefined;
 
+  const itemGroupsOf = async (readableId: string) =>
+    (
+      await db
+        .selectFrom("item")
+        .innerJoin("itemCost", "itemCost.itemId", "item.id")
+        .select("itemCost.itemPostingGroupId")
+        .where("item.readableId", "=", readableId)
+        .where("item.companyId", "=", ids.company)
+        .orderBy("item.revision")
+        .execute()
+    ).map((row) => row.itemPostingGroupId);
+
+  it("saves the company's item group on every revision", async () => {
+    const readableId = `${prefix}-MAT-GROUP`;
+
+    const result = await withInterceptors(() =>
+      items.createMaterial(ctx(), {
+        ...material(readableId),
+        postingGroupId: ids.postingGroup,
+        sizes: ["A", "B"]
+      })
+    );
+
+    expect(result.error).toBeNull();
+    expect(await itemGroupsOf(readableId)).toEqual([
+      ids.postingGroup,
+      ids.postingGroup
+    ]);
+  });
+
+  it("refuses another company's item group, and adds no revision", async () => {
+    const readableId = `${prefix}-MAT-FOREIGN-GROUP`;
+
+    const result = await withInterceptors(() =>
+      items.createMaterial(ctx(), {
+        ...material(readableId),
+        postingGroupId: ids.otherPostingGroup,
+        sizes: ["A", "B"]
+      })
+    );
+
+    expect(result.error?.category).toBe("rule");
+    expect(await revisionsOf(readableId)).toEqual([]);
+    expect(await materialRowExists(readableId)).toBe(false);
+  });
+
+  it("refuses another company's item group on an update, and keeps the item's group", async () => {
+    const readableId = `${prefix}-MAT-UPDATE-GROUP`;
+    const created = await withInterceptors(() =>
+      items.createMaterial(ctx(), {
+        ...material(readableId),
+        postingGroupId: ids.postingGroup
+      })
+    );
+    expect(created.error).toBeNull();
+
+    const { id: _readableId, ...fields } = material(readableId);
+    const result = await withInterceptors(() =>
+      items.updateMaterial(ctx(), {
+        ...fields,
+        id: created.data!.id,
+        postingGroupId: ids.otherPostingGroup
+      })
+    );
+
+    expect(result.error?.category).toBe("rule");
+    expect(await itemGroupsOf(readableId)).toEqual([ids.postingGroup]);
+  });
+
+  it("returns the revision it created when the material is renamed as it commits", async () => {
+    const readableId = `${prefix}-MAT-RETURNED`;
+    const renamedId = `${prefix}-MAT-RETURNED-NEW`;
+    const holder = await connectLocalTestDatabase();
+    const renamer = await connectLocalTestDatabase();
+    const monitor = await connectLocalTestDatabase();
+    const createPid = await backendPid(db);
+    const renamePid = await backendPid(renamer);
+    const held = signal();
+    const release = signal();
+    const renamed = signal();
+    let holding: Promise<void> | undefined;
+    let creating: ReturnType<typeof items.createMaterial> | undefined;
+    let renaming: Promise<void> | undefined;
+    try {
+      // An uncommitted revision of the ID stops the create at its item insert,
+      // after it has taken the ID's lock; rolled back, it lets the create on.
+      holding = holder.transaction().execute(async (trx) => {
+        await trx
+          .insertInto("item")
+          .values({
+            readableId,
+            revision: "0",
+            name: "Aluminum plate",
+            type: "Material",
+            itemTrackingType: "Inventory",
+            unitOfMeasureCode: "EA",
+            companyId: ids.company,
+            createdBy: "system"
+          })
+          .execute();
+        held.resolve();
+        await release.promise;
+        throw new Error("rolled back");
+      });
+      void holding.catch(() => {});
+      await Promise.race([held.promise, holding]);
+
+      // A read of the materials list after the commit lands after the rename.
+      creating = withInterceptors(() =>
+        items.createMaterial(
+          ctx({ caller: holdingMaterialsReads(renamed.promise) }),
+          material(readableId)
+        )
+      );
+      await waitForBlockedConnection(monitor, createPid);
+
+      // A rename of the ID waits for the create's lock and commits after it.
+      renaming = renamer.transaction().execute(async (trx) => {
+        await itemsService.lockMaterialReadableId(trx, ids.company, readableId);
+        await trx
+          .updateTable("material")
+          .set({ id: renamedId })
+          .where("id", "=", readableId)
+          .where("companyId", "=", ids.company)
+          .execute();
+        await trx
+          .updateTable("item")
+          .set({ readableId: renamedId })
+          .where("readableId", "=", readableId)
+          .where("companyId", "=", ids.company)
+          .where("type", "=", "Material")
+          .execute();
+      });
+      void renaming.finally(renamed.resolve).catch(() => {});
+      await waitForBlockedConnection(monitor, renamePid);
+      release.resolve();
+
+      const result = await creating;
+      await renaming;
+      const revisions = await db
+        .selectFrom("item")
+        .select("id")
+        .where("readableId", "=", renamedId)
+        .where("companyId", "=", ids.company)
+        .execute();
+      expect(revisions).toHaveLength(1);
+      expect(result).toEqual({ data: { id: revisions[0]!.id }, error: null });
+    } finally {
+      release.resolve();
+      renamed.resolve();
+      await holding?.catch(() => {});
+      await creating?.catch(() => {});
+      await renaming?.catch(() => {});
+      await holder.destroy();
+      await renamer.destroy();
+      await monitor.destroy();
+    }
+  }, 30_000);
+
   it("writes one revision per distinct size, each with the cost sent", async () => {
     const readableId = `${prefix}-MAT-SIZES`;
 
@@ -432,7 +667,7 @@ describeLocal("creating a material", () => {
     expect(await materialRowExists(readableId)).toBe(true);
   });
 
-  it("rolls the whole create back when the requested cost is not saved", async () => {
+  it("rolls the whole create back when the requested item group does not exist", async () => {
     const readableId = `${prefix}-MAT-NOCOST`;
 
     const refused = await withInterceptors(() =>
@@ -527,6 +762,81 @@ describeLocal("creating a material", () => {
         mode: "Set on Receipt"
       }))
     );
+  });
+
+  it("writes every revision's shelf life in one statement", async () => {
+    const readableId = `${prefix}-MAT-BULK-SHELFLIFE`;
+    // Statements that name itemShelfLife, by kind: a per-revision loop would
+    // read and insert once per size under the ID's lock.
+    const statements: string[] = [];
+    const counted = db.withPlugin({
+      transformQuery: ({ node }) => {
+        if (JSON.stringify(node).includes('"name":"itemShelfLife"')) {
+          statements.push(node.kind);
+        }
+        return node;
+      },
+      transformResult: async ({ result }) => result
+    });
+
+    const result = await withInterceptors(() =>
+      items.createMaterial(ctx({ pg: counted }), {
+        ...material(readableId),
+        itemTrackingType: "Batch",
+        shelfLifeMode: "Set on Receipt",
+        sizes: ["A", "B", "C"]
+      })
+    );
+
+    expect(result.error).toBeNull();
+    expect(statements).toEqual(["InsertQueryNode"]);
+    const modes = await db
+      .selectFrom("item")
+      .innerJoin("itemShelfLife", "itemShelfLife.itemId", "item.id")
+      .select(["item.revision", "itemShelfLife.mode"])
+      .where("item.readableId", "=", readableId)
+      .where("item.companyId", "=", ids.company)
+      .orderBy("item.revision")
+      .execute();
+    expect(modes).toEqual(
+      ["A", "B", "C"].map((revision) => ({ revision, mode: "Set on Receipt" }))
+    );
+  });
+
+  it("changes an item's shelf life in place from the inventory card, and removes it", async () => {
+    const readableId = `${prefix}-MAT-CARD-SHELFLIFE`;
+    const created = await withInterceptors(() =>
+      items.createMaterial(ctx(), {
+        ...material(readableId),
+        itemTrackingType: "Batch",
+        shelfLifeMode: "Set on Receipt"
+      })
+    );
+    expect(created.error).toBeNull();
+    const itemId = created.data!.id;
+    const card = (shelfLife: {
+      mode: "Fixed Duration" | "NotManaged";
+      days?: number;
+    }) =>
+      itemsService.upsertPickMethodWithShelfLife(db, {
+        itemId,
+        locationId: ids.location,
+        companyId: ids.company,
+        userId: "system",
+        shelfLife
+      });
+    const policy = () =>
+      db
+        .selectFrom("itemShelfLife")
+        .select(["mode", "days"])
+        .where("itemId", "=", itemId)
+        .executeTakeFirst();
+
+    await card({ mode: "Fixed Duration", days: 30 });
+    expect(await policy()).toEqual({ mode: "Fixed Duration", days: 30 });
+
+    await card({ mode: "NotManaged" });
+    expect(await policy()).toBeUndefined();
   });
 
   it("rolls the whole create back when the shelf life is refused, and the ID stays free", async () => {

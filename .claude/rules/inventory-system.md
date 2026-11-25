@@ -481,17 +481,20 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   batch lists (`getIssueLotsForItem`, over `get_issue_tracked_entity_stock`) and both maintenance
   add-part modals (`getNonNettableTrackedEntityIds`, `@carbon/database`) drop lots whose stock
   is in a non-nettable unit; a failed read offers none.
-- **A lot is drawn only where it is in stock.** A job issue (`consumeTrackedEntitiesIntoOperation`)
-  and a serial or batch pick (`postPicking`) refuse a lot whose stock is at another location
-  (`assertEntitiesAtLocation`, `@carbon/api/stock-stripes`); a unit with no stock anywhere (still
-  in production) passes. The MES issue lists and suggested allocation offer only the job's
-  location. A maintenance dispatch's and a service job's serial or batch draw (`issue`
-  `maintenanceDispatchTrackedEntities`, `serviceJobTrackedEntities`) refuse the same, then book
-  each draw in the storage unit at the dispatch's or job's location that holds most of the lot
-  (`resolveTrackedEntityBins`), and refuse a draw larger than what that unit holds. Each locks the
-  lots (`FOR UPDATE`, id order) before it reads their ledger, so two draws never split the same
-  quantity. The maintenance and service add-part modals (ERP and MES) still list every Available
-  lot of the item.
+- **A lot is drawn only where it is in stock.** A job issue
+  (`consumeTrackedEntitiesIntoOperation`) and a serial or batch pick (`postPicking`) refuse a lot
+  whose stock is at another location (`assertEntitiesAtLocation`, `@carbon/api/stock-stripes`); a
+  unit with no stock anywhere (still in production) passes. The MES issue lists and suggested
+  allocation offer only the job's location. A maintenance dispatch's and a service job's serial or
+  batch draw (`issue` `maintenanceDispatchTrackedEntities`, `serviceJobTrackedEntities`) refuse
+  the same, then book each draw in the storage unit at the dispatch's or job's location that holds
+  most of the lot's unassigned stock (`resolveTrackedEntityBins` over its unassigned rows), and
+  refuse a draw larger than the unassigned stock that unit holds. Each locks the lots (`FOR
+  UPDATE`, id order) before it reads their ledger, so two draws never split the same quantity. A
+  job issue (`consumeTrackedEntitiesIntoOperation`) locks its lots the same way before it reads
+  their quantity and ledger, and a batch pick (`trackedEntitiesToBatch`) locks every picked lot
+  before the member job materials. The maintenance and service add-part modals (ERP and MES) still
+  list every Available lot of the item.
 - **CSV import** has a "Non-nettable" column for storage units and storage types
   (`parseCsvNonNettable`, `shared.service.ts`): blank leaves an existing unit's flag alone,
   true/false (also yes/no, y/n, 1/0, on/off) sets it, and anything else is a row error.

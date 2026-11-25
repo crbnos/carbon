@@ -410,6 +410,11 @@ export type Events = {
           actorId?: string;
           // Source IP of the request that triggered the change (AU-3 source-of-event).
           ip?: string;
+          // Set by Revoke Invite: the invite's `revokedAt` it queued under.
+          // The job deactivates only while the invite still carries it and
+          // the person has no membership, so a resend accepted meanwhile
+          // keeps its account.
+          revokedAt?: string;
         }
       | {
           id: string;

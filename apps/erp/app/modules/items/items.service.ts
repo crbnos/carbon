@@ -2890,14 +2890,16 @@ export async function updateConfigurationParameterOrder(
     "configurationParameterGroupId"
   > & {
     configurationParameterGroupId?: string | null;
+    companyId: string;
     updatedBy: string;
   }
 ) {
   if (data.configurationParameterGroupId != null) {
     const parameter = await client
       .from("configurationParameter")
-      .select("itemId, companyId")
+      .select("itemId")
       .eq("id", data.id)
+      .eq("companyId", data.companyId)
       .maybeSingle();
     if (parameter.error) return { data: null, error: parameter.error };
     // A missing parameter is refused by the update below.
@@ -2905,7 +2907,7 @@ export async function updateConfigurationParameterOrder(
       const group = await requireItemConfigurationGroup(client, {
         groupId: data.configurationParameterGroupId,
         itemId: parameter.data.itemId,
-        companyId: parameter.data.companyId
+        companyId: data.companyId
       });
       if (group.error) return group;
     }
@@ -2915,6 +2917,7 @@ export async function updateConfigurationParameterOrder(
       .from("configurationParameter")
       .update(sanitize(data))
       .eq("id", data.id)
+      .eq("companyId", data.companyId)
       .select("id")
   );
 }
@@ -3380,33 +3383,35 @@ type ShelfLifeSetup = {
 class ShelfLifeRefusal extends Error {}
 
 /**
- * Writes one item's shelf-life policy inside the caller's transaction, with
- * the rules of {@link upsertItemShelfLife}. Throws {@link ShelfLifeRefusal}
- * for a trigger process that is not on the item's recipe.
+ * Writes the items' shelf-life policy (one setup for all of them) inside the
+ * caller's transaction, with the rules of {@link upsertItemShelfLife}. The
+ * setup is checked for every item before the one write. Throws
+ * {@link ShelfLifeRefusal} for a trigger process that is not on an item's
+ * recipe.
  */
 async function writeItemShelfLife(
   trx: KyselyTx,
   args: {
-    itemId: string;
+    itemIds: string[];
     companyId: string;
     userId: string;
     updatedAt: string;
     shelfLife: ShelfLifeSetup;
   }
 ): Promise<void> {
-  const { updatedAt } = args;
+  const { itemIds, companyId, updatedAt } = args;
   const { mode, days, triggerProcessId, triggerTiming, calculateFromBom } =
     args.shelfLife;
 
   // mode undefined = caller didn't surface the field; leave any existing
   // row alone (matches upsertItemShelfLife semantics).
-  if (mode === undefined) return;
+  if (mode === undefined || itemIds.length === 0) return;
 
   if (mode === "NotManaged") {
     await trx
       .deleteFrom("itemShelfLife")
-      .where("itemId", "=", args.itemId)
-      .where("companyId", "=", args.companyId)
+      .where("itemId", "in", itemIds)
+      .where("companyId", "=", companyId)
       .execute();
     return;
   }
@@ -3420,69 +3425,56 @@ async function writeItemShelfLife(
   const normalizedCalcFromBom =
     mode === "Fixed Duration" ? (calculateFromBom ?? false) : false;
 
-  // Reject trigger processes that aren't on the item's active recipe.
+  // Reject trigger processes that aren't on each item's active recipe.
   // The set-shelf-life helper gates on processId equality, so picking a
   // process the recipe never runs would silently never set the expiry.
   if (normalizedTriggerProcess) {
-    const recipeProcessIds = await trx
+    const onRecipe = await trx
       .selectFrom("methodOperation as mo")
       .innerJoin("activeMakeMethods as amm", "amm.id", "mo.makeMethodId")
-      .select("mo.processId")
-      .where("amm.itemId", "=", args.itemId)
-      .where("amm.companyId", "=", args.companyId)
-      .where("mo.processId", "is not", null)
+      .select("amm.itemId")
+      .where("amm.itemId", "in", itemIds)
+      .where("amm.companyId", "=", companyId)
+      .where("mo.processId", "=", normalizedTriggerProcess)
       .where("mo.methodCorrectionId", "is", null)
       .execute();
-    const allowed = new Set(
-      recipeProcessIds
-        .map((r) => r.processId)
-        .filter((id): id is string => !!id)
-    );
-    if (!allowed.has(normalizedTriggerProcess)) {
+    const allowed = new Set(onRecipe.map((row) => row.itemId));
+    if (itemIds.some((itemId) => !allowed.has(itemId))) {
       throw new ShelfLifeRefusal(
         "Shelf-life trigger process must be one of the operations on this item's recipe"
       );
     }
   }
 
-  const existing = await trx
-    .selectFrom("itemShelfLife")
-    .select("itemId")
-    .where("itemId", "=", args.itemId)
-    .where("companyId", "=", args.companyId)
-    .executeTakeFirst();
-
-  if (existing) {
-    await trx
-      .updateTable("itemShelfLife")
-      .set({
-        mode,
-        days: normalizedDays,
-        triggerProcessId: normalizedTriggerProcess,
-        triggerTiming: normalizedTriggerTiming,
-        calculateFromBom: normalizedCalcFromBom,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "=", args.itemId)
-      .where("companyId", "=", args.companyId)
-      .execute();
-    return;
-  }
-
-  await trx
+  const policy = {
+    mode,
+    days: normalizedDays,
+    triggerProcessId: normalizedTriggerProcess,
+    triggerTiming: normalizedTriggerTiming,
+    calculateFromBom: normalizedCalcFromBom
+  };
+  // An item that has a policy keeps its creator. A row of another company is
+  // left alone, and the write fails.
+  const written = await trx
     .insertInto("itemShelfLife")
-    .values({
-      itemId: args.itemId,
-      mode,
-      days: normalizedDays,
-      triggerProcessId: normalizedTriggerProcess,
-      triggerTiming: normalizedTriggerTiming,
-      calculateFromBom: normalizedCalcFromBom,
-      companyId: args.companyId,
-      createdBy: args.userId
-    })
-    .execute();
+    .values(
+      itemIds.map((itemId) => ({
+        itemId,
+        ...policy,
+        companyId,
+        createdBy: args.userId
+      }))
+    )
+    .onConflict((oc) =>
+      oc
+        .column("itemId")
+        .doUpdateSet({ ...policy, updatedBy: args.userId, updatedAt })
+        .where("itemShelfLife.companyId", "=", companyId)
+    )
+    .executeTakeFirst();
+  if (Number(written.numInsertedOrUpdatedRows) !== itemIds.length) {
+    throw new Error("The shelf-life policy was not saved for every item");
+  }
 }
 
 /**
@@ -3539,7 +3531,7 @@ export async function upsertPickMethodWithShelfLife(
       .execute();
 
     await writeItemShelfLife(trx, {
-      itemId: args.itemId,
+      itemIds: [args.itemId],
       companyId: args.companyId,
       userId: args.userId,
       updatedAt,
@@ -5982,6 +5974,28 @@ async function requireMaterialUpdatable(
 
 class MaterialRuleViolation extends Error {}
 
+/**
+ * Refuses an item group (posting group) that is not the company's. Its
+ * foreign key checks only that the group exists, and Kysely bypasses RLS.
+ */
+async function requireCompanyItemPostingGroup(
+  trx: KyselyTx,
+  companyId: string,
+  itemPostingGroupId: string
+): Promise<void> {
+  const group = await trx
+    .selectFrom("itemPostingGroup")
+    .select("id")
+    .where("id", "=", itemPostingGroupId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!group) {
+    throw new MaterialRuleViolation(
+      `Item group ${itemPostingGroupId} not found`
+    );
+  }
+}
+
 // A thrown Kysely/Postgres error in the { message, code } shape services
 // return. The code is the SQLSTATE (23505 for a taken revision label).
 function writeError(error: unknown): ServiceError {
@@ -6127,9 +6141,9 @@ async function getNewMaterialSizes(
  * update refuses a `readableId` or a derived `name` it would not write
  * (`generatedMaterialUpdateRefusal`); a call that changes no property writes a
  * sent `name` to the item, as the properties panel does. `readableId` renames
- * a material when IDs are typed by hand. An update's material, item and item cost writes land
- * together or not at all; the pick method, shelf life and new sizes are
- * written after them.
+ * a material when IDs are typed by hand. An item group must be the company's.
+ * An update's material, item and item cost writes land together or not at
+ * all; the pick method, shelf life and new sizes are written after them.
  */
 export async function upsertMaterial(
   client: SupabaseClient<Database>,
@@ -6226,6 +6240,13 @@ export async function upsertMaterial(
   const updatedAt = datetime.timestamp();
   try {
     readableId = await db.transaction().execute(async (trx) => {
+      if (costUpdate.itemPostingGroupId) {
+        await requireCompanyItemPostingGroup(
+          trx,
+          companyId,
+          costUpdate.itemPostingGroupId
+        );
+      }
       const saved = await writeMaterialIdentity(trx, {
         readableId,
         newReadableId: generatedIds.data
@@ -6311,13 +6332,15 @@ export async function upsertMaterial(
 }
 
 /**
- * Creates a material, with one revision per distinct size in `sizes` (none:
- * the initial revision). With generated material IDs on, its ID and name are
- * derived from the properties sent; `accepted` is the pair the caller already
- * checked, and a derived pair that differs is refused. The item revisions,
- * their item cost and the material row are written in one transaction; the
- * pick method and shelf life after it, as an update writes them. Returns the
- * new material's row in the `materials` view.
+ * Creates a material, with one revision per distinct size in `sizes`: a
+ * repeated or empty size is ignored, and no size makes the initial revision.
+ * With generated material IDs on, its ID and name are derived from the
+ * properties sent; `accepted` is the pair the caller already checked, and a
+ * derived pair that differs is refused. An item group must be the company's.
+ * The item revisions, their item cost, the material row, the pick method and
+ * the shelf life are written in one transaction: a refused setup rolls the
+ * whole create back and leaves the ID free for a corrected call. Returns the
+ * id of the revision the `materials` view shows, read in that transaction.
  */
 export async function insertMaterial(
   client: SupabaseClient<Database>,
@@ -6330,7 +6353,7 @@ export async function insertMaterial(
   },
   accepted?: { readableId: string; name: string }
 ): Promise<{
-  data: Database["public"]["Views"]["materials"]["Row"] | null;
+  data: { id: string } | null;
   error: ServiceError | null;
 }> {
   const { companyId, createdBy } = material;
@@ -6386,8 +6409,9 @@ export async function insertMaterial(
   // The item revisions, their cost, the material row, the pick method and the
   // shelf life land together, so a refused or failed write leaves no item
   // holding the ID against a retry.
+  let id: string;
   try {
-    await db.transaction().execute(async (trx) => {
+    id = await db.transaction().execute(async (trx) => {
       // An existing ID would take the new item rows as extra revisions and
       // overwrite its material row; sizes on an update add revisions instead.
       await lockMaterialReadableId(trx, companyId, readableId);
@@ -6401,6 +6425,13 @@ export async function insertMaterial(
       if (taken) {
         throw new MaterialRuleViolation(
           `Material ${readableId} already exists`
+        );
+      }
+      if (costUpdate.itemPostingGroupId) {
+        await requireCompanyItemPostingGroup(
+          trx,
+          companyId,
+          costUpdate.itemPostingGroupId
         );
       }
 
@@ -6492,21 +6523,33 @@ export async function insertMaterial(
           )
           .execute();
       }
-      for (const itemId of ids) {
-        await writeItemShelfLife(trx, {
-          itemId,
-          companyId,
-          userId: createdBy,
-          updatedAt,
-          shelfLife: {
-            mode: material.shelfLifeMode,
-            days: material.shelfLifeDays,
-            triggerProcessId: material.shelfLifeTriggerProcessId,
-            triggerTiming: material.shelfLifeTriggerTiming,
-            calculateFromBom: material.shelfLifeCalculateFromBom
-          }
-        });
+      await writeItemShelfLife(trx, {
+        itemIds: ids,
+        companyId,
+        userId: createdBy,
+        updatedAt,
+        shelfLife: {
+          mode: material.shelfLifeMode,
+          days: material.shelfLifeDays,
+          triggerProcessId: material.shelfLifeTriggerProcessId,
+          triggerTiming: material.shelfLifeTriggerTiming,
+          calculateFromBom: material.shelfLifeCalculateFromBom
+        }
+      });
+
+      // Read under the ID's lock, before a rename or another create of the
+      // ID can commit: the revision the material list opens.
+      const shown = await trx
+        .selectFrom("materials")
+        .select("id")
+        .where("readableId", "=", readableId)
+        .where("companyId", "=", companyId)
+        .where("id", "in", ids)
+        .executeTakeFirst();
+      if (!shown?.id) {
+        throw new Error(`Material ${readableId} is missing after its insert`);
       }
+      return shown.id;
     });
   } catch (error) {
     const refusal = materialWriteError(error);
@@ -6526,16 +6569,7 @@ export async function insertMaterial(
     return { data: null, error: refusal };
   }
 
-  const newMaterial = await client
-    .from("materials")
-    .select("*")
-    .eq("readableId", readableId)
-    .eq("companyId", companyId);
-
-  return {
-    data: newMaterial.data?.[0] ?? null,
-    error: newMaterial.error
-  };
+  return { data: { id }, error: null };
 }
 
 /**

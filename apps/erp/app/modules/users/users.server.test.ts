@@ -473,18 +473,19 @@ describe("the request's origin", () => {
 
   it("writes the request's IP and user agent into a revocation's audit record", async () => {
     queued.length = 0;
+    const tables: Record<string, Row[]> = {
+      user: [
+        { id: "usr_1", email: "a@example.com" },
+        { id: "usr_2", email: "b@example.com" }
+      ],
+      invite: [
+        { id: "inv_1", email: "a@example.com", companyId: COMPANY },
+        { id: "inv_2", email: "b@example.com", companyId: COMPANY }
+      ]
+    };
     const { ctx, rpcs } = requestContext(
       { users: { delete: [COMPANY] } },
-      {
-        user: [
-          { id: "usr_1", email: "a@example.com" },
-          { id: "usr_2", email: "b@example.com" }
-        ],
-        invite: [
-          { id: "inv_1", email: "a@example.com", companyId: COMPANY },
-          { id: "inv_2", email: "b@example.com", companyId: COMPANY }
-        ]
-      }
+      tables
     );
     const result = await revokeInvites(ctx, {
       userIds: ["usr_1", "usr_2"],
@@ -507,7 +508,8 @@ describe("the request's origin", () => {
           type: "deactivate",
           companyId: COMPANY,
           actorId: "usr_admin",
-          ip: "203.0.113.9"
+          ip: "203.0.113.9",
+          revokedAt: tables.invite?.[0]?.revokedAt
         }
       }))
     );
@@ -605,7 +607,8 @@ describe("revoking an invite", () => {
             type: "deactivate",
             companyId: COMPANY,
             actorId: "usr_admin",
-            ip: "203.0.113.9"
+            ip: "203.0.113.9",
+            revokedAt: tables.invite?.[1]?.revokedAt
           }
         }))
       }
@@ -638,7 +641,8 @@ describe("revoking an invite", () => {
               type: "deactivate",
               companyId: COMPANY,
               actorId: "usr_admin",
-              ip: "203.0.113.9"
+              ip: "203.0.113.9",
+              revokedAt: tables.invite?.[0]?.revokedAt
             }
           }
         ]
@@ -653,8 +657,10 @@ describe("revoking an invite", () => {
   });
 
   // The send can reject after Inngest accepted the events: an invite whose
-  // deactivation may still run is never reopened.
-  it("keeps the invites revoked when queuing their deactivation fails", async () => {
+  // deactivation may still run is never reopened, and the revoke sent again
+  // queues the deactivations without revoking again.
+  it("keeps the invites revoked when queuing their deactivation fails, and finishes on a second revoke", async () => {
+    queued.length = 0;
     vi.mocked(batchTrigger).mockRejectedValueOnce(new Error("Timed out"));
     const tables = invitedEmployees(["usr_1", "usr_2"]);
     const { ctx, rpcs } = requestContext(
@@ -665,16 +671,59 @@ describe("revoking an invite", () => {
     const result = await revokeInvites(ctx, { userIds: ["usr_1", "usr_2"] });
 
     expect(result.error?.category).toBe("internal");
-    expect(tables.invite?.map((invite) => invite.revokedAt)).toEqual([
-      expect.any(String),
-      expect.any(String)
-    ]);
-    const audit = rpcs.find((call) => call.name === "insert_audit_log_batch");
+    const stamps = tables.invite?.map((invite) => invite.revokedAt);
+    expect(stamps).toEqual([expect.any(String), expect.any(String)]);
+    const audit = rpcs.filter((call) => call.name === "insert_audit_log_batch");
     expect(
-      (audit?.args.p_entries as { entityId: unknown }[]).map(
-        (entry) => entry.entityId
+      audit.flatMap((call) =>
+        (call.args.p_entries as { entityId: unknown }[]).map(
+          (entry) => entry.entityId
+        )
       )
     ).toEqual(["inv_usr_1", "inv_usr_2"]);
+
+    const retried = await revokeInvites(ctx, { userIds: ["usr_1", "usr_2"] });
+
+    expect(retried).toEqual({ data: { revoked: 0 }, error: null });
+    expect(tables.invite?.map((invite) => invite.revokedAt)).toEqual(stamps);
+    expect(queued).toEqual([
+      {
+        name: "user-admin",
+        events: ["usr_1", "usr_2"].map((id, index) => ({
+          payload: {
+            id,
+            type: "deactivate",
+            companyId: COMPANY,
+            actorId: "usr_admin",
+            ip: "203.0.113.9",
+            revokedAt: stamps?.[index]
+          }
+        }))
+      }
+    ]);
+    expect(
+      rpcs.filter((call) => call.name === "insert_audit_log_batch")
+    ).toHaveLength(1);
+  });
+
+  // The person keeps groups, overrides or a portal account until the
+  // deactivation runs; running it again removes them.
+  it("deactivates the user of an invite revoked earlier and never accepted, without revoking it again", async () => {
+    queued.length = 0;
+    const tables = invitedEmployees(["usr_1"], {
+      group: [{ id: "grp_sales", companyId: COMPANY }],
+      membership: [{ groupId: "grp_sales", memberUserId: "usr_1" }],
+      permission: [{ userId: "usr_1", companyId: COMPANY, module: "Sales" }]
+    });
+    tables.invite![0]!.revokedAt = "2026-11-20T08:00:00.000+00:00";
+
+    const result = await revoke(tables);
+
+    expect(result).toEqual({ data: { revoked: 0 }, error: null });
+    expect(tables.invite?.[0]?.revokedAt).toBe("2026-11-20T08:00:00.000+00:00");
+    expect(tables.membership).toEqual([]);
+    expect(tables.permission).toEqual([]);
+    expect(queued).toEqual([]);
   });
 
   it("refuses a user who has an account in the company", async () => {
@@ -686,8 +735,10 @@ describe("revoking an invite", () => {
 
   it.each([
     ["accepted", { acceptedAt: "2026-11-01T00:00:00Z" }],
-    ["already revoked", { revokedAt: "2026-11-01T00:00:00Z" }],
-    ["in another company", { companyId: "cmp_2" }]
+    [
+      "accepted and then deactivated",
+      { acceptedAt: "2026-11-01T00:00:00Z", revokedAt: "2026-11-02T00:00:00Z" }
+    ]
   ])("refuses a user whose invite is %s", async (_label, change) => {
     const result = await revoke({
       user: [{ id: "usr_1", email: "a@example.com" }],
@@ -696,6 +747,16 @@ describe("revoking an invite", () => {
       ]
     });
     expect(result.error?.category).toBe("rule");
+  });
+
+  // The user is read across companies: their email is not the caller's to see.
+  it("refuses a user invited only to another company without naming them", async () => {
+    const result = await revoke({
+      user: [{ id: "usr_1", email: "a@example.com" }],
+      invite: [{ id: "inv_1", email: "a@example.com", companyId: "cmp_2" }]
+    });
+    expect(result.error?.category).toBe("notFound");
+    expect(result.error?.message).not.toContain("a@example.com");
   });
 
   it("refuses a user id that names no one", async () => {

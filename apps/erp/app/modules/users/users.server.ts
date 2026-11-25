@@ -414,17 +414,21 @@ export const resendInvites = defineServiceFn({
  *
  * @remarks
  * Revoking deactivates the user, so it needs Full on Accounts, as the
- * lists' Revoke Invite does. Only a pending invite is revoked: every user must
- * have an invite here that is neither accepted nor revoked, and no membership
+ * lists' Revoke Invite does. Only an invite not yet accepted is taken:
+ * every user must have an invite here that is not accepted, and no membership
  * in the company (an employee who already joined is deactivated with
  * users_deactivateUsers). Every invite still pending is marked revoked first,
  * and only its user is deactivated: an invite accepted in the meantime is
- * left alone. One user is deactivated at once (and, on Cloud, the
- * subscription's seat count updated); several are deactivated by a job. A
- * deactivation that fails before it changes the account leaves the invite
- * pending; one that may have changed it leaves the invite revoked, and the job
- * finishes it. Each revocation that stands is written to the audit log when
- * the company keeps one. Returns how many invites were revoked.
+ * left alone. An invite already revoked is not revoked again, but its user is
+ * deactivated again, which finishes a deactivation that did not run. One user
+ * is deactivated at once (and, on Cloud, the subscription's seat count
+ * updated); several are deactivated by a job, which skips a user whose invite
+ * was sent again or accepted since. A deactivation that fails before it
+ * changes the account leaves the invite pending; one that may have changed
+ * it, or could not be queued, leaves the invite revoked, and the job or a
+ * revoke sent again finishes it. Each revocation that stands is written to
+ * the audit log when the company keeps one. Returns how many invites this
+ * call revoked.
  *
  * @param userIds - The invited users, from 1 to 100. See users_getEmployees (status Invited) and users_getUnrevokedInviteEmails.
  *
@@ -443,43 +447,62 @@ export const revokeInvites = defineServiceFn({
 
     const pending = await service.refuseUnlessPendingInvites(ctx, userIds);
     if (pending.error) return pending.error;
-    const { users, inviteIds } = pending.data;
+    const invites = pending.data;
 
     // The revoke is the write that decides: it stamps only invites still
     // pending, and an acceptance needs `revokedAt` null, so an invite accepted
     // since the check is not revoked, and its account is not deactivated.
     const revokedAt = datetime.timestamp();
-    const revoked = await serviceRole
-      .from("invite")
-      .update({ revokedAt })
-      .in("id", inviteIds)
-      .eq("companyId", companyId)
-      .is("acceptedAt", null)
-      .is("revokedAt", null)
-      .select("id, email");
-    if (revoked.error) {
-      return ctx.error("internal", "Failed to revoke invites", revoked.error);
-    }
-    const revokedEmails = new Set(revoked.data.map((invite) => invite.email));
-    const revokedUsers = users.filter((user) => revokedEmails.has(user.email));
-
-    // A deactivation that fails before it changes the account gives the
-    // invites back, as pending: the revoke can be sent again.
-    const unrevoke = async (cause: unknown, message: string) => {
-      const restored = await serviceRole
+    const toStamp = invites.filter((invite) => invite.revokedAt === null);
+    let stamped: { id: string }[] = [];
+    if (toStamp.length > 0) {
+      const revoked = await serviceRole
         .from("invite")
-        .update({ revokedAt: null })
+        .update({ revokedAt })
         .in(
           "id",
-          revoked.data.map((invite) => invite.id)
+          toStamp.map((invite) => invite.inviteId)
         )
         .eq("companyId", companyId)
-        .eq("revokedAt", revokedAt);
-      if (restored.error) {
-        logger.error("Failed to restore revoked invites", {
-          companyId,
-          error: restored.error
-        });
+        .is("acceptedAt", null)
+        .is("revokedAt", null)
+        .select("id");
+      if (revoked.error) {
+        return ctx.error("internal", "Failed to revoke invites", revoked.error);
+      }
+      stamped = revoked.data;
+    }
+    const stampedIds = new Set(stamped.map((invite) => invite.id));
+    // Each user to deactivate, with the revocation its job must still find:
+    // this call's, or an earlier one's whose deactivation may not have run.
+    const toDeactivate = invites.flatMap((invite) =>
+      stampedIds.has(invite.inviteId)
+        ? [{ id: invite.userId, revokedAt }]
+        : invite.revokedAt !== null
+          ? [{ id: invite.userId, revokedAt: invite.revokedAt }]
+          : []
+    );
+
+    // A deactivation that fails before it changes the account gives the
+    // invites this call revoked back, as pending: the revoke can be sent
+    // again.
+    const unrevoke = async (cause: unknown, message: string) => {
+      if (stamped.length > 0) {
+        const restored = await serviceRole
+          .from("invite")
+          .update({ revokedAt: null })
+          .in(
+            "id",
+            stamped.map((invite) => invite.id)
+          )
+          .eq("companyId", companyId)
+          .eq("revokedAt", revokedAt);
+        if (restored.error) {
+          logger.error("Failed to restore revoked invites", {
+            companyId,
+            error: restored.error
+          });
+        }
       }
       return ctx.error("internal", message, cause);
     };
@@ -488,11 +511,11 @@ export const revokeInvites = defineServiceFn({
     // threw. `deactivateUser` returns a failed account write, and throws only
     // after the writes (clearing the cached claims), so a throw keeps the
     // invite revoked and the job, which retries, runs the deactivation again.
-    let toQueue = revokedUsers.length > 1 ? revokedUsers : [];
-    if (revokedUsers.length === 1) {
+    let toQueue = toDeactivate.length > 1 ? toDeactivate : [];
+    if (toDeactivate.length === 1) {
       const deactivated = await deactivateUser(
         serviceRole,
-        revokedUsers[0].id,
+        toDeactivate[0].id,
         companyId,
         actorId,
         ip
@@ -504,7 +527,7 @@ export const revokeInvites = defineServiceFn({
         return null;
       });
       if (deactivated === null) {
-        toQueue = revokedUsers;
+        toQueue = toDeactivate;
       } else if (!deactivated.success) {
         return unrevoke(deactivated.message, "Failed to deactivate user");
       } else if (CarbonEdition === Edition.Cloud) {
@@ -513,14 +536,22 @@ export const revokeInvites = defineServiceFn({
     }
 
     // The send can reject after Inngest accepted the events, and an accepted
-    // deactivation still runs: the invites stay revoked, never reopened.
+    // deactivation still runs: the invites stay revoked, never reopened, and
+    // a revoke sent again for them runs the deactivation that did not.
     let unqueued: { cause: unknown } | null = null;
     if (toQueue.length > 0) {
       try {
         await batchTrigger(
           "user-admin",
-          toQueue.map(({ id }) => ({
-            payload: { id, type: "deactivate" as const, companyId, actorId, ip }
+          toQueue.map((user) => ({
+            payload: {
+              id: user.id,
+              type: "deactivate" as const,
+              companyId,
+              actorId,
+              ip,
+              revokedAt: user.revokedAt
+            }
           }))
         );
       } catch (cause) {
@@ -529,12 +560,12 @@ export const revokeInvites = defineServiceFn({
     }
 
     // Best effort: a company without audit logging has no audit log table.
-    if (revoked.data.length > 0) {
+    if (stamped.length > 0) {
       try {
         await insertAuditLogEntries(
           serviceRole,
           companyId,
-          revoked.data.map((invite) => ({
+          stamped.map((invite) => ({
             tableName: "invite" as const,
             entityType: "invite" as const,
             entityId: invite.id,
@@ -554,11 +585,11 @@ export const revokeInvites = defineServiceFn({
     if (unqueued) {
       return ctx.error(
         "internal",
-        "Revoked the invites, but deactivating their users may not have been queued",
+        "Revoked the invites, but deactivating their users may not have been queued: revoke them again to finish",
         unqueued.cause
       );
     }
-    return { revoked: revoked.data.length };
+    return { revoked: stamped.length };
   }
 });
 

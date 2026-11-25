@@ -11693,13 +11693,15 @@ export const createContractLine = defineServiceFn({
       [input]
     );
     if (upgrade) return ctx.error("entitlement", upgrade);
-    return unwrap(
-      ctx,
-      await service.upsertContractLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
+    const saved = await service.upsertContractLine(
+      ctx.asCaller.supabase,
+      payload(ctx, input).forCreate() as never
     );
+    const refusal = saved.error as { code?: string; message: string } | null;
+    if (refusal?.code === service.CONTRACT_NOT_DRAFT) {
+      return ctx.error("rule", refusal.message);
+    }
+    return unwrap(ctx, saved);
   }
 });
 
@@ -11797,18 +11799,27 @@ export const updateContractLine = defineServiceFn({
       [line]
     );
     if (upgrade) return ctx.error("entitlement", upgrade);
-    const saved = await service.upsertContractLine(client, {
-      ...line,
-      taxCodeId: line.taxCodeId ?? null,
-      customerContractId,
-      id,
-      updatedBy: ctx.auditUserId,
-      // Every field left out was taken from `stored`.
-      expectedUpdatedAt: stored.data.updatedAt
-    });
+    const saved = await service.upsertContractLine(
+      client,
+      {
+        ...line,
+        taxCodeId: line.taxCodeId ?? null,
+        customerContractId,
+        id,
+        updatedBy: ctx.auditUserId,
+        // Every field left out was taken from `stored`.
+        expectedUpdatedAt: stored.data.updatedAt
+      },
+      // Written under the contract's lock, so a Confirm cannot commit
+      // between the Draft check and the write.
+      ctx.asSystem.pg
+    );
     const refusal = saved.error as { code?: string; message: string } | null;
     if (refusal?.code === service.CONTRACT_LINE_CHANGED) {
       return ctx.error("conflict", refusal.message);
+    }
+    if (refusal?.code === service.CONTRACT_NOT_DRAFT) {
+      return ctx.error("rule", refusal.message);
     }
     return unwrap(ctx, saved);
   }

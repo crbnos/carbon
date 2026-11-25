@@ -10909,6 +10909,10 @@ export async function getCustomerContractStatuses(
  *  `result.error` handling (routes, MCP dispatch) reports it unchanged. */
 /** `upsertContractLine` refused a write whose read is out of date. */
 export const CONTRACT_LINE_CHANGED = "CONTRACT_LINE_CHANGED";
+/** A contract write refused because the contract is no longer a Draft. */
+export const CONTRACT_NOT_DRAFT = "CONTRACT_NOT_DRAFT";
+const LINE_CHANGED =
+  "The line changed after it was read. Read it again and send the change.";
 
 function contractRefusal(code: string, message: string) {
   return {
@@ -11040,7 +11044,7 @@ export async function updateContract(
   if (current.error) return current;
   if (current.data.status !== "Draft") {
     return contractRefusal(
-      "CONTRACT_NOT_DRAFT",
+      CONTRACT_NOT_DRAFT,
       "Only a Draft contract can be edited — use Amend"
     );
   }
@@ -11215,7 +11219,9 @@ export async function updateContractInvoiceAutomation(
 /**
  * Adds or changes a line on a Draft contract; the item must be a Service item.
  * Lines on an Active contract change through Amend, and a line never moves
- * between contracts.
+ * between contracts. With `db`, a change is written under the contract's
+ * lock after Draft is checked again (`writeDraftContractLine`), so a Confirm
+ * that commits while this runs keeps the lines it planned from.
  */
 export async function upsertContractLine(
   client: SupabaseClient<Database>,
@@ -11241,7 +11247,8 @@ export async function upsertContractLine(
          *  change. Sent, the write is refused (`CONTRACT_LINE_CHANGED`)
          *  once another save has changed the line since that read. */
         expectedUpdatedAt?: string | null;
-      })
+      }),
+  db?: Kysely<KyselyDatabase>
 ) {
   let companyId: string;
   let storedTax: { taxCodeId: string | null; taxPercent: number } | null = null;
@@ -11276,7 +11283,7 @@ export async function upsertContractLine(
   if (contract.error) return contract;
   if (contract.data.status !== "Draft") {
     return contractRefusal(
-      "CONTRACT_NOT_DRAFT",
+      CONTRACT_NOT_DRAFT,
       "Lines can only be added or changed on a Draft contract — use Amend"
     );
   }
@@ -11419,32 +11426,57 @@ export async function upsertContractLine(
       fundedAmount: _fundedAmount,
       ...rest
     } = values;
+    const changes = {
+      ...(fundedByActions.data ? rest : values),
+      updatedBy: line.updatedBy,
+      updatedAt: datetime.timestamp()
+    };
+    const { expectedUpdatedAt } = line;
+    if (db) {
+      return writeDraftContractLine(
+        db,
+        companyId,
+        line.customerContractId,
+        async (trx) => {
+          let update = trx
+            .updateTable("customerContractLine")
+            .set(changes)
+            .where("id", "=", line.id)
+            .where("companyId", "=", companyId)
+            .where("customerContractId", "=", line.customerContractId);
+          // The values it did not change came from that read: a save in
+          // between would be overwritten with them.
+          if (expectedUpdatedAt === null) {
+            update = update.where("updatedAt", "is", null);
+          } else if (expectedUpdatedAt !== undefined) {
+            update = update.where("updatedAt", "=", expectedUpdatedAt);
+          }
+          const written = await update.returning("id").executeTakeFirst();
+          return (
+            written ?? contractRefusal(CONTRACT_LINE_CHANGED, LINE_CHANGED)
+          );
+        }
+      );
+    }
     const update = client
       .from("customerContractLine")
-      .update({
-        ...(fundedByActions.data ? rest : values),
-        updatedBy: line.updatedBy,
-        updatedAt: datetime.timestamp()
-      })
+      .update(changes)
       .eq("id", line.id)
       .eq("companyId", companyId);
-    if (line.expectedUpdatedAt === undefined) {
+    if (expectedUpdatedAt === undefined) {
       return update.select("id").single();
     }
     // The values it did not change came from that read: a save in between
     // would be overwritten with them.
-    const written = await (line.expectedUpdatedAt === null
+    const written = await (expectedUpdatedAt === null
       ? update.is("updatedAt", null)
-      : update.eq("updatedAt", line.expectedUpdatedAt)
+      : update.eq("updatedAt", expectedUpdatedAt)
     )
       .select("id")
       .maybeSingle();
     if (written.error) return { data: null, error: written.error };
     if (!written.data) {
-      return contractRefusal(
-        CONTRACT_LINE_CHANGED,
-        "The line changed after it was read. Read it again and send the change."
-      );
+      return contractRefusal(CONTRACT_LINE_CHANGED, LINE_CHANGED);
     }
     return { data: written.data, error: null };
   }
@@ -11454,6 +11486,42 @@ export async function upsertContractLine(
     .insert([{ ...values, companyId, createdBy: line.createdBy }])
     .select("id")
     .single();
+}
+
+/**
+ * Writes a contract line under the contract's row lock, the one Confirm and
+ * Amend take (`loadContractForUpdate`), once the contract is still a Draft:
+ * a Confirm that committed since the caller's read planned the schedule
+ * from the lines as they were, and keeps them.
+ */
+async function writeDraftContractLine(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  customerContractId: string,
+  write: (
+    trx: KyselyTx
+  ) => Promise<{ id: string } | ReturnType<typeof contractRefusal>>
+): Promise<
+  { data: { id: string }; error: null } | ReturnType<typeof contractRefusal>
+> {
+  return withTransaction(db, async (trx) => {
+    const contract = await trx
+      .selectFrom("customerContract")
+      .select("status")
+      .where("id", "=", customerContractId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    // A contract deleted since the caller's read is no Draft either.
+    if (contract?.status !== "Draft") {
+      return contractRefusal(
+        CONTRACT_NOT_DRAFT,
+        "Lines can only be added or changed on a Draft contract — use Amend"
+      );
+    }
+    const written = await write(trx);
+    return "error" in written ? written : { data: written, error: null };
+  });
 }
 
 type ContractLineFunding = Omit<
@@ -12036,7 +12104,7 @@ export async function insertContractLines(
   if (contract.error) return contract;
   if (contract.data.status !== "Draft") {
     return contractRefusal(
-      "CONTRACT_NOT_DRAFT",
+      CONTRACT_NOT_DRAFT,
       "Lines can only be added or changed on a Draft contract — use Amend"
     );
   }

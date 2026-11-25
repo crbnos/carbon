@@ -388,6 +388,10 @@ How they behave:
 - A new sales invoice customer and the ship-to it clears are one Kysely transaction
   (`changeSalesInvoiceCustomer`): the invoices are locked `FOR UPDATE` and must still
   be Draft, and only an invoice whose customer changes loses its ship-to.
+- Every other field a posted invoice no longer takes (all but the issue, due and paid
+  dates; the invoice customer and invoice supplier included) is written by
+  `writeDraftInvoices`, under the same lock and Draft check: a post that claims an
+  invoice after `refuseLockedInvoices` read it keeps the invoice it posts.
 
 ## Related Modules
 

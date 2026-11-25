@@ -2532,17 +2532,17 @@ export const updateRisk = defineServiceFn({
   input: riskInput.extend({ id: z.string() }),
   permission: { "quality.risks": "Edit" },
 
-  async run(ctx, { id, ...input }) {
+  async run(ctx, { id, assignee, notes, ...input }) {
     const client = ctx.asCaller.supabase;
     const previous = unwrap(ctx, await service.getRisk(client, id));
     if (previous instanceof CarbonError) return previous;
     if (!previous) return ctx.error("notFound", "The risk could not be found");
-    const newAssignee =
-      input.assignee && input.assignee !== previous.assignee
-        ? input.assignee
-        : null;
+    const posted = assignee || null;
+    const assigneeChanged = posted !== (previous.assignee ?? null);
+    const newAssignee = assigneeChanged ? posted : null;
     // The form posts the saved assignee on every edit, so only a change is
-    // checked: a risk whose assignee has left still saves.
+    // checked and written: a risk whose assignee has left still saves, and
+    // the save never puts back an assignee another save changed since the read.
     if (
       newAssignee &&
       !(await isActiveCompanyEmployee(client, ctx.company.id, newAssignee))
@@ -2551,10 +2551,11 @@ export const updateRisk = defineServiceFn({
     }
     const result = await service.upsertRisk(client, {
       ...input,
-      // Left out, it stays undefined, which the update does not write.
-      notes: input.notes,
+      // A key left out is not written; `sanitize` would write undefined as
+      // null.
+      ...(notes !== undefined ? { notes } : {}),
+      ...(assigneeChanged ? { assignee: posted ?? undefined } : {}),
       id,
-      assignee: input.assignee || undefined,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
     });
@@ -3807,6 +3808,8 @@ const gaugeCalibrationRecordInput = z.object({
  * as an unticked box on the form.
  *
  * @param inspectionStatus - Fail when the calibration requires action, adjustment or repair, else Pass, as the form decides it. Leave it out; a value that contradicts the flags is refused.
+ * @param supplierId - The calibration supplier: one of the company's suppliers.
+ * @param approvedBy - The user id of an active employee of the company.
  *
  * @mcp
  */
@@ -3840,10 +3843,17 @@ export const createGaugeCalibrationRecord = defineServiceFn({
  *
  * @remarks
  * Saves a calibration as the calibration form does, with the gauge updates of
- * quality_createGaugeCalibrationRecord. A field left out keeps its value; the
- * result is decided from the flags the record holds when it is saved.
+ * quality_createGaugeCalibrationRecord. Send every field the record keeps, as
+ * the form does: supplierId, approvedBy, temperature, humidity and
+ * measurementStandard left out are cleared. A requires flag, notes and custom
+ * fields left out keep their stored values, and the result is decided from
+ * the flags the record holds when it is saved. When the save moves the
+ * calibration a gauge shows to another gauge or an earlier date, that gauge
+ * then shows its latest remaining calibration, or none.
  *
  * @param inspectionStatus - Fail when the calibration requires action, adjustment or repair, else Pass, as the form decides it. Leave it out; a value that contradicts the flags is refused.
+ * @param supplierId - The calibration supplier: one of the company's suppliers. Checked when it changes; left out, it is cleared.
+ * @param approvedBy - The user id of an active employee of the company. Checked when it changes, so a record whose approver has left still saves; left out, it is cleared.
  *
  * @mcp
  */

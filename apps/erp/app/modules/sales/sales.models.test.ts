@@ -23,10 +23,12 @@ const {
   contractLineFormValues,
   contractLineNextStep,
   contractRevenueMethodsFor,
+  contractScheduleEditValidator,
   customerContactEmailRequiredValidator,
   customerContactValidator,
   contractTermFromServicePeriods,
   customerContractLineValidator,
+  customerContractScheduleEditValidator,
   customerContractValidator,
   customerPortalValidator,
   laborCategoriesWithoutBillRate,
@@ -792,6 +794,28 @@ describe("customerPortalValidator", () => {
       expiresOn
     });
     expect(result.success).toBe(valid);
+  });
+});
+
+describe("a contract schedule edit's invoice date", () => {
+  it.each([
+    ["2026-12-01", true],
+    ["2028-02-29", true],
+    // The shape of a date, but not a day the calendar has.
+    ["2027-02-29", false],
+    ["2026-13-01", false],
+    ["12/01/2026", false]
+  ])("%s → valid %s", (invoiceDate, valid) => {
+    const edit = {
+      intent: "move",
+      customerContractInvoiceId: "inv_1",
+      invoiceDate
+    };
+    // The API's validator and the invoice grid's form copy share the date.
+    expect(contractScheduleEditValidator.safeParse(edit).success).toBe(valid);
+    expect(customerContractScheduleEditValidator.safeParse(edit).success).toBe(
+      valid
+    );
   });
 });
 

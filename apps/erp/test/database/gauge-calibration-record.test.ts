@@ -34,8 +34,30 @@ const ids = {
   theirType: `${prefix}-their-type`,
   ourGauge: `${prefix}-our-gauge`,
   theirGauge: `${prefix}-their-gauge`,
-  theirRecord: `${prefix}-their-record`
+  theirRecord: `${prefix}-their-record`,
+  // One gauge per correction case, so the cases do not share a summary.
+  earlierGauge: `${prefix}-earlier-gauge`,
+  fromGauge: `${prefix}-from-gauge`,
+  toGauge: `${prefix}-to-gauge`,
+  raceGauge: `${prefix}-race-gauge`,
+  raceToGauge: `${prefix}-race-to-gauge`,
+  referenceGauge: `${prefix}-reference-gauge`,
+  ourSupplier: `${prefix}-our-supplier`,
+  theirSupplier: `${prefix}-their-supplier`,
+  employeeType: `${prefix}-employee-type`,
+  // An employee of ours who has left, and an employee of the other company.
+  departed: `${prefix}-departed`,
+  outsider: `${prefix}-outsider`
 };
+const ourGauges = [
+  ids.ourGauge,
+  ids.earlierGauge,
+  ids.fromGauge,
+  ids.toGauge,
+  ids.raceGauge,
+  ids.raceToGauge,
+  ids.referenceGauge
+];
 
 type Db = Kysely<KyselyDatabase>;
 let db: Db;
@@ -123,12 +145,14 @@ beforeAll(async () => {
     await sql`SET LOCAL session_replication_role = replica`.execute(trx);
     await trx
       .insertInto("user")
-      .values({
-        id: ids.user,
-        email: `${prefix}@carbon.ms`,
-        firstName: "Calibration",
-        lastName: "Test"
-      })
+      .values(
+        [ids.user, ids.departed, ids.outsider].map((id) => ({
+          id,
+          email: `${id}@carbon.ms`,
+          firstName: "Calibration",
+          lastName: "Test"
+        }))
+      )
       .execute();
     await trx
       .insertInto("companyGroup")
@@ -160,9 +184,28 @@ beforeAll(async () => {
       ])
       .execute();
     await trx
+      .insertInto("employee")
+      .values([
+        { id: ids.user, companyId: ids.ours, active: true },
+        { id: ids.departed, companyId: ids.ours, active: false },
+        { id: ids.outsider, companyId: ids.theirs, active: true }
+      ].map((employee) => ({ ...employee, employeeTypeId: ids.employeeType })))
+      .execute();
+    await trx
+      .insertInto("supplier")
+      .values([
+        { id: ids.ourSupplier, companyId: ids.ours },
+        { id: ids.theirSupplier, companyId: ids.theirs }
+      ].map((supplier) => ({
+        ...supplier,
+        name: supplier.id,
+        createdBy: ids.user
+      })))
+      .execute();
+    await trx
       .insertInto("gauge")
       .values([
-        [ids.ourGauge, ids.ourType, ids.ours],
+        ...ourGauges.map((id) => [id, ids.ourType, ids.ours]),
         [ids.theirGauge, ids.theirType, ids.theirs]
       ].map(([id, gaugeTypeId, companyId]) => ({
         id: id!,
@@ -204,7 +247,10 @@ afterAll(async () => {
       .deleteFrom("companyGroup")
       .where("id", "in", [ids.ourGroup, ids.theirGroup])
       .execute();
-    await trx.deleteFrom("user").where("id", "=", ids.user).execute();
+    await trx
+      .deleteFrom("user")
+      .where("id", "in", [ids.user, ids.departed, ids.outsider])
+      .execute();
   });
   await db.destroy();
 });
@@ -384,5 +430,305 @@ describeLocal("a calibration record operation", () => {
       requiresRepair: false,
       dateCalibrated: "2403-01-01"
     });
+  }, TIMEOUT);
+});
+
+// The calibration form can change a saved record's gauge and date, so a
+// correction can take away the calibration a gauge shows.
+describeLocal("correcting the calibration a gauge shows", () => {
+  it("moved earlier, the gauge shows its latest calibration after the correction", async () => {
+    const on = { ...calibration, gaugeId: ids.earlierGauge };
+    const may = await createGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2410-05-01"
+    });
+    const june = await createGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2410-06-01",
+      requiresRepair: true
+    });
+    expect([may.error, june.error]).toEqual([null, null]);
+    expect(await gauge(ids.earlierGauge)).toEqual({
+      gaugeCalibrationStatus: "Out-of-Calibration",
+      lastCalibrationDate: "2410-06-01",
+      nextCalibrationDate: "2410-12-01"
+    });
+
+    const corrected = await updateGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2410-04-01",
+      id: june.data!.id
+    });
+
+    expect(corrected.error).toBeNull();
+    // The May Pass is now the latest; the June Fail moved before it.
+    expect(await gauge(ids.earlierGauge)).toEqual({
+      gaugeCalibrationStatus: "In-Calibration",
+      lastCalibrationDate: "2410-05-01",
+      nextCalibrationDate: "2410-11-01"
+    });
+  }, TIMEOUT);
+
+  it("moved to another gauge, the gauge it left shows its latest remaining calibration, or none", async () => {
+    const march = await createGaugeCalibrationRecord(ctx(), {
+      ...calibration,
+      gaugeId: ids.fromGauge,
+      dateCalibrated: "2411-03-01"
+    });
+    const april = await createGaugeCalibrationRecord(ctx(), {
+      ...calibration,
+      gaugeId: ids.fromGauge,
+      dateCalibrated: "2411-04-01",
+      requiresAdjustment: true
+    });
+    expect([march.error, april.error]).toEqual([null, null]);
+
+    const moved = await updateGaugeCalibrationRecord(ctx(), {
+      ...calibration,
+      gaugeId: ids.toGauge,
+      dateCalibrated: "2411-04-01",
+      id: april.data!.id
+    });
+
+    expect(moved.error).toBeNull();
+    expect(await gauge(ids.fromGauge)).toEqual({
+      gaugeCalibrationStatus: "In-Calibration",
+      lastCalibrationDate: "2411-03-01",
+      nextCalibrationDate: "2411-09-01"
+    });
+    expect(await gauge(ids.toGauge)).toEqual({
+      gaugeCalibrationStatus: "Out-of-Calibration",
+      lastCalibrationDate: "2411-04-01",
+      nextCalibrationDate: "2411-10-01"
+    });
+
+    const last = await updateGaugeCalibrationRecord(ctx(), {
+      ...calibration,
+      gaugeId: ids.toGauge,
+      dateCalibrated: "2411-03-01",
+      id: march.data!.id
+    });
+
+    expect(last.error).toBeNull();
+    expect(await gauge(ids.fromGauge)).toEqual({
+      gaugeCalibrationStatus: "Pending",
+      lastCalibrationDate: null,
+      nextCalibrationDate: null
+    });
+    // March is older than the April the gauge already shows.
+    expect(await gauge(ids.toGauge)).toEqual({
+      gaugeCalibrationStatus: "Out-of-Calibration",
+      lastCalibrationDate: "2411-04-01",
+      nextCalibrationDate: "2411-10-01"
+    });
+  }, TIMEOUT);
+
+  // The gauge it leaves is read under its lock: a calibration another save
+  // committed while this one waited is what the gauge then shows.
+  it("moved away, the gauge shows a calibration committed while the save waited on it", async () => {
+    const on = { ...calibration, gaugeId: ids.raceGauge };
+    await createGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2412-03-01"
+    });
+    const june = await createGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2412-06-01"
+    });
+    const other = await connectLocalTestDatabase();
+    const monitor = await connectLocalTestDatabase();
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let held!: (pid: number) => void;
+    const holding = new Promise<number>((resolve) => {
+      held = resolve;
+    });
+    try {
+      // Another save holds the gauge and records May under it.
+      const recording = other.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("gauge")
+          .select("id")
+          .where("id", "=", ids.raceGauge)
+          .where("companyId", "=", ids.ours)
+          .forUpdate()
+          .execute();
+        await trx
+          .insertInto("gaugeCalibrationRecord")
+          .values({
+            gaugeId: ids.raceGauge,
+            dateCalibrated: "2412-05-01",
+            inspectionStatus: "Fail",
+            requiresRepair: true,
+            companyId: ids.ours,
+            createdBy: ids.user
+          })
+          .execute();
+        const { rows } = await sql<{
+          pid: number;
+        }>`SELECT pg_backend_pid() AS pid`.execute(trx);
+        held(rows[0]!.pid);
+        await released;
+      });
+      const pid = await holding;
+
+      const moving = updateGaugeCalibrationRecord(ctx(), {
+        ...calibration,
+        gaugeId: ids.raceToGauge,
+        dateCalibrated: "2412-06-01",
+        id: june.data!.id
+      });
+      await waitUntilBlockedBy(monitor, pid);
+      release();
+      await recording;
+
+      expect((await moving).error).toBeNull();
+      expect(await gauge(ids.raceGauge)).toEqual({
+        gaugeCalibrationStatus: "Out-of-Calibration",
+        lastCalibrationDate: "2412-05-01",
+        nextCalibrationDate: "2412-11-01"
+      });
+    } finally {
+      release();
+      await Promise.all([other.destroy(), monitor.destroy()]);
+    }
+  }, TIMEOUT);
+});
+
+// The supplier and approver columns reference the global tables, and the
+// write bypasses row-level security.
+describeLocal("a calibration record's supplier and approver", () => {
+  const on = { ...calibration, gaugeId: ids.referenceGauge };
+  const saved = (dateCalibrated: string) =>
+    db
+      .selectFrom("gaugeCalibrationRecord")
+      .select(["supplierId", "approvedBy"])
+      .where("gaugeId", "=", ids.referenceGauge)
+      .where("dateCalibrated", "=", dateCalibrated)
+      .execute();
+
+  it.each([
+    ["another company's supplier", { supplierId: ids.theirSupplier }, "notFound"],
+    ["an employee of another company", { approvedBy: ids.outsider }, "validation"],
+    ["an employee who has left", { approvedBy: ids.departed }, "validation"]
+  ])("refuses %s on a create, and saves nothing", async (_name, fields, category) => {
+    const result = await createGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2413-01-01",
+      ...fields
+    });
+
+    expect(result.error?.category).toBe(category);
+    expect(await saved("2413-01-01")).toEqual([]);
+    expect(await gauge(ids.referenceGauge)).toEqual({
+      gaugeCalibrationStatus: "Pending",
+      lastCalibrationDate: null,
+      nextCalibrationDate: null
+    });
+  }, TIMEOUT);
+
+  it("refuses a change to another company's supplier or approver on an update", async () => {
+    const created = await createGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2413-02-01",
+      supplierId: ids.ourSupplier,
+      approvedBy: ids.user
+    });
+    expect(created.error).toBeNull();
+
+    const supplier = await updateGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2413-02-01",
+      supplierId: ids.theirSupplier,
+      id: created.data!.id
+    });
+    const approver = await updateGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2413-02-01",
+      approvedBy: ids.outsider,
+      id: created.data!.id
+    });
+
+    expect([supplier.error?.category, approver.error?.category]).toEqual([
+      "notFound",
+      "validation"
+    ]);
+    expect(await saved("2413-02-01")).toEqual([
+      { supplierId: ids.ourSupplier, approvedBy: ids.user }
+    ]);
+  }, TIMEOUT);
+
+  // The form sends an emptied field as nothing, and its save clears it.
+  it("an update clears the fields left out that the form empties, and keeps the notes", async () => {
+    const created = await createGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2413-04-01",
+      supplierId: ids.ourSupplier,
+      approvedBy: ids.user,
+      temperature: 20,
+      humidity: 0.5,
+      measurementStandard: "NIST",
+      notes: "Checked against block 3"
+    });
+    expect(created.error).toBeNull();
+    const id = created.data!.id;
+    const fields = () =>
+      db
+        .selectFrom("gaugeCalibrationRecord")
+        .select([
+          "supplierId",
+          "approvedBy",
+          "temperature",
+          "humidity",
+          "measurementStandard",
+          "notes"
+        ])
+        .where("id", "=", id)
+        .executeTakeFirstOrThrow();
+    const before = await fields();
+
+    const updated = await updateGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2413-04-01",
+      id
+    });
+
+    expect(updated.error).toBeNull();
+    expect(await fields()).toEqual({
+      supplierId: null,
+      approvedBy: null,
+      temperature: null,
+      humidity: null,
+      measurementStandard: null,
+      notes: before.notes
+    });
+  }, TIMEOUT);
+
+  // The form posts the saved approver on every edit.
+  it("saves a record whose unchanged approver has since left", async () => {
+    const { id } = await db
+      .insertInto("gaugeCalibrationRecord")
+      .values({
+        gaugeId: ids.referenceGauge,
+        dateCalibrated: "2413-03-01",
+        inspectionStatus: "Pass",
+        approvedBy: ids.departed,
+        companyId: ids.ours,
+        createdBy: ids.user
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    const result = await updateGaugeCalibrationRecord(ctx(), {
+      ...on,
+      dateCalibrated: "2413-03-01",
+      approvedBy: ids.departed,
+      measurementStandard: "NIST",
+      id
+    });
+
+    expect(result).toEqual({ data: { id }, error: null });
   }, TIMEOUT);
 });

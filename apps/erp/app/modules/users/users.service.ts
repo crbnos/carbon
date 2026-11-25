@@ -2465,19 +2465,23 @@ export function refuseUnlessCan(
 }
 
 /**
- * The users of a revoke and their pending invites here, or the refusal.
- * Revoking deactivates the user, so it takes only what the Employees,
- * Customers and Suppliers lists offer Revoke Invite on: an invite here that is
- * neither accepted nor revoked, and no membership in the company (an active
- * account is deactivated instead). The operation then revokes these invites
- * where they are still pending, and deactivates only those users. At most 100
- * users: the operation's input caps it.
+ * The users of a revoke and their invites here, or the refusal. Revoking
+ * deactivates the user, so it takes what the Employees, Customers and
+ * Suppliers lists offer Revoke Invite on: a pending invite here and no
+ * membership in the company (an active account is deactivated instead). An
+ * invite revoked earlier and never accepted is taken too, with its
+ * `revokedAt`: its deactivation may not have run, and running it again
+ * removes nothing it already removed. The operation then revokes the pending
+ * invites where they still are, and deactivates only those users and the
+ * already revoked ones. A user with neither an invite nor a membership here
+ * is not found, and their email is not shown. At most 100 users: the
+ * operation's input caps it.
  */
 export async function refuseUnlessPendingInvites(
   ctx: ServiceContext,
   userIds: string[]
 ): Promise<
-  Result<{ users: { id: string; email: string }[]; inviteIds: string[] }>
+  Result<{ userId: string; inviteId: string; revokedAt: string | null }[]>
 > {
   const serviceRole = ctx.asSystem.supabase;
   const ids = [...new Set(userIds)];
@@ -2525,16 +2529,27 @@ export async function refuseUnlessPendingInvites(
   const inviteByEmail = new Map(
     invites.data.map((invite) => [invite.email, invite])
   );
+  // The users were read across companies: one with no tie to this company is
+  // not found, as an id that names no one is.
+  if (
+    users.data.some(
+      (user) => !memberIds.has(user.id) && !inviteByEmail.has(user.email)
+    )
+  ) {
+    return { data: null, error: ctx.error("notFound", "User not found") };
+  }
   const states = users.data.flatMap((user) => {
     const invite = inviteByEmail.get(user.email);
     if (memberIds.has(user.id)) {
       return [`${user.email} has an active account: deactivate it instead`];
     }
-    if (!invite) return [`${user.email} has no invite in this company`];
-    if (invite.revokedAt) {
-      return [`${user.email} was deactivated or their invite revoked`];
+    if (invite?.acceptedAt) {
+      return [
+        invite.revokedAt
+          ? `${user.email} was deactivated`
+          : `${user.email} accepted their invite`
+      ];
     }
-    if (invite.acceptedAt) return [`${user.email} accepted their invite`];
     return [];
   });
   if (states.length > 0) {
@@ -2547,13 +2562,18 @@ export async function refuseUnlessPendingInvites(
     };
   }
   return {
-    data: {
-      users: users.data,
-      inviteIds: users.data.flatMap((user) => {
-        const invite = inviteByEmail.get(user.email);
-        return invite ? [invite.id] : [];
-      })
-    },
+    data: users.data.flatMap((user) => {
+      const invite = inviteByEmail.get(user.email);
+      return invite
+        ? [
+            {
+              userId: user.id,
+              inviteId: invite.id,
+              revokedAt: invite.revokedAt ?? null
+            }
+          ]
+        : [];
+    }),
     error: null
   };
 }

@@ -146,8 +146,6 @@ export const updateSalesInvoiceField = defineServiceFn({
   permission: { "invoicing.salesInvoices": "Edit" },
 
   async run(ctx, { ids, field, value }) {
-    const client = ctx.asCaller.supabase;
-    const companyId = ctx.company.id;
     const locked = await service.refuseLockedInvoices(
       ctx,
       "salesInvoice",
@@ -156,30 +154,18 @@ export const updateSalesInvoiceField = defineServiceFn({
       "Cannot modify a locked sales invoice."
     );
     if (locked) return locked;
-    const audit = {
-      updatedBy: ctx.auditUserId,
-      updatedAt: datetime.timestamp()
-    };
 
     if (field === "invoiceCustomerId") {
       if (!value)
         return ctx.error("validation", "Invoice customer is required");
       const currency = await service.partyCurrency(ctx, "customer", value);
       if (currency instanceof Error) return currency;
-      const update = await client
-        .from("salesInvoice")
-        .update({ ...salesInvoiceCustomerChange(value, currency), ...audit })
-        .in("id", ids)
-        .eq("companyId", companyId)
-        .select("id");
-      if (update.error) {
-        return ctx.error(
-          "internal",
-          "Failed to update the invoices",
-          update.error
-        );
-      }
-      return service.updatedInvoices(ctx, update.data);
+      return service.writeDraftInvoices(
+        ctx,
+        "salesInvoice",
+        ids,
+        salesInvoiceCustomerChange(value, currency)
+      );
     }
 
     if (field === "customerId") {
@@ -1073,24 +1059,12 @@ export const updatePurchaseInvoiceField = defineServiceFn({
         return ctx.error("validation", "Invoice supplier is required");
       const currency = await service.partyCurrency(ctx, "supplier", value);
       if (currency instanceof Error) return currency;
-      const update = await ctx.asCaller.supabase
-        .from("purchaseInvoice")
-        .update({
-          ...purchaseInvoiceSupplierChange(value, currency),
-          updatedBy: ctx.auditUserId,
-          updatedAt: datetime.timestamp()
-        })
-        .in("id", ids)
-        .eq("companyId", ctx.company.id)
-        .select("id");
-      if (update.error) {
-        return ctx.error(
-          "internal",
-          "Failed to update the invoices",
-          update.error
-        );
-      }
-      return service.updatedInvoices(ctx, update.data);
+      return service.writeDraftInvoices(
+        ctx,
+        "purchaseInvoice",
+        ids,
+        purchaseInvoiceSupplierChange(value, currency)
+      );
     }
 
     return service.writeInvoiceField(ctx, "purchaseInvoice", {

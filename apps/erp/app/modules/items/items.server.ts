@@ -5819,12 +5819,17 @@ export const setMethodOperationToolStepLink = defineServiceFn({
  *
  * @remarks
  * Creates a material as the New Material form does, with one revision per
- * entry of `sizes`. When the company generates material IDs (Settings →
- * Items), the ID and name are derived from the substance, shape, grade, type,
- * dimension and finish, as in the form: leave out `id` and `name`, or send
- * exactly the derived values; anything else is refused and names them. When
- * IDs are typed, `id` and `name` are required. An ID another material has is
- * refused. Returns the new item's id (the one the material page opens).
+ * distinct size in `sizes`: a repeated or empty size is ignored, and no size
+ * makes the initial revision. When the company generates material IDs
+ * (Settings → Items), the ID and name are derived from the substance, shape,
+ * grade, type, dimension and finish, as in the form: leave out `id` and
+ * `name`, or send exactly the derived values; anything else is refused and
+ * names them. When IDs are typed, `id` and `name` are required. An ID another
+ * material has is refused, and so is an item group (`postingGroupId`) of
+ * another company. The revisions, their item cost, the material row, the pick
+ * method and the shelf life are written together: a refused setup creates
+ * nothing and leaves the ID free. Returns the new item's id (the one the
+ * material page opens).
  *
  * @param id - The new material's ID. Required when material IDs are typed; with generated IDs leave it out.
  * @param name - The material's short description. Required when material IDs are typed; with generated IDs leave it out. Printed on returns to suppliers and copied onto new purchase order, RFQ and supplier quote lines, which suppliers see: keep internal notes out.

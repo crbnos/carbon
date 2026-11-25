@@ -11,6 +11,9 @@ export type LotStockRow = {
   locationId: string;
   storageUnitId: string | null;
   quantity: number;
+  /** The row's stock stripe: a project id, or null (the default) for
+   *  unassigned stock. */
+  projectId?: string | null;
 };
 
 /** An Available lot of `itemId`, its quantity the sum of its stock rows, each
@@ -85,4 +88,32 @@ export async function lotStock(
     storageUnitId: row.storageUnitId,
     quantity: Number(row.quantity)
   }));
+}
+
+/** The stock of a lot and its split children in one storage unit, per stripe
+ *  (`common` for unassigned stock). */
+export async function lotStripesIn(
+  db: Db,
+  companyId: string,
+  lotId: string,
+  storageUnitId: string
+): Promise<Record<string, number>> {
+  const rows = await db
+    .selectFrom("itemLedger as il")
+    .innerJoin("trackedEntity as te", "te.id", "il.trackedEntityId")
+    .select("il.projectId")
+    .select((eb) => eb.fn.sum<number>("il.quantity").as("quantity"))
+    .where("il.companyId", "=", companyId)
+    .where("il.storageUnitId", "=", storageUnitId)
+    .where((eb) =>
+      eb.or([
+        eb("te.id", "=", lotId),
+        sql<boolean>`${eb.ref("te.attributes")} ->> 'Split From Entity ID' = ${lotId}`
+      ])
+    )
+    .groupBy("il.projectId")
+    .execute();
+  return Object.fromEntries(
+    rows.map((row) => [row.projectId ?? "common", Number(row.quantity)])
+  );
 }

@@ -13,7 +13,7 @@ import { Edition } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { render } from "react-email";
 import { sendCompanyEmail } from "../../../email/company-email";
-import { refreshResentInvite } from "../../../invite-refresh";
+import { resendInvite, revocationStands } from "../../../invite-refresh";
 import { inngest } from "../../client";
 
 export const userAdminFunction = inngest.createFunction(
@@ -22,30 +22,20 @@ export const userAdminFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const serviceRole = getCarbonServiceRole();
     const payload = event.data;
+    logger.info("User admin update", { type: payload.type, id: payload.id });
 
-    const result = await step.run("user-admin-action", async () => {
-      logger.info("User admin update", { type: payload.type, id: payload.id });
-
-      let result: Result = { success: false, message: "Unknown action" };
-
-      switch (payload.type) {
-        case "deactivate":
-          logger.info("Deactivating a user", { id: payload.id });
-          result = await deactivateUser(
-            serviceRole,
-            payload.id,
-            payload.companyId,
-            payload.actorId,
-            payload.ip
-          );
-          if (result.success && CarbonEdition === Edition.Cloud) {
-            await updateSubscriptionQuantityForCompany(payload.companyId);
-          }
-          break;
-        case "resend":
-          const { id: userId, companyId, location, ip, revokedAt } = payload;
-          logger.info("Resending an invite", { id: payload.id });
-          const [company, user] = await Promise.all([
+    let result: Result;
+    if (payload.type === "resend") {
+      const { id: userId, companyId, location, ip, revokedAt } = payload;
+      // The request checked the invite was re-sendable; an acceptance or a
+      // revoke while this waited in the queue fails the refresh, and one
+      // after it skips the delivery: no email goes out.
+      result = await resendInvite(
+        serviceRole,
+        step,
+        { userId, companyId, revokedAt },
+        async (invite) => {
+          const [company, inviter] = await Promise.all([
             serviceRole
               .from("company")
               .select("name")
@@ -54,52 +44,30 @@ export const userAdminFunction = inngest.createFunction(
             serviceRole
               .from("user")
               .select("email, fullName")
-              .eq("id", userId)
+              .eq("id", invite.createdBy)
               .single()
           ]);
-
-          if (!company.data || !user.data) {
-            throw new Error("Failed to load company or user");
-          }
-
-          // The request checked the invite was re-sendable; an acceptance or
-          // a revoke while this waited in the queue fails the refresh, and
-          // no email goes out.
-          const refreshed = await refreshResentInvite(serviceRole, {
-            userId,
-            email: user.data.email,
-            companyId,
-            revokedAt
-          });
-          if ("failure" in refreshed) {
-            return { success: false, message: refreshed.message };
-          }
-
-          const inviter = await serviceRole
-            .from("user")
-            .select("email, fullName")
-            .eq("id", refreshed.createdBy)
-            .single();
+          if (!company.data) throw new Error("Failed to load company");
 
           const inviteLink = await getSsoAwareInviteLink(
             serviceRole,
-            user.data.email,
-            refreshed.code,
+            invite.email,
+            invite.code,
             companyId
           );
 
           await sendCompanyEmail(serviceRole, companyId, {
-            to: user.data.email,
-            subject: `You have been invited to join ${company.data?.name} on Carbon`,
+            to: invite.email,
+            subject: `You have been invited to join ${company.data.name} on Carbon`,
             headers: {
               "X-Entity-Ref-ID": nanoid()
             },
             html: await render(
               InviteEmail({
-                invitedByEmail: inviter.data?.email ?? user.data.email,
+                invitedByEmail: inviter.data?.email ?? invite.email,
                 invitedByName: inviter.data?.fullName ?? "",
-                email: user.data.email,
-                name: user.data.fullName ?? "",
+                email: invite.email,
+                name: invite.name,
                 companyName: company.data.name,
                 inviteLink,
                 ip,
@@ -108,26 +76,53 @@ export const userAdminFunction = inngest.createFunction(
               })
             )
           });
-
-          result = {
+        }
+      );
+    } else {
+      result = await step.run("user-admin-action", async () => {
+        logger.info("Deactivating a user", { id: payload.id });
+        // Queued by Revoke Invite: a resend and an acceptance since then
+        // keep the account.
+        if (
+          payload.revokedAt &&
+          !(await revocationStands(serviceRole, {
+            userId: payload.id,
+            companyId: payload.companyId,
+            revokedAt: payload.revokedAt
+          }))
+        ) {
+          return {
             success: true,
-            message: `Successfully resent invite for ${payload.id}`
+            message:
+              "The invite was sent again or accepted after the revoke: nothing deactivated"
           };
-          break;
-      }
+        }
+        const deactivated = await deactivateUser(
+          serviceRole,
+          payload.id,
+          payload.companyId,
+          payload.actorId,
+          payload.ip
+        );
+        if (deactivated.success && CarbonEdition === Edition.Cloud) {
+          await updateSubscriptionQuantityForCompany(payload.companyId);
+        }
+        return deactivated;
+      });
+    }
 
-      if (result.success) {
-        logger.info("User admin action succeeded", { id: payload.id });
-      } else {
-        logger.error("Admin action {payloadType} failed for {payloadId}", {
-          payloadType: payload.type,
-          payloadId: payload.id,
-          reason: result.message
-        });
-      }
-
-      return result;
-    });
+    if (result.success) {
+      logger.info("User admin action succeeded", {
+        id: payload.id,
+        message: result.message
+      });
+    } else {
+      logger.error("Admin action {payloadType} failed for {payloadId}", {
+        payloadType: payload.type,
+        payloadId: payload.id,
+        reason: result.message
+      });
+    }
 
     return result;
   }

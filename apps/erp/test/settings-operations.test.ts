@@ -967,6 +967,33 @@ describe("setting a record's custom field values", () => {
     expect(updates()).toHaveLength(1);
   });
 
+  // Taken only because the records hold it: written back, it would undo a
+  // save another person made to that field since this call read the records.
+  it.each([
+    ["a List value its options no longer hold", { shade: "Blue" }],
+    ["a deleted field's stored null", { retired: null }]
+  ])("leaves %s out of the write, and still clears a Date sent as null", async (_name, held) => {
+    const { ctx, updates } = recordCustomFields({
+      fields: [
+        { id: "color", dataTypeId: DataType.Text, listOptions: null },
+        { id: "shade", dataTypeId: DataType.List, listOptions: ["Red"] },
+        { id: "due", dataTypeId: DataType.Date, listOptions: null }
+      ],
+      stored: [{ id: "P-1", customFields: held }]
+    });
+
+    const result = await setRecordCustomFields(ctx, {
+      ...partValues,
+      ids: ["P-1"],
+      customFields: { color: "Red", due: null, ...held }
+    });
+
+    expect(result.error).toBeNull();
+    expect(updates().map((update) => update.body)).toEqual([
+      expect.objectContaining({ p_set: { color: "Red" }, p_clear: ["due"] })
+    ]);
+  });
+
   it("refuses a write that changed no record", async () => {
     const { ctx } = recordCustomFields({ changed: [] });
 

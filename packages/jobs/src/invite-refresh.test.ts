@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { refreshResentInvite } from "./invite-refresh";
+import {
+  type ResentInvite,
+  refreshResentInvite,
+  resendInvite,
+  revocationStands
+} from "./invite-refresh";
 
 type Row = Record<string, unknown>;
 
@@ -43,7 +48,13 @@ function memoryClient(
           filters.push((row) => (row[column] ?? null) === value);
           return query;
         },
-        maybeSingle: async () => ({ data: run()[0] ?? null, error: null })
+        maybeSingle: async () => ({ data: run()[0] ?? null, error: null }),
+        single: async () => {
+          const rows = run();
+          return rows.length === 1
+            ? { data: rows[0], error: null }
+            : { data: null, error: { message: "Not one row" } };
+        }
       };
       return query;
     }
@@ -222,5 +233,146 @@ describe("refreshResentInvite", () => {
       failure: "notFound",
       message: "No invite record found for user"
     });
+  });
+});
+
+/**
+ * Inngest's memo of a run's steps: a finished step's output is kept as JSON
+ * and returned on the run's retry; a step that threw runs again.
+ */
+function inngestSteps() {
+  const done = new Map<string, unknown>();
+  return {
+    run: async (id: string, fn: () => unknown) => {
+      if (done.has(id)) return done.get(id);
+      const output = JSON.parse(JSON.stringify(await fn()));
+      done.set(id, output);
+      return output;
+    }
+  };
+}
+
+describe("resendInvite", () => {
+  const tables = (overrides: Row = {}): Record<string, Row[]> => ({
+    user: [{ id: "usr_1", email: "pat@example.com", fullName: "Pat Doe" }],
+    invite: [invite({ revokedAt: REVOKED_EARLIER, ...overrides })],
+    userToCompany: []
+  });
+
+  /** Runs the resend; its first delivery fails, and `between` runs before the retry. */
+  async function resendWithRetry(
+    db: Record<string, Row[]>,
+    between: () => void = () => undefined
+  ) {
+    const steps = inngestSteps();
+    const delivered: ResentInvite[] = [];
+    let attempts = 0;
+    const deliver = async (sent: ResentInvite) => {
+      attempts += 1;
+      if (attempts === 1) throw new Error("The mail server timed out");
+      delivered.push(sent);
+    };
+    const run = () =>
+      resendInvite(
+        memoryClient(db) as never,
+        steps,
+        { userId: "usr_1", companyId: "cmp_1", revokedAt: REVOKED_EARLIER },
+        deliver
+      );
+    await expect(run()).rejects.toThrow("The mail server timed out");
+    between();
+    return { result: await run(), delivered };
+  }
+
+  // The refresh cleared the revocation; refreshing again on the retry would
+  // read it gone, refuse, and send nothing.
+  it("delivers the refreshed code when a delivery is retried", async () => {
+    const db = tables();
+
+    const { result, delivered } = await resendWithRetry(db);
+
+    expect(result).toEqual({
+      success: true,
+      message: "Successfully resent invite for usr_1"
+    });
+    expect(delivered).toEqual([
+      {
+        email: "pat@example.com",
+        name: "Pat Doe",
+        code: db.invite![0]!.code,
+        createdBy: "usr_admin"
+      }
+    ]);
+    expect(db.invite![0]!.code).not.toBe("code-sent");
+    expect(db.invite![0]!.revokedAt).toBeNull();
+  });
+
+  it.each([
+    ["revoked", { revokedAt: REVOKED_NOW }],
+    ["sent again", { code: "code-of-a-later-resend" }],
+    ["accepted", { acceptedAt: ACCEPTED_NOW }]
+  ])(
+    "delivers nothing when the invite was %s before the retry",
+    async (_label, change) => {
+      const db = tables();
+
+      const { result, delivered } = await resendWithRetry(db, () =>
+        Object.assign(db.invite![0]!, change)
+      );
+
+      expect(result.success).toBe(false);
+      expect(delivered).toEqual([]);
+    }
+  );
+
+  it("refreshes nothing and delivers nothing for an invite revoked since the request", async () => {
+    const db = tables({ revokedAt: REVOKED_NOW });
+    const delivered: ResentInvite[] = [];
+
+    const result = await resendInvite(
+      memoryClient(db) as never,
+      inngestSteps(),
+      { userId: "usr_1", companyId: "cmp_1", revokedAt: REVOKED_EARLIER },
+      async (sent) => {
+        delivered.push(sent);
+      }
+    );
+
+    expect(result.success).toBe(false);
+    expect(delivered).toEqual([]);
+    expect(db.invite![0]).toMatchObject({
+      code: "code-sent",
+      revokedAt: REVOKED_NOW
+    });
+  });
+});
+
+describe("revocationStands", () => {
+  const stands = (overrides: Row = {}, members: Row[] = []) =>
+    revocationStands(
+      memoryClient({
+        user: [{ id: "usr_1", email: "pat@example.com" }],
+        invite: [invite({ revokedAt: REVOKED_EARLIER, ...overrides })],
+        userToCompany: members
+      }) as never,
+      { userId: "usr_1", companyId: "cmp_1", revokedAt: REVOKED_EARLIER }
+    );
+
+  it("holds while the invite carries the revocation and the person has no membership", async () => {
+    expect(await stands()).toBe(true);
+  });
+
+  it.each([
+    ["a resend cleared the revocation", { revokedAt: null }],
+    ["a later revoke replaced it", { revokedAt: REVOKED_NOW }],
+    ["the invite was accepted", { acceptedAt: ACCEPTED_NOW }]
+  ])("lapses once %s", async (_label, change) => {
+    expect(await stands(change)).toBe(false);
+  });
+
+  it("lapses once the person has a membership in the company", async () => {
+    expect(await stands({}, [{ userId: "usr_1", companyId: "cmp_1" }])).toBe(
+      false
+    );
   });
 });

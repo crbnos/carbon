@@ -75,8 +75,10 @@ the caller's client. The readable id is `material.id`, or the id derived from th
 `companySettings.materialGeneratedIds` is on; `createMaterial` passes the pair it checked first
 and the create refuses a derived pair that differs. Each distinct size is one item revision
 (`newMaterialRevisions`, `material-properties.ts`: a repeated or blank size is dropped, and no
-size is the initial revision `0`). A requested item group or unit cost that is not saved
-(`itemCost` row count short) fails and rolls back the whole create. The `material` row is an
+size is the initial revision `0`). An item group of another company is refused
+(`requireCompanyItemPostingGroup`: the foreign key checks only that the group exists), and a
+requested item group or unit cost that is not saved (`itemCost` row count short) fails and rolls
+back the whole create. The `material` row is an
 insert `ON CONFLICT (id, "companyId") DO UPDATE`: no code deletes it when its items are deleted,
 so a re-created ID takes over the row left behind. The create takes `lockMaterialReadableId`
 (`items.service.ts`, an advisory lock on the company and readable id) before it looks for live
@@ -123,7 +125,7 @@ the service loads the rows they read and writes what they decide.
   as the panel's name field does. `generatedMaterialUpdateRefusal` refuses a `readableId` other
   than the one the material ends up with (the panel has no ID field there), and a `name` that
   differs from a derived one. `active` is never touched; `postingGroupId`/`unitCost` go to
-  `itemCost`; `readableId` renames when ids are hand-typed (`updateMaterial` refuses an empty one, which would read as left out); `sizes` adds a revision per new size
+  `itemCost` (a group of another company is refused, as on create); `readableId` renames when ids are hand-typed (`updateMaterial` refuses an empty one, which would read as left out); `sizes` adds a revision per new size
   via `createRevision` after the transaction, refused before any write while the material is open
   in a change notice. The pick method and shelf life are also written after the transaction, so a
   failure there leaves the transaction's writes in place. An update by readable id is refused when
