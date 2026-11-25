@@ -36,13 +36,13 @@ import Grid from "~/components/Grid";
 import { useAfterFirstPaint, useQuantityFormatter } from "~/hooks";
 import { planningOrderStart } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
+import type { PlanningPurchaseOrder } from "./planning-review";
+import { isPlanningActionLate } from "./planning-review";
 import type { PlanningActionHandlers } from "./PlanningActionLines";
 import {
   PlanningActionRowActions,
   PlanningActionTypeWithReason
 } from "./PlanningActionLines";
-import type { PlanningPurchaseOrder } from "./planning-review";
-import { isPlanningActionLate } from "./planning-review";
 import {
   rescheduledFromToday,
   type SuggestedOrderDates,
@@ -535,7 +535,6 @@ export function OpenOrdersGrid({
 
   // `handlers` is a rest object, new on every render, so the memo depends on
   // its members instead.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the handler members listed ARE `handlers`
   const columns = useMemo<ColumnDef<OpenOrderRow>[]>(
     () => [
       {
@@ -629,6 +628,7 @@ export function OpenOrdersGrid({
         }
       }
     ],
+    // oxlint-disable-next-line react/exhaustive-deps -- the handler members listed ARE `handlers`
     [
       documentHeader,
       quantityHeader,
@@ -842,7 +842,6 @@ export function PlannedOrdersGrid({
 
   // `handlers` is a rest object, new on every render, so the memo depends on
   // its members instead.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the handler members listed ARE `handlers`
   const columns = useMemo<ColumnDef<PlannedOrderRow>[]>(
     () => [
       {
@@ -990,6 +989,7 @@ export function PlannedOrdersGrid({
         }
       }
     ],
+    // oxlint-disable-next-line react/exhaustive-deps -- the handler members listed ARE `handlers`
     [
       formatQuantity,
       traceLine,

@@ -31,6 +31,7 @@ import {
 } from "~/types/validators";
 import { currencyCodes } from "../accounting/types";
 import { returnTypes } from "../service/service.models";
+import { inheritableInvoiceAutomations } from "../settings/settings.models";
 import {
   incoterms,
   itemType,
@@ -1539,14 +1540,23 @@ export const rentalBillingCycles = [
 
 export const rentalBillingTimings = ["Advance", "Arrears"] as const;
 
-/** What happens to an invoice the daily run creates — the DB enum
- *  `invoiceAutomation`. An agreement's null falls back to the company's. */
+/** A rental agreement's invoicing modes: the DB enum `invoiceAutomation`.
+ *  Manual (the daily run creates no invoice) is the agreement's alone; a
+ *  contract and the company default take `inheritableInvoiceAutomations`. */
 export const invoiceAutomations = [
-  "Draft Only",
-  "Post",
-  "Post and Email",
-  "Post and Send via Stripe"
+  "Manual",
+  ...inheritableInvoiceAutomations
 ] as const;
+
+/** The most periods an early invoice bills on an open-ended agreement. */
+export const RENTAL_EARLY_INVOICE_MAX_PERIODS = 12;
+
+export const rentalEarlyInvoiceValidator = z.object({
+  periods: zfd.numeric(z.number().int().min(0)),
+  /** The preview's first period, so a resubmit cannot bill later periods.
+   *  Drafting refuses periods > 0 without it; the preview reads none. */
+  fromPeriodStart: zfd.text(z.string().optional())
+});
 
 /** A rental unit's rate frequency: what one unit of its `rate` buys. */
 export const rentalRateUnits = ["Day", "Week", "Month"] as const;
@@ -2059,7 +2069,9 @@ export const customerContractValidator = z
     billedThrough: zfd.text(z.string().optional()),
     recognizeRevenueFrom: zfd.text(z.string().optional()),
     /** Empty means the company's default. */
-    invoiceAutomation: zfd.text(z.enum(invoiceAutomations).optional()),
+    invoiceAutomation: zfd.text(
+      z.enum(inheritableInvoiceAutomations).optional()
+    ),
     paymentTermId: zfd.text(z.string().optional()),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().optional()),
@@ -2935,5 +2947,5 @@ export const contractFromSalesOrderValidator = contractFromSalesOrderFields
   .superRefine(checkContractFromSalesOrderDates);
 
 export const customerContractInvoiceAutomationValidator = z.object({
-  invoiceAutomation: z.enum(invoiceAutomations).nullable()
+  invoiceAutomation: z.enum(inheritableInvoiceAutomations).nullable()
 });

@@ -440,6 +440,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.quote.quoteId": msg`Quote`,
   "entity.quote.revisionId": msg`Revision`,
   "entity.quote.salesPersonId": msg`Salesperson`,
+  "entity.quote.sendViaEmail": msg`Send via email`,
   "entity.quote.status": msg`Status`,
   "entity.quote.tags": msg`Tags`,
   "entity.receipt": msg`Receipt`,

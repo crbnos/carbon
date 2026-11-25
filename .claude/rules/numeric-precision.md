@@ -2,9 +2,8 @@
 paths:
   - "packages/database/src/precision.ts"
   - "packages/utils/src/format.ts"
-  - "packages/checks/src/conformance/no-derived-percent-column.ts"
-  - "packages/checks/src/conformance/no-raw-rounding.ts"
-  - "packages/checks/src/conformance/no-inline-fraction-digits.ts"
+  - "packages/checks/src/conformance/migrations.ts"
+  - "packages/checks/src/conformance/numbers.ts"
   - "packages/checks/src/sources/typescript.ts"
   - "packages/form/src/components/Number.tsx"
   - "packages/ee/src/accounting/providers/xero/serialize.ts"

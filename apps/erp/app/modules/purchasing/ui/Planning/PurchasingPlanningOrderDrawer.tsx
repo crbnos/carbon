@@ -58,6 +58,8 @@ import type { RefusedPlanningOrder } from "~/modules/production/production.model
 import type { DrawerPlannedOrder } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import { DrawerPlannedOrders } from "~/modules/production/ui/Planning/DrawerPlannedOrders";
+import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
+import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import {
   type PlanningActionHandlers,
   reviewPathFor
@@ -77,8 +79,6 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
-import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
-import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { loader as openLinesLoader } from "~/routes/api+/purchasing.planning-open-lines";
 import type { loader as supplierPartsLoader } from "~/routes/api+/purchasing.planning-supplier-parts";
@@ -634,7 +634,6 @@ export const PurchasingPlanningOrderDrawer = memo(
       ]
     );
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     useEffect(() => {
       if (fetcher.state !== "idle" || !fetcher.data) {
         return;
@@ -708,6 +707,7 @@ export const PurchasingPlanningOrderDrawer = memo(
         if (refused.length > 0 || errors.length > 0) return;
         onClose();
       }
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, [fetcher.state, fetcher.data]);
 
     const supplierDisclosure = useDisclosure();

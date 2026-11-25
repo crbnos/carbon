@@ -113,7 +113,7 @@ const SalesOrderConfirmBody = ({
   const canEmail = integrations.has("email");
 
   const [notificationType, setNotificationType] = useState<"Email" | "None">(
-    canEmail ? "Email" : "None"
+    "None"
   );
   const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
@@ -180,6 +180,9 @@ const SalesOrderConfirmBody = ({
                   customer={salesOrder?.customerId ?? undefined}
                   warnIfNoEmail
                   onMissingEmailChange={setContactMissingEmail}
+                  emailNotice={(name) =>
+                    t`This will email the sales order to ${name}.`
+                  }
                 />
                 <EmailRecipients name="cc" label={t`CC`} type="employee" />
               </>
@@ -735,8 +738,9 @@ const SalesOrderHeader = () => {
         action={path.to.deleteSalesOrder(orderId)}
         isOpen={deleteSalesOrderModal.isOpen}
         name={routeData?.salesOrder?.salesOrderId!}
-        text={t`Are you sure you want to delete ${routeData?.salesOrder
-          ?.salesOrderId!}? This cannot be undone.`}
+        text={t`Are you sure you want to delete ${
+          routeData?.salesOrder?.salesOrderId!
+        }? This cannot be undone.`}
         onCancel={() => {
           deleteSalesOrderModal.onClose();
         }}

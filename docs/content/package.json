@@ -12,7 +12,7 @@
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix --no-error-on-unmatched-pattern",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

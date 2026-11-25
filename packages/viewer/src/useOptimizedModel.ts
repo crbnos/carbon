@@ -185,9 +185,9 @@ export function useOptimizedModel({
       artifacts.size != null &&
       artifacts.size <= MODEL_RAW_KEEP_MAX_BYTES &&
       isRawRenderable(artifactRawName)) ||
-      (file &&
-        file.size <= MODEL_RAW_KEEP_MAX_BYTES &&
-        isRawRenderable(file.name))
+    (file &&
+      file.size <= MODEL_RAW_KEEP_MAX_BYTES &&
+      isRawRenderable(file.name))
   );
 
   // Bridges the fire -> job-visible gap: the row status takes a couple of

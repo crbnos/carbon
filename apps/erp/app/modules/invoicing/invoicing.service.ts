@@ -13868,8 +13868,8 @@ export function paymentKind(
     isDeposit: isAR
       ? Boolean(
           payment.rentalAgreementId ??
-            payment.salesOrderId ??
-            payment.customerContractId
+          payment.salesOrderId ??
+          payment.customerContractId
         )
       : !isReimbursement && Boolean(payment.purchaseOrderId),
     partyId,

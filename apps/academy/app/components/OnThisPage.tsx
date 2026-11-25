@@ -24,7 +24,6 @@ export function OnThisPage() {
 
   // Keep the active entry visible inside the TOC's own scroll area (like docs) —
   // scrolls only the nav container, never the page.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when active changes
   useEffect(() => {
     const el = activeRef.current;
     const scroller = navRef.current;
@@ -45,7 +44,6 @@ export function OnThisPage() {
     }
   }, [activeTopic]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-scan on route change
   useEffect(() => {
     const sections = Array.from(
       document.querySelectorAll<HTMLElement>("main section[id]")

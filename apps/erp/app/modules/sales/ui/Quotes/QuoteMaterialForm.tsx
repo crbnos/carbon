@@ -190,7 +190,6 @@ const QuoteMaterialForm = ({
 
   const [, setSearchParams] = useUrlParams();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     const newPath = path.to.quoteLineMakeMethod(
       quoteId,
@@ -200,6 +199,7 @@ const QuoteMaterialForm = ({
 
     setSearchParams({ materialId: initialValues.id ?? null });
     navigate(newPath);
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [
     fetcher.data,
     initialValues,

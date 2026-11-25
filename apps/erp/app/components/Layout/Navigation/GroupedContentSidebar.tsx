@@ -337,9 +337,9 @@ const ViewsReorderGroup = ({
     .sort()
     .join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: views is followed by value
   useEffect(() => {
     setSortedViews([...views].sort((a, b) => a.sortOrder - b.sortOrder));
+    // oxlint-disable-next-line react/exhaustive-deps -- views is followed by value
   }, [viewsSignature]);
 
   const debouncedOnReorder = useDebounce(onReorder, 500, true);

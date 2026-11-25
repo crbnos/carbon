@@ -215,7 +215,6 @@ const ProductionEventsTable = memo(
 
     const navigate = useNavigate();
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const renderContextMenu = useCallback<
       (row: ProductionEvent) => JSX.Element
     >(
@@ -241,6 +240,7 @@ const ProductionEventsTable = memo(
         </>
       ),
 
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
       [permissions]
     );
     const [params] = useUrlParams();

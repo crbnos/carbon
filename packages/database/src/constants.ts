@@ -414,6 +414,7 @@ export const Constants = {
       ],
       inventoryCountStatus: ["Draft", "Pending", "Posted"],
       invoiceAutomation: [
+        "Manual",
         "Draft Only",
         "Post",
         "Post and Email",

@@ -125,7 +125,6 @@ const AttributeCategoriesTable = memo(
       ];
     }, [navigate, params, t]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const renderContextMenu = useCallback(
       (row: AttributeCategory) => {
         return (
@@ -180,6 +179,7 @@ const AttributeCategoriesTable = memo(
         );
       },
 
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
       [navigate, params, permissions]
     );
 

@@ -81,7 +81,6 @@ const ServiceJobProperties = () => {
   });
   const estimateStatusLabels = useEstimateStatusLabels();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onCoverageChange = useCallback(
     (coverage: string) => {
       const formData = new FormData();
@@ -91,10 +90,10 @@ const ServiceJobProperties = () => {
         action: path.to.serviceJobCoverage(jobId)
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [jobId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
     (field: string, value: string | null) => {
       const formData = new FormData();
@@ -106,6 +105,7 @@ const ServiceJobProperties = () => {
         action: path.to.serviceJobUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [jobId]
   );
 

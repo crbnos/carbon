@@ -24,10 +24,6 @@ import {
 import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
-  decideApprovalRequest,
-  openApprovalRequests
-} from "@carbon/ee/approvals/document.server";
-import {
   approveRequest,
   canApproveRequest,
   getApprovalRuleByAmount,
@@ -37,6 +33,10 @@ import {
   isApprovalRequired,
   isCompanyAdmin
 } from "@carbon/ee/approvals.server";
+import {
+  decideApprovalRequest,
+  openApprovalRequests
+} from "@carbon/ee/approvals/document.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";

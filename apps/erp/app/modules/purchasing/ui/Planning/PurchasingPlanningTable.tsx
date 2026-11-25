@@ -68,15 +68,6 @@ import {
 } from "~/modules/production/production.utils";
 import type { PlanningAction } from "~/modules/production/types";
 import {
-  isApplyablePlanningAction,
-  isNewSupplyAction,
-  PlanningActionLines,
-  PlanningActionsCell,
-  planningActionDot,
-  planningActionsExportValue,
-  usePlanningActionTypeOptions
-} from "~/modules/production/ui/Planning/PlanningActionLines";
-import {
   draftsOfRefusedOrders,
   openNewSupplyActions,
   plannedOrdersFromActions,
@@ -88,6 +79,15 @@ import {
   planningRowKey
 } from "~/modules/production/ui/Planning/planning-action-scope";
 import { splitOrdersByFence } from "~/modules/production/ui/Planning/planning-fence";
+import {
+  isApplyablePlanningAction,
+  isNewSupplyAction,
+  PlanningActionLines,
+  PlanningActionsCell,
+  planningActionDot,
+  planningActionsExportValue,
+  usePlanningActionTypeOptions
+} from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   type PlanningSegmentProject,
   planningColumns
@@ -266,7 +266,6 @@ const PlanningTable = memo(
       [changeActionHandlers, purchaseOrderMenuItems, onRelease]
     );
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     useEffect(() => {
       if (bulkUpdateFetcher.state !== "idle" || !bulkUpdateFetcher.data) {
         return;
@@ -328,6 +327,7 @@ const PlanningTable = memo(
           );
         }
       }
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, [bulkUpdateFetcher.state, bulkUpdateFetcher.data]);
 
     const [suppliersMap, setSuppliersMap] = useState<Record<string, string>>(
@@ -462,12 +462,10 @@ const PlanningTable = memo(
       scope.delete(PLANNING_DRAWER_PARAM);
       return scope.toString();
     }, [searchParams]);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: the scope string is the dependency
     useEffect(() => {
       setOrdersMap({});
     }, [pageScope]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const onBulkUpdate = useCallback(
       async (selectedRows: PurchasingPlanningItem[], action: "order") => {
         if (isReadingPlannedOrders.current) return;
@@ -591,6 +589,7 @@ const PlanningTable = memo(
         });
       },
 
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
       [
         bulkUpdateFetcher,
         carbon,
@@ -710,7 +709,6 @@ const PlanningTable = memo(
     // The drawer's Open Orders rows carry the same Apply / Dismiss / Reopen /
     // Assign controls as the expanded row, through the same single fetcher.
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<PurchasingPlanningItem>[]>(() => {
       const shared = planningColumns<PurchasingPlanningItem>({
         i18n,
@@ -949,6 +947,7 @@ const PlanningTable = memo(
           }
         }
       ];
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, [
       t,
       i18n,

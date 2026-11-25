@@ -6173,7 +6173,6 @@ export async function upsertProcedure(
         attributes.length > 0
           ? client.from("procedureStep").insert(
               attributes.map((attribute) => {
-                // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
                 const { id, procedureId, ...rest } = attribute;
                 return {
                   ...rest,
@@ -6186,7 +6185,6 @@ export async function upsertProcedure(
         parameters.length > 0
           ? client.from("procedureParameter").insert(
               parameters.map((parameter) => {
-                // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
                 const { id, procedureId, ...rest } = parameter;
                 return {
                   ...rest,
@@ -9146,7 +9144,6 @@ export async function copyAssemblyInstructionAsVersion(
   if ((sourceSteps.data?.length ?? 0) > 0) {
     const stepRows = sourceSteps.data.map((step) => {
       // Strip identity/audit columns; keep every authored field verbatim.
-      // biome-ignore lint/correctness/noUnusedVariables: destructure omits identity/audit columns before re-insert
       const { id, createdAt, updatedAt, updatedBy, ...rest } = step;
       return {
         ...rest,
@@ -9188,7 +9185,6 @@ export async function copyAssemblyInstructionAsVersion(
       if (rows.error) return rows;
       if (!rows.data?.length) return rows;
       const inserts = rows.data.map((row: any) => {
-        // biome-ignore lint/correctness/noUnusedVariables: destructure omits identity/audit columns before re-insert
         const { id, createdAt, updatedAt, updatedBy, ...rest } = row;
         return {
           ...rest,
@@ -13266,14 +13262,12 @@ export async function convertPlannedOrdersForActions(
           .where("p.startDate", "<", currentWeek.startDate)
           .execute()
       : [];
-    calendar.pastWeekActionRows = pastWeekActions.map(
-      (row): ConversionRow => ({
-        itemId: row.itemId,
-        locationId: row.locationId,
-        planningSegmentId: row.planningSegmentId,
-        orderType: row.type === "Make" ? "Make" : "Buy"
-      })
-    );
+    calendar.pastWeekActionRows = pastWeekActions.map((row): ConversionRow => ({
+      itemId: row.itemId,
+      locationId: row.locationId,
+      planningSegmentId: row.planningSegmentId,
+      orderType: row.type === "Make" ? "Make" : "Buy"
+    }));
     // each key's week, by due date: the current one from the first day of
     // time, as it holds every overdue planned order; a past action week
     // reads as the current one
@@ -19307,7 +19301,7 @@ export async function getMethod(
       // FIXME: hydrated here but never applied — this make-method path does
       // not run configuration rules (itemToJob does). Applying them is a
       // behavior change for its own PR.
-      // biome-ignore lint/correctness/noUnusedVariables: see FIXME above
+      // oxlint-disable-next-line no-unused-vars -- see FIXME above
       const hydratedConfiguration = await hydrateConfiguration(
         db,
         configuration,
@@ -19371,7 +19365,7 @@ export async function getMethod(
       );
 
       // Get configuration code by field
-      // biome-ignore lint/correctness/noUnusedVariables: unapplied configuration, see FIXME above
+      // oxlint-disable-next-line no-unused-vars -- unapplied configuration, see FIXME above
       const configurationCodeByField = configurationRules.data?.reduce<
         Record<string, string>
       >((acc, rule) => {
@@ -20935,7 +20929,7 @@ export async function getMethod(
 
         // FIXME: never called — configuration rules are not applied on this
         // make-method path.
-        // biome-ignore lint/correctness/noUnusedVariables: see FIXME above
+        // oxlint-disable-next-line no-unused-vars -- see FIXME above
         async function getConfiguredValue<T>({
           id,
           field,

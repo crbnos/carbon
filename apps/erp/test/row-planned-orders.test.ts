@@ -58,7 +58,6 @@ function plannedOrderTable(rows: Row[]) {
         range = [start, end];
         return builder;
       },
-      // biome-ignore lint/suspicious/noThenProperty: a PostgREST builder is awaited
       then: (
         resolve: (value: ReturnType<typeof run>) => unknown,
         reject: (reason: unknown) => unknown

@@ -84,13 +84,13 @@ export function TreeView<TData>({
     [onScroll]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     //subscribe to scrollRef scroll event
     if (!scrollRef?.current || onScroll === undefined) return;
     scrollRef.current.addEventListener("scroll", scrollCallback);
     return () =>
       scrollRef.current?.removeEventListener("scroll", scrollCallback);
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [scrollRef?.current]);
 
   return (
@@ -240,27 +240,26 @@ export function useTree<TData, TFilterValue>({
   );
 
   //fire onSelectedIdChanged()
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     const selectedId = selectedIdFromState(state.nodes);
     if (selectedId !== previousSelectedId.current) {
       previousSelectedId.current = selectedId;
       onSelectedIdChanged?.(selectedId);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [state.changes.selectedId]);
 
   //update tree when the data changes or the tree's shape changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (isEager || treeShape !== previousTreeShape.current) {
       previousTreeShape.current = treeShape;
       dispatch({ type: "UPDATE_TREE", payload: { tree } });
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [treeShape, tree]);
 
   //update the filter, if it's changed
   const previousFilter = useRef(filter);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     //check if the value (not reference) of the filter is the same
     const previousValue = previousFilter.current
@@ -273,6 +272,7 @@ export function useTree<TData, TFilterValue>({
     if (previousValue !== newValue) {
       dispatch({ type: "UPDATE_FILTER", payload: { filter } });
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [filter?.value]);
 
   const virtualizer = useVirtualizer({
@@ -292,7 +292,6 @@ export function useTree<TData, TFilterValue>({
     overscan: 20
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const scrollToNodeFn = useCallback(
     (id: string) => {
       const itemIndex = state.visibleNodeIds.findIndex((n) => n === id);
@@ -306,10 +305,10 @@ export function useTree<TData, TFilterValue>({
         }
       }
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const selectNode = useCallback(
     (id: string, scrollToNode = false) => {
       dispatch({
@@ -317,23 +316,23 @@ export function useTree<TData, TFilterValue>({
         payload: { id, scrollToNode, scrollToNodeFn }
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const deselectNode = useCallback(
     (id: string) => {
       dispatch({ type: "DESELECT_NODE", payload: { id } });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const deselectAllNodes = useCallback(() => {
     dispatch({ type: "DESELECT_ALL_NODES" });
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [state]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const toggleNodeSelection = useCallback(
     (id: string, scrollToNode = true) => {
       dispatch({
@@ -341,10 +340,10 @@ export function useTree<TData, TFilterValue>({
         payload: { id, scrollToNode, scrollToNodeFn }
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const expandNode = useCallback(
     (id: string, scrollToNode = true) => {
       dispatch({
@@ -352,18 +351,18 @@ export function useTree<TData, TFilterValue>({
         payload: { id, scrollToNode, scrollToNodeFn }
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const collapseNode = useCallback(
     (id: string) => {
       dispatch({ type: "COLLAPSE_NODE", payload: { id } });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const toggleExpandNode = useCallback(
     (id: string, scrollToNode = true) => {
       dispatch({
@@ -371,10 +370,10 @@ export function useTree<TData, TFilterValue>({
         payload: { id, scrollToNode, scrollToNodeFn }
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const selectFirstVisibleNode = useCallback(
     (scrollToNode = true) => {
       dispatch({
@@ -382,10 +381,10 @@ export function useTree<TData, TFilterValue>({
         payload: { scrollToNode, scrollToNodeFn }
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [tree, state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const selectLastVisibleNode = useCallback(
     (scrollToNode = true) => {
       dispatch({
@@ -393,10 +392,10 @@ export function useTree<TData, TFilterValue>({
         payload: { scrollToNode, scrollToNodeFn }
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [tree, state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const selectNextVisibleNode = useCallback(
     (scrollToNode = true) => {
       dispatch({
@@ -404,10 +403,10 @@ export function useTree<TData, TFilterValue>({
         payload: { scrollToNode, scrollToNodeFn }
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const selectPreviousVisibleNode = useCallback(
     (scrollToNode = true) => {
       dispatch({
@@ -415,10 +414,10 @@ export function useTree<TData, TFilterValue>({
         payload: { scrollToNode, scrollToNodeFn }
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const selectParentNode = useCallback(
     (scrollToNode = true) => {
       dispatch({
@@ -426,50 +425,50 @@ export function useTree<TData, TFilterValue>({
         payload: { scrollToNode, scrollToNodeFn }
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const expandAllBelowDepth = useCallback(
     (depth: number) => {
       dispatch({ type: "EXPAND_ALL_BELOW_DEPTH", payload: { depth } });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const collapseAllBelowDepth = useCallback(
     (depth: number) => {
       dispatch({ type: "COLLAPSE_ALL_BELOW_DEPTH", payload: { depth } });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const expandLevel = useCallback(
     (level: number) => {
       dispatch({ type: "EXPAND_LEVEL", payload: { level } });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const collapseLevel = useCallback(
     (level: number) => {
       dispatch({ type: "COLLAPSE_LEVEL", payload: { level } });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const toggleExpandLevel = useCallback(
     (level: number) => {
       dispatch({ type: "TOGGLE_EXPAND_LEVEL", payload: { level } });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const getTreeProps = useCallback(() => {
     return {
       role: "tree",
@@ -559,9 +558,9 @@ export function useTree<TData, TFilterValue>({
         }
       }
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [state]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const getNodeProps = useCallback(
     (id: string) => {
       const node = state.nodes[id];
@@ -576,6 +575,7 @@ export function useTree<TData, TFilterValue>({
         tabIndex: node.selected ? -1 : undefined
       };
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [state]
   );
 

@@ -84,6 +84,7 @@ const RentalAgreementBilling = ({
     (typeof invoiceAutomations)[number],
     string
   > = {
+    Manual: t`Manual`,
     "Draft Only": t`Draft only`,
     Post: t`Post`,
     "Post and Email": t`Post and email`,

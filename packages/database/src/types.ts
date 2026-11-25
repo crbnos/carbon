@@ -64727,6 +64727,7 @@ export type Database = {
           quoteId: string
           revisionId: number
           salesPersonId: string | null
+          sendViaEmail: boolean
           status: Database["public"]["Enums"]["quoteStatus"]
           tags: string[] | null
           updatedAt: string | null
@@ -64764,6 +64765,7 @@ export type Database = {
           quoteId: string
           revisionId?: number
           salesPersonId?: string | null
+          sendViaEmail?: boolean
           status?: Database["public"]["Enums"]["quoteStatus"]
           tags?: string[] | null
           updatedAt?: string | null
@@ -64801,6 +64803,7 @@ export type Database = {
           quoteId?: string
           revisionId?: number
           salesPersonId?: string | null
+          sendViaEmail?: boolean
           status?: Database["public"]["Enums"]["quoteStatus"]
           tags?: string[] | null
           updatedAt?: string | null
@@ -106315,6 +106318,14 @@ export type Database = {
           paymentCustomerName: string | null
           paymentPostalCode: string | null
           paymentStateProvince: string | null
+          shipToAddressLine1: string | null
+          shipToAddressLine2: string | null
+          shipToCity: string | null
+          shipToCountryCode: string | null
+          shipToCountryName: string | null
+          shipToCustomerName: string | null
+          shipToPostalCode: string | null
+          shipToStateProvince: string | null
         }
         Relationships: [
           {
@@ -106327,6 +106338,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["paymentCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipToCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -111302,6 +111320,13 @@ export type Database = {
         Args: { company_id: string; item_id: string }
         Returns: Json
       }
+      get_items_used_in: {
+        Args: { company_id: string; item_ids: string[] }
+        Returns: {
+          itemId: string
+          usedIn: Json
+        }[]
+      }
       get_job_issue_bins: {
         Args: { p_company_id: string; p_item_ids: string[]; p_job_id: string }
         Returns: {
@@ -114693,6 +114718,7 @@ export type Database = {
         | "Capitalization"
       inventoryCountStatus: "Draft" | "Pending" | "Posted"
       invoiceAutomation:
+        | "Manual"
         | "Draft Only"
         | "Post"
         | "Post and Email"

@@ -10,7 +10,6 @@ import { loaderQuery, loaderRetry } from "./cache";
  * (as `useFetcher<typeof loader>` takes): then it is what that loader returns,
  * without the `data()` wrapper.
  */
-// biome-ignore lint/suspicious/noExplicitAny: any loader signature
 export type LoaderData<T> = T extends (...args: any[]) => infer R
   ? Unwrapped<Awaited<R>>
   : T;

@@ -233,38 +233,34 @@ export function buildBatchMergeRecords(input: {
     ledgerInserts: [
       ...parents
         .filter((p) => p.receivedQuantity > 0)
-        .map(
-          (p): MergeLedgerRecord => ({
-            postingDate,
-            itemId: p.itemId ?? p.sourceDocumentId,
-            quantity: -round(p.receivedQuantity),
-            locationId: p.bin.locationId,
-            storageUnitId: p.bin.storageUnitId,
-            entryType: "Negative Adjmt.",
-            documentType: "Batch Merge",
-            documentId: mergeActivityId,
-            trackedEntityId: p.id,
-            createdBy: userId,
-            companyId
-          })
-        ),
-      // One positive row per bin the parents occupied: the merge changes
-      // which lot the stock belongs to, never where it is.
-      ...receivedByBin(parents).map(
-        ({ bin, quantity }): MergeLedgerRecord => ({
+        .map((p): MergeLedgerRecord => ({
           postingDate,
-          itemId: first.itemId ?? first.sourceDocumentId,
-          quantity,
-          locationId: bin.locationId,
-          storageUnitId: bin.storageUnitId,
-          entryType: "Positive Adjmt.",
+          itemId: p.itemId ?? p.sourceDocumentId,
+          quantity: -round(p.receivedQuantity),
+          locationId: p.bin.locationId,
+          storageUnitId: p.bin.storageUnitId,
+          entryType: "Negative Adjmt.",
           documentType: "Batch Merge",
           documentId: mergeActivityId,
-          trackedEntityId: mergedId,
+          trackedEntityId: p.id,
           createdBy: userId,
           companyId
-        })
-      )
+        })),
+      // One positive row per bin the parents occupied: the merge changes
+      // which lot the stock belongs to, never where it is.
+      ...receivedByBin(parents).map(({ bin, quantity }): MergeLedgerRecord => ({
+        postingDate,
+        itemId: first.itemId ?? first.sourceDocumentId,
+        quantity,
+        locationId: bin.locationId,
+        storageUnitId: bin.storageUnitId,
+        entryType: "Positive Adjmt.",
+        documentType: "Batch Merge",
+        documentId: mergeActivityId,
+        trackedEntityId: mergedId,
+        createdBy: userId,
+        companyId
+      }))
     ]
   };
 }

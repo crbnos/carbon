@@ -53,9 +53,9 @@ import {
   customerContractLinesAddValidator,
   isProjectBillingMethod
 } from "../../sales.models";
+import { contractLineFormValues, contractLineName } from "./contractGrid";
 import ContractLineForm from "./ContractLineForm";
 import ContractMoney from "./ContractMoney";
-import { contractLineFormValues, contractLineName } from "./contractGrid";
 import type { Contract, ContractLine } from "./types";
 
 type ProductRow = {

@@ -106,7 +106,7 @@
     "db:seed:dev": "tsx src/seed-dev.ts",
     "db:seed:dev:admin": "tsx src/seed-dev-admin.ts",
     "deploy": "supabase link --project-ref $SUPABASE_PROJECT_ID && supabase db push",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

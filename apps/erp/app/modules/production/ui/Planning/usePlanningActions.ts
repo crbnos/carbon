@@ -9,14 +9,14 @@ import { createElement, useCallback, useMemo, useRef } from "react";
 import { Link } from "react-router";
 import { actionsOfTypes } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
-import {
-  type FenceRow,
-  useTimeFenceOverrides
-} from "~/modules/production/ui/Planning/PlanningFence";
 import { rowsReplannedByApply } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { planningRowKey } from "~/modules/production/ui/Planning/planning-action-scope";
 import { actionsInsideFence } from "~/modules/production/ui/Planning/planning-fence";
 import { isStaleRelease } from "~/modules/production/ui/Planning/planning-review";
+import {
+  type FenceRow,
+  useTimeFenceOverrides
+} from "~/modules/production/ui/Planning/PlanningFence";
 import { path } from "~/utils/path";
 
 /**

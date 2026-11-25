@@ -29,6 +29,8 @@ type CustomerContactSelectProps = Omit<
   warnIfNoEmail?: boolean;
   /** Called when the "selected contact has no email" state changes. */
   onMissingEmailChange?: (missing: boolean) => void;
+  /** Builds a note shown under the field, e.g. who an email goes to. */
+  emailNotice?: (contactName: string) => string;
 };
 
 const CustomerContactPreview = (
@@ -53,6 +55,7 @@ const CustomerContact = ({
   customer,
   warnIfNoEmail,
   onMissingEmailChange,
+  emailNotice,
   ...props
 }: CustomerContactSelectProps) => {
   const { t } = useLingui();
@@ -110,6 +113,13 @@ const CustomerContact = ({
       {missingEmail && (
         <p className="text-sm text-destructive">
           {t`This contact has no email address.`}
+        </p>
+      )}
+      {emailNotice && selected && !missingEmail && (
+        <p className="text-sm text-muted-foreground">
+          {emailNotice(
+            selected.contact?.fullName || selected.contact?.email || ""
+          )}
         </p>
       )}
       {create.item !== null && (

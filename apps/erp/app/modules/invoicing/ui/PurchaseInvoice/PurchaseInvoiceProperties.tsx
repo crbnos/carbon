@@ -66,7 +66,6 @@ const PurchaseInvoiceProperties = () => {
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (field: keyof PurchaseInvoice, value: string | null) => {
       if (value === routeData?.purchaseInvoice[field]) {
@@ -83,10 +82,10 @@ const PurchaseInvoiceProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [invoiceId, routeData?.purchaseInvoice]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -101,6 +100,7 @@ const PurchaseInvoiceProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [invoiceId]
   );
 

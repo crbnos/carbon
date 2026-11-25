@@ -227,9 +227,9 @@ function writeSchemaFile(catalog: Catalog): void {
   mkdirSync(dirname(SCHEMA_FILE), { recursive: true });
   writeFileSync(SCHEMA_FILE, `${JSON.stringify(manifest, null, 2)}\n`);
   // lint-staged has already run by the time the pre-commit hook stages this file,
-  // so format it here or it never sees Biome at all.
+  // so format it here or it never sees oxfmt at all.
   try {
-    execFileSync("pnpm", ["exec", "biome", "format", "--write", SCHEMA_FILE], {
+    execFileSync("pnpm", ["exec", "oxfmt", SCHEMA_FILE], {
       stdio: "pipe"
     });
   } catch {

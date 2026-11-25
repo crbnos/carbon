@@ -528,17 +528,16 @@ const SalesInvoicePostBody = ({
   const requestKey = `${contactId ?? ""}|${committedEmail ?? ""}`;
   const loadedKeyRef = useRef<string | null>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `stripeCustomer` is a fresh object each render, so depending on it would re-run this effect forever.
   useEffect(() => {
     if (!isStripe || !contactId) return;
     loadedKeyRef.current = requestKey;
     stripeCustomer.load(
       path.to.api.stripeConnectCustomer(invoiceId, contactId, committedEmail)
     );
+    // oxlint-disable-next-line react/exhaustive-deps -- `stripeCustomer` is a fresh object each render, so depending on it would re-run this effect forever.
   }, [isStripe, contactId, invoiceId, committedEmail]);
 
   // Errors are toasted and violations shown by the violation hook.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once per answer
   useEffect(() => {
     const posted = fetcher.data?.data;
     if (!posted) return;
@@ -553,6 +552,7 @@ const SalesInvoicePostBody = ({
       );
     }
     onClose();
+    // oxlint-disable-next-line react/exhaustive-deps -- runs once per answer
   }, [fetcher.data]);
 
   const resolution = stripeCustomer.data ?? null;

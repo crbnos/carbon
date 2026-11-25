@@ -15,7 +15,7 @@
   "sideEffects": false,
   "scripts": {
     "clean": "rimraf .turbo node_modules",
-    "lint": "biome lint --fix",
+    "lint": "oxlint --fix",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

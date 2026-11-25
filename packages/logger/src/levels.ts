@@ -32,7 +32,7 @@ export function parseLogLevel(
   const normalized = value?.toLowerCase().trim();
   if (normalized && isLogLevel(normalized)) return normalized;
   if (value) {
-    // biome-ignore lint/suspicious/noConsole: pre-configure, only safe channel
+    // oxlint-disable-next-line no-console -- pre-configure, only safe channel
     console.warn(
       `[@carbon/logger] invalid LOG_LEVEL "${value}", using "${fallback}"`
     );

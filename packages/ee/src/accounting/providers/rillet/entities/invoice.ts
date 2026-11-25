@@ -376,7 +376,9 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     // parts catalog into Rillet Products. The account is replayed from the
     // POSTED journal, so a historical invoice keeps its own account.
     const salesProductRemoteId = salesRevenueAccountId
-      ? await (await this.getShippingItemSyncer()).ensureSalesProduct({
+      ? await (
+          await this.getShippingItemSyncer()
+        ).ensureSalesProduct({
           revenueAccountId: salesRevenueAccountId,
           baseCurrencyCode: local.baseCurrencyCode,
           baseCurrencyDecimals: local.baseCurrencyDecimalPlaces
@@ -385,14 +387,18 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     // A second synthetic product when the Service Revenue account differs;
     // the same product when the posting fell back to the Sales account.
     const serviceProductRemoteId = serviceRevenueAccountId
-      ? await (await this.getShippingItemSyncer()).ensureSalesProduct({
+      ? await (
+          await this.getShippingItemSyncer()
+        ).ensureSalesProduct({
           revenueAccountId: serviceRevenueAccountId,
           baseCurrencyCode: local.baseCurrencyCode,
           baseCurrencyDecimals: local.baseCurrencyDecimalPlaces
         })
       : null;
     const shippingProductRemoteId = shippingAccount
-      ? await (await this.getShippingItemSyncer()).ensureShippingProduct({
+      ? await (
+          await this.getShippingItemSyncer()
+        ).ensureShippingProduct({
           shippingAccountId: shippingAccount.id,
           baseCurrencyCode: local.baseCurrencyCode,
           baseCurrencyDecimals: local.baseCurrencyDecimalPlaces

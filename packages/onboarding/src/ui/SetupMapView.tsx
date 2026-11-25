@@ -17,7 +17,6 @@ import { setupGroupKey } from "../content/board";
 import { SETUP_GROUPS } from "../content/setup";
 import { filterByModule, flagKey, setupAnchorId } from "../logic";
 import type { CustomDataPayload, ImplementationRowData } from "../types";
-import { ProgressPill } from "./ProgressPill";
 import {
   CustomRowSection,
   EditableInput,
@@ -27,6 +26,7 @@ import {
   SectionList,
   StatusToggle
 } from "./primitives";
+import { ProgressPill } from "./ProgressPill";
 import {
   useCanEdit,
   useCheckMap,

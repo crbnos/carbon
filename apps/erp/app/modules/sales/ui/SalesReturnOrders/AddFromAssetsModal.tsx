@@ -76,13 +76,13 @@ const AddFromAssetsBody = ({
     setLimit(PAGE_SIZE);
   }, 400);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher is stable; re-run only on query inputs
   useEffect(() => {
     const params = new URLSearchParams({ limit: String(limit) });
     if (search.trim()) params.set("search", search.trim());
     assetsFetcher.load(
       `${path.to.salesReturnOrderFromAssets(orderId)}?${params.toString()}`
     );
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher is stable; re-run only on query inputs
   }, [orderId, search, limit]);
 
   const assets = assetsFetcher.data?.assets ?? [];

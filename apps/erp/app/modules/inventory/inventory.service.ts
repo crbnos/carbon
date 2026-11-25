@@ -273,11 +273,11 @@ import {
 import { ruleError, sanitize } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
 import { rescheduleJob } from "../production/production.service";
-import { lockServiceJob } from "../service/service.service";
 import {
   coverageLineDescription,
   serviceCoverageAccount
 } from "../service/service-job-plan";
+import { lockServiceJob } from "../service/service.service";
 import {
   hardenPegsForSupply,
   linkPegsToItemLedger,

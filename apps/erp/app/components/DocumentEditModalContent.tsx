@@ -114,7 +114,7 @@ export default function DocumentEditModal({
             initialHeaderSectionId={editor.template.headerSectionId ?? null}
             initialFooterSectionId={editor.template.footerSectionId ?? null}
             sections={editor.sections}
-            customFields={[]}
+            customFields={editor.customFields}
             previewEntities={[]}
             termsSeed={
               (editor.termsSeed ?? undefined) as JSONContent | undefined

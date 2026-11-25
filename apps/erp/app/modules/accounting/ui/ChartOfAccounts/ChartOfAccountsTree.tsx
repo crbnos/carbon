@@ -227,7 +227,7 @@ const ChartOfAccountsTree = memo(
             const balance = account.netChange ?? 0;
 
             return (
-              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer surface of the role="treeitem" wrapper (TreeView getNodeProps), which takes the focus and handles Enter/Space; the arrow keys live on the role="tree" container, and the ledger/actions are real buttons in the row
+              // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer surface of the role="treeitem" wrapper (TreeView getNodeProps), which takes the focus and handles Enter/Space; the arrow keys live on the role="tree" container, and the ledger/actions are real buttons in the row
               <div
                 className={cn(
                   "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row max-md:h-11",

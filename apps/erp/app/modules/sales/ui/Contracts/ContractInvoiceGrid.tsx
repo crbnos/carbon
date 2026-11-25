@@ -34,8 +34,8 @@ import {
 } from "~/hooks";
 import { path } from "~/utils/path";
 import ContractAmountsModal from "./ContractAmountsModal";
-import ContractMoney from "./ContractMoney";
 import { contractLineName, lineColumnKey } from "./contractGrid";
+import ContractMoney from "./ContractMoney";
 import type { ContractRouteData } from "./types";
 
 type ContractInvoiceGridProps = Pick<

@@ -2347,7 +2347,6 @@ export async function upsertQualityDocument(
       steps.length > 0
         ? client.from("qualityDocumentStep").insert(
             steps.map((step) => {
-              // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
               const { id, qualityDocumentId, ...rest } = step;
               return {
                 ...rest,

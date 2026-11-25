@@ -107,7 +107,6 @@ export function useLinkedDrawerItem<T extends { id: string }>({
   const latest = useRef({ drawer, rows });
   latest.current = { drawer, rows };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the address is the only trigger
   useEffect(() => {
     const { drawer: current, rows: currentRows } = latest.current;
     if (!linkedId) {
@@ -118,6 +117,7 @@ export function useLinkedDrawerItem<T extends { id: string }>({
     const row = currentRows.find((r) => r.id === linkedId);
     if (row) current.open(row);
     else setLinkedId(null, true);
+    // oxlint-disable-next-line react/exhaustive-deps -- the address is the only trigger
   }, [linkedId]);
 
   return { ...drawer, open, close };
