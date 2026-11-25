@@ -140,7 +140,7 @@ Every amount billed is rounded to the agreement currency's decimals: a part mont
 
 A daily job invoices every billing period due on or before today (in the company's timezone) and every charge dated on or before today. What happens next follows the invoicing setting: the company default on **Settings → Invoicing** (**"Recurring Invoices"**, **Post and email** unless changed), or the agreement's own **"Invoicing"** property.
 
-- **Manual**: the daily job creates no invoice for the agreement. You bill it with [**"Invoice"**](#invoicing-ahead), and **"Sell to Customer"** still drafts its own invoice. Only the agreement's own **"Invoicing"** property offers Manual; the company setting and contracts do not.
+- **Manual**: while the agreement is active, the daily job creates no invoice for its rental units or its charges. You bill them with [**"Invoice"**](#invoicing-ahead), and **"Sell to Customer"** still drafts its own invoice. A unit treated as a sale is the exception: Invoice leaves its lease payments out, so the daily job still drafts each one when it falls due. Those drafts are never posted or emailed on their own. Once the agreement is closed, the daily job drafts what a voided invoice returned to be billed, as for any agreement, because Invoice does not take a closed agreement. Only the agreement's own **"Invoicing"** property offers Manual; the company setting and contracts do not.
 - **Draft only**: one draft invoice per agreement; a person reviews and posts it.
 - **Post**: rent is posted automatically.
 - **Post and email**: rent is posted and emailed to the agreement's contact, with the PDF attached, from the company's name, replying to the receivables email. It needs a contact with an email; without one the invoice is posted and marked **"Not sent"**.
@@ -172,13 +172,13 @@ When no period is left to bill, N starts at 0 and Invoice drafts what is due alo
 
 <Screenshot label="Invoice dialog on an active rental agreement with the next 2 periods chosen, listing each period line with its tax and the subtotal, tax and total" />
 
-Invoice needs permission to edit rental agreements and to create sales invoices.
+Invoice needs permission to edit rental agreements and to create sales invoices. When an early-return credit is due, it also needs permission to create credit memos; without it, Invoice is refused and drafts nothing.
 
 Through the API or MCP, a call that bills 1 or more periods must name the first period it expects to bill (`fromPeriodStart`). Carbon refuses the call when another period comes first, so a retried call never bills the following periods. A call for the due charges alone (0 periods) needs none.
 
 ### Next invoice
 
-On an active agreement, the **"Next Invoice"** card above **"Billing Periods"** shows the invoice the next billing pass will draft, before it exists: the day it will be drafted, each line, the tax and the total. When charges go on their own held invoice, the card shows both. On a Manual agreement the card says that the daily run creates no invoices for it.
+On an active agreement, the **"Next Invoice"** card above **"Billing Periods"** shows the invoice the next billing pass will draft, before it exists: the day it will be drafted, each line, the tax and the total. When charges go on their own held invoice, the card shows both. On a Manual agreement the card says that the daily run only bills units treated as a sale.
 
 **"Preview PDF"** opens that invoice in the company's sales invoice template, numbered "Preview", so the tax and the layout can be checked ahead of time. Nothing is saved; the real invoice is drafted on that day as usual. **"Preview PDF"** needs permission to view invoicing.
 
@@ -383,8 +383,8 @@ Close blocker, checked first. A Draft or Pending rental shipment or receipt of t
 ### "Every unit must be returned or sold before the agreement closes" / "Every billing period must be invoiced before the agreement closes" / "Every charge must be invoiced before the agreement closes"
 Close blockers. Return units, then use **"Invoice"** (All remaining on a fixed term) to draft an invoice for the remaining periods and due charges, and a credit memo for any early-return credit. Post them and any held invoice. Note a charge dated in the future is not billed until its date.
 
-### "A unit is on rent; return it before cancelling the agreement" / "The agreement has been invoiced; it can be closed, not cancelled" / "Rental income has been recognized on this agreement; it can be closed, not cancelled" / "A unit on this agreement was sold"
-Cancel blockers. Once anything is billed or accrued the agreement is closed instead.
+### Cancelling a rental agreement is refused
+Cancel blockers: "A unit is on rent; return it before cancelling the agreement", "The agreement has been invoiced; it can be closed, not cancelled", "Rental income has been recognized on this agreement; it can be closed, not cancelled", "A unit on this agreement was sold". Once anything is billed or accrued the agreement is closed instead.
 
 ### "Only a Draft rental agreement can be deleted. Cancel it instead."
 Delete is Draft-only.

@@ -31585,8 +31585,8 @@ msgstr "Das Stichtagsdatum ist gültig."
 msgid "The cutover date must be the first day of a period."
 msgstr "Das Umstellungsdatum muss der erste Tag einer Periode sein."
 
-msgid "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
-msgstr "Der tägliche Lauf erstellt für diese Vereinbarung keine Rechnungen. Verwenden Sie Rechnung, um Zeiträume selbst abzurechnen."
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "Der tägliche Lauf fakturiert nur Einheiten, die als Verkauf behandelt werden. Verwenden Sie Rechnung, um die übrigen Zeiträume selbst zu fakturieren."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Der gestrichelte Schwellenwert, unter den Sie den Bestand nicht fallen lassen möchten."

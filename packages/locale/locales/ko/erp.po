@@ -31585,8 +31585,8 @@ msgstr "전환 날짜가 유효합니다."
 msgid "The cutover date must be the first day of a period."
 msgstr "회계 개시일은 회계기간의 첫 날이어야 합니다."
 
-msgid "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
-msgstr "매일 실행은 이 계약에 대해 송장을 생성하지 않습니다. 기간을 직접 청구하려면 송장을 사용하세요."
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "매일 실행은 판매로 처리된 개만 청구합니다. 나머지 기간은 송장을 사용하여 직접 청구하세요."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "재고가 이 아래로 내려가지 않기를 원하는 점선 임계값입니다."

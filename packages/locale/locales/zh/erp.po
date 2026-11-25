@@ -31585,8 +31585,8 @@ msgstr "启用日期有效"
 msgid "The cutover date must be the first day of a period."
 msgstr "启用日期必须是会计期间的第一天。"
 
-msgid "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
-msgstr "每日运行不会为此协议创建发票。请使用“发票”手动为各期开票。"
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "每日运行仅对按销售处理的件进行开票。如需自行为其他周期开票，请使用发票。"
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "你不希望库存跌破的虚线阈值。"

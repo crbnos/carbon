@@ -31585,8 +31585,8 @@ msgstr "Дата переходит допустима"
 msgid "The cutover date must be the first day of a period."
 msgstr "Дата начала учета должна быть первым днём периода."
 
-msgid "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
-msgstr "Ежедневный прогон не создает счета-фактуры для этого договора. Используйте «Счет-фактура», чтобы самостоятельно выставлять счета за периоды."
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "Ежедневный запуск выставляет счета только за единицы, учитываемые как продажа. Используйте Счет-фактуру, чтобы выставить счета за остальные периоды самостоятельно."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Пунктирный порог, ниже которого вы не хотите, чтобы опускался инвентарь."

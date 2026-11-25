@@ -31585,8 +31585,8 @@ msgstr "The cutover date is valid"
 msgid "The cutover date must be the first day of a period."
 msgstr "The cutover date must be the first day of a period."
 
-msgid "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
-msgstr "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "The dashed threshold you don't want inventory to fall below."

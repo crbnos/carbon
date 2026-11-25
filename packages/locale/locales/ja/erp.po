@@ -31585,8 +31585,8 @@ msgstr "切替日は有効です。"
 msgid "The cutover date must be the first day of a period."
 msgstr "会計開始日は会計期間の初日である必要があります。"
 
-msgid "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
-msgstr "この契約では、毎日の実行によって請求書は作成されません。期間の請求は「請求書」を使って手動で行ってください。"
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "毎日の実行では、売上として扱われる個のみ請求されます。それ以外の期間は、請求書を使用して手動で請求してください。"
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "在庫が下回らないようにしたいダッシュ付きの閾値。"

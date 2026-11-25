@@ -76,7 +76,7 @@
 ### 2. "Manual" invoicing choice
 
 1. Add the value `Manual` to the `invoiceAutomation` enum (new migration).
-2. Only the rental agreement's own Invoicing select offers "Manual" (`rentalAgreement.invoiceAutomation`). The tooltip says: "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
+2. Only the rental agreement's own Invoicing select offers "Manual" (`rentalAgreement.invoiceAutomation`). The tooltip says: "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
 3. The company setting does not offer Manual, and its validator refuses it (`settings.models.ts:52` keeps 4 values). Contracts never offer it (a contract list without Manual). So no agreement and no contract inherits Manual.
 4. In the daily run, `createRentalInvoicesForDuePeriods` drafts no invoice for an agreement whose choice is `Manual`. It still cuts the agreement's periods and drafts its early-return credit memo, which stays Draft in every mode.
 5. A run for one agreement (Sell to Customer) still drafts its invoice.
@@ -215,3 +215,7 @@
 - 2026-11-25: Fixes after the third code review.
   - Drafting an early invoice of 1 or more periods needs `fromPeriodStart`. Before, a retried API or MCP call that left it out billed the next periods again. N = 0 (the due charges alone) still needs none. Test: `rental-invoice-early.test.ts`.
   - An early invoice never bills the periods of a unit treated as a sale (`lessorClassification = 'Sale'`). Those periods are lease payments, and the daily run bills them on their due dates. The period count, **All remaining** and the periods left count only the other units. Test: `rental-invoice-early.test.ts`.
+- 2026-11-25: Fixes after the fourth code review.
+  - On an Active Manual agreement, the daily run drafts the due periods of units treated as a sale. The early invoice leaves those periods out, so before this they were never billed. Rental units and charges still wait for **Invoice**. The drafts are never posted or emailed automatically. Test: `create-rental-invoices.test.ts`.
+  - The Manual skip applies only to an Active agreement. A Closed Manual agreement has its released periods drafted, as any agreement has. Before, a void of its last invoice left periods that nothing could bill, because Invoice refuses a Closed agreement. Test: `create-rental-invoices.test.ts`.
+  - An early invoice that drafts an early-return credit memo needs `invoicing.creditMemos` Create. Without it the call is refused with a `forbidden` error and writes nothing. Periods and charges alone do not need it. Test: `rental-invoice-early.test.ts`.

@@ -61,7 +61,7 @@ export default function RentalInvoiceModal({
   return (
     <Modal open={open} onOpenChange={(o) => !o && onClose()}>
       <ModalOverlay />
-      <ModalContent size="xxlarge">
+      <ModalContent size="xxlarge" className="max-w-5xl">
         <RentalInvoiceBody {...props} onClose={onClose} />
       </ModalContent>
     </Modal>

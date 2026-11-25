@@ -31585,8 +31585,8 @@ msgstr "कटओवर की तारीख मान्य है।"
 msgid "The cutover date must be the first day of a period."
 msgstr "कटओवर तारीख एक अवधि का पहला दिन होना चाहिए।"
 
-msgid "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
-msgstr "दैनिक रन इस अनुबंध के लिए कोई चालान नहीं बनाता। अवधियों का बिल स्वयं बनाने के लिए चालान का उपयोग करें।"
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "दैनिक रन केवल उन इकाइयों का बिल बनाता है जिन्हें बिक्री माना गया है। अन्य अवधियों का बिल स्वयं बनाने के लिए चालान का उपयोग करें।"
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "डैश्ड थ्रेसहोल्ड जिसके नीचे आप इन्वेंटरी नहीं गिरना चाहते।"

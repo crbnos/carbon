@@ -6,12 +6,19 @@
 // database: the preview, the period caps, the charges-only invoice, the
 // automation hold, and deleting an early invoice.
 
+import { createServiceContext } from "@carbon/api/service-fn.server";
+import type { ExpandedClaims } from "@carbon/database/access";
 import { RENTAL_HOLD_EARLY_INVOICE } from "@carbon/utils";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { findInvoicesToAutomate } from "../../../../packages/jobs/src/invoicing/automate-invoice";
 import { databaseTest } from "./fixtures/local-database";
+import {
+  localServiceRoleClient,
+  postgrestTest
+} from "./fixtures/local-supabase";
 import { rentalFixture } from "./fixtures/rental";
+import * as sales from "../../app/modules/sales/sales.server";
 import {
   createRentalInvoices,
   deleteSalesInvoiceReleasingRentals,
@@ -35,7 +42,8 @@ function earlyArgs(
     today: "2026-10-05",
     rentalAgreementId: f.agreementId,
     periods,
-    fromPeriodStart
+    fromPeriodStart,
+    canDraftCreditMemo: true
   };
 }
 
@@ -587,6 +595,89 @@ databaseTest(
       await expect(earlyInvoice(f, 0)).rejects.toThrow(
         "Nothing is due to invoice on this agreement"
       );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** A user's context for the fixture's company, holding every action on each
+ *  of `pages` and nothing else. */
+async function userContext(f: RentalFixture, pages: string[]) {
+  const company = await f.db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", f.companyId)
+    .executeTakeFirstOrThrow();
+  const client = localServiceRoleClient()!;
+  const permissions: ExpandedClaims = Object.fromEntries(
+    pages.map((page) => [
+      page,
+      {
+        view: [f.companyId],
+        create: [f.companyId],
+        update: [f.companyId],
+        delete: [f.companyId]
+      }
+    ])
+  );
+  return createServiceContext({
+    actor: { type: "user", userId: "system", role: "employee", permissions },
+    company: { id: f.companyId, groupId: company.companyGroupId ?? "" },
+    caller: client as never,
+    system: () => client as never,
+    pg: () => f.db as never,
+    kv: () => {
+      throw new Error("No kv in a database test");
+    }
+  });
+}
+
+postgrestTest(
+  "an early invoice with an early-return credit due needs permission to create credit memos",
+  async () => {
+    // Open-ended, so the real "today" the operation reads still starts at
+    // the October period and the credit (due 5 October) is due.
+    const f = await rentalFixture();
+    try {
+      await f.db
+        .insertInto("rentalBillingPeriod")
+        .values({
+          rentalAgreementLineId: f.lineIds[0]!,
+          periodStart: "2026-10-01",
+          periodEnd: "2026-10-31",
+          days: 10,
+          amount: -100,
+          isAdjustment: true,
+          dueOn: "2026-10-05",
+          status: "Pending",
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+      const input = {
+        rentalAgreementId: f.agreementId,
+        periods: 1,
+        fromPeriodStart: "2026-10-01"
+      };
+      const invoicing = ["sales.rentalAgreements", "invoicing.salesInvoices"];
+
+      const before = await writtenRows(f);
+      const refused = await sales.invoiceRentalAgreementPeriods(
+        await userContext(f, invoicing),
+        input
+      );
+      expect(refused.error?.category).toBe("forbidden");
+      expect(await writtenRows(f)).toEqual(before);
+
+      const drafted = await sales.invoiceRentalAgreementPeriods(
+        await userContext(f, [...invoicing, "invoicing.creditMemos"]),
+        input
+      );
+      expect(drafted.error).toBeNull();
+      expect(drafted.data?.invoiceId).not.toBeNull();
+      expect(drafted.data?.creditMemoId).not.toBeNull();
+      expect(drafted.data?.earlyReturnCredit).toBe(100);
     } finally {
       await f.cleanup();
     }

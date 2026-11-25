@@ -6117,6 +6117,9 @@ export const previewRentalAgreementInvoice = defineServiceFn({
  * term takes at most the periods left; an open-ended agreement at most 12.
  * A unit treated as a sale is left out: its periods bill on their due dates.
  * N = 0 bills the due charges alone, and only when no period is left.
+ * A due early-return credit is drafted on its own Draft credit memo, which
+ * needs permission to create credit memos too: without it the call is
+ * refused and writes nothing. Periods and charges alone do not need it.
  *
  * @param fromPeriodStart - Required when periods > 0: the first period you expect to bill (YYYY-MM-DD), the earliest periodStart of a Pending, non-adjustment billing period (sales_getRentalBillingPeriods) of a unit not treated as a sale. Omit it or send null for charges alone (periods = 0). When another period would be billed first (an earlier call billed it), the call is refused, so a retry never bills later periods.
  *
@@ -6134,7 +6137,12 @@ export const invoiceRentalAgreementPeriods = defineServiceFn({
   },
 
   run: (ctx, input) =>
-    service.earlyRentalInvoice(ctx, input, service.draftEarlyRentalInvoice)
+    service.earlyRentalInvoice(ctx, input, (db, args) =>
+      service.draftEarlyRentalInvoice(db, {
+        ...args,
+        canDraftCreditMemo: ctx.can({ "invoicing.creditMemos": "Create" })
+      })
+    )
 });
 
 /**

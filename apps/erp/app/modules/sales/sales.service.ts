@@ -16748,8 +16748,8 @@ export type RentalInvoiceGenerationArgs = {
   asOf: string;
   /** Bill one agreement only. */
   rentalAgreementId?: string;
-  /** Draft a Manual agreement's invoice too (Sell to Customer). The daily
-   *  run leaves it out. */
+  /** Draft an Active Manual agreement's rent and charges too (Sell to
+   *  Customer). The daily run bills only its lines treated as a sale. */
   billManual?: boolean;
   userId: string;
 };
@@ -16801,9 +16801,11 @@ export type RentalInvoiceGenerationResult = {
  * stamped with their invoice line, which is what makes a second call for the
  * same day a no-op; deleting the Draft invoice releases them
  * (the ERP's `releaseRentalInvoiceStamps`). Under invoice automation an agreement's
- * rent and its charges become separate invoices (`planRentalInvoices`). A
- * Manual agreement gets no invoice unless `billManual`, but its periods still
- * roll forward and its early-return credit memo is still drafted.
+ * rent and its charges become separate invoices (`planRentalInvoices`). An
+ * Active Manual agreement bills only the periods of its lines treated as a
+ * sale unless `billManual`, but its periods still roll forward and its
+ * early-return credit memo is still drafted. A Closed Manual agreement is
+ * billed like any other.
  */
 async function createRentalInvoicesForDuePeriods(
   db: Kysely<KyselyDatabase>,
@@ -16953,6 +16955,7 @@ function pendingRentalPeriods(
       "p.rateUnitApplied",
       "p.isAdjustment",
       "p.voidedSalesInvoiceId",
+      "l.lessorClassification",
       "fa.name as assetName",
       "fa.serialNumber"
     ])
@@ -17336,14 +17339,30 @@ async function draftAgreementInvoices(
 
   // Locked so a concurrent run (the daily job and a manual "Generate
   // invoices") cannot bill the same period twice.
-  const { adjustments, planned, agreementTaxPercent } =
-    await planDueRentalInvoices(trx, {
-      companyId,
-      agreement,
-      mode,
-      asOf,
-      lock: true
-    });
+  const due = await selectDueRentalRows(trx, {
+    companyId,
+    agreementId: agreement.id,
+    asOf,
+    lock: true
+  });
+  // A person bills an Active Manual agreement's rent and charges with
+  // Invoice. A line treated as a sale still bills on its due dates: Invoice
+  // leaves its lease payments out. A Closed agreement has no Invoice, so it
+  // bills what a void released.
+  const billed =
+    mode === "Manual" && !args.billManual && agreement.status === "Active"
+      ? {
+          periods: due.periods.filter(
+            (period) =>
+              period.isAdjustment || period.lessorClassification === "Sale"
+          ),
+          charges: []
+        }
+      : due;
+  const { adjustments, planned, agreementTaxPercent } = await planRentalRows(
+    trx,
+    { companyId, agreement, mode, asOf, ...billed }
+  );
   if (adjustments.length === 0 && planned.length === 0) return nothing;
 
   // Early-return adjustments never go on an invoice (`planAgreementRentalInvoices`):
@@ -17362,12 +17381,6 @@ async function draftAgreementInvoices(
           }
         ]
       : [];
-
-  // A person bills a Manual agreement with Invoice; only Sell to Customer
-  // drafts its invoice here.
-  if (mode === "Manual" && !args.billManual) {
-    return { invoices: [], creditMemos };
-  }
 
   const drafted: DraftedRentalInvoice[] = [];
   for (const invoice of planned) {
@@ -17390,6 +17403,10 @@ async function draftAgreementInvoices(
 
 /** A refusal of an early invoice, written for the person. */
 export class RentalEarlyInvoiceRefusal extends Error {}
+
+/** An early invoice refused because its credit memo needs a permission the
+ *  caller lacks. */
+export class RentalCreditMemoForbidden extends Error {}
 
 export type EarlyRentalInvoicePreview = {
   lines: LineValues[];
@@ -17627,10 +17644,15 @@ export async function previewEarlyRentalInvoice(
 }
 
 /** Drafts the early invoice, held so the daily automation never posts it,
- *  whatever the mode or who drafted it. */
+ *  whatever the mode or who drafted it. With an early-return credit due it
+ *  also drafts the credit memo, and refuses, writing nothing, unless
+ *  `canDraftCreditMemo`. */
 export async function draftEarlyRentalInvoice(
   db: Kysely<KyselyDatabase>,
-  args: EarlyRentalInvoiceArgs
+  args: EarlyRentalInvoiceArgs & {
+    /** The caller may create credit memos (`invoicing.creditMemos`). */
+    canDraftCreditMemo: boolean;
+  }
 ): Promise<
   EarlyRentalInvoicePreview & {
     /** Null when only an early-return credit was due. */
@@ -17649,6 +17671,12 @@ export async function draftEarlyRentalInvoice(
       args,
       true
     );
+    // Before anything is written, so a refusal also rolls back the cut periods.
+    if (credit.adjustments.length > 0 && !args.canDraftCreditMemo) {
+      throw new RentalCreditMemoForbidden(
+        "An early-return credit is due on this agreement. Drafting its credit memo needs permission to create credit memos"
+      );
+    }
     const generation = {
       companyId: args.companyId,
       userId: args.userId,
@@ -17693,6 +17721,9 @@ export async function earlyRentalInvoice<T>(
   } catch (err) {
     if (err instanceof RentalEarlyInvoiceRefusal) {
       return ctx.error("rule", err.message);
+    }
+    if (err instanceof RentalCreditMemoForbidden) {
+      return ctx.error("forbidden", err.message);
     }
     return ctx.error("internal", "Failed to invoice the rental agreement", err);
   }

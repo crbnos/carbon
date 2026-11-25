@@ -672,13 +672,17 @@ databaseTest(
   }
 );
 
-/** The status of the fixture's October period (its first Pending one). */
-async function octoberStatus(f: Awaited<ReturnType<typeof rentalFixture>>) {
+/** The status of a unit's October period (its first Pending one); the
+ *  first unit's by default. */
+async function octoberStatus(
+  f: Awaited<ReturnType<typeof rentalFixture>>,
+  lineId = f.lineIds[0]!
+) {
   const period = await f.db
     .selectFrom("rentalBillingPeriod")
     .select("status")
     .where("companyId", "=", f.companyId)
-    .where("rentalAgreementLineId", "=", f.lineIds[0]!)
+    .where("rentalAgreementLineId", "=", lineId)
     .where("periodStart", "=", "2026-10-01")
     .where("isAdjustment", "=", false)
     .executeTakeFirstOrThrow();
@@ -686,7 +690,7 @@ async function octoberStatus(f: Awaited<ReturnType<typeof rentalFixture>>) {
 }
 
 databaseTest(
-  "a run drafts no invoice for a Manual agreement, for the company or for the agreement alone",
+  "a run drafts no invoice for an Active Manual agreement's rental units, for the company or for the agreement alone",
   async () => {
     const f = await rentalFixture({ invoiceAutomation: "Manual" });
     try {
@@ -724,6 +728,89 @@ databaseTest(
           rentalAgreementId: f.agreementId,
           billManual: true
         },
+        createRentalInvoices
+      );
+      expect(result.error).toBeNull();
+      expect(result.data!.failures).toEqual([]);
+      expect(result.data!.invoices).toHaveLength(1);
+      expect(await octoberStatus(f)).toBe("Invoiced");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the daily run bills an Active Manual agreement's units treated as a sale on their due dates, and leaves its rental units for Invoice",
+  async () => {
+    const f = await rentalFixture({ units: 2, invoiceAutomation: "Manual" });
+    try {
+      const [saleLineId, rentalLineId] = f.lineIds as [string, string];
+      await f.db
+        .updateTable("rentalAgreementLine")
+        .set({ lessorClassification: "Sale" })
+        .where("companyId", "=", f.companyId)
+        .where("id", "=", saleLineId)
+        .execute();
+
+      const result = await invokePosting(
+        f.ctx,
+        "create-rental-invoices",
+        { asOf: "2026-10-05" },
+        createRentalInvoices
+      );
+      expect(result.error).toBeNull();
+      expect(result.data!.failures).toEqual([]);
+      // Manual automates nothing: the draft waits for a person to post it.
+      expect(result.data!.invoices).toEqual([
+        {
+          invoiceId: expect.any(String),
+          rentalAgreementId: f.agreementId,
+          mode: "Manual",
+          holdReason: null
+        }
+      ]);
+      const billed = await f.db
+        .selectFrom("salesInvoiceLine")
+        .select(["rentalAgreementLineId", "rentalLineType"])
+        .where("companyId", "=", f.companyId)
+        .where("invoiceId", "=", result.data!.invoices[0]!.invoiceId)
+        .execute();
+      expect(billed).toEqual([
+        { rentalAgreementLineId: saleLineId, rentalLineType: "Rent" }
+      ]);
+      expect(await octoberStatus(f, saleLineId)).toBe("Invoiced");
+      expect(await octoberStatus(f, rentalLineId)).toBe("Pending");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the daily run bills a Closed Manual agreement's periods a void released",
+  async () => {
+    const f = await rentalFixture({ invoiceAutomation: "Manual" });
+    try {
+      // The state a void of its last invoice leaves: Closed, its October
+      // period Pending again. Invoice refuses a Closed agreement.
+      await f.db
+        .updateTable("rentalAgreement")
+        .set({ status: "Closed" })
+        .where("companyId", "=", f.companyId)
+        .where("id", "=", f.agreementId)
+        .execute();
+      await f.db
+        .updateTable("rentalAgreementLine")
+        .set({ status: "Returned", returnedAt: "2026-10-31" })
+        .where("companyId", "=", f.companyId)
+        .where("rentalAgreementId", "=", f.agreementId)
+        .execute();
+
+      const result = await invokePosting(
+        f.ctx,
+        "create-rental-invoices",
+        { asOf: "2026-10-05" },
         createRentalInvoices
       );
       expect(result.error).toBeNull();

@@ -115,7 +115,8 @@ async function draftInvoice(f: RentalFixture) {
   const { firstPeriodStart } = await previewEarlyRentalInvoice(f.db, args);
   const drafted = await draftEarlyRentalInvoice(f.db, {
     ...args,
-    fromPeriodStart: firstPeriodStart
+    fromPeriodStart: firstPeriodStart,
+    canDraftCreditMemo: true
   });
   expect(drafted.invoiceId).not.toBeNull();
   return drafted.invoiceId!;

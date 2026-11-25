@@ -31585,8 +31585,8 @@ msgstr "La data di passaggio è valida"
 msgid "The cutover date must be the first day of a period."
 msgstr "La data di cutover deve essere il primo giorno di un periodo."
 
-msgid "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
-msgstr "L'esecuzione giornaliera non crea fatture per questo contratto. Usa Fattura per fatturare manualmente i periodi."
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "L'esecuzione giornaliera fattura solo le unità trattate come vendita. Usa Fattura per fatturare manualmente gli altri periodi."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "La soglia tratteggiata al di sotto della quale non si desidera che l'inventario scenda."

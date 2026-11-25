@@ -31585,8 +31585,8 @@ msgstr "Kesinti tarihi geçerli"
 msgid "The cutover date must be the first day of a period."
 msgstr "Kesme tarihi bir dönemin ilk günü olmalıdır."
 
-msgid "The daily run creates no invoices for this agreement. Use Invoice to bill periods yourself."
-msgstr "Günlük çalıştırma bu sözleşme için hiçbir fatura oluşturmaz. Dönemleri kendiniz faturalandırmak için Fatura'yı kullanın."
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "Günlük çalıştırma yalnızca satış olarak işlenen adetleri faturalandırır. Diğer dönemleri kendiniz faturalandırmak için Fatura'yı kullanın."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Envanteri aşağısına düşmesini istemediğiniz kesikli eşik."
