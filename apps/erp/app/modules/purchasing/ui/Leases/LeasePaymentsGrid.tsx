@@ -66,7 +66,8 @@ const LeasePaymentsGrid = ({
   const currencyCode = lease.currencyCode ?? "";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const canEdit =
-    lease.status === "Draft" && permissions.can("update", "purchasing");
+    lease.status === "Draft" &&
+    permissions.has({ "purchasing.leases": "Edit" });
 
   const addPayment = useDisclosure();
   const regenerate = useDisclosure();

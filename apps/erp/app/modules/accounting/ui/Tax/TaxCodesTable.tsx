@@ -154,7 +154,7 @@ const TaxCodesTable = memo(({ data, count }: TaxCodesTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "accounting")}
+            disabled={!permissions.has({ "accounting.taxCodes": "Edit" })}
             onClick={() => {
               navigate(`${path.to.taxCode(row.id)}?${params.toString()}`);
             }}
@@ -164,7 +164,9 @@ const TaxCodesTable = memo(({ data, count }: TaxCodesTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!row.active || !permissions.can("delete", "accounting")}
+            disabled={
+              !row.active || !permissions.has({ "accounting.taxCodes": "Full" })
+            }
             onClick={() => {
               navigate(`${path.to.deleteTaxCode(row.id)}?${params.toString()}`);
             }}
@@ -184,7 +186,7 @@ const TaxCodesTable = memo(({ data, count }: TaxCodesTableProps) => {
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "accounting") && (
+        permissions.has({ "accounting.taxCodes": "Create" }) && (
           <New label={t`Tax Code`} to={`new?${params.toString()}`} />
         )
       }

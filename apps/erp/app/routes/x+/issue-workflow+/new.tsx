@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { ScrollArea, useCloseRoute, useViewport } from "@carbon/react";
@@ -25,10 +25,9 @@ import { path } from "~/utils/path";
 export const meta = newRecordMeta("Issue Workflow");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "quality"
+  const { client, companyId } = await authorize(request, {
+    "quality.issueWorkflows": "Create"
   });
-
   const requiredActions = await getRequiredActionsList(client, companyId);
 
   return {
@@ -38,8 +37,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+  const { client, companyId, userId } = await authorize(request, {
+    "quality.issueWorkflows": "Create"
   });
   const formData = await request.formData();
   const validation = await validator(issueWorkflowValidator).validate(formData);

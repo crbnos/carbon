@@ -9,10 +9,9 @@ import type {
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
-import { hasPermission } from "@carbon/auth";
-import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json, Tables } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import { type ExpandedClaims, holdsGate } from "@carbon/database/access";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import {
   type Kysely,
@@ -147,12 +146,16 @@ import {
   lineRevenueDates,
   memoAmounts,
   type PeriodSpec,
+  type PlannedInvoice,
   type ProjectInvoicePlanItem,
   parseLineItemNumber,
+  planAgreementRentalInvoices,
   planProjectInvoiceLines,
-  planRentalInvoices,
   projectInvoiceHold,
   type RentalBillingCycle,
+  type RentalInvoiceLineValues,
+  rentalInvoiceTotals,
+  rentLineDescription,
   requireAffected,
   round,
   salesTypeRequirementError,
@@ -160,8 +163,7 @@ import {
   suggestContractType,
   suggestCoverage,
   sumFunding,
-  takeWithinFunding,
-  wholeRateUnits
+  takeWithinFunding
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { FileObject } from "@supabase/storage-js";
@@ -198,6 +200,7 @@ import {
   getCurrentAccountingPeriod,
   isContactEmailRequired,
   loadTaxCodes,
+  lockOrderLines,
   refuseUnlessOwned,
   resolveInventoryAccount,
   sendSalesOrderEmail
@@ -6451,7 +6454,9 @@ export async function updateSalesOrder(
     customerId?: string;
     notes?: string | null;
     customFields?: Json;
-  }
+  },
+  // Pass the system client once the caller's order permission has passed.
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string } | null;
   error: PostgrestError | null;
@@ -6485,14 +6490,7 @@ export async function updateSalesOrder(
     exchangeRateUpdatedAt = new Date().toISOString();
   }
 
-  if (updates.customerId && existing.data.opportunityId) {
-    await client
-      .from("opportunity")
-      .update({ customerId: updates.customerId })
-      .eq("id", existing.data.opportunityId);
-  }
-
-  return client
+  const updated = await client
     .from("salesOrder")
     .update({
       ...sanitize(updates),
@@ -6505,6 +6503,17 @@ export async function updateSalesOrder(
     .eq("id", id)
     .select("id")
     .single();
+
+  // A new customer follows to the opportunity (Sales → Quotes owns it), only
+  // once the caller's own order write went through.
+  if (!updated.error && updates.customerId && existing.data.opportunityId) {
+    await system
+      .from("opportunity")
+      .update({ customerId: updates.customerId })
+      .eq("id", existing.data.opportunityId)
+      .eq("companyId", existing.data.companyId);
+  }
+  return updated;
 }
 
 export const LIVE_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
@@ -6604,11 +6613,17 @@ export async function cancelSalesOrder(
 export async function upsertSalesOrderShipment(
   client: SupabaseClient<Database>,
   salesOrderShipment:
-    | (z.infer<typeof salesOrderShipmentValidator> & {
+    | (Omit<
+        z.infer<typeof salesOrderShipmentValidator>,
+        "shipToCustomerLocationId"
+      > & {
         createdBy: string;
         customFields?: Json;
       })
-    | (z.infer<typeof salesOrderShipmentValidator> & {
+    | (Omit<
+        z.infer<typeof salesOrderShipmentValidator>,
+        "shipToCustomerLocationId"
+      > & {
         id: string;
         updatedBy: string;
         customFields?: Json;
@@ -6627,6 +6642,50 @@ export async function upsertSalesOrderShipment(
     .insert([salesOrderShipment])
     .select("id")
     .single();
+}
+
+/**
+ * The sales order's Shipping card in one transaction: the shipment row, and
+ * the order's own ship-to unless it is a drop shipment.
+ */
+export async function updateSalesOrderShipping(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    salesOrderId: string;
+    shipping: Omit<
+      z.infer<typeof salesOrderShipmentValidator>,
+      "id" | "shipToCustomerLocationId"
+    >;
+    shipToCustomerLocationId: string | undefined;
+    customFields?: Json;
+  }
+) {
+  const audit = { updatedBy: args.userId, updatedAt: datetime.timestamp() };
+  await withTransaction(db, async (trx) => {
+    await trx
+      .updateTable("salesOrderShipment")
+      .set({
+        ...sanitize(args.shipping),
+        customFields: args.customFields ?? null,
+        ...audit
+      })
+      .where("id", "=", args.salesOrderId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    if (!args.shipping.dropShipment) {
+      await trx
+        .updateTable("salesOrder")
+        .set({
+          customerLocationId: args.shipToCustomerLocationId ?? null,
+          ...audit
+        })
+        .where("id", "=", args.salesOrderId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+  });
 }
 
 /** Not published: `sales.order.line.create` / `update` also refuse a locked order. */
@@ -7015,7 +7074,10 @@ export async function upsertSalesRFQ(
         rfqId: string;
         updatedBy: string;
         customFields?: Json;
-      })
+      }),
+  // Sales → Quotes owns `opportunity`: pass the system client once the
+  // caller's RFQ permission has passed, so a customer change reaches it.
+  system: SupabaseClient<Database> = client
 ) {
   if ("createdBy" in rfq) {
     const opportunity = await client
@@ -7043,23 +7105,15 @@ export async function upsertSalesRFQ(
 
     return insert;
   } else {
-    // If customerId is being updated, also update the opportunity's customerId
-    if (rfq.customerId) {
-      const existingRfq = await client
-        .from("salesRfq")
-        .select("opportunityId")
-        .eq("id", rfq.id)
-        .single();
+    const existing = rfq.customerId
+      ? await client
+          .from("salesRfq")
+          .select("opportunityId, companyId")
+          .eq("id", rfq.id)
+          .maybeSingle()
+      : null;
 
-      if (existingRfq.data?.opportunityId) {
-        await client
-          .from("opportunity")
-          .update({ customerId: rfq.customerId })
-          .eq("id", existingRfq.data.opportunityId);
-      }
-    }
-
-    return requireAffected(
+    const updated = await requireAffected(
       client
         .from("salesRfq")
         .update({
@@ -7069,6 +7123,17 @@ export async function upsertSalesRFQ(
         .eq("id", rfq.id)
         .select("id")
     );
+    // A new customer follows to the opportunity, only once the caller's own
+    // RFQ write went through (so the system write is in the RFQ's company).
+    const opportunity = existing?.data;
+    if (!updated.error && rfq.customerId && opportunity?.opportunityId) {
+      await system
+        .from("opportunity")
+        .update({ customerId: rfq.customerId })
+        .eq("id", opportunity.opportunityId)
+        .eq("companyId", opportunity.companyId);
+    }
+    return updated;
   }
 }
 
@@ -8351,6 +8416,11 @@ export async function createSalesReturnOrderCredit(
   }
 
   return db.transaction().execute(async (trx) => {
+    // The return order before its lines, as a receipt and its void take
+    // them.
+    await lockOrderLines(trx, "salesReturnOrderLine", companyId, [
+      ...requested.keys()
+    ]);
     const orderLines = await trx
       .selectFrom("salesReturnOrderLine")
       .select([
@@ -8367,6 +8437,7 @@ export async function createSalesReturnOrderCredit(
       .where("salesReturnOrderId", "=", salesReturnOrderId)
       .where("companyId", "=", companyId)
       .where("id", "in", [...requested.keys()])
+      .orderBy("id")
       .forUpdate()
       .execute();
 
@@ -8587,7 +8658,10 @@ export async function createReplacementSalesOrder(
     companyGroupId: string;
     userId: string;
     lineIds?: string[];
-  }
+  },
+  // Sales → Returns owns the return order: pass the system client once the
+  // caller's sales order permission has passed, so the link is written.
+  system: SupabaseClient<Database> = client
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const order = await client
     .from("salesReturnOrder")
@@ -8755,7 +8829,7 @@ export async function createReplacementSalesOrder(
 
   if (createdOrder && !existingReplacementId) {
     const link = await requireAffected(
-      client
+      system
         .from("salesReturnOrder")
         .update({
           replacementSalesOrderId: replacementId,
@@ -9658,6 +9732,35 @@ export async function updateRentalAgreement(
     .eq("id", rentalAgreement.id)
     .eq("companyId", rentalAgreement.companyId)
     .eq("status", "Draft")
+    .select("id")
+    .single();
+}
+
+/** The payment terms, or the tax code and percent, of a Draft or Active
+ *  agreement. Each invoice copies them when it is drafted, so a change reaches only the
+ *  invoices drafted after it; drafted and posted invoices keep theirs. Writes
+ *  the given field only — every other term stays locked once Active. */
+export async function updateRentalAgreementInvoiceTerms(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    terms:
+      | { paymentTermId: string | null }
+      | { taxPercent: number; taxCodeId: string | null };
+  }
+) {
+  return client
+    .from("rentalAgreement")
+    .update({
+      ...args.terms,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .in("status", ["Draft", "Active"])
     .select("id")
     .single();
 }
@@ -13629,7 +13732,7 @@ export async function saveQuoteLineWithPrices(
  * `sales-rule-violation` notification. Both writes are best-effort: evidence
  * or notification failures are logged and must never break the submission
  * they describe. Callers pass the SERVICE-ROLE client — the acknowledgment
- * table's INSERT policy requires `sales_create`, but the documents these
+ * table's INSERT policy requires Create on Sales Rules, but the documents these
  * gates protect (invoices, shipments) are legitimately posted by users
  * without it.
  *
@@ -14769,48 +14872,47 @@ export async function deleteContractLineReleasingSalesOrderLine(
 }
 
 /** Where a Draft contract opens: its setup wizard, for anyone who can edit
- *  it (the wizard needs `update: sales`). Null for a confirmed contract, or
- *  for a viewer who cannot edit — they get the contract page. */
+ *  it (the wizard needs Edit on Service Contracts). Null for a confirmed
+ *  contract, or for a viewer who cannot edit — they get the contract page. */
 export async function draftContractSetupPath(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
+  args: { companyId: string; permissions: ExpandedClaims; id: string }
 ): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [contract, claims] = await Promise.all([
-    client
-      .from("customerContract")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
-  if (contract.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "sales", "update", companyId)) {
+  const { companyId, permissions, id } = args;
+  const contract = await client
+    .from("customerContract")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (contract.error || contract.data?.status !== "Draft") return null;
+  if (
+    !holdsGate(permissions, { "sales.serviceContracts": "Edit" }, companyId)
+  ) {
     return null;
   }
   return path.to.contractSetup(id, "products");
 }
 
 /** Where a Draft rental agreement opens: its setup wizard, for anyone who
- *  can edit it (the wizard needs `update: sales`). Null for an activated
- *  agreement, or for a viewer who cannot edit — they get the agreement page. */
+ *  can edit it (the wizard needs Edit on Rental Agreements). Null for an
+ *  activated agreement, or for a viewer who cannot edit — they get the
+ *  agreement page. */
 export async function draftRentalAgreementSetupPath(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
+  args: { companyId: string; permissions: ExpandedClaims; id: string }
 ): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [agreement, claims] = await Promise.all([
-    client
-      .from("rentalAgreement")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
-  if (agreement.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "sales", "update", companyId)) {
+  const { companyId, permissions, id } = args;
+  const agreement = await client
+    .from("rentalAgreement")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (agreement.error || agreement.data?.status !== "Draft") return null;
+  if (
+    !holdsGate(permissions, { "sales.rentalAgreements": "Edit" }, companyId)
+  ) {
     return null;
   }
   return path.to.rentalAgreementSetup(id, "units");
@@ -15234,8 +15336,8 @@ export function parseConfiguration(
 export async function unlockedQuote(ctx: ServiceContext, quoteId: string) {
   const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
   if (refused) return refused;
-  // The caller may hold the write permission without sales_view, which RLS
-  // needs to read the quote; an unread status would pass as unlocked.
+  // The caller may hold the write permission without View on Quotes, which
+  // RLS needs to read the quote; an unread status would pass as unlocked.
   const quote = await getQuote(ctx.asSystem.supabase, quoteId);
   if (quote.error || !quote.data) {
     return ctx.error("internal", "Failed to load quote", quote.error);
@@ -16733,18 +16835,264 @@ type RentalAgreementRecord = Selectable<KyselyDatabase["rentalAgreement"]>;
 const BILLABLE_STATUSES: Database["public"]["Enums"]["rentalAgreementStatus"][] =
   ["Active", "Closed"];
 
-type LineValues = {
-  rentalAgreementLineId: string;
-  rentalBillingPeriodId: string | null;
-  rentalAgreementChargeId: string | null;
-  rentalLineType: Database["public"]["Enums"]["rentalInvoiceLineType"];
-  description: string;
-  unitPrice: number;
-  taxPercent: number;
-  taxCodeId: string | null;
-  serviceStartDate: string | null;
-  serviceEndDate: string | null;
+type LineValues = RentalInvoiceLineValues;
+
+/** The Pending periods due on or before `asOf` and the unbilled charges dated
+ *  on or before it. `lock` takes them `FOR UPDATE` for drafting; a preview
+ *  reads them without a lock. */
+async function selectDueRentalRows(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; agreementId: string; asOf: string; lock: boolean }
+) {
+  const { companyId, agreementId, asOf, lock } = args;
+  let periodQuery = db
+    .selectFrom("rentalBillingPeriod as p")
+    .innerJoin("rentalAgreementLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "p.rentalAgreementLineId")
+        .onRef("l.companyId", "=", "p.companyId")
+    )
+    .leftJoin("fixedAsset as fa", (join) =>
+      join
+        .onRef("fa.id", "=", "l.fixedAssetId")
+        .onRef("fa.companyId", "=", "l.companyId")
+    )
+    .select([
+      "p.id",
+      "p.rentalAgreementLineId",
+      "p.periodStart",
+      "p.periodEnd",
+      "p.days",
+      "p.amount",
+      "p.rateUnitApplied",
+      "p.isAdjustment",
+      "p.voidedSalesInvoiceId",
+      "fa.name as assetName",
+      "fa.serialNumber"
+    ])
+    .where("l.rentalAgreementId", "=", agreementId)
+    .where("p.companyId", "=", companyId)
+    .where("p.status", "=", "Pending")
+    .where("p.dueOn", "<=", asOf)
+    .orderBy("p.periodStart")
+    .orderBy("p.isAdjustment");
+  if (lock) periodQuery = periodQuery.forUpdate("p");
+
+  let chargeQuery = db
+    .selectFrom("rentalAgreementCharge as c")
+    .innerJoin("rentalAgreementLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "c.rentalAgreementLineId")
+        .onRef("l.companyId", "=", "c.companyId")
+    )
+    .select([
+      "c.id",
+      "c.rentalAgreementLineId",
+      "c.chargeType",
+      "c.description",
+      "c.amount",
+      "c.taxPercent",
+      "c.taxCodeId",
+      "c.invoiceSeparately",
+      "c.voidedSalesInvoiceId"
+    ])
+    .where("l.rentalAgreementId", "=", agreementId)
+    .where("c.companyId", "=", companyId)
+    .where("c.salesInvoiceLineId", "is", null)
+    .where("c.chargeDate", "<=", asOf)
+    .orderBy("c.chargeDate");
+  if (lock) chargeQuery = chargeQuery.forUpdate("c");
+
+  const periods = await periodQuery.execute();
+  const charges = await chargeQuery.execute();
+  return { periods, charges };
+}
+
+/** The readable ids of the voided invoices these rows were billed on, so a
+ *  re-bill's hold names them. One read; a deleted invoice keeps its raw id. */
+async function readVoidedInvoiceIds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  rows: { voidedSalesInvoiceId: string | null }[]
+): Promise<Map<string, string>> {
+  const voidedIds = [
+    ...new Set(
+      rows
+        .map((row) => row.voidedSalesInvoiceId)
+        .filter((voidedId): voidedId is string => !!voidedId)
+    )
+  ];
+  const readableIds = new Map<string, string>();
+  if (voidedIds.length === 0) return readableIds;
+  const voided = await db
+    .selectFrom("salesInvoice")
+    .select(["id", "invoiceId"])
+    .where("companyId", "=", companyId)
+    .where("id", "in", voidedIds)
+    .execute();
+  for (const invoice of voided) readableIds.set(invoice.id, invoice.invoiceId);
+  return readableIds;
+}
+
+/** Reads an agreement's due rows and plans their invoices, as of `asOf`.
+ *  Drafting (`lock: true`, inside its transaction) and the Next Invoice
+ *  preview (`lock: false`) both run this, so they bill the same rows the same
+ *  way. `adjustments` are the due early-return credits, for the credit memo. */
+async function planDueRentalInvoices(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    agreement: Pick<
+      RentalAgreementRecord,
+      "id" | "billingCycle" | "taxPercent" | "taxCodeId" | "exchangeRate"
+    >;
+    mode: InvoiceAutomation;
+    asOf: string;
+    lock: boolean;
+  }
+) {
+  const { companyId, agreement, mode, asOf, lock } = args;
+  const { periods, charges } = await selectDueRentalRows(db, {
+    companyId,
+    agreementId: agreement.id,
+    asOf,
+    lock
+  });
+  // Every line takes its code's rate on `asOf`, the invoice's tax point (and
+  // the early-return credit memo's). A line with no code, or a code since
+  // deleted, keeps its stored percent.
+  const taxCodes = await loadTaxCodes(
+    db,
+    companyId,
+    [agreement.taxCodeId, ...charges.map((charge) => charge.taxCodeId)],
+    null
+  );
+  const taxPercentOf = (
+    taxCodeId: string | null,
+    storedPercent: number | string
+  ) =>
+    chargedRateOr(
+      taxCodeId ? taxCodes.get(taxCodeId) : undefined,
+      storedPercent,
+      asOf
+    );
+  const agreementTaxPercent = taxPercentOf(
+    agreement.taxCodeId,
+    agreement.taxPercent
+  );
+  const planned = planAgreementRentalInvoices({
+    billingCycle: agreement.billingCycle,
+    taxPercent: agreementTaxPercent,
+    taxCodeId: agreement.taxCodeId,
+    exchangeRate: agreement.exchangeRate,
+    mode,
+    periods,
+    charges: charges.map((charge) => ({
+      ...charge,
+      taxPercent: taxPercentOf(charge.taxCodeId, charge.taxPercent)
+    })),
+    voidedReadableIds: await readVoidedInvoiceIds(db, companyId, [
+      ...periods,
+      ...charges
+    ])
+  });
+  return {
+    adjustments: periods.filter((period) => period.isAdjustment),
+    planned,
+    agreementTaxPercent
+  };
+}
+
+export type RentalNextInvoice = {
+  /** The day the billing run drafts it: the next due date or charge date, or
+   *  today when something is already due. */
+  asOf: string;
+  invoices: (PlannedInvoice<LineValues> &
+    ReturnType<typeof rentalInvoiceTotals>)[];
 };
+
+/**
+ * What the next billing run will draft for an Active agreement, read only:
+ * the run as of the earliest Pending period's due date or unbilled charge's
+ * date (today when one is already due), planned by `planDueRentalInvoices`
+ * like the real run. Writes nothing and takes no lock. It does not cut new
+ * periods: activation and the daily run keep the next one cut. Null when
+ * nothing is upcoming.
+ */
+export async function getRentalNextInvoice(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; rentalAgreementId: string; today: string }
+): Promise<RentalNextInvoice | null> {
+  const { companyId, rentalAgreementId, today } = args;
+
+  const agreement = await db
+    .selectFrom("rentalAgreement as ra")
+    .innerJoin("companySettings as cs", "cs.id", "ra.companyId")
+    .select((eb) => [
+      "ra.id",
+      "ra.billingCycle",
+      "ra.taxPercent",
+      "ra.taxCodeId",
+      "ra.exchangeRate",
+      "ra.invoiceAutomation",
+      "cs.invoiceAutomation as companyInvoiceAutomation",
+      eb
+        .selectFrom("rentalBillingPeriod as p")
+        .innerJoin("rentalAgreementLine as l", (join) =>
+          join
+            .onRef("l.id", "=", "p.rentalAgreementLineId")
+            .onRef("l.companyId", "=", "p.companyId")
+        )
+        .select((sub) => sub.fn.min("p.dueOn").as("dueOn"))
+        .whereRef("l.rentalAgreementId", "=", "ra.id")
+        .whereRef("p.companyId", "=", "ra.companyId")
+        .where("p.status", "=", "Pending")
+        .where("p.isAdjustment", "=", false)
+        .as("nextDueOn"),
+      eb
+        .selectFrom("rentalAgreementCharge as c")
+        .innerJoin("rentalAgreementLine as l", (join) =>
+          join
+            .onRef("l.id", "=", "c.rentalAgreementLineId")
+            .onRef("l.companyId", "=", "c.companyId")
+        )
+        .select((sub) => sub.fn.min("c.chargeDate").as("chargeDate"))
+        .whereRef("l.rentalAgreementId", "=", "ra.id")
+        .whereRef("c.companyId", "=", "ra.companyId")
+        .where("c.salesInvoiceLineId", "is", null)
+        .as("nextChargeOn")
+    ])
+    .where("ra.id", "=", rentalAgreementId)
+    .where("ra.companyId", "=", companyId)
+    .where("ra.status", "=", "Active")
+    .executeTakeFirst();
+  if (!agreement) return null;
+
+  // YYYY-MM-DD strings compare as dates.
+  const next = [agreement.nextDueOn, agreement.nextChargeOn]
+    .filter((date): date is string => !!date)
+    .sort()[0];
+  const asOf = next && next > today ? next : today;
+
+  const { planned } = await planDueRentalInvoices(db, {
+    companyId,
+    agreement,
+    mode: effectiveInvoiceAutomation(
+      agreement.invoiceAutomation,
+      agreement.companyInvoiceAutomation
+    ),
+    asOf,
+    lock: false
+  });
+  if (planned.length === 0) return null;
+  return {
+    asOf,
+    invoices: planned.map((invoice) => ({
+      ...invoice,
+      ...rentalInvoiceTotals(invoice.lines)
+    }))
+  };
+}
 
 async function draftAgreementInvoices(
   trx: KyselyTx,
@@ -16805,96 +17153,19 @@ async function draftAgreementInvoices(
 
   // Locked so a concurrent run (the daily job and a manual "Generate
   // invoices") cannot bill the same period twice.
-  const periods = await trx
-    .selectFrom("rentalBillingPeriod as p")
-    .innerJoin("rentalAgreementLine as l", (join) =>
-      join
-        .onRef("l.id", "=", "p.rentalAgreementLineId")
-        .onRef("l.companyId", "=", "p.companyId")
-    )
-    .leftJoin("fixedAsset as fa", (join) =>
-      join
-        .onRef("fa.id", "=", "l.fixedAssetId")
-        .onRef("fa.companyId", "=", "l.companyId")
-    )
-    .select([
-      "p.id",
-      "p.rentalAgreementLineId",
-      "p.periodStart",
-      "p.periodEnd",
-      "p.days",
-      "p.amount",
-      "p.rateUnitApplied",
-      "p.isAdjustment",
-      "p.voidedSalesInvoiceId",
-      "fa.name as assetName",
-      "fa.serialNumber"
-    ])
-    .where("l.rentalAgreementId", "=", agreement.id)
-    .where("p.companyId", "=", companyId)
-    .where("p.status", "=", "Pending")
-    .where("p.dueOn", "<=", asOf)
-    .orderBy("p.periodStart")
-    .orderBy("p.isAdjustment")
-    .forUpdate("p")
-    .execute();
+  const { adjustments, planned, agreementTaxPercent } =
+    await planDueRentalInvoices(trx, {
+      companyId,
+      agreement,
+      mode,
+      asOf,
+      lock: true
+    });
+  if (adjustments.length === 0 && planned.length === 0) return nothing;
 
-  const charges = await trx
-    .selectFrom("rentalAgreementCharge as c")
-    .innerJoin("rentalAgreementLine as l", (join) =>
-      join
-        .onRef("l.id", "=", "c.rentalAgreementLineId")
-        .onRef("l.companyId", "=", "c.companyId")
-    )
-    .select([
-      "c.id",
-      "c.rentalAgreementLineId",
-      "c.chargeType",
-      "c.description",
-      "c.amount",
-      "c.chargeDate",
-      "c.taxPercent",
-      "c.taxCodeId",
-      "c.invoiceSeparately",
-      "c.voidedSalesInvoiceId"
-    ])
-    .where("l.rentalAgreementId", "=", agreement.id)
-    .where("c.companyId", "=", companyId)
-    .where("c.salesInvoiceLineId", "is", null)
-    .where("c.chargeDate", "<=", asOf)
-    .orderBy("c.chargeDate")
-    .forUpdate("c")
-    .execute();
-
-  if (periods.length === 0 && charges.length === 0) return nothing;
-
-  // An early-return adjustment is a credit, and a credit on an invoice can
-  // net it below zero — a document no payment can apply and no refund can
-  // pay out. Adjustments go on a credit memo instead; everything else is
-  // invoiced as before.
-  const adjustments = periods.filter((period) => period.isAdjustment);
-  const billable = periods.filter((period) => !period.isAdjustment);
-
-  // Every line takes its code's rate on `asOf`: the invoice's date and the
-  // credit memo's, each document's tax point. A credit across a rate change
-  // therefore does not reverse at the billed rate. A line with no code (or a
-  // code since deleted) keeps its stored percent.
-  const taxCodes = await loadTaxCodes(
-    trx,
-    companyId,
-    [agreement.taxCodeId, ...charges.map((charge) => charge.taxCodeId)],
-    null
-  );
-  const taxPercentOf = (
-    taxCodeId: string | null,
-    storedPercent: number | string
-  ) =>
-    chargedRateOr(
-      taxCodeId ? taxCodes.get(taxCodeId) : undefined,
-      storedPercent,
-      asOf
-    );
-
+  // Early-return adjustments never go on an invoice (`planAgreementRentalInvoices`):
+  // a credit could net it below zero, which no payment can apply and no
+  // refund can pay out. They go on a credit memo instead.
   const creditMemos: DraftedRentalCreditMemo[] =
     adjustments.length > 0
       ? [
@@ -16902,100 +17173,12 @@ async function draftAgreementInvoices(
             memoId: await insertRentalCreditMemo(trx, args, agreement, {
               adjustments,
               decimals,
-              taxPercent: taxPercentOf(
-                agreement.taxCodeId,
-                agreement.taxPercent
-              )
+              taxPercent: agreementTaxPercent
             }),
             rentalAgreementId: agreement.id
           }
         ]
       : [];
-
-  // The readable ids of the voided invoices these rows were billed on, so a
-  // re-bill's hold names them. One read; a deleted invoice keeps its raw id.
-  const voidedIds = [
-    ...new Set(
-      [...billable, ...charges]
-        .map((row) => row.voidedSalesInvoiceId)
-        .filter((voidedId): voidedId is string => !!voidedId)
-    )
-  ];
-  const voidedReadableIds = new Map<string, string>();
-  if (voidedIds.length > 0) {
-    const voided = await trx
-      .selectFrom("salesInvoice")
-      .select(["id", "invoiceId"])
-      .where("companyId", "=", companyId)
-      .where("id", "in", voidedIds)
-      .execute();
-    for (const invoice of voided) {
-      voidedReadableIds.set(invoice.id, invoice.invoiceId);
-    }
-  }
-  const voidedReadableId = (voidedId: string | null) =>
-    voidedId ? (voidedReadableIds.get(voidedId) ?? voidedId) : null;
-
-  // Periods and charges are priced in the agreement's currency;
-  // `salesInvoiceLine.unitPrice` is base currency (`convertedUnitPrice` =
-  // unitPrice × exchangeRate is what the customer sees), as on every sales
-  // document.
-  const exchangeRate = Number(agreement.exchangeRate);
-  const lines: {
-    values: LineValues;
-    isAdjustment: boolean;
-    invoiceSeparately: boolean;
-    voidedInvoiceReadableId: string | null;
-  }[] = [
-    ...billable.map((period) => ({
-      values: {
-        rentalAgreementLineId: period.rentalAgreementLineId,
-        rentalBillingPeriodId: period.id,
-        rentalAgreementChargeId: null,
-        rentalLineType: "Rent" as const,
-        description: rentLineDescription({
-          ...period,
-          cycle: agreement.billingCycle
-        }),
-        unitPrice: toBaseAmount(Number(period.amount), exchangeRate),
-        taxPercent: taxPercentOf(agreement.taxCodeId, agreement.taxPercent),
-        taxCodeId: agreement.taxCodeId,
-        serviceStartDate: period.periodStart,
-        serviceEndDate: period.periodEnd
-      },
-      isAdjustment: period.isAdjustment ?? false,
-      invoiceSeparately: false,
-      voidedInvoiceReadableId: voidedReadableId(period.voidedSalesInvoiceId)
-    })),
-    ...charges.map((charge) => ({
-      values: {
-        rentalAgreementLineId: charge.rentalAgreementLineId,
-        rentalBillingPeriodId: null,
-        rentalAgreementChargeId: charge.id,
-        rentalLineType: charge.chargeType,
-        description: charge.description,
-        unitPrice: toBaseAmount(Number(charge.amount), exchangeRate),
-        taxPercent: taxPercentOf(charge.taxCodeId, charge.taxPercent),
-        taxCodeId: charge.taxCodeId,
-        serviceStartDate: null,
-        serviceEndDate: null
-      },
-      isAdjustment: false,
-      invoiceSeparately: charge.invoiceSeparately,
-      voidedInvoiceReadableId: voidedReadableId(charge.voidedSalesInvoiceId)
-    }))
-  ];
-
-  const planned = planRentalInvoices(
-    mode,
-    lines.map((line) => ({
-      item: line.values,
-      lineType: line.values.rentalLineType,
-      isAdjustment: line.isAdjustment,
-      invoiceSeparately: line.invoiceSeparately,
-      voidedInvoiceReadableId: line.voidedInvoiceReadableId
-    }))
-  );
 
   const drafted: DraftedRentalInvoice[] = [];
   for (const invoice of planned) {
@@ -17119,10 +17302,7 @@ async function insertRentalInvoice(
 ): Promise<string> {
   const { companyId, asOf, userId } = args;
 
-  const subtotal = round(lines.reduce((sum, line) => sum + line.unitPrice, 0));
-  const totalTax = round(
-    lines.reduce((sum, line) => sum + line.unitPrice * line.taxPercent, 0)
-  );
+  const { subtotal, totalTax, totalAmount } = rentalInvoiceTotals(lines);
 
   const readableInvoiceId = await getNextSequence(
     trx,
@@ -17154,7 +17334,7 @@ async function insertRentalInvoice(
       subtotal,
       totalDiscount: 0,
       totalTax,
-      totalAmount: round(subtotal + totalTax),
+      totalAmount,
       opportunityId: opportunity.id,
       automationHoldReason: holdReason,
       companyId,
@@ -17342,39 +17522,6 @@ async function rollBillingPeriodsForward(
   }
 }
 
-/** "2026-10-01 – 2026-10-28 · 28 days · 1 × Month rate — Skid Steer 4
- *  SN-1001", "… · 31 days · Month rate — …" (a Monthly unit on a Calendar
- *  Month or Monthly agreement is its month rate prorated by days, so it names
- *  no unit count), or for an early-return credit "Early return credit — 3 days used". */
-export function rentLineDescription(period: {
-  cycle: Database["public"]["Enums"]["rentalBillingCycle"];
-  periodStart: string;
-  periodEnd: string;
-  days: number;
-  rateUnitApplied: RateUnit | null;
-  isAdjustment: boolean;
-  assetName: string | null;
-  serialNumber: string | null;
-}): string {
-  // A unit capitalized from stock is named "<item> <serial>": its serial is
-  // named once, not twice.
-  const serial =
-    period.serialNumber && !period.assetName?.includes(period.serialNumber)
-      ? period.serialNumber
-      : null;
-  const unit = [period.assetName, serial].filter(Boolean).join(" ");
-  if (period.isAdjustment) {
-    return `Early return credit — ${period.days} days used${unit ? ` — ${unit}` : ""}`;
-  }
-  const tier =
-    period.rateUnitApplied === null
-      ? ""
-      : period.cycle !== "28 Days" && period.rateUnitApplied === "Month"
-        ? " · Month rate"
-        : ` · ${wholeRateUnits(period.days, period.rateUnitApplied)} × ${period.rateUnitApplied} rate`;
-  return `${period.periodStart} – ${period.periodEnd} · ${period.days} days${tier}${unit ? ` — ${unit}` : ""}`;
-}
-
 export const createRentalInvoicesInput = z.object({
   /** `YYYY-MM-DD` in the company's timezone. */
   asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -17383,8 +17530,8 @@ export const createRentalInvoicesInput = z.object({
 });
 
 export const createRentalInvoicesPermission = {
-  update: "sales",
-  create: "invoicing"
+  "sales.rentalAgreements": "Edit",
+  "invoicing.salesInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createRentalInvoicesInput>>;
 
 /** Drafts the rental invoices due on or before `asOf` (see
@@ -20072,7 +20219,7 @@ export const postRentalAgreementInput = payloadValidator;
 export type PostRentalAgreementInput = RentalAgreementPayload;
 
 export const postRentalAgreementPermission = {
-  update: "sales"
+  "sales.rentalAgreements": "Edit"
 } satisfies PermissionRule<z.output<typeof postRentalAgreementInput>>;
 
 /** Activates, releases a unit of, closes or cancels a rental agreement, per
@@ -23722,7 +23869,7 @@ async function revertCancellation(
 // ---------------------------------------------------------------------------
 
 export const postCustomerContractPermission = {
-  update: "sales"
+  "sales.serviceContracts": "Edit"
 } satisfies PermissionRule<z.output<typeof postCustomerContractInput>>;
 
 /** Confirms, edits the schedule of, amends, cancels or reverts the
@@ -24638,8 +24785,8 @@ export const createContractInvoicesInput = z.object({
 });
 
 export const createContractInvoicesPermission = {
-  update: "sales",
-  create: "invoicing"
+  "sales.serviceContracts": "Edit",
+  "invoicing.salesInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createContractInvoicesInput>>;
 
 /** Drafts the contract invoices due on or before `asOf` (see
@@ -25152,8 +25299,8 @@ export const createProjectBillingInvoicesInput = z.object({
 });
 
 export const createProjectBillingInvoicesPermission = {
-  update: "sales",
-  create: "invoicing"
+  "sales.serviceContracts": "Edit",
+  "invoicing.salesInvoices": "Create"
 } satisfies PermissionRule<z.output<typeof createProjectBillingInvoicesInput>>;
 
 /** Drafts the project billing invoices due on `asOf` (see
@@ -25183,7 +25330,7 @@ export const generateContractBillableItemsInput = z.object({
 });
 
 export const generateContractBillableItemsPermission = {
-  update: "sales"
+  "sales.serviceContracts": "Edit"
 } satisfies PermissionRule<z.output<typeof generateContractBillableItemsInput>>;
 
 export type GenerateContractBillableItemsResult = {

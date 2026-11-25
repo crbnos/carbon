@@ -7,21 +7,19 @@
 // unit stays the customer's: it is never credited, and the whole-RMA
 // replacement leaves it out (it is replaced from its own line).
 
-import { describe, expect, it } from "vitest";
+import { expect } from "vitest";
 import {
   createReplacementSalesOrder,
   createSalesReturnOrderCredit,
   getCreditableQuantities
 } from "../../../app/modules/sales/sales.service";
-import { hasLocalDatabase } from "../fixtures/local-database";
-import { localServiceRoleClient } from "../fixtures/local-supabase";
+import { postgrestTest } from "../fixtures/local-supabase";
 import { PROJECT_TEST_USER } from "../fixtures/project-posting";
 import { serviceReturnFixture } from "../fixtures/service-return";
 
-const client = hasLocalDatabase ? localServiceRoleClient() : null;
-
-describe.skipIf(!client)("an RMA's Service and Warranty lines", () => {
-  it("are not creditable, and the whole-RMA replacement leaves them out", async () => {
+postgrestTest(
+  "an RMA's Service and Warranty lines are not creditable, and the whole-RMA replacement leaves them out",
+  async (client) => {
     const f = await serviceReturnFixture();
     try {
       await f.db
@@ -47,7 +45,7 @@ describe.skipIf(!client)("an RMA's Service and Warranty lines", () => {
       expect((await f.receive(rmaId)).posted.error).toBeNull();
 
       const creditable = await getCreditableQuantities(
-        client!,
+        client,
         rmaId,
         f.companyId
       );
@@ -58,7 +56,7 @@ describe.skipIf(!client)("an RMA's Service and Warranty lines", () => {
 
       for (const lineId of [serviceLineId, warrantyLineId]) {
         await expect(
-          createSalesReturnOrderCredit(client!, f.db, {
+          createSalesReturnOrderCredit(client, f.db, {
             salesReturnOrderId: rmaId,
             companyId: f.companyId,
             companyGroupId: f.groupId,
@@ -75,7 +73,7 @@ describe.skipIf(!client)("an RMA's Service and Warranty lines", () => {
         { itemId: f.unitItemId, returnType: "Return for Warranty" }
       ]);
       expect((await f.receive(servicedRmaId)).posted.error).toBeNull();
-      const replacement = await createReplacementSalesOrder(client!, {
+      const replacement = await createReplacementSalesOrder(client, {
         salesReturnOrderId: servicedRmaId,
         companyId: f.companyId,
         companyGroupId: f.groupId,
@@ -93,5 +91,5 @@ describe.skipIf(!client)("an RMA's Service and Warranty lines", () => {
     } finally {
       await f.cleanup();
     }
-  });
-});
+  }
+);

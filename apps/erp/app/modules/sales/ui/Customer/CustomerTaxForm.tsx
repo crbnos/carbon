@@ -64,7 +64,7 @@ const CustomerTaxForm = ({
   const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId);
   const suggestedName = suggestedTaxCode?.name;
 
-  const isDisabled = !permissions.can("update", "sales");
+  const isDisabled = !permissions.has({ "sales.customers": "Edit" });
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {

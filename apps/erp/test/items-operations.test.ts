@@ -13,6 +13,7 @@ vi.mock("@carbon/ee/approvals/document.server", () => ({
   decideApprovalRequest: vi.fn()
 }));
 
+import { getPostgresClient } from "@carbon/database/client";
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
 import {
   addItemPredecessor,
@@ -20,10 +21,15 @@ import {
   setItemActive,
   setItemPostingGroup,
   setItemSourcing,
+  updateConsumable,
   updateItem,
-  updateItemPlanning
+  updateItemCost,
+  updateItemPlanning,
+  updatePart,
+  updateTool
 } from "../app/modules/items/items.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 
 type Write = {
   table: string;
@@ -85,6 +91,40 @@ const unreachable = () => {
   throw new Error("must not be reached");
 };
 
+/**
+ * The item rows the gate reads (`item` id and type), at the Postgres wire: a
+ * driver that answers every query with these rows. Kysely runs real.
+ */
+function itemsDatabase(items: Record<string, string>) {
+  const rows = Object.entries(items).map(([id, type]) => ({ id, type }));
+  const connection = {
+    executeQuery: async () => ({ rows }),
+    // biome-ignore lint/correctness/useYield: never streamed
+    streamQuery: async function* () {
+      throw new Error("not streamed");
+    }
+  };
+  const done = async () => undefined;
+  class Driver {
+    init = done;
+    acquireConnection = async () => connection;
+    beginTransaction = done;
+    commitTransaction = done;
+    rollbackTransaction = done;
+    releaseConnection = done;
+    destroy = done;
+  }
+  return getPostgresClient({} as never, Driver as never);
+}
+
+const PARTS = itemsDatabase({
+  i1: "Part",
+  i2: "Part",
+  i3: "Part",
+  "old-part": "Part",
+  "new-part": "Part"
+});
+
 function contextFor(
   caller: unknown,
   { system = unreachable }: { system?: () => unknown } = {}
@@ -92,20 +132,21 @@ function contextFor(
   return createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "user-1",
-      permissions: {
+      permissions: pageClaims({
         parts: {
           view: ["company-1"],
           create: ["company-1"],
           update: ["company-1"],
           delete: ["company-1"]
         }
-      }
+      })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: caller as any,
     system: system as any,
-    pg: () => ({}) as any,
+    pg: () => PARTS,
     kv: unreachable
   });
 }
@@ -182,6 +223,54 @@ describe("setItemActive", () => {
 
     expect(result.error).toBeNull();
     expect(writes).toMatchObject([{ op: "update", values: { active: false } }]);
+  });
+});
+
+describe("details saves", () => {
+  const details = {
+    id: "i1",
+    name: "Bracket",
+    replenishmentSystem: "Buy",
+    defaultMethodType: "Pull from Inventory",
+    itemTrackingType: "Inventory",
+    unitOfMeasureCode: "EA"
+  } as const;
+
+  /** The item row once the save's item updates whose filters match it have
+   *  landed on it, as the database would apply them. */
+  function itemAfter(row: Record<string, unknown>, writes: Write[]) {
+    const matches = (write: Write) =>
+      write.filters.every(([column, value]) =>
+        Array.isArray(value) ? value.includes(row[column]) : row[column] === value
+      );
+    return writes
+      .filter(
+        (write) =>
+          write.table === "item" && write.op === "update" && matches(write)
+      )
+      .reduce((item, write) => ({ ...item, ...(write.values as object) }), row);
+  }
+
+  it.each([
+    ["updatePart", (ctx: any) => updatePart(ctx, { ...details, revision: "0" })],
+    ["updateTool", (ctx: any) => updateTool(ctx, { ...details, revision: "0" })],
+    ["updateConsumable", (ctx: any) => updateConsumable(ctx, details)]
+  ])("%s leaves an inactive item inactive", async (_name, save) => {
+    const stored = {
+      id: "i1",
+      companyId: "company-1",
+      readableId: "P1",
+      active: false
+    };
+    const { client, writes } = fakeClient({ item: stored });
+
+    const result = await save(contextFor(client));
+
+    expect(result.error).toBeNull();
+    expect(itemAfter(stored, writes)).toMatchObject({
+      name: "Bracket",
+      active: false
+    });
   });
 });
 
@@ -349,5 +438,65 @@ describe("updateItem", () => {
     });
     expect(writes[0].values).not.toHaveProperty("readableId");
     expect(writes[0].values).not.toHaveProperty("type");
+  });
+});
+
+describe("item page permissions", () => {
+  // Tools at Edit with Parts at View: a tool's cost can change, a part's cannot.
+  const toolsEditor = (items: Record<string, string>, caller: unknown) =>
+    createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: pageClaims({
+          "parts.tools": {
+            view: ["company-1"],
+            create: ["company-1"],
+            update: ["company-1"],
+            delete: []
+          },
+          "parts.parts": {
+            view: ["company-1"],
+            create: [],
+            update: [],
+            delete: []
+          }
+        })
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as any,
+      system: unreachable as any,
+      pg: () => itemsDatabase(items),
+      kv: unreachable
+    });
+
+  it("lets Tools at Edit change a tool's cost", async () => {
+    const { client, writes } = fakeClient();
+    const result = await updateItemCost(
+      toolsEditor({ "tool-1": "Tool" }, client),
+      { itemId: "tool-1", cost: { unitCost: 12 } }
+    );
+
+    expect(result.error).toBeNull();
+    expect(writes).toMatchObject([
+      {
+        table: "itemCost",
+        op: "update",
+        values: { unitCost: 12 },
+        filters: [["itemId", "tool-1"]]
+      }
+    ]);
+  });
+
+  it("refuses a part's cost with Parts at View, and writes nothing", async () => {
+    const { client, writes } = fakeClient();
+    const result = await updateItemCost(
+      toolsEditor({ "part-1": "Part" }, client),
+      { itemId: "part-1", cost: { unitCost: 12 } }
+    );
+
+    expect(result.error).toMatchObject({ category: "forbidden", status: 403 });
+    expect(writes).toEqual([]);
   });
 });

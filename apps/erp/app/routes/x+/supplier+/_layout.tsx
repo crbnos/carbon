@@ -2,12 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { getShippingTermsList } from "~/modules/inventory/inventory.service";
-import { getSupplierTypes } from "~/modules/purchasing/purchasing.service";
 import type { Handle } from "~/utils/handle";
 import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -18,25 +16,22 @@ export const meta = moduleMeta("Supplier");
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,
-  to: path.to.purchasing,
-  module: "purchasing"
+  to: path.to.purchasing
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.suppliers": "View" });
 
   const [
     supplierTypes
     // shippingTerms,
   ] = await Promise.all([
-    getSupplierTypes(client, companyId),
-    getShippingTermsList(client, companyId)
+    api.purchasing.getSupplierTypes({}),
+    api.inventory.getShippingTermsList({})
   ]);
 
   return {
-    supplierTypes: supplierTypes.data ?? []
+    supplierTypes: supplierTypes.data?.rows ?? []
     // shippingTerms: shippingTerms.data ?? [],
   };
 }

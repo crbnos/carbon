@@ -94,7 +94,7 @@ function SupplierAssignment({
   const { t } = useLingui();
   const permissions = usePermissions();
 
-  const canEdit = permissions.can("update", "quality") && !isDisabled;
+  const canEdit = permissions.has({ "quality.issues": "Edit" }) && !isDisabled;
 
   // The supplier being saved, before the server answers.
   const currentSupplierId =
@@ -247,7 +247,9 @@ export function TaskItem({
       title={taskTitle ?? ""}
       status={currentStatus as ActionTaskStatus}
       notes={content as JSONContent}
-      canEditNotes={permissions.can("update", "quality") && !isDisabled}
+      canEditNotes={
+        permissions.has({ "quality.issues": "Edit" }) && !isDisabled
+      }
       onNotesChange={(value) => {
         setContent(value);
         onUpdateContent(value);
@@ -402,7 +404,7 @@ function useTaskStatus({
   const permissions = usePermissions();
   const optimisticStatus = useOptimisticTaskStatus(task.id!);
 
-  const isDisabled = !permissions.can("update", "quality") || disabled;
+  const isDisabled = !permissions.has({ "quality.issues": "Edit" }) || disabled;
 
   const onOperationStatusChange = useCallback(
     (id: string, status: IssueActionTask["status"]) => {
@@ -493,7 +495,7 @@ function TaskDueDate({
   const [isOpen, setIsOpen] = useState(false);
   const permissions = usePermissions();
 
-  const canEdit = permissions.can("update", "quality") && !isDisabled;
+  const canEdit = permissions.has({ "quality.issues": "Edit" }) && !isDisabled;
   const pendingValue = dueDateAction.pending?.get("dueDate") ?? task.dueDate;
 
   const handleDateChange = (date: string | null) => {
@@ -582,7 +584,7 @@ function TaskProcesses({
     setLocalProcessIds(currentProcessIds);
   }, [currentProcessIds]);
 
-  const canEdit = permissions.can("update", "quality") && !isDisabled;
+  const canEdit = permissions.has({ "quality.issues": "Edit" }) && !isDisabled;
   const fetchers = useFetchers();
   const pendingUpdate = fetchers.find(
     (f) =>

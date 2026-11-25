@@ -511,3 +511,91 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a part with no bin is taken from the bins that hold it, and goes back to them",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("filter", {
+        quantity: 7,
+        unitCost: 10
+      });
+      const [binA, binB] = ["a", "b"].map((key) => `${f.prefix}-filter-${key}`);
+      const user = (
+        await f.db
+          .selectFrom("itemLedger")
+          .select("createdBy")
+          .where("itemId", "=", itemId)
+          .executeTakeFirstOrThrow()
+      ).createdBy;
+      await f.db
+        .insertInto("storageUnit")
+        .values(
+          [binA, binB].map((id) => ({
+            id,
+            name: id,
+            locationId,
+            companyId: f.companyId,
+            createdBy: user
+          }))
+        )
+        .execute();
+      // The stock moves out of no storage unit: 2 to A and 5 to B.
+      await f.db
+        .insertInto("itemLedger")
+        .values(
+          [
+            { storageUnitId: null, quantity: -7 },
+            { storageUnitId: binA, quantity: 2 },
+            { storageUnitId: binB, quantity: 5 }
+          ].map((row) => ({
+            ...row,
+            itemId,
+            locationId,
+            entryType: "Transfer" as const,
+            companyId: f.companyId,
+            createdBy: user
+          }))
+        )
+        .execute();
+      const job = await f.addJob({ locationId, coverage: "Billable" });
+
+      const issued = await f.issue({
+        type: "serviceJobInventory",
+        serviceJobId: job.id,
+        itemId,
+        unitOfMeasureCode: "EA",
+        quantity: 6
+      });
+      expect(issued.error).toBeNull();
+
+      const stock = async () => {
+        const rows = await f.db
+          .selectFrom("itemLedger")
+          .select([
+            "storageUnitId",
+            (eb) => eb.fn.sum<number>("quantity").as("quantity")
+          ])
+          .where("itemId", "=", itemId)
+          .where("companyId", "=", f.companyId)
+          .groupBy("storageUnitId")
+          .execute();
+        return Object.fromEntries(
+          rows.map((row) => [row.storageUnitId ?? "none", Number(row.quantity)])
+        );
+      };
+      // Fullest first: all 5 from B, then 1 from A. No storage unit stays 0.
+      expect(await stock()).toEqual({ none: 0, [binA]: 1, [binB]: 0 });
+
+      const returned = await f.issue({
+        type: "serviceJobUnconsume",
+        serviceJobItemId: issued.data?.serviceJobItemId as string
+      });
+      expect(returned.error).toBeNull();
+      expect(await stock()).toEqual({ none: 0, [binA]: 2, [binB]: 5 });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

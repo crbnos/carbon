@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { anyOf, type PageGate } from "@carbon/database/access";
 import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import {
   bicMatchesCountry,
@@ -48,26 +49,47 @@ import {
   pricingRuleConfigurationPriceValidator
 } from "./sales.utils";
 
+/** View on either contracts list: both open the same contract page. */
+export const CONTRACT_READ_GATE = anyOf(
+  ["sales.serviceContracts", "sales.projectContracts"],
+  "View"
+);
+
+/** `gate` together with View on either contracts list. */
+export function withContractRead(gate: PageGate): PageGate[] {
+  return CONTRACT_READ_GATE.map((read) => ({ ...gate, ...read }));
+}
+
+// Each KPI names the pages it reads, so the dashboard shows only what the person may see.
 export const KPIs = [
   {
     key: "quoteCount",
-    label: "Quotes"
+    label: "Quotes",
+    gate: { "sales.quotes": "View" }
   },
   {
     key: "rfqCount",
-    label: "RFQs"
+    label: "RFQs",
+    gate: { "sales.rfqs": "View" }
   },
   {
     key: "salesFunnel",
-    label: "Sales Funnel"
+    label: "Sales Funnel",
+    gate: {
+      "sales.rfqs": "View",
+      "sales.quotes": "View",
+      "sales.salesOrders": "View"
+    }
   },
   {
     key: "salesOrderCount",
-    label: "Sales Orders"
+    label: "Sales Orders",
+    gate: { "sales.salesOrders": "View" }
   },
   {
     key: "salesOrderRevenue",
-    label: "Sales Revenue"
+    label: "Sales Revenue",
+    gate: { "sales.salesOrders": "View" }
   }
   // {
   //   key: "turnaroundTime",
@@ -962,6 +984,9 @@ export const salesOrderShipmentValidator = z
     receiptRequestedDate: zfd.text(z.string().optional()),
     receiptPromisedDate: zfd.text(z.string().optional()),
     dropShipment: zfd.checkbox(),
+    // The order's own ship-to (`salesOrder.customerLocationId`); a drop
+    // shipment ships to `customerLocationId` below instead.
+    shipToCustomerLocationId: zfd.text(z.string().optional()),
     customerId: zfd.text(z.string().optional()),
     customerLocationId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
@@ -2842,52 +2867,72 @@ export const customerContractCancelValidator = z.object({
   creditUnusedTime: zfd.checkbox()
 });
 
-export const createContractFromSalesOrderValidator = z
-  .object({
-    salesOrderId: z.string().min(1, { message: "Sales order is required" }),
-    name: z.string().trim().min(1, { message: "Name is required" }),
-    startDate: z.string().min(1, { message: "Start date is required" }),
-    duration: z.enum(contractDurations, { error: "Duration is required" }),
-    endDate: zfd.text(z.string().optional()),
-    billingFrequency: z.enum(contractBillingFrequencies, {
-      error: "Billing frequency is required"
-    }),
-    billingAlignment: z.enum(contractBillingAlignments, {
-      error: "Billing alignment is required"
-    }),
-    billingTiming: z.enum(contractBillingTimings, {
-      error: "Billing timing is required"
-    }),
-    lines: jsonField(
-      z
-        .array(
-          z
-            .object({
-              salesOrderLineId: z.string().min(1),
-              revenueType: z.enum(contractRevenueTypes),
-              rateUnit: z.enum(contractRateUnits).optional()
-            })
-            .refine(
-              (line) => (line.revenueType === "Recurring") === !!line.rateUnit,
-              {
-                message:
-                  "A recurring line needs a rate unit; a one-time line has none",
-                path: ["rateUnit"]
-              }
-            )
-        )
-        .min(1, { message: "Choose at least one line" }),
-      "Invalid lines"
-    )
+const contractFromSalesOrderFields = z.object({
+  salesOrderId: z.string().min(1, { message: "Sales order is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  startDate: z.string().min(1, { message: "Start date is required" }),
+  duration: z.enum(contractDurations, { error: "Duration is required" }),
+  endDate: zfd.text(z.string().optional()),
+  billingFrequency: z.enum(contractBillingFrequencies, {
+    error: "Billing frequency is required"
+  }),
+  billingAlignment: z.enum(contractBillingAlignments, {
+    error: "Billing alignment is required"
+  }),
+  billingTiming: z.enum(contractBillingTimings, {
+    error: "Billing timing is required"
   })
-  .refine((data) => (data.duration === "custom" ? !!data.endDate : true), {
-    message: "End date is required",
-    path: ["endDate"]
-  })
-  .refine((data) => isOnOrAfter(data.endDate, data.startDate, -1), {
-    message: "End date cannot be before the start date",
-    path: ["endDate"]
-  });
+});
+
+const contractFromSalesOrderLines = z
+  .array(
+    z
+      .object({
+        salesOrderLineId: z.string().min(1),
+        revenueType: z.enum(contractRevenueTypes),
+        rateUnit: z.enum(contractRateUnits).optional()
+      })
+      .refine(
+        (line) => (line.revenueType === "Recurring") === !!line.rateUnit,
+        {
+          message:
+            "A recurring line needs a rate unit; a one-time line has none",
+          path: ["rateUnit"]
+        }
+      )
+  )
+  .min(1, { message: "Choose at least one line" });
+
+function checkContractFromSalesOrderDates(
+  data: { duration: string; startDate: string; endDate?: string },
+  ctx: z.RefinementCtx
+) {
+  if (data.duration === "custom" && !data.endDate) {
+    ctx.addIssue({
+      code: "custom",
+      message: "End date is required",
+      path: ["endDate"]
+    });
+  }
+  if (!isOnOrAfter(data.endDate, data.startDate, -1)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "End date cannot be before the start date",
+      path: ["endDate"]
+    });
+  }
+}
+
+/** The modal's form: the lines arrive as JSON. */
+export const createContractFromSalesOrderValidator =
+  contractFromSalesOrderFields
+    .extend({ lines: jsonField(contractFromSalesOrderLines, "Invalid lines") })
+    .superRefine(checkContractFromSalesOrderDates);
+
+/** `sales.createContractFromSalesOrder`'s input: the lines already parsed. */
+export const contractFromSalesOrderValidator = contractFromSalesOrderFields
+  .extend({ lines: contractFromSalesOrderLines })
+  .superRefine(checkContractFromSalesOrderDates);
 
 export const customerContractInvoiceAutomationValidator = z.object({
   invoiceAutomation: z.enum(invoiceAutomations).nullable()

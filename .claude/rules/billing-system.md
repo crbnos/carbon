@@ -82,6 +82,36 @@ the `customer.subscription.*` family (`created/updated/deleted/paused/resumed/tr
 the `invoice.*` family, and `payment_intent.*`. Most mutate state via `syncStripeDataToKV`;
 several `invoice.*` events are forwarded to GTM.
 
+## Who may manage billing: the company owner
+
+The owner is the company group's `companyGroup.ownerId` (the user who created the group, until
+they transfer it). Billing is the owner's alone, whatever grants anyone else holds: Settings →
+Billing at Edit is needed as well, never instead.
+
+- The decision is `ownsCompany(ownerId, userId)` (`@carbon/database/access`, `owner.ts`): the
+  client's `usePermissions().isOwner()` (sidebar, avatar menu) and the server share it. The
+  Billing page needs no client check: its loader already refused a non-owner.
+- The server check is `isCompanyOwner(companyId, userId)` (`@carbon/auth/company.server`): the
+  owner read past RLS (`readCompanyOwnerId`, shared with `isCarbonOwnedCompany`); a failed read
+  is no owner. A route uses `requireCompanyOwner({ companyId,
+  userId })` (403 otherwise): the Billing loader (`x+/settings+/billing.tsx`) and the checkout
+  action (`onboarding+/plan.tsx`). The service functions `getBillingPortalUrl` and
+  `transferCompanyOwnership` (`settings.server.ts`) refuse a non-owner as `forbidden`; an API key
+  or a job is never the owner.
+- **Transfer** (`transferCompanyOwnership`): the caller must be the current owner (and hold
+  Billing at Edit), and the new owner an active employee (`employee.active`, `userToCompany.role
+  = 'employee'`) of a company in the group. That rule is one query, `ownershipCandidates`
+  (`settings.service.ts`): the Billing page lists from it (`listOwnershipCandidates`, read as the
+  system, since the group's other companies are not the owner's) and `readOwnershipTransfer`
+  checks the chosen user against it. The decision is `ownershipTransferRefusal`, tested by value in
+  `packages/database/src/access/owner.test.ts`. `companyGroup` has no update policy (do not add
+  one), so it writes as the system through `setCompanyGroupOwner` (`settings.service.ts`), for
+  the company's own group and only while the caller still owns it, then emits
+  `ownership_transferred` (`logOwnershipTransfer`, `@carbon/auth/auth-events.server`). DB test:
+  `apps/erp/test/database/transfer-company-ownership.test.ts`.
+- Stripe's webhooks (`webhook.stripe.ts`) are not user calls and have no owner check; nor does
+  the seat sync (`updateSubscriptionQuantityForCompany`), a side effect of user changes.
+
 ## Plan gating (`packages/ee/src/plan.ts` + `plan.server.ts`)
 
 `FEATURE_PLANS` (`plan.ts`) is the source of truth — both client and server read it:
@@ -105,15 +135,15 @@ local-dev only via the plain `canAccessBackups`.
 (`x+/users+/employee-types*`), editing an individual user's permissions
 (`employees.$employeeId`, `bulk-edit-permissions`), and console/kiosk mode
 (`x+/settings+/people.tsx`). The licensed logic — the flattened-permission-object
-builder `updatePermissions`, `updateEmployee`, the employee-type CRUD, and the
+builder `updatePermissions`, `writeAccessGrants`, the employee-type CRUD, and the
 claims/employee-type translators — lives once in **`@carbon/ee/permissions.server`**
 (consumed by the ERP authoring routes AND the `@carbon/jobs` bulk-edit task, which
 no longer carries its own copy). Console-operator provisioning is `@carbon/ee/console.server`
 (`updateConsoleSetting`); the authoring UI is `.ee.tsx` in the app (it can't move
 to the package — it imports `~/components/Form` etc.).
-The community primitives it does NOT include — the invite permission merge and
-`makePermissionsFromEmployeeType` (invite snapshot) — stay in the app's
-`users.service.ts`. Community/Starter ships "everyone is an admin": you can add
+The community primitive it does NOT include — the invite permission merge, which
+portal invites still use — stays in the app's `users.service.ts`; an employee
+invite carries no permissions, since access comes from the employee type's grants. Community/Starter ships "everyone is an admin": you can add
 users (every invite defaults to the seeded `Admin` employee type) but not author
 roles. Enforcement (`requirePermissions`, RLS, `get_claims`) is unaffected and
 stays in every edition.

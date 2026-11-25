@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
 import type { JSONContent } from "@carbon/react";
@@ -15,13 +15,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import RiskRegisterCard from "~/modules/quality/ui/RiskRegister/RiskRegisterCard";
-import {
-  getFailureModesList,
-  getMaintenanceDispatch,
-  getMaintenanceDispatchComments,
-  getMaintenanceDispatchEvents,
-  getMaintenanceDispatchItems
-} from "~/modules/resources/resources.service";
+import type { getMaintenanceDispatch } from "~/modules/resources/resources.service";
 import { MaintenanceDispatchExplorer } from "~/modules/resources/ui/Maintenance/MaintenanceDispatchExplorer";
 import MaintenanceDispatchHeader from "~/modules/resources/ui/Maintenance/MaintenanceDispatchHeader";
 import {
@@ -40,8 +34,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Maintenance`, to: path.to.maintenanceDispatches },
     (data) => data?.dispatch?.maintenanceDispatchId
-  ),
-  module: "resources"
+  )
 };
 
 async function getMaintenanceDispatchFiles(
@@ -59,19 +52,19 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.dispatch?.maintenanceDispatchId, "Maintenance Dispatch");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources"
+  const { client, companyId, api } = await authorize(request, {
+    "resources.dispatches": "View"
   });
 
   const { dispatchId } = params;
   if (!dispatchId) throw new Error("Could not find dispatchId");
 
   const [dispatch, events, items, comments, failureModes] = await Promise.all([
-    getMaintenanceDispatch(client, dispatchId),
-    getMaintenanceDispatchEvents(client, dispatchId),
-    getMaintenanceDispatchItems(client, dispatchId),
-    getMaintenanceDispatchComments(client, dispatchId),
-    getFailureModesList(client, companyId)
+    api.resources.getMaintenanceDispatch({ dispatchId }),
+    api.resources.getMaintenanceDispatchEvents({ dispatchId }),
+    api.resources.getMaintenanceDispatchItems({ dispatchId }),
+    api.resources.getMaintenanceDispatchComments({ dispatchId }),
+    api.resources.getFailureModesList({})
   ]);
 
   if (dispatch.error) {

@@ -368,15 +368,17 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/database/supabase/migrations/` set-returning `LANGUAGE sql` functions consumed via `client.rpc(...)`; any app code that greedy-fills / picks "the first row" from an RPC result.
 
-## Tracked consumption/split must book against the entity's ACTUAL bin, not an arbitrary ledger row
+## Tracked consumption/split must book against the entity's ACTUAL bin, not an arbitrary ledger row (and a reversal against the row it reverses)
 
 **Context:** Building "return unused picks at job complete" surfaced a pre-existing bug in the `issue` edge function (`trackedEntitiesToOperation`). Consuming a batch that had been picked to a lineside shelf booked the Consumption + split `itemLedger` rows against `itemLedgers.find(il => il.trackedEntityId === id)?.storageUnitId` — the FIRST row for the entity in a `createdBy`-ordered list, i.e. an arbitrary bin. A picked entity has ledger rows in BOTH its warehouse source and its lineside bin, so consumption landed on the warehouse bin, leaving the entity at −N on-hand in one bin / +N in another: a per-bin-negative, internally inconsistent ledger, and the un-consumed remainder (a split entity) stranded on the wrong bin.
 
 **Problem:** For a tracked entity that has moved between bins (pick/transfer), "which bin holds the stock" is NOT the first ledger row — it's the bin whose net on-hand is positive. Picking any row's `storageUnitId` silently misplaces consumption and breaks any downstream feature that reasons about physical location (e.g. returning lineside remainder to source).
 
-**Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/utils/src/resolve-tracked-entity-bin.ts`, pure + test-covered; exported by `@carbon/utils`). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths.
+**Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/utils/src/resolve-tracked-entity-bin.ts`, pure + test-covered; exported by `@carbon/utils`). Scope such a fix to the path you can verify; don't blanket-replace untested paths.
 
-**Applies to:** `issueMaterial` (`apps/erp/app/modules/inventory/inventory.service.ts`) and any posting inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
+A reversal is different: once a unit is consumed, no bin nets positive, so `resolveTrackedEntityBin` has nothing to find. A put-back (unconsume, unissue, unpick, a void) books against the row it reverses. Read the entity's ledger with `.where("companyId", …)` and `.orderBy("createdAt", "desc")` and take the newest row of the entry type being reversed (for unconsume: the newest negative `Consumption` row). Take its bin and its `projectId` from that one row. `createdBy` is a user id, not a time: ordering by it, then taking the first row, returned a unit consumed from bin B to the bin it was received into (`unconsumeTrackedEntities`, fixed 2026-11-24, pinned by `apps/erp/test/database/unconsume-tracked-bin.test.ts`).
+
+**Applies to:** `issueMaterial` (`apps/erp/app/modules/inventory/inventory.service.ts`) and any posting inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins, or reversing one.
 
 ## A tracked entity's bin is where it IS, never the document line's bin — and "no storage unit" is a bin
 
@@ -503,7 +505,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Problem:** Editable cells (`~/components/Editable/*`) persist via the input's native `onBlur`, but three things prevent that blur from ever firing on keyboard navigation: (1) the Table's key handler `preventDefault()`s Tab/Enter, so the browser never moves focus; (2) React unmounts the still-focused input when the selection moves, and browsers fire no blur on a removed element; (3) react-aria's NumberField swallows Enter entirely (`onKeyDownEnter` commits internally without `continuePropagation()`) and consumes ArrowUp/Down as spinbutton steps, so a bubble-phase table handler never sees those keys. Blurring at the input level without navigating drops `document.activeElement` to `body`, after which the table wrapper hears no further keys.
 
-**Rule:** The table container owns the Excel keyboard model: attach the handler with `onKeyDownCapture` (so it beats react-aria to Enter/arrows), `stopPropagation()` for handled keys while editing, blur `document.activeElement` to commit *before* `setSelectedCell`, and let the roving-tabindex cell ref (`useMovingCellRef`) refocus the newly selected cell. Skip events targeting portaled overlays (`[data-radix-popper-content-wrapper]`, `[role=menu|listbox|dialog]`) — those own their keys. Editors must keep blur as their *single* commit path (no keydown commits — they double-fire the mutation, as `EditableText` did in Grid).
+**Rule:** The table container owns the Excel keyboard model: attach the handler with `onKeyDownCapture` (so it beats react-aria to Enter/arrows), `stopPropagation()` for handled keys while editing, blur `document.activeElement` to commit *before* `setSelectedCell`, and let the roving-tabindex cell ref (`useMovingCellRef`) refocus the newly selected cell. Skip events targeting portaled overlays (`[data-radix-popper-content-wrapper]`, `[role=menu|listbox|dialog]`) — those own their keys. Editors must keep blur as their *single* commit path (no keydown commits — they double-fire the mutation, as `EditableText` did in Grid). Match Enter by `key`, not `code`: the number pad's Enter has `code` `NumpadEnter`, and react-aria's commit and the browser's implicit form submission both still treat it as Enter (`gridKeyCode`). `Grid` takes only Tab and Enter in the capture phase, and only while a cell is being edited (`takesKeyFromEditor`); every other key stays in the bubble phase, so a combobox list still selects on Enter before the grid moves on. Until it did, Enter in a Grid number cell inside a form submitted the form without the typed value.
 
 **Applies to:** `apps/erp/app/components/Table/Table.tsx`, `apps/erp/app/components/Grid/Grid.tsx`, `apps/erp/app/components/Editable/*`, any future inline-editable cell editor.
 
@@ -2180,7 +2182,7 @@ full-screen ERP route.
 
 **Problem:** Every such insert returned a 23502, and nobody read it. The reject route did `await (serviceRole as any).from(...).insert(rows)` and discarded the result entirely, so the feature had never worked in production and no error surfaced anywhere. supabase-js does not throw — it resolves to `{ data, error }` — so an unchecked insert is indistinguishable from a successful one, and the `as any` cast additionally hid that the row type was missing a required column. A Kysely insert in the same place would have thrown.
 
-**Rule:** Never discard a supabase-js write result — bind it and check `.error`, even for a fire-and-forget link write. Treat `as any` on a `.from(...).insert(...)` as a defect in review: the cast exists precisely because the row object does not satisfy the generated type, which is the compiler telling you a required column is missing. When a "seeded" side table is mysteriously empty, check the writer's error handling before suspecting the read.
+**Rule:** Never discard a supabase-js write result — bind it and check `.error`, even for a fire-and-forget link write. Treat `as any` on a `.from(...).insert(...)` as a defect in review: the cast exists precisely because the row object does not satisfy the generated type, which is the compiler telling you a required column is missing. When a "seeded" side table is mysteriously empty, check the writer's error handling before suspecting the read. (Enforced by `no-discarded-query-error`.)
 
 **Applies to:** every `.from(...).insert(...)` / `.update(...)` whose result is not bound, especially in post-commit "also link X" tails; fixed for both writers in PR #1612 by moving them into a Kysely transaction under `lockIssueDispositions`.
 
@@ -3851,7 +3853,7 @@ Never edit main's migration to make it apply.
 
 **Problem:** `journalLine.accountId` and the order, invoice and supplier quote line FKs were `ON DELETE SET NULL`. Deleting an account with Draft or Provisional lines succeeded and silently emptied the lines' account; Posted lines only refused by accident, through the immutability trigger. The import also has to know, for every column that names an account, whether a merge may move it.
 
-**Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-draft`, `repoint-if-unposted-journal` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `SOFT_REFERENCES` and the apply's `repointReferences`.
+**Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-draft`, `repoint-if-unposted-journal` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `SOFT_REFERENCES` and the apply's `repointReferences`. (Enforced by `account-fk-restrict` for the RESTRICT half.)
 
 **Applies to:** migrations that add a column referencing `account`; `packages/database/src/account-import.ts`; `applyAccountImport` (`apps/erp/app/modules/accounting/accounting.service.ts`) and its live test `apps/erp/test/database/apply-account-import.test.ts`.
 
@@ -4273,6 +4275,16 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** every Inngest function that polls an external service.
 
+## A service function's result is not the building block's result
+
+**Context:** 1,145 loader reads moved from `.service` building blocks to `api.<module>.<fn>(input)` (2026-10-18).
+
+**Problem:** The two results differ in four ways that a codemod changes silently. `paged` answers `data: { rows, count }`, not `data` and `count`. `unwrap` drops `count`. A refusal is `{ category, message, status }`, so a `PGRST116` check never matches. A service function that returns its building block's value as is (no `unwrap`/`paged`) answers `{ data: value }`, and a throw comes back as `{ error }`, not a throw. The `unwrap` data type also took the failure branch's `null` until `DataOf` was fixed, so 570 loader reads of `.data` after an `.error` check broke at once.
+
+**Rule:** Classify each service function by what its `run` returns before a caller swaps to it (`unwrap`, `paged`, or a plain value) and skip one the classifier does not know. Read a plain value with `dataOrThrow`. When a type error repeats hundreds of times, fix the shared type, not the call sites.
+
+**Applies to:** every move from a building block to its service function, in loaders, actions, jobs and tests.
+
 ## A fetcher's error goes to the boundary above the component that owns it
 
 **Context:** `CarbonProvider` (`@carbon/auth`, rendered by each app's `x+/_layout`) refreshes the session from a one-minute timer with `useFetcher().submit` to `/refresh-session`. In a background tab the POST failed with `TypeError: Failed to fetch` (the laptop asleep, the connection dropped), and the whole app was replaced by the root "Something broke on our end" screen.
@@ -4409,7 +4421,7 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Problem:** A worker saves the file only when it installs, and it reinstalls only when `service-worker.js` itself changes. Editing `offline.html` alone leaves every browser that already has the worker on the old copy, and the self-heal only fills a missing entry, it never replaces one.
 
-**Rule:** Every change to `offline.html` bumps the offline cache in both workers (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`). `offline-page.test.ts` in each app pins the page's hash to the cache name, so a change that skips the bump fails.
+**Rule:** Every change to `offline.html` bumps the offline cache in both workers (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`). The `offline-page-cache-bumped` check in `packages/checks` pins the page's hash to both cache names, so a change that skips the bump fails.
 
 **Applies to:** `apps/{erp,mes}/public/offline.html` and `service-worker.js`.
 
@@ -5103,6 +5115,23 @@ unrelated page.
 **Applies to:** Any action whose redirect target is a `$id._index.tsx` that
 redirects (purchase orders, and the other records with a `/details` index).
 
+## A page that is off for this company redirects home, not to its module
+
+**Context:** A Settings page gated by a flag, a plan or the environment (ITAR
+Certifications, Companies, Backups, Webhooks) redirected to `/x/settings` when
+that gate was off.
+
+**Problem:** A module root opens on the first page of the module the person can
+view (`moduleIndexLoader`, `landingOf`), and that choice knows nothing about
+flags or plans. For a person whose first Settings page is the gated one, the root
+sends them straight back to it: a redirect loop. The one-page-role pass found it.
+
+**Rule:** When a page is unavailable for this company, redirect to
+`path.to.authenticatedRoot`, never to its own module root.
+
+**Applies to:** Every flag-, plan- or environment-gated route under a module whose
+root is `moduleIndexLoader`.
+
 ## A force delete treats the void's refusal as a fallback, not a stop
 
 - **Context:** the Admin force delete of invoices, receipts and payments (`decideDocumentForceDelete`).
@@ -5302,3 +5331,99 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 An async call in an effect stays acceptable only for a third-party API or a load started by an event (a search box, a click).
 
 **Applies to:** Every drawer, panel or card in `apps/erp` and `apps/mes` that loads its own data. Before you write `useEffect(() => { (async () => …)() })` or `.then(` on a client read, write the route.
+
+## `pg_temp.allows` cannot see a policy's role list
+
+**Context:** `authz-pieces.test.sql` evaluates a policy with `pg_temp.allows(table, command, clause, row)`, which reads the policy's `USING` or `WITH CHECK` text from `pg_policies` and runs it as the current role.
+
+**Problem:** It ignores `pg_policies.roles`. `exchangeRate` kept API keys out with `TO authenticated USING (true)`, so an `allows('exchangeRate', …)` assertion made as `anon` passed against the old policy: the test could not fail.
+
+**Rule:** For a policy restricted by `TO <role>`, or whenever the role decides, test the behaviour instead: select from the table, or call the function that reads it (`get_exchange_rate`), as that role. Prove the assertion red against the old policy before trusting it.
+
+**Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
+
+## A component's outlet beside the route's outlet mounts the child route twice
+
+- **Context:** List tables and record cards (`ApiKeysTable`, `WebhooksTable`, `SupplierProcesses`) rendered their own `<Outlet />` for their New/Edit drawers. #1855 then gave every route under `/x` a `<RecordOutlet />`, and these routes kept both.
+- **Problem:** Both outlets render the same child route, so New API Key opened two modals with the same `id="name"` input. Each Radix modal set `aria-hidden` on everything outside itself, so each hid the other: screen readers and `getByRole` found no Name field, checkbox or Save button, while a sighted user saw one dialog. The per-file `no-bare-outlet` scan reads routes only, so it did not see the component's outlet.
+- **Rule:** One outlet per route. A component rendered by a route that has `RecordOutlet` has no outlet of its own; adding `RecordOutlet` to a route whose table still renders `Outlet` means removing the table's. `findNestedOutlets` (`no-bare-outlet`) flags the pair across files.
+- **Applies to:** every component in `modules/*/ui/` or `components/` that renders `Outlet`, and every route that renders one.
+
+## Count invoices by the status the list shows, from its view
+
+**Context:** The purchasing dashboard's Open Purchase Invoices card counted `purchaseInvoice` rows by status, and its link opens the Purchase Invoices list filtered on the same statuses.
+
+**Problem:** The list reads the `purchaseInvoices` view, which derives `Partially Paid`, `Paid` and `Overdue` from settlements and the due date. The table stores the posted status (`Open`, or `Submitted` on sales) and keeps it once the invoice is paid. Counting the table missed every posted bill, and adding `Open` to the table filter would have counted paid bills too.
+
+**Rule:** Count, filter or badge invoices by status from `salesInvoices` / `purchaseInvoices`, the views the lists read. Read the table's `status` (the views' `baseStatus`) only for a rule about the stored state, such as whether the invoice is posted.
+
+**Applies to:** dashboards, KPIs and cards that count sales or purchase invoices by status.
+
+## A feature that lets a record repeat must widen the key that forbade it
+
+**Context:** Split hours (`20260731192616_people-split-hours.sql`) let one person's shift be dealt across several `peopleAssignment` rows, one per station. The table's unique key, added a week earlier (`peopleAssignment_person_day_key`), allowed one row per person, date and shift.
+
+**Problem:** The day editor, the free-hours drag and the matrix move each write a second row for the same shift, so each failed with a duplicate-key error. Later code treated the key as the rule: the matrix move refused the case (`"taken"`), and comments explained the refusal by the index, so the stale key spread instead of being fixed.
+
+**Rule:** When a feature lets a record hold several rows where it held one, find the unique keys over that record in the newest migrations and widen them in the same change. A refusal whose only reason is a unique index is a sign the index is stale: check it against the feature it contradicts before adding the refusal.
+
+**Applies to:** Any migration that relaxes a one-row-per-X rule, and any service code that refuses an action because a unique index would reject it.
+
+## A controlled field's starting value must equal its form default
+
+**Context:** An RMA line with no customer asset showed Unsaved changes on leaving, with nothing changed. The first diagnosis blamed the Disposition list, a bare Radix Select outside the form's state.
+
+**Problem:** The route passed `customerAssetId: line.customerAssetId ?? undefined` as the form default, and the form seeded its `useState` with `initialValues.customerAssetId ?? ""`. On mount, `Combobox` (`@carbon/form`) calls `setValue` with any value prop that is not null or undefined; `useControllableValue` marks the field touched when that value differs from the default by `!==`, so `""` against `undefined` touched it. `Submit` blocks navigation while any field is touched.
+
+**Rule:** Seed the state a controlled field reads (`Combobox`, `SelectControlled`, `NumberControlled`, `Item`, `TaxCode`) from the same value the form gets as its default: `useState(initialValues.x)`, or the same `?? ""` in both places. A caller that leaves a field out gets `undefined` as its default, so a state fallback such as `?? "Return to Stock"` needs the same value in that caller's defaults. To find the field behind a false Unsaved changes prompt, read each controlled field's starting value against its default, not the fields that look interactive.
+
+**Applies to:** Every `ValidatedForm` whose controlled fields read component state, and every route or modal that builds its `initialValues`.
+
+## A UI hint for a posting's refusal calls the posting's rule, at every entry point
+
+**Context:** Charge cost on the element page posts an expense entry, and `postProjectExpense` refuses one whose treatment on the entry date is Capitalize.
+
+**Problem:** The first write-up disabled the action on the project's treatment. The treatment resolves per element: the element, then its ancestors whose override is in effect on the date, then the project. A project-level check would refuse an element that expenses its own cost and offer the action on a capital element under an Expense project. The action also opened from a third place, the plan card's Charge button, beside the two menus the write-up named.
+
+**Rule:** Move the posting's check into a pure function of the posting context and the date. The posting refuses with it, and the loader calls it on the context the posting loads (`loadProjectPostingContexts`), never on a copy of the rule. Before gating an action, grep its opener (`charging.open`) for every entry point and give each the same disabled state and reason. Disable the action only when no input the user can still change (the entry date) makes it post, and keep the server refusal for the inputs that are refused: a dated override (`costTreatmentEffectiveFrom`) leaves the dates before it open, so a today-only check would block entries the posting accepts.
+
+**Applies to:** `projectExpenseRefusal` / `getChargeCostRefusal`, and any action the UI disables with a reason the server decides by cost treatment or date.
+
+## A stock-out with no bin chosen takes the bin that holds the stock, never NULL
+
+**Context:** Project Issue with the Storage Unit left empty counted only stock with no bin and booked the issue at "no storage unit". "No bin" went negative while named bins held the parts. The same gap sat in the maintenance spare-part issue, the direct sales invoice, the warehouse transfer shipment, the return shipments and the NCR close. A stock transfer pick also never checked that its From bin still held the stock.
+
+**Problem:** Each posting had written its own "which bin" rule, and an empty bin field quietly meant "no storage unit". Job issue and sales order shipments had been fixed to choose a bin from stock. The other paths were never brought into line, because nothing tied them to one rule.
+
+**Rule:** A posting that takes untracked stock out with no bin chosen calls a shared rule. Never default to NULL and never take "the first ledger row".
+1. Ordinary stock (issue, consumption, sale, transfer out): `planUntrackedDraw` (`shared.service.ts`), or `shipmentSourceBinChooser` when a document line names one bin. The nettable default comes first, then bins with stock, fullest first. Quarantine and lineside units are never guessed.
+2. Nonconforming or returned stock (NCR Scrap, Return to Supplier, return shipments): `planHeldUntrackedDraw` / `chooseHeldStockBin`. Held units (quarantine, MRB, rejected) come first.
+3. A serial or batch row posts at the bin the unit holds stock in (`getTrackedEntityBins`, `resolveTrackedEntityBin`).
+4. A pick or move from a named bin checks that the bin still holds the quantity.
+
+A new stock-out path names which rule it follows in its code comment and has a database test with stock only in a named bin.
+
+**Applies to:** every writer of a negative `itemLedger` row: `projects.service.ts`, `inventory.service.ts`, `invoicing.service.ts`, `quality.service.ts`, `shared.service.ts` (`createDocument`). See `.claude/rules/inventory-system.md` → "An untracked draw takes stock from the bins that hold it".
+
+## A guessed bin must leave stock an open inspection lot holds
+
+**Context:** The fix that made empty-bin stock-outs take a bin from stock read each bin's raw on-hand. A code review found that an NCR close, a return shipment and a Project Issue could now pick a quarantine or goods-in unit whose stock an open receipt lot holds. The hold guard (`check_inspection_hold`) then refused the whole posting. Before the fix the same posting succeeded at "no storage unit".
+
+**Problem:** A bin guess has two failure modes, not one: it can take the wrong bin, and it can take stock that is not free. Capping the bin at its free stock was not enough either: the planner then put a real shortfall back onto that capped bin (the first bin drawn).
+
+**Rule:** A path that guesses a bin reads stock net of inspection holds (`getUntrackedBinStock` with `inspectionHolds`) and runs its plan through `keepInspectionHeldStock`. When you change where a posting takes stock from, list every guard that can refuse that write (the hold guard, Prevent negative stock, `assertPickSourceNettable`) and test the case where the new bin trips it. A fix that turns a posting that used to succeed into a refusal is a regression, even if the old result was wrong.
+
+**Applies to:** `planUntrackedDraw`, `planHeldUntrackedDraw`, the shipment bin choosers, and any new writer of a negative untracked `itemLedger` row.
+
+## Parallel agents on one rule need the shared helper first
+
+**Context:** One PR fixed eight stock-out paths with five parallel subagents. The draw rule had a shared helper before the fan-out, and every agent used it. The return rule ("back to the bins the issues drew from") and the shipment line bin chooser had no helper, so the agents wrote the return rule three times and made a near copy of the chooser. The copies already differed: one broke ties by `entryNumber` and the others did not.
+
+**Problem:** A subagent sees only its own path and writes the rule inline. Nobody compares the copies until review, and by then they have drifted apart.
+
+**Rule:** Before fanning out work that applies one rule in several places, list every rule the paths share (draw, return, line bin, refusal message). Write each rule as a pure tested helper first, and name it in every agent's brief. Review the agents' diffs side by side for logic that repeats. Also check the small edits each agent made:
+- A new helper inserted between a function and its doc comment moves the comment onto the wrong function.
+- Two arrays matched by position silently break when someone adds a row; have each entry hold its own row instead.
+- A scripted multi-site edit can corrupt brackets; run the typecheck right after it.
+
+**Applies to:** Multi-path fixes run through the Agent tool or `/conductor`.

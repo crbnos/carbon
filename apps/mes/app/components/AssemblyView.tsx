@@ -120,6 +120,7 @@ import { useWorkUnit } from "~/components/JobOperation/hooks/useWorkUnit";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
+import { UnitHoldBanner } from "~/components/UnitHoldBanner";
 import { useRealtime, useUser } from "~/hooks";
 import {
   type AbilityShortfall,
@@ -140,8 +141,9 @@ import {
 } from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
+import { holdingIssues, isUnitOnHold, type UnitHolds } from "~/utils/unitHold";
 import { deriveUnits } from "~/utils/units";
-import { shownRecordIndex } from "~/utils/workUnit";
+import { operationUnits, shownRecordIndex } from "~/utils/workUnit";
 
 const log = getLogger("mes", "assembly-view");
 
@@ -340,6 +342,8 @@ type Props = {
     /** False when this rework or correction copy does not work the unit. */
     inOperationScope?: boolean;
   }[];
+  /** The units on hold for an open quality issue (`readUnitHolds`). */
+  unitHolds?: UnitHolds;
   trackedEntityId: string | null;
   materials: { materials?: any[]; trackedInputs?: any[] } | null;
   procedure: { attributes: Step[]; parameters: any[] };
@@ -550,6 +554,7 @@ export function AssemblyView({
   thumbnailPath,
   correctionName,
   trackedEntities,
+  unitHolds,
   trackedEntityId,
   materials,
   procedure,
@@ -881,14 +886,18 @@ export function AssemblyView({
   // A rework or correction copy works only the units sent into it: page through
   // those, but key step records by each unit's place in the full axis, as the
   // operation view and the ERP do. With no scope the two are the same.
-  const scopedAxis = axisEntities
-    .map((entity, axisIndex) => ({ entity, axisIndex }))
-    .filter(({ entity }) => entity.inOperationScope !== false);
-  const axisIndexOf = (position: number) =>
-    scopedAxis[position]?.axisIndex ?? position;
-  const units = deriveUnits(
+  const navigableEntities = operationUnits(
+    axisEntities,
     unitCount,
-    scopedAxis.map(({ entity }) => entity)
+    navigatesByEntity ? { operationId, holds: unitHolds } : undefined
+  );
+  const axisIndexOf = (position: number) => {
+    const entity = navigableEntities[position];
+    return entity ? axisEntities.indexOf(entity) : position;
+  };
+  const units = deriveUnits(
+    Math.max(unitCount, navigableEntities.length),
+    navigableEntities
   );
   // The tracked entities within the navigable set (for the serial picker; empty when
   // the parent is untracked).
@@ -906,12 +915,19 @@ export function AssemblyView({
   // The serial unit the operator works on, decided as on the operation view
   // (`useWorkUnit`). At a later operation the unit on screen is for viewing
   // until the operator picks or scans one: no write names it.
+  // A unit on hold for an open quality issue is not open here: no work names
+  // it and the screen moves past it, as the server does (`resolveWorkUnit`).
   const workUnit = useWorkUnit({
     serial: navigatesByEntity,
     isFirstOperation,
     units: unitEntities,
-    isOpen: (entity) => isUnitIncompleteForOperation(entity, operationId)
+    isOpen: (entity) => isUnitIncompleteForOperation(entity, operationId),
+    isOnHold: (entity) => isUnitOnHold(unitHolds, entity.id)
   });
+  // The open issues that hold the unit on screen.
+  const shownUnitHolds = navigatesByEntity
+    ? holdingIssues(unitHolds, workUnit.reviewUnitId)
+    : [];
 
   // Resolve the current unit. A serial part shows the unit `useWorkUnit` holds
   // (picked, or looked back at), so what the screen shows is what its writes
@@ -955,7 +971,6 @@ export function AssemblyView({
   const reviewEntity = navigatesByEntity ? workUnit.unit : currentEntity;
   // The Issue dialog opens on a finished unit too, for Unconsume only.
   const issueDialogBlocked = writesBlocked && !reviewEntity;
-  const canCompleteUnit = !workUnit.requiresPick || workUnit.unitIsOpen;
   const canPickUnit = workUnit.canPick;
   const askForUnit = () => {
     toast.info(t`Select a unit first`);
@@ -1873,7 +1888,7 @@ export function AssemblyView({
                 <Trans>No unit selected</Trans>
               ) : (
                 <>
-                  Unit {Math.min(currentUnitIndex + 1, unitCount)} / {unitCount}
+                  Unit {currentUnitIndex + 1} / {units.length}
                 </>
               )}
             </Badge>
@@ -1970,7 +1985,7 @@ export function AssemblyView({
       {operation ? (
         <button
           type="button"
-          disabled={abilityBlocked || !canCompleteUnit}
+          disabled={abilityBlocked || writesBlocked}
           onClick={completeModal.onOpen}
           className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 max-md:hidden md:gap-2 md:px-4"
         >
@@ -2083,6 +2098,14 @@ export function AssemblyView({
       {abilityWarning && (
         <div className="shrink-0 px-4 pt-3">
           <AbilityWarning warning={abilityWarning} />
+        </div>
+      )}
+      {shownUnitHolds.length > 0 && (
+        <div className="shrink-0 px-4 pt-3">
+          <UnitHoldBanner
+            serialNumber={workUnit.unit?.readableId}
+            issues={shownUnitHolds}
+          />
         </div>
       )}
 
@@ -2842,7 +2865,7 @@ export function AssemblyView({
             <Button
               size="lg"
               leftIcon={<LuCheck />}
-              isDisabled={abilityBlocked || !canCompleteUnit}
+              isDisabled={abilityBlocked || writesBlocked}
               onClick={completeModal.onOpen}
               className="h-12 flex-1"
             >
@@ -2874,6 +2897,7 @@ export function AssemblyView({
           ""
         }
         issueBlocked={writesBlocked}
+        parentOnHold={shownUnitHolds.length > 0}
         parentIdIsSerialized={requiresSerialTracking}
         // Stamp the current step + 1-based unit onto the consume so issued
         // quantities can be attributed per-unit even for a batch parent (where
@@ -2898,7 +2922,7 @@ export function AssemblyView({
         onClose={needMaterialModal.onClose}
       />
 
-      {operation && completeModal.openCount > 0 && (
+      {operation && !writesBlocked && completeModal.openCount > 0 && (
         <QuantityModal
           key={`complete-${completeModal.openCount}`}
           open={completeModal.isOpen}
@@ -2960,6 +2984,7 @@ export function AssemblyView({
           jobId={jobId}
           isOpen={reworkModal.isOpen}
           onClose={reworkModal.onClose}
+          unitHolds={unitHolds}
           trackedEntities={trackedEntities as never}
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}
@@ -2977,6 +3002,8 @@ export function AssemblyView({
       <SerialSelectorModal
         open={workUnit.pickerOpen}
         availableEntities={workUnit.openUnits as never}
+        onHoldEntities={workUnit.onHoldUnits as never}
+        unitHolds={unitHolds}
         onClose={workUnit.closePicker}
         onCancel={workUnit.closePicker}
         onSelect={(entity) => workUnit.pick(entity.id)}
@@ -3054,7 +3081,7 @@ export function AssemblyView({
                 }}
               />
               {/* Manager-only override: record every remaining step for this unit at once.
-                  Shown only to users with the Production DELETE permission, and only when
+                  Shown only with Jobs at Full (the pinned operator's, on a console), and only when
                   there are unrecorded steps left. */}
               {canOverrideComplete &&
                 steps.length > 0 &&

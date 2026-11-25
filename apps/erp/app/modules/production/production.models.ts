@@ -28,21 +28,29 @@ import type {
   PurchaseOrderStatus
 } from "./types";
 
+// Each KPI names the pages it reads, so the dashboard shows only what the person may see.
 export const KPIs = [
   {
     key: "utilization",
     label: "Work Center Utilization",
-    emptyMessage: "No work center utilization data within range"
+    emptyMessage: "No work center utilization data within range",
+    gate: { "production.jobs": "View" },
+    lowerIsBetter: false
   },
   {
+    // The change is actual time against estimated time: running over is bad.
     key: "estimatesVsActuals",
     label: "Estimates vs Actuals",
-    emptyMessage: "No completed jobs within range"
+    emptyMessage: "No completed jobs within range",
+    gate: { "production.jobs": "View" },
+    lowerIsBetter: true
   },
   {
     key: "completionTime",
     label: "Completion Time",
-    emptyMessage: "No completed jobs within range"
+    emptyMessage: "No completed jobs within range",
+    gate: { "production.jobs": "View" },
+    lowerIsBetter: true
   }
 ] as const;
 
@@ -677,6 +685,8 @@ export const leftoverAction = ["ship", "receive", "split", "discard"] as const;
 export type LeftoverAction = (typeof leftoverAction)[number];
 
 export const jobCompleteValidator = z.object({
+  expectedReceiptPreview: zfd.text(z.string().optional()),
+  expectedUnitIds: zfd.json(z.array(z.string()).optional()),
   quantityComplete: zfd.numeric(z.number().min(0)),
   salesOrderId: zfd.text(z.string().optional()),
   salesOrderLineId: zfd.text(z.string().optional()),

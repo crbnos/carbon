@@ -68,6 +68,8 @@ type ProductRow = {
   rateUnit: ContractLine["rateUnit"];
   /** Percent points, as the cell edits them. */
   discountPercent: number;
+  /** Percent points, as the cell edits them. */
+  taxPercent: number;
   startDate: string;
   endDate: string | null;
   total: number;
@@ -99,7 +101,7 @@ const ContractProductsGrid = ({
   const { currencyCode } = contract;
   const contractEndDate = contract.endDate;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
-  const canEdit = permissions.can("update", "sales");
+  const canEdit = permissions.has({ "sales.serviceContracts": "Edit" });
 
   const addProducts = useDisclosure();
   const editing = useDrawerItem<ContractLine>();
@@ -138,6 +140,7 @@ const ContractProductsGrid = ({
         rate: Number(line.rate),
         rateUnit: line.rateUnit,
         discountPercent: round(Number(line.discountPercent) * 100),
+        taxPercent: round(Number(line.taxPercent) * 100),
         startDate: line.startDate,
         endDate: line.endDate,
         total: lineTotals[line.id] ?? 0
@@ -213,6 +216,18 @@ const ContractProductsGrid = ({
           row.original.discountPercent > 0 ? (
             <span className="tabular-nums">
               {percent.format(row.original.discountPercent / 100)}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )
+      },
+      {
+        accessorKey: "taxPercent",
+        header: t`Tax`,
+        cell: ({ row }) =>
+          row.original.taxPercent > 0 ? (
+            <span className="tabular-nums">
+              {percent.format(row.original.taxPercent / 100)}
             </span>
           ) : (
             <span className="text-muted-foreground">—</span>
@@ -312,6 +327,12 @@ const ContractProductsGrid = ({
         step: INPUT_STEP.percent,
         formatOptions: INPUT_FORMAT.percentPoints
       }),
+      taxPercent: EditableNumber<ProductRow>(onCellEdit, {
+        minValue: 0,
+        maxValue: 100,
+        step: INPUT_STEP.percent,
+        formatOptions: INPUT_FORMAT.percentPoints
+      }),
       startDate: EditableDate<ProductRow>(onCellEdit, { label: t`Start` }),
       endDate: EditableDate<ProductRow>(onCellEdit, {
         label: t`End`,
@@ -354,7 +375,7 @@ const ContractProductsGrid = ({
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "sales")}
+            disabled={!permissions.has({ "sales.serviceContracts": "Full" })}
             onClick={() => openDelete(line)}
           >
             <MenuIcon icon={<LuTrash />} />
@@ -382,7 +403,9 @@ const ContractProductsGrid = ({
           </p>
           <Button
             leftIcon={<LuPlus />}
-            isDisabled={!permissions.can("create", "sales")}
+            isDisabled={
+              !permissions.has({ "sales.serviceContracts": "Create" })
+            }
             onClick={addProducts.onOpen}
           >
             <Trans>Add Services</Trans>
@@ -424,7 +447,9 @@ const ContractProductsGrid = ({
             <Button
               variant="secondary"
               leftIcon={<LuPlus />}
-              isDisabled={!permissions.can("create", "sales")}
+              isDisabled={
+                !permissions.has({ "sales.serviceContracts": "Create" })
+              }
               onClick={addProducts.onOpen}
             >
               <Trans>Add Services</Trans>

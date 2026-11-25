@@ -35,6 +35,7 @@ import {
 } from "~/services/models";
 import type { OperationWithDetails } from "~/services/types";
 import { path } from "~/utils/path";
+import { isUnitOnHold, type UnitHolds } from "~/utils/unitHold";
 
 type UpstreamOperation = {
   id: string;
@@ -47,7 +48,9 @@ type UpstreamOperation = {
   } | null;
 };
 
-type TrackedEntity = Database["public"]["Tables"]["trackedEntity"]["Row"];
+type TrackedEntity = Database["public"]["Tables"]["trackedEntity"]["Row"] & {
+  inOperationScope?: boolean;
+};
 
 type ReworkTargets = {
   operations: UpstreamOperation[];
@@ -71,7 +74,8 @@ export function ReworkModal({
   jobId,
   isOpen,
   onClose,
-  trackedEntities = [],
+  trackedEntities: allEntities = [],
+  unitHolds,
   parentIsSerial,
   parentIsBatch,
   returnFocusRef
@@ -81,6 +85,7 @@ export function ReworkModal({
   isOpen: boolean;
   onClose: () => void;
   trackedEntities?: TrackedEntity[];
+  unitHolds: UnitHolds | undefined;
   parentIsSerial?: boolean;
   parentIsBatch?: boolean;
   // Where focus goes on close when the control that opened the modal is gone
@@ -102,6 +107,16 @@ export function ReworkModal({
     }
   });
   const reworkTargets = useReworkTargets(operation.id);
+
+  const trackedEntities = useMemo(
+    () =>
+      allEntities.filter(
+        (entity) =>
+          entity.inOperationScope !== false &&
+          (!parentIsSerial || !isUnitOnHold(unitHolds, entity.id))
+      ),
+    [allEntities, parentIsSerial, unitHolds]
+  );
 
   const maxQuantity = operation.operationQuantity ?? 0;
   const defaultQuantity = Math.max(
@@ -158,14 +173,17 @@ export function ReworkModal({
     }
   };
 
-  const serialQuantity = selectedEntityIds.size;
+  const selectedSerialIds = trackedEntities
+    .filter((entity) => selectedEntityIds.has(entity.id))
+    .map((entity) => entity.id);
+  const serialQuantity = selectedSerialIds.length;
   const selectedBatch = trackedEntities.find((e) => e.id === selectedBatchId);
   const batchMaxQuantity = selectedBatch
     ? Number(selectedBatch.quantity)
     : maxQuantity;
 
   const trackedEntityIdsValue = parentIsSerial
-    ? JSON.stringify(Array.from(selectedEntityIds))
+    ? JSON.stringify(selectedSerialIds)
     : parentIsBatch && selectedBatchId
       ? JSON.stringify([selectedBatchId])
       : undefined;

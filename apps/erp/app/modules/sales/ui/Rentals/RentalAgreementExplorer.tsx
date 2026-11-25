@@ -53,7 +53,8 @@ export default function RentalAgreementExplorer() {
   const rentalAgreement = routeData?.rentalAgreement;
   const lines = routeData?.lines ?? [];
   const isDraft = rentalAgreement?.status === "Draft";
-  const canAdd = isDraft && permissions.can("create", "sales");
+  const canAdd =
+    isDraft && permissions.has({ "sales.rentalAgreements": "Create" });
 
   if (!rentalAgreement) return null;
 
@@ -169,6 +170,13 @@ function ExplorerLine({
     state.canSell ||
     state.canDelete;
 
+  const subtitle = [
+    line.item?.readableIdWithRevision,
+    line.fixedAsset?.serialNumber
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <HStack
       className={cn(
@@ -182,23 +190,24 @@ function ExplorerLine({
       >
         <HStack spacing={2} className="flex-grow min-w-0 pr-10">
           <ItemThumbnail thumbnailPath={line.item?.thumbnailPath} type="Part" />
-          <VStack spacing={0} className="min-w-0">
-            <span className="font-semibold line-clamp-1">
+          <VStack spacing={0} className="min-w-0 flex-1">
+            <span className="w-full font-semibold truncate">
               {line.fixedAsset?.fixedAssetId ?? rentalUnitLabel(line)}
             </span>
-            <span className="text-muted-foreground text-xs truncate line-clamp-1">
-              {[
-                line.item?.readableIdWithRevision,
-                line.fixedAsset?.serialNumber
-              ]
-                .filter(Boolean)
-                .join(" · ")}
+            <span
+              className="w-full text-muted-foreground text-xs truncate"
+              title={subtitle}
+            >
+              {subtitle}
             </span>
           </VStack>
+          {/* In the row, not over it: the text truncates to make room. */}
+          <div className="shrink-0">
+            <RentalStatus status={line.status} />
+          </div>
         </HStack>
       </PrefetchLink>
       <HStack spacing={1} className="pointer-events-none absolute right-2 z-10">
-        <RentalStatus status={line.status} />
         {hasActions && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -14,9 +14,7 @@ export const meta = moduleMeta("Workflow");
 // No breadcrumb here: the detail route ($id.tsx) already emits the "Workflows"
 // list link via detailBreadcrumb, so declaring it on the layout too would render
 // "Workflows" twice. `module` is kept for navigation highlighting / recently-viewed.
-export const handle: Handle = {
-  module: "workflows"
-};
+export const handle: Handle = {};
 
 export default function WorkflowRoute() {
   return (

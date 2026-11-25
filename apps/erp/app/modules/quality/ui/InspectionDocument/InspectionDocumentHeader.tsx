@@ -170,7 +170,7 @@ export default function InspectionDocumentHeader({
             <DropdownMenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "quality")}
+              disabled={!permissions.has({ "quality.inspectionPlans": "Full" })}
               onClick={onDelete}
             >
               <LuTrash2 className="mr-2 size-4" />
@@ -223,7 +223,7 @@ export default function InspectionDocumentHeader({
             renderStatus={(v) => <QualityDocumentStatus status={v.status} />}
             isNewVersionDisabled={newVersionFetcher.state !== "idle"}
             onNewVersion={
-              permissions.can("create", "quality")
+              permissions.has({ "quality.inspectionPlans": "Create" })
                 ? () =>
                     newVersionFetcher.submit(
                       {},
@@ -243,7 +243,7 @@ export default function InspectionDocumentHeader({
                   type="button"
                   isLoading={activateFetcher.state !== "idle"}
                   isDisabled={
-                    !permissions.can("update", "quality") ||
+                    !permissions.has({ "quality.inspectionPlans": "Edit" }) ||
                     activateFetcher.state !== "idle" ||
                     hasPendingEdits
                   }

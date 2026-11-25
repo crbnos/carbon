@@ -60,9 +60,9 @@ const ApprovalRuleCard = memo(
     };
     const documentTypeLabel = documentTypeLabels[documentType];
 
-    const canEdit = permissions.can("update", "settings");
+    const canEdit = permissions.has({ "settings.approvalRules": "Edit" });
     // The delete route needs settings delete; offer it only to those who hold it.
-    const canDelete = permissions.can("delete", "settings");
+    const canDelete = permissions.has({ "settings.approvalRules": "Full" });
 
     const handleEdit = useCallback(() => {
       if (!rule.id) return;

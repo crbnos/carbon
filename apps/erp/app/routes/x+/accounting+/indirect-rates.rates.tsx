@@ -75,7 +75,7 @@ export default function IndirectRatesRatesRoute() {
               variant="secondary"
               leftIcon={<LuPlus />}
               isDisabled={
-                !permissions.can("update", "accounting") ||
+                !permissions.has({ "accounting.indirectRates": "Edit" }) ||
                 activePools.length === 0
               }
               onClick={settingRate.onOpen}

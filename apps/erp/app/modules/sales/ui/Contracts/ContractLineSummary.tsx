@@ -160,12 +160,14 @@ export default function ContractLineSummary({
   const buildingQuantity = (prototype?.jobs ?? [])
     .filter((job) => job.status !== "Cancelled")
     .reduce((sum, job) => sum + job.quantity, 0);
-  const canBuild =
-    permissions.can("update", "sales") &&
-    permissions.can("create", "production");
-  const canDeliver =
-    permissions.can("update", "sales") &&
-    permissions.can("create", "inventory");
+  const canBuild = permissions.has({
+    "sales.serviceContracts": "Edit",
+    "production.jobs": "Create"
+  });
+  const canDeliver = permissions.has({
+    "sales.serviceContracts": "Edit",
+    "inventory.shipments": "Create"
+  });
 
   return (
     <Card>

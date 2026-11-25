@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
@@ -23,8 +23,9 @@ const plannedOrdersQueryValidator = z.object({
 
 // The planning drawer's Planned Orders section: one item's Planned and Firm
 // planned orders at one location, and the time fence that marks the held
-// ones. Read as the caller, so RLS applies; a Make order needs production
-// view, a Buy order purchasing view, as the drawers that show them do.
+// ones. Read as the caller, so RLS applies; a Make order needs View on
+// production's Material Planning, a Buy order on purchasing's, the pages
+// whose drawers show them.
 export async function loader({ request }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
   const parsed = plannedOrdersQueryValidator.safeParse({
@@ -43,9 +44,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const { itemId, locationId, orderType } = parsed.data;
 
-  const { client, companyId } = await requirePermissions(request, {
-    view: orderType === "Make" ? "production" : "purchasing"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    orderType === "Make"
+      ? { "production.materialPlanning": "View" }
+      : { "purchasing.materialPlanning": "View" }
+  );
 
   const args = { companyId, itemId, locationId };
   const [orders, fence] = await Promise.all([

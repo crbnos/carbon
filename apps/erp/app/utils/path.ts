@@ -94,6 +94,8 @@ export const path = {
     apAgingExcel: `${x}/reports/ap-aging.xlsx`,
     api: {
       abilities: `${api}/resources/abilities`,
+      accessHolders: (page: string, level: string) =>
+        `${api}/users/access-holders?${new URLSearchParams({ level, page })}`,
       accountNotifications: `${api}/account/notifications`,
       accountProfile: `${api}/account/profile`,
       accountSecurity: `${api}/account/security`,
@@ -168,7 +170,6 @@ export const path = {
           projectId ? { periodId, projectId } : { periodId }
         )}`,
       employeeTypes: `${api}/users/employee-types`,
-      emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,
       gauges: `${api}/quality/gauges`,
       generateCsvColumns: (table: string) =>
@@ -1389,6 +1390,10 @@ export const path = {
 
         return generatePath(url);
       },
+      rentalNextInvoice: (id: string, invoice?: "rent" | "charges") =>
+        generatePath(
+          `${file}/rental-agreement/${id}/next-invoice.pdf${invoice ? `?invoice=${invoice}` : ""}`
+        ),
       salesInvoice: (id: string) =>
         generatePath(`${file}/sales-invoice/${id}.pdf`),
       salesOrder: (id: string) => generatePath(`${file}/sales-order/${id}.pdf`),

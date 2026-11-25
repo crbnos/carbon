@@ -3,16 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import RuleAssignmentsList from "~/modules/inventory/ui/StorageRules/RuleAssignmentsList";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "resources.workCenters": "View"
   });
   const { workCenterId } = params;
   if (!workCenterId) throw notFound("workCenterId required");

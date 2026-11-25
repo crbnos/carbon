@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { getSupplierParts } from "~/modules/items/items.service";
 
 const logger = getLogger("erp", "planning-supplier-parts");
 
@@ -18,8 +17,7 @@ const planningSupplierPartsQueryValidator = z.object({
 
 // The purchasing planning drawer's Suppliers tab, read again after a supplier
 // is added there: the item's active supplier parts, as the planning grid's
-// row lists them. Read as the caller, so RLS applies (purchasing view reads
-// supplier parts).
+// row lists them.
 export async function loader({ request }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
   const parsed = planningSupplierPartsQueryValidator.safeParse({
@@ -33,11 +31,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const { itemId } = parsed.data;
 
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { api } = await authorize(request, {
+    "purchasing.materialPlanning": "View"
   });
 
-  const suppliers = await getSupplierParts(client, itemId, companyId);
+  // Gated on viewing the item, as every supplier part read is: the drawer
+  // reads it only after the planner saved one, which needs the item's page.
+  const suppliers = await api.items.getSupplierParts({ id: itemId });
   if (suppliers.error) {
     logger.error("Failed to read the item's supplier parts", {
       itemId,

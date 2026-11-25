@@ -4,6 +4,7 @@
 
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
+import { renderRegistryHelpers } from "@carbon/database/authz-registry-sql";
 import { validateEnv } from "@carbon/env/validate";
 import { keyOf, loadBaseline } from "./baseline";
 import type {
@@ -13,6 +14,11 @@ import type {
   StructureCheck,
   Violation
 } from "./check";
+import {
+  accountFkClassified,
+  accountFkRestrict
+} from "./conformance/account-fk-restrict";
+import { counterWriteRelative } from "./conformance/counter-write-relative";
 import {
   DEPLOYMENTS_SET_REQUIRED_ENV,
   findDeploymentEnvGaps
@@ -38,17 +44,28 @@ import {
   findUnselectedListColumns,
   LIST_SELECT_COVERS_COLUMNS
 } from "./conformance/list-select-covers-columns";
+import {
+  loaderReadsThroughApi,
+  wrappedBuildingBlocks
+} from "./conformance/loader-reads-through-api";
 import { mesUnitWriteResolvesUnit } from "./conformance/mes-unit-write-resolves-unit";
+import { migrationReplaySafe } from "./conformance/migration-replay-safe";
 import { moduleShape } from "./conformance/module-shape";
+import {
+  findMovedTableGaps,
+  livePolicies,
+  MOVED_TABLES_COVERED
+} from "./conformance/moved-tables-covered";
 import {
   MANAGED_FUNCTION_SETS,
   type ManagedFunction,
   noAuthzDdlInMigrations
 } from "./conformance/no-authz-ddl-in-migrations";
-import { noBareOutlet } from "./conformance/no-bare-outlet";
+import { findNestedOutlets, noBareOutlet } from "./conformance/no-bare-outlet";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+import { noDiscardedQueryError } from "./conformance/no-discarded-query-error";
 import {
   findDuplicatedAppFiles,
   NO_DUPLICATED_APP_FILE,
@@ -63,6 +80,10 @@ import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log"
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
+import {
+  MODULE_KEY_ROOTS,
+  noModulePermissionKey
+} from "./conformance/no-module-permission-key";
 import { noNoopOpenChange } from "./conformance/no-noop-open-change";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noPostgresChanges } from "./conformance/no-postgres-changes";
@@ -73,6 +94,10 @@ import { noRawRevalidator } from "./conformance/no-raw-revalidator";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noServerCodeInClient } from "./conformance/no-server-code-in-client";
+import {
+  noSilentTestPass,
+  sharedTestWrappers
+} from "./conformance/no-silent-test-pass";
 import { noStateCopyOfLoaderData } from "./conformance/no-state-copy-of-loader-data";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 import { noUnmountingDialog } from "./conformance/no-unmounting-dialog";
@@ -81,10 +106,27 @@ import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import {
+  findStaleOfflinePageCaches,
+  OFFLINE_PAGE_CACHE_BUMPED
+} from "./conformance/offline-page-cache-bumped";
+import {
   findProviderRoleDrift,
   PROVIDER_ROLE_BACKFILLED
 } from "./conformance/provider-role-backfilled";
+import {
+  findStaleRegistryHelpers,
+  REGISTRY_HELPERS_FRESH
+} from "./conformance/registry-helpers-fresh";
 import { routeActionShape } from "./conformance/route-action-shape";
+import {
+  gateConstants,
+  listGates,
+  routeGateNamesPage
+} from "./conformance/route-gate-names-page";
+import {
+  findRoutePageGaps,
+  ROUTE_MAPS_TO_PAGE
+} from "./conformance/route-maps-to-page";
 import {
   findScheduledSqlDrift,
   SCHEDULED_SQL_CONSTANTS
@@ -99,16 +141,25 @@ import {
   findStampColumnMismatches,
   STAMP_MATCHES_COLUMNS
 } from "./conformance/stamp-matches-columns";
+import { statusWriteGuarded } from "./conformance/status-write-guarded";
 import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 import { testReadsSource } from "./conformance/test-reads-source";
 import {
+  loadErpRouteFiles,
+  loadRegistryHelperFiles
+} from "./sources/authz-registry";
+import {
+  loadAccountReferencePolicy,
   loadDeploymentEnvSources,
   loadEventFunctionSources,
   loadIntegrationConfigs,
   loadListSources,
   loadScheduledConstantSources
 } from "./sources/cross-file";
-import { loadDbTableColumns } from "./sources/db-columns";
+import {
+  loadDbTableColumns,
+  loadDbTableColumnTypes
+} from "./sources/db-columns";
 import { loadDocumentSequenceSources } from "./sources/document-sequences";
 import { loadEdgeFunctions } from "./sources/edge-functions";
 import { loadLicenseFiles } from "./sources/license-files";
@@ -118,9 +169,10 @@ import {
   loadModules,
   modulesDir
 } from "./sources/modules";
+import { loadOfflinePageSources } from "./sources/offline-page";
 import { loadServerFiles } from "./sources/server-files";
 import { loadSideEffectPackages } from "./sources/side-effect-packages";
-import { loadTestFiles } from "./sources/test-files";
+import { loadSharedTestFixtures, loadTestFiles } from "./sources/test-files";
 import {
   loadTypescriptFiles,
   REQUEST_HANDLING_ROOTS,
@@ -134,7 +186,9 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noRequiredColumnWithoutDefault,
   noViewWithoutInvoker,
   noForeignKeyWithoutOnDelete,
-  journalStatusFilter
+  journalStatusFilter,
+  migrationReplaySafe,
+  accountFkRestrict
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */
@@ -161,6 +215,7 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noPostgresChanges,
   journalStatusFilter,
   mesUnitWriteResolvesUnit,
+  noDiscardedQueryError,
   noInlineUniqueViolation
 ];
 
@@ -226,24 +281,41 @@ export function loadManagedFunctions(root: string): ManagedFunction[] {
   );
 }
 
+/** The managed function files, read with their repo paths. */
+function loadManagedFunctionFiles(root: string): SourceFile[] {
+  return MANAGED_FUNCTION_SETS.flatMap(({ dir }) =>
+    loadSqlFiles(join(root, dir)).map(({ file, contents }) => ({
+      file: `${dir}/${file}`,
+      contents
+    }))
+  );
+}
+
 /** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions + license headers under `root`. */
 export function collectFindings(root: string = repoRoot()): Finding[] {
   const migrations = loadSqlFiles(migrationsDir(root));
   const listSources = loadListSources(root);
   const eventSources = loadEventFunctionSources(root);
+  const registryHelpers = renderRegistryHelpers();
+  const typescriptFiles = loadTypescriptFiles(root);
+  const columnTypes = loadDbTableColumnTypes(root);
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
-      noAuthzDdlInMigrations(loadManagedFunctions(root))
+      noAuthzDdlInMigrations(loadManagedFunctions(root)),
+      accountFkClassified(loadAccountReferencePolicy(root))
     ]),
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
-    // noMissingAuditColumn needs the real column list, so it is built from the
-    // generated types here rather than sitting in TS_CHECKS — the same shape as
-    // noAuthzDdlInMigrations above, which keeps every `scan` pure.
-    ...scanAll(loadTypescriptFiles(root), [
+    // noMissingAuditColumn, statusWriteGuarded and counterWriteRelative need
+    // the real columns, so they are built from the generated types here rather
+    // than sitting in TS_CHECKS — the same shape as noAuthzDdlInMigrations
+    // above, which keeps every `scan` pure.
+    ...scanAll(typescriptFiles, [
       ...TS_CHECKS,
-      noMissingAuditColumn(loadDbTableColumns(root))
+      noMissingAuditColumn(loadDbTableColumns(root)),
+      statusWriteGuarded(columnTypes),
+      counterWriteRelative(columnTypes)
     ]),
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders,
@@ -251,7 +323,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noRawRedirect,
       linguiMacroMisuse
     ]),
-    ...scanAll(loadTypescriptFiles(root), [
+    ...scanAll(typescriptFiles, [
       noRawOrSearch,
       noRawRevalidator,
       noInlineSensorOptions,
@@ -259,9 +331,30 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noStateCopyOfLoaderData,
       formFieldBudget
     ]),
+    ...findNestedOutlets(typescriptFiles).map((violation) => ({
+      checkId: noBareOutlet.id,
+      violation
+    })),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
-      indexRedirectBeforeLoaders
+      indexRedirectBeforeLoaders,
+      loaderReadsThroughApi(
+        wrappedBuildingBlocks(loadModuleServerFiles(root).map((f) => f.server))
+      ),
+      routeGateNamesPage(
+        gateConstants(loadTypescriptFiles(root, ["apps/erp/app/modules"])),
+        listGates(
+          loadTypescriptFiles(root, ["apps/erp/app/utils/list-registry"])
+        )
+      )
     ]),
+    ...scanAll(
+      [
+        ...loadSqlFiles(migrationsDir(root)),
+        ...loadManagedFunctionFiles(root),
+        ...loadTypescriptFiles(root, MODULE_KEY_ROOTS)
+      ],
+      [noModulePermissionKey]
+    ),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
     ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),
     ...findDuplicatedAppFiles(loadTypescriptFiles(root, SHARED_APP_DIRS)).map(
@@ -269,6 +362,24 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ),
     ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
       (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
+    ),
+    ...findStaleRegistryHelpers(
+      registryHelpers,
+      loadRegistryHelperFiles(
+        root,
+        registryHelpers.map((helper) => helper.name)
+      )
+    ).map((violation) => ({ checkId: REGISTRY_HELPERS_FRESH, violation })),
+    ...findMovedTableGaps(livePolicies(migrations)).map((violation) => ({
+      checkId: MOVED_TABLES_COVERED,
+      violation
+    })),
+    ...findRoutePageGaps(loadErpRouteFiles(root)).map((violation) => ({
+      checkId: ROUTE_MAPS_TO_PAGE,
+      violation
+    })),
+    ...findStaleOfflinePageCaches(loadOfflinePageSources(root)).map(
+      (violation) => ({ checkId: OFFLINE_PAGE_CACHE_BUMPED, violation })
     ),
     ...findDroppedFunctionChanges(migrations).map((violation) => ({
       checkId: FUNCTION_REDEFINITION_KEEPS_CHANGES,
@@ -281,7 +392,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...findUndeclaredSideEffectImports(loadSideEffectPackages(root)).map(
       (violation) => ({ checkId: SIDE_EFFECT_IMPORT_DECLARED, violation })
     ),
-    ...scanAll(loadTestFiles(root), TEST_CHECKS),
+    ...scanAll(loadTestFiles(root), [
+      ...TEST_CHECKS,
+      noSilentTestPass(sharedTestWrappers(loadSharedTestFixtures(root)))
+    ]),
     ...findUnselectedListColumns(listSources.services, listSources.tables).map(
       (violation) => ({ checkId: LIST_SELECT_COVERS_COLUMNS, violation })
     ),

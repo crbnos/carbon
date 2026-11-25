@@ -52,6 +52,7 @@ import {
   rentalBillingCycles,
   rentalBillingTimings
 } from "../../sales.models";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import type { RentalAgreement, RentalAgreementRouteData } from "./types";
 
 type Term =
@@ -113,6 +114,7 @@ const RentalAgreementProperties = () => {
   const agreement = routeData?.rentalAgreement;
   const contactEmail = routeData?.contactEmail ?? null;
   const permissions = usePermissions();
+  const invoiceAutomationHint = useInvoiceAutomationHint();
   const companySettings = useSettings();
   const currencyCode = agreement?.currencyCode ?? "";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -210,10 +212,18 @@ const RentalAgreementProperties = () => {
   ];
   const isInvoicingReadOnly =
     !["Draft", "Active"].includes(agreement.status ?? "") ||
-    !permissions.can("update", "sales");
+    !permissions.has({ "sales.rentalAgreements": "Edit" });
+
+  // Payment terms and tax are read when each invoice is drafted, so they stay
+  // editable while Active, like Invoicing.
+  const invoiceTermHelper =
+    agreement.status === "Active" && !isInvoicingReadOnly
+      ? t`Applies to invoices drafted from now on`
+      : undefined;
 
   const isDisabled =
-    agreement.status !== "Draft" || !permissions.can("update", "sales");
+    agreement.status !== "Draft" ||
+    !permissions.has({ "sales.rentalAgreements": "Edit" });
   const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
   const moneyStep = INPUT_STEP.money(currencyDecimals);
   // Only a fixed term can be a sales-type lease, so these inputs matter only
@@ -416,6 +426,11 @@ const RentalAgreementProperties = () => {
             </span>
           )}
           isReadOnly={isInvoicingReadOnly}
+          labelHelp={
+            agreement.effectiveInvoiceAutomation
+              ? invoiceAutomationHint(agreement.effectiveInvoiceAutomation)
+              : undefined
+          }
           helperText={
             !contactEmail && !isInvoicingReadOnly
               ? t`Add a contact with an email to send invoices`
@@ -440,7 +455,8 @@ const RentalAgreementProperties = () => {
           name="paymentTermId"
           label={t`Payment Terms`}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
           onChange={(term) => {
             onUpdate("paymentTermId", term?.value ?? null);
           }}
@@ -477,7 +493,8 @@ const RentalAgreementProperties = () => {
           name="taxCodeId"
           label={t`Tax Code`}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
           onChange={(option) => {
             onUpdate("taxCodeId", option?.value ?? null);
           }}
@@ -488,7 +505,8 @@ const RentalAgreementProperties = () => {
           name="taxPercent"
           label={t`Tax Percent`}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={invoiceTermHelper}
           value={agreement.taxPercent ?? 0}
           minValue={0}
           maxValue={1}

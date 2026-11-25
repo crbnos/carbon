@@ -29,6 +29,7 @@ import {
   type contractBillingTimings,
   invoiceAutomations
 } from "../../sales.models";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import type { Contract } from "./types";
 import { useContractLabels } from "./useContractLabels";
 
@@ -110,7 +111,8 @@ const ContractBillTo = ({
   const contractId = contract.id!;
   const { save, submit } = useContractTermSave(contractId);
   const isDisabled =
-    contract.status !== "Draft" || !permissions.can("update", "sales");
+    contract.status !== "Draft" ||
+    !permissions.has({ "sales.serviceContracts": "Edit" });
   const billTo = contract.invoiceCustomerId ?? contract.customerId ?? "";
 
   const onChange = (field: Term, value: string | null) => {
@@ -426,6 +428,8 @@ const ContractInvoiceAutomation = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const labels = useContractLabels();
+  const companySettings = useSettings();
+  const invoiceAutomationHint = useInvoiceAutomationHint();
   return (
     <TermForm
       name="invoiceAutomation"
@@ -434,8 +438,10 @@ const ContractInvoiceAutomation = ({
       <Select
         name="invoiceAutomation"
         label={t`Invoicing`}
-        helperText={t`What happens to an invoice once it is drafted`}
-        isReadOnly={!permissions.can("update", "sales")}
+        helperText={invoiceAutomationHint(
+          contract.invoiceAutomation ?? companySettings.invoiceAutomation
+        )}
+        isReadOnly={!permissions.has({ "sales.serviceContracts": "Edit" })}
         options={[
           {
             value: COMPANY_DEFAULT,
@@ -545,7 +551,8 @@ export const ContractRevenueMigration = ({
         contract={contract}
         field="recognizeRevenueFrom"
         isDisabled={
-          contract.status !== "Draft" || !permissions.can("update", "sales")
+          contract.status !== "Draft" ||
+          !permissions.has({ "sales.serviceContracts": "Edit" })
         }
         onSave={(field, value) => {
           if ((contract[field as keyof Contract] ?? null) === (value ?? null))

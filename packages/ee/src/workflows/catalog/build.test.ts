@@ -4,6 +4,7 @@
 
 import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { describe, expect, it } from "vitest";
+import type { EventPermission } from "../definition/catalog";
 import type { ActionInputLike } from "./actions";
 import { WORKFLOW_ACTIONS } from "./actions";
 import type {
@@ -64,20 +65,23 @@ const registry: Record<string, RegistryEntry> = {
   order: {
     table: "order",
     label: "Order",
-    permission: "purchasing",
     watch: {
       status: { label: "status" },
       supplierId: { label: "supplier", ref: "person" },
       buyerId: { label: "buyer" }
     }
   },
-  person: { table: "person", label: "Person", permission: "users" }
+  person: { table: "person", label: "Person" }
 };
+
+/** The fake tables are on no page of the access registry: each event checks this one. */
+const testPages = (table: string): EventPermission =>
+  table === "order" ? "purchasing.purchaseOrders" : "users.accounts";
 
 const moments: Record<string, MomentDeclarationLike> = {
   "order.approved": {
     label: "An order is approved",
-    permission: "purchasing",
+    table: "order",
     outputs: {
       order: { kind: "entity", of: "order" },
       approvedBy: { kind: "entity", of: "person" }
@@ -102,7 +106,7 @@ function realDefinitions(): SwaggerSchema["definitions"] {
 }
 
 describe("buildCatalog — record events", () => {
-  const built = buildCatalog(registry, moments, {}, {}, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema, testPages);
   const ev = (id: string) => need(built.events[id], id);
 
   it("emits created, deleted and one changed event per watched column", () => {
@@ -164,12 +168,12 @@ describe("buildCatalog — record events", () => {
   });
 
   it("carries the entity's permission on every event", () => {
-    expect(ev("order.created").permission).toBe("purchasing");
+    expect(ev("order.created").permission).toBe("purchasing.purchaseOrders");
   });
 });
 
 describe("buildCatalog — labels", () => {
-  const built = buildCatalog(registry, moments, {}, {}, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema, testPages);
 
   it("uses the three templates", () => {
     expect(built.labels["order.created"]).toBe("An order is created");
@@ -186,14 +190,14 @@ describe("buildCatalog — labels", () => {
           table: "person",
           label: "User",
           article: "A",
-          permission: "users",
           watch: { email: { label: "email" } }
         }
       },
       {},
       {},
       {},
-      schema
+      schema,
+      testPages
     );
     expect(built2.labels["user.created"]).toBe("A user is created");
   });
@@ -204,14 +208,14 @@ describe("buildCatalog — labels", () => {
         quote: {
           table: "order",
           label: "Quote",
-          permission: "sales",
           watch: { status: { label: "status" } }
         }
       },
       {},
       {},
       {},
-      schema
+      schema,
+      testPages
     );
     expect(built2.labels["quote.created"]).toBe("A quote is created");
   });
@@ -248,21 +252,21 @@ describe("buildCatalog — labels", () => {
           order: {
             table: "order",
             label: "Order",
-            permission: "purchasing",
             watch: { status: { label: "`template`" } }
           }
         },
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/contains a backtick/);
   });
 });
 
 describe("buildCatalog — moments", () => {
-  const built = buildCatalog(registry, moments, {}, {}, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema, testPages);
 
   it("passes declared outputs through unchanged and matches on the key", () => {
     expect(built.events["order.approved"]).toEqual({
@@ -270,7 +274,7 @@ describe("buildCatalog — moments", () => {
         order: { kind: "entity", of: "order" },
         approvedBy: { kind: "entity", of: "person" }
       },
-      permission: "purchasing",
+      permission: "purchasing.purchaseOrders",
       match: { moment: "order.approved" }
     });
   });
@@ -282,13 +286,14 @@ describe("buildCatalog — moments", () => {
         {
           "order.shipped": {
             label: "An order is shipped",
-            permission: "inventory",
+            table: "order",
             outputs: { carrier: { kind: "entity", of: "carrier" } }
           }
         },
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/names entity "carrier"/);
   });
@@ -300,20 +305,21 @@ describe("buildCatalog — moments", () => {
         {
           "order.shipped": {
             label: "   ",
-            permission: "inventory",
+            table: "order",
             outputs: {}
           }
         },
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/has no label/);
   });
 });
 
 describe("buildCatalog — entity properties", () => {
-  const built = buildCatalog(registry, moments, {}, {}, schema);
+  const built = buildCatalog(registry, moments, {}, {}, schema, testPages);
   const order = need(built.entities.order, "order entity");
   const person = need(built.entities.person, "person entity");
 
@@ -372,14 +378,14 @@ describe("buildCatalog — entity properties", () => {
           order: {
             table: "order",
             label: "Order",
-            permission: "purchasing",
             watch: { buyerId: { label: "buyer", ref: "order" } }
           }
         },
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/foreign key points at "person"/);
   });
@@ -392,14 +398,14 @@ describe("buildCatalog — entity properties", () => {
           order: {
             table: "order",
             label: "Order",
-            permission: "purchasing",
             watch: { status: { label: "status", ref: "ghost" } }
           }
         },
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/not a registry entity/);
   });
@@ -411,14 +417,14 @@ describe("buildCatalog — entity properties", () => {
           order: {
             table: "order",
             label: "Order",
-            permission: "purchasing",
             watch: { ghostColumn: { label: "ghost" } }
           }
         },
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/watches column "ghostColumn"/);
   });
@@ -426,11 +432,12 @@ describe("buildCatalog — entity properties", () => {
   it("throws when an entity names a table outside the schema", () => {
     expect(() =>
       buildCatalog(
-        { ghost: { table: "ghostTable", label: "Ghost", permission: "sales" } },
+        { ghost: { table: "ghostTable", label: "Ghost" } },
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/not in the database schema/);
   });
@@ -452,7 +459,6 @@ describe("validateCatalogInputs", () => {
         order: {
           table: "order",
           label: "Order",
-          permission: "purchasing",
           watch: {
             ghostOne: { label: "one" },
             ghostTwo: { label: "two" },
@@ -463,7 +469,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.x": {
           label: "",
-          permission: "sales",
+          table: "order",
           outputs: { who: { kind: "entity", of: "nobody" } }
         }
       },
@@ -489,7 +495,7 @@ describe("validateCatalogInputs", () => {
       {
         notify: {
           label: "Notify",
-          permission: { module: "users", action: "view" },
+          permission: { "users.accounts": "View" },
           call: "notify",
           inputs: {
             payload: { type: recordType, required: true, label: "Payload" }
@@ -503,7 +509,7 @@ describe("validateCatalogInputs", () => {
       {
         "integration.x.y": {
           label: "X: Y",
-          permission: { module: "workflows", action: "update" },
+          permission: { "workflows.workflows": "Edit" },
           // A LIST of objects is refused for the same reason a single one is.
           inputs: {
             rows: {
@@ -542,7 +548,6 @@ describe("validateCatalogInputs", () => {
         order: {
           table: "order",
           label: "Order",
-          permission: "purchasing",
           write: { ghostWrite: { label: "ghost" } }
         }
       },
@@ -563,7 +568,6 @@ describe("validateCatalogInputs", () => {
         order: {
           table: "order",
           label: "Order",
-          permission: "purchasing",
           write: { companyId: { label: "company" } }
         }
       },
@@ -582,10 +586,9 @@ describe("validateCatalogInputs", () => {
         order: {
           table: "order",
           label: "Order",
-          permission: "purchasing",
           write: { buyerId: { label: "buyer", ref: "order" } }
         },
-        person: { table: "person", label: "Person", permission: "users" }
+        person: { table: "person", label: "Person" }
       },
       {},
       {},
@@ -603,14 +606,14 @@ describe("validateCatalogInputs", () => {
           order: {
             table: "order",
             label: "Order",
-            permission: "purchasing",
             watch: { updatedBy: { label: "updated by" } }
           }
         },
         {},
         {},
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/dropped from every entity's properties/);
   });
@@ -622,7 +625,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { module: "purchasing", action: "update" },
+          permission: { "purchasing.purchaseOrders": "Edit" },
           call: "purchasing_archiveOrder",
           inputs: {
             score: {
@@ -651,7 +654,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { module: "purchasing", action: "update" },
+          permission: { "purchasing.purchaseOrders": "Edit" },
           call: "purchasing_archiveOrder",
           inputs: {
             channels: input as unknown as ActionInputLike
@@ -733,7 +736,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { module: "purchasing", action: "update" },
+          permission: { "purchasing.purchaseOrders": "Edit" },
           call: "purchasing_archiveOrder",
           inputs: {
             method: {
@@ -843,6 +846,22 @@ describe("buildCatalog — enums from real schema", () => {
     // priority is a number column (double precision), not an enum
     expect(built.enums.job?.priority).toBeUndefined();
   });
+
+  it("checks the page of the event's table: a moment's own table, any item page for an item", () => {
+    expect(built.events["purchaseOrder.status.changed"]?.permission).toBe(
+      "purchasing.purchaseOrders"
+    );
+    expect(built.events["inventory.receiptPosted"]?.permission).toBe(
+      "inventory.receipts"
+    );
+    expect(built.events["item.created"]?.permission).toEqual([
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services"
+    ]);
+  });
 });
 
 describe("buildCatalog — actions and operations", () => {
@@ -859,7 +878,7 @@ describe("buildCatalog — actions and operations", () => {
   };
 
   it("expands a write allowlist into one update action", () => {
-    const built = buildCatalog(writeRegistry, {}, {}, {}, schema);
+    const built = buildCatalog(writeRegistry, {}, {}, {}, schema, testPages);
     const action = need(built.actions["order.update"], "order.update");
 
     expect(Object.keys(action.inputs).sort()).toEqual([
@@ -875,15 +894,12 @@ describe("buildCatalog — actions and operations", () => {
       of: "person"
     });
     expect(action.update).toEqual({ entity: "order" });
-    expect(action.permission).toEqual({
-      module: "purchasing",
-      action: "update"
-    });
+    expect(action.permission).toEqual({ "purchasing.purchaseOrders": "Edit" });
     expect(built.labels["order.update"]).toBe("Update an order");
   });
 
   it("generates no update action for an entity with no write allowlist", () => {
-    const built = buildCatalog(registry, {}, {}, {}, schema);
+    const built = buildCatalog(registry, {}, {}, {}, schema, testPages);
     expect(built.actions["order.update"]).toBeUndefined();
   });
 
@@ -894,7 +910,7 @@ describe("buildCatalog — actions and operations", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { module: "purchasing", action: "update" },
+          permission: { "purchasing.purchaseOrders": "Edit" },
           call: "purchasing_archiveOrder",
           inputs: {
             method: {
@@ -921,7 +937,8 @@ describe("buildCatalog — actions and operations", () => {
         }
       },
       {},
-      schema
+      schema,
+      testPages
     );
     const inputs = built.actions["order.archive"]?.inputs;
     expect(inputs?.method?.choices).toEqual(["GET", "POST"]);
@@ -940,7 +957,7 @@ describe("buildCatalog — actions and operations", () => {
         {
           "order.update": {
             label: "Update an order by hand",
-            permission: { module: "purchasing", action: "update" },
+            permission: { "purchasing.purchaseOrders": "Edit" },
             inputs: {},
             outputs: {},
             batchable: false,
@@ -948,7 +965,8 @@ describe("buildCatalog — actions and operations", () => {
           }
         },
         {},
-        schema
+        schema,
+        testPages
       )
     ).toThrow(/declared by hand and also generated/);
   });
@@ -960,7 +978,7 @@ describe("buildCatalog — actions and operations", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { module: "purchasing", action: "update" },
+          permission: { "purchasing.purchaseOrders": "Edit" },
           inputs: {},
           outputs: {},
           batchable: false
@@ -983,7 +1001,6 @@ describe("buildCatalog — actions and operations", () => {
         "carrier.total": {
           label: "Total",
           entity: "carrier",
-          permission: { module: "sales", action: "view" },
           inputs: {},
           output: { kind: "primitive", of: "number" }
         }

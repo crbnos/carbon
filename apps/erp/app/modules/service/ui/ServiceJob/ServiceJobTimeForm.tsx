@@ -53,7 +53,7 @@ const ServiceJobTimeForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
-  const isDisabled = isLocked || !permissions.can("update", "service");
+  const isDisabled = isLocked || !permissions.has({ "service.jobs": "Edit" });
 
   // A route sends a service function's result as `{ data, error }`.
   const fetcher = useAction<{ data: { warning?: string | null } | null }>({

@@ -28,7 +28,8 @@ record change                            business moment
         └──────────────┬───────────────────────────┘
                        ▼
               matchAndQueue(db, input)          packages/jobs/src/workflows/matcher.ts
-                 1. read subscribers   workflowTriggerEvent × workflow (one indexed read)
+                 1. read subscribers   workflowTriggerEvent × workflow (one indexed read; the row's
+                                       version must be the workflow's publishedVersionId)
                  2. origin filter      Person / Automation / Both
                  3. loop guards        cycle, then depth
                  4. insert workflowRun one per workflow, ON CONFLICT DO NOTHING
@@ -128,7 +129,8 @@ replay can never double-fire:
   need. Moments resolve to no table and contribute nothing.
 - `findTriggerSchedule(nodes)` — returns the `Schedule` from the trigger node, or `null`.
 - `syncWorkflowTriggers(db, companyId, workflowId, lockCompany)` — rewrite one workflow's trigger rows
-  (delete-then-insert; the table has no UPDATE policy by design), **write `workflow.nextRunAt`**
+  (delete-then-insert; the table has a SELECT policy only, so the Data API cannot point a
+  workflow at another version), **write `workflow.nextRunAt`**
   (the scheduler's bookmark, or null for event-triggered workflows), and reconcile the company's
   subscriptions. Returns `{ eventIds, tables, scheduled }`. Call it on publish, on trigger edit,
   and on unpublish.

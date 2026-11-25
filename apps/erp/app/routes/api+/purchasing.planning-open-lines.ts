@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { fetchAllByIds } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
@@ -39,8 +39,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const { itemId, locationId } = parsed.data;
 
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { client, companyId } = await authorize(request, {
+    "purchasing.materialPlanning": "View"
   });
 
   const lines = await client

@@ -23,7 +23,7 @@ const baseTool: ManifestEntry = {
   module: "sales",
   classification: "READ",
   description: "get customer",
-  permission: { module: "sales", actions: ["view"] },
+  permission: { module: "sales", page: "sales.customers", actions: ["view"] },
   paginates: true,
   serviceFn: { path: ["sales", "getCustomer"] },
   schema: {
@@ -71,7 +71,7 @@ describe("formatToolDescription", () => {
     expect(text.split("\n").slice(0, 3)).toEqual([
       "sales_getCustomer [READ]",
       "get customer",
-      "Permission: sales_view"
+      "Permission: sales.customers_view"
     ]);
     expect(text).toContain(
       "Input: { id: string; includeContacts?: boolean; status?: string }"

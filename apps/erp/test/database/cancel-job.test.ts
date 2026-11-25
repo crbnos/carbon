@@ -15,7 +15,7 @@ import { SUPABASE_SERVICE_ROLE_KEY } from "@carbon/env";
 import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
 import { postPicking } from "../../app/modules/inventory/inventory.service";
 import { createClient } from "@supabase/supabase-js";
-import { expect } from "vitest";
+import { expect, it } from "vitest";
 import { cancelJob } from "../../app/modules/production/production.server";
 import {
   alwaysPostFixture,
@@ -32,10 +32,7 @@ import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 const caller = hasLocalDatabase ? localServiceRoleClient() : null;
 const cancelTest = (name: string, fn: () => Promise<void>) =>
-  databaseTest(name, async () => {
-    if (!caller) return;
-    await fn();
-  });
+  it.skipIf(!caller)(name, fn, 60_000);
 
 /** A Ready job with one of its two parts picked from stock to a lineside bin,
  *  so its picking list is still open. */

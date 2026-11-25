@@ -60,10 +60,16 @@ Specs: `.ai/specs/implemented/2026-07-30-workflows-foundation.md` (schema, valid
 - Add an entity, a moment, an action or an operation by editing **one hand-written file** in
   `src/catalog/` — `entities.ts`, `moments.ts`, `actions.ts`, `operations.ts` — then run
   `pnpm run generate:workflow-catalog`. Nothing else in `src/catalog/` is authored by hand.
-- Declare a `permission: { module, action }` on every action and operation. It is **required** on
-  `CatalogAction` and `CatalogOperation` (optional on `CatalogEntity`), and it is what the engine
-  checks before the node runs — `NodeExecutor.permission` returns it, so the gate and the work come
-  from the same catalog entry and cannot drift.
+- Declare a `permission` on every hand-written action: a `Gate` (`@carbon/database/access`) on
+  the page of the record it creates or acts on (`{ "production.jobs": "Create" }`; several pages,
+  any one enough: `anyOf(pages, level)`), never a module. The generator gives each
+  `<entity>.update` action (Edit), each operation and each entity lookup (View) a gate on the page
+  of the entity's table through the access registry (`tablePages` + `gateOn`; an `item` gates on
+  any one of its five pages). An event's `permission` stays its page(s); `eventGate` makes it the
+  View gate the engine and the test-run route both check. The permission is **required** on `CatalogAction` and `CatalogOperation`
+  (optional on `CatalogEntity`), and it is what the engine checks before the node runs —
+  `NodeExecutor.permission` returns it, so the gate and the work come from the same catalog entry
+  and cannot drift.
 - Reach the world from `src/runtime/` only through `ctx.services` — the `WorkflowServices` port
   (`runAction` / `runOperation` / `search`) declared in `src/runtime/types.ts` and **required** on
   `RuntimeContext`, so a missing implementation is a compile error rather than a run-time surprise.
@@ -103,7 +109,7 @@ src/definition/
 ├── batch.ts      # batchCandidates + batchPlan — whether an action repeats, read off the wiring
 ├── nodes.ts      # NODE_KINDS — what each node type declares about itself
 ├── normalize.ts  # readWorkflowVersion + the migrateDefinition seam
-├── catalog.ts    # WorkflowCatalog + RequiredPermission + walkPath + createFixtureCatalog
+├── catalog.ts    # WorkflowCatalog + gateOn/eventGate/gatePages + walkPath + createFixtureCatalog
 └── validate.ts   # validateDefinition -> WorkflowIssue[]
 
 src/catalog/
@@ -161,7 +167,8 @@ Five exports, all re-exported from the package root:
 - `findTriggerSchedule(nodes)` — returns the `Schedule` from the trigger node, or `null` if
   the workflow is event-triggered. Throws if nodes fail to parse.
 - `syncWorkflowTriggers(db, companyId, workflowId)` — rewrites one workflow's trigger rows,
-  **writes `workflow.nextRunAt`** (the scheduler's bookmark), and reconciles the company's
+  **writes `workflow.nextRunAt`** (the scheduler's bookmark; the database refuses an API
+  change of it by anyone but the owner, `check_workflow_owner_change`), and reconciles the company's
   subscriptions in one transaction. Returns `{ eventIds, tables, scheduled }`. Call it on
   promote, on trigger edit, and on activate/deactivate.
 - `syncWorkflowSubscriptions(db, companyId)` — standalone repair from existing rows.
@@ -169,7 +176,7 @@ Five exports, all re-exported from the package root:
 Kysely is imported **type-only** (`import type { Kysely, Transaction } from "kysely"`), so
 it stays a devDependency and this package keeps its four runtime dependencies
 (`zod`, `@carbon/utils`, `@lingui/core`, `@internationalized/date`). Kysely also **bypasses
-RLS** — the caller authorizes first (the activation route gates on `workflows_update`).
+RLS** — the caller authorizes first (the activation route gates on `workflows.workflows_update`).
 
 This is the one thing here that lives in this package for a dependency reason rather than a
 conceptual one: it needs `WORKFLOW_EVENTS`, and `@carbon/database` (its more natural home,
@@ -319,7 +326,9 @@ A `workflowTriggerEvent` row exists **if and only if** the workflow has a publis
 that version's trigger nodes list that event id. Publishing a version, editing the published
 version's trigger, and unpublishing must all rewrite the workflow's rows —
 delete-then-insert **in the same transaction** as the change. If these drift, a workflow silently
-stops firing or fires when it should not.
+stops firing or fires when it should not. RLS on the table is SELECT-only: only `syncWorkflowTriggers`
+(Kysely) and the datasets write it. The matcher also joins on `w.publishedVersionId = te.workflowVersionId`,
+so a row naming any other version queues nothing.
 
 Two deploy-time checks in `packages/checks` watch for that drift against a live database (they need
 one, so they are not CI jobs): the `workflow-trigger-event-drift` SQL invariant compares the rows to

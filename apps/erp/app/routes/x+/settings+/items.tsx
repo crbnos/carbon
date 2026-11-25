@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Hidden, Select, Submit, ValidatedForm, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -39,10 +38,7 @@ import {
   plmReleaseControlValidator,
   settingsToggle
 } from "~/modules/settings/settings.models";
-import {
-  getCompanySettings,
-  getStrictBackflushGapCounts
-} from "~/modules/settings/settings.service";
+import { getStrictBackflushGapCounts } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -55,11 +51,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { api, companyId } = await authorize(request, {
+    "settings.items": "View"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   if (!companySettings.data)
     throw redirect(
       path.to.settings,
@@ -108,7 +104,7 @@ const itemsSettingsForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(itemsSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.updateItemsSettings(input.data);
 }
 

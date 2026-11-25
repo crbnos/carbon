@@ -213,12 +213,15 @@ Before opening the PR:
 
 1. Final pass: run `/check-and-commit` on the branch state (biome + gates), so
    the PR goes up clean.
-2. Open the PR with `gh pr create` — **never merge**. The body must include:
-   - the design rationale (precedent copied; research cited),
-   - per acceptance criterion: **which gate proves it and how** (test name,
-     before/after screenshots, or CLI output),
-   - a ledger summary (iterations, kept/reverted and why),
-   - **open questions** (disputed criteria, assumptions made instead of asking).
+2. Open the PR with `gh pr create` — **never merge**. Write the body with the
+   `pr` skill (`.claude/skills/pr/SKILL.md`): Summary, Evidence, Merge Danger.
+   The loop's own content goes inside those sections:
+   - **Summary:** the design rationale (precedent copied; research cited),
+   - **Evidence:** per acceptance criterion, **which gate proves it and how**
+     (test name, before/after screenshots, or CLI output), then a ledger
+     summary (iterations, kept/reverted and why),
+   - **Merge Danger:** **open questions** and the "Assumed decisions"
+     (disputed criteria, assumptions made instead of asking).
 3. **Ready-vs-draft is decided by the exit state** — create the PR as a draft only for unverified or partial runs, then promote shipped PRs to ready for review:
    - **All criteria proved, verification gate green (`state=shipped`):** mark
      the PR *ready for review* (`gh pr ready <url>`) and request a review from

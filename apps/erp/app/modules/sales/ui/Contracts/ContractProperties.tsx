@@ -52,6 +52,7 @@ import {
   customerContractTypes,
   invoiceAutomations
 } from "../../sales.models";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import ContractProject from "./ContractProject";
 import type { Contract, ContractRouteData } from "./types";
 import { useContractLabels } from "./useContractLabels";
@@ -121,6 +122,7 @@ const ContractProperties = () => {
   );
   const permissions = usePermissions();
   const companySettings = useSettings();
+  const invoiceAutomationHint = useInvoiceAutomationHint();
   const labels = useContractLabels();
 
   const storedDuration = contract
@@ -193,7 +195,7 @@ const ContractProperties = () => {
 
   const companyLabel =
     labels.invoiceAutomation[companySettings.invoiceAutomation];
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.serviceContracts": "Edit" });
   const isDisabled = contract.status !== "Draft" || !canUpdate;
   const isEnded = contract.status === "Ended";
   const billTo = contract.invoiceCustomerId ?? contract.customerId ?? "";
@@ -646,6 +648,9 @@ const ContractProperties = () => {
               </span>
             )}
             isReadOnly={isEnded || !canUpdate}
+            labelHelp={invoiceAutomationHint(
+              contract.invoiceAutomation ?? companySettings.invoiceAutomation
+            )}
             options={[
               {
                 value: COMPANY_DEFAULT,

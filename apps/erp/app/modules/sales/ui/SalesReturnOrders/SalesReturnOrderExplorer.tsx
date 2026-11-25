@@ -116,7 +116,7 @@ export default function SalesReturnOrderExplorer() {
   const isLocked = isSalesReturnOrderLocked(
     routeData?.salesReturnOrder?.status
   );
-  const isDisabled = isLocked || !permissions.can("update", "sales");
+  const isDisabled = isLocked || !permissions.has({ "sales.returns": "Edit" });
 
   const lineInitialValues = {
     salesReturnOrderId: orderId,
@@ -124,7 +124,8 @@ export default function SalesReturnOrderExplorer() {
     quantity: 1,
     unitOfMeasureCode: "",
     unitPrice: 0,
-    restockFeePercent: 0
+    restockFeePercent: 0,
+    returnType: "Return to Stock" as const
   };
 
   const onDeleteLine = (line: SalesReturnOrderLine) => {
@@ -156,7 +157,7 @@ export default function SalesReturnOrderExplorer() {
             ))
           ) : (
             <Empty>
-              {permissions.can("update", "sales") && (
+              {permissions.has({ "sales.returns": "Edit" }) && (
                 <Button
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
@@ -491,7 +492,7 @@ function SalesReturnOrderLineItem({
                     <DropdownMenuSubTrigger
                       disabled={
                         dispositionFetcher.state !== "idle" ||
-                        !permissions.can("update", "sales")
+                        !permissions.has({ "sales.returns": "Edit" })
                       }
                     >
                       <DropdownMenuIcon icon={<LuClipboardCheck />} />
@@ -519,7 +520,7 @@ function SalesReturnOrderLineItem({
                   <DropdownMenuItem
                     disabled={
                       navigation.state !== "idle" ||
-                      !permissions.can("create", "inventory")
+                      !permissions.has({ "inventory.shipments": "Create" })
                     }
                     onClick={(e) => {
                       e.stopPropagation();
@@ -532,7 +533,12 @@ function SalesReturnOrderLineItem({
                 )}
                 {canReplace && (
                   <DropdownMenuItem
-                    disabled={!permissions.can("create", "sales")}
+                    disabled={
+                      !permissions.has({
+                        "sales.returns": "Edit",
+                        "sales.salesOrders": "Create"
+                      })
+                    }
                     onClick={(e) => {
                       e.stopPropagation();
                       openNextStep("Replace");
@@ -545,7 +551,7 @@ function SalesReturnOrderLineItem({
                 {canShipBack && (
                   <DropdownMenuItem
                     destructive
-                    disabled={!permissions.can("update", "sales")}
+                    disabled={!permissions.has({ "sales.returns": "Edit" })}
                     onClick={(e) => {
                       e.stopPropagation();
                       openNextStep("Scrap");
@@ -558,8 +564,10 @@ function SalesReturnOrderLineItem({
                 {canChangeToService && (
                   <DropdownMenuItem
                     disabled={
-                      !permissions.can("update", "sales") ||
-                      !permissions.can("update", "service")
+                      !permissions.has({
+                        "sales.returns": "Edit",
+                        "service.jobs": "Edit"
+                      })
                     }
                     onClick={(e) => {
                       e.stopPropagation();
@@ -577,7 +585,9 @@ function SalesReturnOrderLineItem({
                 <DropdownMenuItem
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
-                  disabled={isDisabled || !permissions.can("delete", "sales")}
+                  disabled={
+                    isDisabled || !permissions.has({ "sales.returns": "Full" })
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(line);

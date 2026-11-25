@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,27 +11,19 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { changeNoticeRequiredActionValidator } from "~/modules/items/items.models";
-import {
-  getChangeNoticeRequiredAction,
-  upsertChangeNoticeRequiredAction
-} from "~/modules/items/items.service";
+import { upsertChangeNoticeRequiredAction } from "~/modules/items/items.service";
 import { ChangeNoticeRequiredActionForm } from "~/modules/items/ui/ChangeNoticeActions";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "parts.changeNoticeActions": "View"
   });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const requiredAction = await getChangeNoticeRequiredAction(
-    client,
-    id,
-    companyId
-  );
+  const requiredAction = await api.items.getChangeNoticeRequiredAction({ id });
 
   if (requiredAction.error) {
     throw redirect(
@@ -50,8 +42,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { client, companyId, userId } = await authorize(request, {
+    "parts.changeNoticeActions": "Edit"
   });
 
   const formData = await request.formData();

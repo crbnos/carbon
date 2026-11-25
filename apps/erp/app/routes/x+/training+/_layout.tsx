@@ -15,8 +15,7 @@ export const meta = moduleMeta("Training");
 
 export const handle: Handle = {
   breadcrumb: msg`Resources`,
-  to: path.to.resources,
-  module: "resources"
+  to: path.to.resources
 };
 
 export default function ResourcesRoute() {

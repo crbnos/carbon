@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   EMPTY_EXCLUSIONS,
   gatesDone,
@@ -137,11 +137,12 @@ function GetStartedSidebar() {
 export const handle: Handle = {
   breadcrumb: msg`Get Started`,
   to: path.to.getStarted,
+  module: "get-started",
   sidebar: GetStartedSidebar
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await authorize(request);
 
   const hub = await getImplementationHub(client, companyId);
   // Only enrolled companies have a hub row — others never reach this surface.

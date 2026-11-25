@@ -13,6 +13,7 @@ import {
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import { afterEach, beforeEach, describe, expect } from "vitest";
+import { pageClaims } from "../page-claims";
 import { runMRP } from "../../app/modules/production/production.service";
 import {
   applyPlanningActions,
@@ -460,11 +461,13 @@ describe.skipIf(!hasLocalDatabase)("planned order firm, edit and apply", () => {
       const make = await plannedOrder("make");
       const buy = await plannedOrder("buy", { orderType: "Buy" });
       const purchaser = createServiceContext({
+        // Edit on purchasing's Material Planning, nothing on production's
         actor: {
           type: "user",
+          role: "employee",
           userId: USER,
           permissions: {
-            purchasing: {
+            "purchasing.materialPlanning": {
               view: [f.companyId],
               create: [],
               update: [f.companyId],
@@ -508,17 +511,18 @@ describe.skipIf(!client)("a planned order change re-plans", () => {
     await f.cleanup();
   });
 
-  // A planner who may change planned orders of the module, and may not run
-  // MRP on their own.
+  // A planner holding every page of the module. The re-plan runs as the
+  // system: a purchasing planner, who may not run MRP, still gets it.
   function planner(module: "production" | "purchasing") {
     const all = [f.companyId];
     return createServiceContext({
       actor: {
         type: "user",
+        role: "employee",
         userId: USER,
-        permissions: {
+        permissions: pageClaims({
           [module]: { view: all, create: all, update: all, delete: all }
-        }
+        })
       },
       company: { id: f.companyId, groupId: f.service.company.groupId },
       caller: client!,

@@ -43,7 +43,7 @@ const ApprovalRules = memo(
     changeRequestRules = []
   }: ApprovalRulesProps) => {
     const permissions = usePermissions();
-    const canCreate = permissions.can("update", "settings");
+    const canCreate = permissions.has({ "settings.approvalRules": "Edit" });
 
     // A rule's ceiling is the next-higher tier's minimum (null for the top tier).
     const nextTierFloor = useMemo(() => {

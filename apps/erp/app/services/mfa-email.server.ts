@@ -120,7 +120,7 @@ export async function sendMfaEnabledEmail(
 ) {
   try {
     // getUser also filters `active` — correct here, since the recipient just
-    // cleared requirePermissions to reach the verify route.
+    // cleared authorize to reach the verify route.
     const user = await getUser(serviceRole, userId);
 
     if (user.error) throw user.error;

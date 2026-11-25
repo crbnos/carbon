@@ -49,7 +49,7 @@ const SupplierShippingForm = ({ initialValues }: SupplierShippingFormProps) => {
   //     label: term.name,
   //   })) ?? [];
 
-  const isDisabled = !permissions.can("update", "purchasing");
+  const isDisabled = !permissions.has({ "purchasing.suppliers": "Edit" });
 
   return (
     <ValidatedForm

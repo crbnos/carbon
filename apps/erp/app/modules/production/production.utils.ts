@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { PageGate } from "@carbon/database/access";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { resolvePlanningTimeFenceDays } from "@carbon/utils";
 import type { AssemblyStep } from "@carbon/viewer";
@@ -154,9 +155,9 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
 }
 
 // ── Planned orders in the planning drawers ─────────────────────────────────
-// Read in the browser with the user's client, as the drawers read their open
-// jobs and PO lines: the `plannedOrder` SELECT policy is production_view or
-// purchasing_view, the two pages that open these drawers.
+// Read with the caller's client, as the drawers read their open jobs and PO
+// lines: `plannedOrder` is read as `planningAction` is, from either Material
+// Planning page, the two pages that open these drawers.
 
 const DRAWER_PLANNED_ORDER_COLUMNS =
   "id, itemId, periodId, splitIndex, status, orderType, quantity, scrapQuantity, quantityTrace, dueDate, releaseDate, firmedAt" as const;
@@ -282,3 +283,29 @@ export async function getPlanningTimeFenceDays(
     error: null
   };
 }
+
+/** `production.syncAssemblyToOperation`: the sync rewrites the job operation's steps as the system. */
+export const syncAssemblyToOperationPermission = {
+  "production.assemblies": "Edit",
+  "production.jobs": "Edit"
+} satisfies PageGate;
+
+/** A planned order is a planning suggestion, not a document: a Make one is
+ *  changed from production's Material Planning, a Buy one from purchasing's. */
+export const plannedOrderChangePages = {
+  Make: { "production.materialPlanning": "Edit" },
+  Buy: { "purchasing.materialPlanning": "Edit" }
+} as const satisfies Record<"Make" | "Buy", PageGate>;
+
+/** Firm / unfirm / edit a planned order: either page lets the call in, and
+ *  the body checks the one its order type needs (`plannedOrderChangePages`). */
+export const plannedOrderChangeGate = [
+  plannedOrderChangePages.Make,
+  plannedOrderChangePages.Buy
+] as const;
+
+/** `production.applyPlanningActions`: every change edits or cancels a job. */
+export const applyPlanningActionsPermission = {
+  "production.materialPlanning": "Edit",
+  "production.jobs": "Edit"
+} satisfies PageGate;

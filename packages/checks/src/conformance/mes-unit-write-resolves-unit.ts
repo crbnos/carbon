@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ConformanceCheck, Violation } from "../check";
+import { blankComments } from "../sources/comments";
 import { maskCommentsAndStrings } from "./no-default-on-effects";
-import { blankComments } from "./no-unscoped-kysely-write";
 
 // On a later operation of a serial part, a write names the unit the operator
 // picked or scanned, never one the server chose. `resolveWorkUnit`
@@ -86,8 +86,6 @@ export const UNIT_WRITE_ALLOW_LIST: Record<string, string> = {
 export const UNIT_PICK_ALLOW_LIST: Record<string, string> = {
   "apps/mes/app/routes/x+/operation.$operationId.tsx#loader":
     "first operation only: chooses the unit the page opens on and writes nothing",
-  "apps/mes/app/services/kanban-scan.server.ts#endOperationByScan":
-    "first operation only: after the completion is posted, chooses the unit the redirect opens",
   "apps/mes/app/services/traveler.server.ts#resolveTravelerScan":
     "tells where the scanned unit is open; the scan names the unit",
   "apps/mes/app/services/traveler.server.ts#getClaimOptions":
