@@ -25,7 +25,11 @@ const migrations = (files: Record<string, string>) => {
   return dir;
 };
 
-describe("unshipped: production gets every rule and helper through a migration", () => {
+// Each test parses every committed migration: well under a second alone, but
+// past vitest's 5 s default on a CI runner busy with every other package.
+describe("unshipped: production gets every rule and helper through a migration", {
+  timeout: 60_000
+}, () => {
   test("the repository ships everything the manifest and helpers say", async () => {
     expect(
       await unshipped(manifest, await loadHelpers(), undefined, attachments),
