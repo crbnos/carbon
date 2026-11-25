@@ -5,6 +5,7 @@
 import { ValidatedForm } from "@carbon/form";
 import { Badge, Button, Copy, cn, useDisclosure, VStack } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useMemo } from "react";
 import { LuBuilding2 } from "react-icons/lu";
@@ -130,7 +131,7 @@ export function ElementSidebar({
   );
   const pastAverage =
     element.itemId && count > 0
-      ? t`Past average: ${hours} h, ${materialCost} material over ${count} elements`
+      ? t`Past average: ${hours} h, ${materialCost} material over ${plural(count, { one: "# element", other: "# elements" })}`
       : null;
   const currency = company.baseCurrencyCode;
   const decimals = useCurrencyDecimals(currency);

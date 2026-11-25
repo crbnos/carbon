@@ -22882,8 +22882,8 @@ msgstr "パスキー"
 msgid "Passkeys are disabled"
 msgstr "パスキーは無効です"
 
-msgid "Past average: {hours} h, {materialCost} material over {count} elements"
-msgstr "過去の平均: {count} 要素の実績で {hours} 時間、材料費 {materialCost}"
+msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "過去平均: {hours} h、{count, plural, one {# 件} other {# 件}}の材料 {materialCost}"
 
 msgid "Past due"
 msgstr "期限切れ"

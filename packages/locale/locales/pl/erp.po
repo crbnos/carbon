@@ -22882,8 +22882,8 @@ msgstr "Klucze dostępu"
 msgid "Passkeys are disabled"
 msgstr "Klucze dostępu są wyłączone"
 
-msgid "Past average: {hours} h, {materialCost} material over {count} elements"
-msgstr "Średnia z przeszłości: {hours} h, koszt materiału {materialCost} w {count} elementach"
+msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Średnia dotychczasowa: {hours} h, materiały {materialCost} z {count, plural, one {# elementu} few {# elementów} many {# elementów} other {# elementu}}"
 
 msgid "Past due"
 msgstr "Zaległy"

@@ -22882,8 +22882,8 @@ msgstr "Ключи доступа"
 msgid "Passkeys are disabled"
 msgstr "Ключи доступа отключены"
 
-msgid "Past average: {hours} h, {materialCost} material over {count} elements"
-msgstr "Среднее за прошлое: {hours} ч, {materialCost} материала на {count} элементах"
+msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Прошлое среднее: {hours} ч, материалы {materialCost} за {count, plural, one {# элемент} few {# элемента} many {# элементов} other {# элемента}}"
 
 msgid "Past due"
 msgstr "Просрочено"

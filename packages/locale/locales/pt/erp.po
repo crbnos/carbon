@@ -22882,8 +22882,8 @@ msgstr "Chaves de Acesso"
 msgid "Passkeys are disabled"
 msgstr "As chaves de acesso estão desabilitadas"
 
-msgid "Past average: {hours} h, {materialCost} material over {count} elements"
-msgstr "Média anterior: {hours} h, {materialCost} de material em {count} elementos"
+msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Média anterior: {hours} h, {materialCost} em material sobre {count, plural, one {# elemento} other {# elementos}}"
 
 msgid "Past due"
 msgstr "Vencido"

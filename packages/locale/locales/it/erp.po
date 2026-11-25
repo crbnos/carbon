@@ -22882,8 +22882,8 @@ msgstr "Passkey"
 msgid "Passkeys are disabled"
 msgstr "Le passkey sono disabilitate"
 
-msgid "Past average: {hours} h, {materialCost} material over {count} elements"
-msgstr "Media storica: {hours} h, {materialCost} di materiale su {count} elementi"
+msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Media passata: {hours} h, {materialCost} di materiale su {count, plural, one {# elemento} other {# elementi}}"
 
 msgid "Past due"
 msgstr "Scaduto"

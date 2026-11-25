@@ -22882,8 +22882,8 @@ msgstr "通行密钥"
 msgid "Passkeys are disabled"
 msgstr "通行密钥已禁用"
 
-msgid "Past average: {hours} h, {materialCost} material over {count} elements"
-msgstr "过往平均：{hours} 小时，{count} 个元素的原材料成本 {materialCost}"
+msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "过往平均: {hours} 小时, 材料 {materialCost}, 跨 {count, plural, one {# 个元素} other {# 个元素}}"
 
 msgid "Past due"
 msgstr "逾期"

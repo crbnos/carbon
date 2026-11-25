@@ -22882,8 +22882,8 @@ msgstr "Geçiş Anahtarları"
 msgid "Passkeys are disabled"
 msgstr "Geçiş Anahtarları Devre Dışı Bırakılmış"
 
-msgid "Past average: {hours} h, {materialCost} material over {count} elements"
-msgstr "Geçmiş ortalama: {count} elemanda {hours} sa. ve {materialCost} malzeme"
+msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Önceki ortalama: {hours} sa, {count, plural, one {# öğe} other {# öğe}} üzerinden {materialCost} malzeme"
 
 msgid "Past due"
 msgstr "Vadesi geçmiş"

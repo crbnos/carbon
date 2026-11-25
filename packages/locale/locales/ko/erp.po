@@ -22882,8 +22882,8 @@ msgstr "패스키"
 msgid "Passkeys are disabled"
 msgstr "패스키가 비활성화되었습니다"
 
-msgid "Past average: {hours} h, {materialCost} material over {count} elements"
-msgstr "과거 평균: {hours}시간, {count}개 요소에 걸친 자재비 {materialCost}"
+msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "과거 평균: {hours}h, 자재 {materialCost}, {count, plural, one {# 개 요소} other {# 개 요소}} 기준"
 
 msgid "Past due"
 msgstr "기한 초과"

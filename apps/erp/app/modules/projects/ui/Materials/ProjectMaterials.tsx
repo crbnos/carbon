@@ -141,7 +141,11 @@ export default function ProjectMaterials({
   });
   const groups = groupMaterialRows(filtered, groupBy);
   const showOnHand = filtered.some((row) => row.projectOnHand !== null);
-  const columnCount = showOnHand ? 13 : 11;
+  // The group row already names the element or the item it groups by.
+  const showElement = groupBy === "item";
+  const showItem = groupBy === "element";
+  const columnCount =
+    9 + (showElement || showItem ? 1 : 0) + (showOnHand ? 2 : 0);
 
   const quantity = (value: number | null, unit: string | null) =>
     value === null ? null : (
@@ -231,7 +235,7 @@ export default function ProjectMaterials({
     const unit = first?.unitOfMeasureCode ?? null;
     const totals = group.totals;
     return (
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-6">
         <div className="flex min-w-0 items-baseline gap-2">
           <Hyperlink to={path.to.inventoryItem(group.key)}>
             <span className="whitespace-nowrap font-medium">
@@ -318,17 +322,27 @@ export default function ProjectMaterials({
             description={null}
           />
         ) : (
-          <TableBase full>
+          <TableBase>
             <Thead>
               <Tr>
-                <Th>
-                  <Trans>Item</Trans>
-                </Th>
-                <Th>
-                  <Trans>Element</Trans>
-                </Th>
+                {showItem && (
+                  <Th>
+                    <Trans>Item</Trans>
+                  </Th>
+                )}
+                {showElement && (
+                  <Th>
+                    <Trans>Element</Trans>
+                  </Th>
+                )}
                 <Th>
                   <Trans>Method</Trans>
+                </Th>
+                <Th>
+                  <Trans>Issue status</Trans>
+                </Th>
+                <Th>
+                  <Trans>Supply</Trans>
                 </Th>
                 <Th>
                   <Trans>Required</Trans>
@@ -347,12 +361,6 @@ export default function ProjectMaterials({
                 </Th>
                 <Th>
                   <Trans>Required date</Trans>
-                </Th>
-                <Th>
-                  <Trans>Supply</Trans>
-                </Th>
-                <Th>
-                  <Trans>Issue status</Trans>
                 </Th>
                 {showOnHand && (
                   <>
@@ -381,47 +389,51 @@ export default function ProjectMaterials({
                           `unplanned:${row.projectElementId ?? ""}:${row.itemId}`
                         }
                       >
-                        <Td>
-                          <div className="flex min-w-0 flex-col">
-                            <Hyperlink to={path.to.inventoryItem(row.itemId)}>
-                              <span className="whitespace-nowrap">
-                                {row.itemReadableId}
-                              </span>
-                            </Hyperlink>
-                            <span className="truncate text-xs text-muted-foreground">
-                              {row.itemName}
-                            </span>
-                          </div>
-                        </Td>
-                        <Td>
-                          {row.projectElementId ? (
-                            <div className="flex items-center gap-2">
-                              {row.elementStateGroup && (
-                                <StateIcon
-                                  group={row.elementStateGroup}
-                                  color={
-                                    row.elementStateColor ?? "currentColor"
-                                  }
-                                  className="shrink-0"
-                                />
-                              )}
-                              <Hyperlink
-                                to={path.to.projectElement(
-                                  projectId,
-                                  row.projectElementId
-                                )}
-                              >
+                        {showItem && (
+                          <Td>
+                            <div className="flex min-w-0 flex-col">
+                              <Hyperlink to={path.to.inventoryItem(row.itemId)}>
                                 <span className="whitespace-nowrap">
-                                  {row.elementReadableId ?? row.elementName}
+                                  {row.itemReadableId}
                                 </span>
                               </Hyperlink>
+                              <span className="truncate text-xs text-muted-foreground">
+                                {row.itemName}
+                              </span>
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              <Trans>Project</Trans>
-                            </span>
-                          )}
-                        </Td>
+                          </Td>
+                        )}
+                        {showElement && (
+                          <Td>
+                            {row.projectElementId ? (
+                              <div className="flex items-center gap-2">
+                                {row.elementStateGroup && (
+                                  <StateIcon
+                                    group={row.elementStateGroup}
+                                    color={
+                                      row.elementStateColor ?? "currentColor"
+                                    }
+                                    className="shrink-0"
+                                  />
+                                )}
+                                <Hyperlink
+                                  to={path.to.projectElement(
+                                    projectId,
+                                    row.projectElementId
+                                  )}
+                                >
+                                  <span className="whitespace-nowrap">
+                                    {row.elementReadableId ?? row.elementName}
+                                  </span>
+                                </Hyperlink>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                <Trans>Project</Trans>
+                              </span>
+                            )}
+                          </Td>
+                        )}
                         <Td>
                           {row.methodType && (
                             <span className="flex items-center gap-1 whitespace-nowrap">
@@ -433,17 +445,6 @@ export default function ProjectMaterials({
                             </span>
                           )}
                         </Td>
-                        <Td>{quantity(row.quantityRequired, unit)}</Td>
-                        <Td>{quantity(row.quantityOrdered, unit)}</Td>
-                        <Td>{quantity(row.quantityReceived, unit)}</Td>
-                        <Td>{quantity(row.quantityIssued, unit)}</Td>
-                        <Td>{quantity(row.quantityRemaining, unit)}</Td>
-                        <Td className="whitespace-nowrap">
-                          {row.requiredDate ? (
-                            <DateTime value={row.requiredDate} variant="date" />
-                          ) : null}
-                        </Td>
-                        <Td>{supplyCell(row)}</Td>
                         <Td>
                           <Status
                             color={
@@ -454,6 +455,17 @@ export default function ProjectMaterials({
                           >
                             {issueStatusLabels[row.issueStatus]}
                           </Status>
+                        </Td>
+                        <Td>{supplyCell(row)}</Td>
+                        <Td>{quantity(row.quantityRequired, unit)}</Td>
+                        <Td>{quantity(row.quantityOrdered, unit)}</Td>
+                        <Td>{quantity(row.quantityReceived, unit)}</Td>
+                        <Td>{quantity(row.quantityIssued, unit)}</Td>
+                        <Td>{quantity(row.quantityRemaining, unit)}</Td>
+                        <Td className="whitespace-nowrap">
+                          {row.requiredDate ? (
+                            <DateTime value={row.requiredDate} variant="date" />
+                          ) : null}
                         </Td>
                         {showOnHand && (
                           <>

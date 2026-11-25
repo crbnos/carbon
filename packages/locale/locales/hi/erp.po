@@ -22882,8 +22882,8 @@ msgstr "पासकीज़"
 msgid "Passkeys are disabled"
 msgstr "पासकीज़ अक्षम हैं"
 
-msgid "Past average: {hours} h, {materialCost} material over {count} elements"
-msgstr "पिछला औसत: {hours} घं., {count} एलिमेंट में {materialCost} सामग्री"
+msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "पिछला औसत: {hours} h, {count, plural, one {# तत्व} other {# तत्व}} में {materialCost} सामग्री"
 
 msgid "Past due"
 msgstr "अतिदेय"
