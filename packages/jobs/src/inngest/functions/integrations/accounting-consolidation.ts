@@ -510,14 +510,47 @@ export async function consolidateIntegration(args: {
    * their structured errorCode/warning/metadata (the base BATCH workflow
    * flattens them to strings).
    */
+  /** Whether each booked summary is still in the provider, read once per run. */
+  const summaryLive = new Map<string, Promise<boolean>>();
+  const isSummaryLive = (externalId: string) => {
+    let live = summaryLive.get(externalId);
+    if (!live) {
+      live = provider.isManualJournalLive(externalId);
+      summaryLive.set(externalId, live);
+    }
+    return live;
+  };
+
   const pushIndividually = async (operations: SyncOperation[]) => {
     for (const operation of operations) {
-      // In a summary already in the provider: pushing it again would book it
-      // twice. A member a recovering run did not claim arrives here.
+      // In a summary still in the provider: pushing it again would book it
+      // twice. A member a recovering run did not claim arrives here, and so
+      // does one a person re-sent. A summary deleted or voided in the
+      // provider books nothing, so a re-sent member then goes out on its own.
       const { journalId, reversal } = parseJournalEntrySyncEntityId(
         operation.entityId
       );
-      const booked = reversal ? undefined : bookedJournals.get(journalId);
+      let booked = reversal ? undefined : bookedJournals.get(journalId);
+      if (booked?.externalId) {
+        let live: boolean;
+        try {
+          live = await isSummaryLive(booked.externalId);
+        } catch (error) {
+          if (error instanceof RatelimitError) throw error;
+          // Unknown: neither completing against it nor pushing again is safe.
+          summary.individualFailed++;
+          await failOperation(client, {
+            id: operation.id,
+            companyId: operation.companyId,
+            attemptCount: operation.attemptCount,
+            errorMessage: `Could not confirm the day's summary journal ${booked.externalId} in Xero: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          });
+          continue;
+        }
+        if (!live) booked = undefined;
+      }
       if (booked) {
         summary.membersCompleted++;
         await completeOperation(client, {

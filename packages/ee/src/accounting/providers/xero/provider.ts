@@ -841,6 +841,25 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
   }
 
   /**
+   * Whether manual journal `id` is still in the ledger: false when Xero has
+   * none (404) or it was deleted or voided. Throws when Xero cannot say, so a
+   * caller never takes a failed read for a missing journal.
+   */
+  async isManualJournalLive(id: string): Promise<boolean> {
+    const response = await this.request<{
+      ManualJournals: Xero.ManualJournal[];
+    }>("GET", `/ManualJournals/${id}`);
+    if (response.error) {
+      if (response.code === 404) return false;
+      throwXeroApiError("read manual journal", response);
+    }
+    const journal = response.data?.ManualJournals?.[0];
+    return (
+      !!journal && journal.Status !== "DELETED" && journal.Status !== "VOIDED"
+    );
+  }
+
+  /**
    * Fetch one manual journal by id (GET /ManualJournals/{id}).
    * Returns null when it does not exist or the request fails.
    */

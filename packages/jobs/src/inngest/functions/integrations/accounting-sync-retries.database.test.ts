@@ -158,6 +158,15 @@ class FakeXero {
     if (method === "GET" && path === "/Organisation") {
       return json({ Organisations: [{ Name: "Fake" }] });
     }
+    const journalById = path.match(/^\/ManualJournals\/([^/]+)$/);
+    if (method === "GET" && journalById) {
+      const journal = this.journals.find(
+        (j) => j.ManualJournalID === journalById[1]
+      );
+      return journal
+        ? json({ ManualJournals: [journal] })
+        : json({ Message: "Not found" }, 404);
+    }
     if (method === "GET" && path === "/ManualJournals") {
       return json({
         ManualJournals: this.journals.filter((j) => matchesWhere(j, where))
@@ -1090,6 +1099,44 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
         externalId: "ManualJournals-1"
       });
     }
+  });
+
+  /** A consolidated day, then a person re-sends one of its journals from Sync Activity. */
+  async function resentMember(name: string, summaryDeletedInXero: boolean) {
+    const day = await dailyCompany(`${name}-1`, `${name}-2`);
+    await day.consolidate();
+    if (summaryDeletedInXero) fake.journals[0]!.Status = "DELETED";
+    await transitionOperation(client, {
+      id: day.ops[0]!.id,
+      companyId: day.scope.companyId,
+      to: "Pending",
+      userId: "system"
+    });
+    await day.consolidate();
+    return operation(day.scope.companyId, day.ops[0]!.id);
+  }
+
+  it("a re-sent journal of a day whose summary is in Xero is not pushed again", async () => {
+    expect(await resentMember("resend-live", false)).toMatchObject({
+      status: "Completed",
+      externalId: "ManualJournals-1"
+    });
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+  });
+
+  // The summary was deleted in Xero, so it books nothing: the re-sent
+  // journal goes out on its own rather than completing against it.
+  it("a re-sent journal of a day whose summary was deleted in Xero is pushed on its own", async () => {
+    expect(await resentMember("resend-deleted", true)).toMatchObject({
+      status: "Completed",
+      externalId: "ManualJournals-2"
+    });
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1",
+      "ManualJournals-2"
+    ]);
   });
 
   // Two runs at once: the second claims a member that arrived after the
