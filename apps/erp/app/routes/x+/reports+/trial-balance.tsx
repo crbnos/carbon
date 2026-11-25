@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { datetime, defaultReportRange, redirect } from "@carbon/utils";
@@ -14,7 +14,6 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
-  getCompaniesInGroup,
   getConsolidatedBalancesForReport,
   getReportFiscalStartMonth,
   getTrialBalance,
@@ -40,13 +39,9 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting",
-      role: "employee"
-    }
-  );
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
+    "accounting.reporting": "View"
+  });
 
   const url = new URL(request.url);
   // Invalid params fall back to defaults — a bad bookmark must not 500
@@ -64,7 +59,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? parsed.data.showTranslated
     : false;
 
-  const companies = await getCompaniesInGroup(client, companyGroupId);
+  const companies = await api.accounting.getCompaniesInGroup({});
   if (companies.error) {
     throw redirect(
       path.to.accounting,

@@ -36,8 +36,18 @@ vi.hoisted(() => {
 // instead of throwing.
 const redisDown = vi.hoisted(() => ({
   get: async () => null,
+  hget: async () => null,
   set: async (): Promise<string | null> => null,
-  del: async () => null
+  del: async () => null,
+  // A transaction's exec resolves [] instead of the replies.
+  multi: () => {
+    const tx = {
+      hset: () => tx,
+      expire: () => tx,
+      exec: async () => []
+    };
+    return tx;
+  }
 }));
 vi.mock("@carbon/kv", () => ({ redis: redisDown }));
 
@@ -52,7 +62,10 @@ const fakeDatabase = async (input: RequestInfo | URL) => {
     return new Response("{}", { status: 404 });
   }
   return new Response(
-    JSON.stringify({ role: "employee", parts_view: ["company-1"] }),
+    JSON.stringify({
+      role: "employee",
+      grants: [{ subject: "role", module: "Parts", page: null, level: "View" }]
+    }),
     { headers: { "Content-Type": "application/json" } }
   );
 };
@@ -72,9 +85,16 @@ describe("auth with Redis down", () => {
   it("reads claims from the database when the permission cache is unreachable", async () => {
     await expect(getUserClaims("user-1", "company-1")).resolves.toEqual({
       role: "employee",
-      permissions: {
-        parts: { view: ["company-1"], create: [], update: [], delete: [] }
-      }
+      // A module grant reaches every page of the module, and no other page.
+      permissions: expect.objectContaining({
+        "parts.parts": {
+          view: ["company-1"],
+          create: [],
+          update: [],
+          delete: []
+        },
+        "sales.quotes": { view: [], create: [], update: [], delete: [] }
+      })
     });
   });
 

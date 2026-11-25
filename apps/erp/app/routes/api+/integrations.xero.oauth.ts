@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getAppUrl, XERO_CLIENT_ID, XERO_CLIENT_SECRET } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { Xero } from "@carbon/ee";
 import {
@@ -23,10 +23,7 @@ import {
   type XeroConnection,
   xeroAuthEventId
 } from "~/modules/settings/integration-oauth";
-import {
-  getIntegration,
-  upsertCompanyIntegration
-} from "~/modules/settings/settings.service";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
@@ -37,9 +34,8 @@ export const config = {
 const logger = getLogger("erp", "xero", "oauth");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+  const caller = await authorize(request, { "settings.integrations": "Edit" });
+  const { client, userId, companyId } = caller;
 
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
@@ -79,7 +75,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Read the stored row BEFORE the code exchange: the exchange saves the new
     // tokens through the provider, and without the stored metadata that save
     // overwrote the organization and every setting.
-    const existing = await getIntegration(client, Xero.id, companyId);
+    const existing = await caller.api.settings.getIntegration({
+      id: Xero.id
+    });
     const provider = getProviderIntegration(
       client,
       companyId,

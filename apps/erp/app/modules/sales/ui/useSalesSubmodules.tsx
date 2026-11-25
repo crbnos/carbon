@@ -25,6 +25,7 @@ import {
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function useSalesSubmodules() {
@@ -44,7 +45,6 @@ export default function useSalesSubmodules() {
         {
           name: t`Portals`,
           to: path.to.customerPortals,
-          role: "employee",
           icon: <LuGlobe />
         }
       ]
@@ -112,13 +112,11 @@ export default function useSalesSubmodules() {
         {
           name: t`Price Lists`,
           to: path.to.salesPriceList,
-          role: "employee",
           icon: <LuList />
         },
         {
           name: t`Pricing Rules`,
           to: path.to.salesPricingRules,
-          role: "employee",
           icon: <LuPercent />
         }
       ]
@@ -129,31 +127,26 @@ export default function useSalesSubmodules() {
         {
           name: t`Sales Rules`,
           to: path.to.salesRules,
-          role: "employee",
           icon: <LuShieldCheck />
         },
         {
           name: t`No Quote Reasons`,
           to: path.to.noQuoteReasons,
-          role: "employee",
           icon: <LuBan />
         },
         {
           name: t`Return Reasons`,
           to: path.to.returnReasons,
-          role: "employee",
           icon: <LuUndo2 />
         },
         {
           name: t`Statuses`,
           to: path.to.customerStatuses,
-          role: "employee",
           icon: <LuStar />
         },
         {
           name: t`Types`,
           to: path.to.customerTypes,
-          role: "employee",
           icon: <LuShapes />
         }
       ]
@@ -161,31 +154,9 @@ export default function useSalesSubmodules() {
   ];
 
   return {
-    groups: salesRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        });
-
-        return filteredRoutes.length > 0;
-      })
-      .map((group) => ({
-        ...group,
-        routes: group.routes
-          .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else if (route.permission) {
-              return permissions.can("view", route.permission);
-            } else {
-              return true;
-            }
-          })
-          .map(addSavedViewsToRoutes)
-      }))
+    groups: visibleGroups(salesRoutes, permissions).map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes)
+    }))
   };
 }

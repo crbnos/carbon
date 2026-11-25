@@ -164,9 +164,9 @@ databaseTest(
       const before = await dialogChoice(f, job, 4);
       // SN-002 is Consumed but never left stock, so it is not received.
       expect(before.snapshot?.issuedTrackedEntityIds).toEqual([issued!.id]);
-      expect(before.choice).toEqual({
+      expect(before.choice).toMatchObject({
         mode: "serials",
-        serials: ["SN-001", "SN-003", "SN-004"]
+        serials: [{id: issued!.id, readableId:"SN-001"}, {readableId:"SN-003"}, {readableId:"SN-004"}]
       });
 
       await sql`

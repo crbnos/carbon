@@ -19,6 +19,8 @@ export type Call = {
 function valueAt(row: Row, column: string): unknown {
   const json = column.match(/^(\w+)->>(.+)$/);
   if (json) return (row[json[1]!] as Row | null | undefined)?.[json[2]!];
+  const [relation, field] = column.split(".");
+  if (relation && field) return (row[relation] as Row | undefined)?.[field];
   return row[column];
 }
 
@@ -35,16 +37,17 @@ export function fakeClient(
     calls.push(call);
     let rows = [...(tables[table] ?? [])];
     let shape: "many" | "maybe" | "one" = "many";
+    let projection = "";
     let window: [number, number] = [0, MAX_ROWS - 1];
     const keep = (column: string, test: (value: unknown) => boolean) => {
-      // A filter on an embedded table ("a.b") is the database's to apply.
-      if (!column.includes("."))
+      // An embedded filter excludes a parent row only with an inner join.
+      const [relation] = column.split(".");
+      if (!column.includes(".") || projection.includes(`${relation}!inner(`))
         rows = rows.filter((r) => test(valueAt(r, column)));
     };
     const builder: Record<string, unknown> = {};
     const chain = () => builder;
     for (const method of [
-      "select",
       "order",
       "or",
       "not",
@@ -66,6 +69,10 @@ export function fakeClient(
         op === "insert" || op === "upsert"
           ? ([] as Row[]).concat((values as Row) ?? [])
           : [];
+      return builder;
+    };
+    builder.select = (columns = "*") => {
+      projection = columns;
       return builder;
     };
     builder.insert = write("insert");
@@ -182,6 +189,24 @@ export function serialUnits(
       ...(unit.done ? { [`Operation ${operationId}`]: index } : {})
     }
   }));
+}
+
+/** A posted output as returned by PostgREST with its activity embedded. */
+export function operationOutput(
+  unitId: string,
+  operationId: string,
+  type: string
+) {
+  return {
+    companyId: "co",
+    trackedEntityId: unitId,
+    trackedActivity: {
+      companyId: "co",
+      sourceDocument: "Job Operation",
+      sourceDocumentId: operationId,
+      type
+    }
+  };
 }
 
 /** An operation row with the embeds `readOperationUnitFacts` reads. */

@@ -1084,7 +1084,7 @@ function UnnumberedStock({
           ) : (
             <Button
               size="sm"
-              isDisabled={!permissions.can("update", "inventory")}
+              isDisabled={!permissions.has({ "inventory.quantities": "Edit" })}
               onClick={() => {
                 setOpen(false);
                 onAssignBatch();

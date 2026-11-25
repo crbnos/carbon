@@ -11,14 +11,15 @@ import {
 } from "@carbon/api/errors";
 import {
   type PermissionRule,
-  resolvePermissions
+  resolvePermissions,
+  rowRule
 } from "@carbon/api/permissions";
 import type {
   CarbonError,
   ErrorCategory,
   ServiceContext
 } from "@carbon/api/service-fn.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
@@ -9710,7 +9711,7 @@ export type LeaseLiabilities = LeaseLiabilitySummary & {
  * lines of posted purchase invoices (posting date in the range). Schedule
  * lines, payments and events are read for the Operating and Finance assets
  * of leases past Draft only, every read paged. Reads the lease tables, whose
- * RLS is `purchasing_view` — a caller without purchasing view gets an empty
+ * RLS is View on Leases (Purchasing) — a caller without it gets an empty
  * report, so the report route requires it.
  */
 export async function getLeaseLiabilities(
@@ -10339,8 +10340,8 @@ export async function returnFixedAssetToService(
 
 /** Capitalize a unit, return an asset to inventory, attach a job to a CIP
  *  asset or capitalize a CIP asset (`postAssetTransfer`), run as the caller:
- *  the caller holds the transfer's permission, and `update: accounting` too
- *  when a capitalization enters its own cost.
+ *  the caller holds the transfer's permission, raised to Edit on
+ *  `accounting.assets` when a capitalization enters its own cost.
  */
 export async function invokeAssetTransfer(
   client: SupabaseClient<Database>,
@@ -10357,14 +10358,10 @@ export async function invokeAssetTransfer(
     transfer as z.input<typeof postAssetTransferInput>,
     postAssetTransfer,
     {
-      as: (input) => {
-        const required = resolvePermissions(postAssetTransferPermission, input);
-        return input.type === "capitalize" &&
-          input.cost != null &&
-          required !== "system"
-          ? { ...required, update: "accounting" }
-          : required;
-      }
+      as: (input) =>
+        input.type === "capitalize" && input.cost != null
+          ? { "accounting.assets": "Edit" }
+          : resolvePermissions(postAssetTransferPermission, input)
     }
   );
 }
@@ -11053,11 +11050,11 @@ export async function applyCtaToReportPeriodSeriesForReport(
   reportingCompanyId: string,
   args: Parameters<typeof applyCtaToReportPeriodSeries>[3]
 ) {
-  const { client, companyGroupId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee",
-    bypassRls: true
-  });
+  const { client, companyGroupId } = await authorize(
+    request,
+    { "accounting.reporting": "View" },
+    { bypassRls: true }
+  );
   const root = await client
     .from("company")
     .select("id")
@@ -13289,8 +13286,8 @@ export async function outOfServiceRefusal(
 
   // A unit on rent goes to maintenance through the agreement's Return (with
   // "Take out of service"), never around it. Read with the service role,
-  // scoped to the company and the asset: agreement lines need sales_view,
-  // which an accountant may not hold, and under RLS that reads as "not on
+  // scoped to the company and the asset: agreement lines need View on Rental
+  // Agreements, which an accountant may not hold, and under RLS that reads as "not on
   // rent". A failed read refuses rather than passes.
   const onRent = await getOnRentLineForAsset(system, fixedAssetId, companyId);
   if (onRent.error) {
@@ -15033,11 +15030,11 @@ async function adjustCost(
 export const postAssetTransferPermission = {
   by: "type",
   rules: {
-    capitalize: { create: "accounting" },
-    return: { create: "accounting" },
-    attachJob: { create: "accounting" },
-    capitalizeCip: { create: "accounting" },
-    adjustCost: { update: "accounting" }
+    capitalize: { "accounting.assets": "Create" },
+    return: { "accounting.assets": "Create" },
+    attachJob: { "accounting.assets": "Create" },
+    capitalizeCip: { "accounting.assets": "Create" },
+    adjustCost: { "accounting.assets": "Edit" }
   }
 } satisfies PermissionRule<z.output<typeof postAssetTransferInput>>;
 
@@ -15058,7 +15055,7 @@ export async function postAssetTransfer(
   switch (input.type) {
     case "capitalize":
       // An entered cost puts a number of the caller's own on the books.
-      if (input.cost != null && !ctx.can({ update: "accounting" })) {
+      if (input.cost != null && !ctx.can({ "accounting.assets": "Edit" })) {
         throw new ForbiddenError();
       }
       return capitalize(db, { ...input, companyId, userId });
@@ -15086,7 +15083,7 @@ class RollbackPreview extends Error {
 }
 
 export const previewAssetCapitalizationPermission = {
-  view: "accounting"
+  "accounting.assets": "View"
 } satisfies PermissionRule<z.output<typeof previewAssetCapitalizationInput>>;
 
 export async function previewAssetCapitalization(
@@ -15238,10 +15235,6 @@ async function repointReferences(
     trx
   );
 }
-
-export const applyAccountImportPermission = {
-  update: "accounting"
-} satisfies PermissionRule<z.output<typeof applyAccountImportInput>>;
 
 export async function applyAccountImport(
   ctx: ServiceContext,
@@ -16604,7 +16597,7 @@ export const postChargeInput = z.object({
 });
 
 export const postChargePermission = {
-  update: "invoicing"
+  "invoicing.charges": "Edit"
 } satisfies PermissionRule<z.output<typeof postChargeInput>>;
 
 /**
@@ -17563,7 +17556,7 @@ export const postReimbursementInput = z.object({
 });
 
 export const postReimbursementPermission = {
-  update: "invoicing"
+  "invoicing.reimbursements": "Edit"
 } satisfies PermissionRule<z.output<typeof postReimbursementInput>>;
 
 /**
@@ -22788,10 +22781,6 @@ export type ActivateAccountingResult = {
 
 const OPENING_JOURNAL_DESCRIPTION = "Opening Balance";
 
-export const activateAccountingPermission = {
-  update: "accounting"
-} satisfies PermissionRule<z.output<typeof activateAccountingInput>>;
-
 export async function activateAccounting(
   ctx: ServiceContext,
   raw: z.input<typeof activateAccountingInput>
@@ -23156,7 +23145,7 @@ export type JournalLegacyDocumentsResult = {
 };
 
 export const journalLegacyDocumentsPermission = {
-  update: "accounting"
+  "accounting.journalEntries": "Edit"
 } satisfies PermissionRule<z.output<typeof journalLegacyDocumentsInput>>;
 
 export async function repairLegacyJournals(
@@ -24100,8 +24089,11 @@ export const proposeRevenueRecognitionRunInput = z.object({
   type: z.enum(["Revenue Recognition", "Lease"]).default("Revenue Recognition")
 });
 
+// Both run pages: the posting contract types `type` as optional (it
+// defaults), so a rule keyed on it cannot type-check for its callers.
 export const proposeRevenueRecognitionRunPermission = {
-  create: "accounting"
+  "accounting.revenueRecognition": "Create",
+  "accounting.leases": "Create"
 } satisfies PermissionRule<z.output<typeof proposeRevenueRecognitionRunInput>>;
 
 /** Proposes ONE Draft run for the period, or null when nothing is due (see
@@ -24147,7 +24139,11 @@ class PreviewRollback extends Error {
 }
 
 export const previewRevenueRecognitionRunPermission = {
-  view: "accounting"
+  by: "type",
+  rules: {
+    "Revenue Recognition": { "accounting.revenueRecognition": "View" },
+    Lease: { "accounting.leases": "View" }
+  }
 } satisfies PermissionRule<z.output<typeof previewRevenueRecognitionRunInput>>;
 
 export async function previewRevenueRecognitionRun(
@@ -24189,9 +24185,11 @@ export type RunRecalculation = {
   deleted: boolean;
 };
 
-export const recalculateRevenueRecognitionRunPermission = {
-  update: "accounting"
-} satisfies PermissionRule<
+export const recalculateRevenueRecognitionRunPermission = rowRule(
+  "revenueRecognitionRun",
+  "Edit",
+  { id: "runId" }
+) satisfies PermissionRule<
   z.output<typeof recalculateRevenueRecognitionRunInput>
 >;
 

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -25,8 +25,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("rfqId not found");
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+  const { client: viewClient } = await authorize(request, {
+    "sales.rfqs": "View"
   });
 
   const rfq = await getSalesRFQ(viewClient, rfqId);
@@ -37,8 +37,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "sales"
+  const { client, companyId, userId } = await authorize(request, {
+    "sales.rfqs": "Create"
   });
 
   const formData = await request.formData();

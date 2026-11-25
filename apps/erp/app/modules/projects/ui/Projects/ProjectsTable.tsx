@@ -260,7 +260,7 @@ const ProjectsTable = memo(({ data, count, infinite }: ProjectsTableProps) => {
         </MenuItem>
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.edit}
-          disabled={!permissions.can("update", "projects")}
+          disabled={!permissions.has({ "projects.projects": "Edit" })}
           onClick={() => {
             navigate(path.to.project(row.id));
           }}
@@ -293,7 +293,7 @@ const ProjectsTable = memo(({ data, count, infinite }: ProjectsTableProps) => {
         active: false
       }}
       primaryAction={
-        permissions.can("create", "projects") && (
+        permissions.has({ "projects.projects": "Create" }) && (
           <New label={t`Project`} to={path.to.newProject} />
         )
       }

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
@@ -32,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.sales.checkSalesOrderLineDeliveryDate({
     ...line.data,
     salesOrderId: orderId

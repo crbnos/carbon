@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { flags } from "@carbon/env/flags.server";
@@ -41,20 +41,19 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateIgnoringTabDisplay;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyGroupId, companyId, email } = await requirePermissions(
-    request,
-    {
-      view: "settings"
-    }
-  );
+  const { companyGroupId, companyId, email } = await authorize(request, {
+    "settings.companies": "View"
+  });
 
   // Multi-company management: Carbon staff, and the companies the
   // `multi-company-management` flag turns it on for.
+  // Home, not Settings: Settings opens on the first page the person can
+  // view, which may be this one, and would loop.
   if (
     !isInternalEmail(email) &&
     !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const companies = await getSubsidiaries(

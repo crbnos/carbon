@@ -22,9 +22,7 @@ import {
   abilityBlockRefusal,
   finishJobOperation,
   getRequiredScanShortfall,
-  getTrackedEntitiesForOperation,
   insertProductionQuantity,
-  isSerialEntityIncompleteForOperation,
   postEndedProductionEvents,
   startMachineProductionEvent,
   startProductionEvent
@@ -611,22 +609,15 @@ export async function endOperationByScan(
         // units already exist), so advance to the next incomplete serial unit
         // for this operation. When none remain, fall through to the shared
         // "operation complete" redirect below.
-        const remainingTrackedEntities = await getTrackedEntitiesForOperation(
-          serviceRole,
-          {
-            operationId,
-            jobMakeMethodId: jobOperation.data.jobMakeMethodId,
-            companyId
-          }
-        );
-        const nextTrackedEntity = (remainingTrackedEntities.data ?? []).find(
-          (entity) => isSerialEntityIncompleteForOperation(entity, operationId)
-        );
-        if (nextTrackedEntity) {
+        const next = await resolveWorkUnit({
+          client: serviceRole,
+          operationId,
+          companyId,
+          mode: "advance"
+        });
+        if (next.kind === "unit") {
           return redirect(
-            `${path.to.operation(
-              operationId
-            )}?trackedEntityId=${nextTrackedEntity.id}`
+            `${path.to.operation(operationId)}?trackedEntityId=${next.unitId}`
           );
         }
       } else if (jobMakeMethod.data.requiresBatchTracking) {

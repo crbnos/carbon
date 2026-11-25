@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -23,10 +22,7 @@ import {
   rescheduleToleranceValidator,
   settingsToggle
 } from "~/modules/settings/settings.models";
-import {
-  getCompanySettings,
-  getItemPostingGroupResponsibilities
-} from "~/modules/settings/settings.service";
+import { getItemPostingGroupResponsibilities } from "~/modules/settings/settings.service";
 import {
   CalendarWeeksCard,
   ForecastConsumptionCard,
@@ -47,13 +43,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId, api } = await authorize(request, {
+    "settings.planning": "View"
   });
 
   const [companySettings, locations, itemGroups, responsibilities] =
     await Promise.all([
-      getCompanySettings(client, companyId),
+      api.settings.getCompanySettings({}),
       client
         .from("location")
         .select("id, name, responsibleEmployee")
@@ -182,7 +178,7 @@ const planningSettingsForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(planningSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.updatePlanningSettings(input.data);
 }
 

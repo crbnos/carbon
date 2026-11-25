@@ -37,13 +37,16 @@ import {
   isMovementActivity
 } from "./metadata";
 import { StepRecordsList } from "./StepRecordsList";
+import {
+  type ActivityMeasurements,
+  stepRecordsForSelection
+} from "./stepRecords";
 import TrackedEntityStatus from "./TrackedEntityStatus";
 import {
   activityHeadline,
   entityHeadline,
   type LineagePayload,
   normalizeInspectionLinks,
-  type StepRecord,
   sourceLinkHref
 } from "./utils";
 
@@ -272,7 +275,7 @@ export function TraceabilitySidebar({
     };
   }, [lineage, entity, activity, cluster, clusterByMember]);
 
-  const stepRecordsFetcher = useFetcher<{ stepRecords: StepRecord[] }>();
+  const stepRecordsFetcher = useFetcher<ActivityMeasurements>();
   const lastLoadedActivityIdRef = useRef<string | null>(null);
   const stepRecordsLoad = stepRecordsFetcher.load;
   const activityId = activity?.id ?? null;
@@ -285,22 +288,10 @@ export function TraceabilitySidebar({
     );
   }, [activityId, stepRecordsLoad]);
 
-  const stepRecordsForActivity = useMemo(() => {
-    const list = stepRecordsFetcher.data?.stepRecords ?? [];
-    if (!activity || list.length === 0) return [];
-    const attrs = activity.attributes as Record<string, any> | null;
-    const opId = attrs?.["Job Operation"];
-    if (!opId) return [];
-    // A production activity is scoped to one unit (its "Unit" is the 0-based
-    // unit-axis index that step records key off). Isolate this unit's records
-    // from the operation's other units. Activities without a Unit (older data
-    // or the operation view) fall back to all records for the operation.
-    const unit = attrs?.Unit;
-    const hasUnit = typeof unit === "number";
-    return list.filter(
-      (r) => r.operationId === opId && (!hasUnit || r.index === unit)
-    );
-  }, [activity, stepRecordsFetcher.data]);
+  const stepRecordsForActivity = stepRecordsForSelection(
+    activityId,
+    stepRecordsFetcher.data
+  );
 
   // Where the lot sits now: destination of the latest movement that took it as
   // an input. Bin names are enriched server-side (enrichActivityBinNames).
@@ -624,7 +615,7 @@ export function TraceabilitySidebar({
 
         {activity &&
           (stepRecordsFetcher.state === "loading" &&
-          stepRecordsFetcher.data === undefined ? (
+          stepRecordsFetcher.data?.activityId !== activityId ? (
             <Section title="Step records">
               <StepRecordsSkeleton />
             </Section>

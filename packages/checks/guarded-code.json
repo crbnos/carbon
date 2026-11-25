@@ -1,0 +1,60 @@
+{
+  "$comment": "Race-protected code and the database tests that prove its fix. `pnpm --filter @carbon/checks guarded-code` warns (never fails) when a diff touches one of these functions, so the author keeps those tests passing. A function is a top-level declaration of the file; a marker is a string on the line that opens a guarded block inside a very large function (the block runs to the end of the marker's indentation). A file or function missing on the current branch is skipped. See packages/checks/AGENTS.md.",
+  "guarded": [
+    {
+      "file": "apps/erp/app/modules/accounting/accounting.service.ts",
+      "functions": [
+        "lockAccountingPeriod",
+        "unlockAccountingPeriod",
+        "setPeriodCloseStatus",
+        "closeAccountingPeriod",
+        "reopenAccountingPeriod"
+      ],
+      "tests": ["apps/erp/test/database/period-close-concurrency.test.ts"]
+    },
+    {
+      "file": "apps/erp/app/modules/inventory/inventory.service.ts",
+      "functions": ["issueJobOperationMaterials"],
+      "tests": ["apps/erp/test/database/job-material-issue-concurrency.test.ts"]
+    },
+    {
+      "file": "apps/erp/app/modules/inventory/inventory.service.ts",
+      "functions": ["lockPostedReceipt", "lockPostedShipment"],
+      "tests": ["apps/erp/test/database/document-posting-concurrency.test.ts"]
+    },
+    {
+      "file": "apps/erp/app/modules/shared/shared.service.ts",
+      "functions": ["lockPostable"],
+      "tests": ["apps/erp/test/database/document-posting-concurrency.test.ts"]
+    },
+    {
+      "file": "apps/erp/app/modules/shared/shared.service.ts",
+      "functions": ["lockOrderLines", "lockOrderLinesAsRead"],
+      "tests": [
+        "apps/erp/test/database/order-line-counters-concurrency.test.ts"
+      ]
+    },
+    {
+      "file": "apps/erp/app/modules/shared/shared.service.ts",
+      "functions": ["lockItemMakeMethods"],
+      "tests": [
+        "apps/erp/test/database/make-method-version-concurrency.test.ts"
+      ]
+    },
+    {
+      "file": "apps/erp/app/modules/shared/shared.service.ts",
+      "functions": ["lockUntrackedDraws", "calculateCOGS"],
+      "tests": [
+        "apps/erp/test/database/job-material-issue-concurrency.test.ts",
+        "apps/erp/test/database/backflush-cost-layer-concurrency.test.ts"
+      ]
+    },
+    {
+      "file": "packages/ee/src/accounting/core/operations.ts",
+      "functions": ["completeOperation", "failOperation"],
+      "tests": [
+        "packages/jobs/src/inngest/functions/integrations/accounting-sync-retries.database.test.ts"
+      ]
+    }
+  ]
+}

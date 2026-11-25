@@ -66,7 +66,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   externalLink: ["documentId"],
   indirectExpenseStatement: ["dimensionValueId"],
   indirectPoolAccount: ["dimensionValueId"],
-  inspection: ["sourceDocumentId", "sourceDocumentLineId"],
+  inspection: ["acceptedUnitIds", "sourceDocumentId", "sourceDocumentLineId"],
   intercompanyEliminationLine: ["accountId", "itemId", "journalLineId"],
   intercompanyTransaction: ["documentId"],
   inventoryCountLine: [

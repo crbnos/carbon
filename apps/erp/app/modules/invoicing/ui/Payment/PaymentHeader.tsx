@@ -49,8 +49,8 @@ const PaymentHeader = () => {
   const status = payment.status;
   const isDraft = status === "Draft";
   const isPosted = status === "Posted";
-  const canMutate = permissions.can("update", "invoicing");
-  const canDelete = permissions.can("delete", "invoicing");
+  const canMutate = permissions.has({ "invoicing.payments": "Edit" });
+  const canDelete = permissions.has({ "invoicing.payments": "Full" });
 
   return (
     <>
@@ -118,7 +118,6 @@ const PaymentHeader = () => {
               )}
               <DocumentForceDeleteMenuItem
                 forceDelete={routeData}
-                canDelete={canDelete}
                 onClick={forceDeleteModal.onOpen}
               />
             </>

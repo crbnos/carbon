@@ -82,6 +82,28 @@ export default function Route() {
     expect(scan("apps/erp/app/routes/x+/a+/$id.tsx", ts)).toEqual([]);
   });
 
+  it("does not count a word in JSX text, but counts a JSX expression", () => {
+    const prose = `import { authorize } from "@carbon/api/carbon.server";
+
+export default function Route() {
+  return (
+    <p>
+      Only authorize it if you started
+      this connection.
+    </p>
+  );
+}`;
+    expect(scan("apps/erp/app/routes/x+/a+/$id.tsx", prose)).toEqual([]);
+    const used = `import { authorize } from "@carbon/api/carbon.server";
+
+export default function Route() {
+  return <Button onClick={() => authorize(request)}>Go</Button>;
+}`;
+    expect(scan("apps/erp/app/routes/x+/a+/$id.tsx", used)).toEqual([
+      "authorize from @carbon/api/carbon.server"
+    ]);
+  });
+
   it("does not count a property or a type-only specifier", () => {
     const ts = `import { type Row, getRow } from "~/modules/a/a.service";
 

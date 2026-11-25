@@ -118,7 +118,7 @@ const ExchangeRatesTable = memo(({ data, count }: ExchangeRatesTableProps) => {
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "accounting")}
+            disabled={!permissions.has({ "accounting.exchangeRates": "Edit" })}
             onClick={() => {
               navigate(
                 `${path.to.exchangeRate(row.id as string)}?${params.toString()}`

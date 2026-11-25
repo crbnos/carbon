@@ -9,9 +9,12 @@ BEGIN
   INSERT INTO "group" ("id", "name", "isSupplierOrgGroup", "companyId")
   VALUES (p_new->>'id', p_new->>'name', TRUE, p_new->>'companyId');
 
-  IF p_new->>'supplierTypeId' IS NOT NULL THEN
-    INSERT INTO "membership"("groupId", "memberGroupId")
-    VALUES (p_new->>'supplierTypeId', p_new->>'id');
-  END IF;
+  -- Only the type's own group, in this company: the type id is caller-set.
+  INSERT INTO "membership"("groupId", "memberGroupId")
+  SELECT g.id, p_new->>'id'
+  FROM "group" g
+  WHERE g.id = p_new->>'supplierTypeId'
+    AND g."isSupplierTypeGroup"
+    AND g."companyId" = p_new->>'companyId';
 END;
 $function$;

@@ -8,7 +8,7 @@ import {
   NotFoundError,
   ServerFnError
 } from "@carbon/api/errors";
-import type { PermissionRule } from "@carbon/api/permissions";
+import { type PermissionRule, rowRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { withStripe } from "@carbon/api/stock-stripes";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -98,7 +98,10 @@ import {
 } from "@carbon/database/tax-ledger";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
-import { isCompanyAdmin } from "@carbon/ee/approvals.server";
+import {
+  getCompanyAdminIds,
+  isCompanyAdmin
+} from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   dedupeViolations,
@@ -237,7 +240,6 @@ import {
   deletePurchaseInvoiceReleasingLeases,
   type ForceDeleteReversalAccounting,
   forceDeleteReceiptRefusal,
-  getCompanyAdminIds,
   getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
@@ -1602,6 +1604,12 @@ export async function updatePurchaseInvoiceLineOrder(
   });
 }
 
+/**
+ * Inserts a sales invoice with its opportunity and shipment. Sales owns
+ * `opportunity`, so pass the system client as `system` once the caller's
+ * invoicing permission has passed: the opportunity is written with it,
+ * scoped to `input.companyId`.
+ */
 export async function insertSalesInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -1622,7 +1630,8 @@ export async function insertSalesInvoice(
     exchangeRate?: number;
     exchangeRateUpdatedAt?: string;
     customFields?: Json;
-  }
+  },
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string; invoiceId: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
@@ -1650,7 +1659,7 @@ export async function insertSalesInvoice(
 
   const [opportunity, customerPayment, customerShipping, salesPerson] =
     await Promise.all([
-      client
+      system
         .from("opportunity")
         .insert({
           companyId: input.companyId,
@@ -8367,6 +8376,59 @@ export function isDirectItemLine(line: SalesInvoiceLine): boolean {
   );
 }
 
+/** An untracked direct invoice line that takes stock out. */
+type DirectStockDraw = {
+  /** The line's ledger row; its bin is set once the bin is chosen. */
+  ledger: Database["public"]["Tables"]["itemLedger"]["Insert"];
+  lineId: string;
+  itemId: string;
+  locationId: string | null;
+  storageUnitId: string | null;
+  quantity: number;
+};
+
+/**
+ * The bin each untracked direct invoice line ships from, by line id: the bin
+ * the line names, else one that holds its common stock
+ * (`shipmentSourceBinChooser`, as a sales order shipment line takes one).
+ * Quarantine and lineside units are never guessed, and lines are planned in
+ * order, so two lines of one item do not count the same stock. Locks the
+ * draws first, so two postings never plan from the same on-hand. Call it
+ * inside the posting transaction.
+ */
+async function directInvoiceSourceBins(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  draws: DirectStockDraw[]
+): Promise<Map<string, string | null>> {
+  const bins = new Map<string, string | null>();
+  if (draws.length === 0) return bins;
+  const locationIds = [
+    ...new Set(
+      draws.map((draw) => draw.locationId).filter((id): id is string => !!id)
+    )
+  ].sort();
+  // One lock per location: an invoice ships from one or two.
+  for (const locationId of locationIds) {
+    await sharedPostings.lockUntrackedDraws(trx, {
+      companyId,
+      locationId,
+      itemIds: draws
+        .filter((draw) => draw.locationId === locationId)
+        .map((draw) => draw.itemId)
+    });
+  }
+  // A negative line puts stock back: it keeps the bin it names.
+  const outgoing = draws.filter((draw) => draw.quantity > 0);
+  const choose = await sharedPostings.shipmentSourceBinChooser(trx, {
+    companyId,
+    lines: outgoing.filter((draw) => !draw.storageUnitId),
+    inspectionHolds: "all"
+  });
+  for (const draw of outgoing) bins.set(draw.lineId, choose(draw));
+  return bins;
+}
+
 /**
  * The service range of a line whose revenue the posting defers. Only a
  * Service line is deferred: every other item type is a physical good, earned
@@ -9689,7 +9751,7 @@ const RECOGNIZED_REVENUE_VOID_ERROR =
   "Invoice has recognized revenue; reverse the revenue recognition or lease run that posted it first";
 
 export const postSalesInvoicePermission = {
-  update: "invoicing"
+  "invoicing.salesInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postSalesInvoiceInput>>;
 
 export const SALES_INVOICE_SETTLED_VOID_ERROR =
@@ -9877,6 +9939,9 @@ export async function postSalesInvoice(
           "shipmentId"
         >[] = [];
 
+        // The untracked lines that take stock out, each with its ledger row:
+        // their bins are chosen inside the transaction.
+        const directStockDraws: DirectStockDraw[] = [];
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
 
@@ -10522,18 +10587,29 @@ export async function postSalesInvoice(
             items.data.find((item) => item.id === invoiceLine.itemId)
               ?.itemTrackingType ?? "Inventory";
           if (itemTrackingType === "Inventory") {
-            itemLedgerInserts.push({
-              postingDate: today,
+            const ledger: Database["public"]["Tables"]["itemLedger"]["Insert"] =
+              {
+                postingDate: today,
+                itemId: invoiceLine.itemId!,
+                quantity: round(-invoiceLine.quantity),
+                locationId: invoiceLine.locationId,
+                storageUnitId: invoiceLine.storageUnitId,
+                entryType: "Negative Adjmt.",
+                documentType: "Sales Shipment",
+                documentId: invoiceHeader.id ?? undefined,
+                externalDocumentId:
+                  invoiceHeader.customerReference ?? undefined,
+                createdBy: userId,
+                companyId
+              };
+            itemLedgerInserts.push(ledger);
+            directStockDraws.push({
+              ledger,
+              lineId: invoiceLine.id,
               itemId: invoiceLine.itemId!,
-              quantity: round(-invoiceLine.quantity),
               locationId: invoiceLine.locationId,
               storageUnitId: invoiceLine.storageUnitId,
-              entryType: "Negative Adjmt.",
-              documentType: "Sales Shipment",
-              documentId: invoiceHeader.id ?? undefined,
-              externalDocumentId: invoiceHeader.customerReference ?? undefined,
-              createdBy: userId,
-              companyId
+              quantity: invoiceLine.quantity
             });
           }
         }
@@ -10582,6 +10658,30 @@ export async function postSalesInvoice(
                 );
               }
             }
+          }
+
+          // A line with no bin ships from a bin that holds its stock, never
+          // from "no storage unit" while a bin holds it. Its shipment line
+          // and ledger row both name that bin, so the void puts the stock
+          // back where it came from (it reverses the ledger rows).
+          const sourceBins = await directInvoiceSourceBins(
+            trx,
+            companyId,
+            directStockDraws
+          );
+          const sourceBinOf = (lineId: string, named: string | null) =>
+            sourceBins.has(lineId) ? (sourceBins.get(lineId) ?? null) : named;
+          for (const line of shipmentLineInserts) {
+            line.storageUnitId = sourceBinOf(
+              line.lineId!,
+              line.storageUnitId ?? null
+            );
+          }
+          for (const draw of directStockDraws) {
+            draw.ledger.storageUnitId = sourceBinOf(
+              draw.lineId,
+              draw.ledger.storageUnitId ?? null
+            );
           }
 
           if (shipmentLineInserts.length > 0) {
@@ -13676,9 +13776,9 @@ export const postMemoInput = z.object({
   memoId: z.string()
 });
 
-export const postMemoPermission = {
-  update: "invoicing"
-} satisfies PermissionRule<z.output<typeof postMemoInput>>;
+export const postMemoPermission = rowRule("memo", "Edit", {
+  id: "memoId"
+}) satisfies PermissionRule<z.output<typeof postMemoInput>>;
 
 /** Posts or voids a credit/debit memo and its journal, atomically. */
 export async function postMemo(
@@ -16081,7 +16181,7 @@ export const postPaymentInput = z.object({
 });
 
 export const postPaymentPermission = {
-  update: "invoicing"
+  "invoicing.payments": "Edit"
 } satisfies PermissionRule<z.output<typeof postPaymentInput>>;
 
 /** Posts or voids a payment: settlements, funding and its journal, atomically. */
@@ -17717,7 +17817,7 @@ export const postPurchaseInvoiceInput = z.object({
 });
 
 export const postPurchaseInvoicePermission = {
-  update: "invoicing"
+  "invoicing.purchaseInvoices": "Edit"
 } satisfies PermissionRule<z.output<typeof postPurchaseInvoiceInput>>;
 
 /** Posts or voids a purchase invoice: receipts, cost, ledger and journal rows. */
@@ -20869,7 +20969,7 @@ export async function notifyDocumentForceDelete(
   try {
     const userIds =
       event === "Requested"
-        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+        ? (await getCompanyAdminIds(ctx.asSystem.supabase, companyId)).filter(
             (id) => id !== requestedBy
           )
         : requestedBy === ctx.auditUserId
@@ -23105,9 +23205,9 @@ export async function adjustPurchaseInvoiceRounding(
     const posted = invoice.status !== "Draft";
     if (posted) {
       // A posted invoice's adjustment posts a journal.
-      if (!ctx.can({ update: "accounting" })) {
+      if (!ctx.can({ "accounting.journalEntries": "Edit" })) {
         throw new ForbiddenError(
-          "Adjusting a posted invoice needs accounting update permission."
+          "Adjusting a posted invoice needs Edit on Journal Entries."
         );
       }
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);

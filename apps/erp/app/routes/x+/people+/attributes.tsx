@@ -6,7 +6,6 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAttributeDataTypes } from "~/modules/people/people.service";
 import { AttributeCategoriesTable } from "~/modules/people/ui/Attributes";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -21,8 +20,8 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, attributeCategoriesList, {
     dataKey: "categories",
-    firstPage: async ({ client }) => ({
-      dataTypes: (await getAttributeDataTypes(client)).data ?? []
+    firstPage: async ({ api }) => ({
+      dataTypes: (await api.people.getAttributeDataTypes({})).data ?? []
     }),
     onError: {
       redirectTo: path.to.authenticatedRoot,

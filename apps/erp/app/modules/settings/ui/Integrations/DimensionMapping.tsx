@@ -137,7 +137,7 @@ export function DimensionMapping({
     onSuccess: () => toast.success(t`Updated dimension sync settings`)
   });
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "settings");
+  const canUpdate = permissions.has({ "settings.integrations": "Edit" });
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
 
   const nextKeyRef = useRef(slots.length);

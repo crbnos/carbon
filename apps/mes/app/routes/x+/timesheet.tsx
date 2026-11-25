@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { validator } from "@carbon/form";
@@ -94,7 +94,7 @@ const logger = getLogger("mes", "timesheet");
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request, {});
 
   const url = new URL(request.url);
   const parsed = Number.parseInt(url.searchParams.get("week") ?? "0", 10);
@@ -202,7 +202,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await authorize(request, {});
 
   const formData = await request.formData();
   const intent = formData.get("intent");

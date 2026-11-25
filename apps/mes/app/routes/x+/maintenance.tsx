@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import {
   Badge,
   Button,
@@ -18,6 +18,11 @@ import {
   TabsTrigger,
   VStack
 } from "@carbon/react";
+import {
+  getLocalTimeZone,
+  isToday,
+  parseAbsoluteToLocal
+} from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
@@ -51,7 +56,7 @@ export const handle: Handle = {
 export const meta: MetaFunction = () => pageMeta("Maintenance");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, userId } = await authorize(request, {});
   const locationId = context.get(userContext)?.locationId;
 
   const url = new URL(request.url);
@@ -314,17 +319,6 @@ function EmptyState({
   );
 }
 
-function isToday(dateString: string | null): boolean {
-  if (!dateString) return false;
-  const date = new Date(dateString);
-  const today = new Date();
-  return (
-    date.getFullYear() === today.getFullYear() &&
-    date.getMonth() === today.getMonth() &&
-    date.getDate() === today.getDate()
-  );
-}
-
 export default function MaintenanceRoute() {
   const { t } = useLingui();
   const { dispatches, assignedDispatches, workCenters } =
@@ -352,8 +346,14 @@ export default function MaintenanceRoute() {
     });
   }, [dispatches]);
 
+  // In the browser, the local time zone is the user's.
   const todayDispatches = useMemo(() => {
-    return dispatches.filter((d) => isToday(d.plannedStartTime));
+    const zone = getLocalTimeZone();
+    return dispatches.filter(
+      (d) =>
+        !!d.plannedStartTime &&
+        isToday(parseAbsoluteToLocal(d.plannedStartTime), zone)
+    );
   }, [dispatches]);
 
   const filters = useMemo<ColumnFilter[]>(() => {

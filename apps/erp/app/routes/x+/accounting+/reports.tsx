@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import {
@@ -50,11 +50,7 @@ import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { PinnedCard, PinToggle } from "~/components/ReportPin";
 import { useDrawerItem } from "~/hooks";
 import { reportPinValidator } from "~/modules/accounting/accounting.models";
-import {
-  getReportPins,
-  getReportViews,
-  upsertReportPin
-} from "~/modules/accounting/accounting.service";
+import { upsertReportPin } from "~/modules/accounting/accounting.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -68,14 +64,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { companyId, userId, api } = await authorize(request, {
+    "accounting.reporting": "View"
   });
 
   const [pins, savedViews] = await Promise.all([
-    getReportPins(client, userId, companyId),
-    getReportViews(client, { companyId })
+    api.accounting.getReportPins({}),
+    api.accounting.getReportViews({ companyId })
   ]);
 
   return {
@@ -87,9 +82,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { client, companyId, userId } = await authorize(request, {
+    "accounting.reporting": "View"
   });
 
   const validation = await validator(reportPinValidator).validate(

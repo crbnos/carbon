@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -11,20 +11,17 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteMaterialSubstance,
-  getMaterialSubstance
-} from "~/modules/items/items.service";
+import { deleteMaterialSubstance } from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.substances": "View" });
   const { substanceId } = params;
   if (!substanceId) throw notFound("substanceId not found");
 
-  const materialSubstance = await getMaterialSubstance(client, substanceId);
+  const materialSubstance = await api.items.getMaterialSubstance({
+    id: substanceId
+  });
   if (materialSubstance.error) {
     throw redirect(
       path.to.materialSubstances,
@@ -39,9 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "parts"
-  });
+  const { client } = await authorize(request, { "parts.substances": "Full" });
 
   const { substanceId } = params;
   if (!substanceId) {

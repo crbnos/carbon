@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Settings → Demo Data (apply an industry demo dataset, keep it or revert).
+
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { DATASETS, datasetKeys } from "@carbon/database/datasets";
 import { useRevalidator } from "@carbon/query";
@@ -36,8 +37,8 @@ export const handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId } = await authorize(request, {
+    "settings.demoData": "Edit"
   });
 
   const run = await getCompanyTemplateRun(client, companyId);
@@ -55,8 +56,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId, userId } = await authorize(request, {
+    "settings.demoData": "Edit"
   });
 
   const formData = await request.formData();

@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { PageId } from "@carbon/database/access";
+
 export type DocumentTypeDefinition = {
   id: string;
   displayName: string;
@@ -9,8 +11,8 @@ export type DocumentTypeDefinition = {
   builtInRenderer: "zpl" | "pdf" | null;
   defaultFormat: "zpl" | "pdf";
   description: string;
-  /** The module a user must be able to view to print it. Labels need none. */
-  viewPermission?: string;
+  /** The page a user must be able to view to print it. Labels need none. */
+  viewPermission?: PageId;
 };
 
 export const documentTypeRegistry = [
@@ -54,7 +56,7 @@ export const documentTypeRegistry = [
     builtInRenderer: "pdf" as const,
     defaultFormat: "pdf" as const,
     description: "Full-page packing slip for a shipment",
-    viewPermission: "inventory"
+    viewPermission: "inventory.shipments"
   },
   {
     id: "salesInvoice",
@@ -63,7 +65,7 @@ export const documentTypeRegistry = [
     builtInRenderer: "pdf" as const,
     defaultFormat: "pdf" as const,
     description: "Full-page invoice for a document printer",
-    viewPermission: "invoicing"
+    viewPermission: "invoicing.salesInvoices"
   }
 ] as const satisfies readonly DocumentTypeDefinition[];
 
@@ -109,11 +111,11 @@ export function getDocumentTypesForSource(
 }
 
 /**
- * The view permissions a user needs to print a source document. The print
- * task reads as the service role, so the route that queues it checks these.
+ * The pages a user may view to print a source document (any one of them). The
+ * print task reads as the service role, so the route that queues it checks these.
  */
-export function getPrintPermissions(sourceDocument: string): string[] {
-  const permissions = new Set<string>();
+export function getPrintPermissions(sourceDocument: string): PageId[] {
+  const permissions = new Set<PageId>();
   for (const dt of documentTypeRegistry as readonly DocumentTypeDefinition[]) {
     if (dt.viewPermission && dt.sourceDocuments.includes(sourceDocument)) {
       permissions.add(dt.viewPermission);

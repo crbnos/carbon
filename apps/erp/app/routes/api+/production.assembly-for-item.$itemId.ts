@@ -2,15 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 // The item's most relevant assembly instruction for the BOP editors' steps-source
 // panel: a Published one wins (it can be synced), else the newest Draft/Archived
 // (it can be opened/finished), else null (one can be created from the item's model).
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production"
+  const { client, companyId } = await authorize(request, {
+    "production.assemblies": "View"
   });
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");

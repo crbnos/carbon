@@ -47,7 +47,7 @@ export default function FixedAssetsRoute() {
         infinite={infinite}
         assetClasses={assetClasses}
         primaryAction={
-          permissions.can("create", "accounting") && (
+          permissions.has({ "accounting.assets": "Create" }) && (
             <NewAction label={t`Add Fixed Asset`} to={path.to.newFixedAsset}>
               <Button
                 leftIcon={<LuCirclePlus />}

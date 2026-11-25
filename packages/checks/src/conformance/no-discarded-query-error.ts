@@ -298,7 +298,8 @@ export const noDiscardedQueryError: ConformanceCheck = {
     deprecates:
       "`const { data } = await client.from(…)`, `result.data` with no `result.error`, and unbound awaited writes, which read a failed query as 'none' (cfdc4f9299, b399972472, c0b85077ee, 22c9b98508)",
     replacedBy:
-      "`const { data, error } = await …; if (error) …`, and every write's result bound and checked"
+      "`const { data, error } = await …; if (error) …`, and every write's result bound and checked",
+    incidents: ["cfdc4f9299", "b399972472", "c0b85077ee", "22c9b98508"]
   },
   scan(file, contents) {
     if (!/\bawait\b/.test(contents)) return [];

@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { fetchAllFromTable } from "@carbon/database";
 import { validator } from "@carbon/form";
 import { RecordOutlet, useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { storageUnitValidator } from "~/modules/inventory/inventory.models";
-import {
-  getEffectiveWorkCenterId,
-  getStorageUnit
-} from "~/modules/inventory/inventory.service";
 import {
   type NonNettableUnit,
   nonNettableSource
@@ -25,17 +21,16 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory",
-    role: "employee"
+  const { client, companyId, api } = await authorize(request, {
+    "inventory.storageUnits": "View"
   });
 
   const { storageUnitId } = params;
   if (!storageUnitId) throw notFound("storageUnitId not found");
 
   const [storageUnit, effectiveWorkCenter, workCenters] = await Promise.all([
-    getStorageUnit(client, storageUnitId),
-    getEffectiveWorkCenterId(client, storageUnitId),
+    api.inventory.getStorageUnit({ storageUnitId }),
+    api.inventory.getEffectiveWorkCenterId({ storageUnitId }),
     getWorkCentersList(client, companyId)
   ]);
 
@@ -98,7 +93,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { id: _, ...storageUnit } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.inventory.updateStorageUnit({
     ...storageUnit,
     id: input.params.storageUnitId,

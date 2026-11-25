@@ -110,9 +110,9 @@ msgstr "Visualizzazione della manutenzione di {0}"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} di {1}"
 
@@ -255,6 +255,9 @@ msgstr "Registrato/{0} ordini di produzione"
 
 msgid "{scrapped} scrapped"
 msgstr ""
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} è in sospeso"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} in giacenza, senza contenitore"
@@ -2248,6 +2251,9 @@ msgstr "Più vecchio prima"
 msgid "On Hold"
 msgstr "Sospeso"
 
+msgid "On hold · {issueNumbers}"
+msgstr "In sospeso · {issueNumbers}"
+
 msgid "On its way"
 msgstr "In arrivo"
 
@@ -2630,6 +2636,9 @@ msgstr "Problema di qualità"
 
 msgid "Quality issue created"
 msgstr "Problema di qualità creato"
+
+msgid "Quality rejected this unit for production."
+msgstr "Il reparto qualità ha respinto questa unità per la produzione."
 
 msgid "Quantity"
 msgstr "Quantità"
@@ -3580,6 +3589,9 @@ msgstr ""
 msgid "This unit is not part of this operation"
 msgstr ""
 
+msgid "This unit is on hold"
+msgstr "Questa unità è in sospeso"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Questa unità sarà permanentemente scartata e verrà creata un'unità sostitutiva."
 
@@ -3898,6 +3910,9 @@ msgstr "Display del Centro di Lavoro"
 
 msgid "Work instructions"
 msgstr "Istruzioni di lavoro"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "Il lavoro su questa unità attende finché la qualità non chiude tutti i problemi qui sotto. Le altre unità non sono interessate."
 
 msgid "Work Site"
 msgstr "Sito di lavoro"

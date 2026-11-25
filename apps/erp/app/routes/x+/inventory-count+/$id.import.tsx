@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { inventoryCountImportValidator } from "~/modules/inventory/inventory.models";
@@ -19,7 +19,7 @@ export async function action(args: ActionFunctionArgs) {
   if (parsed.errors.length > 0) {
     return { data: { errors: parsed.errors }, error: null };
   }
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.inventory.importInventoryCountResults({
     inventoryCountId: input.params.id,
     rows: parsed.rows

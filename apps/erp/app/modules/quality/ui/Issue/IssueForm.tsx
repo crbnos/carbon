@@ -260,8 +260,8 @@ const IssueForm = ({
           <Submit
             isDisabled={
               isEditing
-                ? !permissions.can("update", "quality")
-                : !permissions.can("create", "quality")
+                ? !permissions.has({ "quality.issues": "Edit" })
+                : !permissions.has({ "quality.issues": "Create" })
             }
           >
             <Trans>Save</Trans>

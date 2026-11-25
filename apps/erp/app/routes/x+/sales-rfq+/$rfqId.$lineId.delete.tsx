@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -23,8 +23,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("lineId not found");
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+  const { client: viewClient } = await authorize(request, {
+    "sales.rfqs": "View"
   });
 
   const rfq = await getSalesRFQ(viewClient, rfqId);
@@ -35,9 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client } = await requirePermissions(request, {
-    delete: "sales"
-  });
+  const { client } = await authorize(request, { "sales.rfqs": "Full" });
 
   const deleteLine = await deleteSalesRFQLine(client, lineId);
   if (deleteLine.error) {

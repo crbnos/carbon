@@ -191,8 +191,10 @@ const SalesInvoiceItemLineForm = ({
     !["Draft", "Pending", "Voided"].includes(
       routeData?.salesInvoice?.status ?? ""
     ) &&
-    permissions.can("update", "invoicing") &&
-    permissions.can("update", "accounting");
+    permissions.has({
+      "invoicing.salesInvoices": "Edit",
+      "accounting.journalEntries": "Edit"
+    });
 
   // A Service line with no item is a service job's labor or fixed price
   // line: no item, no method and no location, only its description, quantity,
@@ -341,8 +343,8 @@ const SalesInvoiceItemLineForm = ({
     : hasInvalidMethodType
       ? true
       : isEditing
-        ? !permissions.can("update", "purchasing")
-        : !permissions.can("create", "purchasing");
+        ? !permissions.has({ "invoicing.salesInvoices": "Edit" })
+        : !permissions.has({ "invoicing.salesInvoices": "Create" });
 
   const onTypeChange = (t: ItemType | "Item") => {
     if (t === itemFilter) return;

@@ -62,8 +62,8 @@ export function QuantityModal({
   parentIsBatch = false,
   requireTrackedMaterialsIssued = false,
   setupProductionEvent,
-  trackedEntityId,
-  trackedEntityReadableId,
+  trackedEntityId: selectedId,
+  trackedEntityReadableId: selectedSerial,
   type,
   returnFocusRef,
   open = true,
@@ -111,6 +111,12 @@ export function QuantityModal({
       }
     }
   });
+  // Each opening mounts a new confirmation. Realtime can change the page's
+  // selected unit while this one is open, so bind its label and form together.
+  const [{ trackedEntityId, trackedEntityReadableId }] = useState(() => ({
+    trackedEntityId: selectedId,
+    trackedEntityReadableId: selectedSerial
+  }));
   const [quantity, setQuantity] = useState(parentIsSerial ? 1 : 0);
   const [confirmedUnissued, setConfirmedUnissued] = useState(false);
   const submitted = useRef(false);

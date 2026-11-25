@@ -93,7 +93,7 @@ function readJobMakeMethodId(attributes: unknown): string | null {
 
 export const jobsList = searchList({
   key: "jobs",
-  permission: { view: "production", role: "employee" },
+  gate: { "production.jobs": "View" },
   paging: JOBS_PAGING,
   service: getJobs,
   rows: withJobListExtras,
@@ -102,7 +102,7 @@ export const jobsList = searchList({
 
 export const assemblyInstructionsList = {
   key: "assembly-instructions",
-  permission: { view: "production", role: "employee" },
+  gate: { "production.assemblies": "View" },
   ...ASSEMBLY_INSTRUCTIONS_PAGING,
   query: (
     client,
@@ -149,7 +149,7 @@ async function withBatchListExtras<
 
 export const operationBatchesList = searchList({
   key: "operation-batches",
-  permission: { view: "production", role: "employee" },
+  gate: { "production.batches": "View" },
   paging: JOB_OPERATION_BATCHES_PAGING,
   service: getJobOperationBatches,
   rows: withBatchListExtras,
@@ -158,14 +158,14 @@ export const operationBatchesList = searchList({
 
 export const proceduresList = searchList({
   key: "procedures",
-  permission: { view: "production", role: "employee" },
+  gate: { "production.procedures": "View" },
   paging: PROCEDURES_PAGING,
   service: getProcedures
 });
 
 export const scrapReasonsList = searchList({
   key: "scrap-reasons",
-  permission: { view: "production", role: "employee" },
+  gate: { "production.scrapReasons": "View" },
   paging: SCRAP_REASONS_PAGING,
   service: getScrapReasons
 });

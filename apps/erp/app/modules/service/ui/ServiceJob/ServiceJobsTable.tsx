@@ -251,7 +251,7 @@ const ServiceJobsTable = memo(({ data, count }: ServiceJobsTableProps) => {
         priority: false
       }}
       primaryAction={
-        permissions.can("create", "service") && (
+        permissions.has({ "service.jobs": "Create" }) && (
           <New
             label={t`Job`}
             to={`${path.to.newServiceJob}?${params.toString()}`}

@@ -2,13 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
+import { pagesOf } from "@carbon/database/access";
 import { createClient } from "@supabase/supabase-js";
 import { expect, it, vi } from "vitest";
 import { loader } from "./_index";
 
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize: vi.fn() }));
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn()
 }));
@@ -30,11 +31,31 @@ async function loadDashboard(respond: (url: URL) => Response) {
       }
     }
   });
-  vi.mocked(requirePermissions).mockResolvedValue({
+  const full = {
+    view: ["company-a"],
+    create: ["company-a"],
+    update: ["company-a"],
+    delete: ["company-a"]
+  };
+  vi.mocked(authorize).mockResolvedValue({
     client,
     userId: "user-a",
-    companyId: "company-a"
-  } as Awaited<ReturnType<typeof requirePermissions>>);
+    companyId: "company-a",
+    permissions: Object.fromEntries(
+      [...pagesOf("purchasing"), ...pagesOf("invoicing")].map((page) => [
+        page,
+        full
+      ])
+    ),
+    api: {
+      purchasing: {
+        getPurchasingDocumentsAssignedToMe: async () => ({
+          data: [],
+          error: null
+        })
+      }
+    }
+  } as unknown as Awaited<ReturnType<typeof authorize>>);
 
   const result = loader({
     request: new Request("http://localhost/x/purchasing"),

@@ -3,22 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import invariant from "tiny-invariant";
 import { inspectionGaugeValidator } from "~/modules/quality/quality.models";
-import { recordInspectionGauge } from "~/modules/quality/quality.service";
-import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "quality",
-    role: "employee"
-  });
+  const { api } = await authorize(request);
   const { id } = params;
   invariant(id, "id is required");
 
@@ -35,12 +30,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await recordInspectionGauge(getDatabaseClient(), {
+  const result = await api.quality.setInspectionGauge({
     inspectionId: id,
     inspectionFeatureId: validation.data.inspectionFeatureId,
-    gaugeId: validation.data.gaugeId || null,
-    companyId,
-    userId
+    gaugeId: validation.data.gaugeId
   });
 
   if (result.error) {

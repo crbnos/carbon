@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -11,24 +11,18 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { returnReasonValidator } from "~/modules/sales/sales.models";
-import {
-  getReturnReason,
-  upsertReturnReason
-} from "~/modules/sales/sales.service";
+import { upsertReturnReason } from "~/modules/sales/sales.service";
 import ReturnReasonForm from "~/modules/sales/ui/ReturnReasons/ReturnReasonForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "sales.returnReasons": "View" });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const returnReason = await getReturnReason(client, id);
+  const returnReason = await api.sales.getReturnReason({ returnReasonId: id });
 
   if (returnReason.error) {
     throw redirect(
@@ -47,8 +41,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, userId } = await authorize(request, {
+    "sales.returnReasons": "Edit"
   });
 
   const formData = await request.formData();

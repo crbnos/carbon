@@ -116,9 +116,15 @@ Releasing a job copies the part's method into a job-specific copy. Editing that 
   </Card>
 </Cards>
 
-<AgentContext>
 ## Troubleshooting
 
+### Why did my job receive only three of four serials?
+
+When **Settings → Quality → Issues: Hold Units** is enabled, you can finish a job while Quality reviews a serial. In the job's **Complete** dialog, check the receipt preview. For example, if `0003` is on hold, the preview lists `0001`, `0002`, and `0004` for receipt and shows the issue number beside `0003`. After you submit, the job shows how many units entered inventory and which serial is still held.
+
+If Quality accepts `0003` and clears its last hold, open the completed job and choose **Reopen**, then **Complete**. Verify that the preview lists only `0003` for receipt and submit. The job now has four receipts, one per serial. A serial marked **Scrap** or **Return to Supplier** stays excluded while holds are enabled. [Follow the four-unit job from the shop floor to inventory (PDF)](/screens/serial-quality-hold/serial-quality-hold.pdf).
+
+<AgentContext>
 ### "Manufacturing is blocked"
 Releasing the job was stopped because the item's planning settings have manufacturing blocked. Open the item, clear the manufacturing-blocked flag under its planning settings, then release the job again.
 

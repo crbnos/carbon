@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -37,8 +36,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "projects"
+  const { client, companyId } = await authorize(request, {
+    "projects.projects": "Create"
   });
 
   // The projects a new one can copy: templates first.
@@ -84,7 +83,7 @@ export async function action(args: ActionFunctionArgs) {
       ? copyFromProjectId
       : undefined;
 
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.projects.createProject({
     ...input.data,
     sourceProjectId,

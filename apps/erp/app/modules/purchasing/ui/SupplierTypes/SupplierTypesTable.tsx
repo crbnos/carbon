@@ -68,7 +68,9 @@ const SupplierTypesTable = memo((props: SupplierTypesTableProps) => {
           </MenuItem>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={row.protected || !permissions.can("update", "purchasing")}
+            disabled={
+              row.protected || !permissions.has({ "purchasing.types": "Edit" })
+            }
             onClick={() => {
               navigate(`${path.to.supplierType(row.id)}?${params.toString()}`);
             }}
@@ -79,7 +81,9 @@ const SupplierTypesTable = memo((props: SupplierTypesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={row.protected || !permissions.can("delete", "purchasing")}
+            disabled={
+              row.protected || !permissions.has({ "purchasing.types": "Full" })
+            }
             onClick={() => {
               navigate(
                 `${path.to.deleteSupplierType(row.id)}?${params.toString()}`
@@ -102,7 +106,7 @@ const SupplierTypesTable = memo((props: SupplierTypesTableProps) => {
       count={count}
       infinite={infinite}
       primaryAction={
-        permissions.can("create", "purchasing") && (
+        permissions.has({ "purchasing.types": "Create" }) && (
           <New
             label={t`Supplier Type`}
             to={`${path.to.newSupplierType}?${params.toString()}`}

@@ -43,7 +43,10 @@ import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
-import { isRfqLocked } from "../../purchasing.models";
+import {
+  finalizePurchasingRfqAndNotifyPermission,
+  isRfqLocked
+} from "../../purchasing.models";
 import type { PurchasingRFQ, PurchasingRFQLine } from "../../types";
 import { SupplierQuoteCompareDrawer } from "../SupplierQuote";
 import FinalizeRFQModal from "./FinalizeRFQModal";
@@ -94,7 +97,7 @@ const PurchasingRFQHeader = () => {
         disabled={
           status !== "Closed" ||
           statusFetcher.state !== "idle" ||
-          !permissions.can("update", "purchasing")
+          !permissions.has({ "purchasing.rfqs": "Edit" })
         }
         onClick={() => {
           statusFetcher.submit(
@@ -113,7 +116,7 @@ const PurchasingRFQHeader = () => {
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         disabled={
           isLocked ||
-          !permissions.can("delete", "purchasing") ||
+          !permissions.has({ "purchasing.rfqs": "Full" }) ||
           !permissions.is("employee")
         }
         destructive
@@ -232,7 +235,7 @@ const PurchasingRFQHeader = () => {
                   isDisabled={
                     status !== "Draft" ||
                     routeData?.lines?.length === 0 ||
-                    !permissions.can("create", "purchasing")
+                    !permissions.has(finalizePurchasingRfqAndNotifyPermission)
                   }
                   leftIcon={<LuSend />}
                   variant={status === "Draft" ? "primary" : "secondary"}
@@ -247,7 +250,7 @@ const PurchasingRFQHeader = () => {
                   isDisabled={
                     status !== "Draft" ||
                     routeData?.lines?.length === 0 ||
-                    !permissions.can("create", "purchasing")
+                    !permissions.has(finalizePurchasingRfqAndNotifyPermission)
                   }
                   leftIcon={<LuSend />}
                   variant={status === "Draft" ? "primary" : "secondary"}
@@ -263,7 +266,7 @@ const PurchasingRFQHeader = () => {
                 onClick={cancelReasonModal.onOpen}
                 isDisabled={
                   (status !== "Draft" && status !== "Requested") ||
-                  !permissions.can("update", "purchasing")
+                  !permissions.has({ "purchasing.rfqs": "Edit" })
                 }
                 leftIcon={<LuCircleX />}
                 variant="secondary"

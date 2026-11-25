@@ -3,13 +3,15 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { TermId } from "@carbon/content/glossary";
+import { type Gate, ownersOf } from "@carbon/database/access";
 import {
   type EventMatch,
+  type EventPermission,
+  gateOn,
   integrationAppLabelKey,
   isMultiSelect,
   type LinksDeclaration,
-  type OptionsSource,
-  type RequiredPermission
+  type OptionsSource
 } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 import type {
@@ -56,8 +58,6 @@ export interface RegistryEntry {
   label: string;
   /** Glossary term for the entity itself. Reused for every field that IS this record. */
   help?: TermId;
-  /** Lowercase permission module; must be an existing family. */
-  permission: string;
   /** Overrides the derived "A"/"An" where the vowel test gets it wrong. */
   article?: "A" | "An";
   /** Present => triggerable; absent => reference-only, no events generated. */
@@ -74,14 +74,29 @@ export interface RegistryEntry {
 
 export interface MomentDeclarationLike {
   label: string;
-  permission: string;
+  /** The table the moment is about: its page is the event's permission. */
+  table: string;
   outputs: Record<string, ValueType>;
 }
 
 export interface BuiltEvent {
   outputs: Record<string, ValueType>;
-  permission: string;
+  permission: EventPermission;
   match: EventMatch;
+}
+
+/**
+ * The page an event on `table` needs View on, from the access registry: the
+ * page that owns the table, or every page of a shared table (any one passes:
+ * an item event fires for every item type).
+ */
+export function tablePages(table: string): EventPermission {
+  const owners = ownersOf(table);
+  if (owners.length === 1) return owners[0]!;
+  if (owners.length) return owners;
+  throw new Error(
+    `Workflow table ${table} is on no page of the access registry (packages/database/src/access/pages).`
+  );
 }
 
 export interface BuiltActionInput {
@@ -119,7 +134,7 @@ export interface BuiltAction {
   inputs: Record<string, BuiltActionInput>;
   outputs: Record<string, ValueType>;
   batchable: boolean;
-  permission: RequiredPermission;
+  permission: Gate;
   requireOneOf?: string[][];
   call?: string;
   update?: { entity: string };
@@ -145,7 +160,7 @@ export interface BuiltOperation {
   entity: string;
   inputs: Record<string, BuiltActionInput>;
   output: ValueType;
-  permission: RequiredPermission;
+  permission: Gate;
 }
 
 export interface BuiltCatalog {
@@ -155,6 +170,8 @@ export interface BuiltCatalog {
   /** Glossary term id per input key, for the builder's ⓘ hover. Same key shape as `labels`. */
   help: Record<string, string>;
   entities: Record<string, Record<string, ValueType>>;
+  /** The page of each entity's table: a lookup, an operation and the update action check it. */
+  entityPages: Record<string, EventPermission>;
   /** Allowed values per entity + property, only for enum columns. */
   enums: Record<string, Record<string, readonly string[]>>;
   actions: Record<string, BuiltAction>;
@@ -681,6 +698,7 @@ export function buildCatalog(
   handWrittenActions: Record<string, ActionDeclarationLike>,
   handWrittenOperations: Record<string, OperationDeclarationLike>,
   schema: SwaggerSchema,
+  pagesOf: (table: string) => EventPermission = tablePages,
   integrationSteps: Record<string, IntegrationDeclarationLike> = {}
 ): BuiltCatalog {
   const problems = validateCatalogInputs(
@@ -698,6 +716,7 @@ export function buildCatalog(
   const labels: Record<string, string> = {};
   const help: Record<string, string> = {};
   const entities: Record<string, Record<string, ValueType>> = {};
+  const entityPages: Record<string, EventPermission> = {};
   const enums: Record<string, Record<string, readonly string[]>> = {};
   const actions: Record<string, BuiltAction> = {};
   const integrations: Record<string, BuiltIntegration> = {};
@@ -708,6 +727,7 @@ export function buildCatalog(
     if (definition === undefined) continue;
 
     entities[name] = entityProperties(entry, definition, byTable);
+    entityPages[name] = pagesOf(entry.table);
 
     // Collect enum values for any column that declares them.
     const entityEnumMap: Record<string, readonly string[]> = {};
@@ -766,7 +786,7 @@ export function buildCatalog(
         inputs,
         outputs: { record: t.entity(name) },
         batchable: true,
-        permission: { module: entry.permission, action: "update" },
+        permission: gateOn(pagesOf(entry.table), "Edit"),
         update: { entity: name }
       };
       labels[id] =
@@ -794,14 +814,14 @@ export function buildCatalog(
 
     events[`${name}.created`] = {
       outputs: { record },
-      permission: entry.permission,
+      permission: pagesOf(entry.table),
       match: { table: entry.table, operation: "INSERT" }
     };
     labels[`${name}.created`] = `${determiner} ${noun} is created`;
 
     events[`${name}.deleted`] = {
       outputs: { record },
-      permission: entry.permission,
+      permission: pagesOf(entry.table),
       match: { table: entry.table, operation: "DELETE" }
     };
     labels[`${name}.deleted`] = `${determiner} ${noun} is deleted`;
@@ -811,7 +831,7 @@ export function buildCatalog(
       const id = `${name}.${column}.changed`;
       events[id] = {
         outputs: { record, before: record, after: record },
-        permission: entry.permission,
+        permission: pagesOf(entry.table),
         match: { table: entry.table, operation: "UPDATE", field: column }
       };
       labels[id] = `${determiner} ${noun}'s ${watched.label} changes`;
@@ -821,7 +841,7 @@ export function buildCatalog(
   for (const [key, moment] of Object.entries(moments)) {
     events[key] = {
       outputs: moment.outputs,
-      permission: moment.permission,
+      permission: pagesOf(moment.table),
       match: { moment: key }
     };
     labels[key] = moment.label;
@@ -900,7 +920,10 @@ export function buildCatalog(
       entity: declaration.entity,
       inputs,
       output: declaration.output,
-      permission: declaration.permission
+      permission: gateOn(
+        pagesOf(registry[declaration.entity]?.table ?? ""),
+        "View"
+      )
     };
     labels[id] = declaration.label;
     for (const [input, spec] of Object.entries(declaration.inputs)) {
@@ -924,6 +947,7 @@ export function buildCatalog(
     labels,
     help,
     entities,
+    entityPages,
     enums,
     actions,
     integrations,

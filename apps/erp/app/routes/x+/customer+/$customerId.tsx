@@ -3,22 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { cn, RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-
 import { usePermissions } from "~/hooks";
-import {
-  getCustomer,
-  getCustomerContacts,
-  getCustomerLocations,
-  getCustomerTax
-} from "~/modules/sales/sales.service";
 import { CustomerHeader, CustomerSidebar } from "~/modules/sales/ui/Customer";
-import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -27,27 +19,24 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Customers`, to: path.to.customers },
     (data) => data?.customer?.name
-  ),
-  module: "sales"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.customer?.name, "Customer");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.customers": "View" });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
   const [customer, contacts, locations, tags, customerTax] = await Promise.all([
-    getCustomer(client, customerId),
-    getCustomerContacts(client, customerId),
-    getCustomerLocations(client, customerId),
-    getTagsList(client, companyId, "customer"),
-    getCustomerTax(client, customerId)
+    api.sales.getCustomer({ customerId }),
+    api.sales.getCustomerContacts({ customerId }),
+    api.sales.getCustomerLocations({ customerId }),
+    api.shared.getTagsList({ table: "customer" }),
+    api.sales.getCustomerTax({ customerId })
   ]);
 
   if (customer.error) {

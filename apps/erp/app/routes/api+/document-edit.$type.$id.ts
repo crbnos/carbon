@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { isDocumentEditType } from "@carbon/documents/template";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -15,7 +15,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!type || !isDocumentEditType(type) || !id) {
     throw new Response("Document not found", { status: 404 });
   }
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   return data(
     await api.settings.getDocumentEditor({ documentType: type, documentId: id })
   );
@@ -29,7 +29,7 @@ export async function action(args: ActionFunctionArgs) {
   }
   const input = await validator(documentEditValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   return api.settings.saveDocumentEdit({
     documentType: type,
     documentId: id,

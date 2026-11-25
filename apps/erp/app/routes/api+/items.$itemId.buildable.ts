@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { data, type LoaderFunctionArgs } from "react-router";
 
 // GET ?locationId=&targetQuantity= — how many of the item the location can
@@ -11,7 +11,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
   const target = search.get("targetQuantity");
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.items.getBuildableQuantity({
     itemId: params.itemId ?? "",
     locationId: search.get("locationId") ?? "",

@@ -19,6 +19,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Run `pnpm run generate:types` after schema/migration changes, BEFORE typechecking.
 - Start every new source file with its SPDX license header — AGPL, or the commercial one under `packages/ee/` and in `.ee.` files. Run the fixer (`pnpm --filter @carbon/checks license-headers`) rather than hand-typing it. Moving a file into or out of `packages/ee/`, or adding/removing `.ee.` in its name, changes its license and so its header.
 - Resolve every merge or rebase conflict with the `resolving-merge-conflicts` skill (`.claude/skills/resolving-merge-conflicts/SKILL.md`): load it before touching a conflicted file. Its checks here are the scoped typecheck and tests, Biome, and `pnpm --filter @carbon/checks clobbers` when migrations are involved.
+- Write every PR body with the `pr` skill (`.claude/skills/pr/SKILL.md`): load it before `gh pr create` or `gh pr edit --body`. The body is Summary, Evidence and Merge Danger, the same sections as `.github/PULL_REQUEST_TEMPLATE.md`.
 - Never claim work is complete without running verification commands. Evidence before assertions — run the command, read the output, then state the result.
 
 ## Ask First
@@ -93,6 +94,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Working with the database package | `packages/database/AGENTS.md` |
 | **Server & Services** | |
 | Writing service functions | `.claude/rules/conventions-services.md` + `.claude/rules/module-files.md` |
+| Concurrency: a status change, a running total, a row lock, a side effect in a transaction, a retried external create | `.claude/rules/concurrency.md` |
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
 | Account settings modal (ERP, MES, starter) | `packages/account/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
@@ -191,6 +193,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Browser-verify a feature | `.claude/skills/test/SKILL.md` |
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |
 | Review your own branch before PR | `.claude/skills/self-review/SKILL.md` |
+| Writing a PR body (always) | `.claude/skills/pr/SKILL.md` |
 | Resolving a merge or rebase conflict (always) | `.claude/skills/resolving-merge-conflicts/SKILL.md` |
 | Writing, reviewing or deleting a test (house style, where a check lives) | `.claude/rules/testing.md` |
 | Test-first work: the red→green loop, proof vs committed test | `.claude/skills/test-driven-development/SKILL.md` + `.claude/skills/tdd/SKILL.md` |
@@ -254,7 +257,7 @@ apps/erp/app/modules/{module}/
 ```
 
 No barrel: import from the file that defines the thing. Routes call operations
-through `carbon(request)` (`@carbon/api/carbon.server`). See `.claude/rules/module-files.md`.
+through `authorize(request)` (`@carbon/auth/auth.server`). See `.claude/rules/module-files.md`.
 
 MES is lighter: services in `apps/mes/app/services/`, components in `apps/mes/app/components/`.
 

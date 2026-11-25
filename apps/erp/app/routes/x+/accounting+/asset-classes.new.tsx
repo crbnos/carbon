@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -16,17 +16,16 @@ import {
   upsertFixedAssetClass
 } from "~/modules/accounting/accounting.service";
 import { AssetClassForm } from "~/modules/accounting/ui/FixedAssets";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "accounting"
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.assetClasses": "Create"
   });
 
   const [defaults, companySettings] = await Promise.all([
     getDefaultAccounts(client, companyId),
-    getCompanySettings(client, companyId)
+    api.settings.getCompanySettings({})
   ]);
 
   return {
@@ -38,8 +37,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "accounting"
+  const { client, companyId, userId } = await authorize(request, {
+    "accounting.assetClasses": "Create"
   });
 
   const formData = await request.formData();

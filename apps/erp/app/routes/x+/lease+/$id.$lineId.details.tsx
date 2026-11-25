@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -22,13 +22,17 @@ import { path } from "~/utils/path";
 /** A Draft's assets are edited in its setup, so an editor is sent there, as
  *  from the lease page. An asset of another lease goes back to this one. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { client, companyId, permissions } = await authorize(request, {
+    "purchasing.leases": "View"
   });
   const { id, lineId } = params;
   if (!id) throw notFound("id not found");
   if (!lineId) throw notFound("lineId not found");
-  const setup = await draftLeaseSetupPath(client, { companyId, userId, id });
+  const setup = await draftLeaseSetupPath(client, {
+    companyId,
+    permissions,
+    id
+  });
   if (setup) throw redirect(setup);
 
   const line = await client

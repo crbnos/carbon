@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dataOrThrow } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
@@ -21,10 +22,6 @@ import {
   type shelfLifeModes
 } from "~/modules/items/items.models";
 import {
-  getBomHasShelfLifeManagedInput,
-  getItemQuantities,
-  getItemShelfLife,
-  getPickMethod,
   upsertPickMethod,
   upsertPickMethodWithShelfLife
 } from "~/modules/items/items.service";
@@ -32,7 +29,6 @@ import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
 import type { PartSummary, UnitOfMeasureListItem } from "~/modules/items/types";
 import { PickMethodForm } from "~/modules/items/ui/Item";
 import ItemBuildable from "~/modules/items/ui/Item/ItemBuildable";
-import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores";
@@ -41,8 +37,8 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "parts"
+  const { client, companyId, userId, api } = await authorize(request, {
+    "parts.parts": "View"
   });
 
   const { itemId } = params;
@@ -57,8 +53,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [userDefaults, shelfLife, bomHasShelfLifeManagedInput, rulesData] =
     await Promise.all([
       locationId ? null : getUserDefaults(client, userId, companyId),
-      getItemShelfLife(client, itemId),
-      getBomHasShelfLifeManagedInput(client, itemId, companyId),
+      api.items.getItemShelfLife({ itemId }),
+      api.items.getBomHasShelfLifeManagedInput({ itemId }).then(dataOrThrow),
       getStorageRulesDataForTarget(client, {
         targetType: "item",
         targetId: itemId,
@@ -81,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.part(itemId),
@@ -96,8 +92,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   let [partInventory, quantities, itemStorageUnitQuantities] =
     await Promise.all([
-      getPickMethod(client, itemId, companyId, locationId),
-      getItemQuantities(client, itemId, companyId, locationId),
+      api.items.getPickMethod({ itemId, locationId }),
+      api.items.getItemQuantities({ itemId, locationId }),
       getItemStorageUnitQuantities(client, itemId, companyId, locationId)
     ]);
 
@@ -120,7 +116,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    partInventory = await getPickMethod(client, itemId, companyId, locationId);
+    partInventory = await api.items.getPickMethod({ itemId, locationId });
     if (partInventory.error || !partInventory.data) {
       throw redirect(
         path.to.part(itemId),
@@ -177,8 +173,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "parts"
+  const { companyId, userId } = await authorize(request, {
+    "parts.parts": "Edit"
   });
 
   const { itemId } = params;

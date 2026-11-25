@@ -1015,6 +1015,9 @@ msgstr "{count, plural, one {选择全部 # 行匹配项} other {选择全部 # 
 msgid "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
 msgstr "{count, plural, one {选择全部匹配行（约 #）} other {选择全部匹配行（约 #）}}"
 
+msgid "{count} grants"
+msgstr ""
+
 msgid "{count} items"
 msgstr "{count} 个物料"
 
@@ -1105,6 +1108,10 @@ msgstr "{from} – {to}"
 
 msgid "{functionLabel}: {formattedValue}"
 msgstr "{functionLabel}: {formattedValue}"
+
+#. placeholder {0}: modules.length
+msgid "{granted} of {0} modules"
+msgstr ""
 
 msgid "{group} {number}"
 msgstr "{group} {number}"
@@ -1308,6 +1315,9 @@ msgstr "{overdueBorrowCount, plural, one {# 项借出已逾期} other {# 项借�
 msgid "{overInvoiced, plural, one {# line bills more than its order has left to invoice} other {# lines bill more than their order has left to invoice}}"
 msgstr "{overInvoiced, plural, one {# 行开票量超过订单剩余可开票量} other {# 行开票量超过订单剩余可开票量}}"
 
+msgid "{overrides} overridden"
+msgstr ""
+
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} 欠 {lender}，应付期限 {due}"
 
@@ -1344,6 +1354,10 @@ msgstr "{quantity} 无生产批次"
 msgid "{quantity} without a serial number"
 msgstr "{quantity} 无序列号"
 
+#. placeholder {0}: module.rows.length
+msgid "{reached}/{0} pages"
+msgstr ""
+
 msgid "{readyJobs, plural, =0 {No open job has every part} one {In production on # job with every part in stock} other {In production on # jobs with every part in stock}}"
 msgstr "{readyJobs, plural, =0 {没有未结工单具备全部零件} one {正在生产 # 个工单，所有零件均有库存} other {正在生产 # 个工单，所有零件均有库存}}"
 
@@ -1373,9 +1387,6 @@ msgstr "{removed} 个已计划发票已移除。"
 
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} 将作为其下一个修订版重新打开以进行计划。已发送给供应商的文件在您最终确定并重新发送订单之前保持不变。"
-
-msgid "{scopeCount} permissions"
-msgstr "{scopeCount} 个权限"
 
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} 行"
@@ -2717,6 +2728,12 @@ msgstr "已接受 {0}"
 msgid "Accepted quantity"
 msgstr "接受数量"
 
+msgid "Access"
+msgstr ""
+
+msgid "Access level"
+msgstr ""
+
 msgid "Account"
 msgstr "账户"
 
@@ -2779,9 +2796,6 @@ msgstr "账户类型"
 
 msgid "Account Type (inherited)"
 msgstr "账户类型（继承）"
-
-msgid "accounting"
-msgstr "会计"
 
 msgid "Accounting"
 msgstr "会计"
@@ -3468,6 +3482,9 @@ msgstr "添加采购订单"
 msgid "Add Question"
 msgstr "添加问题"
 
+msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
+msgstr ""
+
 msgid "Add Rate"
 msgstr "添加费率"
 
@@ -3687,6 +3704,12 @@ msgstr "调整"
 msgid "Admin"
 msgstr "管理员"
 
+msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
+msgstr ""
+
+msgid "Admin has full access"
+msgstr ""
+
 msgid "Advance"
 msgstr "预付"
 
@@ -3710,6 +3733,9 @@ msgstr "之后"
 
 msgid "After (calculation method)"
 msgstr "之后（计算方法）"
+
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "质量部门放行后，重新打开工单，将该件产品入库。"
 
 msgid "After the correction"
 msgstr "纠正之后"
@@ -3753,9 +3779,6 @@ msgstr "全部"
 #. placeholder {0}: tieOut.cellCount
 msgid "All {0} cells tie out"
 msgstr "全部 {0} 个单元格对账"
-
-msgid "All {moduleName} permissions"
-msgstr "所有{moduleName}权限"
 
 msgid "All {total} phases are done. Nice work — your team is up and running."
 msgstr "所有{total}个阶段都已完成。做得好——您的团队已启动并运行。"
@@ -3838,9 +3861,6 @@ msgstr "所有未结工单"
 
 msgid "All Others"
 msgstr "所有其他项"
-
-msgid "All permissions"
-msgstr "所有权限"
 
 msgid "All returnable lines"
 msgstr "所有可退货的行"
@@ -5214,7 +5234,7 @@ msgstr "作为公司所有者，您可以将所有权转移给另一名员工。
 msgid "Ascending"
 msgstr "升序"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "请求具有{0}权限的管理员添加第一个{1}。"
@@ -6553,8 +6573,20 @@ msgstr "在Carbon中称为方法 — 生产一个零件的组成部分和工序�
 msgid "Camera"
 msgstr "摄像头"
 
+msgid "can create"
+msgstr ""
+
+msgid "can delete"
+msgstr ""
+
 msgid "Can Start More"
 msgstr "可再开工"
+
+msgid "can update"
+msgstr ""
+
+msgid "can view"
+msgstr ""
 
 msgid "Can't be restored"
 msgstr "无法恢复"
@@ -7163,6 +7195,9 @@ msgstr "聊天"
 
 msgid "Check"
 msgstr "检查"
+
+msgid "Check a module to override the type on all its pages, or expand it to override one page."
+msgstr ""
 
 msgid "Check before posting"
 msgstr "过账前请检查"
@@ -7866,7 +7901,7 @@ msgstr "完成日期"
 msgid "Completed Qty"
 msgstr "已完成数量"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "完成至固定资产类别 {0}"
 
@@ -8933,6 +8968,9 @@ msgstr "无法加载工序"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "无法加载不计入MRP的存储单元。部分标记可能缺失。"
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr ""
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "无法加载在 {workCenterName} 上运行的内容。"
@@ -10288,9 +10326,6 @@ msgstr "默认供料方式"
 msgid "Default Method Type"
 msgstr "默认供料方式"
 
-msgid "Default Permissions"
-msgstr "默认权限"
-
 msgid "Default Priority"
 msgstr "默认优先级"
 
@@ -11334,9 +11369,6 @@ msgstr "解散生产批次"
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "解散{0}会将其{memberCount}个操作返回到未运行的计划中，并删除该批次。包含已记录生产的批次必须改为完成。"
 
-msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
-msgstr "您想用此员工类型的默认权限覆盖该用户的当前权限吗？"
-
 msgid "Doc-Backed"
 msgstr "文档支持"
 
@@ -11723,6 +11755,9 @@ msgstr "例如：疑似假冒、零件错误、运输中损坏"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "例如前3到4周"
+
+msgid "e.g. Warehouse Supervisor"
+msgstr ""
 
 msgid "e.g. Zebra 2x1"
 msgstr "例如 Zebra 2x1"
@@ -13056,6 +13091,9 @@ msgstr "您配置的系统中的每项范围内测试都通过了您的数据。
 
 msgid "Every job of {name} is complete. Is it done?"
 msgstr "{name} 的所有工单都已完成。完成了吗？"
+
+msgid "Every level on every module, including modules added later. There is nothing to set."
+msgstr ""
 
 #. placeholder {0}: storageUnit.name
 msgid "Every line already comes from {0}"
@@ -14524,6 +14562,9 @@ msgstr "来源："
 msgid "Fulfillment Location"
 msgstr "发货地点"
 
+msgid "Full access through the Admin type"
+msgstr ""
+
 msgid "Full name"
 msgstr "全名"
 
@@ -14620,6 +14661,10 @@ msgstr "租赁终止利得"
 
 msgid "Gain/Loss"
 msgstr "收益/损失"
+
+#. placeholder {0}: actions.join(", ")
+msgid "Gained {0} when permissions became levels"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的获利"
@@ -15683,6 +15728,9 @@ msgstr "已导入"
 msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "已导入：{counted}行已计数，{added}个已添加，{removed}个已移除"
 
+msgid "in"
+msgstr ""
+
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "{0} 后"
@@ -16200,9 +16248,6 @@ msgstr "无效应用"
 msgid "Invalid Invite"
 msgstr "无效邀请"
 
-msgid "inventory"
-msgstr "库存管理"
-
 msgid "Inventory"
 msgstr "库存管理"
 
@@ -16622,6 +16667,9 @@ msgstr "按类型统计的问题及累计百分比"
 msgid "Issues opened and closed by week"
 msgstr "每周开启和关闭的问题"
 
+msgid "Issues: Hold Units"
+msgstr "问题：搁置单元"
+
 msgid "It could not start. Try again."
 msgstr "无法启动。请重试。"
 
@@ -16959,9 +17007,6 @@ msgstr "看板"
 
 msgid "Keep"
 msgstr "保留"
-
-msgid "Keep Current"
-msgstr "保持当前"
 
 msgid "Keep demo data"
 msgstr "保留演示数据"
@@ -17411,6 +17456,12 @@ msgstr "留空表示不设上限。超过该次数后，MES 仅提供报废或�
 
 msgid "Leave empty to pick a color from the name"
 msgstr "留空则根据名称自动选择颜色"
+
+msgid "Leave empty to return it where it was issued from"
+msgstr "留空则退回到出库来源处"
+
+msgid "Leave empty to take it from the storage units that hold it"
+msgstr "留空则从存有该物料的存储单元中取用"
 
 msgid "Leave empty to use the account default"
 msgstr "留空以使用帐户默认值"
@@ -20113,6 +20164,9 @@ msgstr "没有单元格可以接收粘贴的值"
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中设置。"
 
+msgid "No change"
+msgstr ""
+
 msgid "No change request"
 msgstr "没有更改请求"
 
@@ -21095,6 +21149,9 @@ msgstr "没有人有资质执行 {0}"
 msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "没有人有资质。向工艺的技能添加人员。"
 
+msgid "Nobody yet."
+msgstr ""
+
 msgid "Nom"
 msgstr "标称值"
 
@@ -21682,6 +21739,9 @@ msgstr "项目树中的一个项目，类型为系统、要求、功能、任务
 msgid "One line per CLIN. Time & Materials and Cost Plus lines bill from project cost; a Fixed Price line bills its price. Click a cell to change it."
 msgstr "每个CLIN一行。工时和材料及成本加成行从项目成本计费；固定价格行按其价格计费。点击单元格进行更改。"
 
+msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
+msgstr ""
+
 msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
 msgstr "您的一个{appName}账户需要重新连接，工作流步骤才能使用它。"
 
@@ -21953,6 +22013,12 @@ msgstr "未结领料"
 
 msgid "Open issues by criticality and weeks open"
 msgstr "按严重程度和未结周数统计的未结问题"
+
+msgid "Open issues do not stop work"
+msgstr "未关闭的问题不会停止作业"
+
+msgid "Open issues no longer stop work"
+msgstr "未关闭的问题不再停止作业"
 
 msgid "Open item details"
 msgstr "打开物料详情"
@@ -22542,9 +22608,6 @@ msgstr "概览"
 msgid "Overwrite Existing"
 msgstr "覆盖现有"
 
-msgid "Overwrite Permissions"
-msgstr "覆盖权限"
-
 msgid "Overwrite the quote method with the source method"
 msgstr "用源方法覆盖报价方法"
 
@@ -23009,9 +23072,6 @@ msgstr "待检验"
 msgid "Pending payment, not posted"
 msgstr "待处理付款，未过账"
 
-msgid "people"
-msgstr "人员"
-
 msgid "People"
 msgstr "人员"
 
@@ -23109,7 +23169,7 @@ msgid "Permission groups for granting access in bulk"
 msgstr "用于批量授予访问权限的权限组"
 
 msgid "Permissions"
-msgstr "权限"
+msgstr ""
 
 msgid "Person"
 msgstr "个人"
@@ -23983,9 +24043,6 @@ msgstr "超级护理期间的产品问题"
 msgid "Product support"
 msgstr "产品支持"
 
-msgid "production"
-msgstr "生产差异"
-
 msgid "Production"
 msgstr "生产"
 
@@ -24467,9 +24524,6 @@ msgstr "采购服务"
 msgid "Purchases"
 msgstr "采购"
 
-msgid "purchasing"
-msgstr "采购和已售商品成本"
-
 msgid "Purchasing"
 msgstr "采购"
 
@@ -24613,9 +24667,6 @@ msgstr "每个业务部门的合格研究费用"
 
 msgid "Qualified to run it"
 msgstr "有资质运行它"
-
-msgid "quality"
-msgstr "质量"
 
 msgid "Quality"
 msgstr "质量"
@@ -25171,7 +25222,9 @@ msgstr "接收到项目库存"
 msgid "Received"
 msgstr "已接收"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "已接收 {1} 中的 {0}"
@@ -26315,6 +26368,9 @@ msgstr "已预留"
 msgid "Reset"
 msgstr "重置"
 
+msgid "Reset all overrides"
+msgstr ""
+
 msgid "Reset PIN"
 msgstr "重置PIN"
 
@@ -26378,9 +26434,6 @@ msgstr "资源"
 
 msgid "Resource Planning"
 msgstr "资源规划"
-
-msgid "resources"
-msgstr "资源"
 
 msgid "Resources"
 msgstr "资源"
@@ -26917,6 +26970,9 @@ msgstr "RMA"
 msgid "Role"
 msgstr "角色"
 
+msgid "Role default"
+msgstr ""
+
 msgid "Role:"
 msgstr "角色："
 
@@ -27130,9 +27186,6 @@ msgstr "销售价格"
 
 msgid "Sale Proceeds"
 msgstr "销售收入"
-
-msgid "sales"
-msgstr "销售"
 
 msgid "Sales"
 msgstr "销售"
@@ -27551,9 +27604,6 @@ msgstr "范围已签署"
 msgid "Scope Summary"
 msgstr "范围总结"
 
-msgid "Scopes"
-msgstr "范围"
-
 msgid "Scrap"
 msgstr "报废"
 
@@ -27942,6 +27992,10 @@ msgstr "选择账户"
 
 msgid "Select all"
 msgstr "全选"
+
+#. placeholder {0}: module.row.label
+msgid "Select all in {0}"
+msgstr ""
 
 msgid "Select all jobs"
 msgstr "选择所有工单"
@@ -28502,6 +28556,14 @@ msgstr "为每周设置需求预测值"
 
 msgid "Set due date"
 msgstr "设置到期日"
+
+#. placeholder {0}: module.row.label
+#. placeholder {1}: stepLabel(step)
+msgid "Set every page of {0} to {1}"
+msgstr ""
+
+msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
+msgstr ""
 
 msgid "Set on a posting account: Allowable, or Expressly, Mutually Agreed or Directly Associated Unallowable. Cost posted to an unallowable account or element is marked unallowable in the project ledger and never becomes a billable item."
 msgstr "在过账账户上设置：允许或明确、相互同意或直接相关的不允许。过账到不允许账户或元素的成本在项目分类账中标记为不允许，永远不会成为可账单项。"
@@ -29827,6 +29889,9 @@ msgstr "停止接收"
 msgid "Stop Shipping"
 msgstr "停止发货"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "当带序列号的单元关联的问题未关闭时，停止该单元的车间作业。"
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "在此步骤中停止使用 {0}"
@@ -30529,7 +30594,7 @@ msgstr "疑似故障模式"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "将成本扫入资产 {0}"
 
@@ -30572,8 +30637,8 @@ msgstr "切换到书面内容"
 msgid "Switch users over and confirm access"
 msgstr "切换用户并确认访问权限"
 
-msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
-msgstr "在此处更改员工类型不会更改其现有权限；后续对话框询问是否应使用新类型的默认值覆盖当前集。"
+msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
+msgstr ""
 
 msgid "Sync"
 msgstr "同步"
@@ -31848,6 +31913,9 @@ msgstr "承租人的资产用于使用权，在运营或融资租赁激活时按
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "销售型租赁中出租人的资产：租赁付款和无保障残值的现值，每月因租赁利息增加，因每笔租金和购买选择权发票而减少。"
 
+msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "您跟踪客户所经历的生命周期阶段"
 
@@ -32104,9 +32172,6 @@ msgstr "在不合格品的受影响原材料上记录的单件结果——待处
 msgid "The percentage of the cash discount. Use 0 for no discount."
 msgstr "现金折扣的百分比。使用 0 表示无折扣。"
 
-msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
-msgstr "该类型的新员工自动接收的权限集；在此处编辑仅更改模板以供将来雇用 - 现有员工保留他们拥有的内容，除非明确进行批量更新。"
-
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "计划行动被分配给的个人：该地点的物料负责人，否则为物料组的负责人，否则为地点的负责人，否则为公司默认值。"
 
@@ -32303,6 +32368,9 @@ msgstr "零件的修订版号"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
 msgstr "使用权资产和租赁负债在资产负债表上列示，每月预提一笔直线租赁成本。"
+
+msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
+msgstr ""
 
 msgid "The sales order could not be read, so it was not checked against this invoice."
 msgstr "无法读取销售订单，因此未与此发票进行核对。"
@@ -32517,8 +32585,8 @@ msgstr "流转卡列出物料清单上的每个物料及其数量。"
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
 msgstr "流转卡列出每个工艺路线工序及其预期时间和扫码条码。"
 
-msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
-msgstr "类型控制新员工接收的默认权限；在此处选择它会从类型的模板预填充权限矩阵。"
+msgid "The type sets this person's access, and changes to it reach them too."
+msgstr ""
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "将工作发送给此供应商进行此工艺和取回之间的典型天数;选择供应商时计划以此偏移需求。"
@@ -34275,6 +34343,9 @@ msgstr "单位"
 msgid "Units don't match"
 msgstr "单位不一致"
 
+msgid "Units excluded from this receipt"
+msgstr "本次入库排除的产品"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "基础货币单位对该货币一个单位的比率;用于过账时金额的转换。"
 
@@ -34292,6 +34363,12 @@ msgstr "抽样不合格的单元仍为已拒绝。其他所有单元，包括从
 
 msgid "Units this customer owns show here once registered."
 msgstr "此客户拥有的单位在已登记后显示在此处。"
+
+msgid "Units with an open issue are now on hold"
+msgstr "有未关闭问题的单元现在会被搁置"
+
+msgid "Units with an open issue are on hold"
+msgstr "有未关闭问题的单元被搁置"
 
 msgid "Unknown"
 msgstr "未知"
@@ -34810,9 +34887,6 @@ msgstr "用户角色"
 
 msgid "Username"
 msgstr "用户名"
-
-msgid "users"
-msgstr "用户"
 
 msgid "Users"
 msgstr "用户"
@@ -35722,6 +35796,9 @@ msgstr "当递延收入、应计收入和租赁利息收入被确认时"
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "当租赁协议或合同的每个计费期到期开票时：可选择在第一天（期间使用前）的提前开票方式，或在最后一天（期间应得后）的后付开票方式。"
 
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "启用后，判定为报废或退回供应商的产品在问题关闭后仍会被阻止使用。"
+
 msgid "When expired stock is used"
 msgstr "当使用已过期库存时"
 
@@ -35962,9 +36039,6 @@ msgstr "此工艺是在内部工作中心(工艺、装配或检验)还是在外�
 msgid "Whether this work blocks production (Down), degrades it (Impact), is on a planned downtime window (Planned), or has no production impact (No Impact); informs scheduling and customer-facing downtime communication."
 msgstr "此工作是否阻止生产（停机）、降低生产（影响）、处于计划停机时间窗口（已计划）或没有生产影响（无影响）；影响计划和面向客户的停机时间通信。"
 
-msgid "Whether to Add the selected permissions on top of what each user already has, or Update by replacing each user's permission set wholesale with the selection below."
-msgstr "是否将选定的权限添加到每个用户已有的权限之上,或通过将每个用户的权限集替换为下面的选择来更新。"
-
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
 msgstr "是否将循环事件展开为单个实例，并只返回一次性事件和循环事件的实例，而不返回底层循环事件本身。"
 
@@ -35982,6 +36056,9 @@ msgstr "这是哪个工序?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "当此派遣打开时，工作中心对计划不可用（直到计划结束时间或派遣完成）。"
+
+msgid "Who"
+msgstr ""
 
 msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
 msgstr "谁承担服务工单的成本：可计费和合同工作过账到服务成本（否则销售成本），保修工作过账到保修费用。仅可计费工单已开票。"
@@ -36354,15 +36431,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "您只能看到此密钥一次。请妥善保管。"
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "您完成了 {leftoverQuantity} 个以上 \n"
-"                        {0}，比 \n"
-"                        订购数量 {1} 多。您想 \n"
-"                        用多余的零件怎么办？"
+msgstr ""
 
 msgid "You do not have permission to do this"
 msgstr "您没有权限执行此操作"

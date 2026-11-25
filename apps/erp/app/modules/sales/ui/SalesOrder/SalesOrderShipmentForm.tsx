@@ -151,7 +151,7 @@ const SalesOrderShipmentForm = forwardRef<
                 )}
                 recalculateTaxesText={t`Each line takes the tax code and rate its item gets at the order's ship-to on the order date. This overwrites a tax code you cleared on a line.`}
                 canRecalculateTaxes={
-                  permissions.can("update", "sales") && !isLocked
+                  permissions.has({ "sales.salesOrders": "Edit" }) && !isLocked
                 }
               />
             )}
@@ -215,7 +215,9 @@ const SalesOrderShipmentForm = forwardRef<
           </div>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "sales")}>
+          <Submit
+            isDisabled={!permissions.has({ "sales.salesOrders": "Edit" })}
+          >
             <Trans>Save</Trans>
           </Submit>
         </CardFooter>
