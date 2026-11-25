@@ -5633,6 +5633,9 @@ msgstr "Avatar url"
 msgid "Average"
 msgstr "Average"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+
 msgid "Avg Days to Close"
 msgstr "Avg Days to Close"
 
@@ -22882,9 +22885,6 @@ msgstr "Passkeys"
 msgid "Passkeys are disabled"
 msgstr "Passkeys are disabled"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-
 msgid "Past due"
 msgstr "Past due"
 
@@ -32039,6 +32039,9 @@ msgstr "The material is purchased from a supplier for that specific order, rathe
 msgid "The material types you organize your stock by"
 msgstr "The material types you organize your stock by"
 
+msgid "The materials could not be loaded"
+msgstr "The materials could not be loaded"
+
 msgid "The model is still loading."
 msgstr "The model is still loading."
 
@@ -34223,8 +34226,8 @@ msgstr "Unassign rule"
 msgid "Unassigned"
 msgstr "Unassigned"
 
-msgid "Unassigned on hand"
-msgstr "Unassigned on hand"
+msgid "Unassigned at project location"
+msgstr "Unassigned at project location"
 
 msgid "unassigned stock"
 msgstr "unassigned stock"

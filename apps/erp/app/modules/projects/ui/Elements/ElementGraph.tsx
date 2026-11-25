@@ -40,6 +40,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuInfo, LuMaximize, LuSearch } from "react-icons/lu";
 import { useNavigate, useSearchParams } from "react-router";
 import { useStore } from "zustand";
+import { useItemsById } from "~/stores";
 import { path } from "~/utils/path";
 import type {
   ProjectElementLinkType,
@@ -155,6 +156,28 @@ function ElementGraphCanvas({
     () => new Map(elements.map((element) => [element.id, element])),
     [elements]
   );
+  // The part labels of this plan's elements, as a string first: the items
+  // list changes with any item of the company, and the nodes below should
+  // rebuild only when one of these labels does.
+  const itemsById = useItemsById();
+  const partLabelsJson = JSON.stringify(
+    Object.fromEntries(
+      elements.flatMap((element) =>
+        element.itemId
+          ? [
+              [
+                element.id,
+                itemsById.get(element.itemId)?.readableIdWithRevision ?? null
+              ]
+            ]
+          : []
+      )
+    )
+  );
+  const partLabels = useMemo(
+    () => JSON.parse(partLabelsJson) as Record<string, string | null>,
+    [partLabelsJson]
+  );
 
   const setRoot = useCallback(
     (id: string | null) => {
@@ -259,7 +282,7 @@ function ElementGraphCanvas({
             type: element.type,
             state: element.state,
             ownerId: element.ownerId,
-            itemId: element.itemId,
+            partLabel: partLabels[element.id] ?? null,
             commentCount: commentCounts[element.id] ?? 0,
             linkCount:
               element.type === "Requirement"
@@ -345,7 +368,8 @@ function ElementGraphCanvas({
     toggleHighlight,
     commentCounts,
     jobs,
-    labels
+    labels,
+    partLabels
   ]);
 
   // Fit and centre the tree once the nodes are measured and the canvas has

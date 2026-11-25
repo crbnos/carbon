@@ -123,7 +123,7 @@ export function ElementSidebar({
   const formatMoney = useCurrencyFormatter();
   const formatQuantity = useQuantityFormatter();
   const { company } = useUser();
-  // A linked part: what other elements on the same part averaged.
+  // A linked part: what the elements on the same part averaged (this one included).
   const count = Number(itemHistory?.elementCount ?? 0);
   const hours = formatQuantity(Number(itemHistory?.averageHours ?? 0));
   const materialCost = formatMoney.format(
@@ -131,7 +131,7 @@ export function ElementSidebar({
   );
   const pastAverage =
     element.itemId && count > 0
-      ? t`Past average: ${hours} h, ${materialCost} material over ${plural(count, { one: "# element", other: "# elements" })}`
+      ? t`Average on this part: ${hours} h, ${materialCost} material over ${plural(count, { one: "# element", other: "# elements" })}`
       : null;
   const currency = company.baseCurrencyCode;
   const decimals = useCurrencyDecimals(currency);

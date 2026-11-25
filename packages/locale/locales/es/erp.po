@@ -5633,6 +5633,9 @@ msgstr "URL del avatar"
 msgid "Average"
 msgstr "Promedio"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Promedio en esta pieza: {hours} h, {materialCost} de material en {count, plural, one {# elemento} other {# elementos}}"
+
 msgid "Avg Days to Close"
 msgstr "Días promedio para cerrar"
 
@@ -22882,9 +22885,6 @@ msgstr "Llaves de acceso"
 msgid "Passkeys are disabled"
 msgstr "Las llaves de acceso están deshabilitadas"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "Promedio anterior: {hours} h, {materialCost} de material en {count, plural, one {# elemento} other {# elementos}}"
-
 msgid "Past due"
 msgstr "Vencido"
 
@@ -32039,6 +32039,9 @@ msgstr "El material se compra a un proveedor para ese pedido específico, en lug
 msgid "The material types you organize your stock by"
 msgstr "Los tipos de material por los que organizas tu inventario"
 
+msgid "The materials could not be loaded"
+msgstr "No se pudieron cargar los artículos"
+
 msgid "The model is still loading."
 msgstr "El modelo aún se está cargando."
 
@@ -34223,8 +34226,8 @@ msgstr "Desasignar regla"
 msgid "Unassigned"
 msgstr "Sin asignar"
 
-msgid "Unassigned on hand"
-msgstr "Existencias sin asignar"
+msgid "Unassigned at project location"
+msgstr "Sin asignar en la ubicación del proyecto"
 
 msgid "unassigned stock"
 msgstr "existencias no asignadas"

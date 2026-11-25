@@ -5633,6 +5633,9 @@ msgstr "아바타 URL"
 msgid "Average"
 msgstr "평균"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "이 부품의 평균: {hours}시간, {materialCost} 자재비, {count, plural, one {#개 요소} other {#개 요소}} 기준"
+
 msgid "Avg Days to Close"
 msgstr "평균 마감 소요일"
 
@@ -22882,9 +22885,6 @@ msgstr "패스키"
 msgid "Passkeys are disabled"
 msgstr "패스키가 비활성화되었습니다"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "과거 평균: {hours}h, 자재 {materialCost}, {count, plural, one {# 개 요소} other {# 개 요소}} 기준"
-
 msgid "Past due"
 msgstr "기한 초과"
 
@@ -32039,6 +32039,9 @@ msgstr "제조하거나 재고에서 가져오는 대신, 해당 특정 주문�
 msgid "The material types you organize your stock by"
 msgstr "재고를 분류하는 자재 유형"
 
+msgid "The materials could not be loaded"
+msgstr "항목을 불러올 수 없습니다"
+
 msgid "The model is still loading."
 msgstr "모델이 여전히 로드 중입니다."
 
@@ -34223,8 +34226,8 @@ msgstr "규칙 할당 해제"
 msgid "Unassigned"
 msgstr "미배정"
 
-msgid "Unassigned on hand"
-msgstr "미배정 보유량"
+msgid "Unassigned at project location"
+msgstr "프로젝트 사업장에 할당되지 않음"
 
 msgid "unassigned stock"
 msgstr "미지정 재고"

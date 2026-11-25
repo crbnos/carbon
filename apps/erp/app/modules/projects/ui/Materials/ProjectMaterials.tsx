@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
 import {
   Select,
   SelectContent,
@@ -52,6 +51,8 @@ type ProjectMaterialsProps = {
   rows: ProjectMaterialRow[];
   /** The RPC had more rows than the page shows. */
   isTruncated: boolean;
+  /** The read failed: the page says so instead of showing an empty project. */
+  loadFailed: boolean;
 };
 
 const issueStatuses: ProjectMaterialIssueStatus[] = [
@@ -68,7 +69,8 @@ const issueStatuses: ProjectMaterialIssueStatus[] = [
  */
 export default function ProjectMaterials({
   rows,
-  isTruncated
+  isTruncated,
+  loadFailed
 }: ProjectMaterialsProps) {
   const { t } = useLingui();
   const { projectId } = useParams();
@@ -140,7 +142,9 @@ export default function ProjectMaterials({
     issueStatus
   });
   const groups = groupMaterialRows(filtered, groupBy);
-  const showOnHand = filtered.some((row) => row.projectOnHand !== null);
+  // The stock columns follow the project, not the filter: every row of a
+  // project with project stock has a number, 0 included.
+  const showOnHand = rows.some((row) => row.projectOnHand !== null);
   // The group row already names the element or the item it groups by.
   const showElement = groupBy === "item";
   const showItem = groupBy === "element";
@@ -170,6 +174,12 @@ export default function ProjectMaterials({
             key={`${supply.type}:${supply.documentId}:${supply.lineId ?? ""}`}
             className="flex items-center gap-2"
           >
+            {/* The status first: the link keeps room for its hover icons. */}
+            {supply.type === "Job" ? (
+              <JobStatus status={supply.status} />
+            ) : (
+              <PurchasingStatus status={supply.status} />
+            )}
             <Hyperlink
               to={
                 supply.type === "Job"
@@ -179,19 +189,6 @@ export default function ProjectMaterials({
             >
               <span className="whitespace-nowrap">{supply.readableId}</span>
             </Hyperlink>
-            {supply.type === "Job" ? (
-              <JobStatus
-                status={
-                  supply.status as Database["public"]["Enums"]["jobStatus"]
-                }
-              />
-            ) : (
-              <PurchasingStatus
-                status={
-                  supply.status as Database["public"]["Enums"]["purchaseOrderStatus"]
-                }
-              />
-            )}
           </div>
         ))}
       </div>
@@ -211,11 +208,15 @@ export default function ProjectMaterials({
       return (
         <div className="flex min-w-0 items-center gap-2">
           {first.elementStateGroup && (
-            <StateIcon
-              group={first.elementStateGroup}
-              color={first.elementStateColor ?? "currentColor"}
-              className="shrink-0"
-            />
+            <span
+              className="flex shrink-0"
+              title={first.elementStateName ?? undefined}
+            >
+              <StateIcon
+                group={first.elementStateGroup}
+                color={first.elementStateColor ?? "currentColor"}
+              />
+            </span>
           )}
           <Hyperlink
             to={path.to.projectElement(projectId, first.projectElementId)}
@@ -306,7 +307,12 @@ export default function ProjectMaterials({
         </div>
       </div>
       <div className="@container">
-        {rows.length === 0 ? (
+        {loadFailed ? (
+          <Empty
+            title={<Trans>The materials could not be loaded</Trans>}
+            description={<Trans>Reload the page to try again.</Trans>}
+          />
+        ) : rows.length === 0 ? (
           <Empty
             title={<Trans>No materials</Trans>}
             description={
@@ -368,7 +374,7 @@ export default function ProjectMaterials({
                       <Trans>Project on hand</Trans>
                     </Th>
                     <Th>
-                      <Trans>Unassigned on hand</Trans>
+                      <Trans>Unassigned at project location</Trans>
                     </Th>
                   </>
                 )}
@@ -408,13 +414,17 @@ export default function ProjectMaterials({
                             {row.projectElementId ? (
                               <div className="flex items-center gap-2">
                                 {row.elementStateGroup && (
-                                  <StateIcon
-                                    group={row.elementStateGroup}
-                                    color={
-                                      row.elementStateColor ?? "currentColor"
-                                    }
-                                    className="shrink-0"
-                                  />
+                                  <span
+                                    className="flex shrink-0"
+                                    title={row.elementStateName ?? undefined}
+                                  >
+                                    <StateIcon
+                                      group={row.elementStateGroup}
+                                      color={
+                                        row.elementStateColor ?? "currentColor"
+                                      }
+                                    />
+                                  </span>
                                 )}
                                 <Hyperlink
                                   to={path.to.projectElement(
@@ -429,7 +439,7 @@ export default function ProjectMaterials({
                               </div>
                             ) : (
                               <span className="text-muted-foreground">
-                                <Trans>Project</Trans>
+                                <Trans>Project (no element)</Trans>
                               </span>
                             )}
                           </Td>

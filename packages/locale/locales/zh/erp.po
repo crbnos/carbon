@@ -5633,6 +5633,9 @@ msgstr "头像网址"
 msgid "Average"
 msgstr "平均"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "该零件的平均值: {hours} 小时, {materialCost} 材料成本, 共 {count, plural, one {# 个元素} other {# 个元素}}"
+
 msgid "Avg Days to Close"
 msgstr "平均关闭天数"
 
@@ -22882,9 +22885,6 @@ msgstr "通行密钥"
 msgid "Passkeys are disabled"
 msgstr "通行密钥已禁用"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "过往平均: {hours} 小时, 材料 {materialCost}, 跨 {count, plural, one {# 个元素} other {# 个元素}}"
-
 msgid "Past due"
 msgstr "逾期"
 
@@ -32039,6 +32039,9 @@ msgstr "原材料是从供应商购买用于该特定订单，而不是制造或
 msgid "The material types you organize your stock by"
 msgstr "您用来组织库存的原材料类型"
 
+msgid "The materials could not be loaded"
+msgstr "无法加载物料"
+
 msgid "The model is still loading."
 msgstr "模型正在加载。"
 
@@ -34223,8 +34226,8 @@ msgstr "取消分配规则"
 msgid "Unassigned"
 msgstr "未分配"
 
-msgid "Unassigned on hand"
-msgstr "未分配的库存"
+msgid "Unassigned at project location"
+msgstr "未分配到项目地点"
 
 msgid "unassigned stock"
 msgstr "未分配库存"

@@ -154,6 +154,7 @@ export function ElementList({
     [wbsCodes]
   );
 
+  const itemsById = useItemsById();
   const labelsById = useMemo(
     () => new Map(labels.map((label) => [label.id, label])),
     [labels]
@@ -258,6 +259,11 @@ export function ElementList({
                   idChars={idChars}
                   wbs={wbsCodes?.[element.id]}
                   wbsChars={wbsChars}
+                  partLabel={
+                    element.itemId
+                      ? itemsById.get(element.itemId)?.readableIdWithRevision
+                      : null
+                  }
                   menu={
                     <ElementRowMenu
                       readableId={element.readableId}
@@ -314,8 +320,9 @@ type ElementRowProps = {
     | "targetDate"
     | "labels"
     | "changeOperation"
-    | "itemId"
   >;
+  /** The readable id of the part the element links, when it has one. */
+  partLabel?: string | null;
   /** The indent, in steps of one level. */
   level?: number;
   states: ProjectState[];
@@ -356,10 +363,9 @@ export function ElementRow({
   idChars,
   wbs,
   wbsChars,
+  partLabel,
   className
 }: ElementRowProps) {
-  const itemById = useItemsById();
-  const item = element.itemId ? itemById.get(element.itemId) : undefined;
   const state = states.find((s) => s.id === element.stateId);
   const isComplete =
     state?.group === "Completed" || state?.group === "Cancelled";
@@ -413,9 +419,9 @@ export function ElementRow({
         >
           {element.name}
         </Link>
-        {item && (
+        {partLabel && (
           <span className="min-w-0 truncate text-xs text-muted-foreground">
-            {item.readableIdWithRevision}
+            {partLabel}
           </span>
         )}
         {status && (

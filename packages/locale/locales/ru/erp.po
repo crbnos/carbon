@@ -5633,6 +5633,9 @@ msgstr "URL аватара"
 msgid "Average"
 msgstr "Среднее"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Среднее по этой детали: {hours} ч, {materialCost} материальных затрат за {count, plural, one {# элемент} few {# элемента} many {# элементов} other {# элемента}}"
+
 msgid "Avg Days to Close"
 msgstr "Среднее количество дней до закрытия"
 
@@ -22882,9 +22885,6 @@ msgstr "Ключи доступа"
 msgid "Passkeys are disabled"
 msgstr "Ключи доступа отключены"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "Прошлое среднее: {hours} ч, материалы {materialCost} за {count, plural, one {# элемент} few {# элемента} many {# элементов} other {# элемента}}"
-
 msgid "Past due"
 msgstr "Просрочено"
 
@@ -32039,6 +32039,9 @@ msgstr "Материал закупается у поставщика для э�
 msgid "The material types you organize your stock by"
 msgstr "Типы материалов, по которым вы организуете свой запас"
 
+msgid "The materials could not be loaded"
+msgstr "Не удалось загрузить позиции"
+
 msgid "The model is still loading."
 msgstr "Модель еще загружается."
 
@@ -34223,8 +34226,8 @@ msgstr "Отменить назначение правила"
 msgid "Unassigned"
 msgstr "Не назначено"
 
-msgid "Unassigned on hand"
-msgstr "Нераспределённый запас"
+msgid "Unassigned at project location"
+msgstr "Не назначено на площадке проекта"
 
 msgid "unassigned stock"
 msgstr "неназначенный запас"

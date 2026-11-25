@@ -68,7 +68,12 @@ An unplanned row combines 3 sources for one element and item pair:
 2. `purchaseOrderLine` rows with the project's `projectId` that no plan line links (`projectElementMaterial.purchaseOrderLineId`).
 3. `job` rows with the project's `projectId` that no plan line links (`projectElementMaterial.jobId`).
 
-A PO line or a job that no plan line links always goes into an unplanned row. So an unplanned row can sit beside a plan row of the same element and item. An issue goes into an unplanned row only if its element has no plan line for the item.
+A PO line or a job that no plan line of the company links always goes into an unplanned row. So an unplanned row can sit beside a plan row of the same element and item. These sources make no row:
+- a PO line or a job that a plan line of another project links (it is that plan line's supply);
+- an outside processing PO (it is the job's supply, not the item's);
+- a Rejected PO line that received nothing, and a Cancelled job that made nothing.
+
+An issue goes into an unplanned row for the part that no plan line of its element and item shows: `post-project-issue` raises the oldest plan line of the element and item, so the ledger's issued quantity less those lines' `quantityIssued` had no plan line. This covers an element with no plan line, and an issue posted before its plan line was added.
 
 If a PO line or a job has no element (`projectElementId` is NULL), its unplanned row has no element. The page shows it under the group **Project (no element)**.
 
@@ -99,6 +104,8 @@ If a PO line or a job has no element (`projectElementId` is NULL), its unplanned
 2. A job with `consumeToProject` = true: its `quantityComplete`.
 
 A PO line or a job that goes to project stock adds nothing. Its later issue raises `quantityIssued`, as today.
+
+**Issues that write no ledger row.** A Statistical charge writes no `projectLedger` row. So the RPC also reads the `itemLedger` rows with `documentType` = `'Project Issue'` and `documentId` = the project. What they issued, less the plan lines' `quantityIssued` and the ledger's unplanned issues, is an Unplanned row with no element. The item ledger does not record the element, so the row sits under **Project (no element)**.
 
 **Project Issue quantity.** One issue writes 1 to 3 `projectLedger` rows with `documentType` = `'Project Issue'`:
 
@@ -133,9 +140,9 @@ The Supply cell of a Pull from Inventory line is empty. The line takes stock, so
 
 The RPC computes the issue status in SQL. The TypeScript side reads it and never computes it again (`.ai/lessons.md`: take status from the view the list reads).
 
-**Project stock columns.** If `project.projectStock` is true, the page adds 2 columns per row, read by item:
+**Project stock columns.** If `project.projectStock` is true, the page adds 2 columns per row, read by item. Every row then has both numbers, 0 when nothing is on hand, so the columns do not depend on the filter:
 1. **Project on hand**: the sum of `itemStockQuantities.quantityOnHand` where `projectId` = the project, over all locations.
-2. **Unassigned on hand**: the sum of `itemStockQuantities.quantityOnHand` where `projectId` = `''`, at the project's location (`project.locationId`).
+2. **Unassigned at project location**: the sum of `itemStockQuantities.quantityOnHand` where `projectId` = `''`, at the project's location (`project.locationId`).
 
 **Toolbar.** The toolbar has one row, like the Pegging page:
 1. A search box (`?search=`). It matches the item's readable id and name, and the element's readable id and name.
@@ -176,7 +183,7 @@ The group's name is **Projects**. It needs the `projects.projects` page. A click
 
 ### 4. The past-average hint in the element sidebar
 
-`getProjectElementPage` already returns `itemHistory` from `get_element_history_by_item`. The element sidebar (`ElementSidebar.tsx`) shows one line under **Hours estimate**, for example "Past average: 5.8 h, $1,240 material over 12 elements". It shows only when the element links a part and `elementCount` > 0. The hint is text only and has no action.
+`getProjectElementPage` already returns `itemHistory` from `get_element_history_by_item`. The element sidebar (`ElementSidebar.tsx`) shows one line under **Hours estimate**, for example "Average on this part: 5.8 h, $1,240 material over 12 elements". The average includes this element, because `get_element_history_by_item` does not leave it out. It shows only when the element links a part and `elementCount` > 0. The hint is text only and has no action.
 
 ### Design Decisions
 
@@ -380,3 +387,4 @@ Plan and sidebar:
 - 2026-11-25: Q9. The page reads through the system handle after the Projects View check. The Project Issue count now sums every row except the inventory side of a relocation pair. The part route's 2 Used In trees both get the group.
 - 2026-11-25: Planning fixes. The Element cell drops the WBS code, because the RPC cannot compute derived codes. Element groups sort by `sequence`. A Used In entry carries the element id in `documentParentId`. An unlinked PO line or job always makes an unplanned row.
 - 2026-11-25: Implementation. The 2 status filters sit in one Filter button (`?filter=`), as on the Plan page. The page hides the column its group row names, and the status columns come before the quantities, so that they show at 1440 px (found in the browser test). The sidebar hint pluralises the element count.
+- 2026-11-25: Review fixes. An Unplanned row shows No supply never: only a Purchase to Order or Make to Order line does. The stock columns follow the project. An issue a Statistical charge records only in the item ledger shows as an Unplanned row with no element. A PO line or job that another project's plan line links, an outside processing PO, and a Rejected or Cancelled supply that brought nothing make no row. An issue posted before its plan line existed stays an Unplanned row of its element. The page says when the read failed. The Supply cell shows the status before the number, and the hint reads "Average on this part".

@@ -14032,13 +14032,21 @@ export async function getProjectStockOnHand(
 }
 
 /** A PO or a job that supplies a project Materials row, with its stored status. */
-export type ProjectMaterialSupply = {
-  type: "Purchase Order" | "Job";
-  documentId: string;
-  readableId: string;
-  lineId: string | null;
-  status: string;
-};
+type ProjectMaterialSupply =
+  | {
+      type: "Purchase Order";
+      documentId: string;
+      readableId: string;
+      lineId: string;
+      status: Database["public"]["Enums"]["purchaseOrderStatus"];
+    }
+  | {
+      type: "Job";
+      documentId: string;
+      readableId: string;
+      lineId: null;
+      status: Database["public"]["Enums"]["jobStatus"];
+    };
 
 /** How much of a plan line reached its element; Unplanned has no plan line. */
 export type ProjectMaterialIssueStatus =
@@ -14076,7 +14084,7 @@ export type ProjectMaterialRow = {
 };
 
 /** The page shows the first 1,000 rows; the RPC returns 1,001 to flag more. */
-export const PROJECT_MATERIALS_LIMIT = 1000;
+const PROJECT_MATERIALS_LIMIT = 1000;
 
 /**
  * Every plan line and unplanned item of a project (`get_project_materials`).

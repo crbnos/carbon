@@ -5633,6 +5633,9 @@ msgstr "URL avatara"
 msgid "Average"
 msgstr "Średnia"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Średnia dla tej części: {hours} h, {materialCost} kosztów materiałowych w {count, plural, one {# elemencie} few {# elementach} many {# elementach} other {# elementach}}"
+
 msgid "Avg Days to Close"
 msgstr "Średnia liczba dni do zamknięcia"
 
@@ -22882,9 +22885,6 @@ msgstr "Klucze dostępu"
 msgid "Passkeys are disabled"
 msgstr "Klucze dostępu są wyłączone"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "Średnia dotychczasowa: {hours} h, materiały {materialCost} z {count, plural, one {# elementu} few {# elementów} many {# elementów} other {# elementu}}"
-
 msgid "Past due"
 msgstr "Zaległy"
 
@@ -32039,6 +32039,9 @@ msgstr "Materiał jest kupowany od dostawcy dla tego konkretnego zamówienia, za
 msgid "The material types you organize your stock by"
 msgstr "Typy materiałów, według których organizujesz swoje zapasy"
 
+msgid "The materials could not be loaded"
+msgstr "Nie udało się załadować artykułów"
+
 msgid "The model is still loading."
 msgstr "Model jest wciąż ładowany."
 
@@ -34223,8 +34226,8 @@ msgstr "Usuń przypisanie reguły"
 msgid "Unassigned"
 msgstr "Nieprzydzielone"
 
-msgid "Unassigned on hand"
-msgstr "Nieprzypisane na stanie"
+msgid "Unassigned at project location"
+msgstr "Nieprzypisane w lokalizacji projektu"
 
 msgid "unassigned stock"
 msgstr "nieprzydzielony zapas"

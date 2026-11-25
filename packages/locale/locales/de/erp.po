@@ -5633,6 +5633,9 @@ msgstr "Avatar-URL"
 msgid "Average"
 msgstr "Durchschnitt"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Durchschnitt für dieses Teil: {hours} h, {materialCost} Materialkosten über {count, plural, one {# Element} other {# Elemente}}"
+
 msgid "Avg Days to Close"
 msgstr "Durchschn. Tage bis Abschluss"
 
@@ -22882,9 +22885,6 @@ msgstr "Passkeys"
 msgid "Passkeys are disabled"
 msgstr "Passkeys sind deaktiviert"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "Bisheriger Durchschnitt: {hours} h, {materialCost} Material über {count, plural, one {# Element} other {# Elemente}}"
-
 msgid "Past due"
 msgstr "Überfällig"
 
@@ -32039,6 +32039,9 @@ msgstr "Das Material wird für diese spezifische Bestellung von einem Lieferante
 msgid "The material types you organize your stock by"
 msgstr "Die Materialtypen, nach denen Sie Ihren Bestand organisieren"
 
+msgid "The materials could not be loaded"
+msgstr "Die Artikel konnten nicht geladen werden"
+
 msgid "The model is still loading."
 msgstr "Das Modell wird noch geladen."
 
@@ -34223,8 +34226,8 @@ msgstr "Regel entfernen"
 msgid "Unassigned"
 msgstr "Nicht zugewiesen"
 
-msgid "Unassigned on hand"
-msgstr "Nicht zugewiesener Bestand"
+msgid "Unassigned at project location"
+msgstr "Nicht zugeordnet am Projektstandort"
 
 msgid "unassigned stock"
 msgstr "nicht zugewiesener Bestand"

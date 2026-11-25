@@ -5633,6 +5633,9 @@ msgstr "Avatar URL'si"
 msgid "Average"
 msgstr "Ortalama"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Bu parçadaki ortalama: {hours} sa, {materialCost} malzeme maliyeti, {count, plural, one {# öğe} other {# öğe}} üzerinden"
+
 msgid "Avg Days to Close"
 msgstr "Kapatma Ortalama Günler"
 
@@ -22882,9 +22885,6 @@ msgstr "Geçiş Anahtarları"
 msgid "Passkeys are disabled"
 msgstr "Geçiş Anahtarları Devre Dışı Bırakılmış"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "Önceki ortalama: {hours} sa, {count, plural, one {# öğe} other {# öğe}} üzerinden {materialCost} malzeme"
-
 msgid "Past due"
 msgstr "Vadesi geçmiş"
 
@@ -32039,6 +32039,9 @@ msgstr "Malzeme, yapılmak veya stoktan çekilmek yerine, bu belirli sipariş i�
 msgid "The material types you organize your stock by"
 msgstr "Stok organizasyonunuz için kullandığınız malzeme türleri"
 
+msgid "The materials could not be loaded"
+msgstr "Kalemler yüklenemedi"
+
 msgid "The model is still loading."
 msgstr "Model yükleniyor."
 
@@ -34223,8 +34226,8 @@ msgstr "Kuralı kaldır"
 msgid "Unassigned"
 msgstr "Atanmamış"
 
-msgid "Unassigned on hand"
-msgstr "Atanmamış mevcut"
+msgid "Unassigned at project location"
+msgstr "Proje lokasyonunda atanmamış"
 
 msgid "unassigned stock"
 msgstr "atanmamış stok"

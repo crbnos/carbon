@@ -513,7 +513,7 @@ export default function PartRoute() {
                               },
                               {
                                 key: "projectMaterials",
-                                name: "Projects",
+                                name: t`Projects`,
                                 pages: ["projects.projects"],
                                 children: projectMaterials
                               },

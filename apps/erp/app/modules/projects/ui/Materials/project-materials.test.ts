@@ -66,6 +66,23 @@ describe("filterMaterialRows", () => {
     expect(kept.map((r) => r.projectElementMaterialId)).toEqual(["buy"]);
   });
 
+  it("does not call an Unplanned row with no supply No supply", () => {
+    const rows = [
+      row({ projectElementMaterialId: "make", methodType: "Make to Order" }),
+      row({
+        rowKind: "Unplanned",
+        projectElementMaterialId: null,
+        methodType: null,
+        issueStatus: "Unplanned"
+      })
+    ];
+    const kept = filterMaterialRows(rows, {
+      ...noFilters,
+      supplyStatus: [NO_SUPPLY]
+    });
+    expect(kept.map((r) => r.projectElementMaterialId)).toEqual(["make"]);
+  });
+
   it("keeps only the rows of the chosen issue status", () => {
     const rows = [
       row({ projectElementMaterialId: "plan", issueStatus: "Not issued" }),
@@ -117,6 +134,15 @@ describe("groupMaterialRows", () => {
       quantityIssued: 7,
       quantityRemaining: 3
     });
+  });
+
+  it("gives an element group no totals, since its rows are different items", () => {
+    const rows = [
+      row({ itemId: "bolt", itemReadableId: "B-1" }),
+      row({ itemId: "motor", itemReadableId: "M-1" })
+    ];
+    const [group] = groupMaterialRows(rows, "element");
+    expect(group?.totals).toBeNull();
   });
 
   it("gives no totals when the rows of an item use 2 units", () => {

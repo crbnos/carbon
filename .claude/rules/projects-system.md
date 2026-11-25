@@ -53,8 +53,8 @@ opens in layers. Each layer shows the least that a user needs.
   The other columns are hidden by default. **New Project** opens a drawer (`projects+/new.tsx`).
 - **Project workspace** (`project+/$projectId.tsx`). The left project sidebar
   (`ProjectSidebar`) starts with the change request picker and a Baselines (history)
-  button. Then the page links (`useProjectSidebarLinks`): Overview, Plan, Schedule, Costs
-  and Time. There is no Settings page (Brad, 2026-10-19). The Overview (`ProjectOverview`) is a
+  button. Then the page links (`useProjectSidebarLinks`): Overview, Plan, Materials,
+  Schedule, Costs and Time. There is no Settings page (Brad, 2026-10-19). The Overview (`ProjectOverview`) is a
   dashboard of light cards in two columns. The left column has About (the description), Progress,
   Coming up, Budget, Contract (a Contract project billed by a confirmed project contract,
   `view: sales`) and Needs attention. Needs attention also names, on a Contract project, a
@@ -943,14 +943,17 @@ is read-only and shows quantities, never money.
 
 - **One read.** The `getProjectMaterials` operation checks `"projects.projects": "View"`,
   then calls the RPC `get_project_materials(project_id, company_id)` through the system
-  handle (`ctx.asSystem.pg`). The RPC reads PO lines, jobs, the item ledger and journal
-  lines, which RLS guards for other modules. It stays SECURITY INVOKER, so a direct
+  handle (`ctx.asSystem.pg`). The RPC reads PO lines, jobs, `itemLedger`,
+  `itemStockQuantities` and journal lines, which RLS guards for other modules. It stays SECURITY INVOKER, so a direct
   PostgREST call runs under the caller's RLS. It returns at most 1,001 rows; the page
   shows 1,000 and a truncated notice.
 - **Two row kinds.** A Plan row is one `projectElementMaterial`. An Unplanned row is one
   element and item pair of the issues, PO lines and jobs that no plan line covers: a PO
-  line or job that no plan line links always goes here, and an issue goes here only when
-  its element has no plan line for the item.
+  line or job that no plan line of the company links always goes here. An issue goes here
+  for what the ledger issued beyond the `quantityIssued` of its element's plan lines for
+  the item (an element with none, or an issue posted before the line was added). An
+  outside processing PO, a Rejected PO line that received nothing and a Cancelled job that
+  made nothing make no row.
 - **Ordered.** A PO line uses the `covered` rule of `openProjectMaterialLines` (a Closed or
   Rejected PO, or a `receivedComplete` line, counts only what it received). A Completed,
   Closed or Cancelled job counts only `quantityComplete`.
@@ -958,7 +961,13 @@ is read-only and shows quantities, never money.
   the received quantity of a PO line `purchase_order_line_consumed_by_project` covers, and
   the `quantityComplete` of a `consumeToProject` job.
 - **Project Issue count.** Every `'Project Issue'` ledger row counts except the inventory
-  side of a relocation pair (the rule of `project_receipt_charge_quantities`).
+  side of a relocation pair (the rule of `project_receipt_charge_quantities`). A
+  Statistical charge writes no ledger row, so the RPC also reads the `itemLedger`
+  `'Project Issue'` rows (`documentId` = the project): what they issued less the plan
+  lines' `quantityIssued` and the ledger's unplanned issues is an Unplanned row with no
+  element (the item ledger does not record the element).
+- **Stock columns.** With `project.projectStock`, every row has both stock numbers (0
+  when nothing is on hand), so the columns follow the project, not the filter.
 - **Status.** No derived label: the Element cell shows the element's state, the Supply
   cell the stored PO or job status (or No supply), and the Issue status is Not issued,
   Partly issued, Issued or Unplanned (`PROJECT_MATERIAL_ISSUE_STATUS_COLOR_MAP`).

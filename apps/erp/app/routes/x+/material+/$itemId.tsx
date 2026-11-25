@@ -149,7 +149,7 @@ export default function MaterialRoute() {
                           },
                           {
                             key: "projectMaterials",
-                            name: "Projects",
+                            name: t`Projects`,
                             pages: ["projects.projects"],
                             children: projectMaterials
                           },

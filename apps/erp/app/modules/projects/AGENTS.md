@@ -343,7 +343,7 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
   `x+/projects+/expense.tsx`), `ElementEarnedValue.ee`.
 - `ui/Milestones/` — the Schedule page (`MilestoneSchedule`, `schedule-scale.ts`, the burn
   chart). `ui/Costs/`, `ui/Stock/`, `ui/Pegging/`, `ui/Billing/` — the Costs page and the
-  pages under it. `ui/Transfers/` — the stock transfer list and document. `ui/Baselines/`,
+  pages under it. `ui/Materials/` — the Materials page (`ProjectMaterials`, `project-materials.ts`). `ui/Transfers/` — the stock transfer list and document. `ui/Baselines/`,
   `ui/ChangeRequests/` — baselines, change requests and the sidebar's `ChangeRequestPicker`.
 - `ui/Timesheet/` — `TimesheetWeek` (My Time at `x+/timesheet.tsx`: the week as stacked
   bars per day), `TimesheetGrid` (the manager's `projects+/timesheets.$employeeId.tsx`),

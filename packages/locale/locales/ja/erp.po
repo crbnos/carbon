@@ -5633,6 +5633,9 @@ msgstr "アバターURL"
 msgid "Average"
 msgstr "平均"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "この部品の平均: {hours} 時間, {materialCost} の材料費, 対象 {count, plural, one {# 要素} other {# 要素}}"
+
 msgid "Avg Days to Close"
 msgstr "平均クローズ日数"
 
@@ -22882,9 +22885,6 @@ msgstr "パスキー"
 msgid "Passkeys are disabled"
 msgstr "パスキーは無効です"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "過去平均: {hours} h、{count, plural, one {# 件} other {# 件}}の材料 {materialCost}"
-
 msgid "Past due"
 msgstr "期限切れ"
 
@@ -32039,6 +32039,9 @@ msgstr "この材料は、製造または在庫から取得するのではなく
 msgid "The material types you organize your stock by"
 msgstr "あなたが在庫を整理する材料タイプ"
 
+msgid "The materials could not be loaded"
+msgstr "品目を読み込めませんでした"
+
 msgid "The model is still loading."
 msgstr "モデルはまだ読み込み中です。"
 
@@ -34223,8 +34226,8 @@ msgstr "ルールの割り当てを解除"
 msgid "Unassigned"
 msgstr "未割り当て"
 
-msgid "Unassigned on hand"
-msgstr "未割当の手持在庫"
+msgid "Unassigned at project location"
+msgstr "プロジェクト拠点で未割当"
 
 msgid "unassigned stock"
 msgstr "未割り当て在庫"

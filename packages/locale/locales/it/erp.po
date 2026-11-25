@@ -5633,6 +5633,9 @@ msgstr "URL avatar"
 msgid "Average"
 msgstr "Media"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "Media su questo componente: {hours} h, {materialCost} di materiale su {count, plural, one {# elemento} other {# elementi}}"
+
 msgid "Avg Days to Close"
 msgstr "Giorni medi per chiudere"
 
@@ -22882,9 +22885,6 @@ msgstr "Passkey"
 msgid "Passkeys are disabled"
 msgstr "Le passkey sono disabilitate"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "Media passata: {hours} h, {materialCost} di materiale su {count, plural, one {# elemento} other {# elementi}}"
-
 msgid "Past due"
 msgstr "Scaduto"
 
@@ -32039,6 +32039,9 @@ msgstr "Il materiale viene acquistato da un fornitore per quella specifica ordin
 msgid "The material types you organize your stock by"
 msgstr "I tipi di materiale in base ai quali organizzi il tuo stock"
 
+msgid "The materials could not be loaded"
+msgstr "Impossibile caricare gli articoli"
+
 msgid "The model is still loading."
 msgstr "Il modello si sta ancora caricando."
 
@@ -34223,8 +34226,8 @@ msgstr "Annulla assegnazione regola"
 msgid "Unassigned"
 msgstr "Non assegnato"
 
-msgid "Unassigned on hand"
-msgstr "Giacenza non assegnata"
+msgid "Unassigned at project location"
+msgstr "Non assegnato all'ubicazione del progetto"
 
 msgid "unassigned stock"
 msgstr "giacenza non assegnata"

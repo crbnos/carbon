@@ -12,13 +12,13 @@ export const NO_ELEMENT_GROUP = "no-element";
 
 export type MaterialGroupBy = "element" | "item";
 
-export type MaterialFilters = {
+type MaterialFilters = {
   search: string | null;
   supplyStatus: string[];
   issueStatus: string[];
 };
 
-export type MaterialTotals = {
+type MaterialTotals = {
   quantityRequired: number;
   quantityOrdered: number;
   quantityReceived: number;
@@ -29,20 +29,26 @@ export type MaterialTotals = {
 export type MaterialGroup = {
   key: string;
   rows: ProjectMaterialRow[];
-  /** Null when the rows of the group use more than one unit of measure. */
+  /** Null for an element group, and when an item's rows use 2 units of measure. */
   totals: MaterialTotals | null;
 };
 
 type SupplyRow = Pick<ProjectMaterialRow, "supplies" | "methodType">;
 
+/** The methods that need a PO line or a job to reach the element. */
+const SUPPLIED_METHODS = new Set<ProjectMaterialRow["methodType"]>([
+  "Purchase to Order",
+  "Make to Order"
+]);
+
 /**
- * The stored statuses of a row's PO and job. A Pull from Inventory line takes
- * stock, so no supply is normal for it; any other line with none shows
- * No supply.
+ * The stored statuses of a row's PO and job. Only a Purchase to Order or
+ * Make to Order line needs one, so only it shows No supply without one: a
+ * Pull from Inventory line takes stock, and an Unplanned row has no method.
  */
 export function supplyStatuses(row: SupplyRow): string[] {
   if (row.supplies.length > 0) return row.supplies.map((s) => s.status);
-  return row.methodType === "Pull from Inventory" ? [] : [NO_SUPPLY];
+  return SUPPLIED_METHODS.has(row.methodType) ? [NO_SUPPLY] : [];
 }
 
 export function filterMaterialRows(
@@ -129,8 +135,13 @@ export function groupMaterialRows(
     ];
   }
 
+  // Only an item group has totals: an element's rows are different items.
   return keys.map((key) => {
     const groupRows = byKey.get(key)!;
-    return { key, rows: groupRows, totals: totalsOf(groupRows) };
+    return {
+      key,
+      rows: groupRows,
+      totals: groupBy === "item" ? totalsOf(groupRows) : null
+    };
   });
 }

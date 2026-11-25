@@ -34,15 +34,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     rows: materials.data?.rows ?? [],
-    isTruncated: materials.data?.isTruncated ?? false
+    isTruncated: materials.data?.isTruncated ?? false,
+    loadFailed: Boolean(materials.error)
   };
 }
 
 export default function ProjectMaterialsRoute() {
-  const { rows, isTruncated } = useLoaderData<typeof loader>();
+  const { rows, isTruncated, loadFailed } = useLoaderData<typeof loader>();
   return (
     <>
-      <ProjectMaterials rows={rows} isTruncated={isTruncated} />
+      <ProjectMaterials
+        rows={rows}
+        isTruncated={isTruncated}
+        loadFailed={loadFailed}
+      />
       <RecordOutlet />
     </>
   );

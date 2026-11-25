@@ -5633,6 +5633,9 @@ msgstr "अवतार url"
 msgid "Average"
 msgstr "औसत"
 
+msgid "Average on this part: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
+msgstr "इस पार्ट का औसत: {hours} घंटे, {materialCost} सामग्री लागत, {count, plural, one {# एलिमेंट} other {# एलिमेंट}} पर"
+
 msgid "Avg Days to Close"
 msgstr "बंद करने के लिए औसत दिन"
 
@@ -22882,9 +22885,6 @@ msgstr "पासकीज़"
 msgid "Passkeys are disabled"
 msgstr "पासकीज़ अक्षम हैं"
 
-msgid "Past average: {hours} h, {materialCost} material over {count, plural, one {# element} other {# elements}}"
-msgstr "पिछला औसत: {hours} h, {count, plural, one {# तत्व} other {# तत्व}} में {materialCost} सामग्री"
-
 msgid "Past due"
 msgstr "अतिदेय"
 
@@ -32039,6 +32039,9 @@ msgstr "सामग्री एक विशेष आदेश के लि�
 msgid "The material types you organize your stock by"
 msgstr "आप अपने स्टॉक को जिन सामग्री प्रकारों से व्यवस्थित करते हैं"
 
+msgid "The materials could not be loaded"
+msgstr "आइटम लोड नहीं हो सके"
+
 msgid "The model is still loading."
 msgstr "मॉडल अभी भी लोड हो रहा है।"
 
@@ -34223,8 +34226,8 @@ msgstr "नियम को अनअसाइन करें"
 msgid "Unassigned"
 msgstr "अनुत्तरित"
 
-msgid "Unassigned on hand"
-msgstr "असाइन नहीं किया गया, उपलब्ध"
+msgid "Unassigned at project location"
+msgstr "प्रोजेक्ट स्थान पर असाइन नहीं"
 
 msgid "unassigned stock"
 msgstr "असंबद्ध स्टॉक"
