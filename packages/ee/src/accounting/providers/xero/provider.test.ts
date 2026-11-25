@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { remoteCreateKey } from "../../core/create-key";
 import { DEFAULT_SYNC_CONFIG } from "../../core/models";
-import { AccountingApiError } from "../../core/utils";
+import { AccountingApiError, RatelimitError } from "../../core/utils";
 import {
   buildXeroSyncConfig,
   toXeroTaxRateOptions,
@@ -574,24 +574,32 @@ describe("XeroProvider tax rates", () => {
   });
 });
 
-describe("XeroProvider.upsertInvoiceDocument", () => {
-  const key = remoteCreateKey({
-    companyId: "company-1",
-    operation: "bill",
-    localId: "bill-1"
-  });
-  const payload = {
-    Type: "ACCPAY",
-    InvoiceNumber: "AP000001",
-    Contact: { ContactID: "contact-1" },
-    LineItems: [{ Description: "Edited", Quantity: 1, UnitAmount: 12 }]
+describe("XeroProvider invoice and bill writes", () => {
+  const SUPPLIER = "11111111-2222-3333-4444-555555555555";
+  const OTHER_SUPPLIER = "99999999-8888-7777-6666-555555555555";
+  const key = (localId: string) =>
+    remoteCreateKey({ companyId: "company-1", operation: "bill", localId });
+  const bill = (invoiceNumber = "AP000001") =>
+    ({
+      Type: "ACCPAY",
+      InvoiceNumber: invoiceNumber,
+      Contact: { ContactID: SUPPLIER },
+      LineItems: [{ Description: "Edited", Quantity: 1, UnitAmount: 12 }]
+    }) as never;
+  const invoice = {
+    Type: "ACCREC",
+    InvoiceNumber: "INV000001",
+    Contact: { ContactID: SUPPLIER },
+    LineItems: [{ Description: "Sold", Quantity: 1, UnitAmount: 30 }]
   } as never;
 
   function sent(call: number) {
     const [url, init] = fetchMock.mock.calls[call] ?? [];
+    const parsed = new URL(String(url));
     return {
       method: init?.method,
-      url: String(url).replace("https://api.xero.com/api.xro/2.0", ""),
+      path: parsed.pathname.replace("/api.xro/2.0", "") + parsed.search,
+      where: parsed.searchParams.get("where"),
       key: (init?.headers as Record<string, string>)["Idempotency-Key"],
       body: init?.body ? JSON.parse(String(init.body)) : undefined
     };
@@ -599,16 +607,23 @@ describe("XeroProvider.upsertInvoiceDocument", () => {
 
   // An earlier attempt may have sent an older payload before its response
   // was lost: the bill it left is brought up to date, not returned as is.
-  it("updates a bill an earlier attempt created with the payload this attempt sends", async () => {
+  it("updates the supplier's bill an earlier attempt created with the payload this attempt sends", async () => {
     fetchMock
       .mockResolvedValueOnce(
         jsonResponse({
           Invoices: [
             {
+              InvoiceID: "other-supplier-bill",
+              Type: "ACCPAY",
+              InvoiceNumber: "AP000001",
+              Contact: { ContactID: OTHER_SUPPLIER },
+              Status: "AUTHORISED"
+            },
+            {
               InvoiceID: "bill-remote",
               Type: "ACCPAY",
               InvoiceNumber: "AP000001",
-              Contact: { ContactID: "contact-1" },
+              Contact: { ContactID: SUPPLIER },
               Status: "AUTHORISED"
             }
           ]
@@ -620,45 +635,171 @@ describe("XeroProvider.upsertInvoiceDocument", () => {
 
     const id = await makeProvider().upsertInvoiceDocument({
       type: "ACCPAY",
-      data: payload,
+      data: bill(),
       existingRemoteId: null,
       mayExist: true,
-      key
+      key: key("bill-1")
     });
 
     expect(id).toBe("bill-remote");
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(sent(0)).toMatchObject({ method: "GET" });
+    expect(sent(0)).toMatchObject({
+      method: "GET",
+      where: `Type=="ACCPAY" AND InvoiceNumber=="AP000001" AND Contact.ContactID==guid("${SUPPLIER}") AND Status!="DELETED" AND Status!="VOIDED"`
+    });
     expect(sent(1)).toEqual({
       method: "POST",
-      url: "/Invoices?unitdp=4",
+      path: "/Invoices?unitdp=4",
+      where: null,
       key: undefined,
-      body: {
-        Invoices: [{ ...(payload as object), InvoiceID: "bill-remote" }]
-      }
+      body: { Invoices: [{ ...(bill() as object), InvoiceID: "bill-remote" }] }
     });
   });
 
-  it("creates an invoice on a first attempt without looking it up", async () => {
+  it("creates a sales invoice on a first attempt without looking it up", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ Invoices: [{ InvoiceID: "invoice-remote" }] })
     );
 
     const id = await makeProvider().upsertInvoiceDocument({
       type: "ACCREC",
-      data: payload,
+      data: invoice,
       existingRemoteId: null,
       mayExist: false,
-      key
+      key: key("invoice-1")
     });
 
     expect(id).toBe("invoice-remote");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(sent(0)).toEqual({
       method: "POST",
-      url: "/Invoices?unitdp=4",
-      key,
-      body: { Invoices: [payload] }
+      path: "/Invoices?unitdp=4",
+      where: null,
+      key: key("invoice-1"),
+      body: { Invoices: [invoice] }
     });
+  });
+
+  // One request for the batch keeps a drain inside Xero's call limit; a
+  // document Xero refuses fails on its own, and the others are returned.
+  it("writes a batch's first attempts in one request and reports each document's refusal on its own", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        Invoices: [
+          { InvoiceID: "bill-a", StatusAttributeString: "OK" },
+          {
+            StatusAttributeString: "ERROR",
+            HasErrors: true,
+            ValidationErrors: [{ Message: "Account code '999' is not valid" }]
+          },
+          { InvoiceID: "bill-c", StatusAttributeString: "OK" }
+        ]
+      })
+    );
+
+    const outcomes = await makeProvider().upsertInvoiceDocuments({
+      type: "ACCPAY",
+      documents: ["a", "b", "c"].map((localId) => ({
+        localId,
+        data: bill(`AP-${localId}`),
+        existingRemoteId: null,
+        mayExist: false,
+        key: key(localId)
+      })),
+      batchKey: key("a,b,c")
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(sent(0)).toMatchObject({
+      method: "POST",
+      path: "/Invoices?unitdp=4&summarizeErrors=false",
+      key: key("a,b,c")
+    });
+    expect(outcomes.get("a")).toBe("bill-a");
+    expect(outcomes.get("b")).toEqual({
+      error: expect.any(AccountingApiError)
+    });
+    expect(
+      String((outcomes.get("b") as { error: Error }).error.message)
+    ).toContain("Account code '999' is not valid");
+    expect(outcomes.get("c")).toBe("bill-c");
+  });
+
+  it("looks up an unmapped bill an earlier attempt may have created on its own, after the batch", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({ Invoices: [{ InvoiceID: "bill-a" }] })
+      )
+      .mockResolvedValueOnce(jsonResponse({ Invoices: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse({ Invoices: [{ InvoiceID: "bill-b" }] })
+      );
+
+    const outcomes = await makeProvider().upsertInvoiceDocuments({
+      type: "ACCPAY",
+      documents: [
+        {
+          localId: "a",
+          data: bill("AP-a"),
+          existingRemoteId: null,
+          mayExist: false,
+          key: key("a")
+        },
+        {
+          localId: "b",
+          data: bill("AP-b"),
+          existingRemoteId: null,
+          mayExist: true,
+          key: key("b")
+        }
+      ],
+      batchKey: key("a,b")
+    });
+
+    expect(
+      fetchMock.mock.calls.map(
+        (_, i) => `${sent(i).method} ${sent(i).path.split("?")[0]}`
+      )
+    ).toEqual(["POST /Invoices", "GET /Invoices", "POST /Invoices"]);
+    expect(sent(1).where).toContain('InvoiceNumber=="AP-b"');
+    expect(sent(2)).toMatchObject({
+      key: key("b"),
+      body: { Invoices: [bill("AP-b")] }
+    });
+    expect([...outcomes]).toEqual([
+      ["a", "bill-a"],
+      ["b", "bill-b"]
+    ]);
+  });
+
+  it("stops at a rate limit, and the documents it did not write report it", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response("{}", { status: 429, headers: { "Retry-After": "30" } })
+    );
+
+    const outcomes = await makeProvider().upsertInvoiceDocuments({
+      type: "ACCPAY",
+      documents: [
+        {
+          localId: "a",
+          data: bill("AP-a"),
+          existingRemoteId: null,
+          mayExist: false,
+          key: key("a")
+        },
+        {
+          localId: "b",
+          data: bill("AP-b"),
+          existingRemoteId: null,
+          mayExist: true,
+          key: key("b")
+        }
+      ],
+      batchKey: key("a,b")
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(outcomes.get("a")).toEqual({ error: expect.any(RatelimitError) });
+    expect(outcomes.get("b")).toEqual({ error: expect.any(RatelimitError) });
   });
 });

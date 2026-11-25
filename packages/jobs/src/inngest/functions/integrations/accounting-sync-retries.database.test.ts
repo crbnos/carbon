@@ -57,7 +57,16 @@ function localEnv(): Record<string, string> {
   return env;
 }
 
-const env = localEnv();
+// The process environment wins over `.env.local`, so a stack configured
+// either way runs the suite.
+const env: Record<string, string> = {
+  ...localEnv(),
+  ...Object.fromEntries(
+    ["PORT_API", "SUPABASE_SERVICE_ROLE_KEY"].flatMap((name) =>
+      process.env[name] ? [[name, process.env[name]!]] : []
+    )
+  )
+};
 const hasLocalStack = (() => {
   try {
     return (
@@ -338,7 +347,11 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(typeof input === "string" ? input : input.toString());
       if (url.hostname === "api.xero.com") return fake.handle(url, init ?? {});
-      if (url.hostname === "quickbooks.api.intuit.com") {
+      // Both QuickBooks hosts: QUICKBOOKS_ENVIRONMENT picks the sandbox one.
+      if (
+        url.hostname === "quickbooks.api.intuit.com" ||
+        url.hostname === "sandbox-quickbooks.api.intuit.com"
+      ) {
         return quickBooks.handle(url, init ?? {});
       }
       return realFetch(input, init);
@@ -973,6 +986,98 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
       ops.map((op) => op.id)
     );
     await consolidate();
+    await age(scope.companyId, 24 * 60);
+    await consolidate();
+
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+    for (const op of ops) {
+      expect(await operation(scope.companyId, op.id)).toMatchObject({
+        status: "Completed",
+        externalId: "ManualJournals-1"
+      });
+    }
+  });
+
+  /** A day whose summary create lost its response; a person then skips its marker and retries its members. */
+  async function skippedDay(name: string) {
+    const day = await dailyCompany(`${name}-1`, `${name}-2`);
+    fake.next("lose");
+    await day.consolidate();
+    const { id } = await db
+      .selectFrom("accountingSyncOperation")
+      .select("id")
+      .where("companyId", "=", day.scope.companyId)
+      .where("entityId", "like", "daily:%")
+      .executeTakeFirstOrThrow();
+    fake.now += 10 * MINUTE;
+    for (const operationId of [id, ...day.ops.map((op) => op.id)]) {
+      await transitionOperation(client, {
+        id: operationId,
+        companyId: day.scope.companyId,
+        to: operationId === id ? "Skipped" : "Pending",
+        userId: "system"
+      });
+    }
+    return day;
+  }
+
+  // A person's Skip settles the day: it is never pushed again as a summary.
+  // Its retried members go out on their own, unless the summary booked them.
+  it("the members of a skipped day whose summary is in Xero are completed against it", async () => {
+    const { scope, ops, consolidate } = await skippedDay("skip-booked");
+
+    await consolidate();
+
+    expect(fake.journals.map((j) => j.ManualJournalID)).toEqual([
+      "ManualJournals-1"
+    ]);
+    for (const op of ops) {
+      expect(await operation(scope.companyId, op.id)).toMatchObject({
+        status: "Completed",
+        externalId: "ManualJournals-1"
+      });
+    }
+    expect((await marker(scope.companyId)).status).toBe("Skipped");
+  });
+
+  it("the members of a skipped day with no summary in Xero are pushed on their own", async () => {
+    const { scope, ops, consolidate } = await skippedDay("skip-empty");
+    // The person removed the lost summary in Xero before skipping the day.
+    fake.journals.length = 0;
+
+    await consolidate();
+
+    expect(fake.journals).toHaveLength(2);
+    for (const op of ops) {
+      expect((await operation(scope.companyId, op.id)).status).toBe(
+        "Completed"
+      );
+    }
+    expect((await marker(scope.companyId)).status).toBe("Skipped");
+  });
+
+  // The first run recorded its push and is still sending it. A run that
+  // claims only the marker must not close the day as empty: the summary may
+  // land after it, and the members would then push again on their own.
+  it("a stray marker whose recorded summary is not in Xero yet waits for it", async () => {
+    const { scope, ops, consolidate } = await dailyCompany("late-1", "late-2");
+
+    fake.next("hold");
+    void consolidate();
+    await fake.heldCreate();
+    const sending = fake.journals.splice(0);
+
+    await age(
+      scope.companyId,
+      24 * 60,
+      ops.map((op) => op.id)
+    );
+    await consolidate();
+    expect((await marker(scope.companyId)).status).toBe("Failed");
+
+    fake.journals.push(...sending);
     await age(scope.companyId, 24 * 60);
     await consolidate();
 

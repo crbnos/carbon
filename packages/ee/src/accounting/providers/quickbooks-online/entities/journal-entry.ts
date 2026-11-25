@@ -31,6 +31,7 @@ import {
   type Accounting,
   BaseEntitySyncer,
   type BatchSyncResult,
+  type RemoteUpsertOutcome,
   type ShouldSyncContext,
   type SyncResult
 } from "../../../core/types";
@@ -747,20 +748,18 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
     }
   }
 
+  /**
+   * One journal per POST keeps each journal's idempotency its own; journal
+   * volumes per drain are small (claim limit 20). Unused while
+   * `pushBatchToAccounting` pushes journals one at a time.
+   */
   protected async upsertRemoteBatch(
     data: Array<{
       localId: string;
       payload: QboCreatePayload<Qbo.JournalEntry>;
     }>
-  ): Promise<Map<string, string>> {
-    const result = new Map<string, string>();
-    // One journal per POST keeps per-journal idempotency simple; journal
-    // volumes per drain are small (claim limit 20)
-    for (const { localId, payload } of data) {
-      const remoteId = await this.upsertRemote(payload, localId);
-      result.set(localId, remoteId);
-    }
-    return result;
+  ): Promise<Map<string, RemoteUpsertOutcome>> {
+    return this.upsertRemoteEach(data);
   }
 
   // =================================================================

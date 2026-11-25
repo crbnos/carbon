@@ -430,12 +430,13 @@ export interface SyncContext {
   config: EntityConfig;
   entityType: AccountingEntityType;
   /**
-   * The local ids an earlier push attempt may already have created remotely
-   * (`getAttemptedEntityIds`). Only these pay a provider's recovery read
-   * before their create. Absent when the caller does not know, and then
-   * every create reads first.
+   * The local ids of `entityType` an earlier push attempt may already have
+   * created remotely (`getAttemptedEntityIds`). Only these pay a provider's
+   * recovery read before their create. A syncer of another entity type (a
+   * dependency built from a spread of this context) ignores it, and so does
+   * every create when it is absent: those read first.
    */
-  attemptedIds?: ReadonlySet<string>;
+  attempted?: { entityType: AccountingEntityType; ids: ReadonlySet<string> };
 }
 
 /** A batch upsert's outcome for one document: its remote id, or why it failed. */
@@ -586,7 +587,10 @@ export abstract class BaseEntitySyncer<
    * create must first look for that document. A first attempt skips the read.
    */
   protected mayExistRemotely(localId: string): boolean {
-    return this.context.attemptedIds?.has(localId) ?? true;
+    const attempted = this.context.attempted;
+    return attempted?.entityType === this.entityType
+      ? attempted.ids.has(localId)
+      : true;
   }
 
   /** The key every attempt at creating `localId` remotely sends. */
@@ -980,6 +984,7 @@ export abstract class BaseEntitySyncer<
 
   async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
     const results: SyncResult[] = [];
+    let stoppedBy: unknown;
 
     if (!this.config.enabled) {
       for (const id of entityIds) {
@@ -1070,6 +1075,14 @@ export abstract class BaseEntitySyncer<
       for (const { localId } of batchPayloads) {
         const outcome = remoteIdMap.get(localId);
         if (outcome !== undefined && typeof outcome !== "string") {
+          // A rate limit or a dead grant stops the batch: the drain retries
+          // it after the documents already created are linked below.
+          if (
+            outcome.error instanceof RatelimitError ||
+            outcome.error instanceof AccountingAuthError
+          ) {
+            stoppedBy ??= outcome.error;
+          }
           results.push({
             status: "error",
             action: "none",
@@ -1088,12 +1101,6 @@ export abstract class BaseEntitySyncer<
             externalId: remoteId,
             ...(lastSyncedAt ? { options: { lastSyncedAt } } : {})
           });
-          results.push({
-            status: "success",
-            action: "updated",
-            localId,
-            remoteId
-          });
         } else {
           results.push({
             status: "error",
@@ -1110,6 +1117,16 @@ export abstract class BaseEntitySyncer<
           await txMappingService.linkBatch(mappingsToLink);
         });
       }
+      // A success only once its mapping is saved: closed Completed without
+      // one, the next attempt would create the document again.
+      for (const { entityId, externalId } of mappingsToLink) {
+        results.push({
+          status: "success",
+          action: "updated",
+          localId: entityId,
+          remoteId: externalId
+        });
+      }
     } catch (err: any) {
       // If the whole batch fails, mark all as errors
       for (const id of entityIds) {
@@ -1124,6 +1141,7 @@ export abstract class BaseEntitySyncer<
       }
     }
 
+    if (stoppedBy !== undefined) throw stoppedBy;
     return this.summarizeBatchResults(results);
   }
 

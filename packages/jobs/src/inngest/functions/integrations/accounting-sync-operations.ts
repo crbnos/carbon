@@ -1082,7 +1082,14 @@ export async function drainSyncOperations(args: {
             entityType as AccountingEntityType
           ),
           entityType: entityType as AccountingEntityType,
-          ...(attempted ? { attemptedIds: attempted.data } : {})
+          ...(attempted
+            ? {
+                attempted: {
+                  entityType: entityType as AccountingEntityType,
+                  ids: attempted.data
+                }
+              }
+            : {})
         });
 
         const entityIds = operations.map((operation) => operation.entityId);
@@ -1102,38 +1109,43 @@ export async function drainSyncOperations(args: {
 
           const decision = getSyncOperationCloseDecision(operation, syncResult);
 
-          if (decision.outcome === "failed") {
-            summary.failed++;
-            // Structured journal pre-flight failures keep their errorCode,
-            // Warning/Failed flag and metadata; other errors flatten to a
-            // string exactly as before
-            await failOperation(args.client, {
-              id: operation.id,
-              companyId: operation.companyId,
-              attemptCount: operation.attemptCount,
-              ...decision.record
-            });
-            continue;
-          }
-
-          if (decision.outcome === "skipped") {
-            summary.skipped++;
-            await skipOperation(args.client, {
-              id: operation.id,
-              companyId: operation.companyId,
-              attemptCount: operation.attemptCount,
-              reason: decision.reason
-            });
-            continue;
-          }
-
-          summary.completed++;
-          await completeOperation(args.client, {
+          const attempt = {
             id: operation.id,
             companyId: operation.companyId,
-            attemptCount: operation.attemptCount,
-            ...(decision.externalId ? { externalId: decision.externalId } : {})
-          });
+            attemptCount: operation.attemptCount
+          };
+          // Structured journal pre-flight failures keep their errorCode,
+          // Warning/Failed flag and metadata; other errors flatten to a
+          // string exactly as before
+          const closed =
+            decision.outcome === "failed"
+              ? await failOperation(args.client, {
+                  ...attempt,
+                  ...decision.record
+                })
+              : decision.outcome === "skipped"
+                ? await skipOperation(args.client, {
+                    ...attempt,
+                    reason: decision.reason
+                  })
+                : await completeOperation(args.client, {
+                    ...attempt,
+                    ...(decision.externalId
+                      ? { externalId: decision.externalId }
+                      : {})
+                  });
+
+          // Counted only once the close applied: no row means a newer claim
+          // holds the operation and closes it itself.
+          if (closed.error) {
+            logger.error("Could not close a sync operation", {
+              operationId: operation.id,
+              outcome: decision.outcome,
+              error: closed.error
+            });
+          } else if (closed.data) {
+            summary[decision.outcome]++;
+          }
         }
       } catch (error) {
         if (error instanceof AccountingAuthError) {

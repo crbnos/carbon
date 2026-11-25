@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import type { Database } from "@carbon/database";
+import { type Database, fetchAllRecords } from "@carbon/database";
 import { isUniqueViolation, quoteFilterValue } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SYNC_OPERATION_ALLOWED_TRANSITIONS } from "./models";
@@ -577,27 +577,30 @@ export async function getAttemptedEntityIds(
   const first = firstAttempts[0];
   if (!first) return { data: attempted, error: null };
 
-  const earlier = await syncOperationTable(client)
-    .select("entityId")
-    .eq("companyId", args.companyId)
-    .eq("integration", args.integration)
-    .eq("entityType", first.entityType)
-    .eq("direction", first.direction)
-    .in(
-      "entityId",
-      firstAttempts.map((operation) => operation.entityId)
-    )
-    .not(
-      "id",
-      "in",
-      `(${firstAttempts.map((operation) => quoteFilterValue(operation.id)).join(",")})`
-    )
-    .gt("attemptCount", 0);
+  // Paged: an entity re-enqueued many times has many rows, and a read cut
+  // at the row cap would treat the entities past it as never attempted.
+  const earlier = await fetchAllRecords<{ entityId: string }>(() =>
+    syncOperationTable(client)
+      .select("entityId")
+      .eq("companyId", args.companyId)
+      .eq("integration", args.integration)
+      .eq("entityType", first.entityType)
+      .eq("direction", first.direction)
+      .in(
+        "entityId",
+        firstAttempts.map((operation) => operation.entityId)
+      )
+      .not(
+        "id",
+        "in",
+        `(${firstAttempts.map((operation) => quoteFilterValue(operation.id)).join(",")})`
+      )
+      .gt("attemptCount", 0)
+      .order("id")
+  );
   if (earlier.error) return { data: attempted, error: earlier.error.message };
 
-  for (const row of (earlier.data ?? []) as Array<{ entityId: string }>) {
-    attempted.add(row.entityId);
-  }
+  for (const row of earlier.data) attempted.add(row.entityId);
   return { data: attempted, error: null };
 }
 

@@ -269,13 +269,6 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
         ...(Object.keys(metadata).length > 0 ? { metadata } : {})
       }
     );
-
-    // Also update updatedAt on salesInvoice (Xero-syncer parity)
-    await tx
-      .updateTable("salesInvoice")
-      .set({ updatedAt: datetime.timestamp() })
-      .where("id", "=", localId)
-      .execute();
   }
 
   // =================================================================

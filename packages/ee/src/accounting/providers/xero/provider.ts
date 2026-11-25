@@ -27,12 +27,17 @@ import type {
   ProviderChange,
   ProviderConfig,
   ProviderCredentials,
+  RemoteUpsertOutcome,
   SupportsIncrementalPull
 } from "../../core/types";
 import {
+  AccountingApiError,
+  AccountingAuthError,
   createOAuthClient,
+  extractXeroErrorDetails,
   HTTPClient,
   type HttpResponse,
+  RatelimitError,
   throwXeroApiError
 } from "../../core/utils";
 import {
@@ -42,6 +47,8 @@ import {
 import { parseDotnetDate, type Xero } from "./models";
 
 const logger = getLogger("ee", "accounting", "xero");
+
+const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Xero's org-wide limit: at most 2 ACTIVE tracking categories, so at most
@@ -559,9 +566,19 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     invoiceNumber: string;
     contactId: string;
   }): Promise<string | null> {
-    const where = encodeURIComponent(
-      `Type==${JSON.stringify(args.type)} AND InvoiceNumber==${JSON.stringify(args.invoiceNumber)}`
-    );
+    // Narrowed in Xero to this contact's live documents: a number can repeat
+    // across contacts (ACCPAY numbers are the supplier's), and a first page of
+    // other contacts' bills would hide this one.
+    const clauses = [
+      `Type==${JSON.stringify(args.type)}`,
+      `InvoiceNumber==${JSON.stringify(args.invoiceNumber)}`,
+      ...(GUID.test(args.contactId)
+        ? [`Contact.ContactID==guid(${JSON.stringify(args.contactId)})`]
+        : []),
+      `Status!="DELETED"`,
+      `Status!="VOIDED"`
+    ];
+    const where = encodeURIComponent(clauses.join(" AND "));
     const response = await this.request<{ Invoices: Xero.Invoice[] }>(
       "GET",
       `/Invoices?where=${where}&page=1`
@@ -642,6 +659,109 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
       );
     }
     return invoiceId;
+  }
+
+  /**
+   * Write several invoices (ACCREC) or bills (ACCPAY). The documents that
+   * need no lookup (mapped, or never attempted before) go in one request
+   * under `batchKey`, with each document's validation reported on its own
+   * (`summarizeErrors=false`). An unmapped one an earlier attempt may have
+   * created goes alone through `upsertInvoiceDocument`, which looks it up
+   * first. A rate limit or a dead grant stops the writes; the documents not
+   * written report it.
+   */
+  async upsertInvoiceDocuments(args: {
+    type: "ACCREC" | "ACCPAY";
+    documents: Array<{
+      localId: string;
+      data: Omit<Xero.Invoice, "UpdatedDateUTC">;
+      existingRemoteId: string | null;
+      mayExist: boolean;
+      key: RemoteCreateKey;
+    }>;
+    batchKey: RemoteCreateKey;
+  }): Promise<Map<string, RemoteUpsertOutcome>> {
+    const label = args.type === "ACCPAY" ? "bill" : "invoice";
+    const outcomes = new Map<string, RemoteUpsertOutcome>();
+    const alone = args.documents.filter(
+      (document) => !document.existingRemoteId && document.mayExist
+    );
+    const together = args.documents.filter(
+      (document) => !alone.includes(document)
+    );
+    let stoppedBy: unknown;
+    const stops = (error: unknown) =>
+      error instanceof RatelimitError || error instanceof AccountingAuthError;
+
+    if (together.length > 0) {
+      try {
+        const result = await this.request<{ Invoices: Xero.Invoice[] }>(
+          "POST",
+          "/Invoices?unitdp=4&summarizeErrors=false",
+          {
+            body: JSON.stringify({
+              Invoices: together.map(({ data, existingRemoteId }) =>
+                existingRemoteId
+                  ? { ...data, InvoiceID: existingRemoteId }
+                  : data
+              )
+            }),
+            headers: { "Idempotency-Key": args.batchKey }
+          }
+        );
+        if (result.error) throwXeroApiError(`write ${label}s`, result);
+        // Xero answers in the order it was sent.
+        const returned = result.data?.Invoices ?? [];
+        together.forEach(({ localId, existingRemoteId }, i) => {
+          const invoice = returned[i] as
+            | (Xero.Invoice & {
+                HasErrors?: boolean;
+                ValidationErrors?: Array<{ Message?: string }>;
+              })
+            | undefined;
+          const operation = `${existingRemoteId ? "update" : "create"} ${label}`;
+          if (invoice?.HasErrors || invoice?.ValidationErrors?.length) {
+            outcomes.set(localId, {
+              error: new AccountingApiError(
+                "xero",
+                operation,
+                extractXeroErrorDetails(400, "Validation failed", {
+                  Elements: [invoice]
+                })
+              )
+            });
+          } else if (invoice?.InvoiceID) {
+            outcomes.set(localId, invoice.InvoiceID);
+          } else {
+            outcomes.set(localId, {
+              error: new Error(
+                `Xero API returned success but no InvoiceID was returned for the ${label}`
+              )
+            });
+          }
+        });
+      } catch (error) {
+        for (const { localId } of together) outcomes.set(localId, { error });
+        if (stops(error)) stoppedBy = error;
+      }
+    }
+
+    for (const document of alone) {
+      if (stoppedBy !== undefined) {
+        outcomes.set(document.localId, { error: stoppedBy });
+        continue;
+      }
+      try {
+        outcomes.set(
+          document.localId,
+          await this.upsertInvoiceDocument({ type: args.type, ...document })
+        );
+      } catch (error) {
+        outcomes.set(document.localId, { error });
+        if (stops(error)) stoppedBy = error;
+      }
+    }
+    return outcomes;
   }
 
   /**

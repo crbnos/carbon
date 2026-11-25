@@ -904,13 +904,39 @@ export class BillSyncer extends BaseEntitySyncer<
     });
   }
 
-  /** One bill per request, so each create carries its own key and recovery read. */
+  /**
+   * One request for the bills that need no lookup, and one each for an
+   * unmapped bill an earlier attempt may have created
+   * (`XeroProvider.upsertInvoiceDocuments`).
+   */
   protected async upsertRemoteBatch(
     data: Array<{
       localId: string;
       payload: Omit<Xero.Invoice, "UpdatedDateUTC">;
     }>
   ): Promise<Map<string, RemoteUpsertOutcome>> {
-    return this.upsertRemoteEach(data);
+    const mappings = await this.mappingService.getByEntities(
+      this.entityType,
+      data.map(({ localId }) => localId),
+      this.provider.id
+    );
+    const documents = data.map(({ localId, payload }) => ({
+      localId,
+      data: payload,
+      existingRemoteId: mappings.get(localId)?.externalId ?? null,
+      mayExist: this.mayExistRemotely(localId),
+      key: this.createKey(localId)
+    }));
+    return this.xeroProvider.upsertInvoiceDocuments({
+      type: "ACCPAY",
+      documents,
+      batchKey: this.createKey(
+        data
+          .map(({ localId }) => localId)
+          .sort()
+          .join(","),
+        "billBatch"
+      )
+    });
   }
 }

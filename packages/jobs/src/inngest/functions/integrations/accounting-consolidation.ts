@@ -133,10 +133,18 @@ function readBookedJournalIds(marker: SyncOperation): string[] {
     : [];
 }
 
-/** A marker a run may take again: Pending, In Flight and Completed rows are not reopened. */
+/** A day whose push failed: a later run reopens its marker and pushes the day again. */
 const REOPENABLE_MARKER_STATUSES: ReadonlyArray<SyncOperation["status"]> = [
   "Failed",
-  "Warning",
+  "Warning"
+];
+
+/**
+ * A day that is settled: its summary went out (Completed), or a person or a
+ * policy closed it (Skipped, Excluded). Its later members push on their own.
+ */
+const SETTLED_MARKER_STATUSES: ReadonlyArray<SyncOperation["status"]> = [
+  "Completed",
   "Skipped",
   "Excluded"
 ];
@@ -360,6 +368,30 @@ export async function consolidateIntegration(args: {
     }
   };
 
+  /**
+   * The journals a settled day's summary booked. A Completed marker names
+   * them; a day a person skipped after a push whose response was lost may
+   * still have its summary in the provider, found by the push it recorded.
+   */
+  const recordSettledDay = async (batchKey: string, marker: SyncOperation) => {
+    if (marker.status === "Completed") {
+      recordBooked(batchKey, marker);
+      return;
+    }
+    const recorded = readConsolidationPush(marker.metadata);
+    if (!recorded) return;
+    const summaryJournal = await provider.recoverManualJournal([
+      recorded.narration
+    ]);
+    if (!summaryJournal) return;
+    for (const journalId of recorded.journalIds) {
+      bookedJournals.set(journalId, {
+        batchKey,
+        externalId: summaryJournal.ManualJournalID
+      });
+    }
+  };
+
   for (const group of candidateGroups) {
     const marker = await enqueueMarker(group);
     if (marker.error || !marker.data) {
@@ -369,9 +401,9 @@ export async function consolidateIntegration(args: {
         }`
       );
     }
-    if (marker.data.status === "Completed") {
+    if (SETTLED_MARKER_STATUSES.includes(marker.data.status)) {
       consolidatedBatchKeys.add(group.batchKey);
-      recordBooked(group.batchKey, marker.data);
+      await recordSettledDay(group.batchKey, marker.data);
       continue;
     }
     if (REOPENABLE_MARKER_STATUSES.includes(marker.data.status)) {
@@ -618,8 +650,8 @@ export async function consolidateIntegration(args: {
         );
         continue;
       }
-      if (lateMarker.data.status === "Completed") {
-        recordBooked(batchKey, lateMarker.data);
+      if (SETTLED_MARKER_STATUSES.includes(lateMarker.data.status)) {
+        await recordSettledDay(batchKey, lateMarker.data);
         await pushIndividually(operations);
         continue;
       }
@@ -701,7 +733,16 @@ export async function consolidateIntegration(args: {
             journalCount: previousPush.journalIds.length
           }
         });
-        if (completed.data) recordBooked(batchKey, completed.data);
+        if (completed.error) {
+          // The marker keeps its recorded push, so the next run that claims
+          // it finds this summary again and completes it.
+          logger.error(
+            "Could not complete a consolidation marker after recovering its summary",
+            { companyId, providerId, batchKey, error: completed.error }
+          );
+        } else if (completed.data) {
+          recordBooked(batchKey, completed.data);
+        }
         // Not in the summary already booked: they go out on their own, as
         // members arriving after a Completed marker do.
         await pushIndividually(late);
@@ -975,45 +1016,76 @@ export async function consolidateIntegration(args: {
   // ── 8. Stray markers (claimed, but their date had no members this run —
   // e.g. a user retried an old marker row). Close them: the date is
   // settled and future arrivals push individually. ──────────────────────────
-  // A marker that recorded a push may have a summary in the provider whose
-  // members this run did not claim: it closes as that summary, so they are
-  // completed against it when a later run claims them.
   for (const operation of partition.markers) {
     if (processedMarkerIds.has(operation.id)) continue;
+    // The pre-scan saw members for this day that the claim did not take (the
+    // claim cap held them back): closing the day now would push them one by
+    // one. A later run takes the marker and its members together.
+    if (planned.byGroup.has(operation.entityId)) {
+      logger.info(
+        "Leaving a consolidation marker whose members this run did not claim",
+        { companyId, providerId, batchKey: operation.entityId }
+      );
+      continue;
+    }
     const recordedPush = readConsolidationPush(operation.metadata);
+    if (!recordedPush) {
+      await completeOperation(client, {
+        id: operation.id,
+        companyId: operation.companyId,
+        attemptCount: operation.attemptCount,
+        metadata: {
+          ...(operation.metadata ?? {}),
+          note: "Marker closed without members by the consolidation cron"
+        }
+      });
+      continue;
+    }
+
+    // A push was recorded: its summary may be in the provider for members
+    // this run did not claim.
     let summaryJournal: Awaited<
       ReturnType<XeroProvider["recoverManualJournal"]>
-    > = null;
-    if (recordedPush) {
-      try {
-        summaryJournal = await provider.recoverManualJournal([
-          recordedPush.narration
-        ]);
-      } catch (error) {
-        if (error instanceof RatelimitError) throw error;
-        logger.error(
-          "Could not look up a consolidation marker's recorded push; leaving the marker for a later run",
-          { companyId, providerId, markerId: operation.id, error }
-        );
-        continue;
-      }
+    >;
+    try {
+      summaryJournal = await provider.recoverManualJournal([
+        recordedPush.narration
+      ]);
+    } catch (error) {
+      if (error instanceof RatelimitError) throw error;
+      logger.error(
+        "Could not look up a consolidation marker's recorded push; leaving the marker for a later run",
+        { companyId, providerId, markerId: operation.id, error }
+      );
+      continue;
     }
-    await completeOperation(client, {
+    if (summaryJournal) {
+      // Closed as that summary, so its members are completed against it when
+      // a later run claims them.
+      await completeOperation(client, {
+        id: operation.id,
+        companyId: operation.companyId,
+        attemptCount: operation.attemptCount,
+        externalId: summaryJournal.ManualJournalID,
+        metadata: {
+          ...(operation.metadata ?? {}),
+          journalIds: recordedPush.journalIds,
+          journalCount: recordedPush.journalIds.length
+        }
+      });
+      continue;
+    }
+    // Not in the provider yet. Closed as empty, a summary the recording run
+    // still sends would book journals no marker names, and their members
+    // would then push again on their own. Failed keeps the record: a later
+    // run reopens the marker and looks again before it pushes.
+    await failOperation(client, {
       id: operation.id,
       companyId: operation.companyId,
       attemptCount: operation.attemptCount,
-      ...(summaryJournal ? { externalId: summaryJournal.ManualJournalID } : {}),
-      metadata: {
-        ...(operation.metadata ?? {}),
-        ...(summaryJournal && recordedPush
-          ? {
-              journalIds: recordedPush.journalIds,
-              journalCount: recordedPush.journalIds.length
-            }
-          : {
-              note: "Marker closed without members by the consolidation cron"
-            })
-      }
+      errorMessage:
+        "The day's summary journal was recorded but is not in Xero yet; a later run looks for it again",
+      metadata: operation.metadata ?? {}
     });
   }
 
