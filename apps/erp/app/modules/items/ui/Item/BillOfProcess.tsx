@@ -115,10 +115,12 @@ import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
 import { MeasurementLimits } from "~/components/MeasurementLimits";
 import { ConfirmDelete } from "~/components/Modals";
 import {
+  moveItem,
   SlidePinOverlay,
   SlidesEditor,
   uploadStepSlideModel,
-  useSlideModels
+  useSlideModels,
+  useSlideOrder
 } from "~/components/SlidesEditor";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import {
@@ -2377,6 +2379,9 @@ function AttributesForm({
                 onRemove={(index) =>
                   setDraftSlides((prev) => prev.filter((_, i) => i !== index))
                 }
+                onMove={(from, to) =>
+                  setDraftSlides((prev) => moveItem(prev, from, to))
+                }
                 onCaptionBlur={(index, caption) =>
                   setDraftSlides((prev) =>
                     prev.map((slide, i) =>
@@ -3120,9 +3125,10 @@ function StepSlides({
   const modelInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const slides = ((step.methodOperationStepSlide ?? []) as OperationStepSlide[])
-    .slice()
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const { slides, move } = useSlideOrder(
+    (step.methodOperationStepSlide ?? []) as OperationStepSlide[],
+    { stepId: step.id, action: path.to.methodOperationStepSlideOrder }
+  );
 
   const nextSortOrder = () =>
     slides.reduce((m, s) => Math.max(m, s.sortOrder ?? 0), 0) + 1;
@@ -3203,7 +3209,6 @@ function StepSlides({
     fd.append("stepId", slide.stepId);
     if (slide.imagePath) fd.append("imagePath", slide.imagePath);
     if (slide.modelUploadId) fd.append("modelUploadId", slide.modelUploadId);
-    fd.append("sortOrder", String(slide.sortOrder ?? 1));
     for (const [key, value] of Object.entries(fields)) fd.append(key, value);
     captionFetcher.submit(fd, {
       method: "post",
@@ -3235,6 +3240,7 @@ function StepSlides({
           action: path.to.deleteMethodOperationStepSlide(slide.id)
         });
       }}
+      onMove={move}
       onCaptionBlur={(index, caption) => {
         const slide = slides[index];
         if (slide && (slide.caption ?? "") !== caption)

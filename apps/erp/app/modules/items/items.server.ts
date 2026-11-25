@@ -45,13 +45,15 @@ import {
   methodType,
   optionalTiptapDoc,
   requiredTiptapDoc,
-  sourcingType
+  sourcingType,
+  stepSlideOrderValidator
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   isActiveCompanyEmployee,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
+import { updateSortOrder } from "~/modules/shared/sort-order";
 import {
   type BomOperation,
   calculateMadePartCosts,
@@ -5442,6 +5444,40 @@ export const updateMethodOperationStepSlide = defineServiceFn({
         payload(ctx, input).forUpdate() as never
       )
     );
+  }
+});
+
+/**
+ * Reorder the slides of an item's make method operation step.
+ *
+ * @remarks
+ * Refused unless the method is a Draft. All or nothing: a slide that is not
+ * on `stepId` refuses the whole reorder.
+ *
+ * @mcp
+ */
+export const updateMethodOperationStepSlideOrder = defineServiceFn({
+  input: stepSlideOrderValidator,
+  permission: service.itemRule("Edit", {
+    id: "stepId",
+    from: "methodOperationStep"
+  }),
+  async run(ctx, { stepId, updates }) {
+    const refusal = await service.methodStepRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      { stepId }
+    );
+    if (refusal) return ctx.error("rule", refusal);
+    await updateSortOrder(ctx.asSystem.pg, {
+      table: "methodOperationStepSlide",
+      column: "sortOrder",
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      parent: { column: "stepId", id: stepId },
+      updates
+    });
+    return { stepId };
   }
 });
 

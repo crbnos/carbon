@@ -19159,8 +19159,14 @@ msgstr "İçine Taşı"
 msgid "Move item"
 msgstr "Öğeyi taşı"
 
+msgid "Move left"
+msgstr "Sola taşı"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "Alt Montajdan Taşı"
+
+msgid "Move right"
+msgstr "Sağa taşı"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Miktarın bir kısmını yeni bir karar satırına taşıyın, böylece MRB her bölümü ayrı ayrı karar verebilir (örneğin, bazılarını fire edin, bazılarını yeniden işleyin)."

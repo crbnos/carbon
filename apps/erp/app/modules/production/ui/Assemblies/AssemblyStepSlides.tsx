@@ -9,7 +9,11 @@ import { toast, toastError } from "@carbon/react";
 import { nanoid } from "nanoid";
 import { useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
+import {
+  SlidesEditor,
+  uploadStepSlideModel,
+  useSlideOrder
+} from "~/components/SlidesEditor";
 import { useUser } from "~/hooks";
 import type {
   SlideAnnotation,
@@ -46,9 +50,10 @@ export default function AssemblyStepSlides({
   const modelInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const slides = slideRows
-    .slice()
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const { slides, move } = useSlideOrder(slideRows, {
+    stepId,
+    action: path.to.assemblyStepSlideOrder(instructionId)
+  });
 
   const nextSortOrder = () =>
     slides.reduce((m, s) => Math.max(m, s.sortOrder ?? 0), 0) + 1;
@@ -126,7 +131,6 @@ export default function AssemblyStepSlides({
     fd.append("stepId", slide.stepId);
     if (slide.imagePath) fd.append("imagePath", slide.imagePath);
     if (slide.modelUploadId) fd.append("modelUploadId", slide.modelUploadId);
-    fd.append("sortOrder", String(slide.sortOrder ?? 1));
     for (const [key, value] of Object.entries(fields)) fd.append(key, value);
     captionFetcher.submit(fd, {
       method: "post",
@@ -158,6 +162,7 @@ export default function AssemblyStepSlides({
           action: path.to.deleteAssemblyStepSlide(instructionId, slide.id)
         });
       }}
+      onMove={move}
       onCaptionBlur={(index, caption) => {
         const slide = slides[index];
         if (slide && (slide.caption ?? "") !== caption)

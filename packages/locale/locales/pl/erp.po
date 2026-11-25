@@ -19159,8 +19159,14 @@ msgstr "Przenieś do"
 msgid "Move item"
 msgstr "Przesuń element"
 
+msgid "Move left"
+msgstr "Przesuń w lewo"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "Przenieś z Podzestawu"
+
+msgid "Move right"
+msgstr "Przesuń w prawo"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Przenieś część ilości do nowego wiersza dyspozycji, aby komisja oceny materiałów mogła podjąć decyzję dla każdej części osobno (np. części na braki, części na poprawę)."

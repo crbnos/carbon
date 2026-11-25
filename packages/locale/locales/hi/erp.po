@@ -19159,8 +19159,14 @@ msgstr "में स्थानांतरित करें"
 msgid "Move item"
 msgstr "आइटम को स्थानांतरित करें"
 
+msgid "Move left"
+msgstr "बाएँ ले जाएँ"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "उप-असेंबली से बाहर स्थानांतरित करें"
+
+msgid "Move right"
+msgstr "दाएँ ले जाएँ"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "कुछ मात्रा को एक नई निपटान पंक्ति में स्थानांतरित करें ताकि MRB प्रत्येक भाग का अलग से निर्णय ले सके (जैसे कुछ स्क्रैप करें, कुछ पुनः कार्य करें)।"

@@ -19159,8 +19159,14 @@ msgstr "移动到"
 msgid "Move item"
 msgstr "移动项目"
 
+msgid "Move left"
+msgstr "左移"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "从子装配移出"
+
+msgid "Move right"
+msgstr "右移"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "将部分数量移动到新的处置行，以便MRB可以分别决定每一部分（例如报废部分、返工部分）。"

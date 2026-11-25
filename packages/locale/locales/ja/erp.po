@@ -19159,8 +19159,14 @@ msgstr "移動先"
 msgid "Move item"
 msgstr "アイテムを移動"
 
+msgid "Move left"
+msgstr "左へ移動"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "サブアセンブリから移動"
+
+msgid "Move right"
+msgstr "右へ移動"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "数量の一部を新しい処置行に移動して、MRBが各部分を個別に決定できるようにします(例えば一部をスクラップ、一部を手直し)。"

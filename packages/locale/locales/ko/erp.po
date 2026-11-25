@@ -19159,8 +19159,14 @@ msgstr "이동"
 msgid "Move item"
 msgstr "품목 이동"
 
+msgid "Move left"
+msgstr "왼쪽으로 이동"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "부분 조립에서 이동"
+
+msgid "Move right"
+msgstr "오른쪽으로 이동"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "수량의 일부를 새로운 처분 결정 행으로 할당하여 MRB가 각 부분을 별도로 결정할 수 있도록 합니다(예: 일부는 스크랩, 일부는 재작업)."

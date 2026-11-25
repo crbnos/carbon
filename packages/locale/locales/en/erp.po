@@ -19159,8 +19159,14 @@ msgstr "Move Into"
 msgid "Move item"
 msgstr "Move item"
 
+msgid "Move left"
+msgstr "Move left"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "Move Out of Sub-Assembly"
+
+msgid "Move right"
+msgstr "Move right"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."

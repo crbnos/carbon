@@ -19159,8 +19159,14 @@ msgstr "Einlagern"
 msgid "Move item"
 msgstr "Element verschieben"
 
+msgid "Move left"
+msgstr "Nach links verschieben"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "Aus Baugruppe auslagern"
+
+msgid "Move right"
+msgstr "Nach rechts verschieben"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Lagern Sie einen Teil der Menge in eine neue Verwendungsentscheid-Zeile um, damit die MRB jeden Teil separat entscheiden kann (z. B. etwas Ausschuss, etwas Nacharbeit)."

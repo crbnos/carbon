@@ -19159,8 +19159,14 @@ msgstr "Переместить в"
 msgid "Move item"
 msgstr "Переместить элемент"
 
+msgid "Move left"
+msgstr "Переместить влево"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "Переместить из подсборки"
+
+msgid "Move right"
+msgstr "Переместить вправо"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Переместить часть количества в новую строку решения, чтобы MRB мог решить каждую часть отдельно (например, отправить на брак, отправить на доработку)."

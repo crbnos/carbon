@@ -22,13 +22,65 @@ import { useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuBox, LuCirclePlus, LuMapPin, LuX } from "react-icons/lu";
+import {
+  LuBox,
+  LuChevronLeft,
+  LuChevronRight,
+  LuCirclePlus,
+  LuMapPin,
+  LuX
+} from "react-icons/lu";
+import { useFetcher } from "react-router";
 import type {
   SlideAnnotation,
   SlideSize
 } from "~/modules/shared/shared.models";
 import { getPrivateUrl, path } from "~/utils/path";
 import { SlideAnnotator } from "./SlideAnnotator";
+
+/** `list` with the item at `from` moved to `to`. */
+export function moveItem<T>(list: T[], from: number, to: number): T[] {
+  if (from === to || to < 0 || to >= list.length) return list;
+  const next = list.slice();
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item!);
+  return next;
+}
+
+/**
+ * A saved step's slides in display order, and `move` to reorder them. A move
+ * posts every slide's new position to `action` (the step's slide order route)
+ * and shows that order until the step reloads.
+ */
+export function useSlideOrder<
+  T extends { id: string; sortOrder: number | null }
+>(
+  stepSlides: T[],
+  { stepId, action }: { stepId: string | undefined; action: string }
+) {
+  const fetcher = useFetcher();
+  const pending = fetcher.formData?.get("updates");
+  const slides = useMemo(() => {
+    const order: Record<string, number> =
+      typeof pending === "string" ? JSON.parse(pending) : {};
+    const position = (slide: T) => order[slide.id] ?? slide.sortOrder ?? 0;
+    return stepSlides.slice().sort((a, b) => position(a) - position(b));
+  }, [stepSlides, pending]);
+
+  const move = (from: number, to: number) => {
+    const next = moveItem(slides, from, to);
+    if (next === slides || !stepId) return;
+    const formData = new FormData();
+    formData.append("stepId", stepId);
+    formData.append(
+      "updates",
+      JSON.stringify(Object.fromEntries(next.map((s, i) => [s.id, i + 1])))
+    );
+    fetcher.submit(formData, { method: "post", action });
+  };
+
+  return { slides, move };
+}
 
 // Single fixed slide card size — slides are no longer individually resizable.
 const SLIDE_CARD_WIDTH = "w-40";
@@ -179,6 +231,7 @@ export function SlidesEditor({
   modelInputRef,
   onModelFileChange,
   onRemove,
+  onMove,
   onCaptionBlur,
   onAnnotationsChange
 }: {
@@ -191,6 +244,8 @@ export function SlidesEditor({
   modelInputRef?: React.RefObject<HTMLInputElement>;
   onModelFileChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (index: number) => void;
+  // Optional reordering; when absent the slides keep their upload order.
+  onMove?: (from: number, to: number) => void;
   onCaptionBlur: (index: number, caption: string) => void;
   onAnnotationsChange: (index: number, annotations: SlideAnnotation[]) => void;
 }) {
@@ -229,6 +284,7 @@ export function SlidesEditor({
   if (isHidden) return null;
 
   const withModels = !!modelInputRef && !!onModelFileChange;
+  const canMove = !isDisabled && !!onMove && slides.length > 1;
 
   return (
     <VStack
@@ -388,17 +444,41 @@ export function SlidesEditor({
                     {model.name}
                   </p>
                 )}
-                {!isDisabled && !slide.modelUploadId && (
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="h-6 px-2 text-[0.625rem]"
-                      leftIcon={<LuMapPin className="size-3" />}
-                      onClick={() => setAnnotatingIndex(index)}
-                    >
-                      {pins.length > 0 ? pins.length : t`Pin`}
-                    </Button>
+                {(canMove || (!isDisabled && !slide.modelUploadId)) && (
+                  <div className="flex items-center gap-1">
+                    {canMove && (
+                      <>
+                        <IconButton
+                          aria-label={t`Move left`}
+                          icon={<LuChevronLeft />}
+                          variant="secondary"
+                          size="sm"
+                          className="h-6 w-6"
+                          isDisabled={index === 0}
+                          onClick={() => onMove?.(index, index - 1)}
+                        />
+                        <IconButton
+                          aria-label={t`Move right`}
+                          icon={<LuChevronRight />}
+                          variant="secondary"
+                          size="sm"
+                          className="h-6 w-6"
+                          isDisabled={index === slides.length - 1}
+                          onClick={() => onMove?.(index, index + 1)}
+                        />
+                      </>
+                    )}
+                    {!isDisabled && !slide.modelUploadId && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="ml-auto h-6 px-2 text-[0.625rem]"
+                        leftIcon={<LuMapPin className="size-3" />}
+                        onClick={() => setAnnotatingIndex(index)}
+                      >
+                        {pins.length > 0 ? pins.length : t`Pin`}
+                      </Button>
+                    )}
                   </div>
                 )}
                 <input

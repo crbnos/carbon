@@ -56,7 +56,8 @@ import {
   methodItemType,
   methodType,
   optionalTiptapDoc,
-  requiredTiptapDoc
+  requiredTiptapDoc,
+  stepSlideOrderValidator
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
@@ -8682,6 +8683,30 @@ export const updateJobOperationStepSlide = defineServiceFn({
 });
 
 /**
+ * Reorder the slides of a job operation step.
+ *
+ * @remarks
+ * All or nothing: a slide that is not on `stepId` refuses the whole reorder.
+ *
+ * @mcp
+ */
+export const updateJobOperationStepSlideOrder = defineServiceFn({
+  input: stepSlideOrderValidator,
+  permission: { "production.jobs": "Edit" },
+  async run(ctx, { stepId, updates }) {
+    await updateSortOrder(ctx.asSystem.pg, {
+      table: "jobOperationStepSlide",
+      column: "sortOrder",
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      parent: { column: "stepId", id: stepId },
+      updates
+    });
+    return { stepId };
+  }
+});
+
+/**
  * Create a job operation parameter
  *
  * @remarks
@@ -10814,6 +10839,30 @@ export const updateAssemblyInstructionStepSlide = defineServiceFn({
         payload(ctx, input).forUpdate() as never
       )
     );
+  }
+});
+
+/**
+ * Reorder the slides of an assembly instruction step.
+ *
+ * @remarks
+ * All or nothing: a slide that is not on `stepId` refuses the whole reorder.
+ *
+ * @mcp
+ */
+export const updateAssemblyInstructionStepSlideOrder = defineServiceFn({
+  input: stepSlideOrderValidator,
+  permission: { "production.assemblies": "Edit" },
+  async run(ctx, { stepId, updates }) {
+    await updateSortOrder(ctx.asSystem.pg, {
+      table: "assemblyInstructionStepSlide",
+      column: "sortOrder",
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      parent: { column: "stepId", id: stepId },
+      updates
+    });
+    return { stepId };
   }
 });
 

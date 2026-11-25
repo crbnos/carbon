@@ -19159,8 +19159,14 @@ msgstr "Mover Para"
 msgid "Move item"
 msgstr "Mover item"
 
+msgid "Move left"
+msgstr "Mover para a esquerda"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "Mover Para Fora do Sub-Conjunto"
+
+msgid "Move right"
+msgstr "Mover para a direita"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Mover parte da quantidade para uma nova linha de disposição para que o Comitê de análise de materiais possa decidir cada parte separadamente (por exemplo, refugar parte, fazer retrabalho em parte)."

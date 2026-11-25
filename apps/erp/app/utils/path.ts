@@ -550,6 +550,8 @@ export const path = {
       generatePath(`${x}/assembly/${id}/materials/${materialId}`),
     assemblyStepMaterialOrder: (id: string) =>
       generatePath(`${x}/assembly/${id}/materials/order`),
+    assemblyStepSlideOrder: (id: string) =>
+      generatePath(`${x}/assembly/${id}/slides/order`),
     assemblySubAssembly: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/sub-assemblies/${stepId}`),
     assemblySubAssemblyDelete: (id: string, stepId: string) =>
@@ -1706,6 +1708,7 @@ export const path = {
       generatePath(`${x}/job/methods/operation/${operationId}/step/order`),
     jobOperationStepRecords: (id: string) =>
       generatePath(`${x}/job/${id}/steps`),
+    jobOperationStepSlideOrder: `${x}/job/methods/operation/step/slide/order`,
     jobOperationStepTool: `${x}/job/methods/operation/step/tool`,
     jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
     jobOperationsDelete: (jobId: string) =>
@@ -1868,6 +1871,7 @@ export const path = {
     methodOperationStepMaterial: `${x}/items/methods/operation/step/material`,
     methodOperationStepOrder: (operationId: string) =>
       generatePath(`${x}/items/methods/operation/${operationId}/step/order`),
+    methodOperationStepSlideOrder: `${x}/items/methods/operation/step/slide/order`,
     methodOperationStepTool: `${x}/items/methods/operation/step/tool`,
     methodOperations: `${x}/items/methods/operations`,
     methodOperationsDelete: `${x}/items/methods/operation/delete`,

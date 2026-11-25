@@ -19159,8 +19159,14 @@ msgstr "Sposta dentro"
 msgid "Move item"
 msgstr "Sposta elemento"
 
+msgid "Move left"
+msgstr "Sposta a sinistra"
+
 msgid "Move Out of Sub-Assembly"
 msgstr "Sposta fuori da sub-assemblaggio"
+
+msgid "Move right"
+msgstr "Sposta a destra"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Sposta parte della quantità in una nuova riga di disposizione in modo che il MRB possa decidere ciascuna porzione separatamente (ad es. scartare alcuni, rilavorare altri)."

@@ -421,6 +421,20 @@ export const slideAnnotationValidator = z.object({
 });
 export type SlideAnnotation = z.infer<typeof slideAnnotationValidator>;
 
+// A step's slides in their new order (item method, job and assembly steps).
+export const stepSlideOrderValidator = z.object({
+  stepId: z.string().min(1),
+  updates: z
+    .array(z.object({ id: z.string().min(1), sortOrder: z.number().min(0) }))
+    .min(1)
+    .refine(
+      (updates) => new Set(updates.map((u) => u.id)).size === updates.length,
+      {
+        message: "A slide appears twice"
+      }
+    )
+});
+
 // A reference "slide" attached to an operation step — either an image (`imagePath`) or a
 // 3D model (`modelUploadId` → modelUpload; STEP sources are converted to GLB by the
 // assembler service). Authored on the method and copied to job/quote by get-method.

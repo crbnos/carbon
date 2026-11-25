@@ -1,5 +1,5 @@
 {
-  "totalTools": 1848,
+  "totalTools": 1851,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting.accountingPeriods:create+update+view","paginates":false},
@@ -612,6 +612,7 @@
     {"name":"items_updateMethodOperationParameter","classification":"WRITE","schema":"4ebb80282220","response":"3797626bd17e","permission":"parts:create+update+view one of parts.parts|parts.materials|parts.tools|parts.consumables|parts.services by item.type","paginates":false},
     {"name":"items_updateMethodOperationStep","classification":"WRITE","schema":"3466028965b5","response":"3797626bd17e","permission":"parts:create+update+view one of parts.parts|parts.materials|parts.tools|parts.consumables|parts.services by item.type","paginates":false},
     {"name":"items_updateMethodOperationStepSlide","classification":"WRITE","schema":"c64f09e0594b","response":"3797626bd17e","permission":"parts:create+update+view one of parts.parts|parts.materials|parts.tools|parts.consumables|parts.services by item.type","paginates":false},
+    {"name":"items_updateMethodOperationStepSlideOrder","classification":"WRITE","schema":"339f0d8e40ba","response":"e3fc07878bc9","permission":"parts:create+update+view one of parts.parts|parts.materials|parts.tools|parts.consumables|parts.services by item.type","paginates":false},
     {"name":"items_updateMethodOperationTool","classification":"WRITE","schema":"f569053d023e","response":"3797626bd17e","permission":"parts:create+update+view one of parts.parts|parts.materials|parts.tools|parts.consumables|parts.services by item.type","paginates":false},
     {"name":"items_updateOperationOrder","classification":"WRITE","schema":"60a7bcc6c0a3","response":"f9f1ba0210e3","permission":"parts:create+update+view one of parts.parts|parts.materials|parts.tools|parts.consumables|parts.services","paginates":false},
     {"name":"items_updatePart","classification":"WRITE","schema":"acd84a2121e9","response":"3797626bd17e","permission":"parts.parts:create+update+view","paginates":false},
@@ -898,6 +899,7 @@
     {"name":"production_updateAssemblyInstructionStepMaterialOrder","classification":"WRITE","schema":"1249cad3b667","response":"none","permission":"production.assemblies:create+update+view","paginates":false},
     {"name":"production_updateAssemblyInstructionStepOrder","classification":"WRITE","schema":"b504d63a6b72","response":"none","permission":"production.assemblies:create+update+view","paginates":false},
     {"name":"production_updateAssemblyInstructionStepSlide","classification":"WRITE","schema":"6f14d5038e3a","response":"3797626bd17e","permission":"production.assemblies:create+update+view","paginates":false},
+    {"name":"production_updateAssemblyInstructionStepSlideOrder","classification":"WRITE","schema":"339f0d8e40ba","response":"e3fc07878bc9","permission":"production.assemblies:create+update+view","paginates":false},
     {"name":"production_updateAssemblyInstructionStepStatus","classification":"WRITE","schema":"5e5d8ac0e6c8","response":"3797626bd17e","permission":"production.assemblies:create+update+view","paginates":false},
     {"name":"production_updateAssemblyStepHiddenComponents","classification":"WRITE","schema":"a7916cd6086a","response":"3797626bd17e","permission":"production.assemblies:create+update+view","paginates":false},
     {"name":"production_updateAssemblyStepMotion","classification":"WRITE","schema":"c70122f65e35","response":"3797626bd17e","permission":"production.assemblies:create+update+view","paginates":false},
@@ -913,6 +915,7 @@
     {"name":"production_updateJobOperationStep","classification":"WRITE","schema":"994215e483b5","response":"3797626bd17e","permission":"production.jobs:create+update+view","paginates":false},
     {"name":"production_updateJobOperationStepOrder","classification":"WRITE","schema":"33fd534d3ffe","response":"60cd1f553572","permission":"production.jobs:create+update+view","paginates":false},
     {"name":"production_updateJobOperationStepSlide","classification":"WRITE","schema":"c64f09e0594b","response":"3797626bd17e","permission":"production.jobs:create+update+view","paginates":false},
+    {"name":"production_updateJobOperationStepSlideOrder","classification":"WRITE","schema":"339f0d8e40ba","response":"e3fc07878bc9","permission":"production.jobs:create+update+view","paginates":false},
     {"name":"production_updateJobOperationTool","classification":"WRITE","schema":"3b7347dd0cb8","response":"3797626bd17e","permission":"production.jobs:create+update+view","paginates":false},
     {"name":"production_updateKanbanJob","classification":"WRITE","schema":"621a1b60b578","response":"8394fbabd845","permission":"inventory.kanbans:create+update+view","paginates":false},
     {"name":"production_updateMaintenanceDispatchComment","classification":"WRITE","schema":"0175e4c01377","response":"3797626bd17e","permission":"resources.dispatches:create+update+view","paginates":false},
