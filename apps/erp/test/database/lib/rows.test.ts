@@ -89,17 +89,22 @@ databaseTest(
     const db = await connectLocalTestDatabase();
     const rollback = new Error("rollback");
     try {
-      // The system user, not a member: a database with no users has no member
-      // row.
-      const { id: companyId } = await db
-        .selectFrom("company")
-        .select("id")
-        .limit(1)
-        .executeTakeFirstOrThrow();
-      const owner = { companyId, userId: "system" };
       await db
         .transaction()
         .execute(async (trx) => {
+          // Other test files delete the companies they made while this runs.
+          // The lock keeps the borrowed company until the rollback, and
+          // `skipLocked` passes over one that is being deleted.
+          const { id: companyId } = await trx
+            .selectFrom("company")
+            .select("id")
+            .limit(1)
+            .forKeyShare()
+            .skipLocked()
+            .executeTakeFirstOrThrow();
+          // The system user, not a member: a database with no users has no
+          // member row.
+          const owner = { companyId, userId: "system" };
           const attributes = { "Receipt Line": "rl_1", Tags: ["a", "b"] };
           const inserted = await insertRows(trx, "trackedEntity", {
             quantity: 2.5,
