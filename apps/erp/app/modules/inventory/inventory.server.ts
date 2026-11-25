@@ -4409,7 +4409,7 @@ export const scanKanban = defineServiceFn({
     // job, and with auto-release releases it, as the system. A Buy card
     // writes as the key, but RLS refuses a new order only after its number
     // is taken.
-    const cardPermission = service.kanbanKeyPermission(card);
+    const cardPermission = service.kanbanKeyGate(card);
     const cardRefused = cardPermission
       ? refuseKeyWithout(ctx, cardPermission)
       : null;

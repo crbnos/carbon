@@ -22,6 +22,7 @@ import {
   getJobMaterialsWithQuantityOnHand,
   getJobOrderStatusMap,
   getJobProjectCharge,
+  getJobReceiptHolds,
   getJobTrackedEntitiesPreview
 } from "~/modules/production/production.service";
 import type { JobMethodTreeItem } from "~/modules/production/production.utils";
@@ -33,6 +34,7 @@ import {
 } from "~/modules/production/ui/Jobs";
 import type { JobOrderStatusData } from "~/modules/production/ui/Jobs/JobBoMExplorer";
 import { getLocationTimeZone } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -149,6 +151,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     job: job.data,
     projectCharge: projectCharge.data ?? null,
+    receiptHolds:
+      job.data.status === "Completed" &&
+      !job.data.fixedAssetId &&
+      !job.data.fixedAssetClassId &&
+      !projectCharge.data?.consumeToProject &&
+      job.data.itemTrackingType !== "Non-Inventory" &&
+      (job.data.quantityReceivedToInventory ?? 0) < (job.data.quantity ?? 0)
+        ? await getJobReceiptHolds(getDatabaseClient(), jobId, companyId)
+        : [],
     unbatchedBatchableOperations,
     tags: tags.data ?? [],
     trackedEntities: getJobTrackedEntitiesPreview(client, jobId),

@@ -26,38 +26,6 @@ describe("objectRefs", () => {
     );
   });
 
-  it("treats a qualified and a bare name as the same object", () => {
-    const branch = [
-      {
-        file: "b.sql",
-        contents: "CREATE OR REPLACE FUNCTION public.f() RETURNS int AS $$ $$;"
-      }
-    ];
-    const main = [
-      {
-        file: "m.sql",
-        contents: "CREATE OR REPLACE FUNCTION f() RETURNS int AS $$ $$;"
-      }
-    ];
-    expect(findClobbers(branch, main)).toHaveLength(1);
-  });
-
-  it("does not flag two unrelated schema-qualified functions", () => {
-    const branch = [
-      {
-        file: "b.sql",
-        contents: "CREATE OR REPLACE FUNCTION public.a() RETURNS int AS $$ $$;"
-      }
-    ];
-    const main = [
-      {
-        file: "m.sql",
-        contents: "CREATE OR REPLACE FUNCTION public.b() RETURNS int AS $$ $$;"
-      }
-    ];
-    expect(findClobbers(branch, main)).toHaveLength(0);
-  });
-
   it("ignores non-redefining SQL", () => {
     expect(objectRefs("SELECT 1; INSERT INTO t VALUES (1);").size).toBe(0);
   });

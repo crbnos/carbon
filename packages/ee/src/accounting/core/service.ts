@@ -304,9 +304,8 @@ export function getProviderIntegration(
       // Secret material is split out to Supabase Vault; only the non-secret
       // config is written back to the metadata column. Vault RPCs require the
       // service-role client.
-      const { getCarbonServiceRole } = await import(
-        "@carbon/auth/client.server"
-      );
+      const { getCarbonServiceRole } =
+        await import("@carbon/auth/client.server");
       await persistIntegrationSecrets(
         getCarbonServiceRole(),
         companyId,

@@ -304,8 +304,9 @@ const PurchasingRFQHeader = () => {
         action={path.to.cancelPurchasingRfq(rfqId)}
         isOpen={cancelReasonModal.isOpen}
         name={routeData?.rfqSummary?.rfqId!}
-        text={t`Are you sure you want to cancel ${routeData?.rfqSummary
-          ?.rfqId!}? This will also cancel all related supplier quotes.`}
+        text={t`Are you sure you want to cancel ${
+          routeData?.rfqSummary?.rfqId!
+        }? This will also cancel all related supplier quotes.`}
         deleteText="Cancel"
         onCancel={() => {
           cancelReasonModal.onClose();
@@ -318,8 +319,9 @@ const PurchasingRFQHeader = () => {
         action={path.to.deletePurchasingRfq(rfqId)}
         isOpen={deleteRFQModal.isOpen}
         name={routeData?.rfqSummary?.rfqId!}
-        text={t`Are you sure you want to delete ${routeData?.rfqSummary
-          ?.rfqId!}? This cannot be undone.`}
+        text={t`Are you sure you want to delete ${
+          routeData?.rfqSummary?.rfqId!
+        }? This cannot be undone.`}
         onCancel={() => {
           deleteRFQModal.onClose();
         }}

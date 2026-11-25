@@ -79,9 +79,9 @@ import type {
   JobOperationBatchEvent
 } from "../../types";
 import JobStatus from "../Jobs/JobStatus";
+import { batchPlanBreakdown } from "./batch-builder-logic";
 import { BatchStatus } from "./BatchesTable";
 import { BatchReleaseModal } from "./BatchReleaseModal";
-import { batchPlanBreakdown } from "./batch-builder-logic";
 import { useBatchRelease } from "./useBatchRelease";
 
 const EVENT_TYPES = ["Setup", "Labor", "Machine"] as const;

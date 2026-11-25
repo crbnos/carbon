@@ -21,7 +21,7 @@ const isEmbeddedTable = (table: string): table is EmbeddedTable =>
 /** The `embedding` edge function's batch limit. */
 const MAX_TEXTS_PER_CALL = 100;
 
-// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping control characters is the point
+// oxlint-disable-next-line no-control-regex -- stripping control characters is the point
 const CONTROL_CHARACTERS = /[\u0000-\u001F\u007F-\u009F]/g;
 
 /** The edge function's own sanitizing: text it would refuse as empty is

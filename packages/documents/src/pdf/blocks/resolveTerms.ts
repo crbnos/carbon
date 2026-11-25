@@ -10,9 +10,9 @@ import { interpolateContent } from "../../template";
 export function hasContent(content?: JSONContent | null): boolean {
   return Boolean(
     content &&
-      typeof content === "object" &&
-      Array.isArray(content.content) &&
-      content.content.length > 0
+    typeof content === "object" &&
+    Array.isArray(content.content) &&
+    content.content.length > 0
   );
 }
 

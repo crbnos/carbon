@@ -33,8 +33,8 @@ import { IconButton } from "./IconButton";
 import { PrefetchLink } from "./PrefetchLink";
 import { Separator } from "./Separator";
 import { ShortcutKey } from "./ShortcutKey";
-import { useSidebar } from "./Sidebar";
 import { SHORTCUTS } from "./shortcuts";
+import { useSidebar } from "./Sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { cn } from "./utils/cn";
 import { useViewport } from "./Viewport";
@@ -222,7 +222,6 @@ export function NavRail({
 
   // Links, go-to shortcuts and redirects all land here: whatever navigated,
   // the phone drawer must not stay over the destination.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs per navigation
   useEffect(() => {
     setOpenMobile(false);
   }, [pathname, setOpenMobile]);
@@ -308,7 +307,7 @@ export function NavRail({
             <Trans>Navigation</Trans>
           </DrawerTitle>
           <NavRailHoldContext.Provider value={hold}>
-            {/* biome-ignore lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too */}
+            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too */}
             <nav
               aria-label={t`Main`}
               data-state="expanded"
@@ -328,7 +327,7 @@ export function NavRail({
               />
             </nav>
             {footer ? (
-              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too
+              // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too
               <div
                 data-state="expanded"
                 onClick={closeOnLink}

@@ -41,7 +41,6 @@ export const useRegisterControlledField = (
     context.formId,
     (state) => state.controlledFields.unregister
   );
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     register(field);
     return () => unregister(field);

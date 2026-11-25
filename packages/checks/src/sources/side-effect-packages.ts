@@ -4,7 +4,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { SideEffectPackage } from "../conformance/side-effect-import-declared";
+import type { SideEffectPackage } from "../conformance/modules";
 import { loadTypescriptFiles } from "./typescript";
 
 const PACKAGE_ROOTS = ["apps", "packages"];

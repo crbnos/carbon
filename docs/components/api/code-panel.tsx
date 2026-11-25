@@ -126,7 +126,6 @@ export function CodePanel({
         </div>
         <div className="relative">
           <CopyButton text={applyConfig(samples[lang], base, apiKey, false, appBase)} />
-          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: build-time shiki HTML */}
           <div
             className="api-shiki"
             dangerouslySetInnerHTML={{
@@ -143,7 +142,6 @@ export function CodePanel({
               Response
             </span>
           </div>
-          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: build-time shiki HTML */}
           <div
             className="api-shiki-response"
             dangerouslySetInnerHTML={{ __html: responseHtml }}

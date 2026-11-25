@@ -8,7 +8,6 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getDocumentApprovalState } from "@carbon/ee/approvals/document.server";
 import { getLogger } from "@carbon/logger";
-import type { JSONContent } from "@carbon/react";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -23,30 +22,15 @@ import {
   getChangeNoticeDiff,
   getChangeNoticeRequiredActionsList,
   getChangeNoticeTypesList,
-  getConfigurationRules,
-  getItemFiles,
-  getItemManufacturing,
-  getMakeMethodById,
-  getMakeMethods,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
-  getPart,
-  getPartUsedIn,
-  getPickMethods,
-  getRevisionLock,
-  getSupplierParts
+  getItemsUsedIn
 } from "~/modules/items/items.service";
-import { getConfigurationParameters } from "~/modules/items/items.utils";
-import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
+import type { AffectedItemListEntry } from "~/modules/items/ui/ChangeNotice";
 import {
   ChangeNoticeExplorer,
   ChangeNoticeHeader,
   ChangeNoticeProperties
 } from "~/modules/items/ui/ChangeNotice";
 import { getIssue, getIssues } from "~/modules/quality/quality.service";
-import { getLocationsList } from "~/modules/resources/resources.service";
-import { getTagsList } from "~/modules/shared/shared.service";
-import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -83,10 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     diff,
     actions,
     nonConformances,
-    locationsList,
-    requiredActionsList,
-    partTags,
-    operationTags
+    requiredActionsList
   ] = await Promise.all([
     getChangeNotice(client, id, companyId),
     getChangeNoticeTypesList(client, companyId),
@@ -95,15 +76,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getChangeNoticeActions(client, id, companyId),
     // NCR cross-link picker options (4a).
     getIssues(client, companyId),
-    // Company locations feed the embedded PartProperties pick-method editor.
-    getLocationsList(client, companyId),
     // Active default-action templates for the "Add Actions" picker.
-    getChangeNoticeRequiredActionsList(client, companyId),
-    getTagsList(client, companyId, "part"),
-    getTagsList(client, companyId, "operation")
+    getChangeNoticeRequiredActionsList(client, companyId)
   ]);
 
-  const locations = locationsList.data ?? [];
   const requiredActions = requiredActionsList.data ?? [];
 
   if (changeNotice.error) {
@@ -126,156 +102,46 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const affectedRows = affected.data ?? [];
 
   // Impact = where each affected item is used across the system (jobs, POs,
-  // sales, receipts, methods, NCRs, …) — the same "Used In" data the part detail
-  // page loads, one entry per affected item. Streamed: only the impact panel
-  // reads it.
-  const impactUsedIn = Promise.all(
-    affectedRows.map(async (a) => ({
-      itemId: a.itemId,
-      readableIdWithRevision: a.item?.readableIdWithRevision ?? a.itemId,
-      itemName: a.item?.name ?? null,
-      usedIn: await getPartUsedIn(client, a.itemId, companyId)
-    }))
-  ).catch((error) => {
-    logger.error("Failed to load change notice impact", {
-      companyId,
-      changeNoticeId: id,
-      error
+  // sales, receipts, methods, NCRs, …), the part page's "Used In" data. Streamed:
+  // only the impact panel reads it.
+  const impactUsedIn = getItemsUsedIn(
+    client,
+    affectedRows.map((a) => a.itemId),
+    companyId
+  ).then(({ data, error }) => {
+    if (error) {
+      logger.error("Failed to load change notice impact", {
+        companyId,
+        changeNoticeId: id,
+        error
+      });
+      return [];
+    }
+    return affectedRows.flatMap((a) => {
+      const usedIn = data.get(a.itemId);
+      return usedIn
+        ? [
+            {
+              itemId: a.itemId,
+              readableIdWithRevision:
+                a.item?.readableIdWithRevision ?? a.itemId,
+              itemName: a.item?.name ?? null,
+              usedIn
+            }
+          ]
+        : [];
     });
-    return [];
   });
 
   const diffByAffectedId = new Map(
     (diff.data?.items ?? []).map((entry) => [entry.affectedItemId, entry])
   );
 
-  // Per affected item: load its CO-owned Draft make method's real rows shaped
-  // exactly as the embedded BillOfMaterial / BillOfProcess editors expect (same
-  // assembly as x+/part+/$itemId.make.$makeMethodId). The draft lives on the
-  // same item for a Version, or on the new item (newItemId) for Revision/New Part.
-  const affectedItems: AffectedItemDraft[] = await Promise.all(
-    affectedRows.map(async (affectedItem) => {
-      const draftItemId = affectedItem.newItemId ?? affectedItem.itemId;
-      const draftMakeMethodId = affectedItem.draftMakeMethodId;
-
-      if (!draftMakeMethodId) {
-        return {
-          affectedItem,
-          draftItemId,
-          makeMethod: null,
-          methodMaterials: [],
-          methodOperations: [],
-          tags: [],
-          configurable: false,
-          configurationRules: [],
-          parameters: [],
-          revisionStatus: null,
-          releaseControl: null,
-          partData: null,
-          diff: diffByAffectedId.get(affectedItem.id)
-        };
-      }
-
-      // Revision / Replacement Part / New Part edit the item's attributes + files
-      // on the draft item — load the same bundle the part detail route feeds
-      // PartProperties, embedded on the CO card. Parts only (Tool attribute
-      // editing is a follow-up); Version has no attribute editing (Q2 matrix).
-      const needsAttributes =
-        (affectedItem.changeType === "Revision" ||
-          affectedItem.changeType === "Replacement Part" ||
-          affectedItem.changeType === "New Part") &&
-        affectedItem.item?.type === "Part";
-      const partDataPromise = needsAttributes
-        ? Promise.all([
-            getPart(client, draftItemId, companyId),
-            getSupplierParts(client, draftItemId, companyId),
-            getPickMethods(client, draftItemId, companyId)
-          ]).then(([partSummary, supplierParts, pickMethods]) =>
-            partSummary.data
-              ? {
-                  itemId: draftItemId,
-                  locations,
-                  partSummary: partSummary.data,
-                  files: getItemFiles(client, draftItemId, companyId),
-                  supplierParts: supplierParts.data ?? [],
-                  pickMethods: pickMethods.data ?? [],
-                  makeMethods: getMakeMethods(client, draftItemId, companyId),
-                  tags: partTags.data ?? []
-                }
-              : null
-          )
-        : null;
-
-      const [
-        makeMethod,
-        methodMaterials,
-        methodOperations,
-        manufacturing,
-        revisionLock,
-        partData
-      ] = await Promise.all([
-        getMakeMethodById(client, draftMakeMethodId, companyId),
-        getMethodMaterialsByMakeMethod(client, draftMakeMethodId),
-        getMethodOperationsByMakeMethodId(client, draftMakeMethodId),
-        getItemManufacturing(client, draftItemId, companyId),
-        getRevisionLock(client, { itemId: draftItemId, companyId }),
-        partDataPromise
-      ]);
-
-      const config = manufacturing.data?.requiresConfiguration
-        ? await Promise.all([
-            getConfigurationParameters(client, draftItemId, companyId),
-            getConfigurationRules(client, draftItemId, companyId)
-          ]).then(([{ parameters }, configurationRules]) => ({
-            parameters,
-            configurationRules
-          }))
-        : {
-            parameters: [] as Awaited<
-              ReturnType<typeof getConfigurationParameters>
-            >["parameters"],
-            configurationRules: [] as Awaited<
-              ReturnType<typeof getConfigurationRules>
-            >
-          };
-
-      return {
-        affectedItem,
-        draftItemId,
-        makeMethod: makeMethod.data ?? null,
-        methodMaterials:
-          methodMaterials.data?.map((m) => ({
-            ...m,
-            description: m.item?.name ?? "",
-            methodOperationId: m.methodOperationId ?? undefined,
-            methodType: m.methodType as MethodType,
-            itemType: m.itemType as MethodItemType
-          })) ?? [],
-        methodOperations:
-          methodOperations.data?.map((operation) => ({
-            ...operation,
-            description: operation.description ?? "",
-            procedureId: operation.procedureId ?? undefined,
-            assemblyInstructionId: operation.assemblyInstructionId ?? undefined,
-            inspectionDocumentId: operation.inspectionDocumentId ?? undefined,
-            operationSupplierProcessId:
-              operation.operationSupplierProcessId ?? undefined,
-            operationMinimumCost: operation.operationMinimumCost ?? 0,
-            operationLeadTime: operation.operationLeadTime ?? 0,
-            operationUnitCost: operation.operationUnitCost ?? 0,
-            tags: operation.tags ?? [],
-            workCenterId: operation.workCenterId ?? undefined,
-            workInstruction: operation.workInstruction as JSONContent | null
-          })) ?? [],
-        tags: operationTags.data ?? [],
-        configurable: manufacturing.data?.requiresConfiguration ?? false,
-        configurationRules: config.configurationRules,
-        parameters: config.parameters,
-        revisionStatus: revisionLock.revisionStatus,
-        releaseControl: revisionLock.releaseControl,
-        partData,
-        diff: diffByAffectedId.get(affectedItem.id)
-      };
+  // Each item's draft is loaded by its own route ($id.$affectedId.details).
+  const affectedItems: AffectedItemListEntry[] = affectedRows.map(
+    (affectedItem) => ({
+      affectedItem,
+      diff: diffByAffectedId.get(affectedItem.id)
     })
   );
 

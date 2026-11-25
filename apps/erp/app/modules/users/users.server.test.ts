@@ -345,7 +345,7 @@ function recordingDatabase(results: unknown[][]) {
           sent.push(query);
           return { rows: (results.shift() ?? []) as R[] };
         },
-        // biome-ignore lint/correctness/useYield: never streamed
+        // oxlint-disable-next-line require-yield -- never streamed
         streamQuery: async function* () {
           throw new Error("not streamed");
         }

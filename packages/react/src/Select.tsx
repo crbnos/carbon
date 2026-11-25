@@ -39,9 +39,7 @@ import { useViewport } from "./Viewport";
  * Phones render each part from SelectSheet (a bottom sheet) instead of Radix's
  * select; see SelectSheet.tsx.
  */
-const Select = (
-  props: ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
-) =>
+const Select = (props: ComponentPropsWithoutRef<typeof SelectPrimitive.Root>) =>
   useViewport().isPhone ? (
     <SelectSheetRoot {...props} />
   ) : (
@@ -77,7 +75,8 @@ const selectTriggerVariants = cva(
 );
 
 interface SelectTriggerProps
-  extends ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>,
+  extends
+    ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>,
     VariantProps<typeof selectTriggerVariants> {
   hideIcon?: boolean;
   inline?: boolean;

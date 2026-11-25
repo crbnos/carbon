@@ -110,9 +110,9 @@ msgstr "{0} の保全表示"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
@@ -254,7 +254,10 @@ msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0}件の製造指図"
 
 msgid "{scrapped} scrapped"
-msgstr ""
+msgstr "{scrapped} 件廃棄"
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} は保留中です"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "在庫 {unbinned}、ビンなし"
@@ -1332,7 +1335,7 @@ msgid "Flag issue"
 msgstr "問題を報告"
 
 msgid "Flow chart view"
-msgstr ""
+msgstr "フローチャート表示"
 
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れていませんか？"
@@ -1725,7 +1728,7 @@ msgid "Log completed for {0}"
 msgstr "{0} の完了を記録"
 
 msgid "Log completed for {trackedEntityReadableId}"
-msgstr ""
+msgstr "{trackedEntityReadableId} の完了を記録しました"
 
 msgid "Log Rework"
 msgstr "手直しを記録"
@@ -2145,7 +2148,7 @@ msgid "No unit"
 msgstr "ユニットなし"
 
 msgid "No unit selected"
-msgstr ""
+msgstr "個が選択されていません"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
@@ -2248,6 +2251,9 @@ msgstr "最も古い順"
 msgid "On Hold"
 msgstr "保留中"
 
+msgid "On hold · {issueNumbers}"
+msgstr "保留中 · {issueNumbers}"
+
 msgid "On its way"
 msgstr "移動中"
 
@@ -2306,7 +2312,7 @@ msgid "Open sub-assembly {0}: {1}"
 msgstr "サブアセンブリ {0} を開く: {1}"
 
 msgid "Open the operation to pick the unit"
-msgstr ""
+msgstr "工程を開いて個を選択してください"
 
 msgid "Operation"
 msgstr "工程"
@@ -2466,10 +2472,10 @@ msgid "Pick a style, a color and a face."
 msgstr "スタイル、色、面を選択"
 
 msgid "Pick an open unit to issue parts."
-msgstr ""
+msgstr "部品を出庫するには、オープンの個を選択してください。"
 
 msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
-msgstr ""
+msgstr "部品を出庫するには、オープンの個を選択してください。この個にすでにある部品は、まだ消費を取り消せます。"
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "製造指図を選択してください。時間を追加するまでは表示されません。"
@@ -2630,6 +2636,9 @@ msgstr "品質問題"
 
 msgid "Quality issue created"
 msgstr "品質問題が作成されました"
+
+msgid "Quality rejected this unit for production."
+msgstr "品質部門がこのユニットを生産に使用できないと判定しました。"
 
 msgid "Quantity"
 msgstr "数量"
@@ -3060,10 +3069,10 @@ msgid "Select a serial number to continue with this operation"
 msgstr "この工程を続行するシリアル番号を選択してください"
 
 msgid "Select a unit"
-msgstr ""
+msgstr "個を選択"
 
 msgid "Select a unit first"
-msgstr ""
+msgstr "先に個を選択してください"
 
 msgid "Select an issue type"
 msgstr "イシュータイプを選択"
@@ -3545,7 +3554,7 @@ msgid "This job has no bill rate. Ask the office to set it before the time is bi
 msgstr "この製造指図には請求レートがありません。時間が請求される前にオフィスに設定するよう依頼してください。"
 
 msgid "This job has no operations"
-msgstr ""
+msgstr "この製造指図には工程がありません"
 
 msgid "This label does not belong to a unit in this company"
 msgstr "このラベルは、この会社のユニットに属していません"
@@ -3575,10 +3584,13 @@ msgid "This unit has used this correction its limit number of times. Scrap it or
 msgstr "この個品はこの修正の上限回数に達しました。代わりにスクラップするか、品質問題を起票してください。"
 
 msgid "This unit is complete here"
-msgstr ""
+msgstr "この個はここで完了しています"
 
 msgid "This unit is not part of this operation"
-msgstr ""
+msgstr "この個はこの工程に属していません"
+
+msgid "This unit is on hold"
+msgstr "このユニットは保留中です"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
@@ -3779,7 +3791,7 @@ msgid "Until <0/>"
 msgstr "<0/>まで"
 
 msgid "Untitled"
-msgstr ""
+msgstr "無題"
 
 msgid "Up next"
 msgstr "次は"
@@ -3898,6 +3910,9 @@ msgstr "作業区ディスプレイ"
 
 msgid "Work instructions"
 msgstr "作業手順書"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "品質担当が以下の問題をすべてクローズするまで、このユニットの作業は保留されます。他のユニットには影響しません。"
 
 msgid "Work Site"
 msgstr "作業現場"

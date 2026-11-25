@@ -463,9 +463,9 @@ const ContractAmendBody = ({
     setSubmittedKey(key);
     previewFetcher.submit(formData, { method: "post", action });
   }, 500);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the key carries every input; the debounced submitter is a new function each render
   useEffect(() => {
     if (previewKey) submitPreview(previewKey);
+    // oxlint-disable-next-line react/exhaustive-deps -- the key carries every input; the debounced submitter is a new function each render
   }, [previewKey]);
 
   const isPreviewing =
@@ -877,7 +877,7 @@ const ContractAmendBody = ({
               </div>
             ) : (
               // Enter commits a cell; it must not submit the amendment.
-              // biome-ignore lint/a11y/noStaticElementInteractions: keydown-only wrapper that stops Enter in a grid cell from submitting the form; the grid's own cells are the controls
+              // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- keydown-only wrapper that stops Enter in a grid cell from submitting the form; the grid's own cells are the controls
               <div
                 className="w-full overflow-hidden rounded-lg border border-border"
                 style={{

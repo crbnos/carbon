@@ -10,11 +10,10 @@ import type {
 } from "./build";
 
 /** `watch`, `write`, `describe` and `display` keys are bound to the entry's own table, so a renamed column fails to compile. */
-interface EntityEntry<T extends TableName>
-  extends Omit<
-    RegistryEntry,
-    "table" | "watch" | "write" | "describe" | "display"
-  > {
+interface EntityEntry<T extends TableName> extends Omit<
+  RegistryEntry,
+  "table" | "watch" | "write" | "describe" | "display"
+> {
   table: T;
   watch?: { [C in ColumnOf<T>]?: WatchedColumnLike };
   write?: { [C in ColumnOf<T>]?: WritableColumnLike };

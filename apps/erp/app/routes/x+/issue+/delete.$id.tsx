@@ -8,17 +8,15 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteIssue } from "~/modules/quality/quality.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(request, { "quality.issues": "Full" });
-
+  const { api } = await authorize(request, { "quality.issues": "Full" });
   const { id } = params;
 
   if (!id) throw new Error("id is not found");
 
-  const mutation = await deleteIssue(client, id);
+  const mutation = await api.quality.deleteIssue({ nonConformanceId: id });
   if (mutation.error) {
     return data(
       {

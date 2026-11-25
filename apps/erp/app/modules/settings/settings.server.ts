@@ -5,8 +5,8 @@
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
-import { hashApiKey } from "@carbon/auth/auth.server";
 import { logOwnershipTransfer } from "@carbon/auth/auth-events.server";
+import { hashApiKey } from "@carbon/auth/auth.server";
 import { isCompanyOwner } from "@carbon/auth/company.server";
 import { anyOf, ownershipTransferRefusal } from "@carbon/database/access";
 import {
@@ -25,7 +25,8 @@ import {
   themeSchema,
   unknownVariables,
   validateDocumentEdit,
-  validateTemplateText
+  validateTemplateText,
+  withoutDocumentValues
 } from "@carbon/documents/template";
 import { PART_NUMBER_DISPLAYS } from "@carbon/documents/utils";
 import { integrations as availableIntegrations } from "@carbon/ee";
@@ -121,7 +122,7 @@ import {
 } from "~/modules/shared/shared.service";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
-import { fromServerFn } from "../shared/shared.service";
+import { fromServerFn, getCustomFieldsSchemas } from "../shared/shared.service";
 import { grantsSchema } from "../users/users.models";
 import {
   accountMappingEntrySchema,
@@ -134,7 +135,7 @@ import {
   dimensionValueMappingEntrySchema,
   expiredEntityPolicies,
   incompletePickingListPolicies,
-  invoiceAutomations,
+  inheritableInvoiceAutomations,
   kanbanLabelSizes,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
@@ -148,6 +149,7 @@ import {
 } from "./settings.models";
 import * as service from "./settings.service";
 import {
+  customFieldNames,
   DOCUMENT_EDIT_RECORDS,
   DOCUMENT_TERMS_FIELD,
   documentEditPermissions
@@ -348,7 +350,7 @@ export const updateInventorySettings = defineServiceFn({
  */
 export const updateInvoicingSettings = defineServiceFn({
   input: z.object({
-    invoiceAutomation: z.enum(invoiceAutomations).optional(),
+    invoiceAutomation: z.enum(inheritableInvoiceAutomations).optional(),
     accountsReceivableEmail: z.string().email().nullable().optional(),
     invoiceNotificationGroup: notificationGroup.optional(),
     accountsReceivableAddress: z.boolean().optional(),
@@ -609,7 +611,8 @@ export const updatePurchasingSettings = defineServiceFn({
  *
  * @remarks
  * Writes the fields sent and leaves the rest: whether an inspection needs a
- * second person to sign it off, the sampling standard inspection plans use,
+ * second person to sign it off, whether a serial unit with an open issue is on
+ * hold on the shop floor, the sampling standard inspection plans use,
  * the open-issue target on the quality dashboard, and who is notified when a
  * gauge goes out of calibration. Then one location's goods-in storage units:
  * the inspection storage unit received parts wait in, and the rejected
@@ -623,6 +626,7 @@ export const updatePurchasingSettings = defineServiceFn({
 export const updateQualitySettings = defineServiceFn({
   input: z.object({
     enforceInspectionFourEyes: z.boolean().optional(),
+    holdUnitsWithOpenIssues: z.boolean().optional(),
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
     qualityIssueTarget: z.number().int().min(0).optional(),
     gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional(),
@@ -2071,21 +2075,34 @@ export const getDocumentEditor = defineServiceFn({
       return ctx.error("notFound", "The document could not be found");
     }
     const termsField = DOCUMENT_TERMS_FIELD[documentType];
-    const [template, edit, terms, partNumberLines] = await Promise.all([
-      getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
-      getDocumentEdit(client, {
-        companyId: ctx.company.id,
-        documentType,
-        documentId
-      }),
-      termsField ? service.getTerms(client, ctx.company.id) : null,
-      service.getDocumentPartNumberLines(
-        client,
-        ctx.company.id,
-        documentType,
-        documentId
-      )
-    ]);
+    const [template, edit, terms, partNumberLines, customFieldSchemas] =
+      await Promise.all([
+        getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
+        getDocumentEdit(client, {
+          companyId: ctx.company.id,
+          documentType,
+          documentId
+        }),
+        termsField ? service.getTerms(client, ctx.company.id) : null,
+        service.getDocumentPartNumberLines(
+          client,
+          ctx.company.id,
+          documentType,
+          documentId
+        ),
+        // A custom field block's panel names the field it prints.
+        getCustomFieldsSchemas(client, {
+          companyId: ctx.company.id,
+          table: documentType
+        })
+      ]);
+    if (customFieldSchemas.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the custom fields",
+        customFieldSchemas.error
+      );
+    }
     if (partNumberLines.error) {
       return ctx.error(
         "internal",
@@ -2111,7 +2128,8 @@ export const getDocumentEditor = defineServiceFn({
       template,
       edit,
       termsSeed,
-      sections: Object.values(sections)
+      sections: Object.values(sections),
+      customFields: customFieldNames(customFieldSchemas.data, documentType)
     };
   }
 });
@@ -2226,6 +2244,7 @@ export const saveDocumentTemplate = defineServiceFn({
   async run(ctx, template) {
     // Changed values belong to one document, never to a company template.
     template.settings.valueEdits = undefined;
+    template.blocks = withoutDocumentValues(template.blocks as DocumentBlock[]);
     const { headerConfig, headerSectionId } = template;
 
     const problems = validateTemplateText({

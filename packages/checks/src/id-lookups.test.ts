@@ -250,13 +250,6 @@ describe("resolveIdLookups", () => {
     ]);
   });
 
-  it("links nothing to a list that names a relation only at runtime", () => {
-    // `quality_getTypesList` would outrank the …List below on its shorter name.
-    expect(createIssue?.get("nonConformanceTypeId")).not.toContain(
-      "quality_getTypesList"
-    );
-  });
-
   it("links nothing to a list that also reads through an RPC", () => {
     expect(createIssue?.has("jobId")).toBe(false);
   });

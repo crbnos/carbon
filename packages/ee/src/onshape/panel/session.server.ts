@@ -5,8 +5,8 @@
 import { randomBytes } from "node:crypto";
 import { originOf } from "@carbon/api/service-fn.server";
 import type { AuthSession } from "@carbon/auth";
-import { authorize, type Caller, type Gate } from "@carbon/auth/auth.server";
 import { logAuthEvent } from "@carbon/auth/auth-events.server";
+import { authorize, type Caller, type Gate } from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
   getUserScopedClient

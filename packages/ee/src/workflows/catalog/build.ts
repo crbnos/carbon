@@ -145,8 +145,10 @@ export interface BuiltAction {
  * action path has no notion of a vendor, so the two cannot be confused at a call
  * site or routed through the same dispatcher.
  */
-export interface BuiltIntegration
-  extends Omit<BuiltAction, "call" | "update" | "requireOneOf"> {
+export interface BuiltIntegration extends Omit<
+  BuiltAction,
+  "call" | "update" | "requireOneOf"
+> {
   /** Which piece, and which of its actions. The app's display name lives in the
    * label map instead, so it is not repeated on every step. */
   piece: { name: string; action: string };

@@ -59,7 +59,6 @@ const SupplierQuoteProperties = () => {
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
   const { t } = useLingui();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (field: keyof SupplierQuote, value: string | null) => {
       if (value === routeData?.quote[field]) {
@@ -76,10 +75,10 @@ const SupplierQuoteProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [id, routeData?.quote]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -94,6 +93,7 @@ const SupplierQuoteProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [id]
   );
 

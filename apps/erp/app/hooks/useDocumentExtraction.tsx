@@ -108,9 +108,9 @@ export function useDocumentExtraction(
   }, [clearPoll]);
 
   // Subscribe to realtime changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: load once per extraction (also starts polling if in-progress)
   useEffect(() => {
     fetchInitial();
+    // oxlint-disable-next-line react/exhaustive-deps -- load once per extraction (also starts polling if in-progress)
   }, [extractionId, company.id]);
 
   useChangedRows<{

@@ -33,6 +33,6 @@ export function useStableEditableComponents<
   useEffect(() => {
     latest.current = callbacks;
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: built once on purpose; the editors read `latest`
+  // oxlint-disable-next-line react/exhaustive-deps -- built once on purpose; the editors read `latest`
   return useMemo(() => build(latest), []);
 }

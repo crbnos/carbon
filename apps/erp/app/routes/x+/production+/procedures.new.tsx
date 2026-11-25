@@ -33,13 +33,12 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, content, ...d } = validation.data;
 
   let contentJSON;
   try {
     contentJSON = content ? JSON.parse(content) : {};
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+    // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   } catch (e) {
     return data(
       {},

@@ -82,6 +82,14 @@ export const SAMPLE_PURCHASING_RFQ = {
   },
   contact: { name: "Jane Doe", email: "jane.doe@acme.example" },
   thumbnails: {},
-  terms: {},
+  terms: {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "Quotes must stay valid for 30 days." }]
+      }
+    ]
+  },
   locale: "en-US"
 };

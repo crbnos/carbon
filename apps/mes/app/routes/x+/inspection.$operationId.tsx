@@ -39,6 +39,7 @@ import {
   getIssueTypesList
 } from "~/services/quality.service";
 import type { InspectionSample, OperationWithDetails } from "~/services/types";
+import { readUnitHolds } from "~/services/unit-hold.server";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
@@ -87,7 +88,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // this company before any of them runs.
   const scopedOperation = await serviceRole
     .from("jobOperation")
-    .select("id, jobId, jobOperationBatchId")
+    .select(
+      "id, jobId, jobOperationBatchId, jobMakeMethod(requiresSerialTracking)"
+    )
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -223,6 +226,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInspectionMeasurements(serviceRole, lot.data.id, companyId),
     getIssueTypesList(serviceRole, companyId),
     getTrackedEntitiesForOperation(serviceRole, {
+      jobId: scopedOperation.data.jobId,
+      includeSerialOutputs:
+        scopedOperation.data.jobMakeMethod?.requiresSerialTracking === true,
       operationId,
       jobMakeMethodId: op.jobMakeMethodId,
       companyId
@@ -274,11 +280,44 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       a.id.localeCompare(b.id)
   );
 
-  const abilityWarning = await getAbilityShortfall(serviceRole, {
-    operationId,
-    employeeId: userId,
-    companyId
-  });
+  const requiresSerialTracking =
+    jobMakeMethod.data?.requiresSerialTracking ?? false;
+  if (trackedEntities.error || jobMakeMethod.error || linkedQuantities.error) {
+    throw redirect(
+      path.to.operations,
+      await flash(
+        request,
+        error(
+          trackedEntities.error ??
+            jobMakeMethod.error ??
+            linkedQuantities.error,
+          "Failed to read the inspection's production units"
+        )
+      )
+    );
+  }
+  const [abilityWarning, holds] = await Promise.all([
+    getAbilityShortfall(serviceRole, {
+      operationId,
+      employeeId: userId,
+      companyId
+    }),
+    requiresSerialTracking
+      ? readUnitHolds(serviceRole, {
+          companyId,
+          unitIds: (trackedEntities.data ?? []).map((unit) => unit.id)
+        })
+      : { data: {}, error: null }
+  ]);
+  if (holds.error) {
+    throw redirect(
+      path.to.operations,
+      await flash(
+        request,
+        error(holds.error, "Failed to check the units on hold")
+      )
+    );
+  }
 
   return {
     abilityWarning,
@@ -293,7 +332,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     recentGaugeIds: recentGauges.data ?? [],
     issueTypes: issueTypes.data ?? [],
     trackedEntities: trackedEntities.data ?? [],
-    requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
+    requiresSerialTracking,
+    unitHolds: holds.data,
     requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
     events: events.data ?? [],
     productionQuantities,

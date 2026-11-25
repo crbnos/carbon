@@ -131,7 +131,7 @@ function itemsDatabase(items: Record<string, string>) {
   const rows = Object.entries(items).map(([id, type]) => ({ id, type }));
   const connection = {
     executeQuery: async () => ({ rows }),
-    // biome-ignore lint/correctness/useYield: never streamed
+    // oxlint-disable-next-line require-yield -- never streamed
     streamQuery: async function* () {
       throw new Error("not streamed");
     }
@@ -208,7 +208,7 @@ function scriptedPg(
       statements.push(query);
       return { rows: [], ...answer(query.sql) };
     },
-    // biome-ignore lint/correctness/useYield: never streamed
+    // oxlint-disable-next-line require-yield -- never streamed
     streamQuery: async function* () {
       throw new Error("not streamed");
     }

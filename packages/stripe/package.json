@@ -36,7 +36,7 @@
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup --watch",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "dev:stripe": "tsx ./stripe.dev.ts",
     "register:stripe": "tsx ./stripe.register.ts",
     "typecheck": "tsc --noEmit"

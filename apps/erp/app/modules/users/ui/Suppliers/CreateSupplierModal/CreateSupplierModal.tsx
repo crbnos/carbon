@@ -153,7 +153,6 @@ const SupplierContact = ({
     Awaited<ReturnType<typeof getSupplierContacts>>
   >(supplier ? path.to.api.supplierContacts(supplier) : null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (initialLoad.current) {
       initialLoad.current = false;
@@ -163,6 +162,7 @@ const SupplierContact = ({
         onChange(null);
       }
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [supplier]);
 
   const options = useMemo(
@@ -190,11 +190,11 @@ const SupplierContact = ({
   };
 
   // so that we can call onChange on load
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (value && value === defaultValue) {
       handleChange(value);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [value, supplierContactFetcher.data?.data]);
 
   return (

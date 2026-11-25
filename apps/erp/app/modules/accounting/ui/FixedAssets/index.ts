@@ -21,8 +21,8 @@ import FixedAssetNotes from "./FixedAssetNotes";
 import FixedAssetOutOfServiceForm from "./FixedAssetOutOfServiceForm";
 import FixedAssetRegisterForm from "./FixedAssetRegisterForm";
 import FixedAssetReturnToInventoryForm from "./FixedAssetReturnToInventoryForm";
-import FixedAssetStatus from "./FixedAssetStatus";
 import FixedAssetsTable from "./FixedAssetsTable";
+import FixedAssetStatus from "./FixedAssetStatus";
 import FleetAssetsTable from "./FleetAssetsTable";
 import FleetStatus from "./FleetStatus";
 

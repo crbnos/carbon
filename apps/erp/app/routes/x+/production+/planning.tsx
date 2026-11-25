@@ -27,9 +27,9 @@ import {
   PRODUCTION_PLANNING_PAGING
 } from "~/modules/production/production.service";
 import type { ProductionPlanningItem } from "~/modules/production/types";
+import { withPlanningActions } from "~/modules/production/ui/Planning/planning-action-scope";
 import { PlanningOverdueBorrows } from "~/modules/production/ui/Planning/PlanningOverdueBorrows";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
-import { withPlanningActions } from "~/modules/production/ui/Planning/planning-action-scope";
 import { getProjectBorrows } from "~/modules/projects/projects.service";
 import {
   getLocationTimeZone,

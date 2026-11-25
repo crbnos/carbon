@@ -82,12 +82,7 @@ describe("enforcementRule family isolation", () => {
   it("scopes the sales rule fetch to the sales family", async () => {
     const { client, calls } = makeClient({ enforcementRule: [SALES_RULE] });
 
-    await getActiveSalesRulesForItems(
-      // biome-ignore lint/suspicious/noExplicitAny: test double
-      client as any,
-      "company_1",
-      ["item_1"]
-    );
+    await getActiveSalesRulesForItems(client as any, "company_1", ["item_1"]);
 
     const ruleCall = calls.find((c) => c.table === "enforcementRule");
     expect(ruleCall).toBeDefined();
@@ -113,12 +108,7 @@ describe("enforcementRule family isolation", () => {
     });
 
     const { rules, assignmentsByItemId, error } =
-      await getActiveSalesRulesForItems(
-        // biome-ignore lint/suspicious/noExplicitAny: test double
-        client as any,
-        "company_1",
-        ["item_1"]
-      );
+      await getActiveSalesRulesForItems(client as any, "company_1", ["item_1"]);
 
     expect(error).toBeNull();
     expect(rules.map((r) => r.id)).toEqual(["rule_sales"]);
@@ -132,12 +122,7 @@ describe("enforcementRule family isolation", () => {
   it("reads pins from the shared assignment table", async () => {
     const { client, calls } = makeClient({ enforcementRule: [SALES_RULE] });
 
-    await getActiveSalesRulesForItems(
-      // biome-ignore lint/suspicious/noExplicitAny: test double
-      client as any,
-      "company_1",
-      ["item_1"]
-    );
+    await getActiveSalesRulesForItems(client as any, "company_1", ["item_1"]);
 
     const pinCall = calls.find(
       (c) => c.table === "enforcementRuleItemAssignment"
@@ -173,11 +158,11 @@ describe("enforcementRule family isolation", () => {
       ]
     });
 
-    await getActiveRulesForTargets(
-      // biome-ignore lint/suspicious/noExplicitAny: test double
-      client as any,
-      { targetType: "item", targetIds: ["item_1"], companyId: "company_1" }
-    );
+    await getActiveRulesForTargets(client as any, {
+      targetType: "item",
+      targetIds: ["item_1"],
+      companyId: "company_1"
+    });
 
     const ruleCalls = calls.filter((c) => c.table === "enforcementRule");
     // Broadcast fetch + explicit-pin resolution — both must carry the family.
@@ -206,11 +191,11 @@ describe("enforcementRule family isolation", () => {
       ]
     });
 
-    const { data, error } = await getActiveRulesForTargets(
-      // biome-ignore lint/suspicious/noExplicitAny: test double
-      client as any,
-      { targetType: "item", targetIds: ["item_1"], companyId: "company_1" }
-    );
+    const { data, error } = await getActiveRulesForTargets(client as any, {
+      targetType: "item",
+      targetIds: ["item_1"],
+      companyId: "company_1"
+    });
 
     expect(error).toBeNull();
     const assigned = data.get("item_1") ?? [];

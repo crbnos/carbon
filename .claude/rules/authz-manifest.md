@@ -4,7 +4,7 @@ paths:
   - "packages/database/src/event-system/**"
   - "packages/database/supabase/migrations/**"
   - "packages/database/supabase/tests/authz-*.test.sql"
-  - "packages/checks/src/conformance/no-authz-ddl-in-migrations.ts"
+  - "packages/checks/src/conformance/authz.ts"
   - "packages/dev/src/services/migrations.ts"
 ---
 

@@ -69,16 +69,46 @@ exports[`clicking a real PDF > opens the right text on the issue sample 1`] = `
     "Globex Corporation": "associations:customerValue",
   },
   {
+    "Supplier:": "associations:supplier",
+  },
+  {
+    "Apex Anodizing": "associations:supplierValue",
+  },
+  {
     "Job Operation:": "associations:jobOperation",
   },
   {
     "JOB-002310 / Op 30": "associations:jobOperationValue",
   },
   {
+    "Purchase Order:": "associations:purchaseOrder",
+  },
+  {
+    "PO-000512": "associations:purchaseOrderValue",
+  },
+  {
     "Sales Order:": "associations:salesOrder",
   },
   {
     "SO-001188": "associations:salesOrderValue",
+  },
+  {
+    "Shipment:": "associations:shipment",
+  },
+  {
+    "SHP-001188": "associations:shipmentValue",
+  },
+  {
+    "Receipt:": "associations:receipt",
+  },
+  {
+    "RCV-000377": "associations:receiptValue",
+  },
+  {
+    "Tracked Entity:": "associations:trackedEntity",
+  },
+  {
+    "BATCH-44021": "associations:trackedEntityValue",
   },
   {
     "DESCRIPTION OF ISSUE": "notes:descriptionOfIssue",
@@ -320,6 +350,39 @@ exports[`clicking a real PDF > opens the right text on the jobTraveler sample 1`
     "Complete": "operations:complete",
   },
   {
+    "4": "operations:seqCell",
+  },
+  {
+    "Stress relieve": "operations:operationCell",
+  },
+  {
+    "Machine: 4 hr": "operations:expectedMachine",
+  },
+  {
+    "BATCH BAT-000112": "operations:actions (panel)",
+  },
+  {
+    "Open in MES": "operations:openInMes",
+  },
+  {
+    "This operation runs with other jobs as one batch. Start and complete it from the batch": "operations:batchInstructions",
+  },
+  {
+    "in MES.": "operations:batchInstructions",
+  },
+  {
+    "BATCH NOTES": "operations:batchNotes",
+  },
+  {
+    "Load parts flat on the rack.": "operations:batchNotes (panel)",
+  },
+  {
+    "JOB NOTES": "notes:jobNotes",
+  },
+  {
+    "Handle finished parts with gloves to avoid fingerprints on the anodized surface.": "notes:jobNotes (panel)",
+  },
+  {
     "JOB-002310": "document:page (panel)",
   },
   {
@@ -397,6 +460,9 @@ exports[`clicking a real PDF > opens the right text on the packingSlip sample 1`
     "Qty": "lineItems:qty",
   },
   {
+    "Serial/Batch": "lineItems:serialBatch",
+  },
+  {
     "WIDGET-100 (C-100 Rev 3)": "lineItems:itemCell",
   },
   {
@@ -407,6 +473,9 @@ exports[`clicking a real PDF > opens the right text on the packingSlip sample 1`
   },
   {
     "EA": "lineItems:qtyCell",
+  },
+  {
+    "SN-WIDGET-0001": "lineItems:serialBatchCell",
   },
   {
     "BRACKET-22": "lineItems:itemCell",
@@ -1099,7 +1168,22 @@ exports[`clicking a real PDF > opens the right text on the purchasingRfq sample 
     "PRFQ000012": "document:page (panel)",
   },
   {
-    "Page 1 of 1": "document:page",
+    "Page 1 of 2": "document:page",
+  },
+  {
+    "Terms and Conditions": "terms:termsAndConditions",
+  },
+  {
+    "Quotes must stay valid for 30 days.": "terms:termsAndConditions (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "PRFQ000012": "document:page (panel)",
+  },
+  {
+    "Page 2 of 2": "document:page",
   },
 ]
 `;
@@ -1421,6 +1505,30 @@ exports[`clicking a real PDF > opens the right text on the salesInvoice sample 1
     "Seller Tax ID: MI-0001234": "parties:sellerTaxId",
   },
   {
+    "SHIP TO": "parties:shipTo",
+  },
+  {
+    "Globex Corporation": "parties:shipToName",
+  },
+  {
+    "88": "parties:shipToAddressLine1",
+  },
+  {
+    "Harbor Road": "parties:shipToAddressLine1",
+  },
+  {
+    "Dock 3": "parties:shipToAddressLine2",
+  },
+  {
+    "Springfield": "parties:shipToCity",
+  },
+  {
+    "IL 62701": "parties:shipToStatePostal",
+  },
+  {
+    "United States": "parties:shipToCountry",
+  },
+  {
     "NOTES": "notes:notes",
   },
   {
@@ -1630,6 +1738,30 @@ exports[`clicking a real PDF > opens the right text on the salesOrder sample 1`]
     "United States": "parties:customerCountry",
   },
   {
+    "SHIP TO": "parties:shipTo",
+  },
+  {
+    "Globex Corporation": "parties:shipToName",
+  },
+  {
+    "88": "parties:shipToAddressLine1",
+  },
+  {
+    "Harbor Road": "parties:shipToAddressLine1",
+  },
+  {
+    "Dock 3": "parties:shipToAddressLine2",
+  },
+  {
+    "Springfield": "parties:shipToCity",
+  },
+  {
+    "IL 62701": "parties:shipToStatePostal",
+  },
+  {
+    "United States": "parties:shipToCountry",
+  },
+  {
     "ORDER DETAILS": "parties:orderDetails",
   },
   {
@@ -1646,6 +1778,30 @@ exports[`clicking a real PDF > opens the right text on the salesOrder sample 1`]
   },
   {
     "Shipping: Ground": "parties:shipping",
+  },
+  {
+    "BILL TO": "parties:billTo",
+  },
+  {
+    "Globex Holdings": "parties:billToName",
+  },
+  {
+    "200": "parties:billToAddressLine1",
+  },
+  {
+    "Finance Plaza": "parties:billToAddressLine1",
+  },
+  {
+    "Suite 400": "parties:billToAddressLine2",
+  },
+  {
+    "Chicago": "parties:billToCity",
+  },
+  {
+    "IL 60603": "parties:billToStatePostal",
+  },
+  {
+    "United States": "parties:billToCountry",
   },
   {
     "NOTES": "notes:notes",
@@ -2046,6 +2202,27 @@ exports[`clicking a real PDF > opens the right text on the stockTransfer sample 
   },
   {
     "Pick": "lineItems:pick",
+  },
+  {
+    "Nylon Spacer": "lineItems:descriptionCell",
+  },
+  {
+    "SPACER-8": "lineItems:itemIdCell",
+  },
+  {
+    "Any": "lineItems:any",
+  },
+  {
+    "’": "lineItems:any",
+  },
+  {
+    "Bin C2": "lineItems:transferCell",
+  },
+  {
+    "100": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
   },
   {
     "Precision Widget, anodized": "lineItems:descriptionCell",

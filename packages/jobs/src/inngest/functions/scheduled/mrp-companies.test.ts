@@ -107,7 +107,7 @@ class RowsDriver extends DummyDriver {
       executeQuery: async <R>(): Promise<QueryResult<R>> => ({
         rows: this.rows as R[]
       }),
-      // biome-ignore lint/correctness/useYield: never streamed
+      // oxlint-disable-next-line require-yield -- never streamed
       streamQuery: async function* () {
         throw new Error("not streamed");
       }

@@ -62,7 +62,6 @@ export function useLeaseTermSave(leaseId: string) {
     if (fetcher.data?.error) toast.error(fetcher.data.error.message);
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const save = useCallback(
     (field: LeaseTerm, value: string | null) => {
       const formData = new FormData();
@@ -74,6 +73,7 @@ export function useLeaseTermSave(leaseId: string) {
         action: path.to.leaseUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [leaseId]
   );
 

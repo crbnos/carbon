@@ -187,7 +187,6 @@ export const NotificationEmail = ({
                                     <Link
                                       // Segments have no stable id; the value is
                                       // re-rendered whole or not at all.
-                                      // biome-ignore lint/suspicious/noArrayIndexKey: no stable id
                                       key={i}
                                       href={segment.href}
                                       style={{ color: "#2563eb" }}
@@ -195,7 +194,6 @@ export const NotificationEmail = ({
                                       {segment.text}
                                     </Link>
                                   ) : (
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: no stable id
                                     <span key={i}>{segment.text}</span>
                                   )
                               )

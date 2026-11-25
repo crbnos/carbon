@@ -22,8 +22,8 @@ import {
   resolvePlanningSegmentScope
 } from "~/modules/production/production.models";
 import { getPlanningActions } from "~/modules/production/production.service";
-import { PlanningOverdueBorrows } from "~/modules/production/ui/Planning/PlanningOverdueBorrows";
 import { withPlanningActions } from "~/modules/production/ui/Planning/planning-action-scope";
+import { PlanningOverdueBorrows } from "~/modules/production/ui/Planning/PlanningOverdueBorrows";
 import { getProjectBorrows } from "~/modules/projects/projects.service";
 import {
   getPurchasingPlanning,

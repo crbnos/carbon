@@ -64,12 +64,12 @@ export function SlideAnnotator({
   const justDragged = useRef(false);
 
   // Reseed from the source every time the annotator opens for a slide.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on open only
   useEffect(() => {
     if (open) {
       setPins(initial);
       setSelectedId(null);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- reset on open only
   }, [open]);
 
   const selected = pins.find((p) => p.id === selectedId) ?? null;
@@ -160,7 +160,7 @@ export function SlideAnnotator({
         <ModalBody>
           <div className="flex flex-col gap-4 lg:flex-row">
             <div className="flex flex-1 items-center justify-center">
-              {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: drops a pin at the pointer's x/y on the image — inherently positional; placed pins are labelled buttons */}
+              {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- drops a pin at the pointer's x/y on the image — inherently positional; placed pins are labelled buttons */}
               <div
                 ref={wrapperRef}
                 className="relative inline-block cursor-crosshair select-none"

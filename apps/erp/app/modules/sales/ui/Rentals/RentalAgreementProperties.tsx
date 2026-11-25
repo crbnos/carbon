@@ -126,7 +126,6 @@ const RentalAgreementProperties = () => {
     }
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
     (field: Term, value: string | null) => {
       const current = agreement?.[field as keyof RentalAgreement];
@@ -142,10 +141,10 @@ const RentalAgreementProperties = () => {
         action: path.to.rentalAgreementUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id, agreement]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -157,10 +156,10 @@ const RentalAgreementProperties = () => {
         action: path.to.customFields
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateInvoiceAutomation = useCallback(
     (value: string | null) => {
       const next = !value || value === COMPANY_DEFAULT ? null : value;
@@ -174,6 +173,7 @@ const RentalAgreementProperties = () => {
         action: path.to.rentalAgreementUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id, agreement]
   );
 
@@ -193,6 +193,7 @@ const RentalAgreementProperties = () => {
     (typeof invoiceAutomations)[number],
     string
   > = {
+    Manual: t`Manual`,
     "Draft Only": t`Draft only`,
     Post: t`Post`,
     "Post and Email": t`Post and email`,
@@ -214,11 +215,15 @@ const RentalAgreementProperties = () => {
     !["Draft", "Active"].includes(agreement.status ?? "") ||
     !permissions.has({ "sales.rentalAgreements": "Edit" });
 
-  // Payment terms and tax are read when each invoice is drafted, so they stay
-  // editable while Active, like Invoicing.
+  // Payment terms, tax and the Rental Site are read when each invoice is
+  // drafted, so they stay editable while Active, like Invoicing.
   const invoiceTermHelper =
     agreement.status === "Active" && !isInvoicingReadOnly
       ? t`Applies to invoices drafted from now on`
+      : undefined;
+  const rentalSiteHelper =
+    agreement.status === "Active" && !isInvoicingReadOnly
+      ? t`Bills and ships invoices drafted from now on`
       : undefined;
 
   const isDisabled =
@@ -308,7 +313,8 @@ const RentalAgreementProperties = () => {
           label={t`Rental Site`}
           customer={agreement.customerId ?? ""}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={rentalSiteHelper}
           onChange={(location) => {
             if (location?.id) onUpdate("customerLocationId", location.id);
           }}

@@ -47,9 +47,10 @@ export const kanbanOutputTypes = ["label", "qrcode", "url"] as const;
 // others are thermal label ids in @carbon/utils `labelSizes`.
 export const kanbanLabelSizes = ["letter", "label4x2", "label3x2"] as const;
 
-// Mirrors the `invoiceAutomation` DB enum: what happens to a recurring
-// invoice (rental agreements today) when the daily job creates it.
-export const invoiceAutomations = [
+// Every `invoiceAutomation` value but Manual: the company default and a
+// contract's own mode. Only a rental agreement takes Manual (a CHECK on
+// `companySettings` and `customerContract`), so nothing inherits it.
+export const inheritableInvoiceAutomations = [
   "Draft Only",
   "Post",
   "Post and Email",
@@ -316,7 +317,7 @@ export const jobCompletedValidator = z.object({
 });
 
 export const invoiceAutomationValidator = z.object({
-  invoiceAutomation: z.enum(invoiceAutomations)
+  invoiceAutomation: z.enum(inheritableInvoiceAutomations)
 });
 
 /** The company's service labor rates: cost per hour and default bill rate. */

@@ -8,6 +8,7 @@ import {
   calendarMonthCharge,
   defaultRentalRates,
   type ExistingBillingPeriod,
+  generatePeriodsForPending,
   generateRentalBillingPeriods,
   monthlyCharge,
   type PeriodSpec,
@@ -821,4 +822,65 @@ it("default rates: an expired customer rate falls through to the type", () => {
     item: null
   });
   expect(result.Month).toEqual({ rate: 1300, source: "Customer Type" });
+});
+
+/** Calendar Month, Advance, 300 a month from 2026-09-01: Sep is billed, Oct
+ *  is Pending, and the daily horizon on 2026-10-05 is 2026-11-30. */
+const earlyInvoiceLine = (
+  overrides: Partial<Parameters<typeof generatePeriodsForPending>[0]>
+) => ({
+  cycle: "Calendar Month" as const,
+  timing: "Advance" as const,
+  rateUnit: "Month" as const,
+  rate: 300,
+  startDate: "2026-09-01",
+  endDate: null,
+  returnedAt: null,
+  through: billingHorizon("Calendar Month", "2026-10-05"),
+  existing: [
+    invoiced("2026-09-01", "2026-09-30", 300),
+    pending("2026-10-01", "2026-10-31", 300)
+  ],
+  decimals: DECIMALS,
+  minPending: 1,
+  ...overrides
+});
+
+const starts = (plan: { create: PeriodSpec[] }) =>
+  plan.create.map((p) => p.periodStart);
+
+it("generatePeriodsForPending cuts an open-ended line until it holds minPending Pending periods", () => {
+  // Oct (Pending) + Nov..Mar (cut now) = 6 Pending periods.
+  expect(
+    starts(generatePeriodsForPending(earlyInvoiceLine({ minPending: 6 })))
+  ).toEqual([
+    "2026-11-01",
+    "2026-12-01",
+    "2027-01-01",
+    "2027-02-01",
+    "2027-03-01"
+  ]);
+});
+
+it("generatePeriodsForPending cuts no more than the daily horizon when it already holds minPending", () => {
+  const args = earlyInvoiceLine({ minPending: 1 });
+  expect(starts(generatePeriodsForPending(args))).toEqual([
+    "2026-11-01",
+    "2026-12-01"
+  ]);
+  expect(starts(generateRentalBillingPeriods(args))).toEqual([
+    "2026-11-01",
+    "2026-12-01"
+  ]);
+});
+
+it("generatePeriodsForPending generates a fixed term as it is, whatever minPending is", () => {
+  const args = earlyInvoiceLine({ endDate: "2026-12-31", minPending: 6 });
+  expect(generatePeriodsForPending(args)).toEqual(
+    generateRentalBillingPeriods(args)
+  );
+  expect(starts(generatePeriodsForPending(args))).toEqual([
+    "2026-11-01",
+    "2026-12-01"
+  ]);
 });

@@ -303,7 +303,8 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     ["sales.returns", "Edit"]
   ),
   // A rental unit on a shipment or receipt: Rental Agreements AND Shipments
-  // or Receipts. Selling it: Rental Agreements AND Sales Invoices.
+  // or Receipts. Selling it, or invoicing periods ahead: Rental Agreements AND
+  // Sales Invoices.
   sales_deliverRentalUnit: allOf(
     EDIT,
     ["inventory.shipments", "Create"],
@@ -315,6 +316,11 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     ["sales.rentalAgreements", "Edit"]
   ),
   sales_sellRentalUnit: allOf(
+    EDIT,
+    ["invoicing.salesInvoices", "Create"],
+    ["sales.rentalAgreements", "Edit"]
+  ),
+  sales_invoiceRentalAgreementPeriods: allOf(
     EDIT,
     ["invoicing.salesInvoices", "Create"],
     ["sales.rentalAgreements", "Edit"]

@@ -14,8 +14,8 @@ import RentalAgreementLineForm from "./RentalAgreementLineForm";
 import RentalAgreementLineSummary from "./RentalAgreementLineSummary";
 import RentalAgreementProperties from "./RentalAgreementProperties";
 import RentalAgreementReleaseForm from "./RentalAgreementReleaseForm";
-import RentalAgreementSummary from "./RentalAgreementSummary";
 import RentalAgreementsTable from "./RentalAgreementsTable";
+import RentalAgreementSummary from "./RentalAgreementSummary";
 import RentalBillingPeriods from "./RentalBillingPeriods";
 import RentalDeposits from "./RentalDeposits";
 import {

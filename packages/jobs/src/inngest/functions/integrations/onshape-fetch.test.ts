@@ -12,9 +12,8 @@ vi.mock("@carbon/auth/client.server", () => ({
 vi.mock("@carbon/ee/onshape", () => ({ getOnshapeClient: vi.fn() }));
 
 const { AssemblerJobError } = await import("../tasks/assembler-client");
-const { isExportTooLarge, stagedModelFromFetch } = await import(
-  "./onshape-fetch"
-);
+const { isExportTooLarge, stagedModelFromFetch } =
+  await import("./onshape-fetch");
 
 const STAGED = "company/models/onshape-fetch-model-t.step";
 

@@ -79,7 +79,6 @@ const RevisionFormBody = ({
     !hasSizesInsteadOfRevisions &&
     (initialValues.type === "Part" || initialValues.type === "Tool");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     // The "open a change notice" path posts straight to the create+attach route
     // (see the form action below), which redirects to the new CO — so it never
@@ -91,6 +90,7 @@ const RevisionFormBody = ({
     if (fetcher.data?.success === false) {
       toastError(fetcher.data.message, fetcher.data);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [fetcher.data]);
 
   return (

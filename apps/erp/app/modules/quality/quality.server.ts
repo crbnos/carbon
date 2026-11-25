@@ -73,6 +73,7 @@ import {
   issueAssociationValidator,
   issueValidator,
   issueWorkflowRequiredActionIdsInput,
+  nonConformanceAssociationType,
   nonConformanceStatus,
   nonConformanceTaskStatus,
   qualityDocumentStatus,
@@ -201,7 +202,7 @@ export const createIssue = defineServiceFn({
           trackedEntityIds
         });
       } catch (err) {
-        const removed = await service.deleteIssue(serviceRole, issueId);
+        const removed = await service.deleteIssue(ctx, issueId);
         if (removed.error) {
           logger.error("Failed to remove an issue whose units did not link", {
             companyId,
@@ -223,13 +224,14 @@ export const createIssue = defineServiceFn({
     if (input.jobOperationId) {
       await service.linkJobOperationLot(ctx, {
         nonConformanceId: issueId,
-        jobOperationId: input.jobOperationId
+        jobOperationId: input.jobOperationId,
+        trackedEntityIds
       });
     }
 
     const tasks = await service.createIssueTasks(ctx, issueId);
     if (tasks.error) {
-      await service.deleteIssue(serviceRole, issueId);
+      await service.deleteIssue(ctx, issueId);
       return ctx.error("internal", "Failed to create tasks", tasks.error);
     }
 
@@ -865,11 +867,20 @@ export const createIssueAssociation = defineServiceFn({
         }
         break;
       }
+      case "jobOperations": {
+        const refusal = await service.attachJobOperationToIssue(ctx, {
+          nonConformanceId,
+          jobId: id,
+          jobOperationId: lineId!
+        });
+        if (refusal) return refusal;
+        break;
+      }
       default: {
         const { table, readable, noun } = service.associationHeaders[type];
         let headerQuery = client
-          .from(table as "job")
-          .select(`id, ${readable}${table === "job" ? ", itemId" : ""}`)
+          .from(table as "purchaseOrder")
+          .select(`id, ${readable}`)
           .eq("id", id);
         // The return orders were the only headers the route scoped; RLS
         // scopes the rest.
@@ -887,14 +898,6 @@ export const createIssueAssociation = defineServiceFn({
           readableId: row[readable] ?? null
         });
         if (insert.error) return failed(noun, insert.error);
-
-        if (type === "jobOperations") {
-          await service.linkJobOperationContext(ctx, {
-            nonConformanceId,
-            jobItemId: row.itemId ?? null,
-            jobOperationId: lineId!
-          });
-        }
       }
     }
 
@@ -2735,13 +2738,7 @@ export const deleteIssue = defineServiceFn({
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { "quality.issues": "Full" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteIssue(
-        ctx.asCaller.supabase,
-        input.nonConformanceId as never
-      )
-    );
+    return unwrap(ctx, await service.deleteIssue(ctx, input.nonConformanceId));
   }
 });
 
@@ -2751,14 +2748,19 @@ export const deleteIssue = defineServiceFn({
  * @mcp destructive
  */
 export const deleteIssueAssociation = defineServiceFn({
-  input: z.looseObject({ type: z.string(), associationId: z.string() }),
+  input: z.looseObject({
+    type: z.enum(nonConformanceAssociationType),
+    associationId: z.string()
+  }),
   permission: { "quality.issues": "Full" },
   async run(ctx, input) {
-    return await service.deleteIssueAssociation(
-      ctx.asCaller.supabase,
-      input.type as never,
-      input.associationId as never
+    const result = await service.deleteIssueAssociation(
+      ctx,
+      input.type,
+      input.associationId
     );
+    if (result.error) return ctx.error("rule", result.error.message);
+    return result;
   }
 });
 

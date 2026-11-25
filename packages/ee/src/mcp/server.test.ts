@@ -15,12 +15,10 @@ vi.mock("../entitlements.server", () => ({
   requireEntitlement: vi.fn(async () => undefined)
 }));
 
-const callOperation = vi.fn(
-  async (): Promise<McpCallResult> => ({
-    success: true,
-    data: [{ id: "cust_1" }]
-  })
-);
+const callOperation = vi.fn(async (): Promise<McpCallResult> => ({
+  success: true,
+  data: [{ id: "cust_1" }]
+}));
 
 const ctx = {
   client: {},

@@ -175,7 +175,6 @@ const TableHeader = <T extends object>({
 
   const fetcher = useFetcher<typeof savedViewAction>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data.id) {
       setParams({ view: fetcher.data.id });
@@ -183,6 +182,7 @@ const TableHeader = <T extends object>({
     } else if (fetcher.data?.success === false) {
       toastError(fetcher.data.message, fetcher.data);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [fetcher.state, fetcher.data?.success]);
 
   const { currentView, hasView } = useSavedViews();

@@ -376,6 +376,8 @@ export const path = {
       quoteLines: (quoteId: string) =>
         generatePath(`${api}/sales/quotes/${quoteId}/lines`),
       quotes: `${api}/sales/quotes`,
+      rentalAgreementInvoicePreview: (id: string, periods: number) =>
+        `${generatePath(`${api}/rental-agreement/${id}/invoice-preview`)}?${new URLSearchParams({ periods: String(periods) })}`,
       requestQuoteRows: (itemId: string) =>
         generatePath(`${api}/purchasing/request-quote/${itemId}`),
       resourcesKpi: (key: string) =>

@@ -221,16 +221,16 @@ import {
   takePanelPlan
 } from "@carbon/ee/onshape";
 import {
-  ONSHAPE_PANEL_INTEGRATION_IDS,
-  ONSHAPE_V2_INTEGRATION_ID
-} from "@carbon/ee/onshape/integration-id";
-import { panelCompanyChoices } from "@carbon/ee/onshape/panel-session.server";
-import {
   isOnshapeOAuthIntegrationId,
   loadOnshapeOAuthConfig,
   patchOnshapeOAuthGrant,
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
+import {
+  ONSHAPE_PANEL_INTEGRATION_IDS,
+  ONSHAPE_V2_INTEGRATION_ID
+} from "@carbon/ee/onshape/integration-id";
+import { panelCompanyChoices } from "@carbon/ee/onshape/panel-session.server";
 import {
   isIntegrationComingSoon,
   isIntegrationWhitelisted
@@ -7314,10 +7314,7 @@ export async function pushOnshapeAssembly(
       { status: 500 }
     );
   }
-  const childMethodFor = (
-    childItem: AssemblyPushItemRow,
-    childMade: boolean
-  ) =>
+  const childMethodFor = (childItem: AssemblyPushItemRow, childMade: boolean) =>
     childMade
       ? methodByItemId.get(childItem.id)
       : childItem.defaultMethodType === "Make to Order"
@@ -9167,9 +9164,8 @@ export async function pushOnshapeRelease(
   // Delete the revision's copies of the base's Onshape lines (manual lines stay),
   // then the lines a previous push of this release wrote.
   const baseMethodIdByTargetMethodId = new Map<string, string>(
-    bomTargets.flatMap(
-      (target): Array<[string, string]> =>
-        target.baseMethodId ? [[target.methodId, target.baseMethodId]] : []
+    bomTargets.flatMap((target): Array<[string, string]> =>
+      target.baseMethodId ? [[target.methodId, target.baseMethodId]] : []
     )
   );
   const copyTargetMethodIds = [...baseMethodIdByTargetMethodId.entries()]

@@ -156,24 +156,15 @@ const DemandProjectionsForm = ({
   // Each column is the week its hidden `weekStarts[i]` posts: the loader's
   // period, else the browser's week (the form posts no week without one).
   const firstWeek = startOfWeek(today(getLocalTimeZone()), "en-US").toString();
-  const weekStarts = useMemo(
-    () =>
-      Array.from(
-        { length: WEEK_COUNT },
-        (_, i) =>
-          periods[i]?.startDate ??
-          parseDate(firstWeek).add({ weeks: i }).toString()
-      ),
-    [periods, firstWeek]
+  const weekStarts = Array.from(
+    { length: WEEK_COUNT },
+    (_, i) =>
+      periods[i]?.startDate ?? parseDate(firstWeek).add({ weeks: i }).toString()
   );
   // The number each week is headed with: 1, 2, … from this week, or the
   // calendar week of the year when the company plans by calendar week.
-  const weekNumbers = useMemo(
-    () =>
-      weekStarts.map((weekStart, i) =>
-        planningWeekNumber(weekStart, i, useCalendarWeeks)
-      ),
-    [weekStarts, useCalendarWeeks]
+  const weekNumbers = weekStarts.map((weekStart, i) =>
+    planningWeekNumber(weekStart, i, useCalendarWeeks)
   );
   const weekLabels = weekNumbers.map((weekNumber, i) => {
     const formattedDate = formatDate(
@@ -195,13 +186,13 @@ const DemandProjectionsForm = ({
 
   // Re-seed the chart when the drawer is reused for a different projection
   // (same route, new item/location) — otherwise it keeps the prior values.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the new form builds initialValues every render, so depending on it resets the chart on any parent render
   useEffect(() => {
     setWeekValues(
       Array.from({ length: WEEK_COUNT }, (_, i) =>
         toFinite((initialValues as Record<string, unknown>)[`week${i}`])
       )
     );
+    // oxlint-disable-next-line react/exhaustive-deps -- the new form builds initialValues every render, so depending on it resets the chart on any parent render
   }, [initialValues.itemId, initialValues.locationId]);
 
   const handleWeekChange = (index: number, value: number) => {
