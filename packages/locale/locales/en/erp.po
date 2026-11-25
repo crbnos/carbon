@@ -16595,8 +16595,14 @@ msgstr "Issue Number"
 msgid "Issue Part"
 msgstr "Issue Part"
 
+msgid "Issue status"
+msgstr "Issue status"
+
 msgid "Issue Status"
 msgstr "Issue Status"
+
+msgid "Issue statuses"
+msgstr "Issue statuses"
 
 msgid "Issue Target"
 msgstr "Issue Target"
@@ -16639,6 +16645,10 @@ msgstr "Issue workflows defined the preset values for an issue. For example, you
 
 msgid "Issued"
 msgstr "Issued"
+
+#. placeholder {0}: quantity(totals.quantityIssued, unit)
+msgid "Issued {0}"
+msgstr "Issued {0}"
 
 msgid "Issued Date"
 msgstr "Issued Date"
@@ -20580,6 +20590,9 @@ msgstr "No matching time"
 msgid "No materials"
 msgstr "No materials"
 
+msgid "No materials match the filters"
+msgstr "No materials match the filters"
+
 msgid "No materials yet"
 msgstr "No materials yet"
 
@@ -21010,6 +21023,9 @@ msgstr "No supplier parts match \"{searchText}\"."
 msgid "No suppliers yet"
 msgstr "No suppliers yet"
 
+msgid "No supply"
+msgstr "No supply"
+
 msgid "No sync operations yet"
 msgstr "No sync operations yet"
 
@@ -21251,6 +21267,9 @@ msgstr "Not feasible"
 
 msgid "Not funded"
 msgstr "Not funded"
+
+msgid "Not issued"
+msgstr "Not issued"
 
 msgid "Not job time"
 msgstr "Not job time"
@@ -22381,6 +22400,10 @@ msgstr "Order Total"
 msgid "Ordered"
 msgstr "Ordered"
 
+#. placeholder {0}: quantity(totals.quantityOrdered, unit)
+msgid "Ordered {0}"
+msgstr "Ordered {0}"
+
 msgid "Ordered Quantity"
 msgstr "Ordered Quantity"
 
@@ -22795,6 +22818,9 @@ msgstr "Partially Passed"
 msgid "Partially Returned"
 msgstr "Partially Returned"
 
+msgid "Partly issued"
+msgstr "Partly issued"
+
 msgid "Partly Recognized"
 msgstr "Partly Recognized"
 
@@ -22855,6 +22881,9 @@ msgstr "Passkeys"
 
 msgid "Passkeys are disabled"
 msgstr "Passkeys are disabled"
+
+msgid "Past average: {hours} h, {materialCost} material over {count} elements"
+msgstr "Past average: {hours} h, {materialCost} material over {count} elements"
 
 msgid "Past due"
 msgstr "Past due"
@@ -24103,6 +24132,9 @@ msgstr "Progress payments with the SF 1443, performance-based payments, and thei
 msgid "Project"
 msgstr "Project"
 
+msgid "Project (no element)"
+msgstr "Project (no element)"
+
 msgid "Project Billing"
 msgstr "Project Billing"
 
@@ -24145,6 +24177,9 @@ msgstr "Project Expense"
 
 msgid "Project ledger"
 msgstr "Project ledger"
+
+msgid "Project on hand"
+msgstr "Project on hand"
 
 msgid "Project owner"
 msgstr "Project owner"
@@ -24234,6 +24269,9 @@ msgstr "Projects"
 
 msgid "Projects in one group net their demand together in MRP."
 msgstr "Projects in one group net their demand together in MRP."
+
+msgid "Projects that have this item on their plan"
+msgstr "Projects that have this item on their plan"
 
 msgid "Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan."
 msgstr "Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan."
@@ -25207,6 +25245,10 @@ msgstr "Receive to project stock"
 msgid "Received"
 msgstr "Received"
 
+#. placeholder {0}: quantity(totals.quantityReceived, unit)
+msgid "Received {0}"
+msgstr "Received {0}"
+
 #. placeholder {0}: status?.received
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
@@ -25676,6 +25718,10 @@ msgstr "Reload the page to try again. If it keeps failing, check this item's bil
 
 msgid "Remaining"
 msgstr "Remaining"
+
+#. placeholder {0}: quantity(totals.quantityRemaining, unit)
+msgid "Remaining {0}"
+msgstr "Remaining {0}"
 
 msgid "Remaining after split stays on the original row."
 msgstr "Remaining after split stays on the original row."
@@ -26254,6 +26300,10 @@ msgstr "Require two-factor authentication"
 
 msgid "Required"
 msgstr "Required"
+
+#. placeholder {0}: quantity(totals.quantityRequired, unit)
+msgid "Required {0}"
+msgstr "Required {0}"
 
 msgid "Required Action"
 msgstr "Required Action"
@@ -30549,6 +30599,12 @@ msgstr "Supply and demand chart over {weeks} weeks: projected on hand starts at 
 msgid "Supply and demand chart: no data."
 msgstr "Supply and demand chart: no data."
 
+msgid "Supply status"
+msgstr "Supply status"
+
+msgid "Supply statuses"
+msgstr "Supply statuses"
+
 msgid "Support"
 msgstr "Support"
 
@@ -32154,6 +32210,9 @@ msgstr "The percentage of the cash discount. Use 0 for no discount."
 
 msgid "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
 msgstr "The person a planning action is assigned to: the item's owner at that location, else the item group's, else the location's, else the company default."
+
+msgid "The plan lines of the project's elements appear here, with the issues, PO lines and jobs of the project."
+msgstr "The plan lines of the project's elements appear here, with the issues, PO lines and jobs of the project."
 
 msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
 msgstr "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
@@ -34164,6 +34223,9 @@ msgstr "Unassign rule"
 msgid "Unassigned"
 msgstr "Unassigned"
 
+msgid "Unassigned on hand"
+msgstr "Unassigned on hand"
+
 msgid "unassigned stock"
 msgstr "unassigned stock"
 
@@ -34428,6 +34490,9 @@ msgstr "Unpick {0}"
 #. placeholder {0}: view.name
 msgid "Unpin {0}"
 msgstr "Unpin {0}"
+
+msgid "Unplanned"
+msgstr "Unplanned"
 
 msgid "Unposted Documents"
 msgstr "Unposted Documents"

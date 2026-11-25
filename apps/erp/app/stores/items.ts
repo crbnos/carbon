@@ -130,6 +130,21 @@ export const itemsList: LiveList<Item> = {
 
 export const useItems = () => useLiveList(itemsList, useUser().company.id);
 
+// One id lookup per items array, shared by every caller: a list that renders
+// a row per element would otherwise build a map of every item per row.
+const itemsById = new WeakMap<Item[], Map<string, Item>>();
+
+/** The company's items keyed by id. */
+export const useItemsById = () => {
+  const [items] = useItems();
+  let byId = itemsById.get(items);
+  if (!byId) {
+    byId = new Map(items.map((item) => [item.id, item]));
+    itemsById.set(items, byId);
+  }
+  return byId;
+};
+
 const useItemsOfType = (type: Item["type"]) => {
   const [items] = useItems();
   return useMemo(() => items.filter((i) => i.type === type), [items, type]);

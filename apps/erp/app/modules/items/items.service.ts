@@ -1542,6 +1542,7 @@ export async function getMaterialUsedIn(
   return {
     issues: usedIn.issues,
     jobMaterials: usedIn.jobMaterials,
+    projectMaterials: usedIn.projectMaterials,
     maintenanceDispatchItems: usedIn.maintenanceDispatchItems,
     methodMaterials: usedIn.methodMaterials,
     purchaseOrderLines: usedIn.purchaseOrderLines,
@@ -2404,6 +2405,7 @@ export type ItemUsedIn = {
   receiptLines: UsedInDocument[];
   quoteLines: UsedInMethod[];
   quoteMaterials: (UsedInMethod & { documentParentId: string })[];
+  projectMaterials: (UsedInMethod & { documentParentId: string })[];
   salesOrderLines: UsedInMethod[];
   shipmentLines: UsedInDocument[];
   supplierQuotes: UsedInDocument[];
@@ -2429,6 +2431,7 @@ const NOT_USED: ItemUsedIn = {
   receiptLines: [],
   quoteLines: [],
   quoteMaterials: [],
+  projectMaterials: [],
   salesOrderLines: [],
   shipmentLines: [],
   supplierQuotes: [],

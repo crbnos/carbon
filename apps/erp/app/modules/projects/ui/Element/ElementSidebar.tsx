@@ -16,6 +16,7 @@ import {
   useCurrencyDecimals,
   useCurrencyFormatter,
   usePermissions,
+  useQuantityFormatter,
   useUser
 } from "~/hooks";
 import FixedAssetStatus from "~/modules/accounting/ui/FixedAssets/FixedAssetStatus";
@@ -87,6 +88,7 @@ export function ElementSidebar({
   costTreatment,
   costObjective,
   costSummary,
+  itemHistory,
   states,
   labels,
   milestones,
@@ -102,6 +104,8 @@ export function ElementSidebar({
   costTreatment: ProjectCostTreatment | null;
   costObjective: ProjectCostObjective | null;
   costSummary: ProjectElementPage["costSummary"];
+  /** What other elements on the same part have charged, when one is linked. */
+  itemHistory: ProjectElementPage["itemHistory"];
   states: ProjectState[];
   labels: ProjectLabel[];
   milestones: ProjectMilestone[];
@@ -116,7 +120,18 @@ export function ElementSidebar({
   const typeLabels = useElementTypeLabels();
   const priorityLabels = usePriorityLabels();
   const formatMoney = useCurrencyFormatter();
+  const formatQuantity = useQuantityFormatter();
   const { company } = useUser();
+  // A linked part: what other elements on the same part averaged.
+  const count = Number(itemHistory?.elementCount ?? 0);
+  const hours = formatQuantity(Number(itemHistory?.averageHours ?? 0));
+  const materialCost = formatMoney.format(
+    Number(itemHistory?.averageMaterialCost ?? 0)
+  );
+  const pastAverage =
+    element.itemId && count > 0
+      ? t`Past average: ${hours} h, ${materialCost} material over ${count} elements`
+      : null;
   const currency = company.baseCurrencyCode;
   const decimals = useCurrencyDecimals(currency);
   // DCAA timekeeping AND the feature show the government fields; DCAA
@@ -302,6 +317,9 @@ export function ElementSidebar({
           step={INPUT_STEP.quantity}
           minValue={0}
         />
+        {pastAverage && (
+          <p className="text-xs text-muted-foreground">{pastAverage}</p>
+        )}
         {element.type !== "Parameter" && (
           <PartLink
             projectId={projectId}

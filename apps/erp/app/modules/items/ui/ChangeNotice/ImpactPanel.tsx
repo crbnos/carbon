@@ -29,6 +29,7 @@ export type ChangeNoticeImpactItem = {
     issues: UsedInChild[];
     jobs: UsedInChild[];
     jobMaterials: UsedInChild[];
+    projectMaterials: UsedInChild[];
     maintenanceDispatchItems: UsedInChild[];
     methodMaterials: UsedInChild[];
     purchaseOrderLines: UsedInChild[];
@@ -68,6 +69,12 @@ function ImpactItem({ item }: { item: ChangeNoticeImpactItem }) {
       name: t`Job Materials`,
       pages: ["production.jobs"],
       children: u.jobMaterials
+    },
+    {
+      key: "projectMaterials",
+      name: t`Projects`,
+      pages: ["projects.projects"],
+      children: u.projectMaterials
     },
     {
       key: "maintenanceDispatchItems",

@@ -119,6 +119,7 @@ export default function ConsumableRoute() {
                         const {
                           issues,
                           jobMaterials,
+                          projectMaterials,
                           maintenanceDispatchItems,
                           methodMaterials,
                           purchaseOrderLines,
@@ -143,6 +144,12 @@ export default function ConsumableRoute() {
                             name: "Job Materials",
                             pages: ["production.jobs"],
                             children: jobMaterials
+                          },
+                          {
+                            key: "projectMaterials",
+                            name: "Projects",
+                            pages: ["projects.projects"],
+                            children: projectMaterials
                           },
                           {
                             key: "maintenanceDispatchItems",

@@ -30,6 +30,7 @@ import { Link, useLocation } from "react-router";
 import { DiffBadge } from "~/components/Diff";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { useDrawerItem } from "~/hooks/useDrawerItem";
+import { useItemsById } from "~/stores";
 import type {
   ChangeOperationMark,
   ProjectElementType,
@@ -313,6 +314,7 @@ type ElementRowProps = {
     | "targetDate"
     | "labels"
     | "changeOperation"
+    | "itemId"
   >;
   /** The indent, in steps of one level. */
   level?: number;
@@ -356,6 +358,8 @@ export function ElementRow({
   wbsChars,
   className
 }: ElementRowProps) {
+  const itemById = useItemsById();
+  const item = element.itemId ? itemById.get(element.itemId) : undefined;
   const state = states.find((s) => s.id === element.stateId);
   const isComplete =
     state?.group === "Completed" || state?.group === "Cancelled";
@@ -409,6 +413,11 @@ export function ElementRow({
         >
           {element.name}
         </Link>
+        {item && (
+          <span className="min-w-0 truncate text-xs text-muted-foreground">
+            {item.readableIdWithRevision}
+          </span>
+        )}
         {status && (
           <span className="relative z-10 flex shrink-0">
             <DiffBadge status={status} />

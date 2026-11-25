@@ -2323,6 +2323,8 @@ export const path = {
     projectExpense: `${x}/projects/expense`,
     projectIssue: `${x}/projects/issue`,
     projectLogTime: `${x}/projects/log-time`,
+    projectMaterials: (id: string) =>
+      generatePath(`${x}/project/${id}/materials`),
     projectMilestones: (id: string) =>
       generatePath(`${x}/project/${id}/milestones`),
     projectPegging: (id: string) => generatePath(`${x}/project/${id}/pegging`),

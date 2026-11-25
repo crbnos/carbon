@@ -259,6 +259,7 @@ function ElementGraphCanvas({
             type: element.type,
             state: element.state,
             ownerId: element.ownerId,
+            itemId: element.itemId,
             commentCount: commentCounts[element.id] ?? 0,
             linkCount:
               element.type === "Requirement"

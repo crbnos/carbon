@@ -5776,6 +5776,27 @@ export const getProjectStockOnHand = defineServiceFn({
   }
 });
 
+/**
+ * Get the materials of a project.
+ *
+ * @remarks
+ * One row per plan line, plus one Unplanned row per element and item that has
+ * issues, PO lines or jobs no plan line links. Quantities only, with the
+ * stored status of each PO and job.
+ *
+ * @mcp read
+ */
+export const getProjectMaterials = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { "projects.projects": "View" },
+  async run(ctx, { projectId }) {
+    return service.getProjectMaterials(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      projectId
+    });
+  }
+});
+
 // --- Indirect rates (Government Contracting, @carbon/ee) ---------------------
 
 /**

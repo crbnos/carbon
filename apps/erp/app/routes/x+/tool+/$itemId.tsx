@@ -275,6 +275,7 @@ export default function ToolRoute() {
                               const {
                                 issues,
                                 jobMaterials,
+                                projectMaterials,
                                 jobs,
                                 maintenanceDispatchItems,
                                 methodMaterials,
@@ -310,6 +311,12 @@ export default function ToolRoute() {
                                   name: t`Job Materials`,
                                   pages: ["production.jobs"],
                                   children: jobMaterials
+                                },
+                                {
+                                  key: "projectMaterials",
+                                  name: t`Projects`,
+                                  pages: ["projects.projects"],
+                                  children: projectMaterials
                                 },
                                 {
                                   key: "maintenanceDispatchItems",
@@ -439,6 +446,7 @@ export default function ToolRoute() {
                             const {
                               issues,
                               jobMaterials,
+                              projectMaterials,
                               jobs,
                               maintenanceDispatchItems,
                               methodMaterials,
@@ -474,6 +482,12 @@ export default function ToolRoute() {
                                 name: "Job Materials",
                                 pages: ["production.jobs"],
                                 children: jobMaterials
+                              },
+                              {
+                                key: "projectMaterials",
+                                name: "Projects",
+                                pages: ["projects.projects"],
+                                children: projectMaterials
                               },
                               {
                                 key: "maintenanceDispatchItems",

@@ -82,6 +82,7 @@ export type UsedInKey =
   | "jobs"
   | "maintenanceDispatchItems"
   | "methodMaterials"
+  | "projectMaterials"
   | "purchaseOrderLines"
   | "receiptLines"
   | "quoteLines"
@@ -117,6 +118,7 @@ type UsedInTooltipKey = UsedInKey | "revisions" | "sizes";
  */
 const USED_IN_TOOLTIPS: Partial<Record<UsedInTooltipKey, MessageDescriptor>> = {
   jobMaterials: msg`Jobs that have this item on their bill of materials`,
+  projectMaterials: msg`Projects that have this item on their plan`,
   methodMaterials: msg`Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)`,
   quoteMaterials: msg`Quote lines whose bill of materials includes this item`
 };
@@ -663,6 +665,9 @@ function getUseInLink(
         child.documentParentId!,
         child.documentId
       );
+    case "projectMaterials":
+      if (!child.documentId || !child.documentParentId) return "#";
+      return path.to.projectElement(child.documentId, child.documentParentId);
     case "purchaseOrderLines":
       if (!child.documentId) return "#";
       return path.to.purchaseOrder(child.documentId);
