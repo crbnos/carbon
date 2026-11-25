@@ -28,7 +28,7 @@ import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { ChangeNotice } from "../../types";
 import AffectedItemForm from "./AffectedItemForm";
-import type { AffectedItemDraft } from "./affectedItem.types";
+import type { AffectedItemListEntry } from "./affectedItem.types";
 import { useChangeNoticeEngineeringLock } from "./lock-ui";
 
 // Explorer (left panel) of the change-order workspace — deliberately the same
@@ -45,7 +45,7 @@ export default function ChangeNoticeExplorer() {
 
   const routeData = useRouteData<{
     changeNotice: ChangeNotice;
-    affectedItems: AffectedItemDraft[];
+    affectedItems: AffectedItemListEntry[];
   }>(path.to.changeNotice(id));
 
   const affectedItems = routeData?.affectedItems ?? [];
@@ -114,7 +114,7 @@ function AffectedItemRow({
   isDisabled
 }: {
   changeOrderId: string;
-  affected: AffectedItemDraft;
+  affected: AffectedItemListEntry;
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
