@@ -2,11 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+// Several checks blank the same files, so each text is blanked once.
+const blanked = new Map<string, string>();
+const masked = new Map<string, string>();
+
 /**
  * Replace TS/JS comment text with spaces (newlines kept, so offsets and line
  * numbers survive). String contents are left alone.
  */
 export function blankComments(src: string): string {
+  let known = blanked.get(src);
+  if (known === undefined) {
+    known = blankText(src);
+    blanked.set(src, known);
+  }
+  return known;
+}
+
+function blankText(src: string): string {
   const out = src.split("");
   let i = 0;
   let quote: string | null = null;
@@ -61,6 +74,15 @@ export function blankComments(src: string): string {
  * effect is not a shape that occurs here.
  */
 export function maskCommentsAndStrings(contents: string): string {
+  let known = masked.get(contents);
+  if (known === undefined) {
+    known = maskText(contents);
+    masked.set(contents, known);
+  }
+  return known;
+}
+
+function maskText(contents: string): string {
   const out = contents.split("");
   let i = 0;
   const blank = (from: number, to: number) => {

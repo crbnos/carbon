@@ -482,17 +482,24 @@ export function sqlFragments(contents: string): SqlFragment[] {
   return fragments;
 }
 
+type SqlFileNode = SqlNode & {
+  fragment: SqlFragment;
+  statement: SqlStatement;
+  line: number;
+};
+
+// Most SQL checks walk every node of every migration, so each file's nodes are
+// listed once.
+const listed = new Map<string, readonly SqlFileNode[]>();
+
 /**
  * Every node of every fragment, with the fragment and statement it is in and
  * its file line: its own, or the statement's when the parser keeps none for it.
  */
-export function* sqlNodes(contents: string): Generator<
-  SqlNode & {
-    fragment: SqlFragment;
-    statement: SqlStatement;
-    line: number;
-  }
-> {
+export function sqlNodes(contents: string): readonly SqlFileNode[] {
+  const known = listed.get(contents);
+  if (known) return known;
+  const out: SqlFileNode[] = [];
   for (const fragment of sqlFragments(contents)) {
     for (const statement of fragment.statements) {
       for (const found of nodesIn(statement.node)) {
@@ -500,17 +507,19 @@ export function* sqlNodes(contents: string): Generator<
           found.location === undefined
             ? statement.line
             : fragment.lineAt(found.location);
-        yield {
+        out.push({
           node: found.node,
           parent: found.parent,
           location: found.location,
           fragment,
           statement,
           line
-        };
+        });
       }
     }
   }
+  listed.set(contents, out);
+  return out;
 }
 
 /**

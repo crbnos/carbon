@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { SourceFile } from "../check";
+import { readSource } from "./read-source";
 import { isTest } from "./typescript";
 
 /**
@@ -143,7 +144,7 @@ export function loadServerFiles(root: string): SourceFile[] {
     .map((path) => ({ path, file: relative(root, path) }))
     .sort((a, b) => a.file.localeCompare(b.file))
     .map(({ path, file }) => {
-      const contents = readFileSync(path, "utf8");
+      const contents = readSource(path);
       return {
         file,
         contents: isRoute.has(path) ? maskClientCode(contents) : contents
