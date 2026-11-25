@@ -6,7 +6,9 @@ import {
   type Directive,
   type Node,
   type ParseResult,
+  type ParserOptions,
   parseSync,
+  rawTransferSupported,
   type Statement,
   type StaticMemberExpression,
   visitorKeys
@@ -26,8 +28,17 @@ export type { Node };
  * recovered.
  */
 export function parseTypescript(file: string, contents: string): ParseResult {
-  return parseSync(file, contents);
+  return parseSync(file, contents, OPTIONS);
 }
+
+// Raw transfer reads the tree from the parser's own memory and does not copy
+// it through JSON, which is most of the cost of a parse. The option is
+// experimental and not in oxc-parser's types, hence the cast. Where it is not
+// supported (Node older than 22, a 32-bit or big-endian machine) the parser
+// runs in its default mode and returns the same tree.
+const OPTIONS = (
+  rawTransferSupported() ? { experimentalRawTransfer: true } : {}
+) as ParserOptions;
 
 // A child field holds a node, a list of nodes (with `null` for a hole, as in
 // `[a, , b]`), or nothing.
