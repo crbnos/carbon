@@ -254,17 +254,28 @@ describe("render: actions become page keys", () => {
     expect(select).toContain(`get_companies_with_module_view(ARRAY['parts']`);
   });
 
+  // The tables a policy's subqueries read: what follows FROM or JOIN, in the
+  // rendered rules and in the hand-written custom ones.
+  const tablesRead = (statement: string) =>
+    new Set(
+      [
+        ...statement.matchAll(
+          /\b(?:FROM|JOIN)\s+(?:(?:"public"|public)\.)?(?:"(\w+)"|(\w+))/gi
+        )
+      ].map((m) => (m[1] ?? m[2]) as string)
+    );
+  const selectReads = () =>
+    new Map(
+      Object.entries(manifest).map(([table, rule]) => [
+        table,
+        tablesRead(policy(render(rule as AnyRule, table), "SELECT"))
+      ])
+    );
+
   test("no table's SELECT policy reaches back to itself", () => {
     // A policy subquery runs under the SELECT policies of the table it reads,
     // so a cycle of SELECT policies is what Postgres refuses as recursion.
-    const reads = new Map<string, Set<string>>();
-    for (const [table, rule] of Object.entries(manifest)) {
-      const select = policy(render(rule as AnyRule, table), "SELECT");
-      const named = [...select.matchAll(/"public"\."(\w+)"/g)]
-        .map((m) => m[1] as string)
-        .filter((name, i) => i > 0 || name !== table);
-      reads.set(table, new Set(named));
-    }
+    const reads = selectReads();
     const cycles: string[] = [];
     const walk = (table: string, trail: string[]) => {
       for (const next of reads.get(table) ?? []) {
@@ -273,6 +284,33 @@ describe("render: actions become page keys", () => {
       }
     };
     for (const table of reads.keys()) walk(table, [table]);
+    expect(cycles).toEqual([]);
+  });
+
+  test("no write policy reads a table whose SELECT reaches back to the written table", () => {
+    // A write policy's subqueries run under the SELECT policies of the tables
+    // they read while the written table is still being expanded, so reaching
+    // the written table again is refused as recursion on every write.
+    const reads = selectReads();
+    const cycles: string[] = [];
+    for (const [table, rule] of Object.entries(manifest)) {
+      const rendered = render(rule as AnyRule, table);
+      for (const command of ["INSERT", "UPDATE", "DELETE"]) {
+        const seen = new Set<string>();
+        const walk = (current: string, trail: string[]) => {
+          if (current === table) {
+            cycles.push([`${table} ${command}`, ...trail].join(" → "));
+            return;
+          }
+          if (seen.has(current)) return;
+          seen.add(current);
+          for (const next of reads.get(current) ?? [])
+            walk(next, [...trail, next]);
+        };
+        for (const first of tablesRead(policy(rendered, command)))
+          walk(first, [first]);
+      }
+    }
     expect(cycles).toEqual([]);
   });
 });

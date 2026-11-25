@@ -110995,6 +110995,10 @@ export type Database = {
           unitOfMeasureCode: string
         }[]
       }
+      get_item_type: {
+        Args: { company_id: string; item_id: string }
+        Returns: Database["public"]["Enums"]["itemType"]
+      }
       get_item_used_in: {
         Args: { company_id: string; item_id: string }
         Returns: Json
