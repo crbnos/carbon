@@ -73,7 +73,7 @@ export function WeekNumberingCard({
           </div>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={!permissions.can("update", "settings")}>
+          <Submit isDisabled={!permissions.has({ "settings.company": "Edit" })}>
             <Trans>Save</Trans>
           </Submit>
         </CardFooter>

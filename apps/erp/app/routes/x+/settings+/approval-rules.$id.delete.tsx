@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { deleteApprovalRule } from "@carbon/ee/approvals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
@@ -12,9 +12,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "settings",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "settings.approvalRules": "Full"
   });
 
   await requireFeature({

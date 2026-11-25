@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -18,10 +18,6 @@ import type {
 } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
-import {
-  getIssueWorkflow,
-  getRequiredActionsList
-} from "~/modules/quality/quality.service";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
 import { toTiptapDoc } from "~/modules/shared/shared.models";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -34,26 +30,25 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Issue Workflows`, to: path.to.issueWorkflows },
     (data) => data?.workflow?.name
-  ),
-  module: "quality"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.workflow?.name, "Issue Workflow");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality",
-    role: "employee",
-    bypassRls: true
-  });
+  const { companyId, api } = await authorize(
+    request,
+    { "quality.issueWorkflows": "View" },
+    { bypassRls: true }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [workflow, requiredActions] = await Promise.all([
-    getIssueWorkflow(client, id),
-    getRequiredActionsList(client, companyId)
+    api.quality.getIssueWorkflow({ nonConformanceWorkflowId: id }),
+    api.quality.getRequiredActionsList({})
   ]);
 
   if (workflow.error) {
@@ -88,7 +83,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { id: _, content, ...workflow } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.quality.updateIssueWorkflow({
     ...workflow,
     id: input.params.id,

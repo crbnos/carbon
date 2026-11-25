@@ -40,8 +40,9 @@ const ids = {
 type Db = Kysely<KyselyDatabase>;
 let db: Db;
 
-const quality = (actions: ("view" | "create" | "update")[]) => ({
-  quality: {
+// Quality → Records alone: the gauge moves as the system, after it.
+const records = (actions: ("view" | "create" | "update")[]) => ({
+  "quality.records": {
     view: actions.includes("view") ? [ids.ours] : [],
     create: actions.includes("create") ? [ids.ours] : [],
     update: actions.includes("update") ? [ids.ours] : [],
@@ -61,7 +62,12 @@ const ctx = (
   actions: ("view" | "create" | "update")[] = ["view", "create", "update"]
 ) =>
   createServiceContext({
-    actor: { type: "user", userId: ids.user, permissions: quality(actions) },
+    actor: {
+      type: "user",
+      role: "employee",
+      userId: ids.user,
+      permissions: records(actions)
+    },
     company: { id: ids.ours, groupId: ids.ourGroup },
     caller: unavailable("caller client"),
     system: () => unavailable("service-role client"),
@@ -362,23 +368,21 @@ describeLocal("a calibration record operation", () => {
     });
   }, TIMEOUT);
 
-  // The form's save changes the gauge under the gauge's update policy.
-  it("refuses the gauge's latest calibration to a caller without update on quality", async () => {
-    const before = await gauge(ids.ourGauge);
+  // The form picks a new record's id first and uploads its files there.
+  it("creates the record under the id the caller picked", async () => {
+    const id = `${prefix}-picked`;
 
     const result = await createGaugeCalibrationRecord(ctx(["view", "create"]), {
       ...calibration,
-      dateCalibrated: "2403-01-01"
+      dateCalibrated: "2403-01-01",
+      id
     });
 
-    expect(result.error?.category).toBe("forbidden");
-    expect(await gauge(ids.ourGauge)).toEqual(before);
-    const records = await db
-      .selectFrom("gaugeCalibrationRecord")
-      .select("id")
-      .where("gaugeId", "=", ids.ourGauge)
-      .where("dateCalibrated", "=", "2403-01-01")
-      .execute();
-    expect(records).toEqual([]);
+    expect(result).toEqual({ data: { id }, error: null });
+    expect(await record(id)).toEqual({
+      inspectionStatus: "Pass",
+      requiresRepair: false,
+      dateCalibrated: "2403-01-01"
+    });
   }, TIMEOUT);
 });

@@ -12,10 +12,12 @@ import {
   LuNetwork,
   LuUsers
 } from "react-icons/lu";
+import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import { useSettings } from "~/hooks/useSettings";
 import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import type { RouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function usePeopleSubmodules() {
@@ -82,17 +84,18 @@ export default function usePeopleSubmodules() {
   const { addSavedViewsToRoutes } = useSavedViews();
 
   const settings = useSettings();
+  const permissions = usePermissions();
 
   return {
-    groups: peopleRoutes.map((group) => ({
+    groups: visibleGroups(
+      peopleRoutes,
+      permissions,
+      (route) =>
+        !route.setting ||
+        settings[route.setting as keyof typeof settings] === true
+    ).map((group) => ({
       ...group,
-      routes: group.routes
-        .filter(
-          (route) =>
-            !route.setting ||
-            settings[route.setting as keyof typeof settings] === true
-        )
-        .map(addSavedViewsToRoutes)
+      routes: group.routes.map(addSavedViewsToRoutes)
     }))
   };
 }

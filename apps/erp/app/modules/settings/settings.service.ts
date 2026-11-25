@@ -7,6 +7,7 @@ import { createGunzip } from "node:zlib";
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type {
+  Actor,
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
@@ -17,7 +18,6 @@ import {
   SUPABASE_URL,
   VERCEL_URL
 } from "@carbon/auth";
-import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
@@ -27,6 +27,7 @@ import {
   fetchAllFromTable,
   getCompanyTimeZone
 } from "@carbon/database";
+import { ownersOf } from "@carbon/database/access";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import {
   type Kysely,
@@ -34,7 +35,7 @@ import {
   type KyselyTx,
   withTransaction
 } from "@carbon/database/client";
-import { single, updateRows } from "@carbon/database/rows";
+import { single } from "@carbon/database/rows";
 import {
   accountDefaults,
   accounts,
@@ -181,7 +182,6 @@ import {
   type XeroProvider
 } from "@carbon/ee/accounting";
 import { enableAuditLog } from "@carbon/ee/audit.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
   ensureOnshapeReleaseWebhook,
   getIntegrationServerHooks,
@@ -333,10 +333,7 @@ import type {
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
 import { DataType } from "~/modules/shared/types";
-import {
-  getItarCertificationStatus,
-  getPermissionCacheKey
-} from "~/modules/users/users.service";
+import { getItarCertificationStatus } from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
@@ -413,7 +410,7 @@ export async function getApiKey(
   return client
     .from("apiKey")
     .select(
-      "id, name, expiresAt, scopes, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId"
+      "id, name, expiresAt, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId, permission(module, page, level)"
     )
     .eq("id", id)
     .eq("companyId", companyId)
@@ -431,7 +428,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", { count: listCount(args) })
+    .select("*, permission(module, page, level)", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -682,9 +679,10 @@ export async function getCustomFieldsTables(
 const GROUP_CUSTOM_FIELD_TABLES = new Set(["account", "currency"]);
 
 /**
- * What edits the records of a custom field table: the permission module whose
- * update the properties panels require, and the column that ties a record to
- * the company. Data is null when the table has no custom fields.
+ * What edits the records of a custom field table: the pages that own the
+ * table, whose Edit row-level security asks of a write (one page per item type
+ * for a table the item pages share), and the column that ties a record to the
+ * company. Data is null when the table has no custom fields.
  */
 export async function getCustomFieldTableEditScope(
   client: SupabaseClient<Database>,
@@ -692,14 +690,13 @@ export async function getCustomFieldTableEditScope(
 ) {
   const { data, error } = await client
     .from("customFieldTable")
-    .select("module")
+    .select("table")
     .eq("table", table)
     .maybeSingle();
   if (error || !data) return { data: null, error };
   return {
     data: {
-      // Item tables are listed under Items and edited with the parts permission.
-      module: data.module === "Items" ? "parts" : data.module.toLowerCase(),
+      pages: ownersOf(table),
       scopeColumn: GROUP_CUSTOM_FIELD_TABLES.has(table)
         ? ("companyGroupId" as const)
         : ("companyId" as const)
@@ -1492,17 +1489,125 @@ export async function insertSubsidiary(
 }
 
 /** Only the company fields: `updateSubsidiaryDetails` gates it and drops the cached time zone. */
+/**
+ * Writes a subsidiary's details. Bypasses row-level security when given the
+ * system client (Settings → Company owns `company`), so it is scoped to the
+ * caller's company group.
+ */
 export async function updateSubsidiary(
   client: SupabaseClient<Database>,
   id: string,
+  companyGroupId: string,
   subsidiary: Partial<z.infer<typeof subsidiaryValidator>> & {
     updatedBy: string;
   }
 ) {
   const { id: _, ...data } = subsidiary;
   return requireAffected(
-    client.from("company").update(data).eq("id", id).select("id")
+    client
+      .from("company")
+      .update(data)
+      .eq("id", id)
+      .eq("companyGroupId", companyGroupId)
+      .select("id")
   );
+}
+
+/**
+ * Who may own a company group: an active employee of any company in it. The
+ * one rule behind the billing page's list (`listOwnershipCandidates`) and the
+ * transfer's check (`readOwnershipTransfer`). Read past RLS: the group's other
+ * companies are not the caller's.
+ */
+function ownershipCandidates(db: Kysely<KyselyDatabase>, groupId: string) {
+  return db
+    .selectFrom("employee")
+    .innerJoin("company", "company.id", "employee.companyId")
+    .innerJoin("userToCompany", (join) =>
+      join
+        .onRef("userToCompany.userId", "=", "employee.id")
+        .onRef("userToCompany.companyId", "=", "employee.companyId")
+    )
+    .where("employee.active", "=", true)
+    .where("userToCompany.role", "=", "employee")
+    .where("company.companyGroupId", "=", groupId);
+}
+
+/** The users the owner of `companyId`'s group may hand it to (`ownershipCandidates`). */
+export async function listOwnershipCandidates(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{ id: string; fullName: string | null; email: string }[]> {
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  if (!company?.companyGroupId) return [];
+  return ownershipCandidates(db, company.companyGroupId)
+    .innerJoin("user", "user.id", "employee.id")
+    .select(["user.id", "user.fullName", "user.email"])
+    .distinct()
+    .orderBy("user.fullName")
+    .execute();
+}
+
+/**
+ * What deciding a transfer of the company group's ownership reads: the group
+ * and its owner, and whether the new owner is one of its
+ * `ownershipCandidates`. Read past RLS: `transferCompanyOwnership` decides
+ * itself.
+ */
+export async function readOwnershipTransfer(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; newOwnerId: string }
+): Promise<{
+  groupId: string;
+  ownerId: string | null;
+  newOwnerIsGroupEmployee: boolean;
+} | null> {
+  const group = await db
+    .selectFrom("company")
+    .innerJoin("companyGroup", "companyGroup.id", "company.companyGroupId")
+    .select(["companyGroup.id as groupId", "companyGroup.ownerId"])
+    .where("company.id", "=", args.companyId)
+    .executeTakeFirst();
+  if (!group) return null;
+
+  const employee = await ownershipCandidates(db, group.groupId)
+    .select("employee.id")
+    .where("employee.id", "=", args.newOwnerId)
+    .limit(1)
+    .executeTakeFirst();
+
+  return {
+    groupId: group.groupId,
+    ownerId: group.ownerId,
+    newOwnerIsGroupEmployee: employee !== undefined
+  };
+}
+
+/**
+ * Hand the company group to `toOwnerId`, only while `fromOwnerId` still owns
+ * it. False when the group changed hands since it was read.
+ */
+export async function setCompanyGroupOwner(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    groupId: string;
+    fromOwnerId: string;
+    toOwnerId: string;
+    userId: string;
+  }
+): Promise<boolean> {
+  const updated = await db
+    .updateTable("companyGroup")
+    .set({ ownerId: args.toOwnerId, updatedBy: args.userId })
+    .where("id", "=", args.groupId)
+    .where("ownerId", "=", args.fromOwnerId)
+    .returning("id")
+    .executeTakeFirst();
+  return updated !== undefined;
 }
 
 export async function updateCompanyPlan(
@@ -1936,9 +2041,9 @@ export async function setLocationResponsibleEmployee(
     userId: string;
   }
 ) {
-  // `location` is a resources table: without resources_update, row-level
-  // security matches no row and the update succeeds having changed nothing.
-  // Returning the row lets the caller tell the two apart.
+  // `location` belongs to Resources → Locations; the operation passes the
+  // system client, so the write is scoped to the company. Returning the row
+  // tells a location of another company (no row) from a written one.
   return client
     .from("location")
     .update({ responsibleEmployee: args.employeeId, updatedBy: args.userId })
@@ -2458,6 +2563,7 @@ async function previewTaxCodes(
     .select(TAX_CODE_SUMMARY_SELECT)
     .eq("companyId", companyId)
     .in("id", taxCodeIds);
+  if (taxCodes.error) throw taxCodes.error;
   return taxCodes.data;
 }
 
@@ -2861,42 +2967,6 @@ export async function getOeeDevicesTabData(
 
 const INTEGRATION_CACHE_TTL = 3600;
 const PIECE_HEALTHY_CACHE_TTL = 300;
-
-/**
- * Drop the cached auth record for an API key so a scope change or revocation
- * takes effect immediately in the common case. An in-flight auth read can still
- * re-prime the cache with the pre-write row, so the hard bound is the 30s TTL —
- * callers that delete the row should bust AGAIN after the delete commits, using
- * the returned keyHash (unreadable from the DB once the row is gone).
- *
- * Service-role on purpose: apiKey's RLS SELECT requires `settings_view`, but the
- * routes that revoke or rescope a key gate on `users_update`, so the caller's own
- * client cannot see the row and the bust would silently do nothing.
- */
-export async function invalidateApiKeyCache(
-  id: string,
-  companyId: string
-): Promise<string | null> {
-  const { data, error } = await getCarbonServiceRole()
-    .from("apiKey")
-    .select("keyHash")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  // A failed lookup is indistinguishable from a missing row at the return type,
-  // and neither may block the revoke — log it so a stale scope surviving its TTL
-  // is diagnosable rather than silent.
-  if (error) {
-    logger.error("Failed to read api key for cache bust", {
-      error,
-      id,
-      companyId
-    });
-  }
-  if (!data?.keyHash) return null;
-  await bustApiKeyCache(data.keyHash);
-  return data.keyHash;
-}
 
 export async function clearCustomFieldsCache(companyId?: string) {
   const keys = companyId ? `customFields:${companyId}:*` : "customFields:*";
@@ -4041,6 +4111,14 @@ export async function getProviderDimensionTargets(
 type CompanySettingsUpdate =
   Database["public"]["Tables"]["companySettings"]["Update"];
 
+/**
+ * Whose console PIN turning console mode on generates: a person's own. An
+ * API key gets none, since whoever holds the key may not be its creator.
+ */
+export function consolePinUserId(actor: Actor): string | undefined {
+  return actor.type === "user" ? actor.userId : undefined;
+}
+
 /** The fields the caller sent: an absent (undefined) one is left out. */
 export function sentFields<T extends object>(fields: T): Partial<T> {
   return Object.fromEntries(
@@ -4057,7 +4135,12 @@ export function nothingSent(
     : null;
 }
 
-/** Writes the sent fields to the company's settings row, as the caller. */
+/**
+ * Writes the sent fields to the company's settings row. Bypasses row-level
+ * security: Settings → Company owns the row, and the calling settings page's
+ * operation permission is the gate. Call it only with that operation's
+ * validated fields.
+ */
 export async function saveCompanySettings(
   ctx: ServiceContext,
   fields: CompanySettingsUpdate,
@@ -4066,7 +4149,7 @@ export async function saveCompanySettings(
   const changes = sentFields(fields);
   if (Object.keys(changes).length === 0) return null;
   const { error } = await requireAffected(
-    ctx.asCaller.supabase
+    ctx.asSystem.supabase
       .from("companySettings")
       .update(changes)
       .eq("id", ctx.company.id)
@@ -4286,14 +4369,13 @@ export async function createHeadquarters(
     );
   }
 
-  const [job] = await Promise.all([
-    insertEmployeeJob(client, {
-      id: ctx.auditUserId,
-      companyId,
-      locationId: headquarters.data.id
-    }),
-    redis.del(getPermissionCacheKey(ctx.auditUserId))
-  ]);
+  // No claims clear: the cache holds one field per company, and a company
+  // just created has none yet.
+  const job = await insertEmployeeJob(client, {
+    id: ctx.auditUserId,
+    companyId,
+    locationId: headquarters.data.id
+  });
   if (job.error) {
     return ctx.error(
       "internal",
@@ -4315,12 +4397,6 @@ export function generateTestLabel(
   const labelSize = labelSizes.find((s) => s.id === mediaSizeId);
   if (!labelSize?.zpl) return null;
   return generateTestLabelZPL(withLabelDpi(labelSize, dpi), printedAt);
-}
-
-/** An API key action on a company without the plan. */
-export function apiKeysEntitlement(ctx: ServiceContext, err: unknown) {
-  if (!(err instanceof EntitlementError)) throw err;
-  return ctx.error("entitlement", "API keys require the Business plan");
 }
 
 /** The integration's stored metadata and its `settings` object, for a merge. */
@@ -4572,35 +4648,7 @@ export async function seedCompany(
     if (!employeeTypeId)
       throw new Error("Failed to insert admin employee type");
 
-    // get the modules
-    const modules = (await trx
-      .selectFrom("modules")
-      .select("name")
-      .execute()) as { name: string }[];
-
-    // create employee type permissions for admin
-    const employeeTypePermissions = modules.reduce<
-      Database["public"]["Tables"]["employeeTypePermission"]["Insert"][]
-    >((acc, module) => {
-      if (module.name) {
-        acc.push({
-          employeeTypeId: employeeTypeId,
-          // @ts-expect-error - it's legit, chill typescript
-          module: module.name,
-          create: [companyId],
-          update: [companyId],
-          delete: [companyId],
-          view: [companyId]
-        });
-      }
-      return acc;
-    }, []);
-
-    // insert employee type permissions
-    await trx
-      .insertInto("employeeTypePermission")
-      .values(employeeTypePermissions)
-      .execute();
+    // The Admin type resolves to Full on every page with no permission rows.
 
     // insert employee
     await trx
@@ -4966,54 +5014,6 @@ export async function seedCompany(
         await trx.insertInto("fixedAssetClass").values(classRows).execute();
       }
     } // end if (!identityOnly)
-
-    const user = await single(
-      trx,
-      "userPermission",
-      { id: userId },
-      { columns: ["permissions"] }
-    );
-    if (user.error) throw new Error(user.error.message);
-
-    const currentPermissions = (user.data?.permissions ?? {}) as Record<
-      string,
-      string[]
-    >;
-    const newPermissions = { ...currentPermissions };
-    modules.forEach(({ name }) => {
-      const module = name?.toLowerCase();
-      if (`${module}_view` in newPermissions) {
-        newPermissions[`${module}_view`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_view`] = [companyId];
-      }
-
-      if (`${module}_create` in newPermissions) {
-        newPermissions[`${module}_create`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_create`] = [companyId];
-      }
-
-      if (`${module}_update` in newPermissions) {
-        newPermissions[`${module}_update`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_update`] = [companyId];
-      }
-
-      if (`${module}_delete` in newPermissions) {
-        newPermissions[`${module}_delete`]!.push(companyId);
-      } else {
-        newPermissions[`${module}_delete`] = [companyId];
-      }
-    });
-
-    const { error } = await updateRows(
-      trx,
-      "userPermission",
-      { permissions: newPermissions },
-      { id: userId }
-    );
-    if (error) throw new Error(error.message);
 
     // For subsidiaries: set companyGroupId + parentCompanyId now that the
     // reference data (including the supplier/customer sequences) has been
@@ -8781,7 +8781,7 @@ export async function pushOnshapeRelease(
   }
   // An item the notice could not take is removed: left in place it is outside
   // change control, and a re-push would reuse it instead of staging it. The
-  // service role removes it because the pusher may lack parts_delete.
+  // service role removes it because the pusher may lack Full on its page.
   const stageInNotice = async (
     label: string,
     itemId: string,

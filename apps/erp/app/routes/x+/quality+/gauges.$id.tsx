@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
@@ -31,9 +31,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    view: "quality"
-  });
+  const { companyId } = await authorize(request, { "quality.gauges": "View" });
 
   const serviceRole = await getCarbonServiceRole();
 
@@ -66,7 +64,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const d = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.quality.updateGauge({
     id,
     gaugeId: d.gaugeId,

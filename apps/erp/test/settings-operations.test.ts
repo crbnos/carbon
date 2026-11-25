@@ -46,14 +46,22 @@ vi.mock("@carbon/printing/printing.server", () => ({
   invalidatePrinterCache: vi.fn()
 }));
 vi.mock("@carbon/jobs", () => ({ batchTrigger, trigger }));
+// The plan check behind the API-key lock: the real answer unless a test says.
+vi.mock("@carbon/ee/plan.server", async (importOriginal) => {
+  const plan = await importOriginal<typeof import("@carbon/ee/plan.server")>();
+  return { ...plan, companyHasFeature: vi.fn(plan.companyHasFeature) };
+});
 
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import { redis } from "@carbon/kv";
+import { pageClaims } from "./page-claims";
 
 import {
   createItemSerialSequence,
   deleteCustomField,
   removePrinterRoute,
+  revokeApiKey,
   savePrinterRoute,
   setIntegrationSyncEnabled,
   setRecordCustomFields,
@@ -66,20 +74,25 @@ import {
   updateProductionSettings,
   updateCustomField,
   updateItemSerialSequence,
+  updatePurchasingSettings,
+  updateResourcesSettings,
   updateSecuritySettings,
   updateSubsidiaryDetails
 } from "../app/modules/settings/settings.server";
-import type { CustomFieldType } from "../app/modules/settings/settings.service";
+import {
+  type CustomFieldType,
+  consolePinUserId
+} from "../app/modules/settings/settings.service";
 import { DataType } from "../app/modules/shared/types";
 
-const settings = {
+const settings = pageClaims({
   settings: {
     view: ["company-1"],
     create: ["company-1"],
     update: ["company-1"],
     delete: ["company-1"]
   }
-};
+});
 
 type Write = { table: string; method: string; values: unknown };
 
@@ -124,7 +137,7 @@ function contextWith(
 ) {
   const db = client(rows, options);
   const ctx = createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions: settings },
+    actor: { type: "user", role: "employee", userId: "user-1", permissions: settings },
     company: { id: "company-1", groupId: "group-1" },
     caller: db as never,
     system: () => db as never,
@@ -168,7 +181,7 @@ describe("a settings page update", () => {
   it("is refused without the settings permission", async () => {
     const db = client({});
     const ctx = createServiceContext({
-      actor: { type: "user", userId: "user-1", permissions: {} },
+      actor: { type: "user", role: "employee", userId: "user-1", permissions: {} },
       company: { id: "company-1", groupId: "group-1" },
       caller: db as never,
       system: () => db as never,
@@ -182,6 +195,62 @@ describe("a settings page update", () => {
 
     expect(result.error?.category).toBe("forbidden");
     expect(db.writes).toEqual([]);
+  });
+});
+
+// Settings → Company owns the settings row, its billing addresses and the
+// company row; a module's settings page writes its own fields there as the
+// system, after its own permission.
+// The writes these pages make as the system, past RLS, are pinned against the
+// database in `test/database/settings-scoping.test.ts`.
+describe("a caller with one settings page only", () => {
+  function pageOnly(page: string, rows: Record<string, unknown> = {}) {
+    const db = client(rows);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: {
+          [page]: {
+            view: ["company-1"],
+            create: ["company-1"],
+            update: ["company-1"],
+            delete: []
+          }
+        }
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: db as never,
+      system: () => db as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    return { ctx, writes: db.writes };
+  }
+
+  it("refuses a location that is not the company's", async () => {
+    const { ctx } = pageOnly("settings.planning", { location: [] });
+
+    const result = await updatePlanningSettings(ctx, {
+      locationResponsibleEmployee: {
+        locationId: "loc-9",
+        responsibleEmployee: null
+      }
+    });
+
+    expect(result.error?.category).toBe("notFound");
+  });
+
+  it("is refused on another settings page's operation", async () => {
+    const { ctx, writes } = pageOnly("settings.inventory");
+
+    const result = await updatePurchasingSettings(ctx, {
+      requireSupplierContactEmail: true
+    });
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
   });
 });
 
@@ -236,7 +305,11 @@ describe("planning settings", () => {
 
 describe("people settings", () => {
   it("answers a company without the plan with an entitlement error", async () => {
-    consoleSetting.mockRejectedValue(new EntitlementError("PERMISSIONS"));
+    consoleSetting.mockResolvedValue({
+      error: { code: "entitlement", message: "Requires the Business plan" },
+      pin: null,
+      pinError: null
+    });
     const { ctx } = contextWith();
 
     const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
@@ -244,22 +317,23 @@ describe("people settings", () => {
     expect(result.error?.category).toBe("entitlement");
   });
 
-  it("generates no console PIN for a key caller: the key holder may not be its creator", async () => {
-    consoleSetting.mockResolvedValue({ error: null, pin: null, pinError: null });
-    const db = client({});
-    const ctx = createServiceContext({
-      actor: { type: "apiKey", createdBy: "user-1", scopes: settings },
-      company: { id: "company-1", groupId: "group-1" },
-      caller: db as never,
-      system: () => db as never,
-      pg: () => ({}) as never,
-      kv: () => ({}) as never
-    });
-
-    const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
-
-    expect(result.data).toMatchObject({ pin: null });
-    expect(consoleSetting.mock.calls[0]![4]).toBeUndefined();
+  it("generates a console PIN for a person only, never for an API key", () => {
+    const permissions = settings;
+    expect(
+      consolePinUserId({
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions
+      })
+    ).toBe("user-1");
+    // Whoever holds the key may not be its creator.
+    expect(
+      consolePinUserId({ type: "apiKey", createdBy: "user-1", permissions })
+    ).toBeUndefined();
+    expect(
+      consolePinUserId({ type: "system", onBehalfOf: "user-1" })
+    ).toBeUndefined();
   });
 });
 
@@ -584,7 +658,7 @@ describe("retrying or skipping sync operations", () => {
       global: { fetch: fetchStub as typeof fetch }
     });
     const ctx = createServiceContext({
-      actor: { type: "user", userId: "user-1", permissions: settings },
+      actor: { type: "user", role: "employee", userId: "user-1", permissions: settings },
       company: { id: "company-1", groupId: "group-1" },
       caller: caller as never,
       system: () => caller as never,
@@ -681,7 +755,12 @@ describe("setting a record's custom field values", () => {
   // The boundary is PostgREST: a real supabase-js client whose fetch answers
   // the custom field table's module and the UPDATE with the rows it changed.
   function recordCustomFields({
-    actor = { type: "user", userId: "user-1", permissions: settings },
+    actor = {
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: settings
+    },
     module = "Items",
     changed = ["P-1"],
     fields = [{ id: "color", dataTypeId: DataType.Text, listOptions: null }],
@@ -732,15 +811,17 @@ describe("setting a record's custom field values", () => {
     return { ctx, updates };
   }
 
-  const key = (scopes: Record<string, { view?: string[]; update?: string[] }>) =>
+  const key = (grants: Record<string, { view?: string[]; update?: string[] }>) =>
     ({
       type: "apiKey",
       createdBy: "user-1",
-      scopes: Object.fromEntries(
-        Object.entries(scopes).map(([module, actions]) => [
-          module,
-          { view: [], create: [], update: [], delete: [], ...actions }
-        ])
+      permissions: pageClaims(
+        Object.fromEntries(
+          Object.entries(grants).map(([subject, actions]) => [
+            subject,
+            { view: [], create: [], update: [], delete: [], ...actions }
+          ])
+        )
       )
     }) as Actor;
 
@@ -785,6 +866,10 @@ describe("setting a record's custom field values", () => {
   it.each([
     ["only view on parts", { parts: { view: ["company-1"] } }],
     ["update on items, the table's module name", { items: { update: ["company-1"] } }],
+    [
+      "Edit on another item page",
+      { "parts.materials": { update: ["company-1"] } }
+    ],
     ["update on another module", { sales: { update: ["company-1"] } }]
   ])("refuses an API key with %s and writes nothing", async (_name, scopes) => {
     const { ctx, updates } = recordCustomFields({ actor: key(scopes) });
@@ -795,7 +880,7 @@ describe("setting a record's custom field values", () => {
     expect(updates()).toEqual([]);
   });
 
-  it("lets an API key with update on parts change an item table's records", async () => {
+  it("lets an API key with Edit on the table's page change its records", async () => {
     const { ctx, updates } = recordCustomFields({
       actor: key({ parts: { update: ["company-1"] } })
     });
@@ -889,7 +974,12 @@ describe("custom field definitions and serial sequences", () => {
   // every request with the rows `respond` gives, and records what was sent.
   function postgrest(
     respond: (method: string, url: URL) => { status?: number; body: unknown },
-    actor: Actor = { type: "user", userId: "user-1", permissions: settings }
+    actor: Actor = {
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: settings
+    }
   ) {
     const sent: { method: string; url: URL; body: unknown }[] = [];
     const fetchStub = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -1059,24 +1149,87 @@ describe("custom field definitions and serial sequences", () => {
     ]);
   });
 
-  // Row-level security updates a custom field only with update: settings.
-  it("refuses a custom field change to a user who cannot update settings", async () => {
+  // Row-level security updates a custom field only with Edit on Custom Fields.
+  it("refuses a custom field change to a user with Create on Custom Fields alone", async () => {
     const { ctx, writes } = postgrest(() => ({ body: [] }), {
       type: "user",
+      role: "employee",
       userId: "user-1",
-      permissions: {
+      permissions: pageClaims({
         settings: {
           view: ["company-1"],
           create: ["company-1"],
           update: [],
           delete: []
         }
-      }
+      })
     });
 
     const result = await updateCustomField(ctx, { id: "field-1", name: "Hue" });
 
     expect(result.error?.category).toBe("forbidden");
     expect(writes()).toEqual([]);
+  });
+});
+
+describe("revoking an API key", () => {
+  // API Keys at Edit: RLS lets this role update a key but not delete it.
+  const editor = {
+    "settings.apiKeys": {
+      view: ["company-1"],
+      create: ["company-1"],
+      update: ["company-1"],
+      delete: []
+    }
+  };
+
+  function revoke(deleted: { keyHash: string } | undefined) {
+    const caller = client({});
+    const where: [string, string, string][] = [];
+    const query = {
+      where: (...args: [string, string, string]) => {
+        where.push(args);
+        return query;
+      },
+      returning: () => query,
+      executeTakeFirst: async () => deleted
+    };
+    const pg = { deleteFrom: vi.fn(() => query) };
+    vi.mocked(companyHasFeature).mockResolvedValueOnce(true);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: editor
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => caller as never,
+      pg: () => pg as never,
+      kv: () => ({}) as never
+    });
+    return { result: revokeApiKey(ctx, { id: "key-1" }), caller, pg, where };
+  }
+
+  it("deletes the company's key as the system, then drops its cached authentication", async () => {
+    const { result, caller, pg, where } = revoke({ keyHash: "hash-1" });
+
+    expect(await result).toEqual({ data: { id: "key-1" }, error: null });
+    expect(pg.deleteFrom).toHaveBeenCalledWith("apiKey");
+    expect(where).toEqual([
+      ["id", "=", "key-1"],
+      ["companyId", "=", "company-1"]
+    ]);
+    // Never through the caller's client, whose RLS would delete nothing.
+    expect(caller.writes).toEqual([]);
+    expect(redis.del).toHaveBeenCalledWith(expect.stringContaining("hash-1"));
+  });
+
+  it("refuses a key no row was deleted for, and reports no success", async () => {
+    const { result } = revoke(undefined);
+
+    expect((await result).error?.category).toBe("notFound");
+    expect(redis.del).not.toHaveBeenCalled();
   });
 });

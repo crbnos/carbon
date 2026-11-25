@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { type CalendarDate, parseDate } from "@internationalized/date";
+import { niceAxis } from "~/utils/chart";
 import type { FeatureSamplingRule } from "./samplingStandards";
 
 /**
@@ -236,5 +237,38 @@ export function scarForSupplier({
       supplierId: task.supplierId,
       notes: task.notes
     }))
+  };
+}
+
+export type IssueTrendSeries = "opened" | "closed" | "target";
+
+/**
+ * The Issue Trend chart's Y axis, from 0 to the busiest week or the issue
+ * target, whichever is higher. Recharts drops a reference line outside the
+ * axis, so an axis fitted to the weeks alone hides a target above them.
+ * A series the legend hides is left out, so hiding the target fits the axis
+ * to the weeks.
+ * `showCounts`: every bar is at most a quarter of the axis, too short to read
+ * against the gridlines, so the bars print their counts.
+ */
+export function issueTrendAxis(
+  weeks: readonly { opened?: number; closed?: number }[],
+  target: number | null | undefined,
+  hidden: { has(series: IssueTrendSeries): boolean } = new Set()
+) {
+  const busiestWeek = weeks.reduce(
+    (max, week) =>
+      Math.max(
+        max,
+        hidden.has("opened") ? 0 : (week.opened ?? 0),
+        hidden.has("closed") ? 0 : (week.closed ?? 0)
+      ),
+    0
+  );
+  const shownTarget = hidden.has("target") ? 0 : (target ?? 0);
+  const axis = niceAxis(0, Math.max(busiestWeek, shownTarget), 5);
+  return {
+    ...axis,
+    showCounts: busiestWeek > 0 && busiestWeek * 4 <= axis.niceMax
   };
 }

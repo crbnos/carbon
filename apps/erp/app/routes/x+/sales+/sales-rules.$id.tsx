@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import type { SalesRuleSurface } from "@carbon/utils";
@@ -16,16 +16,13 @@ import {
   salesRuleValidator
 } from "~/modules/sales/sales.models";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
-import { getEnforcementRule } from "~/modules/shared/shared.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
-  });
+  const { api } = await authorize(request, { "sales.salesRules": "View" });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getEnforcementRule(client, "sales", id, companyId);
+  const rule = await api.shared.getEnforcementRule({ family: "sales", id });
   if (rule.error || !rule.data) throw notFound("Rule not found");
   return { rule: rule.data };
 }
@@ -35,7 +32,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["id"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.sales.updateSalesRule({
     ...input.data,
     id: input.params.id

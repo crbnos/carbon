@@ -16,7 +16,6 @@ import { annotateRequestSpan } from "@carbon/logger/span";
 import { serve } from "inngest/remix";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { tableJobHandlers } from "~/utils/table-jobs.server";
-import { scopesFromPermissions } from "./v1+/lib/base.server";
 
 const logger = getLogger("erp", "inngest");
 
@@ -57,7 +56,10 @@ function wireWorkflowDispatch() {
       {
         ...context,
         authKind: "session",
-        scopes: scopesFromPermissions(permissions, context.companyId),
+        permissions,
+        // A workflow acts only as an owner who is an employee
+        // (`readOwnerPermissions`).
+        role: "employee",
         origin: NO_ORIGIN
       },
       args

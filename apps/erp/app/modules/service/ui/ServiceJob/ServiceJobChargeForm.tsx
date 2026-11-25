@@ -133,7 +133,7 @@ const ServiceJobChargeForm = ({
   const jobAccount = coverageAccount ? accountLabel(coverageAccount) : null;
 
   const isEditing = !!initialValues.id;
-  const isDisabled = isLocked || !permissions.can("update", "service");
+  const isDisabled = isLocked || !permissions.has({ "service.jobs": "Edit" });
 
   const [unitPrice, setUnitPrice] = useState(initialValues.unitPrice);
   const [unitOfMeasureCode, setUnitOfMeasureCode] = useState(

@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -12,9 +12,7 @@ import FailureModeForm from "~/modules/resources/ui/FailureModes/FailureModeForm
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    create: "resources"
-  });
+  await authorize(request, { "resources.failureModes": "Create" });
 
   return null;
 }
@@ -22,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(failureModeValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.resources.createFailureMode({
     name: input.data.name,
     type: input.data.type

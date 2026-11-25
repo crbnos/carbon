@@ -2,14 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import { createClient } from "@supabase/supabase-js";
 import { expect, it, vi } from "vitest";
+import * as invoicing from "~/modules/invoicing/invoicing.server";
+import {
+  registerTestCarbon,
+  withTestApi
+} from "../../../../test/register-carbon";
 import { loader } from "./charges.$id";
 
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize: vi.fn() }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: async () => ({}) }));
+
+registerTestCarbon({ invoicing });
 
 // PostgREST answered over a stubbed fetch: one table fails, the rest succeed.
 function clientFailing(failingTable: string) {
@@ -39,11 +46,13 @@ function clientFailing(failingTable: string) {
 it.each(["account", "document"])(
   "redirects instead of rendering a partial charge when the %s read fails",
   async (table) => {
-    vi.mocked(requirePermissions).mockResolvedValue({
-      client: clientFailing(table),
-      companyId: "company-a",
-      companyGroupId: "group-a"
-    } as Awaited<ReturnType<typeof requirePermissions>>);
+    vi.mocked(authorize).mockResolvedValue(
+      withTestApi({
+        client: clientFailing(table),
+        companyId: "company-a",
+        companyGroupId: "group-a"
+      }) as unknown as Awaited<ReturnType<typeof authorize>>
+    );
 
     await expect(
       loader({

@@ -228,14 +228,17 @@ describe("buildManifestDigest", () => {
 
   // A gate over several modules that read "none" could lose a module, or
   // become a membership gate, without a line of the digest changing.
-  it("records every scope of a gate over several modules", () => {
+  it("records every page of a gate over several modules", () => {
     expect(
       digested({
         module: null,
-        actions: [],
-        scopes: ["production_create", "projects_view"]
+        actions: ["view", "create"],
+        allOf: [
+          { page: "production.jobs", level: "Create" },
+          { page: "projects.projects", level: "View" }
+        ]
       })
-    ).toBe("production_create+projects_view");
+    ).toBe("all of production.jobs:Create+projects.projects:View");
   });
 
   it("records one module with its actions, and membership as none", () => {

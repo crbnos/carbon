@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -13,12 +13,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getKanbanItems,
-  getKanbanProjectedQuantities,
   KANBAN_ITEMS_PAGING
 } from "~/modules/inventory/inventory.service";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
-import { getLocationsList } from "~/modules/resources/resources.service";
-import { getKanbanOutputSetting } from "~/modules/settings/settings.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
@@ -30,15 +27,15 @@ const logger = getLogger("erp", "kanbans");
 
 export const handle: Handle = {
   breadcrumb: msg`Kanbans`,
-  to: path.to.kanbans,
-  module: "inventory"
+  to: path.to.kanbans
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "inventory",
-    bypassRls: true
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    { "inventory.kanbans": "View" },
+    { bypassRls: true }
+  );
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -65,7 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await api.resources.getLocationsList({});
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.kanbans,
@@ -86,7 +83,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getKanbanOutputSetting(client, companyId)
+    api.settings.getKanbanOutputSetting({})
   ]);
 
   if (result.error) {
@@ -120,11 +117,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const projectedQuantities: Record<string, number> = {};
   if (armedKanbanIds.length > 0) {
-    const projected = await getKanbanProjectedQuantities(
-      client,
-      companyId,
-      armedKanbanIds
-    );
+    const projected = await api.inventory.getKanbanProjectedQuantities({
+      kanbanIds: armedKanbanIds
+    });
     if (projected.error) {
       logger.error("Failed to load kanban projected quantities", {
         companyId,

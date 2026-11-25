@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { Button } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -10,7 +10,10 @@ import { LuFileUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
+import { usePermissions } from "~/hooks";
+import { accountingActivationGate } from "~/modules/accounting/accounting.models";
 import { getActivationCutover } from "~/modules/accounting/accounting.service";
+import { importChartOfAccountsPermission } from "~/modules/accounting/accounting.utils";
 import { ActivationFooter } from "~/modules/accounting/ui/Activation";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -21,9 +24,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    accountingActivationGate("View")
+  );
   return getActivationCutover(client, companyId, request);
 }
 
@@ -31,6 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
  *  is matched to it by account number. */
 export default function AccountingActivationChartRoute() {
   const { cutoverDate } = useLoaderData<typeof loader>();
+  const permissions = usePermissions();
 
   return (
     <>
@@ -47,11 +52,13 @@ export default function AccountingActivationChartRoute() {
             </Trans>
           }
           actions={
-            <Button leftIcon={<LuFileUp />} asChild>
-              <Link to={`${path.to.chartOfAccountsImport}?from=activation`}>
-                <Trans>Import your chart</Trans>
-              </Link>
-            </Button>
+            permissions.has(importChartOfAccountsPermission) && (
+              <Button leftIcon={<LuFileUp />} asChild>
+                <Link to={`${path.to.chartOfAccountsImport}?from=activation`}>
+                  <Trans>Import your chart</Trans>
+                </Link>
+              </Button>
+            )
           }
         />
       </SetupBody>

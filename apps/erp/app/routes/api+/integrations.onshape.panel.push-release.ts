@@ -2,9 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbonFor } from "@carbon/api/carbon.server";
-import { originOf } from "@carbon/api/service-fn.server";
-import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { panelResponse } from "~/modules/settings/settings.service";
 
@@ -14,14 +12,7 @@ export const config = {
 
 /** Apply a reviewed release plan; Carbon's state at apply time outranks the plan. */
 export async function action({ request }: ActionFunctionArgs) {
-  const api = carbonFor(
-    await requireOnshapePanelPermissions(request, {
-      create: "parts",
-      update: "parts",
-      delete: "parts"
-    }),
-    originOf(request)
-  );
+  const { api } = await authorizePanel(request, { "parts.parts": "Full" });
   return panelResponse(
     await api.settings.pushOnshapeRelease(
       await request.json().catch(() => null)

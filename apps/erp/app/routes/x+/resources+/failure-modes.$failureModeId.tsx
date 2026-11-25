@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -12,20 +12,18 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { failureModeValidator } from "~/modules/resources/resources.models";
-import { getFailureMode } from "~/modules/resources/resources.service";
 import FailureModeForm from "~/modules/resources/ui/FailureModes/FailureModeForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "resources.failureModes": "View"
   });
 
   const { failureModeId } = params;
   if (!failureModeId) throw notFound("failureModeId not found");
 
-  const failureMode = await getFailureMode(client, failureModeId);
+  const failureMode = await api.resources.getFailureMode({ failureModeId });
 
   if (failureMode.error) {
     throw redirect(
@@ -47,7 +45,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["failureModeId"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.resources.updateFailureMode({
     name: input.data.name,
     type: input.data.type,

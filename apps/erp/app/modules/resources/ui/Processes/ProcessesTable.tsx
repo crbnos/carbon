@@ -361,7 +361,7 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
           </MenuItem>
           {row.active ? (
             <MenuItem
-              disabled={!permissions.can("delete", "resources")}
+              disabled={!permissions.has({ "resources.processes": "Full" })}
               onClick={() => {
                 navigate(
                   `${path.to.processDeactivate(row.id!)}?${params.toString()}`
@@ -373,7 +373,7 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
             </MenuItem>
           ) : (
             <MenuItem
-              disabled={!permissions.can("delete", "resources")}
+              disabled={!permissions.has({ "resources.processes": "Full" })}
               onClick={() => {
                 navigate(
                   `${path.to.processActivate(row.id!)}?${params.toString()}`
@@ -387,7 +387,7 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
-            disabled={!permissions.can("delete", "resources")}
+            disabled={!permissions.has({ "resources.processes": "Full" })}
             onClick={() => {
               navigate(
                 `${path.to.deleteProcess(row.id!)}?${params.toString()}`
@@ -417,7 +417,7 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
         }
       ]}
       primaryAction={
-        permissions.can("create", "resources") && (
+        permissions.has({ "resources.processes": "Create" }) && (
           <New label={t`Process`} to={`new?${params.toString()}`} />
         )
       }

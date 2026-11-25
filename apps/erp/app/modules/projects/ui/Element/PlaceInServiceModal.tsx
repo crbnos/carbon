@@ -241,8 +241,10 @@ function PlaceInServiceBody({
               withBlocker={false}
               isDisabled={
                 selected.length === 0 ||
-                !permissions.can("create", "accounting") ||
-                !permissions.can("update", "projects")
+                !permissions.has({
+                  "accounting.assets": "Create",
+                  "projects.projects": "Edit"
+                })
               }
             >
               <Trans>Place in Service</Trans>

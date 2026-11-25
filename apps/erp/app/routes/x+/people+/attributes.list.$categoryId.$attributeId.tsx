@@ -3,29 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getAttribute } from "~/modules/people/people.service";
 import type { AttributeDataType } from "~/modules/people/types";
 import { AttributeForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "people",
-    role: "employee"
-  });
+  const { api } = await authorize(request, { "people.attributes": "View" });
 
   const { categoryId, attributeId } = params;
   if (!attributeId) throw notFound("attributeId not found");
   if (!categoryId) throw notFound("categoryId not found");
 
-  const attribute = await getAttribute(client, attributeId);
+  const attribute = await api.people.getAttribute({ attributeId });
   if (attribute.error) {
     throw redirect(
       path.to.attributeCategoryList(categoryId),

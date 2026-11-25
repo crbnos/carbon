@@ -254,12 +254,14 @@ export function formatToolDescription(
 ): string {
   let output = `${tool.name} [${tool.classification}]\n`;
   output += `${tool.description}\n`;
-  // The gate requires every scope it names, never one of them.
-  const { module, actions, scopes } = tool.permission;
-  const required =
-    scopes ?? (module ? actions.map((action) => `${module}_${action}`) : []);
-  if (required.length > 0) {
-    output += `Permission: ${required.join(" and ")}\n`;
+  // The actions are every one the gate's level holds; it checks the highest.
+  const action = tool.permission.actions.at(-1);
+  const oneOf = tool.permission.oneOf;
+  if (oneOf) {
+    const picked = oneOf.by.length > 0 ? ` (by ${oneOf.by.join(", ")})` : "";
+    output += `Permission: one of ${oneOf.pages.join(", ")} at ${oneOf.level}${picked}\n`;
+  } else if (tool.permission.module && action) {
+    output += `Permission: ${tool.permission.page ?? tool.permission.module}_${action}\n`;
   }
   if (options.isList) {
     if (tool.paginates) {

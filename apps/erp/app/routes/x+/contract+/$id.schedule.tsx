@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getErrorMessage, redirect } from "@carbon/utils";
@@ -38,7 +38,7 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   const edit = validation.data;
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result =
     edit.intent === "reset"
       ? await api.sales.resetContractSchedule({ customerContractId: id })

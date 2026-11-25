@@ -9,9 +9,10 @@ vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
 
-import type { ModulePermissions } from "@carbon/api/permissions";
 import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
+import type { ExpandedClaims } from "@carbon/database/access";
 import { getPlanningPeriods } from "../app/modules/shared/shared.server";
+import { pageClaims } from "./page-claims";
 
 // It adds missing weeks to the calendar as the system, so a caller the
 // planning screens would turn away must be refused before anything runs.
@@ -24,12 +25,15 @@ const untouched = new Proxy(
   }
 );
 
-const viewOf = (...modules: string[]): ModulePermissions =>
-  Object.fromEntries(
-    modules.map((module) => [
-      module,
-      { view: ["company-1"], create: [], update: [], delete: [] }
-    ])
+/** View on each module (every page of it) or page named. */
+const viewOf = (...subjects: string[]): ExpandedClaims =>
+  pageClaims(
+    Object.fromEntries(
+      subjects.map((subject) => [
+        subject,
+        { view: ["company-1"], create: [], update: [], delete: [] }
+      ])
+    )
   );
 
 const read = (actor: Actor) =>
@@ -46,11 +50,15 @@ const read = (actor: Actor) =>
   );
 
 describe("getPlanningPeriods", () => {
-  it("refuses a user who can view no planning screen", async () => {
+  it.each([
+    ["another module", "sales"],
+    ["a production page with no planning weeks", "production.jobs"]
+  ])("refuses a user who views %s alone", async (_label, subject) => {
     const { error } = await read({
       type: "user",
+      role: "employee",
       userId: "user-1",
-      permissions: viewOf("sales")
+      permissions: viewOf(subject)
     });
     expect(error?.category).toBe("forbidden");
   });
@@ -59,20 +67,23 @@ describe("getPlanningPeriods", () => {
     const { error } = await read({
       type: "apiKey",
       createdBy: "user-1",
-      scopes: viewOf("sales")
+      permissions: viewOf("sales")
     });
     expect(error?.category).toBe("forbidden");
   });
 
-  it.each(["production", "purchasing", "parts"])(
-    "lets a %s viewer past the refusal",
-    async (module) => {
-      const { error } = await read({
-        type: "user",
-        userId: "user-1",
-        permissions: viewOf(module)
-      });
-      expect(error?.category).not.toBe("forbidden");
-    }
-  );
+  it.each([
+    "production.materialPlanning",
+    "production.demandForecasts",
+    "purchasing.materialPlanning",
+    "parts.tools"
+  ])("lets a %s viewer past the refusal", async (page) => {
+    const { error } = await read({
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: viewOf(page)
+    });
+    expect(error?.category).not.toBe("forbidden");
+  });
 });

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -17,12 +17,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
-  });
-  const { client } = await requirePermissions(request, {
-    delete: "purchasing"
-  });
+  const { client } = await authorize(request, { "purchasing.rfqs": "Full" });
 
   const { rfqId, lineId } = params;
   if (!rfqId) {
@@ -32,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("lineId not found");
   }
 
-  const rfq = await getPurchasingRFQ(viewClient, rfqId);
+  const rfq = await getPurchasingRFQ(client, rfqId);
   await requireUnlocked({
     request,
     isLocked: isRfqLocked(rfq.data?.status),

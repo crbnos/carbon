@@ -27,7 +27,7 @@ export const useDocument = () => {
   const canDelete = useCallback(
     (doc: DocumentType) => {
       return (
-        !permissions.can("delete", "documents") ||
+        !permissions.has({ documents: "Full" }) ||
         !doc.writeGroups?.some((group) => user?.groups.includes(group))
       );
     },
@@ -37,7 +37,7 @@ export const useDocument = () => {
   const canUpdate = useCallback(
     (document: DocumentType) => {
       return (
-        !permissions.can("update", "documents") ||
+        !permissions.has({ documents: "Edit" }) ||
         !document.writeGroups?.some((group) => user?.groups.includes(group))
       );
     },

@@ -10,6 +10,7 @@ import {
   postInventoryCount,
   scanKanban
 } from "../app/modules/inventory/inventory.server";
+import { pageClaims } from "./page-claims";
 import {
   adjustmentRuleSurfaces,
   inventoryCountPostingFailure,
@@ -32,15 +33,16 @@ const ctx = (rows: Record<string, unknown> = {}) =>
   createServiceContext({
     actor: {
       type: "user",
+      role: "employee",
       userId: "user-1",
-      permissions: {
+      permissions: pageClaims({
         inventory: {
           view: ["company-1"],
           create: ["company-1"],
           update: ["company-1"],
           delete: []
         }
-      }
+      })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: clientWith(rows) as any,
@@ -184,11 +186,13 @@ describe("scanKanban for an API key", () => {
   ): Actor => ({
     type: "apiKey",
     createdBy: "user-1",
-    scopes: Object.fromEntries(
-      Object.entries(scopes).map(([module, actions]) => [
-        module,
-        { ...noScope, ...actions }
-      ])
+    permissions: pageClaims(
+      Object.fromEntries(
+        Object.entries(scopes).map(([module, actions]) => [
+          module,
+          { ...noScope, ...actions }
+        ])
+      )
     )
   });
   // A Make card whose job is still open: the scan only answers "collision".
@@ -222,13 +226,13 @@ describe("scanKanban for an API key", () => {
     return { result: scanKanban(ctx, { kanbanId: "kb-1" }), writes: caller.writes };
   };
 
-  it("refuses a key without inventory update, before reading the card", async () => {
+  it("refuses a key without Edit on inventory.kanbans, before reading the card", async () => {
     const { result, writes } = scan(key({ inventory: { view: ["company-1"] } }));
     expect((await result).error?.category).toBe("forbidden");
     expect(writes).toEqual([]);
   });
 
-  it("refuses a Make card to a key without production create", async () => {
+  it("refuses a Make card to a key without Create on production.jobs", async () => {
     const { result, writes } = scan(
       key({ inventory: { update: ["company-1"] } }),
       makeCard(null)

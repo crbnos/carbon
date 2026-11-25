@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import { datetime } from "@carbon/utils";
@@ -13,7 +13,6 @@ import {
   demandProjectionValidator,
   demandProjectionWeeks
 } from "~/modules/production/production.models";
-import { getDemandProjections } from "~/modules/production/production.service";
 import DemandProjectionsForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
 import {
   getLocationTimeZone,
@@ -25,8 +24,8 @@ import { path } from "~/utils/path";
 const WEEKS_TO_PROJECT = 52;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production"
+  const { client, companyId, api } = await authorize(request, {
+    "production.demandForecasts": "View"
   });
 
   const { itemId, locationId } = params;
@@ -42,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   // Load existing demand forecasts for this item and location
-  const existingProjections = await getDemandProjections(client, {
+  const existingProjections = await api.production.getDemandProjections({
     itemId,
     locationId,
     companyId,
@@ -88,7 +87,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { itemId, locationId } = input.params;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.production.updateDemandProjections({
     itemId,
     locationId,

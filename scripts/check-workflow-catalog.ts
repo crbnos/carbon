@@ -20,10 +20,15 @@ import {
   WORKFLOW_INTEGRATION_CATALOG,
   WORKFLOW_OPERATION_CATALOG
 } from "../packages/ee/src/workflows/catalog/actions.generated";
-import { buildCatalog, validateCatalogInputs } from "../packages/ee/src/workflows/catalog/build";
+import {
+  buildCatalog,
+  tablePages,
+  validateCatalogInputs
+} from "../packages/ee/src/workflows/catalog/build";
 import { WORKFLOW_ENTITY_REGISTRY } from "../packages/ee/src/workflows/catalog/entities";
 import {
   WORKFLOW_ENTITIES,
+  WORKFLOW_ENTITY_PAGES,
   WORKFLOW_EVENTS
 } from "../packages/ee/src/workflows/catalog/events.generated";
 // Direct import, unlike labels: this file has no `msg` macro, so plain Node can read it.
@@ -213,6 +218,7 @@ async function main(): Promise<void> {
       WORKFLOW_ACTIONS,
       WORKFLOW_OPERATIONS,
       schema,
+      tablePages,
       INTEGRATION_STEPS
     );
     const stale =
@@ -252,6 +258,12 @@ async function main(): Promise<void> {
       fail(`${stale} An entity's generated properties changed.`);
     }
 
+    try {
+      assert.deepStrictEqual(WORKFLOW_ENTITY_PAGES, rebuilt.entityPages);
+    } catch {
+      fail(`${stale} The page of an entity's table changed.`);
+    }
+
     compareMap(
       "action",
       WORKFLOW_ACTION_CATALOG,
@@ -268,7 +280,7 @@ async function main(): Promise<void> {
     try {
       assert.deepStrictEqual(WORKFLOW_OPERATION_CATALOG, rebuilt.operations);
     } catch {
-      fail(`${stale} An operation's entity, inputs or output changed.`);
+      fail(`${stale} An operation's entity, inputs, output or permission changed.`);
     }
 
     try {

@@ -20,8 +20,8 @@ import { EmployeeAvatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { convertConsoleOperatorPermission } from "~/modules/users/users.models";
 import type { getConsoleOperators } from "~/modules/users/users.service";
-import { getEmployeeTypes } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
@@ -37,9 +37,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, consoleOperatorsList, {
     dataKey: "operators",
     bypassRls: true,
-    firstPage: async ({ client, companyId }) => {
-      const employeeTypes = await getEmployeeTypes(client, companyId);
-      return { employeeTypes: employeeTypes.data ?? [] };
+    firstPage: async ({ api }) => {
+      const employeeTypes = await api.users.getEmployeeTypes({});
+      return { employeeTypes: employeeTypes.data?.rows ?? [] };
     },
     onError: {
       redirectTo: path.to.users,
@@ -155,7 +155,7 @@ const OperatorsTable = memo(
                 `${path.to.operatorResetPin(row.id!)}?${params.toString()}`
               )
             }
-            disabled={!permissions.can("update", "users")}
+            disabled={!permissions.has({ "users.operators": "Edit" })}
           >
             <MenuIcon icon={<LuKey />} />
             Reset PIN
@@ -164,7 +164,7 @@ const OperatorsTable = memo(
             onClick={() =>
               navigate(`${path.to.operator(row.id!)}?${params.toString()}`)
             }
-            disabled={!permissions.can("update", "users")}
+            disabled={!permissions.has(convertConsoleOperatorPermission)}
           >
             <MenuIcon icon={<LuUser />} />
             Convert to Full User
@@ -181,7 +181,7 @@ const OperatorsTable = memo(
         data={data}
         infinite={infinite}
         primaryAction={
-          permissions.can("create", "users") && (
+          permissions.has({ "users.operators": "Create" }) && (
             <New label={t`Operator`} to={`new?${params.toString()}`} />
           )
         }

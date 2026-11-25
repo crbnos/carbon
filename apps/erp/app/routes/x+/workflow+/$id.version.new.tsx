@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { requireFeature } from "@carbon/ee/plan.server";
@@ -22,8 +22,8 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "workflows"
+  const { client, companyId, userId } = await authorize(request, {
+    "workflows.workflows": "Create"
   });
   await requireFeature({
     request,

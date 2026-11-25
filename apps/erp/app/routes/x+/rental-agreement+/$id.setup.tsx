@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { Button, RecordOutlet, useDisclosure } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -26,8 +26,8 @@ import { path } from "~/utils/path";
 /** The setup wizard is for a Draft: once activated, an agreement is worked
  *  on from its page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, companyId } = await authorize(request, {
+    "sales.rentalAgreements": "Edit"
   });
 
   const { id } = params;
@@ -142,7 +142,7 @@ export default function RentalAgreementSetupRoute() {
                     isDisabled={
                       !hasLines ||
                       hasUnpricedUnit ||
-                      !permissions.can("update", "sales")
+                      !permissions.has({ "sales.rentalAgreements": "Edit" })
                     }
                     onClick={activate.onOpen}
                   >

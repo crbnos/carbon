@@ -84,8 +84,8 @@ const RiskRegisterForm = ({
 
   const isEditing = !!initialValues.id;
   const isDisabled = isEditing
-    ? !permissions.can("update", "quality")
-    : !permissions.can("create", "quality");
+    ? !permissions.has({ "quality.risks": "Edit" })
+    : !permissions.has({ "quality.risks": "Create" });
 
   // Set default values for severity and likelihood
   const formInitialValues = {

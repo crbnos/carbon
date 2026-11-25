@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -13,23 +13,19 @@ import {
   itemSerialSequenceValidator,
   type SerialNumberTiming
 } from "~/modules/settings/settings.models";
-import {
-  getItemSerialSequence,
-  upsertItemSerialSequence
-} from "~/modules/settings/settings.service";
+import { upsertItemSerialSequence } from "~/modules/settings/settings.service";
 import { ItemSerialSequenceForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "settings",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "settings.serialNumbers": "View"
   });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const itemSerialSequence = await getItemSerialSequence(client, id, companyId);
+  const itemSerialSequence = await api.settings.getItemSerialSequence({ id });
   if (itemSerialSequence.error) {
     throw redirect(
       path.to.serialNumberSequences,
@@ -45,8 +41,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
+  const { client, companyId, userId } = await authorize(request, {
+    "settings.serialNumbers": "Edit"
   });
 
   const { id } = params;

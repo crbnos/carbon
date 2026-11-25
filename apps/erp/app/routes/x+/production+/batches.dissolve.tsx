@@ -4,7 +4,7 @@
 
 import { originOf } from "@carbon/api/service-fn.server";
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { dissolveBatches } from "~/modules/production/production.server";
 import { serviceContext } from "~/modules/service-context.server";
@@ -19,7 +19,7 @@ import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 // revalidates.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const auth = await requirePermissions(request, { update: "production" });
+  const auth = await authorize(request, { "production.batches": "Edit" });
 
   const json = (await request.json().catch(() => null)) as {
     batchIds?: string[];

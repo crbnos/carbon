@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { originOf } from "@carbon/api/service-fn.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { chatRequest } from "~/modules/agent/agent.models";
@@ -18,7 +18,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) {
     throw new Response("Invalid request", { status: 400 });
   }
-  const auth = await requirePermissions(args.request, {});
+  const auth = await authorize(args.request);
   const turn = await startAgentTurn(
     serviceContext(auth, originOf(args.request)),
     input.data

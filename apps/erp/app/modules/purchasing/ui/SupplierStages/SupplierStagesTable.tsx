@@ -80,7 +80,9 @@ const SupplierStagesTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={!permissions.can("delete", "purchasing")}
+              disabled={
+                !permissions.has({ "purchasing.supplierStages": "Full" })
+              }
               onClick={() => {
                 navigate(
                   `${path.to.deleteSupplierStage(row.id)}?${params.toString()}`
@@ -103,7 +105,7 @@ const SupplierStagesTable = memo(
         count={count}
         infinite={infinite}
         primaryAction={
-          permissions.can("create", "purchasing") && (
+          permissions.has({ "purchasing.supplierStages": "Create" }) && (
             <New
               label={t`Supplier Stage`}
               to={`${path.to.newSupplierStage}?${params.toString()}`}

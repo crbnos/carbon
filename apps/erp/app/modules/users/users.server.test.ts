@@ -3,6 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import {
+  claimsFor,
+  type ExpandedClaims,
+  type Grant,
+  type Level,
+  levelOf,
+  MODULES,
+  PAGES
+} from "@carbon/database/access";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
   type CompiledQuery,
@@ -15,6 +24,7 @@ import {
   type QueryResult
 } from "kysely";
 import { describe, expect, it, vi } from "vitest";
+import { pageClaims } from "../../../test/page-claims";
 
 // The job runner is Inngest over the network: keep what would be sent.
 const queued = vi.hoisted(() => [] as { name: string; events: unknown[] }[]);
@@ -32,71 +42,85 @@ vi.mock("@carbon/ee/plan.server", async (importOriginal) => ({
 // Redis is over the network: deactivating clears the cached claims there.
 vi.mock("@carbon/kv", () => ({ redis: { del: vi.fn(async () => 1) } }));
 
+import { nonOperatorPinResetPermission } from "./users.models";
 import {
   bulkUpdatePermissions,
   certifyItarEntity,
   createGroup,
   deactivateUsers,
-  getEmployeePermissions,
   inviteCustomerContact,
   inviteEmployee,
   inviteSupplierContact,
   resendInvites,
-  resetConsoleOperatorPin,
   revokeInvites,
   updateGroup
 } from "./users.server";
 import {
   canReAddDeactivatedEmployee,
-  makePermissionsFromEmployeeType,
+  pinResetRefusal,
   refuseUninvitableContact
 } from "./users.service";
 
 const COMPANY = "cmp_1";
 
 describe("canReAddDeactivatedEmployee", () => {
-  const grant = (users: string[], people: string[]) => ({
-    users: { view: [], create: [COMPANY], update: users, delete: [] },
-    people: { view: [], create: people, update: [], delete: [] }
+  const level = (actions: Partial<Record<"create" | "update", string[]>>) => ({
+    view: [],
+    create: [],
+    update: [],
+    delete: [],
+    ...actions
   });
+  const accountsEdit = { "users.accounts": level({ update: [COMPANY] }) };
+  const employeesCreate = { "people.employees": level({ create: [COMPANY] }) };
 
-  it("allows an inviter with users update and people create", () => {
+  it("allows an inviter with Edit on Accounts and Create on Employees", () => {
     expect(
-      canReAddDeactivatedEmployee(grant([COMPANY], [COMPANY]), COMPANY)
+      canReAddDeactivatedEmployee(
+        { ...accountsEdit, ...employeesCreate },
+        COMPANY
+      )
     ).toBe(true);
   });
 
   it.each([
-    ["users create alone", grant([], [])],
-    ["no people create", grant([COMPANY], [])],
-    ["no users update", grant([], [COMPANY])],
-    ["both, for another company", grant(["cmp_2"], ["cmp_2"])],
+    ["Edit on Accounts alone", accountsEdit],
+    ["Create on Employees alone", employeesCreate],
+    [
+      "Create, not Edit, on Accounts",
+      { "users.accounts": level({ create: [COMPANY] }), ...employeesCreate }
+    ],
+    [
+      "both, for another company",
+      {
+        "users.accounts": level({ update: ["cmp_2"] }),
+        "people.employees": level({ create: ["cmp_2"] })
+      }
+    ],
+    [
+      "Edit on every other Users page",
+      {
+        "users.operators": level({ update: [COMPANY] }),
+        "users.groups": level({ update: [COMPANY] }),
+        "users.employeeTypes": level({ update: [COMPANY] }),
+        ...employeesCreate
+      }
+    ],
+    [
+      "Create on every other People page",
+      {
+        ...accountsEdit,
+        "people.timecards": level({ create: [COMPANY] }),
+        "people.attributes": level({ create: [COMPANY] }),
+        "people.departments": level({ create: [COMPANY] }),
+        "people.holidays": level({ create: [COMPANY] }),
+        "people.shifts": level({ create: [COMPANY] }),
+        "people.payrollTotals": level({ create: [COMPANY] })
+      }
+    ],
     ["unreadable claims", null]
   ])("refuses an inviter with %s", (_label, permissions) => {
     expect(canReAddDeactivatedEmployee(permissions, COMPANY)).toBe(false);
-  });
-});
-
-describe("makePermissionsFromEmployeeType", () => {
-  it("keys each module's grants by module_action", () => {
-    expect(
-      makePermissionsFromEmployeeType({
-        data: [
-          {
-            module: "Sales",
-            view: [COMPANY],
-            create: [COMPANY],
-            update: [],
-            delete: []
-          }
-        ]
-      })
-    ).toEqual({
-      sales_view: [COMPANY],
-      sales_create: [COMPANY],
-      sales_update: [],
-      sales_delete: []
-    });
   });
 });
 
@@ -106,7 +130,7 @@ const unreachable = () => {
 
 /** A user in COMPANY holding `permissions`; the caller client returns `user`. */
 function userContext(
-  permissions: Record<string, Record<string, string[]>>,
+  permissions: ExpandedClaims,
   user: Record<string, unknown> | null = null
 ) {
   const chain: Record<string, unknown> = {
@@ -116,7 +140,12 @@ function userContext(
       user ? { data: user, error: null } : { data: null, error: {} }
   };
   return createServiceContext({
-    actor: { type: "user", userId: "usr_admin", permissions },
+    actor: {
+      type: "user",
+      userId: "usr_admin",
+      permissions: pageClaims(permissions),
+      role: "employee"
+    },
     company: { id: COMPANY, groupId: "grp_1" },
     caller: { from: () => chain } as never,
     system: unreachable as never,
@@ -126,22 +155,11 @@ function userContext(
 }
 
 describe("operation guards", () => {
-  // A PIN signs in as that person anywhere on the floor, so anyone but a
-  // console operator needs settings update as well.
-  it("refuses resetting a non-operator's PIN with users update alone", async () => {
-    const result = await resetConsoleOperatorPin(
-      userContext(
-        { users: { update: [COMPANY] } },
-        { id: "usr_1", isConsoleOperator: false }
-      ),
-      { operatorId: "usr_1" }
-    );
-    expect(result.error?.category).toBe("forbidden");
-  });
-
   it("refuses deactivating the caller's own account", async () => {
     const result = await deactivateUsers(
-      userContext({ users: { delete: [COMPANY] } }),
+      userContext({
+        users: { view: [], create: [], update: [], delete: [COMPANY] }
+      }),
       { userIds: ["usr_1", "usr_admin"] }
     );
     expect(result.error?.category).toBe("rule");
@@ -153,9 +171,9 @@ describe("operation guards", () => {
       actor: {
         type: "apiKey",
         createdBy: "usr_admin",
-        scopes: {
+        permissions: pageClaims({
           users: { view: [], create: [], update: [COMPANY], delete: [] }
-        }
+        })
       },
       company: { id: COMPANY, groupId: "grp_1" },
       caller: {} as never,
@@ -258,22 +276,47 @@ function memoryClient(
 
 const ORIGIN = { ip: "203.0.113.9", city: "Oslo", userAgent: "agent/1.0" };
 
-/** A user in COMPANY whose request came from ORIGIN, over `tables`. */
+type ModuleGrants = Record<
+  string,
+  Partial<Record<"view" | "create" | "update" | "delete", string[]>>
+>;
+
+/** Grants written per module, as every page of the module holds them. */
+const claimsOf = (modules: ModuleGrants): ExpandedClaims =>
+  pageClaims(
+    Object.fromEntries(
+      Object.entries(modules).map(([module, actions]) => [
+        module,
+        { view: [], create: [], update: [], delete: [], ...actions }
+      ])
+    )
+  );
+
+/**
+ * A user in COMPANY whose request came from ORIGIN, over `tables`. Without
+ * `pg`, every statement finds no rows: no one acted on is an Admin.
+ */
 function requestContext(
-  permissions: Record<string, Record<string, string[]>>,
+  permissions: ModuleGrants,
   tables: Record<string, Row[]> = {},
   rpcResults: Record<string, unknown> = {},
   pg: Kysely<KyselyDatabase> | null = null,
   afterRead?: (table: string) => void
 ) {
   const system = memoryClient(tables, rpcResults, afterRead);
+  const db = pg ?? recordingDatabase([]).db;
   const ctx = createServiceContext({
-    actor: { type: "user", userId: "usr_admin", permissions },
+    actor: {
+      type: "user",
+      userId: "usr_admin",
+      role: "employee",
+      permissions: claimsOf(permissions)
+    },
     company: { id: COMPANY, groupId: "grp_1" },
     origin: ORIGIN,
     caller: {} as never,
     system: () => system.client as never,
-    pg: pg ? () => pg : (unreachable as never),
+    pg: () => db,
     kv: unreachable as never
   });
   return { ctx, rpcs: system.rpcs };
@@ -398,13 +441,11 @@ describe("the request's origin", () => {
       { users: { update: [COMPANY] } },
       { employee: [{ id: "usr_1", companyId: COMPANY }] }
     );
-    const permissions = {
-      sales: { view: true, create: false, update: false, delete: false }
-    };
+    const grants = [{ module: "Sales", page: null, level: "View" }];
     await bulkUpdatePermissions(ctx, {
       editType: "add",
       userIds: ["usr_1"],
-      permissions,
+      grants,
       ...forged
     } as never);
     expect(queued).toEqual([
@@ -414,7 +455,7 @@ describe("the request's origin", () => {
           {
             payload: {
               id: "usr_1",
-              permissions,
+              grants,
               addOnly: true,
               companyId: COMPANY,
               actorId: "usr_admin",
@@ -469,7 +510,7 @@ describe("the request's origin", () => {
   });
 });
 
-// Revoking deactivates the user, and deactivating an account needs delete.
+// Revoking deactivates the user, and deactivating an account needs Full.
 describe("revoking an invite", () => {
   const invited = (extra: Record<string, Row[]> = {}) => ({
     user: [{ id: "usr_1", email: "a@example.com" }],
@@ -482,8 +523,8 @@ describe("revoking an invite", () => {
       { userIds }
     );
 
-  // The lists show Revoke Invite only with users delete.
-  it("refuses a caller with users create alone", async () => {
+  // The lists show Revoke Invite only with Full on Accounts.
+  it("refuses a caller with Create on Accounts alone", async () => {
     const result = await revokeInvites(
       requestContext({ users: { create: [COMPANY] } }, invited()).ctx,
       { userIds: ["usr_1"] }
@@ -600,9 +641,13 @@ const usersScopes = (actions: Partial<Record<string, string[]>>) => ({
 });
 
 /** An API key of COMPANY holding `scopes`; nothing may be read or written. */
-const keyContext = (scopes: Record<string, Record<string, string[]>>) =>
+const keyContext = (scopes: ModuleGrants) =>
   createServiceContext({
-    actor: { type: "apiKey", createdBy: "usr_admin", scopes },
+    actor: {
+      type: "apiKey",
+      createdBy: "usr_admin",
+      permissions: claimsOf(scopes)
+    },
     company: { id: COMPANY, groupId: "grp_1" },
     caller: unreachable as never,
     system: unreachable as never,
@@ -613,7 +658,7 @@ const keyContext = (scopes: Record<string, Record<string, string[]>>) =>
 describe("API key scopes beyond the gate", () => {
   // A first-time invite inserts the employee under RLS, and a re-add checks
   // the key creator's claims: the key itself must hold both.
-  it("refuses an invite from a key with users create alone", async () => {
+  it("refuses an invite from a key with Create on Accounts alone", async () => {
     const result = await inviteEmployee(
       keyContext(usersScopes({ create: [COMPANY] })),
       {
@@ -627,8 +672,8 @@ describe("API key scopes beyond the gate", () => {
     expect(result.error?.category).toBe("forbidden");
   });
 
-  // The route has only ever required view: a read-only key must not write.
-  it("refuses a group change from a key with users view alone", async () => {
+  // A read-only key must not write.
+  it("refuses a group change from a key with View on Groups alone", async () => {
     const result = await updateGroup(
       keyContext(usersScopes({ view: [COMPANY] })),
       { id: "grp_x", name: "Welders", selections: ["user_usr_1"] }
@@ -669,8 +714,8 @@ describe("changing a group", () => {
     expect(result.error?.category).toBe("notFound");
   });
 
-  // Row-level security asked for update before the write bypassed it.
-  it("refuses a user with users view alone", async () => {
+  // Row-level security asks Edit of a member write, which bypasses it.
+  it("refuses a user with View on Groups alone", async () => {
     const result = await updateGroup(
       requestContext({ users: { view: [COMPANY] } }, company()).ctx,
       { id: "grp_x", name: "Welders", selections: ["user_usr_1"] }
@@ -886,7 +931,7 @@ describe("deactivating users", () => {
 });
 
 // A second account insert fails, and its rollback deactivated the account
-// the person already had: a removal under `create: users`.
+// the person already had: a removal under Create on Accounts.
 describe("inviting a portal contact", () => {
   const contactTables = (
     extra: Record<string, Row[]> = {}
@@ -961,7 +1006,7 @@ describe("inviting a portal contact", () => {
 
   // The account and the invite are written beside each other: a write the
   // caller's row-level security refuses leaves the invite redeemable.
-  it("refuses a user without sales create, update and view", async () => {
+  it("refuses a user without Edit on Customers", async () => {
     const result = await inviteCustomerContact(
       requestContext({ users: { create: [COMPANY] } }, contactTables()).ctx,
       { customerContactId: "cc_1", customerId: "cus_1" }
@@ -1023,7 +1068,7 @@ describe("inviting a portal contact", () => {
         })
     ]
   ])(
-    "refuses a %s invite from a key with users create alone",
+    "refuses a %s invite from a key with Create on Accounts alone",
     async (_label, invite) => {
       const result = await invite();
       expect(result.error?.category).toBe("forbidden");
@@ -1031,57 +1076,188 @@ describe("inviting a portal contact", () => {
   );
 });
 
-describe("reading an employee's permissions", () => {
-  const claims = {
-    role: "employee",
-    sales_view: [COMPANY, "cmp_2"],
-    sales_update: ["cmp_2"],
-    users_view: [COMPANY]
+describe("pinResetRefusal", () => {
+  const grant = (
+    subject: Grant["subject"],
+    module: string,
+    page: string | null,
+    level: Level
+  ): Grant => ({ subject, module, page, level });
+  const user = (grants: Grant[], admin = false) => ({
+    type: "user" as const,
+    userId: "usr_actor",
+    role: "employee" as const,
+    permissions: claimsFor({ role: "employee", admin, grants }, COMPANY)
+      .permissions
+  });
+  const target = (
+    type: { systemType: string | null; isConsoleOperator: boolean },
+    grants: Grant[],
+    admin = false
+  ) => ({
+    ...type,
+    employeeTypeCompanyId: COMPANY,
+    admin,
+    levels: PAGES.map((page) => ({
+      page: page.id,
+      level: levelOf({ admin, grants }, page.id).level
+    }))
+  });
+  const operatorType = {
+    systemType: "Console Operator",
+    isConsoleOperator: true
   };
-  const read = (tables: Record<string, Row[]>) =>
-    getEmployeePermissions(
-      requestContext({ users: { view: [COMPANY] } }, tables, {
-        get_claims: claims
-      }).ctx,
-      { id: "usr_1" }
-    );
+  // The Console Operator type's grants (`CONSOLE_OPERATOR_GRANTS`, @carbon/ee).
+  const operatorGrants = (subject: Grant["subject"]) => [
+    grant(subject, "Production", null, "Edit"),
+    grant(subject, "Inventory", null, "Edit"),
+    grant(subject, "Quality", null, "Edit"),
+    grant(subject, "Resources", null, "View"),
+    grant(subject, "People", null, "View")
+  ];
+  const operatorsEdit = grant("role", "Users", "users.operators", "Edit");
+  const accountsEdit = grant("role", "Users", "users.accounts", "Edit");
+  const peopleEdit = grant("role", "Settings", "settings.people", "Edit");
 
-  it("returns this company's grants by module, the shape the permission edits take", async () => {
-    const result = await read({
-      employees: [
-        {
-          id: "usr_1",
-          companyId: COMPANY,
-          name: "Pat Doe",
-          employeeTypeId: "et_1"
-        }
-      ]
-    });
-    expect(result).toEqual({
-      data: {
-        id: "usr_1",
-        name: "Pat Doe",
-        employeeTypeId: "et_1",
-        permissions: {
-          sales: { view: true, create: false, update: false, delete: false },
-          users: { view: true, create: false, update: false, delete: false }
-        }
-      },
-      error: null
-    });
+  it("refuses a non-Admin resetting an Admin's PIN", () => {
+    const admin = target(
+      { systemType: "Admin", isConsoleOperator: false },
+      [],
+      true
+    );
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit, accountsEdit, peopleEdit]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: admin
+      })
+    ).toBe("Only an Admin can reset an Admin's PIN");
   });
 
-  it("refuses a user who is not an employee of the company", async () => {
-    const result = await read({
-      employees: [
-        {
-          id: "usr_1",
-          companyId: "cmp_2",
-          name: "Pat Doe",
-          employeeTypeId: "et_9"
-        }
-      ]
-    });
-    expect(result.error?.category).toBe("notFound");
+  it("refuses a non-Admin holding Full on every module resetting an Admin's PIN", () => {
+    const everything = MODULES.map((module) =>
+      grant("role", module.enum, null, "Full")
+    );
+    expect(
+      pinResetRefusal({
+        actor: user(everything),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: target(
+          { systemType: "Admin", isConsoleOperator: false },
+          [],
+          true
+        )
+      })
+    ).toBe("Only an Admin can reset an Admin's PIN");
+  });
+
+  it("refuses Operators Edit alone resetting an operator moved to another type", () => {
+    // Still flagged a console operator, but no longer the Console Operator
+    // type, and holding nothing the actor lacks.
+    const raised = target({ systemType: null, isConsoleOperator: true }, [
+      grant("role", "Users", "users.operators", "View")
+    ]);
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: raised
+      })
+    ).toMatch(/not a console operator/);
+  });
+
+  it("refuses Operators and People Edit without Accounts Edit resetting a non-operator", () => {
+    const employee = target({ systemType: null, isConsoleOperator: false }, [
+      grant("role", "Users", "users.operators", "View")
+    ]);
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit, peopleEdit]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: employee
+      })
+    ).toMatch(/not a console operator/);
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit, accountsEdit, peopleEdit]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: employee
+      })
+    ).toBeNull();
+  });
+
+  // The Employees "Set Console PIN" item checks the same constant.
+  it("admits a non-operator's reset with exactly nonOperatorPinResetPermission, and no fewer", () => {
+    const gate = Object.entries(nonOperatorPinResetPermission).map(
+      ([page, level]) =>
+        grant(
+          "role",
+          MODULES.find((m) => m.id === page.split(".")[0])!.enum,
+          page,
+          level
+        )
+    );
+    expect(gate.length).toBeGreaterThan(1);
+    const employee = target({ systemType: null, isConsoleOperator: false }, []);
+    const reset = (grants: Grant[]) =>
+      pinResetRefusal({
+        actor: user([operatorsEdit, ...grants]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: employee
+      });
+    expect(reset(gate)).toBeNull();
+    for (const missing of gate) {
+      expect(reset(gate.filter((g) => g !== missing))).toMatch(
+        /not a console operator/
+      );
+    }
+  });
+
+  it("refuses resetting the PIN of someone holding more than the actor", () => {
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: target(operatorType, operatorGrants("role"))
+      })
+    ).toMatch(/more access than you/);
+  });
+
+  it("allows Operators Edit resetting a real console operator's PIN", () => {
+    expect(
+      pinResetRefusal({
+        actor: user([operatorsEdit, ...operatorGrants("role")]),
+        actorIsAdmin: false,
+        companyId: COMPANY,
+        target: target(operatorType, operatorGrants("role"))
+      })
+    ).toBeNull();
+  });
+
+  it("allows an Admin resetting anyone's PIN", () => {
+    const admin = user([], true);
+    for (const someone of [
+      target({ systemType: "Admin", isConsoleOperator: false }, [], true),
+      target({ systemType: null, isConsoleOperator: true }, [
+        grant("person", "Accounting", null, "Full")
+      ]),
+      target(operatorType, operatorGrants("role"))
+    ]) {
+      expect(
+        pinResetRefusal({
+          actor: admin,
+          actorIsAdmin: true,
+          companyId: COMPANY,
+          target: someone
+        })
+      ).toBeNull();
+    }
   });
 });

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -44,7 +44,7 @@ export type TravelerScanResponse = {
  */
 export async function action({ request, context }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await authorize(request, {});
   const { locationId, effectiveUserId } = context.get(userContext) ?? {};
 
   const parsed = scanValidator.safeParse(

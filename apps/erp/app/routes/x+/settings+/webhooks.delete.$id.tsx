@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { deleteWebhook } from "@carbon/ee/webhooks.server";
@@ -13,18 +13,15 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { getWebhook } from "~/modules/settings/settings.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "settings"
-  });
+  const { api } = await authorize(request, { "settings.webhooks": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const webhook = await getWebhook(client, id);
+  const webhook = await api.settings.getWebhook({ id });
   if (webhook.error) {
     throw redirect(
       path.to.webhooks,
@@ -38,8 +35,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "users"
+  const { client, companyId } = await authorize(request, {
+    "settings.webhooks": "Edit"
   });
 
   await requireFeature({

@@ -5,6 +5,7 @@
 import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import { type Actor, createServiceContext } from "@carbon/api/service-fn.server";
+import { pageClaims } from "./page-claims";
 import {
   createIssue,
   createIssueWorkflow,
@@ -21,14 +22,14 @@ import {
 } from "../app/modules/quality/quality.server";
 import { gaugeCalibrationPatch } from "../app/modules/quality/quality.service";
 
-const quality = {
+const quality = pageClaims({
   quality: {
     view: ["company-1"],
     create: ["company-1"],
     update: ["company-1"],
     delete: ["company-1"]
   }
-};
+});
 
 /**
  * A Supabase client whose every query answers with the rows the test names
@@ -68,7 +69,12 @@ function client(rows: Record<string, unknown>) {
 
 function contextWith(
   rows: Record<string, unknown> = {},
-  actor: Actor = { type: "user", userId: "user-1", permissions: quality }
+  actor: Actor = {
+    type: "user",
+    role: "employee",
+    userId: "user-1",
+    permissions: quality
+  }
 ) {
   const db = client(rows);
   const ctx = createServiceContext({
@@ -411,12 +417,18 @@ describe("recording a risk", () => {
     ({
       type: "apiKey",
       createdBy: "user-1",
-      scopes: {
-        quality: { view: [], create: [], update: [], delete: [], ...actions }
+      permissions: {
+        "quality.risks": {
+          view: [],
+          create: [],
+          update: [],
+          delete: [],
+          ...actions
+        }
       }
     }) as Actor;
 
-  it("refuses an API key without create: quality, before any write", async () => {
+  it("refuses an API key without Create on quality.risks, before any write", async () => {
     const { ctx, writes } = contextWith(
       {},
       apiKey({ view: ["company-1"] })
@@ -426,7 +438,7 @@ describe("recording a risk", () => {
     expect(writes).toEqual([]);
   });
 
-  it("records it for a key with create: quality and answers its id", async () => {
+  it("records it for a key with Create on quality.risks and answers its id", async () => {
     const { ctx } = contextWith(
       { riskRegister: { id: "risk-1" } },
       apiKey({ create: ["company-1"] })

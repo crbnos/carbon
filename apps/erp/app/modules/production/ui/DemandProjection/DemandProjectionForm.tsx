@@ -149,8 +149,8 @@ const DemandProjectionsForm = ({
     };
 
   const isDisabled = isEditing
-    ? !permissions.can("update", "production")
-    : !permissions.can("create", "production");
+    ? !permissions.has({ "production.demandForecasts": "Edit" })
+    : !permissions.has({ "production.demandForecasts": "Create" });
 
   const useCalendarWeeks = useCompanySettings()?.useCalendarWeeks ?? false;
   // Each column is the week its hidden `weekStarts[i]` posts: the loader's

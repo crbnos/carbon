@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { ScrollArea, useCloseRoute, useViewport } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -21,10 +21,9 @@ import { path } from "~/utils/path";
 export const meta = newRecordMeta("Issue Workflow");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "quality"
+  const { client, companyId } = await authorize(request, {
+    "quality.issueWorkflows": "Create"
   });
-
   const requiredActions = await getRequiredActionsList(client, companyId);
 
   return {
@@ -36,7 +35,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(issueWorkflowValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const { id: _, content, ...workflow } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.quality.createIssueWorkflow({
     ...workflow,
     // An untouched editor posts `{}`: an empty template.

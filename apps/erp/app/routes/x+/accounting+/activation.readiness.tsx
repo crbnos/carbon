@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
 import { getActivationReadiness } from "@carbon/database/accounting-cutover-reads";
 import { DatePicker } from "@carbon/react";
@@ -13,6 +13,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
 import { useDateFormatter } from "~/hooks";
+import { accountingActivationGate } from "~/modules/accounting/accounting.models";
 import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,
@@ -29,9 +30,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    accountingActivationGate("View")
+  );
   const cutover = await getActivationCutover(client, companyId, request);
   const readiness = await getActivationReadiness(getDatabaseClient(), {
     companyId,

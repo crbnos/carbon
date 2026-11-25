@@ -4,7 +4,7 @@
 
 import type { AccountNotificationsData } from "@carbon/account";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -17,20 +17,17 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { notificationPreferenceValidator } from "~/modules/users/users.models";
-import {
-  getNotificationPreferences,
-  upsertNotificationPreference
-} from "~/modules/users/users.service";
+import { upsertNotificationPreference } from "~/modules/users/users.service";
 
 // Data and writes for the Notifications pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {});
+  const { client, companyId, api } = await authorize(request);
 
   const [preferences, slackActive, emailPlanEnabled] = await Promise.all([
-    getNotificationPreferences(client, userId, companyId),
-    // Service role: integrationConnection SELECT requires settings_view, which
-    // regular employees don't have. Slack is "on" when the company has a usable
-    // Slack connection — the same rows the Assistant and workflows read.
+    api.users.getNotificationPreferences({}),
+    // Service role: integrationConnection SELECT requires View on Integrations,
+    // which regular employees don't have. Slack is "on" when the company has a
+    // usable Slack connection — the same rows the Assistant and workflows read.
     // A failed read reads as Slack off: it must not fail the whole pane.
     readConnections(getCarbonServiceRole(), companyId, "slack").then(
       (rows) => rows.some(connectionUsable),
@@ -53,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, companyId } = await requirePermissions(request, {});
+  const { client, userId, companyId } = await authorize(request);
 
   const validation = await validator(notificationPreferenceValidator).validate(
     await request.formData()

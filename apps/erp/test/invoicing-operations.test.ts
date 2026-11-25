@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { pageClaims } from "./page-claims";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { describe, expect, it } from "vitest";
 import { fromServerFn } from "../app/modules/shared/shared.service";
@@ -102,7 +103,8 @@ describe("changing a posted line's account", () => {
       actor: {
         type: "user",
         userId: "user-1",
-        permissions: {
+        role: "employee",
+        permissions: pageClaims({
           invoicing: {
             view: ["company-1"],
             create: ["company-1"],
@@ -115,7 +117,7 @@ describe("changing a posted line's account", () => {
             update: [],
             delete: []
           }
-        }
+        })
       },
       company: { id: "company-1", groupId: "group-1" },
       caller: {} as never,
@@ -148,7 +150,12 @@ describe("setting an invoice header field", () => {
     permissions: Record<string, ReturnType<typeof actions>>
   ) =>
     createServiceContext({
-      actor: { type: "user", userId: "user-1", permissions },
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: pageClaims(permissions)
+      },
       company: { id: "company-1", groupId: "group-1" },
       caller: client as never,
       system: unreachable,
@@ -167,7 +174,7 @@ describe("setting an invoice header field", () => {
   };
   const invoicingUpdate = { invoicing: actions("update") };
 
-  it("needs invoicing update, which the invoice tables' RLS asks for, not sales or purchasing update", async () => {
+  it("needs Edit on the invoice's page, which the invoice tables' RLS asks for, not on sales or purchasing", async () => {
     const { client, writes } = filteringSupabase(invoices());
     const salesAndPurchasing = {
       sales: actions("create", "update"),
@@ -263,8 +270,9 @@ describe("setting an invoice header field", () => {
     const ctx = createServiceContext({
       actor: {
         type: "user",
+        role: "employee",
         userId: "user-1",
-        permissions: invoicingUpdate
+        permissions: pageClaims(invoicingUpdate)
       },
       company: { id: "company-1", groupId: "group-1" },
       caller: fake.client,

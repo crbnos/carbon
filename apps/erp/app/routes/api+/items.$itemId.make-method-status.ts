@@ -2,23 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
+import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import type { LoaderFunctionArgs } from "react-router";
-import { getMakeMethods } from "~/modules/items/items.service";
 
 // Lightweight status check for the "Add Affected Item" modal: does this item have
 // an Active make method? When it doesn't (its current method is still an
 // un-activated Draft — the common case), adding a Version change promotes that
 // Draft to Active, which the modal warns about before the user commits.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, anyOf(ITEM_PAGES, "View"));
 
   const { itemId } = params;
   if (!itemId) return { hasActiveMethod: false, hasAnyMethod: false };
 
-  const methods = await getMakeMethods(client, itemId, companyId);
+  const methods = await api.items.getMakeMethods({ itemId });
   const rows = methods.data ?? [];
 
   return {

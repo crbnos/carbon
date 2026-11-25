@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import {
@@ -44,9 +44,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "accounting.accountingPeriods": "View"
   });
 
   // The month the action generates from, so the preview shows that year.
@@ -77,8 +76,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "accounting"
+  const { client, companyId, userId } = await authorize(request, {
+    "accounting.accountingPeriods": "Create"
   });
 
   const formData = await request.formData();

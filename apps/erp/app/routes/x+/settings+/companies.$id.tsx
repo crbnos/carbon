@@ -2,10 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, carbonFor, respond } from "@carbon/api/carbon.server";
-import { originOf } from "@carbon/api/service-fn.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { flags } from "@carbon/env/flags.server";
 import { validator } from "@carbon/form";
@@ -34,10 +33,9 @@ const subsidiaryDetailsValidator = subsidiaryValidator.safeExtend({
 });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const auth = await requirePermissions(request, {
-    view: "settings"
+  const { client, companyId, email, api } = await authorize(request, {
+    "settings.companies": "View"
   });
-  const { client, companyId, email } = auth;
 
   // Multi-company management: Carbon staff, and the companies the
   // `multi-company-management` flag turns it on for.
@@ -45,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     !isInternalEmail(email) &&
     !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const { id } = params;
@@ -53,9 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [subsidiary, change] = await Promise.all([
     getSubsidiary(client, id),
-    carbonFor(auth, originOf(request)).settings.getBaseCurrencyChange({
-      companyId: id
-    })
+    api.settings.getBaseCurrencyChange({ companyId: id })
   ]);
   if (subsidiary.error) {
     throw redirect(
@@ -76,7 +72,7 @@ export async function action(args: ActionFunctionArgs) {
     params: ["id"]
   });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.settings.updateSubsidiaryDetails({
     ...input.data,
     id: input.params.id

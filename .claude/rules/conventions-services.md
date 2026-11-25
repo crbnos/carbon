@@ -42,7 +42,7 @@ exactly what the button does. Plan:
  */
 export const cancelJob = defineServiceFn({
   input: z.object({ jobId: z.string() }),
-  permission: { update: "production" },
+  permission: { "production.jobs": "Edit" },
   async run(ctx, { jobId }) {
     // ...
     if (!update.updated) return ctx.error("conflict", "The job's status changed");
@@ -55,17 +55,42 @@ export const cancelJob = defineServiceFn({
   value or `ctx.error(category, message, cause)`; a throw becomes `internal`
   with the cause logged and withheld. The error union is inferred.
 - **Gate**: every ENTRY call is checked against `permission` for its actor
-  (`user` claims, `apiKey` scopes; `system` passes). `{}` means company
-  membership, which any key of the company passes, even a read-only one, so a
-  write on it also calls `refuseKeyWithout` (`shared/shared.service.ts`); so
-  does a write gated narrower than what its writes need (the `create: users`
-  invites, the `view: users` `updateGroup`), `"system"` admits only the system actor, `{ by, rules }` keys
-  the rule on an input field. A call made from inside another function's
-  `run` is not checked again.
+  (`user` claims, `apiKey` scopes; `system` passes). A gate names each page
+  it needs and the lowest level there, `{ "inventory.receipts": "Edit" }`
+  (`PageGate`, `Partial<Record<PageId, GateLevel>>`, typed by the registry,
+  `@carbon/database/access`); two entries need both. The check is `admits`
+  (`@carbon/database/access`), the caller check routes share. The check
+  reads the level's highest action (`inventory.receipts_update` for Edit). A
+  page is the one that owns the table the function writes (else reads), or
+  the page whose route calls it. `"employee"` (the same as
+  `{}`) admits an employee of the company or an API key holding some grant
+  there, never a customer or supplier portal account or a user with no role (a read every screen needs, such as locations or
+  units; RLS still filters the rows). Use it only when every table the read
+  touches is one RLS lets every employee read. `"system"` admits only the
+  system actor, `{ by, rules }` keys the rule on an input field. A table
+  several pages share (`item` by type, `memo` by party,
+  `revenueRecognitionRun` by type) gates on the row: `rowRule(table, level,
+  { id, from?, path? })` (`@carbon/api/permissions`; the ERP's
+  `itemRule(level, { id, from?, path? })` in `items.service.ts`) reads the
+  row the input names, through `path` hops, and requires the page its type
+  picks. A list with no one row is `anyOfRule(table, level)` (any one page;
+  RLS filters the rows). An id `run` alone can name (one inside a list of
+  objects, or an item OR a make method) is checked there with
+  `refusalOf(ctx, rule, input)`.
+  `permission: {}` is refused by `service-fn-file`: write `"employee"`. Any
+  key holding a grant in the company passes `"employee"`, even a read-only
+  one, so a write on it also calls `refuseKeyWithout` (`shared/shared.service.ts`); so
+  does a write gated narrower than what its writes need (it checks the wider gate
+  with `ctx.can` inside). The
+  user actor carries `role` for this check: `requirePermissions` returns it,
+  and a workflow runs only while its owner is an employee
+  (`readOwnerPermissions`). A call made from inside another function's
+  `run` is not checked again, except that a `"system"` function still admits
+  only the system actor.
 - **Context**: `ctx.asCaller.supabase` (RLS), `ctx.asSystem.supabase` /
   `ctx.asSystem.pg` (no RLS: scope every query by `ctx.company.id`), `ctx.kv`,
-  `ctx.auditUserId` for `createdBy` / `updatedBy`. `ctx.can(required)` checks
-  a permission the data decides (a posting mode, reopening a completed
+  `ctx.auditUserId` for `createdBy` / `updatedBy`. `ctx.can(required)` (`admits`; a gate,
+  a list, `{ anyOf }`, `"employee"` or `"system"`) checks a permission the data decides (a posting mode, reopening a completed
   transfer). Before an RLS-bypassing write keyed on an id the caller sent,
   `refuseUnlessOwned(ctx, table, match)` (`shared/shared.service.ts`) returns
   a refusal unless the row is the company's.
@@ -73,34 +98,33 @@ export const cancelJob = defineServiceFn({
   `userAgent` (`RequestOrigin`). `originOf(request)`
   (`@carbon/api/service-fn.server`) reads them from the headers: the IP
   through `getClientIp`, the city from `X-Vercel-IP-City`, the user agent
-  from `User-Agent`. `carbon(request)`, the HTTP API route (`api+/v1+/$.ts`)
-  and the MCP route (`api+/mcp+/_index.ts`) put it on the context, and
-  `serviceContext(auth, origin)` and `carbonFor(auth, origin)` require it, so a
-  route cannot drop it. A job, a workflow or a posting passes `NO_ORIGIN`. The
+  from `User-Agent`. `authorize(request)` hands the request to the binding
+  `registerCarbon` registers, so its `api` carries it (`authorize(caller,
+  request)` for a caller another gate authenticated, as `authorizePanel` does);
+  the HTTP API route (`api+/v1+/$.ts`) and the MCP route (`api+/mcp+/_index.ts`)
+  put it on the context too, and `serviceContext(auth, origin)` requires it. A job, a workflow or a posting passes `NO_ORIGIN`. The
   user agent, and the city off Vercel, are what the caller sent. An operation that emails or
   audits where a request came from reads `ctx.origin`, never an input field:
   an input field lets an API caller write any address into the audit log.
 - **Transactions**: `ctx.transaction(async (tx) => …)` on `asSystem.pg`. A
   returned `CarbonError` rolls back; a nested call joins the open
   transaction; `tx.asCaller` throws, because that client is outside it.
-- **Routes**: `const api = await carbon(request)` (`@carbon/api/carbon.server`)
-  authenticates the caller and returns the router: `api.production.cancelJob(input)`
+- **Routes**: `const { api } = await authorize(request, gate?)` (`@carbon/auth/auth.server`)
+  authenticates the caller and returns it with the router: `api.production.cancelJob(input)`
   resolves to the result, its error a plain `{ category, message, status }`.
-  A route that needs the auth result for more than the call (a role gate, a
-  stream) builds the context with `serviceContext(auth, originOf(request))`
-  (`modules/service-context.server.ts`; the origin may be left out when no
-  operation it calls records one); a caller with no session (a public
+  A route that needs the context itself (a stream, a building block that takes
+  `ctx`) builds it with `serviceContext(auth, originOf(request))`
+  (`modules/service-context.server.ts`); a caller with no session (a public
   share link) uses `systemContext({ companyId, companyGroupId, onBehalfOf })`.
 - **Published**: `@mcp` in the TSDoc publishes the const as the MCP tool
   `{module}_{name}` and `POST /api/v1/{module}/{name}`. The permission decides
-  the classification (only `view` → READ, any `delete` → DESTRUCTIVE, else
-  WRITE); `@mcp read` forces READ (a read gated on membership alone; on a gate
-  that names a write it fails generation), `@mcp write` forces WRITE (a write
-  whose route has only ever required `view`; on a gate that names a write it
-  fails generation), `@mcp destructive` forces DESTRUCTIVE. `@param name - text` describes an
-  input field. Publish an operation only when it is safe with nothing but its
-  input: the API runs the gate and `run`, nothing the route does around the
-  call.
+  the classification (View alone → READ, Full → DESTRUCTIVE, else WRITE);
+  `@mcp read` forces READ (a read gated on `"employee"`; on a gate whose level
+  holds a write it fails generation), `@mcp write` forces WRITE (a write whose
+  route has only ever required View; on a gate whose level holds a write it
+  fails generation), `@mcp destructive` forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
+  an operation only when it is safe with nothing but its input: the API runs
+  the gate and `run`, nothing the route does around the call.
 - **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
   Kysely or `invokePosting` write in an ERP route; `service-fn-file` fails
   anything but service functions in `{module}.server.ts`.

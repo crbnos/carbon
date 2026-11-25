@@ -17,7 +17,10 @@ import path from "node:path";
 import { buildPieceActionDeclarations } from "../packages/jobs/src/workflows/integrations/catalog";
 import schema from "../packages/database/src/swagger-docs-schema";
 import { WORKFLOW_ACTIONS } from "../packages/ee/src/workflows/catalog/actions";
-import { buildCatalog } from "../packages/ee/src/workflows/catalog/build";
+import {
+  buildCatalog,
+  tablePages
+} from "../packages/ee/src/workflows/catalog/build";
 import { WORKFLOW_ENTITY_REGISTRY } from "../packages/ee/src/workflows/catalog/entities";
 import { WORKFLOW_MOMENTS } from "../packages/ee/src/workflows/catalog/moments";
 import { WORKFLOW_OPERATIONS } from "../packages/ee/src/workflows/catalog/operations";
@@ -49,12 +52,14 @@ async function main(): Promise<void> {
     WORKFLOW_ACTIONS,
     WORKFLOW_OPERATIONS,
     schema,
+    tablePages,
     integrationSteps
   );
 
   const events = [
     HEADER,
     `import type { BuiltEvent } from "./build";`,
+    `import type { EventPermission } from "../definition/catalog";`,
     `import type { ValueType } from "../definition/types";`,
     ``,
     `export type { BuiltEvent as GeneratedEvent };`,
@@ -62,6 +67,8 @@ async function main(): Promise<void> {
     `export const WORKFLOW_EVENTS: Record<string, BuiltEvent> = ${JSON.stringify(sorted(built.events))};`,
     ``,
     `export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = ${JSON.stringify(sorted(built.entities))};`,
+    ``,
+    `export const WORKFLOW_ENTITY_PAGES: Record<string, EventPermission> = ${JSON.stringify(sorted(built.entityPages))};`,
     ``,
     `export const WORKFLOW_ENTITY_ENUMS: Record<string, Record<string, readonly string[]>> = ${JSON.stringify(sorted(built.enums))};`,
     ``

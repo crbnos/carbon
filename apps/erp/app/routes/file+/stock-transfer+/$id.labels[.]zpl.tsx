@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import { labelSizes, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getCompanyLogoForLabel,
-  getCompanySettings,
   getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
@@ -16,8 +15,8 @@ import { path } from "~/utils/path";
 import { getStockTransferLabelItems } from "./labels.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, api } = await authorize(request, {
+    "inventory.stockTransfers": "View"
   });
 
   const { id } = params;
@@ -27,7 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const labelParam = url.searchParams.get("labelSize");
   const lineIdParam = url.searchParams.get("lineId");
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await api.settings.getCompanySettings({});
   const labelSizeId =
     labelParam || companySettings.data?.productLabelSize || "label2x1";
 

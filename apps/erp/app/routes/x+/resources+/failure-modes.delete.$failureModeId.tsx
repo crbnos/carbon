@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -13,18 +13,16 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { getFailureMode } from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "resources.failureModes": "View"
   });
   const { failureModeId } = params;
   if (!failureModeId) throw notFound("failureModeId not found");
 
-  const failureMode = await getFailureMode(client, failureModeId);
+  const failureMode = await api.resources.getFailureMode({ failureModeId });
   if (failureMode.error) {
     throw redirect(
       `${path.to.failureModes}?${getParams(request)}`,
@@ -41,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["failureModeId"] });
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.resources.deleteFailureMode({
     failureModeId: input.params.failureModeId
   });

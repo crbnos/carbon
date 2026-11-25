@@ -112,7 +112,8 @@ function FinancingCards({
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const permissions = usePermissions();
-  const isDisabled = disabled || !permissions.can("update", "sales");
+  const isDisabled =
+    disabled || !permissions.has({ "sales.serviceContracts": "Edit" });
   const formatMoney = useCurrencyFormatter({
     currency: financing.currencyCode
   });

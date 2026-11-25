@@ -735,7 +735,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           <DropdownMenuGroup>
             <DropdownMenuItem
               disabled={
-                !permissions.can("update", "production") ||
+                !permissions.has({ "production.jobs": "Edit" }) ||
                 (!allMatching && releasable.length === 0) ||
                 overReleaseLimit ||
                 releaseFetcher.isPending
@@ -767,7 +767,7 @@ const JobsTable = memo((props: JobsTableProps) => {
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={
-                !permissions.can("delete", "production") ||
+                !permissions.has({ "production.jobs": "Full" }) ||
                 (!allMatching &&
                   selectedRows.some((row) => !isJobDeletable(row.status)))
               }
@@ -803,7 +803,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={
-            !permissions.can("delete", "production") ||
+            !permissions.has({ "production.jobs": "Full" }) ||
             !isJobDeletable(row.status)
           }
           onClick={() => onDelete(row)}
@@ -830,7 +830,7 @@ const JobsTable = memo((props: JobsTableProps) => {
         count={count ?? 0}
         infinite={infinite}
         primaryAction={
-          permissions.can("update", "resources") && (
+          permissions.has({ "production.jobs": "Create" }) && (
             <New label={t`Job`} to={path.to.newJob} />
           )
         }

@@ -70,7 +70,7 @@ A material is an `item` of `type = 'Material'`. `material.id` is set to the item
 **not** the item's `id`. Creating a material (`insertMaterial` in
 `apps/erp/app/modules/items/items.service.ts`, behind `upsertMaterial`'s create branch and
 `createMaterial`) writes the `item` row(s), their `itemCost` and the `material` row with the shared
-id in ONE Kysely transaction, gated by `assert_company_access(companyId, 'parts_create')` through
+id in ONE Kysely transaction, gated by Create on `parts.materials` (`parts.materials_create`) through
 the caller's client. The readable id is `material.id`, or the id derived from the properties when
 `companySettings.materialGeneratedIds` is on; `createMaterial` passes the pair it checked first
 and the create refuses a derived pair that differs. Each distinct size is one item revision
@@ -109,7 +109,7 @@ the service loads the rows they read and writes what they decide.
   a rename, every revision's item row; `upsertMaterial` adds the item row, custom fields and
   itemCost to the same transaction. A create has its own transaction (`insertMaterial`, see "Item
   linkage"). Kysely bypasses RLS, so `requireMaterialUpdatable` first runs
-  an UPDATE through the caller's client (material's policy is parts_update in the company, which
+  an UPDATE through the caller's client (material's policy is Edit on `parts.materials` in the company, which
   also grants the item and itemCost rows). A taken readable id is refused on rename and on create.
 - `upsertMaterial` updates write only the keys present on the payload (a present-but-undefined key,
   a cleared form field, clears). The MCP schema requires `replenishmentSystem`,

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   getScrappableParts,
@@ -18,7 +18,7 @@ import { abilityBlockRefusal } from "~/services/operations.service";
 
 /** The parts an operator can scrap at an operation and replace from the shelf. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId } = await authorize(request, {});
   const { operationId } = params;
   if (!operationId) throw new Response("Missing operation", { status: 400 });
 
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await authorize(request, {});
   const { operationId } = params;
   if (!operationId) throw new Response("Missing operation", { status: 400 });
 

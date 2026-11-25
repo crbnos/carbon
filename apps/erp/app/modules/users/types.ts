@@ -9,7 +9,6 @@ import type {
   getEmployees,
   getEmployeeTypes,
   getModules,
-  getPermissionsByEmployeeType,
   getPublicAttributes,
   getSuppliers,
   getUsers
@@ -27,17 +26,11 @@ export type EmployeeInsert = Database["public"]["Tables"]["employee"]["Insert"];
 
 export type InviteInsert = Database["public"]["Tables"]["invite"]["Insert"];
 
-export type EmployeeTypePermission = NonNullable<
-  Awaited<ReturnType<typeof getPermissionsByEmployeeType>>["data"]
->[number];
-
 export type EmployeeType = NonNullable<
   Awaited<ReturnType<typeof getEmployeeTypes>>["data"]
 >[number];
 
-export type Module = NonNullable<
-  Awaited<ReturnType<typeof getModules>>["data"]
->[number];
+export type Module = ReturnType<typeof getModules>[number];
 
 export type Group = {
   data: {
@@ -72,20 +65,6 @@ export type UserSelectGroup = {
 export type UserSelectGroupMembers = {
   groups: UserSelectGroup[];
   users: User[];
-};
-
-export type CompanyPermission = {
-  view: boolean;
-  create: boolean;
-  update: boolean;
-  delete: boolean;
-};
-
-export type Permission = {
-  view: string[];
-  create: string[];
-  update: string[];
-  delete: string[];
 };
 
 export type Supplier = NonNullable<

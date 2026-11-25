@@ -93,6 +93,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Working with the database package | `packages/database/AGENTS.md` |
 | **Server & Services** | |
 | Writing service functions | `.claude/rules/conventions-services.md` + `.claude/rules/module-files.md` |
+| Concurrency: a status change, a running total, a row lock, a side effect in a transaction, a retried external create | `.claude/rules/concurrency.md` |
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
 | Account settings modal (ERP, MES, starter) | `packages/account/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
@@ -254,7 +255,7 @@ apps/erp/app/modules/{module}/
 ```
 
 No barrel: import from the file that defines the thing. Routes call operations
-through `carbon(request)` (`@carbon/api/carbon.server`). See `.claude/rules/module-files.md`.
+through `authorize(request)` (`@carbon/auth/auth.server`). See `.claude/rules/module-files.md`.
 
 MES is lighter: services in `apps/mes/app/services/`, components in `apps/mes/app/components/`.
 

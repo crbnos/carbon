@@ -23,7 +23,7 @@ const baseTool: ManifestEntry = {
   module: "sales",
   classification: "READ",
   description: "get customer",
-  permission: { module: "sales", actions: ["view"] },
+  permission: { module: "sales", page: "sales.customers", actions: ["view"] },
   paginates: true,
   serviceFn: { path: ["sales", "getCustomer"] },
   schema: {
@@ -71,7 +71,7 @@ describe("formatToolDescription", () => {
     expect(text.split("\n").slice(0, 3)).toEqual([
       "sales_getCustomer [READ]",
       "get customer",
-      "Permission: sales_view"
+      "Permission: sales.customers_view"
     ]);
     expect(text).toContain(
       "Input: { id: string; includeContacts?: boolean; status?: string }"
@@ -106,27 +106,6 @@ describe("formatToolDescription", () => {
     );
     expect(text).toContain("full-set read");
     expect(text).not.toContain("database-side paging use");
-  });
-
-  test.each<[ManifestEntry["permission"], string]>([
-    [
-      {
-        module: null,
-        actions: [],
-        scopes: ["production_create", "projects_view"]
-      },
-      "Permission: production_create and projects_view"
-    ],
-    [
-      { module: "sales", actions: ["create", "update"] },
-      "Permission: sales_create and sales_update"
-    ]
-  ])("names every scope the gate requires: %j", (permission, line) => {
-    const text = formatToolDescription(
-      { ...baseTool, permission },
-      { isList: false }
-    );
-    expect(text.split("\n")[2]).toBe(line);
   });
 
   test("omits the permission line for key-only operations", () => {

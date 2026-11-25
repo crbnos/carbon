@@ -21,24 +21,31 @@ import {
 } from "../app/modules/sales/sales.server";
 import { salesRulesEntitlementRefusal } from "../app/modules/sales/sales.service";
 import { filteringSupabase } from "./filtering-supabase-fake";
+import { pageClaims } from "./page-claims";
 
 const unreachable = () => {
   throw new Error("must not be reached");
 };
 
-const sales = {
+// Every sales page at every level.
+const sales = pageClaims({
   sales: {
     view: ["company-1"],
     create: ["company-1"],
     update: ["company-1"],
     delete: ["company-1"]
   }
-};
+});
 
 // The ownership checks read with the service role, the writes as the caller.
 function contextFor(client: unknown) {
   return createServiceContext({
-    actor: { type: "user", userId: "user-1", permissions: sales },
+    actor: {
+      type: "user",
+      role: "employee",
+      userId: "user-1",
+      permissions: sales
+    },
     company: { id: "company-1", groupId: "group-1" },
     caller: client as never,
     system: (() => client) as never,

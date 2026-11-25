@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
@@ -105,7 +106,7 @@ const ItemSupersessionForm = ({
 }: ItemSupersessionFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
-  const canUpdate = permissions.can("update", "parts");
+  const canUpdate = permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" });
 
   const [mode, setMode] = useState<SupersessionMode | "">(
     initialValues.supersessionMode ?? ""

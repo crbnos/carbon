@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -12,16 +12,13 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { getEnforcementRule } from "~/modules/shared/shared.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "sales"
-  });
+  const { api } = await authorize(request, { "sales.salesRules": "Full" });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getEnforcementRule(client, "sales", id, companyId);
+  const rule = await api.shared.getEnforcementRule({ family: "sales", id });
   if (rule.error || !rule.data) {
     throw redirect(
       path.to.salesRules,
@@ -35,7 +32,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const { request } = args;
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.sales.deleteSalesRule({ id: input.params.id });
   const list = `${path.to.salesRules}?${getParams(request)}`;
   return respond(request, result).redirect(list, {

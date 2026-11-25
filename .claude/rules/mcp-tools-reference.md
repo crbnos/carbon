@@ -42,8 +42,8 @@ inputs use its validators).
 module's `<module>.server.ts` imports something those inputs do not cover.
 
 The committed record is `tool-manifest.digest.json`: one line per operation
-with its classification, permission (`module:action+action`, the `scopes`
-joined by `+` for a gate over several modules, `none` for membership),
+with its classification, permission (`<page>:action+action`, `all of
+<page>:<Level>+…` for a gate over several modules, `none` for `"employee"`),
 `paginates` and a hash of each schema, so a contract change is one visible
 line in review. `pnpm check:manifest`
 regenerates without the cache and fails when the digest is stale. Pre-commit
@@ -117,22 +117,30 @@ any other value export in a server file fails generation.
   The description is the summary sentence, then `@remarks`, then `@returns`.
   `@param name - text` becomes that input field's `description`, and naming a
   field the input does not have fails generation.
-- **Permission**: read off the literal `permission` and published in the
-  manifest (`ToolPermission`, `@carbon/api`). One module → `{ module, actions }`;
-  two or more modules → `{ module: null, actions: [], scopes }`, every
-  `<module>_<action>` the literal names, sorted
-  (`{ create: "production", view: "projects" }` → `["production_create",
-  "projects_view"]`); `{}` (company membership) → `{ module: null, actions: [] }`.
-  The caller must hold all of it: the function's own gate is the only check, and
-  `hasPermissions` (`@carbon/api/permissions`) requires every module of every
-  action. `"system"` and a keyed permission (`{ by, rules }`) cannot be
-  published.
-- **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
-  WRITE. `@mcp read` forces READ, for a read gated on membership alone (`{}`);
-  on a permission that names `create`, `update` or `delete` it fails
-  generation, since a READ is offered as safe to run unasked. `@mcp write`
-  forces WRITE, for a write whose gate names only `view` because its route has
-  only ever required view (`users_updateGroup`); it never lowers DESTRUCTIVE.
+- **Permission**: read off the literal `permission` (pages and levels,
+  `{ "inventory.receipts": "Edit" }`) and published in the manifest as the
+  pages' module and every action their levels hold (Edit → view, create,
+  update). Pages of one module → `{ module, actions }`, plus `page` when the
+  gate names one page (`describe_tool` prints `<page>_<action>`, the digest
+  `<page>:<actions>`). One gate over pages of several modules (every entry
+  needed) → `{ module: null, actions, allOf: [{ page, level }, …] }` in
+  registry order, `actions` those of its highest level; the digest writes
+  it `all of <page>:<Level>+…`. `"employee"` (any employee of the company),
+  or a keyed rule over several modules → `{ module: null, actions: [] }`.
+  A keyed permission (`{ by, rules }`) publishes every page its rules name. An `anyOf` or row rule (`rowRule`,
+  `itemRule`) is read off its TYPE, so a helper call publishes like a
+  literal: its pages also go out as `oneOf: { pages, level, by }` (`by` is
+  the row column that picks, `item.type`), which `describe_tool` prints as
+  "one of … at <Level>" and the digest appends to its permission. A page
+  the registry does not have, or a level that is not View, Create, Edit or
+  Full, fails generation. The
+  function's own gate is the only check. `"system"` cannot be published.
+- **Classification**: View alone → READ; Full → DESTRUCTIVE; else WRITE.
+  `@mcp read` forces READ, for a read gated on `"employee"`; on a gate whose
+  level holds create, update or delete it fails generation, since a READ is
+  offered as safe to run unasked. `@mcp write` forces WRITE, for a write
+  gated on View because its route has only ever required View; on a gate whose
+  level holds a write it fails generation, and it never lowers DESTRUCTIVE.
   `@mcp destructive` forces DESTRUCTIVE.
 - **Input schema**: the TYPE of `run`'s input parameter, through
   `typeToJsonSchema` (`scripts/lib/response-schema.ts`). A field whose type
@@ -229,10 +237,10 @@ instance advertises its own endpoint. Never hard-code `app.carbon.ms`.
 
 1. **OAuth bearer**: `Authorization: Bearer <token>` not prefixed `crbn_`.
    `findOAuthToken` (hash lookup + expiry), the per-user rate limit, then
-   `oauthContext` (membership, company group, claims, user client), in
+   `oauthContext` (company group, claims, user client), in
    `api+/v1+/lib/authenticate.server.ts`.
 2. **API key**: `Bearer crbn_…` is rewritten to the `carbon-key` header, or the
-   header is sent directly (`authenticateApiKey`).
+   header is sent directly (`apiKeyContext`, `authorizeApiKey`).
 3. **No auth** → 401 with `WWW-Authenticate: Bearer resource_metadata=…`.
 
 `companyId` / `userId` always come from the credential, never from arguments.
@@ -435,7 +443,7 @@ bytes never pass through the model or the dispatch.
 signed into the `temp-staging` bucket, 2.5 GB) and `items_insertModelUpload`
 (`{ modelId, path, name, size, itemId?, jobId?, salesRfqLineId?, quoteLineId?,
 salesOrderLineId?, convert? }`). The `temp-staging` storage policies read the key's
-scopes (`parts_create` / `parts_update`), so an API key with those scopes can mint
+scopes (Create / Edit on any item page, `parts.parts_create` … `parts.services_update`), so an API key with those scopes can mint
 the URL and upload — unlike the document pair above, which signs into a company bucket.
 
 ## File downloads (a link, never the bytes)
@@ -499,20 +507,20 @@ Markdown markers.
   not a customer's saved workflow.
 - Publish a function only when it is safe with nothing but its input. The API
   runs the gate and `run`; nothing a route does around the call.
-- A function gated on several modules publishes `module: null` with `scopes`.
-  A pin of it in `apps/erp/test/mcp-tool-permissions.test.ts` (`OVERRIDES`)
-  names the scopes; `{ module: null, actions: [] }` there means membership.
-- A write gated on `{}` admits an API key with any scope, even a read-only one.
+- A function gated on several modules publishes `module: null` and its pages
+  as `allOf` (or `oneOf`) in the manifest; its own gate decides, as for every
+  function.
+- A write gated on `"employee"` admits an API key with any grant, even a read-only one.
   It starts with `refuseKeyWithout(ctx, required)` (`shared.service.ts`), and its
   `@remarks` name what a key needs: the manifest shows no permission.
 - A write whose building blocks write under the caller's RLS can need more
   than its gate. It calls `refuseKeyWithout(ctx, required)` first and names
-  what a key needs in `@remarks` (`users_inviteEmployee`: `update: users` and
-  `create: people`; `users_inviteCustomerContact` / `inviteSupplierContact`:
-  `view`, `create` and `update` on sales / purchasing).
+  what a key needs in `@remarks` (`users_inviteEmployee`: `users.accounts` at
+  Edit and `people.employees` at Create; `users_inviteCustomerContact` /
+  `inviteSupplierContact`: `sales.customers` / `purchasing.suppliers` at Edit).
 - A write that runs as a job answers before its effect lands:
-  `users_bulkUpdatePermissions` queues one job per user, and
-  `users_getEmployeePermissions` reads the grants in force.
+  `users_deactivateUsers` and `users_resendInvites` queue a job for several
+  users (`queued: true`).
 - **A form validator's `.refine()` checks are invisible in the published
   schema**: the manifest says a field is optional, and the call refuses it
   anyway. Give the API input the base object and fill or keep what a caller

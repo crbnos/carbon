@@ -22,8 +22,9 @@ import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 const serviceRole = hasLocalDatabase ? localServiceRoleClient() : null;
 
-// The trackedEntity write needs inventory update under RLS and the field
-// needs production update only: touching the caller's client fails the test.
+// The trackedEntity write needs an inventory page under RLS and the field
+// needs Edit on production.jobs only: touching the caller's client fails the
+// test.
 const untouched = new Proxy(
   {},
   {
@@ -53,8 +54,8 @@ describe.skipIf(!serviceRole)("updateJobBatchNumber", () => {
       actor: {
         type: "apiKey",
         createdBy: USER,
-        scopes: {
-          production: {
+        permissions: {
+          "production.jobs": {
             view: [],
             create: [],
             update: [f.companyId],

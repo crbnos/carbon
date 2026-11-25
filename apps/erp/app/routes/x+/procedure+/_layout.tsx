@@ -15,8 +15,7 @@ export const meta = moduleMeta("Procedure");
 
 export const handle: Handle = {
   breadcrumb: msg`Production`,
-  to: path.to.production,
-  module: "production"
+  to: path.to.production
 };
 
 export default function ProcedureRoute() {

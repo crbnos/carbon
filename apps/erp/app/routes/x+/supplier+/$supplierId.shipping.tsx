@@ -3,30 +3,27 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { supplierShippingValidator } from "~/modules/purchasing/purchasing.models";
-import {
-  getSupplierShipping,
-  updateSupplierShipping
-} from "~/modules/purchasing/purchasing.service";
+import { updateSupplierShipping } from "~/modules/purchasing/purchasing.service";
 import SupplierShippingForm from "~/modules/purchasing/ui/Supplier/SupplierShippingForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { api } = await authorize(request, { "purchasing.suppliers": "View" });
 
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");
 
-  const supplierShipping = await getSupplierShipping(client, supplierId);
+  const supplierShipping = await api.purchasing.getSupplierShipping({
+    supplierId
+  });
 
   if (supplierShipping.error || !supplierShipping.data) {
     throw redirect(
@@ -45,8 +42,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "purchasing"
+  const { client, userId } = await authorize(request, {
+    "purchasing.suppliers": "Edit"
   });
 
   const { supplierId } = params;

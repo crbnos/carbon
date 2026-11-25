@@ -5,7 +5,7 @@
 // Runs against the local database and PostgREST; skipped without them.
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
-import { expect, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 import { scanKanban } from "../../app/modules/inventory/inventory.server";
 import {
   alwaysPostFixture,
@@ -14,7 +14,7 @@ import {
   USER,
   workCenterFixture
 } from "./fixtures/always-post";
-import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
+import { hasLocalDatabase } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 // Get Method is a posting, and the posting gate tells the system by its key.
@@ -28,10 +28,7 @@ vi.mock("@carbon/env", async (importOriginal) => {
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
 const scanTest = (name: string, fn: () => Promise<void>) =>
-  databaseTest(name, async () => {
-    if (!client) return;
-    await fn();
-  });
+  it.skipIf(!client)(name, fn, 60_000);
 
 function context(f: Fixture) {
   return createServiceContext({

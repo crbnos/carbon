@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Generate Fiscal Year for a caller that may create accounting periods but
-// not view settings, where the fiscal year's start month is kept.
+// Generate Fiscal Year for an API key that may create accounting periods and
+// do nothing else, where the fiscal year's start month is kept.
 
 import { createHash } from "node:crypto";
 import { createServiceContext } from "@carbon/api/service-fn.server";
@@ -43,20 +43,29 @@ async function companyFixture(startMonth: "July" | null) {
         .execute();
     }
   });
-  // An API key that may create and view accounting, and nothing else.
+  // An API key whose one grant is Create on Accounting Periods.
   const rawKey = `crbn_fiscal_${crypto.randomUUID()}`;
-  await db
+  const key = await db
     .insertInto("apiKey")
     .values({
-      name: "Accounting only",
+      name: "Accounting Periods only",
       companyId,
       createdBy: USER,
       keyHash: createHash("sha256").update(rawKey).digest("hex"),
-      scopes: JSON.stringify({
-        accounting_view: [companyId],
-        accounting_create: [companyId]
-      })
+      scopes: JSON.stringify({})
     })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  await db
+    .insertInto("permission")
+    .values({
+      companyId,
+      apiKeyId: key.id,
+      module: "Accounting",
+      page: "accounting.accountingPeriods",
+      level: "Create",
+      createdBy: USER
+    } as never)
     .execute();
   return {
     db,
@@ -111,17 +120,10 @@ function contextOf(
 }
 
 postgrestTest(
-  "a fiscal year starts in the settings' month for a caller who cannot view settings",
+  "a fiscal year starts in the settings' month for a key on Accounting Periods alone",
   async (system) => {
     const f = await companyFixture("July");
     try {
-      // The caller's own read of the settings finds nothing.
-      const hidden = await f.caller
-        .from("fiscalYearSettings")
-        .select("startMonth")
-        .eq("companyId", f.companyId);
-      expect(hidden).toMatchObject({ data: [], error: null });
-
       const created = await createFiscalYearPeriods(contextOf(f, system), {
         fiscalYear: 2027
       });

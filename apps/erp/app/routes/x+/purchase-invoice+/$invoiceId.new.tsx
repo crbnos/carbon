@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
@@ -31,8 +31,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   // Check if PI is locked
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "invoicing"
+  const { client: viewClient } = await authorize(request, {
+    "invoicing.purchaseInvoices": "View"
   });
 
   const purchaseInvoice = await getPurchaseInvoice(viewClient, invoiceId);
@@ -53,6 +53,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
+  const { api } = await authorize(request, {
+    "invoicing.purchaseInvoices": "Create"
+  });
+
   const formData = await request.formData();
   const validation = await validator(purchaseInvoiceLineValidator).validate(
     formData
@@ -66,7 +70,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // The operation checks the charge number and the order's funds, and
   // decides the line's tax.
-  const api = await carbon(request);
   const result = await api.invoicing.createPurchaseInvoiceLine({
     ...d,
     // The form posts the field: an empty one is a cleared code. A request

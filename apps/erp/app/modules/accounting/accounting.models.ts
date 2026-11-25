@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { Constants } from "@carbon/database";
+import type { GateLevel } from "@carbon/database/access";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { months } from "~/modules/shared/shared.models";
@@ -1279,7 +1280,33 @@ export const RUN_JOURNAL_SOURCES: Record<string, string> = {
   "Asset Depreciation": "depreciation"
 };
 
+/**
+ * The activation wizard's page, or Reporting, which still writes its moved table
+ * (`alsoWrittenBy`). A literal, so the MCP manifest can read it.
+ */
+export const accountingActivationGate = <L extends GateLevel>(level: L) =>
+  [
+    { "settings.accounting": level },
+    { "accounting.reporting": level }
+  ] as const;
 // -- Tax Models --
+/** Who reads tax codes: the screens whose documents pick one. */
+export const taxCodeReadersGate = [
+  { "accounting.taxCodes": "View" },
+  { "sales.customers": "View" },
+  { "sales.quotes": "View" },
+  { "sales.salesOrders": "View" },
+  { "sales.rentalAgreements": "View" },
+  { "sales.serviceContracts": "View" },
+  { "sales.projectContracts": "View" },
+  { "purchasing.suppliers": "View" },
+  { "purchasing.supplierQuotes": "View" },
+  { "purchasing.purchaseOrders": "View" },
+  { "invoicing.salesInvoices": "View" },
+  { "invoicing.purchaseInvoices": "View" },
+  { "invoicing.creditMemos": "View" },
+  { "invoicing.supplierCredits": "View" }
+] as const;
 // See .ai/specs/2026-10-16-multi-jurisdiction-tax.md. Every rate is a 0..1
 // fraction, as `taxPercent` is on document lines.
 

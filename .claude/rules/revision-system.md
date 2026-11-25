@@ -140,6 +140,13 @@ Make methods are independently **versioned** (`20250603011801_make-method-versio
   `version DESC` (excludes `Archived`) — picks the one current method per item.
 - `activateMethodVersion` (`items.service.ts`) calls `convertDocument` (`shared.service.ts`, ported from the `convert` server function)
   (`type: "methodVersionToActive"`). Route: `x+/items+/methods+/versions.activate.$id.tsx`.
+  Inside its transaction it locks every version of the item in id order
+  (`lockItemMakeMethods`, `shared.service.ts`) and archives the versions
+  still Active under that lock, so two activations at once leave one Active.
+  Every writer that reads a version's status to decide (the method import,
+  the Onshape sync, a new version that sets its source Active) takes the same
+  lock in the same order (`make-method-version-concurrency.test.ts`).
+  No unique index enforces one Active version per item.
 - `jobMakeMethod.version` / `quoteMakeMethod.version` denormalize the method version
   at job/quote creation. Don't conflate method `version` (per-item recipe) with item
   `revision` (a sibling item row).

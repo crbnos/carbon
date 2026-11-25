@@ -169,7 +169,7 @@ const SalesOrderSummary = ({
   return (
     <>
       {jobsCardStatusMatches &&
-        permissions.can("create", "production") &&
+        permissions.has({ "production.jobs": "Create" }) &&
         permissions.is("employee") &&
         linesRequireJobs && (
           <Card>

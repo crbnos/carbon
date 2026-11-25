@@ -41,7 +41,8 @@ const LeasePaymentTerms = ({ lease }: LeasePaymentTermsProps) => {
   const id = lease.id!;
   const { save } = useLeaseTermSave(id);
   const isDisabled =
-    lease.status !== "Draft" || !permissions.can("update", "purchasing");
+    lease.status !== "Draft" ||
+    !permissions.has({ "purchasing.leases": "Edit" });
 
   const onChange = (field: LeaseTerm, value: string | null) => {
     const current = lease[field];
