@@ -39,7 +39,9 @@ import {
   outcomeOf,
   race,
   raceRounds,
-  raceTimeout
+  raceTimeout,
+  succeeded,
+  unexpectedRefusals
 } from "./fixtures/race";
 import { serviceReturnFixture } from "./fixtures/service-return";
 import { operationContext, postgrestTest } from "./fixtures/local-supabase";
@@ -712,10 +714,19 @@ databaseTest(
           const received = Number(posted.quantity ?? 0);
           expect({
             deadlocked: deadlocked(outcomes),
+            // A post or void may lose to the line another one changed; it is
+            // refused to be run again, never failed for another reason.
+            unexpected: unexpectedRefusals(
+              outcomes,
+              /changed while this receipt was (posting|voiding)/
+            ),
+            somethingApplied: succeeded(outcomes).length > 0,
             quantityReceived: Number(counters.quantityReceived),
             receivedComplete: counters.receivedComplete
           }).toEqual({
             deadlocked: [],
+            unexpected: [],
+            somethingApplied: true,
             quantityReceived: received,
             receivedComplete: received >= Number(counters.purchaseQuantity)
           });

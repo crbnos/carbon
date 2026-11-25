@@ -126,6 +126,30 @@ export function deadlocked<Name extends string>(
   });
 }
 
+/** The operations that did their work. */
+export function succeeded<Name extends string>(
+  outcomes: Record<Name, Outcome>
+): Name[] {
+  return (Object.keys(outcomes) as Name[]).filter(
+    (name) => outcomes[name].ok
+  );
+}
+
+/**
+ * The operations refused for a reason `allowed` does not match. A race may
+ * lose to the state another operation left; any other refusal is a broken
+ * path that would otherwise leave the invariant holding with nothing done.
+ */
+export function unexpectedRefusals<Name extends string>(
+  outcomes: Record<Name, Outcome>,
+  allowed: RegExp
+): Name[] {
+  return (Object.keys(outcomes) as Name[]).filter((name) => {
+    const outcome = outcomes[name];
+    return !outcome.ok && !allowed.test(outcome.error);
+  });
+}
+
 /** What `run` did: its value, or its refusal or database failure. */
 export async function outcomeOf(
   run: () => Promise<unknown>

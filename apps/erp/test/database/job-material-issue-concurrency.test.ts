@@ -25,7 +25,9 @@ import {
   outcomeOf,
   race,
   raceRounds,
-  raceTimeout
+  raceTimeout,
+  succeeded,
+  unexpectedRefusals
 } from "./fixtures/race";
 
 function signal() {
@@ -366,7 +368,7 @@ const ISSUE_ROUNDS = raceRounds(6);
 // one unit at once, under each backflush setting in turn: the unit needs 2,
 // and the step backflush planned its 2 from a read before any of them.
 databaseTest(
-  "an operation completion, the job's backflush and a step backflush of one unit at once issue at most the unit's need",
+  "an operation completion, the job's backflush and a step backflush of one unit at once issue exactly the unit's need",
   async () => {
     const f = await alwaysPostFixture();
     try {
@@ -425,14 +427,16 @@ databaseTest(
             item,
             job.materialId
           );
+          // The material needs 2 and the bin holds 10: whatever the order,
+          // exactly the need leaves the bin and is recorded as issued.
           expect({
             deadlocked: deadlocked(outcomes),
-            leftTheBinWithinNeed: -consumed <= 2,
+            consumed,
             quantityIssued
           }).toEqual({
             deadlocked: [],
-            leftTheBinWithinNeed: true,
-            quantityIssued: -consumed
+            consumed: -2,
+            quantityIssued: 2
           });
         }
       });

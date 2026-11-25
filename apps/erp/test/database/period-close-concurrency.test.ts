@@ -18,7 +18,9 @@ import {
   deadlocked,
   race,
   raceRounds,
-  raceTimeout
+  raceTimeout,
+  succeeded,
+  unexpectedRefusals
 } from "./fixtures/race";
 
 function signal() {
@@ -594,6 +596,9 @@ const PERIOD_STARTS = [
   { august: "Closed", september: "Closed" }
 ] as const;
 const PERIOD_ROUNDS = raceRounds(12);
+/** Refusals of a lock, unlock, close or reopen called on a period in the wrong state. */
+const PERIOD_LIFECYCLE_REFUSALS =
+  /only open periods can be locked|only locked periods can be unlocked|already closed|must be locked before closing|earlier periods must be closed first|later periods must be reopened first|is not closed/i;
 
 postgrestTest(
   "locks, unlocks, closes and reopens of two periods at once never leave a Closed period after an open one",
@@ -662,7 +667,13 @@ postgrestTest(
           reopenSeptember: (db) => reopenAccountingPeriod(db, args(september))
         },
         invariant: async (_, outcomes) => {
-          expect(deadlocked(outcomes)).toEqual([]);
+          // Each operation may find the period in a state it does not apply
+          // to; any other refusal is a broken lifecycle call.
+          expect({
+            deadlocked: deadlocked(outcomes),
+            unexpected: unexpectedRefusals(outcomes, PERIOD_LIFECYCLE_REFUSALS),
+            somethingApplied: succeeded(outcomes).length > 0
+          }).toEqual({ deadlocked: [], unexpected: [], somethingApplied: true });
           const periods = await f.db
             .selectFrom("accountingPeriod")
             .select(["id", "closeStatus"])

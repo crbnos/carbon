@@ -35,7 +35,9 @@ import {
   deadlocked,
   race,
   raceRounds,
-  raceTimeout
+  raceTimeout,
+  succeeded,
+  unexpectedRefusals
 } from "./fixtures/race";
 
 function signal() {
@@ -521,7 +523,7 @@ const VERSION_ROUNDS = raceRounds(6);
 // imports a BOM line into both at once. Earlier rounds' versions stay, so an
 // activation also archives whichever version the round before left Active.
 databaseTest(
-  "two activations and a method import into the same versions at once leave at most one version Active",
+  "two activations and a method import into the same versions at once leave one of the versions activated Active",
   async () => {
     const f = await methodImportFixture();
     try {
@@ -569,7 +571,7 @@ databaseTest(
             return { error: summary.errors.length ? summary.errors : null };
           }
         },
-        invariant: async (_, outcomes) => {
+        invariant: async ({ versions }, outcomes) => {
           const active = await f.db
             .selectFrom("makeMethod")
             .select("version")
@@ -577,10 +579,22 @@ databaseTest(
             .where("companyId", "=", f.companyId)
             .where("status", "=", "Active")
             .execute();
+          // One activation wins, so this round's version is the one Active;
+          // the import may only be refused for the version it found Active.
           expect({
             deadlocked: deadlocked(outcomes),
-            atMostOneActive: active.length <= 1
-          }).toEqual({ deadlocked: [], atMostOneActive: true });
+            unexpected: unexpectedRefusals(
+              outcomes,
+              /only a Draft version can change/
+            ),
+            activated: succeeded(outcomes).some((name) => name !== "import"),
+            active: active.map(({ version }) => version)
+          }).toEqual({
+            deadlocked: [],
+            unexpected: [],
+            activated: true,
+            active: [expect.toSatisfy((v: number) => versions.includes(v))]
+          });
         }
       });
     } finally {
