@@ -153,8 +153,8 @@ Voiding applies only after posting. A Draft invoice can simply be edited or dele
 ### "Purchase invoice is already voided"
 No action needed — the invoice was already reversed.
 
-### "Cannot void a purchase invoice with payments applied. Reverse the payment first."
-The invoice has settled payments against it. Reverse (or unapply) those payments, then void the invoice.
+### "Cannot void a sales invoice with payments or credits applied. Reverse them first."
+A posted payment or credit memo settles the invoice, whatever its status says (a Credit Note Issued invoice too). Reverse (or unapply) the payment or memo, then void the invoice. The purchase invoice says the same, for a payment or debit memo.
 
 ### "Cannot delete purchase invoice with status … Only Draft invoices can be deleted."
 A database guard (same wording for sales invoices). Once an invoice leaves Draft it can't be deleted — void a posted invoice instead, which writes reversing entries.

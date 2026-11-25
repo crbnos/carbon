@@ -9781,9 +9781,9 @@ export const postSalesInvoicePermission = {
 } satisfies PermissionRule<z.output<typeof postSalesInvoiceInput>>;
 
 export const SALES_INVOICE_SETTLED_VOID_ERROR =
-  "Cannot void a sales invoice with payments applied. Reverse the payment first.";
+  "Cannot void a sales invoice with payments or credits applied. Reverse them first.";
 export const PURCHASE_INVOICE_SETTLED_VOID_ERROR =
-  "Cannot void a purchase invoice with payments applied. Reverse the payment first.";
+  "Cannot void a purchase invoice with payments or credits applied. Reverse them first.";
 
 /** Whether a posted payment or memo settles the invoice: a settlement row
  *  whose payment is Posted, or whose memo is Posted (and, applied through a
