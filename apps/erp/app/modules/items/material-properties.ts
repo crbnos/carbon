@@ -5,7 +5,7 @@
 import { getMaterialDescription, getMaterialId } from "@carbon/utils";
 
 // The material properties panel's rules as pure decisions, shared by the
-// panel's route, upsertMaterial and updateMaterialProperties (MCP). The
+// panel's route, updateMaterial and updateMaterialProperties (MCP). The
 // service loads the rows these read and writes what they decide.
 
 export const materialPropertyFields = [
@@ -87,6 +87,29 @@ export function materialItemUpdateFields(nameDerived: boolean) {
     "itemTrackingType",
     "unitOfMeasureCode"
   ] as const;
+}
+
+/**
+ * The itemCost columns a material create or update writes: the item group
+ * (posting group) and the unit cost it was sent. A create writes a group only
+ * when one is named; an update (`clearsEmptyGroup`) also clears it when the
+ * key is present but empty, as a cleared form field is.
+ */
+export function materialCostFields(
+  material: { postingGroupId?: string | null; unitCost?: number | null },
+  { clearsEmptyGroup }: { clearsEmptyGroup: boolean }
+): { itemPostingGroupId?: string | null; unitCost?: number } {
+  const writesGroup = clearsEmptyGroup
+    ? "postingGroupId" in material
+    : !!material.postingGroupId;
+  return {
+    ...(writesGroup
+      ? { itemPostingGroupId: material.postingGroupId || null }
+      : {}),
+    ...(typeof material.unitCost === "number"
+      ? { unitCost: material.unitCost }
+      : {})
+  };
 }
 
 /** sentFields for the property ids, where an empty string clears like null. */

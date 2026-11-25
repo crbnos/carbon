@@ -8,6 +8,7 @@ import {
   clearsSubstanceOrShape,
   generatedMaterialUpdateRefusal,
   generateMaterialIdentity,
+  materialCostFields,
   materialItemUpdateFields,
   type MaterialPropertyLookups,
   type MaterialPropertyValues,
@@ -18,7 +19,7 @@ import {
   sentMaterialProperties
 } from "~/modules/items/material-properties";
 
-// The properties panel's rules for material edits, which upsertMaterial,
+// The properties panel's rules for material edits, which updateMaterial,
 // updateMaterialProperties (MCP) and the panel's own route all apply.
 
 const ALUMINUM_PLATE: MaterialPropertyValues = {
@@ -311,5 +312,38 @@ describe("sentMaterialProperties", () => {
       dimensionId: null,
       materialFormId: "plate"
     });
+  });
+});
+
+describe("materialCostFields", () => {
+  it("writes only the cost fields sent", () => {
+    expect(materialCostFields({}, { clearsEmptyGroup: true })).toEqual({});
+    expect(
+      materialCostFields(
+        { postingGroupId: "raw", unitCost: 0 },
+        { clearsEmptyGroup: false }
+      )
+    ).toEqual({ itemPostingGroupId: "raw", unitCost: 0 });
+  });
+
+  it("clears the group on an update that sends it empty, never on a create", () => {
+    expect(
+      materialCostFields({ postingGroupId: "" }, { clearsEmptyGroup: true })
+    ).toEqual({ itemPostingGroupId: null });
+    expect(
+      materialCostFields(
+        { postingGroupId: undefined },
+        { clearsEmptyGroup: true }
+      )
+    ).toEqual({ itemPostingGroupId: null });
+    expect(
+      materialCostFields({ postingGroupId: "" }, { clearsEmptyGroup: false })
+    ).toEqual({});
+  });
+
+  it("leaves the unit cost alone unless a number is sent", () => {
+    expect(
+      materialCostFields({ unitCost: null }, { clearsEmptyGroup: true })
+    ).toEqual({});
   });
 });

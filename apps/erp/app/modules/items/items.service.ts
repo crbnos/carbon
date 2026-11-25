@@ -165,6 +165,7 @@ import {
   type MaterialPropertyField,
   type MaterialPropertyLookups,
   type MaterialPropertyValues,
+  materialCostFields,
   materialItemUpdateFields,
   newMaterialRevisions,
   noMaterialProperties,
@@ -347,6 +348,39 @@ async function requireItemPagePermission(
     )
   );
   return { error: checks.find((check) => check.error)?.error ?? null };
+}
+
+/** A refusal thrown inside a transaction, which rolls it back. Its message is
+ *  written for the person. */
+class RuleRefusal extends Error {}
+
+// A thrown Kysely/Postgres error in the { message, code } shape services
+// return. The code is the SQLSTATE (23505 for a taken revision label).
+function writeError(error: unknown): ServiceError {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code: unknown }).code)
+      : undefined;
+  const message = error instanceof Error ? error.message : String(error);
+  return code ? { code, message } : { message };
+}
+
+/**
+ * The service error of a failed transaction, logged as `failure`: a
+ * {@link RuleRefusal} is a rule refusal (a warning), anything else a write
+ * failure.
+ */
+function transactionError(
+  error: unknown,
+  failure: string,
+  context: Record<string, unknown>
+): ServiceError {
+  if (error instanceof RuleRefusal) {
+    logger.warning(failure, { ...context, error });
+    return ruleError(error.message);
+  }
+  logger.error(failure, { ...context, error });
+  return writeError(error);
 }
 
 // What a new revision inherits from the revision it was copied from, beyond the
@@ -584,6 +618,22 @@ export async function createRevision(
   let revisionItemId: string;
   try {
     revisionItemId = await db.transaction().execute(async (trx) => {
+      if (item.type === "Material") {
+        // A rename of the material takes this lock too: under it the readable
+        // id read before the transaction is still the material's.
+        await lockMaterialReadableIds(trx, companyId, [item.readableId]);
+        const source = await trx
+          .selectFrom("item")
+          .select("readableId")
+          .where("id", "=", item.id)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (source?.readableId !== item.readableId) {
+          throw new RuleRefusal(
+            `Material ${item.readableId} was renamed. Send the call again`
+          );
+        }
+      }
       const inserted = await trx
         .insertInto("item")
         .values({
@@ -620,13 +670,14 @@ export async function createRevision(
       return inserted.id;
     });
   } catch (error) {
-    logger.error("Failed to create revision", {
-      companyId,
-      sourceItemId: item.id,
-      revision,
-      error
-    });
-    return { data: null, error: writeError(error) };
+    return {
+      data: null,
+      error: transactionError(error, "Failed to create revision", {
+        companyId,
+        sourceItemId: item.id,
+        revision
+      })
+    };
   }
 
   if (item.replenishmentSystem !== "Buy") {
@@ -746,80 +797,73 @@ export async function deleteConfigurationParameterGroup(
   );
   if (permitted.error) return { data: null, error: permitted.error };
 
-  type Outcome = { refusal: string } | { deleted: { id: string }[] };
   try {
-    const outcome = await db
-      .transaction()
-      .execute(async (trx): Promise<Outcome> => {
-        // The lock holds off a parameter added to the group meanwhile.
-        const group = await trx
+    const deleted = await db.transaction().execute(async (trx) => {
+      // The lock holds off a parameter added to the group meanwhile.
+      const group = await trx
+        .selectFrom("configurationParameterGroup")
+        .select(["itemId", "isUngrouped"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!group) {
+        throw new RuleRefusal("Configuration parameter group not found");
+      }
+      if (group.isUngrouped) {
+        throw new RuleRefusal("The Ungrouped group cannot be deleted");
+      }
+
+      const parameters = await trx
+        .selectFrom("configurationParameter")
+        .select("id")
+        .where("configurationParameterGroupId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (parameters.length > 0) {
+        // Every configurable item has its own Ungrouped group.
+        const ungrouped = await trx
           .selectFrom("configurationParameterGroup")
-          .select(["itemId", "isUngrouped"])
-          .where("id", "=", id)
-          .where("companyId", "=", companyId)
-          .forUpdate()
-          .executeTakeFirst();
-        if (!group) {
-          return { refusal: "Configuration parameter group not found" };
-        }
-        if (group.isUngrouped) {
-          return { refusal: "The Ungrouped group cannot be deleted" };
-        }
-
-        const parameters = await trx
-          .selectFrom("configurationParameter")
           .select("id")
-          .where("configurationParameterGroupId", "=", id)
+          .where("itemId", "=", group.itemId)
           .where("companyId", "=", companyId)
-          .execute();
-        if (parameters.length > 0) {
-          // Every configurable item has its own Ungrouped group.
-          const ungrouped = await trx
-            .selectFrom("configurationParameterGroup")
-            .select("id")
-            .where("itemId", "=", group.itemId)
-            .where("companyId", "=", companyId)
-            .where("isUngrouped", "=", true)
-            .executeTakeFirst();
-          if (!ungrouped) {
-            return {
-              refusal:
-                "The item has no Ungrouped group to move this group's parameters to"
-            };
-          }
-          await trx
-            .updateTable("configurationParameter")
-            .set({ configurationParameterGroupId: ungrouped.id })
-            .where("configurationParameterGroupId", "=", id)
-            .where("itemId", "=", group.itemId)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
-
-        const deleted = await trx
-          .deleteFrom("configurationParameterGroup")
-          .where("id", "=", id)
-          .where("companyId", "=", companyId)
-          .returning("id")
-          .execute();
-        if (deleted.length !== 1) {
-          throw new Error(
-            `Configuration parameter group ${id} was not deleted`
+          .where("isUngrouped", "=", true)
+          .executeTakeFirst();
+        if (!ungrouped) {
+          throw new RuleRefusal(
+            "The item has no Ungrouped group to move this group's parameters to"
           );
         }
-        return { deleted };
-      });
-    if ("refusal" in outcome) {
-      return { data: null, error: ruleError(outcome.refusal) };
-    }
-    return { data: outcome.deleted, error: null };
-  } catch (error) {
-    logger.error("Failed to delete the configuration parameter group", {
-      companyId,
-      id,
-      error
+        await trx
+          .updateTable("configurationParameter")
+          .set({ configurationParameterGroupId: ungrouped.id })
+          .where("configurationParameterGroupId", "=", id)
+          .where("itemId", "=", group.itemId)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      const removed = await trx
+        .deleteFrom("configurationParameterGroup")
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .returning("id")
+        .execute();
+      if (removed.length !== 1) {
+        throw new Error(`Configuration parameter group ${id} was not deleted`);
+      }
+      return removed;
     });
-    return { data: null, error: writeError(error) };
+    return { data: deleted, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: transactionError(
+        error,
+        "Failed to delete the configuration parameter group",
+        { companyId, id }
+      )
+    };
   }
 }
 
@@ -2961,6 +3005,12 @@ export async function updateRevision(
   );
 }
 
+/**
+ * Saves the parameter `id` of the item, or without `id` adds one to the sent
+ * group, else to the item's Ungrouped group (made when the item has none).
+ * A group must be one of the item's (`requireItemConfigurationGroup`). An add
+ * answers the new parameter's id.
+ */
 export async function upsertConfigurationParameter(
   client: SupabaseClient<Database>,
   configurationParameter: z.infer<typeof configurationParameterValidator> & {
@@ -2969,6 +3019,13 @@ export async function upsertConfigurationParameter(
   }
 ) {
   const { userId, ...data } = configurationParameter;
+  const group = await requireItemConfigurationGroup(client, {
+    groupId: data.configurationParameterGroupId,
+    itemId: data.itemId,
+    companyId: data.companyId
+  });
+  if (group.error) return group;
+
   if (configurationParameter.id) {
     return requireAffected(
       client
@@ -3024,12 +3081,17 @@ export async function upsertConfigurationParameter(
     ungroupedGroupId = ungroupedGroupInsert.data.id;
   }
 
-  return client.from("configurationParameter").insert({
-    ...data,
-    key: data.key ?? "",
-    createdBy: userId,
-    configurationParameterGroupId: ungroupedGroupId
-  });
+  return client
+    .from("configurationParameter")
+    .insert({
+      ...data,
+      key: data.key ?? "",
+      createdBy: userId,
+      configurationParameterGroupId:
+        data.configurationParameterGroupId ?? ungroupedGroupId
+    })
+    .select("id")
+    .single();
 }
 
 export async function upsertConfigurationParameterGroup(
@@ -3197,14 +3259,10 @@ export async function getRecipeProcessIdsForItem(
   if (operations.error) {
     return { data: [] as string[], error: operations.error };
   }
-  const ids = Array.from(
-    new Set(
-      (operations.data ?? [])
-        .map((o) => o.processId)
-        .filter((id): id is string => !!id)
-    )
-  );
-  return { data: ids, error: null };
+  return {
+    data: pluckUnique(operations.data, (operation) => operation.processId),
+    error: null
+  };
 }
 
 /**
@@ -3284,20 +3342,8 @@ export async function upsertItemShelfLife(
     return client.from("itemShelfLife").delete().eq("itemId", args.itemId);
   }
 
-  const days = args.mode === "Fixed Duration" ? (args.days ?? null) : null;
-  const triggerProcessId =
-    args.mode === "Fixed Duration" ? (args.triggerProcessId ?? null) : null;
-  // triggerTiming only matters when there's a trigger process. Reset to the
-  // default 'After' otherwise so the column never carries a stale value
-  // from a prior config.
-  const triggerTiming = triggerProcessId
-    ? (args.triggerTiming ?? "After")
-    : "After";
-  // Calculate-from-BOM is meaningful only on Fixed Duration; the table
-  // CHECK enforces the same rule. Coerce any stale flag back to false on
-  // mode switches so the row never carries an inconsistent combo.
-  const calculateFromBom =
-    args.mode === "Fixed Duration" ? (args.calculateFromBom ?? false) : false;
+  const { days, triggerProcessId, triggerTiming, calculateFromBom } =
+    normalizeShelfLifePolicy(args.mode, args);
 
   // Reject trigger processes that aren't on the item's active recipe.
   // The set-shelf-life helper gates on processId equality, so a process
@@ -3379,15 +3425,57 @@ type ShelfLifeSetup = {
   calculateFromBom?: boolean;
 };
 
-/** A shelf-life setup the person must correct; its message is for them. */
-class ShelfLifeRefusal extends Error {}
+/**
+ * The itemShelfLife row a managed mode stores. Days, the trigger process and
+ * calculate-from-BOM belong to Fixed Duration only (the table's CHECK holds
+ * the last), and the timing to a trigger process; otherwise they reset, so a
+ * row never keeps a value from an earlier policy.
+ */
+function normalizeShelfLifePolicy(
+  mode: Exclude<(typeof shelfLifeModes)[number], "NotManaged">,
+  setup: ShelfLifeSetup
+): {
+  mode: Exclude<(typeof shelfLifeModes)[number], "NotManaged">;
+  days: number | null;
+  triggerProcessId: string | null;
+  triggerTiming: (typeof shelfLifeTriggerTimings)[number];
+  calculateFromBom: boolean;
+} {
+  const fixed = mode === "Fixed Duration";
+  const triggerProcessId = fixed ? (setup.triggerProcessId ?? null) : null;
+  return {
+    mode,
+    days: fixed ? (setup.days ?? null) : null,
+    triggerProcessId,
+    triggerTiming: triggerProcessId
+      ? (setup.triggerTiming ?? "After")
+      : "After",
+    calculateFromBom: fixed ? (setup.calculateFromBom ?? false) : false
+  };
+}
+
+/** The shelf-life setup of an item form or call, by its item field names. */
+function shelfLifeSetupOf(item: {
+  shelfLifeMode?: ShelfLifeSetup["mode"];
+  shelfLifeDays?: number;
+  shelfLifeTriggerProcessId?: string;
+  shelfLifeTriggerTiming?: ShelfLifeSetup["triggerTiming"];
+  shelfLifeCalculateFromBom?: boolean;
+}): ShelfLifeSetup {
+  return {
+    mode: item.shelfLifeMode,
+    days: item.shelfLifeDays,
+    triggerProcessId: item.shelfLifeTriggerProcessId,
+    triggerTiming: item.shelfLifeTriggerTiming,
+    calculateFromBom: item.shelfLifeCalculateFromBom
+  };
+}
 
 /**
  * Writes the items' shelf-life policy (one setup for all of them) inside the
  * caller's transaction, with the rules of {@link upsertItemShelfLife}. The
  * setup is checked for every item before the one write. Throws
- * {@link ShelfLifeRefusal} for a trigger process that is not on an item's
- * recipe.
+ * {@link RuleRefusal} for a trigger process that is not on an item's recipe.
  */
 async function writeItemShelfLife(
   trx: KyselyTx,
@@ -3400,8 +3488,7 @@ async function writeItemShelfLife(
   }
 ): Promise<void> {
   const { itemIds, companyId, updatedAt } = args;
-  const { mode, days, triggerProcessId, triggerTiming, calculateFromBom } =
-    args.shelfLife;
+  const { mode } = args.shelfLife;
 
   // mode undefined = caller didn't surface the field; leave any existing
   // row alone (matches upsertItemShelfLife semantics).
@@ -3416,43 +3503,29 @@ async function writeItemShelfLife(
     return;
   }
 
-  const normalizedDays = mode === "Fixed Duration" ? (days ?? null) : null;
-  const normalizedTriggerProcess =
-    mode === "Fixed Duration" ? (triggerProcessId ?? null) : null;
-  const normalizedTriggerTiming = normalizedTriggerProcess
-    ? (triggerTiming ?? "After")
-    : "After";
-  const normalizedCalcFromBom =
-    mode === "Fixed Duration" ? (calculateFromBom ?? false) : false;
+  const policy = normalizeShelfLifePolicy(mode, args.shelfLife);
 
   // Reject trigger processes that aren't on each item's active recipe.
   // The set-shelf-life helper gates on processId equality, so picking a
   // process the recipe never runs would silently never set the expiry.
-  if (normalizedTriggerProcess) {
+  if (policy.triggerProcessId) {
     const onRecipe = await trx
       .selectFrom("methodOperation as mo")
       .innerJoin("activeMakeMethods as amm", "amm.id", "mo.makeMethodId")
       .select("amm.itemId")
       .where("amm.itemId", "in", itemIds)
       .where("amm.companyId", "=", companyId)
-      .where("mo.processId", "=", normalizedTriggerProcess)
+      .where("mo.processId", "=", policy.triggerProcessId)
       .where("mo.methodCorrectionId", "is", null)
       .execute();
-    const allowed = new Set(onRecipe.map((row) => row.itemId));
+    const allowed = new Set(pluckUnique(onRecipe, (row) => row.itemId));
     if (itemIds.some((itemId) => !allowed.has(itemId))) {
-      throw new ShelfLifeRefusal(
+      throw new RuleRefusal(
         "Shelf-life trigger process must be one of the operations on this item's recipe"
       );
     }
   }
 
-  const policy = {
-    mode,
-    days: normalizedDays,
-    triggerProcessId: normalizedTriggerProcess,
-    triggerTiming: normalizedTriggerTiming,
-    calculateFromBom: normalizedCalcFromBom
-  };
   // An item that has a policy keeps its creator. A row of another company is
   // left alone, and the write fails.
   const written = await trx
@@ -3474,6 +3547,106 @@ async function writeItemShelfLife(
     .executeTakeFirst();
   if (Number(written.numInsertedOrUpdatedRows) !== itemIds.length) {
     throw new Error("The shelf-life policy was not saved for every item");
+  }
+}
+
+/**
+ * Sets the items' default storage unit at its location inside the caller's
+ * transaction, as {@link upsertItemDefaultPickMethod} does: no storage unit
+ * leaves the pick methods alone. Throws {@link RuleRefusal} for a storage unit
+ * that is not the company's.
+ */
+async function writeItemDefaultPickMethod(
+  trx: KyselyTx,
+  args: {
+    itemIds: string[];
+    companyId: string;
+    userId: string;
+    updatedAt: string;
+    storageUnitId: string | undefined;
+  }
+): Promise<void> {
+  const { itemIds, companyId, userId, updatedAt, storageUnitId } = args;
+  if (!storageUnitId || itemIds.length === 0) return;
+
+  const storageUnit = await trx
+    .selectFrom("storageUnit")
+    .select("locationId")
+    .where("id", "=", storageUnitId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!storageUnit) {
+    throw new RuleRefusal(`Storage unit ${storageUnitId} not found`);
+  }
+
+  await trx
+    .insertInto("pickMethod")
+    .values(
+      itemIds.map((itemId) => ({
+        itemId,
+        locationId: storageUnit.locationId,
+        defaultStorageUnitId: storageUnitId,
+        companyId,
+        createdBy: userId,
+        updatedBy: userId,
+        updatedAt
+      }))
+    )
+    .onConflict((oc) =>
+      oc
+        .columns(["itemId", "locationId"])
+        .doUpdateSet({
+          defaultStorageUnitId: storageUnitId,
+          updatedBy: userId,
+          updatedAt
+        })
+        .where("pickMethod.companyId", "=", companyId)
+    )
+    .execute();
+}
+
+/**
+ * Writes the items' group (posting group) and unit cost inside the caller's
+ * transaction; a field left out of `cost` is left alone. The item insert
+ * trigger creates each item's itemCost row, so this updates it. Throws
+ * {@link RuleRefusal} for a group that is not the company's (its foreign key
+ * checks only that it exists, and Kysely bypasses RLS) and for an item whose
+ * cost row is missing, naming it `label`.
+ */
+async function writeItemCost(
+  trx: KyselyTx,
+  args: {
+    itemIds: string[];
+    label: string;
+    companyId: string;
+    userId: string;
+    updatedAt: string;
+    cost: { itemPostingGroupId?: string | null; unitCost?: number | null };
+  }
+): Promise<void> {
+  const { itemIds, companyId, cost } = args;
+  if (itemIds.length === 0 || Object.keys(cost).length === 0) return;
+
+  if (cost.itemPostingGroupId) {
+    const group = await trx
+      .selectFrom("itemPostingGroup")
+      .select("id")
+      .where("id", "=", cost.itemPostingGroupId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!group) {
+      throw new RuleRefusal(`Item group ${cost.itemPostingGroupId} not found`);
+    }
+  }
+
+  const updated = await trx
+    .updateTable("itemCost")
+    .set({ ...cost, updatedBy: args.userId, updatedAt: args.updatedAt })
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (Number(updated.numUpdatedRows) !== itemIds.length) {
+    throw new RuleRefusal(`Item cost for ${args.label} not found`);
   }
 }
 
@@ -3817,100 +3990,157 @@ const typedItemTables = {
   Service: "service"
 } as const;
 
+/** The fields a part, tool or consumable is created with. */
+type NewTypedItem = Pick<
+  z.infer<typeof itemValidator>,
+  | "id"
+  | "name"
+  | "description"
+  | "replenishmentSystem"
+  | "defaultMethodType"
+  | "itemTrackingType"
+  | "unitOfMeasureCode"
+  | "postingGroupId"
+  | "unitCost"
+  | "defaultStorageUnitId"
+  | "shelfLifeMode"
+  | "shelfLifeDays"
+  | "shelfLifeTriggerProcessId"
+  | "shelfLifeTriggerTiming"
+  | "shelfLifeCalculateFromBom"
+> & {
+  revision?: string;
+  modelUploadId?: string;
+  lotSize?: number;
+  customFields?: Json;
+  companyId: string;
+  createdBy: string;
+};
+
 /**
- * Creates a consumable (item row and consumable row) or updates one; on update
- * `id` is the item id (uuid) or the consumable's readable id and the write is
- * a full replace, so omitted optional fields are cleared, but `active` is left
- * as stored.
+ * Creates a part, tool or consumable numbered `item.id`: the item row and its
+ * type row, its item group and unit cost, a part's batch size, the default
+ * storage unit and the shelf life, in one transaction, so a refused or failed
+ * step leaves no item holding the number against a retry. A part made in
+ * house gets no unit cost, and one only bought no batch size. A number
+ * another item has fails as a unique violation (23505). Returns the new
+ * item's id.
+ */
+export async function insertTypedItem(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  type: "Part" | "Tool" | "Consumable",
+  item: NewTypedItem
+): Promise<
+  { data: { id: string }; error: null } | { data: null; error: ServiceError }
+> {
+  const { companyId, createdBy } = item;
+  // Kysely bypasses RLS: the item INSERT policy asks for create on the page
+  // of the item's type.
+  const permitted = await requireCompanyPermission(
+    client,
+    companyId,
+    `${ITEM_TYPE_PAGES[type]}_create`
+  );
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  const isPart = type === "Part";
+  try {
+    const id = await db.transaction().execute(async (trx) => {
+      const inserted = await trx
+        .insertInto("item")
+        .values({
+          readableId: item.id,
+          revision: item.revision,
+          name: item.name,
+          description: item.description,
+          type,
+          replenishmentSystem: item.replenishmentSystem,
+          defaultMethodType: item.defaultMethodType,
+          itemTrackingType: item.itemTrackingType,
+          unitOfMeasureCode: item.unitOfMeasureCode,
+          active: true,
+          modelUploadId: item.modelUploadId,
+          companyId,
+          createdBy
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      // A type row left by the number's deleted items is taken over.
+      const typed = { createdBy, customFields: toJson(item.customFields) };
+      await trx
+        .insertInto(typedItemTables[type])
+        .values({ id: item.id, companyId, ...typed })
+        .onConflict((oc) => oc.columns(["id", "companyId"]).doUpdateSet(typed))
+        .execute();
+
+      const writes = {
+        itemIds: [inserted.id],
+        companyId,
+        userId: createdBy,
+        updatedAt: datetime.timestamp()
+      };
+      const madeInHouse = isPart && item.replenishmentSystem === "Make";
+      await writeItemCost(trx, {
+        ...writes,
+        label: item.id,
+        cost: {
+          itemPostingGroupId: item.postingGroupId ?? null,
+          unitCost: madeInHouse ? null : (item.unitCost ?? null)
+        }
+      });
+      if (
+        isPart &&
+        item.replenishmentSystem !== "Buy" &&
+        item.lotSize !== undefined
+      ) {
+        await trx
+          .updateTable("itemReplenishment")
+          .set({ lotSize: item.lotSize })
+          .where("itemId", "=", inserted.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+      await writeItemDefaultPickMethod(trx, {
+        ...writes,
+        storageUnitId: item.defaultStorageUnitId
+      });
+      await writeItemShelfLife(trx, {
+        ...writes,
+        shelfLife: shelfLifeSetupOf(item)
+      });
+      return inserted.id;
+    });
+    return { data: { id }, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: transactionError(
+        error,
+        `Failed to create ${typedItemTables[type]}`,
+        {
+          companyId,
+          readableId: item.id
+        }
+      )
+    };
+  }
+}
+
+/**
+ * Updates a consumable; `id` is the item id (uuid) or the consumable's
+ * readable id and the write is a full replace, so omitted optional fields are
+ * cleared, but `active` is left as stored. `insertTypedItem` creates one.
  */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
-  consumable:
-    | (z.infer<typeof consumableValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof consumableValidator> & {
-        companyId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in consumable) {
-    const itemInsert = await client
-      .from("item")
-      .insert({
-        readableId: consumable.id,
-        name: consumable.name,
-        description: consumable.description,
-        type: "Consumable",
-        replenishmentSystem: consumable.replenishmentSystem,
-        defaultMethodType: consumable.defaultMethodType,
-        itemTrackingType: consumable.itemTrackingType,
-        unitOfMeasureCode: consumable.unitOfMeasureCode,
-        active: true,
-        companyId: consumable.companyId,
-        createdBy: consumable.createdBy
-      })
-      .select("id")
-      .single();
-    if (itemInsert.error) return itemInsert;
-    const itemId = itemInsert.data?.id;
-
-    const [consumableInsert, itemCostUpdate] = await Promise.all([
-      client.from("consumable").upsert({
-        id: consumable.id,
-        companyId: consumable.companyId,
-        createdBy: consumable.createdBy,
-        customFields: consumable.customFields
-      }),
-      client
-        .from("itemCost")
-        .update(
-          sanitize({
-            itemPostingGroupId: consumable.postingGroupId,
-            unitCost: consumable.unitCost
-          })
-        )
-        .eq("itemId", itemId)
-        .eq("companyId", consumable.companyId)
-    ]);
-
-    if (consumableInsert.error) return consumableInsert;
-    if (itemCostUpdate.error) return itemCostUpdate;
-
-    if (itemId) {
-      const pickMethod = await upsertItemDefaultPickMethod(client, {
-        itemId,
-        userId: consumable.createdBy,
-        storageUnitId: consumable.defaultStorageUnitId
-      });
-      if (pickMethod.error) return pickMethod;
-
-      const shelfLife = await upsertItemShelfLife(client, {
-        itemId,
-        userId: consumable.createdBy,
-        companyId: consumable.companyId,
-        mode: consumable.shelfLifeMode,
-        days: consumable.shelfLifeDays,
-        triggerProcessId: consumable.shelfLifeTriggerProcessId,
-        triggerTiming: consumable.shelfLifeTriggerTiming,
-        calculateFromBom: consumable.shelfLifeCalculateFromBom
-      });
-      if (shelfLife.error) return shelfLife;
-    }
-
-    const newConsumable = await client
-      .from("consumables")
-      .select("id")
-      .eq("readableId", consumable.id)
-      .eq("companyId", consumable.companyId)
-      .single();
-
-    return newConsumable;
+  consumable: z.infer<typeof consumableValidator> & {
+    companyId: string;
+    updatedBy: string;
+    customFields?: Json;
   }
-
+) {
   const updated = await updateTypedItem(client, {
     id: consumable.id,
     companyId: consumable.companyId,
@@ -4098,8 +4328,9 @@ export async function resolveItemIdFromExtractedText(
  * Creates a part (item row and part row) or updates one; on update `id` is the
  * item id (uuid) or the part's readable id and the write is a full replace, so
  * omitted optional fields are cleared, but `active` is left as stored.
- * `createPart` / `updatePart` are the operations; create also queues the
- * part's model optimisation.
+ * `updatePart` is the operation. The create writes one row at a time, so a
+ * late failure leaves the item behind: `createPart` creates through
+ * `insertTypedItem` instead, in one transaction.
  */
 export async function upsertPart(
   client: SupabaseClient<Database>,
@@ -5905,38 +6136,47 @@ async function planMaterialPropertyChanges(
   };
 }
 
+/** What a new material is created with: its properties, and the readable id
+ *  and name derived from them when the company generates material IDs (null
+ *  when IDs are typed). */
+export type NewMaterialPlan = {
+  generated: { readableId: string; name: string } | null;
+  properties: MaterialPropertyValues;
+};
+
 /**
- * The readable id and name a new material gets when the company generates
- * material IDs, derived from the properties sent; null when IDs are typed.
- * Without a substance and a shape it is refused, as the create refuses it.
+ * Plans a new material from the properties sent, checked as the properties
+ * panel checks them. With generated material IDs the readable id and name are
+ * derived from them; without a substance and a shape that is refused.
  */
-export async function getGeneratedMaterialIdentity(
+export async function planNewMaterial(
   client: SupabaseClient<Database>,
   material: { companyId: string } & Partial<
     Record<MaterialPropertyField, string | null>
   >
 ): Promise<
-  | { data: { readableId: string; name: string } | null; error: null }
-  | { data: null; error: ServiceError }
+  { data: NewMaterialPlan; error: null } | { data: null; error: ServiceError }
 > {
   const generatedIds = await materialIdsAreGenerated(
     client,
     material.companyId
   );
-  if (generatedIds.error) return generatedIds;
-  if (!generatedIds.data) return { data: null, error: null };
+  if (generatedIds.error) return { data: null, error: generatedIds.error };
 
   const plan = await planMaterialPropertyChanges(client, {
     companyId: material.companyId,
     current: noMaterialProperties,
     changes: sentMaterialProperties(material),
-    generatedIds: true
+    generatedIds: generatedIds.data
   });
   if (plan.error) return plan;
-  if (!plan.data.generated) {
+  if (generatedIds.data && !plan.data.generated) {
     return { data: null, error: ruleError(generatedIdsNeedSubstanceAndShape) };
   }
-  return { data: plan.data.generated, error: null };
+  return {
+    data: { generated: plan.data.generated, properties: plan.data.next },
+    error: null
+  };
 }
 
 /**
@@ -5953,6 +6193,22 @@ export async function lockMaterialReadableId(
   await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`material-id:${companyId}:${readableId}`}, 0))`.execute(
     trx
   );
+}
+
+/**
+ * {@link lockMaterialReadableId} for several IDs, in sorted order, so two
+ * transactions that lock the same IDs never wait on each other in a cycle.
+ * A rename locks its old and new ID, so it waits for a create of either and
+ * for a new revision of the old one.
+ */
+export async function lockMaterialReadableIds(
+  trx: KyselyTx,
+  companyId: string,
+  readableIds: string[]
+): Promise<void> {
+  for (const readableId of [...new Set(readableIds)].sort()) {
+    await lockMaterialReadableId(trx, companyId, readableId);
+  }
 }
 
 // Kysely bypasses RLS, so the caller's client must be able to update the
@@ -5972,51 +6228,6 @@ async function requireMaterialUpdatable(
   return { error: probe.error };
 }
 
-class MaterialRuleViolation extends Error {}
-
-/**
- * Refuses an item group (posting group) that is not the company's. Its
- * foreign key checks only that the group exists, and Kysely bypasses RLS.
- */
-async function requireCompanyItemPostingGroup(
-  trx: KyselyTx,
-  companyId: string,
-  itemPostingGroupId: string
-): Promise<void> {
-  const group = await trx
-    .selectFrom("itemPostingGroup")
-    .select("id")
-    .where("id", "=", itemPostingGroupId)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  if (!group) {
-    throw new MaterialRuleViolation(
-      `Item group ${itemPostingGroupId} not found`
-    );
-  }
-}
-
-// A thrown Kysely/Postgres error in the { message, code } shape services
-// return. The code is the SQLSTATE (23505 for a taken revision label).
-function writeError(error: unknown): ServiceError {
-  const code =
-    error && typeof error === "object" && "code" in error
-      ? String((error as { code: unknown }).code)
-      : undefined;
-  const message = error instanceof Error ? error.message : String(error);
-  return code ? { code, message } : { message };
-}
-
-function materialWriteError(error: unknown): ServiceError {
-  if (
-    error instanceof MaterialRuleViolation ||
-    error instanceof ShelfLifeRefusal
-  ) {
-    return ruleError(error.message);
-  }
-  return writeError(error);
-}
-
 async function writeMaterialIdentity(
   trx: KyselyTx,
   args: {
@@ -6032,7 +6243,7 @@ async function writeMaterialIdentity(
   const newReadableId = args.newReadableId ?? readableId;
   const renamed = newReadableId !== readableId;
   if (!newReadableId) {
-    throw new MaterialRuleViolation("Material ID cannot be empty");
+    throw new RuleRefusal("Material ID cannot be empty");
   }
   if (!renamed && args.name === undefined && !Object.keys(changes).length) {
     return readableId;
@@ -6040,8 +6251,9 @@ async function writeMaterialIdentity(
 
   const updatedAt = datetime.timestamp();
   if (renamed) {
-    // A create of the same ID takes this lock before its own check.
-    await lockMaterialReadableId(trx, companyId, newReadableId);
+    // A create of either ID, and a new revision of the old one, take these
+    // locks before their own check.
+    await lockMaterialReadableIds(trx, companyId, [readableId, newReadableId]);
     const taken = await trx
       .selectFrom("item")
       .select("id")
@@ -6050,9 +6262,7 @@ async function writeMaterialIdentity(
       .where("type", "=", "Material")
       .executeTakeFirst();
     if (taken) {
-      throw new MaterialRuleViolation(
-        `Material ${newReadableId} already exists`
-      );
+      throw new RuleRefusal(`Material ${newReadableId} already exists`);
     }
   }
 
@@ -6063,7 +6273,7 @@ async function writeMaterialIdentity(
     .where("companyId", "=", companyId)
     .executeTakeFirst();
   if (Number(material.numUpdatedRows) !== 1) {
-    throw new MaterialRuleViolation(`Material ${readableId} not found`);
+    throw new RuleRefusal(`Material ${readableId} not found`);
   }
 
   if (renamed || args.name !== undefined) {
@@ -6103,7 +6313,9 @@ async function getNewMaterialSizes(
     .eq("type", "Material");
   if (existing.error) return { data: null, error: existing.error };
 
-  const revisions = new Set(existing.data.map((item) => item.revision));
+  const revisions = new Set(
+    pluckUnique(existing.data, (item) => item.revision)
+  );
   const sizes = [...new Set(args.sizes)].filter(
     (size) => size && !revisions.has(size)
   );
@@ -6133,36 +6345,27 @@ async function getNewMaterialSizes(
 }
 
 /**
- * Creates a material or updates one by item id or readable id; an update keeps
- * any optional field it leaves out, and `sizes` adds a revision per new size.
- * Property changes follow updateMaterialProperties: dependents reset, picks
- * are checked against their substance and shape, and with generated material
- * IDs on the readable id and name are derived from the properties. There an
- * update refuses a `readableId` or a derived `name` it would not write
+ * Updates a material by item id or readable id; it keeps any optional field
+ * it leaves out, and `sizes` adds a revision per new size. Property changes
+ * follow updateMaterialProperties: dependents reset, picks are checked against
+ * their substance and shape, and with generated material IDs on the readable
+ * id and name are derived from the properties. There it refuses a
+ * `readableId` or a derived `name` it would not write
  * (`generatedMaterialUpdateRefusal`); a call that changes no property writes a
  * sent `name` to the item, as the properties panel does. `readableId` renames
- * a material when IDs are typed by hand. An item group must be the company's.
- * An update's material, item and item cost writes land together or not at
- * all; the pick method, shelf life and new sizes are written after them.
+ * the material when IDs are typed by hand. An item group must be the
+ * company's. The material, item, item cost, pick method and shelf life writes
+ * land together or not at all; new sizes are added after them.
  */
-export async function upsertMaterial(
+export async function updateMaterial(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  material:
-    | (z.infer<typeof materialValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-        sizes?: string[];
-      })
-    | (z.infer<typeof materialValidator> & {
-        companyId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
+  material: z.infer<typeof materialValidator> & {
+    companyId: string;
+    updatedBy: string;
+    customFields?: Json;
+  }
 ) {
-  if ("createdBy" in material) return insertMaterial(client, db, material);
-
   const generatedIds = await materialIdsAreGenerated(
     client,
     material.companyId
@@ -6221,15 +6424,6 @@ export async function upsertMaterial(
     materialItemUpdateFields(plan.data.generated !== null)
   );
 
-  const costUpdate: { itemPostingGroupId?: string | null; unitCost?: number } =
-    {};
-  if ("postingGroupId" in material) {
-    costUpdate.itemPostingGroupId = material.postingGroupId || null;
-  }
-  if (typeof material.unitCost === "number") {
-    costUpdate.unitCost = material.unitCost;
-  }
-
   const permitted = await requireMaterialUpdatable(client, {
     readableId,
     companyId,
@@ -6238,15 +6432,14 @@ export async function upsertMaterial(
   if (permitted.error) return { data: null, error: permitted.error };
 
   const updatedAt = datetime.timestamp();
+  const writes = { itemIds: [itemId], companyId, userId: updatedBy, updatedAt };
   try {
     readableId = await db.transaction().execute(async (trx) => {
-      if (costUpdate.itemPostingGroupId) {
-        await requireCompanyItemPostingGroup(
-          trx,
-          companyId,
-          costUpdate.itemPostingGroupId
-        );
-      }
+      await writeItemCost(trx, {
+        ...writes,
+        label: itemId,
+        cost: materialCostFields(material, { clearsEmptyGroup: true })
+      });
       const saved = await writeMaterialIdentity(trx, {
         readableId,
         newReadableId: generatedIds.data
@@ -6274,42 +6467,25 @@ export async function upsertMaterial(
           .execute();
       }
 
-      // The item insert trigger creates the itemCost row, so this updates it.
-      if (Object.keys(costUpdate).length > 0) {
-        const cost = await trx
-          .updateTable("itemCost")
-          .set({ ...costUpdate, updatedBy, updatedAt })
-          .where("itemId", "=", itemId)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst();
-        if (Number(cost.numUpdatedRows) !== 1) {
-          throw new MaterialRuleViolation(`Item cost for ${itemId} not found`);
-        }
-      }
+      await writeItemDefaultPickMethod(trx, {
+        ...writes,
+        storageUnitId: material.defaultStorageUnitId
+      });
+      await writeItemShelfLife(trx, {
+        ...writes,
+        shelfLife: shelfLifeSetupOf(material)
+      });
       return saved;
     });
   } catch (error) {
-    return { data: null, error: materialWriteError(error) };
+    return {
+      data: null,
+      error: transactionError(error, "Failed to update material", {
+        companyId,
+        itemId
+      })
+    };
   }
-
-  const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId,
-    userId: updatedBy,
-    storageUnitId: material.defaultStorageUnitId
-  });
-  if (pickMethod.error) return pickMethod;
-
-  const shelfLife = await upsertItemShelfLife(client, {
-    itemId,
-    userId: updatedBy,
-    companyId,
-    mode: material.shelfLifeMode,
-    days: material.shelfLifeDays,
-    triggerProcessId: material.shelfLifeTriggerProcessId,
-    triggerTiming: material.shelfLifeTriggerTiming,
-    calculateFromBom: material.shelfLifeCalculateFromBom
-  });
-  if (shelfLife.error) return shelfLife;
 
   if (newSizes.length > 0) {
     const source = await getItem(client, itemId);
@@ -6332,15 +6508,15 @@ export async function upsertMaterial(
 }
 
 /**
- * Creates a material, with one revision per distinct size in `sizes`: a
+ * Creates a material under the readable id and name of `plan` (from
+ * {@link planNewMaterial}), with one revision per distinct size in `sizes`: a
  * repeated or empty size is ignored, and no size makes the initial revision.
- * With generated material IDs on, its ID and name are derived from the
- * properties sent; `accepted` is the pair the caller already checked, and a
- * derived pair that differs is refused. An item group must be the company's.
- * The item revisions, their item cost, the material row, the pick method and
- * the shelf life are written in one transaction: a refused setup rolls the
- * whole create back and leaves the ID free for a corrected call. Returns the
- * id of the revision the `materials` view shows, read in that transaction.
+ * An ID another material has is refused, and so is an item group of another
+ * company. The item revisions, their item cost, the material row, the pick
+ * method and the shelf life are written in one transaction: a refused setup
+ * rolls the whole create back and leaves the ID free for a corrected call.
+ * Returns the id of the revision the `materials` view shows, read in that
+ * transaction.
  */
 export async function insertMaterial(
   client: SupabaseClient<Database>,
@@ -6351,54 +6527,20 @@ export async function insertMaterial(
     customFields?: Json;
     sizes?: string[];
   },
-  accepted?: { readableId: string; name: string }
+  plan: {
+    readableId: string;
+    name: string;
+    properties: MaterialPropertyValues;
+  }
 ): Promise<{
   data: { id: string } | null;
   error: ServiceError | null;
 }> {
   const { companyId, createdBy } = material;
-  const generatedIds = await materialIdsAreGenerated(client, companyId);
-  if (generatedIds.error) return { data: null, error: generatedIds.error };
-
-  const plan = await planMaterialPropertyChanges(client, {
-    companyId,
-    current: noMaterialProperties,
-    changes: sentMaterialProperties(material),
-    generatedIds: generatedIds.data
-  });
-  if (plan.error) return { data: null, error: plan.error };
-  if (generatedIds.data && !plan.data.generated) {
-    return {
-      data: null,
-      error: ruleError(generatedIdsNeedSubstanceAndShape)
-    };
-  }
-  const readableId = plan.data.generated?.readableId ?? material.id;
-  const name = plan.data.generated?.name ?? material.name;
-  // A property renamed since the caller's check would save another identity.
-  if (
-    accepted &&
-    (accepted.readableId !== readableId || accepted.name !== name)
-  ) {
-    return {
-      data: null,
-      error: ruleError(
-        `The material's properties now make it ${readableId}, named ${name}. Send the call again`
-      )
-    };
-  }
-
-  const costUpdate: { itemPostingGroupId?: string | null; unitCost?: number } =
-    {};
-  if (material.postingGroupId) {
-    costUpdate.itemPostingGroupId = material.postingGroupId;
-  }
-  if (typeof material.unitCost === "number") {
-    costUpdate.unitCost = material.unitCost;
-  }
+  const { readableId, name } = plan;
 
   // Kysely bypasses RLS: the item INSERT policy asks for create on the page
-  // of the item's type.
+  // of the item's type. The pick method and shelf life rows ask for the same.
   const permitted = await requireCompanyPermission(
     client,
     companyId,
@@ -6406,12 +6548,8 @@ export async function insertMaterial(
   );
   if (permitted.error) return { data: null, error: permitted.error };
 
-  // The item revisions, their cost, the material row, the pick method and the
-  // shelf life land together, so a refused or failed write leaves no item
-  // holding the ID against a retry.
-  let id: string;
   try {
-    id = await db.transaction().execute(async (trx) => {
+    const id = await db.transaction().execute(async (trx) => {
       // An existing ID would take the new item rows as extra revisions and
       // overwrite its material row; sizes on an update add revisions instead.
       await lockMaterialReadableId(trx, companyId, readableId);
@@ -6423,16 +6561,7 @@ export async function insertMaterial(
         .where("type", "=", "Material")
         .executeTakeFirst();
       if (taken) {
-        throw new MaterialRuleViolation(
-          `Material ${readableId} already exists`
-        );
-      }
-      if (costUpdate.itemPostingGroupId) {
-        await requireCompanyItemPostingGroup(
-          trx,
-          companyId,
-          costUpdate.itemPostingGroupId
-        );
+        throw new RuleRefusal(`Material ${readableId} already exists`);
       }
 
       const items = await trx
@@ -6456,32 +6585,23 @@ export async function insertMaterial(
         )
         .returning("id")
         .execute();
-      const ids = items.map((item) => item.id);
+      const writes = {
+        itemIds: items.map((item) => item.id),
+        companyId,
+        userId: createdBy,
+        updatedAt: datetime.timestamp()
+      };
 
-      // The item insert trigger creates each revision's itemCost row, so this
-      // updates it; a cost that is not saved fails the create.
-      if (Object.keys(costUpdate).length > 0) {
-        const cost = await trx
-          .updateTable("itemCost")
-          .set({
-            ...costUpdate,
-            updatedBy: createdBy,
-            updatedAt: datetime.timestamp()
-          })
-          .where("itemId", "in", ids)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst();
-        if (Number(cost.numUpdatedRows) !== ids.length) {
-          throw new MaterialRuleViolation(
-            `Item cost for ${readableId} not found`
-          );
-        }
-      }
+      await writeItemCost(trx, {
+        ...writes,
+        label: readableId,
+        cost: materialCostFields(material, { clearsEmptyGroup: false })
+      });
 
       // A row left by the material's deleted items is taken over, as the
       // upsert before this did.
       const properties = {
-        ...plan.data.next,
+        ...plan.properties,
         createdBy,
         customFields: toJson(material.customFields)
       };
@@ -6493,48 +6613,13 @@ export async function insertMaterial(
         )
         .execute();
 
-      // Kysely bypasses RLS: the pick method and shelf life rows ask for the
-      // same create on the item's page, checked above.
-      const updatedAt = datetime.timestamp();
-      if (material.defaultStorageUnitId) {
-        const storageUnit = await trx
-          .selectFrom("storageUnit")
-          .select("locationId")
-          .where("id", "=", material.defaultStorageUnitId)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst();
-        if (!storageUnit) {
-          throw new MaterialRuleViolation(
-            `Storage unit ${material.defaultStorageUnitId} not found`
-          );
-        }
-        await trx
-          .insertInto("pickMethod")
-          .values(
-            ids.map((itemId) => ({
-              itemId,
-              locationId: storageUnit.locationId,
-              defaultStorageUnitId: material.defaultStorageUnitId,
-              companyId,
-              createdBy,
-              updatedBy: createdBy,
-              updatedAt
-            }))
-          )
-          .execute();
-      }
+      await writeItemDefaultPickMethod(trx, {
+        ...writes,
+        storageUnitId: material.defaultStorageUnitId
+      });
       await writeItemShelfLife(trx, {
-        itemIds: ids,
-        companyId,
-        userId: createdBy,
-        updatedAt,
-        shelfLife: {
-          mode: material.shelfLifeMode,
-          days: material.shelfLifeDays,
-          triggerProcessId: material.shelfLifeTriggerProcessId,
-          triggerTiming: material.shelfLifeTriggerTiming,
-          calculateFromBom: material.shelfLifeCalculateFromBom
-        }
+        ...writes,
+        shelfLife: shelfLifeSetupOf(material)
       });
 
       // Read under the ID's lock, before a rename or another create of the
@@ -6544,32 +6629,23 @@ export async function insertMaterial(
         .select("id")
         .where("readableId", "=", readableId)
         .where("companyId", "=", companyId)
-        .where("id", "in", ids)
+        .where("id", "in", writes.itemIds)
         .executeTakeFirst();
       if (!shown?.id) {
         throw new Error(`Material ${readableId} is missing after its insert`);
       }
       return shown.id;
     });
+    return { data: { id }, error: null };
   } catch (error) {
-    const refusal = materialWriteError(error);
-    if (refusal.code === SERVICE_RULE_ERROR_CODE) {
-      logger.warning("Material create refused", {
+    return {
+      data: null,
+      error: transactionError(error, "Failed to create material", {
         companyId,
-        readableId,
-        error
-      });
-    } else {
-      logger.error("Failed to create material", {
-        companyId,
-        readableId,
-        error
-      });
-    }
-    return { data: null, error: refusal };
+        readableId
+      })
+    };
   }
-
-  return { data: { id }, error: null };
 }
 
 /**
@@ -6642,7 +6718,13 @@ export async function updateMaterialProperties(
         })
       );
     } catch (error) {
-      return { data: null, error: materialWriteError(error) };
+      return {
+        data: null,
+        error: transactionError(error, "Failed to change material properties", {
+          companyId,
+          readableId
+        })
+      };
     }
   }
 
@@ -7159,100 +7241,18 @@ export async function upsertUnitOfMeasure(
 }
 
 /**
- * Creates a tool (item row and tool row) or updates one; on update `id` is the
- * item id (uuid) or the tool's readable id and the write is a full replace, so
- * omitted optional fields are cleared, but `active` is left as stored.
+ * Updates a tool; `id` is the item id (uuid) or the tool's readable id and the
+ * write is a full replace, so omitted optional fields are cleared, but
+ * `active` is left as stored. `insertTypedItem` creates one.
  */
 export async function upsertTool(
   client: SupabaseClient<Database>,
-  tool:
-    | (z.infer<typeof toolValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof toolValidator> & {
-        companyId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in tool) {
-    const itemInsert = await client
-      .from("item")
-      .insert({
-        readableId: tool.id,
-        revision: tool.revision ?? "0",
-        name: tool.name,
-        description: tool.description,
-        type: "Tool",
-        replenishmentSystem: tool.replenishmentSystem,
-        defaultMethodType: tool.defaultMethodType,
-        itemTrackingType: tool.itemTrackingType,
-        unitOfMeasureCode: tool.unitOfMeasureCode,
-        active: true,
-        modelUploadId: tool.modelUploadId,
-        companyId: tool.companyId,
-        createdBy: tool.createdBy
-      })
-      .select("id")
-      .single();
-    if (itemInsert.error) return itemInsert;
-    const itemId = itemInsert.data?.id;
-
-    const [toolInsert, itemCostUpdate] = await Promise.all([
-      client.from("tool").upsert({
-        id: tool.id,
-        companyId: tool.companyId,
-        createdBy: tool.createdBy,
-        customFields: tool.customFields
-      }),
-      client
-        .from("itemCost")
-        .update(
-          sanitize({
-            itemPostingGroupId: tool.postingGroupId,
-            unitCost: tool.unitCost
-          })
-        )
-        .eq("itemId", itemId)
-        .eq("companyId", tool.companyId)
-    ]);
-
-    if (toolInsert.error) return toolInsert;
-    if (itemCostUpdate.error) return itemCostUpdate;
-
-    if (itemId) {
-      const pickMethod = await upsertItemDefaultPickMethod(client, {
-        itemId,
-        userId: tool.createdBy,
-        storageUnitId: tool.defaultStorageUnitId
-      });
-      if (pickMethod.error) return pickMethod;
-
-      const shelfLife = await upsertItemShelfLife(client, {
-        itemId,
-        userId: tool.createdBy,
-        companyId: tool.companyId,
-        mode: tool.shelfLifeMode,
-        days: tool.shelfLifeDays,
-        triggerProcessId: tool.shelfLifeTriggerProcessId,
-        triggerTiming: tool.shelfLifeTriggerTiming,
-        calculateFromBom: tool.shelfLifeCalculateFromBom
-      });
-      if (shelfLife.error) return shelfLife;
-    }
-
-    const newTool = await client
-      .from("tools")
-      .select("*")
-      .eq("readableId", tool.id)
-      .eq("companyId", tool.companyId)
-      .single();
-
-    return newTool;
+  tool: z.infer<typeof toolValidator> & {
+    companyId: string;
+    updatedBy: string;
+    customFields?: Json;
   }
-
+) {
   const updated = await updateTypedItem(client, {
     id: tool.id,
     companyId: tool.companyId,

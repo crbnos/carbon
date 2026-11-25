@@ -706,26 +706,6 @@ describeLocal("creating a material", () => {
     );
   });
 
-  it("refuses an ID and name other than the pair the caller accepted", async () => {
-    const readableId = `${prefix}-MAT-ACCEPTED`;
-
-    const result = await withInterceptors(() =>
-      itemsService.insertMaterial(
-        client!,
-        db,
-        {
-          ...material(readableId),
-          companyId: ids.company,
-          createdBy: "system"
-        } as never,
-        { readableId, name: "Aluminum sheet" }
-      )
-    );
-
-    expect(result.error).toMatchObject({ code: SERVICE_RULE_ERROR_CODE });
-    expect(await revisionsOf(readableId)).toEqual([]);
-  });
-
   it("writes the pick method and shelf life of every revision with it", async () => {
     const readableId = `${prefix}-MAT-SETUP`;
 
@@ -869,6 +849,48 @@ describeLocal("creating a material", () => {
     expect(retried.error).toBeNull();
   });
 
+  it("rolls a whole update back when its shelf life is refused", async () => {
+    const readableId = `${prefix}-MAT-UPDATE-SHELFLIFE`;
+    const created = await withInterceptors(() =>
+      items.createMaterial(ctx(), { ...material(readableId), unitCost: 5 })
+    );
+    expect(created.error).toBeNull();
+    const itemId = created.data!.id;
+
+    const { id: _readableId, ...fields } = material(readableId);
+    const refused = await withInterceptors(() =>
+      items.updateMaterial(ctx(), {
+        ...fields,
+        id: itemId,
+        name: "Aluminum plate offcuts",
+        unitCost: 9,
+        defaultStorageUnitId: ids.storageUnit,
+        shelfLifeMode: "Fixed Duration",
+        shelfLifeDays: 30,
+        shelfLifeTriggerProcessId: `${prefix}-no-such-process`
+      })
+    );
+
+    expect(refused.error?.category).toBe("rule");
+    expect(await revisionsOf(readableId)).toEqual([
+      { revision: "0", unitCost: 5 }
+    ]);
+    expect(
+      await db
+        .selectFrom("item")
+        .select("name")
+        .where("id", "=", itemId)
+        .executeTakeFirstOrThrow()
+    ).toEqual({ name: "Aluminum plate" });
+    expect(
+      await db
+        .selectFrom("pickMethod")
+        .select("itemId")
+        .where("itemId", "=", itemId)
+        .execute()
+    ).toEqual([]);
+  });
+
   it("refuses a create of an ID another create holds, and adds no revision", async () => {
     const readableId = `${prefix}-MAT-RACE`;
     const holder = await connectLocalTestDatabase();
@@ -987,4 +1009,181 @@ describeLocal("creating a material", () => {
       await monitor.destroy();
     }
   }, 30_000);
+
+  it("refuses a new revision of a material renamed while it waited, and adds none", async () => {
+    const source = `${prefix}-MAT-REVISION-SRC`;
+    const target = `${prefix}-MAT-REVISION-NEW`;
+    const created = await withInterceptors(() =>
+      items.createMaterial(ctx(), material(source))
+    );
+    expect(created.error).toBeNull();
+    const sourceItem = await itemsService.getItem(client!, created.data!.id);
+    expect(sourceItem.error).toBeNull();
+    const holder = await connectLocalTestDatabase();
+    const monitor = await connectLocalTestDatabase();
+    const held = signal();
+    const release = signal();
+    let holding: Promise<void> | undefined;
+    let revising: ReturnType<typeof itemsService.createRevision> | undefined;
+    try {
+      // A rename holds both IDs' locks and has moved the rows to the new ID.
+      holding = holder.transaction().execute(async (trx) => {
+        await itemsService.lockMaterialReadableIds(trx, ids.company, [
+          source,
+          target
+        ]);
+        await trx
+          .updateTable("material")
+          .set({ id: target })
+          .where("id", "=", source)
+          .where("companyId", "=", ids.company)
+          .execute();
+        await trx
+          .updateTable("item")
+          .set({ readableId: target })
+          .where("readableId", "=", source)
+          .where("companyId", "=", ids.company)
+          .where("type", "=", "Material")
+          .execute();
+        held.resolve();
+        await release.promise;
+      });
+      void holding.catch(() => {});
+      await Promise.race([held.promise, holding]);
+
+      // The revision was read before the rename committed.
+      revising = withInterceptors(() =>
+        itemsService.createRevision(client!, db, {
+          item: sourceItem.data!,
+          revision: "B",
+          createdBy: "system"
+        })
+      );
+      await waitForBlockedConnection(monitor, await backendPid(db));
+      release.resolve();
+      await holding;
+
+      const result = await revising;
+      expect(result.error).toMatchObject({ code: SERVICE_RULE_ERROR_CODE });
+      expect(await revisionsOf(source)).toEqual([]);
+      expect((await revisionsOf(target)).map((row) => row.revision)).toEqual([
+        "0"
+      ]);
+    } finally {
+      release.resolve();
+      await holding?.catch(() => {});
+      await revising?.catch(() => {});
+      await holder.destroy();
+      await monitor.destroy();
+    }
+  }, 30_000);
+});
+
+describeLocal("creating a part, tool or consumable", () => {
+  const item = (id: string) => ({
+    id,
+    name: "Gloves",
+    replenishmentSystem: "Buy" as const,
+    defaultMethodType: "Pull from Inventory" as const,
+    itemTrackingType: "Batch" as const,
+    unitOfMeasureCode: "EA"
+  });
+  const creates = [
+    [
+      "createPart",
+      (id: string, sent: object = {}) =>
+        items.createPart(ctx(), { ...item(id), revision: "0", ...sent })
+    ],
+    [
+      "createTool",
+      (id: string, sent: object = {}) =>
+        items.createTool(ctx(), { ...item(id), revision: "0", ...sent })
+    ],
+    [
+      "createConsumable",
+      (id: string, sent: object = {}) =>
+        items.createConsumable(ctx(), { ...item(id), ...sent })
+    ]
+  ] as const;
+
+  const itemsNumbered = async (readableId: string) =>
+    db
+      .selectFrom("item")
+      .select("id")
+      .where("readableId", "=", readableId)
+      .where("companyId", "=", ids.company)
+      .execute();
+
+  it.each(creates)("%s rolls the whole create back when the shelf life is refused, and the number stays free", async (name, create) => {
+    const readableId = `${prefix}-${name}-SHELFLIFE`;
+
+    // A new item has no recipe, so no process can trigger its shelf life.
+    const refused = await withInterceptors(() =>
+      create(readableId, {
+        unitCost: 4,
+        defaultStorageUnitId: ids.storageUnit,
+        shelfLifeMode: "Fixed Duration",
+        shelfLifeDays: 30,
+        shelfLifeTriggerProcessId: `${prefix}-no-such-process`
+      })
+    );
+
+    expect(refused.error?.category).toBe("rule");
+    expect(await itemsNumbered(readableId)).toEqual([]);
+
+    const retried = await withInterceptors(() =>
+      create(readableId, { shelfLifeMode: "Fixed Duration", shelfLifeDays: 30 })
+    );
+    expect(retried.error).toBeNull();
+    expect(await itemsNumbered(readableId)).toEqual([
+      { id: retried.data!.id }
+    ]);
+  });
+
+  it.each(creates)("%s refuses another company's item group, and adds no item", async (name, create) => {
+    const readableId = `${prefix}-${name}-FOREIGN-GROUP`;
+
+    const result = await withInterceptors(() =>
+      create(readableId, { postingGroupId: ids.otherPostingGroup })
+    );
+
+    expect(result.error?.category).toBe("rule");
+    expect(await itemsNumbered(readableId)).toEqual([]);
+  });
+
+  it.each(creates)("%s saves the item group, unit cost and default storage unit", async (name, create) => {
+    const readableId = `${prefix}-${name}-SETUP`;
+
+    const result = await withInterceptors(() =>
+      create(readableId, {
+        postingGroupId: ids.postingGroup,
+        unitCost: 4,
+        defaultStorageUnitId: ids.storageUnit
+      })
+    );
+
+    expect(result.error).toBeNull();
+    expect(
+      await db
+        .selectFrom("item")
+        .innerJoin("itemCost", "itemCost.itemId", "item.id")
+        .innerJoin("pickMethod", "pickMethod.itemId", "item.id")
+        .select([
+          "item.id",
+          "itemCost.itemPostingGroupId",
+          "itemCost.unitCost",
+          "pickMethod.defaultStorageUnitId"
+        ])
+        .where("item.readableId", "=", readableId)
+        .where("item.companyId", "=", ids.company)
+        .execute()
+    ).toEqual([
+      {
+        id: result.data!.id,
+        itemPostingGroupId: ids.postingGroup,
+        unitCost: 4,
+        defaultStorageUnitId: ids.storageUnit
+      }
+    ]);
+  });
 });

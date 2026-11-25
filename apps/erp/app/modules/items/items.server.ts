@@ -70,6 +70,7 @@ import {
   changeNoticeStatusValidator,
   changeNoticeValidator,
   configurationParameterGroupValidator,
+  configurationParameterValidator,
   deriveItemMethodUpdate,
   getMethodValidator,
   itemBulkUpdateValidator,
@@ -636,7 +637,9 @@ const partInput = applyStorageAndShelfLifeRefines(
  *
  * @remarks
  * Writes the item and its part row, its item group and unit cost, batch size,
- * default storage unit and shelf life (`upsertPart`).
+ * default storage unit and shelf life together (`insertTypedItem`): a refused
+ * step creates nothing and leaves the number free. A number another item has
+ * is a conflict. Returns the new item's id.
  *
  * @mcp
  */
@@ -645,18 +648,17 @@ export const createPart = defineServiceFn({
   permission: { "parts.parts": "Create" },
 
   async run(ctx, part) {
-    const companyId = ctx.company.id;
-    const created = await service.upsertPart(ctx.asCaller.supabase, {
-      ...part,
-      companyId,
-      createdBy: ctx.auditUserId
-    });
-    const id = created.data?.id;
-    if (created.error || !id) {
-      return ctx.error("internal", "Failed to insert part", created.error);
-    }
-
-    return { id };
+    const created = unwrap(
+      ctx,
+      await service.insertTypedItem(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        "Part",
+        payload(ctx, part).forCreate() as never
+      )
+    );
+    if (created instanceof CarbonError) return created;
+    return { id: created.id };
   }
 });
 
@@ -4203,31 +4205,17 @@ export const updateRevision = defineServiceFn({
  *
  * @remarks
  * As the configuration card's Add Parameter and parameter edit forms do:
- * without `id` it adds a parameter to the item's Ungrouped group; with `id`
- * it saves that parameter of the item. A `configurationParameterGroupId` must
- * be one of the item's groups. Needs Edit on the page of the item's type,
- * which also holds the Create an add needs.
+ * without `id` it adds a parameter to the sent group, else to the item's
+ * Ungrouped group, and answers its id; with `id` it saves that parameter of
+ * the item. A `configurationParameterGroupId` must be one of the item's
+ * groups. `key` is letters and digits in words joined by underscores, and a
+ * `list` parameter needs `listOptions`. Needs Edit on the page of the item's
+ * type, which also holds the Create an add needs.
  *
  * @mcp
  */
 export const upsertConfigurationParameter = defineServiceFn({
-  input: z.looseObject({
-    id: z.string().optional(),
-    itemId: z.string().min(1),
-    key: z.string().optional(),
-    label: z.string().min(1),
-    dataType: z.enum([
-      "text",
-      "numeric",
-      "boolean",
-      "list",
-      "material",
-      "date"
-    ]),
-    listOptions: z.array(z.string().min(1)).optional(),
-    configurationParameterGroupId: z.string().optional(),
-    materialFormFilterId: z.string().optional()
-  }),
+  input: configurationParameterValidator,
   // The card's route gate. Edit holds Create, which an add also needs.
   permission: service.itemRule("Edit", { id: "itemId" }),
   async run(ctx, input) {
@@ -4235,29 +4223,13 @@ export const upsertConfigurationParameter = defineServiceFn({
     // only that the item exists.
     const owned = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
     if (owned) return owned;
-    const group = unwrap(
-      ctx,
-      await service.requireItemConfigurationGroup(ctx.asSystem.supabase, {
-        groupId: input.configurationParameterGroupId,
-        itemId: input.itemId,
-        companyId: ctx.company.id
-      })
-    );
-    if (group instanceof CarbonError) return group;
-    // The input keeps unknown keys: an edit must not rewrite who created the
-    // parameter, or when.
-    const {
-      createdBy: _createdBy,
-      createdAt: _createdAt,
-      ...parameter
-    } = input;
     return unwrap(
       ctx,
       await service.upsertConfigurationParameter(ctx.asCaller.supabase, {
-        ...parameter,
+        ...input,
         companyId: ctx.company.id,
         userId: ctx.auditUserId
-      } as never)
+      })
     );
   }
 });
@@ -4412,8 +4384,9 @@ export const upsertPickMethodWithShelfLife = defineServiceFn({
  *
  * @remarks
  * Writes the item and its consumable row, its item group and unit cost,
- * default storage unit and shelf life (`upsertConsumable`). Returns the new
- * item's id.
+ * default storage unit and shelf life together (`insertTypedItem`): a refused
+ * step creates nothing and leaves the number free. A number another item has
+ * is a conflict. Returns the new item's id.
  *
  * @param id - The new consumable's number (its readable id).
  *
@@ -4448,18 +4421,17 @@ export const createConsumable = defineServiceFn({
   }),
   permission: { "parts.consumables": "Create" },
   async run(ctx, input) {
-    // unwrap: a taken number (23505) is a conflict, not an internal error.
     const created = unwrap(
       ctx,
-      await service.upsertConsumable(
+      await service.insertTypedItem(
         ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        "Consumable",
         payload(ctx, input).forCreate() as never
       )
     );
     if (created instanceof CarbonError) return created;
-    const id = (created as { id?: string | null } | null)?.id;
-    if (!id) return ctx.error("internal", "Failed to insert consumable");
-    return { id };
+    return { id: created.id };
   }
 });
 
@@ -5872,31 +5844,26 @@ export const createMaterial = defineServiceFn({
   permission: { "parts.materials": "Create" },
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
-    const generated = unwrap(
+    const plan = unwrap(
       ctx,
-      await service.getGeneratedMaterialIdentity(client, {
+      await service.planNewMaterial(client, {
         ...input,
         companyId: ctx.company.id
       })
     );
-    if (generated instanceof CarbonError) return generated;
-    const identity = newMaterialIdentity(generated, input);
+    if (plan instanceof CarbonError) return plan;
+    const identity = newMaterialIdentity(plan.generated, input);
     if ("refusal" in identity) {
       return ctx.error(identity.refusal, identity.message);
     }
 
-    // The create derives the pair again and refuses one that changed since.
     const created = unwrap(
       ctx,
       await service.insertMaterial(
         client,
         ctx.asSystem.pg,
-        payload(ctx, {
-          ...input,
-          id: identity.readableId,
-          name: identity.name
-        }).forCreate() as never,
-        identity
+        payload(ctx, input).forCreate() as never,
+        { ...identity, properties: plan.properties }
       )
     );
     if (created instanceof CarbonError) return created;
@@ -5970,7 +5937,7 @@ export const updateMaterial = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertMaterial(
+      await service.updateMaterial(
         ctx.asCaller.supabase,
         ctx.asSystem.pg,
         payload(ctx, input).forUpdate() as never
@@ -6534,7 +6501,9 @@ export const updateUnitOfMeasure = defineServiceFn({
  *
  * @remarks
  * Writes the item and its tool row, its item group and unit cost, default
- * storage unit and shelf life (`upsertTool`). Returns the new item's id.
+ * storage unit and shelf life together (`insertTypedItem`): a refused step
+ * creates nothing and leaves the number free. A number another item has is a
+ * conflict. Returns the new item's id.
  *
  * @param id - The new tool's number (its readable id).
  *
@@ -6572,18 +6541,17 @@ export const createTool = defineServiceFn({
   }),
   permission: { "parts.tools": "Create" },
   async run(ctx, input) {
-    // unwrap: a taken number (23505) is a conflict, not an internal error.
     const created = unwrap(
       ctx,
-      await service.upsertTool(
+      await service.insertTypedItem(
         ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        "Tool",
         payload(ctx, input).forCreate() as never
       )
     );
     if (created instanceof CarbonError) return created;
-    const id = (created as { id?: string | null } | null)?.id;
-    if (!id) return ctx.error("internal", "Failed to insert tool");
-    return { id };
+    return { id: created.id };
   }
 });
 

@@ -14,7 +14,7 @@ import { useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import { materialValidator } from "~/modules/items/items.models";
-import { upsertMaterial } from "~/modules/items/items.service";
+import { updateMaterial } from "~/modules/items/items.service";
 import type { ItemFile, MaterialSummary } from "~/modules/items/types";
 import {
   ItemDocuments,
@@ -46,20 +46,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await authorize(request, { "parts.materials": "Create" });
   }
 
-  const updateMaterial = await upsertMaterial(client, getDatabaseClient(), {
+  const updated = await updateMaterial(client, getDatabaseClient(), {
     ...validation.data,
     id: itemId,
     companyId,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });
-  if (updateMaterial.error) {
+  if (updated.error) {
     throw redirect(
       path.to.material(itemId),
-      await flash(
-        request,
-        error(updateMaterial.error, "Failed to update material")
-      )
+      await flash(request, error(updated.error, "Failed to update material"))
     );
   }
 
