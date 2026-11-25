@@ -101,7 +101,7 @@ const SupplierQuoteLinePricing = ({
   );
   const isReverseCharge = useIsReverseCharge();
   const isEditable =
-    permissions.can("update", "purchasing") &&
+    permissions.has({ "purchasing.supplierQuotes": "Edit" }) &&
     ["Draft"].includes(routeData?.quote?.status ?? "");
 
   const { carbon } = useCarbon();

@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { Edition, type FailureReason, redirect } from "@carbon/utils";
 import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
@@ -41,7 +40,6 @@ import {
   userHasVerifiedTotpFactor,
   verifyTotpChallenge
 } from "./mfa.server";
-import { getPermissionCacheKey } from "./users";
 
 async function assertAuthSession(
   request: Request,
@@ -62,7 +60,6 @@ export const isTestEdition = CarbonEdition === Edition.Test;
 
 const cookieDomain = isTestEdition ? undefined : getCookieDomain(DOMAIN);
 
-// Shared by every signed cookie in this file.
 const signedCookieOptions: CookieOptions = {
   httpOnly: true,
   path: "/",
@@ -105,9 +102,8 @@ async function endBrowserPush(request: Request) {
   try {
     // Loaded here, not at module load: importing the session module must not
     // build a Supabase client.
-    const { getCarbonServiceRole } = await import(
-      "../lib/supabase/client.server"
-    );
+    const { getCarbonServiceRole } =
+      await import("../lib/supabase/client.server");
     // Every user's row for this browser: after sign-out nobody is signed in.
     const { error } = await getCarbonServiceRole()
       .from("pushSubscription")
@@ -553,11 +549,9 @@ export async function updateCompanySession(
   const session = await getSession(request);
   const authSession = await getAuthSession(request);
 
+  // No claims clear: the cache holds one field per company, and a switch
+  // changes no grant or membership.
   if (authSession !== undefined) {
-    // Fire-and-forget cache invalidation. If Redis is down, @carbon/kv fails
-    // soft and this resolves null — benign: a stale permission cache entry (if
-    // any) simply expires on its own TTL, and the session cookie is still returned.
-    redis.del(getPermissionCacheKey(authSession?.userId!));
     session.set(SESSION_KEY, {
       ...authSession,
       companyId,

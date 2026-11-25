@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { holidayValidator } from "~/modules/people/people.models";
@@ -14,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(holidayValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const { id: _id, ...holiday } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.people.createHoliday({
     ...holiday,
     customFields: input.formData && setCustomFields(input.formData)

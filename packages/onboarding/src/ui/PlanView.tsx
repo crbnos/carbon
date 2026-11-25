@@ -53,8 +53,8 @@ import {
   toISODate
 } from "../logic";
 import type { BoardTask, GateValue, StateKind, StepDef, Tier } from "../types";
-import { ProgressPill } from "./ProgressPill";
 import { DerivedStatus, LearnLink, PageHeader } from "./primitives";
+import { ProgressPill } from "./ProgressPill";
 import {
   useCheckMap,
   useExclusions,

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
@@ -49,16 +49,15 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Receipts`, to: path.to.receipts },
     (data) => data?.receipt?.receiptId
-  ),
-  module: "inventory"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.receipt?.receiptId, "Receipt");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, companyId, userId } = await authorize(request, {
+    "inventory.receipts": "View"
   });
 
   const serviceRole = await getCarbonServiceRole();
@@ -220,7 +219,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let rentalLines: RentalReceiptLine[] = [];
 
   if (receipt.data.sourceDocument === "Rental Agreement") {
-    // Service role: rentalAgreementLine needs sales_view, which an inventory
+    // Service role: rentalAgreementLine needs View on Rental Agreements, which an inventory
     // user may not hold.
     const rentalLineRecords = await getRentalReceiptLines(
       serviceRole,

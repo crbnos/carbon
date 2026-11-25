@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { dispositionInspection } from "@carbon/database/quality";
@@ -26,11 +26,11 @@ import {
   checkStrictBackflush,
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
-  getSerialCompletionCandidates,
   inspectionPairingsMatch,
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
+import { getSerialCompletionCandidates } from "~/utils/inspectionOutcome";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
@@ -41,8 +41,8 @@ import { path } from "~/utils/path";
 // only. The disposition is one-shot (requireOpen): postings can never re-run.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
+  const { client, companyId, userId } = await authorize(request, {
+    "quality.inspections": "Edit"
   });
   const { id } = params;
   if (!id) throw new Error("id is required");
@@ -151,6 +151,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     inspectionSampleId: string | null;
   }[] = [];
   let completionQuantity = 0;
+  let acceptedUnitIds: string[] | undefined;
   const scrapTotal = state.requiresSerialTracking
     ? scrapEntityIds.length
     : (validation.data.scrapQuantity ?? 0);
@@ -179,23 +180,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
     if (decision === "Accept") {
-      completionCandidates = getSerialCompletionCandidates(state, {
-        includePending: true,
-        includeSampleless: true,
-        pairings: validation.data.pairings,
-        excludeEntityIds: failedEntityIds
-      });
+      const accepted = getSerialCompletionCandidates(
+        { ...state, entityEligible: (id) => state.entityEligible(id, true) },
+        {
+          includePending: true,
+          includeSampleless: true,
+          excludeEntityIds: failedEntityIds
+        }
+      );
+      acceptedUnitIds = accepted.map((unit) => unit.trackedEntityId);
+      completionCandidates = accepted.filter((unit) =>
+        state.entityEligible(unit.trackedEntityId)
+      );
     } else if (decision === "Partial") {
       completionCandidates = getSerialCompletionCandidates(state, {
         includePending: false,
         includeSampleless: false,
-        pairings: validation.data.pairings,
         excludeEntityIds: allocated
       });
     }
     const selected = [
       ...allocated,
-      ...completionCandidates.map((candidate) => candidate.trackedEntityId)
+      ...(acceptedUnitIds ??
+        completionCandidates.map((candidate) => candidate.trackedEntityId))
     ];
     if (!inspectionPairingsMatch(state, selected, validation.data.pairings)) {
       return fail(
@@ -203,6 +210,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         "A packed component has changed. Reopen the inspection and confirm the units."
       );
     }
+    completionCandidates = completionCandidates.map((unit) => ({
+      ...unit,
+      pairingId: validation.data.pairings?.[unit.trackedEntityId]
+    }));
     completionQuantity = completionCandidates.length;
   } else {
     if (decision === "Partial" && scrapTotal + reworkTotal > failedCount) {
@@ -271,6 +282,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     decision,
     companyId,
     dispositionedBy: userId,
+    serialAcceptance: acceptedUnitIds
+      ? { acceptedUnitIds, failedUnitIds: [...failedEntityIds] }
+      : undefined,
+    requireSource: "Job Operation",
     requireOpen: true
   });
   if (dispositionResult.error) {

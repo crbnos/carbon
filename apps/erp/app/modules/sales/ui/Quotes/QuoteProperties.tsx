@@ -63,7 +63,6 @@ const QuoteProperties = () => {
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (field: keyof Quotation, value: string | null) => {
       if (value === routeData?.quote[field]) {
@@ -80,10 +79,10 @@ const QuoteProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [quoteId, routeData?.quote]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -98,6 +97,7 @@ const QuoteProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [quoteId]
   );
 
@@ -111,7 +111,7 @@ const QuoteProperties = () => {
       : routeData?.quote?.assignee;
   const permissions = usePermissions();
 
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.quotes": "Edit" });
   const isLocked = isQuoteLocked(routeData?.quote?.status);
   const isDisabled = !canUpdate || isLocked;
 

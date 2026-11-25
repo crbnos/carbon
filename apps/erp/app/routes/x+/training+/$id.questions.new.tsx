@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -13,8 +13,8 @@ import { upsertTrainingQuestion } from "~/modules/resources/resources.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "resources"
+  const { client, companyId, userId } = await authorize(request, {
+    "resources.training": "Create"
   });
 
   const { id: trainingId } = params;
@@ -37,7 +37,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, matchingPairs, correctBoolean, ...rest } = validation.data;
 
   // Parse matchingPairs if it's a string

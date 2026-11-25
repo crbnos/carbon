@@ -10,23 +10,59 @@
 // works on the units the job has not received yet, so the dialog and the
 // database always agree on which units a completion takes.
 
-export type JobSerialUnit = {
-  id: string;
-  status: string;
-  quantity: number;
-  readableId: string | null;
-  createdAt: string;
-};
+import type { JobReceiptTracking, JobSerialUnit } from "../../types";
+
+export type { JobSerialUnit } from "../../types";
 
 /** What a job has received to inventory, from api+/production.job.$jobId.receipts. */
 export type JobReceiptSnapshot = {
   /** In receipt order. Null for jobs with ordinary numbering. */
-  pairedSerials: string[] | null;
+  pairedUnitIds: string[] | null;
+  qualityHoldsEnabled: boolean;
+  receiptPreview: string;
+  tracking: JobReceiptTracking;
   quantityReceivedToInventory: number;
   trackedEntityIds: string[];
+  holds: Awaited<
+    ReturnType<typeof import("../../production.service").getJobReceiptHolds>
+  >;
   /** The job's Consumed units that were booked out of stock (issued or shipped). */
   issuedTrackedEntityIds: string[];
 };
+
+export function receiptHasTrackedOutput(tracking?: JobReceiptTracking) {
+  return (
+    !!tracking &&
+    !tracking.consumeToProject &&
+    tracking.itemTrackingType !== "Non-Inventory"
+  );
+}
+
+/** A serial completion is refused when quality holds keep out units and
+ * nothing else can be received. The database computes both numbers with the
+ * receipt's own function (util.job_serial_receipt_capacity), so the dialog
+ * never re-derives which units count. */
+export function isSerialReceiptBlockedByHolds(
+  tracking: Pick<JobReceiptTracking, "serialReceiptCapacity">
+) {
+  const capacity = tracking.serialReceiptCapacity;
+  return !!capacity && capacity.held > 0 && capacity.receivable === 0;
+}
+
+/** Values submitted by the serial receipt dialog. Deferred units have a
+ * confirmation too, even when the receipt itself will assign their numbers. */
+export function getReceiptConfirmation(
+  preview: Pick<JobReceiptSnapshot, "receiptPreview" | "tracking"> | null,
+  namedUnits?: Pick<JobSerialUnit, "id">[]
+) {
+  if (!preview?.tracking.requiresSerialTracking) return null;
+  return {
+    expectedReceiptPreview: preview.receiptPreview,
+    expectedUnitIds: receiptHasTrackedOutput(preview.tracking)
+      ? namedUnits?.map((unit) => unit.id)
+      : undefined
+  };
+}
 
 const NON_RECEIVABLE_SERIAL_STATUSES = ["Consumed", "Rejected", "Scrapped"];
 
@@ -68,7 +104,7 @@ export function getReceivableSerialUnits(
   trackedEntities: JobSerialUnit[],
   receivedEntityIds: ReadonlySet<string> = new Set(),
   issuedEntityIds: ReadonlySet<string> = new Set()
-): string[] | null {
+): JobSerialUnit[] | null {
   const receivable = trackedEntities.filter((entity) =>
     isUnreceived(entity, receivedEntityIds, issuedEntityIds)
   );
@@ -92,13 +128,9 @@ export function getReceivableSerialUnits(
         ? 1
         : 2;
 
-  return [...receivable]
-    .sort(
-      (a, b) =>
-        statusRank(a) - statusRank(b) ||
-        a.readableId!.localeCompare(b.readableId!)
-    )
-    .map((entity) => entity.readableId as string);
+  // Preserve the database's serial-number, creation-time and ID order for
+  // ties. Browser locale collation can disagree with the receipt SQL.
+  return receivable.sort((a, b) => statusRank(a) - statusRank(b));
 }
 
 /**
@@ -118,18 +150,20 @@ export function getReceivableSerialUnits(
  *   read.
  */
 export type SerialCompleteChoice =
-  | { mode: "serials"; serials: string[] }
+  | { mode: "serials"; serials: JobSerialUnit[] }
   | { mode: "numberOnReceipt"; receivableCount: number }
   | { mode: "locked" };
 
 export function getSerialCompleteChoice({
   trackedEntities,
+  heldUnitIds,
   receivedEntityIds,
   issuedEntityIds,
   hasSerialSequence,
   jobQuantity
 }: {
   trackedEntities: JobSerialUnit[];
+  heldUnitIds?: ReadonlySet<string>;
   /** Null when the job's receipts could not be read. */
   receivedEntityIds: ReadonlySet<string> | null;
   issuedEntityIds: ReadonlySet<string>;
@@ -156,8 +190,10 @@ export function getSerialCompleteChoice({
       )
     : 0;
 
+  // A held seed still accounts for every unit on it when computing missing rows.
+  const eligible = trackedEntities.filter((unit) => !heldUnitIds?.has(unit.id));
   const serials = getReceivableSerialUnits(
-    trackedEntities,
+    eligible,
     receivedEntityIds,
     issuedEntityIds
   );
@@ -166,7 +202,7 @@ export function getSerialCompleteChoice({
   if (!hasSerialSequence) return { mode: "locked" };
 
   const receivableCount =
-    trackedEntities
+    eligible
       .filter((entity) =>
         isUnreceived(entity, receivedEntityIds, issuedEntityIds)
       )
@@ -227,4 +263,71 @@ export function getDefaultSerialCompleteQuantity({
       ? finishedUnreceivedQuantity
       : Math.max(jobQuantity - priorReceivedQuantity, 0);
   return priorReceivedQuantity + Math.min(newUnits, receivableSerialCount);
+}
+
+/** Quantity and serial selection when the operator opens Complete. */
+export function getTrackedReceiptQuantity(
+  receipts: Pick<
+    JobReceiptSnapshot,
+    | "pairedUnitIds"
+    | "tracking"
+    | "trackedEntityIds"
+    | "issuedTrackedEntityIds"
+    | "quantityReceivedToInventory"
+  >
+): { choice: SerialCompleteChoice; quantity: number } | null {
+  const { tracking } = receipts;
+  const { trackedEntities } = tracking;
+  if (receipts.pairedUnitIds) {
+    const byId = new Map(trackedEntities.map((unit) => [unit.id, unit]));
+    const serials = receipts.pairedUnitIds.map((id) => byId.get(id)!);
+    return {
+      choice: { mode: "serials", serials },
+      quantity: receipts.quantityReceivedToInventory + serials.length
+    };
+  }
+  if (!tracking.requiresSerialTracking) {
+    if (!tracking.requiresBatchTracking || !trackedEntities.length) return null;
+    return {
+      choice: { mode: "locked" },
+      quantity: getFinishedQuantity(trackedEntities)
+    };
+  }
+  const heldUnitIds = new Set(
+    trackedEntities.filter((unit) => unit.held).map((unit) => unit.id)
+  );
+  const eligible = trackedEntities.filter((unit) => !heldUnitIds.has(unit.id));
+  const receivedEntityIds = new Set(receipts.trackedEntityIds);
+  const issuedEntityIds = new Set(
+    tracking.fixedAssetClassId || tracking.fixedAssetId
+      ? []
+      : receipts.issuedTrackedEntityIds
+  );
+  const choice = getSerialCompleteChoice({
+    trackedEntities,
+    heldUnitIds,
+    receivedEntityIds,
+    issuedEntityIds,
+    hasSerialSequence: !!tracking.sequenceId,
+    jobQuantity: tracking.quantity
+  });
+  return {
+    choice,
+    quantity:
+      choice.mode === "locked"
+        ? getFinishedQuantity(eligible, issuedEntityIds)
+        : getDefaultSerialCompleteQuantity({
+            finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
+              eligible,
+              receivedEntityIds,
+              issuedEntityIds
+            ),
+            jobQuantity: tracking.quantity,
+            priorReceivedQuantity: receipts.quantityReceivedToInventory,
+            receivableSerialCount:
+              choice.mode === "serials"
+                ? choice.serials.length
+                : choice.receivableCount
+          })
+  };
 }

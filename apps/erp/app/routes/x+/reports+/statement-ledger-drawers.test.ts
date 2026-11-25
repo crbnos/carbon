@@ -2,14 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import { createClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loader as balanceSheetLedger } from "./balance-sheet.$accountId";
 import { loader as incomeStatementLedger } from "./income-statement.$accountId";
 
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
+vi.mock("@carbon/auth/auth.server", () => ({ authorize: vi.fn() }));
 vi.mock("@carbon/kv", () => ({
   redis: { get: async () => null, set: async () => "OK" }
 }));
@@ -59,11 +59,19 @@ async function openDrawer(
   search: string
 ) {
   const { client, reads } = ledgerClient();
-  vi.mocked(requirePermissions).mockResolvedValue({
+  vi.mocked(authorize).mockResolvedValue({
     client,
     companyId: "company-1",
-    companyGroupId: "group-1"
-  } as Awaited<ReturnType<typeof requirePermissions>>);
+    companyGroupId: "group-1",
+    api: {
+      accounting: {
+        getAccount: async () => ({
+          data: { id: "account-1", name: "Rent Expense" },
+          error: null
+        })
+      }
+    }
+  } as unknown as Awaited<ReturnType<typeof authorize>>);
 
   const result = await loader({
     request: new Request(`http://localhost/x/report/account-1${search}`),

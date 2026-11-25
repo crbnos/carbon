@@ -94,6 +94,8 @@ export const path = {
     apAgingExcel: `${x}/reports/ap-aging.xlsx`,
     api: {
       abilities: `${api}/resources/abilities`,
+      accessHolders: (page: string, level: string) =>
+        `${api}/users/access-holders?${new URLSearchParams({ level, page })}`,
       accountNotifications: `${api}/account/notifications`,
       accountProfile: `${api}/account/profile`,
       accountSecurity: `${api}/account/security`,
@@ -169,7 +171,6 @@ export const path = {
           projectId ? { periodId, projectId } : { periodId }
         )}`,
       employeeTypes: `${api}/users/employee-types`,
-      emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,
       gauges: `${api}/quality/gauges`,
       generateCsvColumns: (table: string) =>
@@ -375,6 +376,8 @@ export const path = {
       quoteLines: (quoteId: string) =>
         generatePath(`${api}/sales/quotes/${quoteId}/lines`),
       quotes: `${api}/sales/quotes`,
+      rentalAgreementInvoicePreview: (id: string, periods: number) =>
+        `${generatePath(`${api}/rental-agreement/${id}/invoice-preview`)}?${new URLSearchParams({ periods: String(periods) })}`,
       requestQuoteRows: (itemId: string) =>
         generatePath(`${api}/purchasing/request-quote/${itemId}`),
       resourcesKpi: (key: string) =>
@@ -408,10 +411,11 @@ export const path = {
       serialNumbers: (
         itemId: string,
         isReadOnly: boolean,
-        stockShipment = false
+        stockShipment = false,
+        salesReturnOrderId?: string | null
       ) =>
         generatePath(
-          `${api}/inventory/serial-numbers?itemId=${itemId}&isReadOnly=${isReadOnly}${stockShipment ? "&stockShipment=true" : ""}`
+          `${api}/inventory/serial-numbers?itemId=${itemId}&isReadOnly=${isReadOnly}${stockShipment ? "&stockShipment=true" : ""}${salesReturnOrderId ? "&salesReturnOrderId=" + encodeURIComponent(salesReturnOrderId) : ""}`
         ),
       services: `${api}/items/services`,
       shifts: (id: string) =>

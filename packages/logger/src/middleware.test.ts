@@ -27,7 +27,6 @@ function makeContext() {
   return {
     get: (c: unknown) => store.get(c),
     set: (c: unknown, v: unknown) => store.set(c, v)
-    // biome-ignore lint/suspicious/noExplicitAny: test stub
   } as any;
 }
 

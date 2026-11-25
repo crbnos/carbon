@@ -48,6 +48,9 @@
     "./picked-consumption": "./src/picked-consumption.ts",
     "./realtime-tables": "./src/realtime-tables.ts",
     "./posting": "./src/posting.ts",
+    "./access": "./src/access/index.ts",
+    "./access-write": "./src/access/write.ts",
+    "./authz-registry-sql": "./src/authz/registry-sql.ts",
     "./datasets": "./src/datasets/index.ts",
     "./event": "./src/event.ts",
     "./machine-time": "./src/machine-time.ts",
@@ -103,7 +106,7 @@
     "db:seed:dev": "tsx src/seed-dev.ts",
     "db:seed:dev:admin": "tsx src/seed-dev-admin.ts",
     "deploy": "supabase link --project-ref $SUPABASE_PROJECT_ID && supabase db push",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

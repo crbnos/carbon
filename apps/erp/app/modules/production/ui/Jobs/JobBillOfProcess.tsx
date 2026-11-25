@@ -194,7 +194,10 @@ import {
   procedureSyncValidator,
   syncAssemblyToBopValidator
 } from "../../production.models";
-import { getProductionEventsPage } from "../../production.utils";
+import {
+  getProductionEventsPage,
+  syncAssemblyToOperationPermission
+} from "../../production.utils";
 import type { Job, JobOperation } from "../../types";
 import { JobOperationStatus, JobOperationTags } from "./JobOperationStatus";
 import { OperationDueDatePicker } from "./OperationDueDatePicker";
@@ -517,7 +520,7 @@ const JobBillOfProcess = ({
 }: JobBillOfProcessProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
   const sortOrderFetcher = useAction();
   const deleteOperationFetcher = useAction();
@@ -614,7 +617,8 @@ const JobBillOfProcess = ({
   const isDisabled = ["Completed", "Cancelled"].includes(
     jobData?.job?.status ?? ""
   );
-  const isReadOnly = isDisabled || !permissions.can("update", "production");
+  const isReadOnly =
+    isDisabled || !permissions.has({ "production.jobs": "Edit" });
 
   const onToggleItem = (id: string) => {
     if (isReadOnly) return;
@@ -679,7 +683,7 @@ const JobBillOfProcess = ({
     .map((item) => item.id);
 
   const onReorder = (items: ItemWithData[]) => {
-    if (!permissions.can("update", "production") || isDisabled) return;
+    if (!permissions.has({ "production.jobs": "Edit" }) || isDisabled) return;
     const newItems = items.map((item, index) => ({
       ...item,
       data: {
@@ -864,7 +868,7 @@ const JobBillOfProcess = ({
         content: (
           <div className="flex flex-col">
             <div>
-              {permissions.can("update", "parts") ? (
+              {permissions.has({ "production.jobs": "Edit" }) ? (
                 <Editor
                   label={t`Work Instructions`}
                   initialValue={
@@ -872,7 +876,7 @@ const JobBillOfProcess = ({
                   }
                   onUpload={onUploadImage}
                   onChange={(content) => {
-                    if (!permissions.can("update", "production")) return;
+                    if (!permissions.has({ "production.jobs": "Edit" })) return;
                     setWorkInstructions((prev) => ({
                       ...prev,
                       [item.id]: content
@@ -1078,7 +1082,7 @@ const JobBillOfProcess = ({
               ref={addOperationButtonRef}
               variant="secondary"
               isDisabled={
-                !permissions.can("update", "production") ||
+                !permissions.has({ "production.jobs": "Edit" }) ||
                 selectedItemId !== null ||
                 isDisabled
               }
@@ -1111,7 +1115,7 @@ const JobBillOfProcess = ({
                   <Button
                     variant="secondary"
                     isDisabled={
-                      !permissions.can("update", "production") ||
+                      !permissions.has({ "production.jobs": "Edit" }) ||
                       selectedItemId !== null ||
                       isDisabled
                     }
@@ -1374,7 +1378,6 @@ function StepsForm({
 
   // When the new step is created, attach any buffered slides to it, then revalidate so they
   // show on the step and reset the buffer for the next step.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftSlides.length === 0 || !carbon) return;
@@ -1408,10 +1411,10 @@ function StepsForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered parts, then revalidate + reset.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftParts.length === 0 || !carbon) return;
@@ -1442,13 +1445,13 @@ function StepsForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered tools, then revalidate + reset.
   // Goes through the step-tool route (not a direct insert) because the buffer holds
   // tool ITEM ids and the operation tool row may not exist yet — the route creates
   // it before linking. Sequential so a repeated tool never races its own creation.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftTools.length === 0 || !carbon) return;
@@ -1479,6 +1482,7 @@ function StepsForm({
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed off the created step id
   }, [fetcher.data]);
 
   if (isDisabled && temporaryItems[operationId]) {
@@ -2145,7 +2149,7 @@ function StepsListItem({
     }
     try {
       return JSON.parse(attribute.description);
-      // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+      // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
     } catch (e) {
       return {};
     }
@@ -2821,6 +2825,7 @@ function OperationForm({
   const { jobId } = useParams();
   const { t } = useLingui();
   const { company } = useUser();
+  const permissions = usePermissions();
   if (!jobId) throw new Error("jobId not found");
 
   const isNew = !!temporaryItems[item.id];
@@ -3678,6 +3683,9 @@ function OperationForm({
                         <Button
                           variant="secondary"
                           rightIcon={<LuRefreshCcw />}
+                          isDisabled={
+                            !permissions.has(syncAssemblyToOperationPermission)
+                          }
                           onClick={assemblySyncDisclosure.onOpen}
                         >
                           Sync Assembly Steps
@@ -4212,7 +4220,7 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const { t } = useLingui();
   const [isLoading, setIsLoading] = useState(false);
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
 
   const fetchChat = async () => {

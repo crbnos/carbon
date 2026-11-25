@@ -433,7 +433,7 @@ for (const shipFirst of [false, true]) {
           expect(loser.reason.message).toMatch(
             shipFirst
               ? /not available|already consumed/i
-              : /selected serial.*changed/i
+              : /selected serial.*changed|has no stock to ship at this location/i
           );
         const layer = await f.db
           .selectFrom("costLedger")

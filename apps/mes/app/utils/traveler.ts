@@ -487,3 +487,51 @@ export function decideTravelerClaim<
       : best.operation.workCenterId === workCenterId;
   return { kind: "claim", options, auto };
 }
+
+/** The assembly screen that opened a QR confirmation. Its step and unit
+ * position apply only when the operator confirms that same destination. */
+type TravelerScreen = {
+  operationId?: string;
+  trackedEntityId?: string;
+  jobOperationStepId?: string;
+  unitNumber?: number;
+};
+
+export function travelerScreenParams(screen: TravelerScreen) {
+  const params = new URLSearchParams();
+  if (screen.operationId) params.set("operationId", screen.operationId);
+  if (screen.trackedEntityId)
+    params.set("trackedEntityId", screen.trackedEntityId);
+  if (screen.jobOperationStepId)
+    params.set("jobOperationStepId", screen.jobOperationStepId);
+  if (screen.unitNumber !== undefined)
+    params.set("unitNumber", String(screen.unitNumber));
+  return params;
+}
+
+export function readTravelerScreen(params: URLSearchParams): TravelerScreen {
+  const unitNumber = Number(params.get("unitNumber"));
+  return {
+    operationId: params.get("operationId") || undefined,
+    trackedEntityId: params.get("trackedEntityId") || undefined,
+    jobOperationStepId: params.get("jobOperationStepId") || undefined,
+    unitNumber:
+      Number.isSafeInteger(unitNumber) && unitNumber > 0
+        ? unitNumber
+        : undefined
+  };
+}
+
+export function confirmedTravelerStep(
+  screen: TravelerScreen | undefined,
+  operationId: string,
+  trackedEntityId: string
+) {
+  return screen?.operationId === operationId &&
+    screen.trackedEntityId === trackedEntityId
+    ? {
+        jobOperationStepId: screen.jobOperationStepId,
+        unitNumber: screen.unitNumber
+      }
+    : {};
+}

@@ -26,8 +26,8 @@ import {
   type TaxCodeSummaryRow,
   toTaxSummaryCodes
 } from "../utils/tax-summary";
-import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
+import { DocumentPage } from "./blocks/DocumentPage";
 import type { SalesOrderData, SalesOrderLocations } from "./blocks/salesOrder";
 import {
   buildSalesOrderVars,

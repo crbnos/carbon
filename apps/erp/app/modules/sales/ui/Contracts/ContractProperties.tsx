@@ -38,6 +38,7 @@ import {
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { TermForm } from "~/components/Setup";
 import { usePermissions, useRouteData, useSettings } from "~/hooks";
+import { inheritableInvoiceAutomations } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
@@ -49,8 +50,7 @@ import {
   contractDurations,
   contractRenewals,
   type customerContractResearchFields,
-  customerContractTypes,
-  invoiceAutomations
+  customerContractTypes
 } from "../../sales.models";
 import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import ContractProject from "./ContractProject";
@@ -144,7 +144,6 @@ const ContractProperties = () => {
     }
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const submit = useCallback(
     (fields: Record<string, string>) => {
       const formData = new FormData();
@@ -157,6 +156,7 @@ const ContractProperties = () => {
         action: path.to.contractUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 
@@ -176,7 +176,6 @@ const ContractProperties = () => {
     [contract, submit]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -188,6 +187,7 @@ const ContractProperties = () => {
         action: path.to.customFields
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 
@@ -195,7 +195,7 @@ const ContractProperties = () => {
 
   const companyLabel =
     labels.invoiceAutomation[companySettings.invoiceAutomation];
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.serviceContracts": "Edit" });
   const isDisabled = contract.status !== "Draft" || !canUpdate;
   const isEnded = contract.status === "Ended";
   const billTo = contract.invoiceCustomerId ?? contract.customerId ?? "";
@@ -643,7 +643,7 @@ const ContractProperties = () => {
                 {value === COMPANY_DEFAULT
                   ? t`Company default (${companyLabel})`
                   : (labels.invoiceAutomation[
-                      value as (typeof invoiceAutomations)[number]
+                      value as (typeof inheritableInvoiceAutomations)[number]
                     ] ?? value)}
               </span>
             )}
@@ -656,7 +656,7 @@ const ContractProperties = () => {
                 value: COMPANY_DEFAULT,
                 label: t`Company default (${companyLabel})`
               },
-              ...invoiceAutomations.map((mode) => ({
+              ...inheritableInvoiceAutomations.map((mode) => ({
                 value: mode,
                 label: labels.invoiceAutomation[mode]
               }))

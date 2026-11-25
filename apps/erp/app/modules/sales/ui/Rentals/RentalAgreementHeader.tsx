@@ -44,6 +44,7 @@ import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import { path } from "~/utils/path";
 import { rentalEquipmentStatus } from "../../sales.utils";
+import RentalInvoiceModal from "./RentalInvoiceModal";
 import { RentalCommencementPreview } from "./RentalLeaseClassification";
 import RentalStatus, { RentalEquipmentStatusBadge } from "./RentalStatus";
 import type { RentalAgreementRouteData } from "./types";
@@ -59,7 +60,7 @@ type RentalAgreementHeaderProps = Pick<
   | "receipts"
 >;
 
-type PendingAction = "activate" | "invoice" | "close" | "cancel";
+type PendingAction = "activate" | "close" | "cancel";
 
 const RentalAgreementHeader = ({
   rentalAgreement,
@@ -78,14 +79,16 @@ const RentalAgreementHeader = ({
 
   const confirm = useDisclosure();
   const deleteDisclosure = useDisclosure();
+  const invoiceDisclosure = useDisclosure();
   const [action, setAction] = useState<PendingAction | null>(null);
 
   const id = rentalAgreement.id!;
   const readableId = rentalAgreement.rentalAgreementId ?? "";
   const status = rentalAgreement.status;
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.rentalAgreements": "Edit" });
   // Invoicing drafts sales invoices, so it needs the invoicing permission too.
-  const canInvoice = canUpdate && permissions.can("create", "invoicing");
+  const canInvoice =
+    canUpdate && permissions.has({ "invoicing.salesInvoices": "Create" });
 
   const isDraft = status === "Draft";
   const isActive = status === "Active";
@@ -100,12 +103,30 @@ const RentalAgreementHeader = ({
   );
   const hasUnitOnRent = lines.some((line) => line.status === "On Rent");
   // Delivering and returning draft inventory documents.
-  const canMoveUnits = canUpdate && permissions.can("create", "inventory");
+  const canMoveUnits =
+    canUpdate &&
+    permissions.has({
+      "inventory.shipments": "Create",
+      "inventory.receipts": "Create"
+    });
   const hasPendingUnit = lines.some((line) => line.status === "Pending");
   // A receipt also holds Pending units (spec Q8).
   const canReturn = hasUnitOnRent || hasPendingUnit;
   const hasInvoicedPeriod = periods.some(
     (period) => period.status === "Invoiced"
+  );
+  // With no Pending period left, the Invoice dialog starts on the due charges.
+  // A unit treated as a sale is never invoiced early, so its periods do not count.
+  const saleLineIds = new Set(
+    lines
+      .filter((line) => line.lessorClassification === "Sale")
+      .map((line) => line.id)
+  );
+  const hasPendingPeriod = periods.some(
+    (period) =>
+      period.status === "Pending" &&
+      !period.isAdjustment &&
+      !saleLineIds.has(period.rentalAgreementLineId)
   );
   // A commenced sales-type lease has already derecognized its unit; undoing
   // that is a manual journal in v1, so cancel is refused (spec §4).
@@ -155,12 +176,6 @@ const RentalAgreementHeader = ({
       text: t`Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards.`,
       confirmText: t`Activate`
     },
-    invoice: {
-      action: path.to.rentalAgreementInvoice(id),
-      title: t`Invoice ${readableId} now?`,
-      text: t`Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting.`,
-      confirmText: t`Invoice`
-    },
     close: {
       action: path.to.rentalAgreementStatus(id),
       title: t`Close ${readableId}`,
@@ -209,7 +224,10 @@ const RentalAgreementHeader = ({
               <DropdownMenuContent>
                 <DropdownMenuItem
                   destructive
-                  disabled={!isDraft || !permissions.can("delete", "sales")}
+                  disabled={
+                    !isDraft ||
+                    !permissions.has({ "sales.rentalAgreements": "Full" })
+                  }
                   onClick={deleteDisclosure.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuTrash />} />
@@ -325,7 +343,7 @@ const RentalAgreementHeader = ({
                 variant="secondary"
                 leftIcon={<LuCreditCard />}
                 isDisabled={!canInvoice}
-                onClick={() => open("invoice")}
+                onClick={invoiceDisclosure.onOpen}
               >
                 <Trans>Invoice</Trans>
               </Button>
@@ -425,6 +443,13 @@ const RentalAgreementHeader = ({
           )}
         </Confirm>
       )}
+
+      <RentalInvoiceModal
+        open={invoiceDisclosure.isOpen}
+        onClose={invoiceDisclosure.onClose}
+        rentalAgreement={rentalAgreement}
+        initialPeriods={hasPendingPeriod ? 1 : 0}
+      />
 
       <ConfirmDelete
         action={path.to.deleteRentalAgreement(id)}

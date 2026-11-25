@@ -3,11 +3,8 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { TermId } from "@carbon/content/glossary";
-import type {
-  LinksDeclaration,
-  OptionsSource,
-  RequiredPermission
-} from "../definition/catalog";
+import { anyOf, type Gate } from "@carbon/database/access";
+import type { LinksDeclaration, OptionsSource } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 
 export interface ActionInputLike {
@@ -46,7 +43,7 @@ export interface ActionInputLike {
 
 export interface ActionDeclarationLike {
   label: string;
-  permission: RequiredPermission;
+  permission: Gate;
   inputs: Record<string, ActionInputLike>;
   outputs: Record<string, ValueType>;
   batchable: boolean;
@@ -62,8 +59,10 @@ export interface ActionDeclarationLike {
  * allowlist and never by hand. Inputs work exactly as an action's — only how the
  * step RUNS differs, which is why `piece` is required here and absent above.
  */
-export interface IntegrationDeclarationLike
-  extends Omit<ActionDeclarationLike, "call" | "update"> {
+export interface IntegrationDeclarationLike extends Omit<
+  ActionDeclarationLike,
+  "call" | "update"
+> {
   /** See `CatalogIntegration.batchable`. */
   batchable: false;
   /** `label` is the APP's own name — see `integrationAppLabelKey`. */
@@ -82,7 +81,7 @@ const action = (entry: ActionDeclarationLike) => entry;
 export const WORKFLOW_ACTIONS = {
   "job.create": action({
     label: "Create a job",
-    permission: { module: "production", action: "create" },
+    permission: { "production.jobs": "Create" },
     inputs: {
       itemId: {
         type: t.entity("item"),
@@ -110,7 +109,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   "nonConformance.create": action({
     label: "Create an issue",
-    permission: { module: "quality", action: "create" },
+    permission: { "quality.issues": "Create" },
     // `locationId`, `nonConformanceTypeId` and `source` are NOT NULL on the table with no
     // default, so they are required here however optional they look on the issue form.
     inputs: {
@@ -138,7 +137,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   "purchaseOrder.create": action({
     label: "Create a purchase order",
-    permission: { module: "purchasing", action: "create" },
+    permission: { "purchasing.purchaseOrders": "Create" },
     inputs: {
       supplierId: {
         type: t.entity("supplier"),
@@ -159,7 +158,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   "salesOrder.create": action({
     label: "Create a sales order",
-    permission: { module: "sales", action: "create" },
+    permission: { "sales.salesOrders": "Create" },
     inputs: {
       customerId: {
         type: t.entity("customer"),
@@ -180,7 +179,8 @@ export const WORKFLOW_ACTIONS = {
   }),
   notify: action({
     label: "Notify someone",
-    permission: { module: "users", action: "view" },
+    // The person or the group it notifies.
+    permission: anyOf(["users.accounts", "users.groups"], "View"),
     inputs: {
       user: { type: t.entity("user"), required: false, label: "person" },
       // The stored key stays `role`; renaming it would need a v4 format migration for a
@@ -234,7 +234,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   webhook: action({
     label: "Call an outside URL",
-    permission: { module: "workflows", action: "update" },
+    permission: { "workflows.workflows": "Edit" },
     inputs: {
       url: {
         type: t.string,

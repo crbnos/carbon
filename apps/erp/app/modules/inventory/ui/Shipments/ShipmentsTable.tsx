@@ -391,7 +391,7 @@ const ShipmentsTable = memo((props: ShipmentsTableProps) => {
                 ? MENU_ITEM_SHORTCUTS.view
                 : MENU_ITEM_SHORTCUTS.edit
             }
-            disabled={!permissions.can("update", "inventory")}
+            disabled={!permissions.has({ "inventory.shipments": "Edit" })}
             onClick={() => {
               navigate(
                 `${path.to.shipmentDetails(row.id!)}?${params.toString()}`
@@ -404,7 +404,7 @@ const ShipmentsTable = memo((props: ShipmentsTableProps) => {
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
-              !permissions.can("delete", "inventory") ||
+              !permissions.has({ "inventory.shipments": "Full" }) ||
               !!row.postingDate ||
               row.status === "Pending"
             }
@@ -441,7 +441,9 @@ const ShipmentsTable = memo((props: ShipmentsTableProps) => {
           updatedBy: false
         }}
         primaryAction={
-          permissions.can("create", "inventory") && <NewShipment />
+          permissions.has({ "inventory.shipments": "Create" }) && (
+            <NewShipment />
+          )
         }
         renderContextMenu={renderContextMenu}
         title={t`Shipments`}

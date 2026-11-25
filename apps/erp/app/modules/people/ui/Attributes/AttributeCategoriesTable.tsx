@@ -125,7 +125,6 @@ const AttributeCategoriesTable = memo(
       ];
     }, [navigate, params, t]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const renderContextMenu = useCallback(
       (row: AttributeCategory) => {
         return (
@@ -167,7 +166,10 @@ const AttributeCategoriesTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
-              disabled={row.protected || !permissions.can("delete", "users")}
+              disabled={
+                row.protected ||
+                !permissions.has({ "people.attributes": "Full" })
+              }
               onClick={() => onDelete(row)}
             >
               <MenuIcon icon={<LuTrash />} />
@@ -177,6 +179,7 @@ const AttributeCategoriesTable = memo(
         );
       },
 
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
       [navigate, params, permissions]
     );
 
@@ -188,7 +191,7 @@ const AttributeCategoriesTable = memo(
           columns={columns}
           count={count ?? 0}
           primaryAction={
-            permissions.can("update", "people") && (
+            permissions.has({ "people.attributes": "Edit" }) && (
               <New label={t`Category`} to={`new?${params.toString()}`} />
             )
           }

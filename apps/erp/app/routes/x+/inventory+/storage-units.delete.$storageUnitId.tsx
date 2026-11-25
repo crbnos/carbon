@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
@@ -28,7 +28,6 @@ import { useLoaderData, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { ConfirmDelete } from "~/components/Modals";
-import { getStorageUnit } from "~/modules/inventory/inventory.service";
 import { getParams, path } from "~/utils/path";
 
 // The cascade modal sends `cascade=true` to delete the nested units too.
@@ -37,8 +36,8 @@ const deleteForm = z.object({
 });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "inventory"
+  const { client, api } = await authorize(request, {
+    "inventory.storageUnits": "View"
   });
   const { storageUnitId } = params;
   if (!storageUnitId) throw notFound("storageUnitId not found");
@@ -49,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // build, so the cascade modal never triggered. Fetching rows and reading
   // `.data.length` is unambiguous and the direct-child list is tiny.
   const [storageUnit, children] = await Promise.all([
-    getStorageUnit(client, storageUnitId),
+    api.inventory.getStorageUnit({ storageUnitId }),
     client.from("storageUnit").select("id").eq("parentId", storageUnitId)
   ]);
 
@@ -74,7 +73,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const { cascade } = input.data;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.inventory.removeStorageUnit({
     storageUnitId: input.params.storageUnitId,
     cascade

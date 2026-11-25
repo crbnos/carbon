@@ -32,6 +32,7 @@ import {
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
+  invoiceAutomationPosts,
   requireAffected,
   round,
   suggestContractType,
@@ -84,10 +85,15 @@ import {
   sendSalesOrderEmail,
   upsertExternalLink
 } from "~/modules/shared/shared.service";
-import { resolveBuyUnitCost } from "~/modules/shared/shared.utils";
+import {
+  quoteToSalesOrderPermission,
+  resolveBuyUnitCost,
+  salesRfqToQuotePermission
+} from "~/modules/shared/shared.utils";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
+import { inheritableInvoiceAutomations } from "../settings/settings.models";
 import {
   invokeCreate,
   invokePosting,
@@ -98,6 +104,7 @@ import {
   baseQuoteOperationValidator,
   contractAmendmentChangeValidator,
   contractDurationOf,
+  contractFromSalesOrderValidator,
   contractLaborRateValidator,
   contractLineBuildValidator,
   contractLineFundingValidator,
@@ -140,7 +147,10 @@ import type {
 } from "./sales.service";
 import * as service from "./sales.service";
 import * as utils from "./sales.utils";
-import { reconcileQuantityBreaks } from "./sales.utils";
+import {
+  createContractFromSalesOrderPermission,
+  reconcileQuantityBreaks
+} from "./sales.utils";
 
 const logger = getLogger("erp", "sales-server");
 // ---------------------------------------------------------------------------
@@ -193,7 +203,7 @@ export const createSalesRfq = defineServiceFn({
       .default([]),
     documentPath: z.string().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.rfqs": "Create" },
 
   async run(ctx, { lines, documentPath, customFields, ...rfq }) {
     const client = ctx.asCaller.supabase;
@@ -320,7 +330,7 @@ export const createSalesRfq = defineServiceFn({
  */
 export const updateSalesRfqField = defineServiceFn({
   input: service.fieldUpdate(salesRfqFields),
-  permission: { update: "sales" },
+  permission: { "sales.rfqs": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const client = ctx.asCaller.supabase;
@@ -370,7 +380,7 @@ export const setSalesRfqStatus = defineServiceFn({
     status: z.enum(salesRFQStatusType),
     noQuoteReasonId: z.string().nullish()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.rfqs": "Edit" },
 
   async run(ctx, { id, status, noQuoteReasonId }) {
     const client = ctx.asCaller.supabase;
@@ -423,7 +433,7 @@ export const setSalesRfqStatus = defineServiceFn({
  */
 export const convertSalesRfq = defineServiceFn({
   input: z.object({ id: z.string(), acknowledged: z.boolean().default(false) }),
-  permission: { create: "sales" },
+  permission: salesRfqToQuotePermission,
 
   async run(ctx, { id, acknowledged }) {
     const serviceRole = ctx.asSystem.supabase;
@@ -522,7 +532,7 @@ export const convertSalesRfq = defineServiceFn({
  */
 export const attachSalesRfqFile = defineServiceFn({
   input: salesRfqDragValidator,
-  permission: { create: "sales" },
+  permission: { "sales.rfqs": "Create" },
 
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
@@ -600,7 +610,7 @@ export const mapSalesRfqLines = defineServiceFn({
       })
     )
   }),
-  permission: { update: "sales" },
+  permission: { "sales.rfqs": "Edit" },
 
   async run(ctx, { rfqId, customerId, mappings }) {
     const serviceRole = ctx.asSystem.supabase;
@@ -805,7 +815,7 @@ const quoteFields = [
  */
 export const updateQuoteField = defineServiceFn({
   input: service.fieldUpdate(quoteFields),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const client = ctx.asCaller.supabase;
@@ -893,7 +903,7 @@ export const createQuoteLine = defineServiceFn({
     customFields: customFieldValues.optional(),
     acknowledged: z.boolean().default(false)
   }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
 
   async run(ctx, { id: _id, acknowledged, customFields, ...line }) {
     const serviceRole = ctx.asSystem.supabase;
@@ -991,7 +1001,7 @@ export const updateQuoteLine = defineServiceFn({
     customFields: customFieldValues.optional(),
     acknowledged: z.boolean().default(false)
   }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
 
   async run(ctx, { id: lineId, acknowledged, customFields, ...line }) {
     const serviceRole = ctx.asSystem.supabase;
@@ -1142,7 +1152,9 @@ export const updateQuoteLine = defineServiceFn({
  * quote gets its share link; its PDF is filed on the opportunity; the quote
  * is set Sent and its lines Complete. With `notification` Email the PDF is
  * then emailed to `customerContact` (and `cc`); when that fails the quote is
- * still Sent and `warning` says so. `locale` formats the PDF.
+ * still Sent and `warning` says so. The `notification` sent is kept on the
+ * quote (`sendViaEmail`: Email true, None false; omitted leaves it), and the
+ * Won drawer starts the order's Send Via from it. `locale` formats the PDF.
  *
  * @mcp
  */
@@ -1154,7 +1166,7 @@ export const finalizeAndSendQuote = defineServiceFn({
     ...documentNotification,
     locale: z.string().default("en-US")
   }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
 
   async run(ctx, input) {
     const { quoteId, notification, customerContact, cc, locale } = input;
@@ -1249,7 +1261,10 @@ export const finalizeAndSendQuote = defineServiceFn({
       quoteId,
       userId,
       companyId,
-      { emailOrderOnAcceptance: input.emailOrderOnAcceptance }
+      {
+        emailOrderOnAcceptance: input.emailOrderOnAcceptance,
+        notification
+      }
     );
     if (finalized.error) {
       return ctx.error("internal", "Failed to finalize quote", finalized.error);
@@ -1310,7 +1325,7 @@ export const convertQuote = defineServiceFn({
     ...documentNotification,
     locale: z.string().default("en-US")
   }),
-  permission: { create: "sales" },
+  permission: quoteToSalesOrderPermission,
 
   async run(ctx, input) {
     const { quoteId, selectedLines, notification, customerContact } = input;
@@ -1435,7 +1450,7 @@ export const configureQuoteLine = defineServiceFn({
     lineId: z.string(),
     configuration: z.record(z.string(), z.unknown())
   }),
-  permission: { update: "production" },
+  permission: { "sales.quotes": "Edit" },
 
   async run(ctx, { quoteId, lineId, configuration }) {
     const client = ctx.asCaller.supabase;
@@ -1544,7 +1559,7 @@ export const attachQuoteFile = defineServiceFn({
     path: z.string(),
     lineId: z.string().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
 
   async run(
     ctx,
@@ -1595,8 +1610,9 @@ export const attachQuoteFile = defineServiceFn({
         // A failed link is logged; the model is still optimised.
         const [lineUpdate] = await Promise.all([
           client.from("quoteLine").update({ modelUploadId }).eq("id", lineId),
+          // The item pages own the item, created above with the service role.
           partId
-            ? client
+            ? serviceRole
                 .from("item")
                 .update({ modelUploadId })
                 .eq("id", partId)
@@ -1844,7 +1860,7 @@ const NON_ADVANCING_SALES_ORDER_STATUSES = new Set([
  */
 export const setQuoteStatus = defineServiceFn({
   input: z.object({ quoteId: z.string(), status: z.enum(quoteStatusType) }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
 
   async run(ctx, { quoteId, status }) {
     const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
@@ -1889,7 +1905,7 @@ export const updateQuoteDetails = defineServiceFn({
     id: z.string(),
     customFields: customFieldValues.optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
 
   async run(ctx, { id, customFields, ...quote }) {
     const unlocked = await service.unlockedQuote(ctx, id);
@@ -1943,7 +1959,7 @@ export const setSalesOrderStatus = defineServiceFn({
     status: z.enum(salesOrderStatusType),
     cancelJobIds: z.array(z.string()).optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.salesOrders": "Edit" },
 
   async run(ctx, { salesOrderId, status, cancelJobIds }) {
     const refused = await refuseUnlessOwned(ctx, "salesOrder", {
@@ -2015,7 +2031,7 @@ const salesOrderFields = [
  */
 export const updateSalesOrderField = defineServiceFn({
   input: service.fieldUpdate(salesOrderFields),
-  permission: { update: "sales" },
+  permission: { "sales.salesOrders": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const client = ctx.asCaller.supabase;
@@ -2092,7 +2108,7 @@ export const updateSalesOrderShipping = defineServiceFn({
     shipping: salesOrderShipmentValidator,
     customFields: z.record(z.string(), z.unknown()).optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.salesOrders": "Edit" },
 
   async run(ctx, { salesOrderId, shipping, customFields }) {
     const order = await ctx.asSystem.supabase
@@ -2171,7 +2187,7 @@ export const confirmSalesOrder = defineServiceFn({
     ...documentNotification,
     locale: z.string().default("en-US")
   }),
-  permission: { create: "sales" },
+  permission: { "sales.salesOrders": "Create" },
 
   async run(ctx, input) {
     const { salesOrderId, notification, customerContact } = input;
@@ -2331,7 +2347,7 @@ export const updateSalesOrderDetails = defineServiceFn({
     id: z.string(),
     customFields: customFieldValues.optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.salesOrders": "Edit" },
 
   async run(ctx, { id, customFields, ...order }) {
     const locked = await service.unlockedSalesOrder(
@@ -2348,18 +2364,22 @@ export const updateSalesOrderDetails = defineServiceFn({
       );
       if (blocked) return blocked;
     }
-    const result = await service.updateSalesOrder(ctx.asCaller.supabase, {
-      id,
-      status: order.status,
-      currencyCode: order.currencyCode,
-      orderDate: order.orderDate,
-      customerId: order.customerId,
-      customerContactId: order.customerContactId || null,
-      customerLocationId: order.customerLocationId || null,
-      notes: order.notes,
-      customFields: customFields as Json | undefined,
-      updatedBy: ctx.auditUserId
-    });
+    const result = await service.updateSalesOrder(
+      ctx.asCaller.supabase,
+      {
+        id,
+        status: order.status,
+        currencyCode: order.currencyCode,
+        orderDate: order.orderDate,
+        customerId: order.customerId,
+        customerContactId: order.customerContactId || null,
+        customerLocationId: order.customerLocationId || null,
+        notes: order.notes,
+        customFields: customFields as Json | undefined,
+        updatedBy: ctx.auditUserId
+      },
+      ctx.asSystem.supabase
+    );
     if (result.error) {
       return ctx.error("internal", "Failed to update order", result.error);
     }
@@ -2385,7 +2405,7 @@ export const updateSalesOrderDetails = defineServiceFn({
  */
 export const checkSalesOrderLineDeliveryDate = defineServiceFn({
   input: deliveryDateCheckValidator.extend({ salesOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
 
   async run(ctx, input) {
     const refused = await refuseUnlessOwned(ctx, "salesOrder", {
@@ -2486,7 +2506,7 @@ export const createSalesOrderLine = defineServiceFn({
   input: salesOrderLineInput.safeExtend({
     taxCodeId: z.string().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.salesOrders": "Create" },
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
     const companyId = ctx.company.id;
@@ -2587,7 +2607,7 @@ export const createSalesOrderLine = defineServiceFn({
  */
 export const updateSalesOrderLine = defineServiceFn({
   input: salesOrderLineInput.safeExtend({ id: z.string() }),
-  permission: { create: "sales" },
+  permission: { "sales.salesOrders": "Create" },
 
   async run(ctx, { id, acknowledged, customFields, ...input }) {
     const line = service.withLineTarget(input);
@@ -2685,7 +2705,7 @@ export const updateSalesOrderLine = defineServiceFn({
  */
 export const recalculateSalesOrderTaxes = defineServiceFn({
   input: z.object({ salesOrderId: z.string() }),
-  permission: { update: "sales" },
+  permission: { "sales.salesOrders": "Edit" },
 
   async run(ctx, { salesOrderId }) {
     const locked = await service.unlockedSalesOrder(
@@ -2725,7 +2745,7 @@ export const recalculateSalesOrderTaxes = defineServiceFn({
  */
 export const shipSalesOrderLine = defineServiceFn({
   input: z.object({ salesOrderLineId: z.string() }),
-  permission: { create: "inventory" },
+  permission: { "inventory.shipments": "Create" },
 
   async run(ctx, { salesOrderLineId }) {
     const companyId = ctx.company.id;
@@ -2794,7 +2814,7 @@ const salesReturnOrderFields = [
  */
 export const updateSalesReturnOrderField = defineServiceFn({
   input: service.fieldUpdate(salesReturnOrderFields),
-  permission: { update: "sales" },
+  permission: { "sales.returns": "Edit" },
 
   async run(ctx, { ids, field, value }) {
     const client = ctx.asCaller.supabase;
@@ -2885,7 +2905,7 @@ export const confirmReturnOrder = defineServiceFn({
     salesReturnOrderId: z.string(),
     locale: z.string().default("en-US")
   }),
-  permission: { update: "sales" },
+  permission: { "sales.returns": "Edit" },
 
   async run(ctx, { salesReturnOrderId: id, locale }) {
     const companyId = ctx.company.id;
@@ -2970,7 +2990,7 @@ export const createReturnOrderLine = defineServiceFn({
   input: salesReturnOrderLineValidator.extend({
     customFields: customFieldValues.optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.returns": "Create" },
 
   async run(ctx, { id: _id, customFields, ...line }) {
     const client = ctx.asCaller.supabase;
@@ -3059,7 +3079,7 @@ export const escalateReturnOrderLine = defineServiceFn({
     lineId: z.string(),
     disposition: z.enum(["Scrap", "Rework"])
   }),
-  permission: { create: "quality", update: "sales" },
+  permission: { "sales.returns": "Edit", "quality.issues": "Create" },
 
   async run(ctx, { salesReturnOrderId: id, lineId, disposition }) {
     const client = ctx.asCaller.supabase;
@@ -3215,7 +3235,7 @@ export const escalateReturnOrderLine = defineServiceFn({
       disposition
     });
     if (linked) {
-      await deleteIssue(serviceRole, issueId);
+      await deleteIssue(ctx, issueId);
       return linked;
     }
 
@@ -3224,7 +3244,7 @@ export const escalateReturnOrderLine = defineServiceFn({
       { type: "nonConformanceTasks", id: issueId }
     );
     if (tasks.error) {
-      await deleteIssue(serviceRole, issueId);
+      await deleteIssue(ctx, issueId);
       return ctx.error("internal", "Failed to create Issue tasks", tasks.error);
     }
 
@@ -3259,7 +3279,7 @@ export const updateReturnOrderLine = defineServiceFn({
     id: z.string(),
     customFields: customFieldValues.optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.returns": "Edit" },
 
   async run(ctx, { id: lineId, customFields, ...line }) {
     const client = ctx.asCaller.supabase;
@@ -3392,7 +3412,7 @@ export const createReturnOrderLinesFromAssets = defineServiceFn({
   input: salesReturnOrderFromAssetsValidator.extend({
     salesReturnOrderId: z.string().min(1)
   }),
-  permission: { create: "sales" },
+  permission: { "sales.returns": "Create" },
 
   async run(ctx, { salesReturnOrderId, customerAssetIds }) {
     const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
@@ -3433,7 +3453,7 @@ const returnLineInput = z.object({
  */
 export const scrapReturnedUnit = defineServiceFn({
   input: returnLineInput,
-  permission: { update: "sales" },
+  permission: { "sales.returns": "Edit" },
 
   async run(ctx, { salesReturnOrderId, lineId }) {
     const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
@@ -3466,7 +3486,7 @@ export const scrapReturnedUnit = defineServiceFn({
  */
 export const replaceReturnedUnit = defineServiceFn({
   input: returnLineInput,
-  permission: { create: "sales" },
+  permission: { "sales.returns": "Edit", "sales.salesOrders": "Create" },
 
   async run(ctx, { salesReturnOrderId, lineId }) {
     const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
@@ -3559,7 +3579,7 @@ export const replaceReturnedUnit = defineServiceFn({
  */
 export const changeReturnLineToService = defineServiceFn({
   input: returnLineInput,
-  permission: { update: ["sales", "service"] },
+  permission: { "sales.returns": "Edit", "service.jobs": "Edit" },
 
   async run(ctx, { salesReturnOrderId, lineId }) {
     const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
@@ -3628,7 +3648,7 @@ export const copyItemMethodToQuoteLine = defineServiceFn({
     parts: methodParts.default(methodParts.parse({})),
     configuration: z.record(z.string(), z.unknown()).optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
 
   async run(ctx, { quoteId, quoteLineId, itemId, parts, configuration }) {
     // The method is written with the service role.
@@ -3685,7 +3705,7 @@ export const copyQuoteLineMethod = defineServiceFn({
     targetId: z.string(),
     parts: methodParts.default(methodParts.parse({}))
   }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
 
   async run(ctx, { sourceId, targetId, parts }) {
     const [quoteId, quoteLineId] = targetId.split(":");
@@ -3740,7 +3760,7 @@ export const copyItemMethodToQuoteMaterial = defineServiceFn({
     parts: methodParts.default(methodParts.parse({})),
     configuration: z.record(z.string(), z.unknown()).optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
 
   async run(ctx, { sourceId, targetId, parts, configuration }) {
     const method = await service.upsertQuoteMaterialMakeMethod(
@@ -3787,7 +3807,7 @@ const quoteMaterialInput = z.object({
  */
 export const createQuoteMaterial = defineServiceFn({
   input: quoteMaterialInput.extend({ id: z.string().min(1).optional() }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
 
   async run(ctx, { customFields, ...material }) {
     const serviceRole = ctx.asSystem.supabase;
@@ -3863,7 +3883,7 @@ export const createQuoteMaterial = defineServiceFn({
  */
 export const updateQuoteMaterial = defineServiceFn({
   input: quoteMaterialInput,
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
 
   async run(ctx, { customFields, ...material }) {
     const { quoteId, quoteLineId } = material;
@@ -3908,7 +3928,7 @@ export const deleteQuoteMaterialAndReprice = defineServiceFn({
     quoteLineId: z.string(),
     id: z.string()
   }),
-  permission: { delete: "sales" },
+  permission: { "sales.quotes": "Full" },
 
   async run(ctx, { quoteId, quoteLineId, id }) {
     const refused =
@@ -3949,7 +3969,7 @@ export const deleteQuoteMaterialsAndReprice = defineServiceFn({
     quoteLineId: z.string(),
     ids: z.array(z.string()).min(1)
   }),
-  permission: { delete: "sales" },
+  permission: { "sales.quotes": "Full" },
 
   async run(ctx, { quoteId, quoteLineId, ids }) {
     const refused = await refuseUnlessOwned(ctx, "quoteLine", {
@@ -4005,7 +4025,7 @@ const newQuoteOperationInput = quoteOperationFields
  */
 export const createQuoteOperation = defineServiceFn({
   input: newQuoteOperationInput,
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
 
   async run(ctx, { customFields, ...input }) {
     const operation = await withOperationStandards(ctx, input);
@@ -4042,7 +4062,7 @@ export const createQuoteOperation = defineServiceFn({
  */
 export const updateQuoteOperation = defineServiceFn({
   input: quoteOperationInput,
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
 
   async run(ctx, { customFields, ...operation }) {
     const { quoteId, quoteLineId } = operation;
@@ -4091,7 +4111,7 @@ export const updateQuoteOperation = defineServiceFn({
  */
 export const setQuoteOperationWorkInstruction = defineServiceFn({
   input: z.object({ id: z.string().min(1), text: z.string() }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
 
   async run(ctx, { id, text }) {
     return setOperationWorkInstruction(ctx, "quoteOperation", id, text);
@@ -4105,7 +4125,7 @@ export const setQuoteOperationWorkInstruction = defineServiceFn({
  */
 export const deleteQuoteOperationAndReprice = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.quotes": "Full" },
 
   async run(ctx, { id }) {
     const client = ctx.asCaller.supabase;
@@ -4147,7 +4167,7 @@ export const deleteQuoteOperationAndReprice = defineServiceFn({
  */
 export const deleteQuoteOperationsAndReprice = defineServiceFn({
   input: z.object({ ids: z.array(z.string()).min(1) }),
-  permission: { delete: "sales" },
+  permission: { "sales.quotes": "Full" },
 
   async run(ctx, { ids }) {
     const client = ctx.asCaller.supabase;
@@ -4210,7 +4230,7 @@ export const createContract = defineServiceFn({
   input: customerContractValidator.safeExtend({
     customFields: customFieldValues.optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.serviceContracts": "Create" },
 
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
@@ -4313,6 +4333,36 @@ export const createContract = defineServiceFn({
 });
 
 /**
+ * Create a Draft contract from a sales order's Service lines.
+ *
+ * @remarks
+ * The order keeps the lines, marked invoiced, so the contract bills them
+ * instead. Needs Service Contracts Create as well as Sales Orders Edit.
+ */
+export const createContractFromSalesOrder = defineServiceFn({
+  input: contractFromSalesOrderValidator,
+  permission: createContractFromSalesOrderPermission,
+
+  async run(ctx, input) {
+    try {
+      const id = await service.createContractFromSalesOrder(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        asOf: await service.companyToday(ctx),
+        input
+      });
+      return { id };
+    } catch (err) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(err, "Failed to create contract"),
+        err
+      );
+    }
+  }
+});
+
+/**
  * Save a Draft contract's terms from its setup.
  *
  * @remarks
@@ -4328,7 +4378,7 @@ export const updateContractTerms = defineServiceFn({
     id: z.string(),
     customFields: customFieldValues.optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
@@ -4434,7 +4484,7 @@ export const setContractTerm = defineServiceFn({
     field: z.enum(contractTermFields),
     value: z.string().nullish()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, { id, field, value }) {
     const client = ctx.asCaller.supabase;
@@ -4619,7 +4669,7 @@ export const setContractType = defineServiceFn({
     id: z.string(),
     contractType: z.enum(customerContractTypes)
   }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, { id, contractType }) {
     const update = await service.updateContractType(ctx.asCaller.supabase, {
@@ -4653,9 +4703,9 @@ export const setContractType = defineServiceFn({
 export const setContractInvoiceAutomation = defineServiceFn({
   input: z.object({
     id: z.string(),
-    invoiceAutomation: z.enum(invoiceAutomations).nullable()
+    invoiceAutomation: z.enum(inheritableInvoiceAutomations).nullable()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, { id, invoiceAutomation }) {
     const client = ctx.asCaller.supabase;
@@ -4679,7 +4729,10 @@ export const setContractInvoiceAutomation = defineServiceFn({
           (await getCompanySettings(client, companyId)).data?.invoiceAutomation;
         if (
           effective !== "Draft Only" &&
-          !ctx.can({ update: "sales", create: "invoicing" })
+          !ctx.can({
+            "sales.serviceContracts": "Edit",
+            "invoicing.salesInvoices": "Create"
+          })
         ) {
           return service.forbidden(ctx);
         }
@@ -4723,7 +4776,7 @@ export const confirmContract = defineServiceFn({
     stripeCustomerId: z.string().optional(),
     stripeContactEmail: z.string().email().optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, { id, stripeCustomerAction, ...stripe }) {
     const client = ctx.asCaller.supabase;
@@ -4738,7 +4791,10 @@ export const confirmContract = defineServiceFn({
     const mode = contract.data.effectiveInvoiceAutomation;
     if (
       mode !== "Draft Only" &&
-      !ctx.can({ update: "sales", create: "invoicing" })
+      !ctx.can({
+        "sales.serviceContracts": "Edit",
+        "invoicing.salesInvoices": "Create"
+      })
     ) {
       return service.forbidden(ctx);
     }
@@ -4816,7 +4872,7 @@ const contractAmendment = customerContractAmendmentValidator.extend({
  */
 export const previewContractAmendment = defineServiceFn({
   input: contractAmendment.omit({ reason: true, contractType: true }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, { customerContractId, amendmentDate, effect, changes }) {
     const result = await service.postContract(ctx, {
@@ -4856,7 +4912,7 @@ export const previewContractAmendment = defineServiceFn({
  */
 export const amendContract = defineServiceFn({
   input: contractAmendment,
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, input) {
     const upgrade = await service.projectRevenueRefusal(
@@ -4899,7 +4955,7 @@ export const amendContract = defineServiceFn({
  */
 export const previewContractCancellation = defineServiceFn({
   input: z.object({ customerContractId: z.string(), endDate: z.string() }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, { customerContractId, endDate }) {
     const result = await service.postContract(ctx, {
@@ -4950,12 +5006,15 @@ export const cancelContract = defineServiceFn({
     reason: z.string().trim().min(1),
     creditUnusedTime: z.boolean().default(false)
   }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, input) {
     if (
       input.creditUnusedTime &&
-      !ctx.can({ update: "sales", create: "invoicing" })
+      !ctx.can({
+        "sales.serviceContracts": "Edit",
+        "invoicing.creditMemos": "Create"
+      })
     ) {
       return service.forbidden(ctx);
     }
@@ -4992,7 +5051,7 @@ export const cancelContract = defineServiceFn({
  */
 export const revertContractCancellation = defineServiceFn({
   input: z.object({ customerContractId: z.string() }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, { customerContractId }) {
     const memoRows = await ctx.asCaller.supabase
@@ -5004,7 +5063,10 @@ export const revertContractCancellation = defineServiceFn({
       .limit(1);
     if (
       (memoRows.error || memoRows.data.length > 0) &&
-      !ctx.can({ update: "sales", delete: "invoicing" })
+      !ctx.can({
+        "sales.serviceContracts": "Edit",
+        "invoicing.creditMemos": "Full"
+      })
     ) {
       return service.forbidden(ctx);
     }
@@ -5057,7 +5119,7 @@ export const createRentalAgreement = defineServiceFn({
     fixedAssetId: z.string().optional(),
     taxCodeId: z.string().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.rentalAgreements": "Create" },
 
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
@@ -5241,12 +5303,14 @@ const rentalBooleanTerms = new Set<string>([
   "purchaseOptionReasonablyCertain"
 ]);
 
-// Read when each invoice is drafted, so changing them on an Active agreement
-// changes only the invoices not drafted yet.
+// Read when each invoice is drafted (the Rental Site is its ship-to), so
+// changing them on an Active agreement changes only the invoices not drafted
+// yet.
 const rentalActiveTerms = new Set<string>([
   "paymentTermId",
   "taxPercent",
-  "taxCodeId"
+  "taxCodeId",
+  "customerLocationId"
 ]);
 
 /**
@@ -5254,8 +5318,9 @@ const rentalActiveTerms = new Set<string>([
  *
  * @remarks
  * A Draft agreement takes any term. An Active one takes only the payment
- * terms, the tax code and the tax percent: they apply to the invoices drafted
- * from then on, and invoices already drafted keep theirs. The terms are checked as a whole (an end date after the start, a purchase
+ * terms, the tax code, the tax percent and the Rental Site: they apply to the
+ * invoices drafted from then on, and invoices already drafted keep theirs.
+ * The Rental Site must be a location of the agreement's customer. The terms are checked as a whole (an end date after the start, a purchase
  * option reasonably certain needs an end date), so the stored terms are
  * read, the one field is swapped in and the whole set is validated and
  * saved. A new customer clears the site and the contacts; a new currency
@@ -5272,7 +5337,7 @@ export const setRentalAgreementTerm = defineServiceFn({
     field: z.enum(rentalTermFields),
     value: z.string().nullish()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.rentalAgreements": "Edit" },
 
   async run(ctx, { id, field, value }) {
     const client = ctx.asCaller.supabase;
@@ -5285,7 +5350,7 @@ export const setRentalAgreementTerm = defineServiceFn({
       return ctx.error(
         "rule",
         agreement.status === "Active"
-          ? "Only the payment terms and tax of an Active rental agreement can be changed"
+          ? "Only the payment terms, tax and Rental Site of an Active rental agreement can be changed"
           : "Only a Draft rental agreement's terms can be edited"
       );
     }
@@ -5400,20 +5465,23 @@ export const setRentalAgreementTerm = defineServiceFn({
       ...data
     } = validation.data;
 
-    // A tax code, its rate and the payment terms are read when each invoice
-    // is drafted; an Active agreement writes only those.
+    // A tax code, its rate, the payment terms and the Rental Site are read
+    // when each invoice is drafted; an Active agreement writes only those.
     const update = isActiveTerm
       ? await service.updateRentalAgreementInvoiceTerms(client, {
           id,
           companyId,
           updatedBy: ctx.auditUserId,
+          customerId: agreement.customerId ?? "",
           terms:
             field === "paymentTermId"
               ? { paymentTermId: data.paymentTermId ?? null }
-              : {
-                  taxPercent: data.taxPercent,
-                  taxCodeId: (terms.taxCodeId as string | null) ?? null
-                }
+              : field === "customerLocationId"
+                ? { customerLocationId: data.customerLocationId ?? null }
+                : {
+                    taxPercent: data.taxPercent,
+                    taxCodeId: (terms.taxCodeId as string | null) ?? null
+                  }
         })
       : await service.updateRentalAgreement(client, {
           ...data,
@@ -5447,7 +5515,8 @@ export const setRentalAgreementTerm = defineServiceFn({
  * @remarks
  * Null is the company's setting. Stays editable while the agreement is
  * Active. Stripe needs Stripe connected; Post and Email needs a contact
- * email.
+ * email. Manual: the daily run creates no invoice for the agreement; bill it
+ * with invoiceRentalAgreementPeriods.
  *
  * @mcp
  */
@@ -5456,7 +5525,7 @@ export const setRentalInvoiceAutomation = defineServiceFn({
     id: z.string(),
     invoiceAutomation: z.enum(invoiceAutomations).nullable()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.rentalAgreements": "Edit" },
 
   async run(ctx, { id, invoiceAutomation }) {
     if (
@@ -5506,7 +5575,7 @@ export const setRentalAgreementContacts = defineServiceFn({
     primaryId: z.string().nullable(),
     contacts: z.array(rentalAgreementContactRowValidator).max(100)
   }),
-  permission: { update: "sales" },
+  permission: { "sales.rentalAgreements": "Edit" },
 
   async run(ctx, input) {
     const saved = await service.saveRentalAgreementContacts(ctx.asSystem.pg, {
@@ -5532,7 +5601,7 @@ export const setRentalAgreementContacts = defineServiceFn({
  */
 export const activateRentalAgreement = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { update: "sales" },
+  permission: { "sales.rentalAgreements": "Edit" },
 
   async run(ctx, { id }) {
     const agreement = await service.ownRentalAgreement(ctx, id);
@@ -5581,7 +5650,7 @@ export const activateRentalAgreement = defineServiceFn({
  */
 export const setRentalAgreementStatus = defineServiceFn({
   input: z.object({ id: z.string(), intent: z.enum(["close", "cancel"]) }),
-  permission: { update: "sales" },
+  permission: { "sales.rentalAgreements": "Edit" },
 
   async run(ctx, { id, intent }) {
     const agreement = await service.ownRentalAgreement(ctx, id);
@@ -5628,7 +5697,7 @@ export const releaseRentalUnit = defineServiceFn({
     rentalAgreementLineId: z.string(),
     returnedAt: z.string().min(1)
   }),
-  permission: { update: "sales" },
+  permission: { "sales.rentalAgreements": "Edit" },
 
   async run(ctx, input) {
     const result = await invokePosting(
@@ -5665,7 +5734,10 @@ export const deliverRentalUnit = defineServiceFn({
     rentalAgreementId: z.string(),
     rentalAgreementLineId: z.string()
   }),
-  permission: { update: "sales", create: "inventory" },
+  permission: {
+    "sales.rentalAgreements": "Edit",
+    "inventory.shipments": "Create"
+  },
 
   async run(ctx, input) {
     const result = await invokeCreate(
@@ -5703,7 +5775,10 @@ export const deliverContractLine = defineServiceFn({
     customerContractId: z.string(),
     customerContractLineId: z.string()
   }),
-  permission: { update: "sales", create: "inventory" },
+  permission: {
+    "sales.serviceContracts": "Edit",
+    "inventory.shipments": "Create"
+  },
 
   async run(ctx, input) {
     const result = await invokeCreate(
@@ -5739,7 +5814,10 @@ export const returnRentalUnit = defineServiceFn({
     rentalAgreementId: z.string(),
     rentalAgreementLineId: z.string()
   }),
-  permission: { update: "sales", create: "inventory" },
+  permission: {
+    "sales.rentalAgreements": "Edit",
+    "inventory.receipts": "Create"
+  },
 
   async run(ctx, input) {
     const result = await invokeCreate(
@@ -5776,7 +5854,7 @@ export const classifyRentalUnit = defineServiceFn({
     rentalAgreementId: z.string(),
     rentalAgreementLineId: z.string()
   }),
-  permission: { update: "accounting" },
+  permission: { "accounting.revenueRecognition": "Edit" },
 
   async run(
     ctx,
@@ -5894,7 +5972,10 @@ export const sellRentalUnit = defineServiceFn({
     rentalAgreementId: z.string(),
     rentalAgreementLineId: z.string()
   }),
-  permission: { create: ["sales", "invoicing"], update: "sales" },
+  permission: {
+    "sales.rentalAgreements": "Edit",
+    "invoicing.salesInvoices": "Create"
+  },
 
   async run(ctx, { rentalAgreementId: id, rentalAgreementLineId: lineId }) {
     const client = ctx.asCaller.supabase;
@@ -5998,7 +6079,7 @@ export const sellRentalUnit = defineServiceFn({
     // Normally on a held charges invoice; anything automatable posts in the
     // background.
     const toAutomate = invoices.filter(
-      (invoice) => invoice.mode !== "Draft Only" && !invoice.holdReason
+      (invoice) => invoiceAutomationPosts(invoice.mode) && !invoice.holdReason
     );
     if (toAutomate.length > 0) {
       await batchTrigger(
@@ -6011,6 +6092,59 @@ export const sellRentalUnit = defineServiceFn({
     return { invoiceIds: invoices.map((invoice) => invoice.invoiceId) };
   }
 });
+
+/** What "Invoice the next N periods" would draft, rolled back. */
+export const previewRentalAgreementInvoice = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    periods: z.number().int().min(0)
+  }),
+  permission: {
+    "sales.rentalAgreements": "Edit",
+    "invoicing.salesInvoices": "Create"
+  },
+
+  run: (ctx, input) =>
+    service.earlyRentalInvoice(ctx, input, service.previewEarlyRentalInvoice)
+});
+
+/**
+ * Invoice the next periods of a rental agreement
+ *
+ * @remarks
+ * One Draft invoice for the next N periods of each unit and the unbilled
+ * charges dated today or earlier. Never posted or sent on its own. A fixed
+ * term takes at most the periods left; an open-ended agreement at most 12.
+ * A unit treated as a sale is left out: its periods bill on their due dates.
+ * N = 0 bills the due charges alone, and only when no period is left.
+ * A due early-return credit is drafted on its own Draft credit memo, which
+ * needs permission to create credit memos too: without it the call is
+ * refused and writes nothing. Periods and charges alone do not need it.
+ *
+ * @param fromPeriodStart - Required when periods > 0: the first period you expect to bill (YYYY-MM-DD), the earliest periodStart of a Pending, non-adjustment billing period (sales_getRentalBillingPeriods) of a unit not treated as a sale. Omit it or send null for charges alone (periods = 0). When another period would be billed first (an earlier call billed it), the call is refused, so a retry never bills later periods.
+ *
+ * @mcp
+ */
+export const invoiceRentalAgreementPeriods = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    periods: z.number().int().min(0),
+    fromPeriodStart: z.string().nullable().optional()
+  }),
+  permission: {
+    "sales.rentalAgreements": "Edit",
+    "invoicing.salesInvoices": "Create"
+  },
+
+  run: (ctx, input) =>
+    service.earlyRentalInvoice(ctx, input, (db, args) =>
+      service.draftEarlyRentalInvoice(db, {
+        ...args,
+        canDraftCreditMemo: ctx.can({ "invoicing.creditMemos": "Create" })
+      })
+    )
+});
+
 /**
  * Copy quote
  *
@@ -6018,7 +6152,7 @@ export const sellRentalUnit = defineServiceFn({
  */
 export const copyQuote = defineServiceFn({
   input: z.looseObject({ sourceId: z.string(), targetId: z.string() }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6065,7 +6199,7 @@ export const createPricingRule = defineServiceFn({
       )
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.pricingRules": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6086,7 +6220,7 @@ export const createPricingRule = defineServiceFn({
  */
 export const deleteCustomer = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.customers": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6105,7 +6239,7 @@ export const deleteCustomer = defineServiceFn({
  */
 export const deleteCustomerBankAccount = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "accounting" },
+  permission: { "accounting.bankAccounts": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6124,7 +6258,7 @@ export const deleteCustomerBankAccount = defineServiceFn({
  */
 export const getCustomerBankAccounts = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { view: "accounting" },
+  permission: { "accounting.bankAccounts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6163,7 +6297,7 @@ export const createCustomerBankAccount = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "accounting" },
+  permission: { "accounting.bankAccounts": "Create" },
   async run(ctx, input) {
     return await service.upsertCustomerBankAccount(
       ctx.asSystem.pg,
@@ -6201,7 +6335,7 @@ export const updateCustomerBankAccount = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "accounting" },
+  permission: { "accounting.bankAccounts": "Edit" },
   async run(ctx, input) {
     return await service.upsertCustomerBankAccount(
       ctx.asSystem.pg,
@@ -6220,7 +6354,7 @@ export const deleteCustomerContact = defineServiceFn({
     customerId: z.string(),
     customerContactId: z.string()
   }),
-  permission: { delete: "sales" },
+  permission: { "sales.customers": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6243,7 +6377,7 @@ export const deleteCustomerLocation = defineServiceFn({
     customerId: z.string(),
     customerLocationId: z.string()
   }),
-  permission: { delete: "sales" },
+  permission: { "sales.customers": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6263,7 +6397,7 @@ export const deleteCustomerLocation = defineServiceFn({
  */
 export const deleteCustomerStatus = defineServiceFn({
   input: z.looseObject({ customerStatusId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.statuses": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6282,7 +6416,7 @@ export const deleteCustomerStatus = defineServiceFn({
  */
 export const deleteCustomerType = defineServiceFn({
   input: z.looseObject({ customerTypeId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.types": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6301,7 +6435,7 @@ export const deleteCustomerType = defineServiceFn({
  */
 export const deleteNoQuoteReason = defineServiceFn({
   input: z.looseObject({ noQuoteReasonId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.noQuoteReasons": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6320,7 +6454,7 @@ export const deleteNoQuoteReason = defineServiceFn({
  */
 export const deletePricingRule = defineServiceFn({
   input: z.looseObject({ pricingRuleId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.pricingRules": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6339,7 +6473,7 @@ export const deletePricingRule = defineServiceFn({
  */
 export const deleteQuote = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.quotes": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6355,7 +6489,7 @@ export const deleteQuote = defineServiceFn({
  */
 export const deleteQuoteLine = defineServiceFn({
   input: z.looseObject({ quoteLineId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.quotes": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6374,7 +6508,7 @@ export const deleteQuoteLine = defineServiceFn({
  */
 export const deleteQuoteOperationStep = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.quotes": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6393,7 +6527,7 @@ export const deleteQuoteOperationStep = defineServiceFn({
  */
 export const deleteQuoteOperationParameter = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.quotes": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6412,7 +6546,7 @@ export const deleteQuoteOperationParameter = defineServiceFn({
  */
 export const deleteQuoteOperationTool = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.quotes": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6431,7 +6565,7 @@ export const deleteQuoteOperationTool = defineServiceFn({
  */
 export const deleteSalesOrder = defineServiceFn({
   input: z.looseObject({ salesOrderId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.salesOrders": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6450,7 +6584,7 @@ export const deleteSalesOrder = defineServiceFn({
  */
 export const deleteSalesOrderLine = defineServiceFn({
   input: z.looseObject({ salesOrderLineId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.salesOrders": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6469,7 +6603,7 @@ export const deleteSalesOrderLine = defineServiceFn({
  */
 export const deleteSalesRFQ = defineServiceFn({
   input: z.looseObject({ salesRfqId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.rfqs": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6488,7 +6622,7 @@ export const deleteSalesRFQ = defineServiceFn({
  */
 export const deleteSalesRFQLine = defineServiceFn({
   input: z.looseObject({ salesRFQLineId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.rfqs": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6507,7 +6641,7 @@ export const deleteSalesRFQLine = defineServiceFn({
  */
 export const duplicatePricingRule = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { create: "sales" },
+  permission: { "sales.pricingRules": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6528,7 +6662,7 @@ export const duplicatePricingRule = defineServiceFn({
  */
 export const getConfigurationParametersByQuoteLineId = defineServiceFn({
   input: z.looseObject({ quoteLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return await service.getConfigurationParametersByQuoteLineId(
       ctx.asCaller.supabase,
@@ -6545,7 +6679,7 @@ export const getConfigurationParametersByQuoteLineId = defineServiceFn({
  */
 export const getCustomer = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.customers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6565,7 +6699,7 @@ export const getCustomer = defineServiceFn({
  */
 export const getCustomerContact = defineServiceFn({
   input: z.looseObject({ customerContactId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.customers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6585,7 +6719,7 @@ export const getCustomerContact = defineServiceFn({
  */
 export const getCustomerContacts = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.customers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6610,7 +6744,7 @@ export const getCustomerItemPriceOverride = defineServiceFn({
     quantity: z.number().optional(),
     date: z.string().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.priceLists": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6633,7 +6767,7 @@ export const getCustomerItemPriceOverride = defineServiceFn({
  */
 export const getCustomerLocation = defineServiceFn({
   input: z.looseObject({ customerLocationId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.customers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6653,7 +6787,7 @@ export const getCustomerLocation = defineServiceFn({
  */
 export const getCustomerLocations = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.customers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6673,7 +6807,7 @@ export const getCustomerLocations = defineServiceFn({
  */
 export const getCustomerPayment = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.customers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6693,7 +6827,7 @@ export const getCustomerPayment = defineServiceFn({
  */
 export const getCustomerShipping = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.customers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6724,7 +6858,7 @@ export const assignCustomerTaxCode = defineServiceFn({
     ids: z.array(z.string()),
     taxCodeId: z.string().min(1, { message: "Select a tax code" })
   }),
-  permission: { update: "sales" },
+  permission: { "sales.customers": "Edit" },
 
   async run(ctx, { ids, taxCodeId: value }) {
     const client = ctx.asCaller.supabase;
@@ -6788,7 +6922,7 @@ export const assignCustomerTaxCode = defineServiceFn({
  */
 export const getCustomerTax = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.customers": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6816,7 +6950,7 @@ export const getCustomers = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.customers": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -6836,7 +6970,7 @@ export const getCustomers = defineServiceFn({
  */
 export const getCustomersList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "sales" },
+  permission: { "sales.customers": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -6852,7 +6986,7 @@ export const getCustomersList = defineServiceFn({
  */
 export const getCustomerStatus = defineServiceFn({
   input: z.looseObject({ customerStatusId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.statuses": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6879,7 +7013,7 @@ export const getCustomerStatuses = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: "employee",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -6899,7 +7033,7 @@ export const getCustomerStatuses = defineServiceFn({
  */
 export const getCustomerStatusesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "sales" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -6918,7 +7052,7 @@ export const getCustomerStatusesList = defineServiceFn({
  */
 export const getCustomerType = defineServiceFn({
   input: z.looseObject({ customerTypeId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.types": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -6945,7 +7079,7 @@ export const getCustomerTypes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: "employee",
   async run(ctx, input) {
     return paged(
       ctx,
@@ -6965,7 +7099,7 @@ export const getCustomerTypes = defineServiceFn({
  */
 export const getCustomerTypesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "sales" },
+  permission: { "sales.types": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -6990,7 +7124,7 @@ export const getExternalSalesOrderLines = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7010,7 +7144,7 @@ export const getExternalSalesOrderLines = defineServiceFn({
  */
 export const getModelByQuoteLineId = defineServiceFn({
   input: z.looseObject({ quoteLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return await service.getModelByQuoteLineId(
       ctx.asCaller.supabase,
@@ -7026,7 +7160,7 @@ export const getModelByQuoteLineId = defineServiceFn({
  */
 export const getNoQuoteReason = defineServiceFn({
   input: z.looseObject({ noQuoteReasonId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.noQuoteReasons": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7053,7 +7187,7 @@ export const getNoQuoteReasons = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.noQuoteReasons": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7073,7 +7207,7 @@ export const getNoQuoteReasons = defineServiceFn({
  */
 export const getOpportunity = defineServiceFn({
   input: z.looseObject({ opportunityId: z.string().nullable() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7092,7 +7226,10 @@ export const getOpportunity = defineServiceFn({
  */
 export const getOpportunityDocuments = defineServiceFn({
   input: z.looseObject({ opportunityId: z.string() }),
-  permission: { view: "sales" },
+  // Read for an invoice too: a cross-module reader.
+  permission: {
+    anyOf: [{ "sales.quotes": "View" }, { "invoicing.salesInvoices": "View" }]
+  },
   async run(ctx, input) {
     return await service.getOpportunityDocuments(
       ctx.asCaller.supabase,
@@ -7112,7 +7249,7 @@ export const getOpportunityLineDocuments = defineServiceFn({
     lineId: z.string(),
     itemId: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return await service.getOpportunityLineDocuments(
       ctx.asCaller.supabase,
@@ -7130,7 +7267,7 @@ export const getOpportunityLineDocuments = defineServiceFn({
  */
 export const getPricingRule = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.pricingRules": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7154,7 +7291,7 @@ export const getPricingRules = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.pricingRules": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7174,7 +7311,7 @@ export const getPricingRules = defineServiceFn({
  */
 export const getQuote = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7198,7 +7335,7 @@ export const getQuotes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7218,7 +7355,7 @@ export const getQuotes = defineServiceFn({
  */
 export const getQuotesList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -7234,7 +7371,7 @@ export const getQuotesList = defineServiceFn({
  */
 export const getQuoteCustomerDetails = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7253,7 +7390,7 @@ export const getQuoteCustomerDetails = defineServiceFn({
  */
 export const getQuoteLine = defineServiceFn({
   input: z.looseObject({ quoteLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7272,7 +7409,7 @@ export const getQuoteLine = defineServiceFn({
  */
 export const getQuoteLinesList = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7291,7 +7428,7 @@ export const getQuoteLinesList = defineServiceFn({
  */
 export const getQuoteMakeMethod = defineServiceFn({
   input: z.looseObject({ quoteMakeMethodId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7310,7 +7447,7 @@ export const getQuoteMakeMethod = defineServiceFn({
  */
 export const getRootQuoteMakeMethod = defineServiceFn({
   input: z.looseObject({ quoteLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7329,7 +7466,7 @@ export const getRootQuoteMakeMethod = defineServiceFn({
  */
 export const getQuoteMethodTrees = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7348,7 +7485,7 @@ export const getQuoteMethodTrees = defineServiceFn({
  */
 export const getQuoteLines = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7364,7 +7501,7 @@ export const getQuoteLines = defineServiceFn({
  */
 export const getQuoteByExternalId = defineServiceFn({
   input: z.looseObject({ externalId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7383,7 +7520,7 @@ export const getQuoteByExternalId = defineServiceFn({
  */
 export const getQuoteLinePrices = defineServiceFn({
   input: z.looseObject({ quoteLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7402,7 +7539,7 @@ export const getQuoteLinePrices = defineServiceFn({
  */
 export const getQuoteLinePricesByQuoteId = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7421,7 +7558,7 @@ export const getQuoteLinePricesByQuoteId = defineServiceFn({
  */
 export const getQuoteMaterialsByMethodId = defineServiceFn({
   input: z.looseObject({ quoteMakeMethodId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7440,7 +7577,7 @@ export const getQuoteMaterialsByMethodId = defineServiceFn({
  */
 export const getQuoteOperationsByLine = defineServiceFn({
   input: z.looseObject({ quoteLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7459,7 +7596,7 @@ export const getQuoteOperationsByLine = defineServiceFn({
  */
 export const getQuoteOperationsByMethodId = defineServiceFn({
   input: z.looseObject({ quoteMakeMethodId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7478,7 +7615,7 @@ export const getQuoteOperationsByMethodId = defineServiceFn({
  */
 export const getQuotePayment = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7497,7 +7634,7 @@ export const getQuotePayment = defineServiceFn({
  */
 export const getQuoteShipment = defineServiceFn({
   input: z.looseObject({ quoteId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7516,7 +7653,7 @@ export const getQuoteShipment = defineServiceFn({
  */
 export const getRelatedPricesForQuoteLine = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), quoteId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return await service.getRelatedPricesForQuoteLine(
       ctx.asCaller.supabase,
@@ -7529,17 +7666,33 @@ export const getRelatedPricesForQuoteLine = defineServiceFn({
 /**
  * Get sales documents assigned to me
  *
+ * @remarks
+ * Only the document types the caller can view: sales orders, quotes and RFQs.
+ *
  * @mcp read
  */
 export const getSalesDocumentsAssignedToMe = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "sales" },
+  permission: {
+    anyOf: [
+      { "sales.salesOrders": "View" },
+      { "sales.quotes": "View" },
+      { "sales.rfqs": "View" }
+    ]
+  } as const,
   async run(ctx) {
-    return await service.getSalesDocumentsAssignedToMe(
+    const docs = await service.getSalesDocumentsAssignedToMe(
       ctx.asCaller.supabase,
       ctx.auditUserId,
       ctx.company.id
     );
+    // RLS reads the whole module, so each type checks its own page.
+    const can = {
+      salesOrder: ctx.can({ "sales.salesOrders": "View" }),
+      quote: ctx.can({ "sales.quotes": "View" }),
+      rfq: ctx.can({ "sales.rfqs": "View" })
+    };
+    return docs.filter((doc) => can[doc.type as keyof typeof can]);
   }
 });
 
@@ -7550,7 +7703,7 @@ export const getSalesDocumentsAssignedToMe = defineServiceFn({
  */
 export const getSalesOrder = defineServiceFn({
   input: z.looseObject({ salesOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7569,7 +7722,7 @@ export const getSalesOrder = defineServiceFn({
  */
 export const getSalesOrderRelatedItems = defineServiceFn({
   input: z.looseObject({ salesOrderId: z.string(), opportunityId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return await service.getSalesOrderRelatedItems(
       ctx.asCaller.supabase,
@@ -7596,7 +7749,7 @@ export const getSalesOrders = defineServiceFn({
     status: z.enum(salesOrderStatusType).nullable().optional(),
     customerId: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7616,7 +7769,7 @@ export const getSalesOrders = defineServiceFn({
  */
 export const getSalesOrdersList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -7632,7 +7785,7 @@ export const getSalesOrdersList = defineServiceFn({
  */
 export const getSalesOrderPayment = defineServiceFn({
   input: z.looseObject({ salesOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7651,7 +7804,7 @@ export const getSalesOrderPayment = defineServiceFn({
  */
 export const getSalesTerms = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -7667,7 +7820,7 @@ export const getSalesTerms = defineServiceFn({
  */
 export const getSalesOrderShipment = defineServiceFn({
   input: z.looseObject({ salesOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7686,7 +7839,7 @@ export const getSalesOrderShipment = defineServiceFn({
  */
 export const getSalesOrderLines = defineServiceFn({
   input: z.looseObject({ salesOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7705,7 +7858,7 @@ export const getSalesOrderLines = defineServiceFn({
  */
 export const getSalesOrderInvoiceLines = defineServiceFn({
   input: z.looseObject({ salesOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7724,7 +7877,7 @@ export const getSalesOrderInvoiceLines = defineServiceFn({
  */
 export const getSalesOrderInvoicesByIds = defineServiceFn({
   input: z.looseObject({ invoiceIds: z.array(z.string()) }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7743,7 +7896,7 @@ export const getSalesOrderInvoicesByIds = defineServiceFn({
  */
 export const getSalesOrderInvoicePaymentsByIds = defineServiceFn({
   input: z.looseObject({ invoiceIds: z.array(z.string()) }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7764,7 +7917,7 @@ export const getSalesOrderInvoicePaymentsByIds = defineServiceFn({
  */
 export const getOpenSalesOrderLinesForItem = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7784,7 +7937,7 @@ export const getOpenSalesOrderLinesForItem = defineServiceFn({
  */
 export const getSalesOrderLine = defineServiceFn({
   input: z.looseObject({ salesOrderLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7803,7 +7956,7 @@ export const getSalesOrderLine = defineServiceFn({
  */
 export const getSalesOrderLineShipments = defineServiceFn({
   input: z.looseObject({ salesOrderLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.salesOrders": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7822,7 +7975,7 @@ export const getSalesOrderLineShipments = defineServiceFn({
  */
 export const getSalesRFQ = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rfqs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7846,7 +7999,7 @@ export const getSalesRFQs = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.rfqs": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -7866,7 +8019,7 @@ export const getSalesRFQs = defineServiceFn({
  */
 export const getSalesRFQLine = defineServiceFn({
   input: z.looseObject({ lineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rfqs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7885,7 +8038,7 @@ export const getSalesRFQLine = defineServiceFn({
  */
 export const getSalesRFQLines = defineServiceFn({
   input: z.looseObject({ salesRfqId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rfqs": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7926,7 +8079,7 @@ export const insertCustomerContact = defineServiceFn({
     customerLocationId: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.customers": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7957,7 +8110,7 @@ export const insertCustomerLocation = defineServiceFn({
     }),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.customers": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -7985,7 +8138,7 @@ export const resolvePrice = defineServiceFn({
     existingBasePrice: z.number().optional(),
     configuration: z.record(z.string(), z.unknown()).nullable().optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.salesOrders": "Edit" },
   async run(ctx, input) {
     return await service.resolvePrice(
       ctx.asCaller.supabase,
@@ -8017,7 +8170,7 @@ export const resolvePriceList = defineServiceFn({
     search: z.string().optional(),
     quantity: z.number().optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.priceLists": "Edit" },
   async run(ctx, input) {
     const { error, ...result } = await service.resolvePriceList(
       ctx.asCaller.supabase,
@@ -8045,7 +8198,7 @@ export const getBaseCatalog = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.priceLists": "View" },
   async run(ctx, input) {
     const { error, ...result } = await service.getBaseCatalog(
       ctx.asCaller.supabase,
@@ -8090,7 +8243,7 @@ export const createCustomer = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.customers": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8136,7 +8289,7 @@ export const updateCustomer = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.customers": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8185,7 +8338,7 @@ export const upsertCustomerItemPriceOverride = defineServiceFn({
     validFrom: z.string().optional(),
     validTo: z.string().optional()
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.priceLists": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8206,7 +8359,7 @@ export const upsertCustomerItemPriceOverride = defineServiceFn({
  */
 export const deleteCustomerItemPriceOverride = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.priceLists": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8226,7 +8379,7 @@ export const deleteCustomerItemPriceOverride = defineServiceFn({
  */
 export const getCustomerItemPriceOverrideById = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.priceLists": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8268,7 +8421,7 @@ export const updateCustomerContact = defineServiceFn({
     customerLocationId: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.customers": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8299,7 +8452,7 @@ export const updateCustomerLocation = defineServiceFn({
     }),
     customFields: z.unknown().optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.customers": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8324,7 +8477,7 @@ export const updateCustomerPayment = defineServiceFn({
     invoiceCustomerContactId: z.string().optional(),
     paymentTermId: z.string().optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.customers": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8365,7 +8518,7 @@ export const updateCustomerShipping = defineServiceFn({
       .optional(),
     incotermLocation: z.string().optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.customers": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8407,7 +8560,7 @@ export const updateCustomerTax = defineServiceFn({
     taxExemptionCertificateNumber: z.string().optional(),
     taxExemptionCertificatePath: z.string().nullable().optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.customers": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8456,7 +8609,7 @@ export const updatePricingRule = defineServiceFn({
         .optional()
     })
   }),
-  permission: { update: "sales" },
+  permission: { "sales.pricingRules": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8488,7 +8641,7 @@ export const createCustomerStatus = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.statuses": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8520,7 +8673,7 @@ export const updateCustomerStatus = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.statuses": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8549,7 +8702,7 @@ export const createCustomerType = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.types": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8580,7 +8733,7 @@ export const updateCustomerType = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.types": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8609,7 +8762,7 @@ export const createNoQuoteReason = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.noQuoteReasons": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8640,7 +8793,7 @@ export const updateNoQuoteReason = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.noQuoteReasons": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8659,7 +8812,7 @@ export const updateNoQuoteReason = defineServiceFn({
  */
 export const updateQuoteExchangeRate = defineServiceFn({
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8682,7 +8835,7 @@ export const updateQuoteLinePrecision = defineServiceFn({
     lineId: z.string(),
     precision: z.number()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return await service.updateQuoteLinePrecision(
       ctx.asSystem.pg,
@@ -8701,7 +8854,7 @@ export const updateQuoteLinePrecision = defineServiceFn({
  */
 export const updateSalesOrderExchangeRate = defineServiceFn({
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
-  permission: { update: "sales" },
+  permission: { "sales.salesOrders": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8722,7 +8875,7 @@ export const updateQuoteMaterialOrder = defineServiceFn({
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
   }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8743,7 +8896,7 @@ export const updateQuoteOperationOrder = defineServiceFn({
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
   }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8776,7 +8929,7 @@ export const upsertMakeMethodFromQuoteLine = defineServiceFn({
       })
       .optional()
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8809,7 +8962,7 @@ export const upsertMakeMethodFromQuoteMethod = defineServiceFn({
       })
       .optional()
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8859,7 +9012,7 @@ export const insertQuote = defineServiceFn({
     notes: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8881,7 +9034,7 @@ export const updateQuoteLineOrder = defineServiceFn({
     quoteId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return await service.updateQuoteLineOrder(
       ctx.asSystem.pg,
@@ -8905,7 +9058,7 @@ export const upsertQuoteLineAdditionalCharges = defineServiceFn({
       additionalCharges: z.record(z.string(), z.unknown())
     })
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8954,7 +9107,7 @@ export const upsertQuoteLinePrices = defineServiceFn({
       })
     )
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return await service.upsertQuoteLinePrices(
       ctx.asSystem.pg,
@@ -8973,7 +9126,7 @@ export const upsertQuoteLinePrices = defineServiceFn({
  */
 export const getQuoteLinePriceTraces = defineServiceFn({
   input: z.looseObject({ quoteId: z.string(), quoteLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -8994,7 +9147,7 @@ export const getQuoteLinePriceTraces = defineServiceFn({
  */
 export const repriceQuoteLineFromRules = defineServiceFn({
   input: z.looseObject({ quoteId: z.string(), quoteLineId: z.string() }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9045,7 +9198,7 @@ export const createQuoteOperationStep = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9094,7 +9247,7 @@ export const updateQuoteOperationStep = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9125,7 +9278,7 @@ export const createQuoteOperationParameter = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9158,7 +9311,7 @@ export const updateQuoteOperationParameter = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9189,7 +9342,7 @@ export const createQuoteOperationTool = defineServiceFn({
       .optional(),
     updatedAt: z.string().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9222,7 +9375,7 @@ export const updateQuoteOperationTool = defineServiceFn({
       updatedAt: z.string().optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9248,7 +9401,7 @@ export const upsertQuotePayment = defineServiceFn({
     paymentTermId: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9289,7 +9442,7 @@ export const upsertQuoteShipment = defineServiceFn({
       .optional(),
     incotermLocation: z.string().optional()
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.quotes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9341,7 +9494,7 @@ export const insertSalesOrder = defineServiceFn({
     salesPersonId: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.salesOrders": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9392,7 +9545,7 @@ export const upsertSalesOrderShipment = defineServiceFn({
     incotermLocation: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.salesOrders": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9414,7 +9567,7 @@ export const updateSalesOrderLineOrder = defineServiceFn({
     salesOrderId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
-  permission: { update: "sales" },
+  permission: { "sales.salesOrders": "Edit" },
   async run(ctx, input) {
     return await service.updateSalesOrderLineOrder(
       ctx.asSystem.pg,
@@ -9751,7 +9904,7 @@ export const upsertSalesOrderPayment = defineServiceFn({
       .optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.salesOrders": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9792,7 +9945,7 @@ export const createSalesRFQ = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.rfqs": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9837,13 +9990,15 @@ export const updateSalesRFQ = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.rfqs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
       await service.upsertSalesRFQ(
         ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+        payload(ctx, input).forUpdate() as never,
+        // Sales → Quotes owns the opportunity a customer change follows to.
+        ctx.asSystem.supabase
       )
     );
   }
@@ -9874,7 +10029,7 @@ export const createSalesRFQLine = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.rfqs": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9913,7 +10068,7 @@ export const updateSalesRFQLine = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.rfqs": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -9935,7 +10090,7 @@ export const updateSalesRFQLineOrder = defineServiceFn({
     salesRfqId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
-  permission: { update: "sales" },
+  permission: { "sales.rfqs": "Edit" },
   async run(ctx, input) {
     return await service.updateSalesRFQLineOrder(
       ctx.asSystem.pg,
@@ -9962,7 +10117,7 @@ export const getReturnReasons = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.returnReasons": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -9982,7 +10137,7 @@ export const getReturnReasons = defineServiceFn({
  */
 export const getReturnReasonsList = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "sales" },
+  permission: "employee",
   async run(ctx) {
     return unwrap(
       ctx,
@@ -9998,7 +10153,7 @@ export const getReturnReasonsList = defineServiceFn({
  */
 export const getReturnReason = defineServiceFn({
   input: z.looseObject({ returnReasonId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.returnReasons": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10028,7 +10183,7 @@ export const createReturnReason = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.returnReasons": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10060,7 +10215,7 @@ export const updateReturnReason = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.returnReasons": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10079,7 +10234,7 @@ export const updateReturnReason = defineServiceFn({
  */
 export const deleteReturnReason = defineServiceFn({
   input: z.looseObject({ returnReasonId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.returnReasons": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10108,7 +10263,7 @@ export const getSalesReturnOrders = defineServiceFn({
     status: z.string().nullable().optional(),
     customerId: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.returns": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -10128,7 +10283,7 @@ export const getSalesReturnOrders = defineServiceFn({
  */
 export const getSalesReturnOrder = defineServiceFn({
   input: z.looseObject({ salesReturnOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.returns": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10147,7 +10302,7 @@ export const getSalesReturnOrder = defineServiceFn({
  */
 export const getSalesReturnOrderLines = defineServiceFn({
   input: z.looseObject({ salesReturnOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.returns": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10167,7 +10322,7 @@ export const getSalesReturnOrderLines = defineServiceFn({
  */
 export const getSalesReturnOrderLine = defineServiceFn({
   input: z.looseObject({ lineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.returns": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10199,7 +10354,7 @@ export const insertSalesReturnOrder = defineServiceFn({
     assignee: z.string().optional(),
     customFields: z.unknown().optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.returns": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10218,7 +10373,7 @@ export const insertSalesReturnOrder = defineServiceFn({
  */
 export const deleteSalesReturnOrder = defineServiceFn({
   input: z.looseObject({ salesReturnOrderId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.returns": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10237,7 +10392,7 @@ export const deleteSalesReturnOrder = defineServiceFn({
  */
 export const deleteSalesReturnOrderLine = defineServiceFn({
   input: z.looseObject({ lineId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.returns": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10256,7 +10411,7 @@ export const deleteSalesReturnOrderLine = defineServiceFn({
  */
 export const getSalesReturnOrderReceipts = defineServiceFn({
   input: z.looseObject({ salesReturnOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.returns": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10276,7 +10431,7 @@ export const getSalesReturnOrderReceipts = defineServiceFn({
  */
 export const getSalesReturnOrderCredits = defineServiceFn({
   input: z.looseObject({ salesReturnOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.returns": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10296,7 +10451,7 @@ export const getSalesReturnOrderCredits = defineServiceFn({
  */
 export const getSalesReturnOrderIssues = defineServiceFn({
   input: z.looseObject({ salesReturnOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.returns": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10316,7 +10471,7 @@ export const getSalesReturnOrderIssues = defineServiceFn({
  */
 export const reopenSalesReturnOrder = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { update: "sales" },
+  permission: { "sales.returns": "Edit" },
   async run(ctx, input) {
     return await service.reopenSalesReturnOrder(
       ctx.asSystem.pg,
@@ -10332,7 +10487,7 @@ export const reopenSalesReturnOrder = defineServiceFn({
  */
 export const cancelSalesReturnOrder = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { update: "sales" },
+  permission: { "sales.returns": "Edit" },
   async run(ctx, input) {
     return await service.cancelSalesReturnOrder(
       ctx.asSystem.pg,
@@ -10352,7 +10507,7 @@ export const shortCloseSalesReturnOrderLine = defineServiceFn({
     salesReturnOrderId: z.string(),
     intent: z.enum(["close", "reopen"])
   }),
-  permission: { update: "sales" },
+  permission: { "sales.returns": "Edit" },
   async run(ctx, input) {
     return await service.shortCloseSalesReturnOrderLine(
       ctx.asSystem.pg,
@@ -10374,7 +10529,7 @@ export const getReturnableLinesForCustomer = defineServiceFn({
     limit: z.number().optional(),
     offset: z.number().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.returns": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10396,7 +10551,7 @@ export const getReturnableLinesForCustomer = defineServiceFn({
  */
 export const getShippedTrackedEntitiesForCustomer = defineServiceFn({
   input: z.looseObject({ customerId: z.string(), itemId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.returns": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10419,7 +10574,7 @@ export const getShippedTrackedEntitiesForCustomer = defineServiceFn({
  */
 export const getCreditableQuantities = defineServiceFn({
   input: z.looseObject({ salesReturnOrderId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.returns": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10448,7 +10603,7 @@ export const createSalesReturnOrderCredit = defineServiceFn({
       })
     )
   }),
-  permission: { create: "invoicing" },
+  permission: { "invoicing.creditMemos": "Create" },
   async run(ctx, input) {
     return await service.createSalesReturnOrderCredit(
       ctx.asCaller.supabase,
@@ -10471,13 +10626,14 @@ export const createSalesReturnOrderCredit = defineServiceFn({
  */
 export const createReplacementSalesOrder = defineServiceFn({
   input: z.looseObject({ salesReturnOrderId: z.string() }),
-  permission: { create: "sales" },
+  permission: { "sales.salesOrders": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
       await service.createReplacementSalesOrder(
         ctx.asCaller.supabase,
-        payload(ctx, input).withGroup().withUser().forUpsert() as never
+        payload(ctx, input).withGroup().withUser().forUpsert() as never,
+        ctx.asSystem.supabase
       )
     );
   }
@@ -10506,7 +10662,7 @@ export const setSalesReturnOrderLineDisposition = defineServiceFn({
       "Return to Customer"
     ])
   }),
-  permission: { update: "sales" },
+  permission: { "sales.returns": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10526,7 +10682,7 @@ export const setSalesReturnOrderLineDisposition = defineServiceFn({
  */
 export const createOpportunityDocumentUploadUrl = defineServiceFn({
   input: z.looseObject({ opportunityId: z.string(), name: z.string() }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10556,7 +10712,9 @@ export const getOpportunityDocumentDownloadUrl = defineServiceFn({
     opportunityId: z.string().min(1),
     name: z.string().min(1)
   }),
-  permission: { view: "sales" },
+  permission: {
+    anyOf: [{ "sales.quotes": "View" }, { "invoicing.salesInvoices": "View" }]
+  },
   async run(ctx, { opportunityId, name }) {
     return signRecordFileUrl(ctx, {
       folder: "opportunity",
@@ -10573,7 +10731,7 @@ export const getOpportunityDocumentDownloadUrl = defineServiceFn({
  */
 export const createOpportunityLineDocumentUploadUrl = defineServiceFn({
   input: z.looseObject({ lineId: z.string(), name: z.string() }),
-  permission: { create: "sales" },
+  permission: { "sales.quotes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10600,7 +10758,7 @@ export const createOpportunityLineDocumentUploadUrl = defineServiceFn({
  */
 export const getOpportunityLineDocumentDownloadUrl = defineServiceFn({
   input: z.object({ lineId: z.string().min(1), name: z.string().min(1) }),
-  permission: { view: "sales" },
+  permission: { "sales.quotes": "View" },
   async run(ctx, { lineId, name }) {
     return signRecordFileUrl(ctx, {
       folder: "opportunity-line",
@@ -10625,7 +10783,7 @@ export const getRentalAgreements = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -10645,7 +10803,7 @@ export const getRentalAgreements = defineServiceFn({
  */
 export const getRentalAgreement = defineServiceFn({
   input: z.looseObject({ rentalAgreementId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10665,7 +10823,7 @@ export const getRentalAgreement = defineServiceFn({
  */
 export const deleteRentalAgreement = defineServiceFn({
   input: z.looseObject({ rentalAgreementId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.rentalAgreements": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10685,7 +10843,7 @@ export const deleteRentalAgreement = defineServiceFn({
  */
 export const getRentalAgreementLines = defineServiceFn({
   input: z.looseObject({ rentalAgreementId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10705,7 +10863,7 @@ export const getRentalAgreementLines = defineServiceFn({
  */
 export const getRentalAgreementLine = defineServiceFn({
   input: z.looseObject({ rentalAgreementLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10741,7 +10899,7 @@ export const createRentalAgreementLine = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.rentalAgreements": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10778,7 +10936,7 @@ export const updateRentalAgreementLine = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.rentalAgreements": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10797,7 +10955,7 @@ export const updateRentalAgreementLine = defineServiceFn({
  */
 export const deleteRentalAgreementLine = defineServiceFn({
   input: z.looseObject({ rentalAgreementLineId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.rentalAgreements": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10817,7 +10975,7 @@ export const deleteRentalAgreementLine = defineServiceFn({
  */
 export const getRentalAgreementCharges = defineServiceFn({
   input: z.looseObject({ rentalAgreementId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10857,7 +11015,7 @@ export const createRentalAgreementCharge = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.rentalAgreements": "Create" },
   async run(ctx, input) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
@@ -10925,7 +11083,7 @@ export const updateRentalAgreementCharge = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.rentalAgreements": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10948,7 +11106,7 @@ export const updateRentalAgreementCharge = defineServiceFn({
  */
 export const deleteRentalAgreementCharge = defineServiceFn({
   input: z.looseObject({ rentalAgreementChargeId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.rentalAgreements": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10968,7 +11126,7 @@ export const deleteRentalAgreementCharge = defineServiceFn({
  */
 export const getRentalBillingPeriods = defineServiceFn({
   input: z.looseObject({ rentalAgreementId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -10988,7 +11146,7 @@ export const getRentalBillingPeriods = defineServiceFn({
  */
 export const getRentableFleetAssets = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx) {
     return unwrap(
       ctx,
@@ -11007,7 +11165,7 @@ export const getRentableFleetAssets = defineServiceFn({
  */
 export const getItemRentalRate = defineServiceFn({
   input: z.looseObject({ itemId: z.string(), currencyCode: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11034,7 +11192,7 @@ export const upsertItemRentalRate = defineServiceFn({
     weekRate: z.number().min(0).optional(),
     monthRate: z.number().min(0).optional()
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.rentalAgreements": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11060,7 +11218,7 @@ export const getDefaultRentalRates = defineServiceFn({
     asOf: z.string(),
     itemIds: z.array(z.string())
   }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11079,7 +11237,7 @@ export const getDefaultRentalRates = defineServiceFn({
  */
 export const getCustomerItemRentalRates = defineServiceFn({
   input: z.looseObject({ itemId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11099,7 +11257,7 @@ export const getCustomerItemRentalRates = defineServiceFn({
  */
 export const getCustomerItemRentalRate = defineServiceFn({
   input: z.looseObject({ customerItemRentalRateId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11131,7 +11289,7 @@ export const upsertCustomerItemRentalRate = defineServiceFn({
     validTo: z.string().optional(),
     notes: z.string().optional()
   }),
-  permission: { create: "sales", update: "sales" },
+  permission: { "sales.rentalAgreements": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11150,7 +11308,7 @@ export const upsertCustomerItemRentalRate = defineServiceFn({
  */
 export const deleteCustomerItemRentalRate = defineServiceFn({
   input: z.looseObject({ customerItemRentalRateId: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.rentalAgreements": "Full" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11170,7 +11328,7 @@ export const deleteCustomerItemRentalRate = defineServiceFn({
  */
 export const getRentalAgreementDeposits = defineServiceFn({
   input: z.looseObject({ rentalAgreementId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11190,7 +11348,7 @@ export const getRentalAgreementDeposits = defineServiceFn({
  */
 export const getRentalAgreementRelatedDocuments = defineServiceFn({
   input: z.looseObject({ rentalAgreementId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.rentalAgreements": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11218,7 +11376,7 @@ export const getContracts = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -11238,7 +11396,7 @@ export const getContracts = defineServiceFn({
  */
 export const getContract = defineServiceFn({
   input: z.looseObject({ customerContractId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11258,7 +11416,7 @@ export const getContract = defineServiceFn({
  */
 export const getContractLines = defineServiceFn({
   input: z.looseObject({ customerContractId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11278,7 +11436,7 @@ export const getContractLines = defineServiceFn({
  */
 export const getContractLine = defineServiceFn({
   input: z.looseObject({ customerContractLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11308,7 +11466,7 @@ export const buildContractLineJob = defineServiceFn({
     customerContractId: z.string(),
     customerContractLineId: z.string()
   }),
-  permission: { update: "sales", create: "production" },
+  permission: { "sales.serviceContracts": "Edit", "production.jobs": "Create" },
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const [line, contract] = await Promise.all([
@@ -11363,7 +11521,7 @@ export const buildContractLineJob = defineServiceFn({
  */
 export const getContractInvoiceSchedule = defineServiceFn({
   input: z.looseObject({ customerContractId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11383,7 +11541,7 @@ export const getContractInvoiceSchedule = defineServiceFn({
  */
 export const getContractAmendments = defineServiceFn({
   input: z.looseObject({ customerContractId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11403,7 +11561,7 @@ export const getContractAmendments = defineServiceFn({
  */
 export const getCustomerContractStatuses = defineServiceFn({
   input: z.looseObject({ customerId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
   async run(ctx, input) {
     return unwrap(
       ctx,
@@ -11456,7 +11614,7 @@ export const createContractLine = defineServiceFn({
       .describe("Send to update that record; omit to create a new one.")
       .optional()
   }),
-  permission: { create: "sales" },
+  permission: { "sales.serviceContracts": "Create" },
   async run(ctx, input) {
     // Cost Plus and Percent Complete need the project revenue feature.
     const upgrade = await service.projectRevenueRefusal(
@@ -11517,7 +11675,7 @@ export const updateContractLine = defineServiceFn({
         .optional()
     })
     .required({ id: true }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
   async run(ctx, input) {
     // Cost Plus and Percent Complete need the project revenue feature.
     const upgrade = await service.projectRevenueRefusal(
@@ -11662,7 +11820,7 @@ export const updateContractResearchFlags = defineServiceFn({
     paymentContingentOnSuccess: z.boolean().optional(),
     contractorRetainsRights: z.boolean().optional()
   }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, input) {
     const update = await service.updateContractResearchFlags(
@@ -11696,7 +11854,7 @@ export const updateContractResearchFlags = defineServiceFn({
  */
 export const getContractFundingActions = defineServiceFn({
   input: z.object({ lineIds: z.array(z.string()) }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
 
   async run(ctx, { lineIds }) {
     return unwrap(
@@ -11720,7 +11878,7 @@ export const getContractFundingActions = defineServiceFn({
  */
 export const getContractLaborRates = defineServiceFn({
   input: z.object({ customerContractLineId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
 
   async run(ctx, { customerContractLineId }) {
     return unwrap(
@@ -11745,7 +11903,7 @@ export const getContractLaborRates = defineServiceFn({
  */
 export const upsertContractLaborRate = defineServiceFn({
   input: contractLaborRateValidator,
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, { id, ...rate }) {
     return unwrap(
@@ -11772,7 +11930,7 @@ export const upsertContractLaborRate = defineServiceFn({
  */
 export const deleteContractLaborRate = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, { id }) {
     const result = await service.deleteContractLaborRate(
@@ -11808,7 +11966,7 @@ export const getContractLineFunding = defineServiceFn({
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional()
   }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
 
   async run(ctx, { lineIds, asOf }) {
     return unwrap(
@@ -11834,7 +11992,7 @@ export const getContractLineFunding = defineServiceFn({
  */
 export const updateContractLineFunding = defineServiceFn({
   input: contractLineFundingValidator,
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, input) {
     return unwrap(
@@ -11857,7 +12015,7 @@ export const updateContractLineFunding = defineServiceFn({
  */
 export const upsertContractFunding = defineServiceFn({
   input: customerContractFundingValidator,
-  permission: { update: "sales" },
+  permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, input) {
     try {
@@ -11887,7 +12045,7 @@ export const upsertContractFunding = defineServiceFn({
  */
 export const deleteContractFunding = defineServiceFn({
   input: z.object({ id: z.string() }),
-  permission: { delete: "sales" },
+  permission: { "sales.serviceContracts": "Full" },
 
   async run(ctx, { id }) {
     try {
@@ -11919,7 +12077,7 @@ export const deleteContractFunding = defineServiceFn({
  */
 export const getContractProjectBillingInvoices = defineServiceFn({
   input: z.object({ customerContractId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
 
   async run(ctx, { customerContractId }) {
     return unwrap(
@@ -11945,7 +12103,7 @@ export const getContractProjectBillingInvoices = defineServiceFn({
  */
 export const getProjectBillingBackup = defineServiceFn({
   input: z.object({ salesInvoiceId: z.string() }),
-  permission: { view: "sales" },
+  permission: { "sales.serviceContracts": "View" },
 
   async run(ctx, { salesInvoiceId }) {
     return unwrap(

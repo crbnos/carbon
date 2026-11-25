@@ -116,7 +116,6 @@ export function useRuleViolations<T = unknown>({
   // the fresh `data` directly — splitting it caused the success effect to see
   // a stale `staged` from the same render, firing `onSuccess` before the
   // staging effect's setState had propagated.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: callback identities are intentionally not tracked
   useEffect(() => {
     if (!idle) return;
     const dataChanged = data !== lastSeenDataRef.current;
@@ -154,6 +153,7 @@ export function useRuleViolations<T = unknown>({
     if (!pendingSuccessRef.current) return;
     pendingSuccessRef.current = false;
     onSuccess?.();
+    // oxlint-disable-next-line react/exhaustive-deps -- callback identities are intentionally not tracked
   }, [idle, data]);
 
   const submit = useCallback(

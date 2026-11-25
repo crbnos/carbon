@@ -5,11 +5,11 @@ SET lock_timeout = '5s';
 -- Existing unpaired jobs keep the workflow they were created under. Both
 -- sides use the transaction timestamp so an atomic enable-and-create counts
 -- as a new job. Turning the setting off and back on starts a new period.
-ALTER TABLE public."companySettings" ADD COLUMN "serialNumberFromComponentEnabledAt" timestamptz;
+ALTER TABLE public."companySettings" ADD COLUMN IF NOT EXISTS "serialNumberFromComponentEnabledAt" timestamptz;
 UPDATE public."companySettings" SET "serialNumberFromComponentEnabledAt" = now()
-WHERE "serialNumberFromComponent";
+WHERE "serialNumberFromComponent" AND "serialNumberFromComponentEnabledAt" IS NULL;
 
-CREATE FUNCTION public.stamp_serial_number_from_component_activation()
+CREATE OR REPLACE FUNCTION public.stamp_serial_number_from_component_activation()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = public AS $$
 BEGIN
   IF NOT NEW."serialNumberFromComponent" THEN
@@ -23,12 +23,12 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER stamp_serial_number_from_component_activation
+CREATE OR REPLACE TRIGGER stamp_serial_number_from_component_activation
 BEFORE INSERT OR UPDATE OF "serialNumberFromComponent", "serialNumberFromComponentEnabledAt"
 ON public."companySettings" FOR EACH ROW
 EXECUTE FUNCTION public.stamp_serial_number_from_component_activation();
 
-CREATE TABLE public."jobUnitPairing" (
+CREATE TABLE IF NOT EXISTS public."jobUnitPairing" (
   "id" TEXT NOT NULL DEFAULT id('jup'),
   "companyId" TEXT NOT NULL REFERENCES public.company(id) ON DELETE CASCADE,
   "jobId" TEXT NOT NULL REFERENCES public.job(id) ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED,
@@ -50,14 +50,14 @@ CREATE TABLE public."jobUnitPairing" (
   CHECK ("jobMaterialId" IS NOT NULL OR "releasedAt" IS NOT NULL)
 );
 
-CREATE UNIQUE INDEX "jobUnitPairing_active_source" ON public."jobUnitPairing" ("companyId", "sourceId") WHERE "releasedAt" IS NULL;
-CREATE UNIQUE INDEX "jobUnitPairing_active_output" ON public."jobUnitPairing" ("companyId", "outputId") WHERE "releasedAt" IS NULL;
-CREATE INDEX "jobUnitPairing_job" ON public."jobUnitPairing" ("companyId", "jobId");
-CREATE INDEX "jobUnitPairing_material" ON public."jobUnitPairing" ("jobMaterialId");
-CREATE INDEX "jobUnitPairing_source" ON public."jobUnitPairing" ("sourceId");
-CREATE INDEX "jobUnitPairing_output" ON public."jobUnitPairing" ("outputId");
-CREATE INDEX "jobUnitPairing_createdBy" ON public."jobUnitPairing" ("createdBy");
-CREATE INDEX "jobUnitPairing_updatedBy" ON public."jobUnitPairing" ("updatedBy");
+CREATE UNIQUE INDEX IF NOT EXISTS "jobUnitPairing_active_source" ON public."jobUnitPairing" ("companyId", "sourceId") WHERE "releasedAt" IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS "jobUnitPairing_active_output" ON public."jobUnitPairing" ("companyId", "outputId") WHERE "releasedAt" IS NULL;
+CREATE INDEX IF NOT EXISTS "jobUnitPairing_job" ON public."jobUnitPairing" ("companyId", "jobId");
+CREATE INDEX IF NOT EXISTS "jobUnitPairing_material" ON public."jobUnitPairing" ("jobMaterialId");
+CREATE INDEX IF NOT EXISTS "jobUnitPairing_source" ON public."jobUnitPairing" ("sourceId");
+CREATE INDEX IF NOT EXISTS "jobUnitPairing_output" ON public."jobUnitPairing" ("outputId");
+CREATE INDEX IF NOT EXISTS "jobUnitPairing_createdBy" ON public."jobUnitPairing" ("createdBy");
+CREATE INDEX IF NOT EXISTS "jobUnitPairing_updatedBy" ON public."jobUnitPairing" ("updatedBy");
 
 ALTER TABLE public."jobUnitPairing" ENABLE ROW LEVEL SECURITY;
 

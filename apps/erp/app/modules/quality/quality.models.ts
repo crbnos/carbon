@@ -164,7 +164,7 @@ export const gaugeCalibrationRecordValidator = z.object({
     .transform((val) => {
       try {
         return val ? JSON.parse(val) : {};
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+        // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
       } catch (e) {
         return {};
       }
@@ -250,7 +250,7 @@ export const issueWorkflowValidator = z.object({
     .transform((val) => {
       try {
         return JSON.parse(val);
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+        // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
       } catch (e) {
         return {};
       }
@@ -264,7 +264,7 @@ export const issueWorkflowValidator = z.object({
       if (!val) return [];
       try {
         return JSON.parse(val) as string[];
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+        // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
       } catch (e) {
         return [];
       }
@@ -289,7 +289,7 @@ const entityAssignmentsFromForm = z
     try {
       const parsed = JSON.parse(val);
       return Array.isArray(parsed) ? parsed : undefined;
-      // biome-ignore lint/correctness/noUnusedVariables: required by try/catch
+      // oxlint-disable-next-line no-unused-vars -- required by try/catch
     } catch (e) {
       return undefined;
     }
@@ -400,14 +400,39 @@ export const requiredActionValidator = z.object({
   active: zfd.checkbox()
 });
 
+// Each KPI names the pages it reads, so the dashboard shows only what the person may see.
 export const QualityKPIs = [
-  { key: "weeklyTracking", label: "Issue Trend" },
-  { key: "statusDistribution", label: "Status Distribution" },
-  { key: "paretoByType", label: "Pareto by Type" },
-  { key: "ncrsByType", label: "NCRs by Type" },
-  { key: "sourceAnalysis", label: "Source Analysis" },
-  { key: "supplierQuality", label: "Supplier Quality" },
-  { key: "weeksOpen", label: "Weeks Open" }
+  {
+    key: "weeklyTracking",
+    label: "Issue Trend",
+    gate: { "quality.issues": "View" }
+  },
+  {
+    key: "statusDistribution",
+    label: "Status Distribution",
+    gate: { "quality.issues": "View" }
+  },
+  {
+    key: "paretoByType",
+    label: "Pareto by Type",
+    gate: { "quality.issues": "View" }
+  },
+  {
+    key: "ncrsByType",
+    label: "NCRs by Type",
+    gate: { "quality.issues": "View" }
+  },
+  {
+    key: "sourceAnalysis",
+    label: "Source Analysis",
+    gate: { "quality.issues": "View" }
+  },
+  {
+    key: "supplierQuality",
+    label: "Supplier Quality",
+    gate: { "quality.issues": "View" }
+  },
+  { key: "weeksOpen", label: "Weeks Open", gate: { "quality.issues": "View" } }
 ] as const;
 
 export const riskRegisterValidator = z.object({
@@ -422,7 +447,7 @@ export const riskRegisterValidator = z.object({
     .transform((val) => {
       try {
         return val ? JSON.parse(val) : {};
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+        // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
       } catch (e) {
         return {};
       }

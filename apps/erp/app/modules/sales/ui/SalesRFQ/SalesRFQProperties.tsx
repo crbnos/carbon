@@ -51,7 +51,6 @@ const SalesRFQProperties = () => {
       toastServiceError(data);
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (field: keyof SalesRFQ, value: string | null) => {
       if (value === routeData?.rfqSummary[field]) {
@@ -68,10 +67,10 @@ const SalesRFQProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [rfqId, routeData?.rfqSummary]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -86,6 +85,7 @@ const SalesRFQProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [rfqId]
   );
 
@@ -99,7 +99,7 @@ const SalesRFQProperties = () => {
       : routeData?.rfqSummary?.assignee;
   const permissions = usePermissions();
 
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.rfqs": "Edit" });
   const isLocked = isSalesRfqLocked(routeData?.rfqSummary?.status);
   const isDisabled = !canUpdate || isLocked;
 

@@ -741,7 +741,8 @@ upload, the same `generateHTML` read-only render.
   line (`receiptLineId` set, untracked) beyond the untracked on-hand left at
   its source unit is refused inside the pick's transaction
   (`putAwayPickShortfall`, single pick and Pick All); an ordinary transfer
-  pick is not checked. A Put Away with a line that has no To storage unit is
+  pick is refused when its From unit holds less than it picks
+  (`untrackedPickShortfall`, `inventory-system.md` → Live bins). A Put Away with a line that has no To storage unit is
   created Draft (one transfer per line location), so stores can set it and release the transfer (a Put Away
   line's item, From unit and quantity stay fixed, and Release refuses a blank To);
   `assertPutAwayHasToUnit` refuses picking such a line, and Pick All leaves it
@@ -848,7 +849,7 @@ inspection link is written with the disposition row under the issue lock).
 | **Accept** | Completes the open remainder (serial: per-entity `issue` `jobOperationSerialComplete`, Pending-sampled and un-sampled units included, failed-sample units EXCLUDED; non-serial: one bulk posting of the op-column remaining via `jobOperationBatchComplete` or `insertProductionQuantity`+backflush) |
 | **Reject** | The operator allocates the open remainder in `DispositionModal`: serial per-unit Scrap/Rework toggles, non-serial scrap+rework quantity fields; the rest is record-only. Scrap subset → one `insertScrapQuantity` (+reason, + backflush) and the serial subset flips → `Rejected`. Rework subset → ONE `trigger-rework` invoke (targets from `rework-targets`; the routing clone includes the inspection op → fresh lot → automatic re-inspection) + `recalculate jobRequirements`; reworked entities are NOT flipped. |
 | **Partial** | Terminal mixed close, gated `inspected >= lotSize && passes > 0 && fails > 0`. Passed units complete; the failed set is allocated exactly like Reject (allocation restricted to failed units). |
-| **Complete (n passed)** header chip | Progressive completion of passed-but-unposted units any time the lot is open (`$id.complete-passed.tsx`) — explicit button, not auto-on-pass, so verdict typos need no compensating transaction. |
+| **Complete (n passed)** header chip | Progressive completion of eligible passed-but-unposted units while the lot is open. On a Passed or Partial serial lot, a passed sample that clears a quality hold can still be posted once (`$id.complete-passed.tsx`) — explicit button, not auto-on-pass, so verdict typos need no compensating transaction. |
 
 Mechanics (in order, per POST):
 1. Buckets recomputed server-side and validated (allocation ids must be open
@@ -1221,7 +1222,8 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   lot, and a repeated Reject on a Failed lot writes off nothing new.
 - **A crash between the one-shot close and the postings** leaves a closed lot
   with missing postings (by design — close-first is what makes rework
-  un-repeatable). Recovery is manual: post the missing rows from the ERP
+  un-repeatable). The MES Complete passed action can retry an eligible, unposted
+  passed serial sample on an accepted or partially accepted lot. Other missing rows are posted from the ERP
   (`productionQuantity` links make completed-vs-not arithmetic self-healing);
   deleting a linked Production row makes that sample's unit completable again.
 - **ERP inspection views of Job Operation lots are verdict-only.** The

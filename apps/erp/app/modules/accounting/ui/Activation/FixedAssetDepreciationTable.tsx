@@ -26,6 +26,7 @@ import {
   useUser
 } from "~/hooks";
 import { path } from "~/utils/path";
+import { accountingActivationGate } from "../../accounting.models";
 import FixedAssetStatus from "../FixedAssets/FixedAssetStatus";
 import { activationStepPath } from "./ActivationSteps";
 
@@ -161,7 +162,7 @@ function FixedAssetDepreciationRow({
           )}
           // A disposal after the cutover cleared what it found.
           isDisabled={
-            !permissions.can("update", "accounting") ||
+            !permissions.has(accountingActivationGate("Edit")) ||
             save.isPending ||
             asset.status === "Disposed"
           }

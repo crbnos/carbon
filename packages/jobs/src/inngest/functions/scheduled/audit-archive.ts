@@ -140,8 +140,10 @@ export const auditArchiveFunction = inngest.createFunction(
       const client = getCarbonServiceRole();
 
       // Calculate cutoff date
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
+      const cutoffDate = datetime
+        .now("UTC")
+        .subtract({ days: RETENTION_DAYS })
+        .toDate();
 
       logger.info("Archiving audit logs older than {cutoffDate}", {
         cutoffDate: cutoffDate.toISOString()

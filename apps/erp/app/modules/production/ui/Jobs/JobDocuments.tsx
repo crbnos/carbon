@@ -80,8 +80,8 @@ const useJobDocuments = ({
   const { company } = useUser();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "production");
-  const canUpdate = permissions.can("update", "production");
+  const canDelete = permissions.has({ "production.jobs": "Full" });
+  const canUpdate = permissions.has({ "production.jobs": "Edit" });
 
   const getPath = useCallback(
     (file: { name: string }, bucket: "job" | "parts" = "job") => {
@@ -148,7 +148,6 @@ const useJobDocuments = ({
     [t]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const download = useCallback(
     async (file: FileObject & { bucket?: string }) => {
       const bucket = file.bucket === "parts" ? "parts" : "job";
@@ -163,6 +162,7 @@ const useJobDocuments = ({
       }
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     []
   );
 
@@ -661,7 +661,7 @@ const JobDocumentForm = ({
 
   return (
     <File
-      isDisabled={!permissions.can("update", "production")}
+      isDisabled={!permissions.has({ "production.jobs": "Edit" })}
       leftIcon={<LuUpload />}
       onChange={(e) => uploadFiles(e)}
       multiple

@@ -92,13 +92,6 @@ import {
 } from "../ChangeRequests/useActiveChangeRequest";
 import { useElementRoutes } from "../Elements/ElementRoutes";
 import {
-  CostCard,
-  CostToolbar,
-  FigureSeparator,
-  NoMatchingCosts,
-  useCostTypeLabels
-} from "./CostCards";
-import {
   type CostTypeFilter,
   costDescriptionKey,
   type EstimatedSort,
@@ -108,6 +101,13 @@ import {
   planProgress,
   sortPlanCards
 } from "./cost-cards";
+import {
+  CostCard,
+  CostToolbar,
+  FigureSeparator,
+  NoMatchingCosts,
+  useCostTypeLabels
+} from "./CostCards";
 import { orderPlanRows, type PlanLineType } from "./plan-rows";
 
 type PlanLines = ProjectElementPage["planLines"];
@@ -240,8 +240,10 @@ export function ElementPlanLines({
   const methodLabels = useMethodTypeLabels();
   const [items] = useItems();
   const permissions = usePermissions();
-  const canCreateJob = permissions.can("create", "production");
-  const canCreatePurchaseOrderLine = permissions.can("create", "purchasing");
+  const canCreateJob = permissions.has({ "production.jobs": "Create" });
+  const canCreatePurchaseOrderLine = permissions.has({
+    "purchasing.purchaseOrders": "Create"
+  });
   const changeRequestId = useActiveChangeRequestId();
   const routes = useElementRoutes(projectId);
   const action = withChangeRequest(routes.plan(elementId), changeRequestId);

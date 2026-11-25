@@ -201,6 +201,78 @@ for (const voidReturn of [false, true]) {
   );
 }
 
+for (const legacy of [true, false]) {
+  postgrestTest(
+    legacy
+      ? "voiding a pre-upgrade serialized return leaves the established Average rate intact"
+      : "voiding a FIFO return after switching to Average leaves the established rate intact",
+    async (client) => {
+      const f = await alwaysPostFixture();
+      try {
+        await stampCutover(f);
+        const ctx = operationContext(f, client, USER);
+        let receiptId!: string;
+        const { itemId, outputs } = await packSerials(
+          f,
+          legacy ? "Average" : "FIFO",
+          await stockSerials(f),
+          async (item, unit) => {
+            receiptId = (await sellAndSelectReturn(f, ctx, item, unit, 40))
+              .receiptId;
+          }
+        );
+        const receipt = async (type: "post" | "void") =>
+          unwrap(
+            await invokePosting(
+              handlesOf(f.ctx),
+              "post-receipt",
+              { type, receiptId },
+              postReceipt
+            )
+          );
+        await receipt("post");
+
+        // A pre-upgrade receipt left the $22 rate untouched. A clerk can also
+        // select Average with a $22 rate after receiving the unit under FIFO.
+        await f.db
+          .updateTable("itemCost")
+          .set({ costingMethod: "Average", unitCost: 22 })
+          .where("companyId", "=", f.companyId)
+          .where("itemId", "=", itemId)
+          .execute();
+        if (legacy) {
+          // The old poster wrote one anonymous cost layer and no receipt line ID.
+          await f.db
+            .updateTable("itemLedger")
+            .set({ documentLineId: null })
+            .where("companyId", "=", f.companyId)
+            .where("documentId", "=", receiptId)
+            .execute();
+          await f.db
+            .updateTable("costLedger")
+            .set({ trackedEntityId: null })
+            .where("companyId", "=", f.companyId)
+            .where("documentId", "=", receiptId)
+            .execute();
+        }
+        await receipt("void");
+        expect(await valuation(f, itemId)).toEqual([
+          { quantityOnHand: 1, unitCost: 22, totalValue: 22 }
+        ]);
+        expect(
+          await postedAmounts(f, receiptId, f.account("finished-goods"))
+        ).toEqual([-40, 40]);
+        const sale = await shipPackedUnit(f, itemId, outputs[1]!);
+        expect(
+          await postedAmounts(f, sale.shipmentId, f.account("cogs"))
+        ).toEqual([22]);
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}
+
 for (const { costs, average, reason } of [
   { costs: [40, 0], average: 20, reason: "stranded credit at zero stock" },
   { costs: [10, 40], average: 25, reason: "stranded debit at zero stock" },
@@ -318,11 +390,15 @@ for (const { costs, average, reason } of [
   );
 }
 
-for (const voidFirst of [true, false]) {
+for (const scenario of [
+  { type: "post", receiptFirst: true, soldAt: 31, remainingCost: 31 },
+  { type: "post", receiptFirst: false, soldAt: 22, remainingCost: 40 },
+  { type: "void", receiptFirst: true, soldAt: 22, remainingCost: null },
+  { type: "void", receiptFirst: false, soldAt: 31, remainingCost: 31 }
+] as const) {
+  const { type, receiptFirst, soldAt, remainingCost } = scenario;
   postgrestTest(
-    voidFirst
-      ? "a sale waits for a return void and books the revised Average rate"
-      : "a return void waits for a sale and rechecks the remaining Average value",
+    `a sale and a return ${type} serialize Average valuation when the ${receiptFirst ? "return" : "sale"} posts first`,
     async (client) => {
       const f = await alwaysPostFixture();
       const firstConnection = await connectLocalTestDatabase();
@@ -342,14 +418,15 @@ for (const voidFirst of [true, false]) {
           async (item, unit) => {
             receiptId = (await sellAndSelectReturn(f, ctx, item, unit, 40))
               .receiptId;
-            unwrap(
-              await invokePosting(
-                handles,
-                "post-receipt",
-                { type: "post", receiptId },
-                postReceipt
-              )
-            );
+            if (type === "void")
+              unwrap(
+                await invokePosting(
+                  handles,
+                  "post-receipt",
+                  { type: "post", receiptId },
+                  postReceipt
+                )
+              );
           }
         );
         const sale = await createPackedShipment(f, itemId, outputs[1]!);
@@ -378,7 +455,7 @@ for (const voidFirst of [true, false]) {
               node.table &&
               TableNode.is(node.table) &&
               node.table.table.identifier.name ===
-                (voidFirst ? "itemCost" : "shipment")
+                (receiptFirst ? "itemCost" : "shipment")
             )
               updates.add(queryId);
             return node;
@@ -391,14 +468,14 @@ for (const voidFirst of [true, false]) {
             return result;
           }
         });
-        const voidReceipt = async (db: typeof paused) => {
+        const postOrVoidReceipt = async (db: typeof paused) => {
           const result = await invokePosting(
             { ...handles, db },
             "post-receipt",
-            { type: "void", receiptId },
+            { type, receiptId },
             postReceipt
           );
-          if (voidFirst) unwrap(result);
+          if (receiptFirst || type === "post") unwrap(result);
           else expect(result.error?.message).toMatch(/Cannot void.*Average/);
         };
         const postSale = async (db: typeof paused) => {
@@ -411,7 +488,7 @@ for (const voidFirst of [true, false]) {
             )
           );
         };
-        first = voidFirst ? voidReceipt(paused) : postSale(paused);
+        first = receiptFirst ? postOrVoidReceipt(paused) : postSale(paused);
         await Promise.race([
           writing.promise,
           first.then(() => {
@@ -420,7 +497,9 @@ for (const voidFirst of [true, false]) {
         ]);
         let completed = false;
         other = (
-          voidFirst ? postSale(otherConnection) : voidReceipt(otherConnection)
+          receiptFirst
+            ? postSale(otherConnection)
+            : postOrVoidReceipt(otherConnection)
         ).finally(() => {
           completed = true;
         });
@@ -438,15 +517,23 @@ for (const voidFirst of [true, false]) {
         expect(waiting).toBe(true);
         resume.resolve();
         await Promise.all([first, other]);
-        const cost = voidFirst ? 22 : 31;
+
         expect(
           await postedAmounts(f, sale.shipmentId, f.account("cogs"))
-        ).toEqual([cost]);
+        ).toEqual([soldAt]);
         expect(
           await postedAmounts(f, sale.shipmentId, f.account("finished-goods"))
-        ).toEqual([-cost]);
+        ).toEqual([-soldAt]);
         expect(await valuation(f, itemId)).toEqual(
-          voidFirst ? [] : [{ quantityOnHand: 1, unitCost: 31, totalValue: 31 }]
+          remainingCost === null
+            ? []
+            : [
+                {
+                  quantityOnHand: 1,
+                  unitCost: remainingCost,
+                  totalValue: remainingCost
+                }
+              ]
         );
       } finally {
         resume.resolve();

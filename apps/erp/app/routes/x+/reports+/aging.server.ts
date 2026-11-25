@@ -2,15 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The AR and AP aging CSV downloads. The same data is on screen for an
-// invoicing viewer (the receivables/payables workbenches) and for an accounting
-// viewer (the aging reports), so the download admits either; the page loaders
+// The AR and AP aging CSV downloads. The same data is on screen for a
+// Receivables or Payables viewer (the workbenches) and for a Reporting viewer
+// (the aging reports), so the download admits either; the page loaders
 // keep their own, narrower, permission.
 
-import { hasPermission } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fetchAllByIds, fetchAllRecords } from "@carbon/database";
+import { anyOf } from "@carbon/database/access";
 import { CSV_CONTENT_TYPE, encodeCsvTable } from "@carbon/files/csv";
 import { resolveLanguage } from "@carbon/locale";
 import { getLogger } from "@carbon/logger";
@@ -38,14 +38,20 @@ import { getCatalog, preloadCatalog } from "~/services/lingui";
 
 const logger = getLogger("erp", "reports-aging-export");
 
-export async function resolveAgingExportRequest(request: Request) {
-  const { client, companyId, permissions } = await requirePermissions(request, {
-    role: "employee"
-  });
-  const canView = ["invoicing", "accounting"].some((module) =>
-    hasPermission(permissions, module, "view", companyId)
+export async function resolveAgingExportRequest(
+  request: Request,
+  side: "ar" | "ap"
+) {
+  const { client, companyId } = await authorize(
+    request,
+    anyOf(
+      [
+        side === "ar" ? "invoicing.receivables" : "invoicing.payables",
+        "accounting.reporting"
+      ],
+      "View"
+    )
   );
-  if (!canView) throw new Response("Forbidden", { status: 403 });
 
   const params = await getAgingParams(client, companyId, request);
   // Party RLS requires sales/purchasing view, which an authorized aging viewer
@@ -100,7 +106,7 @@ export async function loadAgingExportTable(
   side: "ar" | "ap"
 ) {
   const { client, partyClient, companyId, asOfDate, agingMethod, bucketDays } =
-    await resolveAgingExportRequest(request);
+    await resolveAgingExportRequest(request, side);
   let aging: AgingCsvCounterparty[];
   let open: AgingCsvDocument[];
   if (side === "ar") {

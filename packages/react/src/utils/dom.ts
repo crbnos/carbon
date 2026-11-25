@@ -22,7 +22,7 @@ export const ariaAttr = (condition: boolean | undefined) =>
  */
 export const copyToClipboard = async (
   str: string | Promise<string>,
-  // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
+  // oxlint-disable-next-line no-empty-function -- suppressed due to migration
   callback = () => {}
 ): Promise<boolean> => {
   if (

@@ -166,7 +166,7 @@ const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     };
 
     return (
-      // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse shortcut for the card's Expand IconButton, which is the keyboard and screen-reader control
+      // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- mouse shortcut for the card's Expand IconButton, which is the keyboard and screen-reader control
       <div
         ref={ref}
         className={cn(

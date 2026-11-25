@@ -17,6 +17,7 @@ import {
 } from "./fixtures/local-database";
 import { confirmPackoutCommand, createPairedJob } from "./fixtures/paired-job";
 import { receiveProductionPair } from "./fixtures/packout-production";
+import { stockSerials } from "./fixtures/serialized-sale";
 
 type Job = Awaited<ReturnType<typeof createPairedJob>>;
 
@@ -174,6 +175,68 @@ databaseTest(
         .execute();
       expect(consumption).toEqual([
         { trackedEntityId: production.first.id, quantity: -1 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "giving back a component averages its original issue cost into the remaining stock",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const [source] = await stockSerials(f, [22]);
+      const setStockRate = (unitCost: number) =>
+        f.db
+          .updateTable("itemCost")
+          .set({ costingMethod: "Average", unitCost })
+          .where("companyId", "=", f.companyId)
+          .where("itemId", "=", f.assemblyId)
+          .execute();
+      await setStockRate(22);
+      const job = await createPairedJob(f, f.assemblyId);
+      expect((await issue(f, job, source!.id)).error).toBeNull();
+
+      // A second unit arrives for $40 while the first is issued to the job.
+      await stockSerials(f, [40], 1);
+      await setStockRate(40);
+      const giveBack = await invokePosting(
+        handlesOf(f.ctx),
+        "issue",
+        {
+          type: "unconsumeTrackedEntities",
+          materialId: job.materialId,
+          parentTrackedEntityId: job.unitId,
+          children: [{ trackedEntityId: source!.id, quantity: 1 }]
+        },
+        issueMaterial
+      );
+      expect(giveBack.error).toBeNull();
+      expect(
+        (
+          await sql`SELECT "quantityOnHand", "unitCost", "totalValue"
+        FROM get_inventory_valuation(${f.companyId}) WHERE "itemId" = ${f.assemblyId}`.execute(
+            f.db
+          )
+        ).rows
+      ).toEqual([{ quantityOnHand: 2, unitCost: 31, totalValue: 62 }]);
+
+      expect((await issue(f, job, source!.id)).error).toBeNull();
+      expect(
+        await f.db
+          .selectFrom("costLedger")
+          .select(["quantity", "cost"])
+          .where("companyId", "=", f.companyId)
+          .where("documentId", "=", job.jobId)
+          .where("documentType", "=", "Job Consumption")
+          .orderBy("entryNumber")
+          .execute()
+      ).toEqual([
+        { quantity: -1, cost: -22 },
+        { quantity: 1, cost: 22 },
+        { quantity: -1, cost: -31 }
       ]);
     } finally {
       await f.cleanup();

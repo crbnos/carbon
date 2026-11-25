@@ -72,7 +72,6 @@ export function ImageZoomViewer({
   }, []);
 
   // Reset transform every time the viewer opens or the image changes.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on open/src only
   useEffect(() => {
     if (open) reset();
   }, [open, src, reset]);

@@ -118,7 +118,7 @@ UI stays `.ee.tsx` in `apps/erp/app/modules/<module>/ui/` (coupled to `~/compone
 6. UI → `.ee.tsx`. Route → keep `requireFeature` for the UX redirect + catch
    `EntitlementError`.
 7. Verify: `pnpm --filter @carbon/ee typecheck`, `pnpm exec turbo run typecheck --filter=erp`,
-   Biome, and if an `@mcp` service function leaves `<module>.server.ts` note the MCP digest
+   oxlint, and if an `@mcp` service function leaves `<module>.server.ts` note the MCP digest
    changes (`pnpm run generate:mcp`) — moving it out of the router removes it as an MCP
    tool, which is usually correct (an ungated MCP path would bypass the gate).
 
@@ -128,7 +128,7 @@ Refactor one at a time; each PR should leave the tree green.
 
 - ✅ **Permissions authoring / console** — body in `packages/ee` (`permissions.server.ts`,
   `console.server.ts`); `requireEntitlement` embedded in every authoring function
-  (employee-type CRUD, `updateEmployee`, `updatePermissions`, `updateConsoleSetting`).
+  (employee-type CRUD, `writeAccessGrants`, `updatePermissions`, `updateConsoleSetting`).
 - ✅ **Approvals** — reference implementation (`packages/ee/src/approvals/`);
   `requireEntitlement` in `upsertApprovalRule`/`deleteApprovalRule`, graceful degrade in
   `getApprovalRuleByAmount`.
@@ -141,7 +141,7 @@ Refactor one at a time; each PR should leave the tree green.
   degrade via `companyHasFeature`; write routes gate with `requireFeature`. The
   entitled writes are kept OUT of the client-safe `@carbon/ee/rules` barrel (which
   client components reach via `useRuleViolations`) — the query getters stay there.
-- ✅ **API keys** — `upsertApiKey`/`deleteApiKey` in `packages/ee/src/api-keys.server.ts`,
+- ✅ **API keys** — `saveApiKey`/`deleteApiKey` in `packages/ee/src/api-keys.server.ts`,
   `requireEntitlement("API_KEYS")`; routes gate with `requireFeature`.
 - ✅ **Webhooks** — authoring in `packages/ee/src/webhooks.server.ts`
   (`requireEntitlement("WEBHOOKS")`, including `revealWebhookSigningSecret` /

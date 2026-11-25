@@ -73,7 +73,7 @@ function useSourceDocument(receipt?: Receipt): DocumentLink | null {
 
   switch (receipt.sourceDocument) {
     case "Purchase Order":
-      return permissions.can("view", "purchasing")
+      return permissions.has({ "purchasing.purchaseOrders": "View" })
         ? {
             to: path.to.purchaseOrderDetails(id),
             icon: <LuShoppingCart />,
@@ -81,7 +81,7 @@ function useSourceDocument(receipt?: Receipt): DocumentLink | null {
           }
         : null;
     case "Purchase Invoice":
-      return permissions.can("view", "invoicing")
+      return permissions.has({ "invoicing.purchaseInvoices": "View" })
         ? {
             to: path.to.purchaseInvoice(id),
             icon: <LuCreditCard />,
@@ -89,7 +89,7 @@ function useSourceDocument(receipt?: Receipt): DocumentLink | null {
           }
         : null;
     case "Inbound Transfer":
-      return permissions.can("view", "inventory")
+      return permissions.has({ "inventory.receipts": "View" })
         ? {
             to: path.to.warehouseTransferDetails(id),
             icon: <LuTruck />,
@@ -97,7 +97,7 @@ function useSourceDocument(receipt?: Receipt): DocumentLink | null {
           }
         : null;
     case "Sales Return Order":
-      return permissions.can("view", "sales")
+      return permissions.has({ "sales.returns": "View" })
         ? {
             to: path.to.salesReturnOrderDetails(id),
             icon: <LuUndo2 />,
@@ -105,7 +105,7 @@ function useSourceDocument(receipt?: Receipt): DocumentLink | null {
           }
         : null;
     case "Rental Agreement":
-      return permissions.can("view", "sales")
+      return permissions.has({ "sales.rentalAgreements": "View" })
         ? {
             to: path.to.rentalAgreementDetails(id),
             icon: <LuKeyRound />,
@@ -134,7 +134,8 @@ function useParty(
 
   if (receipt.sourceDocument === "Sales Return Order") {
     const customer = customers.find((c) => c.id === customerId);
-    if (!customer || !permissions.can("view", "sales")) return null;
+    if (!customer || !permissions.has({ "sales.customers": "View" }))
+      return null;
     return {
       to: path.to.customer(customer.id),
       icon: <LuSquareUser />,
@@ -144,7 +145,8 @@ function useParty(
   }
 
   const supplier = suppliers.find((s) => s.id === receipt.supplierId);
-  if (!supplier || !permissions.can("view", "purchasing")) return null;
+  if (!supplier || !permissions.has({ "purchasing.suppliers": "View" }))
+    return null;
   return {
     to: path.to.supplier(supplier.id),
     icon: <LuContainer />,
@@ -184,7 +186,7 @@ const ReceiptDocuments = () => {
   // A rental receipt has no supplier, and `receipt` has no customer.
   const hidesSupplier =
     isSalesReturn || receipt.sourceDocument === "Rental Agreement";
-  const inspections = permissions.can("view", "quality")
+  const inspections = permissions.has({ "quality.inspections": "View" })
     ? (routeData?.receiptInspections ?? [])
     : [];
   const receiptLines = routeData?.receiptLines ?? [];
@@ -363,7 +365,7 @@ function InvoiceRows({
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  if (!permissions.can("view", "invoicing")) return null;
+  if (!permissions.has({ "invoicing.purchaseInvoices": "View" })) return null;
 
   // A receipt raised from an invoice already lists it as its source.
   return (
@@ -400,7 +402,7 @@ function ServiceJobRows({
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  if (!permissions.can("view", "service")) return null;
+  if (!permissions.has({ "service.jobs": "View" })) return null;
 
   return (
     <>
@@ -483,7 +485,7 @@ function StreamedReceiptDocuments({
   // rendered up front.
   const customer = useParty(receipt, relatedItems.customerId);
   const hasInvoices =
-    permissions.can("view", "invoicing") &&
+    permissions.has({ "invoicing.purchaseInvoices": "View" }) &&
     relatedItems.invoices.some(
       (invoice) =>
         !(
@@ -493,7 +495,8 @@ function StreamedReceiptDocuments({
     );
 
   const hasServiceJobs =
-    permissions.can("view", "service") && relatedItems.serviceJobs.length > 0;
+    permissions.has({ "service.jobs": "View" }) &&
+    relatedItems.serviceJobs.length > 0;
 
   if (!customer && !hasInvoices && !hasServiceJobs && files.length === 0) {
     return <Empty className="py-12" />;

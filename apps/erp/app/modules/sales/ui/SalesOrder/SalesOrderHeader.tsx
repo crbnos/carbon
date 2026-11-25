@@ -67,6 +67,7 @@ import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.s
 import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
 import { isSalesOrderLocked, salesConfirmValidator } from "../../sales.models";
+import { createContractFromSalesOrderPermission } from "../../sales.utils";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
 import { CancelSalesOrderModal } from "./CancelSalesOrderModal";
 import SalesOrderToContractModal from "./SalesOrderToContractModal";
@@ -112,7 +113,7 @@ const SalesOrderConfirmBody = ({
   const canEmail = integrations.has("email");
 
   const [notificationType, setNotificationType] = useState<"Email" | "None">(
-    canEmail ? "Email" : "None"
+    "None"
   );
   const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
@@ -179,6 +180,9 @@ const SalesOrderConfirmBody = ({
                   customer={salesOrder?.customerId ?? undefined}
                   warnIfNoEmail
                   onMissingEmailChange={setContactMissingEmail}
+                  emailNotice={(name) =>
+                    t`This will email the sales order to ${name}.`
+                  }
                 />
                 <EmailRecipients name="cc" label={t`CC`} type="employee" />
               </>
@@ -326,7 +330,7 @@ const SalesOrderHeader = () => {
           !["To Ship and Invoice", "To Ship"].includes(
             routeData?.salesOrder?.status ?? ""
           ) ||
-          !permissions.can("create", "production") ||
+          !permissions.has({ "production.jobs": "Create" }) ||
           !permissions.is("employee") ||
           !linesRequireJobs
         }
@@ -341,7 +345,7 @@ const SalesOrderHeader = () => {
             routeData?.salesOrder?.status ?? ""
           ) ||
           contractEligibleLines.length === 0 ||
-          !permissions.can("create", "sales") ||
+          !permissions.has(createContractFromSalesOrderPermission) ||
           !permissions.is("employee")
         }
         onClick={salesOrderToContractModal.onOpen}
@@ -363,7 +367,7 @@ const SalesOrderHeader = () => {
         disabled={
           ["Draft"].includes(routeData?.salesOrder?.status ?? "") ||
           statusFetcher.state !== "idle" ||
-          !permissions.can("update", "sales")
+          !permissions.has({ "sales.salesOrders": "Edit" })
         }
         onClick={() => {
           statusFetcher.submit(
@@ -383,7 +387,7 @@ const SalesOrderHeader = () => {
         destructive
         disabled={
           isLocked ||
-          !permissions.can("delete", "sales") ||
+          !permissions.has({ "sales.salesOrders": "Full" }) ||
           !permissions.is("employee")
         }
         onClick={deleteSalesOrderModal.onOpen}
@@ -470,7 +474,7 @@ const SalesOrderHeader = () => {
                     routeData?.salesOrder?.status ?? ""
                   ) ||
                   routeData?.lines.length === 0 ||
-                  !permissions.can("update", "sales")
+                  !permissions.has({ "sales.salesOrders": "Edit" })
                 }
               >
                 <Trans>Confirm</Trans>
@@ -487,7 +491,7 @@ const SalesOrderHeader = () => {
                     routeData?.salesOrder?.status ?? ""
                   ) ||
                   statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "sales")
+                  !permissions.has({ "sales.salesOrders": "Edit" })
                 }
                 isLoading={
                   statusFetcher.state !== "idle" &&
@@ -734,8 +738,9 @@ const SalesOrderHeader = () => {
         action={path.to.deleteSalesOrder(orderId)}
         isOpen={deleteSalesOrderModal.isOpen}
         name={routeData?.salesOrder?.salesOrderId!}
-        text={t`Are you sure you want to delete ${routeData?.salesOrder
-          ?.salesOrderId!}? This cannot be undone.`}
+        text={t`Are you sure you want to delete ${
+          routeData?.salesOrder?.salesOrderId!
+        }? This cannot be undone.`}
         onCancel={() => {
           deleteSalesOrderModal.onClose();
         }}

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   assignUnattributedMachineTime,
@@ -38,9 +38,9 @@ import {
   getUnattributedMachineTimeNeighbors,
   getWorkCenterDayEvents
 } from "~/modules/production/production.service";
-import MachineTimeDrawer from "~/modules/production/ui/MachineTime/MachineTimeDrawer.ee";
 import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
 import { suggestMachineTimeOperations } from "~/modules/production/ui/MachineTime/machine-time-suggestions.ee";
+import MachineTimeDrawer from "~/modules/production/ui/MachineTime/MachineTimeDrawer.ee";
 import {
   getCompanyTimeZone,
   getLocationTimeZone
@@ -52,9 +52,8 @@ import { getParams, path } from "~/utils/path";
 const logger = getLogger("erp", "production", "machine-time");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "production",
-    role: "employee"
+  const { client, companyId } = await authorize(request, {
+    "production.unattributedTime": "View"
   });
 
   const { id } = params;
@@ -173,8 +172,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+  const { client, companyId, userId } = await authorize(request, {
+    "production.unattributedTime": "Edit"
   });
 
   const { id } = params;

@@ -30,7 +30,7 @@
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup --watch",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "typecheck": "tsc --noEmit"
   },
   "sideEffects": false,

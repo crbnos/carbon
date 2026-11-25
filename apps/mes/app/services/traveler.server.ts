@@ -30,6 +30,7 @@ import {
 import { makeDurations } from "~/utils/durations";
 import {
   batchScanQuantity,
+  confirmedTravelerStep,
   decideTravelerClaim,
   isUnitInOperationScope,
   pickTravelerClaims,
@@ -820,8 +821,6 @@ export async function scanTraveler(
         return { resolution: null, claimed: null, error: LOOKUP_FAILED };
       if (paired.data) return { resolution, claimed: null, error: null };
     }
-    // Step attribution belongs to the unit on screen only.
-    const sameUnit = args.at?.trackedEntityId === claim.parentTrackedEntityId;
     const issued = await issueTravelerUnit(client, {
       companyId: args.companyId,
       userId: args.userId,
@@ -834,8 +833,11 @@ export async function scanTraveler(
         args.at?.operationId === claim.operationId
           ? (args.at.trackedEntityId ?? null)
           : null,
-      jobOperationStepId: sameUnit ? args.at?.jobOperationStepId : undefined,
-      unitNumber: sameUnit ? args.at?.unitNumber : undefined
+      ...confirmedTravelerStep(
+        args.at,
+        claim.operationId,
+        claim.parentTrackedEntityId
+      )
     });
     if (!issued.error) return { resolution, claimed: claim, error: null };
     lastError = issued.error;

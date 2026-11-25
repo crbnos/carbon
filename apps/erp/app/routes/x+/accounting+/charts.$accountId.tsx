@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
@@ -16,7 +16,6 @@ import {
 } from "~/modules/accounting/accounting.models";
 import {
   getAccount,
-  getGroupAccounts,
   upsertAccount
 } from "~/modules/accounting/accounting.service";
 import {
@@ -27,17 +26,16 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { api } = await authorize(request, {
+    "accounting.chartOfAccounts": "View"
   });
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
 
   const [account, groupAccounts] = await Promise.all([
-    getAccount(client, accountId),
-    getGroupAccounts(client, companyGroupId)
+    api.accounting.getAccount({ accountId }),
+    api.accounting.getGroupAccounts({})
   ]);
 
   return {
@@ -48,8 +46,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "accounting"
+  const { client, userId } = await authorize(request, {
+    "accounting.chartOfAccounts": "Edit"
   });
 
   // Root accounts (Balance Sheet, Income Statement) cannot be modified

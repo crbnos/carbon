@@ -150,7 +150,7 @@ const PaymentForm = ({
   const permissions = usePermissions();
   const isEditing = Boolean(initialValues.id);
   const isLocked = isPaymentLocked(initialValues.status);
-  const canMutate = permissions.can("update", "invoicing");
+  const canMutate = permissions.has({ "invoicing.payments": "Edit" });
 
   const initialKind = initialPaymentKind(initialValues);
   const [paymentKind, setPaymentKind] = useState(initialKind);
@@ -413,7 +413,7 @@ const PaymentForm = ({
           isDisabled={
             isEditing
               ? isLocked || !canMutate
-              : !permissions.can("create", "invoicing")
+              : !permissions.has({ "invoicing.payments": "Create" })
           }
         >
           <Trans>Save</Trans>

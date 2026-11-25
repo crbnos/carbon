@@ -50,7 +50,7 @@ const IntercompanyTransactionForm = ({
 }: IntercompanyTransactionFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const isDisabled = !permissions.can("create", "accounting");
+  const isDisabled = !permissions.has({ "accounting.intercompany": "Create" });
 
   const companyOptions = companies.map((c) => ({
     label: c.name,
@@ -139,7 +139,6 @@ function PostingDate({
 
   // Keyed on sourceCompanyId (not just timezone) so switching between two
   // companies in the SAME zone still re-defaults a manually edited date.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: sourceCompanyId intentionally re-triggers the default
   useEffect(() => {
     if (timezone) setPostingDate(today(timezone).toString());
   }, [sourceCompanyId, timezone, setPostingDate]);

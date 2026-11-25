@@ -61,7 +61,8 @@ const portalVariants = cva(
 );
 
 interface DrawerPortalProps
-  extends DialogPrimitive.DialogPortalProps,
+  extends
+    DialogPrimitive.DialogPortalProps,
     VariantProps<typeof portalVariants> {}
 
 const DrawerPortal = ({ position, children, ...props }: DrawerPortalProps) => (
@@ -198,7 +199,8 @@ const sheetVariants = cva(
 );
 
 export interface DialogContentProps
-  extends ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
+  extends
+    ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof sheetVariants> {
   overlay?: boolean;
   container?: HTMLElement;

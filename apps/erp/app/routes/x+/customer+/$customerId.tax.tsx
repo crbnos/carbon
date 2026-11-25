@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import {
+  type Authorized,
+  authorize,
+  type Caller
+} from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -11,27 +15,21 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { suggestTaxCodes } from "~/modules/accounting/accounting.service";
 import { customerTaxValidator } from "~/modules/sales/sales.models";
-import {
-  getCustomerLocation,
-  getCustomerLocations,
-  getCustomerShipping,
-  getCustomerTax,
-  updateCustomerTax
-} from "~/modules/sales/sales.service";
+import { updateCustomerTax } from "~/modules/sales/sales.service";
 import { CustomerTaxForm } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "sales"
+  const { client, companyId, api } = await authorize(request, {
+    "sales.customers": "View"
   });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
   const [customerTax, suggestedTaxCode] = await Promise.all([
-    getCustomerTax(client, customerId),
-    getSuggestedTaxCode(client, companyId, customerId)
+    api.sales.getCustomerTax({ customerId }),
+    getSuggestedTaxCode(api, client, companyId, customerId)
   ]);
 
   if (customerTax.error || !customerTax.data) {
@@ -56,16 +54,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
  * the user confirms it.
  */
 async function getSuggestedTaxCode(
-  client: Parameters<typeof getCustomerTax>[0],
+  api: Authorized<Caller>["api"],
+  client: Caller["client"],
   companyId: string,
   customerId: string
 ) {
-  const shipping = await getCustomerShipping(client, customerId, companyId);
+  const shipping = await api.sales.getCustomerShipping({ customerId });
   const shippingLocationId = shipping.data?.shippingCustomerLocationId;
   const address = shippingLocationId
-    ? (await getCustomerLocation(client, shippingLocationId, companyId)).data
-        ?.address
-    : ((await getCustomerLocations(client, customerId, companyId)).data?.[0]
+    ? (
+        await api.sales.getCustomerLocation({
+          customerLocationId: shippingLocationId
+        })
+      ).data?.address
+    : ((await api.sales.getCustomerLocations({ customerId })).data?.[0]
         ?.address ?? null);
   const countryCode = address?.country?.alpha2 ?? null;
   if (!countryCode) return null;
@@ -79,8 +81,8 @@ async function getSuggestedTaxCode(
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "sales"
+  const { client, userId } = await authorize(request, {
+    "sales.customers": "Edit"
   });
 
   const { customerId } = params;

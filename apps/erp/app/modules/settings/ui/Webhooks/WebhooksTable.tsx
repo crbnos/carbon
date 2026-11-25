@@ -172,7 +172,6 @@ const WebhooksTable = memo((props: WebhooksTableProps) => {
     ];
   }, [people, webhookTables, t]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {
       return (
@@ -202,6 +201,7 @@ const WebhooksTable = memo((props: WebhooksTableProps) => {
       );
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [navigate, params, permissions]
   );
 
@@ -220,7 +220,7 @@ const WebhooksTable = memo((props: WebhooksTableProps) => {
         }}
         primaryAction={
           <HStack>
-            {permissions.can("update", "users") && (
+            {permissions.has({ "settings.webhooks": "Edit" }) && (
               <New
                 label={t`Webhook`}
                 to={`${path.to.newWebhook}?${params.toString()}`}

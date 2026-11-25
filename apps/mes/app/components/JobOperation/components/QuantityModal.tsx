@@ -245,9 +245,10 @@ export function QuantityModal({
           </ModalHeader>
           <ModalBody>
             <Hidden name="trackedEntityId" />
-            {type === "complete" && viewedUnit.pairingId && (
-              <Hidden name="pairingId" value={viewedUnit.pairingId} />
-            )}
+            {(type === "complete" || type === "scrap") &&
+              viewedUnit.pairingId && (
+                <Hidden name="pairingId" value={viewedUnit.pairingId} />
+              )}
             <Hidden
               name="trackingType"
               value={

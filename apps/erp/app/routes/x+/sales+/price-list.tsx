@@ -23,8 +23,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     firstPage: async ({ client, companyId, params }) => {
       const hasScope = Boolean(
         params.get("customerId") ||
-          params.get("customerTypeId") ||
-          params.get("scope") === "all"
+        params.get("customerTypeId") ||
+        params.get("scope") === "all"
       );
       const groupsResult = await client
         .from("group")

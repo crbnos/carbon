@@ -102,11 +102,11 @@ export const OnshapeSync = ({
     | { data: null; error: string }
   >({});
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (!isDisabled && initialized) {
       documentsFetcher.load(path.to.api.onShapeDocuments);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [initialized]);
 
   useEffect(() => {
@@ -132,11 +132,11 @@ export const OnshapeSync = ({
     | { data: null; error: string }
   >({});
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (documentId && !isDisabled && initialized) {
       versionsFetcher.load(path.to.api.onShapeVersions(documentId));
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [documentId, initialized]);
 
   const versionOptions =
@@ -156,11 +156,11 @@ export const OnshapeSync = ({
     | { data: null; error: string }
   >({});
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (documentId && versionId && !isDisabled && initialized) {
       elementsFetcher.load(path.to.api.onShapeElements(documentId, versionId));
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [documentId, versionId, initialized]);
 
   const elementOptions =
@@ -474,9 +474,7 @@ export const OnshapeSync = ({
                     {!isSynced && partId && (
                       <PulsingDot label={t`Not synced`} className="mt-0.5" />
                     )}
-                    {/** biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration */}
                     {row.data["State"] && (
-                      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
                       <OnshapeStatus status={row.data["State"]} />
                     )}
                   </div>

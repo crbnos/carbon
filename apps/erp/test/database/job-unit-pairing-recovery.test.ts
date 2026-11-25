@@ -171,6 +171,38 @@ for (const scrapRoute of ["scrapTrackedEntity", "scrapJobPart"] as const) {
 }
 
 databaseTest(
+  "a stale Scrap confirmation leaves a replacement component and its output intact",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const { production, job, post, assign, reason } = await packout(f);
+      await assign(production.first.id!);
+      const scrap = await confirmPackoutCommand(f, {
+        type: "jobOperationScrap", jobOperationId: job.operationId,
+        trackedEntityId: job.unitId, quantity: 1, scrapReasonId: reason.id
+      });
+      await post({
+        type: "unconsumeTrackedEntities", materialId: job.materialId,
+        parentTrackedEntityId: job.unitId,
+        children: [{ trackedEntityId: production.first.id!, quantity: 1 }]
+      });
+      const submit = () => invokePosting(handlesOf(f.ctx), "issue", scrap, issueMaterial);
+      expect((await submit()).error?.message).toContain("packing relationship has changed");
+      await assign(production.second.id!);
+      expect((await submit()).error?.message).toContain("packing relationship has changed");
+      expect(await f.db.selectFrom("jobUnitPairing").select("sourceId")
+        .where("companyId", "=", f.companyId).where("outputId", "=", job.unitId)
+        .where("releasedAt", "is", null).execute()).toEqual([{ sourceId: production.second.id }]);
+      expect(await f.db.selectFrom("productionQuantity").select("id")
+        .where("companyId", "=", f.companyId).where("jobOperationId", "=", job.operationId)
+        .where("type", "=", "Scrap").execute()).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
   "the ERP stock Unscrap cannot receive an output scrapped on its pack-out job",
   async () => {
     const f = await alwaysPostFixture();

@@ -9,8 +9,8 @@ import SupplierQuoteHeader from "./SupplierQuoteHeader";
 import SupplierQuoteLineForm from "./SupplierQuoteLineForm";
 import SupplierQuoteLinePricing from "./SupplierQuoteLinePricing";
 import SupplierQuoteProperties from "./SupplierQuoteProperties";
-import SupplierQuoteStatus from "./SupplierQuoteStatus";
 import SupplierQuotesTable from "./SupplierQuotesTable";
+import SupplierQuoteStatus from "./SupplierQuoteStatus";
 
 export {
   DeleteSupplierQuoteLine,

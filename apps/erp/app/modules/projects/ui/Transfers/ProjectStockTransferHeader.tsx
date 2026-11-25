@@ -31,7 +31,7 @@ export default function ProjectStockTransferHeader({
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
   const typeLabels = useStockTransferTypeLabels();
-  const canUpdate = permissions.can("update", "projects");
+  const canUpdate = permissions.has({ "projects.projects": "Edit" });
   const pendingAction = fetcher.formData?.get("action");
   const isBusy = fetcher.state !== "idle";
 

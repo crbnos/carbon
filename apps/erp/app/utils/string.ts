@@ -31,7 +31,7 @@ export const camelCaseToWords = (str: string) =>
  */
 export const copyToClipboard = async (
   str: string | Promise<string>,
-  // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
+  // oxlint-disable-next-line no-empty-function -- suppressed due to migration
   callback = () => {}
 ) => {
   const focused = window.document.hasFocus();

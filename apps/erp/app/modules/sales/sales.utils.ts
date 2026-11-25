@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
+import type { PageGate } from "@carbon/database/access";
 import { getFileExtension } from "@carbon/files";
 import type {
   DefaultRentalRates,
@@ -10,6 +11,7 @@ import type {
   RateUnit,
   RentalBillingCycle,
   ScopedRentalRate,
+  TaxCodeInput,
   Timing
 } from "@carbon/utils";
 import {
@@ -17,6 +19,7 @@ import {
   classifyRentalLine,
   defaultRentalRates,
   equals,
+  invoiceLinePricing,
   leasePaymentTerms,
   rentalTermMonths,
   round
@@ -29,6 +32,7 @@ import {
 } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { chargedRateOr } from "../accounting/accounting.utils";
 import type {
   MatchedRule,
   PriceTraceStep,
@@ -1108,6 +1112,12 @@ export function customerPortalEarliestExpiry(
   return (stored.compare(tomorrow) < 0 ? stored : tomorrow).toString();
 }
 
+/** `sales.createContractFromSalesOrder`: it marks the order's lines invoiced and makes a contract. */
+export const createContractFromSalesOrderPermission = {
+  "sales.salesOrders": "Edit",
+  "sales.serviceContracts": "Create"
+} satisfies PageGate;
+
 type DeliveryDateStatus = Database["public"]["Enums"]["deliveryDateStatus"];
 type SalesOrderLineType = Database["public"]["Enums"]["salesOrderLineType"];
 
@@ -1240,4 +1250,151 @@ export function saveIsCurrent(
     rowDate === (saved.promisedDate?.slice(0, 10) || null) &&
     Number(row.saleQuantity ?? 0) === Number(saved.saleQuantity ?? 0)
   );
+}
+
+/** A contract line's rate on an invoice's (or credit memo's) date: its
+ *  code's charged rate (none for Reverse Charge), else its stored percent. */
+export function contractLineRate(
+  line:
+    | { taxCodeId: string | null; taxPercent: number | string | null }
+    | undefined,
+  taxCodes: ReadonlyMap<string, TaxCodeInput>,
+  date: string
+): number {
+  return chargedRateOr(
+    line?.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined,
+    line?.taxPercent ?? 0,
+    date
+  );
+}
+
+/** A drafted contract invoice's totals: the subtotal of each line's net as
+ *  the schedule priced it, and the tax on the nets, rounded once in total.
+ *  `insertDraftContractInvoice` writes these; the contract page previews them. */
+export function draftInvoiceTotals(
+  lines: {
+    quantity: number;
+    unitPrice: number;
+    discountPercent: number;
+    taxPercent: number;
+  }[]
+): { subtotal: number; totalTax: number } {
+  const nets = lines.map((line) =>
+    round(line.quantity * line.unitPrice * (1 - line.discountPercent))
+  );
+  const subtotal = round(nets.reduce((sum, net) => sum + net, 0));
+  const totalTax = round(
+    lines.reduce((sum, line, index) => sum + nets[index]! * line.taxPercent, 0)
+  );
+  return { subtotal, totalTax };
+}
+
+/** The invoices still to draft, as `contractInvoiceTotals` reads them: the
+ *  live schedule of an unedited Draft, else the stored one. Only Planned
+ *  invoices are drafted; Billed Externally ones never are. */
+export function plannedContractInvoices(args: {
+  computedSchedule:
+    | {
+        status: string;
+        invoiceDate: string;
+        rows: { lineId: string; unitPrice: number; amount: number }[];
+      }[]
+    | null;
+  invoices: {
+    status: string;
+    invoiceDate: string;
+    customerContractInvoiceLine: {
+      customerContractLineId: string;
+      unitPrice: number | string;
+      amount: number | string;
+    }[];
+  }[];
+}): {
+  invoiceDate: string;
+  rows: { lineId: string; unitPrice: number; amount: number }[];
+}[] {
+  if (args.computedSchedule) {
+    return args.computedSchedule
+      .filter((invoice) => invoice.status === "Planned")
+      .map(({ invoiceDate, rows }) => ({ invoiceDate, rows }));
+  }
+  return args.invoices
+    .filter((invoice) => invoice.status === "Planned")
+    .map((invoice) => ({
+      invoiceDate: invoice.invoiceDate,
+      rows: invoice.customerContractInvoiceLine.map((row) => ({
+        lineId: row.customerContractLineId,
+        unitPrice: Number(row.unitPrice),
+        amount: Number(row.amount)
+      }))
+    }));
+}
+
+/** The invoices still to draft with the schedule's net and no tax: what the
+ *  contract page shows when the tax codes cannot be read. */
+export function untaxedContractInvoices(
+  args: Parameters<typeof plannedContractInvoices>[0]
+): { invoiceDate: string; net: number }[] {
+  return plannedContractInvoices(args).map(({ invoiceDate, rows }) => ({
+    invoiceDate,
+    net: round(rows.reduce((sum, row) => sum + row.amount, 0))
+  }));
+}
+
+export type ContractInvoiceTotal = {
+  invoiceDate: string;
+  net: number;
+  tax: number;
+  /** Each line's rate on this invoice, by line id. */
+  taxPercents: Record<string, number>;
+};
+
+/**
+ * What each planned contract invoice bills once drafted: every row priced by
+ * `invoiceLinePricing` and taxed at its line's rate (`contractLineRate`) on
+ * the day the billing run drafts it — the invoice date, or today when that
+ * has passed — totalled by `draftInvoiceTotals`, as the drafting does.
+ * Amounts are in the contract's currency.
+ */
+export function contractInvoiceTotals(args: {
+  invoices: {
+    invoiceDate: string;
+    rows: { lineId: string; unitPrice: number; amount: number }[];
+  }[];
+  lines: {
+    id: string;
+    quantity: number | string;
+    discountPercent: number | string;
+    taxCodeId: string | null;
+    taxPercent: number | string | null;
+  }[];
+  taxCodes: ReadonlyMap<string, TaxCodeInput>;
+  today: string;
+}): ContractInvoiceTotal[] {
+  const lineById = new Map(args.lines.map((line) => [line.id, line]));
+  return args.invoices.map((invoice) => {
+    // YYYY-MM-DD strings compare as dates.
+    const asOf =
+      invoice.invoiceDate > args.today ? invoice.invoiceDate : args.today;
+    const taxPercents: Record<string, number> = {};
+    const priced = invoice.rows.map((row) => {
+      const line = lineById.get(row.lineId);
+      const taxPercent = contractLineRate(line, args.taxCodes, asOf);
+      taxPercents[row.lineId] = taxPercent;
+      return {
+        ...invoiceLinePricing(row, {
+          quantity: Number(line?.quantity ?? 1),
+          discountPercent: Number(line?.discountPercent ?? 0)
+        }),
+        taxPercent
+      };
+    });
+    const { subtotal, totalTax } = draftInvoiceTotals(priced);
+    return {
+      invoiceDate: invoice.invoiceDate,
+      net: subtotal,
+      tax: totalTax,
+      taxPercents
+    };
+  });
 }

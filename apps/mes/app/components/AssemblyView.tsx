@@ -120,6 +120,7 @@ import { useWorkUnit } from "~/components/JobOperation/hooks/useWorkUnit";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
+import { UnitHoldBanner } from "~/components/UnitHoldBanner";
 import { useRealtime, useUser } from "~/hooks";
 import {
   type AbilityShortfall,
@@ -141,8 +142,9 @@ import {
 } from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
+import { holdingIssues, isUnitOnHold, type UnitHolds } from "~/utils/unitHold";
 import { deriveUnits } from "~/utils/units";
-import { shownRecordIndex } from "~/utils/workUnit";
+import { operationUnits, shownRecordIndex } from "~/utils/workUnit";
 
 const log = getLogger("mes", "assembly-view");
 
@@ -342,6 +344,8 @@ type Props = {
     inOperationScope?: boolean;
     pairingId?: string;
   }[];
+  /** The units on hold for an open quality issue (`readUnitHolds`). */
+  unitHolds?: UnitHolds;
   trackedEntityId: string | null;
   materials: { materials?: any[]; trackedInputs?: any[] } | null;
   procedure: { attributes: Step[]; parameters: any[] };
@@ -552,6 +556,7 @@ export function AssemblyView({
   thumbnailPath,
   correctionName,
   trackedEntities,
+  unitHolds,
   trackedEntityId,
   materials,
   procedure,
@@ -695,7 +700,6 @@ export function AssemblyView({
   // against this item/process is materialized as a recordable Inspection step so the
   // operator signs off on the containment inline. Idempotent — actions that already have
   // a step are skipped; the fetcher POST revalidates the loader, so a second pass no-ops.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: mirrors the operation view
   useEffect(() => {
     function createInspectionStepsForNonConformanceActions() {
       // Skip while a prior POST is still in flight: procedure/nonConformanceActions
@@ -766,6 +770,7 @@ export function AssemblyView({
     }
 
     createInspectionStepsForNonConformanceActions();
+    // oxlint-disable-next-line react/exhaustive-deps -- mirrors the operation view
   }, [
     carbon,
     operationId,
@@ -881,14 +886,18 @@ export function AssemblyView({
   // A rework or correction copy works only the units sent into it: page through
   // those, but key step records by each unit's place in the full axis, as the
   // operation view and the ERP do. With no scope the two are the same.
-  const scopedAxis = axisEntities
-    .map((entity, axisIndex) => ({ entity, axisIndex }))
-    .filter(({ entity }) => entity.inOperationScope !== false);
-  const axisIndexOf = (position: number) =>
-    scopedAxis[position]?.axisIndex ?? position;
-  const units = deriveUnits(
+  const navigableEntities = operationUnits(
+    axisEntities,
     unitCount,
-    scopedAxis.map(({ entity }) => entity)
+    navigatesByEntity ? { operationId, holds: unitHolds } : undefined
+  );
+  const axisIndexOf = (position: number) => {
+    const entity = navigableEntities[position];
+    return entity ? axisEntities.indexOf(entity) : position;
+  };
+  const units = deriveUnits(
+    Math.max(unitCount, navigableEntities.length),
+    navigableEntities
   );
   // The tracked entities within the navigable set (for the serial picker; empty when
   // the parent is untracked).
@@ -906,12 +915,19 @@ export function AssemblyView({
   // The serial unit the operator works on, decided as on the operation view
   // (`useWorkUnit`). At a later operation the unit on screen is for viewing
   // until the operator picks or scans one: no write names it.
+  // A unit on hold for an open quality issue is not open here: no work names
+  // it and the screen moves past it, as the server does (`resolveWorkUnit`).
   const workUnit = useWorkUnit({
     serial: navigatesByEntity,
     isFirstOperation,
     units: unitEntities,
-    isOpen: (entity) => isUnitIncompleteForOperation(entity, operationId)
+    isOpen: (entity) => isUnitIncompleteForOperation(entity, operationId),
+    isOnHold: (entity) => isUnitOnHold(unitHolds, entity.id)
   });
+  // The open issues that hold the unit on screen.
+  const shownUnitHolds = navigatesByEntity
+    ? holdingIssues(unitHolds, workUnit.reviewUnitId)
+    : [];
 
   // Resolve the current unit. A serial part shows the unit `useWorkUnit` holds
   // (picked, or looked back at), so what the screen shows is what its writes
@@ -955,7 +971,6 @@ export function AssemblyView({
   const reviewEntity = navigatesByEntity ? workUnit.unit : currentEntity;
   // The Issue dialog opens on a finished unit too, for Unconsume only.
   const issueDialogBlocked = writesBlocked && !reviewEntity;
-  const canCompleteUnit = !workUnit.requiresPick || workUnit.unitIsOpen;
   const canPickUnit = workUnit.canPick;
   const askForUnit = () => {
     toast.info(t`Select a unit first`);
@@ -1303,7 +1318,6 @@ export function AssemblyView({
   // On step change, default the main panel to the animated step playback when this
   // step maps to an instruction step; otherwise the step's first slide, and only
   // fall back to the finished-assembly image when the step has neither.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the current step
   useEffect(() => {
     setSelected(
       playbackAvailable ? "playback" : stepSlides.length > 0 ? 0 : "finished"
@@ -1401,7 +1415,6 @@ export function AssemblyView({
       ? recordedStepValue(step, currentStepRecord)
       : null;
   const stepDoneRef = useRef({ step: currentStep, done: currentStepDone });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on the current step only
   useEffect(() => {
     const prev = stepDoneRef.current;
     stepDoneRef.current = { step: currentStep, done: currentStepDone };
@@ -1437,6 +1450,7 @@ export function AssemblyView({
     }
 
     if (!isLastStep) goToStep(currentStep + 1);
+    // oxlint-disable-next-line react/exhaustive-deps -- transition-detect on the current step only
   }, [currentStep, currentStepDone, isLastStep, allStepsRecorded]);
 
   // ── Keyboard shortcuts (Bluetooth clicker / pedal friendly) ────────────────
@@ -1533,7 +1547,6 @@ export function AssemblyView({
 
   // Stop the labor clock automatically once every step is recorded for this unit.
   const allDoneRef = useRef(allStepsRecorded);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on all-complete
   useEffect(() => {
     const wasAllDone = allDoneRef.current;
     allDoneRef.current = allStepsRecorded;
@@ -1554,6 +1567,7 @@ export function AssemblyView({
         action: path.to.productionEvent
       });
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- transition-detect on all-complete
   }, [allStepsRecorded]);
 
   // ── Auto-complete one unit + roll to the next ────────────────────────────
@@ -1566,7 +1580,6 @@ export function AssemblyView({
   const isMultiQuantity = unitCount > 1;
   const unitsRemaining = unitCount - quantityComplete;
   const autoCompleteSubmittedRef = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on all-complete
   useEffect(() => {
     if (!isMultiQuantity || unitsRemaining <= 0 || writesBlocked) return;
     // Only auto-complete the unit currently being built. Guards against
@@ -1631,6 +1644,7 @@ export function AssemblyView({
         { replace: true, preventScrollReset: true }
       );
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- transition-detect on all-complete
   }, [allStepsRecorded, isMultiQuantity, unitsRemaining]);
 
   // Re-arm auto-complete when a completion POST fails. complete.tsx returns
@@ -1668,12 +1682,12 @@ export function AssemblyView({
   // jump to that unit's first step still to record (step 1 for a fresh unit). This
   // is what returns the operator to the top after finishing a unit's last step.
   const lastUnitRef = useRef(currentUnitIndex);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: transition-detect on the unit index
   useEffect(() => {
     if (lastUnitRef.current === currentUnitIndex) return;
     lastUnitRef.current = currentUnitIndex;
     const firstIncomplete = steps.findIndex((s) => !isStepDone(s));
     goToStep(firstIncomplete >= 0 ? firstIncomplete : 0);
+    // oxlint-disable-next-line react/exhaustive-deps -- transition-detect on the unit index
   }, [currentUnitIndex]);
 
   // On first open (no explicit ?step in the URL), land on the first step that
@@ -1681,7 +1695,6 @@ export function AssemblyView({
   // where they left off. Resolves once, as soon as steps are available; an
   // explicit ?step (a shared/bookmarked link) is always respected.
   const initialStepResolvedRef = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot once steps load
   useEffect(() => {
     if (initialStepResolvedRef.current) return;
     if (searchParams.get("step") != null) {
@@ -1692,6 +1705,7 @@ export function AssemblyView({
     initialStepResolvedRef.current = true;
     const firstIncomplete = steps.findIndex((s) => !isStepDone(s));
     if (firstIncomplete > 0) goToStep(firstIncomplete);
+    // oxlint-disable-next-line react/exhaustive-deps -- one-shot once steps load
   }, [steps.length]);
 
   // Serial parents mint one serial at a time — the next unit's tracked entity is only
@@ -1874,7 +1888,7 @@ export function AssemblyView({
                 <Trans>No unit selected</Trans>
               ) : (
                 <>
-                  Unit {Math.min(currentUnitIndex + 1, unitCount)} / {unitCount}
+                  Unit {currentUnitIndex + 1} / {units.length}
                 </>
               )}
             </Badge>
@@ -1971,7 +1985,7 @@ export function AssemblyView({
       {operation ? (
         <button
           type="button"
-          disabled={abilityBlocked || !canCompleteUnit}
+          disabled={abilityBlocked || writesBlocked}
           onClick={completeModal.onOpen}
           className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 max-md:hidden md:gap-2 md:px-4"
         >
@@ -2084,6 +2098,14 @@ export function AssemblyView({
       {abilityWarning && (
         <div className="shrink-0 px-4 pt-3">
           <AbilityWarning warning={abilityWarning} />
+        </div>
+      )}
+      {shownUnitHolds.length > 0 && (
+        <div className="shrink-0 px-4 pt-3">
+          <UnitHoldBanner
+            serialNumber={workUnit.unit?.readableId}
+            issues={shownUnitHolds}
+          />
         </div>
       )}
 
@@ -2843,7 +2865,7 @@ export function AssemblyView({
             <Button
               size="lg"
               leftIcon={<LuCheck />}
-              isDisabled={abilityBlocked || !canCompleteUnit}
+              isDisabled={abilityBlocked || writesBlocked}
               onClick={completeModal.onOpen}
               className="h-12 flex-1"
             >
@@ -2875,6 +2897,7 @@ export function AssemblyView({
           ""
         }
         issueBlocked={writesBlocked}
+        parentOnHold={shownUnitHolds.length > 0}
         parentIdIsSerialized={requiresSerialTracking}
         // Stamp the current step + 1-based unit onto the consume so issued
         // quantities can be attributed per-unit even for a batch parent (where
@@ -2899,7 +2922,7 @@ export function AssemblyView({
         onClose={needMaterialModal.onClose}
       />
 
-      {operation && completeModal.openCount > 0 && (
+      {operation && !writesBlocked && completeModal.openCount > 0 && (
         <QuantityModal
           key={`complete-${completeModal.openCount}`}
           open={completeModal.isOpen}
@@ -2926,6 +2949,7 @@ export function AssemblyView({
           key={`scrap-${scrapModal.openCount}`}
           open={scrapModal.isOpen}
           type="scrap"
+          pairingId={workEntity?.pairingId}
           operation={operation as unknown as OperationWithDetails}
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}
@@ -2962,6 +2986,7 @@ export function AssemblyView({
           jobId={jobId}
           isOpen={reworkModal.isOpen}
           onClose={reworkModal.onClose}
+          unitHolds={unitHolds}
           trackedEntities={trackedEntities as never}
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}
@@ -2979,6 +3004,8 @@ export function AssemblyView({
       <SerialSelectorModal
         open={workUnit.pickerOpen}
         availableEntities={workUnit.openUnits as never}
+        onHoldEntities={workUnit.onHoldUnits as never}
+        unitHolds={unitHolds}
         onClose={workUnit.closePicker}
         onCancel={workUnit.closePicker}
         onSelect={(entity) => workUnit.pick(entity.id)}
@@ -3056,7 +3083,7 @@ export function AssemblyView({
                 }}
               />
               {/* Manager-only override: record every remaining step for this unit at once.
-                  Shown only to users with the Production DELETE permission, and only when
+                  Shown only with Jobs at Full (the pinned operator's, on a console), and only when
                   there are unrecorded steps left. */}
               {canOverrideComplete &&
                 steps.length > 0 &&
@@ -3185,7 +3212,6 @@ function AutoTimer({
   const running = !!openEvent;
 
   // Auto-start once when the view opens and nothing is running yet.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot on open
   useEffect(() => {
     if (!enabled || startedRef.current) return;
     startedRef.current = true;
@@ -3199,6 +3225,7 @@ function AutoTimer({
     if (trackedEntityId) fd.set("trackedEntityId", trackedEntityId);
     if (typeof unitIndex === "number") fd.set("unitIndex", String(unitIndex));
     fetcher.submit(fd, { method: "post", action: path.to.productionEvent });
+    // oxlint-disable-next-line react/exhaustive-deps -- one-shot on open
   }, [enabled]);
 
   return null;
@@ -3829,7 +3856,6 @@ function UnitNavigator({
   // currentUnitIndex is a real dep: the ref points at a different row after it
   // changes, so re-run the scroll even though the body only reads the ref.
   const currentRef = useRef<HTMLButtonElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on unit change
   useEffect(() => {
     currentRef.current?.scrollIntoView({ block: "nearest" });
   }, [currentUnitIndex]);

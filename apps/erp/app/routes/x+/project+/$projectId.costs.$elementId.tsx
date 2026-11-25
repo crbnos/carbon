@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import {
@@ -24,10 +24,6 @@ import {
   useSearchParams
 } from "react-router";
 import { elementSubtreeIds } from "~/modules/projects/projects.models";
-import {
-  getProjectElementCosts,
-  getProjectLedger
-} from "~/modules/projects/projects.service";
 import ProjectLedgerTable from "~/modules/projects/ui/Costs/ProjectLedgerTable";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -35,15 +31,15 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "project-costs-element");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+  const { api, companyId } = await authorize(request, {
+    "projects.projects": "View"
   });
 
   const { projectId, elementId } = params;
   if (!projectId) throw new Error("Could not find projectId");
   if (!elementId) throw new Error("Could not find elementId");
 
-  const elements = await getProjectElementCosts(client, projectId, companyId);
+  const elements = await api.projects.getProjectElementCosts({ projectId });
   if (elements.error) {
     logger.error("Failed to load project elements", {
       companyId,
@@ -66,7 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const searchParams = new URL(request.url).searchParams;
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
-  const ledger = await getProjectLedger(client, companyId, {
+  const ledger = await api.projects.getProjectLedger({
     projectId,
     projectElementIds: subtreeIds,
     limit,
@@ -93,8 +89,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .filter((row) => subtree.has(row.id))
         .map((row) => [row.id, { readableId: row.readableId, name: row.name }])
     ),
-    ledger: ledger.data ?? [],
-    count: ledger.count ?? 0
+    ledger: ledger.data?.rows ?? [],
+    count: ledger.data?.count ?? 0
   };
 }
 

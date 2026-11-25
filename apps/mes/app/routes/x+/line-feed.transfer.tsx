@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -28,8 +28,8 @@ const transferValidator = z.object({
  */
 export async function action({ request, context }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    create: "inventory"
+  const { client, companyId } = await authorize(request, {
+    "inventory.stockTransfers": "Create"
   });
   const locationId = context.get(userContext)?.locationId;
   const validation = await validator(transferValidator).validate(

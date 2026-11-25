@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -11,7 +11,6 @@ import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
 import { changeNoticeValidator } from "~/modules/items/items.models";
-import { getChangeNoticeTypesList } from "~/modules/items/items.service";
 import { ChangeNoticeForm } from "~/modules/items/ui/ChangeNotice";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -22,16 +21,13 @@ export const meta = newRecordMeta("Change Notice");
 
 export const handle: Handle = {
   breadcrumb: msg`Change Notices`,
-  to: path.to.changeNotices,
-  module: "items"
+  to: path.to.changeNotices
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
-  });
+  const { api } = await authorize(request, { "parts.changeNotices": "View" });
 
-  const types = await getChangeNoticeTypesList(client, companyId);
+  const types = await api.items.getChangeNoticeTypesList({});
 
   // "Create Change Notice" from an Issue (NCR) links here with the source in the
   // query string. Pre-link the non-conformance so the created CO references it
@@ -54,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(changeNoticeValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   const result = await api.items.createChangeNotice({
     ...input.data,
     customFields: input.formData && setCustomFields(input.formData)

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -18,11 +18,14 @@ import {
   checkRequiredScans,
   checkStrictBackflush,
   getInspectionOutcomeState,
-  getSerialCompletionCandidates,
   inspectionPairingsMatch,
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
+import {
+  canPostPassedSamples,
+  getPostableInspectionUnits
+} from "~/utils/inspectionOutcome";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
@@ -50,8 +53,8 @@ async function sweepIfOperationDone(
 // compensating transaction — un-posted verdicts stay editable.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
+  const { client, companyId, userId } = await authorize(request, {
+    "quality.inspections": "Edit"
   });
   const { id } = params;
   if (!id) throw new Error("id is required");
@@ -101,16 +104,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (refusal) {
     return fail(null, refusal);
   }
-  if (["Passed", "Failed", "Partial"].includes(state.inspection.status)) {
+  if (
+    !canPostPassedSamples(state.inspection.status, state.requiresSerialTracking)
+  ) {
     return fail(null, "Inspection is closed — the disposition already ran");
   }
 
   if (state.requiresSerialTracking) {
-    const candidates = getSerialCompletionCandidates(state, {
-      includePending: false,
-      includeSampleless: false,
-      pairings: validation.data.pairings
-    });
+    const candidates = getPostableInspectionUnits(state, state.inspection).map(
+      (unit) => ({
+        ...unit,
+        pairingId: validation.data.pairings?.[unit.trackedEntityId]
+      })
+    );
+
     if (
       !inspectionPairingsMatch(
         state,
@@ -124,7 +131,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
     if (candidates.length === 0) {
-      return fail(null, "No passed units to complete");
+      return fail(null, "No eligible units to complete");
     }
     if (candidates.length > state.opRemaining) {
       return fail(

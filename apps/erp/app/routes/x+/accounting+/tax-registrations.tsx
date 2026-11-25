@@ -2,12 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getTaxRegistrations } from "~/modules/accounting/accounting.service";
 import { TaxRegistrationsTable } from "~/modules/accounting/ui/Tax";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -19,9 +18,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  const { api, client, companyId } = await authorize(request, {
+    "accounting.taxRegistrations": "View"
   });
 
   const url = new URL(request.url);
@@ -34,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // code and every registration on their own.
   const [registrations, activeCodeCountries, registeredCountries] =
     await Promise.all([
-      getTaxRegistrations(client, companyId, {
+      api.accounting.getTaxRegistrations({
         search,
         limit,
         offset,
@@ -75,8 +73,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .sort((a, b) => a.localeCompare(b));
 
   return {
-    data: registrations.data,
-    count: registrations.count,
+    data: registrations.data?.rows ?? null,
+    count: registrations.data?.count ?? null,
     countriesWithoutRegistration: toNames(
       [...codeCountries].filter((code) => !registrationCountries.has(code))
     ),

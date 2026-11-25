@@ -168,7 +168,6 @@ const SalesReturnOrderProperties = () => {
     ];
   }, [salesOrderOptions, linkedOrderId, linkedOrderLabel]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
     (field: keyof SalesReturnOrder, value: string | null) => {
       if (value === routeData?.salesReturnOrder[field]) {
@@ -185,10 +184,10 @@ const SalesReturnOrderProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id, routeData?.salesReturnOrder]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -203,6 +202,7 @@ const SalesReturnOrderProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 
@@ -216,7 +216,7 @@ const SalesReturnOrderProperties = () => {
       ? optimisticAssignment
       : routeData?.salesReturnOrder?.assignee;
 
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "sales.returns": "Edit" });
   const isLocked = isSalesReturnOrderLocked(
     routeData?.salesReturnOrder?.status
   );

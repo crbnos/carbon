@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
@@ -12,8 +12,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Jobs`,
-  to: path.to.jobs,
-  module: "production"
+  to: path.to.jobs
 };
 
 export async function action(args: ActionFunctionArgs) {
@@ -21,14 +20,22 @@ export async function action(args: ActionFunctionArgs) {
     params: ["jobId"]
   });
   if ("invalid" in input) return input.invalid;
-  const { quantityComplete, locationId, storageUnitId, expectedSerials } =
-    input.data;
-  const api = await carbon(args.request);
+  const {
+    quantityComplete,
+    locationId,
+    storageUnitId,
+    expectedSerials,
+    expectedUnitIds,
+    expectedReceiptPreview
+  } = input.data;
+  const { api } = await authorize(args.request);
   return api.production.completeJob({
     jobId: input.params.jobId,
     quantityComplete,
     expectedSerials,
     locationId,
-    storageUnitId
+    storageUnitId,
+    expectedUnitIds,
+    expectedReceiptPreview
   });
 }

@@ -149,6 +149,9 @@ type IssueMaterialModalProps = {
   // The parent unit is complete at this operation (a finished unit looked
   // back at): nothing is issued to it, but its parts can still be unconsumed.
   issueBlocked?: boolean;
+  // Why it is blocked: the parent unit is on hold for an open quality issue,
+  // not complete here. Changes the notice's title only.
+  parentOnHold?: boolean;
   // Assembly view only: the step + 1-based unit the operator is on, stamped onto the
   // consume so issued quantities can be attributed per-unit/per-step even for a batch
   // parent (where all units share one lot entity). Omitted by the operation view.
@@ -197,6 +200,7 @@ function IssueMaterialBody({
   parentId,
   parentIdIsSerialized,
   issueBlocked = false,
+  parentOnHold = false,
   jobOperationStepId,
   unitNumber,
   trackedInputs = [],
@@ -747,10 +751,11 @@ function IssueMaterialBody({
       setActiveTab("select");
     }
   };
-  // biome-ignore lint/correctness/useExhaustiveDependencies: seeds once, when the async reads land
   useEffect(() => {
     if (!hasSeededSuggestionRef.current) seedSelection();
+    // oxlint-disable-next-line react/exhaustive-deps -- seeds once, when the async reads land
   }, [
+    // oxlint-disable-next-line react/exhaustive-deps -- seeds once, when the async reads land
     seedAllocation,
     trackingType,
     selectedBatchNumbers,
@@ -1675,7 +1680,11 @@ function IssueMaterialBody({
                 )}
               {issueBlocked && inventoryMode === "issue" && (
                 <Alert variant="warning">
-                  <AlertTitle>{t`This unit is complete here`}</AlertTitle>
+                  <AlertTitle>
+                    {parentOnHold
+                      ? t`This unit is on hold`
+                      : t`This unit is complete here`}
+                  </AlertTitle>
                   <AlertDescription>
                     {t`Pick an open unit to issue parts.`}
                   </AlertDescription>
@@ -2366,7 +2375,11 @@ function IssueMaterialBody({
               )}
               {issueBlocked && activeTab !== "unconsume" && (
                 <Alert variant="warning">
-                  <AlertTitle>{t`This unit is complete here`}</AlertTitle>
+                  <AlertTitle>
+                    {parentOnHold
+                      ? t`This unit is on hold`
+                      : t`This unit is complete here`}
+                  </AlertTitle>
                   <AlertDescription>
                     {t`Pick an open unit to issue parts. Parts already in this unit can still be unconsumed.`}
                   </AlertDescription>
@@ -2509,7 +2522,6 @@ function useSuggestedAllocation(args?: {
       ? `${args.itemId}:${args.locationId}:${args.quantity}:${args.operationId ?? ""}`
       : undefined;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on args identity
   useEffect(() => {
     if (args && key) {
       fetcher.load(
@@ -2521,6 +2533,7 @@ function useSuggestedAllocation(args?: {
         )
       );
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed on args identity
   }, [key]);
 
   return { data: fetcher.data?.data ?? [] };
@@ -2531,11 +2544,11 @@ function useSuggestedAllocation(args?: {
 function usePickedAllocation(jobMaterialId?: string) {
   const fetcher = useFetcher<{ data: SuggestedAllocationLot[]; error: null }>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on jobMaterialId
   useEffect(() => {
     if (jobMaterialId) {
       fetcher.load(path.to.api.pickedAllocation(jobMaterialId));
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed on jobMaterialId
   }, [jobMaterialId]);
 
   return {

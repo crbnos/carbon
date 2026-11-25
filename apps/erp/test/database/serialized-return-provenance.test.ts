@@ -5,6 +5,7 @@
 import { expect } from "vitest";
 import {
   assignReceiptReturnEntity,
+  getSerialNumbersForItem,
   assignShipmentLineEntity
 } from "../../app/modules/inventory/inventory.server";
 import {
@@ -25,7 +26,7 @@ import {
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
 import { operationContext, postgrestTest } from "./fixtures/local-supabase";
-import { createPackedShipment } from "./fixtures/packout-shipment";
+import { createPackedShipment, postPackedShipment } from "./fixtures/packout-shipment";
 import {
   createLinkedSerialReturn,
   createNormalAndWarrantyShipment,
@@ -383,6 +384,114 @@ postgrestTest(
       ).toEqual([
         { cost: 40, trackedEntityId: rich!.id, remainingQuantity: 1 }
       ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "an RMA ships the on-hold serial received from its customer back on the same order",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      await stampCutover(f);
+      const [unit] = await stockSerials(f, [40]);
+      const ctx = operationContext(f, client, USER);
+      const pick = (shipmentId: string, shipmentLineId: string) =>
+        assignShipmentLineEntity(ctx, {
+          trackingType: "serial",
+          shipmentId,
+          shipmentLineId,
+          trackedEntityId: unit!.id,
+          index: 0
+        });
+      // A production unit can name its job as provenance and its SKU via itemId.
+      await f.db
+        .updateTable("trackedEntity")
+        .set({ sourceDocument: "Job", sourceDocumentId: f.prefix + "-job" })
+        .where("companyId", "=", f.companyId)
+        .where("id", "=", unit!.id)
+        .execute();
+      const sale = await createPackedShipment(f, f.assemblyId, "sold");
+      expect(
+        (await pick(sale.shipmentId, sale.shipmentLineId)).error
+      ).toBeNull();
+      await postPackedShipment(f, sale, f.assemblyId, unit!.id);
+      const rma = await createLinkedSerialReturn(
+        f,
+        f.assemblyId,
+        sale.shipmentLineId
+      );
+      expect(
+        (
+          await assignReceiptReturnEntity(ctx, {
+            receiptId: rma.receiptId,
+            receiptLineId: rma.receiptLineId,
+            trackedEntityId: unit!.id,
+            index: 0
+          })
+        ).error
+      ).toBeNull();
+      const handles = handlesOf(f.ctx);
+      unwrap(
+        await invokePosting(
+          handles,
+          "post-receipt",
+          { type: "post", receiptId: rma.receiptId },
+          postReceipt
+        )
+      );
+      expect(
+        (
+          await setSalesReturnOrderLineDisposition(ctx, {
+            lineId: rma.returnLineId,
+            disposition: "Return to Customer"
+          })
+        ).error
+      ).toBeNull();
+      const options = await getSerialNumbersForItem(ctx, {
+        itemId: f.assemblyId,
+        salesReturnOrderId: rma.rmaId
+      });
+      expect(options.data).toEqual([
+        expect.objectContaining({ id: unit!.id, status: "On Hold" })
+      ]);
+      const ordinary = await createPackedShipment(f, f.assemblyId, "ordinary");
+      expect(
+        (await pick(ordinary.shipmentId, ordinary.shipmentLineId)).error
+      ).toBeTruthy();
+      const shipment = unwrap(
+        await invokeCreate(handles, {
+          type: "shipmentFromSalesReturnOrder",
+          salesReturnOrderId: rma.rmaId,
+          locationId: f.locationId
+        })
+      );
+      const line = await f.db
+        .selectFrom("shipmentLine")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("shipmentId", "=", shipment.id)
+        .where("lineId", "=", rma.returnLineId)
+        .executeTakeFirstOrThrow();
+      expect((await pick(shipment.id, line.id)).error).toBeNull();
+      unwrap(
+        await invokePosting(
+          handles,
+          "post-shipment",
+          { type: "post", shipmentId: shipment.id },
+          postShipment
+        )
+      );
+      const moves = await f.db
+        .selectFrom("itemLedger")
+        .select(["trackedEntityId", "quantity"])
+        .where("companyId", "=", f.companyId)
+        .where("documentId", "=", shipment.id)
+        .where("documentType", "=", "Sales Return Shipment")
+        .execute();
+      expect(moves).toEqual([{ trackedEntityId: unit!.id, quantity: -1 }]);
     } finally {
       await f.cleanup();
     }

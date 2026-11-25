@@ -33,7 +33,7 @@ import { searchList } from "./index.server";
 
 export const purchaseOrdersList = searchList({
   key: "purchase-orders",
-  permission: { view: "purchasing" },
+  gate: { "purchasing.purchaseOrders": "View" },
   paging: PURCHASE_ORDERS_PAGING,
   service: getPurchaseOrders,
   params: { status: "status", supplierId: "supplierId" }
@@ -41,21 +41,21 @@ export const purchaseOrdersList = searchList({
 
 export const supplierQuotesList = searchList({
   key: "supplier-quotes",
-  permission: { view: "purchasing" },
+  gate: { "purchasing.supplierQuotes": "View" },
   paging: SUPPLIER_QUOTES_PAGING,
   service: getSupplierQuotes
 });
 
 export const purchasingRfqsList = searchList({
   key: "purchasing-rfqs",
-  permission: { view: "purchasing" },
+  gate: { "purchasing.rfqs": "View" },
   paging: PURCHASING_RFQS_PAGING,
   service: getPurchasingRFQs
 });
 
 export const purchaseReturnOrdersList = searchList({
   key: "purchase-return-orders",
-  permission: { view: "purchasing" },
+  gate: { "purchasing.returns": "View" },
   paging: PURCHASE_RETURN_ORDERS_PAGING,
   service: getPurchaseReturnOrders,
   params: { status: "status", supplierId: "supplierId" }
@@ -63,14 +63,14 @@ export const purchaseReturnOrdersList = searchList({
 
 export const supplierStagesList = searchList({
   key: "supplier-stages",
-  permission: { view: "purchasing", role: "employee" },
+  gate: { "purchasing.supplierStages": "View" },
   paging: SUPPLIER_STAGES_PAGING,
   service: getSupplierStages
 });
 
 export const supplierTypesList = {
   key: "supplier-types",
-  permission: { view: "purchasing", role: "employee" },
+  gate: { "purchasing.types": "View" },
   ...SUPPLIER_TYPES_PAGING,
   // The list has no column filters: the loader never passed them.
   query: (client, companyId, { params, limit, cursor, exactCount, sorts }) =>
@@ -117,7 +117,7 @@ export async function withSupplierReportContacts<
 
 export const suppliersList = searchList({
   key: "suppliers",
-  permission: { view: "purchasing" },
+  gate: { "purchasing.suppliers": "View" },
   paging: SUPPLIERS_PAGING,
   service: getSuppliers,
   params: { type: "type", status: "status" },
@@ -127,7 +127,7 @@ export const suppliersList = searchList({
 
 export const leasesList = searchList({
   key: "leases",
-  permission: { view: "purchasing" },
+  gate: { "purchasing.leases": "View" },
   paging: LEASES_PAGING,
   service: getLeases
 });

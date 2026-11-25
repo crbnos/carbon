@@ -8,7 +8,7 @@ export const nestedObjectToPathObject = (
   path: string
 ): any => {
   if (Array.isArray(val)) {
-    // biome-ignore lint/suspicious/useIterableCallbackReturn: suppressed due to migration
+    // oxlint-disable-next-line array-callback-return -- suppressed due to migration
     val.forEach((v, index) =>
       nestedObjectToPathObject(v, acc, `${path}[${index}]`)
     );

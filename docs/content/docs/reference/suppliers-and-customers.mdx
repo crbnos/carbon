@@ -31,6 +31,8 @@ Both records carry the same satellite shape: **contacts**, **locations/addresses
 
 A contact needs a first name, a last name or an email. A contact with no email address can still go on a document, such as a purchase order, but Carbon cannot email that document to it. When you choose **Email** as **Send Via**, pick a contact that has an email address, or send without email.
 
+When you convert a won quote to a sales order, **Send Via** starts on what you chose when you finalized the quote: **Email** if you sent the quote by email, else **None**. When you confirm a sales order, **Send Via** starts on **None**, so nothing is emailed unless you choose **Email**. When **Email** is chosen, the dialog names the contact that gets the sales order.
+
 To keep emails required, turn on **Require an Email on Supplier Contacts** in **Settings → Purchasing**, or **Require an Email on Customer Contacts** in **Settings → Sales**. A new or edited contact then needs an email, and so does a contact imported from CSV. Contacts saved before the setting was turned on stay as they are until someone edits them.
 
 ## Tax

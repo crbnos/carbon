@@ -28,21 +28,22 @@ export const SAMPLE_JOB_TRAVELER = {
     salesOrderId: "so-1",
     salesOrderLineId: "sol-1",
     salesOrderReadableId: "SO-001188",
-    customFields: {},
-    notes: {
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-          content: [
-            {
-              type: "text",
-              text: "Handle finished parts with gloves to avoid fingerprints on the anodized surface."
-            }
-          ]
-        }
-      ]
-    }
+    customFields: {}
+  },
+  // The job's notes, as the traveler loader passes them.
+  notes: {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "Handle finished parts with gloves to avoid fingerprints on the anodized surface."
+          }
+        ]
+      }
+    ]
   },
   jobMakeMethod: { id: "jmm-1", version: 2 },
   jobOperations: [
@@ -59,8 +60,36 @@ export const SAMPLE_JOB_TRAVELER = {
       machineTime: 1.5,
       machineUnit: "Total Hours",
       targetQuantity: 100,
-      workInstruction: null,
-      jobOperationStep: []
+      workInstruction: {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: "Clamp on the soft jaws. Face side A first."
+              }
+            ]
+          }
+        ]
+      },
+      jobOperationStep: [
+        {
+          id: "step-0",
+          sortOrder: 1,
+          name: "Measure bore diameter",
+          description: {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: "Use the 20 mm bore gauge." }]
+              }
+            ]
+          }
+        }
+      ]
     },
     {
       id: "op-2",
@@ -93,6 +122,27 @@ export const SAMPLE_JOB_TRAVELER = {
       targetQuantity: 100,
       workInstruction: null,
       jobOperationStep: []
+    },
+    {
+      // Runs in an operation batch with other jobs' parts.
+      id: "op-4",
+      order: 4,
+      operationOrder: "After Previous",
+      description: "Stress relieve",
+      operationType: "Process",
+      setupTime: 0,
+      setupUnit: "Total Hours",
+      laborTime: 0,
+      laborUnit: "Total Hours",
+      machineTime: 4,
+      machineUnit: "Total Hours",
+      targetQuantity: 100,
+      workInstruction: null,
+      jobOperationStep: [],
+      jobOperationBatch: {
+        readableId: "BAT-000112",
+        notes: "Load parts flat on the rack."
+      }
     }
   ],
   customer: { id: "cust-1", name: "Globex Corporation" },

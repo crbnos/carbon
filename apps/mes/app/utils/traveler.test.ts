@@ -6,6 +6,9 @@ import { describe, expect, it } from "vitest";
 import {
   batchScanQuantity,
   captureIssueSerial,
+  confirmedTravelerStep,
+  readTravelerScreen,
+  travelerScreenParams,
   decideTravelerClaim,
   findScannedUnit,
   issueSerialChildren,
@@ -664,4 +667,17 @@ it("builds no Issue request on scanner Enter until every identity-only scan has 
   expect(issueSerialChildren([ordinary], "scan")).toEqual([
     { trackedEntityId: "other", expectedSerial: " PAD ", quantity: 1 }
   ]);
+});
+
+it("carries the assembly step through QR confirmation only for the original operation and output", () => {
+  const step = { jobOperationStepId: "step", unitNumber: 2 };
+  const params = travelerScreenParams({
+    operationId: "pack",
+    trackedEntityId: "output",
+    ...step
+  });
+  const screen = readTravelerScreen(new URLSearchParams(params.toString()));
+  expect(confirmedTravelerStep(screen, "pack", "output")).toEqual(step);
+  expect(confirmedTravelerStep(screen, "other", "output")).toEqual({});
+  expect(confirmedTravelerStep(screen, "pack", "replacement")).toEqual({});
 });

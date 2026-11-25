@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -14,8 +14,7 @@ import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getCurrencyByCode,
-  getExchangeRate,
-  resolveLineTaxes
+  getExchangeRate
 } from "~/modules/accounting/accounting.service";
 import {
   getSiblingQuotesForQuote,
@@ -45,16 +44,15 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Supplier Quotes`, to: path.to.supplierQuotes },
     (data) => data?.quote?.supplierQuoteId
-  ),
-  module: "purchasing"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.quote?.supplierQuoteId, "Supplier Quote");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, companyGroupId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { api, companyId, companyGroupId } = await authorize(request, {
+    "purchasing.supplierQuotes": "View"
   });
 
   const { id } = params;
@@ -111,7 +109,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null,
     // The tax a new price break takes: the supplier's code (or bare
     // percent), on the quote's date.
-    resolveLineTaxes(serviceRole, companyId, {
+    api.accounting.resolveLineTaxes({
       source: "purchase",
       supplierId: quote.data.supplierId,
       date: taxDate

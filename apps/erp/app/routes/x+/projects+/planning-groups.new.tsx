@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
@@ -21,8 +20,8 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "planning-group-new");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "projects"
+  const { client, companyId } = await authorize(request, {
+    "projects.planningGroups": "Create"
   });
 
   await requireFeature({
@@ -53,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (validation.error) return validationError(validation.error);
 
   const { id: _id, ...fields } = validation.data;
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const created = await api.projects.upsertPlanningGroup(fields);
 
   if (created.error?.category === "entitlement") {

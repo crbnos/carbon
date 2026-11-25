@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { PageGate } from "@carbon/database/access";
 import type { AssemblyStep } from "@carbon/viewer";
 import { isPlanFlagged } from "@carbon/viewer/steps";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -58,7 +59,6 @@ function getJobMethodTreeArrayToTree(items: JobMethod[]): JobMethodTreeItem[] {
       lookup[itemId] = { id: itemId, children: [] };
     }
 
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
     lookup[itemId]["data"] = item;
 
     const treeItem = lookup[itemId];
@@ -71,7 +71,6 @@ function getJobMethodTreeArrayToTree(items: JobMethod[]): JobMethodTreeItem[] {
         lookup[parentId] = { id: parentId, children: [] };
       }
 
-      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
       lookup[parentId]["children"].push(treeItem);
     }
   }
@@ -150,3 +149,15 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
     flagged: isPlanFlagged(step.warnings, step.motion) ? true : undefined
   };
 }
+
+/** `production.syncAssemblyToOperation`: the sync rewrites the job operation's steps as the system. */
+export const syncAssemblyToOperationPermission = {
+  "production.assemblies": "Edit",
+  "production.jobs": "Edit"
+} satisfies PageGate;
+
+/** `production.applyPlanningActions`: every change edits or cancels a job. */
+export const applyPlanningActionsPermission = {
+  "production.materialPlanning": "Edit",
+  "production.jobs": "Edit"
+} satisfies PageGate;

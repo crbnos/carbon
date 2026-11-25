@@ -110,9 +110,9 @@ msgstr "Vista de mantenimiento de {0}"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} de {1}"
 
@@ -254,7 +254,10 @@ msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} órdenes de trabajo"
 
 msgid "{scrapped} scrapped"
-msgstr ""
+msgstr "{scrapped} desechados"
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} está suspendida"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} en existencias, en ningún contenedor"
@@ -1332,7 +1335,7 @@ msgid "Flag issue"
 msgstr "Marcar incidencia"
 
 msgid "Flow chart view"
-msgstr ""
+msgstr "Vista de diagrama de flujo"
 
 msgid "Forgot to Clock Out?"
 msgstr "¿Olvidó fichar salida?"
@@ -1725,7 +1728,7 @@ msgid "Log completed for {0}"
 msgstr "Registrar completados para {0}"
 
 msgid "Log completed for {trackedEntityReadableId}"
-msgstr ""
+msgstr "Registro completado para {trackedEntityReadableId}"
 
 msgid "Log Rework"
 msgstr "Registrar retrabajo"
@@ -2145,7 +2148,7 @@ msgid "No unit"
 msgstr "Sin unidad"
 
 msgid "No unit selected"
-msgstr ""
+msgstr "Ninguna unidad seleccionada"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No hay stock de almacén registrado para este artículo. Aún puedes recogerlo — el disponible se volverá negativo hasta que se reconcilie el recuento."
@@ -2248,6 +2251,9 @@ msgstr "Más antiguo primero"
 msgid "On Hold"
 msgstr "Suspendido"
 
+msgid "On hold · {issueNumbers}"
+msgstr "Suspendida · {issueNumbers}"
+
 msgid "On its way"
 msgstr "En camino"
 
@@ -2306,7 +2312,7 @@ msgid "Open sub-assembly {0}: {1}"
 msgstr "Abrir subconjunto {0}: {1}"
 
 msgid "Open the operation to pick the unit"
-msgstr ""
+msgstr "Abra la operación para elegir la unidad"
 
 msgid "Operation"
 msgstr "Operación"
@@ -2466,10 +2472,10 @@ msgid "Pick a style, a color and a face."
 msgstr "Seleccione un estilo, un color y un rostro."
 
 msgid "Pick an open unit to issue parts."
-msgstr ""
+msgstr "Elija una unidad abierta para dar salida a piezas."
 
 msgid "Pick an open unit to issue parts. Parts already in this unit can still be unconsumed."
-msgstr ""
+msgstr "Elija una unidad abierta para dar salida a piezas. Las piezas que ya están en esta unidad todavía pueden revertirse."
 
 msgid "Pick the job. It shows with no hours until you add some."
 msgstr "Seleccione la orden de trabajo. Se muestra sin horas hasta que agregue algunas."
@@ -2630,6 +2636,9 @@ msgstr "Problema de Calidad"
 
 msgid "Quality issue created"
 msgstr "Problema de calidad creado"
+
+msgid "Quality rejected this unit for production."
+msgstr "Calidad rechazó esta unidad para producción."
 
 msgid "Quantity"
 msgstr "Cantidad"
@@ -3060,10 +3069,10 @@ msgid "Select a serial number to continue with this operation"
 msgstr "Seleccione un número de serie para continuar con esta operación"
 
 msgid "Select a unit"
-msgstr ""
+msgstr "Seleccione una unidad"
 
 msgid "Select a unit first"
-msgstr ""
+msgstr "Primero seleccione una unidad"
 
 msgid "Select an issue type"
 msgstr "Seleccione un tipo de problema"
@@ -3545,7 +3554,7 @@ msgid "This job has no bill rate. Ask the office to set it before the time is bi
 msgstr "Esta orden de trabajo no tiene una tarifa de facturación. Pida a la oficina que la establezca antes de que se facture el tiempo."
 
 msgid "This job has no operations"
-msgstr ""
+msgstr "Esta orden de trabajo no tiene operaciones"
 
 msgid "This label does not belong to a unit in this company"
 msgstr "Esta etiqueta no pertenece a una unidad de esta empresa"
@@ -3575,10 +3584,13 @@ msgid "This unit has used this correction its limit number of times. Scrap it or
 msgstr "Esta unidad ya ha usado esta corrección el número máximo de veces. Desperdíciala o abre una incidencia de calidad en su lugar."
 
 msgid "This unit is complete here"
-msgstr ""
+msgstr "Esta unidad está completa aquí"
 
 msgid "This unit is not part of this operation"
-msgstr ""
+msgstr "Esta unidad no forma parte de esta operación"
+
+msgid "This unit is on hold"
+msgstr "Esta unidad está suspendida"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Esta unidad será descartada permanentemente y se creará una unidad de reemplazo."
@@ -3779,7 +3791,7 @@ msgid "Until <0/>"
 msgstr "Hasta <0/>"
 
 msgid "Untitled"
-msgstr ""
+msgstr "Sin título"
 
 msgid "Up next"
 msgstr "Próximo"
@@ -3898,6 +3910,9 @@ msgstr "Pantallas del Centro de Trabajo"
 
 msgid "Work instructions"
 msgstr "Instrucciones de trabajo"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "El trabajo en esta unidad espera hasta que calidad cierre todos los problemas siguientes. Las demás unidades no se ven afectadas."
 
 msgid "Work Site"
 msgstr "Sitio de trabajo"

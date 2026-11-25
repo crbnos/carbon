@@ -70,9 +70,9 @@ export function useDeliveryDateCheck(line: DeliveryDateCheckLine) {
   // has stopped editing for CHECK_DEBOUNCE_MS.
   const [asked, setAsked] = useState({ url, controlKey });
   const debounceAsk = useDebounce(setAsked, CHECK_DEBOUNCE_MS);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `debounceAsk` is a new function on each render over the same timer, so only the line decides when to ask
   useEffect(() => {
     debounceAsk({ url, controlKey });
+    // oxlint-disable-next-line react/exhaustive-deps -- `debounceAsk` is a new function on each render over the same timer, so only the line decides when to ask
   }, [url, controlKey]);
 
   // A line that stops being checkable stops at once; only a new check waits.

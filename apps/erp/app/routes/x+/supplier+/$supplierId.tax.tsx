@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -15,22 +15,22 @@ import {
   getSupplierLocation,
   getSupplierLocations,
   getSupplierPayment,
-  getSupplierTax,
+  type getSupplierTax,
   updateSupplierTax
 } from "~/modules/purchasing/purchasing.service";
 import { SupplierTaxForm } from "~/modules/purchasing/ui/Supplier";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
+  const { client, companyId, api } = await authorize(request, {
+    "purchasing.suppliers": "View"
   });
 
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");
 
   const [supplierTax, suggestedTaxCode] = await Promise.all([
-    getSupplierTax(client, supplierId),
+    api.purchasing.getSupplierTax({ supplierId }),
     getSuggestedTaxCode(client, companyId, supplierId)
   ]);
 
@@ -79,8 +79,8 @@ async function getSuggestedTaxCode(
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "purchasing"
+  const { client, companyId, userId } = await authorize(request, {
+    "purchasing.suppliers": "Edit"
   });
 
   const { supplierId } = params;

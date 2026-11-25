@@ -764,7 +764,7 @@ export async function postCreditMemo(f: Fixture): Promise<string> {
   return memoId;
 }
 
-/** A job for one assembly, one operation at a work center, and one planned
+/** A job for an assembly, one operation at a work center, and one planned
  *  material: two of the part per assembly. `key` keeps two jobs of one
  *  fixture apart. */
 export async function jobFixture(f: Fixture, key = "1", quantity = 1) {

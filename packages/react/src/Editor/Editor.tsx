@@ -201,7 +201,6 @@ const Editor = ({
     };
   }, [uploadFn]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const mentionExtension = useMemo(() => {
     if (!mentions || mentions.length === 0) return null;
     // Use the first mention config - if multiple are needed with different
@@ -214,14 +213,15 @@ const Editor = ({
       items: () => mentionItemsRef.current
     });
     // Only depend on mentions existence and char, not items content
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [mentions?.[0]?.char]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: key on token list, not identity
   const tokenHighlightExtension = useMemo(
     () =>
       highlightTokens
         ? MergeTokenHighlight.configure({ knownTokens: highlightTokens })
         : null,
+    // oxlint-disable-next-line react/exhaustive-deps -- key on token list, not identity
     [highlightTokens?.join(" ")]
   );
 

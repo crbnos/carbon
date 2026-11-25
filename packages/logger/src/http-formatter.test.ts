@@ -15,7 +15,7 @@ function format(properties: Record<string, unknown>) {
     timestamp: Date.now(),
     properties
   } as never);
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: strips ANSI escapes
+  // oxlint-disable-next-line no-control-regex -- strips ANSI escapes
   return line.replace(/\x1b\[\d+m/g, "").trimEnd();
 }
 

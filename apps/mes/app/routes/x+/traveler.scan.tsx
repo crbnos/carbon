@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -14,7 +14,11 @@ import {
   scanTraveler
 } from "~/services/traveler.server";
 import { path, TRAVELER_PARAM } from "~/utils/path";
-import { parseTravelerCode, travelerIssueSerial } from "~/utils/traveler";
+import {
+  parseTravelerCode,
+  travelerIssueSerial,
+  travelerScreenParams
+} from "~/utils/traveler";
 
 const scanValidator = z.object({
   issueId: z.string().min(1).max(100).optional(),
@@ -46,7 +50,7 @@ export type TravelerScanResponse = {
  */
 export async function action({ request, context }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await authorize(request, {});
   const { locationId, effectiveUserId } = context.get(userContext) ?? {};
 
   const parsed = scanValidator.safeParse(
@@ -118,10 +122,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         "This label does not belong to a unit in this company"
       );
     case "claim": {
-      const params = new URLSearchParams();
-      if (operationId) params.set("operationId", operationId);
-      if (screen.trackedEntityId)
-        params.set("trackedEntityId", screen.trackedEntityId);
+      const params = travelerScreenParams({ operationId, ...screen });
       return reply(
         200,
         path.to.traveler(resolution.unit.id) +

@@ -167,14 +167,26 @@ postgrestTest(
     try {
       const job = await jobWithShelf(f, "default-destination");
       const key = `crbn_test_${randomUUID()}`;
-      await f.db
+      const apiKey = await f.db
         .insertInto("apiKey")
         .values({
           name: "Job receiver",
           companyId: f.companyId,
           createdBy: USER,
           keyHash: createHash("sha256").update(key).digest("hex"),
-          scopes: JSON.stringify({ production_update: [f.companyId] })
+          scopes: JSON.stringify({})
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await f.db
+        .insertInto("permission")
+        .values({
+          apiKeyId: apiKey.id,
+          companyId: f.companyId,
+          module: "Production",
+          page: "production.jobs",
+          level: "Edit",
+          createdBy: USER
         })
         .execute();
       const client = localApiKeyClient(key)!;

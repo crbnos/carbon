@@ -117,7 +117,7 @@ function UpgradeOverlayStickyGradient({
         className
       )}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: optional mouse shortcut over the panel; its actions are real buttons in UpgradeOverlayActions */}
+      {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- optional mouse shortcut over the panel; its actions are real buttons in UpgradeOverlayActions */}
       <div
         onClick={onClick}
         className="pointer-events-auto px-4 w-full flex flex-col items-center text-center gap-3 max-w-md mx-auto cursor-pointer rounded-md"

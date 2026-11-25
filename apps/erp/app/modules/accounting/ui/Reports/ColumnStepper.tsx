@@ -16,9 +16,9 @@ import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 function useColumnStep(count: number, initial = count - 1) {
   const [index, setIndex] = useState(Math.max(0, initial));
   // A new period range or column set starts again on its default column.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset per column count only
   useEffect(() => {
     setIndex(Math.max(0, initial));
+    // oxlint-disable-next-line react/exhaustive-deps -- reset per column count only
   }, [count]);
   return [
     Math.min(Math.max(0, index), Math.max(0, count - 1)),

@@ -2,11 +2,9 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { Gate } from "@carbon/database/access";
 import type { Operator } from "@carbon/utils";
-import type {
-  RequiredPermission,
-  WorkflowCatalog
-} from "../definition/catalog";
+import type { WorkflowCatalog } from "../definition/catalog";
 import type { CardRefusal, DataOperation } from "../definition/data-operations";
 import type { WorkflowNode } from "../definition/schema";
 import type {
@@ -166,6 +164,6 @@ export type NodeResult =
 
 export interface NodeExecutor<N extends WorkflowNode> {
   /** What the owner must hold; undefined when the node touches nothing. */
-  permission(node: N, catalog: WorkflowCatalog): RequiredPermission | undefined;
+  permission(node: N, catalog: WorkflowCatalog): Gate | undefined;
   execute(node: N, ctx: RuntimeContext): Promise<NodeResult>;
 }

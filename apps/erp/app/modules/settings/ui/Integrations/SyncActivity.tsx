@@ -292,7 +292,7 @@ export function SyncActivity({
 }: SyncActivityProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const canUpdate = permissions.can("update", "settings");
+  const canUpdate = permissions.has({ "settings.integrations": "Edit" });
   const { formatRelativeTime } = useDateFormatter();
   const [, setParams] = useUrlParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -697,7 +697,7 @@ const driftAmountFormatter = new Intl.NumberFormat(undefined, {
  * Compact tie-out status card, styled after the drift banner above it:
  * amber when any period × account cell carries a nonzero delta, quiet
  * otherwise. Links to the accounting module's tie-out page (which requires
- * accounting_view). Renders nothing when no tie-out rows exist.
+ * View on Sync Tie-Out). Renders nothing when no tie-out rows exist.
  */
 function TieOutSummary({
   tieOut

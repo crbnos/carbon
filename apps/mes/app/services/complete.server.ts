@@ -7,9 +7,10 @@
 // authenticates and passes its clients in.
 
 import type { Permission } from "@carbon/auth";
-import { error, hasPermission, success } from "@carbon/auth";
+import { error, success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { holdsGate } from "@carbon/database/access";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -25,14 +26,17 @@ import {
   abilityBlockRefusal,
   finishJobOperation,
   getRequiredScanShortfall,
-  insertProductionQuantity,
-  insertProductionQuantityIfCurrent
+  insertProductionQuantity
 } from "~/services/operations.service";
 import { autoPrintOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
-import { resolveWorkUnit } from "~/services/work-unit.server";
+import {
+  resolveWorkUnit,
+  SELECT_UNIT_FIRST
+} from "~/services/work-unit.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
+import { insertProductionQuantityIfCurrent } from "./production-quantity.server";
 
 const log = getLogger("mes");
 
@@ -107,6 +111,21 @@ export async function completeOperationQuantity(
     return data(
       {},
       await flash(request, { ...error(null, work.message), flash: "error" })
+    );
+  }
+  // A serial Complete form describes the unit the operator was viewing. A
+  // stale or empty selection must not silently complete its only eligible sibling.
+  if (
+    work.kind === "unit" &&
+    work.via !== "named" &&
+    validation.data.trackingType === "Serial"
+  ) {
+    return data(
+      {},
+      await flash(request, {
+        ...error(null, SELECT_UNIT_FIRST),
+        flash: "error"
+      })
     );
   }
   const trackingType =
@@ -373,7 +392,7 @@ export async function completeOperationQuantity(
     if (expectedQuantityComplete !== undefined) {
       // The page sent the completed quantity it showed: record the unit only
       // if no other request (a second tab, a resend) recorded it meanwhile.
-      if (!hasPermission(permissions, "production", "create", companyId)) {
+      if (!holdsGate(permissions, { "production.jobs": "Create" }, companyId)) {
         return data(
           {},
           await flash(request, {
@@ -551,6 +570,7 @@ export async function scrapOperationQuantity(
     { companyId, userId },
     {
       type: "jobOperationScrap",
+      pairingId: validation.data.pairingId,
       jobOperationId,
       quantity,
       scrapReasonId,

@@ -133,6 +133,94 @@ describe("reconnectStrategy", () => {
   });
 });
 
+/**
+ * A client that counts what it is sent. `get` answers "v" when `up`, and
+ * rejects when not; `status` is what ioredis reports for the connection.
+ */
+function countingClient(state: { up: boolean; status: string }) {
+  const sent: string[] = [];
+  const answer = (command: string) => () => {
+    sent.push(command);
+    return state.up
+      ? Promise.resolve("v")
+      : Promise.reject(new Error("ECONNREFUSED"));
+  };
+  const client = {
+    get status() {
+      return state.status;
+    },
+    getBuiltinCommands: () => ["get", "set", "keys"],
+    on: () => {
+      sent.push("on");
+      return "listening";
+    },
+    get: answer("get"),
+    set: answer("set"),
+    keys: answer("keys"),
+    pipeline: () => ({ exec: answer("exec") })
+  } as unknown as Redis;
+  return { client, sent };
+}
+
+describe("a Redis that is known to be down", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("is not sent the next commands: they get their fallback at once", async () => {
+    const state = { up: false, status: "reconnecting" };
+    const { client, sent } = countingClient(state);
+    const redis = withResilience(client);
+
+    expect(await redis.get("a")).toBeNull();
+    expect(await redis.set("a", "1")).toBeNull();
+    expect(await redis.keys("*")).toEqual([]);
+    expect(await redis.pipeline().exec()).toEqual([]);
+
+    expect(sent).toEqual(["get"]);
+  });
+
+  it("is sent commands again once the connection is ready", async () => {
+    const state = { up: false, status: "reconnecting" };
+    const { client, sent } = countingClient(state);
+    const redis = withResilience(client);
+    await redis.get("a");
+    await redis.get("a");
+
+    state.up = true;
+    state.status = "ready";
+
+    expect(await redis.get("a")).toBe("v");
+    // The success cleared it: a later reconnect alone skips nothing.
+    state.status = "reconnecting";
+    expect(await redis.get("a")).toBe("v");
+    expect(sent).toEqual(["get", "get", "get"]);
+  });
+
+  it("keeps sending on a ready connection after one command fails", async () => {
+    const state = { up: false, status: "ready" };
+    const { client, sent } = countingClient(state);
+    const redis = withResilience(client);
+
+    expect(await redis.get("a")).toBeNull();
+    expect(await redis.get("a")).toBeNull();
+
+    expect(sent).toEqual(["get", "get"]);
+  });
+
+  it("still runs what is not a Redis command", async () => {
+    const state = { up: false, status: "reconnecting" };
+    const { client, sent } = countingClient(state);
+    const redis = withResilience(client);
+    await redis.get("a");
+
+    expect(redis.on("error", () => undefined)).toBe("listening");
+    expect(sent).toEqual(["get", "on"]);
+  });
+});
+
 describe("Ratelimit fail-open when Redis is down", () => {
   beforeEach(() => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined);

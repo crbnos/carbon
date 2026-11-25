@@ -56,10 +56,7 @@ import { useScrapParts } from "~/components/JobOperation/components/ScrapPartsMo
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
-import {
-  type AbilityShortfall,
-  isSerialEntityIncompleteForOperation
-} from "~/services/operations.service";
+import type { AbilityShortfall } from "~/services/operations.service";
 import type {
   InspectionGauge,
   InspectionMeasurement,
@@ -71,8 +68,15 @@ import type {
   ProductionEvent,
   TrackedEntity
 } from "~/services/types";
+import {
+  canPostPassedSamples,
+  getPostableInspectionUnits,
+  getSerialCompletionCandidates,
+  inspectionEntityEligible
+} from "~/utils/inspectionOutcome";
 import { OriginInput, useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
+import type { UnitHolds } from "~/utils/unitHold";
 import { operationUnits } from "~/utils/workUnit";
 import type { AllocatableUnit, FailedFeatureSummary } from "./DispositionModal";
 import DispositionModal from "./DispositionModal";
@@ -83,10 +87,7 @@ import {
 } from "./InspectionLotLayout";
 import ScanInspectionSample from "./ScanInspectionSample";
 import type { DrawingBalloonRow, InspectionLot } from "./useInspectionLotState";
-import {
-  isUnsampleableEntityStatus,
-  useInspectionLotState
-} from "./useInspectionLotState";
+import { useInspectionLotState } from "./useInspectionLotState";
 
 type WorkType = "Setup" | "Labor" | "Machine";
 
@@ -114,6 +115,7 @@ type InspectionViewProps = {
   model: { modelUploadId: string; modelPath: string | null } | null;
   issueTypes: IssueTypeListItem[];
   trackedEntities: TrackedEntity[];
+  unitHolds: UnitHolds;
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
   events: ProductionEvent[];
@@ -150,6 +152,7 @@ export function InspectionView({
   model,
   issueTypes,
   trackedEntities,
+  unitHolds,
   requiresSerialTracking,
   requiresBatchTracking,
   events,
@@ -226,14 +229,10 @@ export function InspectionView({
 
   // Outcome bookkeeping, mirrored from the disposition route's server-side
   // buckets (which recompute and clamp — these drive the header affordances).
-  const opAttrKey = `Operation ${operationId}`;
   const entityOpenAtOp = useCallback(
-    (entity: TrackedEntity) => {
-      if (isUnsampleableEntityStatus(entity.status)) return false;
-      const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
-      return !attributes[opAttrKey];
-    },
-    [opAttrKey]
+    (entity: TrackedEntity) =>
+      inspectionEntityEligible(entity, operationId, unitHolds),
+    [operationId, unitHolds]
   );
   const linkedSampleIdSet = useMemo(
     () => new Set(linkedSampleIds),
@@ -266,27 +265,34 @@ export function InspectionView({
       (operation.quantityReworked ?? 0)
   );
 
-  // Passed but not yet posted — the "Complete passed (n)" affordance.
+  // The server uses the same candidate list when it posts. The grid can have
+  // newer saved verdicts than the loader, so preview those statuses.
+  const candidateState = {
+    samples: samples.map((sample) => ({
+      id: sample.id,
+      trackedEntityId: sample.trackedEntityId,
+      status: sampleStatuses.get(sample.id) ?? sample.status
+    })),
+    linkedSampleIds: linkedSampleIdSet,
+    entities: trackedEntities,
+    entityEligible: (id: string) => {
+      const entity = entityById.get(id);
+      return !!entity && entityOpenAtOp(entity);
+    }
+  };
   const completablePassed = isSerial
-    ? samples.filter((sample) => {
-        if (sampleStatuses.get(sample.id) !== "Passed") return false;
-        if (linkedSampleIdSet.has(sample.id)) return false;
-        const entity = sample.trackedEntityId
-          ? entityById.get(sample.trackedEntityId)
-          : undefined;
-        return entity != null && entityOpenAtOp(entity);
-      }).length
-    : Math.min(
-        Math.max(0, passes - linkedProductionQuantity),
-        Math.max(0, opRemaining)
-      );
-  const showCompletePassed = !isLocked && completablePassed > 0;
-
-  // What Accept will complete: the open remainder, minus failed units.
+    ? getPostableInspectionUnits(candidateState, inspection).length
+    : Math.min(Math.max(0, passes - linkedProductionQuantity), opRemaining);
+  const showCompletePassed =
+    !abilityBlocked &&
+    canPostPassedSamples(inspection.status, isSerial) &&
+    completablePassed > 0;
   const acceptRemaining = isSerial
-    ? trackedEntities.filter(
-        (entity) => entityOpenAtOp(entity) && !failedEntityIds.has(entity.id)
-      ).length
+    ? getSerialCompletionCandidates(candidateState, {
+        includePending: true,
+        includeSampleless: true,
+        excludeEntityIds: failedEntityIds
+      }).length
     : opRemaining;
 
   // Serial units the reject/partial allocator can route: Reject condemns the
@@ -379,9 +385,10 @@ export function InspectionView({
   // only when one is left open here; never one by position. A batch parent
   // shares one lot entity across every unit.
   const openSerialUnits = requiresSerialTracking
-    ? operationUnits(trackedEntities, operation.operationQuantity).filter(
-        (entity) => isSerialEntityIncompleteForOperation(entity, operationId)
-      )
+    ? operationUnits(trackedEntities, operation.operationQuantity, {
+        operationId,
+        holds: unitHolds
+      }).filter(entityOpenAtOp)
     : [];
   const soleSerialUnitId =
     openSerialUnits.length === 1 ? openSerialUnits[0]!.id : undefined;
@@ -443,11 +450,12 @@ export function InspectionView({
             <Trans>Add Sample</Trans>
           </button>
         ) : null}
-        {!isLocked && completablePassed > 0 ? (
+        {showCompletePassed ? (
           <CompletePassedButton
             pairings={pairings}
             inspectionId={inspection.id}
             operationId={operationId}
+            accepted={lotClosed && inspection.status === "Passed"}
             count={completablePassed}
             eventIds={eventIds}
             gridBusy={gridBusy}
@@ -564,6 +572,7 @@ export function InspectionView({
                 pairings={pairings}
                 inspectionId={inspection.id}
                 operationId={operationId}
+                accepted={lotClosed && inspection.status === "Passed"}
                 count={completablePassed}
                 eventIds={eventIds}
                 gridBusy={gridBusy}
@@ -726,6 +735,7 @@ export function InspectionView({
           jobId={jobId}
           isOpen={reworkModal.isOpen}
           onClose={reworkModal.onClose}
+          unitHolds={unitHolds}
           trackedEntities={trackedEntities as never}
           parentIsSerial={requiresSerialTracking}
           parentIsBatch={requiresBatchTracking}
@@ -865,6 +875,7 @@ function CompletePassedButton({
   inspectionId,
   operationId,
   count,
+  accepted,
   eventIds,
   gridBusy,
   variant = "header"
@@ -873,6 +884,7 @@ function CompletePassedButton({
   inspectionId: string;
   operationId: string;
   count: number;
+  accepted: boolean;
   eventIds: ProductionEventIdFields;
   // A reading still saving could turn a passed unit into a failed one.
   gridBusy: boolean;
@@ -881,7 +893,9 @@ function CompletePassedButton({
   const { t } = useLingui();
   const fetcher = useFetcher();
   const busy = fetcher.state !== "idle" || gridBusy;
-  const label = t`Complete (${count} passed)`;
+  const label = accepted
+    ? `${t`Complete`} (${count})`
+    : t`Complete (${count} passed)`;
 
   if (variant === "bar") {
     return (
@@ -1112,7 +1126,6 @@ function AutoTimer({
     Machine: t`Machine`
   }[workType];
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot on open
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
@@ -1125,6 +1138,7 @@ function AutoTimer({
     if (workCenterId) fd.set("workCenterId", workCenterId);
     fetcher.submit(fd, { method: "post", action: path.to.productionEvent });
     setPhase("submitted");
+    // oxlint-disable-next-line react/exhaustive-deps -- one-shot on open
   }, []);
 
   useEffect(() => {

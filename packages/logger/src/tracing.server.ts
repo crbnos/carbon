@@ -46,7 +46,7 @@ const PROVIDER = Symbol.for("carbon.tracing.provider");
 // Everything below is inert unless an OTLP endpoint is configured.
 const enabled = Boolean(
   process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
-    process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+  process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
 );
 
 export type TracingOptions = {

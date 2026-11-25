@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
+import { respond } from "@carbon/api/carbon.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { asWeekNumbering } from "@carbon/database/sequence-tokens";
 import { validator } from "@carbon/form";
 import {
@@ -43,7 +44,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const api = await carbon(request);
+  const { api } = await authorize(request, { "settings.company": "View" });
   const change = await api.settings.getBaseCurrencyChange({});
   // Unknown blockers keep the base currency read-only.
   return { baseCurrencyChange: change.error ? null : change.data };
@@ -57,7 +58,7 @@ const companySettingsForm = z.discriminatedUnion("intent", [
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(companySettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
+  const { api } = await authorize(args.request);
   if (input.data.intent === "weekNumbering") {
     return api.settings.updateSequenceSettings({
       sequenceWeekNumbering: input.data.sequenceWeekNumbering

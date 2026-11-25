@@ -64,7 +64,6 @@ import { ElementCardNode } from "./graph/ElementCardNode";
 import type { LinkEdgeData } from "./graph/LinkEdge";
 import { LinkEdge, linkDash } from "./graph/LinkEdge";
 import { getProjectGraphStore } from "./graph/store";
-import { TreeBreadcrumb } from "./graph/TreeBreadcrumb";
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
@@ -76,6 +75,7 @@ import {
   type TreeBox
 } from "./graph/tree-layout";
 import { TREE_MIN_ZOOM, treeViewport } from "./graph/tree-viewport";
+import { TreeBreadcrumb } from "./graph/TreeBreadcrumb";
 
 const nodeTypes: NodeTypes = { box: ElementBoxNode, card: ElementCardNode };
 const edgeTypes: EdgeTypes = { link: LinkEdge };
@@ -280,53 +280,47 @@ function ElementGraphCanvas({
     });
 
     const edges: Edge[] = [
-      ...layout.edges.map(
-        (edge): Edge => ({
-          id: edge.id,
-          source: edge.source,
-          sourceHandle: edge.sourceHandle,
-          target: edge.target,
-          targetHandle: "in",
-          type: "default",
-          selectable: false,
-          zIndex: 1,
-          style: {
-            stroke: "hsl(var(--border))",
-            strokeWidth: 1.5,
-            opacity: lit ? 0.3 : 1
-          }
-        })
-      ),
+      ...layout.edges.map((edge): Edge => ({
+        id: edge.id,
+        source: edge.source,
+        sourceHandle: edge.sourceHandle,
+        target: edge.target,
+        targetHandle: "in",
+        type: "default",
+        selectable: false,
+        zIndex: 1,
+        style: {
+          stroke: "hsl(var(--border))",
+          strokeWidth: 1.5,
+          opacity: lit ? 0.3 : 1
+        }
+      })),
       ...links
         .filter(
           (link) =>
             visibleCards.has(link.fromElementId) &&
             visibleCards.has(link.toElementId)
         )
-        .map(
-          (link): Edge<LinkEdgeData> => ({
-            id: link.id,
-            source: link.fromElementId,
-            sourceHandle: "link-out",
-            target: link.toElementId,
-            targetHandle: "link-in",
-            type: "link",
-            selectable: false,
-            zIndex: 1,
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              color: link.suspectSince
-                ? "rgb(245 158 11)"
-                : "hsl(var(--primary))"
-            },
-            data: {
-              linkType: link.linkType,
-              label: labels[link.linkType].forward,
-              isSuspect: !!link.suspectSince,
-              isDimmed: !!lit && !lit.linkIds.has(link.id)
-            }
-          })
-        )
+        .map((link): Edge<LinkEdgeData> => ({
+          id: link.id,
+          source: link.fromElementId,
+          sourceHandle: "link-out",
+          target: link.toElementId,
+          targetHandle: "link-in",
+          type: "link",
+          selectable: false,
+          zIndex: 1,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: link.suspectSince ? "rgb(245 158 11)" : "hsl(var(--primary))"
+          },
+          data: {
+            linkType: link.linkType,
+            label: labels[link.linkType].forward,
+            isSuspect: !!link.suspectSince,
+            isDimmed: !!lit && !lit.linkIds.has(link.id)
+          }
+        }))
     ];
 
     // A parent renders before its children: boxes first, then the cards.
@@ -383,7 +377,6 @@ function ElementGraphCanvas({
   const boxSignature = layout.boxes
     .map((box) => `${box.id}:${box.x}:${box.y}:${box.width}:${box.height}`)
     .join("|");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the box signature is the trigger; fitTree reads the boxes from a ref.
   useEffect(() => {
     if (nodesInitialized) fitTree();
   }, [nodesInitialized, boxSignature, fitTree]);

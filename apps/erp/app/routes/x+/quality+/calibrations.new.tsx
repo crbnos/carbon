@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog, useUrlParams } from "@carbon/react";
@@ -15,19 +15,15 @@ import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { gaugeCalibrationRecordValidator } from "~/modules/quality/quality.models";
-import {
-  getQualityFiles,
-  upsertGaugeCalibrationRecord
-} from "~/modules/quality/quality.service";
+import { getQualityFiles } from "~/modules/quality/quality.service";
 import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordForm";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "quality"
+  const { client, companyId } = await authorize(request, {
+    "quality.records": "Create"
   });
-
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   const gaugeId = url.searchParams.get("gaugeId");
@@ -49,8 +45,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+  const { api } = await authorize(request, {
+    "quality.records": "Create"
   });
 
   const formData = await request.formData();
@@ -69,11 +65,11 @@ export async function action({ request }: ActionFunctionArgs) {
       ? "Fail"
       : "Pass";
 
-  const createGauge = await upsertGaugeCalibrationRecord(client, {
+  // The service function moves the gauge (owned by Quality → Gauges) as the
+  // system, after its own records permission.
+  const createGauge = await api.quality.createGaugeCalibrationRecord({
     ...d,
     inspectionStatus,
-    companyId,
-    createdBy: userId,
     customFields: setCustomFields(formData)
   });
 

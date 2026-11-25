@@ -5,5 +5,8 @@
   // Preview extension runs TypeScript 7's language server instead. After
   // installing it, set "js/ts.experimental.useTsgo": true (or run
   // "TypeScript Native Preview: Enable TypeScript 7 Language Server").
-  "recommendations": ["biomejs.biome", "TypeScriptTeam.native-preview"]
+  "recommendations": [
+    "oxc.oxc-vscode",
+    "TypeScriptTeam.native-preview"
+  ]
 }

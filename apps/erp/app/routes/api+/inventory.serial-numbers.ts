@@ -2,16 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  filterStockShipmentSerials,
-  getSerialNumbersForItem
-} from "~/modules/inventory/inventory.service";
-import { getDatabaseClient } from "~/services/database.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { companyId, api } = await authorize(request);
 
   const url = new URL(request.url);
   const itemId = url.searchParams.get("itemId");
@@ -23,16 +18,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const stockShipment = url.searchParams.get("stockShipment") === "true";
-  const result = await getSerialNumbersForItem(client, {
+  return await api.inventory.getSerialNumbersForItem({
     itemId,
     companyId,
-    stockShipment
+    stockShipment,
+    salesReturnOrderId: url.searchParams.get("salesReturnOrderId") ?? undefined
   });
-  if (!result.data || !stockShipment) return result;
-  const data = await filterStockShipmentSerials(
-    getDatabaseClient(),
-    companyId,
-    result.data
-  );
-  return { ...result, data };
 }

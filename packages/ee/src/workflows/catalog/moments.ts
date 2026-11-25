@@ -10,17 +10,17 @@ import type { MomentDeclarationLike } from "./build";
 export const WORKFLOW_MOMENTS = {
   "production.jobReleased": {
     label: "A job is released",
-    permission: "production",
+    table: "job",
     outputs: { job: t.entity("job"), releasedBy: t.entity("user") }
   },
   "production.jobHeld": {
     label: "A job is put on hold",
-    permission: "production",
+    table: "job",
     outputs: { job: t.entity("job"), heldBy: t.entity("user") }
   },
   "production.jobOperationCompleted": {
     label: "A job operation is completed",
-    permission: "production",
+    table: "jobOperation",
     outputs: {
       job: t.entity("job"),
       jobOperation: t.entity("jobOperation"),
@@ -29,17 +29,17 @@ export const WORKFLOW_MOMENTS = {
   },
   "sales.quoteSent": {
     label: "A quote is sent",
-    permission: "sales",
+    table: "quote",
     outputs: { quote: t.entity("quote"), sentBy: t.entity("user") }
   },
   "sales.quoteAccepted": {
     label: "A quote is accepted",
-    permission: "sales",
+    table: "quote",
     outputs: { quote: t.entity("quote"), salesOrder: t.entity("salesOrder") }
   },
   "sales.deliveryDateOverridden": {
     label: "A user keeps a sales order date that can't be met",
-    permission: "sales",
+    table: "salesOrder",
     outputs: {
       salesOrder: t.entity("salesOrder"),
       overriddenBy: t.entity("user")
@@ -47,17 +47,17 @@ export const WORKFLOW_MOMENTS = {
   },
   "inventory.receiptPosted": {
     label: "A receipt is posted",
-    permission: "inventory",
+    table: "receipt",
     outputs: { receipt: t.entity("receipt"), postedBy: t.entity("user") }
   },
   "inventory.shipmentPosted": {
     label: "A shipment is posted",
-    permission: "inventory",
+    table: "shipment",
     outputs: { shipment: t.entity("shipment"), postedBy: t.entity("user") }
   },
   "invoicing.salesInvoicePosted": {
     label: "A sales invoice is posted",
-    permission: "invoicing",
+    table: "salesInvoice",
     outputs: {
       salesInvoice: t.entity("salesInvoice"),
       postedBy: t.entity("user")
@@ -65,7 +65,7 @@ export const WORKFLOW_MOMENTS = {
   },
   "invoicing.purchaseInvoicePosted": {
     label: "A purchase invoice is posted",
-    permission: "invoicing",
+    table: "purchaseInvoice",
     outputs: {
       purchaseInvoice: t.entity("purchaseInvoice"),
       postedBy: t.entity("user")

@@ -8,7 +8,9 @@
 // not. Monthly starts 2026-09-07: 7 Sep – 6 Oct is invoiced, 7 Oct – 6 Nov is
 // not.
 
+import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { connectLocalTestDatabase } from "./local-database";
 import type { PostingHandles } from "@carbon/api/postings.server";
@@ -19,10 +21,18 @@ export async function rentalFixture(options?: {
   units?: number; // default 1
   billingTiming?: "Advance" | "Arrears"; // default "Advance"
   billingCycle?: "Calendar Month" | "Monthly"; // default "Calendar Month"
+  /** The agreement's own invoicing mode; default null (the company's). */
+  invoiceAutomation?: Database["public"]["Enums"]["invoiceAutomation"] | null;
+  /** A fixed term ending on this date (Calendar Month): one Pending period
+   *  per month from November through it. Default null (open-ended). */
+  endDate?: string;
+  /** Unbilled charges on the first unit. Default none. */
+  charges?: { chargeDate: string; amount: number }[];
 }): Promise<{
   db: Kysely<KyselyDatabase>;
   ctx: PostingHandles;
   companyId: string;
+  customerId: string;
   agreementId: string;
   agreementReadableId: string;
   locationId: string;
@@ -37,6 +47,9 @@ export async function rentalFixture(options?: {
   const units = options?.units ?? 1;
   const billingTiming = options?.billingTiming ?? "Advance";
   const billingCycle = options?.billingCycle ?? "Calendar Month";
+  const invoiceAutomation = options?.invoiceAutomation ?? null;
+  const endDate = options?.endDate ?? null;
+  const charges = options?.charges ?? [];
   const periods =
     billingCycle === "Monthly"
       ? [
@@ -47,6 +60,21 @@ export async function rentalFixture(options?: {
           { start: "2026-09-01", end: "2026-09-30", days: 30 },
           { start: "2026-10-01", end: "2026-10-31", days: 31 }
         ];
+  // A fixed term's later months, cut in full as activation cuts them.
+  if (endDate !== null) {
+    const last = parseDate(endDate);
+    let start = parseDate("2026-11-01");
+    while (start.compare(last) <= 0) {
+      const monthEnd = start.add({ months: 1 }).subtract({ days: 1 });
+      const end = monthEnd.compare(last) > 0 ? last : monthEnd;
+      periods.push({
+        start: start.toString(),
+        end: end.toString(),
+        days: end.day
+      });
+      start = start.add({ months: 1 });
+    }
+  }
 
   const db = await connectLocalTestDatabase();
   const prefix = `rentfx-${crypto
@@ -120,6 +148,7 @@ export async function rentalFixture(options?: {
         { table: "shipment", name: "Shipment", prefix: "SHP-", companyId },
         { table: "receipt", name: "Receipt", prefix: "RCV-", companyId },
         { table: "fixedAsset", name: "Fixed Asset", prefix: "FA", companyId },
+        { table: "creditMemo", name: "Credit Memo", prefix: "CM-", companyId },
         {
           table: "journalEntry",
           name: "Journal Entry",
@@ -230,9 +259,10 @@ export async function rentalFixture(options?: {
         currencyCode: "USD",
         discountRate: 0,
         startDate: periods[0]!.start,
-        endDate: null,
+        endDate,
         billingCycle,
         billingTiming,
+        invoiceAutomation,
         status: "Active",
         companyId,
         createdBy: USER
@@ -274,6 +304,21 @@ export async function rentalFixture(options?: {
         )
       )
       .execute();
+    if (charges.length > 0) {
+      await trx
+        .insertInto("rentalAgreementCharge")
+        .values(
+          charges.map((charge, i) => ({
+            rentalAgreementLineId: lineIds[0]!,
+            description: `Charge ${i + 1}`,
+            chargeDate: charge.chargeDate,
+            amount: charge.amount,
+            companyId,
+            createdBy: USER
+          }))
+        )
+        .execute();
+    }
   });
 
   const ctx = { db, companyId, userId: USER };
@@ -282,6 +327,7 @@ export async function rentalFixture(options?: {
     db,
     ctx,
     companyId,
+    customerId,
     agreementId,
     agreementReadableId,
     locationId,

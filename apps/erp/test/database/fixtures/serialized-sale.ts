@@ -18,7 +18,11 @@ import { handlesOf } from "./handles";
 import { confirmPackoutCommand, createPairedJob } from "./paired-job";
 import { createPackedShipment } from "./packout-shipment";
 
-export async function stockSerials(f: Fixture, costs?: number[]) {
+export async function stockSerials(
+  f: Fixture,
+  costs?: number[],
+  firstIndex = 0
+) {
   await f.db
     .updateTable("item")
     .set({ itemTrackingType: "Serial" })
@@ -26,7 +30,7 @@ export async function stockSerials(f: Fixture, costs?: number[]) {
     .where("id", "=", f.assemblyId)
     .execute();
   const serials = (costs ?? [40, 22]).map((cost, index) => {
-    const label = costs ? index : cost;
+    const label = costs ? firstIndex + index : cost;
     return { cost, id: f.prefix + "-sn-" + label, readableId: "SN-" + label };
   });
   const common = { itemId: f.assemblyId, companyId: f.companyId, quantity: 1 };

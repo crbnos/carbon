@@ -15,8 +15,7 @@ export const meta = moduleMeta("Shipment");
 
 export const handle: Handle = {
   breadcrumb: msg`Inventory`,
-  to: path.to.inventory,
-  module: "inventory"
+  to: path.to.inventory
 };
 
 export default function ShipmentRoute() {

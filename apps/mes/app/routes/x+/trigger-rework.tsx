@@ -2,9 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  triggerCorrectionPermission,
+  triggerReworkPermission
+} from "@carbon/api/postings";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { holdsGate } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -19,21 +24,21 @@ const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId, caller, permissions } = await requirePermissions(
-    request,
-    {}
-  );
+  const { companyId, userId, caller, permissions } = await authorize(request);
   // Both postings run as the system, so they check nothing about the caller.
   // An operator on the floor may send a unit back; an API key needs the
-  // production update scope, the postings' own rule
-  // (`triggerReworkPermission`, `triggerCorrectionPermission`).
+  // postings' own rules.
   if (
     caller === "apiKey" &&
-    !permissions.production?.update?.includes(companyId)
+    !holdsGate(
+      permissions,
+      { ...triggerReworkPermission, ...triggerCorrectionPermission },
+      companyId
+    )
   ) {
     return data(
       {},
-      await flash(request, error(null, "This API key cannot update production"))
+      await flash(request, error(null, "This API key cannot edit jobs"))
     );
   }
 

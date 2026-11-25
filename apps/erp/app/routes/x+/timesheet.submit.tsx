@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
+import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect, weekStartOf } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -39,7 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const api = await carbon(request);
+  const { api } = await authorize(request);
   const result = await api.projects.submitTimesheetWeek({
     weekStart: weekStartOf(from),
     certificationText:

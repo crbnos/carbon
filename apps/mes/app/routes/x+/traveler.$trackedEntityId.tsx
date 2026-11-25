@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Button, Card, CardContent, toast } from "@carbon/react";
 import { displaySerial, redirect } from "@carbon/utils";
@@ -19,6 +19,7 @@ import { resolveTravelerScan } from "~/services/traveler.server";
 import type { Handle } from "~/utils/handle";
 import { pageMeta } from "~/utils/meta";
 import { path, TRAVELER_PARAM } from "~/utils/path";
+import { readTravelerScreen, confirmedTravelerStep } from "~/utils/traveler";
 import { postTravelerScan } from "~/utils/travelerScan";
 
 export const handle: Handle = {
@@ -30,21 +31,22 @@ export const meta: MetaFunction = () => pageMeta("Traveler");
 // Read-only: a phone camera opens this page with a GET, so it never issues.
 // A scanner posts to `/x/traveler/scan` instead, which claims in one scan.
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await authorize(request, {});
   const { locationId, effectiveUserId } = context.get(userContext) ?? {};
   const trackedEntityId = params.trackedEntityId;
   if (!trackedEntityId) return { kind: "notFound" as const };
 
-  const paramsOnScreen = new URL(request.url).searchParams;
-  const operationId = paramsOnScreen.get("operationId");
-  const heldUnitId = paramsOnScreen.get("trackedEntityId");
+  const screen = readTravelerScreen(new URL(request.url).searchParams);
   const resolution = await resolveTravelerScan(getCarbonServiceRole(), {
     companyId,
     locationId: locationId ?? null,
     employeeId: effectiveUserId ?? userId,
     trackedEntityId,
-    at: operationId
-      ? { operationId, trackedEntityId: heldUnitId ?? undefined }
+    at: screen.operationId
+      ? {
+          operationId: screen.operationId,
+          trackedEntityId: screen.trackedEntityId
+        }
       : undefined
   });
   if (resolution.kind === "open") {
@@ -52,9 +54,7 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
       `${path.to.operation(resolution.operationId)}?trackedEntityId=${resolution.trackedEntityId}&${TRAVELER_PARAM}`
     );
   }
-  return resolution.kind === "claim"
-    ? { ...resolution, heldUnitId }
-    : resolution;
+  return resolution.kind === "claim" ? { ...resolution, screen } : resolution;
 }
 
 export default function TravelerRoute() {
@@ -113,7 +113,7 @@ export default function TravelerRoute() {
             unit={result.unit}
             options={result.options}
             auto={result.auto}
-            heldUnitId={result.heldUnitId}
+            screen={result.screen}
           />
         )}
         {result.kind === "refuse" && (
@@ -192,12 +192,12 @@ function ClaimChooser({
   unit,
   options,
   auto,
-  heldUnitId
+  screen
 }: {
   unit: Unit;
   options: ClaimOption[];
   auto: boolean;
-  heldUnitId: string | null;
+  screen: ReturnType<typeof readTravelerScreen>;
 }) {
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -207,7 +207,8 @@ function ClaimChooser({
     options.find((option) => option.operationId === selectedId) ?? options[0];
 
   const needsUnit =
-    selected?.laterSerial && selected.parentTrackedEntityId !== heldUnitId;
+    selected?.laterSerial &&
+    selected.parentTrackedEntityId !== screen.trackedEntityId;
   const start = async () => {
     if (!selected) return;
     if (needsUnit) {
@@ -216,6 +217,11 @@ function ClaimChooser({
     }
     setPending(true);
     const result = await postTravelerScan({
+      ...confirmedTravelerStep(
+        screen,
+        selected.operationId,
+        selected.parentTrackedEntityId
+      ),
       code: unit.id,
       expectedSerial: unit.readableId,
       operationId: selected.operationId,

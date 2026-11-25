@@ -21,7 +21,7 @@ const STEP: CatalogIntegration = {
   },
   outputs: { result: t.string },
   batchable: false,
-  permission: { module: "workflows", action: "update" },
+  permission: { "workflows.workflows": "Edit" },
   piece: { name: "google-calendar", action: "create_google_calendar_event" }
 };
 
@@ -94,8 +94,7 @@ describe("integrationExecutor", () => {
 
   it("gates on the permission its catalog entry carries", () => {
     expect(integrationExecutor.permission(node(), catalogWith(STEP))).toEqual({
-      module: "workflows",
-      action: "update"
+      "workflows.workflows": "Edit"
     });
     expect(
       integrationExecutor.permission(node(), catalogWith(undefined))

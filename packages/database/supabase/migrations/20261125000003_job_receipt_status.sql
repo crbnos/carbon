@@ -10,9 +10,9 @@ DECLARE
   v_completed boolean;
 BEGIN
   -- Production staff can receive jobs even when their role cannot read itemLedger.
-  PERFORM public.assert_company_access(p_company_id, 'production_update');
+  PERFORM public.assert_company_access(p_company_id, 'production.jobs_update');
   PERFORM util.post_job_receipt(
-    p_job_id, p_quantity_complete, p_storage_unit_id, p_location_id, p_company_id, p_user_id, p_expected_serials, false
+    p_job_id, p_quantity_complete, p_storage_unit_id, p_location_id, p_company_id, p_user_id, p_expected_serials, false, NULL, NULL
   );
   SELECT status IN ('Completed', 'Closed') INTO STRICT v_completed
     FROM public.job WHERE id = p_job_id AND "companyId" = p_company_id;

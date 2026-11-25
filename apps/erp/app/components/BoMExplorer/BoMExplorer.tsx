@@ -165,7 +165,7 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
   } = useTree({
     tree,
     collapsedIds,
-    // biome-ignore lint/suspicious/noEmptyBlockStatements: selection is URL-driven
+    // oxlint-disable-next-line no-empty-function -- selection is URL-driven
     onSelectedIdChanged: () => {},
     estimatedRowHeight: () => (isPhone ? 48 : 32),
     parentRef,
@@ -544,7 +544,7 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container */}
+          {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container */}
           <div className={rowClassName} onClick={() => onNodeClick(node)}>
             {content}
           </div>
@@ -565,7 +565,7 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
         delay={200}
         closeDelay={100}
         render={
-          // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container
+          // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container
           <div
             key={node.id}
             className={rowClassName}
@@ -596,7 +596,6 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
 function getOnshapeState(node: BoMNode, hasOnshape: boolean) {
   if (!hasOnshape) return null;
   // @ts-expect-error -- externalId is untyped JSON
-  // biome-ignore lint/complexity/useLiteralKeys: untyped JSON access
   return node.data.externalId?.["onshapeData"]?.["State"] ?? null;
 }
 

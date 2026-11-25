@@ -38,3 +38,36 @@ export function loadDbTableColumns(root: string): Map<string, Set<string>> {
   }
   return out;
 }
+
+/**
+ * Each public TABLE's columns with their generated type text (`Row:` blocks
+ * between `public.Tables` and `public.Views`), e.g. `closeStatus` →
+ * `Database["public"]["Enums"]["periodCloseStatus"]`. Views are left out: the
+ * checks that read this judge writes, and a view is never written.
+ */
+export function loadDbTableColumnTypes(
+  root: string
+): Map<string, Map<string, string>> {
+  const contents = readFileSync(
+    join(root, "packages/database/src/types.ts"),
+    "utf-8"
+  );
+  const start = contents.indexOf("\n  public: {\n    Tables: {\n");
+  const end = contents.indexOf("\n    Views: {\n", start);
+  const tables =
+    start === -1 || end === -1 ? "" : contents.slice(start, end + 1);
+  const out = new Map<string, Map<string, string>>();
+  for (const m of tables.matchAll(
+    /\n {6}(\w+): \{\n {8}Row: \{\n([\s\S]*?)\n {8}\}\n/g
+  )) {
+    const [, table, block] = m;
+    if (!table || !block || out.has(table)) continue;
+    const fields = new Map(
+      [...block.matchAll(/^ {10}(\w+): (.+)$/gm)].map(
+        (f) => [f[1] as string, (f[2] as string).trim()] as const
+      )
+    );
+    if (fields.size > 0) out.set(table, fields);
+  }
+  return out;
+}

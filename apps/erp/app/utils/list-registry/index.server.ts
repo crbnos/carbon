@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { requirePermissions } from "@carbon/auth/auth.server";
+import type { Gate } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Cursor, Paging } from "../cursor";
@@ -46,11 +46,6 @@ export type ListPaging = {
   exactCount?: boolean;
 };
 
-export type ListPermission = Omit<
-  Parameters<typeof requirePermissions>[1],
-  "bypassRls"
->;
-
 export type ListQueryResult<TRow> = {
   data: TRow[] | null;
   error: unknown;
@@ -68,7 +63,7 @@ export type ListQueryContext = ListPaging & {
   filters: Filter[];
   /**
    * The company's group, when the caller already has it (a loader's
-   * `requirePermissions`). A group-scoped list reads it with
+   * `authorize`). A group-scoped list reads it with
    * `resolveCompanyGroupId`, which looks it up only when it is absent.
    */
   companyGroupId?: string;
@@ -87,9 +82,11 @@ export type ListDefinition<
 > = Paging & {
   /** The list's key, for example "sales-orders". */
   key: string;
-  /** The loader's permission check, without `bypassRls`. */
-  permission: ListPermission;
-  /** The loader's query for one page. */
+  /**
+   * The loader's gate (`authorize`), without `bypassRls`: the page the list
+   * is on, `{ "sales.salesOrders": "View" }`.
+   */
+  gate: Gate;
   query: (
     client: SupabaseClient<Database>,
     companyId: string,
@@ -121,7 +118,6 @@ export type ListPage<TRow> = {
   error: unknown;
 };
 
-// One file per module. A module batch adds its entries to its own file only.
 export const LIST_REGISTRY: Record<string, ListDefinition> = {
   ...accountingLists,
   ...documentsLists,
@@ -235,7 +231,6 @@ export async function resolveCompanyGroupId(
   };
 }
 
-/** A URL param the list passes to its service: its name, or a reader. */
 type ParamReader = string | ((params: URLSearchParams) => unknown);
 
 /**
@@ -247,7 +242,7 @@ type ParamReader = string | ((params: URLSearchParams) => unknown);
  * ```ts
  * export const salesOrdersList = searchList({
  *   key: "sales-orders",
- *   permission: { view: "sales" },
+ *   gate: { "sales.salesOrders": "View" },
  *   paging: SALES_ORDERS_PAGING,
  *   service: getSalesOrders,
  *   params: { status: "status", customerId: "customerId" }
@@ -263,7 +258,7 @@ export function searchList<
   TOut extends Record<string, unknown> = TRow
 >({
   key,
-  permission,
+  gate,
   paging,
   service,
   params: readers = {},
@@ -271,7 +266,7 @@ export function searchList<
   exportValues
 }: {
   key: string;
-  permission: ListPermission;
+  gate: Gate;
   paging: Paging;
   service: (
     client: SupabaseClient<Database>,
@@ -284,7 +279,7 @@ export function searchList<
 }): ListDefinition<TRow, TOut> {
   return {
     key,
-    permission,
+    gate,
     ...paging,
     ...(rows ? { rows } : {}),
     ...(exportValues ? { exportValues } : {}),

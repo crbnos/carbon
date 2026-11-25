@@ -107,7 +107,7 @@ export async function confirmPackoutCommand(
       }))
     };
   }
-  if (input.type === "jobOperationSerialComplete") {
+  if ((input.type === "jobOperationSerialComplete" || input.type === "jobOperationScrap") && input.trackedEntityId) {
     const pair = await f.db
       .selectFrom("jobUnitPairing")
       .select("id")

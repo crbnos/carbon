@@ -5,8 +5,8 @@
 import PeriodRunsPage from "./PeriodRunsPage";
 import RevenueRecognitionRunDocuments from "./RevenueRecognitionRunDocuments";
 import RevenueRecognitionRunHeader from "./RevenueRecognitionRunHeader";
-import RevenueRecognitionRunStatus from "./RevenueRecognitionRunStatus";
 import RevenueRecognitionRunsTable from "./RevenueRecognitionRunsTable";
+import RevenueRecognitionRunStatus from "./RevenueRecognitionRunStatus";
 
 export type {
   RunRentalAgreement,

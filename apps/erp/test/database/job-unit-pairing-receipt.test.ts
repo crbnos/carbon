@@ -10,6 +10,7 @@ import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
   type Fixture,
+  seed,
   USER,
   unwrap
 } from "./fixtures/always-post";
@@ -18,6 +19,7 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
+import { orderOutsideOperation, receive as receiveOutside } from "./fixtures/outside-processing";
 import { confirmPackoutCommand, createPairedJob } from "./fixtures/paired-job";
 import { receiveProductionPair } from "./fixtures/packout-production";
 import { shipPackedUnit } from "./fixtures/packout-shipment";
@@ -325,6 +327,112 @@ databaseTest(
       await Promise.all(pending);
       await observer.destroy();
       await erp.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the final supplier receipt receives the serials logged at the preceding in-house operation",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const production = await receiveProductionPair(f);
+      const job = await createPairedJob(f, production.productionItemId, 2);
+      const outsideId = `${f.prefix}-outside-pack`;
+      await seed(f, async (trx) => {
+        const pack = await trx
+          .selectFrom("jobOperation")
+          .select(["jobMakeMethodId", "processId"])
+          .where("companyId", "=", f.companyId)
+          .where("id", "=", job.operationId)
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("jobOperation")
+          .values({
+            ...pack,
+            id: outsideId,
+            jobId: job.jobId,
+            order: 2,
+            description: "Coat",
+            operationType: "Outside Processing",
+            operationQuantity: 2,
+            targetQuantity: 2,
+            status: "Waiting",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("jobOperationDependency")
+          .values({
+            operationId: outsideId,
+            dependsOnId: job.operationId,
+            jobId: job.jobId,
+            companyId: f.companyId
+          })
+          .execute();
+      });
+      const order = await orderOutsideOperation(
+        { ...f, assemblyId: job.salesItemId },
+        { jobId: job.jobId, operationId: outsideId },
+        "coat",
+        [2],
+        5
+      );
+      for (const source of [production.first, production.second]) {
+        const output = await f.db
+          .selectFrom("trackedEntity")
+          .select("id")
+          .where("companyId", "=", f.companyId)
+          .where("itemId", "=", job.salesItemId)
+          .where(sql<boolean>`attributes->>'Job' = ${job.jobId}`)
+          .where("readableId", "is", null)
+          .executeTakeFirstOrThrow();
+        await post(f, {
+          type: "trackedEntitiesToOperation",
+          jobOperationId: job.operationId,
+          materialId: job.materialId,
+          parentTrackedEntityId: output.id,
+          children: [{ trackedEntityId: source.id!, quantity: 1 }]
+        });
+        await post(f, {
+          type: "jobOperationSerialComplete",
+          jobOperationId: job.operationId,
+          trackedEntityId: output.id,
+          quantity: 1
+        });
+      }
+      // Log Quantity and Finish are separate on operations that do not auto-finish.
+      await f.db
+        .updateTable("jobOperation")
+        .set({ status: "Done", updatedBy: USER })
+        .where("id", "=", job.operationId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      await receiveOutside(f, order.purchaseOrderId, 1);
+      expect(
+        (await getJobReceiptSnapshot(f.db, job.jobId, f.companyId))
+          ?.pairedSerials
+      ).toEqual([]);
+      await receiveOutside(f, order.purchaseOrderId, 1);
+      const received = await f.db
+        .selectFrom("itemLedger as ledger")
+        .innerJoin("trackedEntity as unit", "unit.id", "ledger.trackedEntityId")
+        .select(["unit.readableId", "ledger.quantity"])
+        .where("ledger.companyId", "=", f.companyId)
+        .where("ledger.documentId", "=", job.jobId)
+        .where("ledger.documentType", "=", "Job Receipt")
+        .orderBy("unit.readableId")
+        .execute();
+      expect(received).toEqual(
+        [production.first, production.second].map((unit) => ({
+          readableId: unit.serial,
+          quantity: 1
+        }))
+      );
+    } finally {
       await f.cleanup();
     }
   }

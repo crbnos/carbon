@@ -61,7 +61,6 @@ const SalesInvoiceProperties = () => {
   const { company } = useUser();
   const exchangeRateFetcher = useFetcher<typeof exchangeRateAction>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (field: keyof SalesInvoice, value: string | null) => {
       if (value === routeData?.salesInvoice[field]) {
@@ -78,10 +77,10 @@ const SalesInvoiceProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [invoiceId, routeData?.salesInvoice]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -96,6 +95,7 @@ const SalesInvoiceProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [invoiceId]
   );
 
@@ -109,7 +109,7 @@ const SalesInvoiceProperties = () => {
       ? optimisticAssignment
       : routeData?.salesInvoice?.assignee;
 
-  const canUpdate = permissions.can("update", "sales");
+  const canUpdate = permissions.has({ "invoicing.salesInvoices": "Edit" });
   const isLocked = isSalesInvoiceLocked(routeData?.salesInvoice?.status);
   const isDisabled = !canUpdate || isLocked;
 

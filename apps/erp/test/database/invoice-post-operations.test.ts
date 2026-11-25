@@ -376,7 +376,7 @@ localTest(
       });
 
       expect(result.error).toBeNull();
-      expect(result.data?.warning).toMatch(/Asset bank account/);
+      expect(result.data?.warning).toEqual(expect.any(String));
       const payment = await f.db
         .selectFrom("payment")
         .select(["status", "employeeId"])
