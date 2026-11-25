@@ -130,34 +130,41 @@ const admits = (
     : { keys: [permissionKey(page, action)], modules: [] };
 
 /**
- * Shared tables whose SELECT reads some of their children back: item's portal
- * branches read supplierPart and customerPartToItem. A write policy on such a
- * child cannot reach the parent through a subquery, because Postgres runs the
- * parent's SELECT inside it, which reads the child again, and refuses the
- * policy as infinite recursion. Its last hop reads the parent's branch column
- * through a SECURITY DEFINER lookup instead. That skips nothing: the hop
- * still needs a page key in the row's company, and whoever holds one reads
- * the parent anyway.
+ * The children of `item` that item's SELECT reads back: its portal branches
+ * read supplierPart and customerPartToItem. A write policy on one of them
+ * cannot subquery `item`, because Postgres runs item's SELECT inside the
+ * subquery, which reads the child again, and refuses the policy as infinite
+ * recursion. Their hop to `item` is `itemTypeHop`.
  */
-const READ_BACK: Readonly<
-  Record<
-    string,
-    {
-      children: readonly string[];
-      column: string;
-      lookup: (
-        id: RawBuilder<unknown>,
-        company: RawBuilder<unknown>
-      ) => RawBuilder<unknown>;
-    }
-  >
-> = {
-  item: {
-    children: ["supplierPart", "customerPartToItem"],
-    column: "type",
-    lookup: (id, company) => sql`get_item_type(${id}, ${company})`
-  }
-};
+const ITEM_CHILDREN_READ_BACK: ReadonlySet<string> = new Set([
+  "supplierPart",
+  "customerPartToItem"
+]);
+
+/** A hop to the parent row `from.fk` names, in `inCompany`, where `rest` holds. */
+const parentHop = (
+  from: string,
+  fk: string,
+  to: string,
+  inCompany: RawBuilder<unknown>,
+  rest: RawBuilder<unknown>
+) =>
+  sql`EXISTS (SELECT 1 FROM ${sql.id("public", to)} WHERE ${sql.ref(`${to}.id`)} = ${sql.ref(`${from}.${fk}`)} AND ${sql.ref(`${to}.companyId`)} = ${inCompany} AND ${rest})`;
+
+/**
+ * The hop to `item` without reading `item`: `get_item_type` (SECURITY
+ * DEFINER) answers the item's type, as a one-row table named `item` so the
+ * type branches in `rest` read `item.type` as they do behind a subquery. It
+ * skips nothing: each branch still needs a page key in the row's company, and
+ * whoever holds one reads the item anyway.
+ */
+const itemTypeHop = (
+  from: string,
+  fk: string,
+  inCompany: RawBuilder<unknown>,
+  rest: RawBuilder<unknown>
+) =>
+  sql`EXISTS (SELECT 1 FROM (SELECT get_item_type(${sql.ref(`${from}.${fk}`)}, ${inCompany}) AS ${sql.id("type")}) AS ${sql.id("item")} WHERE ${rest})`;
 
 /**
  * A shared table's rows, one branch per page: the page's rows and the page's
@@ -185,16 +192,8 @@ const branches = (
     })
   );
   if (place.kind === "shared") return arms;
-  const readBack = READ_BACK[place.parent]?.children.includes(row.table)
-    ? READ_BACK[place.parent]
-    : undefined;
-  if (
-    readBack &&
-    place.branches.some((branch) => branch.column !== readBack.column)
-  )
-    throw new Error(
-      `authz: ${place.parent}'s lookup reads ${readBack.column}, but a branch of ${row.table} checks another column`
-    );
+  const readsItemType =
+    place.parent === "item" && ITEM_CHILDREN_READ_BACK.has(row.table);
   const hop = (
     i: number,
     from: string,
@@ -202,10 +201,9 @@ const branches = (
   ): RawBuilder<unknown> => {
     const [fk, to] = place.path[i] as readonly [string, string];
     const last = i + 1 === place.path.length;
+    if (last && readsItemType) return itemTypeHop(from, fk, inCompany, arms);
     const rest = last ? arms : hop(i + 1, to, sql.ref(`${to}.companyId`));
-    if (last && readBack)
-      return sql`EXISTS (SELECT 1 FROM (SELECT ${readBack.lookup(sql.ref(`${from}.${fk}`), inCompany)} AS ${sql.id(readBack.column)}) AS ${sql.id(to)} WHERE ${rest})`;
-    return sql`EXISTS (SELECT 1 FROM ${sql.id("public", to)} WHERE ${sql.ref(`${to}.id`)} = ${sql.ref(`${from}.${fk}`)} AND ${sql.ref(`${to}.companyId`)} = ${inCompany} AND ${rest})`;
+    return parentHop(from, fk, to, inCompany, rest);
   };
   return hop(0, row.ref, company);
 };

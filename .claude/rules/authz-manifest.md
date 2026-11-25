@@ -122,7 +122,7 @@ which page owns a table, so a rule names only what differs from the default.
   its readers) in the row's company. The parent's SELECT reads the child (`item`'s portal
   branches read `supplierPart`), so a lookup back made Postgres refuse both as recursive.
   `rules.test.ts` fails on any cycle of SELECT policies.
-- A child the parent's SELECT reads back (`READ_BACK` in `rules.ts`: `item` →
+- A child the parent's SELECT reads back (`ITEM_CHILDREN_READ_BACK` in `rules.ts`: `item` →
   `supplierPart`, `customerPartToItem`) cannot write through a subquery on the parent either:
   the subquery runs the parent's SELECT, which reads the child again, and every write is
   refused as infinite recursion. Its last hop reads the branch column through a SECURITY
