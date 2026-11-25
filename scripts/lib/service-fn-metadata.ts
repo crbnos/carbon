@@ -223,8 +223,6 @@ export interface LeafDocs {
   destructive: boolean;
   /** `@mcp read`: changes nothing, whatever its permission names. */
   read: boolean;
-  /** `@mcp write`: a write whose gate names only view (its route's own gate). */
-  write: boolean;
 }
 
 /** The leaf's TSDoc: the summary, `@remarks`, and `@mcp [destructive]`. */
@@ -260,9 +258,9 @@ export function leafDocs(leaf: ServiceFnLeaf): LeafDocs {
   const mcp = tags.filter((tag) => tag.getTagName() === "mcp");
   if (mcp.length > 1) throw new Error(`${where}: more than one @mcp tag`);
   const modifier = mcp[0]?.getCommentText()?.trim() ?? "";
-  if (!["", "destructive", "read", "write"].includes(modifier)) {
+  if (modifier !== "" && modifier !== "destructive" && modifier !== "read") {
     throw new Error(
-      `${where}: @mcp takes nothing, "read", "write" or "destructive", not "${modifier}"`
+      `${where}: @mcp takes nothing, "read" or "destructive", not "${modifier}"`
     );
   }
   if (mcp.length > 0 && !title) {
@@ -284,8 +282,7 @@ export function leafDocs(leaf: ServiceFnLeaf): LeafDocs {
     params,
     published: mcp.length > 0,
     destructive: modifier === "destructive",
-    read: modifier === "read",
-    write: modifier === "write"
+    read: modifier === "read"
   };
 }
 
@@ -626,12 +623,10 @@ function alternativesOf(gate: AnyGate): [string, string][][] {
 function classify(
   actions: PermissionAction[],
   destructive: boolean,
-  read = false,
-  write = false
+  read = false
 ): Classification {
   if (read) return "READ";
   if (destructive || actions.includes("delete")) return "DESTRUCTIVE";
-  if (write) return "WRITE";
   return actions.length > 0 && actions.every((a) => a === "view")
     ? "READ"
     : "WRITE";
@@ -718,13 +713,6 @@ export function buildServiceFnTools(
     }
     const { permission, actions } = leafPermission(leaf);
     const writes = actions.filter((action) => action !== "view");
-    if (docs.write && writes.length > 0) {
-      // @mcp write is for a write gated on view alone; on a gate that names a
-      // write it changes nothing and hides why it is there.
-      throw new Error(
-        `${where}: @mcp write on a function whose permission names ${writes.join(", ")}; drop "write"`
-      );
-    }
     if (docs.read && writes.length > 0) {
       // A READ tool is offered as safe to run unasked; a permission that
       // names a write says the function may change something.
@@ -768,12 +756,7 @@ export function buildServiceFnTools(
       {
         name: leaf.path.join("_"),
         module: leaf.path[0]!,
-        classification: classify(
-          actions,
-          docs.destructive,
-          docs.read,
-          docs.write
-        ),
+        classification: classify(actions, docs.destructive, docs.read),
         title: docs.title,
         description: docs.description,
         permission,

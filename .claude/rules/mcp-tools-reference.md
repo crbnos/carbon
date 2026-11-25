@@ -138,9 +138,7 @@ any other value export in a server file fails generation.
 - **Classification**: View alone → READ; Full → DESTRUCTIVE; else WRITE.
   `@mcp read` forces READ, for a read gated on `"employee"`; on a gate whose
   level holds create, update or delete it fails generation, since a READ is
-  offered as safe to run unasked. `@mcp write` forces WRITE, for a write
-  gated on View because its route has only ever required View; on a gate whose
-  level holds a write it fails generation, and it never lowers DESTRUCTIVE.
+  offered as safe to run unasked.
   `@mcp destructive` forces DESTRUCTIVE.
 - **Input schema**: the TYPE of `run`'s input parameter, through
   `typeToJsonSchema` (`scripts/lib/response-schema.ts`). A field whose type

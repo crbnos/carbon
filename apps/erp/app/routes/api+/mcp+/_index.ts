@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ManifestEntry } from "@carbon/api";
-import { originOf } from "@carbon/api/service-fn.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { createCatalogSearch, type McpServerDeps } from "@carbon/ee/mcp";
 import { serveMcpRequest } from "@carbon/ee/mcp.server";
@@ -18,7 +17,7 @@ import {
   findOAuthToken,
   oauthContext
 } from "../v1+/lib/authenticate.server";
-import type { AuthedContext, Authenticated } from "../v1+/lib/base.server";
+import type { AuthedContext } from "../v1+/lib/base.server";
 
 // The MCP engine lives in `@carbon/ee/mcp.server` and takes the dispatch, the
 // manifest and one catalog search index for the process as injected deps —
@@ -138,7 +137,7 @@ function make401Response(request: Request): Response {
 }
 
 async function resolveAuth(request: Request): Promise<{
-  ctx: Authenticated;
+  ctx: AuthedContext;
   request: Request;
 }> {
   const authHeader = request.headers.get("Authorization");
@@ -156,17 +155,19 @@ async function resolveAuth(request: Request): Promise<{
           throw make429Response(rl.reset, rl.remaining);
         }
 
-        const ctx = await oauthContext(identity);
+        const ctx = await oauthContext(identity, request);
         if (ctx) return { ctx, request };
       }
 
       throw make401Response(request);
     }
 
-    // Fall back to carbon-key auth
+    // Fall back to carbon-key auth. Same helper as the v1 HTTP transport; the
+    // MCP engine gets the request with the key as its `carbon-key` header.
+    const ctx = await apiKeyContext(request, token);
     const headers = new Headers(request.headers);
     headers.set("carbon-key", token);
-    request = new Request(request, { headers });
+    return { ctx, request: new Request(request, { headers }) };
   }
 
   // No Authorization header at all — return 401 for OAuth discovery
@@ -174,8 +175,6 @@ async function resolveAuth(request: Request): Promise<{
     throw make401Response(request);
   }
 
-  // `request` here carries the carbon-key header for both entry forms
-  // (`Bearer crbn_…` was rewritten above). Same helper as the v1 HTTP transport.
   const rawKey = request.headers.get("carbon-key") ?? "";
   return {
     ctx: await apiKeyContext(request, rawKey),
@@ -184,8 +183,7 @@ async function resolveAuth(request: Request): Promise<{
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { ctx: authed, request: authedRequest } = await resolveAuth(request);
-  const ctx: AuthedContext = { ...authed, origin: originOf(request) };
+  const { ctx, request: authedRequest } = await resolveAuth(request);
   addLogContext({
     companyId: ctx.companyId,
     userId: ctx.userId,

@@ -43,7 +43,7 @@ that defines it: `~/modules/sales/sales.models`, never `~/modules/sales`.
   Name it `<verb><Entity>` (`getCustomers`, `createJob`, `deleteJobOperation`).
   Renaming it renames the public tool: list it in the changelog.
 - A const is published (MCP, HTTP, docs) only when its TSDoc has `@mcp`
-  (`@mcp read`, `@mcp write`, `@mcp destructive`). The summary line is the title, `@remarks`
+  (`@mcp read`, `@mcp destructive`). The summary line is the title, `@remarks`
   the description, `@param name - text` a field's description, `@returns` the
   response. See `conventions-services.md`.
 - A permission the row decides (the page of an item's type) is a helper

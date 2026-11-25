@@ -33,12 +33,10 @@ export interface AuthedContext {
   /** The user's role in the company, as their entry point resolved it; `null`
    *  for an API key. */
   role: "employee" | null;
-  /** Where the request came from (`originOf`), set by the HTTP and MCP
-   *  routes from its headers. A workflow passes `NO_ORIGIN`. */
+  /** Where the request came from, read from its headers when it was
+   *  authenticated (`apiKeyContext`, `oauthContext`). A workflow passes
+   *  `NO_ORIGIN`. */
   origin: RequestOrigin;
 }
-
-/** What authenticating a request yields; the route adds its origin. */
-export type Authenticated = Omit<AuthedContext, "origin">;
 
 export const base = os.$context<AuthedContext>();

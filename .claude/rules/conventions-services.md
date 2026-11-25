@@ -95,14 +95,14 @@ export const cancelJob = defineServiceFn({
   `refuseUnlessOwned(ctx, table, match)` (`shared/shared.service.ts`) returns
   a refusal unless the row is the company's.
 - **Request origin**: `ctx.origin` holds the request's `ip`, `city` and
-  `userAgent` (`RequestOrigin`). `originOf(request)`
-  (`@carbon/api/service-fn.server`) reads them from the headers: the IP
-  through `getClientIp`, the city from `X-Vercel-IP-City`, the user agent
-  from `User-Agent`. `authorize(request)` hands the request to the binding
-  `registerCarbon` registers, so its `api` carries it (`authorize(caller,
-  request)` for a caller another gate authenticated, as `authorizePanel` does);
-  the HTTP API route (`api+/v1+/$.ts`) and the MCP route (`api+/mcp+/_index.ts`)
-  put it on the context too, and `serviceContext(auth, origin)` requires it. A job, a workflow or a posting passes `NO_ORIGIN`. The
+  `userAgent` (`RequestOrigin`). `originOf(request)` (`@carbon/utils`) reads
+  them from the headers: the IP through `getClientIp`, the city from
+  `X-Vercel-IP-City`, the user agent from `User-Agent`. Whatever authenticates
+  a request puts its origin on the caller it returns: `authorize(request)`,
+  the Onshape panel's caller, and the API-key and OAuth contexts of the HTTP
+  API route (`api+/v1+/$.ts`) and the MCP route (`api+/mcp+/_index.ts`).
+  `serviceContext(auth)` reads `auth.origin`. A job, a workflow or a posting
+  passes `NO_ORIGIN`. The
   user agent, and the city off Vercel, are what the caller sent. An operation that emails or
   audits where a request came from reads `ctx.origin`, never an input field:
   an input field lets an API caller write any address into the audit log.
@@ -113,16 +113,14 @@ export const cancelJob = defineServiceFn({
   authenticates the caller and returns it with the router: `api.production.cancelJob(input)`
   resolves to the result, its error a plain `{ category, message, status }`.
   A route that needs the context itself (a stream, a building block that takes
-  `ctx`) builds it with `serviceContext(auth, originOf(request))`
+  `ctx`) builds it with `serviceContext(auth)`
   (`modules/service-context.server.ts`); a caller with no session (a public
   share link) uses `systemContext({ companyId, companyGroupId, onBehalfOf })`.
 - **Published**: `@mcp` in the TSDoc publishes the const as the MCP tool
   `{module}_{name}` and `POST /api/v1/{module}/{name}`. The permission decides
   the classification (View alone → READ, Full → DESTRUCTIVE, else WRITE);
   `@mcp read` forces READ (a read gated on `"employee"`; on a gate whose level
-  holds a write it fails generation), `@mcp write` forces WRITE (a write whose
-  route has only ever required View; on a gate whose level holds a write it
-  fails generation), `@mcp destructive` forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
+  holds a write it fails generation), `@mcp destructive` forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
   an operation only when it is safe with nothing but its input: the API runs
   the gate and `run`, nothing the route does around the call.
 - **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,

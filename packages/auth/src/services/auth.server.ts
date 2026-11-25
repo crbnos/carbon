@@ -12,7 +12,15 @@ import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { addLogContext, oncePerRequest } from "@carbon/logger/context.server";
 import { annotateRequestSpan } from "@carbon/logger/span";
-import { Edition, getClientIp, Plan, redirect, safePath } from "@carbon/utils";
+import {
+  Edition,
+  getClientIp,
+  originOf,
+  Plan,
+  type RequestOrigin,
+  redirect,
+  safePath
+} from "@carbon/utils";
 import {
   isAuthRetryableFetchError,
   type AuthSession as SupabaseAuthSession,
@@ -302,6 +310,8 @@ export type Caller = {
   permissions: Record<string, Permission>;
   /** The acting user's role in the company; `null` for an API key. */
   role: CompanyRole | null;
+  /** Where the request came from: the operations read it as `ctx.origin`. */
+  origin: RequestOrigin;
 };
 
 /**
@@ -344,7 +354,8 @@ export async function authorizeApiKey(
     consoleMode: false,
     caller: "apiKey",
     permissions: key.permissions,
-    role: null
+    role: null,
+    origin: originOf(request)
   };
 }
 
@@ -421,7 +432,8 @@ async function requirePermissions(
     consoleMode,
     caller: "session",
     permissions: myClaims.permissions,
-    role: myClaims.role
+    role: myClaims.role,
+    origin: originOf(request)
   };
 }
 
@@ -442,6 +454,7 @@ export type CallerAuth = Pick<
   | "caller"
   | "permissions"
   | "role"
+  | "origin"
 >;
 
 /**
@@ -457,27 +470,16 @@ type RegisteredApi = Register extends { api: infer A } ? A : never;
 /** A caller, with the operations bound to them. */
 export type Authorized<A extends CallerAuth> = A & { api: RegisteredApi };
 
-let bindApi: ((auth: CallerAuth, request?: Request) => unknown) | null = null;
+let bindApi: ((auth: CallerAuth) => unknown) | null = null;
 
-/**
- * Called once at server start: how `api` is built for a caller. It gets the
- * request the caller came with, when there is one, so the operations know
- * where it came from.
- */
-export function registerApi(
-  bind: (auth: CallerAuth, request?: Request) => unknown
-) {
+/** Called once at server start: how `api` is built for a caller. */
+export function registerApi(bind: (auth: CallerAuth) => unknown) {
   bindApi = bind;
 }
 
-/**
- * `authorize` for a caller another gate authenticated: the Onshape panel's
- * bearer token (`authorizePanel`). Pass the request it came with, so the
- * operations get its origin.
- */
+/** `authorize` for a caller another gate authenticated: the Onshape panel's bearer token (`authorizePanel`). */
 export function authorize<A extends CallerAuth>(
-  caller: A,
-  request?: Request
+  caller: A
 ): Promise<Authorized<A>>;
 /**
  * The caller of this request, refused unless they hold `gate`, with the
@@ -494,22 +496,12 @@ export function authorize(
 ): Promise<Authorized<Caller>>;
 export async function authorize(
   from: Request | CallerAuth,
-  gateOrRequest?: Gate | Request,
+  gate: Gate = {},
   options: GateOptions = {}
 ): Promise<Authorized<CallerAuth>> {
-  const request =
-    from instanceof Request
-      ? from
-      : gateOrRequest instanceof Request
-        ? gateOrRequest
-        : undefined;
   const auth =
     from instanceof Request
-      ? await requirePermissions(
-          from,
-          gateOrRequest instanceof Request ? {} : (gateOrRequest ?? {}),
-          options
-        )
+      ? await requirePermissions(from, gate, options)
       : from;
   let api: unknown;
   // Bound on first read: most loaders never call a service function.
@@ -519,7 +511,7 @@ export async function authorize(
       if (!bindApi) {
         throw new Error("authorize(): the app has not called registerApi");
       }
-      api ??= bindApi(auth, request);
+      api ??= bindApi(auth);
       return api;
     }
   }) as Authorized<CallerAuth>;

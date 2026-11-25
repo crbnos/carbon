@@ -13,9 +13,6 @@ import { flash, flashData } from "@carbon/auth/session.server";
 import { type FailureReason, type FormError, redirect } from "@carbon/utils";
 import type { z } from "zod";
 import {
-  NO_ORIGIN,
-  originOf,
-  type RequestOrigin,
   type RouteResult,
   type ServiceContext,
   type ServiceFn,
@@ -35,20 +32,12 @@ export type Api<T> = {
 /**
  * Called once at server start: the app's router, and its context for a
  * caller. The app states `api`'s type on `Register` (`@carbon/auth/auth.server`).
- * The context takes where the request came from (`originOf`), so an operation
- * reads `ctx.origin` and never an input field for it; a caller no request
- * made gets `NO_ORIGIN`.
  */
 export function registerCarbon<R extends object>(setup: {
   router: R;
-  context: (auth: CallerAuth, origin: RequestOrigin) => ServiceContext;
+  context: (auth: CallerAuth) => ServiceContext;
 }) {
-  registerApi((auth, request) =>
-    bindServiceFns(
-      setup.router,
-      setup.context(auth, request ? originOf(request) : NO_ORIGIN)
-    )
-  );
+  registerApi((auth) => bindServiceFns(setup.router, setup.context(auth)));
 }
 
 // ponytail: a Proxy per namespace read; bind eagerly if a hot path ever shows it.

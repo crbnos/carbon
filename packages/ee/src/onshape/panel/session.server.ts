@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { randomBytes } from "node:crypto";
+import { originOf } from "@carbon/api/service-fn.server";
 import type { AuthSession } from "@carbon/auth";
 import { authorize, type Caller, type Gate } from "@carbon/auth/auth.server";
 import { logAuthEvent } from "@carbon/auth/auth-events.server";
@@ -187,7 +188,7 @@ export async function authorizePanel(
   gate: Gate = {},
   options: { bypassRls?: boolean } = {}
 ) {
-  return authorize(await panelCaller(request, gate, options), request);
+  return authorize(await panelCaller(request, gate, options));
 }
 
 async function panelCaller(
@@ -252,6 +253,7 @@ async function panelCaller(
     consoleMode: false,
     caller: "session",
     permissions: myClaims.permissions,
-    role: "employee"
+    role: "employee",
+    origin: originOf(request)
   };
 }

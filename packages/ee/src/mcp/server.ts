@@ -355,9 +355,9 @@ function buildMcpServer<Ctx extends McpContext>(
             fillPagination(body);
           }
         } else {
-          const source = body ?? {};
-          const limit = source.limit;
-          const offset = source.offset;
+          const { limit, offset, ...input } = body ?? {};
+          // They page the response, not the input, which may refuse them.
+          if (body) args = input;
           mcpPaging = {
             limit:
               Number.isInteger(limit) && (limit as number) > 0

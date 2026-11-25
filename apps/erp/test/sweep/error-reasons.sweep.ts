@@ -42,9 +42,9 @@ async function caller() {
       permissions: claims.permissions,
       companyId,
       companyGroupId,
-      client: await getUserScopedClient(userId)
-    },
-    NO_ORIGIN
+      client: await getUserScopedClient(userId),
+      origin: NO_ORIGIN
+    }
   );
   return { companyId, ctx };
 }

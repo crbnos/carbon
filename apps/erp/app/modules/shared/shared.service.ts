@@ -26,6 +26,7 @@ import {
   type Actor,
   type CarbonError,
   createServiceContext,
+  NO_ORIGIN,
   readRowRequirement,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
@@ -1394,6 +1395,9 @@ export async function sendSalesOrderEmail(args: {
   return { success: true };
 }
 
+/** The weeks the planning screens show, from this week of the location's today. */
+export const PLANNING_WEEKS = 12 * 4;
+
 /**
  * The weekly periods the planning screens show for a location: `PLANNING_WEEKS`
  * from the week of the location's today, created when missing, oldest first.
@@ -1410,13 +1414,13 @@ export async function getPlanningWeeks(
     await getLocationTimeZone(client, locationId, companyId)
   );
   const periods = await getOrCreatePeriods(db, today, PLANNING_WEEKS);
-  return periods
-    .map(({ id, startDate, endDate }) => ({ id, startDate, endDate }))
-    .sort((a, b) => a.startDate.localeCompare(b.startDate));
+  // Without `periodType`, which is always "Week" here.
+  return periods.map(({ id, startDate, endDate }) => ({
+    id,
+    startDate,
+    endDate
+  }));
 }
-
-/** The weeks the planning screens show, from this week of the location's today. */
-export const PLANNING_WEEKS = 12 * 4;
 
 export async function getOrCreatePeriods(
   db: Kysely<KyselyDatabase>,
@@ -2373,6 +2377,7 @@ async function runPosting<I, R>(
       const ctx = createServiceContext({
         actor,
         company: await postingCompany(handles, posting?.groupless === true),
+        origin: NO_ORIGIN,
         caller: handles.client ?? getCarbonServiceRole(),
         system: getCarbonServiceRole,
         pg: () => handles.db,

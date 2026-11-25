@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { originOf } from "@carbon/api/service-fn.server";
 import { assertIsPost } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
@@ -44,12 +43,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: false, message: "No batches selected" };
   }
 
-  const result = await dissolveBatches(
-    serviceContext(auth, originOf(request)),
-    {
-      batchIds: ids
-    }
-  );
+  const result = await dissolveBatches(serviceContext(auth), {
+    batchIds: ids
+  });
   if (result.error) return { success: false, message: result.error.message };
   return { success: true, ...result.data };
 }

@@ -149,6 +149,11 @@ describe("call_tool keeps list output small", () => {
       }
     });
 
+    expect(callOperation).toHaveBeenCalledWith(
+      "sales_getCustomersList",
+      expect.anything(),
+      {}
+    );
     const text = (result.content as { text: string }[])[0]!.text;
     const lines = text.split(/\r?\n/);
     expect(lines.slice(0, 3)).toEqual([
@@ -190,6 +195,11 @@ describe("call_tool pages a full-set read with a strict input", () => {
       }
     });
     expect(paged.isError).toBeFalsy();
+    expect(callOperation).toHaveBeenCalledWith(
+      "projects_getProjectMembers",
+      expect.anything(),
+      { projectId: "p1" }
+    );
     const lines = (paged.content as { text: string }[])[0]!.text.split(/\r?\n/);
     expect(lines.slice(0, 3)).toEqual([
       "# projects_getProjectMembers.csv",

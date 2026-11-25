@@ -289,9 +289,9 @@ describe("every update and delete, for a record that does not exist", () => {
             permissions: claims.permissions,
             companyId,
             companyGroupId,
-            client
-          },
-          NO_ORIGIN
+            client,
+            origin: NO_ORIGIN
+          }
         );
         const result = await withTimeout(fn(ctx, faked.args).then(toResult));
         const error = result.error as {

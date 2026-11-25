@@ -50,22 +50,16 @@ function serviceFnAt(path: string[]): ServiceFn<z.ZodType, unknown> {
  * company they belong to, and an id from another one must match nothing.
  */
 export function contextFromAuthed(context: AuthedContext): ServiceContext {
-  return serviceContext(
-    {
-      caller: context.authKind === "api-key" ? "apiKey" : "session",
-      userId: context.userId,
-      permissions: context.permissions,
-      companyId: context.companyId,
-      companyGroupId: context.companyGroupId,
-      client: scopedToCompany(
-        context.client,
-        context.companyId,
-        COMPANY_TABLES
-      ),
-      role: context.role
-    },
-    context.origin
-  );
+  return serviceContext({
+    caller: context.authKind === "api-key" ? "apiKey" : "session",
+    userId: context.userId,
+    permissions: context.permissions,
+    companyId: context.companyId,
+    companyGroupId: context.companyGroupId,
+    client: scopedToCompany(context.client, context.companyId, COMPANY_TABLES),
+    role: context.role,
+    origin: context.origin
+  });
 }
 
 /** Run the operation's service function; a refusal becomes an `ORPCError`. */

@@ -1090,7 +1090,7 @@ const planningScreens: AnyOfGate = {
  *
  * @param locationId - The location whose today starts the first week.
  *
- * @mcp write
+ * @mcp
  */
 export const getPlanningPeriods = defineServiceFn({
   input: z.object({ locationId: z.string().min(1) }),

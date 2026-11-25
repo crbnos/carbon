@@ -12,7 +12,13 @@ import {
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { describeCause, type FailureReason, getClientIp } from "@carbon/utils";
+import {
+  describeCause,
+  type FailureReason,
+  NO_ORIGIN,
+  originOf,
+  type RequestOrigin
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
@@ -113,34 +119,8 @@ export type Actor =
 
 type Kv = typeof redis;
 
-/**
- * Where a request came from: the client's IP and city as the proxy in front
- * of the app reported them, and its user agent. Invite emails and audit
- * records show them. Every field is absent for a call no request made.
- */
-export type RequestOrigin = {
-  ip?: string;
-  city?: string;
-  userAgent?: string;
-};
-
-/** The origin of a call no request made: a job, a workflow, a share link. */
-export const NO_ORIGIN: RequestOrigin = Object.freeze({});
-
-/**
- * The request's origin, read from its headers. The IP is the entry our own
- * proxy wrote (`getClientIp`). The city is Vercel's `X-Vercel-IP-City`, so
- * behind any other proxy the caller sets it, as it sets its user agent.
- */
-export function originOf(request: {
-  headers: Pick<Headers, "get">;
-}): RequestOrigin {
-  return {
-    ip: getClientIp(request) ?? undefined,
-    city: request.headers.get("x-vercel-ip-city") ?? undefined,
-    userAgent: request.headers.get("user-agent") ?? undefined
-  };
-}
+export type { RequestOrigin };
+export { NO_ORIGIN, originOf };
 
 export type ServiceContext = {
   actor: Actor;

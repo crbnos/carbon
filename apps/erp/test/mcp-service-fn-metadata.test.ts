@@ -234,33 +234,6 @@ export const getKeys = defineServiceFn({
     );
   });
 
-  // A route that has only ever required view can still write: it must not be
-  // offered as a READ, which a client may run unasked.
-  it("labels @mcp write a WRITE, and never below DESTRUCTIVE", () => {
-    const write = (permission: string) =>
-      toolsFor({
-        "/m/production.ts": `
-import { defineServiceFn } from "./helper";
-/**
- * Rename a group.
- *
- * @mcp write
- */
-export const renameGroup = defineServiceFn({
-  input: null,
-  permission: ${permission},
-  async run(_ctx, input: { id: string }) {
-    return null;
-  }
-});`,
-        "/m/router.ts": ROUTER
-      })[0]?.classification;
-    expect(write(`{ "production.jobs": "View" }`)).toBe("WRITE");
-    expect(() => write(`{ "production.jobs": "Full" }`)).toThrow(
-      "@mcp write on a function whose permission names"
-    );
-  });
-
   it("refuses a summary that was cut off", () => {
     const tool = (summary: string) =>
       toolsFor({
