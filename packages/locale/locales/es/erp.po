@@ -21209,6 +21209,12 @@ msgstr "Sin video agregado"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No hay stock de almacén registrado para este artículo. Aún puedes recogerlo — el disponible se volverá negativo hasta que se reconcilie el recuento."
 
+msgid "No work center"
+msgstr "Sin centro de trabajo"
+
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "Ningún centro de trabajo de esta ubicación puede realizar esta operación, así que no aparece en el programa. Asígnele un centro de trabajo que ejecute su proceso, o agregue su proceso a un centro de trabajo de esta ubicación."
+
 msgid "No work center utilization data within range"
 msgstr "No hay datos de utilización del centro de trabajo dentro del rango"
 

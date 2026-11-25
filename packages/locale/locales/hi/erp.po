@@ -21209,6 +21209,12 @@ msgstr "कोई वीडियो जोड़ा नहीं गया"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — गणना के समाधान तक हाथ पर नकारात्मक हो जाएगा।"
 
+msgid "No work center"
+msgstr "कोई वर्क सेंटर नहीं"
+
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "इस स्थान पर कोई भी वर्क सेंटर इस ऑपरेशन को नहीं चला सकता, इसलिए यह शेड्यूल में नहीं है। इसे ऐसा वर्क सेंटर दें जो इसकी प्रक्रिया चलाता हो, या इस स्थान के किसी वर्क सेंटर में इसकी प्रक्रिया जोड़ें।"
+
 msgid "No work center utilization data within range"
 msgstr "सीमा के भीतर कोई वर्क सेंटर उपयोग डेटा नहीं"
 

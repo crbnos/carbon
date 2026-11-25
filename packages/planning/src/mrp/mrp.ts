@@ -18,6 +18,11 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { z } from "zod";
+import {
+  databaseNow,
+  lastSavedMrpRunStartedAt,
+  newestRunSaves
+} from "../run-order.ts";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import { buildOpenSupplyOrders } from "./open-supply-orders.ts";
 import { activeMethodIdByItem, planCompany } from "./plan-company.ts";
@@ -94,7 +99,11 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 export type MrpPayload = z.infer<typeof payloadValidator>;
-export type MrpResult = { success: true };
+/**
+ * `skipped`: a run that started later had already saved, so this run wrote
+ * nothing. That is a success: the saved plan is newer than this run's.
+ */
+export type MrpResult = { success: true; skipped: boolean };
 
 /**
  * The commercial functions a run uses for planning groups (PLANNING_GROUPS).
@@ -164,8 +173,19 @@ async function runMrpLocked(
     // a second Make. Each write checks, under the planning lock, that the
     // planned orders are still as the run read (Phase 7) or wrote them (the
     // worklist); if not, it rolls back and the run reads and plans again.
-    await retryOnPlannedOrderChange(async (attempt) => {
+    const result = await retryOnPlannedOrderChange(async (attempt) => {
+      const written = await loadPlanAndWrite(client, db, {
+        companyId,
+        userId,
+        today,
+        periods,
+        locations: locations.data,
+        deps,
+        attempt
+      });
+      if (!written) return { skipped: true };
       const {
+        runStartedAt,
         plannedOrderIdByKey,
         plannedOrderSnapshot,
         commonSurplusDraws,
@@ -179,15 +199,7 @@ async function runMrpLocked(
         planningGroupsEnabled,
         planningGroupRows,
         groupMemberRows
-      } = await loadPlanAndWrite(client, db, {
-        companyId,
-        userId,
-        today,
-        periods,
-        locations: locations.data,
-        deps,
-        attempt
-      });
+      } = written;
       // Each new Order / Make names its planned order's id once it has one.
       const newSupplyByRow = withPlannedOrderIds(
         plannedSupplyByRow,
@@ -207,6 +219,7 @@ async function runMrpLocked(
         await generatePlanningActions(client, db, {
           companyId,
           userId,
+          runStartedAt,
           commonSurplusDraws,
           newSupplyByRow,
           documentChangeActionsByRow,
@@ -248,9 +261,10 @@ async function runMrpLocked(
         }
         throw err;
       }
+      return { skipped: false };
     });
 
-    return { success: true };
+    return { success: true, skipped: result.skipped };
   } catch (err) {
     logger.error("run failed", { companyId, error: err });
     throw err;
@@ -278,6 +292,11 @@ async function loadPlanAndWrite(
   }
 ) {
   const { companyId, userId, today, periods, locations, deps, attempt } = args;
+
+  // Before any input is read: the attempt's place in the newest-read-wins
+  // order (an attempt that plans again reads again, so it starts again).
+  const runStartedAt = await databaseNow(db);
+  logger.info("run attempt started", { companyId, attempt, runStartedAt });
 
   // FIRST: the planned orders and the database's clock, before any other
   // input, so every change after this read is one the write can see.
@@ -684,7 +703,28 @@ async function loadPlanAndWrite(
     // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
     // everything back on any throw.
     const written = await db.transaction().execute(async (trx) => {
-      // FIRST: the planned orders. `writePlannedOrderDiff` takes the
+      // Two runs for one company overlap (the cron and the route-triggered
+      // runs): both would delete, then both insert, and demandForecastSource
+      // has no natural key, so its rows would double. The second run waits
+      // here for the first to commit. A key apart from the planning lock;
+      // every other writer takes the planning lock alone, so the two
+      // never wait on each other in opposite orders.
+      await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`mrp:${companyId}`}, 0))`.execute(
+        trx
+      );
+      // Read under the lock: a run that started later and saved first read
+      // newer inputs, and this older plan must not replace it. Only this
+      // transaction writes the value, under the same lock.
+      if (
+        !newestRunSaves(
+          runStartedAt,
+          await lastSavedMrpRunStartedAt(trx, companyId)
+        )
+      ) {
+        return null;
+      }
+
+      // Then the planned orders. `writePlannedOrderDiff` takes the
       // company's planning lock before any other statement of this
       // transaction, so the ERP's convert (which takes it too) never
       // interleaves with the run, and no row lock is held while waiting
@@ -702,6 +742,12 @@ async function loadPlanAndWrite(
         updatedAt: datetime.timestamp(),
         snapshot: plannedOrderSnapshot
       });
+      await trx
+        .updateTable("companySettings")
+        .set({ lastMrpRunStartedAt: runStartedAt })
+        .where("id", "=", companyId)
+        .execute();
+
       // Delete existing MRP forecasts
       await trx
         .deleteFrom("demandForecast")
@@ -844,7 +890,16 @@ async function loadPlanAndWrite(
       return { idByKey, committedSnapshot };
     });
 
+    if (!written) {
+      logger.info("run skipped: a run that started later already saved", {
+        companyId,
+        runStartedAt
+      });
+      return null;
+    }
+
     return {
+      runStartedAt,
       plannedOrderIdByKey: written.idByKey,
       plannedOrderSnapshot: written.committedSnapshot,
       commonSurplusDraws,

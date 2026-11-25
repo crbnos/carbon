@@ -21209,6 +21209,12 @@ msgstr "未添加视频"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库存将变为负数，直到盘点协调。"
 
+msgid "No work center"
+msgstr "未指定工作中心"
+
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "该地点没有工作中心能够执行此工序，因此它不在排程中。请为其指定一个可执行其工艺的工作中心，或将其工艺添加到该地点的某个工作中心。"
+
 msgid "No work center utilization data within range"
 msgstr "范围内没有工作中心利用率数据"
 

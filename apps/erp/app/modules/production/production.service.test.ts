@@ -17,7 +17,8 @@ import {
   planAssemblyStepMarkerSync,
   planBatchSerialRun,
   planOrphanStepAdoption,
-  planSerialNumberDraws
+  planSerialNumberDraws,
+  withoutLiveReservation
 } from "./production.service";
 
 describe("planAssemblyStepMarkerSync", () => {
@@ -812,5 +813,56 @@ describe("jobStatusMoment", () => {
     ["a status that is neither a release nor a hold", "Ready", "Cancelled"]
   ] as const)("announces nothing for %s", (_, priorStatus, status) => {
     expect(jobStatusMoment({ updated: true, priorStatus, status })).toBeNull();
+  });
+});
+
+describe("withoutLiveReservation", () => {
+  const op = (id: string, jobOperationBatchId: string | null = null) => ({
+    id,
+    jobOperationBatchId
+  });
+  const reservation = (
+    operationId: string,
+    jobOperationBatchId: string | null = null
+  ) => ({ operationId, jobOperationBatchId });
+
+  it("keeps an operation no reservation names", () => {
+    expect(
+      withoutLiveReservation([op("op-stale")], [reservation("op-other")])
+    ).toEqual([op("op-stale")]);
+  });
+
+  it("drops an operation with its own reservation, a placeholder included", () => {
+    expect(
+      withoutLiveReservation(
+        [op("op-placed"), op("op-stale")],
+        [reservation("op-placed")]
+      )
+    ).toEqual([op("op-stale")]);
+  });
+
+  it("drops every member of a batch whose booking names only its anchor", () => {
+    expect(
+      withoutLiveReservation(
+        [op("op-anchor", "bat-1"), op("op-member", "bat-1")],
+        [reservation("op-anchor", "bat-1")]
+      )
+    ).toEqual([]);
+  });
+
+  it("keeps a member of a batch with no booking", () => {
+    expect(
+      withoutLiveReservation(
+        [op("op-member", "bat-planned")],
+        [reservation("op-anchor", "bat-other")]
+      )
+    ).toEqual([op("op-member", "bat-planned")]);
+  });
+
+  it("keeps everything when there are no reservations", () => {
+    expect(withoutLiveReservation([op("a"), op("b", "bat-1")], [])).toEqual([
+      op("a"),
+      op("b", "bat-1")
+    ]);
   });
 });

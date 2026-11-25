@@ -52,11 +52,9 @@ export type OpenProductionOrderRow = {
   leadTime: number | null;
 };
 
-/** A job's status and good-unit quantities, which the view does not expose. */
+/** A job's status, which the view does not expose. */
 export type OpenJobDetails = {
   status: JobStatus;
-  quantity: number;
-  quantityReceivedToInventory: number;
 };
 
 /** The map key of an item at a location in one netting segment. */
@@ -184,14 +182,9 @@ export function buildOpenSupplyOrders(args: {
   for (const job of jobRows) {
     if (!job.id || !job.itemId || !job.locationId) continue;
     const details = jobDetailsById.get(job.id);
-    // The view's quantityToReceive is productionQuantity (quantity + scrap)
-    // less received. A change action is applied to `job.quantity`, the good
-    // units, so the order is measured in those: on the view's figure every
-    // job with a scrap allowance read as over-supplied, got a Decrease to its
-    // own quantity, and got it again after it was applied.
-    const quantity = details
-      ? Math.max(details.quantity - details.quantityReceivedToInventory, 0)
-      : Number(job.quantityToReceive) || 0;
+    // Good units left (the view leaves out the scrap allowance), the units a
+    // change action applies to `job.quantity` in.
+    const quantity = Number(job.quantityToReceive) || 0;
     if (quantity <= 0) continue;
     // the same date the projection buckets this job on — an undated job is
     // supply there, so it is supply here too

@@ -57,6 +57,7 @@ import { datetime, equals, round } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
+import { lastSavedMrpRunStartedAt, newestRunSaves } from "../run-order.ts";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import {
   buildOpenSupplyOrders,
@@ -875,7 +876,7 @@ export async function loadOpenSupplyDetails(
   const [openJobRows, poLineFactorRows] = await Promise.all([
     db
       .selectFrom("job")
-      .select(["id", "status", "quantity", "quantityReceivedToInventory"])
+      .select(["id", "status"])
       .where("companyId", "=", companyId)
       .where("status", "in", ["Planned", "Ready", "In Progress", "Paused"])
       .execute(),
@@ -899,11 +900,7 @@ export async function loadOpenSupplyDetails(
   const jobDetailsById = new Map<string, OpenJobDetails>();
   for (const row of openJobRows) {
     if (!row.status) continue;
-    jobDetailsById.set(row.id, {
-      status: row.status,
-      quantity: Number(row.quantity) || 0,
-      quantityReceivedToInventory: Number(row.quantityReceivedToInventory) || 0
-    });
+    jobDetailsById.set(row.id, { status: row.status });
   }
   return {
     jobDetailsById,
@@ -1265,6 +1262,12 @@ export async function generatePlanningActions(
     companyId: string;
     userId: string;
     /**
+     * When the calling MRP run started (`databaseNow`). Its forecasts are
+     * committed by now; when a run that started later has saved since, that
+     * run writes the actions and this one writes none.
+     */
+    runStartedAt?: string;
+    /**
      * What each project segment takes from common stock (`planCompany`'s
      * `commonSurplusDraws`). Each draw becomes a Transfer action.
      */
@@ -1386,8 +1389,8 @@ export async function generatePlanningActions(
 
   // ── demand per (item, location, segment, period): actual + forecast +
   //    projection (net of consumption), the same union the planning RPCs
-  //    read; on-hand per segment; the open jobs' status and good-unit
-  //    quantity, and the open PO lines' conversion factor, which the
+  //    read; on-hand per segment; the open jobs' status and the open PO
+  //    lines' conversion factor, which the
   //    openProductionOrders / openPurchaseOrderLines views do not expose —
   //    one read each of the company's open documents (the views' own
   //    filters), no id list. Projections are common demand.
@@ -1654,8 +1657,10 @@ export async function generatePlanningActions(
     periods,
     toleranceDays,
     pegging,
-    plannedOrderSnapshot: args.plannedOrderSnapshot
+    plannedOrderSnapshot: args.plannedOrderSnapshot,
+    runStartedAt: args.runStartedAt
   });
+  if (!diff) return { inserted: 0, updated: 0, deleted: 0 };
 
   logger.info("planning actions written", {
     companyId,
@@ -1697,11 +1702,30 @@ export async function writePlanningActions(
     toleranceDays: number;
     pegging?: Parameters<typeof generatePlanningActions>[2]["pegging"];
     plannedOrderSnapshot?: PlannedOrderSnapshot;
+    /** When the calling MRP run started (`databaseNow`): when a run that
+     *  started later has saved since, it writes the actions and this one
+     *  writes none (null). */
+    runStartedAt?: string;
   }
-): Promise<PlanningActionDiff> {
+): Promise<PlanningActionDiff | null> {
   const { companyId, userId, candidates, periods, pegging } = args;
   return db.transaction().execute(async (trx) => {
     await lockCompanyPlanning(trx, companyId);
+    // A newer run that saved changed the planned orders too: skip before the
+    // snapshot check, which would otherwise make this older run plan again.
+    if (
+      args.runStartedAt &&
+      !newestRunSaves(
+        args.runStartedAt,
+        await lastSavedMrpRunStartedAt(trx, companyId)
+      )
+    ) {
+      logger.info("planning actions skipped: a newer MRP run saved", {
+        companyId,
+        runStartedAt: args.runStartedAt
+      });
+      return null;
+    }
     if (args.plannedOrderSnapshot) {
       await assertPlannedOrdersUnchanged(
         trx,

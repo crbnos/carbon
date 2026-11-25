@@ -123,16 +123,11 @@ describe("buildOpenSupplyOrders", () => {
     ]);
   });
 
-  it("measures a job in good units, not the view's quantity with scrap", () => {
-    // view: 80 good + 4 scrap = 84 to receive; 10 received → 70 good units left
+  it("takes a job's good units from the view and its Release from its status", () => {
+    // the view reports good units left to receive (no scrap allowance)
     const result = build({
-      jobRows: [job()],
-      jobDetailsById: new Map([
-        [
-          "job_1",
-          { status: "Planned", quantity: 80, quantityReceivedToInventory: 10 }
-        ]
-      ])
+      jobRows: [job({ quantityToReceive: 70 })],
+      jobDetailsById: new Map([["job_1", { status: "Planned" }]])
     });
 
     expect(result.get(KEY)).toEqual([

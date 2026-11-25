@@ -21209,6 +21209,12 @@ msgstr "추가된 비디오 없음"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
+msgid "No work center"
+msgstr "작업장 없음"
+
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "이 사업장의 작업장 중 이 공정을 수행할 수 있는 곳이 없어 일정에 표시되지 않습니다. 공법을 수행하는 작업장을 지정하거나, 이 사업장의 작업장에 공법을 추가하세요."
+
 msgid "No work center utilization data within range"
 msgstr "해당 기간 내 작업장 가동률 데이터가 없습니다"
 

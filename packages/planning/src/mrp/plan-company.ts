@@ -928,7 +928,8 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
             .reduce((sum, c) => sum + c.quantity, 0);
         for (const [actuals, sourceType] of [
           [jobMaterialDemandByKey, "Job Material"],
-          [salesDemandByKey, "Sales Order"]
+          [salesDemandByKey, "Sales Order"],
+          [projectMaterialDemandByKey, "Project Material"]
         ] as const) {
           const actualKey = makeActualKey(
             oldItemId,

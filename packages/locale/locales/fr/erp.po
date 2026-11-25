@@ -21209,6 +21209,12 @@ msgstr "Aucune vidéo ajoutée"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Aucun stock d'entrepôt n'est enregistré pour cet article. Vous pouvez toujours le prélever — le stock disponible deviendra négatif jusqu'à ce que le décompte soit rapproché."
 
+msgid "No work center"
+msgstr "Aucun poste de travail"
+
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "Aucun poste de travail de ce site ne peut réaliser cette opération, elle n'est donc pas dans le planning. Affectez-lui un poste de travail qui réalise son procédé, ou ajoutez son procédé à un poste de travail de ce site."
+
 msgid "No work center utilization data within range"
 msgstr "Aucune donnée d'utilisation des postes de travail dans la plage"
 
