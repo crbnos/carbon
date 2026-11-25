@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requireFeature } from "@carbon/ee/plan.server";
-import { deleteEnforcementRule } from "@carbon/ee/rules.server";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -28,35 +28,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { rule: rule.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await authorize(request, {
-    "sales.salesRules": "Full"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { request } = args;
+  const { api } = await authorize(request);
+  const result = await api.sales.deleteSalesRule({ id: input.params.id });
+  const list = `${path.to.salesRules}?${getParams(request)}`;
+  return respond(request, result).redirect(list, {
+    message: "Rule deleted",
+    onError: list
   });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "SALES_RULES",
-    redirectTo: path.to.salesRules
-  });
-
-  const { id } = params;
-  if (!id) throw new Error("id required");
-
-  const result = await deleteEnforcementRule(client, "sales", id, companyId);
-  if (result.error) {
-    throw redirect(
-      `${path.to.salesRules}?${getParams(request)}`,
-      await flash(request, error(result.error, "Failed to delete rule"))
-    );
-  }
-
-  throw redirect(
-    `${path.to.salesRules}?${getParams(request)}`,
-    await flash(request, success("Rule deleted"))
-  );
 }
 
 export default function DeleteSalesRuleRoute() {

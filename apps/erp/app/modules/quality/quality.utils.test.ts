@@ -2,10 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
+  compareInspectionFeatures,
+  gaugeCalibrationStatusFromDates,
   issueTrendAxis,
   receiptLotIssueType,
+  requiredActionIdList,
+  samplingRuleForPlanType,
   scarForSupplier
 } from "./quality.utils";
 
@@ -29,6 +34,101 @@ describe("receiptLotIssueType", () => {
     ).toBe("1");
     expect(receiptLotIssueType([])).toBeUndefined();
     expect(receiptLotIssueType(null)).toBeUndefined();
+  });
+});
+
+describe("requiredActionIdList", () => {
+  it.each([
+    [["a", "b"]],
+    ['["a","b"]'],
+    ["{a,b}"],
+    ["a, b"],
+    ['{"a","b"}'],
+    [["a", "b", "a"]]
+  ])("reads %j as the ids in order", (value) => {
+    expect(requiredActionIdList(value)).toEqual(["a", "b"]);
+  });
+
+  it("reads an empty value as no ids", () => {
+    expect(requiredActionIdList("")).toEqual([]);
+    expect(requiredActionIdList("{}")).toEqual([]);
+    expect(requiredActionIdList([])).toEqual([]);
+  });
+
+  it("refuses a JSON list that does not parse", () => {
+    expect(requiredActionIdList('["a"')).toBeNull();
+  });
+});
+
+describe("compareInspectionFeatures", () => {
+  it("orders by createdAt, then by label naturally, then by id", () => {
+    const features = [
+      { id: "c", createdAt: "20260101000000000002", label: "1" },
+      { id: "b", createdAt: "20260101000000000001", label: "10" },
+      { id: "a", createdAt: "20260101000000000001", label: "2" },
+      { id: "e", createdAt: "20260101000000000001", label: "2" },
+      { id: "d", createdAt: null, label: "9" }
+    ];
+    expect(
+      [...features].sort(compareInspectionFeatures).map((f) => f.id)
+    ).toEqual(["d", "a", "e", "b", "c"]);
+  });
+});
+
+describe("samplingRuleForPlanType", () => {
+  const sent = {
+    samplingSampleSize: 5,
+    samplingPercentage: 20,
+    samplingAql: 2.5,
+    samplingInspectionLevel: "S2",
+    samplingSeverity: "Tightened"
+  } as const;
+
+  it("keeps only the values the plan type uses", () => {
+    expect(
+      samplingRuleForPlanType({ samplingPlanType: "First", ...sent })
+    ).toEqual({
+      samplingPlanType: "First",
+      samplingSampleSize: 5,
+      samplingPercentage: null,
+      samplingAql: null,
+      samplingInspectionLevel: null,
+      samplingSeverity: null
+    });
+    expect(
+      samplingRuleForPlanType({ samplingPlanType: "AQL", ...sent })
+    ).toEqual({
+      samplingPlanType: "AQL",
+      samplingSampleSize: null,
+      samplingPercentage: null,
+      samplingAql: 2.5,
+      samplingInspectionLevel: "S2",
+      samplingSeverity: "Tightened"
+    });
+  });
+
+  it("clears every value without a plan type", () => {
+    expect(
+      samplingRuleForPlanType({ samplingPlanType: null, ...sent })
+    ).toEqual({
+      samplingPlanType: null,
+      samplingSampleSize: null,
+      samplingPercentage: null,
+      samplingAql: null,
+      samplingInspectionLevel: null,
+      samplingSeverity: null
+    });
+  });
+
+  it("stores a value left out as null", () => {
+    expect(samplingRuleForPlanType({ samplingPlanType: "AQL" })).toEqual({
+      samplingPlanType: "AQL",
+      samplingSampleSize: null,
+      samplingPercentage: null,
+      samplingAql: null,
+      samplingInspectionLevel: null,
+      samplingSeverity: null
+    });
   });
 });
 
@@ -89,6 +189,26 @@ describe("scarForSupplier", () => {
         }
       ]
     });
+  });
+});
+
+describe("gaugeCalibrationStatusFromDates", () => {
+  const today = parseDate("2026-11-24");
+
+  it.each([
+    [{}, "Pending"],
+    [{ lastCalibrationDate: "2026-05-24" }, "Pending"],
+    [{ nextCalibrationDate: "2026-12-01" }, "Pending"],
+    [
+      { lastCalibrationDate: "2026-05-24", nextCalibrationDate: "2026-11-24" },
+      "In-Calibration"
+    ],
+    [
+      { lastCalibrationDate: "2026-05-23", nextCalibrationDate: "2026-11-23" },
+      "Out-of-Calibration"
+    ]
+  ] as const)("%o is %s", (dates, status) => {
+    expect(gaugeCalibrationStatusFromDates(dates, today)).toBe(status);
   });
 });
 

@@ -12,8 +12,9 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { consumableValidator } from "~/modules/items/items.models";
-import { upsertConsumable } from "~/modules/items/items.service";
+import { insertTypedItem } from "~/modules/items/items.service";
 import { ConsumableForm } from "~/modules/items/ui/Consumables";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { newRecordMeta } from "~/utils/meta";
@@ -41,12 +42,17 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createConsumable = await upsertConsumable(client, {
-    ...validation.data,
-    companyId,
-    customFields: setCustomFields(formData),
-    createdBy: userId
-  });
+  const createConsumable = await insertTypedItem(
+    client,
+    getDatabaseClient(),
+    "Consumable",
+    {
+      ...validation.data,
+      companyId,
+      customFields: setCustomFields(formData),
+      createdBy: userId
+    }
+  );
   if (createConsumable.error) {
     return modal
       ? data(

@@ -49,10 +49,10 @@ Requiredness is enforced by a runtime validator the form registers per table (`C
 The same per-table validator refuses a Link value that `toSafeHref` (`packages/utils/src/url.ts`) cannot turn into an `http` or `https` address: another scheme such as `javascript:` or `mailto:`, a value with spaces, or a bare word with no dotted host. Enter the full address.
 
 ### A Link value shows as plain text
-`LinkValue` (`components/LinkValue.tsx`) renders a link only when `toSafeHref` accepts the stored value. Values written through the API, MCP or a workflow skip the form check, so an unsafe or malformed one is stored but never rendered as a link.
+`LinkValue` (`components/LinkValue.tsx`) renders a link only when `toSafeHref` accepts the stored value. A record's create and update tools in the API, MCP or a workflow skip the form check, so an unsafe or malformed value written through them is stored but never rendered as a link. `settings_setRecordCustomFields`, the properties panel's save, refuses a new one (`classifyCustomFieldKeys`, `settings.service.ts`). It keeps a value that every record it saves already holds, because the panel posts the whole stored map back with one value changed: an edit to another field neither removes nor refuses an unsafe Link stored earlier. To clear one, empty the Link field and save.
 
 ### List custom field rejected on save
-A List field with no options or an empty option fails the validator's refine (`settings.models.ts:121-131`). Give it at least one non-empty choice.
+A List field with no options or an empty option fails the validator's refine (`listFieldHasOptions`, `settings.models.ts`), shown on List Options as "A list field needs at least one option". Give it at least one non-empty choice.
 
 ### The Data Type dropdown is disabled when editing
 By design: the form sets `isReadOnly` on the type select and shows "Data type cannot be changed" (`CustomFieldForm.tsx:110-116`). Delete and re-create to switch types.

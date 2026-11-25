@@ -12,9 +12,10 @@ const log = getLogger("mes", "serial-number");
  * Number a unit from its item's serial sequence when work first starts on it.
  * Under the `production` serial number timing (the item's own, else the
  * company's) that is how the unit gets its number. Under `jobCreation` and
- * `jobRelease` every unit is already numbered, so it does nothing, unless the
- * job was created under `production` before the timing changed. Safe on every
- * start.
+ * `jobRelease` the job's own units are already numbered, so it numbers only a
+ * Make to Order sub-assembly's unit (never numbered at creation or release) or
+ * a unit of a job created under `production` before the timing changed. Safe
+ * on every start.
  *
  * Only a unit of the operation's own make method that is already on its own is
  * numbered. The job's first unit is still the unsplit seed holding every unit,

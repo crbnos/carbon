@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { groupBy } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -397,44 +398,6 @@ export const jobOperationStatus = [
   "Done",
   "Canceled"
 ] as const;
-
-export const maintenanceDispatchPriority = [
-  "Low",
-  "Medium",
-  "High",
-  "Critical"
-] as const;
-
-export const maintenanceDispatchStatus = [
-  "Open",
-  "Assigned",
-  "In Progress",
-  "Completed",
-  "Cancelled"
-] as const;
-
-export const maintenanceFrequency = [
-  "Daily",
-  "Weekly",
-  "Monthly",
-  "Quarterly",
-  "Annual"
-] as const;
-
-export const maintenanceSeverity = [
-  "Preventive",
-  "Operator Performed",
-  "Support Required",
-  "OEM Required"
-] as const;
-
-export const maintenanceSource = [
-  "Scheduled",
-  "Reactive",
-  "Non-Conformance"
-] as const;
-
-export const oeeImpact = ["Down", "Planned", "Impact", "No Impact"] as const;
 
 export const procedureStatus = ["Draft", "Active", "Archived"] as const;
 
@@ -1474,99 +1437,11 @@ export const scrapReasonValidator = z.object({
   name: z.string().trim().min(1, { message: "Name is required" })
 });
 
-export const failureModeValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" })
-});
-
-export const maintenanceDispatchValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  status: z.enum(maintenanceDispatchStatus),
-  priority: z.enum(maintenanceDispatchPriority),
-  severity: z.enum(maintenanceSeverity).optional(),
-  source: z.enum(maintenanceSource).optional(),
-  oeeImpact: z.enum(oeeImpact).optional(),
-  workCenterId: zfd.text(z.string().optional()),
-  suspectedFailureModeId: zfd.text(z.string().optional()),
-  plannedStartTime: zfd.text(z.string().optional()),
-  plannedEndTime: zfd.text(z.string().optional()),
-  assignee: zfd.text(z.string().optional()),
-  content: zfd.text(z.string().optional())
-});
-
-export const maintenanceDispatchCommentValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
-  comment: z.string().min(1, { message: "Comment is required" })
-});
-
-export const maintenanceDispatchEventValidator = z
-  .object({
-    id: zfd.text(z.string().optional()),
-    maintenanceDispatchId: z
-      .string()
-      .min(1, { message: "Dispatch is required" }),
-    employeeId: z.string().min(1, { message: "Employee is required" }),
-    workCenterId: z.string().min(1, { message: "Work center is required" }),
-    startTime: z.string().min(1, { message: "Start time is required" }),
-    endTime: zfd.text(z.string().optional()),
-    notes: zfd.text(z.string().optional())
-  })
-  .refine(
-    (data) => {
-      if (data.endTime) {
-        return new Date(data.startTime) < new Date(data.endTime);
-      }
-      return true;
-    },
-    {
-      message: "Start time must be before end time",
-      path: ["endTime"]
-    }
-  );
-
-export const maintenanceDispatchItemValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
-  itemId: z.string().min(1, { message: "Item is required" }),
-  quantity: zfd.numeric(z.number().min(1)),
-  unitOfMeasureCode: z
-    .string()
-    .min(1, { message: "Unit of measure is required" }),
-  unitCost: zfd.numeric(z.number().min(0).optional())
-});
-
-export const maintenanceDispatchWorkCenterValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
-  workCenterId: z.string().min(1, { message: "Work center is required" })
-});
-
-export const maintenanceScheduleValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  description: zfd.text(z.string().optional()),
-  workCenterId: z.string().min(1, { message: "Work center is required" }),
-  frequency: z.enum(maintenanceFrequency),
-  priority: z.enum(maintenanceDispatchPriority),
-  estimatedDuration: zfd.numeric(z.number().optional()),
-  active: zfd.checkbox()
-});
-
-export const maintenanceScheduleItemValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  maintenanceScheduleId: z.string().min(1, { message: "Schedule is required" }),
-  itemId: z.string().min(1, { message: "Item is required" }),
-  quantity: zfd.numeric(z.number().min(1)),
-  unitOfMeasureCode: z
-    .string()
-    .min(1, { message: "Unit of measure is required" })
-});
-
 export const demandProjectionValidator = z.object({
   itemId: z.string().min(1, { message: "Item is required" }),
   locationId: z.string().min(1, { message: "Location is required" }),
-  periods: z.array(z.string()).optional(),
+  // The start date (YYYY-MM-DD, a Sunday) of each week column, in order.
+  weekStarts: z.array(z.string()).optional(),
   ...Object.fromEntries(
     Array.from({ length: 52 }, (_, i) => [
       `week${i}`,
@@ -1574,6 +1449,90 @@ export const demandProjectionValidator = z.object({
     ])
   )
 });
+
+/** The form's values: `z.infer` drops the `week{i}` keys the spread adds. */
+type DemandProjectionFormValues = z.infer<typeof demandProjectionValidator> &
+  Partial<Record<`week${number}`, number>>;
+
+/**
+ * The weeks of the demand projection form as the projection operations take
+ * them: each week column's start date and quantity, an empty cell as 0.
+ */
+export function demandProjectionWeeks(data: DemandProjectionFormValues) {
+  return (data.weekStarts ?? []).map((weekStart, i) => ({
+    weekStart,
+    quantity: data[`week${i}`] ?? 0
+  }));
+}
+
+export type DemandProjectionRow = {
+  itemId: string;
+  locationId: string;
+  periodId: string;
+  weekStart: string;
+  forecastQuantity: number;
+  companyId: string;
+  createdBy: string;
+  updatedBy: string;
+};
+
+/**
+ * The demand projection rows for the weeks sent, each week named by its start
+ * date among `formWeeks`, the weeks the forecast forms show. The week before
+ * the first one is skipped, not written: a form left open over a week
+ * boundary still shows it, and its other weeks must save. Any other week
+ * outside them is refused, and so is a week sent twice.
+ */
+export function demandProjectionRows(
+  formWeeks: { id: string; startDate: string }[],
+  input: {
+    itemId: string;
+    locationId: string;
+    weeks: { weekStart: string; quantity: number }[];
+  },
+  author: { companyId: string; userId: string }
+): { rows: DemandProjectionRow[] } | { refusal: string } {
+  const periodIdByStart: Record<string, string> = Object.fromEntries(
+    formWeeks.map((week) => [week.startDate, week.id])
+  );
+  const isFormWeek = (weekStart: string) =>
+    Object.hasOwn(periodIdByStart, weekStart);
+  const passedWeek = formWeeks[0]
+    ? parseDate(formWeeks[0].startDate).subtract({ weeks: 1 }).toString()
+    : null;
+  const outside = input.weeks
+    .map((week) => week.weekStart)
+    .filter((weekStart) => !isFormWeek(weekStart) && weekStart !== passedWeek);
+  if (outside.length > 0) {
+    const first = formWeeks[0]?.startDate;
+    const last = formWeeks[formWeeks.length - 1]?.startDate;
+    return {
+      refusal: `A week starts on a Sunday from ${first} to ${last}: ${outside.join(", ")} is not one`
+    };
+  }
+  const repeated = Object.entries(
+    groupBy(input.weeks, (week) => week.weekStart)
+  )
+    .filter(([, sent]) => sent.length > 1)
+    .map(([weekStart]) => weekStart);
+  if (repeated.length > 0) {
+    return { refusal: `Each week is sent once: ${repeated.join(", ")}` };
+  }
+  return {
+    rows: input.weeks
+      .filter((week) => isFormWeek(week.weekStart))
+      .map((week) => ({
+        itemId: input.itemId,
+        locationId: input.locationId,
+        periodId: periodIdByStart[week.weekStart],
+        weekStart: week.weekStart,
+        forecastQuantity: week.quantity,
+        companyId: author.companyId,
+        createdBy: author.userId,
+        updatedBy: author.userId
+      }))
+  };
+}
 
 // --- Assembly Instructions ---------------------------------------------
 

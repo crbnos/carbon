@@ -22,6 +22,7 @@ import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverl
 import {
   getLocationTimeZone,
   getOrCreatePeriods,
+  PLANNING_WEEKS,
   resolveLocationId
 } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -37,8 +38,6 @@ export const handle: Handle = {
   breadcrumb: msg`Demand Forecasts`,
   to: path.to.demandProjections
 };
-
-export const WEEKS_TO_PROJECT = 12 * 4;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(
@@ -64,7 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const periods = await getOrCreatePeriods(
     getDatabaseClient(),
     datetime.today(await getLocationTimeZone(client, locationId, companyId)),
-    WEEKS_TO_PROJECT
+    PLANNING_WEEKS
   );
 
   const projections = await getProductionProjections(

@@ -13168,12 +13168,6 @@ msgstr "사용 중인 모든 세금 코드가 매핑되었습니다."
 msgid "Every unit has a rate."
 msgstr "모든 단위에 요율이 있습니다."
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "모든 개은 미리 번호가 매겨져 있으므로 작업 시작 전에 시리얼 번호를 인쇄할 수 있습니다."
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "모든 개은 작업 지시이 현장으로 이동할 때 번호가 매겨져 있으므로 작업 이동표를 여전히 인쇄할 수 있으며 릴리스 전에 취소된 작업 지시는 번호를 사용하지 않습니다."
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "목록 필터와 일치하는 모든 사용자입니다. 이 작업이 적용되지 않는 사용자는 건너뜁니다."
 
@@ -13916,9 +13910,6 @@ msgstr "배치 속성을 업데이트하지 못했습니다"
 
 msgid "Failed to update category markups"
 msgstr "카테고리 마크업을 업데이트하지 못했습니다"
-
-msgid "Failed to update configuration parameter"
-msgstr "설정 파라미터를 업데이트하지 못했습니다"
 
 msgid "Failed to update count"
 msgstr "카운트를 업데이트하지 못했습니다"
@@ -31926,6 +31917,12 @@ msgstr "작업 지시의 원가는 이 작업에 계상됩니다."
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "작업 지시의 출력이 미할당 재고 대신 프로젝트의 재고에 들어갑니다"
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "작업 지시 자체의 개는 현장으로 이동할 때 번호가 매겨지므로 작업 이동표를 여전히 인쇄할 수 있으며 릴리스 전에 취소된 작업 지시는 번호를 사용하지 않습니다. 주문 생산 서브어셈블리의 개는 처음 작업될 때 번호가 매겨집니다."
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "작업 지시 자체의 개는 생성될 때 번호가 매겨지므로 작업 시작 전에 시리얼 번호를 인쇄할 수 있습니다. 주문 생산 서브어셈블리의 개는 처음 작업될 때 번호가 매겨집니다."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "작업 지시가 해당 사업장의 일정 대기열에서의 위치로, Carbon이 마감일과 마감일 유형으로부터 계산한 소수점 이하 숫자이며, 낮음/높음 등급이 아닙니다."

@@ -13,6 +13,7 @@ import {
   validateDatabaseUrl
 } from "../../../scripts/lib/generate-db-types";
 import { readLocalScriptConfig } from "../../../scripts/lib/local-script-config";
+import { buildManifestDigest } from "../../../scripts/lib/manifest-digest";
 import { normalizeSwaggerSchema } from "../../../scripts/lib/swagger-schema";
 
 describe("validateDatabaseUrl", () => {
@@ -204,5 +205,46 @@ describe("readLocalScriptConfig", () => {
     }
     expect(message).toMatch(/: B_TEST_KEY, C_TEST_KEY\./);
     expect(message).not.toContain("private-value-sentinel");
+  });
+});
+
+describe("buildManifestDigest", () => {
+  const tool = (permission: {
+    module: string | null;
+    actions: ("view" | "create" | "update" | "delete")[];
+    allOf?: { page: string; level: string }[];
+  }) => ({
+    name: "projects_makeJob",
+    module: "projects",
+    classification: "WRITE" as const,
+    description: "Make a job.",
+    permission,
+    paginates: false,
+    schema: { type: "object" },
+    serviceFn: { path: ["projects", "makeJob"] }
+  });
+  const digested = (permission: Parameters<typeof tool>[0]) =>
+    buildManifestDigest([tool(permission)]).tools[0]?.permission;
+
+  // A gate over several modules that read "none" could lose a module, or
+  // become a membership gate, without a line of the digest changing.
+  it("records every page of a gate over several modules", () => {
+    expect(
+      digested({
+        module: null,
+        actions: ["view", "create"],
+        allOf: [
+          { page: "production.jobs", level: "Create" },
+          { page: "projects.projects", level: "View" }
+        ]
+      })
+    ).toBe("all of production.jobs:Create+projects.projects:View");
+  });
+
+  it("records one module with its actions, and membership as none", () => {
+    expect(digested({ module: "sales", actions: ["update", "create"] })).toBe(
+      "sales:create+update"
+    );
+    expect(digested({ module: null, actions: [] })).toBe("none");
   });
 });

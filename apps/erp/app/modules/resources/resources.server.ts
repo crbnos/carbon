@@ -33,6 +33,7 @@ import {
   maintenanceDispatchEventValidator,
   maintenanceDispatchStatus,
   maintenanceDispatchValidator,
+  maintenanceFailureModeType,
   maintenanceScheduleValidator,
   processValidator,
   trainingAssignmentValidator,
@@ -1299,10 +1300,14 @@ export const stopMaintenanceEvent = defineServiceFn({
  * @remarks
  * Refused when the dispatch is Completed or Cancelled, or the item is not the
  * company's. A serial or batch part names the tracked entities it takes in
- * `children`, each with a quantity more than 0; any other part takes
- * `quantity` (more than 0) from inventory at the dispatch's location. The
- * stock leaves inventory through the `issue` posting, whose refusal is
- * returned as it is.
+ * `children`, each with a quantity more than 0, in stock at the dispatch's
+ * location: each draw must fit in the one storage unit there that holds most
+ * of that serial or lot. Any other part takes `quantity` (more than 0) from
+ * inventory at the dispatch's location. The stock leaves inventory through the
+ * `issue` posting, whose refusal is returned as it is.
+ *
+ * @returns The new part's id (`id`), with the dispatch and the item. `id` is
+ * left out only when the posting did not report it; the part was still issued.
  *
  * @mcp
  */
@@ -1361,7 +1366,17 @@ export const issueMaintenancePart = defineServiceFn({
       inventoryPostings.issueMaterial
     );
     if (issued.error) return unwrap(ctx, issued) as CarbonError;
-    return { dispatchId, itemId };
+    const id = issued.data.maintenanceDispatchItemId;
+    // The stock has moved: a refusal here would have a retry issue it twice.
+    if (typeof id !== "string") {
+      logger.error("The issue posting returned no dispatch part id", {
+        companyId: ctx.company.id,
+        dispatchId,
+        itemId
+      });
+      return { dispatchId, itemId };
+    }
+    return { id, dispatchId, itemId };
   }
 });
 
@@ -1752,7 +1767,8 @@ export const updateTrainingAssignment = defineServiceFn({
 });
 
 /**
- * Mark a training assignment complete for an employee.
+ * Mark a training assignment complete for an employee, with an optional
+ * certificate.
  *
  * @remarks
  * Only an employee in the assignment's groups can complete it: a completion
@@ -1760,9 +1776,9 @@ export const updateTrainingAssignment = defineServiceFn({
  * Active. An external assignment may carry a certificate (PDF, PNG or JPG, 10
  * MB). A second completion in the same period counts as already recorded. A
  * granted ability restamps the scheduler. Takes a file, so it is not
- * published.
+ * published: `completeTrainingAssignment` is the same completion without one.
  */
-export const completeTrainingAssignment = defineServiceFn({
+export const completeTrainingAssignmentWithCertificate = defineServiceFn({
   input: z.object({
     trainingAssignmentId: z.string().min(1),
     employeeId: z.string().min(1),
@@ -1815,6 +1831,37 @@ export const completeTrainingAssignment = defineServiceFn({
       );
     }
     return { trainingAssignmentId, employeeId };
+  }
+});
+
+/**
+ * Mark a training assignment complete for an employee.
+ *
+ * @remarks
+ * Only an employee in the assignment's groups can complete it: a completion
+ * can grant an ability, which gates scheduling. An internal training must be
+ * Active. A second completion in the same period counts as already recorded.
+ * A granted ability restamps the scheduler. Records no certificate: attach
+ * one in the app.
+ *
+ * @param trainingAssignmentId - The training assignment. See resources_getTrainingAssignments.
+ * @param employeeId - The employee's user id, a member of one of the assignment's groups.
+ *
+ * @mcp
+ */
+export const completeTrainingAssignment = defineServiceFn({
+  input: z.object({
+    trainingAssignmentId: z.string().min(1),
+    employeeId: z.string().min(1)
+  }),
+  permission: { "resources.assignments": "Edit" },
+
+  async run(ctx, input) {
+    const completed = await completeTrainingAssignmentWithCertificate(
+      ctx,
+      input
+    );
+    return completed.error ?? completed.data;
   }
 });
 
@@ -1923,7 +1970,13 @@ export const deleteLocation = defineServiceFn({
 });
 
 /**
- * Delete maintenance dispatch
+ * Delete a maintenance dispatch
+ *
+ * @remarks
+ * Refused when the dispatch is Completed or Cancelled, as the dispatch page's
+ * Delete is. Its timecards, parts, comments and work centers are deleted with
+ * it. A part's stock is not returned: remove the part first
+ * (`resources_unissueMaintenancePart`).
  *
  * @mcp destructive
  */
@@ -1931,13 +1984,27 @@ export const deleteMaintenanceDispatch = defineServiceFn({
   input: z.looseObject({ dispatchId: z.string() }),
   permission: { "resources.dispatches": "Full" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteMaintenanceDispatch(
-        ctx.asCaller.supabase,
-        input.dispatchId as never
-      )
+    const dispatch = await service.editableDispatch(ctx, input.dispatchId);
+    if (dispatch instanceof CarbonError) return dispatch;
+    const deleted = await service.deleteMaintenanceDispatch(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.dispatchId
     );
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete the dispatch",
+        deleted.error
+      );
+    }
+    if (deleted.data.length === 0) {
+      return ctx.error(
+        "conflict",
+        "The dispatch was completed, cancelled or deleted since it was read"
+      );
+    }
+    return deleted.data;
   }
 });
 
@@ -3225,28 +3292,24 @@ export const updateContractor = defineServiceFn({
  * Create a failure mode
  *
  * @remarks
- * Upsert failure mode
+ * The failure mode form's create: a name and a type.
  *
  * @mcp
  */
 export const createFailureMode = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     name: z.string().min(1),
-    type: z.enum(["Maintenance", "Quality", "Operations", "Other"]),
-    customFields: z.unknown().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+    type: z.enum(maintenanceFailureModeType)
   }),
   permission: { "resources.failureModes": "Create" },
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertFailureMode(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
+      await service.upsertFailureMode(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -3255,30 +3318,25 @@ export const createFailureMode = defineServiceFn({
  * Update a failure mode
  *
  * @remarks
- * Upsert failure mode
+ * The failure mode form's save: its name and type.
  *
  * @mcp
  */
 export const updateFailureMode = defineServiceFn({
-  input: z
-    .looseObject({
-      name: z.string().min(1),
-      type: z.enum(["Maintenance", "Quality", "Operations", "Other"]),
-      customFields: z.unknown().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
+  input: z.object({
+    id: z.string().min(1).describe("The failure mode to change."),
+    name: z.string().min(1),
+    type: z.enum(maintenanceFailureModeType)
+  }),
   permission: { "resources.failureModes": "Edit" },
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertFailureMode(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.upsertFailureMode(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -3287,58 +3345,31 @@ export const updateFailureMode = defineServiceFn({
  * Create a maintenance dispatch comment
  *
  * @remarks
- * Upsert maintenance dispatch comment
+ * Refused when the dispatch is Completed or Cancelled.
  *
  * @mcp
  */
 export const createMaintenanceDispatchComment = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     maintenanceDispatchId: z.string().min(1),
-    comment: z.string().min(1),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+    comment: z.string().min(1)
   }),
-  permission: { "resources.dispatches": "Create" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertMaintenanceDispatchComment(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
-    );
-  }
-});
-
-/**
- * Update a maintenance dispatch comment
- *
- * @remarks
- * Upsert maintenance dispatch comment
- *
- * @mcp
- */
-export const updateMaintenanceDispatchComment = defineServiceFn({
-  input: z
-    .looseObject({
-      maintenanceDispatchId: z.string().min(1),
-      comment: z.string().min(1),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
+  // The dispatch's comment box shows only with Edit on resources.dispatches.
   permission: { "resources.dispatches": "Edit" },
   async run(ctx, input) {
+    const dispatch = await service.editableDispatch(
+      ctx,
+      input.maintenanceDispatchId
+    );
+    if (dispatch instanceof CarbonError) return dispatch;
     return unwrap(
       ctx,
-      await service.upsertMaintenanceDispatchComment(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.insertMaintenanceDispatchComment(ctx.asCaller.supabase, {
+        maintenanceDispatchId: input.maintenanceDispatchId,
+        comment: input.comment,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -3351,6 +3382,8 @@ export const updateMaintenanceDispatchComment = defineServiceFn({
  * dispatch is Completed or Cancelled, and the stock leaves inventory at the
  * dispatch's location, at its cost. A serial or batch part is issued with
  * `issueMaintenancePart`, which names its tracked entities.
+ *
+ * @returns The new part's id.
  *
  * @mcp
  */
@@ -3366,67 +3399,14 @@ export const createMaintenanceDispatchItem = defineServiceFn({
     ctx,
     { maintenanceDispatchId, itemId, quantity, unitOfMeasureCode }
   ) {
-    return issueMaintenancePart(ctx, {
+    const issued = await issueMaintenancePart(ctx, {
       dispatchId: maintenanceDispatchId,
       itemId,
       unitOfMeasureCode,
       quantity
     });
-  }
-});
-
-/**
- * Update a maintenance dispatch item
- *
- * @remarks
- * Refused when the dispatch is Completed or Cancelled, or the item is not on
- * it. Moves no stock.
- *
- * @mcp
- */
-export const updateMaintenanceDispatchItem = defineServiceFn({
-  input: z
-    .looseObject({
-      maintenanceDispatchId: z.string().min(1),
-      itemId: z.string().min(1),
-      quantity: z.number().min(1),
-      unitOfMeasureCode: z.string().min(1),
-      unitCost: z.number().min(0).optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
-  permission: { "resources.dispatches": "Edit" },
-  async run(ctx, input) {
-    const dispatch = await service.editableDispatch(
-      ctx,
-      input.maintenanceDispatchId
-    );
-    if (dispatch instanceof CarbonError) return dispatch;
-    const owned = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
-    if (owned) return owned;
-    const updated = await ctx.asCaller.supabase
-      .from("maintenanceDispatchItem")
-      .update({
-        itemId: input.itemId,
-        quantity: input.quantity,
-        unitOfMeasureCode: input.unitOfMeasureCode,
-        ...(input.unitCost !== undefined && { unitCost: input.unitCost }),
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", input.id)
-      .eq("maintenanceDispatchId", input.maintenanceDispatchId)
-      .eq("companyId", ctx.company.id)
-      .select("id");
-    if (updated.error) {
-      return ctx.error("internal", "Failed to update the part", updated.error);
-    }
-    if (updated.data.length === 0)
-      return ctx.error("notFound", "Part not found");
-    return { id: input.id };
+    if (issued.error) return issued.error;
+    return { id: issued.data.id };
   }
 });
 

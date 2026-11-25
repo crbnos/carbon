@@ -26,6 +26,7 @@ import {
   type Actor,
   type CarbonError,
   createServiceContext,
+  NO_ORIGIN,
   readRowRequirement,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
@@ -45,9 +46,11 @@ import {
   getLocationOwnTimeZone,
   isKysely,
   type Json,
+  PERIOD_LOCK_KEY,
   getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
 import {
+  type AnyOfGate,
   admits,
   ITEM_TYPE_PAGES,
   type PageGate,
@@ -56,11 +59,12 @@ import {
 } from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
-import type {
-  KyselyDatabase as DB,
-  Kysely,
-  KyselyDatabase,
-  KyselyTx
+import {
+  type KyselyDatabase as DB,
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
 } from "@carbon/database/client";
 import {
   type ContractPosition,
@@ -1391,6 +1395,33 @@ export async function sendSalesOrderEmail(args: {
   return { success: true };
 }
 
+/** The weeks the planning screens show, from this week of the location's today. */
+export const PLANNING_WEEKS = 12 * 4;
+
+/**
+ * The weekly periods the planning screens show for a location: `PLANNING_WEEKS`
+ * from the week of the location's today, created when missing, oldest first.
+ * The tool `shared_getPlanningPeriods` reads them; the planning loaders call
+ * the two steps themselves.
+ */
+export async function getPlanningWeeks(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  locationId: string,
+  companyId: string
+) {
+  const today = datetime.today(
+    await getLocationTimeZone(client, locationId, companyId)
+  );
+  const periods = await getOrCreatePeriods(db, today, PLANNING_WEEKS);
+  // Without `periodType`, which is always "Week" here.
+  return periods.map(({ id, startDate, endDate }) => ({
+    id,
+    startDate,
+    endDate
+  }));
+}
+
 export async function getOrCreatePeriods(
   db: Kysely<KyselyDatabase>,
   today: CalendarDate,
@@ -1410,48 +1441,52 @@ export async function getOrCreatePeriods(
     currentStart = periodEnd.add({ days: 1 });
   }
 
-  // Check which periods already exist
-  const existingPeriods = await db
-    .selectFrom("period")
-    .selectAll()
-    .where(
-      "startDate",
-      "in",
-      ranges.map((r) => r.startDate)
-    )
-    .where("periodType", "=", "Week")
-    .execute();
+  const startDates = ranges.map((r) => r.startDate);
+  const readWeeks = (handle: Kysely<KyselyDatabase>) =>
+    handle
+      .selectFrom("period")
+      .selectAll()
+      .where("startDate", "in", startDates)
+      .where("periodType", "=", "Week")
+      .orderBy("startDate")
+      .execute();
 
+  const existingPeriods = await readWeeks(db);
   if (existingPeriods.length === ranges.length) {
     return existingPeriods.map(toPlainPeriod);
   }
 
-  // Find missing periods
-  const existingStartDates = new Set(
-    existingPeriods.map((p) => dateToString(p.startDate))
-  );
-
-  const periodsToCreate = ranges.filter(
-    (r) => !existingStartDates.has(r.startDate)
-  );
-
-  // Create missing periods in a transaction
-  const created = await db.transaction().execute(async (trx) => {
-    return await trx
+  // `period` is shared by every company and has no unique key on a week, so
+  // the missing weeks are read again and inserted under one lock: a call that
+  // waits for it reads the weeks the first one inserted.
+  const periods = await withTransaction(db, async (trx) => {
+    await sql`SELECT pg_advisory_xact_lock(${PERIOD_LOCK_KEY}::bigint)`.execute(
+      trx
+    );
+    const existing = await readWeeks(trx);
+    const existingStartDates = new Set(
+      existing.map((p) => dateToString(p.startDate))
+    );
+    const missing = ranges.filter((r) => !existingStartDates.has(r.startDate));
+    if (missing.length === 0) return existing;
+    const created = await trx
       .insertInto("period")
       .values(
-        periodsToCreate.map((p) => ({
+        missing.map((p) => ({
           startDate: p.startDate,
           endDate: p.endDate,
-          periodType: "Week" as const,
-          createdAt: new Date().toISOString()
+          periodType: "Week" as const
         }))
       )
       .returningAll()
       .execute();
+    return [...existing, ...created];
   });
 
-  return [...existingPeriods, ...created].map(toPlainPeriod);
+  // In week order: callers pair the i-th period with the i-th week column.
+  return periods
+    .map(toPlainPeriod)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
 
 /** Convert a pg DATE value (Date object or string) to an ISO date string. */
@@ -1571,20 +1606,30 @@ export async function refuseUnlessOwned(
 }
 
 /**
- * For a write gated on company membership (`permission: {}`): a person logs
- * their own time, but that gate admits an API key holding any permission,
- * even a read-only one. A key also needs `required`.
+ * For a write whose gate admits a key without what the write needs: one gated
+ * on `"employee"` (a person logs their own time, but that gate admits an API
+ * key holding any permission, even a read-only one), and one gated narrower
+ * than what its writes need (the Accounts Create invites, a custom field
+ * write the table's own page decides). A key also needs `required`: every
+ * entry of a page gate, or one gate of an `anyOf`.
  */
 export function refuseKeyWithout(
   ctx: ServiceContext,
-  required: PageGate
+  required: PageGate | AnyOfGate
 ): CarbonError | null {
   if (ctx.actor.type !== "apiKey" || ctx.can(required)) return null;
+  const named = (gate: PageGate) =>
+    Object.entries(gate)
+      .map(([page, level]) => `${page}: ${level}`)
+      .join(", ");
+  const gates = "anyOf" in required ? required.anyOf : [required];
   return ctx.error(
     "forbidden",
-    `This API key needs ${Object.entries(required)
-      .map(([page, level]) => `${page}: ${level}`)
-      .join(", ")} to do this`
+    `This API key needs ${
+      gates.length === 1
+        ? named(gates[0]!)
+        : `one of ${gates.map(named).join("; ")}`
+    } to do this`
   );
 }
 
@@ -2332,6 +2377,7 @@ async function runPosting<I, R>(
       const ctx = createServiceContext({
         actor,
         company: await postingCompany(handles, posting?.groupless === true),
+        origin: NO_ORIGIN,
         caller: handles.client ?? getCarbonServiceRole(),
         system: getCarbonServiceRole,
         pg: () => handles.db,

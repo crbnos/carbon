@@ -2,46 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { requireFeature } from "@carbon/ee/plan.server";
-import { unassignSalesRule } from "@carbon/ee/rules.server";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await authorize(request, {
-    "sales.salesRules": "Edit"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["itemId", "ruleId"]
   });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "SALES_RULES",
-    redirectTo: path.to.salesRules
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.sales.unassignSalesRule({
+    ruleId: input.params.ruleId,
+    itemId: input.params.itemId
   });
-
-  const { itemId, ruleId } = params;
-  if (!itemId || !ruleId) throw new Error("itemId and ruleId required");
-
-  const result = await unassignSalesRule(client, {
-    itemId,
-    ruleId,
-    companyId
+  const back = requestReferrer(args.request) ?? path.to.salesRules;
+  return respond(args.request, result).redirect(back, {
+    message: "Rule unassigned",
+    onError: back
   });
-  if (result.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.salesRules,
-      await flash(request, error(result.error, "Failed to unassign rule"))
-    );
-  }
-
-  throw redirect(
-    requestReferrer(request) ?? path.to.salesRules,
-    await flash(request, success("Rule unassigned"))
-  );
 }

@@ -193,7 +193,8 @@ describe("Carbon API v1 spec and response shaping", () => {
         permissions: {
           "parts.units": { view: ["c1"], create: [], update: [], delete: [] }
         },
-        role: null
+        role: null,
+        origin: {}
       }
     }).then(
       () => {

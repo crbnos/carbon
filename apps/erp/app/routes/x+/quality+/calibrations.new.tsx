@@ -60,16 +60,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const d = validation.data;
 
-  const inspectionStatus =
-    d.requiresAction || d.requiresAdjustment || d.requiresRepair
-      ? "Fail"
-      : "Pass";
-
-  // The service function moves the gauge (owned by Quality → Gauges) as the
-  // system, after its own records permission.
+  // The service function decides the result from the flags, and moves the
+  // gauge (owned by Quality → Gauges) as the system, after its own records
+  // permission.
   const createGauge = await api.quality.createGaugeCalibrationRecord({
     ...d,
-    inspectionStatus,
     customFields: setCustomFields(formData)
   });
 

@@ -236,7 +236,7 @@ const ContractAmendBody = ({
   const { currencyCode } = contract;
   // A service contract bills every line on its schedule: no billing method.
   // A project contract's lines are One-time, quantity 1 unless they name a
-  // Part — then the quantity is the units to deliver (as `upsertContractLine`).
+  // Part — then the quantity is the units to deliver (as `contractLineValues`).
   const isProject = contract.billingBasis === "Project";
   const hasQuantity = useCallback(
     (row: AmendRow) => (isProject ? row.isPart : !isBillingRow(row)),
@@ -353,7 +353,7 @@ const ContractAmendBody = ({
                 ...row.billing,
                 // A billing line is One-time at quantity 1 and rate 0, and
                 // every project line is One-time; a Part line keeps its
-                // quantity (and a Fixed one its rate), as `upsertContractLine`.
+                // quantity (and a Fixed one its rate), as `contractLineValues`.
                 revenueType:
                   billing || isProject ? "One-time" : row.revenueType,
                 itemId: row.itemId,

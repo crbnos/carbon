@@ -12,6 +12,7 @@ import {
   createServiceContext,
   dataOrThrow,
   defineServiceFn,
+  originOf,
   type Result,
   type RouteResult,
   refusalOf,
@@ -671,6 +672,84 @@ describe("ctx.transaction", () => {
       error: null
     });
     expect(outcomes).toEqual(["commit"]);
+  });
+});
+
+describe("originOf", () => {
+  const headers = (values: Record<string, string>) => ({
+    headers: new Headers(values)
+  });
+
+  it("reads the proxy's IP, the city and the user agent", () => {
+    expect(
+      originOf(
+        headers({
+          // The caller wrote the first entry; our proxy appended the last.
+          "x-forwarded-for": "6.6.6.6, 203.0.113.9",
+          "x-vercel-ip-city": "Oslo",
+          "user-agent": "agent/1.0"
+        })
+      )
+    ).toEqual({ ip: "203.0.113.9", city: "Oslo", userAgent: "agent/1.0" });
+  });
+
+  it("leaves out what the request does not say", () => {
+    expect(originOf(headers({}))).toEqual({
+      ip: undefined,
+      city: undefined,
+      userAgent: undefined
+    });
+  });
+});
+
+describe("the request's origin", () => {
+  const origin = { ip: "203.0.113.9", city: "Oslo", userAgent: "agent/1.0" };
+  const echo = defineServiceFn({
+    input: z.object({}),
+    permission: { "production.jobs": "View" },
+    async run(ctx) {
+      return ctx.origin;
+    }
+  });
+  const outer = defineServiceFn({
+    input: z.object({}),
+    permission: { "production.jobs": "View" },
+    async run(ctx) {
+      return echo(ctx, {});
+    }
+  });
+  const withOrigin = (pg: unknown = {}) =>
+    createServiceContext({
+      actor: {
+        type: "apiKey",
+        createdBy: "user-1",
+        permissions: productionView
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      origin,
+      caller: {} as never,
+      system: () => ({}) as never,
+      pg: () => pg as never,
+      kv: () => ({}) as never
+    });
+
+  it("reaches the body, and a service function the body calls", async () => {
+    await expect(echo(withOrigin(), {})).resolves.toEqual({
+      data: origin,
+      error: null
+    });
+    const nested = await outer(withOrigin(), {});
+    expect(nested.data?.data).toEqual(origin);
+  });
+
+  it("reaches a transaction's body", async () => {
+    const { pg } = database();
+    const result = await withOrigin(pg).transaction(async (tx) => tx.origin);
+    expect(result.data).toEqual(origin);
+  });
+
+  it("is empty for a context no request made", async () => {
+    await expect(echo(ctx, {})).resolves.toEqual({ data: {}, error: null });
   });
 });
 

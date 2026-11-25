@@ -113548,6 +113548,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_record_custom_fields: {
+        Args: {
+          p_clear: string[]
+          p_ids: string[]
+          p_scope_column: string
+          p_scope_id: string
+          p_set: Json
+          p_table: string
+          p_updated_by: string
+        }
+        Returns: {
+          id: string
+        }[]
+      }
       set_shelf_life_for_operation: {
         Args: {
           p_event: Database["public"]["Enums"]["shelfLifeTriggerTiming"]

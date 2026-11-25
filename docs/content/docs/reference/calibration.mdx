@@ -70,7 +70,7 @@ A gauge carries a calibration status with three values, and Carbon sets it for y
   <Status name="Out-of-Calibration" terminal>The most recent calibration failed, the gauge is inactive, or the next-due date has passed. The gauge needs recalibrating.</Status>
 </StatusFlow>
 
-Calibration status is derived, not manually assigned. A passing result sets `In-Calibration`; a failing result sets `Out-of-Calibration`. Carbon also reports any inactive or overdue gauge as `Out-of-Calibration`, regardless of its stored result.
+Calibration status is derived, not manually assigned. A passing result sets `In-Calibration`, or `Out-of-Calibration` when its next-due date has already passed; a failing result sets `Out-of-Calibration`. Carbon also reports any inactive or overdue gauge as `Out-of-Calibration`, regardless of its stored result.
 
 <Callout type="warn" title="Overdue is computed, not stored">
 You never mark a gauge overdue. The out-of-calibration reading for a past-due or inactive gauge is derived at read time from the next-due date, so it flips on its own the day the schedule lapses. Bringing it back is a matter of logging a fresh passing calibration.

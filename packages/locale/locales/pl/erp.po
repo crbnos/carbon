@@ -13168,12 +13168,6 @@ msgstr "Każdy kod podatku w użyciu jest zmapowany"
 msgid "Every unit has a rate."
 msgstr "Każda sztuka ma stawkę."
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "Każda sztuka jest numerowana wcześnie, dlatego numery seryjne mogą być drukowane przed rozpoczęciem pracy."
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "Każda sztuka jest numerowana, gdy zlecenie trafia na halę produkcyjną, tak aby przewodniki mogły być drukowane, a zlecenia anulowane przed zwolnieniem."
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "Każdy użytkownik pasujący do filtrów listy. Użytkownicy, których ta akcja nie dotyczy, zostaną pominięci."
 
@@ -13916,9 +13910,6 @@ msgstr "Nie udało się zaktualizować właściwości partii"
 
 msgid "Failed to update category markups"
 msgstr "Nie udało się zaktualizować narzutów kategorii"
-
-msgid "Failed to update configuration parameter"
-msgstr "Nie udało się zaktualizować parametru konfiguracji"
 
 msgid "Failed to update count"
 msgstr "Nie udało się zaktualizować liczenia"
@@ -31926,6 +31917,12 @@ msgstr "Koszt zlecenia produkcyjnego raportuje do tego zadania."
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "Wyjście zlecenia wchodzi do zapasów projektowych zamiast niezapisanych zapasów"
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "Sztuki samego zlecenia produkcyjnego są numerowane, gdy trafia ono na halę produkcyjną, dzięki czemu przewodniki można jeszcze wydrukować, a zlecenia anulowane przed zwolnieniem nie zużywają numerów. Sztuki podzespołu w produkcji na zamówienie są numerowane, gdy po raz pierwszy są obrabiane."
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "Sztuki samego zlecenia produkcyjnego są numerowane przy jego utworzeniu, dlatego numery seryjne mogą być drukowane przed rozpoczęciem pracy. Sztuki podzespołu w produkcji na zamówienie są numerowane, gdy po raz pierwszy są obrabiane."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Pozycja zadania w kolejce harmonogramu jego lokalizacji — liczba ułamkowa, którą Carbon oblicza na podstawie daty terminu i typu terminu, a nie oceny Niska/Wysoka."

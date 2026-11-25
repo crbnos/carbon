@@ -10,7 +10,7 @@
  * is ever written. Run with `pnpm sweep:tools`.
  */
 
-import { toResult } from "@carbon/api/service-fn.server";
+import { NO_ORIGIN, toResult } from "@carbon/api/service-fn.server";
 import { getUserScopedClient } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { NOT_APPLIED_TEXT, reasonText } from "@carbon/utils";
@@ -34,15 +34,18 @@ async function caller() {
   const { companyId, userId } = await target(db);
   const companyGroupId = await companyGroupOf(db, companyId);
   const claims = await getUserClaims(userId, companyId);
-  const ctx = serviceContext({
-    caller: "session",
-    userId,
-    role: "employee", // the sweep targets an employee (shared.ts)
-    permissions: claims.permissions,
-    companyId,
-    companyGroupId,
-    client: await getUserScopedClient(userId)
-  });
+  const ctx = serviceContext(
+    {
+      caller: "session",
+      userId,
+      role: "employee", // the sweep targets an employee (shared.ts)
+      permissions: claims.permissions,
+      companyId,
+      companyGroupId,
+      client: await getUserScopedClient(userId),
+      origin: NO_ORIGIN
+    }
+  );
   return { companyId, ctx };
 }
 
