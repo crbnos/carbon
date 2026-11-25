@@ -56,6 +56,26 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `runMrp`, `runLocationSchedule`, any regenerate-and-replace job.
 
+## A stored value joins a candidate set only through the pool's own rule
+
+**Context:** The scheduler picks a work center from the process pool (active centers at the job's location) and falls back to the op's stored work center.
+
+**Problem:** The capacity set took in every op's stored work center, from any location and whatever its process. So the fallback and the "started ops stay put" rule could book a machine at another plant, or one that does not run the process. A form that kept a stale hidden `workCenterId` after a process change fed it that data.
+
+**Rule:** When a stored value can stand in for a computed choice, check it with the same predicate that built the choice (`isValidWorkCenter`), in one function every path calls. When a form field's options depend on another field, clear or re-check the dependent value when that field changes (`workCenterForProcess`).
+
+**Applies to:** `finite-context.ts`, `work-center-selector.ts`, `startedOperationWorkCenter`, and the job, quote and make-method Bill of Process forms.
+
+## Time without a resource still runs on a calendar
+
+**Context:** An op with no work center gets a placeholder so its successors and the job's finish wait for it.
+
+**Problem:** Its work was added as continuous clock hours, so 40 hours ended in under two days, and the job read "early" when it was late. On the Forecast the same row was split at every night, like a machine's hours, so one op read as five.
+
+**Rule:** Lay work with no resource on the location's working calendar (the one people with no shifts use). Draw a row that has no resource as one bar, with no non-working split of its own.
+
+**Applies to:** `work-center-selector.ts` (the no-candidate branch), `quote-lead-time.ts`, `forecast.tsx` `nonWorkingIntervalsByLane`.
+
 ## A value written on every run lives where no trigger fires
 
 **Context:** The schedule's newest-read-wins marker was first a column on `location`.
