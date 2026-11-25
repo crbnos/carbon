@@ -20,7 +20,7 @@ export function blankComments(src: string): string {
 }
 
 function blankText(src: string): string {
-  const out = src.split("");
+  const comments: Range[] = [];
   let i = 0;
   let quote: string | null = null;
   while (i < src.length) {
@@ -40,21 +40,50 @@ function blankText(src: string): string {
       continue;
     }
     if (ch === "/" && src[i + 1] === "/") {
-      while (i < src.length && src[i] !== "\n") out[i++] = " ";
+      const end = src.indexOf("\n", i);
+      const stop = end === -1 ? src.length : end;
+      comments.push([i, stop]);
+      i = stop;
       continue;
     }
     if (ch === "/" && src[i + 1] === "*") {
-      while (i < src.length && !(src[i] === "*" && src[i + 1] === "/")) {
-        if (src[i] !== "\n") out[i] = " ";
-        i++;
-      }
-      if (i < src.length) out[i] = out[i + 1] = " ";
-      i += 2;
+      // The search starts at the opening slash, so `/*/` closes itself.
+      const end = src.indexOf("*/", i);
+      const stop = end === -1 ? src.length : end + 2;
+      comments.push([i, stop]);
+      i = stop;
       continue;
     }
     i++;
   }
-  return out.join("");
+  return blankRanges(src, comments);
+}
+
+/** `[from, to)` offsets into a text. */
+type Range = [from: number, to: number];
+
+/**
+ * `src` with every character of `ranges` but a newline turned into a space.
+ * The ranges are in order and do not overlap.
+ */
+function blankRanges(src: string, ranges: Range[]): string {
+  const parts: string[] = [];
+  let kept = 0;
+  for (const [from, to] of ranges) {
+    parts.push(src.slice(kept, from));
+    const end = Math.min(to, src.length);
+    let at = from;
+    let newline = src.indexOf("\n", at);
+    while (newline !== -1 && newline < end) {
+      parts.push(" ".repeat(newline - at), "\n");
+      at = newline + 1;
+      newline = src.indexOf("\n", at);
+    }
+    parts.push(" ".repeat(end - at));
+    kept = end;
+  }
+  parts.push(src.slice(kept));
+  return parts.join("");
 }
 
 /**
@@ -83,28 +112,23 @@ export function maskCommentsAndStrings(contents: string): string {
 }
 
 function maskText(contents: string): string {
-  const out = contents.split("");
+  const interiors: Range[] = [];
   let i = 0;
-  const blank = (from: number, to: number) => {
-    for (let j = from; j < to && j < out.length; j++) {
-      if (out[j] !== "\n") out[j] = " ";
-    }
-  };
-
   while (i < contents.length) {
     const c = contents[i];
     const next = contents[i + 1];
 
     if (c === "/" && next === "/") {
       const end = contents.indexOf("\n", i);
-      blank(i, end === -1 ? contents.length : end);
-      i = end === -1 ? contents.length : end;
+      const stop = end === -1 ? contents.length : end;
+      interiors.push([i, stop]);
+      i = stop;
       continue;
     }
     if (c === "/" && next === "*") {
       const end = contents.indexOf("*/", i + 2);
       const stop = end === -1 ? contents.length : end + 2;
-      blank(i, stop);
+      interiors.push([i, stop]);
       i = stop;
       continue;
     }
@@ -121,12 +145,11 @@ function maskText(contents: string): string {
       }
       // Keep the quotes themselves so the receiver walk still sees a literal
       // boundary rather than bare whitespace.
-      blank(i + 1, j);
+      interiors.push([i + 1, j]);
       i = j + 1;
       continue;
     }
     i++;
   }
-
-  return out.join("");
+  return blankRanges(contents, interiors);
 }

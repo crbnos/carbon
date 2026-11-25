@@ -3,8 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 /** The 1-based line that the character at `index` of `text` is on. */
-export const lineOf = (text: string, index: number) =>
-  text.slice(0, index).split("\n").length;
+export function lineOf(text: string, index: number): number {
+  let line = 1;
+  let newline = text.indexOf("\n");
+  while (newline !== -1 && newline < index) {
+    line++;
+    newline = text.indexOf("\n", newline + 1);
+  }
+  return line;
+}
 
 /** The first character of a JavaScript identifier, and any later one. */
 export const IDENT_START = /[A-Za-z_$]/;

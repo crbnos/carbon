@@ -188,6 +188,12 @@ function lineCounter(bytes: Buffer, firstLine: number) {
 
 /** The offset of the first byte of `text` that is not whitespace or a comment. */
 function firstTokenAt(text: string): number {
+  // Scanning a whole statement to find its first token was half the cost of
+  // reading the migrations. Only a statement that starts with a comment needs
+  // the scanner; whitespace is one byte a character, so the index is the offset.
+  const start = text.search(/[^ \t\n\r\f\v]/);
+  if (start === -1) return 0;
+  if (text[start] !== "-" && text[start] !== "/") return start;
   for (const token of scanSync(text).tokens) {
     if (token.tokenName !== "SQL_COMMENT" && token.tokenName !== "C_COMMENT") {
       return token.start;

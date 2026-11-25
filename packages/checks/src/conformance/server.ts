@@ -197,6 +197,9 @@ const BANNED = [
   }
 ];
 
+/** Text every pattern of BANNED contains, so a file or line without any is skipped. */
+const MAY_BE_BANNED = /getLocalTimeZone|new Date\(|\.setHours\(/;
+
 export const noLocalTimezone = fileCheck(loadServerFiles, {
   id: "no-local-timezone",
   description:
@@ -207,8 +210,10 @@ export const noLocalTimezone = fileCheck(loadServerFiles, {
     since: "20260805020925_company-timezone.sql"
   },
   scan(file, contents) {
+    if (!MAY_BE_BANNED.test(contents)) return [];
     const violations: Violation[] = [];
     contents.split("\n").forEach((text, i) => {
+      if (!MAY_BE_BANNED.test(text)) return;
       for (const { pattern, message } of BANNED) {
         for (const m of text.matchAll(pattern)) {
           violations.push({ file, line: i + 1, snippet: m[0], message });
@@ -252,6 +257,9 @@ const COMPARISON = new RegExp(`[!=]==?\\s*(?:${quoted})`, "g");
 /** `["xero", "quickbooks"]` / `new Set(["ramp", …])` — an ad-hoc membership list. */
 const ID_LIST = new RegExp(`(?:${quoted})\\s*,\\s*(?:${quoted})`, "g");
 
+/** Both patterns need a quoted id, so a file or line without one is skipped. */
+const ANY_ID = new RegExp(quoted);
+
 /**
  * Files that are legitimately id-keyed: the registry itself, a provider naming
  * ITSELF, and the maps whose whole purpose is per-id data (secret keys, server
@@ -283,9 +291,11 @@ export const noIntegrationIdBranching = fileCheck(typescript, {
   },
   scan(file: string, contents: string): Violation[] {
     if (EXCLUDED.some((pattern) => pattern.test(file))) return [];
+    if (!ANY_ID.test(contents)) return [];
 
     const violations: Violation[] = [];
     contents.split("\n").forEach((text, i) => {
+      if (!ANY_ID.test(text)) return;
       for (const pattern of [COMPARISON, ID_LIST]) {
         pattern.lastIndex = 0;
         for (const match of text.matchAll(pattern)) {

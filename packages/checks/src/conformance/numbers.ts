@@ -335,7 +335,8 @@ export const noUnroundedTrackedQuantity = fileCheck(typescript, {
     // --- Rule 2: the compare. Judged per OPERAND: the entity-quantity read
     // must itself be wrapped in a sanctioned call.
     lines.forEach((text, i) => {
-      if (isComment(text)) return;
+      // Both patterns need a `.quantity` read, and blanking strings cannot make one.
+      if (!text.includes(".quantity") || isComment(text)) return;
       const bare = withoutStrings(text);
       for (const pattern of COMPARE_PATTERNS) {
         const match = pattern.exec(bare);

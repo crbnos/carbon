@@ -17,3 +17,11 @@ export function readSource(absolutePath: string): string {
   }
   return contents;
 }
+
+/**
+ * The text `readSource` already holds for `absolutePath`, else the file read
+ * now and not kept, so a caller that reads a file again sees its changes.
+ */
+export function readSourceWithoutKeeping(absolutePath: string): string {
+  return read.get(absolutePath) ?? readFileSync(absolutePath, "utf8");
+}

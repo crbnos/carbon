@@ -620,6 +620,8 @@ export const noDefaultOnEffects = fileCheck(typescript, {
     since: "2026-09-05"
   },
   scan(file: string, contents: string): Violation[] {
+    // Masking only blanks characters, so a `.default` it leaves was in the file.
+    if (!contents.includes(".default")) return [];
     const violations: Violation[] = [];
     // Scan the masked source so comments and string literals can neither fake
     // a violation nor hide one; report from the ORIGINAL so the snippet the
