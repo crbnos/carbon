@@ -873,3 +873,14 @@ Executed 2026-11-25 on `naveenkash/assigned-items-projects`. Deviations from the
 8. **Task 11.** The interpolation is named `materialCost`, because `money` is taken in `ElementSidebar`. The browser test found "over 1 elements", so the count uses `plural()`.
 9. **Task 13.** `lingui:extract` found 1,320 missing strings: 20 new strings × 12 locales, plus the strings `main` had left untranslated. All are filled. `check-glossary` flags 3 hard hits in this feature's strings. All 3 are "Filter" used as a noun, where the glossary approves the verb.
 10. **Task 15.** The browser test found that at 1440 px the status columns sat off-screen and the whole card scrolled sideways. Fix commit `97edb8587b`: the table scrolls on its own, the column the group row names is hidden, and Issue status and Supply come before the quantities. Playbook: `.ai/playbooks/project-materials-page.md`.
+11. **Review round (self-review, `/code-review`, a second browser pass).** Commits `d931af641f` and `b9a9c96e6f`:
+    - An Unplanned row never shows No supply. Only a Purchase to Order or Make to Order line with no supply does.
+    - With project stock, both stock columns show 0 rather than nothing, so they follow the project, not the filter.
+    - A Statistical charge writes no `projectLedger` row. The RPC reads the `itemLedger` Project Issue rows, and what no plan line or ledger row explains becomes an Unplanned row with no element.
+    - An issue posted before its plan line existed stays an Unplanned row of its element. The rule is the ledger's issued quantity less the element's plan-line `quantityIssued`.
+    - These make no row: a PO line or job that another project's plan line links, an outside processing PO, a Rejected PO line that received nothing, and a Cancelled job that made nothing.
+    - The PO line and job lookups are 2 index lookups each instead of one OR.
+    - A failed read shows an error state. An element group has no totals. The Supply cell shows the status first. The column is named "Unassigned at project location". The hint reads "Average on this part".
+    - The Plan list, child list and Tree look up part labels once per page.
+    - 11 new database cases (25 in total) and 2 new unit cases.
+    - Not changed: a plan line with quantity 0 (the CHECK `quantity > 0` forbids it), and the app-wide `Hyperlink` hover-icon width that keeps the Supply column wide.
