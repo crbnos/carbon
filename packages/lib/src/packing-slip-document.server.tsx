@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import { type Database, fetchAllRecords } from "@carbon/database";
+import {
+  getShipmentTracking,
+  getTaggedShipmentTracking,
+  type ShipmentSerialLine
+} from "@carbon/database/shipment-tracking";
 import { ensureFont, PackingSlipPDF } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
@@ -106,7 +111,15 @@ export async function loadPackingSlipDocument(args: {
         .eq("id", shipmentId)
         .eq("companyId", companyId)
         .single(),
-      client.from("shipmentLines").select("*").eq("shipmentId", shipmentId),
+      fetchAllRecords(() =>
+        client
+          .from("shipmentLines")
+          .select("*")
+          .eq("shipmentId", shipmentId)
+          .eq("companyId", companyId)
+          .order("createdAt")
+          .order("id")
+      ),
       serviceRole
         .from("terms")
         .select("salesTerms")
@@ -136,7 +149,7 @@ export async function loadPackingSlipDocument(args: {
     : null;
   const [sections, source, thumbnails] = await Promise.all([
     resolveSections(client, companyId, collectSectionIds(template)),
-    loadSource(client, serviceRole, companyId, shipment),
+    loadSource(client, serviceRole, companyId, shipment, shipmentLines),
     thumbnailClient ? loadThumbnails(thumbnailClient, shipmentLines) : {},
     ensureFont(template.settings.fontFamily)
   ]);
@@ -240,23 +253,12 @@ function getCustomer(client: Client, id: string | null | undefined) {
     .single();
 }
 
-function getShipmentTracking(
-  client: Client,
-  shipmentId: string,
-  companyId: string
-) {
-  return client
-    .from("trackedEntity")
-    .select("*")
-    .eq("attributes ->> Shipment", shipmentId)
-    .eq("companyId", companyId);
-}
-
 async function loadSource(
   client: Client,
   serviceRole: Client,
   companyId: string,
-  shipment: Shipment
+  shipment: Shipment,
+  lines: ShipmentSerialLine[]
 ): Promise<SourceProps> {
   const sourceId = shipment.sourceDocumentId ?? "";
 
@@ -281,7 +283,10 @@ async function loadSource(
             shipment.shippingMethodId ??
               salesOrderShipment.data?.shippingMethodId
           ),
-          getShipmentTracking(serviceRole, shipment.id, companyId)
+          getShipmentTracking(serviceRole, shipment.id, companyId, {
+            shipment,
+            lines
+          })
         ]);
       return {
         customer: must(customer, "customer"),
@@ -291,7 +296,7 @@ async function loadSource(
         shippingAddress: address(location.data?.address),
         paymentTerm: paymentTerm.data ?? NO_TERM,
         shippingMethod: shippingMethod.data ?? NO_TERM,
-        trackedEntities: tracking.data ?? [],
+        trackedEntities: must(tracking, "shipment tracking"),
         meta: PACKING_SLIP_META
       };
     }
@@ -314,7 +319,7 @@ async function loadSource(
             shipment.shippingMethodId ??
               invoice.salesInvoiceShipment?.shippingMethodId
           ),
-          getShipmentTracking(serviceRole, shipment.id, companyId)
+          getTaggedShipmentTracking(serviceRole, shipment.id, companyId)
         ]);
       return {
         customer: must(customer, "customer"),
@@ -354,7 +359,7 @@ async function loadSource(
             .single(),
           getPaymentTerm(client, order?.paymentTermId),
           getShippingMethod(client, delivery.data?.shippingMethodId),
-          getShipmentTracking(client, shipment.id, companyId)
+          getTaggedShipmentTracking(client, shipment.id, companyId)
         ]);
       return {
         customer: must(supplier, "supplier"),
@@ -376,7 +381,7 @@ async function loadSource(
           .eq("id", sourceId)
           .single(),
         getShippingMethod(client, shipment.shippingMethodId),
-        getShipmentTracking(client, shipment.id, companyId)
+        getTaggedShipmentTracking(client, shipment.id, companyId)
       ]);
       const { transferId, toLocation } = must(transfer, "warehouse transfer");
       return {

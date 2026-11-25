@@ -70,6 +70,7 @@ type UpstreamOperation = {
 };
 
 type DispositionModalProps = {
+  pairings: Record<string, string>;
   decision: "Reject" | "Partial";
   inspectionId: string;
   // Threads the jobOperationId through the action so it can post against the
@@ -131,11 +132,13 @@ const DispositionBody = ({
   issueTypes,
   summary,
   failedFeatureSummary,
+  pairings,
   eventIds,
   onCancel,
   onSubmit
 }: Omit<DispositionModalProps, "open">) => {
   const { t } = useLingui();
+  const [viewedPairings] = useState(() => JSON.stringify(pairings));
   const fetcher = useAction<{}>({
     onSettled: () => {
       if (submitted.current) {
@@ -220,6 +223,7 @@ const DispositionBody = ({
         submitted.current = true;
       }}
     >
+      <input type="hidden" name="pairings" value={viewedPairings} />
       <ModalHeader>
         <ModalTitle>
           {decision === "Reject" ? (

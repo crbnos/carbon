@@ -16,6 +16,8 @@ export type { JobSerialUnit } from "../../types";
 
 /** What a job has received to inventory, from api+/production.job.$jobId.receipts. */
 export type JobReceiptSnapshot = {
+  /** In receipt order. Null for jobs with ordinary numbering. */
+  pairedUnitIds: string[] | null;
   qualityHoldsEnabled: boolean;
   receiptPreview: string;
   tracking: JobReceiptTracking;
@@ -267,6 +269,7 @@ export function getDefaultSerialCompleteQuantity({
 export function getTrackedReceiptQuantity(
   receipts: Pick<
     JobReceiptSnapshot,
+    | "pairedUnitIds"
     | "tracking"
     | "trackedEntityIds"
     | "issuedTrackedEntityIds"
@@ -275,6 +278,14 @@ export function getTrackedReceiptQuantity(
 ): { choice: SerialCompleteChoice; quantity: number } | null {
   const { tracking } = receipts;
   const { trackedEntities } = tracking;
+  if (receipts.pairedUnitIds) {
+    const byId = new Map(trackedEntities.map((unit) => [unit.id, unit]));
+    const serials = receipts.pairedUnitIds.map((id) => byId.get(id)!);
+    return {
+      choice: { mode: "serials", serials },
+      quantity: receipts.quantityReceivedToInventory + serials.length
+    };
+  }
   if (!tracking.requiresSerialTracking) {
     if (!tracking.requiresBatchTracking || !trackedEntities.length) return null;
     return {

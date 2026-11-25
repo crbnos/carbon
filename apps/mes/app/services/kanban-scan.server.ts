@@ -523,6 +523,7 @@ export async function endOperationByScan(
           { companyId, userId },
           {
             type: "jobOperationSerialComplete",
+            pairingId: url.searchParams.get("pairingId") ?? undefined,
             quantity: 1,
             jobOperationId: jobOperation.data.id,
             trackedEntityId,

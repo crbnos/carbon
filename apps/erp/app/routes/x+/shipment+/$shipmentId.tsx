@@ -7,6 +7,7 @@ import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getShipmentTracking } from "@carbon/database/shipment-tracking";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -14,7 +15,6 @@ import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { getRentalShipmentLines } from "~/modules/inventory/inventory.service";
-import { getShipmentTracking } from "~/modules/inventory/inventory.utils";
 import type { RentalShipmentLine } from "~/modules/inventory/types";
 import {
   ShipmentDocuments,
@@ -46,10 +46,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { shipmentId } = params;
   if (!shipmentId) throw new Error("Could not find shipmentId");
 
-  const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all([
+  const [shipment, shipmentLines] = await Promise.all([
     api.inventory.getShipment({ shipmentId }),
-    api.inventory.getShipmentLines({ shipmentId }),
-    getShipmentTracking(client, shipmentId, companyId)
+    api.inventory.getShipmentLines({ shipmentId })
   ]);
 
   if (shipment.error) {
@@ -62,6 +61,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (shipment.data.companyId !== companyId) {
     throw redirect(path.to.shipments);
   }
+
+  if (shipmentLines.error)
+    throw new Error("Failed to load shipment lines", {
+      cause: shipmentLines.error
+    });
+
+  const shipmentLineTracking = await getShipmentTracking(
+    client,
+    shipmentId,
+    companyId,
+    { shipment: shipment.data, lines: shipmentLines.data ?? [] }
+  );
+  if (shipmentLineTracking.error)
+    throw new Error("Failed to load shipment tracking", {
+      cause: shipmentLineTracking.error
+    });
 
   let fixedAssetLines: {
     id: string;

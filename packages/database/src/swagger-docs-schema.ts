@@ -89160,6 +89160,213 @@ export default {
         tags: ["quoteLines"]
       }
     },
+    "/jobUnitPairing": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.jobMaterialId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.sourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.outputId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.serial"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.assignedSerial"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.releasedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobUnitPairing"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["jobUnitPairing"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.jobUnitPairing"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["jobUnitPairing"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.jobMaterialId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.sourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.outputId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.serial"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.assignedSerial"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.releasedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["jobUnitPairing"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.jobMaterialId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.sourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.outputId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.serial"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.assignedSerial"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.releasedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobUnitPairing.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.jobUnitPairing"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["jobUnitPairing"]
+      }
+    },
     "/salesInvoices": {
       get: {
         parameters: [
@@ -121732,7 +121939,13 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberFromComponent"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberFromComponentEnabledAt"
           },
           {
             $ref: "#/parameters/select"
@@ -122100,7 +122313,13 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberFromComponent"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberFromComponentEnabledAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -122422,7 +122641,13 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberFromComponent"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberFromComponentEnabledAt"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -128934,6 +129159,74 @@ export default {
         tags: ["(rpc) sync_insert_quote_material_make_method"]
       }
     },
+    "/rpc/job_requires_serial_pairing": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_job_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) job_requires_serial_pairing"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_job_id", "p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) job_requires_serial_pairing"]
+      }
+    },
     "/rpc/get_company_groups_for_employee": {
       post: {
         parameters: [
@@ -131182,6 +131475,51 @@ export default {
           }
         },
         tags: ["(rpc) check_api_key_rate_limit"]
+      }
+    },
+    "/rpc/check_job_unit_pairing_company": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) check_job_unit_pairing_company"]
       }
     },
     "/rpc/get_user_select_group_members": {
@@ -135038,6 +135376,51 @@ export default {
           }
         },
         tags: ["(rpc) matchIntercompanyTransactions"]
+      }
+    },
+    "/rpc/check_job_unit_pairing_serial": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) check_job_unit_pairing_serial"]
       }
     },
     "/rpc/sync_finish_job_operation": {
@@ -140117,6 +140500,73 @@ export default {
           }
         },
         tags: ["(rpc) get_returnable_receipt_lines"]
+      }
+    },
+    "/rpc/receive_job_to_inventory": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_expected_serials: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_quantity_complete: {
+                  format: "numeric",
+                  type: "number"
+                },
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_job_id",
+                "p_quantity_complete",
+                "p_company_id",
+                "p_user_id"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) receive_job_to_inventory"]
       }
     },
     "/rpc/sync_upload_document_transaction": {
@@ -185773,6 +186223,92 @@ export default {
       },
       type: "object"
     },
+    jobUnitPairing: {
+      required: [
+        "id",
+        "companyId",
+        "jobId",
+        "sourceId",
+        "outputId",
+        "serial",
+        "assignedSerial",
+        "createdAt",
+        "createdBy"
+      ],
+      properties: {
+        id: {
+          default: "public.id('jup'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobMaterialId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobMaterial.id`.<fk table='jobMaterial' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        sourceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        outputId: {
+          description:
+            "Note:\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        serial: {
+          format: "text",
+          type: "string"
+        },
+        assignedSerial: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        releasedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     salesInvoices: {
       properties: {
         id: {
@@ -201605,6 +202141,7 @@ export default {
         "sequenceWeekNumbering",
         "supplierPartNumberDisplay",
         "customerPartNumberDisplay",
+        "serialNumberFromComponent",
         "holdUnitsWithOpenIssues"
       ],
       properties: {
@@ -202152,10 +202689,19 @@ export default {
           format: 'public."partNumberDisplay"',
           type: "string"
         },
+        serialNumberFromComponent: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
         holdUnitsWithOpenIssues: {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        serialNumberFromComponentEnabledAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -249765,6 +250311,93 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.jobUnitPairing": {
+      name: "jobUnitPairing",
+      description: "jobUnitPairing",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobUnitPairing"
+      }
+    },
+    "rowFilter.jobUnitPairing.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.jobMaterialId": {
+      name: "jobMaterialId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.sourceId": {
+      name: "sourceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.outputId": {
+      name: "outputId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.serial": {
+      name: "serial",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.assignedSerial": {
+      name: "assignedSerial",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.releasedAt": {
+      name: "releasedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobUnitPairing.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.salesInvoices": {
       name: "salesInvoices",
       description: "salesInvoices",
@@ -267991,8 +268624,20 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.serialNumberFromComponent": {
+      name: "serialNumberFromComponent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.companySettings.holdUnitsWithOpenIssues": {
       name: "holdUnitsWithOpenIssues",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.serialNumberFromComponentEnabledAt": {
+      name: "serialNumberFromComponentEnabledAt",
       required: false,
       in: "query",
       type: "string"

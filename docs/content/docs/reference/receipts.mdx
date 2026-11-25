@@ -109,6 +109,8 @@ The transfer takes only passed stock. For a serial or batch part, that is its **
 
 A sales return receipt has no Put Away button. Move its stock with an ordinary stock transfer.
 
+To void a serialized sales return after a bin pick, unpick the serial back to its receiving bin first. If the customer bought and returned that serial again, void the latest receipt. For an Average-cost item, Carbon refuses a void that would leave inventory value with zero stock or give the remaining stock a negative unit cost. Reverse the intervening stock movements and retry the void.
+
 ### Voiding a receipt with open lots
 
 Voiding the receipt sets each **Pending** or **In Progress** lot to **Cancelled**. A cancelled lot holds nothing. A lot that is already **Passed**, **Failed** or **Partial** keeps its status. A voided receipt always reads **"Not Required"**, whatever its lots.

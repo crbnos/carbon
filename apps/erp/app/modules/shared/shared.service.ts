@@ -16401,6 +16401,7 @@ export interface COGSResult {
   unitCost: number;
   totalCost: number;
   layersConsumed: CostLayer[];
+  identified?: ReadonlyMap<string, { cost: number; quantity: number }>;
 }
 
 export async function calculateCOGS(
@@ -16539,6 +16540,7 @@ export async function calculateCOGS(
       return {
         unitCost: quantity > 0 ? relief.totalCost / quantity : 0,
         totalCost: relief.totalCost,
+        identified: relief.identified,
         layersConsumed: relief.layersConsumed.map((layer) => ({
           costLedgerId: layer.layerId,
           quantityConsumed: layer.quantity,
@@ -17873,17 +17875,36 @@ export function movingAverageUnitCost({
   onHand,
   unitCost,
   quantity,
-  value
+  value,
+  reversingSalesReturn = false
 }: {
   onHand: number;
   unitCost: number;
   quantity: number;
   value: number;
+  reversingSalesReturn?: boolean;
 }): number {
   const held = Math.max(onHand, 0);
   const after = held + quantity;
+  const remainingValue = held * unitCost + value;
+  if (reversingSalesReturn && held > 0 && quantity < 0) {
+    // Compare at the precision of the stored rate: three units received for
+    // 100 carry a rate of 33.33333, even when all 100 can be reversed.
+    const reversesAllValue = equals(round(-value / held), unitCost);
+    if (equals(after, 0) && !reversesAllValue) {
+      throw new InvalidInputError(
+        "Cannot void this return: its booked cost would leave Average inventory value with no stock. Reverse the intervening stock movements first."
+      );
+    }
+    if (after > EPSILON && round(remainingValue / after) < 0) {
+      if (reversesAllValue) return 0;
+      throw new InvalidInputError(
+        "Cannot void this return: its booked cost would leave the remaining stock at a negative Average cost. Reverse the intervening stock movements first."
+      );
+    }
+  }
   if (after <= EPSILON) return unitCost;
-  return (held * unitCost + value) / after;
+  return remainingValue / after;
 }
 
 /** Units and value a posting moves at their own cost, per item. */
@@ -17898,12 +17919,21 @@ export type AverageCostChange = {
  * (`movingAverageUnitCost`); other costing methods are left alone. Call it
  * BEFORE the posting inserts its own item ledger rows: on-hand is read as it
  * stood before them. Locks the cost rows, so two postings of one item
- * average in turn.
+ * average in turn. Returns every item valued by Average for this posting,
+ * including items whose rate stayed the same.
  */
 export async function applyAverageCostChanges(
   trx: Transaction<DB>,
-  { companyId, changes }: { companyId: string; changes: AverageCostChange[] }
-): Promise<void> {
+  {
+    companyId,
+    changes,
+    reversingSalesReturn
+  }: {
+    companyId: string;
+    changes: AverageCostChange[];
+    reversingSalesReturn?: boolean;
+  }
+): Promise<string[]> {
   const byItem = new Map<string, { quantity: number; value: number }>();
   for (const change of changes) {
     const total = byItem.get(change.itemId) ?? { quantity: 0, value: 0 };
@@ -17911,7 +17941,7 @@ export async function applyAverageCostChanges(
     total.value += change.value;
     byItem.set(change.itemId, total);
   }
-  if (byItem.size === 0) return;
+  if (byItem.size === 0) return [];
 
   const averageCosts = await trx
     .selectFrom("itemCost")
@@ -17922,17 +17952,14 @@ export async function applyAverageCostChanges(
     .orderBy("itemId")
     .forUpdate()
     .execute();
-  if (averageCosts.length === 0) return;
+  const averagedItemIds = averageCosts.map((row) => row.itemId);
+  if (averagedItemIds.length === 0) return [];
 
   const onHand = await trx
     .selectFrom("itemLedger")
     .select((eb) => ["itemId", eb.fn.sum<number>("quantity").as("quantity")])
     .where("companyId", "=", companyId)
-    .where(
-      "itemId",
-      "in",
-      averageCosts.map((row) => row.itemId)
-    )
+    .where("itemId", "in", averagedItemIds)
     .groupBy("itemId")
     .execute();
   const onHandByItem = new Map(
@@ -17947,12 +17974,13 @@ export async function applyAverageCostChanges(
         onHand: onHandByItem.get(row.itemId) ?? 0,
         unitCost,
         quantity: change.quantity,
-        value: change.value
+        value: change.value,
+        reversingSalesReturn
       })
     );
     return equals(next, unitCost) ? [] : [{ itemId: row.itemId, next }];
   });
-  if (updates.length === 0) return;
+  if (updates.length === 0) return averagedItemIds;
 
   await trx
     .updateTable("itemCost")
@@ -17971,6 +17999,7 @@ export async function applyAverageCostChanges(
       updates.map((update) => update.itemId)
     )
     .execute();
+  return averagedItemIds;
 }
 export interface BookAdjustmentArgs {
   ledger: {

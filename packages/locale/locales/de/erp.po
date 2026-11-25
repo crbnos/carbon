@@ -2480,6 +2480,12 @@ msgstr "Ein bereichsbegrenztes Geheimnis, das im carbon-key-Anfrage-Header gesen
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Ein separater Plan für die Steuermeldung, wenn Steuerregeln eine Methode erfordern, die sich von der buchhalterischen Abschreibung unterscheidet."
 
+msgid "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+msgstr "Eine Serieneinheit, die aus genau einem Serienteil gefertigt wird, übernimmt dessen Seriennummer, wenn das Teil für sie ausgegeben wird. Artikel mit einer Seriennummernfolge behalten ihre eigenen Nummern."
+
+msgid "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+msgstr "Eine Serieneinheit eines Artikels ohne Seriennummernfolge hat keine Nummer, bis eine im Fertigungsauftrag eingegeben wird."
+
 msgid "A serial's build history"
 msgstr "Die Produktionshistorie einer Seriennummer"
 
@@ -25274,11 +25280,17 @@ msgstr "Zahlung erhalten"
 msgid "Receive Payment · {0} invoices"
 msgstr "Zahlung erhalten · {0} Rechnungen"
 
+msgid "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+msgstr "Buchen Sie die bisher verpackten Einheiten ein. Der Auftrag bleibt offen, bis alle übrigen Einheiten erfasst sind."
+
 msgid "Receive to Inventory"
 msgstr "In Bestand empfangen"
 
 msgid "Receive to project stock"
 msgstr "Zu Projektbestand empfangen"
+
+msgid "Receive Units"
+msgstr "Einheiten einbuchen"
 
 msgid "Received"
 msgstr "Eingegangen"
@@ -27557,6 +27569,9 @@ msgstr "Scannen Sie ein Etikett oder suchen Sie nach Artikel-ID oder Tracking-ID
 msgid "Scan a serial, batch or item number"
 msgstr "Scannen Sie eine Serien-, Los- oder Artikelnummer"
 
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Scannen Sie eine eindeutige Seriennummer oder wählen Sie eine Einheit aus der Liste."
+
 msgid "Scan or choose a batch number"
 msgstr "Scannieren oder wählen Sie eine Chargennummer"
 
@@ -28470,6 +28485,12 @@ msgstr "Seriennummern werden beim Eingang der Einheiten vergeben."
 
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Seriennummern werden nur für Artikel mit Serien- oder Chargenverfolgung generiert."
+
+msgid "Serial numbers from the part disabled"
+msgstr "Seriennummern vom Teil deaktiviert"
+
+msgid "Serial numbers from the part enabled"
+msgstr "Seriennummern vom Teil aktiviert"
 
 msgid "Serial numbers received"
 msgstr "Eingelagerte Seriennummern"
@@ -30778,6 +30799,9 @@ msgstr "Das erste Element nehmen"
 
 msgid "Take the last item"
 msgstr "Das letzte Element nehmen"
+
+msgid "Take the serial number from the part"
+msgstr "Seriennummer vom Teil übernehmen"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Berücksichtigen Sie die kürzeste verbleibende Haltbarkeit der verbrauchten Werkstoffe zur Herstellung dieses Artikels. Verwenden Sie dies, wenn der Verfall des Produkts von seinen Inhaltsstoffen abhängt."
@@ -34419,6 +34443,9 @@ msgstr "Einheitlicher Verkaufspreis"
 msgid "Units"
 msgstr "Einheiten"
 
+msgid "Units are not numbered from their parts"
+msgstr "Einheiten werden nicht nach ihren Teilen nummeriert"
+
 msgid "Units don't match"
 msgstr "Einheiten stimmen nicht überein"
 
@@ -34434,8 +34461,14 @@ msgstr "Maßeinheiten"
 msgid "Units of measure"
 msgstr "Maßeinheiten"
 
+msgid "Units received. The job is still open."
+msgstr "Einheiten eingebucht. Der Auftrag ist weiterhin offen."
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Einheiten, die bei einer Operation mit einem Grund als nicht behebbar gemeldet werden — die Alternative zu Nacharbeiten."
+
+msgid "Units take the serial number of their part"
+msgstr "Einheiten übernehmen die Seriennummer ihres Teils"
 
 msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 msgstr "Einheiten, die bei einer Stichprobe durchgefallen sind, bleiben abgelehnt. Alle anderen Einheiten, auch nie geprüfte, sind bereit zur Einlagerung."

@@ -37,7 +37,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { displaySerial, formatDate } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -179,7 +179,11 @@ const JobHeader = () => {
   const complete = useAction<typeof completeAction>({
     onSuccess: ({ data }) => {
       if (!data) return;
-      toast.success(t`Job completed successfully`);
+      toast.success(
+        data.completed === false
+          ? t`Units received. The job is still open.`
+          : t`Job completed successfully`
+      );
       if (data.warning) toast.error(data.warning);
     }
   });
@@ -1477,7 +1481,10 @@ async function getJobReceipts(
     const body = (await response.json()) as {
       receipts: JobReceiptSnapshot | null;
     };
-    return body.receipts?.tracking && body.receipts.receiptPreview
+    return body.receipts?.tracking &&
+      body.receipts.receiptPreview &&
+      (body.receipts.pairedUnitIds === null ||
+        Array.isArray(body.receipts.pairedUnitIds))
       ? body.receipts
       : null;
   } catch {
@@ -1551,7 +1558,10 @@ function JobCompleteModal({
   );
   const tracking = receiptSnapshot?.tracking;
   const receivesOutput = receiptHasTrackedOutput(tracking);
-  const confirmation = getReceiptConfirmation(receiptSnapshot, previewUnits);
+  const pairedReceipt = Array.isArray(receiptSnapshot?.pairedUnitIds);
+  const confirmation = pairedReceipt
+    ? null
+    : getReceiptConfirmation(receiptSnapshot, previewUnits);
   const minimumQuantityComplete =
     tracking?.itemTrackingType !== "Non-Inventory" ? priorReceivedQuantity : 0;
 
@@ -1579,7 +1589,10 @@ function JobCompleteModal({
     !Number.isInteger(quantityComplete);
 
   const getJobData = async () => {
-    if (!carbon) return;
+    if (!carbon) {
+      setLoading(false);
+      return;
+    }
     const receipts = await getJobReceipts(job?.id!);
     const tracking = receipts?.tracking;
     const pickMethod = tracking?.locationId
@@ -1615,7 +1628,7 @@ function JobCompleteModal({
 
   useMount(() => {
     if (!job || !open) return;
-    getJobData();
+    getJobData().catch(() => setLoading(false));
   });
 
   // Update leftover quantities when action changes
@@ -1676,11 +1689,21 @@ function JobCompleteModal({
                   : t`Receive ${job.jobId} to Inventory`}
               </ModalTitle>
               <ModalDescription>
-                {!receivesToInventory
-                  ? t`This job will no longer be available on the shop floor.`
-                  : t`This job will be received to inventory. It will no longer be available on the shop floor.`}
+                {pairedReceipt
+                  ? t`Receive the units packed so far. The job stays open until the remaining units are accounted for.`
+                  : !receivesToInventory
+                    ? t`This job will no longer be available on the shop floor.`
+                    : t`This job will be received to inventory. It will no longer be available on the shop floor.`}
               </ModalDescription>
             </ModalHeader>
+            {pairedReceipt && previewUnits && (
+              <Hidden
+                name="expectedSerials"
+                value={JSON.stringify(
+                  previewUnits.map((unit) => unit.readableId)
+                )}
+              />
+            )}
             {confirmation && (
               <>
                 <Hidden
@@ -1723,6 +1746,16 @@ function JobCompleteModal({
                         dialog to try again.
                       </Trans>
                     </AlertTitle>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setLoading(true);
+                        getJobData().catch(() => setLoading(false));
+                      }}
+                    >
+                      <Trans>Retry</Trans>
+                    </Button>
                   </Alert>
                 )}
                 {completesToFixedAsset ? (
@@ -1819,7 +1852,7 @@ function JobCompleteModal({
                       </span>
                       <span className="text-sm">
                         {previewUnits
-                          ?.map((unit) => unit.readableId)
+                          ?.map((unit) => displaySerial(unit.readableId ?? ""))
                           .join(", ")}
                       </span>
                     </VStack>
@@ -1973,10 +2006,18 @@ function JobCompleteModal({
                   // consumes nothing; the database refuses it as well.
                   (tracking?.itemTrackingType !== "Non-Inventory" &&
                     !(quantityComplete > 0)) ||
-                  hasFractionalSerialQuantity
+                  hasFractionalSerialQuantity ||
+                  (pairedReceipt &&
+                    (quantityComplete <= priorReceivedQuantity ||
+                      quantityComplete >
+                        priorReceivedQuantity + (receivableUnitCount ?? 0)))
                 }
               >
-                <Trans>Complete Job</Trans>
+                {pairedReceipt ? (
+                  <Trans>Receive Units</Trans>
+                ) : (
+                  <Trans>Complete Job</Trans>
+                )}
               </Button>
             </ModalFooter>
           </ValidatedForm>

@@ -2480,6 +2480,12 @@ msgstr "Carbon'a programlı çağrıları doğrulayan carbon-key istek başlığ
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdiğinde vergi raporlaması için ayrı bir zaman çizelgesi."
 
+msgid "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+msgstr "Tam olarak bir seri numaralı parçadan üretilen seri numaralı birim, parça ona çıkıldığında o parçanın seri numarasını alır. Seri numarası dizisi olan kalemler kendi numaralarını korur."
+
+msgid "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+msgstr "Seri numarası dizisi olmayan bir kalemin seri numaralı birimi, iş emrine bir numara yazılana kadar numarasızdır."
+
 msgid "A serial's build history"
 msgstr "Bir serininin yapım geçmişi"
 
@@ -25274,11 +25280,17 @@ msgstr "Ödeme Al"
 msgid "Receive Payment · {0} invoices"
 msgstr "Ödeme Al · {0} fatura"
 
+msgid "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+msgstr "Şimdiye kadar paketlenen birimleri teslim alın. Kalan birimlerin tamamı kaydedilene kadar iş emri açık kalır."
+
 msgid "Receive to Inventory"
 msgstr "Envantere Al"
 
 msgid "Receive to project stock"
 msgstr "Projeye stok al"
+
+msgid "Receive Units"
+msgstr "Birimleri teslim al"
 
 msgid "Received"
 msgstr "Alındı"
@@ -27557,6 +27569,9 @@ msgstr "Bir etiketi tarayın veya ürün kimliği veya takip kimliği ile arama 
 msgid "Scan a serial, batch or item number"
 msgstr "Bir seri numarası, parti numarası veya stok kartı numarası tarayın"
 
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Benzersiz bir seri numarası tarayın veya listeden bir birim seçin."
+
 msgid "Scan or choose a batch number"
 msgstr "Toplu iş numarasını tarayın veya seçin"
 
@@ -28470,6 +28485,12 @@ msgstr "Seri numaraları adetler alındığında çizilir."
 
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Seri numaraları yalnızca seri- veya batch-izlenen öğeler için oluşturulur."
+
+msgid "Serial numbers from the part disabled"
+msgstr "Parçadan seri numarası devre dışı"
+
+msgid "Serial numbers from the part enabled"
+msgstr "Parçadan seri numarası etkin"
 
 msgid "Serial numbers received"
 msgstr "Teslim alınan seri numaraları"
@@ -30778,6 +30799,9 @@ msgstr "İlk stok kartını al"
 
 msgid "Take the last item"
 msgstr "Son stok kartını al"
+
+msgid "Take the serial number from the part"
+msgstr "Seri numarasını parçadan al"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Bu öğeyi üretmek için tüketilen malzemelerdeki en kısa kalan raf ömrünü alır. Ürünün son kullanma tarihinin bileşenlerine bağlı olduğu durumlarda kullanılır."
@@ -34419,6 +34443,9 @@ msgstr "Birim Satış Fiyatı"
 msgid "Units"
 msgstr "Birimler"
 
+msgid "Units are not numbered from their parts"
+msgstr "Birimler parçalarına göre numaralandırılmaz"
+
 msgid "Units don't match"
 msgstr "Birimler eşleşmiyor"
 
@@ -34434,8 +34461,14 @@ msgstr "ölçü birimleri"
 msgid "Units of measure"
 msgstr "Ölçü birimleri"
 
+msgid "Units received. The job is still open."
+msgstr "Birimler teslim alındı. İş emri hâlâ açık."
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Bir işlemde kurtarılamaz olarak raporlanan birimler, bir nedenle — yeniden işlem için bir alternatif."
+
+msgid "Units take the serial number of their part"
+msgstr "Birimler parçalarının seri numarasını alır"
 
 msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 msgstr "Bir numunede başarısız olan birimler reddedilmiş kalır. Hiç numune alınmayanlar dahil diğer tüm birimler yerleştirmeye hazırdır."

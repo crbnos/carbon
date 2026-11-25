@@ -570,6 +570,7 @@ export async function scrapOperationQuantity(
     { companyId, userId },
     {
       type: "jobOperationScrap",
+      pairingId: validation.data.pairingId,
       jobOperationId,
       quantity,
       scrapReasonId,

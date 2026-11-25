@@ -1,6 +1,7 @@
 {
   "name": "@carbon/lib",
   "dependencies": {
+    "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",
     "@carbon/env": "workspace:*",
     "@carbon/files": "workspace:*",
@@ -17,7 +18,6 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
-    "@carbon/database": "workspace:*",
     "@carbon/notifications": "workspace:*",
     "@carbon/workflows-core": "workspace:*",
     "@supabase/supabase-js": "catalog:",

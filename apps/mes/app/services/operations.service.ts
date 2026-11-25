@@ -1683,6 +1683,7 @@ export async function getBatchWorkInstructions(
 export async function getJobMaterialsByOperationId(
   client: SupabaseClient<Database>,
   args: {
+    companyId: string;
     operation: BaseOperationWithDetails;
     trackedEntityId: string | undefined;
     requiresSerialTracking: boolean;
@@ -1710,7 +1711,7 @@ export async function getJobMaterialsByOperationId(
       .eq("jobMakeMethodId", operation.jobMakeMethodId)
       .order("itemReadableId", { ascending: true })
       .order("id", { ascending: true }),
-    getTrackedInputs(client, trackedEntityId)
+    getTrackedInputs(client, args.companyId, trackedEntityId)
   ]);
 
   const kittedMakeMethodIds = new Set(
@@ -2578,7 +2579,22 @@ export async function getTrackedEntitiesForOperation(
   client: SupabaseClient<Database>,
   args: OperationUnitRead
 ) {
-  return readOperationUnits<TrackedEntityRow>(client, args, "*");
+  const result = await readOperationUnits<
+    TrackedEntityRow & { pairings: { id: string }[] }
+  >(
+    client,
+    args,
+    "*, pairings:jobUnitPairing!jobUnitPairing_outputId_fkey(id)",
+    true
+  );
+  return {
+    ...result,
+    data:
+      result.data?.map(({ pairings, ...unit }) => ({
+        ...unit,
+        pairingId: pairings?.[0]?.id
+      })) ?? null
+  };
 }
 
 /**
@@ -2598,19 +2614,21 @@ export async function getOperationUnitAxis(
 async function readOperationUnits<T extends { id: string }>(
   client: SupabaseClient<Database>,
   args: OperationUnitRead,
-  columns: string
+  columns: string,
+  includeActivePair = false
 ) {
   const [entities, scope, outputs, receipts] = await Promise.all([
-    fetchAll<T>(() =>
-      client
+    fetchAll<T>(() => {
+      const query = client
         .from("trackedEntity")
         .select(columns)
         .eq("attributes->>Job Make Method", args.jobMakeMethodId)
         .eq("companyId", args.companyId)
         .order("createdAt", { ascending: true })
         .order("readableId", { ascending: true })
-        .order("id", { ascending: true })
-    ),
+        .order("id", { ascending: true });
+      return includeActivePair ? query.is("pairings.releasedAt", null) : query;
+    }),
     fetchAll<{ trackedEntityId: string }>(() =>
       client
         .from("jobOperationTrackedEntity")
@@ -2968,16 +2986,24 @@ export async function getTrackedEntitiesByOperationId(
 
 export async function getTrackedInputs(
   client: SupabaseClient<Database>,
+  companyId: string,
   trackedEntityId?: string
 ) {
   if (!trackedEntityId) return { data: [] };
-  const [inputs, outputs] = await Promise.all([
+  const [inputs, outputs, pairing] = await Promise.all([
     client.rpc("get_direct_descendants_of_tracked_entity_strict", {
       p_tracked_entity_id: trackedEntityId
     }),
     client.rpc("get_direct_ancestors_of_tracked_entity_strict", {
       p_tracked_entity_id: trackedEntityId
-    })
+    }),
+    client
+      .from("jobUnitPairing")
+      .select("id, sourceId")
+      .eq("companyId", companyId)
+      .eq("outputId", trackedEntityId)
+      .is("releasedAt", null)
+      .maybeSingle()
   ]);
 
   // A scrapped descendant is no longer a live consumed input — the scrap flow
@@ -2988,9 +3014,16 @@ export async function getTrackedInputs(
   // outputs as often as in inputs) is no longer inside the unit either.
   return {
     data: inputs.data
-      ? netTrackedInputs(inputs.data, outputs.error ? [] : (outputs.data ?? []))
+      ? netTrackedInputs(
+          inputs.data,
+          outputs.error ? [] : (outputs.data ?? [])
+        ).map((input) => ({
+          ...input,
+          pairingId:
+            pairing.data?.sourceId === input.id ? pairing.data.id : undefined
+        }))
       : inputs.data,
-    error: inputs.error
+    error: inputs.error ?? pairing.error
   };
 }
 
@@ -3302,28 +3335,31 @@ export async function insertReworkQuantity(
     createdBy: string;
   }
 ) {
-  const {
-    trackedEntityId: _trackedEntityId,
-    trackingType: _trackingType,
-    ...insert
-  } = data;
-
   return client
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...insert,
+        ...withoutTracking(data),
         type: "Rework" as const
       })
     )
     .select("*");
 }
 
-// The tracked entity is recorded by the issue path, not on productionQuantity.
+// The issue posting owns physical tracking and the confirmed source pairing.
 function withoutTracking<
-  T extends { trackedEntityId?: unknown; trackingType?: unknown }
->(data: T): Omit<T, "trackedEntityId" | "trackingType"> {
-  const { trackedEntityId: _entity, trackingType: _tracking, ...rest } = data;
+  T extends {
+    trackedEntityId?: unknown;
+    trackingType?: unknown;
+    pairingId?: unknown;
+  }
+>(data: T): Omit<T, "trackedEntityId" | "trackingType" | "pairingId"> {
+  const {
+    trackedEntityId: _entity,
+    trackingType: _tracking,
+    pairingId: _pairing,
+    ...rest
+  } = data;
   return rest;
 }
 

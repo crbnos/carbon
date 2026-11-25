@@ -107,6 +107,10 @@ const productionSettingsForm = z.discriminatedUnion("intent", [
     "requireTrackedMaterialsIssued"
   ),
   settingsToggle("autoPickingListOnReleaseToggle", "autoPickingListOnRelease"),
+  settingsToggle(
+    "serialNumberFromComponentToggle",
+    "serialNumberFromComponent"
+  ),
   serialNumberTimingValidator.extend({
     intent: z.literal("serialNumberTiming")
   }),
@@ -183,6 +187,11 @@ export default function ProductionSettingsRoute() {
         ? t`Required tracked parts enabled`
         : t`Required tracked parts disabled`;
     }
+    if (data.serialNumberFromComponent !== undefined) {
+      return data.serialNumberFromComponent
+        ? t`Serial numbers from the part enabled`
+        : t`Serial numbers from the part disabled`;
+    }
     if (data.serialNumberTiming !== undefined) {
       if (data.serialNumberTiming === "production") {
         return t`Serial numbers are drawn when a unit is produced`;
@@ -214,6 +223,8 @@ export default function ProductionSettingsRoute() {
   const travelerLabels = companySettings.travelerLabels ?? false;
   const requireTrackedMaterialsIssued =
     companySettings.requireTrackedMaterialsIssued ?? false;
+  const serialNumberFromComponent =
+    companySettings.serialNumberFromComponent ?? false;
   const autoPickingListOnRelease =
     companySettings.autoPickingListOnRelease ?? false;
 
@@ -275,6 +286,19 @@ export default function ProductionSettingsRoute() {
       fetcher.submit(
         {
           intent: "requireTrackedMaterialsIssuedToggle",
+          enabled: String(checked)
+        },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleSerialNumberFromComponentToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        {
+          intent: "serialNumberFromComponentToggle",
           enabled: String(checked)
         },
         { method: "POST" }
@@ -581,6 +605,41 @@ export default function ProductionSettingsRoute() {
                   checked={requireTrackedMaterialsIssued}
                   aria-label={t`Require tracked parts before completion`}
                   onCheckedChange={handleRequireTrackedMaterialsIssuedToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+
+              <Separator />
+
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {serialNumberFromComponent ? (
+                      <Trans>Units take the serial number of their part</Trans>
+                    ) : (
+                      <Trans>Units are not numbered from their parts</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {serialNumberFromComponent ? (
+                      <Trans>
+                        A serial unit made from exactly one serial part takes
+                        that part's serial number when the part is issued into
+                        it. Items with a serial number sequence keep their own
+                        numbers.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        A serial unit of an item with no serial number sequence
+                        has no number until one is typed on the job.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={serialNumberFromComponent}
+                  aria-label={t`Take the serial number from the part`}
+                  onCheckedChange={handleSerialNumberFromComponentToggle}
                   disabled={isToggling}
                 />
               </HStack>

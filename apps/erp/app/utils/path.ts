@@ -408,9 +408,14 @@ export const path = {
       search: `${api}/search`,
       seedQualityDocuments: `${api}/quality/documents/seed`,
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
-      serialNumbers: (itemId: string, isReadOnly: boolean) =>
+      serialNumbers: (
+        itemId: string,
+        isReadOnly: boolean,
+        stockShipment = false,
+        salesReturnOrderId?: string | null
+      ) =>
         generatePath(
-          `${api}/inventory/serial-numbers?itemId=${itemId}&isReadOnly=${isReadOnly}`
+          `${api}/inventory/serial-numbers?itemId=${itemId}&isReadOnly=${isReadOnly}${stockShipment ? "&stockShipment=true" : ""}${salesReturnOrderId ? "&salesReturnOrderId=" + encodeURIComponent(salesReturnOrderId) : ""}`
         ),
       services: `${api}/items/services`,
       shifts: (id: string) =>

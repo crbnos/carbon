@@ -17,6 +17,7 @@ import { toJson } from "@carbon/database/json";
 import * as sequence from "@carbon/database/sequence";
 import { datetime, textToRichTextDoc } from "@carbon/utils";
 import type { Transaction } from "kysely";
+import { trackedEntityItemId } from "./inventory.utils";
 
 type ReturnLineType = Database["public"]["Enums"]["returnType"];
 
@@ -271,11 +272,13 @@ async function ensureCustomerAssets(
 
   const entities = await trx
     .selectFrom("trackedEntity")
-    .select(["id", "itemId"])
+    .select(["id", "itemId", "sourceDocument", "sourceDocumentId"])
     .where("id", "in", missing)
     .where("companyId", "=", companyId)
     .execute();
-  const itemBySerial = new Map(entities.map((e) => [e.id, e.itemId]));
+  const itemBySerial = new Map(
+    entities.map((unit) => [unit.id, trackedEntityItemId(unit)])
+  );
   if (missing.some((id) => !itemBySerial.get(id))) {
     throw new InvalidInputError(
       "The serial has no item, so it cannot be a customer asset"

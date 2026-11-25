@@ -44,7 +44,7 @@ import {
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   LuCheck,
   LuCircleAlert,
@@ -67,7 +67,11 @@ import type {
   getBatchNumbersForItem,
   getSerialNumbersForItem
 } from "~/modules/inventory/inventory.service";
-import { isShippableEntityStatus } from "~/modules/inventory/inventory.utils";
+import {
+  findShipmentSerial,
+  isShippableEntityStatus,
+  shipmentSerialLabels
+} from "~/modules/inventory/inventory.utils";
 import type {
   ItemTracking,
   RentalShipmentLine,
@@ -125,81 +129,6 @@ const ShipmentLines = () => {
     ...line,
     shippedQuantity: line.shippedQuantity ?? 0
   }));
-
-  const [serialNumbersByLineId, setSerialNumbersByLineId] = useState<
-    Record<string, { index: number; id: string }[]>
-  >(() => {
-    return shipmentLines.reduce((acc, line) => {
-      if (!line.requiresSerialTracking) return acc;
-
-      const trackedEntitiesForLine = routeData?.shipmentLineTracking?.filter(
-        (t) => {
-          const attributes = t.attributes as TrackedEntityAttributes;
-          return attributes["Shipment Line"] === line.id;
-        }
-      );
-
-      if (!trackedEntitiesForLine) return acc;
-      return {
-        ...acc,
-        [line.id!]: Array.from(
-          { length: line.shippedQuantity || 0 },
-          (_, index) => {
-            const serialNumberEntity = trackedEntitiesForLine.find((t) => {
-              const attributes = t.attributes as TrackedEntityAttributes;
-              return attributes["Shipment Line Index"] === index;
-            });
-
-            const serialNumber =
-              serialNumberEntity?.readableId || serialNumberEntity?.id || "";
-
-            return {
-              index,
-              id: serialNumber
-            };
-          }
-        )
-      };
-    }, {});
-  });
-
-  useEffect(() => {
-    setSerialNumbersByLineId(
-      shipmentLines.reduce((acc, line) => {
-        if (!line.requiresSerialTracking) return acc;
-
-        const trackedEntitiesForLine = routeData?.shipmentLineTracking?.filter(
-          (t) => {
-            const attributes = t.attributes as TrackedEntityAttributes;
-            return attributes["Shipment Line"] === line.id;
-          }
-        );
-
-        if (!trackedEntitiesForLine) return acc;
-        return {
-          ...acc,
-          [line.id!]: Array.from(
-            { length: line.shippedQuantity || 0 },
-            (_, index) => {
-              const serialNumberEntity = trackedEntitiesForLine.find((t) => {
-                const attributes = t.attributes as TrackedEntityAttributes;
-                return attributes["Shipment Line Index"] === index;
-              });
-
-              const serialNumber =
-                serialNumberEntity?.readableId || serialNumberEntity?.id || "";
-
-              return {
-                index,
-                id: serialNumber
-              };
-            }
-          )
-        };
-      }, {})
-    );
-    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
-  }, [routeData?.shipment?.sourceDocumentId, routeData?.shipmentLines?.length]);
 
   const onUpdateShipmentLine = useCallback(
     async ({
@@ -263,13 +192,12 @@ const ShipmentLines = () => {
                     a.itemReadableId.localeCompare(b.itemReadableId)
                   )
                   .map((line, index) => {
-                    const tracking = routeData?.shipmentLineTracking?.find(
-                      (t) => {
+                    const lineTracking =
+                      routeData?.shipmentLineTracking?.filter((t) => {
                         const attributes =
                           t.attributes as TrackedEntityAttributes;
                         return attributes["Shipment Line"] === line.id;
-                      }
-                    );
+                      });
                     return (
                       <ShipmentLineItem
                         key={line.id}
@@ -292,14 +220,8 @@ const ShipmentLines = () => {
                             ? "border-none"
                             : ""
                         }
-                        serialNumbers={serialNumbersByLineId[line.id!] || []}
-                        onSerialNumbersChange={(newSerialNumbers) => {
-                          setSerialNumbersByLineId((prev) => ({
-                            ...prev,
-                            [line.id!]: newSerialNumbers
-                          }));
-                        }}
-                        tracking={tracking}
+                        serialNumbers={lineTracking ?? []}
+                        tracking={lineTracking?.[0]}
                       />
                     );
                   })
@@ -490,8 +412,7 @@ function ShipmentLineItem({
   isReadOnly,
   tracking,
   serialNumbers,
-  onUpdate,
-  onSerialNumbersChange
+  onUpdate
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
@@ -501,10 +422,7 @@ function ShipmentLineItem({
   hasTrackingLabel: boolean;
   isReadOnly: boolean;
   tracking: ItemTracking | undefined;
-  serialNumbers: { index: number; id: string }[];
-  onSerialNumbersChange: (
-    serialNumbers: { index: number; id: string }[]
-  ) => void;
+  serialNumbers: ShipmentLineTracking[];
   onUpdate: ({
     lineId,
     field,
@@ -646,21 +564,6 @@ function ShipmentLineItem({
                     field: "shippedQuantity",
                     value: safeValue
                   });
-                  // Adjust serial numbers array size while preserving existing values
-                  if (safeValue > serialNumbers.length) {
-                    onSerialNumbersChange([
-                      ...serialNumbers,
-                      ...Array.from(
-                        { length: safeValue - serialNumbers.length },
-                        (_, i) => ({
-                          index: i,
-                          id: ""
-                        })
-                      )
-                    ]);
-                  } else if (safeValue < serialNumbers.length) {
-                    onSerialNumbersChange(serialNumbers.slice(0, safeValue));
-                  }
                 }}
               >
                 <NumberInput
@@ -776,7 +679,6 @@ function ShipmentLineItem({
           hasTrackingLabel={hasTrackingLabel}
           serialNumbers={serialNumbers}
           isReadOnly={isReadOnly}
-          onSerialNumbersChange={onSerialNumbersChange}
         />
       )}
       <SplitShipmentLineModal
@@ -1164,17 +1066,13 @@ function SerialForm({
   shipment,
   hasTrackingLabel,
   serialNumbers,
-  isReadOnly,
-  onSerialNumbersChange
+  isReadOnly
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
   hasTrackingLabel: boolean;
-  serialNumbers: { index: number; id: string }[];
+  serialNumbers: ShipmentLineTracking[];
   isReadOnly: boolean;
-  onSerialNumbersChange: (
-    serialNumbers: { index: number; id: string }[]
-  ) => void;
 }) {
   const { t } = useLingui();
   const [items] = useItems();
@@ -1182,180 +1080,66 @@ function SerialForm({
   const [errors, setErrors] = useState<Record<number, string>>({});
   const { data: serialNumbersData } = useSerialNumbers(
     line.itemId!,
-    isReadOnly
+    isReadOnly,
+    !isReadOnly &&
+      shipment?.sourceDocument === "Sales Order" &&
+      line.fulfillment?.type !== "Job",
+    shipment?.sourceDocument === "Sales Return Order"
+      ? shipment.sourceDocumentId
+      : null
   );
 
-  // Check for duplicates within the current form
-  const validateSerialNumber = useCallback(
-    (serialNumberId: string, currentIndex: number) => {
-      if (!serialNumberId) return null;
-
-      // Check for duplicates within the form (resolve both sides to entity id)
-      const resolvedCurrent = resolveTrackedEntity(
-        serialNumberId,
-        serialNumbersData?.data ?? []
-      );
-      const isDuplicate = serialNumbers.some((sn, idx) => {
-        if (idx === currentIndex || !sn.id) return false;
-        const resolvedOther = resolveTrackedEntity(
-          sn.id,
-          serialNumbersData?.data ?? []
-        );
-        return (
-          sn.id === serialNumberId ||
-          (resolvedCurrent &&
-            resolvedOther &&
-            resolvedCurrent.id === resolvedOther.id)
-        );
-      });
-
-      if (isDuplicate) {
-        return "Duplicate serial number";
-      }
-
-      // Check if serial number is available (by id or readableId)
-      const serialNumber = resolveTrackedEntity(
-        serialNumberId,
-        serialNumbersData?.data ?? []
-      );
-
-      if (!serialNumber) {
-        return "Serial number not found";
-      }
-
-      // @ts-expect-error TS2339 - TODO: fix type
-      if (!isShippable(shipment, serialNumber.status)) {
-        // @ts-expect-error TS2339 - TODO: fix type
-        return `Serial number is ${serialNumber.status}`;
-      }
-
-      return null;
-    },
-    [serialNumbers, serialNumbersData?.data, shipment]
+  const [draft, setDraft] = useState<{
+    index: number;
+    text: string;
+    previousId: string | null;
+  } | null>(null);
+  const slotAtMenuOpen = useRef<string | null>(null);
+  const assignment = useAction({ onSettled: () => setDraft(null) });
+  const assigning = assignment.state !== "idle";
+  const available = serialNumbersData?.data ?? [];
+  const byIndex = new Map(
+    serialNumbers.map((entity) => [
+      (entity.attributes as TrackedEntityAttributes)["Shipment Line Index"],
+      entity
+    ])
+  );
+  const labels = shipmentSerialLabels(available);
+  const occupied = new Set(serialNumbers.map((entity) => entity.id));
+  const unassignedSerialNumbers = available.filter(
+    (entity) => isShippable(shipment, entity.status) && !occupied.has(entity.id)
   );
 
-  const updateSerialNumber = useCallback(
-    async (serialNumber: { index: number; id: string }) => {
-      if (!shipment?.id || !serialNumber.id) return;
-
-      const error = validateSerialNumber(serialNumber.id, serialNumber.index);
-      if (error) {
-        setErrors((prev) => ({ ...prev, [serialNumber.index]: error }));
-
-        // Clear the input value but keep the error message
-        const newSerialNumbers = [...serialNumbers];
-        newSerialNumbers[serialNumber.index] = {
-          index: serialNumber.index,
-          id: ""
-        };
-        onSerialNumbersChange(newSerialNumbers);
-        return;
-      }
-
-      // Resolve scanned value to actual tracked entity id
-      const resolvedEntity = resolveTrackedEntity(
-        serialNumber.id.trim(),
-        serialNumbersData?.data ?? []
-      );
-
-      const formData = new FormData();
-      formData.append("trackingType", "serial");
-      formData.append("itemId", line.itemId!);
-      formData.append("shipmentId", shipment.id);
-      formData.append("shipmentLineId", line.id!);
-      formData.append("index", serialNumber.index.toString());
-      formData.append(
-        "trackedEntityId",
-        resolvedEntity?.id ?? serialNumber.id.trim()
-      );
-
-      try {
-        const response = await fetch(
-          path.to.shipmentLinesTracking(shipment.id),
-          {
-            method: "POST",
-            body: formData
-          }
-        );
-
-        // The operation's result, `{ data, error }`; a refused form is a 422.
-        const result: { error: { message: string } | null } | null = response.ok
-          ? await response.json()
-          : null;
-
-        if (result && !result.error) {
-          // Clear error if submission was successful
-          setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors[serialNumber.index];
-            return newErrors;
-          });
-        } else {
-          const errorMessage =
-            result?.error?.message || "Failed to track serial number";
-
-          setErrors((prev) => ({
-            ...prev,
-            [serialNumber.index]: errorMessage
-          }));
-
-          // Clear the input value but keep the error message
-          const newSerialNumbers = [...serialNumbers];
-          newSerialNumbers[serialNumber.index] = {
-            index: serialNumber.index,
-            id: ""
-          };
-          onSerialNumbersChange(newSerialNumbers);
-        }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes("available")) {
-          setErrors((prev) => ({
-            ...prev,
-            [serialNumber.index]: "Serial number is not available"
-          }));
-
-          // Clear the input value but keep the error message
-          const newSerialNumbers = [...serialNumbers];
-          newSerialNumbers[serialNumber.index] = {
-            index: serialNumber.index,
-            id: ""
-          };
-          onSerialNumbersChange(newSerialNumbers);
-        }
-      }
-    },
-    [
-      line.id,
-      line.itemId,
-      shipment?.id,
-      validateSerialNumber,
-      serialNumbers,
-      serialNumbersData?.data,
-      onSerialNumbersChange
-    ]
-  );
-
-  // The input stays free-text so a barcode scanner can drive it, but that left
-  // no way to discover a valid number without the physical label in hand. The
-  // QR affordance now also opens the list of what this line accepts.
-  //
-  // Deliberately not `TrackedEntityPicker`/`CreatableCombobox`: the former reads
-  // `get_available_tracked_entities`, which hard-filters `status = 'Available'`
-  // while a sales-return shipment ships On Hold stock; the latter can't render a
-  // value that isn't in its options, which would hide scanned entries. Driving
-  // this off the same data `validateSerialNumber` checks keeps them in step.
-  const unassignedSerialNumbers = (serialNumbersData?.data ?? []).filter(
-    (entity) =>
-      isShippable(shipment, entity.status) &&
-      !serialNumbers.some((assigned) => {
-        if (!assigned.id) return false;
-        const resolved = resolveTrackedEntity(
-          assigned.id,
-          serialNumbersData?.data ?? []
-        );
-        return resolved?.id === entity.id;
-      })
-  );
+  function assign(
+    index: number,
+    entity: (typeof available)[number] | undefined,
+    previousId: string | null
+  ) {
+    if (!shipment?.id || !line.id || assigning) return;
+    const error = !entity
+      ? t`Scan a unique serial number or select a unit from the list.`
+      : !isShippable(shipment, entity.status)
+        ? t`Serial number is not available`
+        : occupied.has(entity.id) && previousId !== entity.id
+          ? t`Duplicate serial number`
+          : "";
+    setErrors((prev) => ({ ...prev, [index]: error }));
+    if (!entity || error || entity.id === previousId) {
+      setDraft(null);
+      return;
+    }
+    const body = new FormData();
+    body.set("trackingType", "serial");
+    body.set("shipmentId", shipment.id);
+    body.set("shipmentLineId", line.id);
+    body.set("index", String(index));
+    body.set("trackedEntityId", entity.id);
+    if (previousId) body.set("expectedTrackedEntityId", previousId);
+    assignment.submit(body, {
+      method: "post",
+      action: path.to.shipmentLinesTracking(shipment.id)
+    });
+  }
 
   return (
     <div className="flex flex-col gap-6 p-6 border rounded-lg max-md:gap-4 max-md:p-4">
@@ -1386,73 +1170,50 @@ function SerialForm({
       </div>
 
       <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3">
-        {serialNumbers.map((serialNumber, index) => {
-          // Check if the serial number is valid and in the list
-          const resolvedSerial = serialNumber.id
-            ? resolveTrackedEntity(
-                serialNumber.id,
-                serialNumbersData?.data ?? []
-              )
-            : null;
-          const isSerialNumberValid =
-            // @ts-expect-error TS2339 - TODO: fix type
-            isShippable(shipment, resolvedSerial?.status);
+        {Array.from({ length: line.shippedQuantity ?? 0 }, (_, index) => {
+          const saved = byIndex.get(index);
+          const editing = draft?.index === index ? draft : null;
+          const text = editing?.text ?? saved?.readableId ?? saved?.id ?? "";
 
           return (
             <div
               key={`${line.id}-${index}-serial`}
               className="flex flex-col gap-1"
             >
-              <InputGroup isDisabled={isReadOnly}>
+              <InputGroup isDisabled={isReadOnly || assigning}>
                 <Input
                   placeholder={t`Serial Number ${index + 1}`}
                   aria-label={t`Serial number ${index + 1} for ${itemReadableId}`}
-                  value={serialNumber.id}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    const newSerialNumbers = [...serialNumbers];
-                    newSerialNumbers[index] = {
+                  value={text}
+                  onChange={(e) =>
+                    setDraft({
                       index,
-                      id: newValue
-                    };
-                    onSerialNumbersChange(newSerialNumbers);
-                  }}
-                  onBlur={(e) => {
-                    const newValue = e.target.value;
-                    const error = validateSerialNumber(newValue, index);
-
-                    setErrors((prev) => {
-                      const newErrors = { ...prev };
-                      if (error) {
-                        newErrors[index] = error;
-                      } else {
-                        delete newErrors[index];
-                      }
-                      return newErrors;
-                    });
-
-                    if (!error) {
-                      updateSerialNumber({
+                      text: e.target.value,
+                      previousId: editing
+                        ? editing.previousId
+                        : (saved?.id ?? null)
+                    })
+                  }
+                  onBlur={() => {
+                    if (editing?.text)
+                      assign(
                         index,
-                        id: newValue
-                      });
-                    } else {
-                      // Clear the input value but keep the error message
-                      const newSerialNumbers = [...serialNumbers];
-                      newSerialNumbers[index] = {
-                        index,
-                        id: ""
-                      };
-                      onSerialNumbersChange(newSerialNumbers);
-                    }
+                        findShipmentSerial(editing.text, available),
+                        editing.previousId
+                      );
+                    else setDraft(null);
                   }}
                   className={cn(errors[index] && "border-destructive")}
                 />
                 <InputRightElement className="pl-2">
-                  {isSerialNumberValid ? (
-                    <LuCheck className="text-emerald-500" />
-                  ) : unassignedSerialNumbers.length > 0 && !isReadOnly ? (
-                    <DropdownMenu>
+                  {unassignedSerialNumbers.length > 0 &&
+                  !isReadOnly &&
+                  !assigning ? (
+                    <DropdownMenu
+                      onOpenChange={(open) => {
+                        if (open) slotAtMenuOpen.current = saved?.id ?? null;
+                      }}
+                    >
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
@@ -1467,23 +1228,14 @@ function SerialForm({
                         className="max-h-64 overflow-y-auto"
                       >
                         {unassignedSerialNumbers.map((entity) => {
-                          const number = (entity.readableId ??
-                            entity.id) as string;
+                          const number = labels.get(entity.id);
                           return (
                             <DropdownMenuItem
                               key={entity.id}
                               className="font-mono text-xs"
-                              onSelect={() => {
-                                const updated = [...serialNumbers];
-                                updated[index] = { index, id: number };
-                                onSerialNumbersChange(updated);
-                                setErrors((prev) => {
-                                  const next = { ...prev };
-                                  delete next[index];
-                                  return next;
-                                });
-                                updateSerialNumber({ index, id: number });
-                              }}
+                              onSelect={() =>
+                                assign(index, entity, slotAtMenuOpen.current)
+                              }
                             >
                               {number}
                             </DropdownMenuItem>
@@ -1491,11 +1243,20 @@ function SerialForm({
                         })}
                       </DropdownMenuContent>
                     </DropdownMenu>
+                  ) : saved ? (
+                    <LuCheck className="text-emerald-500" />
                   ) : (
                     <LuQrCode />
                   )}
                 </InputRightElement>
               </InputGroup>
+              {saved &&
+                labels.has(saved.id) &&
+                labels.get(saved.id) !== (saved.readableId ?? saved.id) && (
+                  <span className="text-xs text-muted-foreground">
+                    {labels.get(saved.id)}
+                  </span>
+                )}
               {errors[index] && (
                 <span className="text-xs text-destructive">
                   {errors[index]}
@@ -1650,10 +1411,24 @@ function resolveTrackedEntity(
 
 export default ShipmentLines;
 
-export function useSerialNumbers(itemId?: string, isReadOnly = false) {
+export function useSerialNumbers(
+  itemId?: string,
+  isReadOnly = false,
+  stockShipment = false,
+  salesReturnOrderId?: string | null
+) {
   const serialNumbersFetcher = useLoaderQuery<
     Awaited<ReturnType<typeof getSerialNumbersForItem>>
-  >(itemId ? path.to.api.serialNumbers(itemId, isReadOnly) : null);
+  >(
+    itemId
+      ? path.to.api.serialNumbers(
+          itemId,
+          isReadOnly,
+          stockShipment,
+          salesReturnOrderId
+        )
+      : null
+  );
 
   return { data: serialNumbersFetcher.data };
 }

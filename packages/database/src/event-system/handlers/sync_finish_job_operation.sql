@@ -14,6 +14,7 @@ DECLARE
   v_quantity_lost NUMERIC;
   v_quantity_received NUMERIC;
   v_job_status TEXT;
+  v_paired BOOLEAN;
 BEGIN
   IF p_operation != 'UPDATE' THEN RETURN; END IF;
   IF (p_new->>'status') != 'Done' OR (p_old->>'status') = 'Done' THEN RETURN; END IF;
@@ -41,7 +42,14 @@ BEGIN
       AND jo2.id != p_new->>'id'
   );
 
-  SELECT status INTO v_job_status FROM "job" WHERE id = p_new->>'jobId';
+  v_paired := job_requires_serial_pairing(p_new->>'jobId', p_new->>'companyId');
+  IF v_paired THEN
+    -- Serialize terminal Finish with a concurrent partial ERP receipt.
+    SELECT status INTO v_job_status FROM "job"
+    WHERE id = p_new->>'jobId' AND "companyId" = p_new->>'companyId' FOR UPDATE;
+  ELSE
+    SELECT status INTO v_job_status FROM "job" WHERE id = p_new->>'jobId';
+  END IF;
   -- A Draft/Planned job's operation can only reach Done through a released
   -- BATCH (batch release outranks job release for floor visibility), so the
   -- run genuinely happened. Completing the batch must complete those jobs
@@ -167,6 +175,16 @@ BEGIN
       RAISE EXCEPTION 'The final operations do not identify the serials for every completed unit';
     END IF;
 
+    -- An ordinary quantity-less Finish can receive the whole planned job.
+    -- A pack-out must account for each piece first, even when the Finish
+    -- button is used instead of the ERP receipt. Rework is still live WIP.
+    IF v_paired THEN
+      v_quantity_complete := GREATEST(COALESCE(v_quantity_complete, 0), COALESCE(v_quantity_received, 0));
+      IF v_quantity_complete + job_scrapped_paired_output_count(p_new->>'jobId', p_new->>'companyId') < v_job_quantity THEN
+        RAISE EXCEPTION 'Finish requires every planned pack-out unit to be logged or scrapped. Receive completed units from the job to leave the remaining work open.';
+      END IF;
+    END IF;
+
     IF COALESCE(v_quantity_complete, 0) = 0 THEN
       -- The zero fallback exists for the quantity-less Finish flow (no
       -- productionQuantity ever recorded). When the job DID record scrap or
@@ -199,14 +217,17 @@ BEGIN
     -- received, and refusing here would block the Done update itself.
     v_quantity_complete := GREATEST(v_quantity_complete, COALESCE(v_quantity_received, 0));
 
-    PERFORM util.receive_job_output(
+    PERFORM util.post_job_receipt(
       p_job_id := p_new->>'jobId',
       p_quantity_complete := v_quantity_complete,
       p_storage_unit_id := v_job_storage_unit_id,
       p_location_id := v_job_location_id,
       p_company_id := p_new->>'companyId',
       p_user_id := COALESCE(p_new->>'updatedBy', p_new->>'createdBy'),
-      p_worked_unit_ids := v_worked_unit_ids
+      p_expected_serials := NULL,
+      p_automatic_finish := true,
+      p_worked_unit_ids := v_worked_unit_ids,
+      p_finishing_operation := p_new
     );
   END IF;
 END;

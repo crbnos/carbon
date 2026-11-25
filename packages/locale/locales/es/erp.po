@@ -2480,6 +2480,12 @@ msgstr "Un secreto con alcance enviado en el encabezado de solicitud carbon-key 
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un cronograma separado para la presentación de impuestos cuando las reglas fiscales requieren un método diferente a la depreciación de libros."
 
+msgid "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+msgstr "Una unidad con número de serie fabricada a partir de exactamente una pieza con número de serie toma el número de serie de esa pieza cuando la pieza se le asigna. Los artículos con una secuencia de números de serie conservan sus propios números."
+
+msgid "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+msgstr "Una unidad con número de serie de un artículo sin secuencia de números de serie no tiene número hasta que se escribe uno en la orden de trabajo."
+
 msgid "A serial's build history"
 msgstr "Historial de construcción de un serial"
 
@@ -25274,11 +25280,17 @@ msgstr "Recibir Pago"
 msgid "Receive Payment · {0} invoices"
 msgstr "Recibir Pago · {0} facturas"
 
+msgid "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+msgstr "Reciba las unidades embaladas hasta ahora. La orden seguirá abierta hasta que se registren las unidades restantes."
+
 msgid "Receive to Inventory"
 msgstr "Recibir al Inventario"
 
 msgid "Receive to project stock"
 msgstr "Recibir al stock del proyecto"
+
+msgid "Receive Units"
+msgstr "Recibir unidades"
 
 msgid "Received"
 msgstr "Recibido"
@@ -27557,6 +27569,9 @@ msgstr "Escanea una etiqueta o busca por ID de artículo o ID de seguimiento."
 msgid "Scan a serial, batch or item number"
 msgstr "Escanee un número de serie, lote de producción o artículo"
 
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Escanee un número de serie único o seleccione una unidad de la lista."
+
 msgid "Scan or choose a batch number"
 msgstr "Escanee o elija un número de lote"
 
@@ -28470,6 +28485,12 @@ msgstr "Los números de serie se asignan cuando se reciben las unidades"
 
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Los números de serie se generan solo para artículos con seguimiento de serie o lote."
+
+msgid "Serial numbers from the part disabled"
+msgstr "Números de serie de la pieza desactivados"
+
+msgid "Serial numbers from the part enabled"
+msgstr "Números de serie de la pieza activados"
 
 msgid "Serial numbers received"
 msgstr "Números de serie recibidos"
@@ -30778,6 +30799,9 @@ msgstr "Tomar el primer artículo"
 
 msgid "Take the last item"
 msgstr "Tomar el último artículo"
+
+msgid "Take the serial number from the part"
+msgstr "Tomar el número de serie de la pieza"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Toma la vida de anaquel más corta restante entre los artículos consumidos para fabricar este artículo. Usa esto cuando la caducidad del producto depende de sus ingredientes."
@@ -34419,6 +34443,9 @@ msgstr "Precio de Venta Unitario"
 msgid "Units"
 msgstr "Unidades"
 
+msgid "Units are not numbered from their parts"
+msgstr "Las unidades no se numeran a partir de sus piezas"
+
 msgid "Units don't match"
 msgstr "Las unidades no coinciden"
 
@@ -34434,8 +34461,14 @@ msgstr "unidades de medida"
 msgid "Units of measure"
 msgstr "Unidades de medida"
 
+msgid "Units received. The job is still open."
+msgstr "Unidades recibidas. La orden sigue abierta."
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Unidades reportadas como irrecuperables en una operación, con una razón — la alternativa al retrabajo."
+
+msgid "Units take the serial number of their part"
+msgstr "Las unidades toman el número de serie de su pieza"
 
 msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 msgstr "Las unidades que fallaron una muestra siguen rechazadas. Todas las demás, incluidas las nunca muestreadas, están listas para ubicar."

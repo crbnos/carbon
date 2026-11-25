@@ -75,7 +75,7 @@ run the same checks. The route only parses the form, and takes the document id f
   Sales Return Order (returned stock ships back from hold, a serviced unit from the depot), `"Available"` or `"Rejected"` when it
   is a Purchase Return Order (rejected units go back to the supplier — a Rejected unit only when
   its `Receipt` attribute is a posted receipt from the shipment's supplier); clears stale
-  attrs off prior entities. Receipt tracking additionally has a `returnEntity` type for
+  attrs off prior entities. Shipment serial picks send the physical ID and the ID previously shown in the slot. The assignment checks that occupant under lock and writes the replacement in one transaction. Receipt tracking additionally has a `returnEntity` type for
   sales-return receipts (same-serial re-entry, guarded by provenance: the entity must be the
   return line's item and shipped to that return's customer on a posted shipment).
   A receipt serial write is keyed by its box (`Receipt Line` + `Receipt Line Index`), not by the

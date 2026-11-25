@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isKanbanCompleteScan,
+  kanbanCompleteHref,
   kanbanCompleteTarget,
   kanbanScanPath,
   soleUnitId
@@ -163,6 +164,16 @@ describe("kanbanCompleteTarget", () => {
       })
     ).toEqual({ action: "complete" });
   });
+});
+
+it("sends the binding shown for the unit the scan completes", () => {
+  const units = [{ id: "one" }, { id: "two", pairingId: "issued" }];
+  expect(kanbanCompleteHref("/end", "two", units)).toBe(
+    "/end?trackedEntityId=two&pairingId=issued"
+  );
+  expect(kanbanCompleteHref("/end", "one", units)).toBe(
+    "/end?trackedEntityId=one"
+  );
 });
 
 describe("soleUnitId", () => {

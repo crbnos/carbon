@@ -39,8 +39,6 @@ export async function outsideProcessingOrder(
   } = {}
 ) {
   const job = await jobFixture(f, key);
-  const purchaseOrderId = `${f.prefix}-po-${key}`;
-  const lineIds = lines.map((_, index) => `${f.prefix}-pol-${key}-${index}`);
   await seed(f, async (trx) => {
     if (!keepMaterial) {
       await trx
@@ -84,6 +82,21 @@ export async function outsideProcessingOrder(
       })
       .where("id", "=", job.operationId)
       .execute();
+  });
+  const order = await orderOutsideOperation(f, job, key, lines, unitPrice);
+  return { ...job, ...order };
+}
+
+export async function orderOutsideOperation(
+  f: Fixture,
+  job: { jobId: string; operationId: string },
+  key: string,
+  lines: number[],
+  unitPrice: number
+) {
+  const purchaseOrderId = `${f.prefix}-po-${key}`;
+  const lineIds = lines.map((_, index) => `${f.prefix}-pol-${key}-${index}`);
+  await seed(f, async (trx) => {
     const interaction = await trx
       .insertInto("supplierInteraction")
       .values({ supplierId: f.supplierId, companyId: f.companyId })
@@ -135,7 +148,7 @@ export async function outsideProcessingOrder(
       )
       .execute();
   });
-  return { ...job, purchaseOrderId, lineIds };
+  return { purchaseOrderId, lineIds };
 }
 
 /** Posts a receipt of the order: `quantity` on every line, or one quantity

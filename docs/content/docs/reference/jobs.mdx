@@ -99,6 +99,18 @@ A job is identical whichever way it's raised. Only its source differs. A **<Term
 Releasing a job copies the part's method into a job-specific copy. Editing that copy never touches the part master, and updating the part never disturbs a job already in flight.
 </Callout>
 
+## Packing a production unit under a sales part number
+
+To keep the serial on the physical label when a unit changes part number at pack-out, enable **Take the serial number from the part** in **Settings → Production**. Set both items to serial tracking and leave the sales item's serial number sequence empty. In the sales item's method, add a pack-out operation and one **Pull from Inventory** line for exactly one production unit per sales unit. Other materials, such as boxes, can appear on the method if they do not require serial tracking.
+
+Create the pack-out job after switching this on. Existing unpaired jobs keep their original numbering rules. On the shop floor, select the sales unit, issue the production unit to it by scanning its label, and log the unit complete at the last operation. The sales unit takes the scanned serial. Each scan identifies one physical unit, including on a job for several units. A traveler QR that contains only the physical ID opens the current serial and destination for confirmation. To correct a wrong scan, return the issued part before logging completion and scan the correct one. Once a piece is logged, Give Back is locked for that piece. If a second operator changes a scan while a dialog is open, reopen the dialog and confirm the current unit.
+
+In the ERP job's completion dialog, **Receive Units** lists the packed serials ready for inventory. Receiving part of the run leaves the job open for the next unit. When all good units and any scrap are accounted for, finish the operation. The sales shipment can then pick a received sales unit by the serial already on its label. Its traveler keeps the link back to the production unit.
+
+The sales item's costing method also applies to a packed unit. Each receipt records the production and packing cost attributed to that output plus its share of common job costs. With FIFO or LIFO, shipping a serial consumes its own receipt layer when available. Voiding that sale returns the serial to stock with a cost layer at the value booked on the sale. With Average, shipments use the item's weighted average unit cost. A free receipt adds quantity at zero value. Voiding a sale adds the returned quantity at its original sale cost to the stock currently on hand. With Standard, they use the item's standard cost. Neither method reduces the remaining quantities on individual receipt layers when a unit ships. Use the item ledger for physical on-hand quantity.
+
+For a linked customer return, select the physical serial that arrived. Its return uses the sale cost recorded for that serial. For an older sale that recorded only a pooled cost, the return uses the proportional share of that cost. After **Use As Is**, the serial is available for a fresh shipment.
+
 ## Related
 
 <Cards>

@@ -222,6 +222,7 @@ export const finishValidator = z.object({
 });
 
 export const issueTrackedEntityValidator = z.object({
+  issueId: z.string().min(1).max(100).optional(),
   materialId: z.string().optional(),
   jobOperationId: z.string().optional(),
   itemId: z.string().optional(),
@@ -230,8 +231,10 @@ export const issueTrackedEntityValidator = z.object({
   // so parentTrackedEntityId is not sent.
   batchId: z.string().optional(),
   parentTrackedEntityId: z.string().optional(),
+  pairingId: z.string().optional(),
   children: z.array(
     z.object({
+      expectedSerial: z.string().optional(),
       trackedEntityId: z.string(),
       quantity: z.number()
     })
@@ -249,6 +252,7 @@ export const issueTrackedEntityValidator = z.object({
 });
 
 export const baseQuantityValidator = finishValidator.extend({
+  pairingId: zfd.text(z.string().optional()),
   trackedEntityId: zfd.text(z.string().optional()),
   trackingType: z.enum(["Serial", "Batch", ""]).optional(),
   quantity: zfd.numeric(z.number().positive()),
@@ -527,6 +531,7 @@ export const inspectionVerdictValidator = z.object({
 // operator intent, not trusted arithmetic.
 export const inspectionDispositionValidator = z
   .object({
+    pairings: zfd.json(z.record(z.string(), z.string())).optional(),
     decision: z.enum(["Accept", "Reject", "Partial"], {
       error: "Decision is required"
     }),
@@ -590,6 +595,7 @@ export const inspectionDispositionValidator = z
 // Production row per passed serial sample (or one linked bulk row for
 // non-serial counts) with sample-level provenance links.
 export const inspectionCompletePassedValidator = z.object({
+  pairings: zfd.json(z.record(z.string(), z.string())).optional(),
   operationId: z.string().min(1, { message: "Operation is required" }),
   setupProductionEventId: zfd.text(z.string().optional()),
   laborProductionEventId: zfd.text(z.string().optional()),

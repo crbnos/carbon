@@ -184,6 +184,7 @@ import {
   createDocumentUploadUrl,
   upsertDocument
 } from "~/modules/documents/documents.service";
+import { trackedEntityItemFilter } from "~/modules/inventory/inventory.utils";
 import { getItemTaxable, upsertPart } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
@@ -8247,23 +8248,60 @@ export async function getReturnableLinesForCustomer(
   });
 }
 
-/**
- * Entity picker source for RMA lines: serials/batches shipped to this
- * customer (Consumed entities tagged with a posted shipment's id — the
- * attributes->>X query pattern from getTrackedEntitiesByMakeMethodId).
- */
+/** Which of these consumed units are with this customer? For serialized stock
+ * the last custody change decides. Transfers stay inside the warehouse,
+ * and voiding a return cancels its receipt. Batches and older serials with
+ * only an opening balance use their posted shipment tag. */
+export async function customerHeldReturnUnitIds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  customerId: string,
+  itemId: string,
+  unitIds: string[]
+) {
+  if (unitIds.length === 0) return new Set<string>();
+  const { rows } = await sql<{ id: string }>`
+    SELECT unit.id
+    FROM "trackedEntity" unit
+    JOIN item ON item.id = ${itemId} AND item."companyId" = unit."companyId"
+    LEFT JOIN LATERAL (
+      SELECT move."documentId", move."documentType", move."itemId", move.quantity,
+             bool_or(move.quantity < 0 OR move."documentType" IN (
+               'Sales Shipment', 'Sales Return Shipment', 'Sales Return Receipt'
+             )) OVER () AS has_custody_history
+      FROM "itemLedger" move
+      WHERE item."itemTrackingType" = 'Serial'
+        AND move."companyId" = unit."companyId" AND move."trackedEntityId" = unit.id
+        AND move.quantity <> 0 AND move."entryType" <> 'Transfer'
+        AND NOT EXISTS (
+          SELECT 1 FROM receipt
+          WHERE move."documentType" = 'Sales Return Receipt' AND receipt.id = move."documentId"
+            AND receipt."companyId" = move."companyId" AND receipt.status = 'Voided'
+        )
+      ORDER BY move."entryNumber" DESC LIMIT 1
+    ) last_move ON true
+    JOIN shipment ON shipment."companyId" = unit."companyId"
+      AND shipment."customerId" = ${customerId} AND shipment.status = 'Posted'
+      AND shipment.id = CASE
+        WHEN last_move."documentType" IN ('Sales Shipment', 'Sales Return Shipment')
+          AND last_move.quantity < 0 AND last_move."itemId" = item.id THEN last_move."documentId"
+        WHEN NOT coalesce(last_move.has_custody_history, false) THEN unit.attributes->>'Shipment'
+      END
+    WHERE unit."companyId" = ${companyId} AND unit.id = ANY(${unitIds}::text[])
+      AND unit.status = 'Consumed' AND COALESCE(unit."itemId", CASE WHEN unit."sourceDocument" = 'Item'
+        THEN unit."sourceDocumentId" END) = item.id
+  `.execute(db);
+  return new Set(rows.map((row) => row.id));
+}
+
+/** Return receipt candidates for one customer and SKU, within the caller's visible stock. */
 export async function getShippedTrackedEntitiesForCustomer(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   customerId: string,
   itemId: string
 ) {
-  // Entity-first, then verify the shipments: the old shape fetched EVERY
-  // posted shipment id for the customer unpaged (PostgREST silently caps at
-  // 1000 rows, and the .in() list has a URL-length ceiling), so a high-volume
-  // customer's picker silently missed candidates. The item's Consumed
-  // entities are the small, relevant set; their shipment ids are verified in
-  // chunks.
   const entities = await fetchAllFromTable<{
     id: string;
     readableId: string | null;
@@ -8277,50 +8315,19 @@ export async function getShippedTrackedEntitiesForCustomer(
     (query) =>
       query
         .eq("companyId", companyId)
-        .eq("itemId", itemId)
+        .or(trackedEntityItemFilter(itemId))
         .eq("status", "Consumed")
   );
   if (entities.error) return { data: null, error: entities.error };
-
-  const entityShipmentIds = [
-    ...new Set(
-      (entities.data ?? [])
-        .map(
-          (entity) =>
-            (entity.attributes as Record<string, unknown> | null)?.Shipment
-        )
-        .filter((value): value is string => typeof value === "string")
-    )
-  ];
-  if (entityShipmentIds.length === 0) return { data: [], error: null };
-
-  const customerShipmentIds = new Set<string>();
-  const CHUNK = 300;
-  for (let i = 0; i < entityShipmentIds.length; i += CHUNK) {
-    const chunk = entityShipmentIds.slice(i, i + CHUNK);
-    const shipments = await client
-      .from("shipment")
-      .select("id")
-      .in("id", chunk)
-      .eq("companyId", companyId)
-      .eq("customerId", customerId)
-      .eq("status", "Posted");
-    if (shipments.error) return { data: null, error: shipments.error };
-    for (const shipment of shipments.data ?? []) {
-      customerShipmentIds.add(shipment.id);
-    }
-  }
-
-  return {
-    data: (entities.data ?? []).filter((entity) => {
-      const shipmentId = (entity.attributes as Record<string, unknown> | null)
-        ?.Shipment;
-      return (
-        typeof shipmentId === "string" && customerShipmentIds.has(shipmentId)
-      );
-    }),
-    error: null
-  };
+  const units = entities.data ?? [];
+  const eligible = await customerHeldReturnUnitIds(
+    db,
+    companyId,
+    customerId,
+    itemId,
+    units.map((unit) => unit.id)
+  );
+  return { data: units.filter((unit) => eligible.has(unit.id)), error: null };
 }
 
 /**

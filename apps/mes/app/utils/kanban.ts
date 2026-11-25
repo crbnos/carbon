@@ -97,3 +97,16 @@ export function kanbanCompleteTarget({
   if (soleUnitId) return { action: "complete", trackedEntityId: soleUnitId };
   return { action: "select" };
 }
+
+/** A scan confirms the unit and component binding shown on the floor. */
+export function kanbanCompleteHref(
+  path: string,
+  id: string | undefined,
+  units: { id: string; pairingId?: string }[]
+): string {
+  if (!id) return path;
+  const params = new URLSearchParams({ trackedEntityId: id });
+  const pairing = units.find((unit) => unit.id === id)?.pairingId;
+  if (pairing) params.set("pairingId", pairing);
+  return `${path}?${params}`;
+}

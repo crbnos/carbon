@@ -62,6 +62,7 @@
     "./sequence": "./src/sequence.ts",
     "./sequence-tokens": "./src/sequence-tokens.ts",
     "./serial-number-timing": "./src/serial-number-timing.ts",
+    "./shipment-tracking": "./src/shipment-tracking.ts",
     "./stock-transfer": "./src/stock-transfer.ts",
     "./travelers": "./src/travelers.ts",
     "./receipt-batch-numbers": "./src/receipt-batch-numbers.ts",

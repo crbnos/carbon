@@ -170,6 +170,12 @@ export function InspectionView({
   // WIP entities (the part being made), not receipt entities.
   const isSerial = requiresSerialTracking;
 
+  const pairings = Object.fromEntries(
+    trackedEntities.flatMap((unit) =>
+      unit.pairingId ? [[unit.id, unit.pairingId]] : []
+    )
+  );
+
   const lotClosed =
     inspection.dispositionedAt != null &&
     (inspection.status === "Passed" ||
@@ -446,6 +452,7 @@ export function InspectionView({
         ) : null}
         {showCompletePassed ? (
           <CompletePassedButton
+            pairings={pairings}
             inspectionId={inspection.id}
             operationId={operationId}
             accepted={lotClosed && inspection.status === "Passed"}
@@ -562,6 +569,7 @@ export function InspectionView({
           {showCompletePassed ? (
             <div className="basis-full [&>*]:w-full">
               <CompletePassedButton
+                pairings={pairings}
                 inspectionId={inspection.id}
                 operationId={operationId}
                 accepted={lotClosed && inspection.status === "Passed"}
@@ -626,6 +634,7 @@ export function InspectionView({
       />
 
       <AcceptLotModal
+        pairings={pairings}
         open={acceptDisclosure.isOpen}
         inspectionId={inspection.id}
         operationId={operationId}
@@ -636,6 +645,7 @@ export function InspectionView({
       />
 
       <DispositionModal
+        pairings={pairings}
         open={rejectDisclosure.isOpen}
         decision="Reject"
         inspectionId={inspection.id}
@@ -657,6 +667,7 @@ export function InspectionView({
       />
 
       <DispositionModal
+        pairings={pairings}
         open={partialDisclosure.isOpen}
         decision="Partial"
         inspectionId={inspection.id}
@@ -860,6 +871,7 @@ function EventIdInputs({ eventIds }: { eventIds: ProductionEventIdFields }) {
 
 // Progressive completion of what has passed so far, while the lot stays open.
 function CompletePassedButton({
+  pairings,
   inspectionId,
   operationId,
   count,
@@ -868,6 +880,7 @@ function CompletePassedButton({
   gridBusy,
   variant = "header"
 }: {
+  pairings: Record<string, string>;
   inspectionId: string;
   operationId: string;
   count: number;
@@ -892,6 +905,7 @@ function CompletePassedButton({
         className="flex min-w-0 flex-1"
       >
         <input type="hidden" name="operationId" value={operationId} />
+        <input type="hidden" name="pairings" value={JSON.stringify(pairings)} />
         <EventIdInputs eventIds={eventIds} />
         <OriginInput />
         <Button
@@ -915,6 +929,7 @@ function CompletePassedButton({
       className="h-full shrink-0"
     >
       <input type="hidden" name="operationId" value={operationId} />
+      <input type="hidden" name="pairings" value={JSON.stringify(pairings)} />
       <EventIdInputs eventIds={eventIds} />
       <OriginInput />
       <button
@@ -939,6 +954,7 @@ function AcceptLotModal({
   operationId,
   fails,
   remaining,
+  pairings,
   eventIds,
   open,
   onClose
@@ -947,6 +963,7 @@ function AcceptLotModal({
   operationId: string;
   fails: number;
   remaining: number;
+  pairings: Record<string, string>;
   eventIds: ProductionEventIdFields;
   open: boolean;
   onClose: () => void;
@@ -966,6 +983,7 @@ function AcceptLotModal({
           fails={fails}
           remaining={remaining}
           eventIds={eventIds}
+          pairings={pairings}
           onClose={onClose}
         />
       </ModalContent>
@@ -978,6 +996,7 @@ function AcceptLotBody({
   operationId,
   fails,
   remaining,
+  pairings,
   eventIds,
   onClose
 }: {
@@ -985,6 +1004,7 @@ function AcceptLotBody({
   operationId: string;
   fails: number;
   remaining: number;
+  pairings: Record<string, string>;
   eventIds: ProductionEventIdFields;
   onClose: () => void;
 }) {
@@ -997,6 +1017,7 @@ function AcceptLotBody({
     }
   });
   const submitted = useRef(false);
+  const [viewedPairings] = useState(() => JSON.stringify(pairings));
 
   return (
     <>
@@ -1033,6 +1054,7 @@ function AcceptLotBody({
           onSubmit={() => (submitted.current = true)}
         >
           <input type="hidden" name="decision" value="Accept" />
+          <input type="hidden" name="pairings" value={viewedPairings} />
           <input type="hidden" name="operationId" value={operationId} />
           <EventIdInputs eventIds={eventIds} />
           <OriginInput />

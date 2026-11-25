@@ -24,6 +24,7 @@ export async function action(args: ActionFunctionArgs) {
     quantityComplete,
     locationId,
     storageUnitId,
+    expectedSerials,
     expectedUnitIds,
     expectedReceiptPreview
   } = input.data;
@@ -31,6 +32,7 @@ export async function action(args: ActionFunctionArgs) {
   return api.production.completeJob({
     jobId: input.params.jobId,
     quantityComplete,
+    expectedSerials,
     locationId,
     storageUnitId,
     expectedUnitIds,

@@ -487,6 +487,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         })
       : null,
     materials: getJobMaterialsByOperationId(serviceRole, {
+      companyId,
       operation: operation.data?.[0],
       // A serial part shows a unit's inputs only for the unit in the URL; a
       // batch part shows its lot's.

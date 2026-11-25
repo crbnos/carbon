@@ -30,6 +30,7 @@ import {
 import { makeDurations } from "~/utils/durations";
 import {
   batchScanQuantity,
+  confirmedTravelerStep,
   decideTravelerClaim,
   isUnitInOperationScope,
   pickTravelerClaims,
@@ -76,7 +77,8 @@ export async function getTravelerTarget(
 
 /**
  * Finds the unit a scanned or typed code names: by id first, then by
- * `readableId`. Two units with the same `readableId` are ambiguous. The code
+ * `readableId`. A pack-out can intentionally share a serial between the
+ * consumed production unit and the sales unit it supplies. The code
  * is passed only through `.eq()`, never into a PostgREST `.or()` string. A
  * failed read is an `error`, never `notFound`: the operator must try again,
  * not throw the label away.
@@ -111,7 +113,7 @@ export async function findTrackedEntityByCode(
     .select("*")
     .eq("readableId", args.code)
     .eq("companyId", args.companyId)
-    .limit(2);
+    .limit(3);
   if (byReadableId.error) {
     log.error("Could not look up the scanned unit by readable id", {
       companyId: args.companyId,
@@ -121,7 +123,32 @@ export async function findTrackedEntityByCode(
     return { kind: "error" };
   }
   const rows = byReadableId.data ?? [];
-  if (rows.length === 2) return { kind: "ambiguous" };
+  if (rows.length > 2) return { kind: "ambiguous" };
+  if (rows.length === 2) {
+    const ids = rows.map((row) => row.id);
+    const pair = await client
+      .from("jobUnitPairing")
+      .select("sourceId, outputId")
+      .eq("companyId", args.companyId)
+      .eq("serial", args.code)
+      .in("sourceId", ids)
+      .in("outputId", ids)
+      .is("releasedAt", null)
+      .maybeSingle();
+    if (pair.error) {
+      log.error("Could not resolve a packed serial", {
+        companyId: args.companyId,
+        error: pair.error
+      });
+      return { kind: "error" };
+    }
+    const source = rows.find((row) => row.id === pair.data?.sourceId);
+    const output = rows.find((row) => row.id === pair.data?.outputId);
+    if (source?.status === "Consumed" && output) {
+      return { kind: "found", entity: output };
+    }
+    return { kind: "ambiguous" };
+  }
   if (rows.length === 1) return { kind: "found", entity: rows[0] };
   return { kind: "notFound" };
 }
@@ -150,9 +177,9 @@ export async function getUnitConsumption(
       client
         .from("trackedActivity")
         .select(
-          "id, attributes, trackedActivityOutput!inner(trackedEntityId), trackedActivityInput(trackedEntityId, quantity, trackedEntity(status, itemId))"
+          "id, type, attributes, trackedActivityOutput!inner(trackedEntityId), trackedActivityInput(trackedEntityId, quantity, trackedEntity(status, itemId))"
         )
-        .eq("type", "Consume")
+        .in("type", ["Consume", "Scrap"])
         .eq("companyId", args.companyId)
         .in("trackedActivityOutput.trackedEntityId", batch)
         .order("id")
@@ -207,7 +234,11 @@ export async function getUnitConsumption(
           materialId,
           input.trackedEntityId
         );
-        net.set(k, (net.get(k) ?? 0) + Number(input.quantity ?? 0));
+        const quantity = Number(input.quantity ?? 0);
+        net.set(
+          k,
+          (net.get(k) ?? 0) + (activity.type === "Scrap" ? -quantity : quantity)
+        );
       }
     }
   }
@@ -737,6 +768,9 @@ export async function scanTraveler(
     locationId: string | null;
     employeeId: string | null;
     trackedEntityId: string;
+    issueId?: string;
+    expectedSerial?: string;
+    confirmedChoice?: boolean;
     at?: TravelerScanAt & {
       jobOperationStepId?: string;
       unitNumber?: number;
@@ -758,20 +792,52 @@ export async function scanTraveler(
       return { resolution, claimed: null, error: null };
     }
     const claim = resolution.options[0]!;
-    // Step attribution belongs to the unit on screen only.
-    const sameUnit = args.at?.trackedEntityId === claim.parentTrackedEntityId;
+    if (
+      args.confirmedChoice &&
+      (resolution.unit.id !== args.trackedEntityId ||
+        resolution.unit.readableId !== args.expectedSerial ||
+        claim.parentTrackedEntityId !== args.at?.trackedEntityId ||
+        claim.operationId !== args.at?.operationId)
+    ) {
+      return {
+        resolution: null,
+        claimed: null,
+        error:
+          "The chosen production or sales unit has changed. Refresh and choose again."
+      };
+    }
+    const observedSerial =
+      resolution.unit.id === args.trackedEntityId
+        ? args.expectedSerial
+        : undefined;
+    if (observedSerial === undefined) {
+      // A traveler QR identifies a physical unit (or an ancestor). It carries
+      // no printed serial to inherit. Show the chooser before pairing it.
+      const paired = await client.rpc("job_requires_serial_pairing", {
+        p_job_id: claim.operation.jobId,
+        p_company_id: args.companyId
+      });
+      if (paired.error)
+        return { resolution: null, claimed: null, error: LOOKUP_FAILED };
+      if (paired.data) return { resolution, claimed: null, error: null };
+    }
     const issued = await issueTravelerUnit(client, {
       companyId: args.companyId,
       userId: args.userId,
       // The unit the label travels with now: a kit's chamber, not the kit.
       trackedEntityId: resolution.unit.id,
+      issueId: args.issueId,
+      expectedSerial: observedSerial,
       claim,
       heldUnitId:
         args.at?.operationId === claim.operationId
           ? (args.at.trackedEntityId ?? null)
           : null,
-      jobOperationStepId: sameUnit ? args.at?.jobOperationStepId : undefined,
-      unitNumber: sameUnit ? args.at?.unitNumber : undefined
+      ...confirmedTravelerStep(
+        args.at,
+        claim.operationId,
+        claim.parentTrackedEntityId
+      )
     });
     if (!issued.error) return { resolution, claimed: claim, error: null };
     lastError = issued.error;
@@ -793,6 +859,8 @@ export async function issueTravelerUnit(
     companyId: string;
     userId: string;
     trackedEntityId: string;
+    issueId?: string;
+    expectedSerial?: string;
     claim: TravelerClaim;
     /** The unit on the screen the scan was made on, at the claim's operation. */
     heldUnitId: string | null;
@@ -840,11 +908,16 @@ export async function issueTravelerUnit(
     { companyId, userId },
     {
       type: "trackedEntitiesToOperation",
+      issueId: args.issueId,
       materialId: resolved.materialId,
       jobOperationId: claim.operationId,
       parentTrackedEntityId: claim.parentTrackedEntityId,
       children: [
-        { trackedEntityId: args.trackedEntityId, quantity: resolved.quantity }
+        {
+          trackedEntityId: args.trackedEntityId,
+          quantity: resolved.quantity,
+          expectedSerial: args.expectedSerial
+        }
       ],
       jobOperationStepId: args.jobOperationStepId,
       unitNumber: args.unitNumber,

@@ -2480,6 +2480,12 @@ msgstr "A scoped secret sent on the carbon-key request header that authenticates
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 
+msgid "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+msgstr "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+
+msgid "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+msgstr "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+
 msgid "A serial's build history"
 msgstr "A serial's build history"
 
@@ -25274,11 +25280,17 @@ msgstr "Receive Payment"
 msgid "Receive Payment · {0} invoices"
 msgstr "Receive Payment · {0} invoices"
 
+msgid "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+msgstr "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+
 msgid "Receive to Inventory"
 msgstr "Receive to Inventory"
 
 msgid "Receive to project stock"
 msgstr "Receive to project stock"
+
+msgid "Receive Units"
+msgstr "Receive Units"
 
 msgid "Received"
 msgstr "Received"
@@ -27557,6 +27569,9 @@ msgstr "Scan a label or search by item ID or tracking ID."
 msgid "Scan a serial, batch or item number"
 msgstr "Scan a serial, batch or item number"
 
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Scan a unique serial number or select a unit from the list."
+
 msgid "Scan or choose a batch number"
 msgstr "Scan or choose a batch number"
 
@@ -28470,6 +28485,12 @@ msgstr "Serial numbers are drawn when the units are received."
 
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Serial numbers are only generated for serial- or batch-tracked items."
+
+msgid "Serial numbers from the part disabled"
+msgstr "Serial numbers from the part disabled"
+
+msgid "Serial numbers from the part enabled"
+msgstr "Serial numbers from the part enabled"
 
 msgid "Serial numbers received"
 msgstr "Serial numbers received"
@@ -30778,6 +30799,9 @@ msgstr "Take the first item"
 
 msgid "Take the last item"
 msgstr "Take the last item"
+
+msgid "Take the serial number from the part"
+msgstr "Take the serial number from the part"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
@@ -34419,6 +34443,9 @@ msgstr "Unit Sale Price"
 msgid "Units"
 msgstr "Units"
 
+msgid "Units are not numbered from their parts"
+msgstr "Units are not numbered from their parts"
+
 msgid "Units don't match"
 msgstr "Units don't match"
 
@@ -34434,8 +34461,14 @@ msgstr "units of measure"
 msgid "Units of measure"
 msgstr "Units of measure"
 
+msgid "Units received. The job is still open."
+msgstr "Units received. The job is still open."
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
+
+msgid "Units take the serial number of their part"
+msgstr "Units take the serial number of their part"
 
 msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 msgstr "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."

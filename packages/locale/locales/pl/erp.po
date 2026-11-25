@@ -2480,6 +2480,12 @@ msgstr "Tajny klucz wysyłany w nagłówku żądania carbon-key, który uwierzyt
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Oddzielny harmonogram dla raportowania podatkowego, gdy zasady podatkowe wymagają innej metody niż amortyzacja bilansowa."
 
+msgid "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+msgstr "Jednostka seryjna wykonana z dokładnie jednej części seryjnej przejmuje numer seryjny tej części, gdy część zostaje do niej wydana. Pozycje z sekwencją numerów seryjnych zachowują własne numery."
+
+msgid "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+msgstr "Jednostka seryjna pozycji bez sekwencji numerów seryjnych nie ma numeru, dopóki nie zostanie on wpisany w zleceniu produkcyjnym."
+
 msgid "A serial's build history"
 msgstr "Historia budowy serii"
 
@@ -25274,11 +25280,17 @@ msgstr "Otrzymaj płatność"
 msgid "Receive Payment · {0} invoices"
 msgstr "Otrzymaj płatność · {0} faktury"
 
+msgid "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+msgstr "Przyjmij dotychczas zapakowane sztuki. Zlecenie pozostanie otwarte do czasu rozliczenia pozostałych sztuk."
+
 msgid "Receive to Inventory"
 msgstr "Odbierz do Magazynu"
 
 msgid "Receive to project stock"
 msgstr "Przyjmij do zapasu projektu"
+
+msgid "Receive Units"
+msgstr "Przyjmij sztuki"
 
 msgid "Received"
 msgstr "Otrzymane"
@@ -27557,6 +27569,9 @@ msgstr "Skanuj etykietę lub wyszukaj po ID artykułu lub ID śledzenia."
 msgid "Scan a serial, batch or item number"
 msgstr "Skanuj numer seryjny, partii lub artykułu"
 
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Zeskanuj unikatowy numer seryjny lub wybierz sztukę z listy."
+
 msgid "Scan or choose a batch number"
 msgstr "Zeskanuj lub wybierz numer partii"
 
@@ -28470,6 +28485,12 @@ msgstr "Numery seryjne są losowane, gdy sztuki są odbierane."
 
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Numery seryjne są generowane tylko dla elementów śledzonych numerem seryjnym lub partią."
+
+msgid "Serial numbers from the part disabled"
+msgstr "Numery seryjne z części wyłączone"
+
+msgid "Serial numbers from the part enabled"
+msgstr "Numery seryjne z części włączone"
 
 msgid "Serial numbers received"
 msgstr "Przyjęte numery seryjne"
@@ -30778,6 +30799,9 @@ msgstr "Weź pierwszy artykuł"
 
 msgid "Take the last item"
 msgstr "Weź ostatni artykuł"
+
+msgid "Take the serial number from the part"
+msgstr "Przejmij numer seryjny z części"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Weź najkrótszy pozostały okres przydatności spośród materiałów zużytych do utworzenia tego artykułu. Użyj, gdy termin ważności produktu zależy od jego składników."
@@ -34419,6 +34443,9 @@ msgstr "Cena sprzedaży jednostkowej"
 msgid "Units"
 msgstr "Jednostki"
 
+msgid "Units are not numbered from their parts"
+msgstr "Jednostki nie są numerowane według swoich części"
+
 msgid "Units don't match"
 msgstr "Jednostki nie są zgodne"
 
@@ -34434,8 +34461,14 @@ msgstr "jednostki miary"
 msgid "Units of measure"
 msgstr "Jednostki miary"
 
+msgid "Units received. The job is still open."
+msgstr "Przyjęto sztuki. Zlecenie jest nadal otwarte."
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Sztuki zgłoszone jako nie do odzyskania na operacji, z podaniem przyczyny — alternatywa dla poprawki."
+
+msgid "Units take the serial number of their part"
+msgstr "Jednostki przejmują numer seryjny swojej części"
 
 msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 msgstr "Jednostki, które nie przeszły próbki, pozostają odrzucone. Wszystkie pozostałe, także nigdy niepróbkowane, są gotowe do rozlokowania."

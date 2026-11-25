@@ -35,9 +35,9 @@ function movementCostRow(eb: CostLedgerExpression) {
 
 /**
  * A cost row that opened a layer: the inbound row of a movement. A job
- * return is not one: `issue` and the SQL backflush write it as a positive
- * "Job Consumption" row with nothing remaining. Its open adjustment
- * children (`appliesToCostLedgerId`) are relieved with it.
+ * return with a tracked entity restores that individual packed component
+ * at its booked cost. Ordinary untracked job returns carry no layer.
+ * Open adjustment children are relieved with their inbound layer.
  */
 export function isCostLayer(eb: CostLedgerExpression) {
   return eb.and([
@@ -45,7 +45,8 @@ export function isCostLayer(eb: CostLedgerExpression) {
     eb("quantity", ">", 0),
     eb.or([
       eb("documentType", "is", null),
-      eb("documentType", "!=", "Job Consumption")
+      eb("documentType", "!=", "Job Consumption"),
+      eb("trackedEntityId", "is not", null)
     ])
   ]);
 }
@@ -112,6 +113,8 @@ export type Relief = {
 export type ReliefResult = {
   /** Unrounded. */
   totalCost: number;
+  /** Full cost (including adjustments) drawn from a selected unit's own layer. */
+  identified: Map<string, { cost: number; quantity: number }>;
   /** Each layer drawn on, in the order drawn, at its own unit cost. */
   layersConsumed: { layerId: string; quantity: number; unitCost: number }[];
   /** The new remaining quantity of every layer and child drawn on. */
@@ -136,6 +139,8 @@ export function relieveLayers(
     method === "LIFO" ? [...layers].reverse() : [...layers],
     relief.trackedEntityIds
   );
+  const selected = new Set(relief.trackedEntityIds);
+  const identified: ReliefResult["identified"] = new Map();
   let toRelieve = relief.quantity;
   let totalCost = 0;
   const layersConsumed: ReliefResult["layersConsumed"] = [];
@@ -145,7 +150,7 @@ export function relieveLayers(
     if (layer.remainingQuantity <= EPSILON) continue;
     const unitCost = layer.quantity > 0 ? layer.cost / layer.quantity : 0;
     const take = Math.min(toRelieve, layer.remainingQuantity);
-    totalCost += take * unitCost;
+    let layerCost = take * unitCost;
     toRelieve -= take;
     layersConsumed.push({ layerId: layer.id, quantity: take, unitCost });
     remaining.set(layer.id, layer.remainingQuantity - take);
@@ -162,13 +167,21 @@ export function relieveLayers(
       if (child.remainingQuantity <= EPSILON) continue;
       const bump = child.quantity > 0 ? child.cost / child.quantity : 0;
       const apply = Math.min(child.remainingQuantity, unapplied);
-      totalCost += apply * bump;
+      layerCost += apply * bump;
       if (!stamped) unapplied -= apply;
       remaining.set(child.id, child.remainingQuantity - apply);
     }
+    totalCost += layerCost;
+    if (layer.trackedEntityId && selected.has(layer.trackedEntityId)) {
+      const previous = identified.get(layer.trackedEntityId);
+      identified.set(layer.trackedEntityId, {
+        quantity: (previous?.quantity ?? 0) + take,
+        cost: (previous?.cost ?? 0) + layerCost
+      });
+    }
   }
   if (toRelieve > EPSILON) totalCost += toRelieve * fallbackUnitCost;
-  return { totalCost, layersConsumed, remaining };
+  return { totalCost, layersConsumed, remaining, identified };
 }
 
 /**

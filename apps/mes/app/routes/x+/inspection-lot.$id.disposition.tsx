@@ -26,6 +26,7 @@ import {
   checkStrictBackflush,
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
+  inspectionPairingsMatch,
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
@@ -145,6 +146,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Serial allocation checks: ids must be this lot's WIP, still open at this
   // operation, and each unit allocated to exactly one outcome.
   let completionCandidates: {
+    pairingId?: string;
     trackedEntityId: string;
     inspectionSampleId: string | null;
   }[] = [];
@@ -197,6 +199,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
         excludeEntityIds: allocated
       });
     }
+    const selected = [
+      ...allocated,
+      ...(acceptedUnitIds ??
+        completionCandidates.map((candidate) => candidate.trackedEntityId))
+    ];
+    if (!inspectionPairingsMatch(state, selected, validation.data.pairings)) {
+      return fail(
+        null,
+        "A packed component has changed. Reopen the inspection and confirm the units."
+      );
+    }
+    completionCandidates = completionCandidates.map((unit) => ({
+      ...unit,
+      pairingId: validation.data.pairings?.[unit.trackedEntityId]
+    }));
     completionQuantity = completionCandidates.length;
   } else {
     if (decision === "Partial" && scrapTotal + reworkTotal > failedCount) {
@@ -260,6 +277,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   //    serialization point; a concurrent second POST dies here before
   //    any posting can re-run.
   // ---------------------------------------------------------------
+  const pairedScrap =
+    state.isJobOutput && state.requiresSerialTracking && scrapTotal > 0
+      ? await serviceRole.rpc("job_requires_serial_pairing", {
+          p_job_id: state.jobId,
+          p_company_id: companyId
+        })
+      : { data: false, error: null };
+  if (pairedScrap.error) {
+    return fail(
+      pairedScrap.error,
+      "Failed to check serial pairing for inspection scrap"
+    );
+  }
   const dispositionResult = await dispositionInspection(getDatabaseClient(), {
     id,
     decision,
@@ -317,7 +347,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  if (scrapTotal > 0 && scrapReasonId) {
+  if (pairedScrap.data && scrapReasonId) {
+    // The posting checks the displayed pairing under the job lock and records
+    // the physical unit, scrap quantity and backflush in the same transaction.
+    for (const [index, trackedEntityId] of scrapEntityIds.entries()) {
+      const result = await erpPosting(
+        "issue",
+        { companyId, userId },
+        {
+          type: "jobOperationScrap",
+          jobOperationId: state.jobOperationId,
+          trackedEntityId,
+          pairingId: validation.data.pairings?.[trackedEntityId],
+          inspectionId: id,
+          quantity: 1,
+          scrapReasonId,
+          ...eventIds
+        }
+      );
+      if (result.error) {
+        return fail(
+          result.error,
+          `Lot dispositioned, but recording scrap failed after ${index} of ${scrapTotal} units`
+        );
+      }
+    }
+  } else if (scrapTotal > 0 && scrapReasonId) {
     const scrapResult = await insertScrapQuantity(client, {
       jobOperationId: state.jobOperationId,
       quantity: scrapTotal,

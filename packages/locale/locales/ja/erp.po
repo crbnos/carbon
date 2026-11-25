@@ -2480,6 +2480,12 @@ msgstr "carbon-key リクエスト ヘッダーで送信されるスコープ付
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "税務報告のための別のスケジュール。税務ルールが帳簿減価償却とは異なる方法を要求する場合。"
 
+msgid "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+msgstr "シリアル管理の部品ちょうど1個から作られるシリアル管理のユニットは、その部品が払い出されたときに、その部品のシリアル番号を引き継ぎます。シリアル番号の採番ルールがある品目は、自身の番号を保持します。"
+
+msgid "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+msgstr "シリアル番号の採番ルールがない品目のシリアル管理ユニットは、製造指図で番号を入力するまで番号がありません。"
+
 msgid "A serial's build history"
 msgstr "シリアルの構築履歴"
 
@@ -25274,11 +25280,17 @@ msgstr "支払いを受け取る"
 msgid "Receive Payment · {0} invoices"
 msgstr "支払いを受け取る · {0} 件の請求書"
 
+msgid "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+msgstr "梱包済みのユニットを入庫します。残りのユニットがすべて計上されるまで、製造指図は未完了のままです。"
+
 msgid "Receive to Inventory"
 msgstr "在庫に受け取る"
 
 msgid "Receive to project stock"
 msgstr "プロジェクト在庫として受け取る"
+
+msgid "Receive Units"
+msgstr "ユニットを入庫"
 
 msgid "Received"
 msgstr "受信済み"
@@ -27557,6 +27569,9 @@ msgstr "ラベルをスキャンするか、アイテムIDまたはトラッキ�
 msgid "Scan a serial, batch or item number"
 msgstr "シリアル番号、バッチ番号または品目番号をスキャンしてください"
 
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "一意のシリアル番号をスキャンするか、一覧からユニットを選択してください。"
+
 msgid "Scan or choose a batch number"
 msgstr "バッチ番号をスキャンまたは選択"
 
@@ -28470,6 +28485,12 @@ msgstr "シリアル番号は個が受領されるときに割り当てられま
 
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "シリアル番号は、シリアルまたはバッチ追跡アイテムに対してのみ生成されます。"
+
+msgid "Serial numbers from the part disabled"
+msgstr "部品からのシリアル番号：無効"
+
+msgid "Serial numbers from the part enabled"
+msgstr "部品からのシリアル番号：有効"
 
 msgid "Serial numbers received"
 msgstr "受け入れたシリアル番号"
@@ -30778,6 +30799,9 @@ msgstr "最初の品目を取得"
 
 msgid "Take the last item"
 msgstr "最後の品目を取得"
+
+msgid "Take the serial number from the part"
+msgstr "部品からシリアル番号を引き継ぐ"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "このアイテムを製造するために消費される材料全体で最短の保存期間を使用してください。製品の使用期限がその成分に依存する場合に使用してください。"
@@ -34419,6 +34443,9 @@ msgstr "単価販売価格"
 msgid "Units"
 msgstr "単位"
 
+msgid "Units are not numbered from their parts"
+msgstr "ユニットは部品から採番されません"
+
 msgid "Units don't match"
 msgstr "単位が一致しません"
 
@@ -34434,8 +34461,14 @@ msgstr "測定単位"
 msgid "Units of measure"
 msgstr "測定単位"
 
+msgid "Units received. The job is still open."
+msgstr "ユニットを入庫しました。製造指図はまだ未完了です。"
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "工程で回復不可能として報告された単位数（理由付き）。手直しの代替案です。"
+
+msgid "Units take the serial number of their part"
+msgstr "ユニットは部品のシリアル番号を引き継ぎます"
 
 msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 msgstr "サンプルで不合格となったユニットは却下のままです。サンプリングされなかったユニットを含め、それ以外はすべて格納できます。"

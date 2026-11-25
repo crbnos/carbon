@@ -2480,6 +2480,12 @@ msgstr "Секретный ключ, отправляемый в заголов�
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Отдельный график для налоговой отчетности, когда налоговые правила требуют метода, отличного от бухгалтерской амортизации."
 
+msgid "A serial unit made from exactly one serial part takes that part's serial number when the part is issued into it. Items with a serial number sequence keep their own numbers."
+msgstr "Серийная единица, изготовленная ровно из одной серийной детали, получает серийный номер этой детали, когда деталь выдаётся в неё. Позиции с последовательностью серийных номеров сохраняют собственные номера."
+
+msgid "A serial unit of an item with no serial number sequence has no number until one is typed on the job."
+msgstr "Серийная единица позиции без последовательности серийных номеров не имеет номера, пока он не введён в производственном заказе."
+
 msgid "A serial's build history"
 msgstr "История сборки серийного номера"
 
@@ -25274,11 +25280,17 @@ msgstr "Получить платеж"
 msgid "Receive Payment · {0} invoices"
 msgstr "Получить платеж · {0} счета-фактуры"
 
+msgid "Receive the units packed so far. The job stays open until the remaining units are accounted for."
+msgstr "Оприходуйте уже упакованные единицы. Заказ останется открытым до учёта всех оставшихся единиц."
+
 msgid "Receive to Inventory"
 msgstr "Получить в инвентарь"
 
 msgid "Receive to project stock"
 msgstr "Приходовать в запас проекта"
+
+msgid "Receive Units"
+msgstr "Оприходовать единицы"
 
 msgid "Received"
 msgstr "Получено"
@@ -27557,6 +27569,9 @@ msgstr "Отсканируйте этикетку или выполните по
 msgid "Scan a serial, batch or item number"
 msgstr "Отсканируйте серийный номер, номер серии или номенклатуру"
 
+msgid "Scan a unique serial number or select a unit from the list."
+msgstr "Отсканируйте уникальный серийный номер или выберите единицу из списка."
+
 msgid "Scan or choose a batch number"
 msgstr "Сканировать или выбрать номер серии"
 
@@ -28470,6 +28485,12 @@ msgstr "Серийные номера назначаются при поступ
 
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Серийные номера генерируются только для серийных или партионно отслеживаемых товаров."
+
+msgid "Serial numbers from the part disabled"
+msgstr "Серийные номера от детали отключены"
+
+msgid "Serial numbers from the part enabled"
+msgstr "Серийные номера от детали включены"
 
 msgid "Serial numbers received"
 msgstr "Принятые серийные номера"
@@ -30778,6 +30799,9 @@ msgstr "Взять первую номенклатуру"
 
 msgid "Take the last item"
 msgstr "Взять последнюю номенклатуру"
+
+msgid "Take the serial number from the part"
+msgstr "Брать серийный номер от детали"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Возьмите кратчайший оставшийся срок хранения из всей используемой номенклатуры для производства этой номенклатуры. Используйте, когда срок годности продукта зависит от его компонентов."
@@ -34419,6 +34443,9 @@ msgstr "Цена продажи за единицу"
 msgid "Units"
 msgstr "Единицы"
 
+msgid "Units are not numbered from their parts"
+msgstr "Единицы не нумеруются по своим деталям"
+
 msgid "Units don't match"
 msgstr "Единицы измерения не совпадают"
 
@@ -34434,8 +34461,14 @@ msgstr "единицы измерения"
 msgid "Units of measure"
 msgstr "Единицы измерения"
 
+msgid "Units received. The job is still open."
+msgstr "Единицы оприходованы. Заказ остаётся открытым."
+
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Единицы, объявленные неремонтируемыми на операции с указанием причины — альтернатива доработке"
+
+msgid "Units take the serial number of their part"
+msgstr "Единицы получают серийный номер своей детали"
 
 msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 msgstr "Единицы, не прошедшие выборку, остаются отклонёнными. Все остальные, включая не попавшие в выборку, готовы к размещению."

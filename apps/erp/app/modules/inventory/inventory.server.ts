@@ -13,6 +13,7 @@ import type { Json } from "@carbon/database";
 import { anyOf, type PageId, writersOf } from "@carbon/database/access";
 import * as materialRequests from "@carbon/database/material-request";
 import { syncReceiptBatchQuantities } from "@carbon/database/receipt-batch-numbers";
+import { getShipmentTracking as readShipmentTracking } from "@carbon/database/shipment-tracking";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   dedupeViolations,
@@ -53,7 +54,10 @@ import {
   updatePurchasedPrices,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
-import { recordSalesRuleOutcome } from "~/modules/sales/sales.service";
+import {
+  customerHeldReturnUnitIds,
+  recordSalesRuleOutcome
+} from "~/modules/sales/sales.service";
 import {
   getCompanySettings,
   getNextSequence
@@ -1229,7 +1233,9 @@ export const assignReceiptReturnEntity = defineServiceFn({
       service.returnReceiptLineOf(ctx, { receiptId, receiptLineId }),
       client
         .from("trackedEntity")
-        .select("id, status, attributes, itemId")
+        .select(
+          "id, status, attributes, itemId, sourceDocument, sourceDocumentId"
+        )
         .eq("id", trackedEntityId)
         .eq("companyId", companyId)
         .maybeSingle(),
@@ -1272,7 +1278,7 @@ export const assignReceiptReturnEntity = defineServiceFn({
         "Return line does not belong to this receipt's return order"
       );
     }
-    if (entity.data.itemId !== orderLine.data.itemId) {
+    if (utils.trackedEntityItemId(entity.data) !== orderLine.data.itemId) {
       return ctx.error(
         "validation",
         "Entity is a different item than this return line"
@@ -1289,19 +1295,18 @@ export const assignReceiptReturnEntity = defineServiceFn({
       .eq("id", orderLine.data.salesReturnOrderId)
       .eq("companyId", companyId)
       .maybeSingle();
-    const shipmentId = attributes.Shipment;
-    const shippedToCustomer =
-      returnOrder.data?.customerId && typeof shipmentId === "string"
-        ? await client
-            .from("shipment")
-            .select("id")
-            .eq("id", shipmentId)
-            .eq("companyId", companyId)
-            .eq("customerId", returnOrder.data.customerId)
-            .eq("status", "Posted")
-            .maybeSingle()
-        : { data: null };
-    if (!shippedToCustomer.data) {
+    const customerId = returnOrder.data?.customerId;
+    const eligible =
+      customerId && orderLine.data.itemId
+        ? await customerHeldReturnUnitIds(
+            ctx.asSystem.pg,
+            companyId,
+            customerId,
+            orderLine.data.itemId,
+            [trackedEntityId]
+          )
+        : null;
+    if (!eligible?.has(trackedEntityId)) {
       return ctx.error("rule", "Entity was not shipped to this customer");
     }
 
@@ -2331,7 +2336,8 @@ export const updateShipmentFixedAssetLine = defineServiceFn({
  * posting ships it. The entity must be the line's item and Available (On
  * Hold or Available for a return-to-customer shipment, and then it must have
  * come back on a receipt of that return order). A batch must hold at least `quantity`.
- * Whatever entity held the slot before is cleared once the new one is set.
+ * For a serial replacement, pass the saved slot occupant in expectedTrackedEntityId.
+ * An omitted or null occupant means the slot was empty.
  *
  * @mcp
  */
@@ -2349,6 +2355,7 @@ export const assignShipmentLineEntity = defineServiceFn({
       shipmentId: z.string(),
       shipmentLineId: z.string(),
       trackedEntityId: z.string(),
+      expectedTrackedEntityId: z.string().min(1).nullable().optional(),
       index: z.number().int().min(0)
     })
   ]),
@@ -2375,7 +2382,7 @@ export const assignShipmentLineEntity = defineServiceFn({
         .single(),
       client
         .from("shipmentLine")
-        .select("itemId, lineId")
+        .select("itemId, requiresBatchTracking, requiresSerialTracking")
         .eq("id", shipmentLineId)
         .eq("shipmentId", shipmentId)
         .eq("companyId", companyId)
@@ -2394,6 +2401,17 @@ export const assignShipmentLineEntity = defineServiceFn({
     }
     if (line.error) {
       return ctx.error("internal", "Failed to load shipment line", line.error);
+    }
+    const trackingType = line.data.requiresSerialTracking
+      ? "serial"
+      : line.data.requiresBatchTracking
+        ? "batch"
+        : null;
+    if (input.trackingType !== trackingType) {
+      return ctx.error(
+        "validation",
+        "Tracking type does not match the shipment line."
+      );
     }
     if (
       entity.data.itemId &&
@@ -2430,6 +2448,7 @@ export const assignShipmentLineEntity = defineServiceFn({
               .eq("id", receiptId)
               .eq("sourceDocument", "Sales Return Order")
               .eq("sourceDocumentId", shipment.data.sourceDocumentId ?? "")
+              .eq("status", "Posted")
               .eq("companyId", companyId)
               .maybeSingle()
           : { data: null, error: null };
@@ -2498,6 +2517,23 @@ export const assignShipmentLineEntity = defineServiceFn({
       return ctx.error("rule", "Batch has insufficient quantity");
     }
 
+    if (input.trackingType === "serial") {
+      const conflict = await service.assignShipmentSerial(
+        ctx.asSystem.pg,
+        companyId,
+        input,
+        {
+          itemId: entity.data.itemId,
+          status: entity.data.status,
+          receiptId: attributes.Receipt,
+          sourceDocument: shipment.data.sourceDocument,
+          sourceDocumentId: shipment.data.sourceDocumentId,
+          supplierId: shipment.data.supplierId
+        }
+      );
+      return conflict ? ctx.error("conflict", conflict) : { trackedEntityId };
+    }
+
     const serviceRole = ctx.asSystem.supabase;
     const updated = await serviceRole
       .from("trackedEntity")
@@ -2505,10 +2541,7 @@ export const assignShipmentLineEntity = defineServiceFn({
         attributes: {
           ...attributes,
           "Shipment Line": shipmentLineId,
-          Shipment: shipmentId,
-          ...(input.trackingType === "serial"
-            ? { "Shipment Line Index": input.index }
-            : {})
+          Shipment: shipmentId
         } as Json
       })
       .eq("id", trackedEntityId)
@@ -2532,18 +2565,12 @@ export const assignShipmentLineEntity = defineServiceFn({
 
     // Only now is the slot's previous entity cleared: for a batch any other
     // entity on the line, for a serial the one at this index.
-    let staleQuery = serviceRole
+    const staleQuery = serviceRole
       .from("trackedEntity")
       .select("id, attributes")
       .eq("companyId", companyId)
       .eq("attributes ->> Shipment Line", shipmentLineId)
       .neq("id", trackedEntityId);
-    if (input.trackingType === "serial") {
-      staleQuery = staleQuery.eq(
-        "attributes ->> Shipment Line Index",
-        String(input.index)
-      );
-    }
     const stale = await staleQuery;
     await Promise.all(
       (stale.data ?? []).map((row) => {
@@ -5519,15 +5546,27 @@ export const getReceiptFiles = defineServiceFn({
  * @mcp read
  */
 export const getSerialNumbersForItem = defineServiceFn({
-  input: z.looseObject({ itemId: z.string() }),
+  input: z.looseObject({
+    itemId: z.string(),
+    stockShipment: z.boolean().optional(),
+    salesReturnOrderId: z.string().optional()
+  }),
   permission: "employee",
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getSerialNumbersForItem(
-        ctx.asCaller.supabase,
-        payload(ctx, input).build() as never
-      )
+    const result = await service.getSerialNumbersForItem(
+      ctx.asCaller.supabase,
+      {
+        itemId: input.itemId,
+        companyId: ctx.company.id,
+        stockShipment: input.stockShipment,
+        salesReturnOrderId: input.salesReturnOrderId
+      }
+    );
+    if (result.error || !input.stockShipment) return unwrap(ctx, result);
+    return service.filterStockShipmentSerials(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      result.data
     );
   }
 });
@@ -5950,9 +5989,9 @@ export const getShipmentTracking = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await utils.getShipmentTracking(
+      await readShipmentTracking(
         ctx.asCaller.supabase,
-        input.shipmentId as never,
+        input.shipmentId,
         ctx.company.id
       )
     );

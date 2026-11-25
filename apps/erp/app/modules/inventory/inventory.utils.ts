@@ -4,9 +4,59 @@
 
 import type { Database } from "@carbon/database";
 import { parseCsvLines } from "@carbon/files/csv";
-import { round } from "@carbon/utils";
+import { displaySerial, quoteFilterValue, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
+
+/** Older stock serials identify their SKU through Item provenance. */
+export function trackedEntityItemId(unit: {
+  itemId: string | null;
+  sourceDocument: string | null;
+  sourceDocumentId: string | null;
+}) {
+  return (
+    unit.itemId ??
+    (unit.sourceDocument === "Item" ? unit.sourceDocumentId : null)
+  );
+}
+
+/** PostgREST equivalent of trackedEntityItemId for an item-scoped picker. */
+export function trackedEntityItemFilter(itemId: string) {
+  const item = quoteFilterValue(itemId);
+  return `itemId.eq.${item},and(itemId.is.null,sourceDocument.eq.Item,sourceDocumentId.eq.${item})`;
+}
+
+/** A barcode names a physical ID or one exact, unique label on this item. */
+export function findShipmentSerial<
+  T extends { id: string; readableId: string | null }
+>(value: string, entities: readonly T[]): T | undefined {
+  if (!value) return undefined;
+  const physical = entities.find((entity) => entity.id === value);
+  if (physical) return physical;
+  const matches = entities.filter((entity) => entity.readableId === value);
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+/** Browsers collapse whitespace in menu labels. Disambiguate those rows without changing the serial sent to inventory. */
+export function shipmentSerialLabels(
+  entities: readonly { id: string; readableId: string | null }[]
+) {
+  const counts = new Map<string, number>();
+  const records = entities.map(({ id, readableId }) => {
+    const label = readableId ?? id;
+    const displayed = label.trim().replace(/\s+/gu, " ");
+    counts.set(displayed, (counts.get(displayed) ?? 0) + 1);
+    return { id, label, displayed };
+  });
+  return new Map(
+    records.map(({ id, label, displayed }) => {
+      if (counts.get(displayed) === 1 && label === displayed)
+        return [id, label] as const;
+      const visible = displaySerial(label);
+      return [id, `${visible} · ${id}`] as const;
+    })
+  );
+}
 
 /** A lineage depth the traceability graph walks: 1 to 5 hops. */
 export function clampDepth(n: number): number {
@@ -139,18 +189,6 @@ export async function getReceiptTracking(
     .from("trackedEntity")
     .select("*")
     .eq("attributes ->> Receipt", receiptId)
-    .eq("companyId", companyId);
-}
-
-export async function getShipmentTracking(
-  client: SupabaseClient<Database>,
-  shipmentId: string,
-  companyId: string
-) {
-  return client
-    .from("trackedEntity")
-    .select("*")
-    .eq("attributes ->> Shipment", shipmentId)
     .eq("companyId", companyId);
 }
 

@@ -10545,7 +10545,7 @@ export const getReturnableLinesForCustomer = defineServiceFn({
 
 /**
  * Serials and batches shipped to a customer, for the lines of a return:
- * consumed tracked entities tagged with one of its posted shipments.
+ * consumed tracked entities held by that customer.
  *
  * @mcp read
  */
@@ -10557,6 +10557,7 @@ export const getShippedTrackedEntitiesForCustomer = defineServiceFn({
       ctx,
       await service.getShippedTrackedEntitiesForCustomer(
         ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         ctx.company.id,
         input.customerId as never,
         input.itemId as never

@@ -5,7 +5,7 @@
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Button, Card, CardContent, toast } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { displaySerial, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
@@ -19,6 +19,7 @@ import { resolveTravelerScan } from "~/services/traveler.server";
 import type { Handle } from "~/utils/handle";
 import { pageMeta } from "~/utils/meta";
 import { path, TRAVELER_PARAM } from "~/utils/path";
+import { readTravelerScreen, confirmedTravelerStep } from "~/utils/traveler";
 import { postTravelerScan } from "~/utils/travelerScan";
 
 export const handle: Handle = {
@@ -35,18 +36,25 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const trackedEntityId = params.trackedEntityId;
   if (!trackedEntityId) return { kind: "notFound" as const };
 
+  const screen = readTravelerScreen(new URL(request.url).searchParams);
   const resolution = await resolveTravelerScan(getCarbonServiceRole(), {
     companyId,
     locationId: locationId ?? null,
     employeeId: effectiveUserId ?? userId,
-    trackedEntityId
+    trackedEntityId,
+    at: screen.operationId
+      ? {
+          operationId: screen.operationId,
+          trackedEntityId: screen.trackedEntityId
+        }
+      : undefined
   });
   if (resolution.kind === "open") {
     throw redirect(
       `${path.to.operation(resolution.operationId)}?trackedEntityId=${resolution.trackedEntityId}&${TRAVELER_PARAM}`
     );
   }
-  return resolution;
+  return resolution.kind === "claim" ? { ...resolution, screen } : resolution;
 }
 
 export default function TravelerRoute() {
@@ -61,7 +69,7 @@ export default function TravelerRoute() {
           result.kind === "notFound" ? (
             <Trans>Traveler</Trans>
           ) : (
-            result.unit.readableId
+            displaySerial(result.unit.readableId)
           )
         }
       />
@@ -105,6 +113,7 @@ export default function TravelerRoute() {
             unit={result.unit}
             options={result.options}
             auto={result.auto}
+            screen={result.screen}
           />
         )}
         {result.kind === "refuse" && (
@@ -182,11 +191,13 @@ function UnitInfo({
 function ClaimChooser({
   unit,
   options,
-  auto
+  auto,
+  screen
 }: {
   unit: Unit;
   options: ClaimOption[];
   auto: boolean;
+  screen: ReturnType<typeof readTravelerScreen>;
 }) {
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -195,15 +206,24 @@ function ClaimChooser({
   const selected =
     options.find((option) => option.operationId === selectedId) ?? options[0];
 
+  const needsUnit =
+    selected?.laterSerial &&
+    selected.parentTrackedEntityId !== screen.trackedEntityId;
   const start = async () => {
     if (!selected) return;
-    if (selected.laterSerial) {
+    if (needsUnit) {
       navigate(path.to.operation(selected.operationId));
       return;
     }
     setPending(true);
     const result = await postTravelerScan({
+      ...confirmedTravelerStep(
+        screen,
+        selected.operationId,
+        selected.parentTrackedEntityId
+      ),
       code: unit.id,
+      expectedSerial: unit.readableId,
       operationId: selected.operationId,
       trackedEntityId: selected.parentTrackedEntityId
     });
@@ -233,7 +253,7 @@ function ClaimChooser({
                 <Trans>Scanned</Trans>
               </dt>
               <dd className="truncate font-medium">
-                {unit.readableId}
+                {displaySerial(unit.readableId)}
                 {unit.itemReadableId ? ` · ${unit.itemReadableId}` : ""}
               </dd>
               <dt className="text-muted-foreground">
@@ -249,7 +269,7 @@ function ClaimChooser({
                 <Trans>Operation</Trans>
               </dt>
               <dd className="truncate">{selected.operation.description}</dd>
-              {!selected.laterSerial && (
+              {!needsUnit && (
                 <>
                   <dt className="text-muted-foreground">
                     <Trans>Unit</Trans>
@@ -267,7 +287,7 @@ function ClaimChooser({
               isDisabled={pending}
               onClick={start}
             >
-              {selected.laterSerial ? (
+              {needsUnit ? (
                 <Trans>Open the operation to pick the unit</Trans>
               ) : (
                 <Trans>Start {selected.parentReadableId}</Trans>

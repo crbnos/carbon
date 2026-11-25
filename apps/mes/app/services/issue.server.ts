@@ -540,6 +540,9 @@ export async function unconsumeFromUnit(
     { companyId, userId },
     {
       type: "unconsumeTrackedEntities",
+      ...(validation.data.pairingId && {
+        pairingId: validation.data.pairingId
+      }),
       materialId,
       parentTrackedEntityId,
       children
@@ -549,7 +552,7 @@ export async function unconsumeFromUnit(
   if (issued.error) {
     logger.error("Failed to issue material", { error: issued.error });
     return data(
-      { success: false, message: "Failed to issue material" },
+      { success: false, message: issued.error.message },
       { status: 400 }
     );
   }

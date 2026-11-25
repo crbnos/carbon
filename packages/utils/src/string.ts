@@ -46,3 +46,9 @@ export function stripSpecialCharacters(inputString: string) {
   // storage URL's path, so "what?.pdf" was stored as "what".
   return inputString?.replace(/[^a-zA-Z0-9/!_\-.*'() &$@=;:+,]/g, "");
 }
+
+/** Show whitespace that HTML would collapse when an operator confirms a printed serial. */
+export function displaySerial(serial: string) {
+  if (serial === serial.trim().replace(/\s+/gu, " ")) return serial;
+  return JSON.stringify(serial).slice(1, -1).replaceAll(" ", "␠");
+}

@@ -68,6 +68,7 @@ export const issueInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("jobOperationSerialComplete"),
+    pairingId: z.string().optional(),
     trackedEntityId: z.string(),
     quantity: z.number(),
     jobOperationId: z.string(),
@@ -84,6 +85,8 @@ export const issueInput = z.discriminatedUnion("type", [
     quantity: z.number().positive(),
     scrapReasonId: z.string(),
     trackedEntityId: z.string().optional(),
+    pairingId: z.string().optional(),
+    inspectionId: z.string().optional(),
     notes: z.string().optional(),
     laborProductionEventId: z.string().optional(),
     machineProductionEventId: z.string().optional(),
@@ -169,6 +172,7 @@ export const issueInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("trackedEntitiesToOperation"),
+    issueId: z.string().min(1).max(100).optional(),
     materialId: z.string().optional(),
     jobOperationId: z.string().optional(),
     itemId: z.string().optional(),
@@ -176,6 +180,7 @@ export const issueInput = z.discriminatedUnion("type", [
     children: z.array(
       z.object({
         trackedEntityId: z.string(),
+        expectedSerial: z.string().optional(),
         quantity: z.number()
       })
     ),
@@ -197,6 +202,8 @@ export const issueInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("unconsumeTrackedEntities"),
+    // Identifies the binding the operator viewed before giving this unit back.
+    pairingId: z.string().optional(),
     materialId: z.string(),
     parentTrackedEntityId: z.string(),
     children: z.array(

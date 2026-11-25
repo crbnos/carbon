@@ -30,6 +30,74 @@ export function parseTravelerCode(input: string): string | null {
   return id;
 }
 
+/** The serial confirmed by a traveler scan or the on-screen claim chooser. */
+export function travelerIssueSerial(
+  code: string,
+  entity: { id: string; readableId: string | null },
+  selectedSerial?: string
+) {
+  return (
+    selectedSerial ??
+    (code === entity.readableId &&
+    code !== entity.id &&
+    !parseTravelerCode(code)
+      ? code
+      : undefined)
+  );
+}
+
+/** Match the printed ID first. A human-readable serial must identify exactly one candidate. */
+export function findScannedUnit<
+  T extends { id: string | null; readableId: string | null }
+>(candidates: readonly T[], value: string): T | undefined {
+  if (!value.trim()) return undefined;
+  const travelerId = parseTravelerCode(value);
+  const byId = candidates.find((unit) => unit.id === (travelerId ?? value));
+  if (travelerId || byId) return byId;
+  const matches = candidates.filter((unit) => unit.readableId === value);
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+/** Capture what a scan or selection identified while that stock list was on screen. */
+export function captureIssueSerial(
+  stock: readonly { id: string | null; readableId: string | null }[],
+  value: string,
+  pairingScan = false
+) {
+  const unit = findScannedUnit(stock, value);
+  if (
+    pairingScan &&
+    unit?.id &&
+    unit.readableId != null &&
+    travelerIssueSerial(value, { id: unit.id, readableId: unit.readableId }) ===
+      undefined
+  ) {
+    return { observedId: unit.id, confirmSerial: unit.readableId };
+  }
+  return {
+    observedId: unit?.id ?? undefined,
+    expectedSerial: unit?.readableId ?? undefined
+  };
+}
+
+/** Resolve the physical children for one Issue request, including the frozen label. */
+export function issueSerialChildren(
+  serials: readonly {
+    id: string;
+    expectedSerial?: string;
+    confirmSerial?: string;
+  }[],
+  action: "scan" | "confirm"
+) {
+  if (action === "scan" && serials.some((sn) => sn.confirmSerial !== undefined))
+    return null;
+  return serials.map((sn) => ({
+    trackedEntityId: sn.id,
+    quantity: 1,
+    expectedSerial: sn.expectedSerial ?? sn.confirmSerial
+  }));
+}
+
 /**
  * Which of a unit's open operations a traveler scan opens. The operator's work
  * center wins; without a match, the next operations in routing order. Two or
@@ -418,4 +486,52 @@ export function decideTravelerClaim<
       ? options.length === 1
       : best.operation.workCenterId === workCenterId;
   return { kind: "claim", options, auto };
+}
+
+/** The assembly screen that opened a QR confirmation. Its step and unit
+ * position apply only when the operator confirms that same destination. */
+type TravelerScreen = {
+  operationId?: string;
+  trackedEntityId?: string;
+  jobOperationStepId?: string;
+  unitNumber?: number;
+};
+
+export function travelerScreenParams(screen: TravelerScreen) {
+  const params = new URLSearchParams();
+  if (screen.operationId) params.set("operationId", screen.operationId);
+  if (screen.trackedEntityId)
+    params.set("trackedEntityId", screen.trackedEntityId);
+  if (screen.jobOperationStepId)
+    params.set("jobOperationStepId", screen.jobOperationStepId);
+  if (screen.unitNumber !== undefined)
+    params.set("unitNumber", String(screen.unitNumber));
+  return params;
+}
+
+export function readTravelerScreen(params: URLSearchParams): TravelerScreen {
+  const unitNumber = Number(params.get("unitNumber"));
+  return {
+    operationId: params.get("operationId") || undefined,
+    trackedEntityId: params.get("trackedEntityId") || undefined,
+    jobOperationStepId: params.get("jobOperationStepId") || undefined,
+    unitNumber:
+      Number.isSafeInteger(unitNumber) && unitNumber > 0
+        ? unitNumber
+        : undefined
+  };
+}
+
+export function confirmedTravelerStep(
+  screen: TravelerScreen | undefined,
+  operationId: string,
+  trackedEntityId: string
+) {
+  return screen?.operationId === operationId &&
+    screen.trackedEntityId === trackedEntityId
+    ? {
+        jobOperationStepId: screen.jobOperationStepId,
+        unitNumber: screen.unitNumber
+      }
+    : {};
 }

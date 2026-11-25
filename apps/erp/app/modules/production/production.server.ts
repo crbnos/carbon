@@ -974,7 +974,9 @@ export const closeJob = defineServiceFn({
  * was received, a fractional quantity on a serial job, and the Make to Asset
  * rules; its message says what to fix (a `rule` error). Units it takes that
  * have no serial number yet (a deferred serial number timing) are numbered by
- * the same function, so a refused completion spends no numbers. Then the
+ * the same function, so a refused completion spends no numbers. A
+ * paired pack-out job requires the selected `expectedSerials` from the job receipt
+ * snapshot and stays open on a partial receipt. Once the job finishes,
  * picked material the job did not consume is returned to the warehouse; a
  * failure there leaves the job completed and is returned as `warning`.
  *
@@ -986,6 +988,7 @@ export const completeJob = defineServiceFn({
     expectedUnitIds: z.array(z.string()).optional(),
     expectedReceiptPreview: z.string().optional(),
     quantityComplete: z.number().min(0),
+    expectedSerials: z.array(z.string()).optional(),
     locationId: z.string().optional(),
     storageUnitId: z.string().optional()
   }),
@@ -999,6 +1002,7 @@ export const completeJob = defineServiceFn({
       locationId,
       storageUnitId,
       expectedUnitIds,
+      expectedSerials,
       expectedReceiptPreview
     }
   ) {
@@ -1016,21 +1020,32 @@ export const completeJob = defineServiceFn({
       p_user_id: userId
     };
     const rpc =
-      expectedReceiptPreview !== undefined
-        ? await ctx.asCaller.supabase.rpc("complete_job_from_receipt_preview", {
+      expectedSerials !== undefined
+        ? await ctx.asCaller.supabase.rpc("receive_job_to_inventory", {
             ...args,
-            p_expected_preview: expectedReceiptPreview,
-            p_expected_unit_ids: expectedUnitIds
+            p_expected_serials: expectedSerials
           })
-        : expectedUnitIds
+        : expectedReceiptPreview !== undefined
           ? await ctx.asCaller.supabase.rpc(
-              "complete_job_to_inventory_previewed",
+              "complete_job_from_receipt_preview",
               {
                 ...args,
+                p_expected_preview: expectedReceiptPreview,
                 p_expected_unit_ids: expectedUnitIds
               }
             )
-          : await ctx.asCaller.supabase.rpc("complete_job_to_inventory", args);
+          : expectedUnitIds
+            ? await ctx.asCaller.supabase.rpc(
+                "complete_job_to_inventory_previewed",
+                {
+                  ...args,
+                  p_expected_unit_ids: expectedUnitIds
+                }
+              )
+            : await ctx.asCaller.supabase.rpc(
+                "complete_job_to_inventory",
+                args
+              );
     if (rpc.error) {
       return ctx.error(
         "rule",
@@ -1039,6 +1054,10 @@ export const completeJob = defineServiceFn({
           : rpc.error.message || "Failed to complete job",
         rpc.error
       );
+    }
+
+    if (rpc.data === false) {
+      return { jobId, completed: false, warning: null };
     }
 
     // A re-completion is supported; the job id is the idempotency key, so a

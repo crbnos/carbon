@@ -6,6 +6,7 @@
 // optional) receives into the job's own location and storage unit. Before,
 // the Job Receipt posted with no location, so no location counted the units.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
+import { createHash, randomUUID } from "node:crypto";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import {
@@ -16,6 +17,7 @@ import {
   USER
 } from "./fixtures/always-post";
 import { databaseTest } from "./fixtures/local-database";
+import { localApiKeyClient, postgrestTest } from "./fixtures/local-supabase";
 
 /** A job whose own storage unit is a shelf at the job's location. */
 async function jobWithShelf(f: Fixture, key: string) {
@@ -151,6 +153,53 @@ databaseTest(
       );
       expect(await jobReceipts(f, job.jobId)).toEqual([
         { locationId: f.otherLocationId, storageUnitId: null, quantity: 1 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "the ERP receipt accepts an omitted destination and returns the committed job status",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await jobWithShelf(f, "default-destination");
+      const key = `crbn_test_${randomUUID()}`;
+      const apiKey = await f.db
+        .insertInto("apiKey")
+        .values({
+          name: "Job receiver",
+          companyId: f.companyId,
+          createdBy: USER,
+          keyHash: createHash("sha256").update(key).digest("hex"),
+          scopes: JSON.stringify({})
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await f.db
+        .insertInto("permission")
+        .values({
+          apiKeyId: apiKey.id,
+          companyId: f.companyId,
+          module: "Production",
+          page: "production.jobs",
+          level: "Edit",
+          createdBy: USER
+        })
+        .execute();
+      const client = localApiKeyClient(key)!;
+      const receipt = await client.rpc("receive_job_to_inventory", {
+        p_job_id: job.jobId,
+        p_quantity_complete: 1,
+        p_company_id: f.companyId,
+        p_user_id: USER
+      });
+      expect(receipt.error).toBeNull();
+      expect(receipt.data).toBe(true);
+      expect(await jobReceipts(f, job.jobId)).toEqual([
+        { locationId: f.locationId, storageUnitId: job.shelf, quantity: 1 }
       ]);
     } finally {
       await f.cleanup();

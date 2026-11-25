@@ -17,8 +17,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
+  const stockShipment = url.searchParams.get("stockShipment") === "true";
   return await api.inventory.getSerialNumbersForItem({
     itemId,
-    companyId
+    companyId,
+    stockShipment,
+    salesReturnOrderId: url.searchParams.get("salesReturnOrderId") ?? undefined
   });
 }

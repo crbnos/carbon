@@ -67,10 +67,10 @@ export const inventoryAdjustmentValidator = z.object({
 export async function getJobOperationIssueScope(
   client: SupabaseClient<Database>,
   args: { jobOperationId: string; companyId: string }
-): Promise<{ locationId: string | null; stripes: (string | null)[] }> {
+) {
   const operation = await client
     .from("jobOperation")
-    .select("job(locationId, projectId)")
+    .select("description, job(id, jobId, locationId, projectId)")
     .eq("id", args.jobOperationId)
     .eq("companyId", args.companyId)
     .maybeSingle();
@@ -84,6 +84,9 @@ export async function getJobOperationIssueScope(
         .maybeSingle()
     : null;
   return {
+    jobId: job?.id,
+    jobLabel: job?.jobId,
+    operationLabel: operation.data?.description,
     locationId: job?.locationId ?? null,
     stripes: project?.data?.projectStock ? [job!.projectId, null] : [null]
   };
@@ -167,10 +170,16 @@ type IssueLot = {
  */
 export async function getIssueLotsForItem(
   client: SupabaseClient<Database>,
-  args: { itemId: string; companyId: string; jobOperationId: string }
+  args: {
+    itemId: string;
+    companyId: string;
+    jobOperationId: string;
+    checkPairing?: boolean;
+  }
 ): Promise<{
   data: Array<IssueLot & { storageUnitName: string | null }> | null;
   error: unknown;
+  pairingDestination?: { job: string; operation: string };
 }> {
   const [scope, itemIds] = await Promise.all([
     getJobOperationIssueScope(client, args),
@@ -178,12 +187,21 @@ export async function getIssueLotsForItem(
   ]);
   if (!scope.locationId) return { data: [], error: null };
 
-  const stock = await getIssueLotStock(client, {
-    companyId: args.companyId,
-    locationId: scope.locationId,
-    itemIds,
-    stripes: scope.stripes
-  });
+  const [stock, pairing] = await Promise.all([
+    getIssueLotStock(client, {
+      companyId: args.companyId,
+      locationId: scope.locationId,
+      itemIds,
+      stripes: scope.stripes
+    }),
+    args.checkPairing && scope.jobId
+      ? client.rpc("job_requires_serial_pairing", {
+          p_company_id: args.companyId,
+          p_job_id: scope.jobId
+        })
+      : null
+  ]);
+  if (pairing?.error) return { data: null, error: pairing.error };
   if (stock.error) return { data: null, error: stock.error };
 
   const stockByLot = new Map<string, { quantity: number; bins: Set<string> }>();
@@ -210,6 +228,13 @@ export async function getIssueLotsForItem(
 
   return {
     error: null,
+    pairingDestination:
+      pairing?.data && scope.jobId
+        ? {
+            job: scope.jobLabel ?? scope.jobId,
+            operation: scope.operationLabel ?? args.jobOperationId
+          }
+        : undefined,
     data: lots.data
       .sort(
         (a, b) =>

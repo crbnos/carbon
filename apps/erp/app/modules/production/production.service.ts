@@ -3432,12 +3432,16 @@ export async function getJobReceiptPreview(
 ) {
   const result = await sql<{
     tracking: JobReceiptTracking;
+    pairedUnitIds: string[] | null;
     receiptPreview: string;
   }>`
     WITH preview AS MATERIALIZED (
       SELECT util.job_receipt_preview_state(${jobId}, ${companyId}) AS state
     )
-    SELECT state AS tracking, md5(state::text) AS "receiptPreview"
+    SELECT state AS tracking, md5(state::text) AS "receiptPreview",
+      CASE WHEN job_requires_serial_pairing(${jobId}, ${companyId}) THEN
+        ARRAY(SELECT id FROM job_receivable_paired_units(${jobId}, ${companyId}) AS ready(id))
+      END AS "pairedUnitIds"
     FROM preview WHERE state IS NOT NULL
   `.execute(db);
   const preview = result.rows[0];
@@ -3556,6 +3560,15 @@ export async function getJobReceiptSnapshot(
     )
     .select([
       "job.quantityReceivedToInventory",
+      sql<
+        string[] | null
+      >`CASE WHEN job_requires_serial_pairing("job".id, "job"."companyId")
+        THEN ARRAY(
+          SELECT te."readableId" FROM job_receivable_paired_units("job".id, "job"."companyId")
+            WITH ORDINALITY AS eligible(id, position)
+          JOIN "trackedEntity" te ON te.id = eligible.id AND te."companyId" = "job"."companyId"
+          ORDER BY eligible.position
+        ) END`.as("pairedSerials"),
       sql<
         string[]
       >`COALESCE(array_agg("itemLedger"."trackedEntityId") FILTER (WHERE "itemLedger"."trackedEntityId" IS NOT NULL), '{}')`.as(

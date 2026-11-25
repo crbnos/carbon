@@ -270,6 +270,7 @@ export type InspectionOutcomeState = {
   jobId: string;
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
+  isJobOutput: boolean;
   // The make method's batch WIP entity (batch-tracked completions accumulate
   // onto it via jobOperationBatchComplete).
   batchTrackedEntityId: string | null;
@@ -288,9 +289,13 @@ export type InspectionOutcomeState = {
   opAccounted: number;
   opRemaining: number;
   // Serial only: the make method's WIP entities and the eligibility test
-  // (not Consumed, not Rejected, not on hold for an open quality issue, not
-  // already completed at this operation).
-  entities: { id: string; status: string | null; attributes: unknown }[];
+  // (not Consumed, not Rejected, not already completed at this operation).
+  entities: {
+    id: string;
+    status: string | null;
+    attributes: unknown;
+    pairingId?: string;
+  }[];
   entityEligible: (entityId: string, includeHeld?: boolean) => boolean;
 };
 
@@ -425,6 +430,7 @@ export async function getInspectionOutcomeState(
     id: e.id,
     status: e.status,
     attributes: e.attributes,
+    pairingId: e.pairingId,
     completedOperationId: e.completedOperationId,
     inOperationScope: e.inOperationScope
   }));
@@ -461,6 +467,7 @@ export async function getInspectionOutcomeState(
       jobId: operation.jobId,
       requiresSerialTracking,
       requiresBatchTracking,
+      isJobOutput: jobMakeMethod?.data?.parentMaterialId === null,
       batchTrackedEntityId: jobMakeMethod?.data?.trackedEntityId ?? null,
       samples,
       lotSize: Number(inspection.lotSize ?? 0),
@@ -477,6 +484,18 @@ export async function getInspectionOutcomeState(
   };
 }
 
+/** Compare each selected inspection outcome to the binding shown on the floor. */
+export function inspectionPairingsMatch(
+  state: InspectionOutcomeState,
+  ids: Iterable<string>,
+  expected: Record<string, string> | undefined
+): boolean {
+  const current = new Map(
+    state.entities.map((unit) => [unit.id, unit.pairingId])
+  );
+  return Array.from(ids).every((id) => expected?.[id] === current.get(id));
+}
+
 // One `issue` serial-complete per unit (quantity 1), carrying the provenance
 // links. Sequential on purpose: each complete mints the next Reserved entity
 // and backflushes; stops at the first failure and reports how far it got.
@@ -484,6 +503,7 @@ export async function postSerialCompletions(
   serviceRole: ServiceRole,
   args: {
     candidates: {
+      pairingId?: string;
       trackedEntityId: string;
       inspectionSampleId: string | null;
     }[];
@@ -507,6 +527,7 @@ export async function postSerialCompletions(
       {
         type: "jobOperationSerialComplete",
         trackedEntityId: candidate.trackedEntityId,
+        pairingId: candidate.pairingId,
         quantity: 1,
         jobOperationId: args.jobOperationId,
         inspectionId: args.inspectionId,

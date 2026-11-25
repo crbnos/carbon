@@ -114,6 +114,7 @@ export type TrackedEntity = NonNullable<
 >[number] & {
   /** Set by `getTrackedEntitiesForOperation`; false = the operation applies to other units. */
   inOperationScope?: boolean;
+  pairingId?: string;
   completedOperationId?: string;
 };
 

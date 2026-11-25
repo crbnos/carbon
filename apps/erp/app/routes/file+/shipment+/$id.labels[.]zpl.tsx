@@ -3,11 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { getTaggedShipmentTracking } from "@carbon/database/shipment-tracking";
 import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { labelSizes, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getShipmentTracking } from "~/modules/inventory/inventory.utils";
 import {
   getCompanyLogoForLabel,
   getDocumentTemplateConfig,
@@ -25,7 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [companySettings, shipmentTracking] = await Promise.all([
     api.settings.getCompanySettings({}),
-    getShipmentTracking(client, id, companyId)
+    getTaggedShipmentTracking(client, id, companyId)
   ]);
 
   const url = new URL(request.url);

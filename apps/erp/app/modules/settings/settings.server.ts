@@ -440,8 +440,9 @@ export const updateItemsSettings = defineServiceFn({
  * or the first time the unit is worked on, scrapped or received), and whether
  * one location requires an assigned operator before the scheduler places work
  * there, whether travelers print at the pick, whether an operation needs its
- * tracked parts issued before completion, and whether releasing a job creates
- * its picking list. The staffing rule lives on the location row and is written for the
+ * tracked parts issued before completion, whether releasing a job creates
+ * its picking list, and whether a serial unit made from exactly one serial part
+ * takes that part's serial number. The staffing rule lives on the location row and is written for the
  * company's own location only, so a settings admin without the resources
  * permission can still set it. Changing it re-plans the location.
  *
@@ -459,6 +460,7 @@ export const updateProductionSettings = defineServiceFn({
     travelerLabels: z.boolean().optional(),
     requireTrackedMaterialsIssued: z.boolean().optional(),
     autoPickingListOnRelease: z.boolean().optional(),
+    serialNumberFromComponent: z.boolean().optional(),
     locationStaffing: z
       .object({
         locationId: z.string().min(1),

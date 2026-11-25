@@ -159,6 +159,7 @@ import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/durations";
 import {
   isKanbanCompleteScan,
+  kanbanCompleteHref,
   kanbanCompleteTarget,
   soleUnitId
 } from "~/utils/kanban";
@@ -336,6 +337,9 @@ export const JobOperation = ({
     : (trackedEntityParam ?? trackedEntities[0]?.id);
   // The unit a write that needs an open unit names (and a timer).
   const trackedEntityId = isSerialOperation ? workUnit.workUnitId : shownUnitId;
+  const scrapUnit = trackedEntities.find(
+    (entity) => entity.id === trackedEntityId
+  );
   // The open issues that hold the unit on screen.
   const shownUnitHolds = isSerialOperation
     ? holdingIssues(unitHolds, shownUnitId)
@@ -783,9 +787,7 @@ export const JobOperation = ({
       if (target.action === "select") return askForUnit();
       const endPath = path.to.endOperation(operation.id);
       return completeFetcher.load(
-        target.trackedEntityId
-          ? `${endPath}?trackedEntityId=${target.trackedEntityId}`
-          : endPath
+        kanbanCompleteHref(endPath, target.trackedEntityId, trackedEntities)
       );
     },
     inTextFields: true,
@@ -3174,6 +3176,7 @@ export const JobOperation = ({
           key={`scrap-${scrapModal.openCount}`}
           open={scrapModal.isOpen}
           type="scrap"
+          pairingId={scrapUnit?.pairingId}
           laborProductionEvent={laborProductionEvent}
           machineProductionEvent={machineProductionEvent}
           operation={operation}
@@ -3181,10 +3184,7 @@ export const JobOperation = ({
           parentIsBatch={parentIsBatch}
           setupProductionEvent={setupProductionEvent}
           trackedEntityId={trackedEntityId}
-          trackedEntityReadableId={
-            trackedEntities.find((entity) => entity.id === trackedEntityId)
-              ?.readableId ?? undefined
-          }
+          trackedEntityReadableId={scrapUnit?.readableId ?? undefined}
           returnFocusRef={actionsSheetOpenerRef}
           onClose={scrapModal.onClose}
         />
@@ -3208,6 +3208,7 @@ export const JobOperation = ({
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
                   trackedEntityReadableId={heldUnit?.readableId ?? undefined}
+                  pairingId={heldUnit?.pairingId}
                   isFirstOpenOperation={isFirstOpenOperation}
                   requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
                   returnFocusRef={actionsSheetOpenerRef}

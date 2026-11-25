@@ -23,7 +23,8 @@ const tracking = z.discriminatedUnion("trackingType", [
   z.object({
     trackingType: z.literal("serial"),
     ...line,
-    index: zfd.numeric(z.number())
+    expectedTrackedEntityId: zfd.text(z.string().min(1).optional()),
+    index: zfd.numeric(z.number().int().min(0))
   })
 ]);
 
