@@ -13168,12 +13168,6 @@ msgstr "Tüm vergi kodları eşleştirilmiştir"
 msgid "Every unit has a rate."
 msgstr "Her adetin bir oranı vardır."
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "Her adet başta numaralandırılır, böylece seriler iş başlamadan önce yazdırılabilir."
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "Her adet iş emirleri atölyeye gittiğinde numaralandırılır, böylece iş takip kartları yine de yazdırılabilir ve serbest bırakmadan önce iptal edilen iş emirleri herhangi bir kaynak tüketmez."
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "Listenin filtrelerine uyan her kullanıcı. Bu işlemin uygulanmadığı kullanıcılar atlanır."
 
@@ -13916,9 +13910,6 @@ msgstr "Toplu özelliği güncelleme başarısız oldu"
 
 msgid "Failed to update category markups"
 msgstr "Kategori eklemeleri güncellenemedi"
-
-msgid "Failed to update configuration parameter"
-msgstr "Yapılandırma parametresi güncellenemedi"
 
 msgid "Failed to update count"
 msgstr "Sayı güncelleme başarısız"
@@ -31920,6 +31911,12 @@ msgstr "İş emrinin maliyeti bu göreve raporlanır."
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "İş emrinin çıktısı, atanmamış stok yerine projenin stokuna kaydedilir."
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "İş emrinin kendi adetleri atölyeye gittiğinde numaralandırılır, böylece iş takip kartları yine de yazdırılabilir ve serbest bırakmadan önce iptal edilen iş emirleri numara tüketmez. Siparişe göre üretim alt montajının adetleri ilk kez üzerinde çalışıldığında numaralandırılır."
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "İş emrinin kendi adetleri oluşturulduğunda numaralandırılır, böylece seri numaraları iş başlamadan önce yazdırılabilir. Siparişe göre üretim alt montajının adetleri ilk kez üzerinde çalışıldığında numaralandırılır."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "İşin konumunun planlama kuyruğundaki konumu — Carbon'un son tarih ve deadline türünden hesapladığı kesirli bir sayı, Düşük/Yüksek bir puanlama değil."

@@ -5293,6 +5293,26 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 
 **Applies to:** `packages/database/supabase/tests/authz-*.test.sql` and any test built on `pg_temp.allows`.
 
+## A helper that writes the rows you are about to update
+
+**Context:** `users_revokeInvites` deactivates each user, then marks the invites revoked with an UPDATE filtered on `revokedAt IS NULL`.
+
+**Problem:** `deactivateUser` (`@carbon/auth/users.server`) already stamps the invite revoked. For one user the operation's own UPDATE matched nothing, so it answered `{ revoked: 0 }` for a revoke that worked and skipped the audit entry that records the request's origin. Its unit test used two users, which take the job path, so it never saw the one-user path.
+
+**Rule:** Before calling a helper, read it to its end. If it writes the rows the next statement filters on, read their ids first and update by id. Count from the rows found, not from a second filtered write.
+
+**Applies to:** Any operation that calls a shared write (deactivate, post, close) and then updates the same rows.
+
+## A gate the manifest cannot show reads as membership
+
+**Context:** The MCP manifest published a gate over two or more modules (`{ create: "production", view: "projects" }`) as `{ module: null, actions: [] }`, the shape of a company-membership gate.
+
+**Problem:** `describe_tool` printed no permission and the digest wrote `none`, so a gate could lose a module, or become `{}`, without any digest line changing. The API still enforced the full gate, so nothing was open, but the contract a caller reads was wrong.
+
+**Rule:** The manifest publishes every page a gate names (`allOf` for pages of several modules, `oneOf` for a choice), and the digest line names them. When the generator meets a gate shape it does not know, fail generation rather than fall back to membership.
+
+**Applies to:** `scripts/lib/service-fn-metadata.ts`, `scripts/lib/manifest-digest.ts`, `apps/erp/test/mcp-tool-permissions.test.ts`.
+
 ## A component's outlet beside the route's outlet mounts the child route twice
 
 - **Context:** List tables and record cards (`ApiKeysTable`, `WebhooksTable`, `SupplierProcesses`) rendered their own `<Outlet />` for their New/Edit drawers. #1855 then gave every route under `/x` a `<RecordOutlet />`, and these routes kept both.
@@ -5339,6 +5359,66 @@ separately and keep Turbo cache hits distinct from TypeScript incremental runs.
 **Rule:** Move the posting's check into a pure function of the posting context and the date. The posting refuses with it, and the loader calls it on the context the posting loads (`loadProjectPostingContexts`), never on a copy of the rule. Before gating an action, grep its opener (`charging.open`) for every entry point and give each the same disabled state and reason. Disable the action only when no input the user can still change (the entry date) makes it post, and keep the server refusal for the inputs that are refused: a dated override (`costTreatmentEffectiveFrom`) leaves the dates before it open, so a today-only check would block entries the posting accepts.
 
 **Applies to:** `projectExpenseRefusal` / `getChargeCostRefusal`, and any action the UI disables with a reason the server decides by cost treatment or date.
+
+## A race test that relies on Promise.all can pass without the lock
+
+**Context:** Database tests for postings that read a row, then write from that read (a lot split, a serial increase, a calibration update).
+
+**Problem:** Two posts run with `Promise.all` interleave by timing. Often one finishes before the other starts, so the test passes with the row lock removed.
+
+**Rule:** Hold `FOR UPDATE` on the row from a third connection. Start each post on its own connection. Release the row only once every post's backend waits on a lock (`pg_stat_activity.wait_event_type = 'Lock'` by pid). `raceBehindRowLock` (`apps/erp/test/database/fixtures/row-lock-race.ts`) does this. Check the test fails with the lock removed.
+
+**Applies to:** Concurrency tests under `apps/erp/test/database/`.
+
+## A merge of stored fields into a partial update overwrites a concurrent save
+
+**Context:** `updateContractLine` and the contract line cell edit fill the fields a caller left out from a read of the line, then write every column.
+
+**Problem:** A save between the read and the write is overwritten with the stale value, and the call still reports success.
+
+**Rule:** Make the write conditional on the read (`updatedAt` matches the value read) and refuse an empty result as `conflict`. Or write only the fields sent.
+
+**Applies to:** Any operation or route that reads a record to fill omitted fields before an update.
+
+## An edit that empties a stored draft makes it read as unedited
+
+**Context:** A Draft contract's invoice schedule is planned live until its first edit stores it.
+
+**Problem:** Deleting the last stored planned invoice left the same state as an unedited Draft, so the schedule returned to the live plan while the dialog said the amounts became residuals.
+
+**Rule:** A draft that is stored on its first edit refuses an edit that would leave nothing stored, or stores a state that says it was emptied.
+
+**Applies to:** Contract and revenue schedule editors, and any "stored once edited" draft.
+
+## One advisory lock key for a global table with no unique key
+
+**Context:** `period` is shared by every company and has no unique key on (`periodType`, `startDate`). The planning screens, MRP and the dataset seeder each insert the weeks they miss.
+
+**Problem:** Each reads the missing weeks, then inserts them. Two writers at once insert the same week, and later reads return two rows for it. A per-company lock key does not serialize two companies.
+
+**Rule:** Every writer takes `pg_advisory_xact_lock(PERIOD_LOCK_KEY)` (`@carbon/database`) and reads the missing weeks again under it, in the transaction that inserts them.
+
+**Applies to:** `getOrCreatePeriods` (ERP), `getOrCreateDemandPeriods` (`@carbon/planning`), dataset tier 12, and any other global table written by read-then-insert.
+
+## Decide with the conditional write, then act on the rows it returned
+
+**Context:** `users_revokeInvites` checked the invites were pending, then deactivated the users, then marked the invites revoked.
+
+**Problem:** An invite accepted between the check and the deactivation got its new account deactivated.
+
+**Rule:** Do the conditional write that decides first: stamp `revokedAt` where `acceptedAt` and `revokedAt` are still null. Deactivate only the users whose rows it returned, and clear the stamp if the deactivation fails. Acceptance requires `revokedAt IS NULL` under the invite's row lock.
+
+**Applies to:** A destructive step that follows a status check: revoke, cancel, close, deactivate.
+
+## Database fixtures turn the interceptors off
+
+**Context:** `connectLocalTestDatabase` sets `app.sync_in_progress`, so the event-system interceptors do not run.
+
+**Problem:** A test that needs a row an interceptor creates (an item insert's `itemCost`) finds none, and a guard that reads it looks broken.
+
+**Rule:** Set `app.sync_in_progress` to `false` around the call that needs the interceptor, inside the test's transaction.
+
+**Applies to:** Database tests of item creates, and any write whose side rows come from an interceptor.
 
 ## A stock-out with no bin chosen takes the bin that holds the stock, never NULL
 

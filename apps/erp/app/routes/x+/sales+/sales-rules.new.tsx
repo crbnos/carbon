@@ -2,16 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { requireFeature } from "@carbon/ee/plan.server";
-import { upsertEnforcementRule } from "@carbon/ee/rules.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data } from "react-router";
 import { salesRuleValidator } from "~/modules/sales/sales.models";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
 import { getParams, path } from "~/utils/path";
@@ -21,38 +16,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {};
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
-    "sales.salesRules": "Create"
-  });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "SALES_RULES",
-    redirectTo: path.to.salesRules
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(salesRuleValidator).validate(formData);
-  if (validation.error) return validationError(validation.error);
-
-  const insert = await upsertEnforcementRule(client, "sales", companyId, {
-    ...validation.data,
-    description: validation.data.description ?? null,
-    createdBy: userId
-  });
-
-  if (insert.error) {
-    return data(
-      {},
-      await flash(request, error(insert.error, "Failed to create rule"))
-    );
-  }
-
-  throw redirect(`${path.to.salesRules}?${getParams(request)}`);
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesRuleValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.sales.createSalesRule(input.data);
+  return respond(args.request, result).redirect(
+    `${path.to.salesRules}?${getParams(args.request)}`
+  );
 }
 
 export default function NewSalesRuleRoute() {

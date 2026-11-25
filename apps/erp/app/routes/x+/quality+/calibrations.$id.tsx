@@ -87,17 +87,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("Could not find id");
 
-  const inspectionStatus =
-    d.requiresAction || d.requiresAdjustment || d.requiresRepair
-      ? "Fail"
-      : "Pass";
-
-  // The service function moves the gauge (owned by Quality → Gauges) as the
-  // system, after its own records permission.
+  // The service function decides the result from the flags, and moves the
+  // gauge (owned by Quality → Gauges) as the system, after its own records
+  // permission.
   const updateGauge = await api.quality.updateGaugeCalibrationRecord({
     id,
     ...d,
-    inspectionStatus,
     customFields: setCustomFields(formData)
   });
 

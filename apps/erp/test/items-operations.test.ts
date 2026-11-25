@@ -16,15 +16,28 @@ vi.mock("@carbon/ee/approvals/document.server", () => ({
 import { getPostgresClient } from "@carbon/database/client";
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
 import {
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler
+} from "kysely";
+import {
   addItemPredecessor,
+  createConsumable,
+  createPart,
+  createTool,
   setChangeNoticeStatus,
   setItemActive,
   setItemPostingGroup,
   setItemSourcing,
   updateConsumable,
+  upsertConfigurationParameter,
+  upsertConfigurationParameterGroup,
   updateItem,
   updateItemCost,
   updateItemPlanning,
+  updateMaterial,
   updatePart,
   updateTool
 } from "../app/modules/items/items.server";
@@ -39,17 +52,26 @@ type Write = {
 };
 
 /** A Supabase client that answers every read of a table with `reads[table]`
- *  and records each write. A table it has no answer for reads as null. */
-function fakeClient(reads: Record<string, unknown> = {}) {
+ *  and records each write. A table it has no answer for reads as null. An
+ *  insert answers the row `inserted[table]` stands for, as `.select()` would. */
+function fakeClient(
+  reads: Record<string, unknown> = {},
+  writeErrors: Record<string, unknown> = {},
+  inserted: Record<string, unknown> = {}
+) {
   const writes: Write[] = [];
   const client = {
+    // The company permission checks before a Kysely write pass.
+    rpc: async () => ({ data: null, error: null }),
     from(table: string) {
       const filters: [string, unknown][] = [];
       let write: Omit<Write, "table" | "filters"> | null = null;
       const answer = () => {
         if (write) {
           writes.push({ table, ...write, filters });
-          return { data: null, error: null };
+          const error = writeErrors[table] ?? null;
+          const row = write.op === "insert" ? inserted[table] : undefined;
+          return { data: error ? null : (row ?? null), error };
         }
         return { data: reads[table] ?? null, error: null };
       };
@@ -61,6 +83,10 @@ function fakeClient(reads: Record<string, unknown> = {}) {
         },
         update: (values: unknown) => {
           write = { op: "update", values };
+          return chain;
+        },
+        upsert: (values: unknown) => {
+          write = { op: "insert", values };
           return chain;
         },
         delete: () => {
@@ -75,6 +101,12 @@ function fakeClient(reads: Record<string, unknown> = {}) {
           filters.push([column, value]);
           return chain;
         },
+        match: (columns: Record<string, unknown>) => {
+          filters.push(...Object.entries(columns));
+          return chain;
+        },
+        or: () => chain,
+        limit: () => chain,
         order: () => chain,
         range: () => chain,
         maybeSingle: async () => answer(),
@@ -127,7 +159,15 @@ const PARTS = itemsDatabase({
 
 function contextFor(
   caller: unknown,
-  { system = unreachable }: { system?: () => unknown } = {}
+  {
+    system = unreachable,
+    pg = () => PARTS,
+    actions = ["view", "create", "update", "delete"]
+  }: {
+    system?: () => unknown;
+    pg?: () => unknown;
+    actions?: ("view" | "create" | "update" | "delete")[];
+  } = {}
 ) {
   return createServiceContext({
     actor: {
@@ -136,19 +176,71 @@ function contextFor(
       userId: "user-1",
       permissions: pageClaims({
         parts: {
-          view: ["company-1"],
-          create: ["company-1"],
-          update: ["company-1"],
-          delete: ["company-1"]
+          view: actions.includes("view") ? ["company-1"] : [],
+          create: actions.includes("create") ? ["company-1"] : [],
+          update: actions.includes("update") ? ["company-1"] : [],
+          delete: actions.includes("delete") ? ["company-1"] : []
         }
       })
     },
     company: { id: "company-1", groupId: "group-1" },
     caller: caller as any,
     system: system as any,
-    pg: () => PARTS,
+    pg: pg as any,
     kv: unreachable
   });
+}
+
+/**
+ * A system connection, at the Postgres wire, that records each statement and
+ * answers it with `answer(sql)`: its rows and affected count, or the error it
+ * throws. Transactions run, and commit nothing.
+ */
+function scriptedPg(
+  answer: (sql: string) => { rows?: unknown[]; numAffectedRows?: bigint }
+) {
+  const statements: { sql: string; parameters: readonly unknown[] }[] = [];
+  const connection = {
+    executeQuery: async (query: {
+      sql: string;
+      parameters: readonly unknown[];
+    }) => {
+      statements.push(query);
+      return { rows: [], ...answer(query.sql) };
+    },
+    // oxlint-disable-next-line require-yield -- never streamed
+    streamQuery: async function* () {
+      throw new Error("not streamed");
+    }
+  };
+  const done = async () => undefined;
+  class Driver {
+    init = done;
+    acquireConnection = async () => connection;
+    beginTransaction = done;
+    commitTransaction = done;
+    rollbackTransaction = done;
+    releaseConnection = done;
+    destroy = done;
+  }
+  return { pg: getPostgresClient({} as never, Driver as never), statements };
+}
+
+/** A system connection that answers no rows and records each statement. */
+function recordingPg() {
+  const statements: { sql: string; parameters: readonly unknown[] }[] = [];
+  const pg = new Kysely<any>({
+    dialect: {
+      createAdapter: () => new PostgresAdapter(),
+      createDriver: () => new DummyDriver(),
+      createIntrospector: (db) => new PostgresIntrospector(db),
+      createQueryCompiler: () => new PostgresQueryCompiler()
+    },
+    log: (event) => {
+      if (event.level === "query") statements.push(event.query);
+    }
+  });
+  return { pg, statements };
 }
 
 beforeEach(() => {
@@ -271,6 +363,340 @@ describe("details saves", () => {
       name: "Bracket",
       active: false
     });
+  });
+});
+
+describe("item creates", () => {
+  const item = {
+    id: "C-100",
+    name: "Gloves",
+    replenishmentSystem: "Buy",
+    defaultMethodType: "Pull from Inventory",
+    itemTrackingType: "Inventory",
+    unitOfMeasureCode: "EA"
+  } as const;
+
+  const creates = [
+    [
+      "createConsumable",
+      (ctx: any, sent: object = {}) =>
+        createConsumable(ctx, { ...item, ...sent })
+    ],
+    [
+      "createTool",
+      (ctx: any, sent: object = {}) =>
+        createTool(ctx, { ...item, revision: "0", ...sent })
+    ],
+    [
+      "createPart",
+      (ctx: any, sent: object = {}) =>
+        createPart(ctx, { ...item, revision: "0", ...sent })
+    ]
+  ] as const;
+
+  it.each(creates)("%s answers the new item's id and costs only that item of the company", async (_name, create) => {
+    const { client } = fakeClient();
+    const { pg, statements } = scriptedPg((sql) => {
+      if (sql.startsWith('insert into "item"')) return { rows: [{ id: "i1" }] };
+      if (sql.startsWith('update "itemCost"')) return { numAffectedRows: BigInt(1) };
+      return {};
+    });
+
+    const result = await create(contextFor(client, { pg: () => pg }));
+
+    expect(result).toEqual({ data: { id: "i1" }, error: null });
+    const cost = statements.find((statement) =>
+      statement.sql.startsWith('update "itemCost"')
+    );
+    expect(cost?.sql).toMatch(
+      /where "itemId" in \(\$\d+\) and "companyId" = \$\d+$/
+    );
+    expect(cost?.parameters.slice(-2)).toEqual(["i1", "company-1"]);
+  });
+
+  it.each(creates)("%s answers a number another item has as a conflict", async (_name, create) => {
+    const { client } = fakeClient();
+    const { pg } = scriptedPg((sql) => {
+      if (sql.startsWith('insert into "item"')) {
+        throw Object.assign(
+          new Error('duplicate key value violates unique constraint "item_unique"'),
+          { code: "23505" }
+        );
+      }
+      return {};
+    });
+
+    const result = await create(contextFor(client, { pg: () => pg }));
+
+    expect(result.error?.category).toBe("conflict");
+  });
+
+  it.each(creates)("%s refuses a group of another company inside its transaction", async (_name, create) => {
+    const { client } = fakeClient();
+    const { pg, statements } = scriptedPg((sql) =>
+      sql.startsWith('insert into "item"') ? { rows: [{ id: "i1" }] } : {}
+    );
+
+    const result = await create(contextFor(client, { pg: () => pg }), {
+      postingGroupId: "other-company-group"
+    });
+
+    expect(result.error).toMatchObject({
+      category: "rule",
+      message: "Item group other-company-group not found"
+    });
+    expect(
+      statements.some((statement) => statement.sql.startsWith('update "itemCost"'))
+    ).toBe(false);
+  });
+});
+
+describe("updateMaterial under generated material IDs", () => {
+  const material = {
+    id: "i1",
+    replenishmentSystem: "Buy",
+    defaultMethodType: "Pull from Inventory",
+    itemTrackingType: "Inventory",
+    unitOfMeasureCode: "EA"
+  } as const;
+  const reads = {
+    companySettings: { materialGeneratedIds: true },
+    item: { id: "i1", readableId: "AL-PL" },
+    material: {
+      materialSubstanceId: "aluminum",
+      materialFormId: "plate",
+      materialTypeId: null,
+      finishId: null,
+      gradeId: null,
+      dimensionId: null
+    },
+    materialSubstance: { name: "Aluminum", code: "AL" },
+    materialForm: { name: "Sheet", code: "SH" }
+  };
+
+  it("writes a sent name to the item when no property changes, as the panel's name field does", async () => {
+    const { client } = fakeClient(reads);
+    const { pg, statements } = recordingPg();
+
+    const result = await updateMaterial(contextFor(client, { pg: () => pg }), {
+      ...material,
+      name: "Plate offcuts"
+    });
+
+    expect(result.error).toBeNull();
+    const itemUpdate = statements.find((statement) =>
+      statement.sql.startsWith('update "item"')
+    );
+    expect(itemUpdate?.parameters).toContain("Plate offcuts");
+  });
+
+  it("refuses an empty readable id instead of reading it as left out", async () => {
+    const { client, writes } = fakeClient(reads);
+    const { pg, statements } = recordingPg();
+
+    const result = await updateMaterial(contextFor(client, { pg: () => pg }), {
+      ...material,
+      readableId: ""
+    });
+
+    expect(result.error).toMatchObject({ category: "validation" });
+    expect(writes).toEqual([]);
+    expect(statements).toEqual([]);
+  });
+
+  it("refuses a name the property change does not derive, before any write", async () => {
+    const { client, writes } = fakeClient(reads);
+    const { pg, statements } = recordingPg();
+
+    const result = await updateMaterial(contextFor(client, { pg: () => pg }), {
+      ...material,
+      materialFormId: "sheet",
+      name: "Plate offcuts"
+    });
+
+    expect(result.error).toMatchObject({ category: "rule" });
+    expect(writes).toEqual([]);
+    expect(statements).toEqual([]);
+  });
+});
+
+describe("upsertConfigurationParameter", () => {
+  const parameter = {
+    itemId: "i1",
+    key: "width",
+    label: "Width",
+    dataType: "numeric"
+  } as const;
+
+  it("refuses a parameter for an item of another company, and writes nothing", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: null });
+
+    const result = await upsertConfigurationParameter(
+      contextFor(client, { system: () => system.client }),
+      { ...parameter, itemId: "other-item" }
+    );
+
+    expect(result.error).toMatchObject({ category: "notFound" });
+    expect(writes).toEqual([]);
+  });
+
+  it("saves an edit with Edit on the item's page, only on the company's item", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: { id: "i1" } });
+
+    const result = await upsertConfigurationParameter(
+      contextFor(client, {
+        system: () => system.client,
+        actions: ["view", "update"]
+      }),
+      { ...parameter, id: "p1" }
+    );
+
+    expect(result.error).toBeNull();
+    expect(writes).toMatchObject([
+      {
+        table: "configurationParameter",
+        op: "update",
+        filters: [
+          ["id", "p1"],
+          ["itemId", "i1"],
+          ["companyId", "company-1"]
+        ]
+      }
+    ]);
+  });
+
+  it("never writes the creation audit fields an edit sends", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: { id: "i1" } });
+    // A caller's extra keys, which the input drops.
+    const sent = {
+      ...parameter,
+      id: "p1",
+      createdBy: "user-2",
+      createdAt: "2020-01-01T00:00:00Z"
+    };
+
+    const result = await upsertConfigurationParameter(
+      contextFor(client, {
+        system: () => system.client,
+        actions: ["view", "update"]
+      }),
+      sent
+    );
+
+    expect(result.error).toBeNull();
+    expect(writes).toHaveLength(1);
+    expect(writes[0]!.values).not.toHaveProperty("createdBy");
+    expect(writes[0]!.values).not.toHaveProperty("createdAt");
+  });
+
+  it("adds a parameter to the group sent, and answers its id", async () => {
+    const { client, writes } = fakeClient(
+      {
+        configurationParameterGroup: [
+          { id: "g-size", isUngrouped: false, sortOrder: 1 },
+          { id: "g-ungrouped", isUngrouped: true, sortOrder: 2 }
+        ]
+      },
+      {},
+      { configurationParameter: { id: "p-new" } }
+    );
+    const system = fakeClient({ item: { id: "i1" } });
+
+    const result = await upsertConfigurationParameter(
+      contextFor(client, { system: () => system.client }),
+      { ...parameter, configurationParameterGroupId: "g-size" }
+    );
+
+    expect(result).toEqual({ data: { id: "p-new" }, error: null });
+    expect(writes).toMatchObject([
+      {
+        table: "configurationParameter",
+        op: "insert",
+        values: { configurationParameterGroupId: "g-size", itemId: "i1" }
+      }
+    ]);
+  });
+
+  it("adds a parameter sent without a group to the item's Ungrouped group", async () => {
+    const { client, writes } = fakeClient(
+      {
+        configurationParameterGroup: [
+          { id: "g-ungrouped", isUngrouped: true, sortOrder: 1 }
+        ]
+      },
+      {},
+      { configurationParameter: { id: "p-new" } }
+    );
+    const system = fakeClient({ item: { id: "i1" } });
+
+    const result = await upsertConfigurationParameter(
+      contextFor(client, { system: () => system.client }),
+      parameter
+    );
+
+    expect(result.error).toBeNull();
+    expect(writes).toMatchObject([
+      {
+        table: "configurationParameter",
+        op: "insert",
+        values: { configurationParameterGroupId: "g-ungrouped" }
+      }
+    ]);
+  });
+
+  it("refuses a group that is not one of the item's, and writes nothing", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: { id: "i1" } });
+
+    const result = await upsertConfigurationParameter(
+      contextFor(client, { system: () => system.client }),
+      { ...parameter, configurationParameterGroupId: "g-other-item" }
+    );
+
+    expect(result.error).toMatchObject({ category: "rule" });
+    expect(writes).toEqual([]);
+  });
+});
+
+describe("upsertConfigurationParameterGroup", () => {
+  it("refuses a group for an item of another company, and writes nothing", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: null });
+
+    const result = await upsertConfigurationParameterGroup(
+      contextFor(client, { system: () => system.client }),
+      { itemId: "other-item", name: "Size" }
+    );
+
+    expect(result.error).toMatchObject({ category: "notFound" });
+    expect(writes).toEqual([]);
+  });
+
+  it("renames a group only of the company's item", async () => {
+    const { client, writes } = fakeClient();
+    const system = fakeClient({ item: { id: "i1" } });
+
+    const result = await upsertConfigurationParameterGroup(
+      contextFor(client, { system: () => system.client }),
+      { itemId: "i1", id: "g1", name: "Size" }
+    );
+
+    expect(result.error).toBeNull();
+    expect(writes).toEqual([
+      {
+        table: "configurationParameterGroup",
+        op: "update",
+        values: { name: "Size" },
+        filters: [
+          ["id", "g1"],
+          ["itemId", "i1"],
+          ["companyId", "company-1"]
+        ]
+      }
+    ]);
   });
 });
 

@@ -12,8 +12,9 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { toolValidator } from "~/modules/items/items.models";
-import { upsertTool } from "~/modules/items/items.service";
+import { insertTypedItem } from "~/modules/items/items.service";
 import { ToolForm } from "~/modules/items/ui/Tools";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { newRecordMeta } from "~/utils/meta";
@@ -41,12 +42,17 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createTool = await upsertTool(client, {
-    ...validation.data,
-    companyId,
-    customFields: setCustomFields(formData),
-    createdBy: userId
-  });
+  const createTool = await insertTypedItem(
+    client,
+    getDatabaseClient(),
+    "Tool",
+    {
+      ...validation.data,
+      companyId,
+      customFields: setCustomFields(formData),
+      createdBy: userId
+    }
+  );
   if (createTool.error) {
     return modal
       ? data(

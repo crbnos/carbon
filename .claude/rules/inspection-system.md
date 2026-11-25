@@ -248,8 +248,9 @@ references).
   `create: quality`, route `x+/inspection-document+/$id.version.tsx`). It locks
   the root, numbers the copy one past the group's highest `version`, and copies
   the plan row (drawing `storagePath` and `modelUploadId` are shared, not
-  duplicated), its characteristics (new ids), balloons (remapped to the new
-  characteristics) and parameters. The copy is a Draft.
+  duplicated), its characteristics (new ids, in the editor's order
+  `compareInspectionFeatures`, each a microsecond after the one before), balloons
+  (remapped to the new characteristics) and parameters. The copy is a Draft.
 - **Publish** — `activateInspectionDocumentVersion` (operation of the same name,
   `update: quality`, route `$id.activate.tsx`). One transaction locks the group,
   archives the Active version, activates this one, and moves
@@ -1207,10 +1208,15 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   send `tempId` / `tempBalloonAnchorId` and read the `featureIdMap` / `balloonAnchorIdMap`
   back. A PDF upload goes through the same save. The route skips revalidation after a
   save (the response carries the rows).
-- **Features saved together share one `createdAt`** (the RPC is one transaction, `NOW()`
-  is fixed), so `ORDER BY "createdAt"` alone returns them in heap order, and an UPDATE
-  moves a row to the end. Anything listing features must break the tie — the editor sorts
-  by `createdAt`, then label (natural), then id, on load only.
+- **Features are listed by `createdAt`, which can tie.** `save_inspection_document_atomic`
+  stamps each characteristic it creates `NOW()` plus its position in the sent list, in
+  microseconds, inside its own transaction
+  (`20261124081455_inspection-plan-save-keeps-sent-order.sql`), and a New Version copies
+  them a microsecond apart, so their order holds. Rows saved before that migration share
+  their save's `NOW()`, and `ORDER BY "createdAt"` alone returns them in heap order.
+  Anything listing features must break the tie: the editor sorts by `createdAt`, then
+  label (natural), then id, on load only (`compareInspectionFeatures`,
+  `quality.utils.ts`).
 - **Sample status is derived on document-driven lots** — do not add manual sample
   pass/fail UI there; deviations resolve at disposition via MRB/NCR (spec decision).
 - **Per-cell measurement saves are quiet** (plain `fetch`, no revalidation) — the grid and

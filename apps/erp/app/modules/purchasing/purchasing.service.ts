@@ -9133,7 +9133,7 @@ export async function postLease(
 /**
  * Write (or clear) a Draft lease asset's classification override, audit
  * logged. An accounting decision, so it runs as the system on the caller's
- * `update: accounting`: an accountant need not hold the purchasing write the
+ * Edit on Accounting Leases: an accountant need not hold the purchasing write the
  * lease's own policies ask for.
  */
 export async function writeClassificationOverride(

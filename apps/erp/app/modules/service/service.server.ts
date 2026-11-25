@@ -1391,10 +1391,12 @@ export const deleteServiceJobCharge = defineServiceFn({
  * @remarks
  * Refused when the job is Completed, Invoiced or Cancelled, or the item is
  * not the company's. A serial or batch part names the tracked entities it
- * takes in `children`, each with a quantity more than 0; any other part takes
- * `quantity` (more than 0) from inventory at the job's location. The stock
- * leaves inventory through the `issue` posting, which posts its cost to the
- * job's coverage account; its refusal is returned as it is.
+ * takes in `children`, each with a quantity more than 0, in stock at the job's
+ * location: each draw must fit in the one storage unit there that holds most
+ * of that serial or lot. Any other part takes `quantity` (more than 0) from
+ * inventory at the job's location. The stock leaves inventory through the
+ * `issue` posting, which posts its cost to the job's coverage account; its
+ * refusal is returned as it is.
  *
  * @mcp
  */

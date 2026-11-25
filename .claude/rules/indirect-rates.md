@@ -38,7 +38,10 @@ Indirect Pools and Indirect Rates actions call `api.projects.*`
 `deleteIndirectPoolAccount`, `setIndirectRate`, `runIndirectRatePeriod`,
 `runFinalTrueUp` in `projects.server.ts`); the period close page calls
 `api.accounting.computePeriodBurden` and `closePeriodEarnedValue`
-(`accounting.server.ts`).
+(`accounting.server.ts`). The `projects` operations are MCP tools (`upsertIndirectPool`
+is gated on company membership, with the `create` / `update: accounting` check inside,
+which an API key must hold too), as are the community reads `getIndirectPools`, `getIndirectPool` (with its accounts),
+`getIndirectRates` and `getIndirectRateRuns` (`view: accounting`, no plan check).
 
 UI: Accounting → **Indirect Pools** (Configure) and **Indirect Rates** (Closing),
 `IndirectRatesUpgradeOverlay` for a gated company; the rate ceilings grid on a Cost

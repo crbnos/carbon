@@ -12,27 +12,35 @@ import {
   datetime,
   EPSILON,
   pick,
+  pluckUnique,
   requireAffected,
   resolveTrackedEntityBin,
   round,
   searchFilter
 } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
+import { type CalendarDate, parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { receiptLotIssueType } from "./quality.utils";
+import {
+  calibrationFlags,
+  calibrationInspectionStatusRefusal,
+  compareInspectionFeatures,
+  gaugeCalibrationStatusFromDates,
+  receiptLotIssueType,
+  samplingRuleForPlanType
+} from "./quality.utils";
 
 const logger = getLogger("erp", "quality");
 
 import { openai } from "@ai-sdk/openai";
 import { NotFoundError, raisedMessage } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
-import type {
+import {
   CarbonError,
-  ServiceContext
+  type ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
   loadTrackedEntityStripes,
@@ -81,13 +89,13 @@ import {
   getUntrackedBinStock,
   invokeCreate,
   invokePosting,
-  lockUntrackedDraws
+  lockUntrackedDraws,
+  refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
 import type { inspectionStatus } from "../shared/shared.models";
 import type {
-  gaugeCalibrationRecordValidator,
   gaugeCalibrationStatus,
   gaugeRole,
   gaugeTypeValidator,
@@ -1397,7 +1405,11 @@ export async function insertIssueReviewer(
     createdBy: string;
   }
 ) {
-  return client.from("nonConformanceReviewer").insert(reviewer);
+  return client
+    .from("nonConformanceReviewer")
+    .insert(reviewer)
+    .select("id")
+    .single();
 }
 
 export async function updateIssueActionProcesses(
@@ -1645,219 +1657,463 @@ export async function updateGauge(
   return { data: { id: result.data.id! }, error: null };
 }
 
-export async function upsertGaugeCalibrationRecord(
-  client: SupabaseClient<Database>,
-  gaugeCalibrationRecord:
-    | (Omit<z.infer<typeof gaugeCalibrationRecordValidator>, "id"> & {
-        companyId: string;
-        inspectionStatus: (typeof inspectionStatus)[number];
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof gaugeCalibrationRecordValidator>, "id"> & {
-        id: string;
-        inspectionStatus: (typeof inspectionStatus)[number];
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  const userId =
-    "updatedBy" in gaugeCalibrationRecord
-      ? gaugeCalibrationRecord.updatedBy
-      : gaugeCalibrationRecord.createdBy;
-  const gauge = await client
-    .from("gauge")
-    .select("*")
-    .eq("id", gaugeCalibrationRecord.gaugeId)
-    .single();
-
-  if (gauge.error) return gauge;
-
-  if (
-    !gauge.data?.lastCalibrationDate ||
-    parseDate(gauge.data.lastCalibrationDate) <=
-      parseDate(gaugeCalibrationRecord.dateCalibrated)
-  ) {
-    const nextCalibrationDate = parseDate(gaugeCalibrationRecord.dateCalibrated)
-      .add({
-        months: gauge.data.calibrationIntervalInMonths
-      })
-      .toString();
-
-    const update = await requireAffected(
-      client
-        .from("gauge")
-        .update({
-          gaugeCalibrationStatus:
-            gaugeCalibrationRecord.inspectionStatus === "Pass"
-              ? "In-Calibration"
-              : "Out-of-Calibration",
-          lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
-          nextCalibrationDate: nextCalibrationDate,
-          // Reset lastCalibrationStatus when gauge passes calibration to allow future notifications
-          lastCalibrationStatus:
-            gaugeCalibrationRecord.inspectionStatus === "Pass"
-              ? "In-Calibration"
-              : gauge.data.lastCalibrationStatus,
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .eq("id", gaugeCalibrationRecord.gaugeId)
-        .select("id")
-    );
-
-    if (update.error) return update;
-  }
-
-  if ("createdBy" in gaugeCalibrationRecord) {
-    const data = sanitize(gaugeCalibrationRecord);
-    if (data.humidity === 0) data.humidity = undefined;
-    if (data.temperature === 0) data.temperature = undefined;
-
-    return client
-      .from("gaugeCalibrationRecord")
-      .insert([data])
-      .select("id")
-      .single();
-  }
-  return client
-    .from("gaugeCalibrationRecord")
-    .update(
-      sanitize({
-        ...gaugeCalibrationRecord,
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-    )
-    .eq("id", gaugeCalibrationRecord.id);
+/** The value a partial update sent, else the stored one. A sent null clears it. */
+export function sentOrStored<T>(sent: T | undefined, stored: T): T {
+  return sent === undefined ? stored : sent;
 }
 
-type GaugeCalibrationRecordFields = Omit<
-  z.infer<typeof gaugeCalibrationRecordValidator>,
-  "id"
-> & {
-  inspectionStatus: (typeof inspectionStatus)[number];
-  customFields?: Json;
+/** The gauge columns a calibration save writes. */
+type GaugeCalibrationSummary = {
+  gaugeCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
+  lastCalibrationDate: string | null;
+  nextCalibrationDate: string | null;
+  lastCalibrationStatus?: (typeof gaugeCalibrationStatus)[number];
 };
 
 /**
- * Saves a calibration record and moves its gauge's calibration dates and
- * status, on one Kysely handle: run it in `ctx.transaction` so the two
- * apply together. Bypasses row-level security (Quality → Gauges owns the
- * gauge, Records the record): the operation's permission is the gate, and
- * every statement is scoped to `companyId`. The gauge moves only when this
- * calibration is not older than its last one. Undefined when the gauge, or
- * the record to update, is not the company's.
+ * The gauge columns a calibration sets. A Pass whose next calibration date has
+ * already gone by is out of calibration, as the gauge form decides it from the
+ * same dates; a Pass also resets `lastCalibrationStatus`, so the nightly check
+ * notifies again when the gauge next goes out of calibration.
  */
-export async function saveGaugeCalibrationRecord(
+function calibrationSummary(
+  gauge: {
+    calibrationIntervalInMonths: number;
+    lastCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
+  },
+  calibration: {
+    dateCalibrated: string;
+    inspectionStatus: (typeof inspectionStatus)[number];
+  },
+  today: CalendarDate
+): GaugeCalibrationSummary {
+  const nextCalibrationDate = parseDate(calibration.dateCalibrated)
+    .add({ months: gauge.calibrationIntervalInMonths })
+    .toString();
+  const passed = calibration.inspectionStatus === "Pass";
+  return {
+    gaugeCalibrationStatus: passed
+      ? gaugeCalibrationStatusFromDates(
+          {
+            lastCalibrationDate: calibration.dateCalibrated,
+            nextCalibrationDate
+          },
+          today
+        )
+      : "Out-of-Calibration",
+    lastCalibrationDate: calibration.dateCalibrated,
+    nextCalibrationDate,
+    lastCalibrationStatus: passed
+      ? "In-Calibration"
+      : gauge.lastCalibrationStatus
+  };
+}
+
+/**
+ * The gauge columns a calibration sets when it is the gauge's latest (no
+ * later calibration is recorded), else null (`calibrationSummary`).
+ */
+export function gaugeCalibrationPatch(
+  gauge: {
+    lastCalibrationDate: string | null;
+    calibrationIntervalInMonths: number;
+    lastCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
+  },
+  calibration: {
+    dateCalibrated: string;
+    inspectionStatus: (typeof inspectionStatus)[number];
+  },
+  today: CalendarDate
+): GaugeCalibrationSummary | null {
+  if (
+    gauge.lastCalibrationDate &&
+    parseDate(gauge.lastCalibrationDate).compare(
+      parseDate(calibration.dateCalibrated)
+    ) > 0
+  ) {
+    return null;
+  }
+  return calibrationSummary(gauge, calibration, today);
+}
+
+type LockedGauge = {
+  id: string;
+  lastCalibrationDate: string | null;
+  calibrationIntervalInMonths: number;
+  lastCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
+};
+
+/** A gauge's update after a calibration save. */
+type GaugeCalibrationUpdate = {
+  gaugeId: string;
+  values: GaugeCalibrationSummary;
+};
+
+/** Whether the gauge's summary shows a calibration of this date. */
+function gaugeShowsCalibration(gauge: LockedGauge, dateCalibrated: string) {
+  return (
+    gauge.lastCalibrationDate !== null &&
+    parseDate(gauge.lastCalibrationDate).compare(parseDate(dateCalibrated)) ===
+      0
+  );
+}
+
+/**
+ * The gauge columns its latest calibration record sets, read under the
+ * gauge's lock, or no dates when it has none left: what a gauge shows once a
+ * correction takes its calibration away.
+ */
+async function latestCalibrationPatch(
   db: Kysely<KyselyDatabase>,
   companyId: string,
-  record:
-    | (GaugeCalibrationRecordFields & { id?: string; createdBy: string })
-    | (GaugeCalibrationRecordFields & { id: string; updatedBy: string })
-): Promise<{ id: string } | undefined> {
-  const userId = "updatedBy" in record ? record.updatedBy : record.createdBy;
-  const now = datetime.timestamp();
+  gauge: LockedGauge,
+  today: CalendarDate
+): Promise<GaugeCalibrationSummary> {
+  const latest = await db
+    .selectFrom("gaugeCalibrationRecord")
+    .select(["dateCalibrated", "inspectionStatus"])
+    .where("gaugeId", "=", gauge.id)
+    .where("companyId", "=", companyId)
+    .orderBy("dateCalibrated", "desc")
+    .orderBy("createdAt", "desc")
+    .orderBy("id", "desc")
+    .limit(1)
+    .executeTakeFirst();
+  if (!latest) {
+    return {
+      gaugeCalibrationStatus: gaugeCalibrationStatusFromDates({}, today),
+      lastCalibrationDate: null,
+      nextCalibrationDate: null
+    };
+  }
+  return calibrationSummary(gauge, latest, today);
+}
 
-  const gauge = await db
-    .selectFrom("gauge")
+/**
+ * Refused unless the supplier is the company's: the column references the
+ * global `supplier` table, so the database takes another company's.
+ */
+async function supplierRefusal(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  id: string
+): Promise<CarbonError | null> {
+  const supplier = await db
+    .selectFrom("supplier")
     .select("id")
-    .where("id", "=", record.gaugeId)
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (supplier) return null;
+  return new CarbonError(
+    "notFound",
+    "The supplier could not be found. It may have been deleted, or it belongs to another company."
+  );
+}
+
+/**
+ * Refused unless the approver is an active employee of the company: the
+ * column references the global `user` table.
+ */
+async function approverRefusal(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  id: string
+): Promise<CarbonError | null> {
+  const employee = await db
+    .selectFrom("employee")
+    .select("id")
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .where("active", "=", true)
+    .executeTakeFirst();
+  if (employee) return null;
+  return new CarbonError(
+    "validation",
+    "Approved By must be an active employee of this company"
+  );
+}
+
+/** A calibration record's fields, as its operations take them. */
+export type GaugeCalibrationRecordFields = {
+  gaugeId: string;
+  supplierId?: string;
+  dateCalibrated: string;
+  requiresAction?: boolean;
+  requiresAdjustment?: boolean;
+  requiresRepair?: boolean;
+  temperature?: number;
+  humidity?: number;
+  approvedBy?: string;
+  measurementStandard?: string;
+  calibrationAttempts: { reference: number; actual: number }[];
+  notes?: unknown;
+  inspectionStatus?: (typeof inspectionStatus)[number];
+  customFields?: unknown;
+};
+
+/**
+ * The record an update changes, locked, so its flags are read as they are
+ * when the save writes; undefined when it is not the company's.
+ */
+function lockStoredCalibration(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  id: string
+) {
+  return db
+    .selectFrom("gaugeCalibrationRecord")
+    .select([
+      "gaugeId",
+      "dateCalibrated",
+      "supplierId",
+      "approvedBy",
+      "requiresAction",
+      "requiresAdjustment",
+      "requiresRepair"
+    ])
+    .where("id", "=", id)
     .where("companyId", "=", companyId)
     .forUpdate()
-    .executeTakeFirst();
-  if (!gauge) return undefined;
-
-  const passed = record.inspectionStatus === "Pass";
-  await db
-    .updateTable("gauge")
-    .set({
-      gaugeCalibrationStatus: passed ? "In-Calibration" : "Out-of-Calibration",
-      lastCalibrationDate: record.dateCalibrated,
-      nextCalibrationDate: sql<string>`(${record.dateCalibrated}::date + make_interval(months => coalesce("calibrationIntervalInMonths", 0)))::date`,
-      // A pass resets the status so a later lapse notifies again.
-      ...(passed ? { lastCalibrationStatus: "In-Calibration" as const } : {}),
-      updatedBy: userId,
-      updatedAt: now
-    })
-    .where("id", "=", record.gaugeId)
-    .where("companyId", "=", companyId)
-    .where((eb) =>
-      eb.or([
-        eb("lastCalibrationDate", "is", null),
-        eb("lastCalibrationDate", "<=", record.dateCalibrated)
-      ])
-    )
-    .execute();
-
-  const fields = {
-    gaugeId: record.gaugeId,
-    supplierId: record.supplierId ?? null,
-    dateCalibrated: record.dateCalibrated,
-    requiresAction: record.requiresAction,
-    requiresAdjustment: record.requiresAdjustment,
-    requiresRepair: record.requiresRepair,
-    approvedBy: record.approvedBy ?? null,
-    measurementStandard: record.measurementStandard ?? null,
-    calibrationAttempts: JSON.stringify(record.calibrationAttempts ?? null),
-    inspectionStatus: record.inspectionStatus,
-    ...(record.notes !== undefined
-      ? { notes: JSON.stringify(record.notes) }
-      : {}),
-    ...(record.customFields !== undefined
-      ? { customFields: JSON.stringify(record.customFields) }
-      : {})
-  };
-
-  if ("createdBy" in record) {
-    return db
-      .insertInto("gaugeCalibrationRecord")
-      .values({
-        ...fields,
-        // The new-record form picks the id first, so its files upload there.
-        ...(record.id ? { id: record.id } : {}),
-        // A 0 reading is no reading, as the form sends it.
-        humidity: record.humidity || null,
-        temperature: record.temperature || null,
-        companyId,
-        createdBy: record.createdBy
-      })
-      .returning("id")
-      .executeTakeFirst();
-  }
-  return db
-    .updateTable("gaugeCalibrationRecord")
-    .set({
-      ...fields,
-      humidity: record.humidity ?? null,
-      temperature: record.temperature ?? null,
-      updatedBy: record.updatedBy,
-      updatedAt: now
-    })
-    .where("id", "=", record.id)
-    .where("companyId", "=", companyId)
-    .returning("id")
     .executeTakeFirst();
 }
 
 /**
- * Saves a calibration record and its gauge's calibration in one transaction,
- * as the system: Quality → Gauges owns the gauge, so a Records caller could
- * not move it. The calling operation's permission is the gate.
+ * The company's gauges among `gaugeIds`, locked in id order: two calibrations
+ * of one gauge cannot leave it with the earlier one's dates, and two saves
+ * moving records between the same two gauges take the locks in one order.
  */
-export async function saveGaugeCalibration(
-  ctx: ServiceContext,
-  record: Parameters<typeof saveGaugeCalibrationRecord>[2]
+function lockCalibrationGauges(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  gaugeIds: string[]
+): Promise<LockedGauge[]> {
+  return db
+    .selectFrom("gauge")
+    .select([
+      "id",
+      "lastCalibrationDate",
+      "calibrationIntervalInMonths",
+      "lastCalibrationStatus"
+    ])
+    .where("id", "in", [...new Set(gaugeIds)])
+    .where("companyId", "=", companyId)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+}
+
+/**
+ * Writes the record and returns its id. The form sends an emptied supplier,
+ * approver, reading or standard as nothing, so one left out is cleared; notes
+ * and custom fields left out are not written. The JSON columns are sent as
+ * text: node-postgres would send an array as a Postgres array.
+ */
+async function writeCalibrationRecord(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    /** The record to change; left out, a record is created. */
+    id?: string;
+    /** A created record's id; left out, one is made. */
+    newId?: string;
+    record: GaugeCalibrationRecordFields;
+    decided: ReturnType<typeof calibrationFlags>;
+  }
+): Promise<string> {
+  const { companyId, userId, record } = args;
+  const columns = {
+    gaugeId: record.gaugeId,
+    dateCalibrated: record.dateCalibrated,
+    supplierId: record.supplierId ?? null,
+    temperature: record.temperature ?? null,
+    humidity: record.humidity ?? null,
+    approvedBy: record.approvedBy ?? null,
+    measurementStandard: record.measurementStandard ?? null,
+    ...args.decided,
+    calibrationAttempts: JSON.stringify(record.calibrationAttempts),
+    notes:
+      record.notes === undefined ? undefined : JSON.stringify(record.notes),
+    customFields:
+      record.customFields === undefined
+        ? undefined
+        : JSON.stringify(record.customFields)
+  };
+  if (args.id) {
+    const updated = await db
+      .updateTable("gaugeCalibrationRecord")
+      .set({ ...columns, updatedBy: userId, updatedAt: datetime.timestamp() })
+      .where("id", "=", args.id)
+      .where("companyId", "=", companyId)
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    return updated.id;
+  }
+  // As the form saves it: a reading of 0 is no reading.
+  const inserted = await db
+    .insertInto("gaugeCalibrationRecord")
+    .values({
+      ...columns,
+      ...(args.newId ? { id: args.newId } : {}),
+      temperature: columns.temperature || undefined,
+      humidity: columns.humidity || undefined,
+      companyId,
+      createdBy: userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return inserted.id;
+}
+
+/**
+ * The gauge updates a saved calibration makes, read after the record's write
+ * under the gauges' locks. Its gauge takes it when it is the gauge's latest.
+ * A correction that moves the calibration a gauge shows earlier on that
+ * gauge, or onto another gauge, leaves that gauge showing its latest
+ * remaining record, or none.
+ */
+async function gaugeUpdatesAfterSave(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  today: CalendarDate,
+  args: {
+    gauges: LockedGauge[];
+    gauge: LockedGauge;
+    saved: {
+      dateCalibrated: string;
+      inspectionStatus: (typeof inspectionStatus)[number];
+    };
+    stored?: { gaugeId: string; dateCalibrated: string };
+  }
+): Promise<GaugeCalibrationUpdate[]> {
+  const { gauges, gauge, saved, stored } = args;
+  const updates: GaugeCalibrationUpdate[] = [];
+  const patch = gaugeCalibrationPatch(gauge, saved, today);
+  if (patch) {
+    updates.push({ gaugeId: gauge.id, values: patch });
+  } else if (
+    stored?.gaugeId === gauge.id &&
+    gaugeShowsCalibration(gauge, stored.dateCalibrated)
+  ) {
+    updates.push({
+      gaugeId: gauge.id,
+      values: await latestCalibrationPatch(db, companyId, gauge, today)
+    });
+  }
+  const left =
+    stored && stored.gaugeId !== gauge.id
+      ? gauges.find((row) => row.id === stored.gaugeId)
+      : undefined;
+  if (left && stored && gaugeShowsCalibration(left, stored.dateCalibrated)) {
+    updates.push({
+      gaugeId: left.id,
+      values: await latestCalibrationPatch(db, companyId, left, today)
+    });
+  }
+  return updates;
+}
+
+function setGaugeCalibration(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  userId: string,
+  { gaugeId, values }: GaugeCalibrationUpdate
 ) {
+  return db
+    .updateTable("gauge")
+    .set({ ...values, updatedBy: userId, updatedAt: datetime.timestamp() })
+    .where("id", "=", gaugeId)
+    .where("companyId", "=", companyId)
+    .returning("id")
+    .executeTakeFirstOrThrow();
+}
+
+/**
+ * Saves a calibration record and the gauges it moves, in one transaction. An
+ * update keeps a flag left out at its stored value; a create saves it as
+ * false. Refused, writing nothing: a record, gauge or supplier that is not
+ * the company's, an approver who is not an active employee of the company,
+ * and an `inspectionStatus` that contradicts the flags. The supplier and
+ * approver are checked only when they change, so a record whose approver
+ * has left still saves. Bypasses row-level security: Quality → Gauges owns
+ * the gauge and Records the record, and the calling operation's permission
+ * is the gate.
+ */
+export async function saveGaugeCalibrationRecord(
+  ctx: ServiceContext,
+  args: {
+    /** The record to change; left out, a record is created. */
+    id?: string;
+    /** A created record's id (the form picks it first); left out, one is made. */
+    newId?: string;
+    record: GaugeCalibrationRecordFields;
+  }
+): Promise<CarbonError | { id: string }> {
+  const { record } = args;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const today = datetime.today(
+    await getCompanyTimeZone(ctx.asSystem.pg, companyId)
+  );
   const saved = await ctx.transaction(async (tx) => {
-    const row = await saveGaugeCalibrationRecord(
-      tx.asSystem.pg,
-      ctx.company.id,
-      record
-    );
-    return row ?? tx.error("notFound", "Gauge or calibration record not found");
+    const db = tx.asSystem.pg;
+    const stored = args.id
+      ? await lockStoredCalibration(db, companyId, args.id)
+      : undefined;
+    if (args.id && !stored) {
+      return ctx.error("notFound", "Calibration record not found");
+    }
+    const decided = calibrationFlags({
+      requiresAction: record.requiresAction ?? stored?.requiresAction,
+      requiresAdjustment:
+        record.requiresAdjustment ?? stored?.requiresAdjustment,
+      requiresRepair: record.requiresRepair ?? stored?.requiresRepair
+    });
+    const contradiction = calibrationInspectionStatusRefusal({
+      ...decided,
+      inspectionStatus: record.inspectionStatus
+    });
+    if (contradiction) return ctx.error("validation", contradiction);
+    if (record.supplierId && record.supplierId !== stored?.supplierId) {
+      const refused = await supplierRefusal(db, companyId, record.supplierId);
+      if (refused) return refused;
+    }
+    if (record.approvedBy && record.approvedBy !== stored?.approvedBy) {
+      const refused = await approverRefusal(db, companyId, record.approvedBy);
+      if (refused) return refused;
+    }
+    const gauges = await lockCalibrationGauges(db, companyId, [
+      record.gaugeId,
+      stored?.gaugeId ?? record.gaugeId
+    ]);
+    const gauge = gauges.find((row) => row.id === record.gaugeId);
+    if (!gauge) return ctx.error("notFound", "Gauge not found");
+
+    const id = await writeCalibrationRecord(db, {
+      companyId,
+      userId,
+      id: args.id,
+      newId: args.newId,
+      record,
+      decided
+    });
+    const updates = await gaugeUpdatesAfterSave(db, companyId, today, {
+      gauges,
+      gauge,
+      saved: {
+        dateCalibrated: record.dateCalibrated,
+        inspectionStatus: decided.inspectionStatus
+      },
+      stored
+    });
+    for (const update of updates) {
+      await setGaugeCalibration(db, companyId, userId, update);
+    }
+    return { id };
   });
-  return saved.error ?? saved.data;
+  if (saved.error) return saved.error;
+  return saved.data;
 }
 
 export async function upsertGaugeType(
@@ -2200,30 +2456,109 @@ export async function updateIssue(
   return { data: { id: result.data.id }, error: null };
 }
 
-export async function upsertIssueWorkflow(
+export async function insertIssueWorkflow(
   client: SupabaseClient<Database>,
-  nonConformanceWorkflow:
-    | (Omit<z.infer<typeof issueWorkflowValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof issueWorkflowValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
+  nonConformanceWorkflow: Omit<z.infer<typeof issueWorkflowValidator>, "id"> & {
+    companyId: string;
+    createdBy: string;
+  }
 ) {
-  if ("createdBy" in nonConformanceWorkflow) {
-    return client
-      .from("nonConformanceWorkflow")
-      .insert([nonConformanceWorkflow])
-      .select("id")
-      .single();
-  } else {
-    return client
+  return client
+    .from("nonConformanceWorkflow")
+    .insert([nonConformanceWorkflow])
+    .select("id")
+    .single();
+}
+
+export async function updateIssueWorkflow(
+  client: SupabaseClient<Database>,
+  nonConformanceWorkflow: Omit<z.infer<typeof issueWorkflowValidator>, "id"> & {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  return requireAffected(
+    client
       .from("nonConformanceWorkflow")
       .update(sanitize(nonConformanceWorkflow))
-      .eq("id", nonConformanceWorkflow.id);
+      .eq("id", nonConformanceWorkflow.id)
+      .eq("companyId", nonConformanceWorkflow.companyId)
+      .select("id")
+  );
+}
+
+/** A table whose rows have an `id` and a `companyId`. */
+type CompanyScopedTable = Parameters<typeof refuseUnlessOwned>[1];
+
+/**
+ * Refused unless every id is a row of `table` in the company, read as the
+ * system: most foreign keys are single-column, so a write keyed on another
+ * company's id would be stored. Empty and repeated ids are ignored. `name`
+ * names the record in the refusal.
+ */
+export async function refuseUnlessAllOwned(
+  ctx: ServiceContext,
+  table: CompanyScopedTable,
+  ids: readonly (string | null | undefined)[],
+  name: string = table
+): Promise<CarbonError | null> {
+  const wanted = pluckUnique(ids, (id) => id || null);
+  if (wanted.length === 0) return null;
+  // Every table in the union has `id` and `companyId`; the cast only narrows
+  // the union so supabase-js can type the builder.
+  const { data, error } = await ctx.asSystem.supabase
+    .from(table as "location")
+    .select("id")
+    .eq("companyId", ctx.company.id)
+    .in("id", wanted);
+  if (error) {
+    return ctx.error("internal", `Failed to read the ${name}s`, error);
   }
+  const found = new Set(data.map((row) => row.id));
+  const missing = wanted.filter((id) => !found.has(id));
+  if (missing.length === 0) return null;
+  return ctx.error(
+    "notFound",
+    `${name.charAt(0).toUpperCase()}${name.slice(1)} ${missing.join(", ")} could not be found. It may have been deleted, or it belongs to another company.`
+  );
+}
+
+/** The table each risk source's `sourceId` names a row of; none for General. */
+const riskSourceTable: Record<
+  (typeof riskSource)[number],
+  CompanyScopedTable | null
+> = {
+  Customer: "customer",
+  General: null,
+  Item: "item",
+  Job: "job",
+  "Quote Line": "quoteLine",
+  Supplier: "supplier",
+  "Work Center": "workCenter"
+};
+
+/**
+ * Refused unless the item and the record a risk names are the company's: the
+ * register's `itemId` foreign key is single-column, and `sourceId` has none.
+ * Pass only the values the save writes anew.
+ */
+export async function riskReferenceRefusal(
+  ctx: ServiceContext,
+  risk: {
+    itemId?: string | null;
+    source: (typeof riskSource)[number];
+    sourceId?: string | null;
+  }
+): Promise<CarbonError | null> {
+  const table = riskSourceTable[risk.source];
+  const [item, source] = await Promise.all([
+    risk.itemId ? refuseUnlessOwned(ctx, "item", { id: risk.itemId }) : null,
+    table && risk.sourceId
+      ? refuseUnlessOwned(ctx, table, { id: risk.sourceId })
+      : null
+  ]);
+  return item ?? source;
 }
 
 export async function upsertIssueType(
@@ -2383,10 +2718,14 @@ export async function upsertRisk(
       })
     | (Omit<
         z.infer<typeof riskRegisterValidator>,
-        "id" | "severity" | "likelihood"
+        "id" | "severity" | "likelihood" | "notes" | "assignee"
       > & {
         severity: number;
         likelihood: number;
+        /** Left out, the stored notes are kept. */
+        notes?: z.infer<typeof riskRegisterValidator>["notes"];
+        /** Left out, the stored assignee is kept; null clears it. */
+        assignee?: string | null;
         id: string;
         updatedBy: string; // This might be used for history/tracking if added
       })
@@ -3581,8 +3920,8 @@ export async function attachModelToInspectionDocument(
 /**
  * Makes a new Draft version of an inspection plan as a copy of `copyFromId`,
  * in one transaction: the plan row (numbered one past the plan's highest
- * version), its characteristics, balloons and parameters. The copy shares the
- * drawing file and the model. Returns the new version's id.
+ * version), its characteristics (in their order), balloons and parameters.
+ * The copy shares the drawing file and the model. Returns the new version's id.
  */
 export async function copyInspectionDocumentAsVersion(
   db: Kysely<KyselyDatabase>,
@@ -3650,6 +3989,13 @@ export async function copyInspectionDocumentAsVersion(
       trx
         .selectFrom("inspectionFeature")
         .selectAll()
+        // As text, since a Date drops the microseconds that order a save's
+        // characteristics.
+        .select(
+          sql<string>`to_char("createdAt" AT TIME ZONE 'UTC', 'YYYYMMDDHH24MISSUS')`.as(
+            "createdAtText"
+          )
+        )
         .where("inspectionDocumentId", "=", copyFromId)
         .where("companyId", "=", companyId)
         .execute(),
@@ -3667,21 +4013,43 @@ export async function copyInspectionDocumentAsVersion(
         .execute()
     ]);
 
-    const featureIds = await newIds(trx, "ift", features.length);
-    const featureIdMap = new Map(
-      features.map((feature, index) => [feature.id, featureIds[index]!])
+    // One insert gives every copy the same createdAt, which loses the order:
+    // each copy is a microsecond after the one before, in the source's order.
+    const orderOf = (feature: (typeof features)[number]) => ({
+      createdAt: feature.createdAtText,
+      label: feature.label,
+      id: feature.id
+    });
+    const ordered = [...features].sort((a, b) =>
+      compareInspectionFeatures(orderOf(a), orderOf(b))
     );
-    if (features.length > 0) {
+    const featureIds = await newIds(trx, "ift", ordered.length);
+    const featureIdMap = new Map(
+      ordered.map((feature, index) => [feature.id, featureIds[index]!])
+    );
+    if (ordered.length > 0) {
       await trx
         .insertInto("inspectionFeature")
         .values(
-          features.map(
-            ({ id, createdAt, updatedAt, updatedBy, createdBy, ...rest }) => ({
+          ordered.map(
+            (
+              {
+                id,
+                createdAt,
+                createdAtText,
+                updatedAt,
+                updatedBy,
+                createdBy,
+                ...rest
+              },
+              index
+            ) => ({
               ...rest,
               id: featureIdMap.get(id)!,
               inspectionDocumentId: planId!,
               companyId,
-              createdBy: userId
+              createdBy: userId,
+              createdAt: sql<string>`now() + ${index}::int * interval '1 microsecond'`
             })
           )
         )
@@ -4099,7 +4467,7 @@ export async function updateInspectionDocumentSampling(
     client
       .from("inspectionDocument")
       .update({
-        ...sampling,
+        ...samplingRuleForPlanType(sampling),
         updatedBy: userId,
         updatedAt: datetime.timestamp()
       })

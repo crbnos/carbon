@@ -295,7 +295,12 @@ function buildMcpServer<Ctx extends McpContext>(
       // The HTTP API accepts and drops a field an operation does not take;
       // an agent reads that success as "saved", so MCP names the field.
       const meta = operationsByName.get(name);
-      const unknown = unknownArguments(meta?.schema, args);
+      // A full-set list read takes `limit` / `offset` here, not in its input:
+      // they page the response below, as describe_tool tells the caller.
+      const pagesResponse = !!meta && isListOperation(meta) && !meta.paginates;
+      const unknown = unknownArguments(meta?.schema, args).filter(
+        (key) => !(pagesResponse && (key === "limit" || key === "offset"))
+      );
       if (unknown.length > 0) {
         const fields = Object.keys(
           (meta?.schema as { properties?: object }).properties ?? {}
@@ -350,9 +355,9 @@ function buildMcpServer<Ctx extends McpContext>(
             fillPagination(body);
           }
         } else {
-          const source = body ?? {};
-          const limit = source.limit;
-          const offset = source.offset;
+          const { limit, offset, ...input } = body ?? {};
+          // They page the response, not the input, which may refuse them.
+          if (body) args = input;
           mcpPaging = {
             limit:
               Number.isInteger(limit) && (limit as number) > 0

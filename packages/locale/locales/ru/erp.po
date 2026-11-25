@@ -13168,12 +13168,6 @@ msgstr "Все используемые коды налога отображен
 msgid "Every unit has a rate."
 msgstr "Каждая единица имеет ставку."
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "Каждая единица получает номер заранее, поэтому серийные номера можно печатать до начала работ."
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "Каждая единица получает номер, когда производственный заказ поступает на цех, поэтому маршрутные листы можно печатать и производственные заказы можно отменять перед запуском в работу без потерь."
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "Каждый пользователь, подходящий под фильтры списка. Пользователи, к которым это действие не применяется, пропускаются."
 
@@ -13916,9 +13910,6 @@ msgstr "Не удалось обновить свойство партии"
 
 msgid "Failed to update category markups"
 msgstr "Не удалось обновить наценки по категориям"
-
-msgid "Failed to update configuration parameter"
-msgstr "Ошибка при обновлении параметра конфигурации"
 
 msgid "Failed to update count"
 msgstr "Ошибка обновления подсчета"
@@ -31920,6 +31911,12 @@ msgstr "Себестоимость производственного заказ
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "Результат производственного заказа поступает в запас проекта вместо неназначенного запаса"
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "Единицы самого производственного заказа получают номер, когда он поступает в цех, поэтому маршрутные листы ещё можно напечатать, а производственные заказы, отменённые до запуска в работу, не расходуют номера. Единицы узла с производством под заказ получают номер, когда с ними впервые работают."
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "Единицы самого производственного заказа получают номер при его создании, поэтому серийные номера можно печатать до начала работ. Единицы узла с производством под заказ получают номер, когда с ними впервые работают."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Положение производственного заказа в очереди графика его площадки — дробное число, которое Carbon вычисляет из срока выполнения и типа крайнего срока, а не рейтинг «Низкий/Высокий»."

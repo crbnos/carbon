@@ -456,6 +456,48 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
     expect(await entity(id)).toEqual({ quantity: 10, status: "Available" });
   });
 
+  // The lot's total covers the scrap; the bin named does not. Booked on the
+  // bin, a scrap of 8 left it at -2.
+  databaseTest(
+    "a scrap takes no more than the lot holds in the bin named",
+    async () => {
+      const itemId = await item("scrap-short", "Batch");
+      const id = await lot(itemId, "1", "B-7", [
+        [binA, 6],
+        [binB, 4]
+      ]);
+      const scrapReason = await f.db
+        .insertInto("scrapReason")
+        .values({ name: "Dropped", companyId: f.companyId, createdBy: USER })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const scrap = (quantity: number) =>
+        adjust({
+          adjustmentType: "Scrap",
+          itemId,
+          locationId: f.locationId,
+          storageUnitId: binA,
+          trackedEntityId: id,
+          scrapReasonId: scrapReason.id,
+          quantity
+        });
+
+      // 8 of the lot, and the whole lot (quantity 0), are more than bin A holds.
+      for (const quantity of [8, 0]) {
+        const refused = await scrap(quantity);
+        expect(refused.error?.status).toBe(400);
+        expect(refused.error?.message).toBe(
+          "The lot is in more than one storage unit: scrap a quantity from one, or move it first"
+        );
+      }
+      expect(await onHandByBin(itemId)).toEqual({ [binA]: 6, [binB]: 4 });
+
+      expect((await scrap(6)).error).toBeNull();
+      expect(await onHandByBin(itemId)).toEqual({ [binA]: 0, [binB]: 4 });
+      expect(await entity(id)).toEqual({ quantity: 4, status: "Available" });
+    }
+  );
+
   // A negative balance in one bin leaves the lot's total below zero, which a
   // tracked quantity cannot hold.
   databaseTest(

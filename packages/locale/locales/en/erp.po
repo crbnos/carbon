@@ -13168,12 +13168,6 @@ msgstr "Every tax code in use is mapped"
 msgid "Every unit has a rate."
 msgstr "Every unit has a rate."
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "Every unit is numbered up front, so serials can be printed before work starts."
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "Every user that matches the list's filters. Users this action does not apply to are skipped."
 
@@ -13916,9 +13910,6 @@ msgstr "Failed to update batch property"
 
 msgid "Failed to update category markups"
 msgstr "Failed to update category markups"
-
-msgid "Failed to update configuration parameter"
-msgstr "Failed to update configuration parameter"
 
 msgid "Failed to update count"
 msgstr "Failed to update count"
@@ -31920,6 +31911,12 @@ msgstr "The job's cost reports to this task"
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "The job's output enters the project's stock instead of unassigned stock"
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."

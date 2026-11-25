@@ -823,7 +823,9 @@ export const accountingPeriodTransitionValidator = z.object({
 
 export const generateFiscalYearPeriodsValidator = z.object({
   intent: z.literal("generate"),
-  fiscalYear: zfd.numeric(z.number().int().min(2000).max(2200))
+  fiscalYear: zfd.numeric(z.number().int().min(2000).max(2200)),
+  // The month the dialog showed the range from.
+  startMonth: zfd.numeric(z.number().int().min(1).max(12))
 });
 
 // --- NetSuite-style period close checklist ---------------------------------

@@ -13168,12 +13168,6 @@ msgstr "使用中のすべての税コードがマップされています"
 msgid "Every unit has a rate."
 msgstr "すべての個にレートが設定されています。"
 
-msgid "Every unit is numbered up front, so serials can be printed before work starts."
-msgstr "すべての個は最初に番号が付けられるため、シリアルは作業開始前に印刷できます。"
-
-msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
-msgstr "製造指図が製造現場に行くときにすべての個に番号が付けられるため、現品票は印刷でき、リリース前のキャンセル済製造指図は番号を消費しません。"
-
 msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
 msgstr "一覧の絞り込み条件に一致するすべてのユーザーが対象です。このアクションの対象外のユーザーはスキップされます。"
 
@@ -13916,9 +13910,6 @@ msgstr "バッチプロパティの更新に失敗しました"
 
 msgid "Failed to update category markups"
 msgstr "カテゴリマークアップの更新に失敗しました"
-
-msgid "Failed to update configuration parameter"
-msgstr "設定パラメータの更新に失敗しました"
 
 msgid "Failed to update count"
 msgstr "カウントの更新に失敗しました"
@@ -31920,6 +31911,12 @@ msgstr "この製造指図の原価はこのタスクに配分される。"
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "製造指図の出力は未割り当て在庫ではなくプロジェクト在庫に入ります"
+
+msgid "The job's own units are numbered when it goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "製造指図自体の個は製造現場に送られたときに番号が付けられるため、現品票は印刷でき、リリース前にキャンセルされた製造指図は番号を消費しません。受注生産のサブアセンブリの個は、最初に作業されたときに番号が付けられます。"
+
+msgid "The job's own units are numbered when it is created, so serials can be printed before work starts. A Make to Order subassembly's units are numbered the first time they are worked on."
+msgstr "製造指図自体の個は作成時に番号が付けられるため、シリアル番号を作業開始前に印刷できます。受注生産のサブアセンブリの個は、最初に作業されたときに番号が付けられます。"
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "このジョブのロケーション内のスケジュール順序での位置。Carbonが期日と期限タイプから計算した小数値で、低/高レーティングではありません。"

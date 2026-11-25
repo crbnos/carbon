@@ -101,7 +101,13 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import {
+  deleteDemandProjections,
+  upsertDemandProjections
+} from "@carbon/ee/forecast.server";
 import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
+import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { TiptapText } from "@carbon/files/markdown";
@@ -168,6 +174,7 @@ import {
 import {
   parseDate,
   parseDateTime,
+  startOfWeek,
   toCalendarDateTime
 } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -197,7 +204,10 @@ import {
   chunked,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
+  getLocationTimeZone,
+  getOrCreatePeriods,
   getStorageUnitId,
+  refuseUnlessOwned,
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
@@ -241,8 +251,9 @@ import {
   type assemblyInstructionStatuses,
   type assemblyStepStatuses,
   type cameraSchema,
+  type DemandProjectionRow,
   type deadlineTypes,
-  type failureModeValidator,
+  demandProjectionRows,
   type fastenerSchema,
   getAssemblyModelState,
   isJobLocked,
@@ -254,13 +265,6 @@ import {
   type jobOperationValidator,
   type jobStatus,
   type jobValidator,
-  type maintenanceDispatchCommentValidator,
-  type maintenanceDispatchEventValidator,
-  type maintenanceDispatchItemValidator,
-  type maintenanceDispatchValidator,
-  type maintenanceDispatchWorkCenterValidator,
-  type maintenanceScheduleItemValidator,
-  type maintenanceScheduleValidator,
   makeToAssetReleaseError,
   motionSchema,
   type orientationSchema,
@@ -1083,110 +1087,6 @@ export async function deleteScrapReason(
 ) {
   return requireAffected(
     client.from("scrapReason").delete().eq("id", scrapReasonId).select("id")
-  );
-}
-
-export async function deleteFailureMode(
-  client: SupabaseClient<Database>,
-  failureModeId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceFailureMode")
-      .delete()
-      .eq("id", failureModeId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatch(
-  client: SupabaseClient<Database>,
-  dispatchId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatch")
-      .delete()
-      .eq("id", dispatchId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchComment(
-  client: SupabaseClient<Database>,
-  commentId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchComment")
-      .delete()
-      .eq("id", commentId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchEvent(
-  client: SupabaseClient<Database>,
-  eventId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchEvent")
-      .delete()
-      .eq("id", eventId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchItem(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchItem")
-      .delete()
-      .eq("id", itemId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceDispatchWorkCenter(
-  client: SupabaseClient<Database>,
-  workCenterId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceDispatchWorkCenter")
-      .delete()
-      .eq("id", workCenterId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceSchedule(
-  client: SupabaseClient<Database>,
-  scheduleId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceSchedule")
-      .delete()
-      .eq("id", scheduleId)
-      .select("id")
-  );
-}
-
-export async function deleteMaintenanceScheduleItem(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
-  return requireAffected(
-    client
-      .from("maintenanceScheduleItem")
-      .delete()
-      .eq("id", itemId)
-      .select("id")
   );
 }
 
@@ -3730,22 +3630,47 @@ export async function runMRP(
   }
 }
 
+/**
+ * Set the serial or batch number of a unit of a job: one of its own units or a
+ * sub-assembly's (`attributes ->> Job Make Method` names one of the job's make
+ * methods). The caller passes the service role, so the job and the company are
+ * the write's only scope. `locked` when the job is Completed, Closed or
+ * Cancelled; `notUnit` when the job is not the company's or the unit is not
+ * the job's.
+ */
 export async function updateJobBatchNumber(
   client: SupabaseClient<Database>,
   companyId: string,
-  trackedEntityId: string,
-  value: string | null
-) {
-  return requireAffected(
-    client
-      .from("trackedEntity")
-      .update({
-        readableId: value
-      })
-      .eq("id", trackedEntityId)
-      .eq("companyId", companyId)
-      .select("id, readableId")
-  );
+  unit: { jobId: string; trackedEntityId: string; value: string | null }
+): Promise<
+  | { status: "locked" }
+  | { status: "notUnit" }
+  | { status: "renamed"; unit: { id: string; readableId: string | null } }
+  | { error: PostgrestError }
+> {
+  const job = await client
+    .from("job")
+    .select("status, jobMakeMethod(id)")
+    .eq("id", unit.jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (job.error) return { error: job.error };
+  if (!job.data) return { status: "notUnit" };
+  if (isJobLocked(job.data.status)) return { status: "locked" };
+  const renamed = await client
+    .from("trackedEntity")
+    .update({ readableId: unit.value })
+    .eq("id", unit.trackedEntityId)
+    .eq("companyId", companyId)
+    .in(
+      "attributes->>Job Make Method",
+      job.data.jobMakeMethod.map((makeMethod) => makeMethod.id)
+    )
+    .select("id, readableId");
+  if (renamed.error) return { error: renamed.error };
+  const [renamedUnit] = renamed.data;
+  if (!renamedUnit) return { status: "notUnit" };
+  return { status: "renamed", unit: renamedUnit };
 }
 
 export type JobReleaseReadiness = {
@@ -6233,221 +6158,6 @@ export async function upsertScrapReason(
         .eq("id", scrapReason.id)
         .select("id")
     );
-  }
-}
-
-export async function upsertFailureMode(
-  client: SupabaseClient<Database>,
-  failureMode:
-    | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  // maintenanceFailureMode has no customFields column.
-  const { customFields: _customFields, ...mode } = failureMode;
-  if ("createdBy" in mode) {
-    return client.from("maintenanceFailureMode").insert([mode]).select("id");
-  }
-  return requireAffected(
-    client
-      .from("maintenanceFailureMode")
-      .update(sanitize(mode))
-      .eq("id", mode.id)
-      .select("id")
-  );
-}
-
-export async function upsertMaintenanceDispatch(
-  client: SupabaseClient<Database>,
-  dispatch:
-    | (Omit<z.infer<typeof maintenanceDispatchValidator>, "id"> & {
-        maintenanceDispatchId: string;
-        companyId: string;
-        createdBy: string;
-        content?: Json;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        content?: Json;
-      })
-) {
-  if ("createdBy" in dispatch) {
-    return client
-      .from("maintenanceDispatch")
-      .insert([
-        { ...dispatch, severity: dispatch.severity ?? "Support Required" }
-      ])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatch")
-      .update(sanitize(dispatch))
-      .eq("id", dispatch.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchComment(
-  client: SupabaseClient<Database>,
-  comment:
-    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in comment) {
-    return client
-      .from("maintenanceDispatchComment")
-      .insert([comment])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchComment")
-      .update(sanitize(comment))
-      .eq("id", comment.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchEvent(
-  client: SupabaseClient<Database>,
-  event:
-    | (Omit<z.infer<typeof maintenanceDispatchEventValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchEventValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in event) {
-    return client
-      .from("maintenanceDispatchEvent")
-      .insert([event])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchEvent")
-      .update(sanitize(event))
-      .eq("id", event.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchItem(
-  client: SupabaseClient<Database>,
-  item:
-    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in item) {
-    return client
-      .from("maintenanceDispatchItem")
-      .insert([item])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchItem")
-      .update(sanitize(item))
-      .eq("id", item.id);
-  }
-}
-
-export async function upsertMaintenanceDispatchWorkCenter(
-  client: SupabaseClient<Database>,
-  workCenter:
-    | (Omit<z.infer<typeof maintenanceDispatchWorkCenterValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchWorkCenterValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in workCenter) {
-    return client
-      .from("maintenanceDispatchWorkCenter")
-      .insert([workCenter])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceDispatchWorkCenter")
-      .update(sanitize(workCenter))
-      .eq("id", workCenter.id);
-  }
-}
-
-export async function upsertMaintenanceSchedule(
-  client: SupabaseClient<Database>,
-  schedule:
-    | (Omit<z.infer<typeof maintenanceScheduleValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceScheduleValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in schedule) {
-    return client
-      .from("maintenanceSchedule")
-      .insert([schedule])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceSchedule")
-      .update(sanitize(schedule))
-      .eq("id", schedule.id);
-  }
-}
-
-export async function upsertMaintenanceScheduleItem(
-  client: SupabaseClient<Database>,
-  item:
-    | (Omit<z.infer<typeof maintenanceScheduleItemValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof maintenanceScheduleItemValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in item) {
-    return client
-      .from("maintenanceScheduleItem")
-      .insert([item])
-      .select("id")
-      .single();
-  } else {
-    return client
-      .from("maintenanceScheduleItem")
-      .update(sanitize(item))
-      .eq("id", item.id);
   }
 }
 
@@ -30563,4 +30273,195 @@ export async function getJobCorrections(
     }),
     error: null
   };
+}
+
+// --- Demand projections -------------------------------------------------------
+
+/** The weeks a demand forecast form shows, from this week on. */
+const DEMAND_PROJECTION_WEEKS = 52;
+
+/**
+ * The weeks the demand forecast forms show, in date order: the new form
+ * counts its weeks from the company's today, the edit form from the
+ * location's, so both forms' weeks are here (one more when those weeks
+ * differ). A week a write takes is one of these, and a delete clears them.
+ */
+export async function demandProjectionFormWeeks(
+  ctx: ServiceContext,
+  locationId: string
+) {
+  const [companyToday, locationToday] = await Promise.all([
+    getCompanyTimeZone(ctx.asCaller.supabase, ctx.company.id).then((tz) =>
+      datetime.today(tz)
+    ),
+    getLocationTimeZone(ctx.asCaller.supabase, locationId, ctx.company.id).then(
+      (tz) => datetime.today(tz)
+    )
+  ]);
+  const sameWeek =
+    startOfWeek(companyToday, "en-US").compare(
+      startOfWeek(locationToday, "en-US")
+    ) === 0;
+  return getOrCreatePeriods(
+    ctx.asSystem.pg,
+    companyToday.compare(locationToday) <= 0 ? companyToday : locationToday,
+    DEMAND_PROJECTION_WEEKS + (sameWeek ? 0 : 1)
+  );
+}
+
+/**
+ * A demand projection write the plan refuses (`requireEntitlement` in
+ * `@carbon/ee/forecast.server`): the upgrade message the routes flashed.
+ */
+export function forecastEntitlementRefusal(ctx: ServiceContext, err: unknown) {
+  if (!(err instanceof EntitlementError)) throw err;
+  return ctx.error(
+    "entitlement",
+    defaultUpgradeMessage(resolveRequirement({ feature: "FORECAST" }))
+  );
+}
+
+/**
+ * An item's demand projections at a location, each with its week's start
+ * date. Without `periodIds`, the weeks the forms show
+ * (`demandProjectionFormWeeks`).
+ */
+export async function getDemandProjectionWeeks(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string; periodIds?: string[] }
+) {
+  const client = ctx.asCaller.supabase;
+  const weeks = input.periodIds
+    ? await client
+        .from("period")
+        .select("id, startDate")
+        .in("id", input.periodIds)
+    : {
+        data: await demandProjectionFormWeeks(ctx, input.locationId),
+        error: null
+      };
+  if (weeks.error) return { data: null, error: weeks.error };
+  // Every projection read is of one of these weeks: the read takes their ids.
+  const weekStartById: Record<string, string> = Object.fromEntries(
+    weeks.data.map((week) => [week.id, week.startDate])
+  );
+  const projections = await getDemandProjections(client, {
+    itemId: input.itemId,
+    locationId: input.locationId,
+    companyId: ctx.company.id,
+    periodIds: weeks.data.map((week) => week.id)
+  });
+  if (projections.error) return { data: null, error: projections.error };
+  return {
+    data: projections.data
+      .map((row) => ({ ...row, weekStart: weekStartById[row.periodId] }))
+      .sort((a, b) => a.weekStart.localeCompare(b.weekStart)),
+    error: null
+  };
+}
+
+/** A refusal unless the item and the location are both the company's. */
+export async function refuseUnlessItemAndLocationOwned(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string }
+) {
+  const itemRefused = await refuseUnlessOwned(ctx, "item", {
+    id: input.itemId
+  });
+  if (itemRefused) return itemRefused;
+  return refuseUnlessOwned(ctx, "location", { id: input.locationId });
+}
+
+/**
+ * The demand projection rows a create or update writes, or its refusal: the
+ * item and the location must be the company's, and each week one the forms
+ * show (`demandProjectionRows`).
+ */
+export async function planDemandProjections(
+  ctx: ServiceContext,
+  input: {
+    itemId: string;
+    locationId: string;
+    weeks: { weekStart: string; quantity: number }[];
+  }
+): Promise<DemandProjectionRow[] | CarbonError> {
+  const refused = await refuseUnlessItemAndLocationOwned(ctx, input);
+  if (refused) return refused;
+  const planned = demandProjectionRows(
+    await demandProjectionFormWeeks(ctx, input.locationId),
+    input,
+    { companyId: ctx.company.id, userId: ctx.auditUserId }
+  );
+  if ("refusal" in planned) return ctx.error("validation", planned.refusal);
+  return planned.rows;
+}
+
+/**
+ * Delete an item's demand projections at a location in `formWeeks`, in one
+ * DELETE; returns those weeks, each with a quantity of 0. The caller has
+ * checked that the item and the location are the company's.
+ */
+export async function clearDemandProjections(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string },
+  formWeeks: { id: string; startDate: string }[]
+) {
+  try {
+    const deleted = await deleteDemandProjections(ctx.asCaller.supabase, {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      companyId: ctx.company.id,
+      futurePeriodIds: formWeeks.map((week) => week.id)
+    });
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete demand forecasts",
+        deleted.error
+      );
+    }
+    return {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      weeks: formWeeks.map((week) => ({
+        weekStart: week.startDate,
+        periodId: week.id,
+        quantity: 0
+      }))
+    };
+  } catch (err) {
+    return forecastEntitlementRefusal(ctx, err);
+  }
+}
+
+/** Write demand projection rows; returns the weeks written. */
+export async function writeDemandProjections(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string },
+  rows: DemandProjectionRow[]
+) {
+  try {
+    const written = await upsertDemandProjections(
+      ctx.asCaller.supabase,
+      rows.map(({ weekStart: _weekStart, ...row }) => row)
+    );
+    if (written.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save demand forecasts",
+        written.error
+      );
+    }
+    return {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      weeks: rows.map((row) => ({
+        weekStart: row.weekStart,
+        periodId: row.periodId,
+        quantity: row.forecastQuantity
+      }))
+    };
+  } catch (err) {
+    return forecastEntitlementRefusal(ctx, err);
+  }
 }

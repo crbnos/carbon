@@ -333,7 +333,7 @@ guarded by `requireUnlockedBulk`, not validators.
 
 Every route action that composes writes calls one `defineServiceFn` operation through
 `authorize(request)` (`api.invoicing.postSalesInvoice(input)`); the API and MCP publish the ones
-tagged `@mcp` (all below except the two `*Field` updates and the two `*LinePostedAccount` reads) as `invoicing_<name>`:
+tagged `@mcp` (all below except the two `*LinePostedAccount` reads) as `invoicing_<name>`:
 
 - Sales invoices: `updateSalesInvoiceField`, `postSalesInvoice`, `voidSalesInvoice`,
   `sendSalesInvoice`, `deleteDraftSalesInvoice`; `createSalesInvoiceLine` /
@@ -374,8 +374,26 @@ How they behave:
 - A failure after the main write (seeding a payment's applications, applying or posting a
   reimbursement payout, the lines of an adjusting entry) keeps the write and returns
   `warning`.
-- The `*Field` operations require `update: sales` for both invoice kinds, as the
-  properties panels' routes always did.
+- The `*Field` operations require Edit on Sales Invoices or Purchase Invoices: the
+  properties panels enable their fields on it, and the tables' RLS asks for it.
+  An id they write (customer, supplier, contact, location, payment term) must name a row
+  of the company, checked with the service role before any write
+  (`INVOICE_FIELD_REFERENCES` and `partyCurrency`, `invoicing.service.ts`): most of
+  these foreign keys name the id alone. A new sales invoice customer is checked before
+  its ship-to is cleared.
+- The issue date cannot be cleared, as in the panels. The due date a new issue date or
+  payment term recomputes reads the term with the service role: `paymentTerm` is read
+  by accounting, sales and purchasing pages, not invoicing's, and a term the caller
+  cannot see would fall back to Net 30. With no issue date the due date is kept.
+- Both operations run `updateInvoiceField` (`invoicing.service.ts`); only the sales
+  `customerId` branch stays in its operation. A new sales invoice customer and the
+  ship-to it clears are one Kysely transaction (`changeSalesInvoiceCustomer`), and only
+  an invoice whose customer changes loses its ship-to.
+- Every other field a posted invoice no longer takes (all but the issue, due and paid
+  dates; the invoice customer and invoice supplier included) is written by
+  `writeDraftInvoices`. Both writers lock the invoices `FOR UPDATE` and check they are
+  still Draft (`lockDraftInvoices`), so a post that claims an invoice first keeps the
+  invoice it posts. There is no Draft check before that lock.
 
 ## Related Modules
 

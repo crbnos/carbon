@@ -2,62 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { configurationParameterOrderValidator } from "~/modules/items/items.models";
-import { updateConfigurationParameterOrder } from "~/modules/items/items.service";
 
-const logger = getLogger("erp", "itemid-parameter-order");
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await authorize(request, {
-    "parts.parts": "Edit"
-  });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const validation = await validator(
-    configurationParameterOrderValidator
-  ).validate(formData);
-
-  if (validation.error) {
-    logger.error("Invalid configuration parameter order", {
-      itemId,
-      error: validation.error
-    });
-    return {
-      success: false,
-      error: "Invalid form data"
-    };
-  }
-
-  const upsert = await updateConfigurationParameterOrder(client, {
-    ...validation.data,
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(configurationParameterOrderValidator).request(
+    args
+  );
+  if ("invalid" in input) return input.invalid;
+  const { configurationParameterGroupId, ...order } = input.data;
+  const { api } = await authorize(args.request);
+  // The card posts "null" for the Ungrouped column.
+  return api.items.updateConfigurationParameterOrder({
+    ...order,
     configurationParameterGroupId:
-      validation.data.configurationParameterGroupId == "null"
+      configurationParameterGroupId === "null"
         ? null
-        : (validation.data.configurationParameterGroupId ?? null),
-    updatedBy: userId
+        : configurationParameterGroupId
   });
-
-  if (upsert.error) {
-    logger.error("Failed to reorder configuration parameters", {
-      itemId,
-      error: upsert.error
-    });
-    return {
-      success: false,
-      error: upsert.error.message
-    };
-  }
-
-  return {
-    success: true
-  };
 }
