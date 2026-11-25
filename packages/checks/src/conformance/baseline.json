@@ -726,7 +726,7 @@
   "no-discarded-query-error::apps/erp/app/routes/_public+/invite.$code.tsx::const inviter = await serviceRole.from(\"user\")",
   "no-discarded-query-error::apps/erp/app/routes/_public+/invite.$code.tsx::const { data: companyRecord } = await serviceRole.from(\"company\")",
   "no-discarded-query-error::apps/erp/app/routes/api+/integrations.$id.connect.ts::const existing = await client.from(\"companyIntegration\")",
-  "no-discarded-query-error::apps/erp/app/routes/api+/integrations.onshape.d.$did.v.$vid.e.$eid.bom.ts::const items = await client.from(\"item\")",
+  "no-discarded-query-error::apps/erp/app/routes/api+/integrations.onshape.[d].$did.v.$vid.e.$eid.bom.ts::const items = await client.from(\"item\")",
   "no-discarded-query-error::apps/erp/app/routes/api+/integrations.stripe-connect.callback.ts::const existing = await client.from(\"companyIntegration\")",
   "no-discarded-query-error::apps/erp/app/routes/api+/integrations.stripe-connect.dashboard.ts::const existing = await client.from(\"companyIntegration\")",
   "no-discarded-query-error::apps/erp/app/routes/api+/passkey.register.options.ts::const { data: existing } = await (serviceRole as any).from(\"passkeyCredential\")",

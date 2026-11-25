@@ -36,10 +36,7 @@
     "packages/database/src/constants.ts",
     "packages/database/src/swagger-docs-schema.ts",
     "**/mcp*/lib/tools/",
-    "**/mcp*/lib/server.ts",
-    // oxlint reads a name with `.d.` in it as a declaration file and cannot
-    // parse these routes; it has no setting to say otherwise.
-    "apps/erp/app/routes/api+/integrations.onshape.d.*"
+    "**/mcp*/lib/server.ts"
   ],
   "rules": {
     // Accessibility
@@ -107,7 +104,7 @@
     "react/exhaustive-deps": "warn",
     // Meant as an error, but oxlint also reads a call to any function named
     // `use` as React's use() hook (3 sites); warn until those are settled.
-    "react/rules-of-hooks": "warn",
+    "react/rules-of-hooks": "error",
     "use-isnan": "warn",
     "react/jsx-key": "warn",
     "valid-typeof": "warn",

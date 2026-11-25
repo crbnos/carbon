@@ -18,6 +18,11 @@ export const shouldRevalidate: ShouldRevalidateFunction = () => {
   return false;
 };
 
+// The shape of Onshape's BOM response this route reads. The client returns it
+// untyped.
+type BomHeader = { id: string; name: string; propertyName: string };
+type BomRow = { headerIdToValue: Record<string, any> };
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(request);
 
@@ -47,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const result = await getOnshapeClient(client, companyId, userId);
 
-  if (result.error) {
+  if (result.error !== null) {
     return {
       data: [],
       error: result.error
@@ -65,8 +70,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       Array.isArray(response.rows)
     ) {
       // Transform the BOM data into a structured array of objects
-      const headers = response.headers;
-      const rows = response.rows;
+      const headers: BomHeader[] = response.headers;
+      const rows: BomRow[] = response.rows;
 
       // Create an array of objects where each object represents a row with properties named after headers
       const flattenedData = rows.map((row) => {
@@ -103,10 +108,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
 
       let itemsMap: Map<
-        string,
+        string | null,
         {
           itemId: string;
-          defaultMethodType: string;
+          defaultMethodType: string | null;
           replenishmentSystem: string;
         }
       > | null = null;

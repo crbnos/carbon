@@ -42,7 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const result = await getOnshapeClient(client, companyId, userId);
 
-  if (result.error) {
+  if (result.error !== null) {
     return {
       data: [],
       error: result.error

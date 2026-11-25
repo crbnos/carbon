@@ -31,8 +31,6 @@
       "unknown"
     ]
   },
-  // Route files named `….d.$id….ts` are not declaration files.
-  "associations": [{ "files": ["**/*.d.*.ts"], "language": "typescript" }],
   // Formats JSON, the apps' app/ and the packages' src/ TypeScript, and the
   // contrib examples. Everything else is ignored, even when named on the
   // command line.
