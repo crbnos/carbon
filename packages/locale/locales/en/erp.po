@@ -21155,6 +21155,12 @@ msgstr "No video added"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
+msgid "No work center"
+msgstr "No work center"
+
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+
 msgid "No work center utilization data within range"
 msgstr "No work center utilization data within range"
 

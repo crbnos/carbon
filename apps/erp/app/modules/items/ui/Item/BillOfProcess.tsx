@@ -56,7 +56,7 @@ import type { DragControls } from "motion/react";
 import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuActivity,
@@ -133,6 +133,7 @@ import {
 } from "~/components/StepLinkEditor";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import { useCurrencyDecimals, useImageUpload, useUser } from "~/hooks";
+import { useProcessWorkCenter } from "~/hooks/useProcessWorkCenter";
 import { useTags } from "~/hooks/useTags";
 import type {
   SlideAnnotation,
@@ -993,6 +994,8 @@ function OperationForm({
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
+  const formId = useId();
+  const keepForProcess = useProcessWorkCenter(formId);
 
   useEffect(() => {
     // Remove from temporary items after successful submission
@@ -1062,16 +1065,27 @@ function OperationForm({
 
   const onProcessChange = async (processId: string) => {
     if (!carbon || !processId) return;
-    const [process, supplierProcesses] = await Promise.all([
+    const [process, workCenters, supplierProcesses] = await Promise.all([
       carbon.from("process").select("*").eq("id", processId).single(),
+      carbon
+        .from("workCenterProcess")
+        .select("workCenter(id, locationId, active)")
+        .eq("processId", processId)
+        .eq("workCenter.active", true),
       carbon.from("supplierProcess").select("*").eq("processId", processId)
     ]);
 
     if (process.error) throw new Error(process.error.message);
+    if (workCenters.error) throw new Error(workCenters.error.message);
+
+    const nextWorkCenterId = keepForProcess(
+      workCenters.data.flatMap((wc) => (wc.workCenter ? [wc.workCenter] : []))
+    );
 
     setProcessData((p) => ({
       ...p,
       processId,
+      workCenterId: nextWorkCenterId,
       procedureId: "",
       description: process.data?.name ?? "",
       laborUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
@@ -1126,6 +1140,7 @@ function OperationForm({
           ? path.to.newMethodOperation
           : path.to.methodOperation(item.id!)
       }
+      id={formId}
       method="post"
       defaultValues={item.data}
       validator={methodOperationValidator}

@@ -2,12 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  type CalendarShiftRow,
-  type CalendarWindow,
-  expandCalendar,
-  unionWindows
-} from "./calendar-utils.ts";
+import { isOperationStarted } from "./apply-work-center-selections.ts";
+import type { CalendarWindow } from "./calendar-utils.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
   buildAbsencesByEmployee,
@@ -58,12 +54,17 @@ export async function loadAvailabilityWindows(args: {
   ) as string[];
 
   // Candidates for selection + current assignments (assigned work centers
-  // stay in play via the sticky/fallback rules).
+  // stay in play via the sticky/fallback rules). Only work centers active at
+  // the job's location: the selector books any center in this set, so a
+  // stored one that moved to another location or was deactivated stays out.
   const workCenterIds = new Set(
     workCenterSelector?.getAllCandidateWorkCenterIds(processIds) ?? []
   );
   for (const op of operations) {
-    if (op.workCenterId) {
+    if (
+      op.workCenterId &&
+      (workCenterSelector?.isValidWorkCenter(op.workCenterId) ?? true)
+    ) {
       workCenterIds.add(op.workCenterId);
     }
   }
@@ -148,14 +149,20 @@ export async function buildFiniteContext(args: {
     peopleRows,
     absenceRows,
     operationsWithEvents,
-    holidayDates
+    holidayDates,
+    clockedInByOperation
   ] = await Promise.all([
     provider.getLiveReservations(now, excludeJobIds),
     provider.getProcessRequirements(processIds),
     provider.getPeopleAssignments(rangeStart, rangeEnd, timeZone),
     provider.getPeopleAbsences(rangeStart, rangeEnd, timeZone),
     provider.getOperationsWithEvents(operationIds),
-    provider.getHolidayDates(rangeStart, rangeEnd)
+    provider.getHolidayDates(rangeStart, rangeEnd),
+    provider.getClockedInEmployees(
+      operations.flatMap((op) =>
+        op.id && isOperationStarted(op) ? [op.id] : []
+      )
+    )
   ]);
 
   const abilityIds = Array.from(
@@ -170,7 +177,13 @@ export async function buildFiniteContext(args: {
       ...peopleRows.map((r) => r.employeeId)
     ])
   );
-  const shiftRows = await provider.getEmployeeShiftWindows(employeeIds);
+  // Each person's shifts expanded over the horizon (grouped by timezone,
+  // unioned) — read once per run, so treat the arrays as read-only.
+  const baseWindows = await provider.getEmployeeAvailability(
+    employeeIds,
+    rangeStart,
+    rangeEnd
+  );
 
   // Work centers: capacity 1, open per the availability ladder (explicit
   // workCenterShift rows → location shifts → stock Mon–Fri 8h, or one open
@@ -208,34 +221,7 @@ export async function buildFiniteContext(args: {
     ])
   );
 
-  // Each qualified person's availability = their assigned shifts expanded
-  // over the horizon (grouped by timezone, unioned). No shift assignment
-  // => always available.
-  const shiftPatternsByEmployee = new Map<
-    string,
-    Map<string, CalendarShiftRow[]>
-  >();
-  for (const row of shiftRows) {
-    let byTz = shiftPatternsByEmployee.get(row.employeeId);
-    if (!byTz) {
-      byTz = new Map();
-      shiftPatternsByEmployee.set(row.employeeId, byTz);
-    }
-    const list = byTz.get(row.timezone) ?? [];
-    list.push({
-      dayOfWeek: row.dayOfWeek,
-      startTime: row.startTime,
-      endTime: row.endTime
-    });
-    byTz.set(row.timezone, list);
-  }
-  const windowsByEmployee = new Map<string, CalendarWindow[]>();
-  for (const [employeeId, byTz] of shiftPatternsByEmployee) {
-    const lists = Array.from(byTz.entries()).map(([tz, shifts]) =>
-      expandCalendar(shifts, rangeStart, rangeEnd, tz)
-    );
-    windowsByEmployee.set(employeeId, unionWindows(lists));
-  }
+  const windowsByEmployee = new Map(baseWindows);
 
   // People with no shift assignment default to the job location's calendar
   // (plant hours, matching the default machine window) — not 24×7 — so
@@ -329,11 +315,13 @@ export async function buildFiniteContext(args: {
     requiresStaffing,
     peopleBudgets,
     windowsByEmployee,
+    locationWindows: locationDefaultWindows,
     dependencies,
     now,
     horizonDays: SCHEDULING_HORIZON_DAYS,
     windowsEnd: rangeEnd,
     timeZone,
-    operationsWithEvents
+    operationsWithEvents,
+    clockedInByOperation
   };
 }

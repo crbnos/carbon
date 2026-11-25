@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261125131414",
+  "schemaVersion": "20261125153019",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-25T14:01:21.107Z",
+  "exportedAt": "2026-11-25T17:08:14.823Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -524,7 +524,8 @@
         "sequenceWeekNumbering",
         "supplierPartNumberDisplay",
         "customerPartNumberDisplay",
-        "holdUnitsWithOpenIssues"
+        "holdUnitsWithOpenIssues",
+        "lastMrpRunStartedAt"
       ]
     },
     {
@@ -4215,6 +4216,11 @@
         "inspectionStorageUnitId",
         "rejectedStorageUnitId"
       ]
+    },
+    {
+      "name": "locationScheduleRun",
+      "rows": 0,
+      "columns": ["locationId", "companyId", "lastRunStartedAt"]
     },
     {
       "name": "nonConformance",

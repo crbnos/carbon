@@ -18,6 +18,11 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { z } from "zod";
+import {
+  databaseNow,
+  lastSavedMrpRunStartedAt,
+  newestRunSaves
+} from "../run-order.ts";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import { activeMethodIdByItem, planCompany } from "./plan-company.ts";
 import { generatePlanningActions } from "./planning-actions.ts";
@@ -77,7 +82,11 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 export type MrpPayload = z.infer<typeof payloadValidator>;
-export type MrpResult = { success: true };
+/**
+ * `skipped`: a run that started later had already saved, so this run wrote
+ * nothing. That is a success: the saved plan is newer than this run's.
+ */
+export type MrpResult = { success: true; skipped: boolean };
 
 /**
  * The commercial functions a run uses for planning groups (PLANNING_GROUPS).
@@ -113,7 +122,10 @@ export async function runMrp(
   const parsedPayload = payloadValidator.parse(payload);
   const { type, companyId, userId } = parsedPayload;
 
-  logger.info("run started", { type, companyId, userId });
+  // Before any input is read: the run's place in the newest-read-wins order.
+  const runStartedAt = await databaseNow(db);
+
+  logger.info("run started", { type, companyId, userId, runStartedAt });
 
   const today = datetime.today(await getCompanyTimeZone(db, companyId));
   const ranges = getStartAndEndDates(today, "Week");
@@ -505,7 +517,31 @@ export async function runMrp(
       // between the delete and the inserts) saw planning data half-written —
       // fresh forecasts with empty actuals. All-or-nothing now; Kysely rolls
       // everything back on any throw.
-      await db.transaction().execute(async (trx) => {
+      const saved = await db.transaction().execute(async (trx) => {
+        // Two runs for one company overlap (the cron and the route-triggered
+        // runs): both would delete, then both insert, and demandForecastSource
+        // has no natural key, so its rows would double. The second run waits
+        // here for the first to commit. A key apart from the planning-actions
+        // lock, so the two transactions never wait on each other.
+        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`mrp:${companyId}`}, 0))`.execute(
+          trx
+        );
+
+        // Read under the lock: a run that started later and saved first
+        // read newer inputs, and this older plan must not replace it.
+        const lastSavedStartedAt = await lastSavedMrpRunStartedAt(
+          trx,
+          companyId
+        );
+        if (!newestRunSaves(runStartedAt, lastSavedStartedAt)) {
+          return false;
+        }
+        await trx
+          .updateTable("companySettings")
+          .set({ lastMrpRunStartedAt: runStartedAt })
+          .where("id", "=", companyId)
+          .execute();
+
         // Delete existing MRP forecasts
         await trx
           .deleteFrom("demandForecast")
@@ -644,7 +680,17 @@ export async function runMrp(
               AND dp."consumedQuantity" IS DISTINCT FROM v."consumedQuantity"::numeric
           `.execute(trx);
         }
+
+        return true;
       });
+
+      if (!saved) {
+        logger.info("run skipped: a run that started later already saved", {
+          companyId,
+          runStartedAt
+        });
+        return { success: true, skipped: true };
+      }
 
       // Persist the planning action messages (spec §P1) in their own atomic
       // transaction AFTER the forecast/actual write commits — the planning
@@ -658,6 +704,7 @@ export async function runMrp(
       await generatePlanningActions(client, db, {
         companyId,
         userId,
+        runStartedAt,
         commonSurplusDraws,
         planningGroups,
         pegging:
@@ -682,7 +729,7 @@ export async function runMrp(
             : undefined
       });
 
-      return { success: true };
+      return { success: true, skipped: false };
     } catch (err) {
       logger.error("write phase failed", { companyId, error: err });
       throw err;

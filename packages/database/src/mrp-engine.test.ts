@@ -74,19 +74,58 @@ it("explodeBom nets and explodes demand for UUID-id items", () => {
       [parent, "Make"],
       [child, "Buy"]
     ]),
-    leadTimeByItem: new Map([[child, 7]]),
+    leadTimeByItem: new Map([
+      [parent, 7],
+      [child, 7]
+    ]),
     periods,
     onHandByLocationItem: new Map([[makeLocationItemKey(location, parent), 4]]),
     jobSupplyByLocationPeriodItem: new Map(),
     topLevelContributors: new Map()
   });
 
-  // 10 demanded - 4 on hand = 6 to make; child qty 2 => 12, pulled one week
-  // earlier by the 7-day lead time.
+  // 10 demanded - 4 on hand = 6 to make; child qty 2 => 12, needed one week
+  // earlier, when the parent's 7-day job starts.
   const childKey = makeKey(location, "p1", child);
   expect(bomDerivedDemand.get(childKey)).toEqual(12);
   // The key parses back to the full hyphenated ids, not truncated segments.
   expect(splitKey(childKey)).toEqual([location, "p1", child, ""]);
+});
+
+// The child's own order sizing already subtracts the child's lead time from
+// this date, so the child's demand sits where the parent's job starts.
+it("explodeBom places a child's demand at its parent's start, offset by the parent's lead time", () => {
+  const periods = [
+    { id: "p1" },
+    { id: "p2" },
+    { id: "p3" },
+    { id: "p4" },
+    { id: "p5" }
+  ];
+  const { bomDerivedDemand } = explodeBom({
+    grossDemand: new Map([[makeKey("loc", "p5", "parent"), 10]]),
+    bomByItem: new Map<string, BomChild[]>([
+      [
+        "parent",
+        [{ itemId: "child", quantity: 1, methodType: "Pull from Inventory" }]
+      ]
+    ]),
+    replenishmentSystemByItem: new Map([
+      ["parent", "Make"],
+      ["child", "Buy"]
+    ]),
+    leadTimeByItem: new Map([
+      ["parent", 28],
+      ["child", 7]
+    ]),
+    periods,
+    onHandByLocationItem: new Map(),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map()
+  });
+
+  // Needed in p5; the parent takes 4 weeks, so its job starts in p1.
+  expect([...bomDerivedDemand]).toEqual([[makeKey("loc", "p1", "child"), 10]]);
 });
 
 it("splitKey(makeKey(l, p, i)) is in the common segment", () => {
@@ -691,7 +730,9 @@ it("nested: a Consume First sub-sub-assembly nets its stock two levels down", ()
   expect(q("plate-a")).toEqual(undefined);
 });
 
-it("fix 3: the successor's shortfall is pulled earlier by its own longer lead time, never later", () => {
+// The successor's own order sizing subtracts its lead time from this date,
+// so neither part's lead time moves the week it is needed in.
+it("a Consume First successor is needed in the week the parent's job starts, whatever either part's lead time", () => {
   const location = "loc";
   const key = (item: string, p: string) => makeKey(location, p, item);
   const run = (leads: Record<string, number>) =>
@@ -700,7 +741,7 @@ it("fix 3: the successor's shortfall is pulled earlier by its own longer lead ti
       bomByItem: trialBom(),
       replenishmentSystemByItem: trialReplenishment(),
       leadTimeByItem: new Map(
-        Object.entries({ "plate-a": 0, "plate-b": 0, ...leads })
+        Object.entries({ top: 7, "plate-a": 0, "plate-b": 0, ...leads })
       ),
       periods: [{ id: "p0" }, { id: "p1" }, { id: "p2" }, { id: "p3" }],
       onHandByLocationItem: new Map(),
@@ -709,13 +750,14 @@ it("fix 3: the successor's shortfall is pulled earlier by its own longer lead ti
       consumeFirstRedirect: new Map([["old", { to: "new", factor: 1 }]])
     }).bomDerivedDemand;
 
+  // Top is needed in p3 and takes one week, so its job starts in p2.
   const slower = run({ old: 7, new: 14 });
-  expect(slower.get(key("new", "p1"))).toEqual(4);
-  expect(slower.get(key("new", "p2"))).toEqual(undefined);
+  expect(slower.get(key("new", "p2"))).toEqual(4);
+  expect(slower.get(key("new", "p1"))).toEqual(undefined);
 
   const faster = run({ old: 14, new: 7 });
-  expect(faster.get(key("new", "p1"))).toEqual(4);
-  expect(faster.get(key("new", "p2"))).toEqual(undefined);
+  expect(faster.get(key("new", "p2"))).toEqual(4);
+  expect(faster.get(key("new", "p1"))).toEqual(undefined);
 });
 
 it("fix 2: a Consume First chain uses the middle part's stock before moving on", () => {
@@ -895,7 +937,10 @@ function projectCase(args: {
       ["part", "Make"],
       ["child", "Buy"]
     ]),
-    leadTimeByItem: new Map([["child", 0]]),
+    leadTimeByItem: new Map([
+      ["part", 0],
+      ["child", 0]
+    ]),
     periods,
     onHandByLocationItem: new Map([
       [makeLocationItemKey("loc", "part"), args.commonOnHand],

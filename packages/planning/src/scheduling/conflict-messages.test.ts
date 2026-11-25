@@ -94,6 +94,16 @@ describe("classifyLatePlacement", () => {
       { kind: "machine-wait" }
     ],
     [
+      "only closed hours sat between its predecessor's end and its start",
+      {
+        waitedMs: 2 * HOUR,
+        wait: wait({ resource: "machine" }),
+        dominantDep: { description: "Anodize" },
+        startsWhenDependencyEnds: true
+      },
+      { kind: "inherited-delay", predecessorDescription: "Anodize" }
+    ],
+    [
       "it did not wait but a predecessor bound its start",
       { waitedMs: 0, wait: null, dominantDep: { description: "Battery Test" } },
       { kind: "inherited-delay", predecessorDescription: "Battery Test" }

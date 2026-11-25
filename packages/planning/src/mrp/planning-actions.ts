@@ -64,6 +64,7 @@ import {
 import { parseDate, startOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
+import { lastSavedMrpRunStartedAt, newestRunSaves } from "../run-order.ts";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import { groupByProjectOf, planningSegmentOf } from "./plan-company.ts";
 import { loadResponsibleEmployeeResolver } from "./responsible-employee.ts";
@@ -1818,6 +1819,12 @@ export async function generatePlanningActions(
     companyId: string;
     userId: string;
     /**
+     * When the calling MRP run started (`databaseNow`). Its forecasts are
+     * committed by now; when a run that started later has saved since, that
+     * run writes the actions and this one writes none.
+     */
+    runStartedAt?: string;
+    /**
      * What each project segment takes from common stock (`planCompany`'s
      * `commonSurplusDraws`). Each draw becomes a Transfer action.
      */
@@ -1913,8 +1920,8 @@ export async function generatePlanningActions(
 
   // ── demand per (item, location, segment, period): actual + forecast +
   //    projection (net of consumption), the same union the planning RPCs
-  //    read; on-hand per segment; the open jobs' status and good-unit
-  //    quantity, and the open PO lines' conversion factor, which the
+  //    read; on-hand per segment; the open jobs' status and the open PO
+  //    lines' conversion factor, which the
   //    openProductionOrders / openPurchaseOrderLines views do not expose —
   //    one read each of the company's open documents (the views' own
   //    filters), no id list. Projections are common demand.
@@ -1962,7 +1969,7 @@ export async function generatePlanningActions(
     loadSegmentOnHand(db, companyId, groupByProjectOf(args.planningGroups)),
     db
       .selectFrom("job")
-      .select(["id", "status", "quantity", "quantityReceivedToInventory"])
+      .select(["id", "status"])
       .where("companyId", "=", companyId)
       .where("status", "in", ["Planned", "Ready", "In Progress", "Paused"])
       .execute(),
@@ -2037,21 +2044,12 @@ export async function generatePlanningActions(
     );
   }
 
-  const jobById = new Map<
+  const jobStatusById = new Map<
     string,
-    {
-      status: Database["public"]["Enums"]["jobStatus"];
-      quantity: number;
-      quantityReceivedToInventory: number;
-    }
+    Database["public"]["Enums"]["jobStatus"]
   >();
   for (const row of openJobRows) {
-    if (!row.status) continue;
-    jobById.set(row.id, {
-      status: row.status,
-      quantity: Number(row.quantity) || 0,
-      quantityReceivedToInventory: Number(row.quantityReceivedToInventory) || 0
-    });
+    if (row.status) jobStatusById.set(row.id, row.status);
   }
 
   const conversionFactorByLineId = new Map(
@@ -2111,15 +2109,10 @@ export async function generatePlanningActions(
   }
   for (const job of jobRows) {
     if (!job.id || !job.itemId || !job.locationId) continue;
-    const details = jobById.get(job.id);
-    // The view's quantityToReceive is productionQuantity (quantity + scrap)
-    // less received. A change action is applied to `job.quantity`, the good
-    // units, so the order is measured in those: on the view's figure every
-    // job with a scrap allowance read as over-supplied, got a Decrease to its
-    // own quantity, and got it again after it was applied.
-    const quantity = details
-      ? Math.max(details.quantity - details.quantityReceivedToInventory, 0)
-      : Number(job.quantityToReceive) || 0;
+    const status = jobStatusById.get(job.id);
+    // Good units left (the view leaves out the scrap allowance), the units a
+    // change action applies to `job.quantity` in.
+    const quantity = Number(job.quantityToReceive) || 0;
     if (quantity <= 0) continue;
     // the same date the projection buckets this job on — an undated job is
     // supply there, so it is supply here too
@@ -2135,9 +2128,9 @@ export async function generatePlanningActions(
         jobId: job.id,
         quantity,
         dueDate,
-        requiresManualAction: isCommittedJobStatus(details?.status),
+        requiresManualAction: isCommittedJobStatus(status),
         release:
-          details?.status === "Planned"
+          status === "Planned"
             ? { date: releaseByDate(dueDate, leadTime), dueDate, leadTime }
             : null
       }
@@ -2279,6 +2272,20 @@ export async function generatePlanningActions(
       trx
     );
 
+    if (
+      args.runStartedAt &&
+      !newestRunSaves(
+        args.runStartedAt,
+        await lastSavedMrpRunStartedAt(trx, companyId)
+      )
+    ) {
+      logger.info("planning actions skipped: a newer MRP run saved", {
+        companyId,
+        runStartedAt: args.runStartedAt
+      });
+      return null;
+    }
+
     const existingRows = await trx
       .selectFrom("planningAction")
       .select([
@@ -2350,6 +2357,7 @@ export async function generatePlanningActions(
 
     return diff;
   });
+  if (!diff) return { inserted: 0, updated: 0, deleted: 0 };
 
   logger.info("planning actions written", {
     companyId,

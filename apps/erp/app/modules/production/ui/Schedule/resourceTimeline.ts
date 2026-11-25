@@ -78,6 +78,24 @@ export type ResourceTimelineReservation = {
   qualifiedPeople?: { name: string; stations: string[] }[];
 };
 
+/**
+ * An open operation of a released job at the location that has no work center
+ * at all: no process, or a process no work center here runs. The scheduler
+ * flags it but writes no reservation (there is no work center to hold), so it
+ * has no time on the axis.
+ */
+export type ResourceTimelineOperationWithoutWorkCenter = {
+  operationId: string;
+  jobId: string;
+  jobReadableId: string;
+  operationDescription: string | null;
+  itemReadableId?: string | null;
+  itemName?: string | null;
+  itemThumbnailPath?: string | null;
+  itemType?: string | null;
+  conflictReason: string | null;
+};
+
 export type ResourceTimeline = {
   events: GanttEvent[];
   totalDuration: number;
@@ -89,6 +107,17 @@ const ROOT_ID = "resources-root";
 
 /** The lane-id prefix for a work-center row: `lane:WorkCenter:<workCenterId>`. */
 const WORK_CENTER_LANE_PREFIX = "lane:WorkCenter:";
+
+/**
+ * The lane of the operations that have no work center. Its title is set by the
+ * page, which translates it.
+ */
+export const NO_WORK_CENTER_LANE_ID = "lane:NoWorkCenter";
+
+/** An operation-without-work-center row's node id. */
+export function noWorkCenterOperationId(operationId: string): string {
+  return `noWorkCenter:${operationId}`;
+}
 
 /** A work center's lane node id. */
 export function workCenterLaneId(workCenterId: string): string {
@@ -147,7 +176,16 @@ const clamp = (value: number, lo: number, hi: number) =>
  * make-method item, NOT its description — falling back to the description only
  * when the part is unknown, then to the job id alone.
  */
-function reservationLabel(r: ResourceTimelineReservation): string {
+function reservationLabel(
+  r: Pick<
+    ResourceTimelineReservation,
+    | "batchReadableId"
+    | "batchMemberCount"
+    | "itemReadableId"
+    | "operationDescription"
+    | "jobReadableId"
+  >
+): string {
   if (r.batchReadableId) {
     return `${r.batchReadableId}${
       r.batchMemberCount ? ` · ${r.batchMemberCount} jobs` : ""
@@ -187,13 +225,20 @@ export function buildResourceTimeline(input: {
    * the gap it leaves in the job schedule.
    */
   maintenance?: ResourceMaintenanceWindow[];
+  /**
+   * Operations with no work center. They get their own lane after the work
+   * centers, each a "can't be scheduled" row across the whole window: they have
+   * no time, and they block their job until someone gives them a work center.
+   */
+  operationsWithoutWorkCenter?: ResourceTimelineOperationWithoutWorkCenter[];
 }): ResourceTimeline {
   const {
     reservations,
     workCenters = [],
     locationName,
     window,
-    maintenance = []
+    maintenance = [],
+    operationsWithoutWorkCenter = []
   } = input;
   const rootTitle = locationName ?? "Resources";
 
@@ -202,7 +247,8 @@ export function buildResourceTimeline(input: {
   if (
     reservations.length === 0 &&
     workCenters.length === 0 &&
-    maintenance.length === 0
+    maintenance.length === 0 &&
+    operationsWithoutWorkCenter.length === 0
   ) {
     const root = makeRootEvent(0, false, rootTitle);
     detailsById[ROOT_ID] = {
@@ -463,9 +509,98 @@ export function buildResourceTimeline(input: {
     };
   };
 
+  // The operations with no work center: one lane after the work-center lanes.
+  let pushedNoWorkCenterLane = false;
+  const pushNoWorkCenterLane = () => {
+    pushedNoWorkCenterLane = true;
+    if (operationsWithoutWorkCenter.length === 0) return;
+    const title = "No work center";
+    const nodes = [...operationsWithoutWorkCenter]
+      .sort((a, b) =>
+        `${a.jobReadableId}:${a.operationId}`.localeCompare(
+          `${b.jobReadableId}:${b.operationId}`
+        )
+      )
+      .map((op): GanttEvent => {
+        const id = noWorkCenterOperationId(op.operationId);
+        const label = reservationLabel(op);
+        detailsById[id] = {
+          kind: "operation",
+          title: label,
+          start: null,
+          end: null,
+          durationMs: 0,
+          approximate: false,
+          noWorkCenter: true,
+          unschedulable: true,
+          conflictReason: op.conflictReason,
+          jobId: op.jobId,
+          jobReadableId: op.jobReadableId,
+          operationId: op.operationId,
+          operationDescription: op.operationDescription,
+          itemReadableId: op.itemReadableId ?? null,
+          itemName: op.itemName ?? null,
+          thumbnailPath: op.itemThumbnailPath ?? null,
+          itemType: op.itemType ?? null
+        };
+        return {
+          id,
+          parentId: NO_WORK_CENTER_LANE_ID,
+          children: [],
+          hasChildren: false,
+          level: 2,
+          data: {
+            duration: totalDuration,
+            offset: 0,
+            message: label,
+            isRoot: false,
+            isError: true,
+            isUnschedulable: true,
+            isPartial: false,
+            isCancelled: false,
+            level: "TRACE" as GanttEvent["data"]["level"],
+            style: { icon: "operation", variant: "primary" }
+          }
+        };
+      });
+    root.children.push(NO_WORK_CENTER_LANE_ID);
+    root.hasChildren = true;
+    events.push({
+      id: NO_WORK_CENTER_LANE_ID,
+      parentId: ROOT_ID,
+      children: nodes.map((node) => node.id),
+      hasChildren: true,
+      level: 1,
+      data: {
+        duration: totalDuration,
+        offset: 0,
+        message: title,
+        isRoot: false,
+        isError: true,
+        isUnschedulable: true,
+        isPartial: false,
+        isCancelled: false,
+        level: "TRACE" as GanttEvent["data"]["level"],
+        style: { icon: "workCenter", variant: "primary" }
+      }
+    });
+    detailsById[NO_WORK_CENTER_LANE_ID] = {
+      kind: "resource",
+      title,
+      start: null,
+      end: null,
+      durationMs: 0,
+      approximate: false
+    };
+    events.push(...nodes);
+  };
+
   // Built depth-first (lane → operation nodes → their operator segments) — the
   // TreeView renders the array as a pre-flattened depth-first list.
   for (const lane of lanes) {
+    if (lane.resourceKind !== "WorkCenter" && !pushedNoWorkCenterLane) {
+      pushNoWorkCenterLane();
+    }
     // Operation nodes (the machine hold) with operator segments nested under
     // each. The op is the anchor bar; a machine-only or unschedulable op simply
     // has no operators beneath it. Titled "{job} · {part}" so the op reads
@@ -606,6 +741,7 @@ export function buildResourceTimeline(input: {
       events.push(node, ...(workerBarsByOp.get(node.id) ?? []));
     }
   }
+  if (!pushedNoWorkCenterLane) pushNoWorkCenterLane();
 
   return {
     events,
@@ -701,6 +837,13 @@ export function forecastCounts(
   let reservations = 0;
   const count = (event: GanttEvent) => {
     const detail = detailsById[event.id];
+    // An operation with no work center holds nothing, but it is work the board
+    // shows and cannot place.
+    if (detail?.noWorkCenter) {
+      if (detail.jobId) jobs.add(detail.jobId);
+      unschedulable.add(detail.operationId ?? event.id);
+      return;
+    }
     if (detail?.kind !== "reservation") return;
     reservations++;
     if (detail.jobId) jobs.add(detail.jobId);
@@ -713,7 +856,11 @@ export function forecastCounts(
   };
   for (const event of events) {
     if (!visibility.rows.has(event.id)) continue;
-    if (event.level === 1 && event.id.startsWith("lane:")) {
+    if (
+      event.level === 1 &&
+      event.id.startsWith("lane:") &&
+      event.id !== NO_WORK_CENTER_LANE_ID
+    ) {
       resources.add(event.id.slice("lane:".length));
     }
     count(event);

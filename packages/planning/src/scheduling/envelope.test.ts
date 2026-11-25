@@ -110,6 +110,8 @@ function makeContext(): FiniteSchedulingContext {
     requiresStaffing: false,
     peopleBudgets: new Map(),
     windowsByEmployee: new Map(),
+    locationWindows: [],
+    clockedInByOperation: new Map(),
     timeZone: "UTC",
     operationsWithEvents: new Set<string>()
   };

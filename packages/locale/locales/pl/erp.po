@@ -21155,6 +21155,12 @@ msgstr "Nie dodano wideo"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
 
+msgid "No work center"
+msgstr "Brak stanowiska roboczego"
+
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "Żadne stanowisko robocze w tej lokalizacji nie może wykonać tej operacji, dlatego nie znajduje się ona w harmonogramie. Przypisz operacji stanowisko robocze, które wykonuje jej proces, lub dodaj jej proces do stanowiska roboczego w tej lokalizacji."
+
 msgid "No work center utilization data within range"
 msgstr "Brak danych o wykorzystaniu stanowiska roboczego w podanym zakresie"
 
