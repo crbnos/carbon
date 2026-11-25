@@ -171,7 +171,6 @@ const SalesInvoiceHeader = () => {
   }>({ salesOrders: [], shipments: [] });
 
   // Load related documents on mount
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     async function getRelatedDocuments() {
       if (!carbon || !salesInvoice.opportunityId) return;

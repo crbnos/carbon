@@ -4697,7 +4697,7 @@ msgstr "この仕入先を承認してもよろしいですか？これを有効
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "{0} をキャンセルしてもよろしいですか?クローズ済になり、再オープンするまで読み取り専用になります。"
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId
+#. placeholder {0}: routeData?.rfqSummary?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0} をキャンセルしてもよろしいですか?関連するすべての仕入先見積もキャンセルされます。"
 

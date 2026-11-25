@@ -144,7 +144,6 @@ const ContractProperties = () => {
     }
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const submit = useCallback(
     (fields: Record<string, string>) => {
       const formData = new FormData();
@@ -157,6 +156,7 @@ const ContractProperties = () => {
         action: path.to.contractUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 
@@ -176,7 +176,6 @@ const ContractProperties = () => {
     [contract, submit]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -188,6 +187,7 @@ const ContractProperties = () => {
         action: path.to.customFields
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 

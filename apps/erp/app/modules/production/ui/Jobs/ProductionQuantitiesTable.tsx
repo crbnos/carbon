@@ -191,7 +191,6 @@ const ProductionQuantitiesTable = memo(
     const navigate = useNavigate();
     const [params] = useUrlParams();
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const renderContextMenu = useCallback<
       (row: ProductionQuantity) => JSX.Element
     >(
@@ -217,6 +216,7 @@ const ProductionQuantitiesTable = memo(
         </>
       ),
 
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
       [permissions]
     );
 

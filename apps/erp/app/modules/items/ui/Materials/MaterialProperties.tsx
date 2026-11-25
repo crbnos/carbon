@@ -196,7 +196,6 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   const settings = useSettings();
   const allowLowercaseItemIds = settings.allowLowercaseItemIds === true;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
       field:
@@ -234,6 +233,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
       );
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [itemId]
   );
 
@@ -281,7 +281,6 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
     [confirmDisclosure, onUpdate, settings.materialGeneratedIds]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -298,10 +297,10 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.materialSummary?.readableId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -316,6 +315,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.materialSummary?.readableId]
   );
 

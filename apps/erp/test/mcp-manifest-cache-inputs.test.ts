@@ -4,7 +4,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, matchesGlob, relative, resolve } from "node:path";
-import ts from "typescript5";
+import { parseSync } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
 // The tool manifest is CACHED by turbo (`//#generate:mcp` in the root
@@ -55,6 +55,47 @@ function resolveImport(from: string, specifier: string): string | null {
   return dir ? join(dir, "src/index.ts") : null;
 }
 
+/**
+ * Every module specifier `file` names: its imports (type-only ones too), its
+ * re-exports (`export … from`), `import x = require("…")`, and each
+ * `import("…")` of a plain string, as a call or as a type.
+ */
+function importedSpecifiers(file: string): string[] {
+  const text = readFileSync(file, "utf8");
+  const { program, module, comments } = parseSync(file, text);
+  const specifiers = module.staticImports.map(
+    ({ moduleRequest }) => moduleRequest.value
+  );
+  // Re-exports are read from the statements: `module.staticExports` also
+  // lists `export { x }` of an imported `x`, under the specifier of its import.
+  for (const statement of program.body) {
+    if (
+      (statement.type === "ExportNamedDeclaration" ||
+        statement.type === "ExportAllDeclaration") &&
+      statement.source
+    ) {
+      specifiers.push(statement.source.value);
+    }
+    if (
+      statement.type === "TSImportEqualsDeclaration" &&
+      statement.moduleReference.type === "TSExternalModuleReference"
+    ) {
+      specifiers.push(statement.moduleReference.expression.value);
+    }
+  }
+  // `import("…")` is read from the text, so that one in a type position
+  // (`typeof import("x")`) counts as well: the parser lists only the calls.
+  // Comments are blanked first: an import named only in a comment is not one.
+  let code = text;
+  for (const { start, end } of comments) {
+    code = code.slice(0, start) + " ".repeat(end - start) + code.slice(end);
+  }
+  for (const match of code.matchAll(/\bimport\(\s*(["'`])([^"'`$]+)\1\s*\)/g)) {
+    if (match[2]) specifiers.push(match[2]);
+  }
+  return specifiers;
+}
+
 const moduleDirs = readdirSync(MODULES, { withFileTypes: true }).filter(
   (entry) => entry.isDirectory()
 );
@@ -77,8 +118,7 @@ describe("the manifest cache inputs", () => {
     const missing: string[] = [];
     for (const file of [...modelsFiles, ...serverFiles]) {
       if (!covered(file)) missing.push(relative(ROOT, file));
-      for (const { fileName } of ts.preProcessFile(readFileSync(file, "utf8"))
-        .importedFiles) {
+      for (const fileName of importedSpecifiers(file)) {
         const target = resolveImport(file, fileName);
         if (target && !covered(target)) {
           missing.push(

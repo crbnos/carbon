@@ -4697,7 +4697,7 @@ msgstr "이 공급업체를 승인하시겠습니까? 이것을 활성으로 만
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "{0}를 취소하시겠습니까? 다시 열기할 때까지 마감되고 읽기 전용이 됩니다."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId
+#. placeholder {0}: routeData?.rfqSummary?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}을(를) 취소하시겠습니까? 관련된 모든 공급업체 견적도 함께 취소됩니다."
 

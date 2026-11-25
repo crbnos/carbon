@@ -233,7 +233,6 @@ export const ItemPlanningChart = ({
             ? quantityDelta
             : quantityDelta * conversionFactor;
 
-        // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
         groupedData[periodId]["Planned"] += inventoryQuantityDelta;
       }
     });

@@ -296,7 +296,7 @@ function rowsDatabase(rows: Record<string, unknown>[]) {
       sent.push({ sql: query.sql, parameters: query.parameters });
       return { rows };
     },
-    // biome-ignore lint/correctness/useYield: never streamed
+    // oxlint-disable-next-line require-yield -- never streamed
     streamQuery: async function* () {
       throw new Error("not streamed");
     }

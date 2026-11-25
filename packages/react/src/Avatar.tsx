@@ -53,8 +53,7 @@ export const avatarVariants = cva(
 );
 
 export interface AvatarProps
-  extends ComponentProps<"span">,
-    VariantProps<typeof avatarVariants> {
+  extends ComponentProps<"span">, VariantProps<typeof avatarVariants> {
   name?: string;
   src?: string;
   /** The name is shown as text beside the avatar: hide the image from
@@ -219,8 +218,7 @@ const AvatarGroupList = ({ children }: { children?: ReactNode }) => {
   return <>{limit ? Children.toArray(children).slice(0, limit) : children}</>;
 };
 
-export interface AvatarOverflowIndicatorProps
-  extends HTMLAttributes<HTMLSpanElement> {}
+export interface AvatarOverflowIndicatorProps extends HTMLAttributes<HTMLSpanElement> {}
 
 const AvatarOverflowIndicator = forwardRef<
   HTMLSpanElement,

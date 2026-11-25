@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceFile } from "../check";
 import {
@@ -11,6 +11,7 @@ import {
   isLicenseCandidate,
   LICENSE_ROOTS
 } from "../license-headers";
+import { readSourceWithoutKeeping } from "./read-source";
 
 /**
  * Every git-tracked file that may need a license header: in a LICENSE_ROOT (or
@@ -47,6 +48,6 @@ export function loadLicenseFiles(
     .filter((path) => !("excluded" in classifyPath(path)))
     .map((path) => ({
       file: path,
-      contents: readFileSync(join(root, path), "utf8")
+      contents: readSourceWithoutKeeping(join(root, path))
     }));
 }

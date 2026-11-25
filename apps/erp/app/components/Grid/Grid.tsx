@@ -159,7 +159,6 @@ const Grid = <T extends object>({
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCell, setSelectedCell] = useState<Position>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const focusOnSelectedCell = useCallback(() => {
     if (selectedCell == null) return;
     const cell = tableContainerRef.current?.querySelector(
@@ -394,7 +393,6 @@ const Grid = <T extends object>({
   );
 
   // reset the selected cell when the table data changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     setSelectedCell(null);
   }, [columnOrder, columnVisibility]);
@@ -499,7 +497,7 @@ const Grid = <T extends object>({
         isVirtual && !contained && "overflow-hidden rounded-md border"
       )}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: delegated keydown for cell navigation/editing of the focused cell inside; the scroller itself is not a control */}
+      {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- delegated keydown for cell navigation/editing of the focused cell inside; the scroller itself is not a control */}
       <div
         className={cn(
           "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-md:scroll-fade-x",

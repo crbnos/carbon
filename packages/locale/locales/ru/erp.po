@@ -4697,7 +4697,7 @@ msgstr "Вы уверены, что хотите утвердить этого �
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Вы уверены, что хотите отменить {0}? Он будет закрыт и доступен только для чтения, пока вы его не откроете заново."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId
+#. placeholder {0}: routeData?.rfqSummary?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Вы уверены, что хотите отменить {0}? Это также отменит все связанные предложения поставщиков."
 

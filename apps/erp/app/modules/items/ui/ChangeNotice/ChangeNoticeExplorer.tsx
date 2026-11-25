@@ -27,8 +27,8 @@ import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { ChangeNotice } from "../../types";
-import AffectedItemForm from "./AffectedItemForm";
 import type { AffectedItemListEntry } from "./affectedItem.types";
+import AffectedItemForm from "./AffectedItemForm";
 import { useChangeNoticeEngineeringLock } from "./lock-ui";
 
 // Explorer (left panel) of the change-order workspace — deliberately the same

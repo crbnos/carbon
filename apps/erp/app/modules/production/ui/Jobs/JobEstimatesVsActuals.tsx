@@ -146,9 +146,9 @@ const JobEstimatesVsActuals = ({
     );
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     getCurrentUnitCosts(materials.map((m) => m.itemId));
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [materials]);
 
   const getEstimatedTime = (operation: Operation) => {

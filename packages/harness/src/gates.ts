@@ -8,7 +8,7 @@ export type Exec = (cmd: string) => { ok: boolean; output: string };
 
 /** The v1 floor: cheap, deterministic, reuses the @carbon/checks checks. Add a row to grow. */
 export const FLOOR_GATES: Gate[] = [
-  { id: "lint", cmd: "pnpm exec biome check" },
+  { id: "lint", cmd: "pnpm exec oxlint" },
   { id: "conformance", cmd: "pnpm --filter @carbon/checks test" },
   { id: "clobbers", cmd: "pnpm --filter @carbon/checks clobbers" }
 ];

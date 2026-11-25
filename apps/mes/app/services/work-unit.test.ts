@@ -6,17 +6,17 @@ import { describe, expect, it } from "vitest";
 import { type HoldingIssue, unitOnHoldMessage } from "~/utils/unitHold";
 import { childrenConsumedInto } from "./operations.service";
 import {
-  decideWorkUnit,
-  type OperationUnitFacts,
-  resolveWorkUnit,
-  SELECT_UNIT_FIRST
-} from "./work-unit.server";
-import {
   fakeClient,
   operationOutput,
   serialOperation,
   serialUnits
 } from "./work-unit-test-fixture";
+import {
+  decideWorkUnit,
+  type OperationUnitFacts,
+  resolveWorkUnit,
+  SELECT_UNIT_FIRST
+} from "./work-unit.server";
 
 const op = "op_2";
 const facts = (over: Partial<OperationUnitFacts> = {}): OperationUnitFacts => ({

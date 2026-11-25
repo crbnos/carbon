@@ -588,22 +588,21 @@ export function recostOutbound(
     "outbound" in event ? [event.outbound] : []
   );
   const { costByKey, remainingById, layerCostById } = replayReliefs({
-    events: events.map(
-      (event): ReliefEvent =>
-        "layer" in event
-          ? {
-              kind: "layer",
-              itemId: event.layer.itemId,
-              layer: event.layer,
-              costOf: event.costOf
-            }
-          : {
-              kind: "relief",
-              key: event.outbound.costLedgerId,
-              itemId: event.outbound.itemId,
-              quantity: event.outbound.quantity,
-              trackedEntityIds: event.outbound.trackedEntityIds
-            }
+    events: events.map((event): ReliefEvent =>
+      "layer" in event
+        ? {
+            kind: "layer",
+            itemId: event.layer.itemId,
+            layer: event.layer,
+            costOf: event.costOf
+          }
+        : {
+            kind: "relief",
+            key: event.outbound.costLedgerId,
+            itemId: event.outbound.itemId,
+            quantity: event.outbound.quantity,
+            trackedEntityIds: event.outbound.trackedEntityIds
+          }
     ),
     methodByItem,
     fallbackUnitCostByItem

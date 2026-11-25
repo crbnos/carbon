@@ -152,7 +152,6 @@ export function ProjectElementTree({
   const [optimistic, setOptimistic] = useState<ProjectTreeElement[] | null>(
     null
   );
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a new elements list ends the optimistic one
   useEffect(() => {
     setOptimistic(null);
   }, [elements]);
@@ -214,7 +213,6 @@ export function ProjectElementTree({
   const justDragged = useRef(false);
 
   // Resting on a collapsed parent opens it, so a drop can reach its children.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the target and position only
   useEffect(() => {
     if (!drop || drop.position !== "inside") return;
     const { targetId } = drop;
@@ -223,6 +221,7 @@ export function ProjectElementTree({
     }
     const timer = setTimeout(() => expandNode(targetId), EXPAND_ON_HOVER_MS);
     return () => clearTimeout(timer);
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed on the target and position only
   }, [drop?.targetId, drop?.position]);
 
   const planDrop = (

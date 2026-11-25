@@ -185,7 +185,6 @@ const JobOperationsTable = memo((props: JobOperationsTableProps) => {
     .map((pendingItem) => `${pendingItem.id}:${pendingItem.status}`)
     .join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: pendingKey stands in for pendingItems
   const optimisticData = useMemo<typeof data>(() => {
     if (pendingItems.length === 0) return data;
     return data.map((item) => {
@@ -200,6 +199,7 @@ const JobOperationsTable = memo((props: JobOperationsTableProps) => {
       }
       return item;
     });
+    // oxlint-disable-next-line react/exhaustive-deps -- pendingKey stands in for pendingItems
   }, [data, pendingKey]);
 
   return (

@@ -12,7 +12,7 @@
   "scripts": {
     "smoke": "bash scripts/smoke.sh",
     "clean": "rimraf node_modules .turbo",
-    "lint": "biome lint --write",
+    "lint": "oxlint --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

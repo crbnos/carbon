@@ -45,9 +45,9 @@ function FilterOptions({
     filter.filter.type === "static" ? filter.filter.options : []
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: load once per filter
   useEffect(() => {
     if (filter.filter.type === "fetcher") fetcher.load(filter.filter.endpoint);
+    // oxlint-disable-next-line react/exhaustive-deps -- load once per filter
   }, [filter.accessorKey]);
 
   useEffect(() => {
@@ -100,7 +100,6 @@ function FilterOptions({
       {options.map((option) => {
         const checked = hasFilter(filter.accessorKey, option.value);
         return (
-          // biome-ignore lint/a11y/useAriaPropsSupportedByRole: role is radio or checkbox
           <button
             key={option.value}
             type="button"

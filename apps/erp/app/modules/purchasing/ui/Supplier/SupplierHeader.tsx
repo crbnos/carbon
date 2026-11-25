@@ -139,7 +139,6 @@ const SupplierHeader = () => {
     });
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -157,6 +156,7 @@ const SupplierHeader = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [supplierId]
   );
 

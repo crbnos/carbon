@@ -1104,7 +1104,6 @@ function AutoTimer({
     Machine: t`Machine`
   }[workType];
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot on open
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
@@ -1117,6 +1116,7 @@ function AutoTimer({
     if (workCenterId) fd.set("workCenterId", workCenterId);
     fetcher.submit(fd, { method: "post", action: path.to.productionEvent });
     setPhase("submitted");
+    // oxlint-disable-next-line react/exhaustive-deps -- one-shot on open
   }, []);
 
   useEffect(() => {

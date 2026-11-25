@@ -34,7 +34,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: id is not used for creation
   const { id, dimensionValues, ...rest } = validation.data;
 
   const insertDimension = await upsertDimension(

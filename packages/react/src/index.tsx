@@ -184,9 +184,6 @@ import {
 } from "./Form";
 import { useFormControl, useInlineTriggerLabel } from "./Form/useFormControl";
 import { Heading } from "./Heading";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
-import { HStack } from "./HStack";
-import { generateHTML, HTML, isRichTextEmpty, RichTextView } from "./HTML";
 import type {
   Modifier,
   Shortcut,
@@ -195,6 +192,9 @@ import type {
   ShortcutKeyMapEntry
 } from "./hooks/useShortcutKeys";
 import { KeyboardKeys, useShortcutKeyMap } from "./hooks/useShortcutKeys";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
+import { HStack } from "./HStack";
+import { generateHTML, HTML, isRichTextEmpty, RichTextView } from "./HTML";
 import { IconButton } from "./IconButton";
 import type { InputProps } from "./Input";
 import {
@@ -344,6 +344,8 @@ import { Separator } from "./Separator";
 import type { ShortcutHelpEntry } from "./ShortcutHelpOverlay";
 import { ShortcutHelpKeys, ShortcutHelpOverlay } from "./ShortcutHelpOverlay";
 import { ShortcutKey, shortcutKeyVariants } from "./ShortcutKey";
+import type { MenuItemShortcut } from "./shortcuts";
+import { MENU_ITEM_SHORTCUTS, SHORTCUTS } from "./shortcuts";
 import {
   Sidebar,
   SidebarContent,
@@ -384,8 +386,6 @@ import { Status } from "./Status";
 import type { SubheadingProps } from "./Subheading";
 import { Subheading } from "./Subheading";
 import { Switch } from "./Switch";
-import type { MenuItemShortcut } from "./shortcuts";
-import { MENU_ITEM_SHORTCUTS, SHORTCUTS } from "./shortcuts";
 import { TabBar, TabBarItem } from "./TabBar";
 import { Table, TableCaption, Tbody, Td, Tfoot, Th, Thead, Tr } from "./Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";

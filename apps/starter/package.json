@@ -64,7 +64,7 @@
     "build": "react-router build",
     "clean": "rimraf .cache .turbo node_modules dist build",
     "dev": "react-router dev",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc --noEmit",
     "typegen": "react-router typegen"

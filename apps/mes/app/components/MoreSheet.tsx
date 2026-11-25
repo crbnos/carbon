@@ -213,9 +213,9 @@ export function MoreSheet({
   }, [open]);
 
   // Links, redirects and company switches all land here.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs per navigation
   useEffect(() => {
     onOpenChange(false);
+    // oxlint-disable-next-line react/exhaustive-deps -- runs per navigation
   }, [pathname]);
 
   // A tap on a link closes the sheet, also on the current page.
@@ -269,7 +269,7 @@ export function MoreSheet({
         <div className="px-2 pb-4">
           {/* Rail items read their expanded layout from this group. */}
           <MorePageContext.Provider value={page}>
-            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: delegated listener that closes the sheet after a link inside is activated; Enter on a link fires this click too */}
+            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- delegated listener that closes the sheet after a link inside is activated; Enter on a link fires this click too */}
             <div
               data-state="expanded"
               onClick={closeOnLink}

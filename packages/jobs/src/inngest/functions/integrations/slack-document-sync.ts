@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { getSlackWorkspace } from "@carbon/ee/slack.server";
 import {
   type DocumentType,
   formatAssignmentUpdate,
@@ -15,7 +16,6 @@ import {
   type IssueTaskUpdate,
   type NonConformanceData
 } from "@carbon/ee/slack/messages";
-import { getSlackWorkspace } from "@carbon/ee/slack.server";
 import { VERCEL_URL } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import { WebClient } from "@slack/web-api";

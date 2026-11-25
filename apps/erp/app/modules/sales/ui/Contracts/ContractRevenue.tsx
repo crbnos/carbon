@@ -35,11 +35,11 @@ import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { Table as DataTable, DateTime } from "~/components";
 import { setupGridHeight } from "~/components/Setup";
 import { useDateFormatter } from "~/hooks";
+import { contractLineName, lineColumnKey } from "./contractGrid";
 import ContractMoney from "./ContractMoney";
 import ContractRevenueGrid, {
   ContractRecognitionGrid
 } from "./ContractRevenueGrid";
-import { contractLineName, lineColumnKey } from "./contractGrid";
 import type { ContractLine, ContractRouteData } from "./types";
 
 type ContractRevenueProps = Pick<
@@ -596,7 +596,6 @@ function useProjectNames(lines: ContractLine[]): Record<string, string> {
   ].sort();
   const key = projectIds.join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the id list, not the array identity
   useEffect(() => {
     if (!carbon || projectIds.length === 0) return;
     let cancelled = false;
@@ -615,6 +614,7 @@ function useProjectNames(lines: ContractLine[]): Record<string, string> {
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed on the id list, not the array identity
   }, [carbon, key]);
 
   return names;

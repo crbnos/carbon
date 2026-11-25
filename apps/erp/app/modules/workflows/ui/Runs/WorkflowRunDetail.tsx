@@ -18,8 +18,8 @@ import type {
 import { useWorkflowEventLabel } from "../Builder/catalog";
 import { EntityRecordLink } from "./EntityRecordLink";
 import { RunLiveUpdates } from "./RunLiveUpdates";
-import { RunStatus, TestRunBadge } from "./RunStatus";
 import { runOutcome } from "./runOutcome";
+import { RunStatus, TestRunBadge } from "./RunStatus";
 import { useNodeLabel } from "./useNodeLabel";
 import { WorkflowRunSteps } from "./WorkflowRunSteps";
 

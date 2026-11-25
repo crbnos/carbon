@@ -61,7 +61,6 @@ export function useContractTermSave(contractId: string) {
     if (fetcher.data?.error) toastServiceError(fetcher.data);
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const submit = useCallback(
     (fields: Record<string, string>) => {
       const formData = new FormData();
@@ -74,6 +73,7 @@ export function useContractTermSave(contractId: string) {
         action: path.to.contractUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [contractId]
   );
 

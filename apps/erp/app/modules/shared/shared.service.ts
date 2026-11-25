@@ -4762,8 +4762,8 @@ async function writeGroup(
           reason: `Material ${text(r.componentId)} rev ${text(r.componentRevision) || "0"} is already on the BOM of ${partLabel}; skipped`
         });
       }
-      const insertedComponents = materialPlan.insert.map(
-        ({ index }) => components.get(index)!
+      const insertedComponents = materialPlan.insert.map(({ index }) =>
+        components.get(index)!
       );
       const makeMethodIdByItem = await currentMakeMethodIds(
         trx,
@@ -8275,8 +8275,8 @@ export async function importCsvTable(
         }) =>
           Boolean(
             record.firstName?.trim() ||
-              record.lastName?.trim() ||
-              record.email?.trim()
+            record.lastName?.trim() ||
+            record.email?.trim()
           );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
@@ -8447,8 +8447,8 @@ export async function importCsvTable(
         }) =>
           Boolean(
             record.firstName?.trim() ||
-              record.lastName?.trim() ||
-              record.email?.trim()
+            record.lastName?.trim() ||
+            record.email?.trim()
           );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
@@ -17334,13 +17334,11 @@ export function cutLeasePaymentRows(args: {
     .filter(
       (row) => row.amount > 0 && (!args.after || row.periodStart > args.after)
     )
-    .map(
-      (row): CutLeasePaymentRow => ({
-        ...row,
-        leaseLineId: asset.id,
-        status: row.dueDate < lease.invoiceFromDate ? "Skipped" : "Pending"
-      })
-    );
+    .map((row): CutLeasePaymentRow => ({
+      ...row,
+      leaseLineId: asset.id,
+      status: row.dueDate < lease.invoiceFromDate ? "Skipped" : "Pending"
+    }));
 
   return { commencementPayment: round(cut.commencementPayment), rows };
 }

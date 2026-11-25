@@ -8,8 +8,8 @@ import PurchaseReturnOrderForm from "./PurchaseReturnOrderForm";
 import PurchaseReturnOrderHeader from "./PurchaseReturnOrderHeader";
 import PurchaseReturnOrderLineForm from "./PurchaseReturnOrderLineForm";
 import PurchaseReturnOrderProperties from "./PurchaseReturnOrderProperties";
-import PurchaseReturnOrderStatus from "./PurchaseReturnOrderStatus";
 import PurchaseReturnOrdersTable from "./PurchaseReturnOrdersTable";
+import PurchaseReturnOrderStatus from "./PurchaseReturnOrderStatus";
 import ReturnableReceiptLinesModal from "./ReturnableReceiptLinesModal";
 
 export {

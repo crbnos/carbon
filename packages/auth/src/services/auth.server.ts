@@ -43,12 +43,12 @@ import {
 import { logAuthEvent } from "./auth-events.server";
 import { getCompanyPlanId, isCarbonOwnedCompany } from "./company.server";
 import { resolveConsolePinIn } from "./console-pin.server";
+import { sessionAccess } from "./session-access";
 import {
   destroyAuthSession,
   flash,
   requireAuthSession
 } from "./session.server";
-import { sessionAccess } from "./session-access";
 import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
@@ -449,7 +449,6 @@ export type CallerAuth = Pick<
  * functions states their type once:
  * `declare module "@carbon/auth/auth.server" { interface Register { api: Api<Router> } }`.
  */
-// biome-ignore lint/suspicious/noEmptyInterface: augmented by the app
 export interface Register {}
 
 type RegisteredApi = Register extends { api: infer A } ? A : never;

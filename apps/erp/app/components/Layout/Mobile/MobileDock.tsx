@@ -52,7 +52,6 @@ export function MobileDock() {
   const canCreate = useCreate().length > 0;
 
   // Any navigation closes the open sheet.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: close on navigation only
   useEffect(() => {
     setSheet(null);
   }, [pathname]);

@@ -47,14 +47,14 @@ import {
   contractRevenueMethodsFor,
   isProjectBillingMethod
 } from "../../sales.models";
-import { useBillingMethodLabels } from "./ContractLineBillingFields";
-import ContractLineForm from "./ContractLineForm";
-import ContractMoney from "./ContractMoney";
 import {
   contractLineFormValues,
   contractLineName,
   newContractLineFormValues
 } from "./contractGrid";
+import { useBillingMethodLabels } from "./ContractLineBillingFields";
+import ContractLineForm from "./ContractLineForm";
+import ContractMoney from "./ContractMoney";
 import type { Contract, ContractLine } from "./types";
 
 type BillingMethod = (typeof contractBillingMethods)[number];

@@ -169,9 +169,9 @@ function BuildFromPartBody({
   const query = params.toString();
 
   const previewFetcher = useFetcher<BuildFromPartPreview>();
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reload on a new query only
   useEffect(() => {
     previewFetcher.load(`${buildPath}?${query}`);
+    // oxlint-disable-next-line react/exhaustive-deps -- reload on a new query only
   }, [buildPath, query]);
 
   const submitFetcher = useAction<BuildFromPartResult>({

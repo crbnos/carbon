@@ -4697,7 +4697,7 @@ msgstr "你确定要审批此供应商吗？这将使其启用。"
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "您确定要取消{0}吗？在您重新打开之前，它将被已关闭且只读。"
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId
+#. placeholder {0}: routeData?.rfqSummary?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "您确定要取消 {0} 吗？这也将取消所有相关的供应商报价。"
 

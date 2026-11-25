@@ -99,18 +99,19 @@ Search with the API, column or call the fixes changed (`forUpdate`,
 `quantityIssued`, `companyId`, `.error`), not with the cause's name:
 
 ```bash
-grep -n -i '<api, column or call>' packages/checks/AGENTS.md
-ls packages/checks/src/conformance | grep -v test
-grep -n -i '<api, column or call>' biome.jsonc
+grep -n -i '<api, column or call>' packages/checks/src/conformance/*.ts
+grep -n '^  id: \|_ID = \|^export const [A-Z_]* = "' packages/checks/src/conformance/*.ts
+grep -n -i '<api, column or call>' oxlint.config.ts
 ```
 
-`packages/checks/AGENTS.md` describes every conformance check (each bullet
-names its id); `biome.jsonc` holds the lint rules. Read each match and decide
+The subject files under `packages/checks/src/conformance/` hold every
+conformance check, with its rule in the comment above it; `oxlint.config.ts` holds
+the lint rules. Read each match and decide
 whether it fails the code from before your group's fixes. When a guard exists,
 date it and look for fixes of the same cause after that date:
 
 ```bash
-git log --diff-filter=A --format='%h %cs' -- packages/checks/src/conformance/<id>.ts
+git log --reverse -S'"<id>"' --format='%h %cs' -- packages/checks/src | head -1
 ```
 
 Expect one line, `<sha> <YYYY-MM-DD>`. Re-run the Step 1 command with
@@ -150,7 +151,8 @@ other branches) or the database schema of a production table.
 ## Step 6: Prove the guard on the real past bug
 
 A check that never failed on the real bug proves only that it parses its own
-fixtures. In `packages/checks/src/conformance/<id>.test.ts`:
+fixtures. In the test file of the check's subject,
+`packages/checks/src/conformance/<subject>.test.ts`:
 
 1. Paste the code from before the fix, from `git show <sha>^:<file>` — the
    exact lines, with a comment giving the line numbers. Add a case that names
@@ -161,7 +163,7 @@ fixtures. In `packages/checks/src/conformance/<id>.test.ts`:
    `/tmp`, not committed) and record the flagged line in the commit message.
 
 ```bash
-pnpm --filter @carbon/checks exec vitest run src/provenance.test.ts src/conformance/<id>.test.ts
+pnpm --filter @carbon/checks exec vitest run src/provenance.test.ts src/conformance/<subject>.test.ts
 ```
 
 Expect `Tests  N passed` and no `FAIL`. `src/provenance.test.ts` fails a check

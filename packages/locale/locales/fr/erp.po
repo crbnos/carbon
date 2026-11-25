@@ -4697,7 +4697,7 @@ msgstr "Êtes-vous sûr de vouloir approuver ce fournisseur ? Cela le rendra act
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Êtes-vous sûr de vouloir annuler {0} ? Il sera fermé et en lecture seule jusqu'à ce que vous le rouvriez."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId
+#. placeholder {0}: routeData?.rfqSummary?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Êtes-vous sûr de vouloir annuler {0} ? Cela annulera également tous les devis fournisseurs associés."
 

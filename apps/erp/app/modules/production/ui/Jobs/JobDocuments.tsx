@@ -148,7 +148,6 @@ const useJobDocuments = ({
     [t]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const download = useCallback(
     async (file: FileObject & { bucket?: string }) => {
       const bucket = file.bucket === "parts" ? "parts" : "job";
@@ -163,6 +162,7 @@ const useJobDocuments = ({
       }
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     []
   );
 

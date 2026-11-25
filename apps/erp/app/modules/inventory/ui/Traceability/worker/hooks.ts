@@ -33,7 +33,6 @@ export function useAsyncLayout(
   const rejectIdsArray = useMemo(() => Array.from(rejectIds), [rejectIds]);
   const rootKey = rootIds.join("|");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: layoutVersion is a manual relayout trigger; rootIds is keyed by rootKey
   useEffect(() => {
     let cancelled = false;
     manager
@@ -51,6 +50,7 @@ export function useAsyncLayout(
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- layoutVersion is a manual relayout trigger; rootIds is keyed by rootKey
   }, [
     manager,
     payload,
@@ -97,7 +97,6 @@ export function useAsyncSelectionPath(
   const latest = useRef({ edges, selectedIds });
   latest.current = { edges, selectedIds };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on topologyKey/selectedKey, not the array identities they summarize
   useEffect(() => {
     const { edges: currentEdges, selectedIds: currentSelected } =
       latest.current;

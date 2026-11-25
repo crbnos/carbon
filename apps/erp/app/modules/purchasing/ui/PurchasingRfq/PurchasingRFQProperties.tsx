@@ -84,7 +84,6 @@ const PurchasingRFQProperties = () => {
       toastServiceError(data);
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (field: keyof PurchasingRFQ, value: string | null) => {
       if (value === routeData?.rfqSummary[field]) {
@@ -101,10 +100,10 @@ const PurchasingRFQProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [rfqId, routeData?.rfqSummary]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -119,10 +118,10 @@ const PurchasingRFQProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [rfqId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateSuppliers = useCallback(
     (supplierIds: string[]) => {
       const formData = new FormData();
@@ -139,6 +138,7 @@ const PurchasingRFQProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [rfqId]
   );
 

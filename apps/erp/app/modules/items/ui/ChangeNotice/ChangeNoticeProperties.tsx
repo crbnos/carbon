@@ -118,7 +118,6 @@ const ChangeNoticeProperties = () => {
       }
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: id is stable
   const onUpdate = useCallback(
     (field: string, value: string | null) => {
       const formData = new FormData();
@@ -130,6 +129,7 @@ const ChangeNoticeProperties = () => {
         action: path.to.updateChangeNotice
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- id is stable
     [id]
   );
 

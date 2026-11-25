@@ -80,9 +80,9 @@ export function ReturnEntityForm({
     }
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: load once per line
   useEffect(() => {
     reload();
+    // oxlint-disable-next-line react/exhaustive-deps -- load once per line
   }, [line.lineId]);
 
   const candidates = candidatesFetcher.data?.candidates;
