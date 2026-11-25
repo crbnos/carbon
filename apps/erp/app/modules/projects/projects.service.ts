@@ -14043,6 +14043,92 @@ export async function getProjectStockOnHand(
   return rows.map((row) => ({ ...row, quantity: Number(row.quantity) }));
 }
 
+/** A PO or a job that supplies a project Materials row, with its stored status. */
+type ProjectMaterialSupply =
+  | {
+      type: "Purchase Order";
+      documentId: string;
+      readableId: string;
+      lineId: string;
+      status: Database["public"]["Enums"]["purchaseOrderStatus"];
+    }
+  | {
+      type: "Job";
+      documentId: string;
+      readableId: string;
+      lineId: null;
+      status: Database["public"]["Enums"]["jobStatus"];
+    };
+
+/** How much of a plan line reached its element; Unplanned has no plan line. */
+export type ProjectMaterialIssueStatus =
+  | "Not issued"
+  | "Partly issued"
+  | "Issued"
+  | "Unplanned";
+
+/** One row of the project Materials page (`get_project_materials`). */
+export type ProjectMaterialRow = {
+  rowKind: "Plan" | "Unplanned";
+  projectElementMaterialId: string | null;
+  projectElementId: string | null;
+  elementReadableId: string | null;
+  elementName: string | null;
+  elementSequence: number | null;
+  elementStateName: string | null;
+  elementStateGroup: ProjectStateGroup | null;
+  elementStateColor: string | null;
+  itemId: string;
+  itemReadableId: string;
+  itemName: string;
+  methodType: Database["public"]["Enums"]["methodType"] | null;
+  unitOfMeasureCode: string | null;
+  quantityRequired: number;
+  quantityOrdered: number;
+  quantityReceived: number;
+  quantityIssued: number;
+  quantityRemaining: number | null;
+  requiredDate: string | null;
+  issueStatus: ProjectMaterialIssueStatus;
+  supplies: ProjectMaterialSupply[];
+  projectOnHand: number | null;
+  unassignedOnHand: number | null;
+};
+
+/** The page shows the first 1,000 rows; the RPC returns 1,001 to flag more. */
+const PROJECT_MATERIALS_LIMIT = 1000;
+
+/**
+ * Every plan line and unplanned item of a project (`get_project_materials`).
+ * The caller passes the system handle: the RPC reads PO lines, jobs and journal
+ * lines that other modules guard, and the operation has checked Projects View.
+ */
+export async function getProjectMaterials(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; projectId: string }
+) {
+  const result = await sql<ProjectMaterialRow>`
+    SELECT * FROM get_project_materials(${args.projectId}, ${args.companyId})
+  `.execute(db);
+  const rows = result.rows.map((row) => ({
+    ...row,
+    quantityRequired: Number(row.quantityRequired),
+    quantityOrdered: Number(row.quantityOrdered),
+    quantityReceived: Number(row.quantityReceived),
+    quantityIssued: Number(row.quantityIssued),
+    quantityRemaining:
+      row.quantityRemaining === null ? null : Number(row.quantityRemaining),
+    projectOnHand:
+      row.projectOnHand === null ? null : Number(row.projectOnHand),
+    unassignedOnHand:
+      row.unassignedOnHand === null ? null : Number(row.unassignedOnHand)
+  }));
+  return {
+    rows: rows.slice(0, PROJECT_MATERIALS_LIMIT),
+    isTruncated: rows.length > PROJECT_MATERIALS_LIMIT
+  };
+}
+
 export type ElementLedgerRow = {
   id: string;
   postingDate: string;

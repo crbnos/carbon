@@ -6,6 +6,7 @@ import type { ShortcutInput } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import {
+  LuBoxes,
   LuCoins,
   LuFlag,
   LuLayoutDashboard,
@@ -70,6 +71,12 @@ export function useProjectSidebarLinks({
       isActive: (pathname) =>
         pathname.startsWith(path.to.projectElements(projectId)) ||
         pathname.startsWith(`${overview}/element/`)
+    },
+    {
+      name: t`Materials`,
+      to: path.to.projectMaterials(projectId),
+      icon: <LuBoxes />,
+      shortcut: PROJECT_TAB_SHORTCUTS.materials
     },
     {
       name: t`Schedule`,

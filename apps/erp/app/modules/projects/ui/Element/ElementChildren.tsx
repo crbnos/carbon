@@ -6,6 +6,7 @@ import { Trans } from "@lingui/react/macro";
 import type { RefObject } from "react";
 import { useMemo, useState } from "react";
 import { LuPlus } from "react-icons/lu";
+import { useItemsById } from "~/stores";
 import type {
   ProjectElementType,
   RequirementStatus
@@ -64,6 +65,7 @@ export function ElementChildren({
   const [type, setType] = useState<ProjectElementType>("Task");
   // A Parameter's children must be Parameters.
   const newType = parent.type === "Parameter" ? "Parameter" : type;
+  const itemsById = useItemsById();
   const labelsById = useMemo(
     () => new Map(labels.map((label) => [label.id, label])),
     [labels]
@@ -83,6 +85,11 @@ export function ElementChildren({
           href={routes.element(child.id)}
           canUpdate={canUpdate}
           idChars={idChars}
+          partLabel={
+            child.itemId
+              ? itemsById.get(child.itemId)?.readableIdWithRevision
+              : null
+          }
           className="rounded-md px-3"
         />
       ))}

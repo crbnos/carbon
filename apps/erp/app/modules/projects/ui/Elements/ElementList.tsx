@@ -30,6 +30,7 @@ import { Link, useLocation } from "react-router";
 import { DiffBadge } from "~/components/Diff";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { useDrawerItem } from "~/hooks/useDrawerItem";
+import { useItemsById } from "~/stores";
 import type {
   ChangeOperationMark,
   ProjectElementType,
@@ -153,6 +154,7 @@ export function ElementList({
     [wbsCodes]
   );
 
+  const itemsById = useItemsById();
   const labelsById = useMemo(
     () => new Map(labels.map((label) => [label.id, label])),
     [labels]
@@ -257,6 +259,11 @@ export function ElementList({
                   idChars={idChars}
                   wbs={wbsCodes?.[element.id]}
                   wbsChars={wbsChars}
+                  partLabel={
+                    element.itemId
+                      ? itemsById.get(element.itemId)?.readableIdWithRevision
+                      : null
+                  }
                   menu={
                     <ElementRowMenu
                       readableId={element.readableId}
@@ -314,6 +321,8 @@ type ElementRowProps = {
     | "labels"
     | "changeOperation"
   >;
+  /** The readable id of the part the element links, when it has one. */
+  partLabel?: string | null;
   /** The indent, in steps of one level. */
   level?: number;
   states: ProjectState[];
@@ -354,6 +363,7 @@ export function ElementRow({
   idChars,
   wbs,
   wbsChars,
+  partLabel,
   className
 }: ElementRowProps) {
   const state = states.find((s) => s.id === element.stateId);
@@ -409,6 +419,11 @@ export function ElementRow({
         >
           {element.name}
         </Link>
+        {partLabel && (
+          <span className="min-w-0 truncate text-xs text-muted-foreground">
+            {partLabel}
+          </span>
+        )}
         {status && (
           <span className="relative z-10 flex shrink-0">
             <DiffBadge status={status} />

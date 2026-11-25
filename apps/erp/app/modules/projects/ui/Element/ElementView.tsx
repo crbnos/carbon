@@ -121,6 +121,7 @@ export function ElementView({
   comments,
   planLines,
   costSummary,
+  itemHistory,
   laborCategories,
   defaultLaborCategoryId,
   ledger,
@@ -656,6 +657,7 @@ export function ElementView({
             costTreatment={project?.costTreatment ?? null}
             costObjective={project?.costObjective ?? null}
             costSummary={costSummary}
+            itemHistory={itemHistory}
             states={states}
             labels={labels}
             milestones={milestones}

@@ -168,6 +168,7 @@ cd apps/erp && npx vitest run test/database/post-timesheet test/database/save-ti
 | `fixedAssetCipCost` (`projectId`, `projectElementId`, `postCapitalization`) | CIP rows of capital projects |
 | `get_project_cost_summary` (RPC) | Plan, committed and actual per element |
 | `get_element_history_by_item` (RPC) | Average hours and material cost of elements on one item |
+| `get_project_materials` (RPC) | The Materials page: one row per plan line plus Unplanned rows, with quantities and the stored PO and job status; called through the system handle |
 | `projectElement.wbsCode` | A pinned WBS code (CHECK `^[A-Za-z0-9][A-Za-z0-9.-]{0,39}$`, partial unique per project) |
 | `projectBaseline` | Plan snapshots (`snapshot` JSONB, `formatVersion`) |
 | `projectChangeRequest`, `projectChangeRequestItem` | Change requests and their row edits (`payload`, `baseRow`) |
@@ -243,7 +244,8 @@ operation of the same name in `projects.server.ts`.
 - `getProjectStockTransfers`, `getProjectStockTransfer`, `getProjectStockTransferLines`,
   `upsertProjectStockTransfer` (Draft only), `upsertProjectStockTransferLine`,
   `deleteProjectStockTransferLine`, `updateProjectStockTransferStatus`, `getProjectBorrows`,
-  `getStockOwnerProjects`; `postProjectStockTransfer`, `getProjectStockOnHand`;
+  `getStockOwnerProjects`; `postProjectStockTransfer`, `getProjectStockOnHand`,
+  `getProjectMaterials` (the Materials page, `get_project_materials`);
   `projectStockTransferValidator`, `projectStockTransferLineValidator`,
   `governmentFurnishedRefusal`, `isBorrowOverdue` (models) — project stock.
   `getProjectBorrows` filters by project, status, `locationId` and `dueBefore` (the
@@ -341,7 +343,7 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
   `x+/projects+/expense.tsx`), `ElementEarnedValue.ee`.
 - `ui/Milestones/` — the Schedule page (`MilestoneSchedule`, `schedule-scale.ts`, the burn
   chart). `ui/Costs/`, `ui/Stock/`, `ui/Pegging/`, `ui/Billing/` — the Costs page and the
-  pages under it. `ui/Transfers/` — the stock transfer list and document. `ui/Baselines/`,
+  pages under it. `ui/Materials/` — the Materials page (`ProjectMaterials`, `project-materials.ts`). `ui/Transfers/` — the stock transfer list and document. `ui/Baselines/`,
   `ui/ChangeRequests/` — baselines, change requests and the sidebar's `ChangeRequestPicker`.
 - `ui/Timesheet/` — `TimesheetWeek` (My Time at `x+/timesheet.tsx`: the week as stacked
   bars per day), `TimesheetGrid` (the manager's `projects+/timesheets.$employeeId.tsx`),

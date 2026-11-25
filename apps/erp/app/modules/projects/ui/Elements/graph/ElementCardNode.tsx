@@ -46,6 +46,8 @@ export type ElementCardData = {
   type: ProjectElementType;
   state: { name: string; group: ProjectStateGroup; color: string } | null;
   ownerId: string | null;
+  /** The readable id of the part the element links, when it has one. */
+  partLabel: string | null;
   commentCount: number;
   linkCount: { kind: "tests" | "reqs"; count: number } | null;
   job: ElementJobBadge | null;
@@ -151,7 +153,7 @@ function ElementCardNodeImpl({ id, data }: NodeProps<ElementCardGraphNode>) {
       <div className="line-clamp-2 min-w-0 break-words leading-5 text-foreground">
         {data.name}
       </div>
-      {(data.state || data.job) && (
+      {(data.state || data.job || data.partLabel) && (
         <div className="mt-auto flex min-w-0 items-center gap-1.5">
           {data.state && (
             <span className="inline-flex h-5 min-w-0 items-center gap-1 rounded bg-muted px-1.5 text-xs text-muted-foreground">
@@ -160,6 +162,11 @@ function ElementCardNodeImpl({ id, data }: NodeProps<ElementCardGraphNode>) {
             </span>
           )}
           {data.job && <JobBadge job={data.job} />}
+          {data.partLabel && (
+            <span className="min-w-0 truncate text-xs text-muted-foreground">
+              {data.partLabel}
+            </span>
+          )}
         </div>
       )}
       {data.hasChildren && (

@@ -246,6 +246,15 @@ export const PROJECT_PEG_STATE_COLOR_MAP = {
   Manual: "blue"
 } as const satisfies Record<string, StatusColor>;
 
+// The issue status of a project Materials row (get_project_materials): how much
+// of the plan line reached its element. Unplanned rows have no plan line.
+export const PROJECT_MATERIAL_ISSUE_STATUS_COLOR_MAP = {
+  "Not issued": "gray",
+  "Partly issued": "orange",
+  Issued: "green",
+  Unplanned: "purple"
+} as const satisfies Record<string, StatusColor>;
+
 // A customer asset (customerAssetStatus): at the customer, at our depot for
 // repair, or sent back to us for good.
 export const CUSTOMER_ASSET_STATUS_COLOR_MAP = {
@@ -518,6 +527,7 @@ export const statusColorMaps = {
   projectStockTransfer: PROJECT_STOCK_TRANSFER_STATUS_COLOR_MAP,
   projectBorrow: PROJECT_BORROW_STATUS_COLOR_MAP,
   projectPeg: PROJECT_PEG_STATE_COLOR_MAP,
+  projectMaterialIssue: PROJECT_MATERIAL_ISSUE_STATUS_COLOR_MAP,
   customerAsset: CUSTOMER_ASSET_STATUS_COLOR_MAP,
   billableItem: BILLABLE_ITEM_STATUS_COLOR_MAP,
   assemblyInstruction: ASSEMBLY_INSTRUCTION_STATUS_COLOR_MAP,

@@ -121,6 +121,7 @@ export default function MaterialRoute() {
                         const {
                           issues,
                           jobMaterials,
+                          projectMaterials,
                           maintenanceDispatchItems,
                           methodMaterials,
                           purchaseOrderLines,
@@ -145,6 +146,12 @@ export default function MaterialRoute() {
                             name: "Job Materials",
                             pages: ["production.jobs"],
                             children: jobMaterials
+                          },
+                          {
+                            key: "projectMaterials",
+                            name: t`Projects`,
+                            pages: ["projects.projects"],
+                            children: projectMaterials
                           },
                           {
                             key: "maintenanceDispatchItems",

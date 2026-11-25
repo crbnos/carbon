@@ -767,7 +767,8 @@ export function ElementPlanLines({
   );
 }
 
-function useMethodTypeLabels(): Record<MethodType, string> {
+/** The label of each method type, shared by the plan line cards and the Materials page. */
+export function useMethodTypeLabels(): Record<MethodType, string> {
   const { t } = useLingui();
   return useMemo(
     () => ({

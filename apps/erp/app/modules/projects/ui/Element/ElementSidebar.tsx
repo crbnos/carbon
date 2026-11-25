@@ -5,6 +5,7 @@
 import { ValidatedForm } from "@carbon/form";
 import { Badge, Button, Copy, cn, useDisclosure, VStack } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useMemo } from "react";
 import { LuBuilding2 } from "react-icons/lu";
@@ -16,6 +17,7 @@ import {
   useCurrencyDecimals,
   useCurrencyFormatter,
   usePermissions,
+  useQuantityFormatter,
   useUser
 } from "~/hooks";
 import FixedAssetStatus from "~/modules/accounting/ui/FixedAssets/FixedAssetStatus";
@@ -87,6 +89,7 @@ export function ElementSidebar({
   costTreatment,
   costObjective,
   costSummary,
+  itemHistory,
   states,
   labels,
   milestones,
@@ -102,6 +105,8 @@ export function ElementSidebar({
   costTreatment: ProjectCostTreatment | null;
   costObjective: ProjectCostObjective | null;
   costSummary: ProjectElementPage["costSummary"];
+  /** What other elements on the same part have charged, when one is linked. */
+  itemHistory: ProjectElementPage["itemHistory"];
   states: ProjectState[];
   labels: ProjectLabel[];
   milestones: ProjectMilestone[];
@@ -116,7 +121,18 @@ export function ElementSidebar({
   const typeLabels = useElementTypeLabels();
   const priorityLabels = usePriorityLabels();
   const formatMoney = useCurrencyFormatter();
+  const formatQuantity = useQuantityFormatter();
   const { company } = useUser();
+  // A linked part: what the elements on the same part averaged (this one included).
+  const count = Number(itemHistory?.elementCount ?? 0);
+  const hours = formatQuantity(Number(itemHistory?.averageHours ?? 0));
+  const materialCost = formatMoney.format(
+    Number(itemHistory?.averageMaterialCost ?? 0)
+  );
+  const pastAverage =
+    element.itemId && count > 0
+      ? t`Average on this part: ${hours} h, ${materialCost} material over ${plural(count, { one: "# element", other: "# elements" })}`
+      : null;
   const currency = company.baseCurrencyCode;
   const decimals = useCurrencyDecimals(currency);
   // DCAA timekeeping AND the feature show the government fields; DCAA
@@ -302,6 +318,9 @@ export function ElementSidebar({
           step={INPUT_STEP.quantity}
           minValue={0}
         />
+        {pastAverage && (
+          <p className="text-xs text-muted-foreground">{pastAverage}</p>
+        )}
         {element.type !== "Parameter" && (
           <PartLink
             projectId={projectId}
