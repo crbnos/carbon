@@ -174,8 +174,9 @@ export const mrpFunction = inngest.createFunction(
     for (const company of scheduled) {
       try {
         await step.run(`mrp-${company.id}`, async () => {
-          // Run MRP in-process (Node); runMrp throws on failure.
-          await runMrp(
+          // Run MRP in-process (Node); runMrp throws on failure. A skipped
+          // run (a newer run already saved) is a success.
+          const result = await runMrp(
             serviceRole,
             getJobDatabaseClient(),
             {
@@ -186,7 +187,10 @@ export const mrpFunction = inngest.createFunction(
             },
             planningGroupMrpDeps
           );
-          logger.info("Ran MRP for the company", { companyId: company.id });
+          logger.info("Ran MRP for the company", {
+            companyId: company.id,
+            skipped: result.skipped
+          });
         });
       } catch (error) {
         logger.error("Failed to run MRP for company {companyName}", {

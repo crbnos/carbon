@@ -6,6 +6,98 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Fix a quantity rule in the view every reader shares
+
+**Context:** MRP counted a job's scrap allowance as supply, because `openProductionOrders.quantityToReceive` is `productionQuantity − received`.
+
+**Problem:** The fix added a side read of `job` in `runMrp` and computed good units there. Available-to-promise, the buildable check and the item planning chart read the same view column, so they kept counting scrap and now disagreed with MRP.
+
+**Rule:** Before you change what a number means, grep every reader of its source column (`grep -rn '"quantityToReceive"'` across the view's readers, TS and SQL). Fix it at the source, the view or RPC, so every reader gets the same value. A side read that corrects one consumer is a symptom fix: delete it once the source is right.
+
+**Applies to:** `openProductionOrders` and the other planning views, `@carbon/planning` (`mrp/`, `promising/`), the item planning chart route.
+
+## A new scheduler state must reach every output, and the last op is the test
+
+**Context:** An operation with no candidate work center used to vanish. The fix gave it a conflict and made its successors wait.
+
+**Problem:** The live test put the op in the middle of a job, so the chain hid the gap. As the LAST op it has no placement and no reservation, so the job's projected completion, the lateness check and the quote lead time all ended at the op before it.
+
+**Rule:** When the selector gains a new state, list every consumer of a selection (projected completion, newly-late, quote lead time, the Forecast, dispatch numbering, `applyWorkCenterSelections`) and decide each one. Test the op first, in the middle and last in its job.
+
+**Applies to:** `scheduling/work-center-selector.ts`, `scheduling-engine.ts`, `quote-lead-time.ts`.
+
+## A new output decides each field; it never passes a stored id through
+
+**Context:** A pinned outside-processing op started emitting a placement so it counts in the forecast.
+
+**Problem:** The selection carried `op.workCenterId`, which can be a stale in-house machine. The op joined that machine's affected work centers and its dispatch numbering, shifting the real queue by one.
+
+**Rule:** When code starts producing a record it did not produce before, set each field on purpose. For an id copied from storage, find every downstream reader of that field before passing it through.
+
+**Applies to:** `WorkCenterSelection` producers, `applyWorkCenterSelections`, `priority-calculator.ts`.
+
+## Order events from two processes with one clock
+
+**Context:** A schedule run clears only the stale marks stamped before it started.
+
+**Problem:** The run's start came from the app server's clock and the mark from the job worker's clock. A few seconds of skew decided which marks were cleared.
+
+**Rule:** When timestamps written by different processes are compared to order events, take both from the database (`now()` in SQL, or `SELECT now()` once at the start). Never compare `Date.now()` from one host with a timestamp another host wrote.
+
+**Applies to:** `job.scheduleOutdatedAt` writers (MARK, nightly replan), schedule and MRP run starts, any cross-process "happened before" check.
+
+## A save lock stops duplicates, not stale overwrites
+
+**Context:** MRP and the scheduler rebuild their output from scratch, and two runs can overlap.
+
+**Problem:** An advisory lock at save time stopped double inserts. A run that read its inputs earlier could still save after a newer run, replacing the newer plan with an older one, and the newer run had already cleared the marks that would have replanned it.
+
+**Rule:** For a delete-and-rewrite job, record when each run started reading (database clock). Under the save lock, skip the save when a run that started later has already saved, and record the start of each run that does save. Newest read wins.
+
+**Applies to:** `runMrp`, `runLocationSchedule`, any regenerate-and-replace job.
+
+## A stored value joins a candidate set only through the pool's own rule
+
+**Context:** The scheduler picks a work center from the process pool (active centers at the job's location) and falls back to the op's stored work center.
+
+**Problem:** The capacity set took in every op's stored work center, from any location and whatever its process. So the fallback and the "started ops stay put" rule could book a machine at another plant, or one that does not run the process. A form that kept a stale hidden `workCenterId` after a process change fed it that data.
+
+**Rule:** When a stored value can stand in for a computed choice, check it with the same predicate that built the choice (`isValidWorkCenter`), in one function every path calls. When a form field's options depend on another field, clear or re-check the dependent value when that field changes (`workCenterForProcess`).
+
+**Applies to:** `finite-context.ts`, `work-center-selector.ts`, `startedOperationWorkCenter`, and the job, quote and make-method Bill of Process forms.
+
+## Time without a resource still runs on a calendar
+
+**Context:** An op with no work center gets a placeholder so its successors and the job's finish wait for it.
+
+**Problem:** Its work was added as continuous clock hours, so 40 hours ended in under two days, and the job read "early" when it was late. On the Forecast the same row was split at every night, like a machine's hours, so one op read as five.
+
+**Rule:** Lay work with no resource on the location's working calendar (the one people with no shifts use). Draw a row that has no resource as one bar, with no non-working split of its own.
+
+**Applies to:** `work-center-selector.ts` (the no-candidate branch), `quote-lead-time.ts`, `forecast.tsx` `nonWorkingIntervalsByLane`.
+
+## A value written on every run lives where no trigger fires
+
+**Context:** The schedule's newest-read-wins marker was first a column on `location`.
+
+**Problem:** Every saved schedule run updated the `location` row, and `location` has event triggers (`events: true`) and `broadcast_reference_changes`. Each run would queue a location update for webhooks and workflows and push a realtime refresh to every client of the company.
+
+**Rule:** Before adding a column that a job writes on every run, read the table's entry in `packages/database/src/event-system/attachments.ts`. If it has events or a broadcast, put the value in a lean table with no triggers (`serviceOnly()` in the manifest), as `locationScheduleRun` and `employeePin` do.
+
+**Applies to:** run markers, cursors, heartbeats and counters written by scheduled jobs or engines.
+
+## A hold reserves every resource the work will use
+
+**Context:** A started operation holds its machine before the scheduler places other jobs.
+
+**Problem:** The hold reserved the machine but not the operator, and could land on a machine the op would not run on. An earlier job took the operator, so the running op waited and the held machine sat idle.
+
+**Rule:** A reservation made on an op's behalf holds every finite resource the op will use (machine and operator), and only on the resource the placement will actually choose. Apply the selector's own eligibility rule rather than the stored value.
+
+**Applies to:** `startedOperationHolds`, `holdStartedOperations`, any pre-pass that reserves ahead of placement.
+
+---
+
 ## Aging report previews need seeded open documents
 
 **Context:** Sharing a local AR/AP aging UI preview.

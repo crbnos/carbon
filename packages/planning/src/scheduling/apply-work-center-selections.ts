@@ -43,6 +43,29 @@ export function isOperationStarted(op: {
   );
 }
 
+/**
+ * The work center a STARTED operation stays on: its stored one, when it is
+ * active at the job's location (`validHere`: the selector's capacity set, or
+ * the location's active work centers for the hold) and the op has a process.
+ * Null when the selector will not keep it there: not started, no process (no
+ * candidate at all), or a stored work center not valid here. The started-op
+ * hold uses the same rule, so it never holds a machine the op will not run on.
+ */
+export function startedOperationWorkCenter(
+  op: {
+    processId?: string | null;
+    workCenterId?: string | null;
+    status?: string | null;
+    quantityComplete?: number | null;
+  },
+  validHere: { has(workCenterId: string): boolean }
+): string | null {
+  if (!op.processId || !isOperationStarted(op)) return null;
+  return op.workCenterId && validHere.has(op.workCenterId)
+    ? op.workCenterId
+    : null;
+}
+
 export function applyWorkCenterSelections(
   operations: Map<string, ScheduledOperation>,
   selections: Map<string, WorkCenterSelection>,
@@ -58,13 +81,14 @@ export function applyWorkCenterSelections(
     }
 
     const updated: ScheduledOperation = { ...op };
-    // Store the station the plan books an unstarted op on. A started op stays
-    // on its machine; a placeholder's fallback is only where it WOULD run.
+    // Store the station the plan books the op on. The selector keeps a
+    // started op on its machine, and moves it only when that machine is not
+    // active at the job's location. A placeholder's fallback is only where it
+    // WOULD run.
     const placed = Boolean(selection.placedStart && selection.placedEnd);
     if (
       selection.workCenterId &&
-      (!hasPreassignedWorkCenter(op.workCenterId) ||
-        (placed && !isOperationStarted(op)))
+      (!hasPreassignedWorkCenter(op.workCenterId) || placed)
     ) {
       updated.workCenterId = selection.workCenterId;
     }
@@ -75,7 +99,13 @@ export function applyWorkCenterSelections(
     // deliberately untouched. Outside operations have a placement but no work
     // center.
     if (selection.placedStart && selection.placedEnd) {
-      updated.startDate = businessDay(selection.placedStart, timeZone);
+      // A pinned outside op's window is the human's: its stored start day
+      // stays as it is, empty included.
+      const pinnedOutside =
+        op.manuallyScheduled && op.operationType === "Outside Processing";
+      updated.startDate = pinnedOutside
+        ? op.startDate
+        : businessDay(selection.placedStart, timeZone);
       updated.projectedCompletionAt = selection.placedEnd;
       updated.hasConflict = false;
       updated.conflictReason = null;

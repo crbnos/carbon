@@ -159,8 +159,11 @@ export function calculatePrioritiesByWorkCenter(
 ): Map<string, number> {
   const allPriorities = new Map<string, number>();
 
-  // Group by work center
-  const byWorkCenter = groupOperationsByWorkCenter(operations);
+  // Group by work center. An outside op runs at the supplier: a work center
+  // it carries is a stale in-house one, so it is numbered in no queue.
+  const byWorkCenter = groupOperationsByWorkCenter(
+    operations.filter((op) => op.operationType !== "Outside Processing")
+  );
 
   // Calculate priorities for each work center independently
   for (const [, wcOperations] of byWorkCenter) {
@@ -198,7 +201,8 @@ export function toOperationWithJobInfo(
     workCenterId: operation.workCenterId ?? null,
     durationHours: operation.durationHours ?? null,
     createdAt: operation.createdAt ? toInstantIso(operation.createdAt) : null,
-    projectedCompletionAt: operation.projectedCompletionAt ?? null
+    projectedCompletionAt: operation.projectedCompletionAt ?? null,
+    operationType: operation.operationType ?? null
   };
 }
 

@@ -21146,6 +21146,12 @@ msgstr "ビデオが追加されていません"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。実在庫がマイナスになり、数量が調整されるまで続きます。"
 
+msgid "No work center"
+msgstr "作業区が未設定"
+
+msgid "No work center at this location can run this operation, so it isn't on the schedule. Give it a work center that runs its process, or add its process to a work center at this location."
+msgstr "この拠点の作業区には、この工程を実行できるものがないため、スケジュールに表示されません。その工法を実行する作業区を割り当てるか、この拠点の作業区に工法を追加してください。"
+
 msgid "No work center utilization data within range"
 msgstr "範囲内の作業区の稼働率データがありません"
 

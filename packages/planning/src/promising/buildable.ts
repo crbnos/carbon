@@ -660,8 +660,7 @@ export async function loadBuildable(
  * each with what its materials still have to be issued. Two reads.
  *
  * Read from "job", not "openProductionOrders": that view is MRP's supply, so
- * it leaves out a job made for a sales order and counts the scrap allowance.
- * The statuses are the view's. What remains is as "openSalesOrderLines" nets
+ * it leaves out a job made for a sales order. The statuses are the view's. What remains is as "openSalesOrderLines" nets
  * a job: quantity less received to inventory less shipped.
  *
  * Only jobs whose materials are common-segment demand, as the stock they are

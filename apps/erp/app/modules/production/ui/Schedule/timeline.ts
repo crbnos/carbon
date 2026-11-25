@@ -33,6 +33,11 @@ export type TimelineNodeDetail = {
    */
   unschedulable?: boolean;
   /**
+   * An operation with no work center (the Forecast's "No work center" lane):
+   * the scheduler cannot place it anywhere, and it has no time.
+   */
+  noWorkCenter?: boolean;
+  /**
    * For an unschedulable operation whose process needs a qualified operator:
    * who is qualified, and the stations the manning board has them at.
    */

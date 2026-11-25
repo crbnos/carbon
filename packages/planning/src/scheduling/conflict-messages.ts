@@ -73,8 +73,21 @@ export function classifyLatePlacement(args: {
    * "a qualified operator".
    */
   staffed?: boolean;
+  /**
+   * It starts at the first working instant of its work center at or after
+   * the dominant predecessor's end: the wait was only closed hours, so the
+   * predecessor, not the work center, set the start.
+   */
+  startsWhenDependencyEnds?: boolean;
 }): LatePlacementCause {
-  const { waitedMs, wait, dominantDep, staffed } = args;
+  const { waitedMs, wait, dominantDep, staffed, startsWhenDependencyEnds } =
+    args;
+  if (dominantDep && startsWhenDependencyEnds) {
+    return {
+      kind: "inherited-delay",
+      predecessorDescription: dominantDep.description
+    };
+  }
   if (waitedMs > 0) {
     if (wait?.resource === "machine") {
       if (wait.blockers)

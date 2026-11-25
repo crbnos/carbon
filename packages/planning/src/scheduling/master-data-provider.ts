@@ -17,7 +17,11 @@ import { groupBy } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, type Selectable, sql } from "kysely";
-import { type CalendarWindow, subtractIntervals } from "./calendar-utils.ts";
+import {
+  type CalendarWindow,
+  expandEmployeeShifts,
+  subtractIntervals
+} from "./calendar-utils.ts";
 import {
   businessDayFromMs,
   msToInstantIso,
@@ -36,6 +40,8 @@ import {
 import {
   type JobWrites,
   mergeCrossJobOperations,
+  startedOperationHolds,
+  startedOperationsToHold,
   visibleReservations
 } from "./run-overlay.ts";
 import {
@@ -80,6 +86,8 @@ export type RootMakeMethod = {
 
 export type ProcessWorkCenters = {
   id: string | null;
+  /** Names the process in conflict messages. */
+  name?: string | null;
   workCenters: string[] | null;
 };
 
@@ -106,6 +114,7 @@ export type CrossJobOperation = {
   machineUnit: Database["public"]["Enums"]["factor"] | null;
   operationQuantity: number | null;
   operationLeadTime: number | null;
+  operationType?: Database["public"]["Enums"]["operationType"] | null;
 };
 
 export type LiveReservation = {
@@ -200,11 +209,23 @@ export interface MasterDataProvider {
   /** The subset of the given operation ids that have ≥1 production event
    * (used by remaining-work netting to decide setup is already done). */
   getOperationsWithEvents(operationIds: string[]): Promise<Set<string>>;
+  /** Operation id -> the people with an open Labor event on it. */
+  getClockedInEmployees(operationIds: string[]): Promise<Map<string, string[]>>;
   getProcessRequirements(
     processIds: string[]
   ): Promise<ProcessRequirementRow[]>;
   getQualifiedEmployees(abilityIds: string[]): Promise<QualifiedEmployeeRow[]>;
   getEmployeeShiftWindows(employeeIds: string[]): Promise<EmployeeShiftRow[]>;
+  /**
+   * Each person's shifts expanded over [rangeStart, rangeEnd) and unioned
+   * across timezones; a person with no shift rows is absent. Shared across
+   * the jobs of a run — never mutate the arrays.
+   */
+  getEmployeeAvailability(
+    employeeIds: string[],
+    rangeStart: number,
+    rangeEnd: number
+  ): Promise<Map<string, CalendarWindow[]>>;
   /**
    * Machine-availability ladder per work center: explicit workCenterShift rows
    * → the location's shifts → a stock Mon–Fri 08:00–16:00 week; or one open
@@ -279,6 +300,11 @@ type RunOverlay = {
   fixedReservations: LiveReservation[];
   /** Per job of the run: its stored rows, then its new ones once it has run. */
   reservationsByJob: Map<string, LiveReservation[]>;
+  /**
+   * Per job not run yet: the machine time its started operations hold
+   * (`holdStartedOperations`), released when the job itself runs.
+   */
+  holdsByJob: Map<string, LiveReservation[]>;
   storedOperationsByWorkCenter: Map<string, CrossJobOperation[]>;
   placedOperations: Map<string, CrossJobOperation>;
 };
@@ -631,7 +657,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   private async loadProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]> {
     return await this.db
       .selectFrom("processes")
-      .select(["id", "workCenters"])
+      .select(["id", "name", "workCenters"])
       .where("companyId", "=", this.companyId)
       .execute();
   }
@@ -708,7 +734,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "jo.machineTime",
         "jo.machineUnit",
         "jo.operationQuantity",
-        "jo.operationLeadTime"
+        "jo.operationLeadTime",
+        "jo.operationType"
       ])
       .where("jo.companyId", "=", this.companyId)
       .where("jo.workCenterId", "in", workCenterIds)
@@ -732,7 +759,100 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     for (const [jobId, reservations] of run.reservationsByJob) {
       if (!excluded.has(jobId)) rows.push(...reservations);
     }
+    for (const [jobId, holds] of run.holdsByJob) {
+      if (excluded.has(jobId)) rows.push(...holds);
+    }
     return rows;
+  }
+
+  /**
+   * Hold the machines of the run's started operations (In Progress, Paused,
+   * or with quantity complete) before any job runs, so a running operation
+   * keeps its machine ahead of an earlier job's unstarted work. A gated op
+   * also holds the people clocked on it (open Labor events), released with
+   * the job's machine holds. Each hold is
+   * seen by the jobs that run before its own; call `releaseHolds` as that job
+   * starts, and its run places the operation itself. Batch members
+   * (`skipOperationIds`) already hold their batch's reservation.
+   */
+  async holdStartedOperations(args: {
+    locationId: string;
+    skipOperationIds: Set<string>;
+    timeZone: string;
+    horizonEnd: number;
+  }): Promise<void> {
+    const run = this.run;
+    const preload = this.preload;
+    if (!run || !preload) return;
+    const validWorkCenterIds = new Set(
+      (await this.getActiveWorkCenters(args.locationId)).flatMap((wc) =>
+        wc.id ? [wc.id] : []
+      )
+    );
+
+    // preload.jobIds keeps the run's job order.
+    const operations = startedOperationsToHold({
+      jobs: [...preload.jobIds].flatMap((jobId) => {
+        const job = preload.jobs.get(jobId);
+        if (!job) return [];
+        return [
+          {
+            jobId,
+            readableJobId: job.readableJobId ?? "",
+            status: job.status ?? null,
+            operations: (preload.operations[jobId] ??
+              []) as unknown as BaseOperation[]
+          }
+        ];
+      }),
+      skipOperationIds: args.skipOperationIds,
+      operationsWithEvents: preload.operationsWithEvents,
+      validWorkCenterIds
+    });
+    if (operations.length === 0) return;
+
+    // A gated op also holds the people working it now: an open Labor event.
+    const [windowsByWorkCenter, requirements] = await Promise.all([
+      this.getWorkCenterAvailability(
+        [...new Set(operations.map((o) => o.workCenterId))],
+        run.now,
+        args.horizonEnd
+      ),
+      this.getProcessRequirements([
+        ...new Set(
+          operations.flatMap((o) => (o.processId ? [o.processId] : []))
+        )
+      ])
+    ]);
+    const gatedProcessIds = new Set(requirements.map((r) => r.processId));
+    const workersByOperation = await this.getClockedInEmployees(
+      operations
+        .filter((o) => o.processId && gatedProcessIds.has(o.processId))
+        .map((o) => o.operationId)
+    );
+
+    const holdsByJob = new Map<string, LiveReservation[]>();
+    for (const hold of startedOperationHolds({
+      operations: operations.map((o) => ({
+        ...o,
+        employeeIds: workersByOperation.get(o.operationId) ?? []
+      })),
+      windowsByWorkCenter,
+      reservations: run.fixedReservations,
+      now: run.now,
+      horizonEnd: args.horizonEnd,
+      timeZone: args.timeZone
+    })) {
+      const list = holdsByJob.get(hold.jobId);
+      if (list) list.push(hold);
+      else holdsByJob.set(hold.jobId, [hold]);
+    }
+    run.holdsByJob = holdsByJob;
+  }
+
+  /** The job is about to run and places its started operations itself. */
+  releaseHolds(jobId: string): void {
+    this.run?.holdsByJob.delete(jobId);
   }
 
   /**
@@ -758,6 +878,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       now,
       fixedReservations,
       reservationsByJob,
+      holdsByJob: new Map(),
       storedOperationsByWorkCenter: new Map(),
       placedOperations: new Map()
     };
@@ -805,7 +926,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         machineTime: op.machineTime,
         machineUnit: op.machineUnit,
         operationQuantity: op.operationQuantity,
-        operationLeadTime: op.operationLeadTime
+        operationLeadTime: op.operationLeadTime,
+        operationType: op.operationType
       });
     }
   }
@@ -869,6 +991,34 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       readableJobId: r.readableJobId,
       jobOperationBatchId: r.jobOperationBatchId ?? null
     }));
+  }
+
+  async getClockedInEmployees(
+    operationIds: string[]
+  ): Promise<Map<string, string[]>> {
+    const result = new Map<string, string[]>();
+    // Chunk the IN list — one query per chunk, never per-row (N+1 rule).
+    const CHUNK = 200;
+    for (let i = 0; i < operationIds.length; i += CHUNK) {
+      const rows = await this.db
+        .selectFrom("productionEvent")
+        .select(["jobOperationId", "employeeId"])
+        .where("companyId", "=", this.companyId)
+        .where("jobOperationId", "in", operationIds.slice(i, i + CHUNK))
+        .where("type", "=", "Labor")
+        .where("endTime", "is", null)
+        .where("employeeId", "is not", null)
+        .orderBy("jobOperationId")
+        .orderBy("employeeId")
+        .execute();
+      for (const row of rows) {
+        if (!row.employeeId) continue;
+        const list = result.get(row.jobOperationId) ?? [];
+        if (!list.includes(row.employeeId)) list.push(row.employeeId);
+        result.set(row.jobOperationId, list);
+      }
+    }
+    return result;
   }
 
   async getOperationsWithEvents(operationIds: string[]): Promise<Set<string>> {
@@ -1033,6 +1183,50 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     );
   }
 
+  async getEmployeeAvailability(
+    employeeIds: string[],
+    rangeStart: number,
+    rangeEnd: number
+  ): Promise<Map<string, CalendarWindow[]>> {
+    const cache = this.companyCache;
+    if (!cache) {
+      return expandEmployeeShifts(
+        await this.getEmployeeShiftWindows(employeeIds),
+        rangeStart,
+        rangeEnd
+      );
+    }
+    // Cached per person: the jobs of a run ask for overlapping sets, and a
+    // year of shifts is the costly part of each job's context.
+    const key = (id: string) =>
+      `employeeWindows:${id}:${rangeStart}:${rangeEnd}`;
+    const missing = employeeIds.filter((id) => !cache.has(key(id)));
+    if (missing.length > 0) {
+      // Straight to the read: only the expanded windows are cached, not the
+      // raw rows again under a key per missing set.
+      const loaded = this.loadEmployeeShiftWindows(missing).then((rows) =>
+        expandEmployeeShifts(rows, rangeStart, rangeEnd)
+      );
+      for (const id of missing) {
+        cache.set(
+          key(id),
+          loaded.then((windows) => windows.get(id))
+        );
+      }
+    }
+    // All at once: awaited one by one, the first failure would leave the
+    // other entries' rejections unobserved, and Node exits on those.
+    const entries = (await Promise.all(
+      employeeIds.map((id) => cache.get(key(id)))
+    )) as (CalendarWindow[] | undefined)[];
+    const result = new Map<string, CalendarWindow[]>();
+    employeeIds.forEach((id, i) => {
+      const windows = entries[i];
+      if (windows) result.set(id, windows);
+    });
+    return result;
+  }
+
   private async loadEmployeeShiftWindows(
     employeeIds: string[]
   ): Promise<EmployeeShiftRow[]> {
@@ -1156,13 +1350,15 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         );
       }
     }
+    // All at once, as in getEmployeeAvailability: no rejection left unobserved.
+    const entries = (await Promise.all(
+      workCenterIds.map((id) => cache.get(key(id)))
+    )) as (CalendarWindow[] | undefined)[];
     const result = new Map<string, CalendarWindow[]>();
-    for (const id of workCenterIds) {
-      const windows = (await cache.get(key(id))) as
-        | CalendarWindow[]
-        | undefined;
+    workCenterIds.forEach((id, i) => {
+      const windows = entries[i];
       if (windows) result.set(id, windows);
-    }
+    });
     return result;
   }
 

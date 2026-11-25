@@ -988,6 +988,8 @@ export const manifest = {
     insert: owner("userId")
   }),
   location: company({ read: "employee" }),
+  // The scheduler's newest-read-wins marker, written over Kysely only.
+  locationScheduleRun: serviceOnly(),
   // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
   // functions, over Kysely and under the device lock: read-only through the API.
   machineStateChange: policies({ select: inCompany("companyId", "employee") }),

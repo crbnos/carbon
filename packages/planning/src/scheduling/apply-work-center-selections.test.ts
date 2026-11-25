@@ -212,7 +212,9 @@ it.each([
   ["Paused", 0],
   ["Ready", 2]
 ])(
-  "a started op (status %s, %i complete) keeps its work center",
+  // The selector keeps a started op on its machine; it moves one only off a
+  // machine not active at the job's location, and the row must follow.
+  "a started op (status %s, %i complete) is stored where the plan placed it",
   (status, quantityComplete) => {
     assertEquals(
       appliedWorkCenter(
@@ -223,7 +225,7 @@ it.each([
         },
         { workCenterId: "wc-tig", ...PLACED }
       ),
-      "wc-cnc"
+      "wc-tig"
     );
   }
 );
@@ -298,4 +300,35 @@ it("the run never writes the need-by of a pinned op, nor an unchanged one", () =
       ["op-moved", "2026-07-11"]
     ]
   );
+});
+
+it("a pinned outside op keeps its stored start day, an empty one included", () => {
+  const ops = new Map<string, ScheduledOperation>([
+    [
+      "op-1",
+      makeOp({
+        manuallyScheduled: true,
+        operationType: "Outside Processing",
+        startDate: null,
+        dueDate: "2026-07-17"
+      })
+    ]
+  ]);
+  const selections = new Map<string, WorkCenterSelection>([
+    [
+      "op-1",
+      {
+        workCenterId: null,
+        priority: 0,
+        placedStart: "2026-07-17T00:00:00.000Z",
+        placedEnd: "2026-07-17T23:59:59.999Z",
+        conflict: null
+      }
+    ]
+  ]);
+
+  const op = applyWorkCenterSelections(ops, selections).get("op-1");
+  assert(op);
+  assertEquals(op.startDate, null);
+  assertEquals(op.projectedCompletionAt, "2026-07-17T23:59:59.999Z");
 });

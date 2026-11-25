@@ -151,8 +151,9 @@ Phase-7 write) and throws on failure.
    `type: "company" | "location" | "item" | "job" | "purchaseOrder" |
    "salesOrder"`, `id?` (required for non-company), `companyId`, `userId`.
    Computation engine is
-   `packages/database/src/mrp-engine.ts` (`explodeBom(...)`, `@carbon/database/mrp-engine`),
-   also used by `getMethod` (`production.service.ts`).
+   `packages/database/src/mrp-engine.ts` (`explodeBom(...)`, `@carbon/database/mrp-engine`);
+   `planCompany` is its only caller (`production.service.ts` imports only
+   `effectiveReplenishment` from it).
 
    - **Periods**: generates/fetches weekly `period` rows 72 weeks forward from
      today on the company's clock (`WEEKS_TO_FORECAST = 18 * 4`, `"Week"`
@@ -225,7 +226,12 @@ Phase-7 write) and throws on failure.
      `packages/database/src/mrp-engine.test.ts`.
    - **BOM explosion**: for `Make` items, explodes the active make method to
      derive child demand with low-level-code ordering, per-period inventory
-     netting, and lead-time offsetting. A line with quantity 0 is left out
+     netting, and lead-time offsetting. A child's demand lands where the
+     parent's order STARTS: the parent's period less the PARENT's lead time
+     (7 days when unset), floored at period[0]. The child's own order sizing
+     (`computePlanningOrders`) then subtracts the child's lead time from that
+     date, so each lead time is applied once. Open job materials are placed
+     the same way, by the job item's lead time. A line with quantity 0 is left out
      (`bomChildren`, `packages/planning/src/mrp/bom-children.ts`), never
      defaulted to 1: a configured item carries every configuration's lines at 0
      except the default's, and `|| 1` exploded all of them per parent.
@@ -240,8 +246,26 @@ Phase-7 write) and throws on failure.
      `generatePlanningActions` (`planning-actions.ts`), which diff-writes the
      `planningAction` worklist in its own transaction. That transaction takes
      `pg_advisory_xact_lock` on `planning-actions:<companyId>` BEFORE it reads
-     the existing rows: nothing else serialises `runMrp` per company (the cron
-     and the five route-triggered runs can overlap), and two runs that both
+     the existing rows. The cron and the five route-triggered runs can overlap
+     for one company. The Phase-7 transaction takes its own lock, on
+     `mrp:<companyId>`, as its first statement, so two runs never delete and
+     insert at the same time (two runs that both found no rows used to both
+     insert, and `demandForecastSource`, which has no natural key, doubled).
+     **Newest read wins.** Before it reads any input, `runMrp` takes its start
+     from the database clock (`databaseNow`, `run-order.ts`: `now()` as
+     fixed-width UTC text to the microsecond, so two starts order as strings
+     and no JS `Date` or app-server clock is involved). Under the `mrp:` lock
+     it reads `companySettings.lastMrpRunStartedAt`; when that is later than
+     its own start (`newestRunSaves`, pure, `run-order.test.ts`), a run that
+     read newer inputs has already saved, so it writes nothing, skips
+     `generatePlanningActions`, logs at info and returns
+     `{ success: true, skipped: true }` — a success to every caller (the ERP
+     `runMRP`, the cron, `planDemoCompany`). Otherwise it records its start
+     there in the same transaction. `generatePlanningActions` repeats the
+     check under its own lock (`runStartedAt`), so an older run whose forecasts
+     committed first does not write its actions over a newer run's. A company
+     with no `companySettings` row has nothing to compare: its runs save and
+     nothing is recorded. Two runs that both
      read "no row" for a natural key both insert — the second fails on
      `planningAction_natural_key_idx` and rolls the whole write back. Under
      the lock the second run reads the first run's rows and updates them in
@@ -507,7 +531,7 @@ to child demand. Note current `methodType` enum is
 ## Source views (open demand/supply)
 
 Newest defs: `openPurchaseOrderLines` in `20261117123417_open-po-lines-exclude-outside-processing.sql`,
-`openProductionOrders` in `20260811123619_widen-sales-production-scale.sql`,
+`openProductionOrders` in `20261125153018_open-production-orders-good-units.sql`,
 `openJobMaterialLines` in `20260926093417_open-job-material-lines-invoker.sql`,
 `openSalesOrderLines` in `20261006130001_demand-forecast-consumption.sql`.
 All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`,
@@ -527,7 +551,12 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
 - `openJobMaterialLines` — job status IN `('Planned','Ready','In Progress','Paused')`,
   `methodType != 'Make to Order'`.
 - `openProductionOrders` — job status IN those 4, `salesOrderId IS NULL`
-  (make-to-stock jobs only); `quantityToReceive = productionQuantity − received`.
+  (make-to-stock jobs only), not `consumeToProject`; `quantityToReceive =
+  GREATEST(quantity − quantityReceivedToInventory, 0)`, in GOOD units: the
+  scrap allowance (`productionQuantity − quantity`) is expected to be lost,
+  so it is not supply. Every reader books that one figure: MRP, the planning
+  actions, available-to-promise, the buildable check's on-order and the item
+  planning chart. Pinned by `apps/erp/test/database/open-production-orders.test.ts`.
 - `openPurchaseOrderLines` — `purchaseOrderLineType != 'Service'`, `purchaseOrderType <>
   'Outside Processing'` (the job it serves is the supply; receiving it stocks nothing), status IN
   `('To Receive','To Receive and Invoice','Planned')`; `dueDate` = the line's
@@ -676,16 +705,15 @@ never offered a Cancel, Defer or Expedite.
 - `runMrp` throws when the forecast-consumption settings cannot be read; the
   window decides what is persisted as `consumedQuantity`, so defaults are not a
   safe fallback.
-- **A job order is measured in GOOD units** — `job.quantity` less
-  `quantityReceivedToInventory`, from one read of the company's open jobs
-  (the same four statuses as `openProductionOrders`), never the view's
-  `quantityToReceive`, which is `productionQuantity` (quantity + scrap) less
-  received. A change action is applied to `job.quantity`, so on the view's
-  figure every job with a scrap allowance read as over-supplied, got "Only 80
-  of 84 is required", and got it again after the Decrease was applied.
-  `updatePlanningJob` restates `scrapQuantity` for the new quantity from the
-  item's scrap rate, as `insertJob` derives it. (The projection itself still
-  books `productionQuantity` as supply — a separate, older choice.)
+- **A job order is measured in GOOD units** — the view's `quantityToReceive`
+  (`job.quantity` less `quantityReceivedToInventory`, no scrap allowance).
+  The generator still reads the open jobs' `status` from `job` (the view does
+  not expose it). A change action is applied to `job.quantity`; when the view
+  counted the scrap allowance, every job with one read as over-supplied, got
+  "Only 80 of 84 is required", and got it again after the Decrease was
+  applied. `updatePlanningJob` restates `scrapQuantity` for the new quantity
+  from the item's scrap rate, as `insertJob` derives it. The projection books
+  the same figure as supply.
 - The `demandProjection.consumedQuantity` write touches only rows whose value
   changed (`IS DISTINCT FROM`) and leaves `updatedAt` / `updatedBy` alone:
   consumption is derived, and the audit columns name the planner who entered

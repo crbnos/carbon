@@ -3,18 +3,23 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { parseAbsolute } from "@internationalized/date";
-import { it } from "vitest";
+import { expect, it } from "vitest";
+import { composePlacementNote } from "./conflict-messages.ts";
+import { loadAvailabilityWindows } from "./finite-context.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
   buildAssignmentsByEmployee,
   buildPeopleByWorkCenter
 } from "./people-utils.ts";
+import { startedOperationHolds } from "./run-overlay.ts";
+import type { ReservationInterval } from "./slot-allocator.ts";
 import { assert, assertEquals } from "./test-helpers.ts";
 import type { ScheduledOperation } from "./types.ts";
 import {
   applyWorkCenterSelections,
   type FiniteSchedulingContext,
   hasPreassignedWorkCenter,
+  projectedFinishMs,
   WorkCenterSelector
 } from "./work-center-selector.ts";
 
@@ -104,6 +109,8 @@ function makeContext(
     requiresStaffing: false,
     peopleBudgets: new Map(),
     windowsByEmployee: new Map(),
+    locationWindows: [{ start: now, end: windowsEnd }],
+    clockedInByOperation: new Map(),
     timeZone: "UTC",
     operationsWithEvents: new Set<string>(),
     ...overrides
@@ -789,6 +796,8 @@ it("a managed person is not shoved onto an unmanned weekend to staff another sta
     requiresStaffing: false,
     peopleBudgets: new Map(),
     windowsByEmployee: new Map([["brad", bradWindows]]),
+    locationWindows: [],
+    clockedInByOperation: new Map(),
     timeZone: "UTC",
     operationsWithEvents: new Set<string>()
   });
@@ -989,4 +998,677 @@ it("requiresStaffing ON: a lights-out (alwaysOn) station still runs unattended",
     selection?.placedStart,
     "lights-out machining is exempt and still schedules"
   );
+});
+
+// --- ops the selector cannot place on any work center -----------------------
+
+it.each([
+  ["has no process", null],
+  ["has a process no work center at the location runs", "proc-unrun"]
+])(
+  "an op that %s carries a conflict and still holds back its successor",
+  async (_label, processId) => {
+    const selector = new WorkCenterSelector(
+      {} as unknown as MasterDataProvider,
+      "loc1"
+    );
+    selector.setFiniteContext(
+      makeContext({
+        dependencies: [
+          { jobId: "job-1", operationId: "op-b", dependsOnId: "op-a" }
+        ]
+      })
+    );
+    const hours = {
+      startDate: null,
+      dueDate: null,
+      setupTime: 0,
+      laborTime: 4,
+      laborUnit: "Total Hours" as const,
+      machineTime: 0,
+      operationQuantity: 1,
+      quantityComplete: 0
+    };
+    const opA = makeOp({ id: "op-a", processId, workCenterId: null, ...hours });
+    // op-b runs on wc1 (its process has no pool, so it falls back to its center)
+    const opB = makeOp({ id: "op-b", workCenterId: "wc1", order: 1, ...hours });
+
+    const selections = selector.selectWorkCentersForOperations([opA, opB], {
+      jobDueDate: null
+    });
+
+    expect(selections.get("op-a")).toEqual({
+      workCenterId: null,
+      priority: 0,
+      error: expect.any(String),
+      placeholderEnd: "2026-01-05T04:00:00.000Z",
+      conflict: expect.any(String)
+    });
+    // op-a's 4h of work, counted from now (00:00) in calendar time like a
+    // placeholder, ends 04:00; op-b may not start before then.
+    expect(selections.get("op-b")).toEqual({
+      workCenterId: "wc1",
+      priority: 0,
+      placedStart: "2026-01-05T04:00:00.000Z",
+      placedEnd: "2026-01-05T08:00:00.000Z",
+      conflict: null
+    });
+  }
+);
+
+it.each([
+  ["first", "op-a"],
+  ["in the middle", "op-b"],
+  ["last", "op-c"]
+])(
+  "an op with no work center %s in its job counts in the projected finish and stays unplaced",
+  (_label, noWorkCenterId) => {
+    const selector = new WorkCenterSelector(
+      {} as unknown as MasterDataProvider,
+      "loc1"
+    );
+    selector.setFiniteContext(
+      makeContext({
+        dependencies: [
+          { jobId: "job-1", operationId: "op-b", dependsOnId: "op-a" },
+          { jobId: "job-1", operationId: "op-c", dependsOnId: "op-b" }
+        ]
+      })
+    );
+    // Three 4h ops in a chain on wc1 (their process has no pool, so each falls
+    // back to its center); the chosen one has no process, so no work center.
+    const ops = ["op-a", "op-b", "op-c"].map((id, order) =>
+      makeOp({
+        id,
+        order,
+        processId: id === noWorkCenterId ? null : "proc-1",
+        workCenterId: id === noWorkCenterId ? null : "wc1",
+        startDate: null,
+        dueDate: null,
+        setupTime: 0,
+        laborTime: 4,
+        laborUnit: "Total Hours",
+        machineTime: 0,
+        operationQuantity: 1,
+        quantityComplete: 0
+      })
+    );
+
+    const selections = selector.selectWorkCentersForOperations(ops, {
+      jobDueDate: null
+    });
+
+    // 3 × 4h from 00:00, the unplaced op counted for its work content.
+    expect(
+      projectedFinishMs(selections.values(), selector.getPlannedReservations())
+    ).toBe(utc("2026-01-05T12:00:00.000Z"));
+    // It is still not placed: no dates, a conflict.
+    const applied = applyWorkCenterSelections(
+      new Map(ops.map((op) => [op.id, op])),
+      selections
+    ).get(noWorkCenterId);
+    expect([
+      applied?.startDate,
+      applied?.projectedCompletionAt,
+      applied?.hasConflict,
+      applied?.workCenterId
+    ]).toEqual([null, undefined, true, null]);
+  }
+);
+
+// --- pinned outside processing ----------------------------------------------
+
+it.each([
+  [
+    "on time when the job is due the day the supplier returns it",
+    "2026-01-09",
+    null
+  ],
+  [
+    "late when the job is due before the supplier returns it",
+    "2026-01-08",
+    expect.any(String)
+  ]
+])(
+  "a pinned outside op counts in the forecast and is %s",
+  async (_label, jobDueDate, conflict) => {
+    const selector = new WorkCenterSelector(
+      {} as unknown as MasterDataProvider,
+      "loc1"
+    );
+    selector.setFiniteContext(makeContext({ timeZone: "America/Chicago" }));
+
+    // It still carries the in-house machine it had before it went outside.
+    const outside = makeOp({
+      id: "op-out",
+      processId: "proc-out",
+      workCenterId: "wc-7",
+      operationType: "Outside Processing",
+      manuallyScheduled: true,
+      startDate: "2026-01-07",
+      dueDate: "2026-01-09"
+    });
+
+    const selections = selector.selectWorkCentersForOperations([outside], {
+      jobDueDate
+    });
+
+    // The pinned window in the factory's day (CST, UTC-6): from the start of
+    // 2026-01-07 to the last instant of 2026-01-09.
+    expect(selections.get("op-out")).toEqual({
+      workCenterId: null,
+      priority: 0,
+      placedStart: "2026-01-07T06:00:00.000Z",
+      placedEnd: "2026-01-10T05:59:59.999Z",
+      conflict
+    });
+  }
+);
+
+// --- work centers at another location ----------------------------------------
+
+/**
+ * One job's run at loc-plant, as the engine builds it: the selector's pool, then
+ * the capacity set `loadAvailabilityWindows` loads. wc-hq runs the process too
+ * but sits at another location (the read of active work centers is per
+ * location).
+ */
+async function runAtPlant(
+  op: Partial<ScheduledOperation>,
+  processCenters: string[]
+) {
+  const now = utc("2026-01-05T00:00:00.000Z"); // Monday
+  const windowsEnd = utc("2026-02-05T00:00:00.000Z");
+  const open = [{ start: now, end: windowsEnd }];
+  const provider = {
+    getProcessesWithWorkCenters: async () => [
+      { id: "proc-1", name: "Welding", workCenters: processCenters }
+    ],
+    getActiveWorkCenters: async () => [{ id: "wc-plant" }],
+    getWorkCenterAvailability: async (ids: string[]) =>
+      new Map(ids.map((id) => [id, open])),
+    getLocationCalendarWindows: async () => open
+  } as unknown as MasterDataProvider;
+  const selector = new WorkCenterSelector(provider, "loc-plant");
+  await selector.initialize();
+  const operation = makeOp({
+    id: "op-1",
+    startDate: null,
+    dueDate: null,
+    setupTime: 0,
+    laborTime: 4,
+    laborUnit: "Total Hours",
+    machineTime: 0,
+    operationQuantity: 1,
+    quantityComplete: 0,
+    ...op
+  });
+  const availability = await loadAvailabilityWindows({
+    provider,
+    workCenterSelector: selector,
+    operations: [operation],
+    locationId: "loc-plant",
+    now
+  });
+  selector.setFiniteContext(
+    makeContext({
+      capacityByWorkCenter: new Map(
+        [...availability.workCenterIds].map((id) => [
+          id,
+          { workCenter: { id }, windows: open, reservations: [] }
+        ])
+      )
+    })
+  );
+  const selection = selector
+    .selectWorkCentersForOperations([operation], { jobDueDate: null })
+    .get("op-1");
+  return {
+    selection,
+    bookedOn: selector.getPlannedReservations().map((r) => r.resourceId)
+  };
+}
+
+it("an op books only the process's work centers at its own location", async () => {
+  const { selection, bookedOn } = await runAtPlant(
+    { workCenterId: "wc-hq", status: "Ready" },
+    ["wc-hq", "wc-plant"]
+  );
+  expect([selection?.workCenterId, bookedOn]).toEqual([
+    "wc-plant",
+    ["wc-plant"]
+  ]);
+});
+
+it("an op whose process runs nowhere here is not put on its stored work center at another location", async () => {
+  const { selection, bookedOn } = await runAtPlant(
+    { workCenterId: "wc-hq", status: "Ready" },
+    ["wc-hq"]
+  );
+  expect([
+    selection?.placedStart,
+    selection?.error === selection?.conflict,
+    bookedOn
+  ]).toEqual([undefined, true, []]);
+  // A planner reads the process by its name, not its id.
+  expect(selection?.error).toContain("Welding");
+  expect(selection?.error).not.toContain("proc-1");
+});
+
+it("a started op on a work center at another location is not kept there", async () => {
+  const { selection, bookedOn } = await runAtPlant(
+    { workCenterId: "wc-hq", status: "In Progress" },
+    ["wc-hq", "wc-plant"]
+  );
+  expect([selection?.workCenterId, bookedOn]).toEqual([
+    "wc-plant",
+    ["wc-plant"]
+  ]);
+});
+
+// --- why the op after a predecessor starts when it does ----------------------
+
+it.each([
+  ["waited for its predecessor when only closed hours sat between", [], true],
+  [
+    "waited for the work center when another job held it after the predecessor",
+    [
+      {
+        startAt: utc("2026-01-12T14:00:00.000Z"),
+        endAt: utc("2026-01-12T16:00:00.000Z"),
+        readableJobId: "J000009"
+      }
+    ],
+    false
+  ]
+])(
+  "the op after a pinned outside op %s",
+  (_label, reservations, waitedForPredecessor) => {
+    // Mon–Fri 08:00–16:00 in Chicago (UTC-6 in January).
+    const windows = [5, 6, 7, 8, 9, 12, 13, 14, 15, 16].map((day) => {
+      const d = String(day).padStart(2, "0");
+      return {
+        start: utc(`2026-01-${d}T14:00:00.000Z`),
+        end: utc(`2026-01-${d}T22:00:00.000Z`)
+      };
+    });
+    const selector = new WorkCenterSelector(
+      {} as unknown as MasterDataProvider,
+      "loc1"
+    );
+    selector.setFiniteContext(
+      makeContext({
+        timeZone: "America/Chicago",
+        capacityByWorkCenter: new Map([
+          ["wc1", { workCenter: { id: "wc1" }, windows, reservations }]
+        ]),
+        dependencies: [
+          { jobId: "job-1", operationId: "op-b", dependsOnId: "op-out" }
+        ]
+      })
+    );
+    // Back from the supplier at the end of Friday 2026-01-09; the next
+    // working instant is Monday 08:00.
+    const outside = makeOp({
+      id: "op-out",
+      order: 1,
+      description: "Anodize",
+      processId: "proc-out",
+      operationType: "Outside Processing",
+      manuallyScheduled: true,
+      startDate: "2026-01-07",
+      dueDate: "2026-01-09"
+    });
+    const after = makeOp({
+      id: "op-b",
+      order: 2,
+      workCenterId: "wc1",
+      startDate: null,
+      dueDate: null,
+      setupTime: 0,
+      laborTime: 4,
+      laborUnit: "Total Hours",
+      machineTime: 0,
+      operationQuantity: 1,
+      quantityComplete: 0
+    });
+
+    selector.selectWorkCentersForOperations([outside, after], {
+      jobDueDate: "2026-01-09"
+    });
+
+    const note = selector
+      .getPlannedReservations()
+      .find((r) => r.operationId === "op-b")?.scheduleNote;
+    const predecessorNote = composePlacementNote(
+      { kind: "inherited-delay", predecessorDescription: "Anodize" },
+      0
+    );
+    expect(note === predecessorNote).toBe(waitedForPredecessor);
+  }
+);
+
+// --- an op with no work center runs on the location's calendar ---------------
+
+it("an op with no work center lays its work on the location's working hours", () => {
+  // Mon–Fri 08:00–16:00 (8h a day), two weeks.
+  const locationWindows = [5, 6, 7, 8, 9, 12, 13, 14, 15, 16].map((day) => {
+    const d = String(day).padStart(2, "0");
+    return {
+      start: utc(`2026-01-${d}T08:00:00.000Z`),
+      end: utc(`2026-01-${d}T16:00:00.000Z`)
+    };
+  });
+  const selector = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  selector.setFiniteContext(
+    makeContext({
+      now: utc("2026-01-05T08:00:00.000Z"), // Monday 08:00
+      locationWindows,
+      dependencies: [
+        { jobId: "job-1", operationId: "op-b", dependsOnId: "op-a" }
+      ]
+    })
+  );
+  const work = {
+    startDate: null,
+    dueDate: null,
+    setupTime: 0,
+    laborUnit: "Total Hours" as const,
+    machineTime: 0,
+    operationQuantity: 1,
+    quantityComplete: 0
+  };
+  const ops = [
+    // 40h with no process: no work center to run on.
+    makeOp({ id: "op-a", order: 1, processId: null, laborTime: 40, ...work }),
+    makeOp({ id: "op-b", order: 2, workCenterId: "wc1", laborTime: 2, ...work })
+  ];
+
+  const selections = selector.selectWorkCentersForOperations(ops, {
+    jobDueDate: null
+  });
+
+  // Five 8h days: Friday 16:00, not 40 clock hours later (Wednesday 00:00).
+  expect([
+    selections.get("op-a")?.placeholderEnd,
+    selections.get("op-b")?.placedStart,
+    projectedFinishMs(selections.values(), selector.getPlannedReservations())
+  ]).toEqual([
+    "2026-01-09T16:00:00.000Z",
+    "2026-01-09T16:00:00.000Z",
+    utc("2026-01-09T18:00:00.000Z")
+  ]);
+});
+
+it("an op with no work center and no work still makes its successor wait for its predecessor", () => {
+  const selector = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  const open = [
+    {
+      start: utc("2026-01-05T00:00:00.000Z"),
+      end: utc("2026-02-05T00:00:00.000Z")
+    }
+  ];
+  selector.setFiniteContext(
+    makeContext({
+      capacityByWorkCenter: new Map(
+        ["wc1", "wc2"].map((id) => [
+          id,
+          { workCenter: { id }, windows: open, reservations: [] }
+        ])
+      ),
+      dependencies: [
+        { jobId: "job-1", operationId: "op-b", dependsOnId: "op-a" },
+        { jobId: "job-1", operationId: "op-c", dependsOnId: "op-b" }
+      ]
+    })
+  );
+  const work = {
+    startDate: null,
+    dueDate: null,
+    setupTime: 0,
+    laborUnit: "Total Hours" as const,
+    machineTime: 0,
+    operationQuantity: 1,
+    quantityComplete: 0
+  };
+  const ops = [
+    makeOp({
+      id: "op-a",
+      order: 1,
+      workCenterId: "wc1",
+      laborTime: 4,
+      ...work
+    }),
+    // No process and no hours: nowhere to run and nothing to lay down.
+    makeOp({ id: "op-b", order: 2, processId: null, laborTime: 0, ...work }),
+    makeOp({ id: "op-c", order: 3, workCenterId: "wc2", laborTime: 2, ...work })
+  ];
+
+  const selections = selector.selectWorkCentersForOperations(ops, {
+    jobDueDate: null
+  });
+
+  expect([
+    selections.get("op-a")?.placedEnd,
+    selections.get("op-c")?.placedStart
+  ]).toEqual(["2026-01-05T04:00:00.000Z", "2026-01-05T04:00:00.000Z"]);
+});
+
+// --- a running op is not placed after its unfinished predecessors -----------
+
+it("a running op starts now ahead of its unstarted predecessor; its successor chains after it", () => {
+  const now = utc("2026-01-05T00:00:00.000Z");
+  const open = [{ start: now, end: utc("2026-02-05T00:00:00.000Z") }];
+  const selector = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  selector.setFiniteContext(
+    makeContext({
+      capacityByWorkCenter: new Map(
+        ["wc1", "wc2"].map((id) => [
+          id,
+          { workCenter: { id }, windows: open, reservations: [] }
+        ])
+      ),
+      dependencies: [
+        { jobId: "job-1", operationId: "op-b", dependsOnId: "op-a" },
+        { jobId: "job-1", operationId: "op-c", dependsOnId: "op-b" }
+      ]
+    })
+  );
+  const work = {
+    startDate: null,
+    dueDate: null,
+    setupTime: 0,
+    laborUnit: "Total Hours" as const,
+    machineTime: 0,
+    operationQuantity: 1,
+    quantityComplete: 0
+  };
+  const ops = [
+    makeOp({
+      id: "op-a",
+      order: 1,
+      workCenterId: "wc1",
+      laborTime: 8,
+      ...work
+    }),
+    makeOp({
+      id: "op-b",
+      order: 2,
+      workCenterId: "wc1",
+      status: "In Progress",
+      laborTime: 4,
+      ...work
+    }),
+    makeOp({ id: "op-c", order: 3, workCenterId: "wc2", laborTime: 2, ...work })
+  ];
+
+  const selections = selector.selectWorkCentersForOperations(ops, {
+    jobDueDate: null
+  });
+
+  // B is on its machine now; A waits for that machine; C follows B.
+  expect(
+    ["op-a", "op-b", "op-c"].map((id) => [
+      id,
+      selections.get(id)?.placedStart,
+      selections.get(id)?.placedEnd
+    ])
+  ).toEqual([
+    ["op-a", "2026-01-05T04:00:00.000Z", "2026-01-05T12:00:00.000Z"],
+    ["op-b", "2026-01-05T00:00:00.000Z", "2026-01-05T04:00:00.000Z"],
+    ["op-c", "2026-01-05T04:00:00.000Z", "2026-01-05T06:00:00.000Z"]
+  ]);
+});
+
+// --- an operator clocked into a running op ------------------------------------
+
+/**
+ * emp-1, the only welder, is on the board at wc-board today but clocked into
+ * job-2's running weld on wc-run (an open Labor event).
+ */
+function clockedInContext(
+  reservationsByEmployee = new Map<string, ReservationInterval[]>()
+) {
+  const now = utc("2026-01-05T00:00:00.000Z");
+  const open = [{ start: now, end: utc("2026-02-05T00:00:00.000Z") }];
+  const board = buildPeopleByWorkCenter([
+    {
+      workCenterId: "wc-board",
+      employeeId: "emp-1",
+      date: "2026-01-05",
+      shiftId: null
+    }
+  ]);
+  return makeContext({
+    capacityByWorkCenter: new Map(
+      ["wc-run", "wc-board"].map((id) => [
+        id,
+        { workCenter: { id }, windows: open, reservations: [] }
+      ])
+    ),
+    requirementByProcess: new Map([
+      ["proc-weld", { abilityId: "ab1", abilityName: "Welding" }]
+    ]),
+    employeesByAbility: new Map([
+      ["ab1", [{ employeeId: "emp-1", expiresAt: null, windows: open }]]
+    ]),
+    windowsByEmployee: new Map([["emp-1", open]]),
+    peopleByWorkCenter: board,
+    assignmentsByEmployee: buildAssignmentsByEmployee(board),
+    reservationsByEmployee,
+    clockedInByOperation: new Map([["op-run", ["emp-1"]]])
+  });
+}
+
+function weld(
+  id: string,
+  jobId: string,
+  workCenterId: string,
+  extra: Partial<ScheduledOperation>
+) {
+  return makeOp({
+    id,
+    jobId,
+    processId: "proc-weld",
+    workCenterId,
+    startDate: null,
+    dueDate: null,
+    setupTime: 0,
+    laborUnit: "Total Hours",
+    machineTime: 0,
+    operationQuantity: 1,
+    quantityComplete: 0,
+    ...extra
+  });
+}
+
+const placedOn = (
+  selector: WorkCenterSelector,
+  op: ScheduledOperation,
+  ctx: FiniteSchedulingContext
+) => {
+  selector.setFiniteContext(ctx);
+  const s = selector
+    .selectWorkCentersForOperations([op], { jobDueDate: null })
+    .get(op.id);
+  return [s?.workCenterId, s?.placedStart, s?.placedEnd, s?.conflict];
+};
+
+it("the operator clocked into a running gated op works it even when the board has them elsewhere, and no later job takes them meanwhile", () => {
+  const selector = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  const ctx = clockedInContext();
+  const running = weld("op-run", "job-2", "wc-run", {
+    status: "In Progress",
+    laborTime: 3
+  });
+  expect(placedOn(selector, running, ctx)).toEqual([
+    "wc-run",
+    "2026-01-05T00:00:00.000Z",
+    "2026-01-05T03:00:00.000Z",
+    null
+  ]);
+  // A later job's weld at the station the board has emp-1 at waits for them.
+  const other = weld("op-other", "job-3", "wc-board", { laborTime: 2 });
+  expect(placedOn(selector, other, ctx)).toEqual([
+    "wc-board",
+    "2026-01-05T03:00:00.000Z",
+    "2026-01-05T05:00:00.000Z",
+    null
+  ]);
+});
+
+it("an earlier job's op at the operator's board station waits for their hold on the running op", () => {
+  const start = utc("2026-01-05T00:00:00.000Z");
+  const holds = startedOperationHolds({
+    operations: [
+      {
+        jobId: "job-2",
+        readableJobId: "J2",
+        workCenterId: "wc-run",
+        hours: 3,
+        attendedHours: 3,
+        employeeIds: ["emp-1"]
+      }
+    ],
+    windowsByWorkCenter: new Map([
+      ["wc-run", [{ start, end: utc("2026-02-05T00:00:00.000Z") }]]
+    ]),
+    reservations: [],
+    now: start,
+    horizonEnd: utc("2026-02-05T00:00:00.000Z"),
+    timeZone: "UTC"
+  });
+  const ctx = clockedInContext(
+    new Map([
+      [
+        "emp-1",
+        holds
+          .filter((h) => h.resourceKind === "Employee")
+          .map((h) => ({ startAt: h.startAt, endAt: h.endAt }))
+      ]
+    ])
+  );
+  const selector = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  const other = weld("op-other", "job-1", "wc-board", { laborTime: 2 });
+  expect(placedOn(selector, other, ctx)).toEqual([
+    "wc-board",
+    "2026-01-05T03:00:00.000Z",
+    "2026-01-05T05:00:00.000Z",
+    null
+  ]);
 });
