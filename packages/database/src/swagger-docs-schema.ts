@@ -121824,10 +121824,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.lastMrpRunStartedAt"
+            $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
+            $ref: "#/parameters/rowFilter.companySettings.lastMrpRunStartedAt"
           },
           {
             $ref: "#/parameters/select"
@@ -122195,10 +122195,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.lastMrpRunStartedAt"
+            $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
+            $ref: "#/parameters/rowFilter.companySettings.lastMrpRunStartedAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -122520,10 +122520,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.customerPartNumberDisplay"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.lastMrpRunStartedAt"
+            $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.holdUnitsWithOpenIssues"
+            $ref: "#/parameters/rowFilter.companySettings.lastMrpRunStartedAt"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -202159,16 +202159,16 @@ export default {
           format: 'public."partNumberDisplay"',
           type: "string"
         },
+        holdUnitsWithOpenIssues: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
         lastMrpRunStartedAt: {
           description:
             "Start of the last MRP run that saved (database clock). An MRP run that started earlier skips its save.",
           format: "timestamp with time zone",
           type: "string"
-        },
-        holdUnitsWithOpenIssues: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
         }
       },
       type: "object"
@@ -267977,16 +267977,16 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.lastMrpRunStartedAt": {
-      name: "lastMrpRunStartedAt",
-      description:
-        "Start of the last MRP run that saved (database clock). An MRP run that started earlier skips its save.",
+    "rowFilter.companySettings.holdUnitsWithOpenIssues": {
+      name: "holdUnitsWithOpenIssues",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.holdUnitsWithOpenIssues": {
-      name: "holdUnitsWithOpenIssues",
+    "rowFilter.companySettings.lastMrpRunStartedAt": {
+      name: "lastMrpRunStartedAt",
+      description:
+        "Start of the last MRP run that saved (database clock). An MRP run that started earlier skips its save.",
       required: false,
       in: "query",
       type: "string"
