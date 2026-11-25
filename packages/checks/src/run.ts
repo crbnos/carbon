@@ -92,8 +92,9 @@ export function findOnWorkers(
   const groupOf = new Map<Worker, string[]>();
   // Each worker has its own loader and SQL-parse caches, so an input is read
   // and parsed again on every worker that runs a check of it. A worker keeps
-  // to its group, then takes the largest group no other worker is on, and only
-  // when every group left is taken helps with the largest.
+  // to its group, then takes the largest group no other worker is on. It does
+  // not help with a group another worker has: reading that group's input
+  // again took longer than the help saved.
   const nextFor = (worker: Worker): string | undefined => {
     let group = groupOf.get(worker);
     if (!group?.length) {
@@ -101,7 +102,7 @@ export function findOnWorkers(
         .filter((candidate) => candidate.length > 0)
         .sort((a, b) => b.length - a.length);
       const taken = new Set(groupOf.values());
-      group = left.find((candidate) => !taken.has(candidate)) ?? left[0];
+      group = left.find((candidate) => !taken.has(candidate));
       if (!group) return undefined;
       groupOf.set(worker, group);
     }
