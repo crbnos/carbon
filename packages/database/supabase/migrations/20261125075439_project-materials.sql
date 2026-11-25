@@ -72,7 +72,49 @@ AS $$
       )
     GROUP BY pl."projectElementId", pl."itemId"
   ),
-  -- The covered rule of openProjectMaterialLines.
+  -- An issue raises the element's plan line for the item (post-project-issue),
+  -- so what the ledger issued beyond the plan lines' quantityIssued had no plan
+  -- line: an element with none, or an issue posted before its line was added.
+  unplanned_issues AS (
+    SELECT i."projectElementId", i."itemId",
+      i."quantity" - COALESCE((
+        SELECT SUM(m."quantityIssued") FROM materials m
+        WHERE m."projectElementId" IS NOT DISTINCT FROM i."projectElementId"
+          AND m."itemId" = i."itemId"
+      ), 0) AS "quantity"
+    FROM issues i
+  ),
+  -- What left the shelf for the project (an issue is negative, a return
+  -- positive). A Statistical charge writes no projectLedger row, so the part
+  -- of this that neither a plan line nor a ledger row explains is an issue
+  -- with no plan line whose element was not recorded.
+  shelf_issues AS (
+    SELECT il."itemId", -SUM(il."quantity") AS "quantity"
+    FROM "itemLedger" il
+    WHERE il."companyId" = company_id
+      AND il."documentType" = 'Project Issue'
+      AND il."documentId" = project_id
+    GROUP BY il."itemId"
+  ),
+  unrecorded_issues AS (
+    SELECT s."itemId",
+      s."quantity"
+        - COALESCE((SELECT SUM(m."quantityIssued") FROM materials m WHERE m."itemId" = s."itemId"), 0)
+        - COALESCE((SELECT SUM(u."quantity") FROM unplanned_issues u WHERE u."itemId" = s."itemId" AND u."quantity" > 0), 0)
+        AS "quantity"
+    FROM shelf_issues s
+  ),
+  -- The project's own PO lines, plus the lines its plan lines link. Two
+  -- index lookups instead of one OR, which would scan the company's lines.
+  po_line_ids AS (
+    SELECT pol."id"
+    FROM "purchaseOrderLine" pol
+    WHERE pol."projectId" = project_id AND pol."companyId" = company_id
+    UNION
+    SELECT m."purchaseOrderLineId" FROM materials m WHERE m."purchaseOrderLineId" IS NOT NULL
+  ),
+  -- The covered rule of openProjectMaterialLines. An outside processing PO
+  -- is the job's supply, not the item's.
   po_supply AS (
     SELECT
       pol."id" AS "lineId",
@@ -98,10 +140,15 @@ AS $$
     JOIN "item" i
       ON i."id" = pol."itemId" AND i."companyId" = pol."companyId"
     WHERE pol."companyId" = company_id
-      AND (
-        pol."projectId" = project_id
-        OR pol."id" IN (SELECT "purchaseOrderLineId" FROM materials WHERE "purchaseOrderLineId" IS NOT NULL)
-      )
+      AND pol."id" IN (SELECT "id" FROM po_line_ids)
+      AND po."purchaseOrderType" <> 'Outside Processing'
+  ),
+  job_ids AS (
+    SELECT j."id"
+    FROM "job" j
+    WHERE j."projectId" = project_id AND j."companyId" = company_id
+    UNION
+    SELECT m."jobId" FROM materials m WHERE m."jobId" IS NOT NULL
   ),
   job_supply AS (
     SELECT
@@ -119,10 +166,7 @@ AS $$
       j."consumeToProject" AS "consumed"
     FROM "job" j
     WHERE j."companyId" = company_id
-      AND (
-        j."projectId" = project_id
-        OR j."id" IN (SELECT "jobId" FROM materials WHERE "jobId" IS NOT NULL)
-      )
+      AND j."id" IN (SELECT "id" FROM job_ids)
   ),
   plan_rows AS (
     SELECT
@@ -154,16 +198,18 @@ AS $$
     LEFT JOIN po_supply ps ON ps."lineId" = m."purchaseOrderLineId"
     LEFT JOIN job_supply js ON js."documentId" = m."jobId"
   ),
+  -- A PO line or a job that any plan line links (of this project or
+  -- another) is that plan line's supply, never an Unplanned row.
   unplanned_sources AS (
-    SELECT i."projectElementId", i."itemId",
-      0::NUMERIC AS "ordered", 0::NUMERIC AS "received", i."quantity" AS "issued",
+    SELECT u."projectElementId", u."itemId",
+      0::NUMERIC AS "ordered", 0::NUMERIC AS "received", u."quantity" AS "issued",
       NULL::JSONB AS "supply"
-    FROM issues i
-    WHERE NOT EXISTS (
-      SELECT 1 FROM materials m
-      WHERE m."projectElementId" IS NOT DISTINCT FROM i."projectElementId"
-        AND m."itemId" = i."itemId"
-    )
+    FROM unplanned_issues u
+    WHERE u."quantity" > 0
+    UNION ALL
+    SELECT NULL::TEXT, r."itemId", 0::NUMERIC, 0::NUMERIC, r."quantity", NULL::JSONB
+    FROM unrecorded_issues r
+    WHERE r."quantity" > 0
     UNION ALL
     SELECT ps."projectElementId", ps."itemId", ps."ordered", ps."received",
       CASE WHEN ps."consumed" THEN ps."received" ELSE 0 END,
@@ -171,7 +217,12 @@ AS $$
         'readableId', ps."readableId", 'lineId', ps."lineId", 'status', ps."status")
     FROM po_supply ps
     WHERE ps."projectId" = project_id
-      AND NOT EXISTS (SELECT 1 FROM materials m WHERE m."purchaseOrderLineId" = ps."lineId")
+      -- A Rejected PO that received nothing brings nothing.
+      AND NOT (ps."status" = 'Rejected' AND ps."received" = 0)
+      AND NOT EXISTS (
+        SELECT 1 FROM "projectElementMaterial" m
+        WHERE m."purchaseOrderLineId" = ps."lineId" AND m."companyId" = company_id
+      )
     UNION ALL
     SELECT js."projectElementId", js."itemId", js."ordered", js."received",
       CASE WHEN js."consumed" THEN js."received" ELSE 0 END,
@@ -179,7 +230,12 @@ AS $$
         'readableId', js."readableId", 'lineId', NULL, 'status', js."status")
     FROM job_supply js
     WHERE js."projectId" = project_id
-      AND NOT EXISTS (SELECT 1 FROM materials m WHERE m."jobId" = js."documentId")
+      -- A Cancelled job that made nothing brings nothing.
+      AND NOT (js."status" = 'Cancelled' AND js."received" = 0)
+      AND NOT EXISTS (
+        SELECT 1 FROM "projectElementMaterial" m
+        WHERE m."jobId" = js."documentId" AND m."companyId" = company_id
+      )
   ),
   unplanned_rows AS (
     SELECT
@@ -244,8 +300,9 @@ AS $$
       ELSE 'Not issued'
     END,
     r."supplies",
-    st."projectOnHand",
-    st."unassignedOnHand"
+    -- With project stock, an item with none on hand shows 0, not blank.
+    CASE WHEN proj."projectStock" THEN COALESCE(st."projectOnHand", 0) END,
+    CASE WHEN proj."projectStock" THEN COALESCE(st."unassignedOnHand", 0) END
   FROM all_rows r
   JOIN proj ON TRUE
   JOIN "item" it ON it."id" = r."itemId" AND it."companyId" = company_id

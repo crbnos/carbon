@@ -21,7 +21,10 @@ import { invokePosting } from "../../app/modules/shared/shared.service";
 import { handlesOf } from "./fixtures/handles";
 import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
 import { localAnonClient } from "./fixtures/local-supabase";
-import { projectPostingFixture } from "./fixtures/project-posting";
+import {
+  PROJECT_TEST_USER,
+  projectPostingFixture
+} from "./fixtures/project-posting";
 
 type Fixture = Awaited<ReturnType<typeof projectPostingFixture>>;
 type MethodType = Database["public"]["Enums"]["methodType"];
@@ -718,6 +721,12 @@ it.skipIf(!anon)(
         company_id: f.companyId
       });
       if (error) {
+        // A refusal, never a missing function (which would also be an error).
+        expect(error.code).not.toBe("PGRST202");
+        expect(error.code).not.toBe("42883");
+        expect(error.message).not.toMatch(
+          /does not exist|could not find the function/i
+        );
         expect(data).toBeNull();
       } else {
         expect(data).toEqual([]);
@@ -772,6 +781,451 @@ databaseTest(
         projectOnHand: 4,
         unassignedOnHand: 10
       });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a return of stock charged at receipt nets the relocated units out of the issued quantity",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Contract" });
+    try {
+      const po = await chargedStock(f, 3);
+      // 2 more units in the project's stock that the receipt never charged.
+      await f.addStripeStock({
+        itemId: po.itemId,
+        locationId: po.locationId,
+        projectId: f.projectId,
+        quantity: 2,
+        unitCost: 10,
+        postingDate: "2026-10-23"
+      });
+      const issued = await projectIssue(f, {
+        itemId: po.itemId,
+        locationId: po.locationId,
+        quantity: 5,
+        direction: "Issue"
+      });
+      expect(issued.error).toBeNull();
+      const returned = await projectIssue(f, {
+        itemId: po.itemId,
+        locationId: po.locationId,
+        quantity: 2,
+        direction: "Return"
+      });
+      expect(returned.error).toBeNull();
+
+      // 5 issued, 2 returned: 3 are still out.
+      const rows = await materials(f);
+      expect(rows.filter((r) => r.itemId === po.itemId)).toHaveLength(1);
+      expect(rows.find((r) => r.itemId === po.itemId)).toMatchObject({
+        rowKind: "Unplanned",
+        projectElementId: f.elementId,
+        quantityIssued: 3
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an issue to a Statistical project with no plan line is one Unplanned row with no element",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Statistical" });
+    try {
+      const { itemId, locationId } = await f.addStockedItem("strap", {
+        quantity: 10,
+        unitCost: 4
+      });
+      const issued = await projectIssue(f, {
+        itemId,
+        locationId,
+        quantity: 2,
+        direction: "Issue"
+      });
+      expect(issued.error).toBeNull();
+      // A Statistical charge writes no project ledger row, so only the item
+      // ledger shows the issue.
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select("id")
+        .where("projectId", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(ledger).toEqual([]);
+
+      const rows = await materials(f);
+      expect(rows.map(summary)).toEqual([
+        {
+          rowKind: "Unplanned",
+          projectElementId: null,
+          itemId,
+          methodType: null,
+          quantityRequired: 0,
+          quantityOrdered: 0,
+          quantityReceived: 0,
+          quantityIssued: 2,
+          quantityRemaining: null,
+          issueStatus: "Unplanned",
+          supplies: []
+        }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an issue to a Statistical project's plan line shows on the plan row and makes no Unplanned row",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Statistical" });
+    try {
+      const { itemId, locationId } = await f.addStockedItem("clip", {
+        quantity: 10,
+        unitCost: 4
+      });
+      await addPlanLine(f, {
+        itemId,
+        quantity: 5,
+        methodType: "Pull from Inventory"
+      });
+      const issued = await projectIssue(f, {
+        itemId,
+        locationId,
+        quantity: 3,
+        direction: "Issue"
+      });
+      expect(issued.error).toBeNull();
+
+      const rows = await materials(f);
+      expect(rows.map(summary)).toEqual([
+        {
+          rowKind: "Plan",
+          projectElementId: f.elementId,
+          itemId,
+          methodType: "Pull from Inventory",
+          quantityRequired: 5,
+          quantityOrdered: 0,
+          quantityReceived: 0,
+          quantityIssued: 3,
+          quantityRemaining: 2,
+          issueStatus: "Partly issued",
+          supplies: []
+        }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an issue to an element's plan line shows on the plan row and makes no Unplanned row",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("hinge", {
+        quantity: 10,
+        unitCost: 4
+      });
+      await addPlanLine(f, {
+        itemId,
+        quantity: 4,
+        methodType: "Pull from Inventory"
+      });
+      const issued = await projectIssue(f, {
+        itemId,
+        locationId,
+        quantity: 2,
+        direction: "Issue"
+      });
+      expect(issued.error).toBeNull();
+
+      const rows = await materials(f);
+      expect(rows.map(summary)).toEqual([
+        {
+          rowKind: "Plan",
+          projectElementId: f.elementId,
+          itemId,
+          methodType: "Pull from Inventory",
+          quantityRequired: 4,
+          quantityOrdered: 0,
+          quantityReceived: 0,
+          quantityIssued: 2,
+          quantityRemaining: 2,
+          issueStatus: "Partly issued",
+          supplies: []
+        }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a Make to Order line whose job is Completed orders only the completed units",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const { locationId, itemId } = await f.addStockedItem("spring", {
+        quantity: 10,
+        unitCost: 1
+      });
+      const job = await f.addConsumeToProjectJob("lid", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 1,
+        jobQuantity: 5
+      });
+      await addPlanLine(f, {
+        itemId: job.finishedItemId,
+        quantity: 5,
+        methodType: "Make to Order",
+        jobId: job.jobId
+      });
+      await f.db
+        .updateTable("job")
+        .set({ status: "Completed", quantityComplete: 3 })
+        .where("id", "=", job.jobId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const rows = await materials(f);
+      expect(rows.map(summary)).toEqual([
+        {
+          rowKind: "Plan",
+          projectElementId: f.elementId,
+          itemId: job.finishedItemId,
+          methodType: "Make to Order",
+          quantityRequired: 5,
+          quantityOrdered: 3,
+          quantityReceived: 3,
+          quantityIssued: 3,
+          quantityRemaining: 2,
+          issueStatus: "Partly issued",
+          supplies: [
+            {
+              type: "Job",
+              documentId: job.jobId,
+              readableId: `${f.prefix}-J-lid`,
+              lineId: null,
+              status: "Completed"
+            }
+          ]
+        }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a PO line of another project that a plan line links makes no Unplanned row in its own project",
+  async () => {
+    const f = await projectPostingFixture();
+    const otherProjectId = `${f.prefix}-project-b`;
+    try {
+      await f.db
+        .insertInto("project")
+        .values({
+          id: otherProjectId,
+          name: "Other project",
+          identifier: "TB",
+          status: "Released",
+          costTreatment: "Expense",
+          companyId: f.companyId,
+          createdBy: PROJECT_TEST_USER
+        })
+        .execute();
+      const po = await chargedPurchaseOrder(f, "flange", 6);
+      await f.db
+        .updateTable("purchaseOrderLine")
+        .set({ projectId: otherProjectId, projectElementId: null })
+        .where("id", "=", po.lineId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await addPlanLine(f, {
+        itemId: po.itemId,
+        quantity: 6,
+        methodType: "Purchase to Order",
+        purchaseOrderLineId: po.lineId
+      });
+
+      // The plan line in this project takes the PO line as its supply.
+      const linked = await materials(f);
+      expect(linked.map((r) => [r.rowKind, r.supplies[0]?.lineId])).toEqual([
+        ["Plan", po.lineId]
+      ]);
+
+      const other = await getProjectMaterials(f.db, {
+        companyId: f.companyId,
+        projectId: otherProjectId
+      });
+      expect(other.rows).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an Outside Processing PO line charged to the project makes no row",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const po = await chargedPurchaseOrder(f, "anodize", 4);
+      await f.db
+        .updateTable("purchaseOrder")
+        .set({ purchaseOrderType: "Outside Processing" })
+        .where("id", "=", po.purchaseOrderId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      expect(await materials(f)).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "with project stock, an item with no stock at all shows 0 in both stock columns",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const { itemId } = await f.addItem("knob", {
+        itemTrackingType: "Inventory"
+      });
+      await addPlanLine(f, {
+        itemId,
+        quantity: 2,
+        methodType: "Pull from Inventory"
+      });
+      await f.enableProjectStock();
+
+      const rows = await materials(f);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        projectOnHand: 0,
+        unassignedOnHand: 0
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an issue posted before its element's plan line existed stays an Unplanned row of that element",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("shim", {
+        quantity: 10,
+        unitCost: 2
+      });
+      const issued = await projectIssue(f, {
+        itemId,
+        locationId,
+        quantity: 5,
+        direction: "Issue"
+      });
+      expect(issued.error).toBeNull();
+      // The plan line comes after the issue, so the issue raised no line.
+      await addPlanLine(f, {
+        itemId,
+        quantity: 8,
+        methodType: "Pull from Inventory"
+      });
+
+      const rows = await materials(f);
+      expect(rows.map(summary)).toEqual([
+        {
+          rowKind: "Plan",
+          projectElementId: f.elementId,
+          itemId,
+          methodType: "Pull from Inventory",
+          quantityRequired: 8,
+          quantityOrdered: 0,
+          quantityReceived: 0,
+          quantityIssued: 0,
+          quantityRemaining: 8,
+          issueStatus: "Not issued",
+          supplies: []
+        },
+        {
+          rowKind: "Unplanned",
+          projectElementId: f.elementId,
+          itemId,
+          methodType: null,
+          quantityRequired: 0,
+          quantityOrdered: 0,
+          quantityReceived: 0,
+          quantityIssued: 5,
+          quantityRemaining: null,
+          issueStatus: "Unplanned",
+          supplies: []
+        }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a Cancelled job of the project that made nothing makes no row",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const { locationId, itemId } = await f.addStockedItem("rivet", {
+        quantity: 10,
+        unitCost: 1
+      });
+      const job = await f.addConsumeToProjectJob("bracket", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 1,
+        jobQuantity: 3
+      });
+      expect(await materials(f)).toHaveLength(1);
+
+      await f.db
+        .updateTable("job")
+        .set({ status: "Cancelled", quantityComplete: 0 })
+        .where("id", "=", job.jobId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      expect(await materials(f)).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a Rejected PO line of the project that received nothing makes no row",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const po = await chargedPurchaseOrder(f, "washer", 4);
+      expect(await materials(f)).toHaveLength(1);
+
+      await f.db
+        .updateTable("purchaseOrder")
+        .set({ status: "Rejected" })
+        .where("id", "=", po.purchaseOrderId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      expect(await materials(f)).toEqual([]);
     } finally {
       await f.cleanup();
     }
