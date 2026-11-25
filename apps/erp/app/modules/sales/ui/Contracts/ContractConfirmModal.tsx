@@ -83,9 +83,9 @@ const ContractConfirmBody = ({
   const planned = plannedInvoices(routeData);
   const first = planned[0] ?? null;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `stripeLink` is a fresh object each render, so depending on it would re-run this effect forever.
   useEffect(() => {
     if (isStripe) stripeLink.load(path.to.contractConfirm(id));
+    // oxlint-disable-next-line react/exhaustive-deps -- `stripeLink` is a fresh object each render, so depending on it would re-run this effect forever.
   }, [isStripe, id]);
 
   // The action redirects with a flash; close once it has settled.

@@ -332,7 +332,6 @@ export default function MaintenanceRoute() {
   const [activeTab, setActiveTab] = useState("all");
   // Phones: the tab row scrolls sideways; keep the active tab in view.
   const tabsListRef = useRef<HTMLDivElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when the active tab changes
   useEffect(() => {
     tabsListRef.current
       ?.querySelector<HTMLElement>('[data-state="active"]')

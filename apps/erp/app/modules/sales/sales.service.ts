@@ -1850,7 +1850,6 @@ function getQuoteMethodTreeArrayToTree(
       lookup[itemId] = { id: itemId, children: [] };
     }
 
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
     lookup[itemId]["data"] = item;
 
     const treeItem = lookup[itemId];
@@ -1863,7 +1862,6 @@ function getQuoteMethodTreeArrayToTree(
         lookup[parentId] = { id: parentId, children: [] };
       }
 
-      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
       lookup[parentId]["children"].push(treeItem);
     }
   }

@@ -184,7 +184,6 @@ export const ProductionPlanningOrderDrawer = memo(
 
     // Only while open: the drawer stays mounted on its last item so it can
     // slide out, and that item's actions change with every Apply on the grid.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: actionsKey stands in for `actions`; periods are fixed for the page
     useEffect(() => {
       if (!isOpen || !carbon || !row.id) return;
       let isCurrent = true;
@@ -229,6 +228,7 @@ export const ProductionPlanningOrderDrawer = memo(
       return () => {
         isCurrent = false;
       };
+      // oxlint-disable-next-line react/exhaustive-deps -- actionsKey stands in for `actions`; periods are fixed for the page
     }, [isOpen, carbon, row.id, locationId, actionsKey, openJobsVersion]);
 
     const openJobRows = useMemo<OpenOrderRow[] | null | Error>(() => {

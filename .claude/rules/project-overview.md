@@ -66,7 +66,7 @@ pnpm + Turborepo monorepo of `apps/*` and `packages/*`.
 - **Cache / rate limit**: Redis via ioredis (`@carbon/kv`).
 - **i18n**: Lingui v5 (`@carbon/locale`).
 - **Build / tooling**: pnpm workspaces + Turborepo; Vite bundler; tsup for
-  packages; Biome for lint, oxfmt for format; TypeScript strict; SST for infra.
+  packages; oxlint for lint, oxfmt for format; TypeScript strict; SST for infra.
 - **Docs app only**: Next.js + Fumadocs + MDX.
 
 ## ERP routing & module layout

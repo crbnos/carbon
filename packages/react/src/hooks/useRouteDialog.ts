@@ -70,16 +70,15 @@ export function useRouteDialog(to?: To, options?: NavigateOptions) {
   // The location moved and this route is still here (back to an earlier entry
   // of it, a pushed search param): its dialog shows again, as it did when
   // closing only navigated.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs on each new location
   useEffect(() => {
     if (phase.current === "open") return;
     phase.current = "open";
     setOpen(true);
   }, [location.key]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when a navigation settles
   useEffect(() => {
     leaveOnceSettled();
+    // oxlint-disable-next-line react/exhaustive-deps -- runs when a navigation settles
   }, [navigation.state]);
 
   const close = useCallbackRef(() => {

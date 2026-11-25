@@ -104,7 +104,6 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
     }
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (
       filter.filter.type === "fetcher" &&
@@ -121,6 +120,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
 
       setLoading(false);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [fetcher.data, filter.filter.type]);
 
   const makeLabel = (v: string) => {

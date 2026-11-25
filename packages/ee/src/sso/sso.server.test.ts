@@ -177,7 +177,6 @@ describe("getSsoProviderIdFromSession", () => {
 // for the ssoConnection lookups without a real PostgREST client.
 function makeSsoClient(result: { data: unknown; error: unknown }) {
   const calls: Record<string, unknown[][]> = {};
-  // biome-ignore lint/suspicious/noExplicitAny: test stub
   const builder: any = {};
   for (const method of ["from", "select", "contains", "eq"]) {
     builder[method] = (...args: unknown[]) => {

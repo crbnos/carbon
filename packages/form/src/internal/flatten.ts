@@ -7,7 +7,7 @@ import { MultiValueMap } from "./MultiValueMap";
 
 export const objectFromPathEntries = (entries: [string, any][]) => {
   const map = new MultiValueMap<string, any>();
-  // biome-ignore lint/suspicious/useIterableCallbackReturn: suppressed due to migration
+  // oxlint-disable-next-line array-callback-return -- suppressed due to migration
   entries.forEach(([key, value]) => map.add(key, value));
   return [...map.entries()].reduce(
     (acc, [key, value]) =>

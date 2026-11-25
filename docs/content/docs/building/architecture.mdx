@@ -668,7 +668,7 @@ Pushing to `main` triggers each Vercel project's Git-integrated build. AWS deplo
 
 | Workflow       | Fires when                                                    | What it does                                                                                                                                               |
 | -------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `check.yml`    | every pull request                                            | Biome, oxfmt, typecheck, tests, translation and workflow-catalog checks; an edge-functions job fails any `../` import out of a function's directory, then runs `deno check` |
+| `check.yml`    | every pull request                                            | oxlint, oxfmt, typecheck, tests, translation and workflow-catalog checks; an edge-functions job fails any `../` import out of a function's directory, then runs `deno check` |
 | `build-images.yml` | every merge to `main`, or to a branch in the `RELEASE_BRANCHES` variable | builds every image, tagged with the commit, or re-tags one already built from the same files; on `main`, when the merge touched `apps/erp`, `apps/mes`, `packages` or `docs/content` and both app images succeeded, it calls `deploy.yml` |
 | `deploy.yml`   | called by `build-images.yml`, or run by hand | fans out `sst deploy` per workspace, then calls `post-deploy.yml` |
 | `supabase.yml` | merge touching `packages/database/supabase`                   | applies migrations and deploys edge functions, per workspace                                                                                               |
@@ -736,7 +736,7 @@ pnpm db:migrate:new <name>                      # create a migration
 pnpm db:migrate                                 # apply migrations
 pnpm run generate:types                         # regenerate database types
 pnpm exec turbo run typecheck --filter=erp      # typecheck one package
-pnpm run lint                                   # Biome
+pnpm run lint                                   # oxlint
 pnpm run test                                   # unit tests
 ```
 

@@ -544,7 +544,6 @@ const LinePricingOptions = ({
     convertedShippingCost: 0
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (selectedValue === "custom") {
       setSelectedLines((prev) => ({

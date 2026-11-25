@@ -1,0 +1,205 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // Every rule is listed below; nothing is on by default.
+  "plugins": ["eslint", "typescript", "react", "jsx-a11y"],
+  "env": { "builtin": true, "es2026": true, "browser": true, "node": true },
+  "categories": {
+    "correctness": "off",
+    "nursery": "off",
+    "pedantic": "off",
+    "perf": "off",
+    "restriction": "off",
+    "style": "off",
+    "suspicious": "off"
+  },
+  "options": {
+    "reportUnusedDisableDirectives": "warn",
+    // Suppress with oxlint-disable comments; eslint-disable ones are not read.
+    "respectEslintDisableDirectives": false
+  },
+  // Lints only the apps' app/ and the packages' src/ TypeScript, the Deno edge
+  // functions and the contrib examples. Everything else is ignored, even when
+  // named on the command line.
+  "ignorePatterns": [
+    "*",
+    "!*/",
+    "!apps/**/app/**/*.ts",
+    "!apps/**/app/**/*.tsx",
+    "!packages/**/src/**/*.ts",
+    "!packages/**/src/**/*.tsx",
+    "!packages/database/supabase/functions/**/*.ts",
+    "!contrib/building/examples/**/*.js",
+    "!contrib/building/examples/**/*.mjs",
+    "!contrib/building/examples/**/*.ts",
+    "!contrib/building/examples/**/*.tsx",
+    "packages/database/src/types.ts",
+    "packages/database/src/constants.ts",
+    "packages/database/src/swagger-docs-schema.ts",
+    "**/mcp*/lib/tools/",
+    "**/mcp*/lib/server.ts",
+    // oxlint reads a name with `.d.` in it as a declaration file and cannot
+    // parse these routes; it has no setting to say otherwise.
+    "apps/erp/app/routes/api+/integrations.onshape.d.*"
+  ],
+  "rules": {
+    // Accessibility
+    "jsx-a11y/no-access-key": "warn",
+    "jsx-a11y/aria-unsupported-elements": "warn",
+    "jsx-a11y/img-redundant-alt": "warn",
+    "jsx-a11y/no-redundant-roles": "warn",
+    "jsx-a11y/alt-text": "warn",
+    "jsx-a11y/anchor-has-content": "warn",
+    "jsx-a11y/aria-activedescendant-has-tabindex": "warn",
+    "jsx-a11y/role-has-required-aria-props": "warn",
+    "jsx-a11y/role-supports-aria-props": "warn",
+    "jsx-a11y/iframe-has-title": "warn",
+    "jsx-a11y/anchor-is-valid": "warn",
+    "jsx-a11y/aria-props": "warn",
+    "jsx-a11y/aria-role": ["warn", { "ignoreNonDOM": true }],
+    "jsx-a11y/aria-proptypes": "warn",
+    "jsx-a11y/lang": "warn",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "jsx-a11y/no-static-element-interactions": "warn",
+    "react/button-has-type": "warn",
+
+    // Complexity
+    "no-sequences": "warn",
+    "no-extra-boolean-cast": "warn",
+    "no-useless-constructor": "warn",
+    "no-useless-escape": "warn",
+    "no-extra-label": "warn",
+    "no-lone-blocks": "warn",
+    "no-useless-rename": "warn",
+    "no-useless-concat": "warn",
+    "no-useless-computed-key": "warn",
+
+    // Correctness
+    "no-const-assign": "error",
+    "no-empty-character-class": "warn",
+    "no-empty-pattern": "warn",
+    "no-use-before-define": [
+      "warn",
+      {
+        "functions": false,
+        "classes": false,
+        "variables": false,
+        "allowNamedExports": true,
+        "ignoreTypeReferences": true
+      }
+    ],
+    "no-self-assign": "warn",
+    "no-undef": "error",
+    "no-unreachable": "warn",
+    "no-this-before-super": "warn",
+    "no-unused-labels": "warn",
+    "no-unused-vars": [
+      "error",
+      {
+        "args": "none",
+        "ignoreRestSiblings": true,
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        // --fix removes an unused import; renaming an unused variable is left
+        // to the author.
+        "fix": { "imports": "safe-fix", "variables": "off" }
+      }
+    ],
+    "react/exhaustive-deps": "warn",
+    // Meant as an error, but oxlint also reads a call to any function named
+    // `use` as React's use() hook (3 sites); warn until those are settled.
+    "react/rules-of-hooks": "warn",
+    "use-isnan": "warn",
+    "react/jsx-key": "warn",
+    "valid-typeof": "warn",
+    "require-yield": "warn",
+
+    // Security
+    "react/no-danger-with-children": "warn",
+    "no-eval": "error",
+
+    // Style
+    "no-array-constructor": "warn",
+    "typescript/consistent-type-imports": [
+      "error",
+      {
+        "prefer": "type-imports",
+        "fixStyle": "separate-type-imports",
+        "disallowTypeAnnotations": false
+      }
+    ],
+
+    // Suspicious
+    "no-ex-assign": "warn",
+    "react/jsx-no-comment-textnodes": "warn",
+    // Use @carbon/logger (getLogger), never console.*: a console.error with an
+    // Error prints a multi-line stack, and the log collector stores each line
+    // as its own entry with no level. The logger writes one JSON record per
+    // line, error and stack inside. Terminal tools are exempt (overrides).
+    "no-console": "error",
+    "no-control-regex": "warn",
+    "no-duplicate-case": "warn",
+    "no-dupe-class-members": "warn",
+    "no-dupe-keys": "warn",
+    "no-empty": "warn",
+    "no-empty-function": "warn",
+    "no-empty-static-block": "warn",
+    "no-func-assign": "error",
+    "no-global-assign": "error",
+    "no-label-var": "warn",
+    // Meant as an error, but oxlint also reports a type and a value that
+    // share a name (3 sites); warn until those are settled.
+    "no-redeclare": "warn",
+    "no-self-compare": "warn",
+    "no-sparse-arrays": "warn",
+    "no-template-curly-in-string": "warn",
+    "no-unsafe-negation": "warn",
+    "getter-return": "warn",
+    "array-callback-return": ["warn", { "checkForEach": true }]
+  },
+  "overrides": [
+    {
+      // route-action-shape (packages/checks/oxlint-plugins). It warns, so the
+      // editor shows it and oxlint still passes; @carbon/checks reads the same
+      // diagnostics and fails on any that its baseline does not grandfather.
+      "files": ["**/erp/app/routes/**"],
+      "excludeFiles": ["**/*.test.ts", "**/*.test.tsx"],
+      "jsPlugins": ["./packages/checks/oxlint-plugins/carbon.mjs"],
+      "rules": { "carbon/route-action-shape": "warn" }
+    },
+    {
+      "files": [
+        "**/*.spec.ts",
+        "**/*.test.ts",
+        "**/tests/**/*.ts",
+        "**/__tests__/**/*.ts"
+      ],
+      "rules": { "no-console": "off" }
+    },
+    {
+      // Terminal tools, whose output IS the console: every package's
+      // src/scripts, the example apps under contrib/, crbn, the seeds and
+      // the datasets.
+      "files": [
+        "**/src/scripts/**",
+        "contrib/**",
+        "packages/dev/**",
+        "packages/database/src/seed*.ts",
+        "packages/database/src/check-datasets.ts",
+        "packages/database/src/datasets/**",
+        "packages/database/src/authz/cli.ts"
+      ],
+      "rules": { "no-console": "off" }
+    },
+    {
+      // Supabase edge functions run on Deno, not Node: they use their own
+      // import style and cannot import @carbon/logger.
+      "files": ["packages/database/supabase/functions/**/*.ts"],
+      "rules": {
+        "no-undef": "off",
+        "no-unused-vars": "off",
+        "typescript/consistent-type-imports": "off",
+        "no-console": "off"
+      }
+    }
+  ]
+}

@@ -50,7 +50,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, supplierId, ...d } = validation.data;
   if (!id) throw notFound("Contractor ID was not found");
 

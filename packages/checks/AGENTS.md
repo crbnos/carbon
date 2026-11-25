@@ -58,23 +58,21 @@ fails on any violation the committed baseline does not list.
   - The PL/pgSQL parser has no catalog and refuses about 1% of bodies Postgres
     accepts (a `%ROWTYPE` variable, an undeclared variable in a fixture). Their
     statements are then read one by one, without conditions or loop queries.
-- **A rule about TypeScript syntax is a Biome plugin, not a regex.** Write a
-  GritQL file in `biome-plugins/` and a `Check` that reads its findings
-  (`routeActionShape` in `routes.ts` is the example). Then:
+- **A rule about TypeScript syntax is an oxlint plugin rule, not a regex.**
+  Add a rule to the `carbon` plugin in `oxlint-plugins/carbon.mjs` (ESLint's
+  `create(context)` API; the rule name is the check id) and a `Check` that
+  reads its findings (`routeActionShape` in `routes.ts` is the example). Then:
   - Enable it for its folders with an `overrides` entry in the root
-    `biome.jsonc`. The object form of `plugins` with `includes` does not match
-    repo-relative globs in Biome 2.5.
-  - Report `severity = "warn"`, so the editor shows it and `biome lint` still
-    passes. The gate reads the same diagnostics (`src/sources/biome.ts`).
-  - End the message with the check id in brackets (`… [route-action-shape]`).
-    Biome 2.5 reports every plugin under the one category `plugin`.
-  - Make the diagnostic `span` the callee, not the whole call: the baseline
-    key is the matched source with comments and whitespace removed.
-  - Test it in `src/sources/biome.test.ts` (`scanWith`).
+    `.oxlintrc.json` (`"carbon/<check-id>": "warn"`).
+  - Keep it at `warn`, so the editor shows it and `oxlint` still passes. The
+    gate reads the same diagnostics by rule id (`src/sources/oxlint.ts`).
+  - Report the callee, not the whole call: the baseline key is the matched
+    source with comments and whitespace removed.
+  - Test it in `src/sources/oxlint.test.ts` (`scanWith`).
 - **A rule that needs the syntax tree and cannot be a plugin reads oxc's.**
   `src/sources/syntax.ts` gives `parseTypescript` and `walk` (`oxc-parser`:
   ESTree with the TypeScript and JSX nodes, offsets into the text). A check
-  that compares files, or needs data from the repo, cannot be a Biome plugin.
+  that compares files, or needs data from the repo, cannot be a plugin rule.
   Test whether the file can matter with a cheap text test before you parse it.
 - **A new check proves itself on the bug it exists for.** Its
   `provenance.incidents` names the commit of the past fix. Its test file names
@@ -105,8 +103,8 @@ fails on any violation the committed baseline does not list.
   branch and on main since the merge base. Rebase first.
 - Remove a check to silence a violation. Add the site to the baseline if it
   should be grandfathered.
-- Run `biome check --write --unsafe` here. Its fix for an unused import can
-  remove the file's license header with it.
+- Run `oxlint --fix-suggestions` or `--fix-dangerously` here. Those fixes
+  can change what the code does; `oxlint --fix` applies only safe ones.
 
 ## Validation Commands
 
@@ -138,8 +136,8 @@ The gate runs in four places with the same command
 | `src/run.ts`, `src/run.worker.ts` | `collectFindings` (runs `CHECKS` on up to 4 worker threads, each with its own `repo`), `runChecks` (one `repo`, in process) and `newViolations` (minus the baseline) |
 | `src/repo.ts` | `openRepo`: reads each input once |
 | `src/conformance/` | One file per subject, with its tests in `<subject>.test.ts` |
-| `src/sources/` | Loaders several checks share; `sql.ts` (parsed SQL), `syntax.ts` (parsed TypeScript) and `biome.ts` (plugin findings) |
-| `biome-plugins/` | The GritQL rules |
+| `src/sources/` | Loaders several checks share; `sql.ts` (parsed SQL), `syntax.ts` (parsed TypeScript) and `oxlint.ts` (plugin findings) |
+| `oxlint-plugins/carbon.mjs` | The oxlint plugin rules |
 | `src/baseline.ts`, `src/conformance/baseline.json` | The grandfathered violations |
 | `src/provenance.ts` | The rule that a check replays its past fix |
 | `src/invariants/` | SQL invariants, run against a live database |

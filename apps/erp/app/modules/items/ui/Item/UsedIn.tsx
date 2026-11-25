@@ -246,7 +246,7 @@ export function UsedInTree({
  *
  * The lookup lives here rather than in the callers so that neither `UsedInItem`
  * nor `RevisionsItem` gains a hook — `UsedInItem` has a conditional early
- * return, so any hook added after it trips `useHookAtTopLevel`.
+ * return, so any hook added after it trips `react/rules-of-hooks`.
  */
 function UsedInGroupTooltip({
   tooltipKey,

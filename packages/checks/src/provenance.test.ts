@@ -94,7 +94,7 @@ const UNPROVEN_CHECKS = new Set([
 // lets an unproven check in, which is what this test exists to stop. It went
 // from 61 to 63 once, when checks began to be read from the registry: the list
 // had been built from file names, which hid `account-fk-classified` (it shares
-// one file with `account-fk-restrict`) and `route-action-shape` (a Biome plugin). Both
+// one file with `account-fk-restrict`) and `route-action-shape` (a lint plugin). Both
 // predate this rule.
 const UNPROVEN_CEILING = 63;
 

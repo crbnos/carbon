@@ -6,28 +6,23 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { pluginFindings, runBiomePlugins } from "./biome";
 import { repoRoot } from "./migrations";
+import { pluginFindings, runOxlint } from "./oxlint";
 
-const diagnostic = (message: string) => ({
-  category: "plugin",
-  message,
-  location: {
-    path: "a.ts",
-    start: { line: 1, column: 7 },
-    end: { line: 3, column: 13 }
-  }
+const diagnostic = (code: string) => ({
+  code,
+  message: "Move it.",
+  severity: "warning",
+  filename: "a.ts",
+  labels: [{ span: { offset: 6, length: 28, line: 1, column: 7 } }]
 });
 
 describe("pluginFindings", () => {
   const source = 'await client\n  // why\n  .from("x").update({ a: 1 });';
 
-  it("names the check from the message and the snippet from the span", () => {
+  it("names the check from the rule and the snippet from the span", () => {
     expect(
-      pluginFindings(
-        [diagnostic("Move it. [route-action-shape]")],
-        () => source
-      )
+      pluginFindings([diagnostic("carbon(route-action-shape)")], () => source)
     ).toEqual([
       {
         checkId: "route-action-shape",
@@ -41,39 +36,62 @@ describe("pluginFindings", () => {
     ]);
   });
 
-  it("refuses a plugin message that names no check", () => {
-    expect(() =>
-      pluginFindings([diagnostic("Move it.")], () => source)
-    ).toThrow("must end with its check id");
+  it("leaves out the diagnostics of other rules", () => {
+    expect(
+      pluginFindings([diagnostic("eslint(no-unused-vars)")], () => source)
+    ).toEqual([]);
   });
 });
-
-/** Runs one plugin of `biome-plugins/` over `contents` as an ERP route. */
-function scanWith(plugin: string, contents: string): string[] {
-  const root = repoRoot();
-  const dir = mkdtempSync(join(tmpdir(), "carbon-biome-plugin-"));
-  dirs.push(dir);
-  mkdirSync(join(dir, "routes"));
-  writeFileSync(join(dir, "routes/route.tsx"), contents);
-  writeFileSync(
-    join(dir, "biome.json"),
-    JSON.stringify({
-      root: true,
-      plugins: [join(root, "packages/checks/biome-plugins", `${plugin}.grit`)]
-    })
-  );
-  return pluginFindings(runBiomePlugins(root, ["routes"], dir), () => contents)
-    .sort((a, b) => a.violation.line - b.violation.line)
-    .map((f) => f.violation.snippet);
-}
 
 const dirs: string[] = [];
 afterAll(() => {
   for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
 });
 
+/** A folder with `config` as its oxlint config and `contents` as an ERP route. */
+function routeFolder(config: object, contents: string): string {
+  const dir = mkdtempSync(join(tmpdir(), "carbon-oxlint-plugin-"));
+  dirs.push(dir);
+  mkdirSync(join(dir, "routes"));
+  writeFileSync(join(dir, "routes/route.tsx"), contents);
+  writeFileSync(join(dir, ".oxlintrc.json"), JSON.stringify(config));
+  return dir;
+}
+
+/** Runs one rule of the `carbon` plugin over `contents` as an ERP route. */
+function scanWith(rule: string, contents: string): string[] {
+  const root = repoRoot();
+  const dir = routeFolder(
+    {
+      plugins: [],
+      categories: { correctness: "off" },
+      jsPlugins: [join(root, "packages/checks/oxlint-plugins/carbon.mjs")],
+      rules: { [`carbon/${rule}`]: "warn" }
+    },
+    contents
+  );
+  return pluginFindings(runOxlint(root, ["routes"], dir), () => contents)
+    .sort((a, b) => a.violation.line - b.violation.line)
+    .map((f) => f.violation.snippet);
+}
+
+describe("runOxlint", () => {
+  it("fails when the plugin does not load", () => {
+    const dir = routeFolder(
+      {
+        jsPlugins: ["./missing.mjs"],
+        rules: { "carbon/route-action-shape": "warn" }
+      },
+      "export {};"
+    );
+    expect(() => runOxlint(repoRoot(), ["routes"], dir)).toThrow(
+      "oxlint printed no JSON report"
+    );
+  });
+});
+
 describe("route-action-shape", () => {
-  const scan = (contents: string) => scanWith("routeActionShape", contents);
+  const scan = (contents: string) => scanWith("route-action-shape", contents);
 
   it("flags a client write across lines", () => {
     expect(
@@ -111,5 +129,11 @@ describe("route-action-shape", () => {
         '// await client.from("job").delete();\nconst text = \'client.from("job").delete()\';'
       )
     ).toEqual([]);
+  });
+
+  it("reads the span in bytes after non-ASCII text", () => {
+    expect(
+      scan('const label = "Größe";\nawait client.from("job").delete();')
+    ).toEqual(['client.from("job").delete']);
   });
 });

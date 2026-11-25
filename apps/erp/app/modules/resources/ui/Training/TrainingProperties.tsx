@@ -49,7 +49,6 @@ const TrainingProperties = () => {
       toastServiceError(data);
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
       field:
@@ -74,6 +73,7 @@ const TrainingProperties = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [id]
   );
 

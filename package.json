@@ -1,8 +1,8 @@
 {
   "name": "carbon",
   "devDependencies": {
-    "@biomejs/biome": "2.5.15",
     "oxfmt": "0.79.0",
+    "oxlint": "1.94.0",
     "@carbon/api": "workspace:*",
     "@lingui/cli": "catalog:",
     "@opentelemetry/semantic-conventions": "1.40.0",
@@ -36,11 +36,10 @@
   },
   "lint-staged": {
     "(apps|packages|docs)/**/*.{js,ts,jsx,tsx}": [
-      "biome check --write --no-errors-on-unmatched",
+      "oxlint --fix --no-error-on-unmatched-pattern",
       "oxfmt --no-error-on-unmatched-pattern"
     ],
     "*.json": [
-      "biome check --write --no-errors-on-unmatched",
       "oxfmt --no-error-on-unmatched-pattern"
     ]
   },
@@ -78,7 +77,7 @@
     "sweep:tools": "pnpm --filter erp exec vitest run --config vitest.sweep.config.ts",
     "generate:swagger": "tsx scripts/generate-swagger-docs.ts && pnpm exec oxfmt packages/database/src/swagger-docs-schema.ts",
     "generate:types": "tsx scripts/generate-db-types.ts",
-    "generate:workflow-catalog": "tsx scripts/generate-workflow-catalog.ts && pnpm exec biome check --write packages/ee/src/workflows/catalog/ && pnpm exec oxfmt packages/ee/src/workflows/catalog/",
+    "generate:workflow-catalog": "tsx scripts/generate-workflow-catalog.ts && pnpm exec oxlint --fix packages/ee/src/workflows/catalog/ && pnpm exec oxfmt packages/ee/src/workflows/catalog/",
     "install-skills": "bash .ai/scripts/install-skills.sh",
     "license:headers": "pnpm --filter @carbon/checks license-headers --",
     "lingui:check": "pnpm run lingui:extract && pnpm run lingui:compile",
@@ -114,7 +113,6 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@biomejs/biome",
       "@swc/core",
       "@tailwindcss/oxide",
       "core-js",

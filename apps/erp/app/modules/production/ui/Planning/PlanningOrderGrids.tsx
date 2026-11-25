@@ -466,7 +466,6 @@ export function OpenOrdersGrid({
 
   // `handlers` is a rest object, new on every render, so the memo depends on
   // its members instead.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the handler members listed ARE `handlers`
   const columns = useMemo<ColumnDef<OpenOrderRow>[]>(
     () => [
       {
@@ -590,6 +589,7 @@ export function OpenOrdersGrid({
         }
       }
     ],
+    // oxlint-disable-next-line react/exhaustive-deps -- the handler members listed ARE `handlers`
     [
       documentHeader,
       quantityHeader,

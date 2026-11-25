@@ -377,7 +377,6 @@ function ElementGraphCanvas({
   const boxSignature = layout.boxes
     .map((box) => `${box.id}:${box.x}:${box.y}:${box.width}:${box.height}`)
     .join("|");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the box signature is the trigger; fitTree reads the boxes from a ref.
   useEffect(() => {
     if (nodesInitialized) fitTree();
   }, [nodesInitialized, boxSignature, fitTree]);

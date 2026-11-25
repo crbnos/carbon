@@ -6,9 +6,9 @@
 // A loader that already takes only `root` (`loadServerFiles`, `loadDbTableColumns`,
 // `loadTestFiles`, …) is passed to `repo.read` as it is and is not repeated here.
 
-import { loadPluginFindings } from "./biome";
 import { loadSqlFiles, migrationsDir } from "./migrations";
 import { loadModules, modulesDir } from "./modules";
+import { loadPluginFindings } from "./oxlint";
 import { readableSql } from "./sql";
 import {
   loadTypescriptFiles,
@@ -34,6 +34,6 @@ export const routeTypescript = (root: string) =>
 /** The ERP's module folders. */
 export const erpModules = (root: string) => loadModules(modulesDir(root));
 
-/** What the Biome plugins report for the ERP routes (`biome-plugins/*.grit`). */
+/** What the `carbon` oxlint plugin reports for the ERP routes (`oxlint-plugins/carbon.mjs`). */
 export const pluginFindings = (root: string) =>
   loadPluginFindings(root, ["apps/erp/app/routes"]);

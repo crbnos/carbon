@@ -133,9 +133,9 @@ export default function SurfacesField<S extends string = TransactionSurface>({
 
   // Mirror selection up to the form. Identity of `onSurfacesChange` not
   // tracked — parent wraps in `useCallback` if it needs stability.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: callback identity intentionally untracked
   useEffect(() => {
     onSurfacesChange?.(selected);
+    // oxlint-disable-next-line react/exhaustive-deps -- callback identity intentionally untracked
   }, [selected]);
 
   let options: ChoiceSelectOption<S>[];

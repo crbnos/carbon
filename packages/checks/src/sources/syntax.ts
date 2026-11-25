@@ -14,7 +14,7 @@ import {
   visitorKeys
 } from "oxc-parser";
 
-// A rule about TypeScript syntax that is not a Biome plugin reads the tree
+// A rule about TypeScript syntax that is not an oxlint rule reads the tree
 // oxc's parser returns (ESTree, with the TypeScript and JSX node types). Every
 // node has `type`, and `start` / `end` as offsets into the text it was parsed
 // from, so `contents.slice(node.start, node.end)` is its source.

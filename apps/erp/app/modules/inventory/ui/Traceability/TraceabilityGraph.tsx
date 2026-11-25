@@ -162,7 +162,6 @@ function TraceabilityGraphInner({
   const probeCacheRef = useRef<Map<string, LineagePayload>>(new Map());
   const probedRef = useRef<Set<string>>(new Set());
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on payload identity change (loader refetch)
   useEffect(() => {
     resetStore(rootId);
     probeCacheRef.current = new Map();

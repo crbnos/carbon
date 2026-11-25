@@ -319,7 +319,6 @@ const WorkCentersTable = memo(
       t
     ]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const renderContextMenu = useCallback<(row: WorkCenter) => JSX.Element>(
       (row) => (
         <>
@@ -365,6 +364,7 @@ const WorkCentersTable = memo(
         </>
       ),
 
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
       [navigate, params, permissions]
     );
 

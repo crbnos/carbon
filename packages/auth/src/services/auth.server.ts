@@ -449,7 +449,6 @@ export type CallerAuth = Pick<
  * functions states their type once:
  * `declare module "@carbon/auth/auth.server" { interface Register { api: Api<Router> } }`.
  */
-// biome-ignore lint/suspicious/noEmptyInterface: augmented by the app
 export interface Register {}
 
 type RegisteredApi = Register extends { api: infer A } ? A : never;

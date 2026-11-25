@@ -106,7 +106,7 @@ a. **Floor gates** — format first, then the harness gate suite (lint +
    `@carbon/checks` conformance + clobber detection), then scoped typechecks:
 
    ```bash
-   pnpm exec biome check --write --no-errors-on-unmatched <changed paths>
+   pnpm exec oxlint --fix --no-error-on-unmatched-pattern <changed paths>
    pnpm exec oxfmt --no-error-on-unmatched-pattern <changed paths>
    pnpm --filter @carbon/harness gates
    pnpm exec turbo run typecheck --filter=<pkg>   # per touched package, never whole-repo
@@ -212,7 +212,7 @@ Before opening the PR:
 
 ## Step 5: Finish — land a gated PR
 
-1. Final pass: run `/check-and-commit` on the branch state (biome + gates), so
+1. Final pass: run `/check-and-commit` on the branch state (oxlint + gates), so
    the PR goes up clean.
 2. Open the PR with `gh pr create` — **never merge**. Write the body with the
    `pr` skill (`.claude/skills/pr/SKILL.md`): Summary, Evidence, Merge Danger.

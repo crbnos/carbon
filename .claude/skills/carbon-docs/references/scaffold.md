@@ -90,7 +90,7 @@ Fumadocs/Next versions to current stable at scaffold time.
     "build": "next build",
     "start": "next start -p 3002",
     "postinstall": "fumadocs-mdx",       // generates the .source types
-    "lint": "biome lint --write",
+    "lint": "oxlint --fix --no-error-on-unmatched-pattern",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -190,7 +190,7 @@ export default withMDX(config);
   Run `pnpm install` from the root so workspace links resolve.
 - **Turbo:** nothing to add — the generic `dev` and `build` tasks run the app's scripts, and `.next/**`
   is already an output. Confirm with `pnpm --filter docs dev`.
-- **Biome:** inherits the root `biome.jsonc`. Don't add a local linter config.
+- **oxlint:** inherits the root `.oxlintrc.json`. Don't add a local linter config.
 - **Optional root script:** add `"dev:docs": "turbo run dev --filter=docs"` to the root `package.json`
   to match the `dev:erp` / `dev:academy` ergonomics.
 

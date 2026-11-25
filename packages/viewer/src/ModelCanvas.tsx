@@ -219,7 +219,6 @@ function useLoadedObject(
     error: string | null;
   }>({ scene: null, isLoading: Boolean(loadObject), error: null });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey re-runs the load on retry without being read inside
   useEffect(() => {
     if (!loadObject) {
       setState({ scene: null, isLoading: false, error: null });

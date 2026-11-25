@@ -299,7 +299,7 @@ const Gantt = ({
         getTreeProps={getTreeProps}
         renderNode={({ node, state }) => (
           <>
-            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard selection lives on the role="tree" container */}
+            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard selection lives on the role="tree" container */}
             <div
               className={cn(
                 "group flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
@@ -730,7 +730,6 @@ const GanttTimeline = ({
 
   //we want to live-update the duration if the root span is still in progress
   const [duration, setDuration] = useState(totalDuration);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (rootSpanStatus !== "inprogress" || !rootStartedAt) {
       setDuration(totalDuration);
@@ -742,6 +741,7 @@ const GanttTimeline = ({
     }, 5000);
 
     return () => clearInterval(interval);
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [totalDuration, rootSpanStatus]);
 
   // Absolute-mode axis ticks. Explicit offsets win (e.g. one per day on a week

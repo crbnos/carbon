@@ -180,7 +180,7 @@
     "clean": "rimraf .cache .turbo node_modules dist build",
     "dev": "portless --script dev:app run --force",
     "dev:app": "react-router dev",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "start": "NODE_ENV=production node ./server/node.ts",
     "test": "vitest run",
     "typecheck": "react-router typegen && ../../packages/dev/bin/heavy-lock tsc --noEmit",

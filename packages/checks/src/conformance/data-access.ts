@@ -1262,8 +1262,8 @@ function requestEnd(text: string, from: number): number {
  * The fix: bind `error`, and return or throw on it. A best-effort write still
  * binds its result and logs the error.
  *
- * Left to others: a bound `error` that is never read fails Biome's
- * `noUnusedVariables`. What the code does with the error is beyond a text
+ * Left to others: a bound `error` that is never read fails oxlint's
+ * `no-unused-vars`. What the code does with the error is beyond a text
  * check.
  *
  * Known gaps: a query builder kept in a variable (`const q = client.from(…);

@@ -596,7 +596,6 @@ function useProjectNames(lines: ContractLine[]): Record<string, string> {
   ].sort();
   const key = projectIds.join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the id list, not the array identity
   useEffect(() => {
     if (!carbon || projectIds.length === 0) return;
     let cancelled = false;
@@ -615,6 +614,7 @@ function useProjectNames(lines: ContractLine[]): Record<string, string> {
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- keyed on the id list, not the array identity
   }, [carbon, key]);
 
   return names;

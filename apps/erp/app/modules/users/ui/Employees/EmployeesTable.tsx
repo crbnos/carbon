@@ -121,7 +121,6 @@ const EmployeesTable = memo(
 
     const canEdit = permissions.has(subjectGates("Edit").person);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(() => {
       return [
         {
@@ -295,6 +294,7 @@ const EmployeesTable = memo(
           }
         }
       ];
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, [params, mfaEnrolledSet, requireMfa]);
 
     const renderActions = useCallback(

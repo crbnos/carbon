@@ -115,7 +115,6 @@ function ItemBoMExplorerContent({
 
   const [searchParams] = useSearchParams();
   const selectedMaterialId = searchParams.get("materialId");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (!selectedMaterialId) {
       deselectAllNodes();
@@ -133,6 +132,7 @@ function ItemBoMExplorerContent({
       );
       if (node?.id) selectNode(node?.id);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [selectedMaterialId, params.methodId]);
 
   return (

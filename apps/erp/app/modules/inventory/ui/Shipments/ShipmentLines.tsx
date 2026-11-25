@@ -163,7 +163,6 @@ const ShipmentLines = () => {
     }, {});
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     setSerialNumbersByLineId(
       shipmentLines.reduce((acc, line) => {
@@ -199,9 +198,9 @@ const ShipmentLines = () => {
         };
       }, {})
     );
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [routeData?.shipment?.sourceDocumentId, routeData?.shipmentLines?.length]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateShipmentLine = useCallback(
     async ({
       lineId,
@@ -229,6 +228,7 @@ const ShipmentLines = () => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     []
   );
 
@@ -876,7 +876,6 @@ function BatchForm({
     isShippable(shipment, resolvedBatch?.status);
 
   // Verify batch quantity is sufficient for the shipped quantity
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (
       values.number &&
@@ -901,6 +900,7 @@ function BatchForm({
         });
       }
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [line.shippedQuantity]);
 
   const getStorageUnitFromBatchNumber = async (trackedEntityId: string) => {
@@ -923,7 +923,6 @@ function BatchForm({
   };
 
   // Fetch the latest storage unit for the selected batch number
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (values.number && values.number.trim()) {
       const resolved = resolveTrackedEntity(
@@ -934,6 +933,7 @@ function BatchForm({
         getStorageUnitFromBatchNumber(resolved.id);
       }
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [values.number]);
 
   const updateBatchNumber = async (newValues: typeof values, isNew = false) => {
@@ -1003,7 +1003,6 @@ function BatchForm({
       if (
         attributes["Shipment Line"] &&
         attributes["Shipment Line"] !== line.id &&
-        // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
         attributes["Shipment"] === shipment?.id
       ) {
         setError("Batch number is already used on another shipment line");

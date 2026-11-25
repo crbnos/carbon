@@ -83,7 +83,6 @@ export function useInfiniteScroll(
   const isLoadingMore = rows?.isLoadingMore ?? false;
   const loadError = rows?.loadError ?? false;
   const loadMore = rows?.loadMore;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: totalLoaded re-checks after each page renders
   useEffect(() => {
     if (inView && hasMore && !isLoadingMore && !loadError) loadMore?.();
   }, [inView, hasMore, isLoadingMore, loadError, loadMore, rows?.totalLoaded]);
@@ -115,12 +114,12 @@ export function useInfiniteScroll(
   // scroll: its reset key follows every search param, not only its own.
   const resetKey = rows?.resetKey;
   const resetKeyRef = useRef(resetKey);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the list changes only
   useEffect(() => {
     if (resetKeyRef.current === resetKey) return;
     resetKeyRef.current = resetKey;
     if (!isOn) return;
     resolveRoot(root, sentinel)?.scrollTo({ top: 0 });
+    // oxlint-disable-next-line react/exhaustive-deps -- runs when the list changes only
   }, [resetKey]);
 
   return setSentinel;

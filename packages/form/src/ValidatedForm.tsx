@@ -412,7 +412,6 @@ export function ValidatedForm<
     setFormElementInState(formRef.current);
   }, [setFormElementInState]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     setFieldErrors(backendError?.fieldErrors ?? {});
     if (backendError?.fieldErrors) endSubmit();

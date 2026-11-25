@@ -198,7 +198,6 @@ const JobsTable = memo((props: JobsTableProps) => {
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
   const customColumns = useCustomColumns<JobRow>("job");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const columns = useMemo<ColumnDef<JobRow>[]>(() => {
     const defaultColumns: ColumnDef<JobRow>[] = [
       {
@@ -656,6 +655,7 @@ const JobsTable = memo((props: JobsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [params, customColumns]);
 
   const { submit: submitBulk } = useBulkFormAction();
@@ -786,7 +786,6 @@ const JobsTable = memo((props: JobsTableProps) => {
     [onBulkUpdate, permissions, releaseFetcher, releaseLimitLabel]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const renderContextMenu = useCallback<(row: JobRow) => JSX.Element>(
     (row) => (
       <>
@@ -814,6 +813,7 @@ const JobsTable = memo((props: JobsTableProps) => {
       </>
     ),
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [navigate, params, permissions]
   );
 

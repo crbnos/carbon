@@ -212,7 +212,7 @@ Carbon is intended to be the core of a bespoke end-to-end manufacturing system. 
 | 3D & CAD       | [three.js](https://threejs.org) / react-three-fiber; Rust with [OpenCASCADE](https://dev.opencascade.org) and [FCL](https://github.com/flexible-collision-library/fcl) |
 | Documents      | [React PDF](https://react-pdf.org), [React Email](https://react.email), [TipTap](https://tiptap.dev) |
 | i18n           | [Lingui](https://lingui.dev)                                                                      |
-| Tooling        | [pnpm](https://pnpm.io), [Turborepo](https://turbo.build), [Biome](https://biomejs.dev), [oxfmt](https://oxc.rs/docs/guide/usage/formatter), [Vitest](https://vitest.dev) |
+| Tooling        | [pnpm](https://pnpm.io), [Turborepo](https://turbo.build), [oxlint](https://oxc.rs/docs/guide/usage/linter), [oxfmt](https://oxc.rs/docs/guide/usage/formatter), [Vitest](https://vitest.dev) |
 | Docs           | [Next.js](https://nextjs.org) + [Fumadocs](https://fumadocs.dev)                                  |
 | Hosting        | [AWS](https://aws.amazon.com) via [SST](https://sst.dev), or self-hosted with Docker              |
 
@@ -426,11 +426,11 @@ The underlying script, `scripts/restore-database.sh`, can still be invoked direc
 | `pnpm db:migrate`                  | Apply pending migrations                                     |
 | `pnpm generate:types`              | Regenerate database types after a migration                  |
 | `pnpm db:seed:dev -- --dataset <key>` | Seed a demo company                                       |
-| `pnpm lint` / `pnpm test`          | Biome lint / unit tests                                      |
+| `pnpm lint` / `pnpm test`          | oxlint lint / unit tests                                     |
 | `pnpm exec turbo run typecheck --filter=<pkg>` | Typecheck one package                            |
 | `pnpm --filter <pkg> <cmd>`        | Run a command in one workspace                               |
 
-This project uses [Biome](https://biomejs.dev/) for linting and [oxfmt](https://oxc.rs/docs/guide/usage/formatter) for formatting; install the [Biome](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) and [Oxc](https://marketplace.visualstudio.com/items?itemName=oxc.oxc-vscode) VS Code extensions for lint and format-on-save.
+This project uses [oxlint](https://oxc.rs/docs/guide/usage/linter) for linting and [oxfmt](https://oxc.rs/docs/guide/usage/formatter) for formatting; install the [Oxc](https://marketplace.visualstudio.com/items?itemName=oxc.oxc-vscode) VS Code extension for lint and format-on-save.
 
 <br />
 

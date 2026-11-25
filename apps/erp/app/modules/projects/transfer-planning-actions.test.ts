@@ -56,7 +56,7 @@ class ScriptedDriver extends DummyDriver {
         this.sent.push(query);
         return { rows: (this.results.shift() ?? []) as R[] };
       },
-      // biome-ignore lint/correctness/useYield: never streamed
+      // oxlint-disable-next-line require-yield -- never streamed
       streamQuery: async function* () {
         throw new Error("not streamed");
       }

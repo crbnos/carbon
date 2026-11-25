@@ -201,7 +201,6 @@ const DocumentsTable = memo(
       [favorite, writeOverride]
     );
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<Document>[]>(() => {
       return [
         {
@@ -442,6 +441,7 @@ const DocumentsTable = memo(
           }
         }
       ];
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, [
       ERP_URL,
       extensions,

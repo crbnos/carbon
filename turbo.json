@@ -48,7 +48,8 @@
         "$TURBO_DEFAULT$",
         "!**/AGENTS.md",
         "!**/CLAUDE.md",
-        "$TURBO_ROOT$/biome.jsonc"
+        "$TURBO_ROOT$/.oxlintrc.json",
+        "$TURBO_ROOT$/packages/checks/oxlint-plugins/carbon.mjs"
       ],
       "outputs": []
     },

@@ -14,6 +14,6 @@ export default function useCallbackRef<T extends (...args: any[]) => any>(
     callbackRef.current = callback;
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   return useCallback(((...args) => callbackRef.current?.(...args)) as T, deps);
 }

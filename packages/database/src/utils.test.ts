@@ -50,7 +50,6 @@ function fakeTable(
           }, 0);
         });
       }
-      // biome-ignore lint/suspicious/noExplicitAny: test double for a postgrest builder
     }) as any;
 
   return { build, ranges, maxInFlight: () => maxInFlight };

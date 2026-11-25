@@ -43,8 +43,10 @@ reviews:
     unit_tests:
       enabled: false
 
-  # Biome already runs in the pre-commit hook; prose and markdown linting is noise.
+  # oxlint already runs in the pre-commit hook; prose and markdown linting is noise.
   tools:
+    oxc:
+      enabled: false
     biome:
       enabled: false
     languagetool:

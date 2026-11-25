@@ -27,7 +27,6 @@ export const SetupFrame = ({
 }) => {
   // The frame outlives the steps, so a new step starts at the top.
   const scrollRef = useRef<HTMLDivElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on step change
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [step]);

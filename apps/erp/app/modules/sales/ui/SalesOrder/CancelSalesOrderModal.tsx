@@ -48,10 +48,10 @@ export function CancelSalesOrderModal({
 
   const [selection, setSelection] = useState<Set<string> | null>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (!isOpen) return;
     previewFetcher.load(path.to.salesOrderCancelPreview(orderId));
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [isOpen, orderId]);
 
   useEffect(() => {

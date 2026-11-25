@@ -114,7 +114,7 @@ const partsDatabase = (() => {
     executeQuery: async () => ({
       rows: ["i", "item-1", "r-1"].map((id) => ({ id, type: "Part" }))
     }),
-    // biome-ignore lint/correctness/useYield: never streamed
+    // oxlint-disable-next-line require-yield -- never streamed
     streamQuery: async function* () {
       throw new Error("not streamed");
     }
