@@ -1,6 +1,6 @@
 # Project Materials Page
 
-> Status: draft
+> Status: in-progress
 > Author: naveenkash
 > Date: 2026-11-25
 > Research: `.ai/research/2026-11-24-project-items-view.md`
@@ -138,16 +138,20 @@ The RPC computes the issue status in SQL. The TypeScript side reads it and never
 2. **Unassigned on hand**: the sum of `itemStockQuantities.quantityOnHand` where `projectId` = `''`, at the project's location (`project.locationId`).
 
 **Toolbar.** The toolbar has one row, like the Pegging page:
-1. A search box. It matches the item's readable id and name, and the element's readable id and name.
-2. A **Supply status** filter (multi-select): No supply, the PO statuses and the job statuses.
-3. An **Issue status** filter (multi-select): Not issued, Partly issued, Issued, Unplanned.
-4. A **Group by** select: **Element** (the default) or **Item**.
+1. A search box (`?search=`). It matches the item's readable id and name, and the element's readable id and name.
+2. One **Filter** button, as on the Plan page (`ElementsHeader`). It holds 2 filters:
+   - **Supply status** (multi-select): No supply, the PO statuses and the job statuses.
+   - **Issue status** (multi-select): Not issued, Partly issued, Issued, Unplanned.
+   The filters live in `?filter=` (for example `filter=supplyStatus:eq:No supply`). When a filter is set, its chips replace the button.
+3. A **Group by** select (`?groupBy=`): **Element** (the default) or **Item**.
 
-The page keeps all 4 in the URL (`useUrlParams`), so a link reopens the same view.
+All of them live in the URL, so a link reopens the same view.
 
-**Grouping.**
-- **Element:** one group per element, in element number order (`projectElement.sequence`). The unplanned rows with no element come last, under **Project (no element)**.
-- **Item:** one group per item. The group header shows the totals of Required, Ordered, Received, Issued and Remaining. If the rows of a group use more than one unit of measure, the header shows no totals.
+**Column order.** Item or Element, Method, Issue status, Supply, Required, Ordered, Received, Issued, Remaining, Required date, then the stock columns. The status columns come first so that they show without a horizontal scroll at 1440 px. The table scrolls on its own; the toolbar does not move.
+
+**Grouping.** The page hides the column that the group row already names.
+- **Element:** one group per element, in element number order (`projectElement.sequence`). The unplanned rows with no element come last, under **Project (no element)**. The Element column is hidden.
+- **Item:** one group per item. The group header shows the totals of Required, Ordered, Received, Issued and Remaining, next to the item's name. If the rows of a group use more than one unit of measure, the header shows no totals. The Item column is hidden.
 
 **Size.** The page is a single-load list (`.claude/rules/table-infinite-scroll.md`). The RPC returns at most 1,001 rows. If it returns 1,001, the page shows the first 1,000 and the truncated notice.
 
@@ -375,3 +379,4 @@ Plan and sidebar:
 - 2026-11-25: Q8. The status now shows the real records (element state, PO status, job status) and an issue status. It replaces the 7 derived labels of Q5 and Q7. The toolbar has a Supply status filter and an Issue status filter.
 - 2026-11-25: Q9. The page reads through the system handle after the Projects View check. The Project Issue count now sums every row except the inventory side of a relocation pair. The part route's 2 Used In trees both get the group.
 - 2026-11-25: Planning fixes. The Element cell drops the WBS code, because the RPC cannot compute derived codes. Element groups sort by `sequence`. A Used In entry carries the element id in `documentParentId`. An unlinked PO line or job always makes an unplanned row.
+- 2026-11-25: Implementation. The 2 status filters sit in one Filter button (`?filter=`), as on the Plan page. The page hides the column its group row names, and the status columns come before the quantities, so that they show at 1440 px (found in the browser test). The sidebar hint pluralises the element count.
