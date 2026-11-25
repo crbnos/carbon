@@ -111163,6 +111163,35 @@ export type Database = {
           projectElementId: string
         }[]
       }
+      get_project_materials: {
+        Args: { company_id: string; project_id: string }
+        Returns: {
+          elementName: string
+          elementReadableId: string
+          elementSequence: number
+          elementStateColor: string
+          elementStateGroup: Database["public"]["Enums"]["projectStateGroup"]
+          elementStateName: string
+          issueStatus: string
+          itemId: string
+          itemName: string
+          itemReadableId: string
+          methodType: Database["public"]["Enums"]["methodType"]
+          projectElementId: string
+          projectElementMaterialId: string
+          projectOnHand: number
+          quantityIssued: number
+          quantityOrdered: number
+          quantityReceived: number
+          quantityRemaining: number
+          quantityRequired: number
+          requiredDate: string
+          rowKind: string
+          supplies: Json
+          unassignedOnHand: number
+          unitOfMeasureCode: string
+        }[]
+      }
       get_purchasing_planning: {
         Args: { company_id: string; location_id: string; periods: string[] }
         Returns: {
