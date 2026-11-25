@@ -50,7 +50,7 @@ const defaultProps = {
   selectionsMaxHeight: 400,
   showAvatars: false,
   usersOnly: false,
-  // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
+  // oxlint-disable-next-line no-empty-function -- suppressed due to migration
   onCancel: () => {}
 };
 
@@ -152,7 +152,6 @@ export default function useUserSelect(props: UserSelectProps) {
     [innerProps.type]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset + first page on type change only
   useEffect(() => {
     setTopLevelGroups([]);
     setHasMore(false);
@@ -160,6 +159,7 @@ export default function useUserSelect(props: UserSelectProps) {
     setExpandedUids(new Set());
     setSearchResults(null);
     loadPage(0, false);
+    // oxlint-disable-next-line react/exhaustive-deps -- reset + first page on type change only
   }, [innerProps.type]);
 
   const loadMore = useCallback(() => {
@@ -347,7 +347,6 @@ export default function useUserSelect(props: UserSelectProps) {
 
   /* Event Handlers */
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const commit = useCallback(() => {
     dropdown.onClose();
     setFocusedId(null);
@@ -452,7 +451,6 @@ export default function useUserSelect(props: UserSelectProps) {
     [getLastNode, resetFocus]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const hasParent = useCallback(
     (id: string) => {
       const { parentId } = focusableNodes.current[id];
@@ -512,7 +510,6 @@ export default function useUserSelect(props: UserSelectProps) {
     [viewModel]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const setFocus = useCallback(
     (command: string) => {
       let nextFocusedId = focusedId;
@@ -627,7 +624,6 @@ export default function useUserSelect(props: UserSelectProps) {
     [innerProps]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onSelect = useCallback(
     (selectionItem?: IndividualOrGroup) => {
       if (selectionItem === undefined) return;
@@ -661,7 +657,6 @@ export default function useUserSelect(props: UserSelectProps) {
     ]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onDeselect = useCallback(
     (selectionItem: IndividualOrGroup) => {
       if (selectionItem === undefined) return;
@@ -671,7 +666,6 @@ export default function useUserSelect(props: UserSelectProps) {
       resolveRequested.current.add(id);
       setSelectionItemsById((previousSelections) => {
         if (id in previousSelections) {
-          // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
           const { [id]: removed, ...newSelectionCodes } = previousSelections;
 
           onChange(Object.values(newSelectionCodes));
@@ -725,7 +719,6 @@ export default function useUserSelect(props: UserSelectProps) {
     }
   }, [clear, innerProps.isMulti, removeSelections]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onInputChange = useCallback(
     ({ target }: ChangeEvent<HTMLInputElement>): void => {
       setControlledValue(target.value);
@@ -750,7 +743,6 @@ export default function useUserSelect(props: UserSelectProps) {
    * Replace a selected group with its direct members (users + child groups).
    * Members are fetched on demand if not already loaded.
    */
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onExplode = useCallback(
     (selectionItem: IndividualOrGroup) => {
       if (!("users" in selectionItem)) return;
@@ -774,7 +766,6 @@ export default function useUserSelect(props: UserSelectProps) {
         setSelectionItemsById((prevSelectionItems) => {
           if (!(id in prevSelectionItems)) return prevSelectionItems;
 
-          // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
           const { [id]: removed, ...newSelectionItems } = prevSelectionItems;
 
           users.forEach((user) => {
@@ -1050,7 +1041,7 @@ function makeSelectionItemsById(
   isMulti: boolean
 ): SelectionItemsById {
   const result: SelectionItemsById = {};
-  // biome-ignore lint/suspicious/useIterableCallbackReturn: suppressed due to migration
+  // oxlint-disable-next-line array-callback-return -- suppressed due to migration
   input.forEach((item) => {
     if (!(item.id in result)) {
       result[item.id] = checked(item);

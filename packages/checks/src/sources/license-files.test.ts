@@ -14,9 +14,9 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { spdxLicenseHeader } from "../conformance/spdx-license-header";
+import { eachFile } from "../check";
+import { spdxLicenseHeader } from "../conformance/licensing";
 import { LICENSE_HEADERS } from "../license-headers";
-import { scanAll } from "../run";
 import { listLicenseCandidates, loadLicenseFiles } from "./license-files";
 
 const PACKAGE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -98,9 +98,9 @@ describe("license-headers script", () => {
       /missing +commercial +packages\/ee\/src\/plan\.ts/
     );
     expect(readFileSync(join(root, "scripts/run.mjs"), "utf8")).toBe(before);
-    expect(scanAll(loadLicenseFiles(root), [spdxLicenseHeader])).toHaveLength(
-      6
-    );
+    expect(
+      eachFile(loadLicenseFiles(root), spdxLicenseHeader.scan)
+    ).toHaveLength(6);
 
     expect(run().status).toBe(0);
     expect(readFileSync(join(root, "scripts/run.mjs"), "utf8")).toBe(
@@ -117,7 +117,9 @@ describe("license-headers script", () => {
     );
 
     // The check and the fixer agree: nothing left.
-    expect(scanAll(loadLicenseFiles(root), [spdxLicenseHeader])).toEqual([]);
+    expect(eachFile(loadLicenseFiles(root), spdxLicenseHeader.scan)).toEqual(
+      []
+    );
     expect(run("--check").status).toBe(0);
     const again = run();
     expect(again.stdout).toMatch(/^0 fixed\.$/m);

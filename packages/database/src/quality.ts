@@ -143,9 +143,8 @@ async function lockOpenLot(
     .select("status")
     .where("id", "=", inspectionId)
     .where("companyId", "=", companyId);
-  const lot = await (mode === "update"
-    ? query.forUpdate()
-    : query.forShare()
+  const lot = await (
+    mode === "update" ? query.forUpdate() : query.forShare()
   ).executeTakeFirst();
   if (!lot) throw new Error("Inspection not found");
   if (isInspectionClosed(lot.status)) throw new Error("Inspection is closed");

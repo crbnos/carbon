@@ -4679,7 +4679,7 @@ msgstr "Bu tedarikçiyi onaylamak istediğinizden emin misiniz? Bu, onu aktif ha
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "{0} öğesini iptal etmek istediğinizden emin misiniz? Yeniden açana kadar kapalı ve salt okunur durumda olacaktır."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId
+#. placeholder {0}: routeData?.rfqSummary?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}'yi iptal etmek istediğinizden emin misiniz? Bu aynı zamanda tüm ilgili tedarikçi tekliflerini de iptal edecektir."
 

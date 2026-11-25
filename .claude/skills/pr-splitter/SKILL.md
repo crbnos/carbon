@@ -109,7 +109,8 @@ scratchpad, noting exactly which files/hunks moved.
 For every PR branch, before opening it:
 
 ```bash
-pnpm exec biome check --write --no-errors-on-unmatched <changed paths>
+pnpm exec oxlint --fix --no-error-on-unmatched-pattern <changed paths>
+pnpm exec oxfmt --no-error-on-unmatched-pattern <changed paths>
 pnpm exec turbo run typecheck --filter=<pkg>    # per touched package, never whole-repo
 pnpm --filter <pkg> test
 ```

@@ -273,7 +273,7 @@ function SortableListItem<T>({
                 {item.details}
                 {item.footer && (
                   // The footer's own controls act in place.
-                  // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: only stops the footer's own controls from also selecting the row; not a control
+                  // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops the footer's own controls from also selecting the row; not a control
                   <div
                     className="-ml-1 flex flex-wrap items-center gap-1"
                     onClick={(event) => event.stopPropagation()}
@@ -738,7 +738,7 @@ function SortableList<T extends Item>({
           <Reorder.Group
             axis="y"
             values={items}
-            // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
+            // oxlint-disable-next-line no-empty-function -- suppressed due to migration
             onReorder={isReadOnly ? () => {} : onReorder}
             className={cn(
               "flex flex-col gap-2",

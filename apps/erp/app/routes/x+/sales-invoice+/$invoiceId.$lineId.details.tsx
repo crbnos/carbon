@@ -10,9 +10,9 @@ import type { JSONContent } from "@carbon/react";
 import { RecordOutlet } from "@carbon/react";
 import { getItemReadableId, redirect, round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import { Fragment } from "react/jsx-runtime";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
+import { Fragment } from "react/jsx-runtime";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
 import {

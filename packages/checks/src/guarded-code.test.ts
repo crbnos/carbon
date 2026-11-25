@@ -7,7 +7,6 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   annotation,
-  functionSpans,
   type GuardedEntry,
   markerSpans,
   parseDiff,
@@ -54,20 +53,24 @@ const hunk = (
   newCount
 });
 
-describe("functionSpans", () => {
-  it("gives each top-level declaration its lines, with the comment above it", () => {
-    expect(functionSpans(SOURCE)).toEqual([
-      { name: "import", start: 1, end: 2 },
-      { name: "lockAccountingPeriod", start: 3, end: 8 },
-      { name: "postEverything", start: 9, end: 16 }
-    ]);
-  });
-});
-
 describe("markerSpans", () => {
   it("runs from the marker to the end of its indentation", () => {
     expect(markerSpans(SOURCE, "// guarded: the void branch")).toEqual([
       { name: "// guarded: the void branch", start: 11, end: 13 }
+    ]);
+  });
+
+  it("keeps going past a blank line inside the marked block", () => {
+    const source = [
+      "function post() {",
+      "  // guarded: posting",
+      "  lock();",
+      "",
+      "  write();",
+      "}"
+    ].join("\n");
+    expect(markerSpans(source, "// guarded: posting")).toEqual([
+      { name: "// guarded: posting", start: 2, end: 5 }
     ]);
   });
 });

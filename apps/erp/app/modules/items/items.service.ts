@@ -2125,7 +2125,6 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
     // node: it keeps the made copy, whatever order the rows came in.
     const existing = lookup[itemId].data as Method | undefined;
     if (!existing || existing.isPickDescendant) {
-      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
       lookup[itemId]["data"] = item;
     }
 
@@ -2139,7 +2138,6 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
         lookup[parentId] = { id: parentId, children: [] };
       }
 
-      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
       lookup[parentId]["children"].push(treeItem);
     }
   }

@@ -735,8 +735,9 @@ const SalesOrderHeader = () => {
         action={path.to.deleteSalesOrder(orderId)}
         isOpen={deleteSalesOrderModal.isOpen}
         name={routeData?.salesOrder?.salesOrderId!}
-        text={t`Are you sure you want to delete ${routeData?.salesOrder
-          ?.salesOrderId!}? This cannot be undone.`}
+        text={t`Are you sure you want to delete ${
+          routeData?.salesOrder?.salesOrderId!
+        }? This cannot be undone.`}
         onCancel={() => {
           deleteSalesOrderModal.onClose();
         }}

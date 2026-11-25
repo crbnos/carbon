@@ -189,7 +189,6 @@ const Kanban = ({
   // change of the data keeps each column's item array (and so its cards) the
   // same object across those renders.
   const pendingKey = JSON.stringify(pendingItems);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: pendingItems is keyed by value
   const { items, itemsById, itemsByColumn } = useMemo(() => {
     const byId = new Map<string, Item>(
       initialItems.map((item) => [item.id, item])
@@ -209,6 +208,7 @@ const Kanban = ({
       else byColumn.set(item.columnId, [item]);
     }
     return { items: sorted, itemsById: byId, itemsByColumn: byColumn };
+    // oxlint-disable-next-line react/exhaustive-deps -- pendingItems is keyed by value
   }, [initialItems, pendingKey]);
   const columnsById = useMemo(
     () => new Map(columns.map((column) => [column.id, column])),

@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceFile } from "../check";
+import { readSource } from "./read-source";
 
 // Directories the numeric-precision checks cover: everywhere app code does
 // arithmetic or builds number formatters.
@@ -58,7 +59,7 @@ function walk(dir: string, out: SourceFile[], repoRootDir: string) {
       out.push({
         // Repo-relative path so baseline keys are machine-independent
         file: full.slice(repoRootDir.length + 1),
-        contents: readFileSync(full, "utf8")
+        contents: readSource(full)
       });
     }
   }

@@ -107,16 +107,15 @@ describe("DOCUMENT_PDFS", () => {
           unitOfMeasureCode: "EA"
         }
       ],
-      jobOperations: sample.jobOperations.map(
-        (operation: any, index: number) =>
-          index === 0
-            ? {
-                ...operation,
-                jobOperationStep: [
-                  { id: "step-1", sortOrder: 1, name: "Check torque" }
-                ]
-              }
-            : operation
+      jobOperations: sample.jobOperations.map((operation: any, index: number) =>
+        index === 0
+          ? {
+              ...operation,
+              jobOperationStep: [
+                { id: "step-1", sortOrder: 1, name: "Check torque" }
+              ]
+            }
+          : operation
       )
     }),
     issue: (sample) => ({

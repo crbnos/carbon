@@ -45,8 +45,8 @@ vi.mock("@carbon/ee/ramp.server", async (original) => ({
 
 describe.skipIf(!hasLocalDatabase)("Ramp bill staging (Postgres)", () => {
   let db: ReturnType<typeof getJobDatabaseClient>;
-  let getCarbonServiceRole: typeof import("@carbon/auth/client.server")["getCarbonServiceRole"];
-  let syncRampBills: typeof import("./ramp-sync-bill")["syncRampBills"];
+  let getCarbonServiceRole: (typeof import("@carbon/auth/client.server"))["getCarbonServiceRole"];
+  let syncRampBills: (typeof import("./ramp-sync-bill"))["syncRampBills"];
   const suppliers: string[] = [];
   let scope: {
     companyId: string;

@@ -22,7 +22,8 @@ const subheadingVariants = cva("text-muted-foreground text-sm", {
 });
 
 export interface SubheadingProps
-  extends Omit<ComponentProps<"span">, "color">,
+  extends
+    Omit<ComponentProps<"span">, "color">,
     VariantProps<typeof subheadingVariants> {
   /**
    * The element to render. Defaults to `span` (inline, no document semantics).

@@ -104,7 +104,6 @@ export type RouteRealtimeTable =
       table: RealtimeTable;
       filter: (route: {
         params: Record<string, string | undefined>;
-        // biome-ignore lint/suspicious/noExplicitAny: each route knows its own loader data
         data: any;
       }) => string | undefined | false;
     };

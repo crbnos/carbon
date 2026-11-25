@@ -77,7 +77,6 @@ export function ChoiceCardGroup<V extends string = string>({
   const groupId = useId();
   const groupRef = useRef<HTMLDivElement>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only focus
   useEffect(() => {
     if (!autoFocus) return;
     const radio =
@@ -85,6 +84,7 @@ export function ChoiceCardGroup<V extends string = string>({
         '[role="radio"][data-state="checked"]'
       ) ?? groupRef.current?.querySelector<HTMLElement>('[role="radio"]');
     radio?.focus();
+    // oxlint-disable-next-line react/exhaustive-deps -- mount-only focus
   }, []);
 
   return (

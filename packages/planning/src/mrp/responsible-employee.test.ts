@@ -117,7 +117,7 @@ describe("loadResponsibleEmployeeResolver", () => {
           const table = query.sql.match(/from "(\w+)"/)?.[1] ?? "";
           return { rows: (TABLES[table] ?? []) as R[] };
         },
-        // biome-ignore lint/correctness/useYield: never streamed
+        // oxlint-disable-next-line require-yield -- never streamed
         streamQuery: async function* () {
           throw new Error("not streamed");
         }

@@ -636,7 +636,6 @@ const PivotTree = memo(
                       <LevelLine key={index} isSelected={nodeState.selected} />
                     ))}
 
-                    {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer shortcut only; the row toggles parents on Enter and carries aria-expanded */}
                     <div
                       role="presentation"
                       className={cn(

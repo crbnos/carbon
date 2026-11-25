@@ -18,7 +18,7 @@ function record(rawMessage: string, properties: Record<string, unknown>) {
   } as never;
 }
 
-// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI colors
+// oxlint-disable-next-line no-control-regex -- stripping ANSI colors
 const plain = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, "");
 
 describe("devFormatter", () => {

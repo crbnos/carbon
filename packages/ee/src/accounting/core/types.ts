@@ -485,8 +485,7 @@ export abstract class BaseEntitySyncer<
   TLocal, // Carbon DB Entity Type (e.g. Invoice)
   TRemote, // Accounting API Entity Type (e.g. Xero.Invoice)
   TOmit extends string | symbol | number // Fields to omit from mapping
-> implements IEntitySyncer
-{
+> implements IEntitySyncer {
   protected database: Kysely<KyselyDatabase>;
   protected companyId: string;
   protected provider: SyncProvider;

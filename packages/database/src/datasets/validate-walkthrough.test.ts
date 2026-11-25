@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { motor } from "./data/motor/index.ts";
 import { motorLine } from "./data/motor-line/index.ts";
+import { motor } from "./data/motor/index.ts";
 import type { Dataset } from "./types.ts";
 import { validateDataset } from "./validate.ts";
 

@@ -307,8 +307,8 @@ describe("QuickBooks native invoice tax", () => {
           TaxRateRef: { value: "rate-zero" }
         });
       if (kind === "tax-on-tax")
-        remote.taxCodes[0]!.SalesTaxRateList!
-          .TaxRateDetail[0]!.TaxTypeApplicable = "TaxOnTax";
+        remote.taxCodes[0]!.SalesTaxRateList!.TaxRateDetail[0]!.TaxTypeApplicable =
+          "TaxOnTax";
       if (kind === "dated")
         remote.taxRates[0]!.EffectiveTaxRate = [
           { EffectiveDate: "2026-01-01", RateValue: 10 }

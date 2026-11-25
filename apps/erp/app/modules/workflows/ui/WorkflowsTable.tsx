@@ -42,8 +42,8 @@ import { path } from "~/utils/path";
 import type { Workflow, WorkflowLastRun } from "../workflows.service";
 import { ConfirmUnpublishWorkflow } from "./ConfirmUnpublishWorkflow";
 import { RunStatus } from "./Runs/RunStatus";
-import WorkflowForm from "./WorkflowForm";
 import { WORKFLOW_LIST_EXPORT_VALUES } from "./workflow-list-export";
+import WorkflowForm from "./WorkflowForm";
 
 // A row of the list, with the values the loader adds per page.
 type WorkflowRow = Workflow & {

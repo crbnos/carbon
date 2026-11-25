@@ -18,13 +18,13 @@ import { endOperationByScan, startOperationByScan } from "./kanban-scan.server";
 import { productionEventAction } from "./production-event.server";
 import { completeAllSteps, recordStep } from "./step-record.server";
 import { issueTravelerUnit } from "./traveler.server";
-import { SELECT_UNIT_FIRST } from "./work-unit.server";
 import {
   fakeClient,
   operationOutput,
   serialOperation,
   serialUnits
 } from "./work-unit-test-fixture";
+import { SELECT_UNIT_FIRST } from "./work-unit.server";
 
 const op = "op_2";
 const caller = { companyId: "co", userId: "user" };

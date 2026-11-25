@@ -38,7 +38,6 @@ export function CodeBlock({ html, code, label }: { html: string; code: string; l
       )}
       <div className="relative">
         <CopyButton text={applyConfig(code, base, apiKey, false, appBase)} />
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: build-time shiki HTML */}
         <div className="api-shiki" dangerouslySetInnerHTML={{ __html: applyConfig(html, base, apiKey, true, appBase) }} />
       </div>
     </div>

@@ -5,8 +5,8 @@
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
-import { hashApiKey } from "@carbon/auth/auth.server";
 import { logOwnershipTransfer } from "@carbon/auth/auth-events.server";
+import { hashApiKey } from "@carbon/auth/auth.server";
 import { isCompanyOwner } from "@carbon/auth/company.server";
 import { ownershipTransferRefusal } from "@carbon/database/access";
 import {

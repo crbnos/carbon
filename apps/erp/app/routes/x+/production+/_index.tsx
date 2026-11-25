@@ -887,7 +887,7 @@ function WorkCenterCards({
     return acc;
   }, {});
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
   const {
     company: { id: companyId }

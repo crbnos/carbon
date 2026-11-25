@@ -3,13 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { contractDurationOf } from "../../sales.models";
-import ContractAmendModal from "./ContractAmendModal";
 import ContractAmendments from "./ContractAmendments";
+import ContractAmendModal from "./ContractAmendModal";
 import ContractBillTo, { ContractRevenueMigration } from "./ContractBillTo";
 import ContractCancelModal from "./ContractCancelModal";
 import ContractConfirmModal from "./ContractConfirmModal";
 import ContractDetailsForm from "./ContractDetailsForm";
 import ContractExplorer from "./ContractExplorer";
+import {
+  contractLineFormValues,
+  contractLineName,
+  newContractLineFormValues
+} from "./contractGrid";
 import ContractHeader from "./ContractHeader";
 import ContractInvoiceGrid from "./ContractInvoiceGrid";
 import ContractInvoices from "./ContractInvoices";
@@ -30,14 +35,9 @@ import ContractSetupSteps, {
   contractSetupStepsFor,
   projectContractSetupSteps
 } from "./ContractSetupSteps";
+import ContractsTable from "./ContractsTable";
 import ContractStatus from "./ContractStatus";
 import ContractSummary from "./ContractSummary";
-import ContractsTable from "./ContractsTable";
-import {
-  contractLineFormValues,
-  contractLineName,
-  newContractLineFormValues
-} from "./contractGrid";
 import {
   scheduleRows,
   toContractLineTerms,

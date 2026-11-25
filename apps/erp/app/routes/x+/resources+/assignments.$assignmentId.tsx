@@ -489,7 +489,6 @@ export default function TrainingAssignmentDetailRoute() {
                 >
                   <LuCircleCheck className="mr-1 size-3" />
                   <Trans>Completed</Trans>{" "}
-                  {/** biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration */}
                   <Count count={statusCounts["Completed"] || 0} />
                 </ToggleGroupItem>
                 <ToggleGroupItem
@@ -499,7 +498,6 @@ export default function TrainingAssignmentDetailRoute() {
                 >
                   <LuClock className="mr-1 size-3" />
                   <Trans>Pending</Trans>{" "}
-                  {/** biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration */}
                   <Count count={statusCounts["Pending"] || 0} />
                 </ToggleGroupItem>
                 <ToggleGroupItem
@@ -509,7 +507,6 @@ export default function TrainingAssignmentDetailRoute() {
                 >
                   <LuTriangleAlert className="mr-1 size-3" />
                   <Trans>Overdue</Trans>{" "}
-                  {/** biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration */}
                   <Count count={statusCounts["Overdue"] || 0} />
                 </ToggleGroupItem>
                 <ToggleGroupItem

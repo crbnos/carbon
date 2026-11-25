@@ -32,9 +32,9 @@ import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
+import { PurchasingRFQStatus } from ".";
 import { purchasingRfqStatusType } from "../../purchasing.models";
 import type { PurchasingRFQ } from "../../types";
-import { PurchasingRFQStatus } from ".";
 
 type PurchasingRFQsTableProps = {
   data: PurchasingRFQ[];

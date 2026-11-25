@@ -96,7 +96,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // The documents Company type is the `companies` view row; getCompany
       // returns the base table row (same fields the Header reads). Same cast
       // the traveler route uses.
-      // biome-ignore lint/suspicious/noExplicitAny: view-vs-table row shape
       company={company.data as any}
       batch={{
         readableId: batch.data.readableId,

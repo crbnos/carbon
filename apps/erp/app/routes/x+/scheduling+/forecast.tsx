@@ -55,8 +55,8 @@ import {
   workCenterIdFromLaneId,
   workCenterLaneId
 } from "~/modules/production/ui/Schedule/resourceTimeline";
-import { TimelineDetail } from "~/modules/production/ui/Schedule/TimelineDetail";
 import type { TimelineNodeDetail } from "~/modules/production/ui/Schedule/timeline";
+import { TimelineDetail } from "~/modules/production/ui/Schedule/TimelineDetail";
 import type {
   AvailabilityShift,
   WorkCenterAvailability

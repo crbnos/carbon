@@ -11,9 +11,9 @@ import { InlineValueEditor } from "./InlineValueEditor";
 import { LiteralControl } from "./LiteralControl";
 import type { ValueFieldProps } from "./types";
 import { VariableChip } from "./VariableChip";
+import { pickAccepts } from "./variableMenu";
 import { VariableMenuPopover } from "./VariableMenuPopover";
 import { VariablePickControl } from "./VariablePickControl";
-import { pickAccepts } from "./variableMenu";
 
 export function ValueField({
   label,

@@ -9,9 +9,8 @@ vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn()
 }));
 
-const { purgeRefusal, resolvePurgeOptions } = await import(
-  "./purge-inactive-companies"
-);
+const { purgeRefusal, resolvePurgeOptions } =
+  await import("./purge-inactive-companies");
 
 describe("purgeRefusal", () => {
   it("allows only a dashboard invoke on Cloud", () => {

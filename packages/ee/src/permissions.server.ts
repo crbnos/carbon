@@ -9,12 +9,12 @@ import type {
 } from "@carbon/api/service-fn.server";
 import type { Result } from "@carbon/auth";
 import { error, getClaims, success } from "@carbon/auth";
-import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import {
   logApiKeyAccessChange,
   logPermissionChange,
   logRoleAccessChange
 } from "@carbon/auth/auth-events.server";
+import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { clearClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";

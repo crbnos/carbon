@@ -126,7 +126,6 @@ const RentalAgreementProperties = () => {
     }
   }, [fetcher.data]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
     (field: Term, value: string | null) => {
       const current = agreement?.[field as keyof RentalAgreement];
@@ -142,10 +141,10 @@ const RentalAgreementProperties = () => {
         action: path.to.rentalAgreementUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id, agreement]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -157,10 +156,10 @@ const RentalAgreementProperties = () => {
         action: path.to.customFields
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdateInvoiceAutomation = useCallback(
     (value: string | null) => {
       const next = !value || value === COMPANY_DEFAULT ? null : value;
@@ -174,6 +173,7 @@ const RentalAgreementProperties = () => {
         action: path.to.rentalAgreementUpdate
       });
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- fetcher identity is stable
     [id, agreement]
   );
 

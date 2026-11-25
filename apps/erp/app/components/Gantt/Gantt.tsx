@@ -202,14 +202,13 @@ const Gantt = ({
   // An inline bar (`data.items`) is not a tree node, so the tree cannot hold
   // its selection — the Gantt does. Selecting a row clears it and vice versa.
   // Seeded once from `selectedId`, like the tree's own selection.
-  const [selectedItemId, setSelectedItemId] = useState<string | undefined>(
-    () =>
-      selectedId &&
-      events.some((event) =>
-        event.data.items?.some((item) => item.id === selectedId)
-      )
-        ? selectedId
-        : undefined
+  const [selectedItemId, setSelectedItemId] = useState<string | undefined>(() =>
+    selectedId &&
+    events.some((event) =>
+      event.data.items?.some((item) => item.id === selectedId)
+    )
+      ? selectedId
+      : undefined
   );
   const onTreeSelectedIdChanged = (id: string | undefined) => {
     // The tree letting go because an inline bar took the selection.
@@ -300,7 +299,7 @@ const Gantt = ({
         getTreeProps={getTreeProps}
         renderNode={({ node, state }) => (
           <>
-            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard selection lives on the role="tree" container */}
+            {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard selection lives on the role="tree" container */}
             <div
               className={cn(
                 "group flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
@@ -731,7 +730,6 @@ const GanttTimeline = ({
 
   //we want to live-update the duration if the root span is still in progress
   const [duration, setDuration] = useState(totalDuration);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (rootSpanStatus !== "inprogress" || !rootStartedAt) {
       setDuration(totalDuration);
@@ -743,6 +741,7 @@ const GanttTimeline = ({
     }, 5000);
 
     return () => clearInterval(interval);
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [totalDuration, rootSpanStatus]);
 
   // Absolute-mode axis ticks. Explicit offsets win (e.g. one per day on a week

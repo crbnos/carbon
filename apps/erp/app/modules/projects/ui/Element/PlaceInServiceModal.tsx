@@ -87,9 +87,9 @@ function PlaceInServiceBody({
     }
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: load once on open
   useEffect(() => {
     loadFetcher.load(path.to.projectPlaceInService(projectId));
+    // oxlint-disable-next-line react/exhaustive-deps -- load once on open
   }, [projectId]);
 
   const data = loadFetcher.data;

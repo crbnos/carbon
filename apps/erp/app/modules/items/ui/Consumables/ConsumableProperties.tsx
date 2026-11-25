@@ -168,7 +168,6 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
       setTrackingRefusals((count) => count + 1);
     }
   });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
       field:
@@ -200,10 +199,10 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
       );
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [itemId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
@@ -221,10 +220,10 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.consumableSummary?.readableId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
@@ -239,6 +238,7 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
       });
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [routeData?.consumableSummary?.readableId]
   );
 

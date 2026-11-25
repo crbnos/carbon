@@ -47,7 +47,7 @@ export function OperationChat({
   const [messages, setMessages] = useState<Message[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+  // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
   const { carbon, accessToken } = useCarbon();
 
   const fetchChats = async () => {

@@ -13007,20 +13007,18 @@ export async function modify(
         userId,
         postingDate: startDate,
         description: `Lease Modification ${lease.leaseId}`,
-        assets: remeasured.map(
-          (asset): AssetLines => ({
-            leaseLineId: asset.line.id,
-            locationId: asset.line.locationId ?? lease.locationId,
-            lines:
-              asset.result.adjustment === 0 && asset.result.gain === 0
-                ? []
-                : remeasurementLines({
-                    adjustment: asset.result.adjustment,
-                    gain: asset.result.gain,
-                    accounts: accounting.accounts
-                  })
-          })
-        ),
+        assets: remeasured.map((asset): AssetLines => ({
+          leaseLineId: asset.line.id,
+          locationId: asset.line.locationId ?? lease.locationId,
+          lines:
+            asset.result.adjustment === 0 && asset.result.gain === 0
+              ? []
+              : remeasurementLines({
+                  adjustment: asset.result.adjustment,
+                  gain: asset.result.gain,
+                  accounts: accounting.accounts
+                })
+        })),
         lease
       });
 
@@ -13031,31 +13029,29 @@ export async function modify(
       });
       await writeSchedules(trx, {
         leaseId: lease.id,
-        schedules: remeasured.map(
-          (asset): AssetSchedule => ({
-            // The months after the change are still the commencement's.
-            leaseLineId: asset.line.id,
-            commencementDate: lease.commencementDate,
-            fromMonth,
+        schedules: remeasured.map((asset): AssetSchedule => ({
+          // The months after the change are still the commencement's.
+          leaseLineId: asset.line.id,
+          commencementDate: lease.commencementDate,
+          fromMonth,
+          classification: asset.after,
+          lines: buildLesseeSchedule({
+            openingLiability: asset.result.liability,
+            openingRouAsset: asset.result.rouAsset,
+            payments: asset.points,
+            months: span.months,
+            annualRate: payload.discountRate,
+            timing: lease.paymentTiming,
             classification: asset.after,
-            lines: buildLesseeSchedule({
-              openingLiability: asset.result.liability,
-              openingRouAsset: asset.result.rouAsset,
-              payments: asset.points,
-              months: span.months,
-              annualRate: payload.discountRate,
-              timing: lease.paymentTiming,
-              classification: asset.after,
-              amortizationMonths: amortizationMonths(
-                asset.line,
-                span.months,
-                fromMonth
-              ),
-              periodDates: span.periodDates,
-              lastMonthShare: span.lastMonthShare
-            })
+            amortizationMonths: amortizationMonths(
+              asset.line,
+              span.months,
+              fromMonth
+            ),
+            periodDates: span.periodDates,
+            lastMonthShare: span.lastMonthShare
           })
-        ),
+        })),
         accounts: accounting.accounts,
         companyId,
         userId
