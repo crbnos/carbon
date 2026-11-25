@@ -48,7 +48,7 @@
         "$TURBO_DEFAULT$",
         "!**/AGENTS.md",
         "!**/CLAUDE.md",
-        "$TURBO_ROOT$/.oxlintrc.json",
+        "$TURBO_ROOT$/oxlint.config.ts",
         "$TURBO_ROOT$/packages/checks/oxlint-plugins/carbon.mjs"
       ],
       "outputs": []

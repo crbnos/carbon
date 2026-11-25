@@ -1,26 +1,31 @@
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { defineConfig } from "oxlint";
+
+export default defineConfig({
   // Every rule is listed below; nothing is on by default.
-  "plugins": ["eslint", "typescript", "react", "jsx-a11y"],
-  "env": { "builtin": true, "es2026": true, "browser": true, "node": true },
-  "categories": {
-    "correctness": "off",
-    "nursery": "off",
-    "pedantic": "off",
-    "perf": "off",
-    "restriction": "off",
-    "style": "off",
-    "suspicious": "off"
+  plugins: ["eslint", "typescript", "react", "jsx-a11y"],
+  env: { builtin: true, es2026: true, browser: true, node: true },
+  categories: {
+    correctness: "off",
+    nursery: "off",
+    pedantic: "off",
+    perf: "off",
+    restriction: "off",
+    style: "off",
+    suspicious: "off"
   },
-  "options": {
-    "reportUnusedDisableDirectives": "warn",
+  options: {
+    reportUnusedDisableDirectives: "warn",
     // Suppress with oxlint-disable comments; eslint-disable ones are not read.
-    "respectEslintDisableDirectives": false
+    respectEslintDisableDirectives: false
   },
   // Lints only the apps' app/ and the packages' src/ TypeScript, the Deno edge
   // functions and the contrib examples. Everything else is ignored, even when
   // named on the command line.
-  "ignorePatterns": [
+  ignorePatterns: [
     "*",
     "!*/",
     "!apps/**/app/**/*.ts",
@@ -38,7 +43,7 @@
     "**/mcp*/lib/tools/",
     "**/mcp*/lib/server.ts"
   ],
-  "rules": {
+  rules: {
     // Accessibility
     "jsx-a11y/no-access-key": "warn",
     "jsx-a11y/aria-unsupported-elements": "warn",
@@ -77,11 +82,11 @@
     "no-use-before-define": [
       "warn",
       {
-        "functions": false,
-        "classes": false,
-        "variables": false,
-        "allowNamedExports": true,
-        "ignoreTypeReferences": true
+        functions: false,
+        classes: false,
+        variables: false,
+        allowNamedExports: true,
+        ignoreTypeReferences: true
       }
     ],
     "no-self-assign": "warn",
@@ -92,13 +97,13 @@
     "no-unused-vars": [
       "error",
       {
-        "args": "none",
-        "ignoreRestSiblings": true,
-        "varsIgnorePattern": "^_",
-        "caughtErrorsIgnorePattern": "^_",
+        args: "none",
+        ignoreRestSiblings: true,
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
         // --fix removes an unused import; renaming an unused variable is left
         // to the author.
-        "fix": { "imports": "safe-fix", "variables": "off" }
+        fix: { "imports": "safe-fix", "variables": "off" }
       }
     ],
     "react/exhaustive-deps": "warn",
@@ -119,9 +124,9 @@
     "typescript/consistent-type-imports": [
       "error",
       {
-        "prefer": "type-imports",
-        "fixStyle": "separate-type-imports",
-        "disallowTypeAnnotations": false
+        prefer: "type-imports",
+        fixStyle: "separate-type-imports",
+        disallowTypeAnnotations: false
       }
     ],
 
@@ -153,30 +158,30 @@
     "getter-return": "warn",
     "array-callback-return": ["warn", { "checkForEach": true }]
   },
-  "overrides": [
+  overrides: [
     {
       // route-action-shape (packages/checks/oxlint-plugins). It warns, so the
       // editor shows it and oxlint still passes; @carbon/checks reads the same
       // diagnostics and fails on any that its baseline does not grandfather.
-      "files": ["**/erp/app/routes/**"],
-      "excludeFiles": ["**/*.test.ts", "**/*.test.tsx"],
-      "jsPlugins": ["./packages/checks/oxlint-plugins/carbon.mjs"],
-      "rules": { "carbon/route-action-shape": "warn" }
+      files: ["**/erp/app/routes/**"],
+      excludeFiles: ["**/*.test.ts", "**/*.test.tsx"],
+      jsPlugins: ["./packages/checks/oxlint-plugins/carbon.mjs"],
+      rules: { "carbon/route-action-shape": "warn" }
     },
     {
-      "files": [
+      files: [
         "**/*.spec.ts",
         "**/*.test.ts",
         "**/tests/**/*.ts",
         "**/__tests__/**/*.ts"
       ],
-      "rules": { "no-console": "off" }
+      rules: { "no-console": "off" }
     },
     {
       // Terminal tools, whose output IS the console: every package's
       // src/scripts, the example apps under contrib/, crbn, the seeds and
       // the datasets.
-      "files": [
+      files: [
         "**/src/scripts/**",
         "contrib/**",
         "packages/dev/**",
@@ -185,13 +190,13 @@
         "packages/database/src/datasets/**",
         "packages/database/src/authz/cli.ts"
       ],
-      "rules": { "no-console": "off" }
+      rules: { "no-console": "off" }
     },
     {
       // Supabase edge functions run on Deno, not Node: they use their own
       // import style and cannot import @carbon/logger.
-      "files": ["packages/database/supabase/functions/**/*.ts"],
-      "rules": {
+      files: ["packages/database/supabase/functions/**/*.ts"],
+      rules: {
         "no-undef": "off",
         "no-unused-vars": "off",
         "typescript/consistent-type-imports": "off",
@@ -199,4 +204,4 @@
       }
     }
   ]
-}
+});

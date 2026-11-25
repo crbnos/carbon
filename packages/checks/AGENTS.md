@@ -63,7 +63,7 @@ fails on any violation the committed baseline does not list.
   `create(context)` API; the rule name is the check id) and a `Check` that
   reads its findings (`routeActionShape` in `routes.ts` is the example). Then:
   - Enable it for its folders with an `overrides` entry in the root
-    `.oxlintrc.json` (`"carbon/<check-id>": "warn"`).
+    `oxlint.config.ts` (`"carbon/<check-id>": "warn"`).
   - Keep it at `warn`, so the editor shows it and `oxlint` still passes. The
     gate reads the same diagnostics by rule id (`src/sources/oxlint.ts`).
   - Report the callee, not the whole call: the baseline key is the matched

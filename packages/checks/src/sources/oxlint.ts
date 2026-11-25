@@ -9,7 +9,7 @@ import type { Violation } from "../check";
 import { blankComments } from "./comments";
 
 // A rule that reads TypeScript syntax is a rule of the `carbon` oxlint plugin
-// (`oxlint-plugins/carbon.mjs`, enabled in the root `.oxlintrc.json`), so the
+// (`oxlint-plugins/carbon.mjs`, enabled in the root `oxlint.config.ts`), so the
 // editor shows it and oxlint's parser does the matching. oxlint has no
 // baseline, so the rules warn and this file turns them into findings the
 // conformance baseline can grandfather.

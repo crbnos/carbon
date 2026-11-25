@@ -190,7 +190,7 @@ export default withMDX(config);
   Run `pnpm install` from the root so workspace links resolve.
 - **Turbo:** nothing to add — the generic `dev` and `build` tasks run the app's scripts, and `.next/**`
   is already an output. Confirm with `pnpm --filter docs dev`.
-- **oxlint:** inherits the root `.oxlintrc.json`. Don't add a local linter config.
+- **oxlint:** inherits the root `oxlint.config.ts`. Don't add a local linter config.
 - **Optional root script:** add `"dev:docs": "turbo run dev --filter=docs"` to the root `package.json`
   to match the `dev:erp` / `dev:academy` ergonomics.
 

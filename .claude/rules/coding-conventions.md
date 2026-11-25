@@ -174,7 +174,7 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   prints a multi-line stack that the log collector stores as one levelless entry
   per line; the logger writes one JSON record with the error inside. Message is
   a fixed sentence, values go in the properties (`{ companyId, error }`).
-  Terminal tools are exempt in `.oxlintrc.json` (scripts,
+  Terminal tools are exempt in `oxlint.config.ts` (scripts,
   `src/scripts`, the CLIs, seeds, Deno edge functions). Until an app configures
   logging, a logger writes plain lines to the console, so a script needs no setup.
 - The body of a thrown 4xx `Response` is shown to the user on the route error

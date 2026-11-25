@@ -101,11 +101,11 @@ Search with the API, column or call the fixes changed (`forUpdate`,
 ```bash
 grep -n -i '<api, column or call>' packages/checks/src/conformance/*.ts
 grep -n '^  id: \|_ID = \|^export const [A-Z_]* = "' packages/checks/src/conformance/*.ts
-grep -n -i '<api, column or call>' .oxlintrc.json
+grep -n -i '<api, column or call>' oxlint.config.ts
 ```
 
 The subject files under `packages/checks/src/conformance/` hold every
-conformance check, with its rule in the comment above it; `.oxlintrc.json` holds
+conformance check, with its rule in the comment above it; `oxlint.config.ts` holds
 the lint rules. Read each match and decide
 whether it fails the code from before your group's fixes. When a guard exists,
 date it and look for fixes of the same cause after that date:

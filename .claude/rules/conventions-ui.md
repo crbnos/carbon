@@ -166,7 +166,7 @@ applies `rounded-2xl` + layered shadow on the outer shell and `rounded-2xl` on
 
 oxlint enforces `jsx-a11y/click-events-have-key-events`,
 `jsx-a11y/no-static-element-interactions` and `react/button-has-type`
-(`.oxlintrc.json`). The patterns the
+(`oxlint.config.ts`). The patterns the
 codebase settled on:
 
 - **One control per action.** A clickable row is a link stretched over the
