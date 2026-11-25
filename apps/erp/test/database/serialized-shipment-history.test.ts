@@ -18,6 +18,7 @@ import { setSalesReturnOrderLineDisposition } from "../../app/modules/sales/sale
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
+  seed,
   stampCutover,
   USER,
   unwrap
@@ -226,6 +227,112 @@ postgrestTest(
         [units[1]!.id, "SN-22", 0],
         [units[0]!.id, "SN-40", 1]
       ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "posted return slots distinguish two lines of the same item after their serials move",
+  async (client) => {
+    const f = await alwaysPostFixture();
+    try {
+      const [rich, cheap] = await stockSerials(f);
+      const doc = await createPackedShipment(
+        f,
+        f.assemblyId,
+        "historical-ship-back"
+      );
+      const secondLine = f.prefix + "-second-ship-back-line";
+      const activityId = f.prefix + "-posted-ship-back";
+      // Restore an archived posting. Both units have since been picked on
+      // other documents, so only physical activity inputs belong to this one.
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("shipment")
+          .set({ status: "Posted", sourceDocument: "Sales Return Order" })
+          .where("companyId", "=", f.companyId)
+          .where("id", "=", doc.shipmentId)
+          .execute();
+        const line = await trx
+          .updateTable("shipmentLine")
+          .set({ shippedQuantity: 1 })
+          .where("companyId", "=", f.companyId)
+          .where("id", "=", doc.shipmentLineId)
+          .returningAll()
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("shipmentLine")
+          .values({ ...line, id: secondLine })
+          .execute();
+        await trx
+          .insertInto("trackedActivity")
+          .values({
+            id: activityId,
+            type: "Return Shipment",
+            sourceDocument: "Shipment",
+            sourceDocumentId: doc.shipmentId,
+            attributes: {
+              "Shipment Slots": [
+                { id: rich!.id, lineId: secondLine, index: 0 },
+                { id: cheap!.id, lineId: doc.shipmentLineId, index: 0 }
+              ]
+            },
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("trackedActivityInput")
+          .values(
+            [rich!, cheap!].map((unit) => ({
+              trackedActivityId: activityId,
+              trackedEntityId: unit.id,
+              quantity: 1,
+              companyId: f.companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+      const ctx = operationContext(f, client, USER);
+      const read = async () =>
+        unwrap(
+          await getShipmentTracking(ctx, { shipmentId: doc.shipmentId })
+        ).map((unit) => ({
+          id: unit.id,
+          lineId: (unit.attributes as TrackedEntityAttributes)["Shipment Line"]
+        }));
+      const expected = [
+        { id: rich!.id, lineId: secondLine },
+        { id: cheap!.id, lineId: doc.shipmentLineId }
+      ];
+      expect(await read()).toEqual(expect.arrayContaining(expected));
+      // A pre-upgrade activity records just the two inputs. A surviving tag
+      // identifies one line and leaves the other as the only possible slot.
+      await f.db
+        .updateTable("trackedActivity")
+        .set({ attributes: {} })
+        .where("companyId", "=", f.companyId)
+        .where("id", "=", activityId)
+        .execute();
+      expect(await read()).toEqual([]);
+      await f.db
+        .updateTable("trackedEntity")
+        .set({
+          attributes: {
+            Shipment: doc.shipmentId,
+            "Shipment Line": secondLine,
+            "Shipment Line Index": 0
+          }
+        })
+        .where("companyId", "=", f.companyId)
+        .where("id", "=", rich!.id)
+        .execute();
+      const recovered = await read();
+      expect(recovered).toHaveLength(2);
+      expect(recovered).toEqual(expect.arrayContaining(expected));
     } finally {
       await f.cleanup();
     }

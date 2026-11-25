@@ -10,6 +10,7 @@ import {
 } from "../../app/modules/inventory/inventory.server";
 import {
   issueMaterial,
+  postInventoryAdjustment,
   postReceipt,
   postShipment
 } from "../../app/modules/inventory/inventory.service";
@@ -392,14 +393,112 @@ for (const { costs, average, reason } of [
   );
 }
 
+postgrestTest(
+  "unscrapping a serialized unit averages its original scrap cost into remaining stock",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stampCutover(f);
+      const [unit] = await stockSerials(f, [22]);
+      const setStockRate = (unitCost: number) =>
+        f.db
+          .updateTable("itemCost")
+          .set({ costingMethod: "Average", unitCost })
+          .where("companyId", "=", f.companyId)
+          .where("itemId", "=", f.assemblyId)
+          .execute();
+      await setStockRate(22);
+      const reason = await f.db
+        .insertInto("scrapReason")
+        .values({
+          name: "Damage",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const adjust = async (adjustmentType: "Scrap" | "Unscrap") =>
+        unwrap(
+          await invokePosting(
+            handlesOf(f.ctx),
+            "post-inventory-adjustment",
+            {
+              itemId: f.assemblyId,
+              locationId: f.locationId,
+              quantity: 1,
+              trackedEntityId: unit!.id,
+              adjustmentType,
+              scrapReasonId: reason.id
+            },
+            postInventoryAdjustment
+          )
+        );
+      await adjust("Scrap");
+      await stockSerials(f, [40], 1);
+      await setStockRate(40);
+      const restored = await adjust("Unscrap");
+      expect(
+        await postedAmounts(
+          f,
+          restored.itemLedger!.id,
+          f.account("finished-goods")
+        )
+      ).toEqual([22]);
+      expect(await valuation(f, f.assemblyId)).toEqual([
+        { quantityOnHand: 2, unitCost: 31, totalValue: 62 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
 async function prepareStockIssue(
   f: Fixture,
   ctx: ReturnType<typeof operationContext>,
   itemId: string,
   unit: string,
-  issue: "sale" | "material issue"
+  issue:
+    | "sale"
+    | "material issue"
+    | "positive adjustment"
+    | "negative adjustment"
 ) {
   const handles = handlesOf(f.ctx);
+  if (issue === "positive adjustment" || issue === "negative adjustment") {
+    const increase = issue === "positive adjustment";
+    let ledgerId!: string;
+    return {
+      get documentId() {
+        return ledgerId;
+      },
+      debitAccount: f.account(
+        increase ? "finished-goods" : "adjustment-variance"
+      ),
+      creditAccount: f.account(
+        increase ? "adjustment-variance" : "finished-goods"
+      ),
+      writeTable: "costLedger",
+      post: async (db: Fixture["db"]) => {
+        const result = unwrap(
+          await invokePosting(
+            { ...handles, db },
+            "post-inventory-adjustment",
+            {
+              itemId,
+              locationId: f.locationId,
+              quantity: 1,
+              trackedEntityId: increase ? f.prefix + "-spare" : unit,
+              ...(increase ? { readableId: "SPARE" } : {}),
+              adjustmentType: increase ? "Positive Adjmt." : "Negative Adjmt."
+            },
+            postInventoryAdjustment
+          )
+        );
+        ledgerId = result.itemLedger!.id;
+      }
+    };
+  }
   if (issue === "material issue") {
     // A separate ordinary job consumes the sales SKU as a component.
     const job = await jobFixture(
@@ -422,6 +521,7 @@ async function prepareStockIssue(
     return {
       documentId: job.jobId,
       debitAccount: f.account("wip"),
+      creditAccount: f.account("finished-goods"),
       writeTable: "costLedger",
       post: (db: Fixture["db"]) =>
         invokePosting(
@@ -453,6 +553,7 @@ async function prepareStockIssue(
   return {
     documentId: sale.shipmentId,
     debitAccount: f.account("cogs"),
+    creditAccount: f.account("finished-goods"),
     writeTable: "shipment",
     post: (db: Fixture["db"]) =>
       invokePosting(
@@ -516,6 +617,48 @@ for (const scenario of [
   },
   {
     issue: "material issue",
+    operation: "shipment void",
+    documentFirst: false,
+    issuedAt: 22,
+    remainingCost: 40
+  },
+  {
+    issue: "positive adjustment",
+    operation: "shipment void",
+    documentFirst: true,
+    issuedAt: 31,
+    remainingCost: 31
+  },
+  {
+    issue: "positive adjustment",
+    operation: "shipment void",
+    documentFirst: false,
+    issuedAt: 22,
+    remainingCost: 28
+  },
+  {
+    issue: "negative adjustment",
+    operation: "return post",
+    documentFirst: true,
+    issuedAt: 31,
+    remainingCost: 31
+  },
+  {
+    issue: "negative adjustment",
+    operation: "return post",
+    documentFirst: false,
+    issuedAt: 22,
+    remainingCost: 40
+  },
+  {
+    issue: "negative adjustment",
+    operation: "shipment void",
+    documentFirst: true,
+    issuedAt: 31,
+    remainingCost: 31
+  },
+  {
+    issue: "negative adjustment",
     operation: "shipment void",
     documentFirst: false,
     issuedAt: 22,
@@ -668,17 +811,18 @@ for (const scenario of [
           await postedAmounts(
             f,
             stockIssue.documentId,
-            f.account("finished-goods")
+            stockIssue.creditAccount
           )
         ).toEqual([-issuedAt]);
+        const remainingUnits = issue === "positive adjustment" ? 3 : 1;
         expect(await valuation(f, itemId)).toEqual(
           remainingCost === null
             ? []
             : [
                 {
-                  quantityOnHand: 1,
+                  quantityOnHand: remainingUnits,
                   unitCost: remainingCost,
-                  totalValue: remainingCost
+                  totalValue: remainingUnits * remainingCost
                 }
               ]
         );

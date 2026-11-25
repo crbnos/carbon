@@ -24,7 +24,11 @@
     },
     {
       "file": "apps/erp/app/modules/inventory/inventory.service.ts",
-      "functions": ["lockAverageIssueAndReturnItems", "lockStockPostingUnits"],
+      "functions": [
+        "lockAverageIssueAndReturnItems",
+        "lockStockPostingUnits",
+        "postInventoryAdjustment"
+      ],
       "markers": ["const restoredItems = [", "if (expectedSerialSlots.size) {"],
       "tests": [
         "apps/erp/test/database/serialized-return-average.test.ts",

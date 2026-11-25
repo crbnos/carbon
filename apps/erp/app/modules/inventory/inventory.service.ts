@@ -357,6 +357,7 @@ import {
   loadWarrantyReturnLineIds,
   type ServiceUnit,
   shipServiceUnits,
+  assertReturnShipmentCustody,
   unshipServiceUnits
 } from "./shipment-service-return";
 import {
@@ -2381,9 +2382,30 @@ export async function assignShipmentSerial(
       )
         return "This serial is already assigned to another shipment slot.";
 
-      // A voided ship-back releases its slot for the same RMA. A stock return has a
-      // later credit for the same physical unit. A depot return is proven
-      // by the service job above and the posted receipt of that customer's RMA.
+      // A voided customer ship-back restores stock on the original RMA.
+      // A sale can pick it after that line releases the unit, while the
+      // reversal is still its latest stock movement apart from bin transfers.
+      const releasedAfterVoid = sql<boolean>`EXISTS (
+        SELECT 1 FROM "shipmentLine" slot
+        JOIN "salesReturnOrderLine" rma ON rma.id = slot."lineId" AND rma."companyId" = slot."companyId"
+        JOIN "receiptLine" rl ON rl."lineId" = rma.id AND rl."companyId" = rma."companyId" AND rl."receiptId" = back.id
+        JOIN "itemLedger" received ON received."companyId" = rl."companyId" AND received."documentId" = back.id
+          AND received."itemId" = rl."itemId" AND received."trackedEntityId" = ${selected.id}
+          AND received."documentType" = 'Sales Return Receipt' AND received.quantity = 1
+        JOIN "itemLedger" restored ON restored."companyId" = received."companyId" AND restored."documentId" = prior.id
+          AND restored."trackedEntityId" = received."trackedEntityId" AND restored."itemId" = received."itemId"
+          AND restored."documentType" = 'Sales Return Shipment' AND restored.quantity = 1
+          AND restored."entryNumber" > received."entryNumber"
+        WHERE slot."companyId" = prior."companyId" AND slot."shipmentId" = prior.id
+          AND slot.id = ${attributes["Shipment Line"] ?? null} AND slot."itemId" = ${itemId}
+          AND rma."salesReturnOrderId" = back."sourceDocumentId" AND rma."returnType" = 'Return to Stock'
+          AND rma.disposition = 'Use As Is'
+          AND NOT EXISTS (
+            SELECT 1 FROM "itemLedger" later WHERE later."companyId" = restored."companyId"
+              AND later."trackedEntityId" = restored."trackedEntityId" AND later."entryNumber" > restored."entryNumber"
+              AND later."entryType" <> 'Transfer' AND later.quantity <> 0
+          )
+      )`;
       const prior = await sql<{ status: string }>`
         SELECT prior.status FROM shipment prior
         JOIN receipt back ON back."companyId" = prior."companyId" AND back.id = ${receiptId}
@@ -2391,9 +2413,10 @@ export async function assignShipmentSerial(
           AND back.status = 'Posted' AND back."sourceDocument" = 'Sales Return Order'
           AND (NOT ${line.sourceDocument === "Sales Return Order"} OR back."sourceDocumentId" = ${line.sourceDocumentId})
           AND CASE
-            WHEN prior.status = 'Voided' THEN ${line.sourceDocument === "Sales Return Order"}
-              AND prior."sourceDocument" = 'Sales Return Order' AND prior."sourceDocumentId" = back."sourceDocumentId"
-              AND prior."customerId" = ${line.customerId}
+            WHEN prior.status = 'Voided' THEN prior."sourceDocument" = 'Sales Return Order'
+              AND prior."sourceDocumentId" = back."sourceDocumentId"
+              AND ((${line.sourceDocument === "Sales Return Order"} AND prior."customerId" = ${line.customerId})
+                OR (${line.sourceDocument === "Sales Order"} AND ${releasedAfterVoid}))
             WHEN prior.status <> 'Posted' THEN false
             WHEN ${Boolean(serviceJob)} THEN prior."customerId" = ${line.customerId}
             ELSE EXISTS (
@@ -2429,22 +2452,26 @@ export async function assignShipmentSerial(
       `.execute(trx);
       if (!prior.rows.length)
         return "This serial is already assigned to another shipment slot.";
-      if (prior.rows[0].status === "Voided") {
-        // Voids posted before slot snapshots still have their original tags.
-        // Capture those slots before the first replacement pick moves one.
-        await sql`
-          UPDATE "trackedActivity" reversal
-          SET attributes = coalesce(reversal.attributes, '{}'::jsonb) || jsonb_build_object('Shipment Slots', (
-            SELECT jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-              'id', u.id, 'lineId', u.attributes->>'Shipment Line', 'index', u.attributes->'Shipment Line Index'
-            ))) FROM "trackedEntity" u WHERE u."companyId" = reversal."companyId"
-              AND u.attributes->>'Shipment' = reversal."sourceDocumentId"
-          ))
-          WHERE reversal."companyId" = ${companyId} AND reversal."sourceDocument" = 'Shipment'
-            AND reversal."sourceDocumentId" = ${previousShipmentId} AND reversal.type = 'Void Shipment'
-            AND reversal.attributes->'Shipment Slots' IS NULL
-        `.execute(trx);
-      }
+      // A legacy ship-back may still carry its original slot only on the
+      // unit. Freeze each activity's own physical inputs before repicking.
+      const voided = prior.rows[0].status === "Voided";
+      await sql`
+        UPDATE "trackedActivity" a
+        SET attributes = coalesce(a.attributes, '{}'::jsonb) || jsonb_build_object('Shipment Slots', (
+          SELECT coalesce(jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
+            'id', u.id, 'lineId', u.attributes->>'Shipment Line', 'index', u.attributes->'Shipment Line Index'
+          ))), '[]'::jsonb) FROM "trackedEntity" u
+          WHERE u."companyId" = a."companyId" AND u.attributes->>'Shipment' = a."sourceDocumentId"
+            AND (${voided} OR EXISTS (
+              SELECT 1 FROM "trackedActivityInput" input WHERE input."trackedActivityId" = a.id
+                AND input."companyId" = a."companyId" AND input."trackedEntityId" = u.id
+            ))
+        ))
+        WHERE a."companyId" = ${companyId} AND a."sourceDocument" = 'Shipment'
+          AND a."sourceDocumentId" = ${previousShipmentId}
+          AND a.type = ${voided ? "Void Shipment" : "Return Shipment"}
+          AND a.attributes->'Shipment Slots' IS NULL
+      `.execute(trx);
     }
     if (currentId) {
       await trx
@@ -20650,16 +20677,19 @@ export async function trackedShipmentSourceBins(
     chosen.push({ trackedEntityId, locationId, quantity, storageUnitId });
     return storageUnitId;
   };
-  sourceBin.confirm = async (trx: Kysely<KyselyDatabase>) => {
+  sourceBin.confirm = async (
+    trx: Kysely<KyselyDatabase>,
+    custodyUnitIds: string[] = []
+  ) => {
     const ids = [
-      ...new Set(
-        chosen.flatMap((pick) =>
-          pick.trackedEntityId ? [pick.trackedEntityId] : []
-        )
-      )
+      ...new Set([
+        ...custodyUnitIds,
+        ...chosen.flatMap((pick) => pick.trackedEntityId ?? [])
+      ])
     ];
     if (ids.length === 0) return;
     await lockStockPostingUnits(trx, args.companyId, ids);
+    if (!chosen.length) return;
     const current = await readBins(trx);
     for (const pick of chosen) {
       const storageUnitId = resolve(
@@ -22651,6 +22681,8 @@ export async function postShipment(
                 .filter((id): id is string => Boolean(id))
             );
             const serviceUnits: ServiceUnit[] = [];
+            const stockSlots: { id: string; lineId: string; index?: number }[] =
+              [];
             const shippedByReturnLine = new Map<string, number>();
             // A returned serial or batch ships from the bin it holds stock in,
             // not the line's bin, as a sales order shipment does.
@@ -22694,6 +22726,11 @@ export async function postShipment(
               ) {
                 serviceUnits.push({
                   salesReturnOrderLineId: shipmentLine.lineId,
+                  shipmentLineId: shipmentLine.id,
+                  index: (
+                    lineEntities[0]
+                      ?.attributes as TrackedEntityAttributes | null
+                  )?.["Shipment Line Index"],
                   trackedEntityId:
                     itemTrackingType === "Serial"
                       ? (lineEntities[0]?.id ?? null)
@@ -22745,6 +22782,13 @@ export async function postShipment(
                   (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
                   entitySum;
                 for (const entity of lineEntities) {
+                  stockSlots.push({
+                    id: entity.id,
+                    lineId: shipmentLine.id,
+                    index: (
+                      entity.attributes as TrackedEntityAttributes | null
+                    )?.["Shipment Line Index"]
+                  });
                   itemLedgerInserts.push({
                     postingDate: today,
                     itemId: shipmentLine.itemId,
@@ -22782,7 +22826,16 @@ export async function postShipment(
               await setInspectionRelease(trx);
               await lockPostable(trx, "shipment", shipmentId, companyId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-              await sourceBin.confirm(trx);
+              await sourceBin.confirm(
+                trx,
+                serviceUnits.flatMap((unit) => unit.trackedEntityId ?? [])
+              );
+              await lockAverageIssueAndReturnItems(
+                trx,
+                companyId,
+                Object.keys(itemShipmentQuantities),
+                "issue"
+              );
 
               const returnedItems: ReturnShipmentItem[] = [];
               for (const [itemId, quantity] of Object.entries(
@@ -22878,6 +22931,7 @@ export async function postShipment(
                     sourceDocumentReadableId: shipmentHeader.shipmentId,
                     attributes: {
                       "Sales Return Order": salesReturnOrderId,
+                      "Shipment Slots": stockSlots,
                       Shipment: shipmentId,
                       Employee: userId
                     },
@@ -24970,49 +25024,13 @@ export async function postShipment(
                 .forUpdate()
                 .execute();
               const shippedIds = shipped.map((unit) => unit.id);
-              if (shippedIds.length) {
-                // A stock debit orders later moves even on the same posting
-                // date. A depot ship-back records the stock cursor it observed.
-                // The posted receipt of a linked second RMA also proves a
-                // later handoff when the old shipment has no stock cursor.
-                const later = await sql`
-                  SELECT id FROM "trackedEntity" unit WHERE unit."companyId" = ${companyId}
-                    AND unit.id = ANY(${shippedIds}::text[]) AND (
-                      unit.status <> 'Consumed' OR unit.attributes->>'Shipment' IS DISTINCT FROM ${shipmentId}
-                      OR EXISTS (SELECT 1 FROM receipt r WHERE r."companyId" = unit."companyId"
-                        AND r.id = unit.attributes->>'Receipt' AND r.status = 'Posted'
-                        AND r."sourceDocument" = 'Sales Return Order' AND r."sourceDocumentId" IS DISTINCT FROM ${shipmentHeader.sourceDocumentId})
-                      OR EXISTS (SELECT 1 FROM "shipmentLine" original
-                        JOIN "salesReturnOrderLine" next ON next."shipmentLineId" = original.id AND next."companyId" = original."companyId"
-                        JOIN "receiptLine" line ON line."lineId" = next.id AND line."companyId" = next."companyId"
-                        JOIN receipt r ON r.id = line."receiptId" AND r."companyId" = line."companyId"
-                        JOIN "trackedActivity" a ON a."sourceDocumentId" = r.id AND a."companyId" = r."companyId"
-                        JOIN "trackedActivityOutput" o ON o."trackedActivityId" = a.id AND o."companyId" = a."companyId"
-                        WHERE original."shipmentId" = ${shipmentId} AND original."companyId" = unit."companyId"
-                          AND r.status = 'Posted' AND r."sourceDocument" = 'Sales Return Order'
-                          AND r."sourceDocumentId" = next."salesReturnOrderId" AND line."receivedQuantity" > 0
-                          AND a.type = 'Return Receipt' AND a."sourceDocument" = 'Receipt' AND o."trackedEntityId" = unit.id)
-                      OR EXISTS (SELECT 1 FROM "itemLedger" sent JOIN "itemLedger" later
-                        ON later."companyId" = sent."companyId" AND later."trackedEntityId" = sent."trackedEntityId"
-                        AND later."entryNumber" > sent."entryNumber" AND later.quantity <> 0
-                        WHERE sent."companyId" = unit."companyId" AND sent."trackedEntityId" = unit.id
-                          AND sent."documentId" = ${shipmentId} AND sent."documentType" = 'Sales Return Shipment' AND sent.quantity < 0)
-                      OR EXISTS (SELECT 1 FROM "trackedActivity" activity
-                        JOIN "trackedActivityInput" input ON input."trackedActivityId" = activity.id
-                          AND input."companyId" = activity."companyId"
-                        JOIN "itemLedger" later ON later."trackedEntityId" = input."trackedEntityId"
-                          AND later."companyId" = activity."companyId"
-                        AND later."entryNumber" > (activity.attributes->>'Stock Entry Number')::bigint
-                        WHERE activity."companyId" = unit."companyId" AND activity.type = 'Return Shipment'
-                          AND activity."sourceDocument" = 'Shipment' AND activity."sourceDocumentId" = ${shipmentId}
-                          AND later."trackedEntityId" = unit.id AND later.quantity <> 0)
-                    ) LIMIT 1
-                `.execute(trx);
-                if (later.rows.length)
-                  throw new InvalidInputError(
-                    "Cannot void: a unit has moved since this return shipment."
-                  );
-              }
+              await assertReturnShipmentCustody(
+                trx,
+                companyId,
+                shipmentId,
+                shipmentHeader.sourceDocumentId!,
+                shippedIds
+              );
               const reversingItemLedger = (originalItemLedger.data ?? []).map(
                 (entry) => ({
                   postingDate: today,
@@ -25031,6 +25049,31 @@ export async function postShipment(
                   companyId
                 })
               );
+              const shippedCosts = (originalCostRows.data ?? []).filter(
+                (row) => row.quantity < 0
+              );
+              // A ship-back void restores its booked value. Other stock can
+              // have a different Average rate by the time the clerk voids it.
+              await lockAverageIssueAndReturnItems(
+                trx,
+                companyId,
+                reversingItemLedger.map((row) => row.itemId),
+                "return"
+              );
+              await applyAverageCostChanges(trx, {
+                companyId,
+                changes: shippedCosts.flatMap((row) =>
+                  row.itemId
+                    ? [
+                        {
+                          itemId: row.itemId,
+                          quantity: -row.quantity,
+                          value: -row.cost
+                        }
+                      ]
+                    : []
+                )
+              });
               if (reversingItemLedger.length > 0) {
                 await trx
                   .insertInto("itemLedger")
@@ -25038,16 +25081,9 @@ export async function postShipment(
                   .execute();
               }
 
-              // Restore inventory VALUE, not just quantity: posting consumed
-              // FIFO layers via calculateCOGS; without an offsetting layer
-              // the voided stock re-enters at zero value and inventory is
-              // permanently understated.
+              // Restore the cost layers consumed by the original shipment.
               const costLedgerRows: Database["public"]["Tables"]["costLedger"]["Insert"][] =
-                [
-                  ...(originalCostRows.data ?? []).filter(
-                    (r) => Number(r.quantity) < 0
-                  )
-                ].map((row) => ({
+                shippedCosts.map((row) => ({
                   itemLedgerType: row.itemLedgerType,
                   costLedgerType: "Direct Cost",
                   adjustment: false,
@@ -26012,15 +26048,6 @@ export async function postInventoryAdjustment(
     if (existing && existing.companyId !== companyId) {
       throw new NotFoundError("Tracked entity not found");
     }
-    const held =
-      existing &&
-      (await inspectionHoldAdjustmentRefusal(db, companyId, {
-        itemId,
-        trackedEntityId,
-        adjustmentType,
-        quantity
-      }));
-    if (held) throw new InvalidInputError(held);
   }
 
   const today = datetime
@@ -26028,67 +26055,32 @@ export async function postInventoryAdjustment(
     .toString();
   const nowIso = datetime.timestamp();
 
-  const [storageUnitQuantities, itemResult, itemCostResult, shelfLife] =
-    await inOrder([
-      () =>
-        rpcRows(db, "get_item_quantities_by_tracking_id", {
-          item_id: itemId,
-          company_id: companyId,
-          location_id: locationId ?? ""
-        }),
-      () =>
-        single(
-          db,
-          "item",
-          { id: itemId, companyId },
-          {
-            columns: [
-              "id",
-              "itemTrackingType",
-              "replenishmentSystem",
-              "readableIdWithRevision"
-            ]
-          }
-        ),
-      () =>
-        single(
-          db,
-          "itemCost",
-          { itemId, companyId },
-          {
-            columns: [
-              "costingMethod",
-              "unitCost",
-              "standardCost",
-              "itemPostingGroupId"
-            ]
-          }
-        ),
-      () =>
-        maybeSingle(
-          db,
-          "itemShelfLife",
-          { itemId, companyId },
-          { columns: ["mode", "days"] }
-        )
-    ]);
+  const [itemResult, shelfLife] = await inOrder([
+    () =>
+      single(
+        db,
+        "item",
+        { id: itemId, companyId },
+        {
+          columns: [
+            "id",
+            "itemTrackingType",
+            "replenishmentSystem",
+            "readableIdWithRevision"
+          ]
+        }
+      ),
+    () =>
+      maybeSingle(
+        db,
+        "itemShelfLife",
+        { itemId, companyId },
+        { columns: ["mode", "days"] }
+      )
+  ]);
 
   if (itemResult.error) throw new Error("Failed to fetch item");
-  if (itemCostResult.error) throw new Error("Failed to fetch item cost");
-  // Fail closed: a failed quantity read must abort, not read as "no stock" —
-  // a Set Quantity against an empty snapshot would post the full target as
-  // new stock on top of whatever actually exists.
-  if (storageUnitQuantities.error) {
-    throw new Error("Failed to fetch current quantities");
-  }
   if (shelfLife.error) throw new Error("Failed to fetch item shelf life");
-  const item = {
-    itemTrackingType: itemResult.data.itemTrackingType,
-    replenishmentSystem: itemResult.data.replenishmentSystem,
-    itemPostingGroupId: itemCostResult.data.itemPostingGroupId
-  };
-  const itemCost = itemCostResult.data;
-
   // Every adjustment that carries value posts a journal: Provisional before
   // the company's accounting cutover, Posted after it. Read here to decide
   // whether to resolve a period, and again inside the transaction.
@@ -26162,66 +26154,15 @@ export async function postInventoryAdjustment(
     // The stock stripe of the row: a project id, or null for common stock.
     projectId: string | null;
   };
-  const trackingRows = (storageUnitQuantities.data ??
-    []) as TrackingQuantityRow[];
-
-  const fullest = (rows: TrackingQuantityRow[]) =>
-    rows.reduce<TrackingQuantityRow | null>(
-      (best, q) =>
-        !best || (q.quantity ?? 0) > (best.quantity ?? 0) ? q : best,
-      null
-    );
-  const rowsOfLot = (lotId: string) =>
-    trackingRows.filter((q) => q.trackedEntityId === lotId);
-  // Non-empty when the payload names a lot that already has stock movements
-  // here. That lot is then the target: a batch number is not unique per lot.
-  const lotRows = trackedEntityId ? rowsOfLot(trackedEntityId) : [];
-  const lotRowIn = (bin: string | null | undefined) =>
-    fullest(lotRows.filter((q) => q.storageUnitId == bin));
-  // A lot's total on-hand after a movement, for settleQuantity. Below zero
-  // means one of its bins is already negative: refused as input the user can
-  // correct, where settleQuantity would throw a 500.
-  const lotOnHandAfter = (lotId: string, movement: number) => {
-    const total = round(
-      rowsOfLot(lotId).reduce((sum, q) => sum + (q.quantity ?? 0), movement)
-    );
-    if (total < 0) {
-      throw new InvalidInputError(
-        "This tracked entity has a negative quantity in a storage unit — correct that row first"
-      );
-    }
-    return total;
+  const readQuantities = async (trx: Transaction<KyselyDatabase>) => {
+    const result = await rpcRows(trx, "get_item_quantities_by_tracking_id", {
+      item_id: itemId,
+      company_id: companyId,
+      location_id: locationId ?? ""
+    });
+    if (result.error) throw new Error("Failed to fetch current quantities");
+    return (result.data ?? []) as TrackingQuantityRow[];
   };
-  // A tracked entity's movements stay in the stripe that holds it: the
-  // stripe of its row with the most on-hand. Untracked stock, and a new
-  // entity, are adjusted in the requested stripe (common by default).
-  const entityHolding = fullest(lotRows);
-  const entityStripe = entityHolding
-    ? (entityHolding.projectId ?? null)
-    : requestedStripe;
-
-  const ledgerBase = {
-    postingDate: today,
-    itemId,
-    locationId,
-    storageUnitId: storageUnitId ?? null,
-    trackedEntityId: trackedEntityId ?? null,
-    documentType: null,
-    documentId: null,
-    comment: comment || null,
-    projectId: entityStripe,
-    companyId,
-    createdBy: userId
-  };
-
-  // The row an adjustment that names no lot is measured against.
-  // null == undefined — loose equality is deliberate (ported behavior).
-  const currentQuantity = trackedEntityId
-    ? undefined
-    : trackingRows.find(
-        (q) =>
-          q.storageUnitId == storageUnitId && q.projectId == requestedStripe
-      );
 
   // Fixed Duration shelf-life fallback for NEW tracked entities when the
   // user did not type an expiry. Other modes stay NULL (resolved at
@@ -26326,6 +26267,126 @@ export async function postInventoryAdjustment(
 
   await db.transaction().execute(async (trx) => {
     await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+    // A reduction can name a serial by its label or select the only lot in
+    // a bin. Resolve that candidate before taking the valuation lock so the
+    // lock order matches a shipment void and customer return.
+    const unitIds = new Set<string>(trackedEntityId ? [trackedEntityId] : []);
+    if (
+      adjustmentType === "Negative Adjmt." ||
+      adjustmentType === "Set Quantity"
+    ) {
+      const before = await readQuantities(trx);
+      if (
+        !trackedEntityId ||
+        !before.some((row) => row.trackedEntityId === trackedEntityId)
+      ) {
+        const [candidate, another] = new Set(
+          before.flatMap((row) =>
+            row.trackedEntityId &&
+            row.storageUnitId == storageUnitId &&
+            (!readableId || row.readableId === readableId) &&
+            (row.quantity ?? 0) > 0
+              ? [row.trackedEntityId]
+              : []
+          )
+        );
+        if (candidate && !another) unitIds.add(candidate);
+      }
+    }
+    await lockStockPostingUnits(trx, companyId, [...unitIds]);
+    await lockAverageIssueAndReturnItems(
+      trx,
+      companyId,
+      [itemId],
+      adjustmentType === "Unscrap" && trackedEntityId ? "return" : "issue"
+    );
+    const itemCost = await trx
+      .selectFrom("itemCost")
+      .select([
+        "costingMethod",
+        "unitCost",
+        "standardCost",
+        "itemPostingGroupId"
+      ])
+      .where("itemId", "=", itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!itemCost) throw new Error("Failed to fetch item cost");
+    const item = {
+      itemTrackingType: itemResult.data.itemTrackingType,
+      replenishmentSystem: itemResult.data.replenishmentSystem,
+      itemPostingGroupId: itemCost.itemPostingGroupId
+    };
+    if (trackedEntityId) {
+      const held = await inspectionHoldAdjustmentRefusal(trx, companyId, {
+        itemId,
+        trackedEntityId,
+        adjustmentType,
+        quantity
+      });
+      if (held) throw new InvalidInputError(held);
+    }
+    // Both the delta of Set Quantity and a lot's new status must reflect a
+    // return or shipment void that completed while this adjustment waited.
+    const trackingRows = await readQuantities(trx);
+    const fullest = (rows: TrackingQuantityRow[]) =>
+      rows.reduce<TrackingQuantityRow | null>(
+        (best, q) =>
+          !best || (q.quantity ?? 0) > (best.quantity ?? 0) ? q : best,
+        null
+      );
+    const rowsOfLot = (lotId: string) =>
+      trackingRows.filter((q) => q.trackedEntityId === lotId);
+    // Non-empty when the payload names a lot that already has stock movements
+    // here. That lot is then the target: a batch number is not unique per lot.
+    const lotRows = trackedEntityId ? rowsOfLot(trackedEntityId) : [];
+    const lotRowIn = (bin: string | null | undefined) =>
+      fullest(lotRows.filter((q) => q.storageUnitId == bin));
+    // A lot's total on-hand after a movement, for settleQuantity. Below zero
+    // means one of its bins is already negative: refused as input the user can
+    // correct, where settleQuantity would throw a 500.
+    const lotOnHandAfter = (lotId: string, movement: number) => {
+      const total = round(
+        rowsOfLot(lotId).reduce((sum, q) => sum + (q.quantity ?? 0), movement)
+      );
+      if (total < 0) {
+        throw new InvalidInputError(
+          "This tracked entity has a negative quantity in a storage unit — correct that row first"
+        );
+      }
+      return total;
+    };
+    // A tracked entity's movements stay in the stripe that holds it: the
+    // stripe of its row with the most on-hand. Untracked stock, and a new
+    // entity, are adjusted in the requested stripe (common by default).
+    const entityHolding = fullest(lotRows);
+    const entityStripe = entityHolding
+      ? (entityHolding.projectId ?? null)
+      : requestedStripe;
+
+    const ledgerBase = {
+      postingDate: today,
+      itemId,
+      locationId,
+      storageUnitId: storageUnitId ?? null,
+      trackedEntityId: trackedEntityId ?? null,
+      documentType: null,
+      documentId: null,
+      comment: comment || null,
+      projectId: entityStripe,
+      companyId,
+      createdBy: userId
+    };
+
+    // The row an adjustment that names no lot is measured against.
+    // null == undefined — loose equality is deliberate (ported behavior).
+    const currentQuantity = trackedEntityId
+      ? undefined
+      : trackingRows.find(
+          (q) =>
+            q.storageUnitId == storageUnitId && q.projectId == requestedStripe
+        );
 
     if (adjustmentType === "Scrap") {
       const scrapLedgerBase = {
@@ -26789,6 +26850,18 @@ export async function postInventoryAdjustment(
           })
           .execute();
 
+        if (fixedUnitCost != null) {
+          await applyAverageCostChanges(trx, {
+            companyId,
+            changes: [
+              {
+                itemId,
+                quantity: entityQuantity,
+                value: entityQuantity * fixedUnitCost
+              }
+            ]
+          });
+        }
         const booked = await bookAdjustment(trx, {
           ledger: {
             ...unscrapLedgerBase,
@@ -26943,6 +27016,12 @@ export async function postInventoryAdjustment(
       // is the shared rule, so a Scrapped lot stays Scrapped.
       const reduceLotOf = async (row: TrackingQuantityRow, rename?: string) => {
         const lotId = row.trackedEntityId as string;
+        if (!unitIds.has(lotId)) {
+          throw new ServerFnError(
+            "The stock in this bin changed. Refresh and try the adjustment again.",
+            409
+          );
+        }
         if (round(adjustmentQuantity) > round(row.quantity ?? 0)) {
           throw new InvalidInputError(
             "Insufficient quantity for negative adjustment"
