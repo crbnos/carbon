@@ -5388,3 +5388,13 @@ A new stock-out path names which rule it follows in its code comment and has a d
 - A scripted multi-site edit can corrupt brackets; run the typecheck right after it.
 
 **Applies to:** Multi-path fixes run through the Agent tool or `/conductor`.
+
+## A write policy's subquery runs the read policy of the table it reads
+
+**Context:** Page permissions made `supplierPart` and `customerPartToItem` children of `item`, so their write policies check the item's type with `EXISTS (SELECT 1 FROM item …)`. `item`'s SELECT reads both tables back for portal accounts. Every insert, update and delete on them failed with "infinite recursion detected in policy", for Admins too. The cycle test in `rules.test.ts` walked SELECT policies only, and nothing wrote these tables as an API role in a test.
+
+**Problem:** Postgres expands the SELECT policies of every table a policy's subquery reads while the guarded table is still being expanded. A write policy that reads a table whose SELECT reaches back to the guarded table is refused as recursion when the statement is planned, whatever the rows.
+
+**Rule:** Check write policies for cycles as well as read policies: a write policy must not read a table whose SELECT reaches back to the written table. When a child's write has to check a parent that reads it back, read the parent's column through a SECURITY DEFINER lookup scoped to the caller's companies (`get_item_type`, `READ_BACK` in `rules.ts`). Cover new policies with a database test that writes as an API role; `EXPLAIN` of each command finds recursion without needing rows (`item-child-write-policies.test.sql`).
+
+**Applies to:** `packages/database/src/authz/` (`rules.ts`, `manifest.ts`, helpers), any rule that reaches a parent row through a subquery.

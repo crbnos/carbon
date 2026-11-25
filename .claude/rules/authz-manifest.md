@@ -4,13 +4,14 @@ paths:
   - "packages/database/src/event-system/**"
   - "packages/database/supabase/migrations/**"
   - "packages/database/supabase/tests/authz-*.test.sql"
+  - "packages/database/supabase/tests/item-child-write-policies.test.sql"
   - "packages/checks/src/conformance/no-authz-ddl-in-migrations.ts"
   - "packages/dev/src/services/migrations.ts"
 ---
 
 # Authz manifest: RLS policies and helpers
 
-Every RLS policy on a `public` table, and the 21 RLS/auth helper functions, are authored in
+Every RLS policy on a `public` table, and every RLS/auth helper function, are authored in
 `packages/database/src/authz/` and nowhere else. Migrations create tables; they never write
 `CREATE POLICY` / `ALTER POLICY` on a public table or define a managed helper
 (`no-authz-ddl-in-migrations` in `@carbon/checks` fails them, from `20260927000000` on).
@@ -121,6 +122,13 @@ which page owns a table, so a rule names only what differs from the default.
   its readers) in the row's company. The parent's SELECT reads the child (`item`'s portal
   branches read `supplierPart`), so a lookup back made Postgres refuse both as recursive.
   `rules.test.ts` fails on any cycle of SELECT policies.
+- A child the parent's SELECT reads back (`READ_BACK` in `rules.ts`: `item` →
+  `supplierPart`, `customerPartToItem`) cannot write through a subquery on the parent either:
+  the subquery runs the parent's SELECT, which reads the child again, and every write is
+  refused as infinite recursion. Its last hop reads the branch column through a SECURITY
+  DEFINER lookup (`get_item_type`, the caller's companies only) instead. `rules.test.ts`
+  fails on a write policy that reads a table whose SELECT reaches back to the written table;
+  `supabase/tests/item-child-write-policies.test.sql` asks Postgres the same of every table.
 - `rowRule` / `itemRule` take a child's path from the registry when `from` is a child of the
   shared table and no `path` is given.
 - A bare action on a table no page owns throws: name a page key.
@@ -259,7 +267,8 @@ pnpm --filter @carbon/database exec vitest run src/authz
 
 Behaviour tests (run against a local database, each rolls back):
 `supabase/tests/authz-pieces.test.sql` (one case per piece),
-`authz-fixes.test.sql`, `journal-update-tenant-check.test.sql`.
+`authz-fixes.test.sql`, `journal-update-tenant-check.test.sql`,
+`item-child-write-policies.test.sql` (no policy recurses; item children by item type).
 
 A table still on its `baseline.json` hash keeps the policy TEXT production had at takeover.
 The meaning equals its rule; the wording may not — production's `agentThread` policies called

@@ -130,6 +130,36 @@ const admits = (
     : { keys: [permissionKey(page, action)], modules: [] };
 
 /**
+ * Shared tables whose SELECT reads some of their children back: item's portal
+ * branches read supplierPart and customerPartToItem. A write policy on such a
+ * child cannot reach the parent through a subquery, because Postgres runs the
+ * parent's SELECT inside it, which reads the child again, and refuses the
+ * policy as infinite recursion. Its last hop reads the parent's branch column
+ * through a SECURITY DEFINER lookup instead. That skips nothing: the hop
+ * still needs a page key in the row's company, and whoever holds one reads
+ * the parent anyway.
+ */
+const READ_BACK: Readonly<
+  Record<
+    string,
+    {
+      children: readonly string[];
+      column: string;
+      lookup: (
+        id: RawBuilder<unknown>,
+        company: RawBuilder<unknown>
+      ) => RawBuilder<unknown>;
+    }
+  >
+> = {
+  item: {
+    children: ["supplierPart", "customerPartToItem"],
+    column: "type",
+    lookup: (id, company) => sql`get_item_type(${id}, ${company})`
+  }
+};
+
+/**
  * A shared table's rows, one branch per page: the page's rows and the page's
  * key. A child table reaches its parent row through its path, one `EXISTS`
  * per hop, and checks the parent's branches. Every hop is in the company of
@@ -155,16 +185,26 @@ const branches = (
     })
   );
   if (place.kind === "shared") return arms;
+  const readBack = READ_BACK[place.parent]?.children.includes(row.table)
+    ? READ_BACK[place.parent]
+    : undefined;
+  if (
+    readBack &&
+    place.branches.some((branch) => branch.column !== readBack.column)
+  )
+    throw new Error(
+      `authz: ${place.parent}'s lookup reads ${readBack.column}, but a branch of ${row.table} checks another column`
+    );
   const hop = (
     i: number,
     from: string,
     inCompany: RawBuilder<unknown>
   ): RawBuilder<unknown> => {
     const [fk, to] = place.path[i] as readonly [string, string];
-    const rest =
-      i + 1 < place.path.length
-        ? hop(i + 1, to, sql.ref(`${to}.companyId`))
-        : arms;
+    const last = i + 1 === place.path.length;
+    const rest = last ? arms : hop(i + 1, to, sql.ref(`${to}.companyId`));
+    if (last && readBack)
+      return sql`EXISTS (SELECT 1 FROM (SELECT ${readBack.lookup(sql.ref(`${from}.${fk}`), inCompany)} AS ${sql.id(readBack.column)}) AS ${sql.id(to)} WHERE ${rest})`;
     return sql`EXISTS (SELECT 1 FROM ${sql.id("public", to)} WHERE ${sql.ref(`${to}.id`)} = ${sql.ref(`${from}.${fk}`)} AND ${sql.ref(`${to}.companyId`)} = ${inCompany} AND ${rest})`;
   };
   return hop(0, row.ref, company);
