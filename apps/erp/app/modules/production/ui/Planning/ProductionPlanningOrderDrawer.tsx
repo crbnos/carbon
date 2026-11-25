@@ -75,7 +75,8 @@ type OpenProductionOrder = ProductionOrder & {
  * `api+/production.planning-open-jobs`. Any action through the router marks
  * the read stale (the root invalidation middleware), so it follows an Apply
  * and an order placed. `refreshKey` reads again after a change the router
- * does not see (Plan and Release are plain fetches).
+ * does not see (Plan and a cell save are plain fetches), and after the drawer
+ * re-seeds, which drops the row's copy of the planned orders.
  */
 function useDrawerOpenJobs(args: { url: string | null; refreshKey: number }) {
   const { url, refreshKey } = args;
@@ -352,6 +353,7 @@ export const ProductionPlanningOrderDrawer = memo(
     // One cell, one field, one request. The route re-reads the job under the
     // company and refuses one that has been released, so a stale row here
     // cannot edit a job on the floor.
+    const { refetch: refetchOpenJobs } = openJobsQuery;
     const onSaveOpenJob = useCallback(
       async (
         openRow: OpenOrderRow,
@@ -375,9 +377,10 @@ export const ProductionPlanningOrderDrawer = memo(
           if (response.ok && result?.data) {
             // Saved, but a follow-up step failed: keep the new value and say so.
             if (result.data.warning) toast.error(result.data.warning);
-            // A plain fetch bypasses the router: refresh the grid row behind
-            // the drawer, which otherwise shows the old value until the next
-            // navigation.
+            // A plain fetch bypasses the router's invalidation: read the open
+            // jobs again, and refresh the grid row behind the drawer, which
+            // otherwise shows the old value until the next navigation.
+            void refetchOpenJobs();
             void revalidate();
             return true;
           }
@@ -388,7 +391,7 @@ export const ProductionPlanningOrderDrawer = memo(
           return false;
         }
       },
-      [locationId, revalidate, t]
+      [locationId, refetchOpenJobs, revalidate, t]
     );
 
     // Plan: a Draft job becomes Planned, so MRP counts it as supply. Draft is

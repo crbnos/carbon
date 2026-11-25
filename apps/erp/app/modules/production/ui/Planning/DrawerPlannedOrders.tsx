@@ -83,7 +83,11 @@ function useDrawerPlannedOrders(args: {
     staleTime: RefreshRate.High,
     // the drawer remounts per item, so this only keeps the list on screen
     // while a closed drawer slides out
-    keepPreviousData: true
+    keepPreviousData: true,
+    // the drawer's suggested orders are built from what this passes up, so a
+    // reopened drawer reads again rather than trust the cached answer: a run
+    // since (Recalculate, a firm on another item) may have changed them
+    refetchOnMount: "always"
   });
   const { refetch } = query;
   const lastRefreshKey = useRef(refreshKey);
@@ -96,9 +100,17 @@ function useDrawerPlannedOrders(args: {
   // The latest callback, so a new function from the parent re-reads nothing.
   const onLoadedRef = useRef(args.onLoaded);
   onLoadedRef.current = args.onLoaded;
+  // On every read, not only a changed answer: the parent drops its copy when
+  // it re-seeds (an order placed, MRP re-ran) and the read after that often
+  // answers the same orders, which keeps the same `data` reference. Never
+  // while a read is in flight or after a failed one: the answer on screen is
+  // then the cached one, and its ids may be converted or gone.
+  const { data, dataUpdatedAt, isFetching, isError } = query;
   useEffect(() => {
-    if (query.data) onLoadedRef.current?.(query.data.orders);
-  }, [query.data]);
+    if (data && dataUpdatedAt && !isFetching && !isError) {
+      onLoadedRef.current?.(data.orders);
+    }
+  }, [data, dataUpdatedAt, isFetching, isError]);
 
   return query;
 }

@@ -703,8 +703,14 @@ working-day dates.
   `production.utils.ts` as the caller, `view: production` for Make,
   `view: purchasing` for Buy; 400 on a bad query, 500 on a failed read). The
   router's invalidation makes it follow an Apply or an order placed, and
-  `refreshKey` refetches it after a change the router does not see (Plan,
-  Release). It feeds `PlannedOrdersGrid` (`PlanningOrderGrids.tsx`) — status
+  `refreshKey` refetches it after the drawer re-seeds (Plan, Release, an order
+  placed with the drawer left open), which drops the grid's copy of the row's
+  planned orders. `onOrdersLoaded` runs on every read (`dataUpdatedAt`), not
+  only on a changed answer: the read after a re-seed often returns the same
+  orders, and TanStack keeps the same `data` reference for them. It never runs
+  while a read is in flight or after a failed one, and every open reads again
+  (`refetchOnMount: "always"`), so the suggestions are never built from a
+  cached answer whose planned orders a run since has converted or replaced. It feeds `PlannedOrdersGrid` (`PlanningOrderGrids.tsx`) — status
   chip, release date, due date, quantity with the trace tooltip ("Projected stock
   -3 → Fixed Reorder Quantity 5 → scrap +1 → explode 6"), a "Fence" marker on a
   Planned order `isPlannedOrderHeld` holds (the engine's rule), Firm / Unfirm, and
@@ -1270,7 +1276,8 @@ never offered a Cancel, Defer or Expedite.
     as the caller, filtered on `locationId`; the drawer maps the rows to its
     weeks. A router action (Apply, an order placed, a PO reopened or
     finalized, Recalculate) marks the reads stale; the production drawer's
-    `openJobsVersion` refetches after its plain-`fetch` Plan and Release.
+    `openJobsVersion` refetches after Plan (a plain `fetch`) and Release, and
+    a cell save refetches the list it edited (both drawers).
     `updateLine` / `updateJob` refuse another location's record with 409.
     A cell edit SAVES that one field (optimistic, reverted with a toast on
     failure) through `planning.update`'s `updateLine` / `updateJob` action,

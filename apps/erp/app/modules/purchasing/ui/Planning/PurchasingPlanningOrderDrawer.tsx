@@ -202,6 +202,10 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     // Bumped when the rows are re-read, to close any cell editor left open.
     const [suggestionsVersion, setSuggestionsVersion] = useState(0);
+    // Bumped to read the planned orders again after an order placed with the
+    // drawer left open: it converted some, and the re-seed dropped the row's
+    // copy of them.
+    const [plannedOrdersVersion, setPlannedOrdersVersion] = useState(0);
     const submittedOrders = useRef<PlannedOrder[]>([]);
     // A planned order firmed, unfirmed or edited here re-ran MRP: the
     // suggestions are rebuilt from the re-planned actions and orders.
@@ -636,6 +640,7 @@ export const PurchasingPlanningOrderDrawer = memo(
           toast.error(pastStartToast(processedItems, refused.length));
         } else {
           onSuggestionsStale(selectedItem);
+          setPlannedOrdersVersion((version) => version + 1);
         }
 
         if (purchaseOrders.length === 0) {
@@ -922,6 +927,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                       todayIso={locationToday}
                       actions={actions}
                       actionHandlers={actionHandlers}
+                      refreshKey={plannedOrdersVersion}
                       onOrdersLoaded={onPlannedOrdersRead}
                       onReplanned={reseedSuggestions}
                     />
