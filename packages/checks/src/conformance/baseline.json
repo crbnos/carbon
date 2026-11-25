@@ -1640,7 +1640,6 @@
   "status-write-guarded::apps/erp/app/modules/accounting/accounting.service.ts::postRevenueRecognitionRun: revenueRecognitionSchedule.status",
   "status-write-guarded::apps/erp/app/modules/accounting/accounting.service.ts::promoteJournals: journal.status",
   "status-write-guarded::apps/erp/app/modules/accounting/accounting.service.ts::returnToInventory: trackedEntity.status",
-  "status-write-guarded::apps/erp/app/modules/accounting/accounting.service.ts::reverseJournalEntry: journal.status",
   "status-write-guarded::apps/erp/app/modules/accounting/accounting.service.ts::reverseRevenueRecognitionRun: customerContractRevenue.status",
   "status-write-guarded::apps/erp/app/modules/accounting/accounting.service.ts::reverseRevenueRecognitionRun: revenueRecognitionSchedule.status",
   "status-write-guarded::apps/erp/app/modules/accounting/accounting.service.ts::unlockAccountingPeriod: accountingPeriod.closeStatus",

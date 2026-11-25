@@ -11,9 +11,11 @@
 
 import { expect } from "vitest";
 import {
+  PURCHASE_INVOICE_SETTLED_VOID_ERROR,
   postPayment,
   postPurchaseInvoice,
-  postSalesInvoice
+  postSalesInvoice,
+  SALES_INVOICE_SETTLED_VOID_ERROR
 } from "../../app/modules/invoicing/invoicing.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
@@ -76,6 +78,72 @@ async function payPartOfPurchaseInvoice(f: Fixture, invoiceId: string) {
   );
 }
 
+/** A Posted receipt settling the sales invoice with `amounts`, seeded as
+ *  posted: the void reads the settlement, not the payment's journal. */
+async function seedPostedReceipt(
+  f: Fixture,
+  invoiceId: string,
+  amounts: {
+    sourceAmount: number;
+    appliedAmount: number;
+    writeOffAmount?: number;
+  }
+) {
+  const paymentId = `${f.prefix}-posted-receipt`;
+  await seed(f, async (trx) => {
+    await trx
+      .insertInto("payment")
+      .values({
+        id: paymentId,
+        paymentId: "PAY-3",
+        paymentType: "Receipt",
+        customerId: f.customerId,
+        paymentDate: f.today,
+        postingDate: f.today,
+        currencyCode: "USD",
+        totalAmount: amounts.sourceAmount,
+        exchangeRate: 1,
+        bankAccount: f.account("bank"),
+        status: "Posted",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("invoiceSettlement")
+      .values({
+        paymentId,
+        targetSalesInvoiceId: invoiceId,
+        sourceAmount: amounts.sourceAmount,
+        appliedAmount: amounts.appliedAmount,
+        writeOffAmount: amounts.writeOffAmount ?? 0,
+        sourceExchangeRate: 1,
+        targetExchangeRate: 1,
+        appliedDate: f.today,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+}
+
+async function voidSales(f: Fixture, invoiceId: string) {
+  return invokePosting(
+    handlesOf(f.ctx),
+    "post-sales-invoice",
+    { type: "void", invoiceId },
+    postSalesInvoice
+  );
+}
+
+async function salesInvoiceStatus(f: Fixture, invoiceId: string) {
+  return f.db
+    .selectFrom("salesInvoice")
+    .select("status")
+    .where("id", "=", invoiceId)
+    .executeTakeFirstOrThrow();
+}
+
 databaseTest("a paid sales invoice's void is refused", async () => {
   const f = await alwaysPostFixture();
   try {
@@ -89,7 +157,7 @@ databaseTest("a paid sales invoice's void is refused", async () => {
       postSalesInvoice
     );
 
-    expect(voided.error).not.toBeNull();
+    expect(voided.error?.message).toBe(SALES_INVOICE_SETTLED_VOID_ERROR);
     expect(
       await f.db
         .selectFrom("salesInvoices")
@@ -117,7 +185,7 @@ databaseTest(
         postPurchaseInvoice
       );
 
-      expect(voided.error).not.toBeNull();
+      expect(voided.error?.message).toBe(PURCHASE_INVOICE_SETTLED_VOID_ERROR);
       expect(
         await f.db
           .selectFrom("purchaseInvoices")
@@ -125,6 +193,94 @@ databaseTest(
           .where("id", "=", invoiceId)
           .executeTakeFirstOrThrow()
       ).toEqual({ status: "Partially Paid" });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a sales invoice settled only by a write-off cannot be voided",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const invoiceId = await postServiceInvoice(f);
+      // No cash applied: the receipt writes the balance off.
+      await seedPostedReceipt(f, invoiceId, {
+        sourceAmount: 0,
+        appliedAmount: 0,
+        writeOffAmount: 100
+      });
+
+      const voided = await voidSales(f, invoiceId);
+
+      expect(voided.error?.message).toBe(SALES_INVOICE_SETTLED_VOID_ERROR);
+      expect(await salesInvoiceStatus(f, invoiceId)).not.toEqual({
+        status: "Voided"
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a sales invoice whose settlement the view sums to nothing cannot be voided",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const invoiceId = await postServiceInvoice(f);
+      // The view sums the source amount first, so this settlement counts
+      // as 0 there and the invoice reads as neither Paid nor Partially Paid.
+      await seedPostedReceipt(f, invoiceId, {
+        sourceAmount: 0,
+        appliedAmount: 1
+      });
+      const view = await f.db
+        .selectFrom("salesInvoices")
+        .select("status")
+        .where("id", "=", invoiceId)
+        .executeTakeFirstOrThrow();
+      expect(["Paid", "Partially Paid"]).not.toContain(view.status);
+
+      const voided = await voidSales(f, invoiceId);
+
+      expect(voided.error?.message).toBe(SALES_INVOICE_SETTLED_VOID_ERROR);
+      expect(await salesInvoiceStatus(f, invoiceId)).not.toEqual({
+        status: "Voided"
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a Credit Note Issued sales invoice with a posted payment cannot be voided",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const invoiceId = await postServiceInvoice(f);
+      await seedPostedReceipt(f, invoiceId, {
+        sourceAmount: 100,
+        appliedAmount: 100
+      });
+      // The view shows a base status such as Credit Note Issued as it is,
+      // never Paid, whatever settles the invoice.
+      await seed(f, (trx) =>
+        trx
+          .updateTable("salesInvoice")
+          .set({ status: "Credit Note Issued" })
+          .where("id", "=", invoiceId)
+          .execute()
+      );
+
+      const voided = await voidSales(f, invoiceId);
+
+      expect(voided.error?.message).toBe(SALES_INVOICE_SETTLED_VOID_ERROR);
+      expect(await salesInvoiceStatus(f, invoiceId)).toEqual({
+        status: "Credit Note Issued"
+      });
     } finally {
       await f.cleanup();
     }

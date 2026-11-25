@@ -1,18 +1,21 @@
--- complete_job_to_inventory never read the job's status. Completing a Closed
--- job set it back to Completed and received stock again after the close had
--- written off its WIP, so the units came in at about zero cost and the next
--- close wrote off once more. Completing a Cancelled job received stock after
--- its picks were returned. The status is now read under the job lock the
--- function already takes, so a Cancel or Close that commits first is seen.
--- A Completed job still completes again: a re-completion receives the extra
--- quantity.
+-- Forked from 20261124175814_mixed-completion-receipts.sql.
 --
--- Redefined from 20261119125737_job-wip-balance.sql; only the status read and
--- its refusal are new.
-CREATE OR REPLACE FUNCTION public.complete_job_to_inventory(p_job_id text, p_quantity_complete numeric, p_storage_unit_id text DEFAULT NULL::text, p_location_id text DEFAULT NULL::text, p_company_id text DEFAULT NULL::text, p_user_id text DEFAULT NULL::text)
+-- Completing a job never read the job's status. Completing a Closed job set it
+-- back to Completed and received stock again after the close had written off
+-- its WIP, so the units came in at about zero cost and the next close wrote off
+-- once more. Completing a Cancelled job received stock after its picks were
+-- returned. The status is now read under the job lock the function already
+-- takes, so a Cancel or Close that commits first is seen. A Completed job still
+-- completes again: a re-completion receives the extra quantity.
+--
+-- complete_job_to_inventory is a wrapper over util.receive_job_output since
+-- 20261124083717_automatic_receipt_for_worked_serials.sql, so the refusal goes
+-- in util.receive_job_output: it covers complete_job_to_inventory and the final
+-- operation's automatic receipt. Only the status read and its refusal are new.
+CREATE OR REPLACE FUNCTION util.receive_job_output(p_job_id text, p_quantity_complete numeric, p_storage_unit_id text, p_location_id text, p_company_id text, p_user_id text, p_worked_unit_ids text[])
  RETURNS void
  LANGUAGE plpgsql
- SECURITY DEFINER
+ SECURITY INVOKER
  SET search_path TO 'public'
 AS $function$
 DECLARE
@@ -24,6 +27,14 @@ DECLARE
   v_job_company_id TEXT;
   v_prior_quantity_received NUMERIC;
   v_quantity_received_to_inventory NUMERIC;
+  v_hold_units BOOLEAN := false;
+  v_unidentified_prior NUMERIC;
+  v_prior_other_units INTEGER;
+  v_anonymous_quantity NUMERIC;
+  v_named_only BOOLEAN := false;
+  v_blocked_unit_ids TEXT[] := '{}';
+  v_held_quantity NUMERIC;
+  v_receivable_quantity NUMERIC;
   v_job_id_readable TEXT;
   v_job_make_method RECORD;
   v_tracked_entity RECORD;
@@ -263,6 +274,103 @@ BEGIN
     RAISE EXCEPTION 'Quantity completed must be a whole number for serial-tracked job %', v_job_id_readable;
   END IF;
 
+  -- A completion receives eligible serials only. Closing an issue releases
+  -- an accepted serial. Scrap and Return to Supplier exclude that serial
+  -- from subsequent receipts while the company uses quality holds. Finishing an
+  -- operation by hand, the ERP's Complete and a batch completion name no unit,
+  -- so this is where a unit on hold is kept out of stock.
+  IF v_job_make_method."requiresSerialTracking" THEN
+    SELECT COALESCE(cs."holdUnitsWithOpenIssues", false)
+    INTO v_hold_units
+    FROM "companySettings" cs
+    WHERE cs.id = p_company_id;
+    v_hold_units := COALESCE(v_hold_units, false);
+
+    IF v_hold_units OR p_worked_unit_ids IS NOT NULL THEN
+      -- Quality's disposition posting locks the affected units. Wait for any
+      -- such posting, then read issue state in a new statement. Keep the ids
+      -- from that snapshot for the cap, seed splitting and both receipt paths.
+      PERFORM te.id FROM "trackedEntity" te
+      WHERE te."companyId" = p_company_id AND te.attributes->>'Job Make Method' = v_job_make_method.id
+      ORDER BY te.id FOR UPDATE;
+
+      v_blocked_unit_ids := ARRAY(
+        SELECT DISTINCT te.id FROM "trackedEntity" te JOIN "unitQualityHold" h
+          ON h."trackedEntityId" = te.id AND h."companyId" = te."companyId"
+        WHERE te."companyId" = p_company_id AND te.attributes->>'Job Make Method' = v_job_make_method.id
+      );
+
+      IF p_worked_unit_ids IS NOT NULL THEN
+        -- A multi-unit receipt on a seed identifies one row. Its remaining
+        -- quantity has already been received, but cannot be tied to a serial.
+        SELECT GREATEST(COALESCE(v_prior_quantity_received, 0) - count(*), 0),
+               count(*) FILTER (WHERE NOT (prior.unit_id = ANY(p_worked_unit_ids)))
+        INTO v_unidentified_prior, v_prior_other_units
+        FROM util.received_job_serials(p_job_id, p_company_id) prior(unit_id);
+
+        -- Receipts of other serials cover anonymous work. Apply any grouped
+        -- prior quantity to the remaining anonymous slots before named units.
+        v_anonymous_quantity := GREATEST(p_quantity_complete - cardinality(p_worked_unit_ids) - v_prior_other_units, 0);
+        v_named_only := v_anonymous_quantity <= v_unidentified_prior;
+
+        -- A named completion receives the worked serials not received yet.
+        -- An ineligible named serial does not create an anonymous slot.
+        SELECT count(*) FILTER (WHERE NOT (te.id = ANY(v_blocked_unit_ids))),
+               count(*) FILTER (WHERE te.id = ANY(v_blocked_unit_ids))
+        INTO v_receivable_quantity, v_held_quantity
+        FROM "trackedEntity" te
+        WHERE te."companyId" = p_company_id
+          AND te.attributes->>'Job Make Method' = v_job_make_method.id
+          AND te.id = ANY(p_worked_unit_ids)
+          AND te.quantity = 1
+          AND NOT EXISTS (
+            SELECT 1 FROM util.received_job_serials(p_job_id, p_company_id) prior(unit_id)
+            WHERE prior.unit_id = te.id
+          )
+          -- A held unit still explains the shortfall after Quality marks it
+          -- Rejected. Only the receivable count requires an eligible status.
+          AND (te.id = ANY(v_blocked_unit_ids) OR CASE WHEN v_asset_target IS NULL THEN
+                te.status NOT IN ('Consumed', 'Rejected', 'Scrapped') OR (
+                  te.status = 'Consumed' AND EXISTS (
+                    SELECT 1 FROM "itemLedger" il
+                    WHERE il."trackedEntityId" = te.id AND il."companyId" = p_company_id AND il.quantity < 0
+                  )
+                )
+              ELSE te.status NOT IN ('Consumed', 'Rejected', 'Scrapped') AND NOT (te.attributes ? 'Fixed Asset')
+              END);
+
+        v_quantity_received_to_inventory := GREATEST(v_receivable_quantity + v_anonymous_quantity - v_unidentified_prior, 0);
+        p_quantity_complete := COALESCE(v_prior_quantity_received, 0) + v_quantity_received_to_inventory;
+        IF v_quantity_received_to_inventory = 0 AND v_held_quantity > 0 AND
+           v_receivable_quantity + v_anonymous_quantity + v_held_quantity > v_unidentified_prior THEN
+          RAISE EXCEPTION 'Job % has no unit to receive: % unit(s) are blocked by a quality issue',
+            v_job_id_readable, v_held_quantity;
+        END IF;
+      END IF;
+
+      IF NOT v_named_only AND cardinality(v_blocked_unit_ids) > 0 THEN
+        -- Count actual remaining units. A multi-unit seed may have been
+        -- partly received, a replacement may exceed the original unit count,
+        -- and inspection may have rejected a peer with no linked NCR. The
+        -- Complete dialog reads the same capacity from the preview state.
+        SELECT c.held, c.receivable
+        INTO v_held_quantity, v_receivable_quantity
+        FROM util.job_serial_receipt_capacity(
+          p_job_id, p_company_id, v_job_make_method.id, v_item_id, v_asset_target, v_blocked_unit_ids
+        ) c;
+
+        IF v_held_quantity > 0 THEN
+          p_quantity_complete := LEAST(p_quantity_complete, COALESCE(v_prior_quantity_received, 0) + v_receivable_quantity);
+          v_quantity_received_to_inventory := p_quantity_complete - COALESCE(v_prior_quantity_received, 0);
+          IF v_quantity_received_to_inventory = 0 AND v_receivable_quantity = 0 THEN
+            RAISE EXCEPTION 'Job % has no unit to receive: % unit(s) are blocked by a quality issue',
+              v_job_id_readable, v_held_quantity;
+          END IF;
+        END IF;
+      END IF;
+    END IF;
+  END IF;
+
   -- The quantity is cumulative, so a stocked job cannot be completed at less than
   -- it has already received: the negative delta would post a negative receipt,
   -- cost layer and WIP journal. Received stock is corrected through inventory
@@ -335,19 +443,22 @@ BEGIN
             AND te.status NOT IN ('Consumed', 'Rejected', 'Scrapped')
             AND te.quantity = 1
             AND NOT (te.attributes ? 'Fixed Asset')
+            AND NOT (te.id = ANY(v_blocked_unit_ids))
+            AND (NOT v_named_only OR te.id = ANY(p_worked_unit_ids))
           ORDER BY
+            (te.id = ANY(p_worked_unit_ids)) DESC,
             CASE te.status WHEN 'Available' THEN 0 WHEN 'Reserved' THEN 1 ELSE 2 END,
             te."readableId" NULLS LAST,
             te."createdAt",
             te.id
           FOR UPDATE OF te
         );
-        EXIT WHEN v_split_done
+        EXIT WHEN v_named_only OR v_split_done
           OR COALESCE(array_length(v_asset_unit_ids, 1), 0) >= v_quantity_received_to_inventory;
         v_split_done := true;
-        EXIT WHEN split_serial_units_for_completion(
+        EXIT WHEN util.split_receivable_serial_units(
           p_job_id, v_job_make_method.id, p_company_id,
-          v_quantity_received_to_inventory::INTEGER - COALESCE(array_length(v_asset_unit_ids, 1), 0)
+          v_quantity_received_to_inventory::INTEGER - COALESCE(array_length(v_asset_unit_ids, 1), 0), v_blocked_unit_ids
         ) = 0;
       END LOOP;
 
@@ -637,19 +748,22 @@ BEGIN
               AND il."documentType" = 'Job Receipt'
               AND il."documentId" = p_job_id
           )
+          AND NOT (te.id = ANY(v_blocked_unit_ids))
+          AND (NOT v_named_only OR te.id = ANY(p_worked_unit_ids))
         ORDER BY
+          (te.id = ANY(p_worked_unit_ids)) DESC,
           CASE te.status WHEN 'Available' THEN 0 WHEN 'Consumed' THEN 0 WHEN 'Reserved' THEN 1 ELSE 2 END,
           te."readableId" NULLS LAST,
           te."createdAt",
           te.id
         FOR UPDATE OF te
       );
-      EXIT WHEN v_split_done
+      EXIT WHEN v_named_only OR v_split_done
         OR COALESCE(array_length(v_serial_unit_ids, 1), 0) >= v_quantity_received_to_inventory;
       v_split_done := true;
-      EXIT WHEN split_serial_units_for_completion(
+      EXIT WHEN util.split_receivable_serial_units(
         p_job_id, v_job_make_method.id, p_company_id,
-        v_quantity_received_to_inventory::INTEGER - COALESCE(array_length(v_serial_unit_ids, 1), 0)
+        v_quantity_received_to_inventory::INTEGER - COALESCE(array_length(v_serial_unit_ids, 1), 0), v_blocked_unit_ids
       ) = 0;
     END LOOP;
 
@@ -671,6 +785,8 @@ BEGIN
         AND te."companyId" = p_company_id
         AND te.status NOT IN ('Consumed', 'Rejected', 'Scrapped')
         AND te.quantity > 1
+        AND NOT v_named_only
+        AND NOT (te.id = ANY(v_blocked_unit_ids))
       ORDER BY te."createdAt"
       LIMIT 1
       FOR UPDATE;

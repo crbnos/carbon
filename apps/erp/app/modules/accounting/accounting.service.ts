@@ -254,7 +254,7 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import { months } from "../shared/shared.models";
 import {
   allocateJournalLineIds,
@@ -8079,6 +8079,12 @@ export async function reverseJournalEntry(
 ): Promise<
   { data: { id: string }; error: null } | { data: null; error: unknown }
 > {
+  // A refusal written for the person: the operation shows it as it is.
+  const refusal = (message: string) => ({
+    data: null,
+    error: ruleError(message)
+  });
+
   const cutover = await requireAccountingCutover(client, data.companyId);
   if (cutover.error) return { data: null, error: cutover.error };
 
@@ -8086,22 +8092,16 @@ export async function reverseJournalEntry(
   const original = await getJournalEntry(client, id);
   if (original.error) return original;
   if (original.data.status !== "Posted") {
-    return {
-      data: null,
-      error: { message: "Can only reverse posted journal entries" }
-    };
+    return refusal("Can only reverse posted journal entries");
   }
   // A run's journal is reversed through its run: reversing the journal alone
   // leaves the revenue schedule rows Posted (that revenue could never be
   // recognized again) or the asset's accumulated depreciation raised.
   const runReversal = RUN_JOURNAL_SOURCES[original.data.sourceType ?? ""];
   if (runReversal) {
-    return {
-      data: null,
-      error: {
-        message: `This journal belongs to a ${runReversal} run. Reverse the run instead, so its schedule and assets stay correct.`
-      }
-    };
+    return refusal(
+      `This journal belongs to a ${runReversal} run. Reverse the run instead, so its schedule and assets stay correct.`
+    );
   }
 
   // 2. The reversing entry is dated today and posts as an "accounting" source,
@@ -8119,106 +8119,56 @@ export async function reverseJournalEntry(
   if (period.error) {
     return { data: null, error: period.error };
   }
+  const accountingPeriodId = period.data;
+  if (!accountingPeriodId) {
+    return refusal("No accounting period holds today's date");
+  }
 
   // 3. One transaction under the original's row lock: two reversals at once
   // both read Posted above, and only the first may write. The loser re-reads
   // Reversed and is refused.
-  const refusal = (message: string) => ({
-    data: null,
-    error: { message }
-  });
   try {
     return await db.transaction().execute(async (trx) => {
-      const locked = await trx
-        .selectFrom("journal")
-        .select(["journalEntryId", "status"])
-        .where("id", "=", id)
-        .where("companyId", "=", data.companyId)
-        .forUpdate()
-        .executeTakeFirst();
+      const [locked] = await lockJournalsForReversal(trx, [id], data.companyId);
       if (!locked) return refusal("Journal entry not found");
       if (locked.status !== "Posted") {
         return refusal("Can only reverse posted journal entries");
       }
 
-      const journalEntryId =
-        data.journalEntryId ||
-        (await getNextSequenceInTransaction(
-          trx,
-          "journalEntry",
-          data.companyId
-        ));
-      const now = datetime.timestamp();
-      const reversed = await trx
-        .insertInto("journal")
-        .values({
-          journalEntryId,
-          companyId: data.companyId,
-          description: `Reversal of ${locked.journalEntryId}`,
-          postingDate,
-          accountingPeriodId: period.data,
-          sourceType: "Manual",
-          reversalOfId: id,
-          status: "Posted",
-          postedAt: now,
-          postedBy: data.userId,
-          createdBy: data.userId
-        })
-        .returning("id")
-        .executeTakeFirstOrThrow();
-
-      // Lines read back in the order they were created, as getJournalEntry does.
-      const lines = await trx
-        .selectFrom("journalLine")
-        .select([
-          "accountId",
-          "description",
-          "amount",
-          "documentType",
-          "documentId",
-          "documentLineReference"
-        ])
-        .where("journalId", "=", id)
+      // The period was read before the transaction: a close that committed
+      // since is refused here, and FOR SHARE holds off one that starts now
+      // (closeAccountingPeriod takes the row FOR NO KEY UPDATE) until commit.
+      const lockedPeriod = await trx
+        .selectFrom("accountingPeriod")
+        .select("closeStatus")
+        .where("id", "=", accountingPeriodId)
         .where("companyId", "=", data.companyId)
-        .orderBy("createdAt")
-        .orderBy("id")
-        .execute();
-      if (lines.length > 0) {
-        await trx
-          .insertInto("journalLine")
-          .values(
-            lines.map((line) => ({
-              journalId: reversed.id,
-              accountId: line.accountId,
-              companyId: data.companyId,
-              description: line.description,
-              amount: -Number(line.amount),
-              // The original stays in its document's balance as Reversed; the
-              // reversal nets it only if it names the same document (a job's
-              // WIP, for one).
-              documentType: line.documentType,
-              documentId: line.documentId,
-              documentLineReference: line.documentLineReference,
-              journalLineReference: crypto.randomUUID()
-            }))
-          )
-          .execute();
+        .forShare()
+        .executeTakeFirst();
+      if (!lockedPeriod) {
+        return refusal("No accounting period holds today's date");
       }
+      const periodRefusal = periodPostingRefusal(
+        lockedPeriod.closeStatus,
+        "accounting"
+      );
+      if (periodRefusal) return refusal(periodRefusal);
 
-      // 4. Mark original as Reversed and store back-reference
-      await trx
-        .updateTable("journal")
-        .set({
-          status: "Reversed",
-          reversedById: reversed.id,
-          updatedBy: data.userId
-        })
-        .where("id", "=", id)
-        .where("companyId", "=", data.companyId)
-        .where("status", "=", "Posted")
-        .execute();
+      const reversals = await writeJournalReversals(trx, {
+        reversals: [
+          {
+            journal: locked,
+            journalEntryId: data.journalEntryId,
+            sourceType: "Manual",
+            postingDate,
+            accountingPeriodId
+          }
+        ],
+        companyId: data.companyId,
+        userId: data.userId
+      });
 
-      return { data: { id: reversed.id }, error: null };
+      return { data: { id: reversals.get(id)! }, error: null };
     });
   } catch (error) {
     return { data: null, error };
@@ -12574,64 +12524,85 @@ export async function resolveReversalPeriods(
 }
 
 /**
- * Reverses posted journals the way `reverseJournalEntry` does — a Posted
- * entry with every line negated, the original marked Reversed — but keeps
- * each line's document and dimensions, and dates each reversal by `periods`
- * (keyed by the original's posting date). Shared by Reverse Run for revenue
- * recognition and depreciation, inside the caller's transaction.
+ * Locks the journals a reversal negates, in posting order, so two reversals
+ * take them in the same order. The caller re-checks each one's status under
+ * the lock, then writes the reversals with `writeJournalReversals`.
  */
-export async function reverseRunJournals(
+async function lockJournalsForReversal(
+  trx: KyselyTx,
+  journalIds: string[],
+  companyId: string
+) {
+  return trx
+    .selectFrom("journal")
+    .select([
+      "id",
+      "journalEntryId",
+      "status",
+      "sourceType",
+      sql<string>`"postingDate"::text`.as("postingDate")
+    ])
+    .where("id", "in", journalIds)
+    .where("companyId", "=", companyId)
+    .orderBy("postingDate")
+    .orderBy("journalEntryId")
+    .forUpdate()
+    .execute();
+}
+
+type LockedJournal = Awaited<
+  ReturnType<typeof lockJournalsForReversal>
+>[number];
+
+/**
+ * Writes the reversal of each journal the caller locked and found Posted
+ * (`lockJournalsForReversal`): a Posted entry with every line negated, each
+ * line keeping its document (type, id and line reference) and its
+ * dimensions, then the original moved from Posted to Reversed. Returns each
+ * original's reversal id. Shared by `reverseJournalEntry` and Reverse Run.
+ */
+async function writeJournalReversals(
   trx: KyselyTx,
   args: {
-    journalIds: string[];
-    periods: RunPostingPeriods;
+    reversals: Array<{
+      journal: LockedJournal;
+      sourceType: Database["public"]["Tables"]["journal"]["Insert"]["sourceType"];
+      postingDate: string;
+      accountingPeriodId: string;
+      /** The reversing entry's number; the next in the sequence when left out. */
+      journalEntryId?: string;
+    }>;
     companyId: string;
     userId: string;
   }
-): Promise<void> {
-  const { journalIds, periods, companyId, userId } = args;
-  if (journalIds.length === 0) return;
+): Promise<Map<string, string>> {
+  const { reversals, companyId, userId } = args;
+  const reversalOf = new Map<string, string>();
+  if (reversals.length === 0) return reversalOf;
   const now = datetime.timestamp();
 
-  const [journals, lines] = await Promise.all([
-    trx
-      .selectFrom("journal")
-      .select([
-        "id",
-        "journalEntryId",
-        "status",
-        "sourceType",
-        sql<string>`"postingDate"::text`.as("postingDate")
-      ])
-      .where("id", "in", journalIds)
-      .where("companyId", "=", companyId)
-      .orderBy("postingDate")
-      .orderBy("journalEntryId")
-      .forUpdate()
-      .execute(),
-    trx
-      .selectFrom("journalLine")
-      .select([
-        "id",
-        "journalId",
-        "accountId",
-        "description",
-        "amount",
-        "documentType",
-        "documentId"
-      ])
-      .where("journalId", "in", journalIds)
-      .where("companyId", "=", companyId)
-      .orderBy("id")
-      .execute()
-  ]);
-  const notPosted = journals.find((journal) => journal.status !== "Posted");
-  if (notPosted) {
-    throw new RunReversalError(
-      `Journal ${notPosted.journalEntryId} is ${notPosted.status}, so the run cannot be reversed`
-    );
-  }
-
+  // Lines in the order they were created, as getJournalEntry reads them.
+  const lines = await trx
+    .selectFrom("journalLine")
+    .select([
+      "id",
+      "journalId",
+      "accountId",
+      "description",
+      "amount",
+      "documentType",
+      "documentId",
+      "documentLineReference"
+    ])
+    .where(
+      "journalId",
+      "in",
+      reversals.map((reversal) => reversal.journal.id)
+    )
+    .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .execute();
   const dimensions =
     lines.length === 0
       ? []
@@ -12647,25 +12618,19 @@ export async function reverseRunJournals(
           .execute();
 
   const reversedLineId = new Map<string, string>();
-  for (const journal of journals) {
-    const period = periods.get(journal.postingDate);
-    if (!period) {
-      throw new Error(`No reversal period resolved for ${journal.postingDate}`);
-    }
-    const journalEntryId = await getNextSequenceInTransaction(
-      trx,
-      "journalEntry",
-      companyId
-    );
+  for (const { journal, ...target } of reversals) {
+    const journalEntryId =
+      target.journalEntryId ||
+      (await getNextSequenceInTransaction(trx, "journalEntry", companyId));
     const reversal = await trx
       .insertInto("journal")
       .values({
         journalEntryId,
-        accountingPeriodId: period.accountingPeriodId,
+        accountingPeriodId: target.accountingPeriodId,
         companyId,
         description: `Reversal of ${journal.journalEntryId}`,
-        postingDate: period.postingDate,
-        sourceType: journal.sourceType,
+        postingDate: target.postingDate,
+        sourceType: target.sourceType,
         reversalOfId: journal.id,
         status: "Posted",
         postedAt: now,
@@ -12674,6 +12639,7 @@ export async function reverseRunJournals(
       })
       .returning(["id"])
       .executeTakeFirstOrThrow();
+    reversalOf.set(journal.id, reversal.id);
 
     const journalLines = lines.filter((line) => line.journalId === journal.id);
     if (journalLines.length > 0) {
@@ -12687,8 +12653,12 @@ export async function reverseRunJournals(
             accountId: line.accountId,
             description: line.description,
             amount: -Number(line.amount),
+            // The original stays in its document's balance as Reversed; the
+            // reversal nets it only if it names the same document (a job's
+            // WIP, for one).
             documentType: line.documentType,
             documentId: line.documentId,
+            documentLineReference: line.documentLineReference,
             journalLineReference: crypto.randomUUID(),
             companyId
           }))
@@ -12700,12 +12670,18 @@ export async function reverseRunJournals(
       });
     }
 
-    await trx
+    const flipped = await trx
       .updateTable("journal")
       .set({ status: "Reversed", reversedById: reversal.id, updatedBy: userId })
       .where("id", "=", journal.id)
       .where("companyId", "=", companyId)
-      .execute();
+      .where("status", "=", "Posted")
+      .executeTakeFirst();
+    if (Number(flipped.numUpdatedRows) !== 1) {
+      throw new Error(
+        `Journal ${journal.journalEntryId} is no longer Posted, so it cannot be reversed`
+      );
+    }
   }
 
   if (dimensions.length > 0) {
@@ -12721,6 +12697,55 @@ export async function reverseRunJournals(
       )
       .execute();
   }
+
+  return reversalOf;
+}
+
+/**
+ * Reverses posted journals the way `reverseJournalEntry` does
+ * (`writeJournalReversals`), but keeps each journal's source and dates each
+ * reversal by `periods` (keyed by the original's posting date). Shared by
+ * Reverse Run for revenue recognition and depreciation, inside the caller's
+ * transaction.
+ */
+export async function reverseRunJournals(
+  trx: KyselyTx,
+  args: {
+    journalIds: string[];
+    periods: RunPostingPeriods;
+    companyId: string;
+    userId: string;
+  }
+): Promise<void> {
+  const { journalIds, periods, companyId, userId } = args;
+  if (journalIds.length === 0) return;
+
+  const journals = await lockJournalsForReversal(trx, journalIds, companyId);
+  const notPosted = journals.find((journal) => journal.status !== "Posted");
+  if (notPosted) {
+    throw new RunReversalError(
+      `Journal ${notPosted.journalEntryId} is ${notPosted.status}, so the run cannot be reversed`
+    );
+  }
+
+  await writeJournalReversals(trx, {
+    reversals: journals.map((journal) => {
+      const period = periods.get(journal.postingDate);
+      if (!period) {
+        throw new Error(
+          `No reversal period resolved for ${journal.postingDate}`
+        );
+      }
+      return {
+        journal,
+        sourceType: journal.sourceType,
+        postingDate: period.postingDate,
+        accountingPeriodId: period.accountingPeriodId
+      };
+    }),
+    companyId,
+    userId
+  });
 }
 
 /**
@@ -24203,6 +24228,19 @@ export async function recalculateRevenueRecognitionRun(
   const userId = ctx.auditUserId;
   await assertAccountingCutover(db, companyId);
   return db.transaction().execute(async (trx) => {
+    // The synthesizers' locks, in their order, before anything else, the run
+    // row included. A concurrent proposal cannot claim a row between the
+    // release and the claim below. An invoice void takes the position lock
+    // before it locks the invoice's schedule rows, then deletes held run
+    // lines and any run it empties; a proposal can delete an emptied Draft
+    // run too. Taking these locks before the run row means neither can
+    // deadlock with the release or with this run's row lock. The position
+    // lock goes first: a proposal or preview takes it in the project and
+    // contract synthesizers, before the service job synthesizer takes the
+    // proposal lock.
+    await lockContractPositions(trx, companyId);
+    await lockRecognitionProposals(trx, companyId);
+
     const run = await trx
       .selectFrom("revenueRecognitionRun")
       .select(["id", "runId", "status", "periodEnd", "type"])
@@ -24222,16 +24260,6 @@ export async function recalculateRevenueRecognitionRun(
       periodEnd: String(run.periodEnd),
       userId
     };
-
-    // The synthesizers' locks, in their order, before anything else: a
-    // concurrent proposal cannot claim a row between the release and the
-    // claim below, and an invoice void (which takes the position lock and
-    // then deletes held run lines) cannot deadlock with the release. The
-    // position lock goes first: a revenue recognition proposal or preview
-    // takes it in the project and contract synthesizers, before the service
-    // job synthesizer takes the proposal lock.
-    await lockContractPositions(trx, companyId);
-    await lockRecognitionProposals(trx, companyId);
 
     // Release the run's own rows BEFORE the synthesizers. A synthesizer
     // that drops a held row (a contract month an amendment replaced) keeps

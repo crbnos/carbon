@@ -12,15 +12,24 @@ import { MissingAccountDefaultError } from "@carbon/database/journal-posting-sta
 import { expect, it } from "vitest";
 import { sql } from "kysely";
 import { postReimbursementTransaction } from "../../app/modules/accounting/accounting.service";
-import { sendPostedSalesInvoice } from "../../app/modules/invoicing/invoicing.service";
+import {
+  PURCHASE_INVOICE_SETTLED_VOID_ERROR,
+  SALES_INVOICE_SETTLED_VOID_ERROR,
+  sendPostedSalesInvoice
+} from "../../app/modules/invoicing/invoicing.service";
 import {
   payReimbursement,
   postPurchaseInvoice,
-  postSalesInvoice
+  postSalesInvoice,
+  voidPurchaseInvoice,
+  voidSalesInvoice
 } from "../../app/modules/invoicing/invoicing.server";
 import {
   alwaysPostFixture,
   type Fixture,
+  payInvoice,
+  postServiceInvoice,
+  postSuppliesInvoice,
   seed,
   USER
 } from "./fixtures/always-post";
@@ -403,6 +412,80 @@ localTest(
           .where("companyId", "=", f.companyId)
           .execute();
       });
+      await f.cleanup();
+    }
+  }
+);
+
+localTest(
+  "the sales void operation refuses a settled invoice before the posting runs",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const invoiceId = await postServiceInvoice(f);
+      await payInvoice(f, invoiceId);
+
+      const result = await voidSalesInvoice(contextOf(f), { invoiceId });
+
+      expect(result.error?.category).toBe("rule");
+      expect(result.error?.message).toBe(SALES_INVOICE_SETTLED_VOID_ERROR);
+      expect((await salesInvoiceRow(f, invoiceId)).status).not.toBe("Voided");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+localTest(
+  "the purchase void operation refuses a settled invoice before the posting runs",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const invoiceId = await postSuppliesInvoice(f);
+      // A posted disbursement that only writes the invoice off.
+      const paymentId = `${f.prefix}-disbursement`;
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("payment")
+          .values({
+            id: paymentId,
+            paymentId: "PAY-2",
+            paymentType: "Disbursement",
+            supplierId: f.supplierId,
+            paymentDate: f.today,
+            postingDate: f.today,
+            currencyCode: "USD",
+            totalAmount: 0,
+            exchangeRate: 1,
+            bankAccount: f.account("bank"),
+            status: "Posted",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("invoiceSettlement")
+          .values({
+            paymentId,
+            targetPurchaseInvoiceId: invoiceId,
+            sourceAmount: 0,
+            appliedAmount: 0,
+            writeOffAmount: 60,
+            sourceExchangeRate: 1,
+            targetExchangeRate: 1,
+            appliedDate: f.today,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+
+      const result = await voidPurchaseInvoice(contextOf(f), { invoiceId });
+
+      expect(result.error?.category).toBe("rule");
+      expect(result.error?.message).toBe(PURCHASE_INVOICE_SETTLED_VOID_ERROR);
+      expect(await purchaseInvoiceStatus(f, invoiceId)).not.toBe("Voided");
+    } finally {
       await f.cleanup();
     }
   }

@@ -4,6 +4,7 @@
 
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   alwaysPostFixture,
   expectPostedJournals,
@@ -12,12 +13,16 @@ import {
   jobFixture,
   journalLinesOf,
   newJournals,
+  seed,
   stampCutover,
   stockPart,
   unwrap
 } from "./fixtures/always-post";
 import { issueMaterial as issue } from "../../app/modules/inventory/inventory.service";
-import { databaseTest } from "./fixtures/local-database";
+import {
+  connectLocalTestDatabase,
+  databaseTest
+} from "./fixtures/local-database";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import {
@@ -330,3 +335,189 @@ for (const status of ["Closed", "Cancelled"] as const) {
     }
   );
 }
+
+/** Waits until `count` connections are queued behind `blockerPid`, directly or
+ *  behind another waiter. */
+async function waitForBlockedConnections(
+  db: Kysely<KyselyDatabase>,
+  blockerPid: number,
+  count: number
+) {
+  const deadline = performance.now() + 15_000;
+  while (performance.now() < deadline) {
+    const { rows } = await sql<{ blocked: number }>`
+      WITH RECURSIVE waiting AS (
+        SELECT ${blockerPid}::int AS pid
+        UNION
+        SELECT a.pid FROM pg_stat_activity a, waiting w
+        WHERE w.pid = ANY(pg_blocking_pids(a.pid))
+      )
+      SELECT count(*)::int - 1 AS blocked FROM waiting
+    `.execute(db);
+    if ((rows[0]?.blocked ?? 0) >= count) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error(`Expected ${count} connections to wait for the held lock`);
+}
+
+/** A Ready job whose one operation, its last, is Ready to be marked Done. */
+async function readyJob(f: Fixture) {
+  const job = await jobFixture(f, "1");
+  await seed(f, async (trx) => {
+    await trx
+      .updateTable("job")
+      .set({ status: "Ready" })
+      .where("id", "=", job.jobId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+    await trx
+      .updateTable("jobOperation")
+      .set({ status: "Ready" })
+      .where("id", "=", job.operationId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+  });
+  return job;
+}
+
+/** The operation's status, the job's status and receipt, and the job's
+ *  receipt ledger rows. */
+async function finishState(
+  f: Fixture,
+  job: Awaited<ReturnType<typeof readyJob>>
+) {
+  const operation = await f.db
+    .selectFrom("jobOperation")
+    .select("status")
+    .where("id", "=", job.operationId)
+    .where("companyId", "=", f.companyId)
+    .executeTakeFirstOrThrow();
+  const row = await f.db
+    .selectFrom("job")
+    .select(["status", "quantityReceivedToInventory"])
+    .where("id", "=", job.jobId)
+    .where("companyId", "=", f.companyId)
+    .executeTakeFirstOrThrow();
+  const receipts = await f.db
+    .selectFrom("itemLedger")
+    .select("id")
+    .where("companyId", "=", f.companyId)
+    .where("documentId", "=", job.jobId)
+    .execute();
+  return {
+    operation: operation.status,
+    job: row.status,
+    quantityReceivedToInventory: Number(row.quantityReceivedToInventory),
+    receipts: receipts.length
+  };
+}
+
+for (const status of ["Closed", "Cancelled"] as const) {
+  databaseTest(
+    `marking the last operation Done while a ${status} commits keeps the job ${status} and the Done`,
+    async () => {
+      const f = await alwaysPostFixture();
+      const closer = await connectLocalTestDatabase();
+      const operator = await connectLocalTestDatabase();
+      let release!: () => void;
+      const released = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let holding: Promise<void> | undefined;
+      let finishing: Promise<unknown> | undefined;
+      try {
+        const job = await readyJob(f);
+        const {
+          rows: [closerPid]
+        } = await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+          closer
+        );
+
+        // The close holds the job lock and has set the status, uncommitted.
+        let held!: () => void;
+        const isHeld = new Promise<void>((resolve) => {
+          held = resolve;
+        });
+        holding = closer.transaction().execute(async (trx) => {
+          await trx
+            .selectFrom("job")
+            .select("id")
+            .where("id", "=", job.jobId)
+            .where("companyId", "=", f.companyId)
+            .forUpdate()
+            .executeTakeFirstOrThrow();
+          await trx
+            .updateTable("job")
+            .set({ status })
+            .where("id", "=", job.jobId)
+            .where("companyId", "=", f.companyId)
+            .execute();
+          held();
+          await released;
+        });
+        void holding.catch(() => {});
+        await Promise.race([isHeld, holding]);
+
+        // The Done trigger reads Ready without a lock, then waits on the job
+        // lock the close holds.
+        finishing = operator
+          .updateTable("jobOperation")
+          .set({ status: "Done" })
+          .where("id", "=", job.operationId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        void finishing.catch(() => {});
+        await waitForBlockedConnections(f.db, closerPid!.pid, 1);
+        release();
+        await holding;
+
+        await expect(finishing).resolves.toBeDefined();
+        expect(await finishState(f, job)).toEqual({
+          operation: "Done",
+          job: status,
+          quantityReceivedToInventory: 0,
+          receipts: 0
+        });
+      } finally {
+        release();
+        await holding?.catch(() => {});
+        await finishing?.catch(() => {});
+        await closer.destroy();
+        await operator.destroy();
+        await f.cleanup();
+      }
+    }
+  );
+}
+
+databaseTest(
+  "marking the last operation of a Closed job Done keeps the job Closed and receives nothing",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await readyJob(f);
+      await f.db
+        .updateTable("job")
+        .set({ status: "Closed" })
+        .where("id", "=", job.jobId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      await f.db
+        .updateTable("jobOperation")
+        .set({ status: "Done" })
+        .where("id", "=", job.operationId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      expect(await finishState(f, job)).toEqual({
+        operation: "Done",
+        job: "Closed",
+        quantityReceivedToInventory: 0,
+        receipts: 0
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

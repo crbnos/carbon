@@ -4248,6 +4248,9 @@ export const reverseJournalEntry = defineServiceFn({
     id: z.string(),
     data: z.looseObject({ journalEntryId: z.string().optional() })
   }),
+  // The reversal writes as the system, so this gate stands in for the RLS it
+  // skips: inserting the journal and its lines (create) and marking the
+  // original Reversed (update). Edit is the lowest level that holds both.
   permission: { "accounting.journalEntries": "Edit" },
   async run(ctx, input) {
     return unwrap(

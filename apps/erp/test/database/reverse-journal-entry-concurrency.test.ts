@@ -36,6 +36,34 @@ async function waitForBlockedConnections(
   throw new Error(`Expected ${count} connections to wait for the held lock`);
 }
 
+type Fixture = Awaited<ReturnType<typeof paymentFixture>>;
+
+/** The fixture's Posted journal: two lines of 100. */
+function originalJournal(f: Fixture) {
+  return f.db
+    .selectFrom("journal")
+    .select("id")
+    .where("companyId", "=", f.companyId)
+    .where("journalEntryId", "=", "TEST-ORIGINAL")
+    .executeTakeFirstOrThrow();
+}
+
+/** A reversal posts on the company's today, in its open period. */
+async function openTodaysPeriod(f: Fixture): Promise<string> {
+  const {
+    rows: [period]
+  } = await sql<{ id: string }>`
+    INSERT INTO "accountingPeriod"
+      ("startDate", "endDate", status, "closeStatus", "companyId", "createdBy")
+    SELECT date_trunc('month', today)::date,
+           (date_trunc('month', today) + interval '1 month - 1 day')::date,
+           'Active', 'Open', ${f.companyId}, 'system'
+    FROM (SELECT (now() AT TIME ZONE 'America/New_York')::date AS today) t
+    RETURNING id
+  `.execute(f.db);
+  return period!.id;
+}
+
 postgrestTest(
   "two reversals of one posted journal at once write one reversal",
   async (client) => {
@@ -49,21 +77,8 @@ postgrestTest(
     });
     let holding: Promise<void> | undefined;
     try {
-      const original = await f.db
-        .selectFrom("journal")
-        .select("id")
-        .where("companyId", "=", f.companyId)
-        .where("journalEntryId", "=", "TEST-ORIGINAL")
-        .executeTakeFirstOrThrow();
-      // A reversal posts on the company's today, in its open period.
-      await sql`
-        INSERT INTO "accountingPeriod"
-          ("startDate", "endDate", status, "closeStatus", "companyId", "createdBy")
-        SELECT date_trunc('month', today)::date,
-               (date_trunc('month', today) + interval '1 month - 1 day')::date,
-               'Active', 'Open', ${f.companyId}, 'system'
-        FROM (SELECT (now() AT TIME ZONE 'America/New_York')::date AS today) t
-      `.execute(f.db);
+      const original = await originalJournal(f);
+      await openTodaysPeriod(f);
       const {
         rows: [blockerPid]
       } = await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
@@ -132,6 +147,182 @@ postgrestTest(
       await blocker.destroy();
       await first.destroy();
       await second.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a reversal copies each line's dimensions onto the line that negates it",
+  async (client) => {
+    const f = await paymentFixture();
+    const dimensionId = `${f.companyId}-cost-center-dimension`;
+    const costCenterId = `${f.companyId}-cost-center`;
+    try {
+      const original = await originalJournal(f);
+      await openTodaysPeriod(f);
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["id", "accountId"])
+        .where("journalId", "=", original.id)
+        .execute();
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("dimension")
+          .values({
+            id: dimensionId,
+            name: "Cost Center",
+            entityType: "CostCenter",
+            companyGroupId: f.groupId,
+            createdBy: "system"
+          })
+          .execute();
+        await trx
+          .insertInto("costCenter")
+          .values({
+            id: costCenterId,
+            name: "Reversal test",
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+        // Only the receivable line carries the cost center.
+        const tagged = lines.find(
+          (line) => line.accountId === f.account("control")
+        )!;
+        await trx
+          .insertInto("journalLineDimension")
+          .values({
+            journalLineId: tagged.id,
+            dimensionId,
+            valueId: costCenterId,
+            companyId: f.companyId
+          })
+          .execute();
+      });
+
+      const result = await reverseJournalEntry(client, f.db, original.id, {
+        companyId: f.companyId,
+        userId: "system"
+      });
+      expect(result.error).toBeNull();
+
+      const reversed = await f.db
+        .selectFrom("journalLine as l")
+        .leftJoin("journalLineDimension as d", "d.journalLineId", "l.id")
+        .select(["l.accountId", "l.amount", "d.dimensionId", "d.valueId"])
+        .where("l.journalId", "=", result.data!.id)
+        .orderBy("l.accountId")
+        .execute();
+      expect(
+        reversed.map((row) => ({ ...row, amount: Number(row.amount) }))
+      ).toEqual(
+        [
+          {
+            accountId: f.account("control"),
+            amount: -100,
+            dimensionId,
+            valueId: costCenterId
+          },
+          {
+            accountId: f.account("sales"),
+            amount: -100,
+            dimensionId: null,
+            valueId: null
+          }
+        ].sort((a, b) => a.accountId.localeCompare(b.accountId))
+      );
+    } finally {
+      // The dimension goes with the company group.
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a reversal waiting on a period close is refused when the close commits",
+  async (client) => {
+    const f = await paymentFixture();
+    const closer = await f.connect();
+    const reverser = await f.connect();
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let closing: Promise<void> | undefined;
+    try {
+      const original = await originalJournal(f);
+      const periodId = await openTodaysPeriod(f);
+      const {
+        rows: [closerPid]
+      } = await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+        closer
+      );
+
+      // A close in flight: closeAccountingPeriod holds the period FOR NO KEY
+      // UPDATE until it commits the period as Closed.
+      let held!: () => void;
+      const isHeld = new Promise<void>((resolve) => {
+        held = resolve;
+      });
+      closing = closer.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("accountingPeriod")
+          .select("id")
+          .where("id", "=", periodId)
+          .forNoKeyUpdate()
+          .executeTakeFirstOrThrow();
+        held();
+        await released;
+        await trx
+          .updateTable("accountingPeriod")
+          .set({
+            closeStatus: "Closed",
+            closedAt: sql`now()`,
+            closedBy: "system"
+          })
+          .where("id", "=", periodId)
+          .execute();
+      });
+      await isHeld;
+
+      // The reversal resolves the still-Open period, then waits on it.
+      await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(
+        reverser
+      );
+      const reversal = reverseJournalEntry(client, reverser, original.id, {
+        companyId: f.companyId,
+        userId: "system"
+      });
+      await waitForBlockedConnections(f.db, closerPid!.pid, 1);
+      release();
+      await closing;
+      const result = await reversal;
+
+      expect(result.error).toMatchObject({
+        message: "Accounting period is closed. Reopen it before posting."
+      });
+      expect(
+        await f.db
+          .selectFrom("journal")
+          .select(["status", "reversedById"])
+          .where("id", "=", original.id)
+          .executeTakeFirstOrThrow()
+      ).toEqual({ status: "Posted", reversedById: null });
+      expect(
+        await f.db
+          .selectFrom("journal")
+          .select("id")
+          .where("companyId", "=", f.companyId)
+          .where("reversalOfId", "=", original.id)
+          .execute()
+      ).toEqual([]);
+    } finally {
+      release();
+      await closing?.catch(() => {});
+      await closer.destroy();
+      await reverser.destroy();
       await f.cleanup();
     }
   }

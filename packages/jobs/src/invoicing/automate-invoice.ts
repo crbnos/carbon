@@ -12,6 +12,7 @@
 import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { withSalesInvoiceSendLock } from "@carbon/database/sales-invoice-send";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
 import {
@@ -438,12 +439,11 @@ async function stampSendError(
   client: Client,
   companyId: string,
   invoiceId: string,
-  sendError: string,
-  release: { sentAt?: null } = {}
+  sendError: string
 ): Promise<EmailOutcome> {
   const stamped = await client
     .from("salesInvoice")
-    .update({ sendError, ...release })
+    .update({ sendError })
     .eq("id", invoiceId)
     .eq("companyId", companyId);
   if (stamped.error) {
@@ -690,10 +690,24 @@ export async function attachPostedInvoicePdf(args: {
  * the company's name at the platform address and Reply-To the receivables
  * mailbox (else the agreement's owner). Stamps `sentAt`/`sentTo` on success
  * and `sendError` on any failure, so a failed send shows in Needs Review.
- * Idempotent: an invoice with `sentAt` is never sent twice. `sentAt` is
- * claimed before the send and cleared again if the send fails.
+ * Idempotent: an invoice with `sentAt` is never sent twice, and the send
+ * runs under the invoice's send lock (`withSalesInvoiceSendLock`), so of two
+ * callers at once only one sends.
  */
 export async function emailPostedInvoice(args: {
+  client: Client;
+  db: Kysely<KyselyDatabase>;
+  companyId: string;
+  invoiceId: string;
+}): Promise<EmailOutcome> {
+  const sent = await withSalesInvoiceSendLock(args.db, args, () =>
+    emailLockedInvoice(args)
+  );
+  return sent.locked ? sent.result : { emailed: false };
+}
+
+/** `emailPostedInvoice` under the send lock: reads `sentAt` under it. */
+async function emailLockedInvoice(args: {
   client: Client;
   companyId: string;
   invoiceId: string;
@@ -724,24 +738,6 @@ export async function emailPostedInvoice(args: {
   if (!recipient?.email) {
     return stampSendError(client, companyId, invoiceId, INVOICE_SEND_NO_EMAIL);
   }
-
-  // The daily job, invoice-automate and a person's Send share no lock: each
-  // reads an unsent invoice, and stamping only after the send emailed the
-  // customer twice. Only the caller that claims `sentAt` sends.
-  const claim = await client
-    .from("salesInvoice")
-    .update({ sentAt: datetime.timestamp() })
-    .eq("id", invoiceId)
-    .eq("companyId", companyId)
-    .is("sentAt", null)
-    .select("id");
-  if (claim.error) throw new Error(claim.error.message);
-  if (claim.data.length === 0) return { emailed: false };
-  // Nothing went out: the claim is released so a Send can retry.
-  const unsent = (sendError: string) =>
-    stampSendError(client, companyId, invoiceId, sendError, {
-      sentAt: null
-    });
 
   try {
     const [company, settings, customer, ownerEmail] = await Promise.all([
@@ -819,22 +815,28 @@ export async function emailPostedInvoice(args: {
       error: error instanceof Error ? error : new Error(String(error))
     }));
     if (sent.error) {
-      return unsent(sent.error.message);
+      return stampSendError(client, companyId, invoiceId, sent.error.message);
     }
     // No transport: nothing left the building, so it is not "sent".
     if (!sent.data) {
-      return unsent(INVOICE_SEND_NOT_CONFIGURED);
+      return stampSendError(
+        client,
+        companyId,
+        invoiceId,
+        INVOICE_SEND_NOT_CONFIGURED
+      );
     }
 
     const sentTo = [recipient.email, ...cc].join(", ");
     const stamped = await client
       .from("salesInvoice")
-      .update({ sentTo, sendError: null })
+      .update({ sentAt: datetime.timestamp(), sentTo, sendError: null })
       .eq("id", invoiceId)
       .eq("companyId", companyId);
     if (stamped.error) {
-      // The email went out and `sentAt` holds, but who it went to is not
-      // recorded: say so on the invoice instead of reporting a clean send.
+      // The email went out, but without `sentAt` the invoice reads as unsent
+      // and a Send would email it again: say so on the invoice (it shows in
+      // Needs Review) instead of reporting a clean send.
       logger.error("Invoice emailed but the sent stamp failed", {
         companyId,
         invoiceId,
@@ -854,7 +856,12 @@ export async function emailPostedInvoice(args: {
       invoiceId,
       error
     });
-    return unsent(error instanceof Error ? error.message : String(error));
+    return stampSendError(
+      client,
+      companyId,
+      invoiceId,
+      error instanceof Error ? error.message : String(error)
+    );
   }
 }
 
@@ -864,10 +871,27 @@ export async function emailPostedInvoice(args: {
  * payment link. Stamps `sentAt`/`sentTo: "Stripe"` on success and
  * `sendError` on any failure, so a failed send shows in Needs Review.
  * Idempotent: an invoice with `sentAt`, or already linked to a Stripe
- * invoice, is never sent twice. An invoice totalling zero or less has nothing
- * to collect: it is left unsent with no send error.
+ * invoice, is never sent twice. The send runs under the invoice's send lock
+ * (`withSalesInvoiceSendLock`), so of two callers at once only one creates a
+ * Stripe invoice; the Stripe create also carries an idempotency key per
+ * invoice, so a retried step replays the first create. An invoice totalling
+ * zero or less has nothing to collect: it is left unsent with no send error.
  */
 export async function sendPostedInvoiceViaStripe(args: {
+  client: Client;
+  db: Kysely<KyselyDatabase>;
+  companyId: string;
+  invoiceId: string;
+}): Promise<EmailOutcome> {
+  const sent = await withSalesInvoiceSendLock(args.db, args, () =>
+    sendLockedInvoiceViaStripe(args)
+  );
+  return sent.locked ? sent.result : { emailed: false };
+}
+
+/** `sendPostedInvoiceViaStripe` under the send lock: reads `sentAt` and the
+ *  Stripe invoice link under it. */
+async function sendLockedInvoiceViaStripe(args: {
   client: Client;
   db: Kysely<KyselyDatabase>;
   companyId: string;

@@ -1119,3 +1119,87 @@ databaseTest("two saves of one empty cell at once write one entry", async () => 
     await f.cleanup();
   }
 });
+
+databaseTest("saves of two cells on one day do not wait on each other", async () => {
+  const f = await timesheetFixture("Standard");
+  const blocker = await connectLocalTestDatabase();
+  const first = await connectLocalTestDatabase();
+  const second = await connectLocalTestDatabase();
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let holding: Promise<void> | undefined;
+  try {
+    const {
+      rows: [blockerPid]
+    } = await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+      blocker
+    );
+    let held!: () => void;
+    const isHeld = new Promise<void>((resolve) => {
+      held = resolve;
+    });
+    holding = blocker.transaction().execute(async (trx) => {
+      await trx
+        .selectFrom("project")
+        .select("id")
+        .where("id", "=", f.projectId)
+        .forUpdate()
+        .executeTakeFirstOrThrow();
+      held();
+      await released;
+    });
+    await isHeld;
+
+    // The two cells differ only by research role. Each save reaches its
+    // insert and waits on the held project, not on the other save's lock.
+    const saves = (
+      [
+        [first, "Direct Research"],
+        [second, "Direct Support"]
+      ] as const
+    ).map(([db, rdActivityRole]) =>
+      invokePosting(
+        handlesOf({ ...f.ctx, db }),
+        "save-timesheet-entry",
+        { ...f.cell, entryDate: day(-5), hours: 6, rdActivityRole },
+        saveTimesheetEntry
+      )
+    );
+    const deadline = performance.now() + 15_000;
+    let direct = 0;
+    while (direct < 2 && performance.now() < deadline) {
+      const { rows } = await sql<{ blocked: number }>`
+        SELECT count(*)::int AS blocked FROM pg_stat_activity
+        WHERE ${blockerPid!.pid}::int = ANY(pg_blocking_pids(pid))
+      `.execute(f.db);
+      direct = rows[0]?.blocked ?? 0;
+      if (direct < 2) await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    expect(direct).toBe(2);
+    release();
+    await holding;
+    const results = await Promise.all(saves);
+
+    expect(results.map((result) => result.error)).toEqual([null, null]);
+    const entries = await f.db
+      .selectFrom("timesheetEntry")
+      .select("rdActivityRole")
+      .where("companyId", "=", f.companyId)
+      .where("employeeId", "=", f.cell.employeeId)
+      .where("entryDate", "=", day(-5))
+      .execute();
+    expect(entries.map((entry) => entry.rdActivityRole).sort()).toEqual([
+      "Direct Research",
+      "Direct Support"
+    ]);
+  } finally {
+    release();
+    await holding?.catch(() => {});
+    await blocker.destroy();
+    await first.destroy();
+    await second.destroy();
+    await f.cleanup();
+  }
+});
