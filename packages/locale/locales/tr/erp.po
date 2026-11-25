@@ -3734,6 +3734,9 @@ msgstr "Sonra"
 msgid "After (calculation method)"
 msgstr "Sonra (hesaplama yöntemi)"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "Kalite birimi bir ürünü serbest bıraktığında, ürünü stoğa almak için iş emrini yeniden açın."
+
 msgid "After the correction"
 msgstr "Düzeltmeden sonra"
 
@@ -7898,7 +7901,7 @@ msgstr "Tamamlanma Tarihi"
 msgid "Completed Qty"
 msgstr "Tamamlanan Miktar"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "Sabit kıymet sınıfı {0} olarak tamamlanır"
 
@@ -8965,6 +8968,9 @@ msgstr "Operasyonlar yüklenemedi"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "MRP dışı depolama birimleri yüklenemedi. Bazı işaretler eksik olabilir."
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr ""
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName} üzerinde çalışan operasyonlar yüklenemedi."
@@ -16661,6 +16667,9 @@ msgstr "Türe göre uygunsuzluklar, kümülatif yüzde ile"
 msgid "Issues opened and closed by week"
 msgstr "Haftaya göre açılan ve kapatılan uygunsuzluklar"
 
+msgid "Issues: Hold Units"
+msgstr "Sorunlar: birimleri askıya al"
+
 msgid "It could not start. Try again."
 msgstr "Başlatılamadı. Yeniden deneyin."
 
@@ -22005,6 +22014,12 @@ msgstr "Açık Sorunlar"
 msgid "Open issues by criticality and weeks open"
 msgstr "Kritikliğe ve açık kalma süresine göre açık uygunsuzluklar"
 
+msgid "Open issues do not stop work"
+msgstr "Açık sorunlar işi durdurmaz"
+
+msgid "Open issues no longer stop work"
+msgstr "Açık sorunlar artık işi durdurmuyor"
+
 msgid "Open item details"
 msgstr "Stok kartı ayrıntılarını aç"
 
@@ -25207,7 +25222,9 @@ msgstr "Projeye stok al"
 msgid "Received"
 msgstr "Alındı"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "{1} öğeden {0} alındı"
@@ -29872,6 +29889,9 @@ msgstr "Alımı Durdur"
 msgid "Stop Shipping"
 msgstr "Gönderimi Durdur"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "Seri numaralı bir birime bağlı bir sorun açıkken o birimdeki atölye işini durdurur."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Bu adımda {0} kullanmayı durdur"
@@ -30574,7 +30594,7 @@ msgstr "Şüpheli Arıza Modu"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "Maliyeti varlık {0} adına taşır"
 
@@ -34323,6 +34343,9 @@ msgstr "Birimler"
 msgid "Units don't match"
 msgstr "Birimler eşleşmiyor"
 
+msgid "Units excluded from this receipt"
+msgstr "Bu stok girişine dahil edilmeyen birimler"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Bu paranın bir biriminin temel para cinsinden kaç birim olduğunu gösterir; muhasebeleştirme sırasında tutarları çevirmek için kullanılır."
 
@@ -34340,6 +34363,12 @@ msgstr "Bir numunede başarısız olan birimler reddedilmiş kalır. Hiç numune
 
 msgid "Units this customer owns show here once registered."
 msgstr "Bu müşterinin sahip olduğu adetler kaydedildikten sonra burada gösterilir."
+
+msgid "Units with an open issue are now on hold"
+msgstr "Açık sorunu olan birimler artık askıya alınıyor"
+
+msgid "Units with an open issue are on hold"
+msgstr "Açık sorunu olan birimler askıda"
 
 msgid "Unknown"
 msgstr "Bilinmeyen"
@@ -35767,6 +35796,9 @@ msgstr "Ertelenen, tahakkuk eden ve kira faiz hasılat muhasebeleştirilecek"
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "Bir kiralama sözleşmesinin veya sözleşmenin her bir faturalama döneminin faturalaması için vadesi geldiğinde: İlk gün önceden (dönem kullanılmadan önce) veya son gün sonradan (kazanıldıktan sonra)."
 
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "Bu ayar açıkken hurdaya ayrılan veya tedarikçiye iade edilecek birimler, sorun kapatıldıktan sonra da engelli kalır."
+
 msgid "When expired stock is used"
 msgstr "Süresi dolmuş Stok kullanıldığında"
 
@@ -36399,12 +36431,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "Bu anahtarı yalnızca bir kez görebilirsiniz. Güvenli bir yerde saklayın."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "Sipariş edilen miktardan {leftoverQuantity} fazla {0} tamamladınız. Fazla parçalarla ne yapmak istersiniz?{1}"
+msgstr ""
 
 msgid "You do not have permission to do this"
 msgstr "Bunu yapmak için izniniz yok"

@@ -3228,7 +3228,7 @@ export const escalateReturnOrderLine = defineServiceFn({
       disposition
     });
     if (linked) {
-      await deleteIssue(serviceRole, issueId);
+      await deleteIssue(ctx, issueId);
       return linked;
     }
 
@@ -3237,7 +3237,7 @@ export const escalateReturnOrderLine = defineServiceFn({
       { type: "nonConformanceTasks", id: issueId }
     );
     if (tasks.error) {
-      await deleteIssue(serviceRole, issueId);
+      await deleteIssue(ctx, issueId);
       return ctx.error("internal", "Failed to create Issue tasks", tasks.error);
     }
 

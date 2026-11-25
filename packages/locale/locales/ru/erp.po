@@ -3734,6 +3734,9 @@ msgstr "После"
 msgid "After (calculation method)"
 msgstr "После (способ расчета)"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "Когда отдел качества разрешит использовать изделие, снова откройте производственный заказ, чтобы принять изделие на склад."
+
 msgid "After the correction"
 msgstr "После исправления"
 
@@ -7898,7 +7901,7 @@ msgstr "Дата завершения"
 msgid "Completed Qty"
 msgstr "Завершённое кол-во"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "Завершается в класс основных средств {0}"
 
@@ -8965,6 +8968,9 @@ msgstr "Не удалось загрузить операции"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "Не удалось загрузить единицы хранения, не учитываемые в MRP. Некоторые отметки могут отсутствовать."
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr ""
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Не удалось загрузить то, что выполнялось на {workCenterName}."
@@ -16661,6 +16667,9 @@ msgstr "Проблемы по типу с накопленным процент�
 msgid "Issues opened and closed by week"
 msgstr "Открытые и закрытые проблемы по неделям"
 
+msgid "Issues: Hold Units"
+msgstr "Проблемы: приостановка единиц"
+
 msgid "It could not start. Try again."
 msgstr "Не удалось начать. Попробуйте еще раз."
 
@@ -22005,6 +22014,12 @@ msgstr "Открытые проблемы"
 msgid "Open issues by criticality and weeks open"
 msgstr "Открытые проблемы по критичности и неделям открытия"
 
+msgid "Open issues do not stop work"
+msgstr "Открытые проблемы не останавливают работу"
+
+msgid "Open issues no longer stop work"
+msgstr "Открытые проблемы больше не останавливают работу"
+
 msgid "Open item details"
 msgstr "Открыть сведения о номенклатуре"
 
@@ -25207,7 +25222,9 @@ msgstr "Приходовать в запас проекта"
 msgid "Received"
 msgstr "Получено"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "Получено {0} из {1}"
@@ -29872,6 +29889,9 @@ msgstr "Остановить получение"
 msgid "Stop Shipping"
 msgstr "Остановить отправку"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "Останавливает работу в цехе над единицей с серийным номером, пока связанная с ней проблема открыта."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Прекратить использование {0} на этом шаге"
@@ -30574,7 +30594,7 @@ msgstr "Предполагаемый режим отказа"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "Переносит стоимость на актив {0}"
 
@@ -34323,6 +34343,9 @@ msgstr "Единицы"
 msgid "Units don't match"
 msgstr "Единицы измерения не совпадают"
 
+msgid "Units excluded from this receipt"
+msgstr "Изделия, исключённые из этой приёмки"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Единицы базовой валюты за одну единицу этой валюты; используется для преобразования сумм при проведении"
 
@@ -34340,6 +34363,12 @@ msgstr "Единицы, не прошедшие выборку, остаются
 
 msgid "Units this customer owns show here once registered."
 msgstr "Единицы, которыми владеет этот покупатель, отображаются здесь после регистрации."
+
+msgid "Units with an open issue are now on hold"
+msgstr "Единицы с открытой проблемой теперь приостанавливаются"
+
+msgid "Units with an open issue are on hold"
+msgstr "Единицы с открытой проблемой приостановлены"
 
 msgid "Unknown"
 msgstr "Неизвестно"
@@ -35767,6 +35796,9 @@ msgstr "Отложенная выручка, накопленная выручк
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "Когда каждый период договора аренды или договора подлежит выставлению счетов: Авансово в первый день, до использования периода, или В рассрочку в последний день, после его начисления."
 
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "При включённой настройке изделия, назначенные к списанию или возврату поставщику, остаются заблокированными после закрытия проблемы."
+
 msgid "When expired stock is used"
 msgstr "Когда используется Запас с истекшим сроком"
 
@@ -36399,12 +36431,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "Вы можете увидеть этот ключ только один раз. Сохраните его в безопасном месте."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "Вы завершили {leftoverQuantity} больше {0}, чем заказанное количество {1}. Что вы хотите сделать с дополнительными деталями?"
+msgstr ""
 
 msgid "You do not have permission to do this"
 msgstr "У вас нет права доступа для выполнения этого"

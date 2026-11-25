@@ -110,9 +110,9 @@ msgstr "Экран техобслуживания — {0}"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} из {1}"
 
@@ -255,6 +255,9 @@ msgstr "{recorded}/{0} производственных заказов"
 
 msgid "{scrapped} scrapped"
 msgstr ""
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} приостановлена"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} на складе, без ячейки"
@@ -2248,6 +2251,9 @@ msgstr "Самые старые первыми"
 msgid "On Hold"
 msgstr "Приостановлено"
 
+msgid "On hold · {issueNumbers}"
+msgstr "Приостановлена · {issueNumbers}"
+
 msgid "On its way"
 msgstr "В пути"
 
@@ -2630,6 +2636,9 @@ msgstr "Проблема качества"
 
 msgid "Quality issue created"
 msgstr "Проблема качества создана"
+
+msgid "Quality rejected this unit for production."
+msgstr "Отдел качества отклонил это изделие для использования в производстве."
 
 msgid "Quantity"
 msgstr "Количество"
@@ -3580,6 +3589,9 @@ msgstr ""
 msgid "This unit is not part of this operation"
 msgstr ""
 
+msgid "This unit is on hold"
+msgstr "Эта единица приостановлена"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Эта единица будет окончательно списана, и будет создана единица на замену."
 
@@ -3898,6 +3910,9 @@ msgstr "Дисплеи рабочего центра"
 
 msgid "Work instructions"
 msgstr "Рабочие инструкции"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "Работа над этой единицей ждёт, пока служба качества не закроет все проблемы ниже. Остальные единицы не затрагиваются."
 
 msgid "Work Site"
 msgstr "Объект"

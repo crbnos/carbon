@@ -3734,6 +3734,9 @@ msgstr "後"
 msgid "After (calculation method)"
 msgstr "後（計算方法）"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "品質部門が保留を解除したら、製造指図を再度開いて対象のユニットを入庫してください。"
+
 msgid "After the correction"
 msgstr "補正後"
 
@@ -7898,7 +7901,7 @@ msgstr "完了日"
 msgid "Completed Qty"
 msgstr "完了数量"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "{0}の固定資産クラスとして完了します"
 
@@ -8965,6 +8968,9 @@ msgstr "工程を読み込むことができませんでした"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "MRP対象外の保管場所を読み込めませんでした。表示が欠けている可能性があります。"
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr ""
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName}で実行された内容を読み込むことができませんでした。"
@@ -16661,6 +16667,9 @@ msgstr "種類別の問題（累積割合付き）"
 msgid "Issues opened and closed by week"
 msgstr "週ごとの問題の発生とクローズ"
 
+msgid "Issues: Hold Units"
+msgstr "問題：ユニットの保留"
+
 msgid "It could not start. Try again."
 msgstr "開始できませんでした。もう一度試してください。"
 
@@ -22005,6 +22014,12 @@ msgstr "未解決の問題"
 msgid "Open issues by criticality and weeks open"
 msgstr "重要度と未完了週数別のオープンの問題"
 
+msgid "Open issues do not stop work"
+msgstr "未解決の問題があっても作業は止まりません"
+
+msgid "Open issues no longer stop work"
+msgstr "未解決の問題で作業が止まらなくなりました"
+
 msgid "Open item details"
 msgstr "品目の詳細を開く"
 
@@ -25207,7 +25222,9 @@ msgstr "プロジェクト在庫として受け取る"
 msgid "Received"
 msgstr "受信済み"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "{1} のうち {0} を受領"
@@ -29872,6 +29889,9 @@ msgstr "受信を停止"
 msgid "Stop Shipping"
 msgstr "配送を停止"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "リンクされた問題が未解決の間、シリアル番号付きユニットの現場作業を止めます。"
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "{0} をこのステップで使用しない"
@@ -30574,7 +30594,7 @@ msgstr "疑わしい故障モード"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "原価を資産{0}に振替"
 
@@ -34323,6 +34343,9 @@ msgstr "単位"
 msgid "Units don't match"
 msgstr "単位が一致しません"
 
+msgid "Units excluded from this receipt"
+msgstr "今回の入庫から除外されるユニット"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "この通貨の1単位あたりの基軸通貨の単位数。転記時の金額変換に使用します。"
 
@@ -34340,6 +34363,12 @@ msgstr "サンプルで不合格となったユニットは却下のままです
 
 msgid "Units this customer owns show here once registered."
 msgstr "この顧客が所有する個体は、登録済になるとここに表示されます。"
+
+msgid "Units with an open issue are now on hold"
+msgstr "未解決の問題があるユニットは保留されるようになりました"
+
+msgid "Units with an open issue are on hold"
+msgstr "未解決の問題があるユニットは保留されます"
 
 msgid "Unknown"
 msgstr "不明"
@@ -35767,6 +35796,9 @@ msgstr "繰延収益、見越収益およびリース利息収益が認識され
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "レンタル契約または契約の各請求期間が請求期日に到達したとき：期間が使用される前にその初日に前払い請求するか、期間が獲得された後にその最終日に後払い請求するかを選択してください。"
 
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "有効にすると、廃棄または仕入先への返品と判定されたユニットは、問題のクローズ後もブロックされます。"
+
 msgid "When expired stock is used"
 msgstr "期限切れの在庫が使用される場合"
 
@@ -36399,12 +36431,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "このキーは一度だけ表示されます。安全に保管してください。"
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "あなたは注文数量 {1} より {leftoverQuantity} 個多く {0} を完了しました。余った部品をどうしたいですか？"
+msgstr ""
 
 msgid "You do not have permission to do this"
 msgstr "これを実行する権限がありません"

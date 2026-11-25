@@ -52,6 +52,12 @@ export type InspectionDispositionInput = {
   // Partial on an untracked (Inventory) receipt lot: how much passed. Required
   // there, ignored otherwise.
   acceptedQuantity?: number;
+  // The server-selected WIP serials covered by a MES Accept (including held
+  // units), and the sampled failures that decision left out.
+  serialAcceptance?: {
+    acceptedUnitIds: string[];
+    failedUnitIds: string[];
+  };
 };
 
 // -------------------------------------------------------------
@@ -290,6 +296,18 @@ export async function dispositionInspection(
           .map((s) => s.trackedEntityId)
           .filter(Boolean)
       );
+      // Sample writes take the same lot lock. Refuse a prepared selection if
+      // an accepted serial now fails or an excluded failure has been cleared.
+      const acceptance = args.serialAcceptance;
+      if (
+        acceptance &&
+        (acceptance.acceptedUnitIds.some((id) => failedEntityIds.has(id)) ||
+          acceptance.failedUnitIds.some((id) => !failedEntityIds.has(id)))
+      ) {
+        throw new Error(
+          "The sample verdicts changed. Reload the lot and review the units before accepting it."
+        );
+      }
       const allLotIds = lotEntities.map((e) => e.id);
       const failures = existingSamples.filter(
         (s) => s.status === "Failed"
@@ -739,6 +757,11 @@ export async function dispositionInspection(
                   dispositionedBy: args.dispositionedBy,
                   dispositionedAt: nowIso
                 }
+              : {}),
+            ...(wasOpen &&
+            inspection.sourceDocument === "Job Operation" &&
+            args.decision === "Accept"
+              ? { acceptedUnitIds: acceptance?.acceptedUnitIds }
               : {}),
             ...(acceptedQuantity !== null ? { acceptedQuantity } : {}),
             ...((movedToStorageUnitId ?? legacyHoldUnitId)

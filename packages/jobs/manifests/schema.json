@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-24T20:30:58.708Z",
+  "exportedAt": "2026-11-25T07:34:14.698Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -524,7 +524,8 @@
         "sequenceWeekNumbering",
         "supplierPartNumberDisplay",
         "customerPartNumberDisplay",
-        "lastMrpRunStartedAt"
+        "lastMrpRunStartedAt",
+        "holdUnitsWithOpenIssues"
       ]
     },
     {
@@ -5748,7 +5749,8 @@
         "workCenterId",
         "assignee",
         "storageUnitId",
-        "acceptedQuantity"
+        "acceptedQuantity",
+        "acceptedUnitIds"
       ]
     },
     {

@@ -30,9 +30,7 @@ const UNPROVEN_CHECKS = new Set([
   "edge-function-authorizes-caller",
   "event-ignored-columns",
   "form-field-budget",
-  "function-redefinition-keeps-changes",
   "index-redirect-before-loaders",
-  "journal-status-filter",
   "lingui-macro-misuse",
   "list-select-covers-columns",
   "loader-reads-through-api",
@@ -52,7 +50,6 @@ const UNPROVEN_CHECKS = new Set([
   "no-integration-id-branching",
   "no-interpolated-error-log",
   "no-legacy-rls",
-  "no-local-timezone",
   "no-missing-audit-column",
   "no-module-permission-key",
   "no-noop-open-change",
@@ -90,7 +87,7 @@ const UNPROVEN_CHECKS = new Set([
 
 // The size the list was frozen at. Lower it when a check leaves; raising it
 // lets an unproven check in, which is what this test exists to stop.
-const UNPROVEN_CEILING = 62;
+const UNPROVEN_CEILING = 59;
 
 /** Every check `run.ts` registers: one `./conformance/<id>` module each. */
 function registeredChecks(): string[] {
