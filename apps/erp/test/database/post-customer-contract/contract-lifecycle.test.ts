@@ -9,7 +9,12 @@
 // company that is deleted afterwards.
 
 import type { KyselyDatabase } from "@carbon/database/client";
-import { CONTRACT_HOLD_ADJUSTMENT, round } from "@carbon/utils";
+import {
+  CONTRACT_HOLD_ADJUSTMENT,
+  horizon,
+  planInvoiceSchedule,
+  round
+} from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { expect } from "vitest";
 import {
@@ -19,7 +24,10 @@ import {
 import {
   type ContractCancellationResult,
   createContractInvoices,
-  postCustomerContract
+  postCustomerContract,
+  previewContractInvoiceTotals,
+  toLineTerms,
+  toTerms
 } from "../../../app/modules/sales/sales.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
@@ -975,6 +983,250 @@ databaseTest(
           totalTax: 15,
           totalAmount: 115
         }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the contract page's planned invoice tax is the tax the drafted invoice bills: the code's dated rate, none for Reverse Charge",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "preview",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      // 10% throughout, plus 5% from February; the line's stored 2% is stale.
+      const taxCodeId = `${contractId}-taxcode`;
+      const reverseChargeId = `${contractId}-reverse`;
+      await db
+        .insertInto("taxCode")
+        .values([
+          { id: taxCodeId, name: "Service VAT", companyId, createdBy: USER },
+          {
+            id: reverseChargeId,
+            name: "EU reverse charge",
+            calculationType: "Reverse Charge",
+            companyId,
+            createdBy: USER
+          }
+        ])
+        .execute();
+      await db
+        .insertInto("taxCodeComponent")
+        .values([
+          {
+            taxCodeId,
+            name: "State",
+            taxPercent: 0.1,
+            sequence: 1,
+            companyId,
+            createdBy: USER
+          },
+          {
+            taxCodeId,
+            name: "City",
+            taxPercent: 0.05,
+            sequence: 2,
+            // Between February's and March's invoice dates, so February is
+            // 10% on its own date and 15% when drafted late on 1 March.
+            effectiveDate: "2026-02-15",
+            companyId,
+            createdBy: USER
+          },
+          {
+            taxCodeId: reverseChargeId,
+            name: "VAT",
+            taxPercent: 0.2,
+            sequence: 1,
+            companyId,
+            createdBy: USER
+          }
+        ])
+        .execute();
+      await db
+        .updateTable("customerContractLine")
+        .set({ taxCodeId, taxPercent: 0.02 })
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .execute();
+      const line = await db
+        .selectFrom("customerContractLine")
+        .select("itemId")
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirstOrThrow();
+      // A second line on a Reverse Charge code, stored at the code's 20%.
+      await db
+        .insertInto("customerContractLine")
+        .values({
+          id: `${contractId}-reverse-line`,
+          customerContractId: contractId,
+          revenueType: "Recurring",
+          itemId: line.itemId,
+          quantity: 1,
+          rate: 100,
+          rateUnit: "Month",
+          startDate: "2026-01-01",
+          taxCodeId: reverseChargeId,
+          taxPercent: 0.2,
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+
+      // What the contract page loader previews: the schedule planned live
+      // from the lines while the Draft is unedited, else the stored one.
+      const preview = async (today: string, live: boolean) => {
+        const [contract, lines, rows] = await Promise.all([
+          db
+            .selectFrom("customerContract")
+            .selectAll()
+            .where("id", "=", contractId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirstOrThrow(),
+          db
+            .selectFrom("customerContractLine")
+            .selectAll()
+            .where("customerContractId", "=", contractId)
+            .where("companyId", "=", companyId)
+            .orderBy("id")
+            .execute(),
+          db
+            .selectFrom("customerContractInvoice as i")
+            .innerJoin(
+              "customerContractInvoiceLine as r",
+              "r.customerContractInvoiceId",
+              "i.id"
+            )
+            .select([
+              "i.id",
+              "i.status",
+              sql<string>`i."invoiceDate"::text`.as("invoiceDate"),
+              "r.customerContractLineId",
+              "r.unitPrice",
+              "r.amount"
+            ])
+            .where("i.customerContractId", "=", contractId)
+            .where("i.companyId", "=", companyId)
+            .orderBy("i.invoiceDate")
+            .orderBy("r.periodStart")
+            .execute()
+        ]);
+        // The stored schedule in the shape the page reads it: each invoice
+        // with its rows, whatever its status.
+        const schedule = new Map<
+          string,
+          {
+            status: string;
+            invoiceDate: string;
+            customerContractInvoiceLine: {
+              customerContractLineId: string;
+              unitPrice: number | string;
+              amount: number | string;
+            }[];
+          }
+        >();
+        for (const row of rows) {
+          const invoice = schedule.get(row.id) ?? {
+            status: row.status,
+            invoiceDate: row.invoiceDate,
+            customerContractInvoiceLine: []
+          };
+          invoice.customerContractInvoiceLine.push({
+            customerContractLineId: row.customerContractLineId,
+            unitPrice: row.unitPrice,
+            amount: row.amount
+          });
+          schedule.set(row.id, invoice);
+        }
+        const terms = toTerms(contract);
+        const totals = await previewContractInvoiceTotals(db, {
+          companyId,
+          today,
+          lines,
+          schedule: [...schedule.values()],
+          computedSchedule: live
+            ? planInvoiceSchedule(
+                terms,
+                toLineTerms(lines),
+                horizon(terms, today)
+              )
+            : null
+        });
+        return totals.map(({ invoiceDate, net, tax }) => ({
+          invoiceDate,
+          net,
+          tax
+        }));
+      };
+
+      // On 1 January each invoice is taxed on its own date: January and
+      // February at 10%, March at 15%; the Reverse Charge line adds nothing.
+      const firstQuarter = [
+        { invoiceDate: "2026-01-01", net: 200, tax: 10 },
+        { invoiceDate: "2026-02-01", net: 200, tax: 10 },
+        { invoiceDate: "2026-03-01", net: 200, tax: 15 }
+      ];
+      // The unedited Draft has no stored schedule: the page plans it live.
+      expect(await preview("2026-01-01", true)).toEqual(firstQuarter);
+
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        { type: "confirm", customerContractId: contractId, asOf: "2026-01-01" },
+        postCustomerContract
+      );
+      expect(confirmed.error).toBeNull();
+      // Confirm stores the same schedule, so the preview does not move.
+      expect(await preview("2026-01-01", false)).toEqual(firstQuarter);
+
+      const drafted = async () =>
+        (
+          await db
+            .selectFrom("salesInvoice")
+            .select(["subtotal", "totalTax"])
+            .where("customerContractId", "=", contractId)
+            .where("companyId", "=", companyId)
+            .orderBy("createdAt")
+            .orderBy("invoiceId")
+            .execute()
+        ).map((invoice) => ({
+          net: Number(invoice.subtotal),
+          tax: Number(invoice.totalTax)
+        }));
+
+      const january = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        { asOf: "2026-01-01", customerContractId: contractId },
+        createContractInvoices
+      );
+      expect(january.error).toBeNull();
+      expect(await drafted()).toEqual([{ net: 200, tax: 10 }]);
+
+      // A run on 1 March drafts February too, on March's date and so at 15%:
+      // the preview on that day says so.
+      expect(await preview("2026-03-01", false)).toEqual([
+        { invoiceDate: "2026-02-01", net: 200, tax: 15 },
+        { invoiceDate: "2026-03-01", net: 200, tax: 15 }
+      ]);
+      const march = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        { asOf: "2026-03-01", customerContractId: contractId },
+        createContractInvoices
+      );
+      expect(march.error).toBeNull();
+      expect(await drafted()).toEqual([
+        { net: 200, tax: 10 },
+        { net: 200, tax: 15 },
+        { net: 200, tax: 15 }
       ]);
     } finally {
       await f.cleanup();

@@ -44,6 +44,7 @@ import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import { path } from "~/utils/path";
 import { rentalEquipmentStatus } from "../../sales.utils";
+import RentalInvoiceModal from "./RentalInvoiceModal";
 import { RentalCommencementPreview } from "./RentalLeaseClassification";
 import RentalStatus, { RentalEquipmentStatusBadge } from "./RentalStatus";
 import type { RentalAgreementRouteData } from "./types";
@@ -59,7 +60,7 @@ type RentalAgreementHeaderProps = Pick<
   | "receipts"
 >;
 
-type PendingAction = "activate" | "invoice" | "close" | "cancel";
+type PendingAction = "activate" | "close" | "cancel";
 
 const RentalAgreementHeader = ({
   rentalAgreement,
@@ -78,6 +79,7 @@ const RentalAgreementHeader = ({
 
   const confirm = useDisclosure();
   const deleteDisclosure = useDisclosure();
+  const invoiceDisclosure = useDisclosure();
   const [action, setAction] = useState<PendingAction | null>(null);
 
   const id = rentalAgreement.id!;
@@ -112,6 +114,19 @@ const RentalAgreementHeader = ({
   const canReturn = hasUnitOnRent || hasPendingUnit;
   const hasInvoicedPeriod = periods.some(
     (period) => period.status === "Invoiced"
+  );
+  // With no Pending period left, the Invoice dialog starts on the due charges.
+  // A unit treated as a sale is never invoiced early, so its periods do not count.
+  const saleLineIds = new Set(
+    lines
+      .filter((line) => line.lessorClassification === "Sale")
+      .map((line) => line.id)
+  );
+  const hasPendingPeriod = periods.some(
+    (period) =>
+      period.status === "Pending" &&
+      !period.isAdjustment &&
+      !saleLineIds.has(period.rentalAgreementLineId)
   );
   // A commenced sales-type lease has already derecognized its unit; undoing
   // that is a manual journal in v1, so cancel is refused (spec §4).
@@ -160,12 +175,6 @@ const RentalAgreementHeader = ({
       title: t`Activate ${readableId}`,
       text: t`Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards.`,
       confirmText: t`Activate`
-    },
-    invoice: {
-      action: path.to.rentalAgreementInvoice(id),
-      title: t`Invoice ${readableId} now?`,
-      text: t`Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting.`,
-      confirmText: t`Invoice`
     },
     close: {
       action: path.to.rentalAgreementStatus(id),
@@ -334,7 +343,7 @@ const RentalAgreementHeader = ({
                 variant="secondary"
                 leftIcon={<LuCreditCard />}
                 isDisabled={!canInvoice}
-                onClick={() => open("invoice")}
+                onClick={invoiceDisclosure.onOpen}
               >
                 <Trans>Invoice</Trans>
               </Button>
@@ -434,6 +443,13 @@ const RentalAgreementHeader = ({
           )}
         </Confirm>
       )}
+
+      <RentalInvoiceModal
+        open={invoiceDisclosure.isOpen}
+        onClose={invoiceDisclosure.onClose}
+        rentalAgreement={rentalAgreement}
+        initialPeriods={hasPendingPeriod ? 1 : 0}
+      />
 
       <ConfirmDelete
         action={path.to.deleteRentalAgreement(id)}

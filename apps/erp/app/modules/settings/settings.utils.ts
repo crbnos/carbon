@@ -226,3 +226,14 @@ export const documentEditPermissions = Object.fromEntries(
     { [pageOfTable(record.table)]: "Edit" }
   ])
 ) as Record<DocumentEditType, PageGate>;
+
+/** The custom fields a document's table defines, as a custom field block's
+ *  panel names them. */
+export function customFieldNames(
+  schemas: { table: string | null; fields: unknown }[],
+  table: string
+): { id: string; name: string }[] {
+  const fields = (schemas.find((schema) => schema.table === table)?.fields ??
+    []) as { id: string; name: string }[];
+  return fields.map(({ id, name }) => ({ id, name }));
+}

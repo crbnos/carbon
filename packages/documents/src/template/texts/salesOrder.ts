@@ -51,7 +51,9 @@ export const salesOrderTexts = {
     },
     { key: "incoterm", kind: "field", default: "Incoterm: {order.incoterm}" },
     { key: "billTo", kind: "heading", default: "Bill To" },
-    ...addressTexts("billTo")
+    ...addressTexts("billTo"),
+    { key: "shipTo", kind: "heading", default: "Ship To" },
+    ...addressTexts("shipTo")
   ],
   notes: [
     { key: "notes", kind: "heading", default: "Notes" },

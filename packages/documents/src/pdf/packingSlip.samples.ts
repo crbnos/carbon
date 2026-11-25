@@ -70,7 +70,10 @@ export const SAMPLE_PACKING_SLIP = {
       }
     ]
   },
-  trackedEntities: [],
+  // One serial on the first line, so the Serial/Batch column prints.
+  trackedEntities: [
+    { id: "SN-WIDGET-0001", attributes: { "Shipment Line": "line-1" } }
+  ],
   thumbnails: {},
   locale: "en-US"
 } as any;

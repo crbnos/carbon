@@ -113,7 +113,7 @@ const SalesOrderConfirmBody = ({
   const canEmail = integrations.has("email");
 
   const [notificationType, setNotificationType] = useState<"Email" | "None">(
-    canEmail ? "Email" : "None"
+    "None"
   );
   const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
@@ -180,6 +180,9 @@ const SalesOrderConfirmBody = ({
                   customer={salesOrder?.customerId ?? undefined}
                   warnIfNoEmail
                   onMissingEmailChange={setContactMissingEmail}
+                  emailNotice={(name) =>
+                    t`This will email the sales order to ${name}.`
+                  }
                 />
                 <EmailRecipients name="cc" label={t`CC`} type="employee" />
               </>

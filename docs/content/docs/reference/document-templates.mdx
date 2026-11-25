@@ -14,11 +14,15 @@ The editor shows a live preview in the middle, the blocks of the page on the lef
 - **Values** such as a customer name print from a variable, shown as a chip. Use **Insert value** to add one.
 - **Preview with** shows the template on a real record, for the documents that offer one.
 
+Until you pick a record, the preview prints sample data that fills nearly every section the template can print, so you can see and edit almost all of them (a few texts nested inside others never print on the sample). On the sales order, the **Addresses & Details** block prints a **Ship To** under the customer when **Drop Shipment** is on: the drop-ship location. An order that does not drop-ship prints no Ship To, because the customer's address is already the order's location. Hide its words like any other field.
+
 Terms are edited on their own block. A record's notes belong to the record, so a template only sets their heading. The company name and address come from the company record; the Header only chooses whether they print.
 
 ## Figures stay what the record says
 
 Money and quantities always print from the record. A template or a document can reword what surrounds a figure or hide its column, but it cannot remove a figure from a text that prints one, and a number or a sign typed next to a figure is refused, because `1{line.quantity}` would print 15 for 5.
+
+This guards the words that come with the template. A Rich Text, Key Value, Field or Custom Field block prints its own content, so a template or one document's edit can type anything there, numbers included.
 
 ## Editing one document
 

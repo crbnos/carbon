@@ -22,16 +22,11 @@ import { isEmptyValueEdits } from "./values";
  * Only the changes are kept, in the template's own shape, so a word the document
  * did not change still follows the template. Stored in `documentEdit`.
  */
-export const blockEditSchema = z.object({
-  text: z.record(z.string(), z.string()).optional(),
-  /** Texts this document hides, or shows, against the template's hidden list. */
-  hide: z.array(z.string()).optional(),
-  show: z.array(z.string()).optional(),
-  visible: z.boolean().optional(),
-  /**
-   * A block's own printed fields for this document (`OWN_EDIT_FIELDS`). Null
-   * clears the template's: the Terms block then prints the company's terms.
-   */
+/**
+ * A block's own printed fields for this document (`OWN_EDIT_FIELDS`). Null
+ * clears the template's: the Terms block then prints the company's terms.
+ */
+const ownEditShape = {
   content: z.any().optional(),
   title: z.string().nullable().optional(),
   rows: z
@@ -40,9 +35,18 @@ export const blockEditSchema = z.object({
     .optional(),
   label: z.string().nullable().optional(),
   value: z.string().nullable().optional()
+};
+
+export const blockEditSchema = z.object({
+  text: z.record(z.string(), z.string()).optional(),
+  /** Texts this document hides, or shows, against the template's hidden list. */
+  hide: z.array(z.string()).optional(),
+  show: z.array(z.string()).optional(),
+  visible: z.boolean().optional(),
+  ...ownEditShape
 });
 
-type OwnEditField = "content" | "title" | "rows" | "label" | "value";
+type OwnEditField = keyof typeof ownEditShape;
 
 /** The fields a block prints from its own settings, which one document can change. */
 const OWN_EDIT_FIELDS: Partial<
@@ -215,6 +219,11 @@ function hiddenChange(
   };
 }
 
+/** An own field to compare; an emptied title or label is the same as none. */
+function ownJson(value: unknown) {
+  return JSON.stringify(value === "" ? null : (value ?? null));
+}
+
 /** Only the words, toggles and terms that differ from the template. */
 function changedText(
   entries: readonly TextEntry[],
@@ -254,12 +263,9 @@ export function diffDocumentEdit(
       const before = block as Record<string, unknown>;
       const edited = after as Record<string, unknown>;
       for (const field of ownEditFields(block.type)) {
-        if (
-          JSON.stringify(before[field] ?? null) !==
-          JSON.stringify(edited[field] ?? null)
-        ) {
+        if (ownJson(before[field]) !== ownJson(edited[field])) {
           // Null: the template's is cleared here (Terms then prints the company's).
-          (change as Record<string, unknown>)[field] = edited[field] ?? null;
+          change[field] = edited[field] ?? null;
         }
       }
     }
@@ -315,15 +321,26 @@ export function validateDocumentEdit(
     const change = edit.blocks[blockId];
     if (!change) return false;
     // An own field's problem is named by the field, or by a piece of it ("rows.0.label").
+    const [head, index] = field.split(".");
     const type = printed.blocks.find((b) => b.id === blockId)?.type;
-    const own = type
-      ? ownEditFields(type).find((f) => f === field.split(".")[0])
-      : undefined;
-    return (
+    const own = type ? ownEditFields(type).find((f) => f === head) : undefined;
+    if (
       change.text?.[field] !== undefined ||
-      change.hide?.includes(field) === true ||
-      (own !== undefined && change[own] !== undefined)
+      change.hide?.includes(field) === true
+    ) {
+      return true;
+    }
+    if (own === undefined || change[own] === undefined) return false;
+    if (own !== "rows") return true;
+    // A row the template also has keeps the template's problem, wherever
+    // the edit moved it.
+    const base = template.blocks.find((b) => b.id === blockId);
+    const baseRows = new Set(
+      (base?.type === "keyValue" ? base.rows : []).map((row) =>
+        JSON.stringify(row)
+      )
     );
+    return !baseRows.has(JSON.stringify(change.rows?.[Number(index)] ?? null));
   });
 }
 

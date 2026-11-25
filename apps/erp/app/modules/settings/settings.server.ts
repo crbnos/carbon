@@ -131,7 +131,7 @@ import {
   dimensionValueMappingEntrySchema,
   expiredEntityPolicies,
   incompletePickingListPolicies,
-  invoiceAutomations,
+  inheritableInvoiceAutomations,
   kanbanLabelSizes,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
@@ -145,6 +145,7 @@ import {
 } from "./settings.models";
 import * as service from "./settings.service";
 import {
+  customFieldNames,
   DOCUMENT_EDIT_RECORDS,
   DOCUMENT_TERMS_FIELD,
   documentEditPermissions
@@ -342,7 +343,7 @@ export const updateInventorySettings = defineServiceFn({
  */
 export const updateInvoicingSettings = defineServiceFn({
   input: z.object({
-    invoiceAutomation: z.enum(invoiceAutomations).optional(),
+    invoiceAutomation: z.enum(inheritableInvoiceAutomations).optional(),
     accountsReceivableEmail: z.string().email().nullable().optional(),
     invoiceNotificationGroup: notificationGroup.optional(),
     accountsReceivableAddress: z.boolean().optional(),
@@ -2121,10 +2122,7 @@ export const getDocumentEditor = defineServiceFn({
       edit,
       termsSeed,
       sections: Object.values(sections),
-      customFields: (
-        (customFieldSchemas.data.find((t) => t.table === documentType)
-          ?.fields ?? []) as { id: string; name: string }[]
-      ).map((f) => ({ id: f.id, name: f.name }))
+      customFields: customFieldNames(customFieldSchemas.data, documentType)
     };
   }
 });

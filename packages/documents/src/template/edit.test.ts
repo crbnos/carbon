@@ -430,6 +430,12 @@ describe("a custom block's own content on one document", () => {
         visible: true,
         title: "Shipping",
         rows: [{ label: "Carrier", value: "Ground" }]
+      },
+      {
+        id: "rt",
+        type: "richText",
+        visible: true,
+        content: { type: "doc", content: [] }
       }
     ]
   });
@@ -468,6 +474,13 @@ describe("a custom block's own content on one document", () => {
     ).toBe(true);
   });
 
+  it("leaves no key when a Rich Text title is typed and cleared", () => {
+    const edited = editBlocks({ rt: { title: "" } });
+    expect(
+      isEmptyDocumentEdit(diffDocumentEdit("purchaseOrder", template, edited))
+    ).toBe(true);
+  });
+
   it("drops a custom field's own value from a stored template", () => {
     const stored = toDocumentTemplate(
       {
@@ -496,12 +509,29 @@ describe("a custom block's own content on one document", () => {
   });
 
   it("reports an unknown variable in an edited row, not the template's", () => {
+    const templateRow = { label: "Broken", value: "{gone.y}" };
+    const withBadRow = editBlocks({
+      kv: { rows: [{ label: "Carrier", value: "Ground" }, templateRow] }
+    });
     const edit = {
-      blocks: { kv: { rows: [{ label: "Carrier", value: "{gone.x}" }] } },
+      blocks: {
+        kv: { rows: [{ label: "Carrier", value: "{gone.x}" }, templateRow] }
+      },
       settings: {}
     };
     expect(
-      validateDocumentEdit("purchaseOrder", template, edit).map((p) => p.field)
+      validateDocumentEdit("purchaseOrder", withBadRow, edit).map(
+        (p) => p.field
+      )
     ).toEqual(["rows.0.value"]);
+  });
+
+  it("leaves the template's broken row out when the edit moves it", () => {
+    const templateRow = { label: "Broken", value: "{gone.y}" };
+    const withBadRow = editBlocks({
+      kv: { rows: [{ label: "Carrier", value: "Ground" }, templateRow] }
+    });
+    const edit = { blocks: { kv: { rows: [templateRow] } }, settings: {} };
+    expect(validateDocumentEdit("purchaseOrder", withBadRow, edit)).toEqual([]);
   });
 });

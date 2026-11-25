@@ -38,6 +38,7 @@ import {
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { TermForm } from "~/components/Setup";
 import { usePermissions, useRouteData, useSettings } from "~/hooks";
+import { inheritableInvoiceAutomations } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
@@ -49,8 +50,7 @@ import {
   contractDurations,
   contractRenewals,
   type customerContractResearchFields,
-  customerContractTypes,
-  invoiceAutomations
+  customerContractTypes
 } from "../../sales.models";
 import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import ContractProject from "./ContractProject";
@@ -643,7 +643,7 @@ const ContractProperties = () => {
                 {value === COMPANY_DEFAULT
                   ? t`Company default (${companyLabel})`
                   : (labels.invoiceAutomation[
-                      value as (typeof invoiceAutomations)[number]
+                      value as (typeof inheritableInvoiceAutomations)[number]
                     ] ?? value)}
               </span>
             )}
@@ -656,7 +656,7 @@ const ContractProperties = () => {
                 value: COMPANY_DEFAULT,
                 label: t`Company default (${companyLabel})`
               },
-              ...invoiceAutomations.map((mode) => ({
+              ...inheritableInvoiceAutomations.map((mode) => ({
                 value: mode,
                 label: labels.invoiceAutomation[mode]
               }))

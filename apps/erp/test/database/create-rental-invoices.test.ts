@@ -15,6 +15,7 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
+import { rentalFixture } from "./fixtures/rental";
 import {
   createRentalInvoices,
   getRentalNextInvoice
@@ -665,6 +666,70 @@ databaseTest(
         [f.septemberCreditId]: [memoIds[0], "Invoiced"],
         [f.octoberCreditId]: [memoIds[0], "Invoiced"]
       });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** The status of the fixture's October period (its first Pending one). */
+async function octoberStatus(f: Awaited<ReturnType<typeof rentalFixture>>) {
+  const period = await f.db
+    .selectFrom("rentalBillingPeriod")
+    .select("status")
+    .where("companyId", "=", f.companyId)
+    .where("rentalAgreementLineId", "=", f.lineIds[0]!)
+    .where("periodStart", "=", "2026-10-01")
+    .where("isAdjustment", "=", false)
+    .executeTakeFirstOrThrow();
+  return period.status;
+}
+
+databaseTest(
+  "a run drafts no invoice for a Manual agreement, for the company or for the agreement alone",
+  async () => {
+    const f = await rentalFixture({ invoiceAutomation: "Manual" });
+    try {
+      for (const input of [
+        { asOf: "2026-10-05" },
+        { asOf: "2026-10-05", rentalAgreementId: f.agreementId }
+      ]) {
+        const result = await invokePosting(
+          f.ctx,
+          "create-rental-invoices",
+          input,
+          createRentalInvoices
+        );
+        expect(result.error).toBeNull();
+        expect(result.data!.failures).toEqual([]);
+        expect(result.data!.invoices).toEqual([]);
+      }
+      expect(await octoberStatus(f)).toBe("Pending");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "Sell to Customer's run (billManual) drafts a Manual agreement's invoice",
+  async () => {
+    const f = await rentalFixture({ invoiceAutomation: "Manual" });
+    try {
+      const result = await invokePosting(
+        f.ctx,
+        "create-rental-invoices",
+        {
+          asOf: "2026-10-05",
+          rentalAgreementId: f.agreementId,
+          billManual: true
+        },
+        createRentalInvoices
+      );
+      expect(result.error).toBeNull();
+      expect(result.data!.failures).toEqual([]);
+      expect(result.data!.invoices).toHaveLength(1);
+      expect(await octoberStatus(f)).toBe("Invoiced");
     } finally {
       await f.cleanup();
     }

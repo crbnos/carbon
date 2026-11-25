@@ -110,6 +110,7 @@ export default function ContractDetailsRoute() {
     credits,
     amendments,
     computedSchedule,
+    plannedInvoices,
     revenue,
     revenueRows,
     revenueIsStored,
@@ -137,6 +138,7 @@ export default function ContractDetailsRoute() {
         lines={lines}
         schedule={schedule}
         computedSchedule={computedSchedule}
+        plannedInvoices={plannedInvoices}
       />
       {isProject && projectBillingCard}
       {/* A project contract's schedule holds only its Fixed Price billing

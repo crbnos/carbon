@@ -32,6 +32,7 @@ import {
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
+  invoiceAutomationPosts,
   requireAffected,
   round,
   suggestContractType,
@@ -92,6 +93,7 @@ import {
 import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
+import { inheritableInvoiceAutomations } from "../settings/settings.models";
 import {
   invokeCreate,
   invokePosting,
@@ -1150,7 +1152,9 @@ export const updateQuoteLine = defineServiceFn({
  * quote gets its share link; its PDF is filed on the opportunity; the quote
  * is set Sent and its lines Complete. With `notification` Email the PDF is
  * then emailed to `customerContact` (and `cc`); when that fails the quote is
- * still Sent and `warning` says so. `locale` formats the PDF.
+ * still Sent and `warning` says so. The `notification` sent is kept on the
+ * quote (`sendViaEmail`: Email true, None false; omitted leaves it), and the
+ * Won drawer starts the order's Send Via from it. `locale` formats the PDF.
  *
  * @mcp
  */
@@ -1257,7 +1261,10 @@ export const finalizeAndSendQuote = defineServiceFn({
       quoteId,
       userId,
       companyId,
-      { emailOrderOnAcceptance: input.emailOrderOnAcceptance }
+      {
+        emailOrderOnAcceptance: input.emailOrderOnAcceptance,
+        notification
+      }
     );
     if (finalized.error) {
       return ctx.error("internal", "Failed to finalize quote", finalized.error);
@@ -4696,7 +4703,7 @@ export const setContractType = defineServiceFn({
 export const setContractInvoiceAutomation = defineServiceFn({
   input: z.object({
     id: z.string(),
-    invoiceAutomation: z.enum(invoiceAutomations).nullable()
+    invoiceAutomation: z.enum(inheritableInvoiceAutomations).nullable()
   }),
   permission: { "sales.serviceContracts": "Edit" },
 
@@ -5296,12 +5303,14 @@ const rentalBooleanTerms = new Set<string>([
   "purchaseOptionReasonablyCertain"
 ]);
 
-// Read when each invoice is drafted, so changing them on an Active agreement
-// changes only the invoices not drafted yet.
+// Read when each invoice is drafted (the Rental Site is its ship-to), so
+// changing them on an Active agreement changes only the invoices not drafted
+// yet.
 const rentalActiveTerms = new Set<string>([
   "paymentTermId",
   "taxPercent",
-  "taxCodeId"
+  "taxCodeId",
+  "customerLocationId"
 ]);
 
 /**
@@ -5309,8 +5318,9 @@ const rentalActiveTerms = new Set<string>([
  *
  * @remarks
  * A Draft agreement takes any term. An Active one takes only the payment
- * terms, the tax code and the tax percent: they apply to the invoices drafted
- * from then on, and invoices already drafted keep theirs. The terms are checked as a whole (an end date after the start, a purchase
+ * terms, the tax code, the tax percent and the Rental Site: they apply to the
+ * invoices drafted from then on, and invoices already drafted keep theirs.
+ * The Rental Site must be a location of the agreement's customer. The terms are checked as a whole (an end date after the start, a purchase
  * option reasonably certain needs an end date), so the stored terms are
  * read, the one field is swapped in and the whole set is validated and
  * saved. A new customer clears the site and the contacts; a new currency
@@ -5340,7 +5350,7 @@ export const setRentalAgreementTerm = defineServiceFn({
       return ctx.error(
         "rule",
         agreement.status === "Active"
-          ? "Only the payment terms and tax of an Active rental agreement can be changed"
+          ? "Only the payment terms, tax and Rental Site of an Active rental agreement can be changed"
           : "Only a Draft rental agreement's terms can be edited"
       );
     }
@@ -5455,20 +5465,23 @@ export const setRentalAgreementTerm = defineServiceFn({
       ...data
     } = validation.data;
 
-    // A tax code, its rate and the payment terms are read when each invoice
-    // is drafted; an Active agreement writes only those.
+    // A tax code, its rate, the payment terms and the Rental Site are read
+    // when each invoice is drafted; an Active agreement writes only those.
     const update = isActiveTerm
       ? await service.updateRentalAgreementInvoiceTerms(client, {
           id,
           companyId,
           updatedBy: ctx.auditUserId,
+          customerId: agreement.customerId ?? "",
           terms:
             field === "paymentTermId"
               ? { paymentTermId: data.paymentTermId ?? null }
-              : {
-                  taxPercent: data.taxPercent,
-                  taxCodeId: (terms.taxCodeId as string | null) ?? null
-                }
+              : field === "customerLocationId"
+                ? { customerLocationId: data.customerLocationId ?? null }
+                : {
+                    taxPercent: data.taxPercent,
+                    taxCodeId: (terms.taxCodeId as string | null) ?? null
+                  }
         })
       : await service.updateRentalAgreement(client, {
           ...data,
@@ -5502,7 +5515,8 @@ export const setRentalAgreementTerm = defineServiceFn({
  * @remarks
  * Null is the company's setting. Stays editable while the agreement is
  * Active. Stripe needs Stripe connected; Post and Email needs a contact
- * email.
+ * email. Manual: the daily run creates no invoice for the agreement; bill it
+ * with invoiceRentalAgreementPeriods.
  *
  * @mcp
  */
@@ -6065,7 +6079,7 @@ export const sellRentalUnit = defineServiceFn({
     // Normally on a held charges invoice; anything automatable posts in the
     // background.
     const toAutomate = invoices.filter(
-      (invoice) => invoice.mode !== "Draft Only" && !invoice.holdReason
+      (invoice) => invoiceAutomationPosts(invoice.mode) && !invoice.holdReason
     );
     if (toAutomate.length > 0) {
       await batchTrigger(
@@ -6078,6 +6092,51 @@ export const sellRentalUnit = defineServiceFn({
     return { invoiceIds: invoices.map((invoice) => invoice.invoiceId) };
   }
 });
+
+/** What "Invoice the next N periods" would draft, rolled back. */
+export const previewRentalAgreementInvoice = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    periods: z.number().int().min(0)
+  }),
+  permission: {
+    "sales.rentalAgreements": "Edit",
+    "invoicing.salesInvoices": "Create"
+  },
+
+  run: (ctx, input) =>
+    service.earlyRentalInvoice(ctx, input, service.previewEarlyRentalInvoice)
+});
+
+/**
+ * Invoice the next periods of a rental agreement
+ *
+ * @remarks
+ * One Draft invoice for the next N periods of each unit and the unbilled
+ * charges dated today or earlier. Never posted or sent on its own. A fixed
+ * term takes at most the periods left; an open-ended agreement at most 12.
+ * A unit treated as a sale is left out: its periods bill on their due dates.
+ * N = 0 bills the due charges alone, and only when no period is left.
+ *
+ * @param fromPeriodStart - Required when periods > 0: the first period you expect to bill (YYYY-MM-DD), the earliest periodStart of a Pending, non-adjustment billing period (sales_getRentalBillingPeriods) of a unit not treated as a sale. Omit it or send null for charges alone (periods = 0). When another period would be billed first (an earlier call billed it), the call is refused, so a retry never bills later periods.
+ *
+ * @mcp
+ */
+export const invoiceRentalAgreementPeriods = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    periods: z.number().int().min(0),
+    fromPeriodStart: z.string().nullable().optional()
+  }),
+  permission: {
+    "sales.rentalAgreements": "Edit",
+    "invoicing.salesInvoices": "Create"
+  },
+
+  run: (ctx, input) =>
+    service.earlyRentalInvoice(ctx, input, service.draftEarlyRentalInvoice)
+});
+
 /**
  * Copy quote
  *
