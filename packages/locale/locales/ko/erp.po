@@ -13728,6 +13728,9 @@ msgstr "공급업체 반품을 로드하지 못했습니다"
 msgid "Failed to load the rental rates"
 msgstr "렌탈 요금을 로드하지 못했습니다."
 
+msgid "Failed to load the suppliers"
+msgstr "공급업체를 불러오지 못했습니다"
+
 msgid "Failed to load tracked entities"
 msgstr "추적 개체를 불러오지 못했습니다"
 
@@ -15351,6 +15354,12 @@ msgstr "계산 날짜 이후 선급 할인을 사용할 수 있는 일 수입니
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "계산일로부터 전체 금액이 만기되는 일수입니다."
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "MRP가 계획 주문을 건드리지 않는 기간(일 수)입니다. 계획 타임 펜스 안에서 릴리스되는 계획 주문은 수량과 날짜가 유지되며, MRP는 해당 주문에 대한 변경만 제안합니다. 계획 타임 펜스 안에 생긴 새 소요는 펜스가 끝나는 시점에 릴리스되도록 계획되며, 앞당기기를 적용해 일정을 당길 수 있습니다. 펜스를 두지 않으려면 0을 입력하십시오."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "MRP가 이 품목의 계획 주문을 건드리지 않는 기간(일 수)입니다. 계획 타임 펜스 안에서 릴리스되는 계획 주문은 수량과 날짜가 유지되며, MRP는 해당 주문에 대한 변경만 제안합니다. 계획 타임 펜스 안에 생긴 새 소요는 펜스가 끝나는 시점에 릴리스되도록 계획되며, 앞당기기를 적용해 일정을 당길 수 있습니다. 비워 두면 사업장의 계획 타임 펜스를 사용하며, 이 품목에만 펜스를 두지 않으려면 0을 입력하십시오."
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "미결 발주가 필요한 날짜로부터 이 일수의 범위 내에 도착하면 MRP가 일정 변경을 제안하지 않습니다. 설정 → 계획에서 설정하며, 기본값은 7일입니다."
@@ -17859,8 +17868,11 @@ msgstr "사업장 코드"
 msgid "Location default"
 msgstr "사업장 기본값"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "사업장 기본값: {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "사업장 설정값: {locationTimeFenceDays, plural, one {# 일} other {# 일}}"
+
+msgid "Location default: no fence"
+msgstr "사업장 설정값: 펜스 없음"
 
 msgid "Location Name"
 msgstr "위치 이름"
@@ -31980,9 +31992,6 @@ msgstr "밤은 아직 젊습니다, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "우선 공급업체에 발주서를 작성한 후 상품이 하역장에 도착할 때까지의 일수; 계획이 이만큼 수요를 뒤로 오프셋합니다."
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "오늘부터 MRP가 계획 주문을 고정해 두는 일수입니다. MRP는 이 주문을 이동하거나 수량을 조정하지 않습니다. 고정 기간 안에 새로 발생한 수요는 고정 기간 끝에 계획되며 긴급 조정과 함께 생성됩니다. 0은 고정 기간이 없음을 뜻합니다. 품목의 값이 사업장 값보다 우선하며, 품목 값을 비워 두면 사업장 값을 사용합니다."
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "이 품목의 배치 하나를 제작하는 데 걸리는 일수(작업 지시 릴리스부터 완료까지 측정); 계획이 이만큼 수요를 뒤로 오프셋합니다."

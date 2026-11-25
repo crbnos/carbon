@@ -13728,6 +13728,9 @@ msgstr "आपूर्तिकर्ता रिटर्न लोड कर
 msgid "Failed to load the rental rates"
 msgstr "किराया दरें लोड करने में विफल"
 
+msgid "Failed to load the suppliers"
+msgstr "आपूर्तिकर्ताओं को लोड करने में विफल"
+
 msgid "Failed to load tracked entities"
 msgstr "ट्रैक किए गए इकाइयों को लोड करने में विफल"
 
@@ -15351,6 +15354,12 @@ msgstr "गणना की तारीख के बाद कितने द
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "गणना की तारीख के बाद कितने दिनों में पूरी राशि देय है।"
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "MRP कितने दिन आगे तक अपने योजनाबद्ध ऑर्डर को अछूता छोड़ता है। योजना टाइम फ़ेंस के भीतर जारी होने वाला योजनाबद्ध ऑर्डर अपनी मात्रा और तिथियाँ बनाए रखता है; MRP उसमें केवल बदलाव सुझाता है। फ़ेंस के भीतर की नई आवश्यकता को फ़ेंस समाप्त होने पर जारी होने के लिए योजनाबद्ध किया जाता है, जिसे आगे लाने के लिए तेज़ी से करें लागू किया जा सकता है। कोई फ़ेंस न रखने के लिए 0 दर्ज करें।"
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "MRP कितने दिन आगे तक इस आइटम के योजनाबद्ध ऑर्डर को अछूता छोड़ता है। योजना टाइम फ़ेंस के भीतर जारी होने वाला योजनाबद्ध ऑर्डर अपनी मात्रा और तिथियाँ बनाए रखता है; MRP उसमें केवल बदलाव सुझाता है। फ़ेंस के भीतर की नई आवश्यकता को फ़ेंस समाप्त होने पर जारी होने के लिए योजनाबद्ध किया जाता है, जिसे आगे लाने के लिए तेज़ी से करें लागू किया जा सकता है। खाली छोड़ने पर स्थान की योजना टाइम फ़ेंस उपयोग होगी, या इस आइटम के लिए कोई फ़ेंस न रखने के लिए 0 दर्ज करें।"
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "एक खुला ऑर्डर आवश्यक तारीख से कितने दिन आगे आ सकता है, इससे पहले कि MRP इसे स्थानांतरित करने का सुझाव दे। सेटिंग्स → योजना में सेट करें; डिफ़ॉल्ट 7 दिन है।"
@@ -17859,8 +17868,11 @@ msgstr "स्थान कोड"
 msgid "Location default"
 msgstr "डिफ़ॉल्ट स्थान"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "डिफ़ॉल्ट स्थान: {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "स्थान का डिफ़ॉल्ट मान: {locationTimeFenceDays, plural, one {# दिन} other {# दिन}}"
+
+msgid "Location default: no fence"
+msgstr "स्थान का डिफ़ॉल्ट मान: कोई फ़ेंस नहीं"
 
 msgid "Location Name"
 msgstr "स्थान का नाम"
@@ -31980,9 +31992,6 @@ msgstr "रात अभी युवा है, {name}।"
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "पसंदीदा आपूर्तिकर्ता के साथ एक PO देने और सामान डॉक पर पहुंचने के बीच दिनों की संख्या; योजना इस राशि से मांग को पीछे की ओर ऑफसेट करता है।"
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "आज से कितने दिनों तक MRP योजनाबद्ध ऑर्डरों को स्थिर रखता है: यह उन्हें न बदलता है, न उनका आकार बदलता है। फ़ेंस के भीतर की नई आवश्यकता फ़ेंस के अंत में एक्सपेडाइट के साथ योजनाबद्ध होती है। 0 का अर्थ है कोई फ़ेंस नहीं। आइटम का मान उसके स्थान के मान की जगह लेता है; स्थान का मान लेने के लिए आइटम को खाली छोड़ें।"
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "इस आइटम का एक बैच बनाने के लिए दिनों की संख्या, जॉब जारी करने से पूर्णता तक मापी जाती है; योजना ऑफसेट मांग को इस राशि से पीछे की ओर स्थानांतरित करती है।"

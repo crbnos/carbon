@@ -13728,6 +13728,9 @@ msgstr "Impossibile caricare i resi del fornitore"
 msgid "Failed to load the rental rates"
 msgstr "Impossibile caricare le tariffe di noleggio"
 
+msgid "Failed to load the suppliers"
+msgstr "Impossibile caricare i fornitori"
+
 msgid "Failed to load tracked entities"
 msgstr "Impossibile caricare le entità tracciate"
 
@@ -15351,6 +15354,12 @@ msgstr "Quanti giorni dopo la data di calcolo lo sconto per pagamento anticipato
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Quanti giorni dopo la data di calcolo l'importo completo è dovuto."
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "Quanti giorni in anticipo MRP lascia invariati i propri ordini pianificati. Un ordine pianificato che viene rilasciato entro l'orizzonte di blocco della pianificazione mantiene la sua quantità e le sue date; MRP si limita a suggerire modifiche. Un nuovo fabbisogno entro l'orizzonte di blocco viene pianificato per essere rilasciato alla fine dell'orizzonte, con un'azione Anticipa che puoi applicare per anticiparlo. Inserisci 0 per nessun orizzonte di blocco."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "Quanti giorni in anticipo MRP lascia invariati gli ordini pianificati di questo articolo. Un ordine pianificato che viene rilasciato entro l'orizzonte di blocco della pianificazione mantiene la sua quantità e le sue date; MRP si limita a suggerire modifiche. Un nuovo fabbisogno entro l'orizzonte di blocco viene pianificato per essere rilasciato alla fine dell'orizzonte, con un'azione Anticipa che puoi applicare per anticiparlo. Lascia vuoto per usare l'orizzonte di blocco dell'ubicazione, oppure inserisci 0 per nessun orizzonte di blocco per questo articolo."
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "Quanti giorni un ordine aperto può arrivare dalla data in cui è necessario prima che l'MRP suggerisca di spostarlo. Impostare in Impostazioni → Pianificazione; il valore predefinito è 7 giorni."
@@ -17859,8 +17868,11 @@ msgstr "Codice ubicazione"
 msgid "Location default"
 msgstr "Ubicazione predefinita"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "Ubicazione predefinita: {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "Valore dell'ubicazione: {locationTimeFenceDays, plural, one {# giorno} other {# giorni}}"
+
+msgid "Location default: no fence"
+msgstr "Valore dell'ubicazione: nessun orizzonte di blocco"
 
 msgid "Location Name"
 msgstr "Nome Ubicazione"
@@ -31980,9 +31992,6 @@ msgstr "La notte è ancora giovane, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Il numero di giorni tra il piazzamento di un ordine di acquisto con il fornitore preferenziale e l'arrivo dei beni al dock; la pianificazione anticipa il fabbisogno di questo importo."
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "Il numero di giorni da oggi entro cui MRP mantiene fermi gli ordini pianificati: non li sposta né ne modifica la quantità. Un nuovo fabbisogno entro la barriera viene pianificato alla fine della barriera, con un'Accelerazione. 0 significa nessuna barriera. Il valore dell'articolo prevale su quello dell'ubicazione; lasciate vuoto il campo dell'articolo per usare quello dell'ubicazione."
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Il numero di giorni per costruire un lotto di produzione di questo articolo, misurato dal rilascio dell'ordine di produzione al completamento; la pianificazione anticipa il fabbisogno di questo importo."

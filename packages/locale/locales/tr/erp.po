@@ -13728,6 +13728,9 @@ msgstr "Tedarikçi iadeleri yüklenemedi"
 msgid "Failed to load the rental rates"
 msgstr "Kiralama oranları yüklenemedi"
 
+msgid "Failed to load the suppliers"
+msgstr "Tedarikçiler yüklenemedi"
+
 msgid "Failed to load tracked entities"
 msgstr "Takip edilen varlıklar yüklenemedi"
 
@@ -15351,6 +15354,12 @@ msgstr "Hesaplama tarihinden sonra erken ödeme iskontosunun kaç gün daha kull
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Hesaplama tarihinden sonra kaç gün tam tutar ödenmesi gerekir."
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "MRP, planlanan siparişlerine kaç gün önceden dokunmaz. Zaman sınırı içinde serbest bırakılacak bir planlanan sipariş, miktarını ve tarihlerini korur; MRP ona yalnızca değişiklik önerir. Sınır içindeki yeni bir ihtiyaç, sınır bittiğinde serbest bırakılacak şekilde planlanır ve bunu öne çekmek için uygulayabileceğiniz bir Hızlandır seçeneği olur. Zaman sınırı olmaması için 0 girin."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "MRP, bu stok kartının planlanan siparişlerine kaç gün önceden dokunmaz. Zaman sınırı içinde serbest bırakılacak bir planlanan sipariş, miktarını ve tarihlerini korur; MRP ona yalnızca değişiklik önerir. Sınır içindeki yeni bir ihtiyaç, sınır bittiğinde serbest bırakılacak şekilde planlanır ve bunu öne çekmek için uygulayabileceğiniz bir Hızlandır seçeneği olur. Lokasyonun zaman sınırını kullanmak için boş bırakın, ya da bu stok kartında zaman sınırı olmaması için 0 girin."
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "Açık bir siparişin ihtiyaç duyulan tarihten ne kadar gün sonra gelebileceği, MRP bunu hareket ettirmeyi önerilmeden önce. Ayarlar → Planlama'da ayarlanır; varsayılan değer 7 gündür."
@@ -17859,8 +17868,11 @@ msgstr "Lokasyon kodu"
 msgid "Location default"
 msgstr "Varsayılan lokasyon"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "Varsayılan lokasyon: {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "Lokasyon varsayılanı: {locationTimeFenceDays, plural, one {# gün} other {# gün}}"
+
+msgid "Location default: no fence"
+msgstr "Lokasyon varsayılanı: zaman sınırı yok"
 
 msgid "Location Name"
 msgstr "Konum Adı"
@@ -31980,9 +31992,6 @@ msgstr "Gece hala genç, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Tercih edilen tedarikçi ile Satın alma siparişi yerleştirme ile malların iskeleye ulaşması arasındaki gün sayısı; Planlama talebi bu kadar geriye doğru kaydırır."
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "Bugünden itibaren MRP'nin planlanmış siparişleri sabit tuttuğu gün sayısı: bu siparişleri taşımaz ve boyutlarını değiştirmez. Sabit aralığın içindeki yeni bir ihtiyaç, aralığın sonunda Hızlandırma ile planlanır. 0 sabit aralık olmadığı anlamına gelir. Bir stok kartında girilen değer, lokasyonunkini geçersiz kılar; lokasyonunkini kullanmak için stok kartı alanını boş bırakın."
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Bu Stok kartının bir Partisini üretmek için İş emri serbest bıraklışından tamamlanmaya kadar ölçülen gün sayısı; Planlama talebi bu kadar geriye doğru kaydırır."

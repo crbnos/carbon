@@ -13728,6 +13728,9 @@ msgstr "Impossible de charger les retours fournisseur"
 msgid "Failed to load the rental rates"
 msgstr "Échec du chargement des tarifs de location"
 
+msgid "Failed to load the suppliers"
+msgstr "Impossible de charger les fournisseurs"
+
 msgid "Failed to load tracked entities"
 msgstr "Impossible de charger les entités suivies"
 
@@ -15351,6 +15354,12 @@ msgstr "Combien de jours après la date de calcul la remise pour paiement antici
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Combien de jours après la date de calcul le montant total est dû."
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "Nombre de jours d'anticipation pendant lesquels le MRP laisse ses ordres planifiés inchangés. Un ordre planifié dont le lancement intervient dans l'horizon de figement conserve sa quantité et ses dates ; le MRP propose seulement des modifications. Un nouveau besoin situé dans l'horizon de figement est planifié pour être lancé à la fin de celui-ci, avec un avancement applicable pour le ramener plus tôt. Saisissez 0 pour ne pas définir d'horizon de figement."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "Nombre de jours d'anticipation pendant lesquels le MRP laisse les ordres planifiés de cet article inchangés. Un ordre planifié dont le lancement intervient dans l'horizon de figement conserve sa quantité et ses dates ; le MRP propose seulement des modifications. Un nouveau besoin situé dans l'horizon de figement est planifié pour être lancé à la fin de celui-ci, avec un avancement applicable pour le ramener plus tôt. Laissez vide pour utiliser l'horizon de figement du site, ou saisissez 0 pour ne pas appliquer d'horizon de figement à cet article."
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "Nombre de jours qu'une commande ouverte peut arriver avant ou après la date à laquelle elle est nécessaire avant que MRP ne suggère de la reprogrammer. À définir dans Paramètres → Planification ; la valeur par défaut est 7 jours."
@@ -17859,8 +17868,11 @@ msgstr "Code du site"
 msgid "Location default"
 msgstr "Site par défaut"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "Site par défaut : {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "Valeur du site : {locationTimeFenceDays, plural, one {# jour} other {# jours}}"
+
+msgid "Location default: no fence"
+msgstr "Valeur du site : aucun horizon de figement"
 
 msgid "Location Name"
 msgstr "Nom du lieu"
@@ -31980,9 +31992,6 @@ msgstr "La nuit est encore jeune, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Le nombre de jours entre la passation d'un bon de commande auprès du fournisseur préféré et l'arrivée des marchandises au quai; la planification décale les besoins en arrière de ce délai."
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "Le nombre de jours, à partir d'aujourd'hui, pendant lesquels le MRP maintient les ordres planifiés en place : il ne les déplace ni ne les redimensionne. Un nouveau besoin situé dans l'horizon figé est planifié à la fin de cet horizon, avec une accélération. 0 signifie aucun horizon figé. La valeur d'un article remplace celle de son site ; laissez l'article vide pour utiliser celle du site."
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Le nombre de jours pour fabriquer un lot de production de cet article, mesuré à partir du lancement de l'ordre de fabrication jusqu'à son achèvement ; les décalages de planification décalent la demande rétrospectivement de cette durée."

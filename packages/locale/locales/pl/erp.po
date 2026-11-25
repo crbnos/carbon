@@ -13728,6 +13728,9 @@ msgstr "Nie udało się załadować zwrotów dostawcy"
 msgid "Failed to load the rental rates"
 msgstr "Nie udało się załadować stawek wynajmu"
 
+msgid "Failed to load the suppliers"
+msgstr "Nie udało się wczytać dostawców"
+
 msgid "Failed to load tracked entities"
 msgstr "Nie udało się załadować śledzonych jednostek"
 
@@ -15351,6 +15354,12 @@ msgstr "Ile dni po dacie obliczenia rabat za wcześniejszą płatność jest jes
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Ile dni po dacie obliczenia pełna kwota jest należna."
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "Na ile dni wcześniej MRP pozostawia swoje zlecenia planowane bez zmian. Zlecenie planowane, którego zwolnienie przypada w horyzoncie zamrożenia planowania, zachowuje swoją ilość i daty; MRP może jedynie zasugerować zmiany. Nowe zapotrzebowanie w horyzoncie zamrożenia planowania zostanie zaplanowane na zwolnienie po jego zakończeniu, z opcją „Przyspiesz”, którą można zastosować, aby je przyspieszyć. Wpisz 0, aby nie stosować horyzontu zamrożenia planowania."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "Na ile dni wcześniej MRP pozostawia zlecenia planowane tego artykułu bez zmian. Zlecenie planowane, którego zwolnienie przypada w horyzoncie zamrożenia planowania, zachowuje swoją ilość i daty; MRP może jedynie zasugerować zmiany. Nowe zapotrzebowanie w horyzoncie zamrożenia planowania zostanie zaplanowane na zwolnienie po jego zakończeniu, z opcją „Przyspiesz”, którą można zastosować, aby je przyspieszyć. Pozostaw puste, aby użyć horyzontu zamrożenia planowania lokalizacji, lub wpisz 0, aby nie stosować horyzontu zamrożenia planowania dla tego artykułu."
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "Ile dni otwarte zamówienie może przybyć od daty, w której jest potrzebne, zanim MRP zasugeruje jego przesunięcie. Ustaw w Ustawienia → Planowanie; domyślnie 7 dni."
@@ -17859,8 +17868,11 @@ msgstr "Kod lokalizacji"
 msgid "Location default"
 msgstr "Domyślne dla lokalizacji"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "Domyślne dla lokalizacji: {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "Domyślnie z lokalizacji: {locationTimeFenceDays, plural, one {# dzień} other {# dni}}"
+
+msgid "Location default: no fence"
+msgstr "Domyślnie z lokalizacji: brak horyzontu zamrożenia planowania"
 
 msgid "Location Name"
 msgstr "Nazwa lokalizacji"
@@ -31980,9 +31992,6 @@ msgstr "Noc jeszcze młoda, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Liczba dni między złożeniem ZO u preferowanego dostawcy a przybyciem towarów na dok; przesunięcie planistyczne przesuwa zapotrzebowanie wstecz o tyle dni."
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "Liczba dni od dziś, przez które MRP utrzymuje zaplanowane zamówienia bez zmian: nie przesuwa ich ani nie zmienia ich wielkości. Nowe zapotrzebowanie w obrębie horyzontu blokady zostaje zaplanowane na koniec horyzontu, z Przyspieszeniem. 0 oznacza brak horyzontu. Wartość artykułu nadpisuje wartość lokalizacji; pozostaw pole artykułu puste, aby użyć wartości lokalizacji."
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Liczba dni wymaganych do zbudowania jednej partii produkcyjnej tego artykułu, mierzona od zwolnienia zlecenia produkcyjnego do ukończenia; przesunięcie planistyczne przesuwa zapotrzebowanie wstecz o tyle dni."

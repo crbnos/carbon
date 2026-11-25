@@ -13728,6 +13728,9 @@ msgstr "加载供应商退货失败"
 msgid "Failed to load the rental rates"
 msgstr "加载租赁费率失败"
 
+msgid "Failed to load the suppliers"
+msgstr "无法加载供应商"
+
 msgid "Failed to load tracked entities"
 msgstr "加载跟踪实体失败"
 
@@ -15351,6 +15354,12 @@ msgstr "计算日期后多少天提前付款折扣仍然可用。"
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "计算日期后多少天全额应付。"
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "MRP 提前多少天保持其计划订单不变。在时界内下达的计划订单会保留其数量和日期；MRP 只会对其提出变更建议。时界内的新需求会计划在时界结束时下达，您可以应用加急来提前下达。输入 0 表示不设时界。"
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "MRP 提前多少天保持此物料的计划订单不变。在时界内下达的计划订单会保留其数量和日期；MRP 只会对其提出变更建议。时界内的新需求会计划在时界结束时下达，您可以应用加急来提前下达。留空则使用地点的时界，或输入 0 表示此物料不设时界。"
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "未结订单可以晚于需要日期多少天到达，MRP才建议移动它。在设置 → 计划中设置；默认为7天。"
@@ -17859,8 +17868,11 @@ msgstr "地点代码"
 msgid "Location default"
 msgstr "地点默认值"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "地点默认值: {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "地点默认值：{locationTimeFenceDays, plural, one {# 天} other {# 天}}"
+
+msgid "Location default: no fence"
+msgstr "地点默认值：无时界"
 
 msgid "Location Name"
 msgstr "位置名称"
@@ -31980,9 +31992,6 @@ msgstr "夜还年轻，{name}。"
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "从向首选供应商下达采购订单到货物到达装卸码头的天数;计划偏移以此向后推移需求。"
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "从今天起，MRP 保持已计划订单不变的天数：冻结期内不移动或调整这些订单。冻结期内的新需求将排在冻结期末，并标记为加急。0 表示不设冻结期。物料的值覆盖地点的值；物料留空则使用地点的值。"
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "从下达工单到完成一个该物料生产批次所需的天数;计划以此向后推移需求。"

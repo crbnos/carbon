@@ -13728,6 +13728,9 @@ msgstr "仕入先返品の読み込みに失敗しました"
 msgid "Failed to load the rental rates"
 msgstr "レンタル料金の読み込みに失敗しました"
 
+msgid "Failed to load the suppliers"
+msgstr "仕入先を読み込めませんでした"
+
 msgid "Failed to load tracked entities"
 msgstr "追跡対象エンティティの読み込みに失敗しました"
 
@@ -15351,6 +15354,12 @@ msgstr "計算日の後、早期支払割引が利用可能な日数。"
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "計算日から何日後に全額が期日となるか。"
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "MRPが計画オーダーに手を加えない期間を日数で指定します。計画タイムフェンス内にリリースされる計画オーダーは、数量と日付を維持します。MRPはそれらに対して変更を提案するだけです。計画タイムフェンス内の新規需要は、計画タイムフェンスの終了時にリリースされるよう計画されます。前倒しを適用すると、リリースを早めることができます。0を入力すると計画タイムフェンスなしになります。"
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "MRPがこの品目の計画オーダーに手を加えない期間を日数で指定します。計画タイムフェンス内にリリースされる計画オーダーは、数量と日付を維持します。MRPはそれらに対して変更を提案するだけです。計画タイムフェンス内の新規需要は、計画タイムフェンスの終了時にリリースされるよう計画されます。前倒しを適用すると、リリースを早めることができます。空欄のままにすると拠点の計画タイムフェンスを使用します。0を入力すると、この品目には計画タイムフェンスを設けません。"
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "MRPが移動を提案する前に、オープン状態の発注がそれが必要とされる日付から到着できる日数。設定 → 計画で設定します。デフォルトは7日です。"
@@ -17859,8 +17868,11 @@ msgstr "拠点コード"
 msgid "Location default"
 msgstr "拠点の既定値"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "拠点の既定値: {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "拠点の既定値: {locationTimeFenceDays, plural, one {# 日} other {# 日}}"
+
+msgid "Location default: no fence"
+msgstr "拠点の既定値: 計画タイムフェンスなし"
 
 msgid "Location Name"
 msgstr "ロケーション名"
@@ -31980,9 +31992,6 @@ msgstr "まだ夜は若い、{name}。"
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "優先仕入先にPOを発注してから商品がドックに到着するまでの日数。計画オフセットは需要をこれだけ後ろにシフトさせます。"
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "今日から何日間、MRPが計画オーダーを固定しておくかを示す日数です。MRPはこれらを移動もサイズ変更もしません。フェンス内の新しい所要は、フェンスの終端に前倒しを伴って計画されます。0はフェンスなしを意味します。品目の値は拠点の値より優先されます。品目を空欄にすると拠点の値が使われます。"
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "この品目の1つのバッチを構築するのにかかる日数（製造指図のリリースから完了まで）。計画オフセットは需要をこれだけ後ろにシフトさせます。"

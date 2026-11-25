@@ -1408,7 +1408,11 @@ export const terms = {
   },
   "planning-time-fence": {
     term: msg`Planning time fence`,
-    definition: msg`The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's.`
+    definition: msg`How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence.`
+  },
+  "item-planning-time-fence": {
+    term: msg`Planning time fence (days)`,
+    definition: msg`How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item.`
   },
   "planned-order": {
     term: msg`Planned Order`,

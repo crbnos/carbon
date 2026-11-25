@@ -13728,6 +13728,9 @@ msgstr "Fehler beim Laden von Lieferantenrückgaben"
 msgid "Failed to load the rental rates"
 msgstr "Fehler beim Laden der Miettarife"
 
+msgid "Failed to load the suppliers"
+msgstr "Fehler beim Laden der Lieferanten"
+
 msgid "Failed to load tracked entities"
 msgstr "Fehler beim Laden von verfolgten Entitäten"
 
@@ -15351,6 +15354,12 @@ msgstr "Wie viele Tage nach dem Berechnungsdatum der Frühzahlungsrabatt noch ve
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Wie viele Tage nach dem Berechnungsdatum der volle Betrag fällig ist."
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "Wie viele Tage im Voraus MRP seine geplanten Aufträge unberührt lässt. Ein geplanter Auftrag, der innerhalb des Planungszeitzauns freigegeben wird, behält seine Menge und Termine; MRP schlägt nur Änderungen dafür vor. Ein neuer Bedarf innerhalb des Planungszeitzauns wird so geplant, dass er freigegeben wird, wenn der Planungszeitzaun endet, mit einer Beschleunigung, die Sie anwenden können, um ihn vorzuziehen. 0 eingeben für keinen Planungszeitzaun."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "Wie viele Tage im Voraus MRP die geplanten Aufträge dieses Artikels unberührt lässt. Ein geplanter Auftrag, der innerhalb des Planungszeitzauns freigegeben wird, behält seine Menge und Termine; MRP schlägt nur Änderungen dafür vor. Ein neuer Bedarf innerhalb des Planungszeitzauns wird so geplant, dass er freigegeben wird, wenn der Planungszeitzaun endet, mit einer Beschleunigung, die Sie anwenden können, um ihn vorzuziehen. Leer lassen, um den Planungszeitzaun des Standorts zu verwenden, oder 0 eingeben für keinen Planungszeitzaun für diesen Artikel."
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "Die Anzahl der Tage, um die eine offene Bestellung vom benötigten Datum abweichen darf, bevor MRP eine Verschiebung vorschlägt. Eingestellt unter Einstellungen → Planung; Standard: 7 Tage."
@@ -17859,8 +17868,11 @@ msgstr "Standortcode"
 msgid "Location default"
 msgstr "Standardstandort"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "Standardstandort: {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "Standard des Standorts: {locationTimeFenceDays, plural, one {# Tag} other {# Tage}}"
+
+msgid "Location default: no fence"
+msgstr "Standard des Standorts: kein Planungszeitzaun"
 
 msgid "Location Name"
 msgstr "Standortname"
@@ -31980,9 +31992,6 @@ msgstr "Die Nacht ist noch jung, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Die Anzahl der Tage zwischen dem Aufgeben einer PO beim bevorzugten Lieferant und dem Eintreffen der Waren an der Rampe; die Planung versetzt den Bedarf um diesen Betrag rückwärts."
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "Die Anzahl der Tage ab heute, in denen MRP geplante Aufträge unverändert lässt: MRP verschiebt oder ändert deren Menge nicht. Ein neuer Bedarf innerhalb der Planungsfrist wird am Ende der Planungsfrist eingeplant, mit einer Beschleunigung. 0 bedeutet keine Planungsfrist. Der Wert eines Artikels überschreibt den Wert seines Standorts; Artikel leer lassen, um den Wert des Standorts zu verwenden."
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Die Anzahl der Tage zum Herstellen eines Loses dieses Artikels, gemessen von der Freigabe des Fertigungsauftrags bis zur Fertigstellung; die Planung versetzt den Bedarf um diesen Betrag rückwärts."

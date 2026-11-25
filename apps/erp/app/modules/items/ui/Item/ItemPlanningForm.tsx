@@ -14,6 +14,7 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { z } from "zod";
@@ -222,12 +223,17 @@ const ItemPlanningForm = ({
               <Number
                 name="planningTimeFenceDays"
                 label={t`Planning time fence (days)`}
-                termId="planning-time-fence"
+                termId="item-planning-time-fence"
                 minValue={0}
                 placeholder={
                   locationTimeFenceDays === undefined
                     ? t`Location default`
-                    : t`Location default: ${locationTimeFenceDays}`
+                    : locationTimeFenceDays === 0
+                      ? t`Location default: no fence`
+                      : t`Location default: ${plural(locationTimeFenceDays, {
+                          one: "# day",
+                          other: "# days"
+                        })}`
                 }
               />
 

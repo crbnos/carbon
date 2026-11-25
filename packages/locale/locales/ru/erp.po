@@ -13728,6 +13728,9 @@ msgstr "Не удалось загрузить возвраты поставщи
 msgid "Failed to load the rental rates"
 msgstr "Не удалось загрузить ставки аренды"
 
+msgid "Failed to load the suppliers"
+msgstr "Не удалось загрузить поставщиков"
+
 msgid "Failed to load tracked entities"
 msgstr "Не удалось загрузить отслеживаемые сущности"
 
@@ -15351,6 +15354,12 @@ msgstr "Сколько дней после даты расчета скидка 
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Сколько дней после даты расчета полная сумма становится подлежащей уплате."
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "На сколько дней вперёд MRP не трогает свои плановые заказы. Плановый заказ, который запускается в пределах границы, сохраняет количество и даты; MRP только предлагает изменения. Новая потребность внутри границы планируется на запуск по окончании границы, с возможностью применить действие «Ускорить», чтобы запустить раньше. Введите 0, чтобы границы не было."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "На сколько дней вперёд MRP не трогает плановые заказы этой номенклатуры. Плановый заказ, который запускается в пределах границы, сохраняет количество и даты; MRP только предлагает изменения. Новая потребность внутри границы планируется на запуск по окончании границы, с возможностью применить действие «Ускорить», чтобы запустить раньше. Оставьте поле пустым, чтобы использовать границу площадки, или введите 0, чтобы для этой номенклатуры границы не было."
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "Количество дней, на которое открытый заказ может отклониться от требуемой даты до того, как MRP предложит его перенести. Установить в Настройки → Планирование; по умолчанию 7 дней."
@@ -17859,8 +17868,11 @@ msgstr "Код площадки"
 msgid "Location default"
 msgstr "Площадка по умолчанию"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "По умолчанию у площадки: {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "По площадке: {locationTimeFenceDays, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
+
+msgid "Location default: no fence"
+msgstr "По площадке: без границы"
 
 msgid "Location Name"
 msgstr "Название местоположения"
@@ -31980,9 +31992,6 @@ msgstr "Ночь еще молода, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Количество дней между размещением заказа у основного поставщика и прибытием товаров на склад; планирование смещает спрос назад на эту величину."
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "Число дней от сегодняшнего дня, в течение которых MRP удерживает запланированные заказы без изменений: он их не переносит и не меняет их размер. Новая потребность внутри горизонта фиксации планируется на конце горизонта с Expedite. 0 означает, что горизонта нет. Значение номенклатуры переопределяет значение площадки; оставьте поле номенклатуры пустым, чтобы использовать значение площадки."
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "Количество дней для производства одной серии этой номенклатуры, измеренное от запуска производственного заказа в работу до завершения; планирование смещает спрос назад на эту величину."

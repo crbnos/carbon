@@ -13728,6 +13728,9 @@ msgstr "Error al cargar devoluciones de proveedores"
 msgid "Failed to load the rental rates"
 msgstr "Error al cargar las tarifas de alquiler"
 
+msgid "Failed to load the suppliers"
+msgstr "Error al cargar los proveedores"
+
 msgid "Failed to load tracked entities"
 msgstr "No se pudieron cargar las entidades rastreadas"
 
@@ -15351,6 +15354,12 @@ msgstr "Cuántos días después de la fecha de cálculo el descuento por pago an
 
 msgid "How many days after the calculation date the full amount is due."
 msgstr "Cuántos días después de la fecha de cálculo el monto completo es debido."
+
+msgid "How many days ahead MRP leaves its planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Enter 0 for no fence."
+msgstr "Cuántos días por delante MRP deja sin cambios sus órdenes planificadas. Una orden planificada que se libera dentro del horizonte de congelación conserva su cantidad y sus fechas; MRP solo sugiere cambios en ella. Una nueva necesidad dentro del horizonte de congelación se planifica para liberarse al terminar dicho horizonte, con una acción Adelantar que puedes aplicar para traerla antes. Introduce 0 para no tener horizonte de congelación."
+
+msgid "How many days ahead MRP leaves this item's planned orders alone. A planned order that releases within the fence keeps its quantity and dates; MRP only suggests changes to it. A new need inside the fence is planned to release when the fence ends, with an Expedite you can apply to pull it in. Leave empty to use the location's fence, or enter 0 for no fence on this item."
+msgstr "Cuántos días por delante MRP deja sin cambios las órdenes planificadas de este artículo. Una orden planificada que se libera dentro del horizonte de congelación conserva su cantidad y sus fechas; MRP solo sugiere cambios en ella. Una nueva necesidad dentro del horizonte de congelación se planifica para liberarse al terminar dicho horizonte, con una acción Adelantar que puedes aplicar para traerla antes. Déjalo vacío para usar el horizonte de congelación de la ubicación, o introduce 0 para no tener horizonte de congelación en este artículo."
 
 msgid "How many days an open order may land from the date it is needed before MRP suggests moving it. Set in Settings → Planning; the default is 7 days."
 msgstr "Cuántos días una orden abierta puede atrasarse desde la fecha en que se necesita antes de que MRP sugiera adelantarla. Configurar en Configuración → Planificación; el valor predeterminado es 7 días."
@@ -17859,8 +17868,11 @@ msgstr "Código de ubicación"
 msgid "Location default"
 msgstr "Ubicación predeterminada"
 
-msgid "Location default: {locationTimeFenceDays}"
-msgstr "Ubicación predeterminada: {locationTimeFenceDays}"
+msgid "Location default: {locationTimeFenceDays, plural, one {# day} other {# days}}"
+msgstr "Valor de la ubicación: {locationTimeFenceDays, plural, one {# día} other {# días}}"
+
+msgid "Location default: no fence"
+msgstr "Valor de la ubicación: sin horizonte de congelación"
 
 msgid "Location Name"
 msgstr "Nombre de Ubicación"
@@ -31980,9 +31992,6 @@ msgstr "La noche aún es joven, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "El número de días entre la colocación de una Orden de Compra con el proveedor preferido y la llegada de las mercancías al almacén; la planificación desplaza la demanda hacia atrás por esta cantidad."
-
-msgid "The number of days from today in which MRP holds planned orders still: it does not move or resize them. A new need inside the fence is planned at the fence end, with an Expedite. 0 means no fence. An item's value overrides its location's; leave the item empty to use the location's."
-msgstr "Número de días a partir de hoy durante los cuales MRP mantiene sin cambios las órdenes planificadas: no las mueve ni cambia su tamaño. Una nueva necesidad dentro del límite se planifica al final del límite, con una aceleración. 0 significa sin límite. El valor de un artículo prevalece sobre el de su ubicación; deje el artículo vacío para usar el de la ubicación."
 
 msgid "The number of days to build one batch of this item, measured from job release to completion; planning offsets demand backward by this much."
 msgstr "El número de días para producir un lote de producción de este artículo, medido desde la liberación de la orden de trabajo hasta su finalización; la planificación desplaza la demanda hacia atrás por esta cantidad."
