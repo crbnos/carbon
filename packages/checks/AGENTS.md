@@ -33,7 +33,9 @@ fails on any violation the committed baseline does not list.
 - **Keep a check self-contained.** The gate runs the checks on worker threads,
   each taking the next check when it finishes one, so two checks may run in
   different threads in any order. A check shares nothing with another check but
-  its loaders: no module state one check writes and another reads.
+  its loaders: no module state one check writes and another reads. The gate
+  groups checks by the loader each reads first (it calls `find` with a repo
+  that throws at the first `repo.read`), so do no work before that read.
 - **Read every input through `repo.read(loader)`.** A loader is a function
   `(root) => T`. `repo` runs each loader once and shares the result, so pass
   the same function every time:
