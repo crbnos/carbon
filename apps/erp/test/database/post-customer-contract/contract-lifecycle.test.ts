@@ -27,7 +27,7 @@ import {
   createContractInvoices,
   getContractLine,
   postCustomerContract,
-  upsertContractLine
+  updateContractLine
 } from "../../../app/modules/sales/sales.service";
 import * as sales from "../../../app/modules/sales/sales.server";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
@@ -3534,7 +3534,7 @@ postgrestTest(
           description: "Seats"
         })
       );
-      const stale = await upsertContractLine(client, {
+      const stale = await updateContractLine(client, f.db, {
         ...line,
         taxCodeId: line.taxCodeId ?? null,
         customerContractId: f.contractId,
@@ -3638,6 +3638,82 @@ postgrestTest(
         revenueMethod: "Daily"
       });
       expect(added.error).toMatchObject(notDraft);
+    } finally {
+      await holder.destroy();
+      await f.cleanup();
+    }
+  }
+);
+
+postgrestTest(
+  "a new contract line that waits for a Confirm holding the contract is refused once the contract is Active",
+  async (client) => {
+    const f = await contractFixture();
+    const holder = await connectLocalTestDatabase();
+    try {
+      const { rows } = await sql<{
+        pid: number;
+      }>`SELECT pg_backend_pid() AS pid`.execute(holder);
+      const { itemId } = await f.db
+        .selectFrom("customerContractLine")
+        .select("itemId")
+        .where("id", "=", f.seatsLineId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const lineCount = async () =>
+        (
+          await f.db
+            .selectFrom("customerContractLine")
+            .select("id")
+            .where("customerContractId", "=", f.contractId)
+            .where("companyId", "=", f.companyId)
+            .execute()
+        ).length;
+      const before = await lineCount();
+      let add: ReturnType<typeof sales.createContractLine> | undefined;
+      let settled = false;
+      // Confirm locks the contract (`loadContractForUpdate`) and makes it
+      // Active before it commits; the insert reads Draft first.
+      await holder.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("customerContract")
+          .select("id")
+          .where("id", "=", f.contractId)
+          .where("companyId", "=", f.companyId)
+          .forUpdate()
+          .execute();
+        await trx
+          .updateTable("customerContract")
+          .set({ status: "Active" })
+          .where("id", "=", f.contractId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        add = sales
+          .createContractLine(operationContext(f, client, USER), {
+            customerContractId: f.contractId,
+            revenueType: "One-time",
+            itemId,
+            quantity: 1,
+            rate: 100,
+            discountPercent: 0,
+            taxPercent: 0,
+            startDate: "2026-11-01",
+            revenueMethod: "Daily"
+          })
+          .finally(() => {
+            settled = true;
+          });
+        await waitForLockWait(trx, rows[0]!.pid, () => settled);
+      });
+
+      const added = await add!;
+      expect(added.data).toBeNull();
+      expect(added.error).toMatchObject({
+        category: "rule",
+        message:
+          "Lines can only be added or changed on a Draft contract — use Amend"
+      });
+      expect(await lineCount()).toBe(before);
     } finally {
       await holder.destroy();
       await f.cleanup();

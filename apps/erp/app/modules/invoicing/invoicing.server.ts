@@ -84,12 +84,10 @@ import { fromServerFn, invokePosting } from "../shared/shared.service";
 import {
   isMemoLocked,
   paymentValidator,
-  purchaseInvoiceSupplierChange,
   purchaseInvoiceValidator,
   reimbursementLinesValidator,
   reimbursementPaymentValidator,
   reimbursementUpdateValidator,
-  salesInvoiceCustomerChange,
   salesInvoiceLineValidator,
   salesInvoicePostValidator
 } from "./invoicing.models";
@@ -146,28 +144,6 @@ export const updateSalesInvoiceField = defineServiceFn({
   permission: { "invoicing.salesInvoices": "Edit" },
 
   async run(ctx, { ids, field, value }) {
-    const locked = await service.refuseLockedInvoices(
-      ctx,
-      "salesInvoice",
-      ids,
-      field,
-      "Cannot modify a locked sales invoice."
-    );
-    if (locked) return locked;
-
-    if (field === "invoiceCustomerId") {
-      if (!value)
-        return ctx.error("validation", "Invoice customer is required");
-      const currency = await service.partyCurrency(ctx, "customer", value);
-      if (currency instanceof Error) return currency;
-      return service.writeDraftInvoices(
-        ctx,
-        "salesInvoice",
-        ids,
-        salesInvoiceCustomerChange(value, currency)
-      );
-    }
-
     if (field === "customerId") {
       // The panel's customer field is required, as the column is.
       if (!value) return ctx.error("validation", "Customer is required");
@@ -179,8 +155,7 @@ export const updateSalesInvoiceField = defineServiceFn({
         customerId: value
       });
     }
-
-    return service.writeInvoiceField(ctx, "salesInvoice", {
+    return service.updateInvoiceField(ctx, "salesInvoice", {
       ids,
       field,
       value
@@ -1045,29 +1020,7 @@ export const updatePurchaseInvoiceField = defineServiceFn({
   permission: { "invoicing.purchaseInvoices": "Edit" },
 
   async run(ctx, { ids, field, value }) {
-    const locked = await service.refuseLockedInvoices(
-      ctx,
-      "purchaseInvoice",
-      ids,
-      field,
-      "Cannot modify a confirmed purchase invoice."
-    );
-    if (locked) return locked;
-
-    if (field === "invoiceSupplierId") {
-      if (!value)
-        return ctx.error("validation", "Invoice supplier is required");
-      const currency = await service.partyCurrency(ctx, "supplier", value);
-      if (currency instanceof Error) return currency;
-      return service.writeDraftInvoices(
-        ctx,
-        "purchaseInvoice",
-        ids,
-        purchaseInvoiceSupplierChange(value, currency)
-      );
-    }
-
-    return service.writeInvoiceField(ctx, "purchaseInvoice", {
+    return service.updateInvoiceField(ctx, "purchaseInvoice", {
       ids,
       field,
       value

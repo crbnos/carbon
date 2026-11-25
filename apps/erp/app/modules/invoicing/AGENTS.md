@@ -385,13 +385,15 @@ How they behave:
   payment term recomputes reads the term with the service role: `paymentTerm` is read
   by accounting, sales and purchasing pages, not invoicing's, and a term the caller
   cannot see would fall back to Net 30. With no issue date the due date is kept.
-- A new sales invoice customer and the ship-to it clears are one Kysely transaction
-  (`changeSalesInvoiceCustomer`): the invoices are locked `FOR UPDATE` and must still
-  be Draft, and only an invoice whose customer changes loses its ship-to.
+- Both operations run `updateInvoiceField` (`invoicing.service.ts`); only the sales
+  `customerId` branch stays in its operation. A new sales invoice customer and the
+  ship-to it clears are one Kysely transaction (`changeSalesInvoiceCustomer`), and only
+  an invoice whose customer changes loses its ship-to.
 - Every other field a posted invoice no longer takes (all but the issue, due and paid
   dates; the invoice customer and invoice supplier included) is written by
-  `writeDraftInvoices`, under the same lock and Draft check: a post that claims an
-  invoice after `refuseLockedInvoices` read it keeps the invoice it posts.
+  `writeDraftInvoices`. Both writers lock the invoices `FOR UPDATE` and check they are
+  still Draft (`lockDraftInvoices`), so a post that claims an invoice first keeps the
+  invoice it posts. There is no Draft check before that lock.
 
 ## Related Modules
 

@@ -815,13 +815,24 @@ const quoteFields = [
   "locationId",
   "salesPersonId"
 ] as const;
+/** The quote fields whose foreign key names the id alone. */
+const quoteFieldReferences: service.FieldReferences = {
+  customerContactId: "customerContact",
+  customerEngineeringContactId: "customerContact",
+  customerLocationId: "customerLocation",
+  locationId: "location",
+  salesPersonId: "employee",
+  estimatorId: "employee"
+};
 /**
  * Set one field on one or more quotes.
  *
  * @remarks
  * Refused when any of the quotes is locked. A new customer on a single quote
  * brings its currency. A new currency brings today's exchange rate. The
- * customer cannot be cleared. An empty value clears any other field.
+ * customer cannot be cleared. An empty value clears any other field. A
+ * customer, contact, location or employee must be the company's. Refused when
+ * none of the quotes is the company's.
  *
  * @param ids - The quotes to change. See sales_getQuotes.
  * @param field - The field to set.
@@ -848,6 +859,14 @@ export const updateQuoteField = defineServiceFn({
       return ctx.error("rule", service.quoteLocked);
     }
 
+    const refused = await service.refuseForeignReference(
+      ctx,
+      quoteFieldReferences,
+      field,
+      value
+    );
+    if (refused) return refused;
+
     let changes: Record<string, string | number | null> = {
       [field]: value || null
     };
@@ -860,6 +879,7 @@ export const updateQuoteField = defineServiceFn({
           .from("customer")
           .select("currencyCode")
           .eq("id", value)
+          .eq("companyId", companyId)
           .single();
         if (customer.data?.currencyCode) {
           changes.currencyCode = customer.data.currencyCode;
@@ -887,11 +907,12 @@ export const updateQuoteField = defineServiceFn({
         })
       )
       .in("id", ids)
-      .eq("companyId", companyId);
-    if (update.error) {
-      return ctx.error("internal", "Failed to update the quotes", update.error);
-    }
-    return { ids };
+      .eq("companyId", companyId)
+      .select("id");
+    return service.updatedDocuments(ctx, update, {
+      field,
+      documents: "quotes"
+    });
   }
 });
 /**
@@ -2040,6 +2061,15 @@ const salesOrderFields = [
   "receiptPromisedDate",
   "receiptRequestedDate"
 ] as const;
+/** The sales order fields whose foreign key names the id alone, or that
+ *  have none. */
+const salesOrderFieldReferences: service.FieldReferences = {
+  customerContactId: "customerContact",
+  customerEngineeringContactId: "customerContact",
+  customerLocationId: "customerLocation",
+  locationId: "location",
+  salesPersonId: "employee"
+};
 
 /**
  * Set one field on one or more sales orders.
@@ -2049,7 +2079,9 @@ const salesOrderFields = [
  * Invoice, Completed, Cancelled or Closed. A new customer on a single
  * order brings its currency and today's exchange rate; so does a new
  * currency. The customer cannot be cleared. The requested and promised dates
- * are the shipment's. An empty value clears any other field.
+ * are the shipment's. An empty value clears any other field. A customer,
+ * contact, location or sales person must be the company's. Refused when none
+ * of the orders is the company's.
  *
  * @param ids - The sales orders to change. See sales_getSalesOrders.
  * @param field - The field to set.
@@ -2087,6 +2119,14 @@ export const updateSalesOrderField = defineServiceFn({
         : { currencyCode, exchangeRate: rate.data };
     };
 
+    const refused = await service.refuseForeignReference(
+      ctx,
+      salesOrderFieldReferences,
+      field,
+      value
+    );
+    if (refused) return refused;
+
     let table: "salesOrder" | "salesOrderShipment" = "salesOrder";
     let changes: Record<string, unknown> = { [field]: value || null };
     if (field === "customerId") {
@@ -2098,6 +2138,7 @@ export const updateSalesOrderField = defineServiceFn({
           .from("customer")
           .select("currencyCode")
           .eq("id", value)
+          .eq("companyId", companyId)
           .single();
         if (customer.data?.currencyCode) {
           const currency = await withRate(customer.data.currencyCode);
@@ -2120,11 +2161,12 @@ export const updateSalesOrderField = defineServiceFn({
       .from(table)
       .update(unchecked({ ...changes, ...audit }))
       .in("id", ids)
-      .eq("companyId", companyId);
-    if (update.error) {
-      return ctx.error("internal", "Failed to update the orders", update.error);
-    }
-    return { ids };
+      .eq("companyId", companyId)
+      .select("id");
+    return service.updatedDocuments(ctx, update, {
+      field,
+      documents: "orders"
+    });
   }
 });
 
@@ -2832,6 +2874,14 @@ const salesReturnOrderFields = [
   "locationId",
   "orderDate"
 ] as const;
+/** The return order fields whose foreign key names the id alone. */
+const salesReturnOrderFieldReferences: service.FieldReferences = {
+  customerId: "customer",
+  salesOrderId: "salesOrder",
+  customerContactId: "customerContact",
+  customerLocationId: "customerLocation",
+  locationId: "location"
+};
 
 /**
  * Set one field on one or more sales return orders.
@@ -2840,7 +2890,9 @@ const salesReturnOrderFields = [
  * Refused when any of them is completed or cancelled. A new customer on a
  * single return order brings its currency and today's exchange rate; so does
  * a new currency (a missing rate refuses rather than writing a stale one). The
- * customer cannot be cleared; an empty value clears any other field.
+ * customer cannot be cleared; an empty value clears any other field. A
+ * customer, sales order, contact or location must be the company's. Refused
+ * when none of the return orders is the company's.
  */
 export const updateSalesReturnOrderField = defineServiceFn({
   input: service.fieldUpdate(salesReturnOrderFields),
@@ -2875,16 +2927,27 @@ export const updateSalesReturnOrderField = defineServiceFn({
         : { currencyCode, exchangeRate: rate.data };
     };
 
+    // The panel's customer field is required, as the column is.
+    if (field === "customerId" && !value) {
+      return ctx.error("validation", "Customer is required");
+    }
+    const refused = await service.refuseForeignReference(
+      ctx,
+      salesReturnOrderFieldReferences,
+      field,
+      value
+    );
+    if (refused) return refused;
+
     let changes: Record<string, unknown> = { [field]: value || null };
-    if (field === "customerId") {
-      // The panel's customer field is required, as the column is.
-      if (!value) return ctx.error("validation", "Customer is required");
+    if (field === "customerId" && value) {
       changes = { customerId: value };
       if (ids.length === 1) {
         const customer = await client
           .from("customer")
           .select("currencyCode")
           .eq("id", value)
+          .eq("companyId", companyId)
           .single();
         if (customer.data?.currencyCode) {
           const currency = await withRate(customer.data.currencyCode);
@@ -2908,15 +2971,12 @@ export const updateSalesReturnOrderField = defineServiceFn({
         })
       )
       .in("id", ids)
-      .eq("companyId", companyId);
-    if (update.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update the return orders",
-        update.error
-      );
-    }
-    return { ids };
+      .eq("companyId", companyId)
+      .select("id");
+    return service.updatedDocuments(ctx, update, {
+      field,
+      documents: "return orders"
+    });
   }
 });
 
@@ -11647,7 +11707,8 @@ export const getCustomerContractStatuses = defineServiceFn({
  * Create a contract line
  *
  * @remarks
- * Adds or changes a line on a Draft contract; the item must be a Service item
+ * Adds a line to a Draft contract. On a service contract the item must be a
+ * Service item. To change a line, use sales_updateContractLine.
  *
  * @mcp
  */
@@ -11681,7 +11742,9 @@ export const createContractLine = defineServiceFn({
       .default("Fixed"),
     id: z
       .string()
-      .describe("Send to update that record; omit to create a new one.")
+      .describe(
+        "Ignored: a new line gets its own id. Change a line with sales_updateContractLine."
+      )
       .optional()
   }),
   permission: { "sales.serviceContracts": "Create" },
@@ -11693,15 +11756,14 @@ export const createContractLine = defineServiceFn({
       [input]
     );
     if (upgrade) return ctx.error("entitlement", upgrade);
-    const saved = await service.upsertContractLine(
+    const saved = await service.insertContractLine(
       ctx.asCaller.supabase,
+      // Written under the contract's lock, so a Confirm cannot commit
+      // between the Draft check and the insert.
+      ctx.asSystem.pg,
       payload(ctx, input).forCreate() as never
     );
-    const refusal = saved.error as { code?: string; message: string } | null;
-    if (refusal?.code === service.CONTRACT_NOT_DRAFT) {
-      return ctx.error("rule", refusal.message);
-    }
-    return unwrap(ctx, saved);
+    return service.contractLineWriteResult(ctx, saved);
   }
 });
 
@@ -11711,8 +11773,9 @@ export const createContractLine = defineServiceFn({
  * @remarks
  * Changes a line on a Draft contract. A field left out keeps the line's
  * value, as a setup grid cell edit does: the billing terms, CLIN number,
- * funding and tax code included. Switching to One-time drops the rate unit;
- * switching to Recurring with none takes the contract's billing frequency.
+ * funding and tax code included; a null or empty one is cleared. Switching to
+ * One-time drops the rate unit; a Recurring line with none takes the
+ * contract's billing frequency.
  * The whole line is then checked as the line form checks it. On a service
  * contract the item must be a Service item. Refused as a conflict when
  * another save changed the line while this one ran; read it again and resend.
@@ -11728,25 +11791,26 @@ export const updateContractLine = defineServiceFn({
       customerContractId: z.string().min(1),
       revenueType: z.enum(["One-time", "Recurring"]),
       itemId: z.string().min(1),
-      description: z.string().optional(),
+      // Null clears the field, as an emptied grid cell does.
+      description: z.string().nullish(),
       quantity: z.number().gt(0),
       rate: z.number().min(0),
-      rateUnit: z.enum(["Day", "Week", "Month", "Quarter", "Year"]).optional(),
+      rateUnit: z.enum(["Day", "Week", "Month", "Quarter", "Year"]).nullish(),
       discountPercent: z.number().min(0).max(100),
-      discountEndsOn: z.string().optional(),
+      discountEndsOn: z.string().nullish(),
       taxPercent: z.number().min(0).max(100),
       startDate: z.string().min(1),
-      endDate: z.string().optional(),
-      goLiveDate: z.string().optional(),
+      endDate: z.string().nullish(),
+      goLiveDate: z.string().nullish(),
       revenueMethod: z.enum([
         "Daily",
         "Even Period",
         "Right to Invoice",
         "Percent Complete"
       ]),
-      revenueStartDate: z.string().optional(),
-      revenueEndDate: z.string().optional(),
-      projectId: z.string().optional(),
+      revenueStartDate: z.string().nullish(),
+      revenueEndDate: z.string().nullish(),
+      projectId: z.string().nullish(),
       billingMethod: z
         .enum(["Fixed", "Time & Materials", "Cost Plus"])
         .optional(),
@@ -11757,29 +11821,25 @@ export const updateContractLine = defineServiceFn({
   permission: { "sales.serviceContracts": "Edit" },
   async run(ctx, { id, customerContractId, ...changes }) {
     const client = ctx.asCaller.supabase;
-    const stored = await service.getContractLine(client, id, ctx.company.id);
+    const [stored, contract] = await Promise.all([
+      service.getContractLine(client, id, ctx.company.id),
+      service.getContract(client, customerContractId, ctx.company.id)
+    ]);
     if (stored.error || stored.data.customerContractId !== customerContractId) {
       return ctx.error("notFound", "The line was not found", stored.error);
     }
+    if (contract.error) {
+      return ctx.error(
+        "notFound",
+        "The contract was not found",
+        contract.error
+      );
+    }
     const values = mergeContractLineChanges(
       contractLineFormValues(stored.data),
-      changes
+      changes,
+      contract.data.billingFrequency ?? "Month"
     );
-    if (values.revenueType === "Recurring" && !values.rateUnit) {
-      const contract = await service.getContract(
-        client,
-        customerContractId,
-        ctx.company.id
-      );
-      if (contract.error) {
-        return ctx.error(
-          "notFound",
-          "The contract was not found",
-          contract.error
-        );
-      }
-      values.rateUnit = contract.data.billingFrequency ?? "Month";
-    }
     const merged = customerContractLineValidator.safeParse(values);
     if (!merged.success) {
       // The first issue, as the line form shows it beside its field.
@@ -11799,8 +11859,11 @@ export const updateContractLine = defineServiceFn({
       [line]
     );
     if (upgrade) return ctx.error("entitlement", upgrade);
-    const saved = await service.upsertContractLine(
+    const saved = await service.updateContractLine(
       client,
+      // Written under the contract's lock, so a Confirm cannot commit
+      // between the Draft check and the write.
+      ctx.asSystem.pg,
       {
         ...line,
         taxCodeId: line.taxCodeId ?? null,
@@ -11809,19 +11872,9 @@ export const updateContractLine = defineServiceFn({
         updatedBy: ctx.auditUserId,
         // Every field left out was taken from `stored`.
         expectedUpdatedAt: stored.data.updatedAt
-      },
-      // Written under the contract's lock, so a Confirm cannot commit
-      // between the Draft check and the write.
-      ctx.asSystem.pg
+      }
     );
-    const refusal = saved.error as { code?: string; message: string } | null;
-    if (refusal?.code === service.CONTRACT_LINE_CHANGED) {
-      return ctx.error("conflict", refusal.message);
-    }
-    if (refusal?.code === service.CONTRACT_NOT_DRAFT) {
-      return ctx.error("rule", refusal.message);
-    }
-    return unwrap(ctx, saved);
+    return service.contractLineWriteResult(ctx, saved);
   }
 });
 
@@ -12373,15 +12426,16 @@ export const deleteSalesRule = defineServiceFn({
     });
     if (refused) return refused;
     try {
-      const deleted = await deleteEnforcementRule(
-        ctx.asCaller.supabase,
-        "sales",
-        id,
-        ctx.company.id
+      const deleted = unwrap(
+        ctx,
+        await deleteEnforcementRule(
+          ctx.asCaller.supabase,
+          "sales",
+          id,
+          ctx.company.id
+        )
       );
-      if (deleted.error) {
-        return ctx.error("internal", "Failed to delete rule", deleted.error);
-      }
+      if (deleted instanceof CarbonError) return deleted;
       return { id };
     } catch (err) {
       return service.salesRulesEntitlementRefusal(ctx, err);
@@ -12406,22 +12460,24 @@ export const assignSalesRule = defineServiceFn({
   permission: { "sales.salesRules": "Edit" },
 
   async run(ctx, { ruleId, itemId }) {
-    const refused =
-      (await refuseUnlessOwned(ctx, "enforcementRule", {
-        id: ruleId,
-        family: "sales"
-      })) ?? (await refuseUnlessOwned(ctx, "item", { id: itemId }));
-    if (refused) return refused;
+    const foreignRule = await refuseUnlessOwned(ctx, "enforcementRule", {
+      id: ruleId,
+      family: "sales"
+    });
+    if (foreignRule) return foreignRule;
+    const foreignItem = await refuseUnlessOwned(ctx, "item", { id: itemId });
+    if (foreignItem) return foreignItem;
     try {
-      const pinned = await eeAssignSalesRule(ctx.asCaller.supabase, {
-        itemId,
-        ruleId,
-        companyId: ctx.company.id,
-        createdBy: ctx.auditUserId
-      });
-      if (pinned.error) {
-        return ctx.error("internal", "Failed to assign rule", pinned.error);
-      }
+      const pinned = unwrap(
+        ctx,
+        await eeAssignSalesRule(ctx.asCaller.supabase, {
+          itemId,
+          ruleId,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        })
+      );
+      if (pinned instanceof CarbonError) return pinned;
       return { ruleId, itemId };
     } catch (err) {
       return service.salesRulesEntitlementRefusal(ctx, err);
@@ -12465,14 +12521,15 @@ export const unassignSalesRule = defineServiceFn({
       return ctx.error("notFound", "The item is not pinned to this rule");
     }
     try {
-      const unpinned = await eeUnassignSalesRule(ctx.asCaller.supabase, {
-        itemId,
-        ruleId,
-        companyId: ctx.company.id
-      });
-      if (unpinned.error) {
-        return ctx.error("internal", "Failed to unassign rule", unpinned.error);
-      }
+      const unpinned = unwrap(
+        ctx,
+        await eeUnassignSalesRule(ctx.asCaller.supabase, {
+          itemId,
+          ruleId,
+          companyId: ctx.company.id
+        })
+      );
+      if (unpinned instanceof CarbonError) return unpinned;
       return { ruleId, itemId };
     } catch (err) {
       return service.salesRulesEntitlementRefusal(ctx, err);

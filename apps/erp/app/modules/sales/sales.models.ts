@@ -2413,13 +2413,17 @@ export function contractLineFormValues(line: StoredContractLine) {
 }
 
 /**
- * `changes` over a stored line's form values: a field left out (undefined)
+ * `changes` over a stored line's form values, for
+ * `customerContractLineValidator` to check: a field left out (undefined)
  * keeps the stored value, and a null or empty one is cleared. Switching to
- * One-time drops the rate unit unless `changes` names one.
+ * One-time drops the rate unit unless `changes` names one; a Recurring line
+ * left with none takes `defaultRateUnit`, the contract's billing frequency,
+ * as a new line does.
  */
 export function mergeContractLineChanges(
-  stored: Record<string, unknown>,
-  changes: Record<string, unknown>
+  stored: ReturnType<typeof contractLineFormValues>,
+  changes: Record<string, unknown>,
+  defaultRateUnit?: string
 ): Record<string, unknown> {
   const merged: Record<string, unknown> = { ...stored };
   for (const [field, value] of Object.entries(changes)) {
@@ -2427,6 +2431,9 @@ export function mergeContractLineChanges(
   }
   if (changes.revenueType === "One-time" && changes.rateUnit === undefined) {
     merged.rateUnit = null;
+  }
+  if (merged.revenueType === "Recurring" && !merged.rateUnit) {
+    merged.rateUnit = defaultRateUnit;
   }
   return Object.fromEntries(
     Object.entries(merged).filter(

@@ -19,7 +19,12 @@ import {
   updateSalesReturnOrderField,
   updateSalesRule
 } from "../app/modules/sales/sales.server";
-import { salesRulesEntitlementRefusal } from "../app/modules/sales/sales.service";
+import {
+  CONTRACT_LINE_CHANGED,
+  contractLineWriteResult,
+  salesRulesEntitlementRefusal,
+  updatedDocuments
+} from "../app/modules/sales/sales.service";
 import { filteringSupabase } from "./filtering-supabase-fake";
 import { pageClaims } from "./page-claims";
 
@@ -89,6 +94,183 @@ describe("clearing a document's customer", () => {
     expect(order.error).toMatchObject({ category: "validation" });
     expect(returnOrder.error).toMatchObject({ category: "validation" });
     expect(writes).toEqual([]);
+  });
+});
+
+describe("a document field write", () => {
+  // Each reference id exists in company-2 too, so a check that drops the
+  // companyId filter passes another company's row.
+  const tables = () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      quote: [{ id: "q-1", companyId: "company-1", status: "Draft" }],
+      salesOrder: [
+        { id: "so-1", companyId: "company-1", status: "Draft" },
+        { id: "foreign", companyId: "company-2", status: "Draft" }
+      ],
+      salesReturnOrder: [
+        { id: "ro-1", companyId: "company-1", status: "Draft" }
+      ]
+    };
+    for (const table of [
+      "customer",
+      "customerContact",
+      "customerLocation",
+      "location",
+      "employee"
+    ]) {
+      tables[table] = [
+        { id: "foreign", companyId: "company-2", currencyCode: "EUR" },
+        { id: "own", companyId: "company-1", currencyCode: "USD" }
+      ];
+    }
+    return tables;
+  };
+
+  it.each([
+    ["quote", "customerContactId"],
+    ["quote", "customerEngineeringContactId"],
+    ["quote", "customerLocationId"],
+    ["quote", "locationId"],
+    ["quote", "salesPersonId"],
+    ["quote", "estimatorId"],
+    ["order", "customerContactId"],
+    ["order", "customerLocationId"],
+    ["order", "locationId"],
+    ["order", "salesPersonId"],
+    ["return order", "customerId"],
+    ["return order", "salesOrderId"],
+    ["return order", "customerContactId"],
+    ["return order", "customerLocationId"],
+    ["return order", "locationId"]
+  ] as const)("refuses another company's row for a %s's %s, before any write", async (kind, field) => {
+    const { client, writes } = filteringSupabase(tables());
+    const write = {
+      quote: () =>
+        updateQuoteField(contextFor(client), {
+          ids: ["q-1"],
+          field: field as never,
+          value: "foreign"
+        }),
+      order: () =>
+        updateSalesOrderField(contextFor(client), {
+          ids: ["so-1"],
+          field: field as never,
+          value: "foreign"
+        }),
+      "return order": () =>
+        updateSalesReturnOrderField(contextFor(client), {
+          ids: ["ro-1"],
+          field: field as never,
+          value: "foreign"
+        })
+    }[kind];
+    const result = await write();
+    expect(result.error).toMatchObject({ category: "notFound" });
+    expect(writes).toEqual([]);
+  });
+
+  it("brings only this company's customer currency to a quote", async () => {
+    const { client, writes } = filteringSupabase(tables());
+    const result = await updateQuoteField(contextFor(client), {
+      ids: ["q-1"],
+      field: "customerId",
+      value: "foreign"
+    });
+    // The database refuses the customer (its key is composite); the read
+    // before it never copies company-2's currency.
+    expect(result.error).toBeNull();
+    expect(writes).toHaveLength(1);
+    expect(writes[0]!.value).not.toHaveProperty("currencyCode");
+  });
+
+  it("is refused when it reaches none of the documents", async () => {
+    const { client } = filteringSupabase(tables());
+    const ctx = contextFor(client);
+    const results = [
+      await updateQuoteField(ctx, {
+        ids: ["q-9"],
+        field: "customerReference",
+        value: "PO-1"
+      }),
+      await updateSalesOrderField(ctx, {
+        ids: ["so-9"],
+        field: "customerReference",
+        value: "PO-1"
+      }),
+      await updateSalesReturnOrderField(ctx, {
+        ids: ["ro-9"],
+        field: "customerReference",
+        value: "PO-1"
+      })
+    ];
+    for (const result of results) {
+      expect(result.error).toMatchObject({ category: "notFound" });
+    }
+  });
+
+  it("answers the documents it reached", async () => {
+    const { client } = filteringSupabase(tables());
+    const result = await updateQuoteField(contextFor(client), {
+      ids: ["q-1", "q-9"],
+      field: "customerReference",
+      value: "PO-1"
+    });
+    expect(result).toEqual({ data: { ids: ["q-1"] }, error: null });
+  });
+
+  it("reports another company's customer, which the composite key refuses, as not found", () => {
+    const ctx = contextFor({});
+    const refused = { data: null, error: { code: "23503", message: "fk" } };
+    expect(
+      updatedDocuments(ctx, refused as never, {
+        field: "customerId",
+        documents: "quotes"
+      })
+    ).toMatchObject({ category: "notFound" });
+    // Another field's key is not the customer's.
+    expect(
+      updatedDocuments(ctx, refused as never, {
+        field: "currencyCode",
+        documents: "quotes"
+      })
+    ).toMatchObject({ category: "internal" });
+  });
+});
+
+describe("a contract line write's refusal", () => {
+  const ctx = contextFor({});
+  const refused = (code: string, message: string) => ({
+    data: null,
+    error: { code, message }
+  });
+
+  it("is a conflict when another save changed the line", () => {
+    expect(
+      contractLineWriteResult(ctx, refused(CONTRACT_LINE_CHANGED, "Changed"))
+    ).toMatchObject({ category: "conflict", message: "Changed" });
+  });
+
+  it.each([
+    ["CONTRACT_LINE_TAX", "Tax code TC has no rate in force on 2026-10-01"],
+    ["CONTRACT_LINE_NOT_SERVICE", "A service contract line must be a Service item"],
+    ["CONTRACT_LINE_NUMBER_TAKEN", "Another line of this contract has the number 0001"]
+  ])("is a rule with its own message for %s", (code, message) => {
+    expect(contractLineWriteResult(ctx, refused(code, message))).toMatchObject({
+      category: "rule",
+      message
+    });
+  });
+
+  it("is internal for a database failure", () => {
+    expect(
+      contractLineWriteResult(ctx, refused("08006", "connection failure"))
+    ).toMatchObject({ category: "internal" });
+  });
+
+  it("answers the line it wrote", () => {
+    expect(
+      contractLineWriteResult(ctx, { data: { id: "line-1" }, error: null })
+    ).toEqual({ id: "line-1" });
   });
 });
 

@@ -857,13 +857,15 @@ describe("an edit of some fields of a stored contract line", () => {
   });
   const edit = (
     changes: Record<string, unknown>,
-    overrides?: Record<string, unknown>
+    overrides?: Record<string, unknown>,
+    defaultRateUnit?: string
   ) =>
     mergeContractLineChanges(
       contractLineFormValues(
         stored(overrides) as Parameters<typeof contractLineFormValues>[0]
       ),
-      changes
+      changes,
+      defaultRateUnit
     );
 
   it("keeps the billing terms, CLIN number, funding and tax code it does not name", () => {
@@ -924,6 +926,32 @@ describe("an edit of some fields of a stored contract line", () => {
         edit({ revenueType: "One-time", rateUnit: "Week" }, recurring)
       ).success
     ).toBe(false);
+  });
+
+  it("gives a line switched to Recurring with no rate unit the contract's billing frequency", () => {
+    const fixed = {
+      billingMethod: "Fixed",
+      revenueMethod: "Daily",
+      projectElementId: null,
+      materialHandlingPercent: null,
+      fundedAmount: null,
+      ceilingAmount: null
+    };
+    expect(edit({ revenueType: "Recurring" }, fixed, "Quarter").rateUnit).toBe(
+      "Quarter"
+    );
+    // A unit the edit or the line names is kept.
+    expect(
+      edit({ revenueType: "Recurring", rateUnit: "Week" }, fixed, "Quarter")
+        .rateUnit
+    ).toBe("Week");
+    expect(
+      edit(
+        { description: "Seats" },
+        { ...fixed, revenueType: "Recurring", rateUnit: "Year" },
+        "Quarter"
+      ).rateUnit
+    ).toBe("Year");
   });
 });
 

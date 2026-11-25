@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
+import { assertIsPost, error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -28,12 +29,9 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useFetcher, useLoaderData, useNavigate } from "react-router";
+import { useFetcher, useLoaderData, useNavigate } from "react-router";
 import { generateFiscalYearPeriodsValidator } from "~/modules/accounting/accounting.models";
-import {
-  createFiscalYearPeriods,
-  getFiscalStartMonth
-} from "~/modules/accounting/accounting.service";
+import { getFiscalStartMonth } from "~/modules/accounting/accounting.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -77,7 +75,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
+  const { api } = await authorize(request, {
     "accounting.accountingPeriods": "Create"
   });
 
@@ -87,35 +85,22 @@ export async function action({ request }: ActionFunctionArgs) {
   ).validate(formData);
   if (validation.error) return validationError(validation.error);
 
-  const result = await createFiscalYearPeriods(client, {
-    companyId,
+  const result = await api.accounting.createFiscalYearPeriods({
     fiscalYear: validation.data.fiscalYear,
-    startMonth: validation.data.startMonth,
-    userId
+    startMonth: validation.data.startMonth
   });
-  if (result.error) {
-    return data(
-      {},
-      await flash(request, error(result.error, "Failed to generate periods"))
-    );
-  }
 
-  // The service is idempotent — it only inserts the periods that didn't exist,
-  // so `data.length` is how many were newly created (0 = year already complete).
-  const created = result.data?.length ?? 0;
-  throw redirect(
-    path.to.accountingPeriods,
-    await flash(
-      request,
-      success(
-        created === 0
-          ? "All periods for that fiscal year already exist"
-          : `Generated ${created} accounting ${
-              created === 1 ? "period" : "periods"
-            }`
-      )
-    )
-  );
+  // It only inserts the periods that did not exist, so `ids` are the newly
+  // created ones (none = year already complete).
+  const created = result.data?.ids.length ?? 0;
+  return respond(request, result).redirect(path.to.accountingPeriods, {
+    message:
+      created === 0
+        ? "All periods for that fiscal year already exist"
+        : `Generated ${created} accounting ${
+            created === 1 ? "period" : "periods"
+          }`
+  });
 }
 
 // Given a fiscal year + the company's fiscal start month, the period range spans

@@ -9,6 +9,7 @@ import type {
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
+import { unwrap } from "@carbon/api/service-tools.server";
 import type { Database, Json, Tables } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import { type ExpandedClaims, holdsGate } from "@carbon/database/access";
@@ -139,6 +140,7 @@ import {
   getSalesReturnOrderStatus,
   groupByTaxRate,
   type InvoiceAutomation,
+  isForeignKeyViolation,
   type LeasePaymentTerms,
   type LessorClassification,
   type LessorScheduleLine,
@@ -10905,15 +10907,17 @@ export async function getCustomerContractStatuses(
     .eq("customerId", customerId);
 }
 
-/** A refusal shaped like a PostgREST error, so every caller's existing
- *  `result.error` handling (routes, MCP dispatch) reports it unchanged. */
-/** `upsertContractLine` refused a write whose read is out of date. */
+/** `updateContractLine` refused a write whose read is out of date. */
 export const CONTRACT_LINE_CHANGED = "CONTRACT_LINE_CHANGED";
 /** A contract write refused because the contract is no longer a Draft. */
 export const CONTRACT_NOT_DRAFT = "CONTRACT_NOT_DRAFT";
 const LINE_CHANGED =
   "The line changed after it was read. Read it again and send the change.";
+const LINES_NEED_DRAFT =
+  "Lines can only be added or changed on a Draft contract — use Amend";
 
+/** A refusal shaped like a PostgREST error, so every caller's existing
+ *  `result.error` handling (routes, MCP dispatch) reports it unchanged. */
 function contractRefusal(code: string, message: string) {
   return {
     data: null,
@@ -11216,64 +11220,135 @@ export async function updateContractInvoiceAutomation(
     .single();
 }
 
+/** A contract line as `customerContractLineValidator` gives it. Omit
+ *  `taxCodeId` to take the ship-to's or customer's code (on an update, to
+ *  leave the line's as it is); null clears it. */
+type ContractLineInput = Omit<
+  z.infer<typeof customerContractLineValidator>,
+  "id" | "taxCodeId"
+> & { taxCodeId?: string | null };
+
 /**
- * Adds or changes a line on a Draft contract; the item must be a Service item.
- * Lines on an Active contract change through Amend, and a line never moves
- * between contracts. With `db`, a change is written under the contract's
- * lock after Draft is checked again (`writeDraftContractLine`), so a Confirm
- * that commits while this runs keeps the lines it planned from.
+ * Adds a line to a Draft contract; the item must be one the contract's basis
+ * allows. Written under the contract's lock after Draft is checked again
+ * (`writeDraftContractLine`), so a Confirm that commits while this runs keeps
+ * the lines it planned from.
  */
-export async function upsertContractLine(
+export async function insertContractLine(
   client: SupabaseClient<Database>,
-  line:
-    | (Omit<
-        z.infer<typeof customerContractLineValidator>,
-        "id" | "taxCodeId"
-      > & {
-        /** Omit to take the ship-to's or customer's code (on an update, to
-         *  leave the line's as it is); null clears it. */
-        taxCodeId?: string | null;
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<
-        z.infer<typeof customerContractLineValidator>,
-        "id" | "taxCodeId"
-      > & {
-        taxCodeId?: string | null;
-        id: string;
-        updatedBy: string;
-        /** The line's `updatedAt` when the caller read the values it did not
-         *  change. Sent, the write is refused (`CONTRACT_LINE_CHANGED`)
-         *  once another save has changed the line since that read. */
-        expectedUpdatedAt?: string | null;
-      }),
-  db?: Kysely<KyselyDatabase>
+  db: Kysely<KyselyDatabase>,
+  line: ContractLineInput & { companyId: string; createdBy: string }
 ) {
-  let companyId: string;
-  let storedTax: { taxCodeId: string | null; taxPercent: number } | null = null;
-  if ("id" in line) {
-    const existing = await client
-      .from("customerContractLine")
-      .select("companyId, customerContractId, taxCodeId, taxPercent")
-      .eq("id", line.id)
-      .single();
-    if (existing.error) return existing;
-    if (existing.data.customerContractId !== line.customerContractId) {
-      return contractRefusal(
-        "CONTRACT_LINE_WRONG_CONTRACT",
-        "This line does not belong to this contract"
-      );
-    }
-    companyId = existing.data.companyId;
-    storedTax = {
+  const { companyId } = line;
+  const values = await contractLineValues(client, line, {
+    companyId,
+    stored: null
+  });
+  if (values.error) return values;
+  return writeDraftContractLine(db, companyId, line.customerContractId, (trx) =>
+    trx
+      .insertInto("customerContractLine")
+      .values({ ...values.data, companyId, createdBy: line.createdBy })
+      .returning("id")
+      .executeTakeFirstOrThrow()
+  );
+}
+
+/**
+ * Changes a line on a Draft contract, under the same lock as
+ * `insertContractLine`. A line never moves between contracts, and lines on an
+ * Active contract change through Amend. Refused (`CONTRACT_LINE_CHANGED`) once
+ * another save changed the line since `expectedUpdatedAt`: the line's
+ * `updatedAt` when the caller read the values it did not change.
+ */
+export async function updateContractLine(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  line: ContractLineInput & {
+    id: string;
+    updatedBy: string;
+    expectedUpdatedAt: string | null;
+  }
+) {
+  const existing = await client
+    .from("customerContractLine")
+    .select("companyId, customerContractId, taxCodeId, taxPercent")
+    .eq("id", line.id)
+    .single();
+  if (existing.error) return existing;
+  if (existing.data.customerContractId !== line.customerContractId) {
+    return contractRefusal(
+      "CONTRACT_LINE_WRONG_CONTRACT",
+      "This line does not belong to this contract"
+    );
+  }
+  const { companyId } = existing.data;
+  const values = await contractLineValues(client, line, {
+    companyId,
+    stored: {
+      id: line.id,
       taxCodeId: existing.data.taxCodeId,
       taxPercent: Number(existing.data.taxPercent ?? 0)
-    };
-  } else {
-    companyId = line.companyId;
-  }
+    }
+  });
+  if (values.error) return values;
 
+  // In DCAA mode the funding actions own a line's funded cost and amount.
+  const fundedByActions = await isDcaaMode(client, companyId);
+  if (fundedByActions.error) return fundedByActions;
+  const {
+    fundedCost: _fundedCost,
+    fundedAmount: _fundedAmount,
+    ...rest
+  } = values.data;
+  const changes = {
+    ...(fundedByActions.data ? rest : values.data),
+    updatedBy: line.updatedBy,
+    updatedAt: datetime.timestamp()
+  };
+  const { expectedUpdatedAt } = line;
+  return writeDraftContractLine(
+    db,
+    companyId,
+    line.customerContractId,
+    async (trx) => {
+      // The values it did not change came from that read: a save in between
+      // would be overwritten with them.
+      const written = await trx
+        .updateTable("customerContractLine")
+        .set(changes)
+        .where("id", "=", line.id)
+        .where("companyId", "=", companyId)
+        .where("customerContractId", "=", line.customerContractId)
+        .where(
+          "updatedAt",
+          expectedUpdatedAt === null ? "is" : "=",
+          expectedUpdatedAt
+        )
+        .returning("id")
+        .executeTakeFirst();
+      return written ?? contractRefusal(CONTRACT_LINE_CHANGED, LINE_CHANGED);
+    }
+  );
+}
+
+/**
+ * The columns a line write sets, or why the line is refused: the contract
+ * must be a Draft whose basis takes the line's billing method and item, the
+ * CLIN number must be free, and the tax is decided here. `stored` is the line
+ * an update changes, with its stored tax; null for a new line.
+ */
+async function contractLineValues(
+  client: SupabaseClient<Database>,
+  line: ContractLineInput,
+  {
+    companyId,
+    stored
+  }: {
+    companyId: string;
+    stored: { id: string; taxCodeId: string | null; taxPercent: number } | null;
+  }
+) {
   const contract = await client
     .from("customerContract")
     .select("status, billingBasis, customerId, shipToCustomerLocationId")
@@ -11282,10 +11357,7 @@ export async function upsertContractLine(
     .single();
   if (contract.error) return contract;
   if (contract.data.status !== "Draft") {
-    return contractRefusal(
-      CONTRACT_NOT_DRAFT,
-      "Lines can only be added or changed on a Draft contract — use Amend"
-    );
+    return contractRefusal(CONTRACT_NOT_DRAFT, LINES_NEED_DRAFT);
   }
 
   // A billing line has no schedule: rate 0, One-time
@@ -11328,7 +11400,7 @@ export async function upsertContractLine(
   const numbering = await checkContractLineNumber(client, {
     companyId,
     customerContractId: line.customerContractId,
-    lineId: "id" in line ? line.id : null,
+    lineId: stored?.id ?? null,
     lineItemNumber: line.lineItemNumber || null,
     parentLineId: line.parentLineId || null
   });
@@ -11342,11 +11414,11 @@ export async function upsertContractLine(
   const sentTaxCodeId =
     line.taxCodeId === null
       ? ""
-      : (line.taxCodeId ?? storedTax?.taxCodeId ?? undefined);
+      : (line.taxCodeId ?? stored?.taxCodeId ?? undefined);
   const itemTaxable = item.data.taxable !== false;
   const [codes, party] = await Promise.all([
     getTaxCodeInputs(client, companyId, [sentTaxCodeId]),
-    !("id" in line) && sentTaxCodeId === undefined && itemTaxable
+    stored === null && sentTaxCodeId === undefined && itemTaxable
       ? resolveLineTaxes(client, companyId, {
           source: "sales",
           customerId: contract.data.customerId,
@@ -11363,7 +11435,7 @@ export async function upsertContractLine(
     sentCode: sentTaxCodeId ? (codes.data.get(sentTaxCodeId) ?? null) : null,
     partyDecision: party?.data ?? null,
     date: line.startDate,
-    stored: storedTax
+    stored
   });
   if (tax.error !== null) {
     return contractRefusal("CONTRACT_LINE_TAX", tax.error);
@@ -11376,11 +11448,7 @@ export async function upsertContractLine(
     revenueType,
     itemId: line.itemId,
     description: line.description ?? null,
-    quantity: isPartLine
-      ? line.quantity
-      : isBilling || isProject
-        ? 1
-        : line.quantity,
+    quantity: isPartLine || !(isBilling || isProject) ? line.quantity : 1,
     rate: isBilling ? 0 : line.rate,
     rateUnit: revenueType === "Recurring" ? (line.rateUnit ?? null) : null,
     discountPercent: percentToFraction(line.discountPercent),
@@ -11416,76 +11484,7 @@ export async function upsertContractLine(
     parentLineId: line.parentLineId || null,
     ...contractLineFundingValues(isBilling ? line : {})
   };
-
-  if ("id" in line) {
-    // In DCAA mode the funding actions own a line's funded cost and amount.
-    const fundedByActions = await isDcaaMode(client, companyId);
-    if (fundedByActions.error) return fundedByActions;
-    const {
-      fundedCost: _fundedCost,
-      fundedAmount: _fundedAmount,
-      ...rest
-    } = values;
-    const changes = {
-      ...(fundedByActions.data ? rest : values),
-      updatedBy: line.updatedBy,
-      updatedAt: datetime.timestamp()
-    };
-    const { expectedUpdatedAt } = line;
-    if (db) {
-      return writeDraftContractLine(
-        db,
-        companyId,
-        line.customerContractId,
-        async (trx) => {
-          let update = trx
-            .updateTable("customerContractLine")
-            .set(changes)
-            .where("id", "=", line.id)
-            .where("companyId", "=", companyId)
-            .where("customerContractId", "=", line.customerContractId);
-          // The values it did not change came from that read: a save in
-          // between would be overwritten with them.
-          if (expectedUpdatedAt === null) {
-            update = update.where("updatedAt", "is", null);
-          } else if (expectedUpdatedAt !== undefined) {
-            update = update.where("updatedAt", "=", expectedUpdatedAt);
-          }
-          const written = await update.returning("id").executeTakeFirst();
-          return (
-            written ?? contractRefusal(CONTRACT_LINE_CHANGED, LINE_CHANGED)
-          );
-        }
-      );
-    }
-    const update = client
-      .from("customerContractLine")
-      .update(changes)
-      .eq("id", line.id)
-      .eq("companyId", companyId);
-    if (expectedUpdatedAt === undefined) {
-      return update.select("id").single();
-    }
-    // The values it did not change came from that read: a save in between
-    // would be overwritten with them.
-    const written = await (expectedUpdatedAt === null
-      ? update.is("updatedAt", null)
-      : update.eq("updatedAt", expectedUpdatedAt)
-    )
-      .select("id")
-      .maybeSingle();
-    if (written.error) return { data: null, error: written.error };
-    if (!written.data) {
-      return contractRefusal(CONTRACT_LINE_CHANGED, LINE_CHANGED);
-    }
-    return { data: written.data, error: null };
-  }
-
-  return client
-    .from("customerContractLine")
-    .insert([{ ...values, companyId, createdBy: line.createdBy }])
-    .select("id")
-    .single();
+  return { data: values, error: null };
 }
 
 /**
@@ -11514,14 +11513,28 @@ async function writeDraftContractLine(
       .executeTakeFirst();
     // A contract deleted since the caller's read is no Draft either.
     if (contract?.status !== "Draft") {
-      return contractRefusal(
-        CONTRACT_NOT_DRAFT,
-        "Lines can only be added or changed on a Draft contract — use Amend"
-      );
+      return contractRefusal(CONTRACT_NOT_DRAFT, LINES_NEED_DRAFT);
     }
     const written = await write(trx);
     return "error" in written ? written : { data: written, error: null };
   });
+}
+
+/**
+ * A contract line write as an operation's result: a line another save
+ * changed is a conflict, any other contract refusal (`contractRefusal`) a
+ * rule with its own message.
+ */
+export function contractLineWriteResult<
+  S extends { data: unknown; error: { code: string; message: string } | null }
+>(ctx: ServiceContext, saved: S) {
+  if (saved.error?.code === CONTRACT_LINE_CHANGED) {
+    return ctx.error("conflict", saved.error.message);
+  }
+  if (saved.error?.code.startsWith("CONTRACT_")) {
+    return ctx.error("rule", saved.error.message);
+  }
+  return unwrap(ctx, saved);
 }
 
 type ContractLineFunding = Omit<
@@ -12080,7 +12093,7 @@ export async function getProjectBillingBackup(
  *  with the defaults a new line gets (the setup wizard's Add Products),
  *  tax included: the ship-to's or customer's code on the start date, none
  *  for a non-taxable item. One read of the contract, one of the items, one
- *  tax decision, one insert. Not an MCP tool: `upsertContractLine` covers a
+ *  tax decision, one insert. Not an MCP tool: `insertContractLine` covers a
  *  single line. */
 export async function insertContractLines(
   client: SupabaseClient<Database>,
@@ -15025,6 +15038,57 @@ export function fieldUpdate<const F extends readonly [string, ...string[]]>(
     field: z.enum(fields),
     value: z.string().nullish()
   });
+}
+
+/**
+ * The id fields a document field write takes whose foreign key names the id
+ * alone, and the table each names: such a key accepts another company's row.
+ */
+export type FieldReferences = Partial<
+  Record<string, Parameters<typeof refuseUnlessOwned>[1]>
+>;
+
+/** Why `value` cannot go in `field`: it names another company's row. */
+export async function refuseForeignReference(
+  ctx: ServiceContext,
+  references: FieldReferences,
+  field: string,
+  value: string | null | undefined
+) {
+  const table = references[field];
+  if (!value || !table) return null;
+  return refuseUnlessOwned(ctx, table, { id: value });
+}
+
+/**
+ * A write of `field` on documents, as the operation's result: the ids it
+ * reached. None is a refusal: the ids are not the company's, or the caller's
+ * RLS hides them. The customer's foreign key names `(customerId, companyId)`,
+ * so the database refuses another company's customer; that is not found too.
+ */
+export function updatedDocuments(
+  ctx: ServiceContext,
+  update: { data: { id: string }[] | null; error: PostgrestError | null },
+  { field, documents }: { field: string; documents: string }
+) {
+  if (field === "customerId" && isForeignKeyViolation(update.error)) {
+    return ctx.error(
+      "notFound",
+      "The customer could not be found. It may have been deleted, or it belongs to another company.",
+      update.error
+    );
+  }
+  if (update.error) {
+    return ctx.error(
+      "internal",
+      `Failed to update the ${documents}`,
+      update.error
+    );
+  }
+  if (!update.data || update.data.length === 0) {
+    return ctx.error("notFound", `None of the ${documents} was found`);
+  }
+  return { ids: update.data.map((row) => row.id) };
 }
 
 /** What a sales-rule check found: the violation modal's payload. */
@@ -22259,34 +22323,26 @@ async function editSchedule(
     }
 
     // An unedited Draft's schedule is computed live, so the page can only name
-    // its invoices and rows by position: `planned:<invoiceDate>` and
-    // `planned:<invoiceDate>:<lineId>:<periodStart>[:adjustment]`. Resolve
-    // those against the rows materialized above.
-    const PLANNED_REF = "planned:";
+    // its invoices and rows by position (`plannedInvoiceRef`,
+    // `plannedRowRef`). Resolve those against the rows materialized above.
+    const plannedInvoices = invoices.filter((i) => i.status === "Planned");
     const resolveInvoiceId = (ref: string) => {
       if (!ref.startsWith(PLANNED_REF)) return ref;
-      const invoiceDate = ref.slice(PLANNED_REF.length);
       return (
-        invoices.find(
-          (i) => i.status === "Planned" && i.invoiceDate === invoiceDate
-        )?.id ?? ref
+        plannedInvoices.find((i) => plannedInvoiceRef(i.invoiceDate) === ref)
+          ?.id ?? ref
       );
     };
     const resolveRowId = (ref: string) => {
       if (!ref.startsWith(PLANNED_REF)) return ref;
-      const [invoiceDate, lineId, periodStart, adjustment] = ref
-        .slice(PLANNED_REF.length)
-        .split(":");
-      const invoiceId = resolveInvoiceId(`${PLANNED_REF}${invoiceDate}`);
-      return (
-        existing.find(
-          (r) =>
-            r.invoiceId === invoiceId &&
-            r.lineId === lineId &&
-            r.periodStart === periodStart &&
-            r.isAdjustment === (adjustment === "adjustment")
-        )?.id ?? ref
-      );
+      const row = existing.find((r) => {
+        const invoice = plannedInvoices.find((i) => i.id === r.invoiceId);
+        return (
+          invoice !== undefined &&
+          plannedRowRef({ ...r, invoiceDate: invoice.invoiceDate }) === ref
+        );
+      });
+      return row?.id ?? ref;
     };
 
     const plannedInvoice = (ref: string) => {
@@ -25475,6 +25531,27 @@ export function salesRulesEntitlementRefusal(
 
 // --- Contract invoice schedule ------------------------------------------------
 
+/** The prefix of a position ref: an unedited Draft's schedule is computed
+ *  live, so its invoices and rows have no ids yet. */
+const PLANNED_REF = "planned:";
+
+/** A planned invoice's position ref: `planned:<invoiceDate>`. */
+function plannedInvoiceRef(invoiceDate: string) {
+  return `${PLANNED_REF}${invoiceDate}`;
+}
+
+/** A planned row's position ref:
+ *  `planned:<invoiceDate>:<lineId>:<periodStart>[:adjustment]`. */
+function plannedRowRef(row: {
+  invoiceDate: string;
+  lineId: string;
+  periodStart: string;
+  isAdjustment: boolean;
+}) {
+  const adjustment = row.isAdjustment ? ":adjustment" : "";
+  return `${plannedInvoiceRef(row.invoiceDate)}:${row.lineId}:${row.periodStart}${adjustment}`;
+}
+
 /**
  * An unedited Draft contract's invoice schedule, planned as `edit-schedule`
  * materializes it, each invoice and row named by the position ref the schedule
@@ -25523,11 +25600,11 @@ export async function plannedContractSchedule(
     horizon(terms, await companyToday(ctx))
   );
   const data = planned.map((invoice) => ({
-    ref: `planned:${invoice.invoiceDate}`,
+    ref: plannedInvoiceRef(invoice.invoiceDate),
     invoiceDate: invoice.invoiceDate,
     status: invoice.status,
     rows: invoice.rows.map((row) => ({
-      ref: `planned:${row.invoiceDate}:${row.lineId}:${row.periodStart}${row.isAdjustment ? ":adjustment" : ""}`,
+      ref: plannedRowRef(row),
       customerContractLineId: row.lineId,
       periodStart: row.periodStart,
       periodEnd: row.periodEnd,

@@ -3909,7 +3909,7 @@ export async function createFiscalYearPeriods(
     userId: string;
     startMonth?: number;
   },
-  system: SupabaseClient<Database> = getCarbonServiceRole()
+  system: SupabaseClient<Database>
 ) {
   const fiscalStart = await getFiscalStartMonth(args.companyId, system);
   if (fiscalStart.error) return { data: null, error: fiscalStart.error };
