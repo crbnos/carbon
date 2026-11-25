@@ -59,7 +59,12 @@ export function runOxlint(
       `oxlint failed on ${failure.filename}:\n${failure.message}`
     );
   }
-  return report.diagnostics;
+  // oxlint lints files in parallel and reports in the order they finish.
+  return report.diagnostics.sort(
+    (a, b) =>
+      a.filename.localeCompare(b.filename) ||
+      (a.labels[0]?.span.offset ?? 0) - (b.labels[0]?.span.offset ?? 0)
+  );
 }
 
 /** The text a span covers. oxlint's offsets count UTF-8 bytes. */
