@@ -339,8 +339,11 @@ export const noViewWithoutInvoker = defineCheck({
 export const FUNCTION_REDEFINITION_KEEPS_CHANGES =
   "function-redefinition-keeps-changes";
 
-/** Migrations before this one are history; only a new redefinition is checked. */
-export const CHECKED_SINCE = "20261016000000";
+/**
+ * Migrations before this one are history; only a new redefinition is checked.
+ * It is the migration of the bug the check exists for, so the check covers it.
+ */
+export const CHECKED_SINCE = "20261014171619";
 
 /** Fewer dropped lines than this is a deliberate edit, not a lost change. */
 const MIN_DROPPED = 2;
@@ -474,6 +477,13 @@ export const functionRedefinitionKeepsChanges = defineCheck({
   id: FUNCTION_REDEFINITION_KEEPS_CHANGES,
   description:
     "A migration that redefines a function must start from its newest definition.",
+  provenance: {
+    deprecates:
+      "a CREATE OR REPLACE FUNCTION forked from an older definition, which silently undoes the migrations between them",
+    replacedBy:
+      "start the redefinition from the newest definition of the function",
+    incidents: ["6907343728"]
+  },
   reads: { migrations },
   find: ({ migrations }) => findDroppedFunctionChanges(migrations)
 });

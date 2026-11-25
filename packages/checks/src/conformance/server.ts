@@ -175,6 +175,9 @@ export const noZeroConcurrency = defineCheck({
  * blanked first (`maskClientCode`). The loaders, actions and the module-level
  * helpers they call stay.
  */
+const NOW_MESSAGE =
+  'Server code: this is a date part of "now" in the process zone — use datetime.today(tz) / getDayOfWeek with the company/location timezone.';
+
 const BANNED = [
   {
     pattern: /getLocalTimeZone\s*\(/g,
@@ -191,8 +194,7 @@ const BANNED = [
   },
   {
     pattern: /new Date\(\)\s*\.get(?:Day|Date|Month|FullYear|Hours|Minutes)\(/g,
-    message:
-      'Server code: this is a date part of "now" in the process zone — use datetime.today(tz) / getDayOfWeek with the company/location timezone.'
+    message: NOW_MESSAGE
   },
   {
     pattern: /\.setHours\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/g,
@@ -201,8 +203,14 @@ const BANNED = [
   }
 ];
 
-/** Text every pattern of BANNED contains, so a file or line without any is skipped. */
+/**
+ * Text every pattern of BANNED contains, so a line without any is skipped by
+ * BANNED. A file without any is skipped whole: NOW_LOCAL needs `new Date(` too.
+ */
 const MAY_BE_BANNED = /getLocalTimeZone|new Date\(|\.setHours\(/;
+
+/** A local assigned the current instant: `const now = new Date();`. */
+const NOW_LOCAL = /\b(?:const|let|var)\s+(\w+)\s*=\s*new Date\(\s*\)\s*;/g;
 
 export const noLocalTimezone = defineCheck({
   files: loadServerFiles,
@@ -212,17 +220,40 @@ export const noLocalTimezone = defineCheck({
   provenance: {
     deprecates: "getLocalTimeZone() / toISOString() day-slicing in server code",
     replacedBy: "@carbon/utils datetime + company/location timezone",
-    since: "20260805020925_company-timezone.sql"
+    since: "20260805020925_company-timezone.sql",
+    // getScheduledEmployeesToday rostered the server's day of week, and
+    // getWeeklyHoursForEmployees cut the payroll week at process-zone midnight.
+    incidents: ["92c041c48e"]
   },
   scan(file, contents) {
     if (!MAY_BE_BANNED.test(contents)) return [];
+    // `const now = new Date(); now.getDay()` is the same date part of "now",
+    // split over two lines, so its second line has none of MAY_BE_BANNED.
+    const nowNames = [...contents.matchAll(NOW_LOCAL)].map((m) => m[1]);
+    const nowParts =
+      nowNames.length > 0
+        ? new RegExp(
+            String.raw`\b(?:${nowNames.join("|")})\s*\.get(?:Day|Date|Month|FullYear|Hours|Minutes)\(`,
+            "g"
+          )
+        : null;
     const violations: Violation[] = [];
     contents.split("\n").forEach((text, i) => {
-      if (!MAY_BE_BANNED.test(text)) return;
-      for (const { pattern, message } of BANNED) {
-        for (const m of text.matchAll(pattern)) {
-          violations.push({ file, line: i + 1, snippet: m[0], message });
+      if (MAY_BE_BANNED.test(text)) {
+        for (const { pattern, message } of BANNED) {
+          for (const m of text.matchAll(pattern)) {
+            violations.push({ file, line: i + 1, snippet: m[0], message });
+          }
         }
+      }
+      if (!nowParts) return;
+      for (const m of text.matchAll(nowParts)) {
+        violations.push({
+          file,
+          line: i + 1,
+          snippet: m[0],
+          message: NOW_MESSAGE
+        });
       }
     });
     return violations;

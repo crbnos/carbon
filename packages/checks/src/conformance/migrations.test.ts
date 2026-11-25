@@ -433,6 +433,59 @@ describe("function-redefinition-keeps-changes", () => {
     ]);
   });
 
+  // complete_job_to_inventory as its migrations defined it before 6907343728:
+  // 20261014135003 added the production-event lock, and 20261014171619
+  // re-created the function from the always-post body, without it.
+  const jobCompletion = (file: string, lock: boolean) => ({
+    file,
+    contents: `
+CREATE OR REPLACE FUNCTION public.complete_job_to_inventory(p_job_id TEXT, p_quantity_complete NUMERIC, p_storage_unit_id TEXT, p_user_id TEXT, p_company_id TEXT, p_location_id TEXT)
+RETURNS VOID LANGUAGE plpgsql AS $$
+BEGIN
+  FOR v_event IN
+    SELECT pe.id, pe.duration, pe.type
+    FROM "productionEvent" pe
+    INNER JOIN "jobOperation" jo ON jo.id = pe."jobOperationId"
+    WHERE jo."jobId" = p_job_id
+      AND pe."endTime" IS NOT NULL
+      AND pe."postedToGL" = false
+      AND pe.duration > 0
+${lock ? "    ORDER BY pe.id\n    FOR UPDATE OF pe" : ""}
+  LOOP
+    v_duration_hours := v_event.duration::NUMERIC / 3600;
+  END LOOP;
+END;
+$$;`
+  });
+
+  it("flags 20261014171619, which dropped the production-event lock (fixed by 6907343728)", () => {
+    expect(
+      findDroppedFunctionChanges([
+        jobCompletion("20261009010412_job-costing-always-post.sql", false),
+        jobCompletion(
+          "20261014135003_lock-production-events-at-job-completion.sql",
+          true
+        ),
+        jobCompletion("20261014171619_receive-consumed-serial-units.sql", false)
+      ]).map((v) => v.snippet)
+    ).toEqual([
+      "complete_job_to_inventory drops 20261014135003_lock-production-events-at-job-completion.sql"
+    ]);
+  });
+
+  it("passes a redefinition that keeps the production-event lock", () => {
+    expect(
+      findDroppedFunctionChanges([
+        jobCompletion("20261009010412_job-costing-always-post.sql", false),
+        jobCompletion(
+          "20261014135003_lock-production-events-at-job-completion.sql",
+          true
+        ),
+        jobCompletion("20261014171619_receive-consumed-serial-units.sql", true)
+      ])
+    ).toEqual([]);
+  });
+
   it("leaves migrations from before it was added alone", () => {
     expect(
       findDroppedFunctionChanges(

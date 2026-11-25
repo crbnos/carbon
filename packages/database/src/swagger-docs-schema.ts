@@ -142008,6 +142008,77 @@ export default {
         tags: ["(rpc) sync_storage_type_nettable"]
       }
     },
+    "/rpc/get_items_used_in": {
+      get: {
+        parameters: [
+          {
+            format: "text[]",
+            in: "query",
+            name: "item_ids",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_items_used_in"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                item_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["item_ids", "company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_items_used_in"]
+      }
+    },
     "/rpc/update_receipt_line_batch_tracking": {
       post: {
         parameters: [

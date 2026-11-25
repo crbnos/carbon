@@ -235,6 +235,51 @@ WHERE j."status" <> 'Draft';`;
     expect(violations[0]?.message).toContain("GL_JOURNAL_STATUSES");
   });
 
+  it("replays c0cf421500: get_inventory_tie_out's not-Draft GL read, restated in the GL readers migration", () => {
+    // packages/database/supabase/migrations/20260925121735_rpc-function-guards.sql
+    // before c0cf421500. c0cf421500 restated the function in
+    // 20261009005144_journal-gl-status-readers.sql with the filter changed;
+    // restated unchanged, the old reader is what the check flags. The gl CTE
+    // is written as a whole statement, since the check reads parsed SQL.
+    const before = `  WITH gl AS (
+    SELECT jl."accountId" AS "account", SUM(jl."amount") AS "balance"
+    FROM "journal" j
+    INNER JOIN "journalLine" jl
+      ON jl."journalId" = j."id" AND jl."companyId" = j."companyId"
+    WHERE j."companyId" = company_id
+      AND j."status" <> 'Draft'
+      AND j."postingDate" <= v_as_of
+      AND jl."accountId" IN (v_rm_account, v_fg_account)
+    GROUP BY jl."accountId"
+  )
+  SELECT * FROM gl;`;
+    const file = "20261009005144_journal-gl-status-readers.sql";
+    expect(
+      scanJournalStatusFilter(file, before).map((v) => [v.line, v.snippet])
+    ).toEqual([[7, "j.status is not 'Draft'"]]);
+    const after = before.replace(
+      `j."status" <> 'Draft'`,
+      `j."status" IN ('Posted', 'Reversed')`
+    );
+    expect(scanJournalStatusFilter(file, after)).toHaveLength(0);
+  });
+
+  it("reads the journalLines view as the journal, quoted or not", () => {
+    const file = "20261010000000_new-reader.sql";
+    expect(
+      scanJournalStatusFilter(
+        file,
+        `SELECT * FROM "journalLines" jl WHERE jl."status" <> 'Draft';`
+      ).map((v) => v.snippet)
+    ).toEqual(["jl.status is not 'Draft'"]);
+    expect(
+      scanJournalStatusFilter(
+        file,
+        `SELECT * FROM journalLines WHERE journalLines.status <> 'Draft';`
+      ).map((v) => v.snippet)
+    ).toEqual(["journallines.status is not 'Draft'"]);
+  });
+
   it("skips a migration older than the GL readers migration", () => {
     const sql = `SELECT * FROM "journal" j WHERE j."status" <> 'Draft';`;
     expect(
@@ -384,6 +429,21 @@ WHERE j."status" IN ('Posted', 'Reversed')
   .where("invoice.status", "not in", ["Draft", "Pending", "Voided"])
   .execute();`;
     expect(scanJournalStatusFilter("a.ts", ts)).toHaveLength(0);
+  });
+
+  it("replays c0cf421500: the account ledger's not-Draft read of the journalLines view", () => {
+    // apps/erp/app/modules/accounting/accounting.service.ts before c0cf421500.
+    // The view carries each line's journal status, so the filter let
+    // Provisional and Superseded journals into the account ledger.
+    const ts = `let query = client
+    .from("journalLines" as any)
+    .select("*", { count: "exact" })
+    .eq("accountId", args.accountId)
+    .neq("status", "Draft")
+    .gte("postingDate", args.startDate);`;
+    expect(
+      scanJournalStatusFilter("accounting.service.ts", ts).map((v) => v.line)
+    ).toEqual([5]);
   });
 
   it("does not take journalLine for journal", () => {

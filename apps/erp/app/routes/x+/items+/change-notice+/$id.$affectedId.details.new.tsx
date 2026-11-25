@@ -19,12 +19,11 @@ export default function ChangeNoticeNewSupplierPartRoute() {
   if (!id) throw new Error("Could not find id");
   if (!affectedId) throw new Error("Could not find affectedId");
 
-  const routeData = useRouteData<{ affectedItems: AffectedItemDraft[] }>(
-    path.to.changeNotice(id)
-  );
+  // The draft is loaded by the parent $id.$affectedId.details route.
   const affected =
-    routeData?.affectedItems.find((a) => a.affectedItem.id === affectedId) ??
-    null;
+    useRouteData<{ draft: Omit<AffectedItemDraft, "diff"> | null }>(
+      path.to.changeNoticeAffectedItem(id, affectedId)
+    )?.draft ?? null;
 
   const navigate = useNavigate();
   const onClose = () =>

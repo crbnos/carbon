@@ -220,7 +220,8 @@ export const accountFkClassifiedCheck = defineCheck({
 // instead: GL (Posted, Reversed), document, or open item.
 //
 // The check works per STATEMENT, not per file: a not-Draft filter is flagged
-// only when the statement that holds it reads the journal table. In a
+// only when the statement that holds it reads the journal table (or the
+// `journalLines` view, which carries each line's journal status). In a
 // migration, a statement is one the SQL parser returns (see `scanSql`). In
 // TypeScript, a statement is the text between two semicolons, comments
 // blanked: one query chain, or one raw SQL text in a sql`` template or a
@@ -275,23 +276,26 @@ const TS_NOT_DRAFT = [
   )
 ];
 
-/** The statement reads the journal table: quoted or not, aliased or not. */
+/**
+ * The statement reads the journal table, or the `journalLines` view, which
+ * carries the journal's status on each line: quoted or not, aliased or not.
+ */
 const SQL_JOURNAL = [
-  /\b(?:FROM|JOIN|UPDATE)\s+(?:"?public"?\s*\.\s*)?"?journal"?(?![\w"])/i,
-  /\bjournal"?\s*\.\s*"?status\b/i
+  /\b(?:FROM|JOIN|UPDATE)\s+(?:"?public"?\s*\.\s*)?"?journal(?:Lines)?"?(?![\w"])/i,
+  /\bjournal(?:Lines)?"?\s*\.\s*"?status\b/i
 ];
 const TS_JOURNAL = [
   ...SQL_JOURNAL,
   // .from("journal"), selectFrom("journal as j"), innerJoin("journal as j", …)
-  /\b(?:from|selectFrom|innerJoin|leftJoin|rightJoin|fullJoin|updateTable|deleteFrom)\(\s*["'`]journal(?:\s+as\s+\w+)?["'`]/,
+  /\b(?:from|selectFrom|innerJoin|leftJoin|rightJoin|fullJoin|updateTable|deleteFrom)\(\s*["'`]journal(?:Lines)?(?:\s+as\s+\w+)?["'`]/,
   // a Supabase embed: select("…, journal!inner(status)")
   /\bjournal(?:!\w+)?\s*\(/
 ];
 
 /** `FROM journal j`, `JOIN "journal" AS j`, `"journal as j"` — the alias. */
 const JOURNAL_ALIAS = [
-  /\b(?:FROM|JOIN)\s+(?:"?public"?\s*\.\s*)?"?journal"?\s+(?:AS\s+)?"?(\w+)"?/gi,
-  /["'`]journal\s+as\s+(\w+)["'`]/g
+  /\b(?:FROM|JOIN)\s+(?:"?public"?\s*\.\s*)?"?journal(?:Lines)?"?\s+(?:AS\s+)?"?(\w+)"?/gi,
+  /["'`]journal(?:Lines)?\s+as\s+(\w+)["'`]/g
 ];
 const NOT_AN_ALIAS = new Set([
   "on",
@@ -315,7 +319,7 @@ const NOT_AN_ALIAS = new Set([
 
 /** The names a status may be qualified with to mean the journal's status. */
 function journalNames(statement: string): Set<string> {
-  const names = new Set(["journal"]);
+  const names = new Set(["journal", "journallines"]);
   for (const pattern of JOURNAL_ALIAS) {
     for (const m of statement.matchAll(pattern)) {
       const alias = m[1]?.toLowerCase();
@@ -416,7 +420,17 @@ function notDraftStatus(node: Node): string | undefined {
   return undefined;
 }
 
-/** `journal` and its aliases in a statement; empty when it does not read the table. */
+/**
+ * The relation names that read the journal: the table, and the `journalLines`
+ * view, which carries the journal's status on each line. The parser lower-cases
+ * an unquoted name (`journallines`); a quoted one keeps its case.
+ */
+const JOURNAL_RELATIONS = new Set(["journal", "journalLines", "journallines"]);
+
+/**
+ * The journal (or `journalLines`) and its aliases in a statement, lower-cased
+ * as a status qualifier is; empty when it reads neither.
+ */
 function journalNamesIn(statement: unknown, names = new Set<string>()) {
   if (Array.isArray(statement)) {
     for (const item of statement) journalNamesIn(item, names);
@@ -426,10 +440,11 @@ function journalNamesIn(statement: unknown, names = new Set<string>()) {
   const table: { relname?: unknown; schemaname?: unknown; alias?: unknown } =
     statement;
   if (
-    table.relname === "journal" &&
+    typeof table.relname === "string" &&
+    JOURNAL_RELATIONS.has(table.relname) &&
     (table.schemaname === undefined || table.schemaname === "public")
   ) {
-    names.add("journal");
+    names.add(table.relname.toLowerCase());
     const alias: { aliasname?: unknown } = table.alias ?? {};
     if (typeof alias.aliasname === "string") {
       names.add(alias.aliasname.toLowerCase());
@@ -493,7 +508,8 @@ export const journalStatusFilter = defineCheck({
     deprecates: "journal status filters written as status <> 'Draft'",
     replacedBy:
       "GL_JOURNAL_STATUSES, DOCUMENT_JOURNAL_STATUSES or OPEN_ITEM_JOURNAL_STATUSES from @carbon/database/accounting-posting",
-    since: SINCE_MIGRATION
+    since: SINCE_MIGRATION,
+    incidents: ["c0cf421500"]
   },
   // Migrations first: the runner groups a check by its first input, so this
   // check runs on the worker that has already parsed their SQL.

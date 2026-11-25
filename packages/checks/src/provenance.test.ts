@@ -32,9 +32,7 @@ const UNPROVEN_CHECKS = new Set([
   "edge-function-authorizes-caller",
   "event-ignored-columns",
   "form-field-budget",
-  "function-redefinition-keeps-changes",
   "index-redirect-before-loaders",
-  "journal-status-filter",
   "lingui-macro-misuse",
   "list-select-covers-columns",
   "loader-reads-through-api",
@@ -54,7 +52,6 @@ const UNPROVEN_CHECKS = new Set([
   "no-integration-id-branching",
   "no-interpolated-error-log",
   "no-legacy-rls",
-  "no-local-timezone",
   "no-missing-audit-column",
   "no-module-permission-key",
   "no-noop-open-change",
@@ -96,7 +93,7 @@ const UNPROVEN_CHECKS = new Set([
 // had been built from file names, which hid `account-fk-classified` (it shares
 // one file with `account-fk-restrict`) and `route-action-shape` (a lint plugin). Both
 // predate this rule.
-const UNPROVEN_CEILING = 63;
+const UNPROVEN_CEILING = 60;
 
 const isCheck = (value: unknown): value is Check =>
   typeof value === "object" &&

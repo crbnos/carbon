@@ -7326,7 +7326,7 @@ export const getJobOrderStatusMap = defineServiceFn({
     materials: z.array(
       z.looseObject({
         description: z.string(),
-        estimatedQuantity: z.number(),
+        estimatedQuantity: z.number().nullable(),
         id: z.string(),
         itemReadableId: z.string(),
         itemScrapPercentage: z.number(),
@@ -7347,17 +7347,17 @@ export const getJobOrderStatusMap = defineServiceFn({
         quantityFromProductionOrderInStorageUnit: z.number(),
         quantityFromProductionOrderNotInStorageUnit: z.number(),
         quantityInTransitToStorageUnit: z.number(),
-        quantityIssued: z.number(),
+        quantityIssued: z.number().nullable(),
         quantityOnHandInStorageUnit: z.number(),
         quantityOnHandNotInStorageUnit: z.number(),
         quantityOnProductionOrder: z.number(),
         quantityOnPurchaseOrder: z.number(),
         quantityOnSalesOrder: z.number(),
         quantityPerParent: z.number(),
-        storageUnitId: z.string(),
-        storageUnitName: z.string(),
-        substitutedFromItemId: z.string(),
-        thumbnailPath: z.string(),
+        storageUnitId: z.string().nullable(),
+        storageUnitName: z.string().nullable(),
+        substitutedFromItemId: z.string().nullable(),
+        thumbnailPath: z.string().nullable(),
         type: z.enum([
           "Part",
           "Service",
@@ -7366,7 +7366,7 @@ export const getJobOrderStatusMap = defineServiceFn({
           "Fixture",
           "Consumable"
         ]),
-        unitOfMeasureCode: z.string()
+        unitOfMeasureCode: z.string().nullable()
       })
     ),
     asOfDate: z.string().optional()
