@@ -42,6 +42,18 @@ export const SAMPLE_STOCK_TRANSFER = {
       toStorageUnitName: "Bin C1",
       requiresSerialTracking: false,
       requiresBatchTracking: false
+    },
+    {
+      // No source bin: picked from any bin.
+      id: "line-3",
+      itemReadableId: "SPACER-8",
+      itemDescription: "Nylon Spacer",
+      quantity: 100,
+      unitOfMeasure: "EA",
+      fromStorageUnitName: null,
+      toStorageUnitName: "Bin C2",
+      requiresSerialTracking: false,
+      requiresBatchTracking: false
     }
   ],
   location: { name: "Main Warehouse" },

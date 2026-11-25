@@ -111,13 +111,13 @@ export const SAMPLE_ISSUE = {
       }
     ],
     customers: [{ id: "a-2", documentReadableId: "Globex Corporation" }],
-    suppliers: [],
+    suppliers: [{ id: "a-5", documentReadableId: "Apex Anodizing" }],
     jobOperations: [{ id: "a-3", documentReadableId: "JOB-002310 / Op 30" }],
-    purchaseOrderLines: [],
+    purchaseOrderLines: [{ id: "a-6", documentReadableId: "PO-000512" }],
     salesOrderLines: [{ id: "a-4", documentReadableId: "SO-001188" }],
-    shipmentLines: [],
-    receiptLines: [],
-    trackedEntities: []
+    shipmentLines: [{ id: "a-7", documentReadableId: "SHP-001188" }],
+    receiptLines: [{ id: "a-8", documentReadableId: "RCV-000377" }],
+    trackedEntities: [{ id: "a-9", documentReadableId: "BATCH-44021" }]
   },
   assignees: { "user-1": "Dana Cruz" },
   jobOperationStepRecords: [],

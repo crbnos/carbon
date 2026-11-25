@@ -193,6 +193,7 @@ const RentalAgreementProperties = () => {
     (typeof invoiceAutomations)[number],
     string
   > = {
+    Manual: t`Manual`,
     "Draft Only": t`Draft only`,
     Post: t`Post`,
     "Post and Email": t`Post and email`,
@@ -214,11 +215,15 @@ const RentalAgreementProperties = () => {
     !["Draft", "Active"].includes(agreement.status ?? "") ||
     !permissions.has({ "sales.rentalAgreements": "Edit" });
 
-  // Payment terms and tax are read when each invoice is drafted, so they stay
-  // editable while Active, like Invoicing.
+  // Payment terms, tax and the Rental Site are read when each invoice is
+  // drafted, so they stay editable while Active, like Invoicing.
   const invoiceTermHelper =
     agreement.status === "Active" && !isInvoicingReadOnly
       ? t`Applies to invoices drafted from now on`
+      : undefined;
+  const rentalSiteHelper =
+    agreement.status === "Active" && !isInvoicingReadOnly
+      ? t`Bills and ships invoices drafted from now on`
       : undefined;
 
   const isDisabled =
@@ -308,7 +313,8 @@ const RentalAgreementProperties = () => {
           label={t`Rental Site`}
           customer={agreement.customerId ?? ""}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={rentalSiteHelper}
           onChange={(location) => {
             if (location?.id) onUpdate("customerLocationId", location.id);
           }}

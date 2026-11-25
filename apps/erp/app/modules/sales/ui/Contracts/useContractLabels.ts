@@ -56,6 +56,7 @@ export function useContractLabels() {
         Arrears: t`Arrears`
       } satisfies Labels<typeof contractBillingTimings>,
       invoiceAutomation: {
+        Manual: t`Manual`,
         "Draft Only": t`Draft only`,
         Post: t`Post`,
         "Post and Email": t`Post and email`,

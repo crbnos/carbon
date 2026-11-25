@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   effectiveInvoiceAutomation,
+  invoiceAutomationPosts,
   type PlannableLine,
   planAgreementRentalInvoices,
   planRentalInvoices,
@@ -34,6 +35,17 @@ describe("planRentalInvoices", () => {
   it("Draft Only keeps rent and charges on one unheld invoice", () => {
     expect(
       planRentalInvoices("Draft Only", [
+        line("rent", "Rent"),
+        line("damage", "Charge")
+      ])
+    ).toEqual([
+      { lines: ["rent", "damage"], holdReason: null, role: "combined" }
+    ]);
+  });
+
+  it("Manual keeps rent and charges on one unheld invoice", () => {
+    expect(
+      planRentalInvoices("Manual", [
         line("rent", "Rent"),
         line("damage", "Charge")
       ])
@@ -199,6 +211,19 @@ describe("effectiveInvoiceAutomation", () => {
   });
 });
 
+describe("invoiceAutomationPosts", () => {
+  it.each([
+    ["Draft Only", false],
+    ["Manual", false],
+    [null, false],
+    ["Post", true],
+    ["Post and Email", true],
+    ["Post and Send via Stripe", true]
+  ] as const)("%s posts on its own: %s", (mode, posts) => {
+    expect(invoiceAutomationPosts(mode)).toBe(posts);
+  });
+});
+
 describe("rentLineDescription", () => {
   const descriptionPeriod = {
     cycle: "Calendar Month" as const,
@@ -217,7 +242,7 @@ describe("rentLineDescription", () => {
         serialNumber: "SN-1001"
       })
     ).toBe(
-      "2026-10-07 – 2026-10-31 · 25 days · 4 × Week rate — Skid Steer 4 SN-1001"
+      "Oct 7, 2026 – Oct 31, 2026 · 25 days · 4 × Week rate — Skid Steer 4 SN-1001"
     );
   });
 
@@ -229,7 +254,7 @@ describe("rentLineDescription", () => {
         serialNumber: "RW-SN-T2"
       })
     ).toBe(
-      "2026-10-07 – 2026-10-31 · 25 days · 4 × Week rate — Reaction Wheel 0.010 Nm RW-SN-T2"
+      "Oct 7, 2026 – Oct 31, 2026 · 25 days · 4 × Week rate — Reaction Wheel 0.010 Nm RW-SN-T2"
     );
   });
 
@@ -246,7 +271,7 @@ describe("rentLineDescription", () => {
         serialNumber: "SN-1001"
       })
     ).toBe(
-      "2026-10-07 – 2026-11-06 · 31 days · Month rate — Skid Steer 4 SN-1001"
+      "Oct 7, 2026 – Nov 6, 2026 · 31 days · Month rate — Skid Steer 4 SN-1001"
     );
   });
 });

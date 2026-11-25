@@ -15,6 +15,7 @@ import type {
   getContractLines,
   getContracts
 } from "../../sales.service";
+import type { ContractInvoiceTotal } from "../../sales.utils";
 
 type Enums = Database["public"]["Enums"];
 
@@ -91,6 +92,10 @@ export type ContractRouteData = {
   /** The schedule planned live from the lines while a Draft has none
    *  persisted; null once it is persisted. */
   computedSchedule: ContractPlannedInvoice[] | null;
+  /** The invoices still to be drafted (Planned, in date order), each with the
+   *  net and tax the drafted invoice will bill (`previewContractInvoiceTotals`).
+   *  Null when the tax codes could not be read: the pages show nets only. */
+  plannedInvoices: ContractInvoiceTotal[] | null;
   /** Per line: computed total − Σ its scheduled amounts, for an edited Draft.
    *  A non-zero value offers Reset schedule. */
   residuals: Record<string, number>;

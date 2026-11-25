@@ -78,7 +78,7 @@ msgstr "{0, plural, =0 {Il suo processo richiede un operatore qualificato, quind
 
 #. placeholder {0}: pending.approvalRules
 msgid "{0, plural, one {# approval rule} other {# approval rules}}"
-msgstr ""
+msgstr "{0, plural, one {# regola di approvazione} other {# regole di approvazione}}"
 
 #. placeholder {0}: data.preview.skippedLines
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
@@ -143,11 +143,11 @@ msgstr "{0, plural, one {# nascosto dal filtro di tipo} other {# nascosti dal fi
 
 #. placeholder {0}: pending.itemCosts
 msgid "{0, plural, one {# item cost} other {# item costs}}"
-msgstr ""
+msgstr "{0, plural, one {# costo articolo} other {# costi articolo}}"
 
 #. placeholder {0}: pending.itemPrices
 msgid "{0, plural, one {# item price} other {# item prices}}"
-msgstr ""
+msgstr "{0, plural, one {# prezzo articolo} other {# prezzi articolo}}"
 
 #. placeholder {0}: data.collapsedCount
 msgid "{0, plural, one {# item} other {# items}}"
@@ -284,7 +284,7 @@ msgstr "{0, plural, one {Registra o elimina il # documento datato prima della tr
 
 #. placeholder {0}: pending.workCenterRates
 msgid "{0, plural, one {Rates on # work center} other {Rates on # work centers}}"
-msgstr ""
+msgstr "{0, plural, one {Tariffe su # centro di lavoro} other {Tariffe su # centri di lavoro}}"
 
 #. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
@@ -439,7 +439,7 @@ msgstr "Distribuzione {0}"
 
 #. placeholder {0}: route.dpi
 msgid "{0} dpi"
-msgstr ""
+msgstr "{0} dpi"
 
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
@@ -1016,7 +1016,7 @@ msgid "{count, plural, one {Select all matching rows (about #)} other {Select al
 msgstr "{count, plural, one {Seleziona tutte le righe corrispondenti (circa #)} other {Seleziona tutte le righe corrispondenti (circa #)}}"
 
 msgid "{count} grants"
-msgstr ""
+msgstr "{count} concessioni"
 
 msgid "{count} items"
 msgstr "{count} articoli"
@@ -1076,7 +1076,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} di {total} fasi completate"
 
 msgid "{dpi} dpi"
-msgstr ""
+msgstr "{dpi} dpi"
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
 msgstr "{errors, plural, one {# riga richiede correzione} other {# righe richiedono correzione}}"
@@ -1111,7 +1111,7 @@ msgstr "{functionLabel}: {formattedValue}"
 
 #. placeholder {0}: modules.length
 msgid "{granted} of {0} modules"
-msgstr ""
+msgstr "{granted} di {0} moduli"
 
 msgid "{group} {number}"
 msgstr "{group} {number}"
@@ -1316,7 +1316,7 @@ msgid "{overInvoiced, plural, one {# line bills more than its order has left to 
 msgstr "{overInvoiced, plural, one {# riga fattura più del residuo da fatturare sull'ordine} other {# righe fatturano più del residuo da fatturare sui rispettivi ordini}}"
 
 msgid "{overrides} overridden"
-msgstr ""
+msgstr "{overrides} sovrascritti"
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} deve a {lender}, scadenza {due}"
@@ -1332,6 +1332,9 @@ msgstr "{percent} prelevato"
 
 msgid "{percentage}%"
 msgstr "{percentage}%"
+
+msgid "{periods, plural, one {period} other {periods}}"
+msgstr "{periods, plural, one {periodo} other {periodi}}"
 
 msgid "{position} of {total}"
 msgstr "{position} di {total}"
@@ -1356,7 +1359,7 @@ msgstr "{quantity} senza numero di serie"
 
 #. placeholder {0}: module.rows.length
 msgid "{reached}/{0} pages"
-msgstr ""
+msgstr "{reached}/{0} pagine"
 
 msgid "{readyJobs, plural, =0 {No open job has every part} one {In production on # job with every part in stock} other {In production on # jobs with every part in stock}}"
 msgstr "{readyJobs, plural, =0 {Nessun ordine di produzione aperto ha tutti i componenti} one {In produzione su # ordine di produzione con tutti i componenti in giacenza} other {In produzione su # ordini di produzione con tutti i componenti in giacenza}}"
@@ -1365,7 +1368,7 @@ msgid "{received} of {ordered}"
 msgstr "{received} di {ordered}"
 
 msgid "{records, plural, one {Keep # record in {fromCode}} other {Keep # records in {fromCode}}}"
-msgstr ""
+msgstr "{records, plural, one {Mantieni # record in {fromCode}} other {Mantieni # record in {fromCode}}}"
 
 msgid "{ref} not found"
 msgstr "{ref} non trovato"
@@ -1417,6 +1420,9 @@ msgstr "{statusTotal, plural, one {# non conformità in totale} other {# non con
 
 msgid "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
 msgstr "{suppliersWithoutTaxCode, plural, one {# fornitore ha una percentuale d'imposta e nessun codice fiscale. Selezionalo e scegli Assegna Codice Fiscale.} other {# fornitori hanno una percentuale d'imposta e nessun codice fiscale. Selezionali e scegli Assegna Codice Fiscale.}}"
+
+msgid "{taxRate} tax"
+msgstr "{taxRate} di imposta"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# mese} other {# mesi}}"
@@ -1882,6 +1888,9 @@ msgstr "Un collaboratore esterno è un contatto fornitore con competenze partico
 
 msgid "A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it."
 msgstr "Una correzione che sposta il tempo registrato a un altro numero di addebito. In modalità DCAA aspetta sempre l'approvazione, e la persona che l'ha richiesta non può approvarla."
+
+msgid "A credit memo of <0/> for the early return is drafted too."
+msgstr "Viene bozzata anche una nota di credito di <0/> per il reso anticipato."
 
 msgid "A Cumulative event bills only after every event before it."
 msgstr "Un evento Cumulativo fattura solo dopo ogni evento precedente."
@@ -2729,10 +2738,10 @@ msgid "Accepted quantity"
 msgstr "Quantità accettata"
 
 msgid "Access"
-msgstr ""
+msgstr "Accesso"
 
 msgid "Access level"
-msgstr ""
+msgstr "Livello di accesso"
 
 msgid "Account"
 msgstr "Conto"
@@ -3483,7 +3492,7 @@ msgid "Add Question"
 msgstr "Aggiungi Domanda"
 
 msgid "Add raises each chosen module to at least the level you set and never lowers one; Update sets it exactly. Modules left at No change keep what each person has."
-msgstr ""
+msgstr "Aggiungi porta ogni modulo scelto almeno al livello impostato e non ne abbassa mai uno; Aggiorna lo imposta esattamente. I moduli lasciati su Nessuna modifica mantengono ciò che ha ogni persona."
 
 msgid "Add Rate"
 msgstr "Aggiungi tariffa"
@@ -3705,10 +3714,10 @@ msgid "Admin"
 msgstr "Amministratore"
 
 msgid "Admin has every level on every module, including modules added later. Overrides don't apply while this person is an Admin."
-msgstr ""
+msgstr "Admin ha ogni livello su ogni modulo, inclusi i moduli aggiunti in seguito. Le forzature non si applicano finché questa persona è Admin."
 
 msgid "Admin has full access"
-msgstr ""
+msgstr "Admin ha accesso completo"
 
 msgid "Advance"
 msgstr "Anticipo"
@@ -3862,6 +3871,12 @@ msgstr "Tutti gli ordini di produzione aperti"
 msgid "All Others"
 msgstr "Tutti gli altri"
 
+msgid "All remaining"
+msgstr "Tutti i rimanenti"
+
+msgid "All remaining bills every period left in one invoice."
+msgstr "Tutti i importi residui di ogni periodo confluiscono in un'unica fattura."
+
 msgid "All returnable lines"
 msgstr "Tutte le righe restituibili"
 
@@ -4014,11 +4029,14 @@ msgstr "Tipo di Importo"
 msgid "Amounts and quantities can't be changed on one document."
 msgstr "Importi e quantità non possono essere modificati su un singolo documento."
 
-msgid "Amounts are before tax."
-msgstr "Gli importi sono al netto delle imposte."
-
 msgid "Amounts are padded to their currency's decimal places."
 msgstr "Gli importi vengono riempiti ai decimali della loro valuta."
+
+msgid "Amounts exclude tax."
+msgstr "Importi al netto dell'imposta."
+
+msgid "Amounts include tax."
+msgstr "Gli importi includono l'imposta."
 
 msgid "Amounts show only the digits that carry value."
 msgstr "Gli importi mostrano solo le cifre significative."
@@ -4036,7 +4054,7 @@ msgid "An accounting bucket that groups expenses by department or function so th
 msgstr "Un bucket di contabilità che raggruppa le spese per reparto o funzione in modo che la Contabilità generale possa riportare le spese per gruppo, non solo per conto."
 
 msgid "An accounting or spend integration is connected"
-msgstr ""
+msgstr "È collegata un'integrazione di contabilità o di spesa"
 
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "Un record contabile per un articolo capitalizzato che ammortizzi piuttosto che spesare; Bozza → Attivo → Completamente ammortizzato → Dismesso."
@@ -4317,7 +4335,7 @@ msgid "Annual. Starts from the company's incremental borrowing rate"
 msgstr "Annuale. Inizia dal tasso di prestito incrementale dell'azienda"
 
 msgid "Another company in the group has transactions"
-msgstr ""
+msgstr "Un'altra azienda del gruppo ha movimenti"
 
 msgid "Another connection to this integration already has that name. Choose a different one."
 msgstr "Un'altra connessione a questa integrazione ha già quel nome. Scegli uno diverso."
@@ -4452,7 +4470,7 @@ msgid "Applies to characteristics without their own rule, and to the lot when th
 msgstr "Si applica alle caratteristiche senza propria regola, e al lotto quando questo piano guida un controllo."
 
 msgid "Applies to invoices drafted from now on"
-msgstr ""
+msgstr "Si applica alle fatture create in bozza da ora in poi"
 
 msgid "Applies to Projects"
 msgstr "Si applica ai progetti"
@@ -6107,6 +6125,9 @@ msgstr "Tempistica di fatturazione"
 msgid "Billing Timing"
 msgstr "Tempistica di Fatturazione"
 
+msgid "Bills and ships invoices drafted from now on"
+msgstr "Da ora in poi le fatture in bozza vengono create alla fatturazione e alla spedizione"
+
 msgid "Bills each period until every unit is returned."
 msgstr "Fattura ogni periodo fino al ritorno di tutte le unità."
 
@@ -6574,19 +6595,19 @@ msgid "Camera"
 msgstr "Fotocamera"
 
 msgid "can create"
-msgstr ""
+msgstr "può creare"
 
 msgid "can delete"
-msgstr ""
+msgstr "può eliminare"
 
 msgid "Can Start More"
 msgstr "Altri avviabili"
 
 msgid "can update"
-msgstr ""
+msgstr "può aggiornare"
 
 msgid "can view"
-msgstr ""
+msgstr "può visualizzare"
 
 msgid "Can't be restored"
 msgstr "Non può essere ripristinato"
@@ -7072,7 +7093,7 @@ msgid "Changes"
 msgstr "Modifiche"
 
 msgid "Changing the base currency converts no amounts"
-msgstr ""
+msgstr "Cambiare la valuta base non converte alcun importo"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "La modifica dei componenti ridefinisce il gruppo. Riesegui Motion Planning per applicare la modifica ai passi."
@@ -7153,7 +7174,7 @@ msgid "Charges"
 msgstr "Addebiti"
 
 msgid "Charges invoice"
-msgstr ""
+msgstr "Fattura addebiti"
 
 msgid "Charging"
 msgstr "Addebitamento"
@@ -7197,7 +7218,7 @@ msgid "Check"
 msgstr "Verifica"
 
 msgid "Check a module to override the type on all its pages, or expand it to override one page."
-msgstr ""
+msgstr "Seleziona un modulo per sovrascrivere il tipo su tutte le sue pagine, oppure espandilo per sovrascrivere una sola pagina."
 
 msgid "Check before posting"
 msgstr "Verificare prima della registrazione"
@@ -8970,7 +8991,7 @@ msgid "Could not load the non-nettable storage units. Non-nettable markers may b
 msgstr "Impossibile caricare le unità di stoccaggio non nettabili. Alcuni indicatori potrebbero mancare."
 
 msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
-msgstr ""
+msgstr "Impossibile caricare l'anteprima dell'entrata merci. Riapri la finestra Completa per riprovare."
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Impossibile caricare ciò che è stato eseguito su {workCenterName}."
@@ -9197,6 +9218,9 @@ msgstr "Crea avviso di modifica"
 
 msgid "Create Contract"
 msgstr "Crea contratto"
+
+msgid "Create Draft Invoice"
+msgstr "Crea fattura in bozza"
 
 msgid "Create element"
 msgstr "Crea elemento"
@@ -9920,7 +9944,7 @@ msgid "Customers"
 msgstr "Clienti"
 
 msgid "Customers, suppliers, supplier parts and bank accounts set to {fromCode}. Otherwise they move to {toCode}."
-msgstr ""
+msgstr "Clienti, fornitori, componenti dei fornitori e conti bancari impostati su {fromCode}. Altrimenti passano a {toCode}."
 
 msgid "Customizations, training, and integrations"
 msgstr "Personalizzazioni, formazione e integrazioni"
@@ -11454,7 +11478,7 @@ msgid "Done when day-to-day runs without us in the room"
 msgstr "Fatto quando le operazioni quotidiane funzionano senza di noi in sala."
 
 msgid "Dots per inch. Custom templates print at 203 dpi; QR codes can print smaller at 300 and 600 dpi."
-msgstr ""
+msgstr "Punti per pollice. I modelli personalizzati stampano a 203 dpi; i codici QR possono stampare più piccoli a 300 e 600 dpi."
 
 msgid "Double-click to open this sub-assembly"
 msgstr "Fai doppio clic per aprire questo sottoassembly"
@@ -11497,7 +11521,7 @@ msgid "Download the template. Each row is a default account Carbon posts to. In 
 msgstr "Scarica il modello. Ogni riga è un conto predefinito su cui Carbon registra le transazioni. Nel campo Numero di conto, inserisci il numero del conto nel tuo piano dei conti che lo sostituisce. Carbon aggiorna il conto predefinito per farlo corrispondere."
 
 msgid "DPI"
-msgstr ""
+msgstr "DPI"
 
 msgid "Draft"
 msgstr "Bozza"
@@ -11521,7 +11545,7 @@ msgid "Draft Request"
 msgstr "Richiesta Bozza"
 
 msgid "Drafted on <0/>. Nothing is saved until then."
-msgstr ""
+msgstr "Creata in bozza il <0/>. Fino ad allora non viene salvato nulla."
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Redige una nota di credito per il tempo già fatturato dopo la data di fine."
@@ -11757,7 +11781,7 @@ msgid "e.g. the first 3 to 4 weeks"
 msgstr "ad es. le prime 3-4 settimane"
 
 msgid "e.g. Warehouse Supervisor"
-msgstr ""
+msgstr "es. Responsabile del deposito"
 
 msgid "e.g. Zebra 2x1"
 msgstr "ad es. Zebra 2x1"
@@ -11829,7 +11853,7 @@ msgid "Each line shows its item ID and revision."
 msgstr "Ogni riga mostra il suo ID articolo e la revisione."
 
 msgid "Each line starts as One-time. Set it to Recurring for a service billed every period."
-msgstr ""
+msgstr "Ogni riga parte come Una tantum. Impostala su Ricorrente per un servizio fatturato a ogni periodo."
 
 msgid "Each line takes the tax code and rate its item gets at the invoice's ship-to on the issue date. This overwrites a tax code you cleared on a line. Rental and contract lines keep theirs."
 msgstr "Ogni riga assume il codice imposta e l'aliquota che il suo articolo ottiene per il luogo di consegna della fattura alla data di emissione. Questo sovrascrive un codice imposta che hai rimosso da una riga. Le righe di noleggio e di contratto mantengono i propri."
@@ -12019,7 +12043,7 @@ msgid "Edit column visibility"
 msgstr "Modifica visibilità colonna"
 
 msgid "Edit company"
-msgstr ""
+msgstr "Modifica azienda"
 
 msgid "Edit Component Group"
 msgstr "Modifica gruppo componenti"
@@ -13093,7 +13117,7 @@ msgid "Every job of {name} is complete. Is it done?"
 msgstr "Ogni ordine di produzione di {name} è completo. È fatto?"
 
 msgid "Every level on every module, including modules added later. There is nothing to set."
-msgstr ""
+msgstr "Ogni livello su ogni modulo, inclusi i moduli aggiunti in seguito. Non c'è nulla da impostare."
 
 #. placeholder {0}: storageUnit.name
 msgid "Every line already comes from {0}"
@@ -13221,6 +13245,9 @@ msgstr "Escluso ({excludedCount})"
 
 msgid "Excluded from Missing Time"
 msgstr "Escluso dal tempo mancante"
+
+msgid "Excludes tax: the tax codes could not be read."
+msgstr "Esclude l'imposta: impossibile leggere i codici imposta."
 
 msgid "Executive P&L"
 msgstr "Conto economico direttivo"
@@ -14295,7 +14322,7 @@ msgid "Fixed Assets"
 msgstr "Cespiti"
 
 msgid "Fixed assets exist"
-msgstr ""
+msgstr "Esistono cespiti"
 
 msgid "Fixed cost amortization variance when batch size differs from standard"
 msgstr "Scostamento di ammortamento del costo fisso quando la dimensione del lotto differisce dallo standard"
@@ -14563,7 +14590,7 @@ msgid "Fulfillment Location"
 msgstr "Ubicazione di spedizione"
 
 msgid "Full access through the Admin type"
-msgstr ""
+msgstr "Accesso completo tramite il tipo Admin"
 
 msgid "Full name"
 msgstr "Nome completo"
@@ -14664,7 +14691,7 @@ msgstr "Guadagno/Perdita"
 
 #. placeholder {0}: actions.join(", ")
 msgid "Gained {0} when permissions became levels"
-msgstr ""
+msgstr "Acquisito {0} quando le autorizzazioni sono diventate livelli"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Guadagni riconosciuti sulla dismissione dei cespiti"
@@ -15202,7 +15229,7 @@ msgid "Hide lines"
 msgstr "Nascondi righe"
 
 msgid "Hide menu"
-msgstr ""
+msgstr "Nascondi menu"
 
 msgid "Hide monthly revenue"
 msgstr "Nascondi ricavi mensili"
@@ -15387,7 +15414,7 @@ msgid "How coverage is worked out"
 msgstr "Come viene calcolata la copertura"
 
 msgid "How each line earns its revenue over calendar months: spread by the day or evenly per month, from go-live or its start date."
-msgstr ""
+msgstr "Come ogni riga genera i suoi ricavi nei mesi di calendario: ripartiti per giorno o in modo uniforme per mese, dalla messa in servizio o dalla data di inizio."
 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Come il noleggio di ogni unità è diviso in periodi e quando in un periodo viene fatturato."
@@ -15729,7 +15756,7 @@ msgid "Imported: {counted} line(s) counted, {added} added, {removed} removed"
 msgstr "Importati: {counted} riga(e) conteggiata(e), {added} aggiunta(e), {removed} rimossa(e)"
 
 msgid "in"
-msgstr ""
+msgstr "in"
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -16336,6 +16363,9 @@ msgstr "Fattura {0}"
 msgid "Invoice {invoiceDate}"
 msgstr "Fattura {invoiceDate}"
 
+msgid "Invoice {readableId}"
+msgstr "Fattura {readableId}"
+
 msgid "Invoice {readableId} now?"
 msgstr "Fatturare {readableId} ora?"
 
@@ -16436,6 +16466,9 @@ msgstr "Ubicazione fornitore fatturazione"
 msgid "Invoice Supplier Location"
 msgstr "Ubicazione Fornitore Fattura"
 
+msgid "Invoice the next"
+msgstr "Fattura il prossimo"
+
 msgid "Invoice Total"
 msgstr "Totale Fattura"
 
@@ -16467,10 +16500,7 @@ msgid "Invoices and bills sync after you activate accounting"
 msgstr "Le fatture e i conti si sincronizzano dopo aver attivato la contabilità"
 
 msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
-msgstr ""
-
-msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
-msgstr "Le fatture vengono create automaticamente ogni giorno per quanto è dovuto. Utilizzare questa opzione per fatturare ciò che è dovuto immediatamente, ad esempio dopo l'aggiunta di una commissione. Le fatture quindi seguono l'impostazione di fatturazione di questo accordo."
+msgstr "Le fatture vengono create come bozze. Non vengono registrate né inviate via email finché non lo fai tu."
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "Le fatture vengono create automaticamente quando l'accordo è attivo."
@@ -16494,13 +16524,13 @@ msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "Le fatture vengono redatte, registrate e inviate tramite Stripe automaticamente."
 
 msgid "Invoices are posted and emailed to the contact as soon as they are created."
-msgstr ""
+msgstr "Le fatture vengono registrate e inviate via email al contatto non appena vengono create."
 
 msgid "Invoices are posted and sent through Stripe as soon as they are created."
-msgstr ""
+msgstr "Le fatture vengono registrate e inviate tramite Stripe non appena vengono create."
 
 msgid "Invoices are posted as soon as they are created. Nothing is emailed."
-msgstr ""
+msgstr "Le fatture vengono registrate non appena vengono create. Non viene inviata alcuna email."
 
 msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr "Le fatture vengono inviate al cliente Stripe già collegato al cliente di fatturazione."
@@ -17060,7 +17090,7 @@ msgid "Kept {kept} of {total}."
 msgstr "Mantenuti {kept} su {total}."
 
 msgid "Kept as entered and read in {toCode}:"
-msgstr ""
+msgstr "Mantenuti come inseriti e letti in {toCode}:"
 
 msgid "Key"
 msgstr "Chiave"
@@ -17474,6 +17504,10 @@ msgstr "Lascia vuoto, oppure inserisci 0, per mostrare tutto quello che l'MRP pi
 
 msgid "Leave this page"
 msgstr "Lascia questa pagina"
+
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "Lascia vuoto Valore per stampare il campo personalizzato “{0}”."
 
 msgid "Left item"
 msgstr "Elemento sinistro"
@@ -19914,6 +19948,9 @@ msgstr "Prossimi 7 giorni"
 msgid "Next billing event"
 msgstr "Prossimo evento di fatturazione"
 
+msgid "Next billing event total"
+msgstr "Totale del prossimo evento di fatturazione"
+
 msgid "Next Calibration"
 msgstr "Prossima Taratura"
 
@@ -19961,6 +19998,9 @@ msgstr "La prossima fattura {date} viene creata automaticamente, quindi registra
 
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "La prossima fattura {date} viene creata automaticamente, quindi registrata."
+
+msgid "Next invoice total"
+msgstr "Totale della prossima fattura"
 
 msgid "Next page"
 msgstr "Pagina successiva"
@@ -20137,6 +20177,9 @@ msgstr "Nessun articolo addebitabile ancora. Il lavoro addebitato all'elemento d
 msgid "No billing lines yet"
 msgstr "Nessuna riga di fatturazione ancora"
 
+msgid "No billing periods are left. Only what is due is drafted."
+msgstr "Non restano periodi di fatturazione. Vengono messi in bozza solo gli importi dovuti."
+
 msgid "No billing periods."
 msgstr "Nessun periodo di fatturazione."
 
@@ -20165,7 +20208,7 @@ msgid "No certification text is set for you. Ask an administrator to set it in S
 msgstr "Nessun testo di certificazione è impostato per te. Chiedi a un amministratore di impostarlo in Impostazioni → Tempo."
 
 msgid "No change"
-msgstr ""
+msgstr "Nessuna modifica"
 
 msgid "No change request"
 msgstr "Nessuna richiesta di modifica"
@@ -20389,7 +20432,7 @@ msgid "No end"
 msgstr "Nessuna fine"
 
 msgid "No end date: the value of the invoices planned so far. A new invoice is added every billing period."
-msgstr ""
+msgstr "Nessuna data di fine: il valore delle fatture pianificate finora. Una nuova fattura viene aggiunta a ogni periodo di fatturazione."
 
 msgid "No estimate lines"
 msgstr "Nessuna riga di preventivo"
@@ -21083,7 +21126,7 @@ msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Nessuna operazione non avviata e non raggruppata su questo processo in questa posizione."
 
 msgid "No upcoming invoice."
-msgstr ""
+msgstr "Nessuna fattura in arrivo."
 
 msgid "No value"
 msgstr "Nessun valore"
@@ -21150,7 +21193,7 @@ msgid "Nobody is qualified. Add someone to the process's ability."
 msgstr "Nessuno è qualificato. Aggiungi qualcuno alla competenza del processo."
 
 msgid "Nobody yet."
-msgstr ""
+msgstr "Ancora nessuno."
 
 msgid "Nom"
 msgstr "Nom"
@@ -21740,7 +21783,7 @@ msgid "One line per CLIN. Time & Materials and Cost Plus lines bill from project
 msgstr "Una riga per CLIN. Le righe Time & Materials e Cost Plus fatturano dal costo del progetto; una riga prezzo fisso fattura il suo prezzo. Fai clic su una cella per modificarla."
 
 msgid "One of None, View, Create, Edit or Full on a module; each level includes the ones before it, and Full adds deleting records."
-msgstr ""
+msgstr "Uno tra Nessuno, Visualizza, Crea, Modifica o Completo su un modulo; ogni livello include quelli precedenti, e Completo aggiunge la possibilità di eliminare i record."
 
 msgid "One of your {appName} accounts needs to be reconnected before workflow steps can use it."
 msgstr "Uno dei tuoi account {appName} deve essere ricollegato prima che i passaggi del flusso di lavoro possano utilizzarlo."
@@ -21757,17 +21800,32 @@ msgstr "Un pagamento per ogni anno del termine."
 msgid "One payment for every three months."
 msgstr "Un pagamento ogni tre mesi."
 
+msgid "One period is 28 days."
+msgstr "Un periodo dura 28 giorni."
+
+msgid "One period is a calendar month; the first and last can be part months."
+msgstr "Un periodo è un mese di calendario; il primo e l'ultimo possono essere mesi parziali."
+
+msgid "One period is a month from the start date (the {startDay, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} to the {endDay, selectordinal, one {#st} two {#nd} few {#rd} other {#th}})."
+msgstr "Un periodo è un mese a partire dalla data di inizio (dal {startDay, selectordinal, one {#º} two {#º} few {#º} other {#º}} al {endDay, selectordinal, one {#º} two {#º} few {#º} other {#º}})."
+
+msgid "One period is a month from the start date (the 1st to the end of the month)."
+msgstr "Un periodo è un mese a partire dalla data di inizio (dal 1º alla fine del mese)."
+
+msgid "One period is a month from the start date."
+msgstr "Un periodo è un mese a partire dalla data di inizio."
+
 msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 msgstr "Un'aliquota all'interno di un codice di imposta, come un'aliquota statale o municipale, con la propria autorità tributaria, percentuale recuperabile e date di validità."
 
 msgid "One row per calendar month, one column per line. A month the contract starts or ends part-way through gets part of the revenue. This is for your accounts only: invoices still bill the full amount of each billing period."
-msgstr ""
+msgstr "Una riga per mese di calendario, una colonna per riga. Un mese in cui il contratto inizia o finisce a metà riceve solo una parte dei ricavi. Serve solo alla tua contabilità: le fatture continuano ad addebitare l'intero importo di ogni periodo di fatturazione."
 
 msgid "One row per characteristic"
 msgstr "Una riga per caratteristica"
 
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one. With no end date, these are the invoices planned so far; a new one is added every billing period."
-msgstr ""
+msgstr "Una riga per fattura, una colonna per riga. Modifica una data o un importo, aggiungi una fattura o eliminane una. Senza data di fine, queste sono le fatture pianificate finora; una nuova viene aggiunta a ogni periodo di fatturazione."
 
 msgid "One row per part"
 msgstr "Una riga per componente"
@@ -23159,6 +23217,9 @@ msgstr "Periodo sbloccato"
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Spesa di ammortamento periodico per i cespiti"
 
+msgid "Periods to invoice"
+msgstr "Periodi da fatturare"
+
 msgid "Periods up to this date were invoiced in your previous system"
 msgstr "I periodi fino a questa data sono stati fatturati nel tuo sistema precedente"
 
@@ -23169,7 +23230,7 @@ msgid "Permission groups for granting access in bulk"
 msgstr "Gruppi di autorizzazione per concedere accesso in blocco"
 
 msgid "Permissions"
-msgstr ""
+msgstr "Autorizzazioni"
 
 msgid "Person"
 msgstr "Persona"
@@ -23775,7 +23836,7 @@ msgid "Preview failed: {error}"
 msgstr "Anteprima non riuscita: {error}"
 
 msgid "Preview PDF"
-msgstr ""
+msgstr "Anteprima PDF"
 
 msgid "Preview Quantity"
 msgstr "Quantità Anteprima"
@@ -23963,7 +24024,7 @@ msgid "Prints as"
 msgstr "Stampa come"
 
 msgid "Prints each document's own notes. The preview shows sample notes. Edit them on the document itself."
-msgstr ""
+msgstr "Stampa le note di ciascun documento. L'anteprima mostra note di esempio. Modificale nel documento stesso."
 
 msgid "Priorities"
 msgstr "Priorità"
@@ -24897,7 +24958,7 @@ msgid "Quotes, orders, invoices and RFQs"
 msgstr "Offerte, ordini, fatture e RdO"
 
 msgid "Quotes, orders, invoices or other documents exist"
-msgstr ""
+msgstr "Esistono offerte, ordini, fatture o altri documenti"
 
 msgid "Quoting"
 msgstr "Preventivi"
@@ -25584,7 +25645,7 @@ msgid "Rejected"
 msgstr "Rifiutato"
 
 msgid "Rejected at inspection"
-msgstr ""
+msgstr "Rifiutato al controllo"
 
 msgid "Rejected at Inspection"
 msgstr "Rifiutato al controllo"
@@ -25921,7 +25982,7 @@ msgid "Rent"
 msgstr "Noleggio"
 
 msgid "Rent invoice"
-msgstr ""
+msgstr "Fattura di noleggio"
 
 msgid "Rental"
 msgstr "Noleggio"
@@ -26369,7 +26430,7 @@ msgid "Reset"
 msgstr "Ripristina"
 
 msgid "Reset all overrides"
-msgstr ""
+msgstr "Ripristina tutte le forzature"
 
 msgid "Reset PIN"
 msgstr "Ripristina PIN"
@@ -26715,7 +26776,7 @@ msgid "Revenue invoiced before it is earned, held as a liability and released to
 msgstr "Ricavi Fatturati prima di essere guadagnati, trattenuti come passività e rilasciati ai Ricavi dal run di riconoscimento al passare del periodo di servizio."
 
 msgid "Revenue is counted per calendar month, so a month the contract starts or ends part-way through gets part of it. Invoices still bill the full amount of each billing period."
-msgstr ""
+msgstr "I ricavi sono conteggiati per mese di calendario, quindi un mese in cui il contratto inizia o finisce a metà ne riceve una parte. Le fatture continuano ad addebitare l'intero importo di ogni periodo di fatturazione."
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "I ricavi vengono visualizzati in anteprima una volta che il contratto ha righe."
@@ -26971,7 +27032,7 @@ msgid "Role"
 msgstr "Ruolo"
 
 msgid "Role default"
-msgstr ""
+msgstr "Predefinito del ruolo"
 
 msgid "Role:"
 msgstr "Ruolo:"
@@ -27995,7 +28056,7 @@ msgstr "Seleziona tutto"
 
 #. placeholder {0}: module.row.label
 msgid "Select all in {0}"
-msgstr ""
+msgstr "Seleziona tutto in {0}"
 
 msgid "Select all jobs"
 msgstr "Seleziona tutti gli ordini di produzione"
@@ -28298,6 +28359,9 @@ msgstr "Invia a Carbon"
 msgid "Send Via"
 msgstr "Invia tramite"
 
+msgid "Send via email"
+msgstr "Invia via email"
+
 msgid "Sender Email"
 msgstr "Email del mittente"
 
@@ -28560,10 +28624,10 @@ msgstr "Imposta data di scadenza"
 #. placeholder {0}: module.row.label
 #. placeholder {1}: stepLabel(step)
 msgid "Set every page of {0} to {1}"
-msgstr ""
+msgstr "Imposta ogni pagina di {0} su {1}"
 
 msgid "Set module-level access, then expand a module to fine-tune each of its pages. A change reaches everyone with this type on their next request."
-msgstr ""
+msgstr "Imposta l'accesso a livello di modulo, poi espandi un modulo per regolare ogni sua pagina. Una modifica si applica a tutti quelli con questo tipo alla loro richiesta successiva."
 
 msgid "Set on a posting account: Allowable, or Expressly, Mutually Agreed or Directly Associated Unallowable. Cost posted to an unallowable account or element is marked unallowable in the project ledger and never becomes a billable item."
 msgstr "Impostato su un conto di registrazione: Ammissibile, oppure Espressamente, Mutuamente Concordato o Direttamente Associato Non Ammissibile. Il costo registrato su un conto o elemento non ammissibile è contrassegnato come non ammissibile nel libro mastro del progetto e non diventa mai una voce fatturabile."
@@ -29105,7 +29169,7 @@ msgid "Show lines"
 msgstr "Mostra righe"
 
 msgid "Show menu"
-msgstr ""
+msgstr "Mostra menu"
 
 msgid "Show monthly revenue"
 msgstr "Mostra ricavi mensili"
@@ -29153,10 +29217,10 @@ msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Visualizzazione {0} di {totalFiltered} — perfeziona la ricerca"
 
 msgid "Showing {shown} of {total}"
-msgstr ""
+msgstr "Mostrando {shown} di {total}"
 
 msgid "Showing {shown} of {total}, through {last}"
-msgstr ""
+msgstr "Mostrando {shown} di {total}, fino a {last}"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Visualizzazione in {parentCurrency}"
@@ -29829,7 +29893,7 @@ msgid "Stock Availability"
 msgstr "Disponibilità di Giacenza"
 
 msgid "Stock has been received, moved or used"
-msgstr ""
+msgstr "La giacenza è stata ricevuta, spostata o utilizzata"
 
 msgid "Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again."
 msgstr "La giacenza in questa unità di stoccaggio non è copertura. MRP e le schermate di pianificazione non la contano, e il prelievo non la usa. Un'unità è non nettabile anche quando lo è la sua unità superiore o uno dei suoi tipi di archiviazione. Da usare per aree di quarantena e blocco. Un trasferimento giacenza la sposta di nuovo fuori."
@@ -30638,7 +30702,7 @@ msgid "Switch users over and confirm access"
 msgstr "Trasferisci gli utenti e conferma l'accesso"
 
 msgid "Switching the type changes the levels this person inherits on every module; their personal overrides stay."
-msgstr ""
+msgstr "Cambiare il tipo modifica i livelli che questa persona eredita su ogni modulo; le sue forzature personali restano."
 
 msgid "Sync"
 msgstr "Sincronizza"
@@ -30747,7 +30811,7 @@ msgstr "Destinazione"
 
 #. placeholder {0}: numberFormatter.format(effectiveTarget)
 msgid "Target ({0})"
-msgstr ""
+msgstr "Obiettivo ({0})"
 
 msgid "Target an item group."
 msgstr "Seleziona un gruppo di articoli."
@@ -31274,10 +31338,10 @@ msgid "The backward-computed date an operation must finish by to keep its job on
 msgstr "La data calcolata a ritroso che un'operazione deve terminare entro per mantenere il suo ordine di produzione in orario, scritta nella data di scadenza dell'operazione. Un obiettivo stabile per misurare i progressi — mai un vincolo sul posizionamento."
 
 msgid "The base currency can't change because:"
-msgstr ""
+msgstr "La valuta base non può cambiare perché:"
 
 msgid "The base currency couldn't be loaded. Saving keeps it as it is."
-msgstr ""
+msgstr "Impossibile caricare la valuta base. Salvando, resta com'è."
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "Il lotto di produzione va all'officina. I suoi ordini di produzione sono già rilasciati."
@@ -31520,6 +31584,9 @@ msgstr "La data di passaggio è valida"
 
 msgid "The cutover date must be the first day of a period."
 msgstr "La data di cutover deve essere il primo giorno di un periodo."
+
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "L'esecuzione giornaliera fattura solo le unità trattate come vendita. Usa Fattura per fatturare manualmente gli altri periodi."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "La soglia tratteggiata al di sotto della quale non si desidera che l'inventario scenda."
@@ -31803,6 +31870,9 @@ msgstr "La fattura per questo pagamento è redatta in questa data"
 msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
 msgstr "La fattura è registrata, quindi la modifica viene registrata anche sul conto di arrotondamento e sui debiti verso fornitori alla data di registrazione della fattura."
 
+msgid "The invoice stays a draft. Nothing is posted or emailed."
+msgstr "La fattura resta in bozza. Non viene registrata né inviata via email."
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "La classe di periodo di recupero IRS per questo bene secondo MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 anni)."
 
@@ -31899,7 +31969,7 @@ msgid "The leased asset becomes a fixed asset that depreciates from the exercise
 msgstr "Il bene in leasing diventa un cespite che si ammortizza dalla data di esercizio. I pagamenti dovuti in seguito sono rimossi. Gli altri cespiti del leasing rimangono invariati."
 
 msgid "The ledger has entries"
-msgstr ""
+msgstr "Il libro mastro contiene registrazioni"
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "L'entità legale da fatturare, quando diversa dal cliente che riceve le merci - per i servizi di fatturazione genitore/sussidiaria o terza parte."
@@ -31914,7 +31984,7 @@ msgid "The lessor's asset on a sales-type lease: the present value of the lease 
 msgstr "L'asset del locatore in una locazione-venditrice: il valore attuale dei canoni di locazione e del residuo non garantito, accresciuto ogni mese dagli interessi di locazione e ridotto da ogni canone di locazione e fattura di opzione di acquisto."
 
 msgid "The level this employee type gives on each module; everyone with the type has it, except where a personal override replaces it, and a change applies to them on their next request."
-msgstr ""
+msgstr "Il livello che questo tipo di dipendente assegna su ogni modulo; tutti quelli con il tipo lo hanno, tranne dove una forzatura personale lo sostituisce, e una modifica si applica a loro alla richiesta successiva."
 
 msgid "The lifecycle stages you track customers through"
 msgstr "Le fasi del ciclo di vita che traccia per i clienti"
@@ -32326,6 +32396,9 @@ msgstr "Il record a cui una notifica del flusso di lavoro punta, denominato come
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "Il record che applica un pagamento o una nota a una fattura, portando gli importi applicati, di sconto e di stralcio."
 
+msgid "The record's value"
+msgstr "Il valore del record"
+
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "La genealogia registrata delle entità monitorate - quali input sono stati consumati per produrre quali output, dalla ricezione alla spedizione."
 
@@ -32370,7 +32443,7 @@ msgid "The right-of-use asset and the lease liability are on the balance sheet, 
 msgstr "L'attività di diritto di utilizzo e la passività di leasing sono nello stato patrimoniale e un costo di leasing a quote costanti è registrato ogni mese."
 
 msgid "The role this employee gets their access levels from; a later edit of the type reaches them too."
-msgstr ""
+msgstr "Il ruolo da cui questo dipendente ottiene i livelli di accesso; una modifica successiva del tipo raggiunge anche questo dipendente."
 
 msgid "The sales order could not be read, so it was not checked against this invoice."
 msgstr "Non è stato possibile leggere l'ordine di vendita, quindi non è stato verificato rispetto a questa fattura."
@@ -32586,7 +32659,7 @@ msgid "The traveler lists each routing operation with its expected times and sca
 msgstr "Il cartellino di produzione elenca ogni operazione del ciclo di lavorazione con i tempi previsti e i codici a barre da scansionare."
 
 msgid "The type sets this person's access, and changes to it reach them too."
-msgstr ""
+msgstr "Il tipo determina l'accesso di questa persona, e le modifiche al tipo si applicano anche a lei."
 
 msgid "The typical number of days between sending work to this supplier for this process and getting it back; planning offsets demand by this much when picking a supplier."
 msgstr "Il numero tipico di giorni tra l'invio del lavoro a questo fornitore per questo processo e il ritorno; la pianificazione anticipa il fabbisogno di questo importo quando si seleziona un fornitore."
@@ -32892,6 +32965,9 @@ msgstr "Questo costo è stato registrato a {lineAccount}, non al {jobAccount} de
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Questa controparte non ha nulla in sospeso — il pagamento verrà registrato come credito in conto."
+
+msgid "This custom field no longer exists. Remove the block."
+msgstr "Questo campo personalizzato non esiste più. Rimuovi il blocco."
 
 msgid "This customer has no assets"
 msgstr "Questo cliente non ha asset"
@@ -33281,6 +33357,9 @@ msgstr "Questo creerà una bozza di esecuzione del riconoscimento dei ricavi per
 #. placeholder {0}: formatDate(run.periodEnd)
 msgid "This will create a new draft depreciation run for the same period ({0}), including only active assets not already covered by an existing run."
 msgstr "Questa operazione creerà una nuova esecuzione dell'ammortamento in bozza per lo stesso periodo ({0}), includendo solo i cespiti attivi non già coperti da un'esecuzione esistente."
+
+msgid "This will email the sales order to {name}."
+msgstr "Questo invierà via email l'ordine di vendita a {name}."
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Questo renderà questa versione di sola lettura e sostituirà tutti i metodi di produzione dei materiali con questa versione."
@@ -34960,6 +35039,10 @@ msgstr "Valore (vuoto utilizza il valore calcolato)"
 msgid "Value {0}"
 msgstr "Valore {0}"
 
+#. placeholder {0}: field.name
+msgid "Value comes from the “{0}” custom field."
+msgstr "Il valore proviene dal campo personalizzato “{0}”."
+
 msgid "Value of events completed earlier"
 msgstr "Valore degli eventi completati in precedenza"
 
@@ -35661,6 +35744,9 @@ msgstr "Ciò che è stato effettivamente prelevato al bordo linea per questo mat
 msgid "What is {translatedTerm}?"
 msgstr "Cos'è {translatedTerm}?"
 
+msgid "What is a period?"
+msgstr "Che cos'è un periodo?"
+
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Quale bene è in leasing, ad esempio Carrello elevatore FL-12"
 
@@ -36058,7 +36144,7 @@ msgid "While this dispatch is open, the work center is unavailable to the schedu
 msgstr "Mentre questo dispatch è aperto, il centro di lavoro non è disponibile per la pianificazione (fino all'ora di fine pianificata, o fino al completamento del dispatch)."
 
 msgid "Who"
-msgstr ""
+msgstr "Chi"
 
 msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
 msgstr "Chi sostiene il costo dell'ordine di servizio: il lavoro Fatturabile e il lavoro su Contratto si registrano su Costo del Servizio (altrimenti Costo del venduto), il lavoro di Garanzia su Spesa di Garanzia. Solo un ordine Fatturabile viene fatturato."
@@ -36435,7 +36521,9 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr ""
+msgstr "Hai completato {leftoverQuantity} {0} in più\n"
+"                        rispetto alla quantità ordinata di {jobQuantity}. Cosa vuoi fare\n"
+"                        dei componenti extra?"
 
 msgid "You do not have permission to do this"
 msgstr "Non hai l'autorizzazione per farlo"

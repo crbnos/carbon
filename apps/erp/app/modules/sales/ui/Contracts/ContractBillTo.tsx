@@ -23,11 +23,11 @@ import {
 } from "~/components/Form";
 import { SetupSection, TermForm } from "~/components/Setup";
 import { useDateFormatter, usePermissions, useSettings } from "~/hooks";
+import { inheritableInvoiceAutomations } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 import {
   contractBillingFrequencies,
-  type contractBillingTimings,
-  invoiceAutomations
+  type contractBillingTimings
 } from "../../sales.models";
 import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import type { Contract } from "./types";
@@ -447,7 +447,7 @@ const ContractInvoiceAutomation = ({
             value: COMPANY_DEFAULT,
             label: t`Company default (${companyLabel})`
           },
-          ...invoiceAutomations.map((mode) => ({
+          ...inheritableInvoiceAutomations.map((mode) => ({
             value: mode,
             label: labels.invoiceAutomation[mode]
           }))
