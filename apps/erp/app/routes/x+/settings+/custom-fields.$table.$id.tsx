@@ -51,7 +51,8 @@ export async function action(args: ActionFunctionArgs) {
     id,
     name,
     listOptions,
-    tags,
+    // The form posts no tags once the last one is removed.
+    tags: tags ?? [],
     required
   });
   return respond(args.request, result).redirect(

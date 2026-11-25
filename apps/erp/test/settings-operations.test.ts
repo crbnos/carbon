@@ -1075,17 +1075,6 @@ describe("custom field definitions and serial sequences", () => {
     return { ctx, reads, writes };
   }
 
-  // PostgREST's answer to `.single()` when the write matched no row.
-  const noRow = {
-    status: 406,
-    body: {
-      code: "PGRST116",
-      details: "The result contains 0 rows",
-      hint: null,
-      message: "JSON object requested, multiple (or no) rows returned"
-    }
-  };
-
   const sequence = {
     itemId: "item-1",
     prefix: "SN",
@@ -1127,7 +1116,7 @@ describe("custom field definitions and serial sequences", () => {
   });
 
   it("updates a serial sequence only on its own item", async () => {
-    const { ctx, writes } = postgrest(() => noRow);
+    const { ctx, writes } = postgrest(() => ({ body: [] }));
 
     const result = await updateItemSerialSequence(ctx, {
       ...sequence,
@@ -1140,6 +1129,17 @@ describe("custom field definitions and serial sequences", () => {
     expect(update?.url.searchParams.get("id")).toBe("eq.seq-1");
     expect(update?.url.searchParams.get("companyId")).toBe("eq.company-1");
     expect(update?.url.searchParams.get("itemId")).toBe("eq.item-2");
+  });
+
+  it("answers the serial sequence's id when it is on its item", async () => {
+    const { ctx } = postgrest(() => ({ body: [{ id: "seq-1" }] }));
+
+    const result = await updateItemSerialSequence(ctx, {
+      ...sequence,
+      id: "seq-1"
+    });
+
+    expect(result).toEqual({ data: { id: "seq-1" }, error: null });
   });
 
   it("deletes a custom field only in this company, and refuses one it did not delete", async () => {
@@ -1208,6 +1208,35 @@ describe("custom field definitions and serial sequences", () => {
     expect(writes().map((write) => write.body)).toEqual([
       { name: "Hue", updatedBy: "user-1" },
       { listOptions: ["Red", "Blue"], updatedBy: "user-1" }
+    ]);
+  });
+
+  // The edit form posts no tags once the last one is removed; its route sends
+  // that as an empty list.
+  it("clears a custom field's tags sent as an empty list, and keeps them when not sent", async () => {
+    const { ctx, writes } = postgrest((method) =>
+      method === "GET"
+        ? {
+            body: {
+              name: "Color",
+              table: "part",
+              dataTypeId: DataType.Text,
+              listOptions: null,
+              tags: ["paint"],
+              required: false
+            }
+          }
+        : { body: [{ id: "field-1" }] }
+    );
+
+    const cleared = await updateCustomField(ctx, { id: "field-1", tags: [] });
+    const renamed = await updateCustomField(ctx, { id: "field-1", name: "Hue" });
+
+    expect(cleared.error).toBeNull();
+    expect(renamed.error).toBeNull();
+    expect(writes().map((write) => write.body)).toEqual([
+      { tags: [], updatedBy: "user-1" },
+      { name: "Hue", updatedBy: "user-1" }
     ]);
   });
 

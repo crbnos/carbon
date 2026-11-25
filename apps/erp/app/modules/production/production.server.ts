@@ -61,8 +61,7 @@ import {
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
-  isActiveCompanyEmployee,
-  refuseUnlessOwned
+  isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
 import { decodeCursor } from "~/utils/cursor";
 import {
@@ -82,7 +81,6 @@ import {
   copyPeopleBoardValidator,
   copyPeopleWeekValidator,
   deadlineTypes,
-  demandProjectionRows,
   getAssemblyModelState,
   getDueDateForColumn,
   invalidOrderDateMessage,
@@ -6801,17 +6799,9 @@ export const createDemandProjections = defineServiceFn({
   input: demandProjectionInput,
   permission: { "production.demandForecasts": "Create" },
   async run(ctx, input) {
-    const refused =
-      (await refuseUnlessOwned(ctx, "item", { id: input.itemId })) ??
-      (await refuseUnlessOwned(ctx, "location", { id: input.locationId }));
-    if (refused) return refused;
-    const planned = demandProjectionRows(
-      await service.demandProjectionFormWeeks(ctx, input.locationId),
-      input,
-      { companyId: ctx.company.id, userId: ctx.auditUserId }
-    );
-    if ("refusal" in planned) return ctx.error("validation", planned.refusal);
-    const positive = planned.rows.filter((row) => row.forecastQuantity > 0);
+    const rows = await service.planDemandProjections(ctx, input);
+    if (rows instanceof CarbonError) return rows;
+    const positive = rows.filter((row) => row.forecastQuantity > 0);
     if (positive.length === 0) {
       return ctx.error("validation", "No forecast quantities provided");
     }
@@ -6840,17 +6830,9 @@ export const updateDemandProjections = defineServiceFn({
   input: demandProjectionInput,
   permission: { "production.demandForecasts": "Edit" },
   async run(ctx, input) {
-    const refused =
-      (await refuseUnlessOwned(ctx, "item", { id: input.itemId })) ??
-      (await refuseUnlessOwned(ctx, "location", { id: input.locationId }));
-    if (refused) return refused;
-    const planned = demandProjectionRows(
-      await service.demandProjectionFormWeeks(ctx, input.locationId),
-      input,
-      { companyId: ctx.company.id, userId: ctx.auditUserId }
-    );
-    if ("refusal" in planned) return ctx.error("validation", planned.refusal);
-    return service.writeDemandProjections(ctx, input, planned.rows);
+    const rows = await service.planDemandProjections(ctx, input);
+    if (rows instanceof CarbonError) return rows;
+    return service.writeDemandProjections(ctx, input, rows);
   }
 });
 
@@ -6874,27 +6856,13 @@ export const deleteDemandProjections = defineServiceFn({
   }),
   permission: { "production.demandForecasts": "Full" },
   async run(ctx, input) {
-    const refused =
-      (await refuseUnlessOwned(ctx, "item", { id: input.itemId })) ??
-      (await refuseUnlessOwned(ctx, "location", { id: input.locationId }));
+    const refused = await service.refuseUnlessItemAndLocationOwned(ctx, input);
     if (refused) return refused;
     const formWeeks = await service.demandProjectionFormWeeks(
       ctx,
       input.locationId
     );
-    const planned = demandProjectionRows(
-      formWeeks,
-      {
-        ...input,
-        weeks: formWeeks.map((week) => ({
-          weekStart: week.startDate,
-          quantity: 0
-        }))
-      },
-      { companyId: ctx.company.id, userId: ctx.auditUserId }
-    );
-    if ("refusal" in planned) return ctx.error("validation", planned.refusal);
-    return service.writeDemandProjections(ctx, input, planned.rows);
+    return service.clearDemandProjections(ctx, input, formWeeks);
   }
 });
 
@@ -8115,13 +8083,15 @@ export const updateJobBatchNumber = defineServiceFn({
         value: input.value?.trim() || null
       }
     );
-    if (result.locked) return ctx.error("rule", JOB_LOCKED_MESSAGE);
-    const updated = unwrap(ctx, result);
-    if (updated instanceof CarbonError) return updated;
-    const unit = updated?.[0];
-    if (!unit)
-      return ctx.error("notFound", "The unit is not one of this job's");
-    return unit;
+    if ("error" in result) return unwrap(ctx, result);
+    switch (result.status) {
+      case "locked":
+        return ctx.error("rule", JOB_LOCKED_MESSAGE);
+      case "notUnit":
+        return ctx.error("notFound", "The unit is not one of this job's");
+      case "renamed":
+        return result.unit;
+    }
   }
 });
 

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { DataType } from "~/modules/shared/types";
 import {
   type CustomFieldType,
-  refusedCustomFieldKeys
+  classifyCustomFieldKeys
 } from "./settings.service";
 
 const field = (dataTypeId: DataType, listOptions: string[] | null = null) => ({
@@ -15,19 +15,29 @@ const field = (dataTypeId: DataType, listOptions: string[] | null = null) => ({
   listOptions
 });
 
+// The keys a save refuses, whether as not a field or as a value its field
+// never takes.
+const refused = (
+  sent: Record<string, unknown>,
+  fields: CustomFieldType[],
+  stored: (Record<string, unknown> | null)[]
+) => {
+  const { notFields, badValues } = classifyCustomFieldKeys(
+    sent,
+    fields,
+    stored
+  );
+  return [...notFields, ...badValues];
+};
+
 // No record read: a refused key is refused outright.
 const refusedFor = (
   dataTypeId: DataType,
   value: unknown,
   listOptions: string[] | null = null
-) =>
-  refusedCustomFieldKeys(
-    { field: value },
-    [field(dataTypeId, listOptions)],
-    []
-  );
+) => refused({ field: value }, [field(dataTypeId, listOptions)], []);
 
-describe("refusedCustomFieldKeys", () => {
+describe("classifyCustomFieldKeys", () => {
   // Each value is one the properties panel's input for that type sends.
   it.each([
     [DataType.Boolean, "on"],
@@ -75,14 +85,14 @@ describe("refusedCustomFieldKeys", () => {
     expect(refusedFor(DataType.List, "Green", options)).toEqual(["field"]);
   });
 
-  it("refuses a key that is not one of the table's fields", () => {
+  it("refuses a key that is not one of the table's fields, and writes the others", () => {
     expect(
-      refusedCustomFieldKeys(
+      classifyCustomFieldKeys(
         { field: "Red", other: "x" },
         [field(DataType.Text)],
         []
       )
-    ).toEqual(["other"]);
+    ).toEqual({ write: { field: "Red" }, notFields: ["other"], badValues: [] });
   });
 
   // The panel posts the whole stored map back with one value changed.
@@ -90,17 +100,17 @@ describe("refusedCustomFieldKeys", () => {
     const fields: CustomFieldType[] = [field(DataType.Boolean)];
     const sent = { field: true, retired: { kept: 1 } };
     expect(
-      refusedCustomFieldKeys(sent, fields, [
+      classifyCustomFieldKeys(sent, fields, [
         { field: true, retired: { kept: 1 } },
         { field: true, retired: { kept: 1 } }
       ])
-    ).toEqual([]);
+    ).toEqual({ write: {}, notFields: [], badValues: [] });
   });
 
   // A JSONB read returns object members in its own order.
   it("keeps a held object sent with its members in another order", () => {
     expect(
-      refusedCustomFieldKeys(
+      refused(
         { retired: { b: 2, a: 1 } },
         [field(DataType.Boolean)],
         [{ retired: { a: 1, b: 2 } }]
@@ -110,7 +120,7 @@ describe("refusedCustomFieldKeys", () => {
 
   it("refuses a held array sent with its items in another order", () => {
     expect(
-      refusedCustomFieldKeys(
+      refused(
         { retired: [2, 1] },
         [field(DataType.Boolean)],
         [{ retired: [1, 2] }]
@@ -120,7 +130,7 @@ describe("refusedCustomFieldKeys", () => {
 
   it("refuses a value one record does not hold", () => {
     expect(
-      refusedCustomFieldKeys(
+      refused(
         { field: true },
         [field(DataType.Boolean)],
         [{ field: true }, { field: "on" }]

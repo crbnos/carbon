@@ -103,7 +103,10 @@ import {
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { upsertDemandProjections } from "@carbon/ee/forecast.server";
+import {
+  deleteDemandProjections,
+  upsertDemandProjections
+} from "@carbon/ee/forecast.server";
 import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
@@ -205,6 +208,7 @@ import {
   getLocationTimeZone,
   getOrCreatePeriods,
   getStorageUnitId,
+  refuseUnlessOwned,
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
@@ -250,6 +254,7 @@ import {
   type cameraSchema,
   type DemandProjectionRow,
   type deadlineTypes,
+  demandProjectionRows,
   type fastenerSchema,
   getAssemblyModelState,
   isJobLocked,
@@ -3521,23 +3526,28 @@ export async function runMRP(
  * sub-assembly's (`attributes ->> Job Make Method` names one of the job's make
  * methods). The caller passes the service role, so the job and the company are
  * the write's only scope. `locked` when the job is Completed, Closed or
- * Cancelled, and no row back means the unit is not the job's.
+ * Cancelled; `notUnit` when the job is not the company's or the unit is not
+ * the job's.
  */
 export async function updateJobBatchNumber(
   client: SupabaseClient<Database>,
   companyId: string,
   unit: { jobId: string; trackedEntityId: string; value: string | null }
-) {
+): Promise<
+  | { status: "locked" }
+  | { status: "notUnit" }
+  | { status: "renamed"; unit: { id: string; readableId: string | null } }
+  | { error: PostgrestError }
+> {
   const job = await client
     .from("job")
     .select("status, jobMakeMethod(id)")
     .eq("id", unit.jobId)
     .eq("companyId", companyId)
     .maybeSingle();
-  if (job.error) return { data: null, error: job.error, locked: false };
-  if (job.data && isJobLocked(job.data.status)) {
-    return { data: null, error: null, locked: true };
-  }
+  if (job.error) return { error: job.error };
+  if (!job.data) return { status: "notUnit" };
+  if (isJobLocked(job.data.status)) return { status: "locked" };
   const renamed = await client
     .from("trackedEntity")
     .update({ readableId: unit.value })
@@ -3545,10 +3555,13 @@ export async function updateJobBatchNumber(
     .eq("companyId", companyId)
     .in(
       "attributes->>Job Make Method",
-      (job.data?.jobMakeMethod ?? []).map((makeMethod) => makeMethod.id)
+      job.data.jobMakeMethod.map((makeMethod) => makeMethod.id)
     )
     .select("id, readableId");
-  return { data: renamed.data, error: renamed.error, locked: false };
+  if (renamed.error) return { error: renamed.error };
+  const [renamedUnit] = renamed.data;
+  if (!renamedUnit) return { status: "notUnit" };
+  return { status: "renamed", unit: renamedUnit };
 }
 
 export type JobReleaseReadiness = {
@@ -29521,34 +29534,107 @@ export async function getDemandProjectionWeeks(
   input: { itemId: string; locationId: string; periodIds?: string[] }
 ) {
   const client = ctx.asCaller.supabase;
-  let weeks: { id: string; startDate: string }[];
-  if (input.periodIds) {
-    const periods = await client
-      .from("period")
-      .select("id, startDate")
-      .in("id", input.periodIds);
-    if (periods.error) return { data: null, error: periods.error };
-    weeks = periods.data;
-  } else {
-    weeks = await demandProjectionFormWeeks(ctx, input.locationId);
-  }
-  const weekStartById = new Map(weeks.map((week) => [week.id, week.startDate]));
+  const weeks = input.periodIds
+    ? await client
+        .from("period")
+        .select("id, startDate")
+        .in("id", input.periodIds)
+    : {
+        data: await demandProjectionFormWeeks(ctx, input.locationId),
+        error: null
+      };
+  if (weeks.error) return { data: null, error: weeks.error };
+  // Every projection read is of one of these weeks: the read takes their ids.
+  const weekStartById: Record<string, string> = Object.fromEntries(
+    weeks.data.map((week) => [week.id, week.startDate])
+  );
   const projections = await getDemandProjections(client, {
     itemId: input.itemId,
     locationId: input.locationId,
     companyId: ctx.company.id,
-    periodIds: [...weekStartById.keys()]
+    periodIds: weeks.data.map((week) => week.id)
   });
   if (projections.error) return { data: null, error: projections.error };
   return {
     data: projections.data
-      .map((row) => ({
-        ...row,
-        weekStart: weekStartById.get(row.periodId) ?? null
-      }))
-      .sort((a, b) => (a.weekStart ?? "").localeCompare(b.weekStart ?? "")),
+      .map((row) => ({ ...row, weekStart: weekStartById[row.periodId] }))
+      .sort((a, b) => a.weekStart.localeCompare(b.weekStart)),
     error: null
   };
+}
+
+/** A refusal unless the item and the location are both the company's. */
+export async function refuseUnlessItemAndLocationOwned(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string }
+) {
+  const itemRefused = await refuseUnlessOwned(ctx, "item", {
+    id: input.itemId
+  });
+  if (itemRefused) return itemRefused;
+  return refuseUnlessOwned(ctx, "location", { id: input.locationId });
+}
+
+/**
+ * The demand projection rows a create or update writes, or its refusal: the
+ * item and the location must be the company's, and each week one the forms
+ * show (`demandProjectionRows`).
+ */
+export async function planDemandProjections(
+  ctx: ServiceContext,
+  input: {
+    itemId: string;
+    locationId: string;
+    weeks: { weekStart: string; quantity: number }[];
+  }
+): Promise<DemandProjectionRow[] | CarbonError> {
+  const refused = await refuseUnlessItemAndLocationOwned(ctx, input);
+  if (refused) return refused;
+  const planned = demandProjectionRows(
+    await demandProjectionFormWeeks(ctx, input.locationId),
+    input,
+    { companyId: ctx.company.id, userId: ctx.auditUserId }
+  );
+  if ("refusal" in planned) return ctx.error("validation", planned.refusal);
+  return planned.rows;
+}
+
+/**
+ * Delete an item's demand projections at a location in `formWeeks`, in one
+ * DELETE; returns those weeks, each with a quantity of 0. The caller has
+ * checked that the item and the location are the company's.
+ */
+export async function clearDemandProjections(
+  ctx: ServiceContext,
+  input: { itemId: string; locationId: string },
+  formWeeks: { id: string; startDate: string }[]
+) {
+  try {
+    const deleted = await deleteDemandProjections(ctx.asCaller.supabase, {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      companyId: ctx.company.id,
+      futurePeriodIds: formWeeks.map((week) => week.id)
+    });
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete demand forecasts",
+        deleted.error
+      );
+    }
+    return {
+      itemId: input.itemId,
+      locationId: input.locationId,
+      weeks: formWeeks.map((week) => ({
+        weekStart: week.startDate,
+        periodId: week.id,
+        quantity: 0
+      }))
+    };
+  } catch (err) {
+    return forecastEntitlementRefusal(ctx, err);
+  }
 }
 
 /** Write demand projection rows; returns the weeks written. */

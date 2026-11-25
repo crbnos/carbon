@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { hashApiKey } from "@carbon/auth/auth.server";
@@ -102,7 +102,6 @@ import {
   formatDateTimeInZone,
   isUniqueViolation,
   NOT_APPLIED_CODE,
-  pick,
   requireAffected,
   unchecked
 } from "@carbon/utils";
@@ -2859,44 +2858,30 @@ export const setRecordCustomFields = defineServiceFn({
         fields.error
       );
     }
-    const fieldTypes = fields.data ?? [];
-    const unwritable = service.unwritableCustomFieldKeys(
+    const stored = await service.getRecordsCustomFields(ctx.asCaller.supabase, {
+      table,
+      ids,
+      scopeColumn,
+      scopeId
+    });
+    if (stored.error) {
+      return ctx.error("internal", "Failed to read the records", stored.error);
+    }
+    const { write, notFields, badValues } = service.classifyCustomFieldKeys(
       customFields,
-      fieldTypes
+      fields.data ?? [],
+      (stored.data ?? []).map((record) => record.customFields)
     );
-    if (unwritable.length > 0) {
-      const stored = await service.getRecordsCustomFields(
-        ctx.asCaller.supabase,
-        { table, ids, scopeColumn, scopeId }
-      );
-      if (stored.error) {
-        return ctx.error(
-          "internal",
-          "Failed to read the records",
-          stored.error
-        );
-      }
-      const refused = service.refusedCustomFieldKeys(
-        customFields,
-        fieldTypes,
-        (stored.data ?? []).map((record) => record.customFields)
-      );
-      if (refused.length > 0) {
-        const fieldIds = new Set(fieldTypes.map((field) => field.id));
-        const notFields = refused.filter((key) => !fieldIds.has(key));
-        const badValues = refused.filter((key) => fieldIds.has(key));
-        return ctx.error(
-          "validation",
-          [
-            notFields.length > 0 &&
-              `Not a custom field of ${table}: ${notFields.join(", ")}`,
-            badValues.length > 0 &&
-              `Not a value these fields take: ${badValues.join(", ")}`
-          ]
-            .filter(Boolean)
-            .join(". ")
-        );
-      }
+
+    const refusals: string[] = [];
+    if (notFields.length > 0) {
+      refusals.push(`Not a custom field of ${table}: ${notFields.join(", ")}`);
+    }
+    if (badValues.length > 0) {
+      refusals.push(`Not a value these fields take: ${badValues.join(", ")}`);
+    }
+    if (refusals.length > 0) {
+      return ctx.error("validation", refusals.join(". "));
     }
 
     // A value taken only because every record already holds it is left out
@@ -2909,11 +2894,7 @@ export const setRecordCustomFields = defineServiceFn({
         ids,
         scopeColumn,
         scopeId,
-        customFields: Object.fromEntries(
-          Object.entries(customFields).filter(
-            ([key]) => !unwritable.includes(key)
-          )
-        ),
+        customFields: write,
         updatedBy: ctx.auditUserId
       }
     );
@@ -3831,11 +3812,8 @@ export const updateCustomField = defineServiceFn({
     // The merged definition is only validated: the write takes the fields
     // sent, so a field left out keeps what is stored when it runs, not the
     // value read above.
-    const sent = (["name", "listOptions", "tags", "required"] as const).filter(
-      (key) => changes[key] !== undefined
-    );
     const updated = await service.upsertCustomField(ctx.asCaller.supabase, {
-      ...pick(field.data, sent),
+      ...changes,
       id,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
@@ -4199,13 +4177,15 @@ export const updateItemSerialSequence = defineServiceFn({
     );
     // The update matches only the sequence's own item: the edit form shows
     // the item read-only.
-    if (updated.error?.code === "PGRST116") {
+    if (updated.error?.code === NOT_APPLIED_CODE) {
       return ctx.error(
         "notFound",
         "No serial sequence with this id is on this item: a sequence stays on its item."
       );
     }
-    return unwrap(ctx, updated);
+    const rows = unwrap(ctx, updated);
+    if (rows instanceof CarbonError) return rows;
+    return { id: input.id };
   }
 });
 

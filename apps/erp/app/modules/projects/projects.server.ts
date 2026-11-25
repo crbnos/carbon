@@ -5440,14 +5440,10 @@ export const upsertPlanningGroup = defineServiceFn({
     ),
   permission: "employee",
   async run(ctx, { id, ...fields }) {
-    const required = id
-      ? ({ "projects.planningGroups": "Edit" } as const)
-      : ({ "projects.planningGroups": "Create" } as const);
-    const keyRefused = refuseKeyWithout(ctx, required);
-    if (keyRefused) return keyRefused;
-    if (!ctx.can(required)) {
-      return ctx.error("forbidden", "You do not have permission to do this");
-    }
+    const refused = service.refuseWithout(ctx, {
+      "projects.planningGroups": id ? "Edit" : "Create"
+    });
+    if (refused) return refused;
     try {
       const result = id
         ? await eeUpsertPlanningGroup(ctx.asCaller.supabase, {
@@ -5893,14 +5889,10 @@ export const upsertIndirectPool = defineServiceFn({
     ),
   permission: "employee",
   async run(ctx, input) {
-    const required = input.id
-      ? ({ "accounting.indirectPools": "Edit" } as const)
-      : ({ "accounting.indirectPools": "Create" } as const);
-    const keyRefused = refuseKeyWithout(ctx, required);
-    if (keyRefused) return keyRefused;
-    if (!ctx.can(required)) {
-      return ctx.error("forbidden", "You do not have permission to do this");
-    }
+    const refused = service.refuseWithout(ctx, {
+      "accounting.indirectPools": input.id ? "Edit" : "Create"
+    });
+    if (refused) return refused;
     try {
       const result = await eeUpsertIndirectPool(ctx.asCaller.supabase, {
         ...input,

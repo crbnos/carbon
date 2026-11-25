@@ -156,15 +156,16 @@ const DemandProjectionsForm = ({
   // Each column is the week its hidden `weekStarts[i]` posts: the loader's
   // period, else the browser's week (the form posts no week without one).
   const firstWeek = startOfWeek(today(getLocalTimeZone()), "en-US").toString();
-  const weekStartKey = periods.map((period) => period.startDate).join(",");
-  const weekStarts = useMemo(() => {
-    const fromPeriods = weekStartKey ? weekStartKey.split(",") : [];
-    return Array.from(
-      { length: WEEK_COUNT },
-      (_, i) =>
-        fromPeriods[i] ?? parseDate(firstWeek).add({ weeks: i }).toString()
-    );
-  }, [weekStartKey, firstWeek]);
+  const weekStarts = useMemo(
+    () =>
+      Array.from(
+        { length: WEEK_COUNT },
+        (_, i) =>
+          periods[i]?.startDate ??
+          parseDate(firstWeek).add({ weeks: i }).toString()
+      ),
+    [periods, firstWeek]
+  );
   // The number each week is headed with: 1, 2, … from this week, or the
   // calendar week of the year when the company plans by calendar week.
   const weekNumbers = useMemo(

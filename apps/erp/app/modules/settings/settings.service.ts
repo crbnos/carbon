@@ -258,6 +258,7 @@ import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   datetime,
+  indexBy,
   isInternalEmail,
   labelSizes,
   requireAffected,
@@ -773,39 +774,47 @@ function isCustomFieldValue(field: CustomFieldType, value: unknown) {
 }
 
 /**
- * The custom field keys a save may write only unchanged: a key that is not
- * one of the table's custom fields, and a value its field's panel input never
- * sends.
+ * What a save does with each custom field key it sent, given the values the
+ * records hold (`stored`, one map per record). `write` is the values it
+ * writes: each a value its field's panel input sends. `notFields` (keys that
+ * are not one of the table's custom fields) and `badValues` (a value its
+ * field's input never sends) refuse the save, unless every record already
+ * holds that value: such a key is in none of the three, taken but not written.
+ * A caller that sends back the stored map (a panel loaded before the panel
+ * sent only its changed field, an API caller) sends a deleted field's value,
+ * or one stored in another shape, unchanged. Values compare as JSON: an
+ * object's members in any order, an array's items in theirs.
  */
-export function unwritableCustomFieldKeys(
-  sent: Record<string, unknown>,
-  fields: readonly CustomFieldType[]
-): string[] {
-  const byId = new Map(fields.map((field) => [field.id, field]));
-  return Object.keys(sent).filter((key) => {
-    const field = byId.get(key);
-    return !field || !isCustomFieldValue(field, sent[key]);
-  });
-}
-
-/**
- * The custom field keys a save may not write: the unwritable ones, unless
- * every record already holds that value. A caller that sends back the stored
- * map (a panel loaded before the panel sent only its changed field, an API
- * caller) sends a deleted field's value, or one stored in another shape,
- * unchanged, and it is kept. Values compare as JSON: an object's members in
- * any order, an array's items in theirs.
- */
-export function refusedCustomFieldKeys(
+export function classifyCustomFieldKeys(
   sent: Record<string, unknown>,
   fields: readonly CustomFieldType[],
   stored: readonly (Record<string, unknown> | null)[]
-): string[] {
-  return unwritableCustomFieldKeys(sent, fields).filter(
-    (key) =>
-      stored.length === 0 ||
-      stored.some((values) => !isEqual(values?.[key], sent[key]))
-  );
+) {
+  const fieldById = indexBy(fields, (field) => field.id);
+  const heldByEveryRecord = (key: string) =>
+    stored.length > 0 &&
+    stored.every((values) => isEqual(values?.[key], sent[key]));
+  const write: Record<string, unknown> = {};
+  const notFields: string[] = [];
+  const badValues: string[] = [];
+  for (const [key, value] of Object.entries(sent)) {
+    const field = fieldById.get(key);
+    if (field && isCustomFieldValue(field, value)) write[key] = value;
+    else if (heldByEveryRecord(key)) continue;
+    else if (field) badValues.push(key);
+    else notFields.push(key);
+  }
+  return { write, notFields, badValues };
+}
+
+type CustomFieldRecord = {
+  id: string;
+  customFields: Record<string, unknown> | null;
+};
+
+function fromCustomFieldTable(client: SupabaseClient<Database>, table: string) {
+  // The table is only known at runtime, so the generated types cannot name it.
+  return (client as unknown as SupabaseClient).from(table);
 }
 
 /** The stored custom field values of some records of one table. */
@@ -818,17 +827,11 @@ export async function getRecordsCustomFields(
     scopeId: string;
   }
 ) {
-  const { data, error } = await (client as unknown as SupabaseClient)
-    .from(args.table)
+  return fromCustomFieldTable(client, args.table)
     .select("id, customFields")
     .in("id", args.ids)
-    .eq(args.scopeColumn, args.scopeId);
-  return {
-    data: (data ?? null) as
-      | { id: string; customFields: Record<string, unknown> | null }[]
-      | null,
-    error
-  };
+    .eq(args.scopeColumn, args.scopeId)
+    .overrideTypes<CustomFieldRecord[], { merge: false }>();
 }
 
 /**
@@ -1138,14 +1141,15 @@ export async function upsertItemSerialSequence(
   }
   // A sequence stays on its item: the update matches only that item's row.
   const { id, companyId, ...update } = itemSerialSequence;
-  return client
-    .from("itemSerialSequence")
-    .update(sanitize(update))
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .eq("itemId", update.itemId)
-    .select("id")
-    .single();
+  return requireAffected(
+    client
+      .from("itemSerialSequence")
+      .update(sanitize(update))
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .eq("itemId", update.itemId)
+      .select("id")
+  );
 }
 
 export async function deleteItemSerialSequence(
@@ -3473,7 +3477,9 @@ export async function upsertCustomField(
     return requireAffected(
       client
         .from("customField")
-        .update(sanitize(changes))
+        // Not sanitized: a key left undefined is left out of the JSON, so a
+        // field the update was not given is not written.
+        .update(changes)
         .eq("id", id)
         .eq("companyId", companyId)
         .select("id")

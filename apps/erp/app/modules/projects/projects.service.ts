@@ -36,7 +36,7 @@ import {
   type Json,
   journalReference
 } from "@carbon/database";
-import { holdsGate } from "@carbon/database/access";
+import { holdsGate, type PageGate } from "@carbon/database/access";
 import type {
   KyselyDatabase as DB,
   Kysely,
@@ -126,6 +126,7 @@ import {
   invokePosting,
   lockUntrackedDraws,
   planUntrackedDraw,
+  refuseKeyWithout,
   resolveAccountingPeriod
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
@@ -295,6 +296,22 @@ const CLOSED_PURCHASE_ORDER_STATUSES = ["Completed", "Closed", "Rejected"];
 
 /** Job statuses that no longer take charges. */
 const CLOSED_JOB_STATUSES = ["Completed", "Cancelled", "Closed"];
+
+/**
+ * The refusal of a caller without `required`, for a write gated on
+ * `"employee"` whose page level depends on the input: the grant an API key
+ * lacks, named, or the generic forbidden error for a person. Null when the
+ * caller holds it.
+ */
+export function refuseWithout(
+  ctx: ServiceContext,
+  required: PageGate
+): CarbonError | null {
+  const keyRefused = refuseKeyWithout(ctx, required);
+  if (keyRefused) return keyRefused;
+  if (ctx.can(required)) return null;
+  return ctx.error("forbidden", "You do not have permission to do this");
+}
 
 // --- Projects ----------------------------------------------------------------
 

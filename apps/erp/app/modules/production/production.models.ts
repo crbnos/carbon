@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { groupBy } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -1489,15 +1490,17 @@ export function demandProjectionRows(
   },
   author: { companyId: string; userId: string }
 ): { rows: DemandProjectionRow[] } | { refusal: string } {
-  const periodByStart = new Map(formWeeks.map((p) => [p.startDate, p.id]));
+  const periodIdByStart: Record<string, string> = Object.fromEntries(
+    formWeeks.map((week) => [week.startDate, week.id])
+  );
+  const isFormWeek = (weekStart: string) =>
+    Object.hasOwn(periodIdByStart, weekStart);
   const passedWeek = formWeeks[0]
     ? parseDate(formWeeks[0].startDate).subtract({ weeks: 1 }).toString()
     : null;
   const outside = input.weeks
     .map((week) => week.weekStart)
-    .filter(
-      (weekStart) => !periodByStart.has(weekStart) && weekStart !== passedWeek
-    );
+    .filter((weekStart) => !isFormWeek(weekStart) && weekStart !== passedWeek);
   if (outside.length > 0) {
     const first = formWeeks[0]?.startDate;
     const last = formWeeks[formWeeks.length - 1]?.startDate;
@@ -1505,30 +1508,27 @@ export function demandProjectionRows(
       refusal: `A week starts on a Sunday from ${first} to ${last}: ${outside.join(", ")} is not one`
     };
   }
-  const starts = input.weeks.map((week) => week.weekStart);
-  const repeated = starts.filter((start, i) => starts.indexOf(start) !== i);
+  const repeated = Object.entries(
+    groupBy(input.weeks, (week) => week.weekStart)
+  )
+    .filter(([, sent]) => sent.length > 1)
+    .map(([weekStart]) => weekStart);
   if (repeated.length > 0) {
-    return {
-      refusal: `Each week is sent once: ${[...new Set(repeated)].join(", ")}`
-    };
+    return { refusal: `Each week is sent once: ${repeated.join(", ")}` };
   }
   return {
-    rows: input.weeks.flatMap((week) => {
-      const periodId = periodByStart.get(week.weekStart);
-      if (!periodId) return [];
-      return [
-        {
-          itemId: input.itemId,
-          locationId: input.locationId,
-          periodId,
-          weekStart: week.weekStart,
-          forecastQuantity: week.quantity,
-          companyId: author.companyId,
-          createdBy: author.userId,
-          updatedBy: author.userId
-        }
-      ];
-    })
+    rows: input.weeks
+      .filter((week) => isFormWeek(week.weekStart))
+      .map((week) => ({
+        itemId: input.itemId,
+        locationId: input.locationId,
+        periodId: periodIdByStart[week.weekStart],
+        weekStart: week.weekStart,
+        forecastQuantity: week.quantity,
+        companyId: author.companyId,
+        createdBy: author.userId,
+        updatedBy: author.userId
+      }))
   };
 }
 
