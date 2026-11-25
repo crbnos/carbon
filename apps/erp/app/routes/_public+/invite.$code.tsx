@@ -35,6 +35,7 @@ import type {
 import { Form, Link, useLoaderData, useNavigation } from "react-router";
 import {
   acceptInvite,
+  inviteOrigin,
   isControlledInviteExpired
 } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -166,7 +167,7 @@ async function requestNewInvite(
   code: string,
   serviceRole: ReturnType<typeof getCarbonServiceRole>
 ) {
-  const { ip = "127.0.0.1", city: location = "Unknown" } = originOf(request);
+  const { ip, location } = inviteOrigin(originOf(request));
 
   const invite = await serviceRole
     .from("invite")

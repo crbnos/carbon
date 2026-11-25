@@ -425,7 +425,7 @@ export type Events = {
           // The invite's `revokedAt` when the resend was queued: the refresh
           // clears that revocation only, never one saved while the event
           // waited. An event from before this field matches the value read.
-          revokedAt: string | null;
+          revokedAt?: string | null;
         };
   };
 

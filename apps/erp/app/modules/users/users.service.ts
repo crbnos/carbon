@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type {
+import {
   CarbonError,
-  Result,
-  ServiceContext
+  type ErrorCategory,
+  type Result,
+  type ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
   CarbonEdition,
@@ -20,6 +21,7 @@ import {
   deactivateCustomer,
   deactivateEmployee,
   deactivateSupplier,
+  deactivateUser,
   getUserClaims
 } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
@@ -85,7 +87,10 @@ import {
   datetime,
   Edition,
   getClientIp,
+  indexBy,
+  indexByMapped,
   isOwnSignaturePath,
+  pluckUnique,
   requireAffected,
   SIGNATURES_BUCKET
 } from "@carbon/utils";
@@ -700,9 +705,11 @@ export type GroupMembers = ReturnType<typeof groupMembersOf>;
 
 /**
  * Members are written with the service role, and `membership` keys them on
- * the global `user` and `group` ids: each must be a user of the company
- * (`refuseUnlessCompanyUsers`) or a group of the company, and a group is
- * never its own member.
+ * the global `user` and `group` ids: each must be a group of the company, or
+ * a user with any tie to it (`refuseUnlessCompanyUsers`): a membership, an
+ * employee, customer or supplier account, or an invite here. That takes a
+ * deactivated employee, whose employee record stays, and a person whose
+ * invite is pending, revoked or accepted. A group is never its own member.
  */
 export async function refuseForeignGroupMembers(
   ctx: ServiceContext,
@@ -784,6 +791,7 @@ export async function replaceGroup(
       .executeTakeFirst();
     if (!renamed) return false;
 
+    // `membership` has no companyId: the subquery is its company scope.
     await trx
       .deleteFrom("membership")
       .where(
@@ -2374,6 +2382,14 @@ export async function inviteSender(ctx: ServiceContext) {
   return { companyName: company.data.name, invitedBy: user.data };
 }
 
+/**
+ * Where an invite email says the request came from. A call no request made
+ * (a job, a missing header) shows the loopback address and "Unknown".
+ */
+export function inviteOrigin(origin: { ip?: string; city?: string }) {
+  return { ip: origin.ip ?? "127.0.0.1", location: origin.city ?? "Unknown" };
+}
+
 /** The invite email, which shows where the request came from (`ctx.origin`). */
 export async function sendInviteEmail(
   ctx: ServiceContext,
@@ -2398,8 +2414,7 @@ export async function sendInviteEmail(
     name: invite.name,
     companyName: invite.companyName,
     inviteLink,
-    ip: ctx.origin.ip ?? "127.0.0.1",
-    location: ctx.origin.city ?? "Unknown",
+    ...inviteOrigin(ctx.origin),
     controlledEnvironment: CONTROLLED_ENVIRONMENT
   });
   // Queued so it follows the company's Email settings; a failed dispatch only logs.
@@ -2464,144 +2479,63 @@ export function refuseUnlessCan(
   );
 }
 
+type AccountRole = Database["public"]["Enums"]["role"];
+
+/** A user and their ties to the company: what Revoke, Resend and Deactivate decide on. */
+export type CompanyTie = {
+  userId: string;
+  email: string;
+  isMember: boolean;
+  accounts: Record<AccountRole, boolean>;
+  invite: {
+    id: string;
+    role: AccountRole;
+    acceptedAt: string | null;
+    revokedAt: string | null;
+  } | null;
+};
+
+/** The read of `readCompanyTies` that failed: its table and its error. */
+export type TiesReadFailure = { table: string; cause: PostgrestError };
+
 /**
- * The users of a revoke and their invites here, or the refusal. Revoking
- * deactivates the user, so it takes what the Employees, Customers and
- * Suppliers lists offer Revoke Invite on: a pending invite here and no
- * membership in the company (an active account is deactivated instead). An
- * invite revoked earlier and never accepted is taken too, with its
- * `revokedAt`: its deactivation may not have run, and running it again
- * removes nothing it already removed. The operation then revokes the pending
- * invites where they still are, and deactivates only those users and the
- * already revoked ones. A user with neither an invite nor a membership here
- * is not found, and their email is not shown. At most 100 users: the
- * operation's input caps it.
+ * Each user the ids name, with their ties to the company: a membership,
+ * employee, customer and supplier accounts, and their invite here. The users
+ * are read across companies, so a user with no tie here is returned too, with
+ * none.
  */
-export async function refuseUnlessPendingInvites(
-  ctx: ServiceContext,
+export async function readCompanyTies(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
   userIds: string[]
 ): Promise<
-  Result<{ userId: string; inviteId: string; revokedAt: string | null }[]>
+  { data: CompanyTie[]; error: null } | { data: null; error: TiesReadFailure }
 > {
-  const serviceRole = ctx.asSystem.supabase;
-  const ids = [...new Set(userIds)];
-  const users = await serviceRole
-    .from("user")
-    .select("id, email")
-    .in("id", ids);
-  if (users.error) {
-    return {
-      data: null,
-      error: ctx.error("internal", "Failed to load users", users.error)
-    };
-  }
-  if (users.data.length !== ids.length) {
-    return { data: null, error: ctx.error("notFound", "User not found") };
-  }
-
-  const [invites, members] = await Promise.all([
-    serviceRole
-      .from("invite")
-      .select("id, email, acceptedAt, revokedAt")
-      .eq("companyId", ctx.company.id)
-      .in(
-        "email",
-        users.data.map((user) => user.email)
-      ),
-    serviceRole
-      .from("userToCompany")
-      .select("userId")
-      .eq("companyId", ctx.company.id)
-      .in("userId", ids)
-  ]);
-  if (invites.error || members.error) {
-    return {
-      data: null,
-      error: ctx.error(
-        "internal",
-        "Failed to read the invites",
-        invites.error ?? members.error
-      )
-    };
-  }
-
-  const memberIds = new Set(members.data.map((member) => member.userId));
-  const inviteByEmail = new Map(
-    invites.data.map((invite) => [invite.email, invite])
-  );
-  // The users were read across companies: one with no tie to this company is
-  // not found, as an id that names no one is.
-  if (
-    users.data.some(
-      (user) => !memberIds.has(user.id) && !inviteByEmail.has(user.email)
-    )
-  ) {
-    return { data: null, error: ctx.error("notFound", "User not found") };
-  }
-  const states = users.data.flatMap((user) => {
-    const invite = inviteByEmail.get(user.email);
-    if (memberIds.has(user.id)) {
-      return [`${user.email} has an active account: deactivate it instead`];
-    }
-    if (invite?.acceptedAt) {
-      return [
-        invite.revokedAt
-          ? `${user.email} was deactivated`
-          : `${user.email} accepted their invite`
-      ];
-    }
-    return [];
+  const failed = (table: string, cause: PostgrestError) => ({
+    data: null,
+    error: { table, cause }
   });
-  if (states.length > 0) {
-    return {
-      data: null,
-      error: ctx.error(
-        "rule",
-        `Only a pending invite can be revoked: ${states.join("; ")}.`
-      )
-    };
-  }
-  return {
-    data: users.data.flatMap((user) => {
-      const invite = inviteByEmail.get(user.email);
-      return invite
-        ? [
-            {
-              userId: user.id,
-              inviteId: invite.id,
-              revokedAt: invite.revokedAt ?? null
-            }
-          ]
-        : [];
-    }),
-    error: null
-  };
-}
+  const ties: CompanyTie[] = [];
+  for (const chunk of chunkArray(
+    pluckUnique(userIds, (id) => id),
+    100
+  )) {
+    const users = await serviceRole
+      .from("user")
+      .select("id, email")
+      .in("id", chunk);
+    if (users.error) return failed("user", users.error);
 
-/**
- * Resend Invite takes what the Employees, Customers and Suppliers lists offer
- * it on: a user with an invite here, no membership in the company, and still
- * the account the invite is for. Resending clears the invite's acceptance, so
- * an active account accepting it again would get the invite's grants back
- * over what an admin removed since. A deactivated customer or supplier has no
- * account left, and its link could never be accepted. Returns each user's
- * invite `revokedAt` as read here: the refresh clears only that revocation,
- * never one saved after the request.
- */
-export async function refuseUnlessReinvitable(
-  ctx: ServiceContext,
-  userIds: string[]
-): Promise<Result<Map<string, string | null>>> {
-  const companyId = ctx.company.id;
-  const serviceRole = ctx.asSystem.supabase;
-  const active: string[] = [];
-  const deactivatedContacts: string[] = [];
-  const revokedAt = new Map<string, string | null>();
-  const refuse = (error: CarbonError) => ({ data: null, error });
-  for (const chunk of chunkArray([...new Set(userIds)], 100)) {
-    const [users, members, employees, customers, suppliers] = await Promise.all(
-      [
-        serviceRole.from("user").select("id, email").in("id", chunk),
+    const [invites, members, employees, customers, suppliers] =
+      await Promise.all([
+        serviceRole
+          .from("invite")
+          .select("id, email, role, acceptedAt, revokedAt")
+          .eq("companyId", companyId)
+          .in(
+            "email",
+            users.data.map((user) => user.email)
+          ),
         serviceRole
           .from("userToCompany")
           .select("userId")
@@ -2622,48 +2556,14 @@ export async function refuseUnlessReinvitable(
           .select("id")
           .eq("companyId", companyId)
           .in("id", chunk)
-      ]
-    );
-    if (
-      users.error ||
-      members.error ||
-      employees.error ||
-      customers.error ||
-      suppliers.error
-    ) {
-      return refuse(
-        ctx.error(
-          "internal",
-          "Failed to read the users",
-          users.error ??
-            members.error ??
-            employees.error ??
-            customers.error ??
-            suppliers.error
-        )
-      );
-    }
-    if (users.data.length !== chunk.length) {
-      return refuse(ctx.error("notFound", "User not found"));
-    }
+      ]);
+    if (invites.error) return failed("invite", invites.error);
+    if (members.error) return failed("userToCompany", members.error);
+    if (employees.error) return failed("employee", employees.error);
+    if (customers.error) return failed("customerAccount", customers.error);
+    if (suppliers.error) return failed("supplierAccount", suppliers.error);
 
-    const invites = await serviceRole
-      .from("invite")
-      .select("email, role, revokedAt")
-      .eq("companyId", companyId)
-      .in(
-        "email",
-        users.data.map((user) => user.email)
-      );
-    if (invites.error) {
-      return refuse(
-        ctx.error("internal", "Failed to read the invites", invites.error)
-      );
-    }
-
-    const inviteByEmail = new Map(
-      invites.data.map((invite) => [invite.email, invite])
-    );
+    const inviteByEmail = indexBy(invites.data, (invite) => invite.email);
     const memberIds = new Set(members.data.map((member) => member.userId));
     const accountIds = {
       employee: new Set(employees.data.map((row) => row.id)),
@@ -2672,34 +2572,209 @@ export async function refuseUnlessReinvitable(
     };
     for (const user of users.data) {
       const invite = inviteByEmail.get(user.email);
-      if (!invite) {
-        return refuse(ctx.error("notFound", "No invite record found for user"));
-      }
-      revokedAt.set(user.id, invite.revokedAt ?? null);
-      if (memberIds.has(user.id)) active.push(user.email);
-      else if (!accountIds[invite.role].has(user.id)) {
-        deactivatedContacts.push(user.email);
-      }
+      ties.push({
+        userId: user.id,
+        email: user.email,
+        isMember: memberIds.has(user.id),
+        accounts: {
+          employee: accountIds.employee.has(user.id),
+          customer: accountIds.customer.has(user.id),
+          supplier: accountIds.supplier.has(user.id)
+        },
+        invite: invite
+          ? {
+              id: invite.id,
+              role: invite.role,
+              acceptedAt: invite.acceptedAt ?? null,
+              revokedAt: invite.revokedAt ?? null
+            }
+          : null
+      });
     }
   }
+  return { data: ties, error: null };
+}
 
+/** Whether an id names no user in `ties`. */
+function someIdNotIn(ties: CompanyTie[], userIds: string[]) {
+  const read = indexBy(ties, (tie) => tie.userId);
+  return userIds.some((id) => !read.has(id));
+}
+
+function refused(category: ErrorCategory, message: string) {
+  return { data: null, error: new CarbonError(category, message) };
+}
+
+export type RevocableInvite = {
+  userId: string;
+  inviteId: string;
+  revokedAt: string | null;
+};
+
+/**
+ * The invites Revoke Invite takes, or the refusal. Revoking deactivates the
+ * user, so it takes what the Employees, Customers and Suppliers lists offer
+ * Revoke Invite on: a pending invite here and no membership in the company
+ * (an active account is deactivated instead). An invite revoked earlier and
+ * never accepted is taken too, with its `revokedAt`: its deactivation may not
+ * have run, and running it again removes nothing it already removed. A user
+ * with neither an invite nor a membership here is not found, and their email
+ * is not shown.
+ */
+export function revocableInvites(
+  ties: CompanyTie[],
+  userIds: string[]
+): Result<RevocableInvite[]> {
+  if (someIdNotIn(ties, userIds)) return refused("notFound", "User not found");
+  const refusals: string[] = [];
+  const invites: RevocableInvite[] = [];
+  for (const tie of ties) {
+    if (tie.isMember) {
+      refusals.push(
+        `${tie.email} has an active account: deactivate it instead`
+      );
+    } else if (!tie.invite) {
+      return refused("notFound", "User not found");
+    } else if (tie.invite.acceptedAt) {
+      refusals.push(
+        tie.invite.revokedAt
+          ? `${tie.email} was deactivated`
+          : `${tie.email} accepted their invite`
+      );
+    } else {
+      invites.push({
+        userId: tie.userId,
+        inviteId: tie.invite.id,
+        revokedAt: tie.invite.revokedAt
+      });
+    }
+  }
+  if (refusals.length > 0) {
+    return refused(
+      "rule",
+      `Only a pending invite can be revoked: ${refusals.join("; ")}.`
+    );
+  }
+  return { data: invites, error: null };
+}
+
+/**
+ * Each user's invite `revokedAt`, or the refusal. Resend Invite takes what the
+ * Employees, Customers and Suppliers lists offer it on: a user with an invite
+ * here, no membership in the company, and still the account the invite is
+ * for. Resending clears the invite's acceptance, so an active account
+ * accepting it again would get the invite's grants back over what an admin
+ * removed since. A deactivated customer or supplier has no account left, and
+ * its link could never be accepted.
+ */
+export function reinviteRevocations(
+  ties: CompanyTie[],
+  userIds: string[]
+): Result<Map<string, string | null>> {
+  if (someIdNotIn(ties, userIds)) return refused("notFound", "User not found");
+  const active: string[] = [];
+  const deactivatedContacts: string[] = [];
+  const revokedAt = new Map<string, string | null>();
+  for (const tie of ties) {
+    if (!tie.invite) {
+      return refused("notFound", "No invite record found for user");
+    }
+    revokedAt.set(tie.userId, tie.invite.revokedAt);
+    if (tie.isMember) active.push(tie.email);
+    else if (!tie.accounts[tie.invite.role]) {
+      deactivatedContacts.push(tie.email);
+    }
+  }
   if (active.length > 0) {
-    return refuse(
-      ctx.error(
-        "rule",
-        `${active.join(", ")} already ${active.length === 1 ? "has" : "have"} an active account in the company. An invite is sent again only to an invited or deactivated person.`
-      )
+    return refused(
+      "rule",
+      `${active.join(", ")} already ${active.length === 1 ? "has" : "have"} an active account in the company. An invite is sent again only to an invited or deactivated person.`
     );
   }
   if (deactivatedContacts.length > 0) {
-    return refuse(
-      ctx.error(
-        "rule",
-        `${deactivatedContacts.join(", ")}: the customer or supplier account was deactivated. Invite the contact again from the customer's or supplier's contacts.`
-      )
+    return refused(
+      "rule",
+      `${deactivatedContacts.join(", ")}: the customer or supplier account was deactivated. Invite the contact again from the customer's or supplier's contacts.`
     );
   }
   return { data: revokedAt, error: null };
+}
+
+function isTiedToCompany(tie: CompanyTie) {
+  return (
+    tie.isMember ||
+    tie.invite !== null ||
+    Object.values(tie.accounts).some(Boolean)
+  );
+}
+
+/**
+ * The refusal unless every id is a user of the company: a membership, an
+ * employee, customer or supplier account, or an invite here, whatever its
+ * state.
+ */
+export function companyUsersRefusal(
+  ties: CompanyTie[],
+  userIds: string[]
+): CarbonError | null {
+  return someIdNotIn(ties.filter(isTiedToCompany), userIds)
+    ? new CarbonError("notFound", "User not found")
+    : null;
+}
+
+/**
+ * The users of a revoke and their invites here, or the refusal
+ * (`revocableInvites`). The operation then revokes the pending invites where
+ * they still are, and deactivates only those users and the already revoked
+ * ones. At most 100 users: the operation's input caps it.
+ */
+export async function readRevocableInvites(
+  ctx: ServiceContext,
+  userIds: string[]
+): Promise<Result<RevocableInvite[]>> {
+  const ties = await readCompanyTies(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    userIds
+  );
+  if (ties.error) {
+    const message =
+      ties.error.table === "user"
+        ? "Failed to load users"
+        : "Failed to read the invites";
+    return {
+      data: null,
+      error: ctx.error("internal", message, ties.error.cause)
+    };
+  }
+  return revocableInvites(ties.data, userIds);
+}
+
+/**
+ * Each user's invite `revokedAt` as read here, or the refusal
+ * (`reinviteRevocations`): the refresh clears only that revocation, never one
+ * saved after the request.
+ */
+export async function readReinviteRevocations(
+  ctx: ServiceContext,
+  userIds: string[]
+): Promise<Result<Map<string, string | null>>> {
+  const ties = await readCompanyTies(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    userIds
+  );
+  if (ties.error) {
+    const message =
+      ties.error.table === "invite"
+        ? "Failed to read the invites"
+        : "Failed to read the users";
+    return {
+      data: null,
+      error: ctx.error("internal", message, ties.error.cause)
+    };
+  }
+  return reinviteRevocations(ties.data, userIds);
 }
 
 /**
@@ -2712,38 +2787,184 @@ export async function readInviteRevocations(
   companyId: string,
   userIds: string[]
 ): Promise<Map<string, string | null>> {
-  const revokedAt = new Map<string, string | null>();
-  for (const chunk of chunkArray([...new Set(userIds)], 100)) {
-    const users = await serviceRole
-      .from("user")
-      .select("id, email")
-      .in("id", chunk);
-    if (users.error) {
-      throw new Error("Failed to read the users of a resend", {
-        cause: users.error
-      });
-    }
-    const invites = await serviceRole
-      .from("invite")
-      .select("email, revokedAt")
-      .eq("companyId", companyId)
-      .in(
-        "email",
-        users.data.map((user) => user.email)
-      );
-    if (invites.error) {
-      throw new Error("Failed to read the invites of a resend", {
-        cause: invites.error
-      });
-    }
-    const byEmail = new Map(
-      invites.data.map((invite) => [invite.email, invite.revokedAt ?? null])
-    );
-    for (const user of users.data) {
-      revokedAt.set(user.id, byEmail.get(user.email) ?? null);
-    }
+  const ties = await readCompanyTies(serviceRole, companyId, userIds);
+  if (ties.error) {
+    const message =
+      ties.error.table === "invite"
+        ? "Failed to read the invites of a resend"
+        : "Failed to read the users of a resend";
+    throw new Error(message, { cause: ties.error.cause });
   }
-  return revokedAt;
+  return indexByMapped(
+    ties.data,
+    (tie) => tie.userId,
+    (tie) => tie.invite?.revokedAt ?? null
+  );
+}
+
+/**
+ * Stamps this revoke's `revokedAt` on the invites still pending and returns
+ * the ids it stamped. The write decides: an acceptance needs `revokedAt`
+ * null, so an invite accepted since it was read is not stamped, and its
+ * account is not deactivated.
+ */
+export async function stampPendingInvites(
+  ctx: ServiceContext,
+  invites: RevocableInvite[],
+  revokedAt: string
+): Promise<Result<string[]>> {
+  const pending = invites.filter((invite) => invite.revokedAt === null);
+  if (pending.length === 0) return { data: [], error: null };
+  const stamped = await ctx.asSystem.supabase
+    .from("invite")
+    .update({ revokedAt })
+    .in(
+      "id",
+      pending.map((invite) => invite.inviteId)
+    )
+    .eq("companyId", ctx.company.id)
+    .is("acceptedAt", null)
+    .is("revokedAt", null)
+    .select("id");
+  if (stamped.error) {
+    return {
+      data: null,
+      error: ctx.error("internal", "Failed to revoke invites", stamped.error)
+    };
+  }
+  return { data: stamped.data.map((invite) => invite.id), error: null };
+}
+
+/**
+ * Gives the invites a revoke stamped back, as pending, when its deactivation
+ * failed before it changed the account: the revoke can be sent again. A
+ * failure is logged.
+ */
+export async function restoreStampedInvites(
+  ctx: ServiceContext,
+  inviteIds: string[],
+  revokedAt: string
+) {
+  if (inviteIds.length === 0) return;
+  const restored = await ctx.asSystem.supabase
+    .from("invite")
+    .update({ revokedAt: null })
+    .in("id", inviteIds)
+    .eq("companyId", ctx.company.id)
+    .eq("revokedAt", revokedAt);
+  if (restored.error) {
+    logger.error("Failed to restore revoked invites", {
+      companyId: ctx.company.id,
+      error: restored.error
+    });
+  }
+}
+
+/**
+ * Deactivates the one user of a revoke (and, on Cloud, updates the
+ * subscription's seat count). A failed account write is the refusal.
+ * `deactivateUser` throws only after its writes (clearing the cached claims),
+ * so a throw answers "queue": the invite stays revoked and the job, which
+ * retries, runs the deactivation again.
+ */
+export async function deactivateRevokedUser(
+  ctx: ServiceContext,
+  userId: string
+): Promise<"done" | "queue" | CarbonError> {
+  const deactivated = await deactivateUser(
+    ctx.asSystem.supabase,
+    userId,
+    ctx.company.id,
+    ctx.auditUserId,
+    ctx.origin.ip
+  ).catch((error: unknown) => {
+    logger.error("Failed to finish deactivating a revoked invite's user", {
+      companyId: ctx.company.id,
+      error
+    });
+    return null;
+  });
+  if (deactivated === null) return "queue";
+  if (!deactivated.success) {
+    return ctx.error(
+      "internal",
+      "Failed to deactivate user",
+      deactivated.message
+    );
+  }
+  if (CarbonEdition === Edition.Cloud) {
+    await updateSubscriptionQuantityForCompany(ctx.company.id);
+  }
+  return "done";
+}
+
+/**
+ * Queues the `user-admin` deactivation of each revoked user, with the
+ * revocation its job must still find. The send can reject after Inngest
+ * accepted the events, and an accepted deactivation still runs, so a failed
+ * send leaves the invites revoked: a revoke sent again runs the deactivations
+ * that did not.
+ */
+export async function queueRevokedDeactivations(
+  ctx: ServiceContext,
+  users: { id: string; revokedAt: string }[]
+): Promise<CarbonError | null> {
+  if (users.length === 0) return null;
+  try {
+    await batchTrigger(
+      "user-admin",
+      users.map((user) => ({
+        payload: {
+          id: user.id,
+          type: "deactivate" as const,
+          companyId: ctx.company.id,
+          actorId: ctx.auditUserId,
+          ip: ctx.origin.ip,
+          revokedAt: user.revokedAt
+        }
+      }))
+    );
+  } catch (cause) {
+    return ctx.error(
+      "internal",
+      "Revoked the invites, but deactivating their users may not have been queued: revoke them again to finish",
+      cause
+    );
+  }
+  return null;
+}
+
+/**
+ * Writes each stamped invite's revocation to the audit log. Best effort: a
+ * company without audit logging has no audit log table.
+ */
+export async function auditRevokedInvites(
+  ctx: ServiceContext,
+  inviteIds: string[],
+  revokedAt: string
+) {
+  if (inviteIds.length === 0) return;
+  try {
+    await insertAuditLogEntries(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      inviteIds.map((id) => ({
+        tableName: "invite" as const,
+        entityType: "invite" as const,
+        entityId: id,
+        recordId: id,
+        operation: "UPDATE" as const,
+        actorId: ctx.auditUserId,
+        diff: { revokedAt: { old: null, new: revokedAt } },
+        metadata: {
+          ipAddress: ctx.origin.ip,
+          userAgent: ctx.origin.userAgent
+        }
+      }))
+    );
+  } catch (err) {
+    logger.warning("Audit write skipped for a revoked invite", { error: err });
+  }
 }
 
 /**
@@ -2779,8 +3000,7 @@ export async function refuseUnlessCompanyEmployees(
 }
 
 /**
- * Deactivate takes users of the company: each id needs a membership, an
- * employee, customer or supplier account, or an invite here.
+ * Deactivate takes users of the company (`companyUsersRefusal`).
  * `deactivateUser` answers any other id "already deactivated", and the job
  * it queues for several changes nothing.
  */
@@ -2788,86 +3008,19 @@ export async function refuseUnlessCompanyUsers(
   ctx: ServiceContext,
   userIds: string[]
 ): Promise<CarbonError | null> {
-  const companyId = ctx.company.id;
-  const serviceRole = ctx.asSystem.supabase;
-  const ids = [...new Set(userIds)];
-  const known = new Set<string>();
-  const users: { id: string; email: string }[] = [];
-  for (const chunk of chunkArray(ids, 100)) {
-    const [found, members, employees, customers, suppliers] = await Promise.all(
-      [
-        serviceRole.from("user").select("id, email").in("id", chunk),
-        serviceRole
-          .from("userToCompany")
-          .select("userId")
-          .eq("companyId", companyId)
-          .in("userId", chunk),
-        serviceRole
-          .from("employee")
-          .select("id")
-          .eq("companyId", companyId)
-          .in("id", chunk),
-        serviceRole
-          .from("customerAccount")
-          .select("id")
-          .eq("companyId", companyId)
-          .in("id", chunk),
-        serviceRole
-          .from("supplierAccount")
-          .select("id")
-          .eq("companyId", companyId)
-          .in("id", chunk)
-      ]
-    );
-    if (
-      found.error ||
-      members.error ||
-      employees.error ||
-      customers.error ||
-      suppliers.error
-    ) {
-      return ctx.error(
-        "internal",
-        "Failed to read the users",
-        found.error ??
-          members.error ??
-          employees.error ??
-          customers.error ??
-          suppliers.error
-      );
-    }
-    users.push(...found.data);
-    for (const member of members.data) known.add(member.userId);
-    for (const account of [
-      ...employees.data,
-      ...customers.data,
-      ...suppliers.data
-    ]) {
-      known.add(account.id);
-    }
+  const ties = await readCompanyTies(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    userIds
+  );
+  if (ties.error) {
+    const message =
+      ties.error.table === "invite"
+        ? "Failed to read the invites"
+        : "Failed to read the users";
+    return ctx.error("internal", message, ties.error.cause);
   }
-
-  const uninvited = users.filter((user) => !known.has(user.id));
-  for (const chunk of chunkArray(uninvited, 100)) {
-    const invites = await serviceRole
-      .from("invite")
-      .select("email")
-      .eq("companyId", companyId)
-      .in(
-        "email",
-        chunk.map((user) => user.email)
-      );
-    if (invites.error) {
-      return ctx.error("internal", "Failed to read the invites", invites.error);
-    }
-    const invited = new Set(invites.data.map((invite) => invite.email));
-    for (const user of chunk) if (invited.has(user.email)) known.add(user.id);
-  }
-
-  if (ids.some((id) => !known.has(id))) {
-    return ctx.error("notFound", "User not found");
-  }
-  return null;
+  return companyUsersRefusal(ties.data, userIds);
 }
 
 /**

@@ -15,16 +15,22 @@ type Row = Record<string, unknown>;
 /**
  * The service-role client over in-memory tables, with the `eq` and `is`
  * filters the refresh uses. `afterRead` runs after a read has its rows: what
- * another request commits in between.
+ * another request commits in between. `failing` names a table whose reads
+ * fail, or `<table>:write` for its writes.
  */
 function memoryClient(
   tables: Record<string, Row[]>,
-  afterRead: (table: string) => void = () => undefined
+  afterRead: (table: string) => void = () => undefined,
+  failing?: string
 ) {
   return {
     from(table: string) {
       const filters: ((row: Row) => boolean)[] = [];
       let patch: Row | null = null;
+      const fails = () =>
+        failing === (patch ? `${table}:write` : table)
+          ? { data: null, error: { message: "Connection reset" } }
+          : null;
       const run = () => {
         const rows = (tables[table] ?? []).filter((row) =>
           filters.every((keep) => keep(row))
@@ -48,7 +54,8 @@ function memoryClient(
           filters.push((row) => (row[column] ?? null) === value);
           return query;
         },
-        maybeSingle: async () => ({ data: run()[0] ?? null, error: null }),
+        maybeSingle: async () =>
+          fails() ?? { data: run()[0] ?? null, error: null },
         single: async () => {
           const rows = run();
           return rows.length === 1
@@ -230,9 +237,41 @@ describe("refreshResentInvite", () => {
 
   it("refuses a person with no invite in the company", async () => {
     expect(await refresh({ invite: [], userToCompany: [] })).toEqual({
-      failure: "notFound",
+      failure: "noInvite",
       message: "No invite record found for user"
     });
+  });
+
+  // A failed read is not an outcome: it throws, so the job's step retries.
+  it.each([
+    ["the invite", "invite", "Failed to read the invite"],
+    ["the membership", "userToCompany", "Failed to read the membership"]
+  ])("throws when reading %s fails", async (_label, table, message) => {
+    const tables = { invite: [invite()], userToCompany: [] };
+
+    await expect(
+      refreshResentInvite(memoryClient(tables, undefined, table) as never, {
+        userId: "usr_1",
+        email: "pat@example.com",
+        companyId: "cmp_1"
+      })
+    ).rejects.toThrow(message);
+    expect(tables.invite[0]).toMatchObject({ code: "code-sent" });
+  });
+
+  it("throws when the write fails", async () => {
+    const tables = { invite: [invite()], userToCompany: [] };
+
+    await expect(
+      refreshResentInvite(
+        memoryClient(tables, undefined, "invite:write") as never,
+        {
+          userId: "usr_1",
+          email: "pat@example.com",
+          companyId: "cmp_1"
+        }
+      )
+    ).rejects.toThrow("Failed to refresh invite");
   });
 });
 
@@ -292,7 +331,7 @@ describe("resendInvite", () => {
     const { result, delivered } = await resendWithRetry(db);
 
     expect(result).toEqual({
-      success: true,
+      outcome: "done",
       message: "Successfully resent invite for usr_1"
     });
     expect(delivered).toEqual([
@@ -320,7 +359,7 @@ describe("resendInvite", () => {
         Object.assign(db.invite![0]!, change)
       );
 
-      expect(result.success).toBe(false);
+      expect(result.outcome).toBe("skipped");
       expect(delivered).toEqual([]);
     }
   );
@@ -338,7 +377,7 @@ describe("resendInvite", () => {
       }
     );
 
-    expect(result.success).toBe(false);
+    expect(result.outcome).toBe("skipped");
     expect(delivered).toEqual([]);
     expect(db.invite![0]).toMatchObject({
       code: "code-sent",

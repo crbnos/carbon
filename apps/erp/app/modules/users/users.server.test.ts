@@ -32,7 +32,8 @@ vi.mock("@carbon/jobs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/jobs")>()),
   batchTrigger: vi.fn(async (name: string, events: unknown[]) => {
     queued.push({ name, events });
-  })
+  }),
+  trigger: vi.fn(async () => undefined)
 }));
 // The plan lookup: this company may author roles.
 vi.mock("@carbon/ee/plan.server", async (importOriginal) => ({
@@ -58,10 +59,14 @@ import {
   updateGroup
 } from "./users.server";
 import {
+  type CompanyTie,
   canReAddDeactivatedEmployee,
+  companyUsersRefusal,
   pinResetRefusal,
   readInviteRevocations,
-  refuseUninvitableContact
+  refuseUninvitableContact,
+  reinviteRevocations,
+  revocableInvites
 } from "./users.service";
 
 const COMPANY = "cmp_1";
@@ -991,6 +996,20 @@ describe("sending an invite again", () => {
     });
   });
 
+  // A user sent twice is one user: one refreshed invite, no queued resends.
+  it("re-invites a user sent twice once, at once", async () => {
+    queued.length = 0;
+    const tables = invitedEmployees(["usr_1"], {
+      company: [{ id: COMPANY, name: "Acme" }]
+    });
+
+    const result = await resend(tables, ["usr_1", "usr_1"]);
+
+    expect(result).toEqual({ data: { queued: false }, error: null });
+    expect(queued).toEqual([]);
+    expect(tables.invite?.[0]?.code).toEqual(expect.any(String));
+  });
+
   // The job runs later: it may clear only the revocation the request saw.
   it("queues each invite's revocation as the request read it", async () => {
     queued.length = 0;
@@ -1074,6 +1093,189 @@ describe("sending an invite again", () => {
       ["usr_1", "usr_9"]
     );
     expect(result.error?.category).toBe("notFound");
+  });
+});
+
+// The checks Revoke, Resend and Deactivate make on what `readCompanyTies` read.
+describe("checks on a user's ties to the company", () => {
+  const NO_ACCOUNTS = { employee: false, customer: false, supplier: false };
+  const tie = (overrides: Partial<CompanyTie> = {}): CompanyTie => ({
+    userId: "usr_1",
+    email: "usr_1@example.com",
+    isMember: false,
+    accounts: { ...NO_ACCOUNTS, employee: true },
+    invite: {
+      id: "inv_1",
+      role: "employee",
+      acceptedAt: null,
+      revokedAt: null
+    },
+    ...overrides
+  });
+  const ACCEPTED = "2026-11-01T00:00:00Z";
+  const REVOKED = "2026-11-02T00:00:00Z";
+
+  describe("revocableInvites", () => {
+    it("takes pending and earlier revoked invites", () => {
+      const ties = [
+        tie(),
+        tie({
+          userId: "usr_2",
+          invite: {
+            id: "inv_2",
+            role: "employee",
+            acceptedAt: null,
+            revokedAt: REVOKED
+          }
+        })
+      ];
+      expect(revocableInvites(ties, ["usr_1", "usr_2"])).toEqual({
+        data: [
+          { userId: "usr_1", inviteId: "inv_1", revokedAt: null },
+          { userId: "usr_2", inviteId: "inv_2", revokedAt: REVOKED }
+        ],
+        error: null
+      });
+    });
+
+    it.each([
+      ["an id that names no one", [tie()], ["usr_1", "usr_9"]],
+      ["a user with no tie here", [tie({ invite: null })], ["usr_1"]]
+    ])("does not find %s", (_label, ties, ids) => {
+      const { error } = revocableInvites(ties, ids);
+      expect(error?.category).toBe("notFound");
+      expect(error?.message).toBe("User not found");
+    });
+
+    it("names every user it refuses", () => {
+      const { error } = revocableInvites(
+        [
+          tie({ isMember: true }),
+          tie({
+            userId: "usr_2",
+            email: "usr_2@example.com",
+            invite: {
+              id: "inv_2",
+              role: "employee",
+              acceptedAt: ACCEPTED,
+              revokedAt: REVOKED
+            }
+          }),
+          tie({
+            userId: "usr_3",
+            email: "usr_3@example.com",
+            invite: {
+              id: "inv_3",
+              role: "employee",
+              acceptedAt: ACCEPTED,
+              revokedAt: null
+            }
+          })
+        ],
+        ["usr_1", "usr_2", "usr_3"]
+      );
+      expect(error?.category).toBe("rule");
+      expect(error?.message).toBe(
+        "Only a pending invite can be revoked: usr_1@example.com has an active account: deactivate it instead; usr_2@example.com was deactivated; usr_3@example.com accepted their invite."
+      );
+    });
+  });
+
+  describe("reinviteRevocations", () => {
+    it("answers each user's revocation", () => {
+      const ties = [
+        tie({
+          invite: {
+            id: "inv_1",
+            role: "employee",
+            acceptedAt: ACCEPTED,
+            revokedAt: REVOKED
+          }
+        }),
+        tie({ userId: "usr_2" })
+      ];
+      expect([
+        ...(reinviteRevocations(ties, ["usr_1", "usr_2"]).data ?? [])
+      ]).toEqual([
+        ["usr_1", REVOKED],
+        ["usr_2", null]
+      ]);
+    });
+
+    it.each([
+      [
+        "an id that names no one",
+        [tie()],
+        ["usr_1", "usr_9"],
+        "User not found"
+      ],
+      [
+        "a user with no invite here",
+        [tie({ invite: null })],
+        ["usr_1"],
+        "No invite record found for user"
+      ]
+    ])("does not find %s", (_label, ties, ids, message) => {
+      const { error } = reinviteRevocations(ties, ids);
+      expect(error?.category).toBe("notFound");
+      expect(error?.message).toBe(message);
+    });
+
+    it("refuses an active account", () => {
+      const { error } = reinviteRevocations(
+        [tie({ isMember: true })],
+        ["usr_1"]
+      );
+      expect(error?.category).toBe("rule");
+      expect(error?.message).toBe(
+        "usr_1@example.com already has an active account in the company. An invite is sent again only to an invited or deactivated person."
+      );
+    });
+
+    it("refuses a contact whose customer account was deactivated", () => {
+      const { error } = reinviteRevocations(
+        [
+          tie({
+            accounts: NO_ACCOUNTS,
+            invite: {
+              id: "inv_1",
+              role: "customer",
+              acceptedAt: ACCEPTED,
+              revokedAt: REVOKED
+            }
+          })
+        ],
+        ["usr_1"]
+      );
+      expect(error?.category).toBe("rule");
+      expect(error?.message).toBe(
+        "usr_1@example.com: the customer or supplier account was deactivated. Invite the contact again from the customer's or supplier's contacts."
+      );
+    });
+  });
+
+  describe("companyUsersRefusal", () => {
+    it.each([
+      [
+        "a membership",
+        tie({ isMember: true, accounts: NO_ACCOUNTS, invite: null })
+      ],
+      ["an account", tie({ invite: null })],
+      ["an invite", tie({ accounts: NO_ACCOUNTS })]
+    ])("takes a user with %s here", (_label, userTie) => {
+      expect(companyUsersRefusal([userTie], ["usr_1"])).toBeNull();
+    });
+
+    it.each([
+      ["an id that names no one", [tie()], ["usr_1", "usr_9"]],
+      [
+        "a user with no tie here",
+        [tie({ accounts: NO_ACCOUNTS, invite: null })],
+        ["usr_1"]
+      ]
+    ])("does not find %s", (_label, ties, ids) => {
+      expect(companyUsersRefusal(ties, ids)?.category).toBe("notFound");
+    });
   });
 });
 

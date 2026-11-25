@@ -9,10 +9,37 @@ import { nanoid } from "nanoid";
 
 export type InviteRefresh =
   | { code: string; createdBy: string }
-  | {
-      failure: "notFound" | "accepted" | "revoked" | "internal";
-      message: string;
-    };
+  | { failure: "noInvite" | "accepted" | "revoked"; message: string };
+
+type NullableFilter<Q> = {
+  is(column: string, value: null): Q;
+  eq(column: string, value: string): Q;
+};
+
+/** `query` narrowed to rows whose `column` is `value`, null included. */
+function whereNullable<Q extends NullableFilter<Q>>(
+  query: Q,
+  column: string,
+  value: string | null
+): Q {
+  return value === null ? query.is(column, null) : query.eq(column, value);
+}
+
+async function isMember(
+  serviceRole: SupabaseClient<Database>,
+  args: { userId: string; companyId: string }
+) {
+  const member = await serviceRole
+    .from("userToCompany")
+    .select("userId")
+    .eq("userId", args.userId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (member.error) {
+    throw new Error("Failed to read the membership", { cause: member.error });
+  }
+  return member.data !== null;
+}
 
 /**
  * Gives an invite that is sent again a new code, clears its acceptance and
@@ -25,7 +52,8 @@ export type InviteRefresh =
  * The write also matches `revokedAt` as it was when the resend was requested
  * (`args.revokedAt`; when absent, as read here): a resend clears the
  * revocation it was asked to clear, never one saved after it.
- * The caller sends no email unless this returns a code.
+ * The caller sends no email unless this returns a code. Throws when a read or
+ * the write fails.
  */
 export async function refreshResentInvite(
   serviceRole: SupabaseClient<Database>,
@@ -43,32 +71,17 @@ export async function refreshResentInvite(
     .eq("companyId", args.companyId)
     .maybeSingle();
   if (invite.error) {
-    return { failure: "internal", message: "Failed to read the invite" };
+    throw new Error("Failed to read the invite", { cause: invite.error });
   }
   if (!invite.data) {
-    return { failure: "notFound", message: "No invite record found for user" };
+    return { failure: "noInvite", message: "No invite record found for user" };
   }
 
-  const isMember = async () => {
-    const member = await serviceRole
-      .from("userToCompany")
-      .select("userId")
-      .eq("userId", args.userId)
-      .eq("companyId", args.companyId)
-      .maybeSingle();
-    return member.error ? null : member.data !== null;
-  };
-  const membershipUnread = {
-    failure: "internal" as const,
-    message: "Failed to read the membership"
-  };
-  const accepted = {
-    failure: "accepted" as const,
+  const accepted: InviteRefresh = {
+    failure: "accepted",
     message: `${args.email} accepted the invite: they have an active account in the company.`
   };
-  const memberBefore = await isMember();
-  if (memberBefore === null) return membershipUnread;
-  if (memberBefore) return accepted;
+  if (await isMember(serviceRole, args)) return accepted;
 
   const revokedAt =
     args.revokedAt === undefined ? invite.data.revokedAt : args.revokedAt;
@@ -82,30 +95,25 @@ export async function refreshResentInvite(
     })
     .eq("email", args.email)
     .eq("companyId", args.companyId);
-  const sinceAccepted =
-    invite.data.acceptedAt === null
-      ? update.is("acceptedAt", null)
-      : update.eq("acceptedAt", invite.data.acceptedAt);
-  const refreshed = await (revokedAt === null
-    ? sinceAccepted.is("revokedAt", null)
-    : sinceAccepted.eq("revokedAt", revokedAt)
+  const refreshed = await whereNullable(
+    whereNullable(update, "acceptedAt", invite.data.acceptedAt),
+    "revokedAt",
+    revokedAt
   )
     .select("code")
     .maybeSingle();
   if (refreshed.error) {
-    return { failure: "internal", message: "Failed to refresh invite" };
+    throw new Error("Failed to refresh invite", { cause: refreshed.error });
   }
-  if (!refreshed.data) {
-    // An acceptance adds the membership; a revoke or a deactivation does not.
-    const memberAfter = await isMember();
-    if (memberAfter === null) return membershipUnread;
-    if (memberAfter) return accepted;
-    return {
-      failure: "revoked",
-      message: `${args.email}'s invite was revoked after this resend was requested.`
-    };
+  if (refreshed.data) {
+    return { code: refreshed.data.code, createdBy: invite.data.createdBy };
   }
-  return { code: refreshed.data.code, createdBy: invite.data.createdBy };
+  // An acceptance adds the membership; a revoke or a deactivation does not.
+  if (await isMember(serviceRole, args)) return accepted;
+  return {
+    failure: "revoked",
+    message: `${args.email}'s invite was revoked after this resend was requested.`
+  };
 }
 
 /**
@@ -123,6 +131,12 @@ export type ResentInvite = {
   name: string;
   code: string;
   createdBy: string;
+};
+
+/** How a queued user-admin action ended: a skip is an action that no longer applies. */
+export type AdminOutcome = {
+  outcome: "done" | "skipped" | "failed";
+  message?: string;
 };
 
 /** A hash of an invite code: the code is a bearer secret, kept out of step state. */
@@ -143,13 +157,14 @@ async function inviteCodeHash(code: string) {
  * gone and refuse. The second delivers the code the invite holds, only while
  * it is still the refreshed one and the invite is neither accepted nor
  * revoked: a revoke, an acceptance or another resend since then skips it.
+ * A failed read throws, so Inngest retries the step.
  */
 export async function resendInvite(
   serviceRole: SupabaseClient<Database>,
   step: InviteSteps,
   args: { userId: string; companyId: string; revokedAt?: string | null },
   deliver: (invite: ResentInvite) => Promise<void>
-): Promise<{ success: boolean; message: string }> {
+): Promise<AdminOutcome> {
   const readUser = async () => {
     const user = await serviceRole
       .from("user")
@@ -177,7 +192,7 @@ export async function resendInvite(
     }
   );
   if (!("codeHash" in refreshed)) {
-    return { success: false, message: refreshed.message };
+    return { outcome: "skipped", message: refreshed.message };
   }
 
   return step.run("send-invite", async () => {
@@ -200,7 +215,7 @@ export async function resendInvite(
       (await inviteCodeHash(invite.data.code)) !== refreshed.codeHash
     ) {
       return {
-        success: false,
+        outcome: "skipped",
         message: `${user.email}'s invite was accepted, revoked or sent again after this resend refreshed it.`
       };
     }
@@ -211,7 +226,7 @@ export async function resendInvite(
       createdBy: invite.data.createdBy
     });
     return {
-      success: true,
+      outcome: "done",
       message: `Successfully resent invite for ${args.userId}`
     };
   });

@@ -3,12 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { accountProfileValidator } from "@carbon/account";
-import { defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  CarbonError,
+  defineServiceFn,
+  type ErrorCategory
+} from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
-import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { LEVELS, pageById } from "@carbon/database/access";
-import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
 import {
   ACCESS_READER_GATE,
@@ -23,15 +26,19 @@ import {
   subjectEntitlement
 } from "@carbon/ee/permissions.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
-import { batchTrigger, refreshResentInvite } from "@carbon/jobs";
+import {
+  batchTrigger,
+  type InviteRefresh,
+  refreshResentInvite
+} from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import {
   datetime,
-  Edition,
   isAllowedAvatarValue,
   isOwnAvatarUpload,
   isOwnSignaturePath,
+  pluckUnique,
   requireAffected,
   requiresItarEntityCertification
 } from "@carbon/utils";
@@ -56,6 +63,16 @@ import {
 import * as service from "./users.service";
 
 const logger = getLogger("erp", "users");
+
+/** The error each refused invite refresh answers. */
+const REFRESH_REFUSAL = {
+  noInvite: "notFound",
+  accepted: "rule",
+  revoked: "conflict"
+} as const satisfies Record<
+  Extract<InviteRefresh, { failure: string }>["failure"],
+  ErrorCategory
+>;
 // ---------------------------------------------------------------------------
 // Operations (`defineServiceFn`): what the routes, the API and MCP all run
 // ---------------------------------------------------------------------------
@@ -321,9 +338,9 @@ export const resendInvites = defineServiceFn({
     userIds: z.array(z.string().min(1)).min(1)
   }),
   permission: { "users.accounts": "Create" },
-  async run(ctx, { userIds }) {
+  async run(ctx, input) {
     const companyId = ctx.company.id;
-    const { ip, city } = ctx.origin;
+    const userIds = pluckUnique(input.userIds, (id) => id);
     // Accepting brings a deactivated person back on the type they kept: an Admin's is an Admin's call.
     const adminRefused = await adminRemovalRefusal(ctx.asSystem.pg, {
       companyId,
@@ -332,7 +349,7 @@ export const resendInvites = defineServiceFn({
     });
     if (adminRefused) return grantWriteRefusal(ctx, adminRefused);
     // Each invite's revocation as read here: the refresh clears only that one.
-    const reinvitable = await service.refuseUnlessReinvitable(ctx, userIds);
+    const reinvitable = await service.readReinviteRevocations(ctx, userIds);
     if (reinvitable.error) return reinvitable.error;
     const revokedAt = reinvitable.data;
     if (userIds.length > 1) {
@@ -344,8 +361,7 @@ export const resendInvites = defineServiceFn({
               id,
               type: "resend" as const,
               companyId,
-              location: city ?? "Unknown",
-              ip: ip ?? "127.0.0.1",
+              ...service.inviteOrigin(ctx.origin),
               revokedAt: revokedAt.get(id) ?? null
             }
           }))
@@ -377,16 +393,16 @@ export const resendInvites = defineServiceFn({
       email: user.data.email,
       companyId,
       revokedAt: revokedAt.get(userId) ?? null
-    });
+    }).catch((cause: unknown) =>
+      ctx.error(
+        "internal",
+        cause instanceof Error ? cause.message : "Failed to refresh invite",
+        cause
+      )
+    );
+    if (refreshed instanceof CarbonError) return refreshed;
     if ("failure" in refreshed) {
-      return ctx.error(
-        refreshed.failure === "accepted"
-          ? "rule"
-          : refreshed.failure === "revoked"
-            ? "conflict"
-            : refreshed.failure,
-        refreshed.message
-      );
+      return ctx.error(REFRESH_REFUSAL[refreshed.failure], refreshed.message);
     }
 
     const inviter = await serviceRole
@@ -440,156 +456,47 @@ export const revokeInvites = defineServiceFn({
   }),
   permission: { "users.accounts": "Full" },
   async run(ctx, { userIds }) {
-    const companyId = ctx.company.id;
-    const actorId = ctx.auditUserId;
-    const serviceRole = ctx.asSystem.supabase;
-    const { ip, userAgent } = ctx.origin;
-
-    const pending = await service.refuseUnlessPendingInvites(ctx, userIds);
+    const pending = await service.readRevocableInvites(ctx, userIds);
     if (pending.error) return pending.error;
-    const invites = pending.data;
 
-    // The revoke is the write that decides: it stamps only invites still
-    // pending, and an acceptance needs `revokedAt` null, so an invite accepted
-    // since the check is not revoked, and its account is not deactivated.
     const revokedAt = datetime.timestamp();
-    const toStamp = invites.filter((invite) => invite.revokedAt === null);
-    let stamped: { id: string }[] = [];
-    if (toStamp.length > 0) {
-      const revoked = await serviceRole
-        .from("invite")
-        .update({ revokedAt })
-        .in(
-          "id",
-          toStamp.map((invite) => invite.inviteId)
-        )
-        .eq("companyId", companyId)
-        .is("acceptedAt", null)
-        .is("revokedAt", null)
-        .select("id");
-      if (revoked.error) {
-        return ctx.error("internal", "Failed to revoke invites", revoked.error);
-      }
-      stamped = revoked.data;
-    }
-    const stampedIds = new Set(stamped.map((invite) => invite.id));
+    const stamped = await service.stampPendingInvites(
+      ctx,
+      pending.data,
+      revokedAt
+    );
+    if (stamped.error) return stamped.error;
+
     // Each user to deactivate, with the revocation its job must still find:
     // this call's, or an earlier one's whose deactivation may not have run.
-    const toDeactivate = invites.flatMap((invite) =>
-      stampedIds.has(invite.inviteId)
-        ? [{ id: invite.userId, revokedAt }]
-        : invite.revokedAt !== null
-          ? [{ id: invite.userId, revokedAt: invite.revokedAt }]
-          : []
-    );
+    const stampedIds = new Set(stamped.data);
+    const toDeactivate = pending.data
+      .filter(
+        (invite) => invite.revokedAt !== null || stampedIds.has(invite.inviteId)
+      )
+      .map((invite) => ({
+        id: invite.userId,
+        revokedAt: invite.revokedAt ?? revokedAt
+      }));
 
-    // A deactivation that fails before it changes the account gives the
-    // invites this call revoked back, as pending: the revoke can be sent
-    // again.
-    const unrevoke = async (cause: unknown, message: string) => {
-      if (stamped.length > 0) {
-        const restored = await serviceRole
-          .from("invite")
-          .update({ revokedAt: null })
-          .in(
-            "id",
-            stamped.map((invite) => invite.id)
-          )
-          .eq("companyId", companyId)
-          .eq("revokedAt", revokedAt);
-        if (restored.error) {
-          logger.error("Failed to restore revoked invites", {
-            companyId,
-            error: restored.error
-          });
-        }
-      }
-      return ctx.error("internal", message, cause);
-    };
-
-    // The users the job deactivates: several, or the one whose deactivation
-    // threw. `deactivateUser` returns a failed account write, and throws only
-    // after the writes (clearing the cached claims), so a throw keeps the
-    // invite revoked and the job, which retries, runs the deactivation again.
-    let toQueue = toDeactivate.length > 1 ? toDeactivate : [];
-    if (toDeactivate.length === 1) {
-      const deactivated = await deactivateUser(
-        serviceRole,
-        toDeactivate[0].id,
-        companyId,
-        actorId,
-        ip
-      ).catch((error: unknown) => {
-        logger.error("Failed to finish deactivating a revoked invite's user", {
-          companyId,
-          error
-        });
-        return null;
-      });
-      if (deactivated === null) {
-        toQueue = toDeactivate;
-      } else if (!deactivated.success) {
-        return unrevoke(deactivated.message, "Failed to deactivate user");
-      } else if (CarbonEdition === Edition.Cloud) {
-        await updateSubscriptionQuantityForCompany(companyId);
-      }
+    // One user is deactivated here; several, or one whose deactivation threw
+    // after its writes, by the job.
+    const deactivated =
+      toDeactivate.length === 1
+        ? await service.deactivateRevokedUser(ctx, toDeactivate[0].id)
+        : "queue";
+    if (deactivated instanceof CarbonError) {
+      await service.restoreStampedInvites(ctx, stamped.data, revokedAt);
+      return deactivated;
     }
 
-    // The send can reject after Inngest accepted the events, and an accepted
-    // deactivation still runs: the invites stay revoked, never reopened, and
-    // a revoke sent again for them runs the deactivation that did not.
-    let unqueued: { cause: unknown } | null = null;
-    if (toQueue.length > 0) {
-      try {
-        await batchTrigger(
-          "user-admin",
-          toQueue.map((user) => ({
-            payload: {
-              id: user.id,
-              type: "deactivate" as const,
-              companyId,
-              actorId,
-              ip,
-              revokedAt: user.revokedAt
-            }
-          }))
-        );
-      } catch (cause) {
-        unqueued = { cause };
-      }
-    }
-
-    // Best effort: a company without audit logging has no audit log table.
-    if (stamped.length > 0) {
-      try {
-        await insertAuditLogEntries(
-          serviceRole,
-          companyId,
-          stamped.map((invite) => ({
-            tableName: "invite" as const,
-            entityType: "invite" as const,
-            entityId: invite.id,
-            recordId: invite.id,
-            operation: "UPDATE" as const,
-            actorId,
-            diff: { revokedAt: { old: null, new: revokedAt } },
-            metadata: { ipAddress: ip, userAgent }
-          }))
-        );
-      } catch (err) {
-        logger.warning("Audit write skipped for a revoked invite", {
-          error: err
-        });
-      }
-    }
-    if (unqueued) {
-      return ctx.error(
-        "internal",
-        "Revoked the invites, but deactivating their users may not have been queued: revoke them again to finish",
-        unqueued.cause
-      );
-    }
-    return { revoked: stamped.length };
+    const unqueued =
+      deactivated === "queue"
+        ? await service.queueRevokedDeactivations(ctx, toDeactivate)
+        : null;
+    await service.auditRevokedInvites(ctx, stamped.data, revokedAt);
+    if (unqueued) return unqueued;
+    return { revoked: stamped.data.length };
   }
 });
 
