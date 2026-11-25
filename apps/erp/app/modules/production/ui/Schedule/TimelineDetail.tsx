@@ -111,7 +111,7 @@ export function TimelineDetail({
   const isUnschedulablePlaceholder =
     detail.kind === "reservation" && !!detail.unschedulable;
 
-  // An operation with no work center: nothing to place it on, and no time.
+  // An operation with no usable work center: nothing to place it on, and no time.
   const hasNoWorkCenter = !!detail.noWorkCenter;
 
   const kindLabel: Record<TimelineNodeDetail["kind"], string> = {
@@ -319,9 +319,9 @@ export function TimelineDetail({
         {hasNoWorkCenter && (
           <p className="text-sm italic text-muted-foreground text-pretty">
             <Trans>
-              This operation has no work center, so it can't be scheduled. Give
-              it a work center that runs its process, or add its process to a
-              work center at this location.
+              No work center at this location can run this operation, so it
+              isn't on the schedule. Give it a work center that runs its
+              process, or add its process to a work center at this location.
             </Trans>
           </p>
         )}

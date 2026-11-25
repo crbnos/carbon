@@ -39,8 +39,8 @@ import { getShiftsWithTimesByIds } from "~/modules/people/people.service";
 import {
   getForecastNonWorkingIntervals,
   getHolidayDates,
-  getOperationsWithoutWorkCenter,
   getQualifiedPeopleByProcess,
+  getUnreservedOperations,
   getWorkCenterNonWorkingIntervals
 } from "~/modules/production/production.service";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
@@ -222,7 +222,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     reservations,
     maintenanceResult,
     holidays,
-    operationsWithoutWorkCenterResult
+    unreservedOperationsResult
   ] = await Promise.all([
     api.production.getCapacityReservationsForResources({
       locationId,
@@ -237,10 +237,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       to: toCalendarDate(fromAbsolute(windowEndMs, timeZone)).toString()
     }),
     // A department scopes the board to its stations; an operation with no
-    // work center belongs to none of them.
+    // reservation is drawn on none of them.
     departmentId
       ? Promise.resolve({ data: [], error: null })
-      : getOperationsWithoutWorkCenter(client, companyId, locationId)
+      : getUnreservedOperations(client, companyId, locationId)
   ]);
   if (holidays.error) {
     throw redirect(
@@ -248,14 +248,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       await flash(request, error(holidays.error, "Failed to load holidays"))
     );
   }
-  if (operationsWithoutWorkCenterResult.error) {
+  if (unreservedOperationsResult.error) {
     throw redirect(
       path.to.production,
       await flash(
         request,
         error(
-          operationsWithoutWorkCenterResult.error,
-          "Failed to load operations without a work center"
+          unreservedOperationsResult.error,
+          "Failed to load the operations that are not on the schedule"
         )
       )
     );
@@ -607,19 +607,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
     maintenance: maintenance.filter((m) =>
       departmentWorkCenterIds.has(m.workCenterId)
     ),
-    operationsWithoutWorkCenter: (
-      operationsWithoutWorkCenterResult.data ?? []
-    ).map((op) => ({
-      operationId: op.id,
-      jobId: op.jobId,
-      jobReadableId: op.job?.jobId ?? op.jobId,
-      operationDescription: op.description ?? null,
-      itemReadableId: op.jobMakeMethod?.item?.readableIdWithRevision ?? null,
-      itemName: op.jobMakeMethod?.item?.name ?? null,
-      itemThumbnailPath: op.jobMakeMethod?.item?.thumbnailPath ?? null,
-      itemType: op.jobMakeMethod?.item?.type ?? null,
-      conflictReason: op.conflictReason
-    })),
+    operationsWithoutWorkCenter: (unreservedOperationsResult.data ?? []).map(
+      (op) => ({
+        operationId: op.id,
+        jobId: op.jobId,
+        jobReadableId: op.job?.jobId ?? op.jobId,
+        operationDescription: op.description ?? null,
+        itemReadableId: op.jobMakeMethod?.item?.readableIdWithRevision ?? null,
+        itemName: op.jobMakeMethod?.item?.name ?? null,
+        itemThumbnailPath: op.jobMakeMethod?.item?.thumbnailPath ?? null,
+        itemType: op.jobMakeMethod?.item?.type ?? null,
+        conflictReason: op.conflictReason
+      })
+    ),
     window: { start: windowStartMs, end: windowEndMs }
   });
 

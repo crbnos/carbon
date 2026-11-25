@@ -1665,35 +1665,106 @@ export async function getCapacityReservationsForResources(
   return query.order("startAt");
 }
 
-/** The most operations without a work center one Forecast load lists. */
-const OPERATIONS_WITHOUT_WORK_CENTER_LIMIT = 200;
+/** The most operations one Forecast load lists as unreserved. */
+const UNRESERVED_OPERATIONS_LIMIT = 200;
+
+/**
+ * The most candidate operations one Forecast load reads: PostgREST's row cap.
+ * A late operation that was placed is a candidate too and is dropped, so the
+ * candidates must reach past the listed cap.
+ */
+const UNRESERVED_OPERATION_CANDIDATE_LIMIT = 1000;
+
+/**
+ * Drops the operations a live reservation already draws on the Forecast: one
+ * booked on the operation itself (a placeholder included), or the coalesced
+ * booking of the Released batch it is a member of, which names only the
+ * batch's anchor operation.
+ */
+export function withoutLiveReservation<
+  T extends { id: string; jobOperationBatchId: string | null }
+>(
+  operations: T[],
+  reservations: { operationId: string; jobOperationBatchId: string | null }[]
+): T[] {
+  const reservedOperationIds = new Set(reservations.map((r) => r.operationId));
+  const reservedBatchIds = new Set(
+    reservations.flatMap((r) =>
+      r.jobOperationBatchId ? [r.jobOperationBatchId] : []
+    )
+  );
+  return operations.filter(
+    (op) =>
+      !reservedOperationIds.has(op.id) &&
+      !(op.jobOperationBatchId && reservedBatchIds.has(op.jobOperationBatchId))
+  );
+}
 
 /**
  * Open operations of the jobs the scheduler places at a location that have no
- * work center: no process, or a process no work center there runs. They get no
- * capacity reservation, so the Forecast reads them here. Outside Processing has
- * no work center by design and is left out.
+ * live capacity reservation, so the Forecast draws them nowhere else: no work
+ * center, or a work center or process the scheduler could not use there (it
+ * flags those with a conflict and keeps the stored work center). Outside
+ * Processing has no work center by design and is left out.
  */
-export async function getOperationsWithoutWorkCenter(
+export async function getUnreservedOperations(
   client: SupabaseClient<Database>,
   companyId: string,
   locationId: string
 ) {
-  return client
+  const candidates = await client
     .from("jobOperation")
     .select(
-      `id, jobId, description, conflictReason,
+      `id, jobId, description, conflictReason, jobOperationBatchId,
        job!inner(jobId, status, locationId),
        jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))`
     )
     .eq("companyId", companyId)
-    .is("workCenterId", null)
+    .or("workCenterId.is.null,hasConflict.eq.true")
     .neq("operationType", "Outside Processing")
     .not("status", "in", '("Done","Canceled")')
     .eq("job.locationId", locationId)
     .in("job.status", SCHEDULED_JOB_STATUSES)
+    // Operations with no work center first: they never have a reservation.
+    .order("workCenterId", { ascending: true, nullsFirst: true })
     .order("id")
-    .limit(OPERATIONS_WITHOUT_WORK_CENTER_LIMIT);
+    .limit(UNRESERVED_OPERATION_CANDIDATE_LIMIT);
+  if (candidates.error) return { data: null, error: candidates.error };
+  if (candidates.data.length === 0) return { data: [], error: null };
+
+  const batchIds = [
+    ...new Set(
+      candidates.data.flatMap((op) =>
+        op.jobOperationBatchId ? [op.jobOperationBatchId] : []
+      )
+    )
+  ];
+  const reservationsFor =
+    (column: "operationId" | "jobOperationBatchId") => (ids: string[]) =>
+      client
+        .from("capacityReservation")
+        .select("id, operationId, jobOperationBatchId")
+        .eq("companyId", companyId)
+        .is("scenarioId", null)
+        .in(column, ids)
+        .order("id");
+  const [byOperation, byBatch] = await Promise.all([
+    fetchAllByIds(
+      candidates.data.map((op) => op.id),
+      reservationsFor("operationId")
+    ),
+    fetchAllByIds(batchIds, reservationsFor("jobOperationBatchId"))
+  ]);
+  if (byOperation.error) return { data: null, error: byOperation.error };
+  if (byBatch.error) return { data: null, error: byBatch.error };
+
+  return {
+    data: withoutLiveReservation(candidates.data, [
+      ...byOperation.data,
+      ...byBatch.data
+    ]).slice(0, UNRESERVED_OPERATIONS_LIMIT),
+    error: null
+  };
 }
 
 export async function getMaintenanceDowntimeForResources(

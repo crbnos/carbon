@@ -6,12 +6,7 @@
 import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
-import {
-  Array as ArrayInput,
-  Input,
-  useControlField,
-  ValidatedForm
-} from "@carbon/form";
+import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -138,6 +133,7 @@ import {
 } from "~/components/StepLinkEditor";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import { useCurrencyDecimals, useImageUpload, useUser } from "~/hooks";
+import { useProcessWorkCenter } from "~/hooks/useProcessWorkCenter";
 import { useTags } from "~/hooks/useTags";
 import type {
   SlideAnnotation,
@@ -152,7 +148,6 @@ import {
   procedureStepType,
   standardFactorType
 } from "~/modules/shared/shared.models";
-import { workCenterForProcess } from "~/modules/shared/shared.utils";
 import type {
   OperationParameter,
   OperationStep,
@@ -1000,10 +995,7 @@ function OperationForm({
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
   const formId = useId();
-  const [workCenterId, setWorkCenterId] = useControlField<string | undefined>(
-    "workCenterId",
-    formId
-  );
+  const keepForProcess = useProcessWorkCenter(formId);
 
   useEffect(() => {
     // Remove from temporary items after successful submission
@@ -1086,13 +1078,9 @@ function OperationForm({
     if (process.error) throw new Error(process.error.message);
     if (workCenters.error) throw new Error(workCenters.error.message);
 
-    const nextWorkCenterId = workCenterForProcess({
-      workCenterId,
-      processWorkCenters: workCenters.data.flatMap((wc) =>
-        wc.workCenter ? [wc.workCenter] : []
-      )
-    });
-    setWorkCenterId(nextWorkCenterId);
+    const nextWorkCenterId = keepForProcess(
+      workCenters.data.flatMap((wc) => (wc.workCenter ? [wc.workCenter] : []))
+    );
 
     setProcessData((p) => ({
       ...p,

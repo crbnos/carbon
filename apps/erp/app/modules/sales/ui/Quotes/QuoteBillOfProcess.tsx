@@ -4,12 +4,7 @@
 
 "use client";
 import { useCarbon } from "@carbon/auth";
-import {
-  Array as ArrayInput,
-  Input,
-  useControlField,
-  ValidatedForm
-} from "@carbon/form";
+import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -118,6 +113,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { useProcessWorkCenter } from "~/hooks/useProcessWorkCenter";
 import {
   OperationRowDetails,
   OperationRowTitle
@@ -130,7 +126,6 @@ import {
   operationTypes,
   procedureStepType
 } from "~/modules/shared/shared.models";
-import { workCenterForProcess } from "~/modules/shared/shared.utils";
 import type {
   OperationParameter,
   OperationStep,
@@ -1698,10 +1693,7 @@ function OperationForm({
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
   const formId = useId();
-  const [workCenterId, setWorkCenterId] = useControlField<string | undefined>(
-    "workCenterId",
-    formId
-  );
+  const keepForProcess = useProcessWorkCenter(formId);
 
   const machineDisclosure = useDisclosure();
   const assemblyDisclosure = useDisclosure();
@@ -1768,18 +1760,16 @@ function OperationForm({
       carbon.from("supplierProcess").select("*").eq("processId", processId)
     ]);
 
-    const activeWorkCenters =
-      workCenters?.data?.filter((wc) => Boolean(wc.workCenter)) ?? [];
-
     if (process.error) throw new Error(process.error.message);
+    // A failed read would leave no work centers, and clear a valid one.
+    if (workCenters.error) throw new Error(workCenters.error.message);
 
-    setWorkCenterId(
-      workCenterForProcess({
-        workCenterId,
-        processWorkCenters: activeWorkCenters.flatMap((wc) =>
-          wc.workCenter ? [wc.workCenter] : []
-        )
-      })
+    const activeWorkCenters = workCenters.data.filter((wc) =>
+      Boolean(wc.workCenter)
+    );
+
+    keepForProcess(
+      activeWorkCenters.flatMap((wc) => (wc.workCenter ? [wc.workCenter] : []))
     );
 
     setProcessData((p) => ({
