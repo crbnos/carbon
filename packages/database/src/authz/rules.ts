@@ -494,7 +494,6 @@ export type Rule<T extends Table = Table> =
   | { kind: "serviceOnly" }
   | { kind: "custom"; reason: string; sql: (target: string) => string };
 
-// biome-ignore lint/suspicious/noExplicitAny: a rule for some table, read generically
 export type AnyRule = Rule<any>;
 
 type CustomRule = Extract<AnyRule, { kind: "custom" }>;

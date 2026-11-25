@@ -123,7 +123,6 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
       [columnFilters, hasFilterKey]
     );
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const activate = useCallback((filter: ColumnFilter) => {
       setInput("");
       setActiveFilter(filter);
@@ -135,6 +134,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
       } else {
         setActiveOptions([]);
       }
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, []);
 
     const updateActiveOptions = useCallback(

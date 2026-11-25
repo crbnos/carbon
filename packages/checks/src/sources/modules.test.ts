@@ -6,7 +6,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { loadModules } from "./modules";
+import { loadModuleServerFiles, loadModules } from "./modules";
 
 describe("loadModules", () => {
   it("returns one entry per subdirectory with its top-level names", () => {
@@ -18,5 +18,34 @@ describe("loadModules", () => {
     const mods = loadModules(root);
     expect(mods.map((m) => m.name)).toEqual(["sales"]);
     expect(mods[0]?.entries.sort()).toEqual(["sales.service.ts", "ui"]);
+  });
+
+  it("returns nothing for a folder that does not exist", () => {
+    const root = mkdtempSync(join(tmpdir(), "mods-"));
+    expect(loadModules(join(root, "missing"))).toEqual([]);
+  });
+});
+
+describe("loadModuleServerFiles", () => {
+  it("pairs a module's server file with its service file, and skips a module that lacks one", () => {
+    const root = mkdtempSync(join(tmpdir(), "mods-"));
+    const modules = join(root, "apps/erp/app/modules");
+    mkdirSync(join(modules, "sales"), { recursive: true });
+    writeFileSync(join(modules, "sales", "sales.server.ts"), "// server");
+    writeFileSync(join(modules, "sales", "sales.service.ts"), "// service");
+    mkdirSync(join(modules, "shared"));
+    writeFileSync(join(modules, "shared", "shared.service.ts"), "");
+    expect(loadModuleServerFiles(root)).toEqual([
+      {
+        server: {
+          file: "apps/erp/app/modules/sales/sales.server.ts",
+          contents: "// server"
+        },
+        service: {
+          file: "apps/erp/app/modules/sales/sales.service.ts",
+          contents: "// service"
+        }
+      }
+    ]);
   });
 });

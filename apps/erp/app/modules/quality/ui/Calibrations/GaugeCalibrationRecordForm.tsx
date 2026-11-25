@@ -110,11 +110,11 @@ const GaugeCalibrationRecordForm = ({
   const { carbon } = useCarbon();
   const { options: gaugeOptions, gaugeTypes } = useGauges();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (initialValues.gaugeId) {
       onGaugeSelected(initialValues.gaugeId);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [initialValues.gaugeId]);
 
   const onGaugeSelected = async (gaugeId: string) => {

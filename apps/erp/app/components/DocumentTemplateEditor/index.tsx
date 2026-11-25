@@ -195,7 +195,6 @@ function CompactEditorPanes({ actionPath }: { actionPath: string }) {
   const textFocus = useEditorStore((s) => s.textFocus);
   // A newly added block, or a word clicked in the preview, opens its
   // settings, as the desktop config rail does.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `textFocus` changes on every click in the preview, even on the selected block.
   useEffect(() => {
     if (selectedId) setPane("config");
   }, [selectedId, textFocus]);

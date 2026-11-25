@@ -52,8 +52,8 @@ import { path } from "~/utils/path";
 import { ALL_MATCHING_RELEASE_LIMIT } from "~/utils/table-jobs";
 import { isBatchDissolvable, isBatchReleasable } from "../../production.models";
 import type { JobOperationBatch } from "../../types";
-import { BatchReleaseModal } from "./BatchReleaseModal";
 import { BATCH_LIST_EXPORT_VALUES } from "./batch-list-export";
+import { BatchReleaseModal } from "./BatchReleaseModal";
 import { useBatchRelease } from "./useBatchRelease";
 
 type BatchesTableProps = {

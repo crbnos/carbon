@@ -115,7 +115,7 @@ Every dirty iteration runs these before the judge sees the change:
 
 | Gate | Command |
 |------|---------|
-| `lint` | `pnpm exec biome check` |
+| `lint` | `pnpm exec oxlint` |
 | `conformance` | `pnpm --filter @carbon/checks test` |
 | `clobbers` | `pnpm --filter @carbon/checks clobbers` |
 

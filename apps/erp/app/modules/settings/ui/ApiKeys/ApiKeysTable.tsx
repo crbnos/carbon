@@ -185,7 +185,6 @@ const ApiKeysTable = memo((props: ApiKeysTableProps) => {
     ];
   }, [people, t]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {
       return (
@@ -215,6 +214,7 @@ const ApiKeysTable = memo((props: ApiKeysTableProps) => {
       );
     },
 
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     [navigate, params, permissions]
   );
 

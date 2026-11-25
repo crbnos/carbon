@@ -50,6 +50,8 @@ import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { SupplierPartPrice } from "~/modules/items/ui/Item/SupplierParts";
 import type { RefusedPlanningOrder } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
+import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
+import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import {
   type PlanningActionHandlers,
   reviewPathFor
@@ -69,8 +71,6 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
-import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
-import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { path } from "~/utils/path";
@@ -192,7 +192,6 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     // Only while open: the drawer stays mounted on its last item so it can
     // slide out, and that item's actions change with every Apply on the grid.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: actionsKey stands in for `actions`; periods are fixed for the page
     useEffect(() => {
       if (!isOpen || !carbon || !selectedItem.id) return;
       let isCurrent = true;
@@ -283,6 +282,7 @@ export const PurchasingPlanningOrderDrawer = memo(
       return () => {
         isCurrent = false;
       };
+      // oxlint-disable-next-line react/exhaustive-deps -- actionsKey stands in for `actions`; periods are fixed for the page
     }, [
       isOpen,
       carbon,
@@ -579,7 +579,6 @@ export const PurchasingPlanningOrderDrawer = memo(
       ]
     );
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     useEffect(() => {
       if (fetcher.state !== "idle" || !fetcher.data) {
         return;
@@ -654,6 +653,7 @@ export const PurchasingPlanningOrderDrawer = memo(
         }
         onClose();
       }
+      // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
     }, [fetcher.state, fetcher.data]);
 
     const supplierDisclosure = useDisclosure();

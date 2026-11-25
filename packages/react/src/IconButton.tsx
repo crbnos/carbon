@@ -9,8 +9,10 @@ import type { ButtonProps } from "./Button";
 import { Button } from "./Button";
 import { cn } from "./utils/cn";
 
-export interface IconButtonProps
-  extends Omit<ButtonProps, "leftIcon" | "rightIcon"> {
+export interface IconButtonProps extends Omit<
+  ButtonProps,
+  "leftIcon" | "rightIcon"
+> {
   /** Required for accessibility - describes the button action */
   "aria-label": string;
   /** The icon element to display */

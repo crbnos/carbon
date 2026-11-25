@@ -158,7 +158,6 @@ export default function NewStockTransferRoute() {
   const { t } = useLingui();
 
   // Lines belong to one location: start empty, and again on a switch.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs per location on purpose
   useEffect(() => {
     clearStockTransferWizard();
   }, [locationId]);

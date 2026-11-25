@@ -18,7 +18,6 @@ function Ticks({ className }: { className?: string }) {
   return (
     <div className={`flex h-full w-full flex-col items-end justify-between ${className ?? ""}`}>
       {Array.from({ length: TICKS }).map((_, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length decorative ruler
         <span key={i} className="h-px w-3.5 rounded-full bg-current" />
       ))}
     </div>

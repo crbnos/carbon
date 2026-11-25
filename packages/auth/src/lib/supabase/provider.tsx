@@ -57,7 +57,6 @@ export const CarbonProvider = ({
   const initialLoad = useRef(true);
   const refresh = useFetcher<{}>();
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (session.accessToken) {
       setAuthToken(session.accessToken);
@@ -91,7 +90,6 @@ export const CarbonProvider = ({
 
   // Timers are throttled in a background tab, so a tab that comes back may be
   // past the point where the interval below would have refreshed it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: refreshIfDue reads the latest session
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") refreshIfDue(true);
@@ -112,6 +110,7 @@ export const CarbonProvider = ({
         window.removeEventListener("online", handleOnline);
       }
     };
+    // oxlint-disable-next-line react/exhaustive-deps -- refreshIfDue reads the latest session
   }, [refresh, session.expiresAt]);
 
   useInterval(() => {

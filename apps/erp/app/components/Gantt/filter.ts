@@ -76,7 +76,7 @@ export function visibleUnderFilter(
     }
     for (const event of events) {
       if (!rowMatchesFilter(value, event)) continue;
-      for (let row: GanttEvent | undefined = event; row; ) {
+      for (let row: GanttEvent | undefined = event; row;) {
         rows.add(row.id);
         row = row.parentId ? byId.get(row.parentId) : undefined;
       }

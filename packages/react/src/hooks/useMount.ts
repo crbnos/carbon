@@ -13,12 +13,12 @@ import { useEffect } from "react";
 export default function useMount(
   callback: () => void | (() => void) | Promise<unknown>
 ) {
-  // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   useEffect(() => {
     const cleanup = callback();
 
     if (typeof cleanup === "function") {
       return cleanup;
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- run once on mount
   }, []);
 }

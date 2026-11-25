@@ -536,7 +536,7 @@ const LineItems = ({
                   thumbnail beside it, pushing the description and price
                   past the card edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
-                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
+                {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
                   className="flex flex-col cursor-pointer w-full min-w-0"
                   onClick={(e) => {
@@ -1138,13 +1138,13 @@ const Quote = ({ data }: { data: QuoteData }) => {
   const mode = useMode();
   const logo = mode === "dark" ? company?.logoDark : company?.logoLight;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.state === "idle" && submitted.current) {
       confirmQuoteModal.onClose();
       rejectQuoteModal.onClose();
       submitted.current = false;
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [fetcher.state]);
 
   useEffect(() => {

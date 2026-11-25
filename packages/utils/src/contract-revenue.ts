@@ -60,7 +60,7 @@ export function contractPositionPreview(
   const position: ContractPositionMonth[] = [];
   let cumulativeInvoiced = 0;
   let cumulativeRecognized = 0;
-  for (let month = months[0]!; month <= last; ) {
+  for (let month = months[0]!; month <= last;) {
     const invoiced = invoicedByMonth.get(month) ?? 0;
     const recognized = recognizedByMonth.get(month) ?? 0;
     cumulativeInvoiced += invoiced;

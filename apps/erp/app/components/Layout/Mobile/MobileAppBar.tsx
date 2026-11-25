@@ -29,7 +29,6 @@ export function MobileAppBar() {
   const location = useLocation();
 
   // Picking a section navigates; any navigation closes the switcher.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: close on navigation only
   useEffect(() => {
     setSwitcherOpen(false);
   }, [location.pathname, location.search]);

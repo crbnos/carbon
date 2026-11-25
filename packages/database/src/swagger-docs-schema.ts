@@ -95902,6 +95902,30 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCountryName"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.shipToCustomerName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.shipToAddressLine1"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.shipToAddressLine2"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.shipToCity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.shipToStateProvince"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.shipToPostalCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.shipToCountryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.shipToCountryName"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -119641,6 +119665,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.emailOrderOnAcceptance"
           },
           {
+            $ref: "#/parameters/rowFilter.quote.sendViaEmail"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -119805,6 +119832,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.emailOrderOnAcceptance"
           },
           {
+            $ref: "#/parameters/rowFilter.quote.sendViaEmail"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -119921,6 +119951,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quote.emailOrderOnAcceptance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.sendViaEmail"
           },
           {
             $ref: "#/parameters/body.quote"
@@ -142076,6 +142109,77 @@ export default {
         tags: ["(rpc) sync_storage_type_nettable"]
       }
     },
+    "/rpc/get_items_used_in": {
+      get: {
+        parameters: [
+          {
+            format: "text[]",
+            in: "query",
+            name: "item_ids",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_items_used_in"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                item_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["item_ids", "company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_items_used_in"]
+      }
+    },
     "/rpc/update_receipt_line_batch_tracking": {
       post: {
         parameters: [
@@ -152586,6 +152690,7 @@ export default {
         },
         invoiceAutomation: {
           enum: [
+            "Manual",
             "Draft Only",
             "Post",
             "Post and Email",
@@ -152620,6 +152725,7 @@ export default {
         },
         effectiveInvoiceAutomation: {
           enum: [
+            "Manual",
             "Draft Only",
             "Post",
             "Post and Email",
@@ -155870,6 +155976,7 @@ export default {
         },
         invoiceAutomation: {
           enum: [
+            "Manual",
             "Draft Only",
             "Post",
             "Post and Email",
@@ -177032,6 +177139,7 @@ export default {
         },
         invoiceAutomation: {
           enum: [
+            "Manual",
             "Draft Only",
             "Post",
             "Post and Email",
@@ -189080,6 +189188,40 @@ export default {
         paymentCountryName: {
           format: "text",
           type: "string"
+        },
+        shipToCustomerName: {
+          format: "text",
+          type: "string"
+        },
+        shipToAddressLine1: {
+          format: "text",
+          type: "string"
+        },
+        shipToAddressLine2: {
+          format: "text",
+          type: "string"
+        },
+        shipToCity: {
+          format: "text",
+          type: "string"
+        },
+        shipToStateProvince: {
+          format: "text",
+          type: "string"
+        },
+        shipToPostalCode: {
+          format: "text",
+          type: "string"
+        },
+        shipToCountryCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string"
+        },
+        shipToCountryName: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -199191,6 +199333,7 @@ export default {
         },
         invoiceAutomation: {
           enum: [
+            "Manual",
             "Draft Only",
             "Post",
             "Post and Email",
@@ -199284,6 +199427,7 @@ export default {
         },
         effectiveInvoiceAutomation: {
           enum: [
+            "Manual",
             "Draft Only",
             "Post",
             "Post and Email",
@@ -200603,7 +200747,8 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
-        "emailOrderOnAcceptance"
+        "emailOrderOnAcceptance",
+        "sendViaEmail"
       ],
       properties: {
         id: {
@@ -200783,6 +200928,11 @@ export default {
           type: "string"
         },
         emailOrderOnAcceptance: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        sendViaEmail: {
           default: true,
           format: "boolean",
           type: "boolean"
@@ -201868,6 +202018,7 @@ export default {
         invoiceAutomation: {
           default: "Post and Email",
           enum: [
+            "Manual",
             "Draft Only",
             "Post",
             "Post and Email",
@@ -253448,6 +253599,54 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderLocations.shipToCustomerName": {
+      name: "shipToCustomerName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLocations.shipToAddressLine1": {
+      name: "shipToAddressLine1",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLocations.shipToAddressLine2": {
+      name: "shipToAddressLine2",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLocations.shipToCity": {
+      name: "shipToCity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLocations.shipToStateProvince": {
+      name: "shipToStateProvince",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLocations.shipToPostalCode": {
+      name: "shipToPostalCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLocations.shipToCountryCode": {
+      name: "shipToCountryCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLocations.shipToCountryName": {
+      name: "shipToCountryName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.materialTypes": {
       name: "materialTypes",
       description: "materialTypes",
@@ -266511,6 +266710,12 @@ export default {
     },
     "rowFilter.quote.emailOrderOnAcceptance": {
       name: "emailOrderOnAcceptance",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quote.sendViaEmail": {
+      name: "sendViaEmail",
       required: false,
       in: "query",
       type: "string"

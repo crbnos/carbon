@@ -23,9 +23,8 @@ vi.mock("@carbon/logger/span", async (original) => ({
 const { getCarbonAPIKeyClient, getCarbonClient, storageReadFetch } =
   await import("./client");
 const { requestFetch } = await import("./client.server");
-const { requestContextMiddleware } = await import(
-  "@carbon/logger/context.server"
-);
+const { requestContextMiddleware } =
+  await import("@carbon/logger/context.server");
 const { RouterContextProvider } = await import("react-router");
 
 // A loader's client carries its request's signal: once the browser has gone,

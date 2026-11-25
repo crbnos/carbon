@@ -1333,6 +1333,9 @@ msgstr "{percent} picked"
 msgid "{percentage}%"
 msgstr "{percentage}%"
 
+msgid "{periods, plural, one {period} other {periods}}"
+msgstr "{periods, plural, one {period} other {periods}}"
+
 msgid "{position} of {total}"
 msgstr "{position} of {total}"
 
@@ -1417,6 +1420,9 @@ msgstr "{statusTotal, plural, one {# issue in total} other {# issues in total}}"
 
 msgid "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
 msgstr "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+
+msgid "{taxRate} tax"
+msgstr "{taxRate} tax"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# month} other {# months}}"
@@ -1882,6 +1888,9 @@ msgstr "A contractor is a supplier contact with particular abilities and availab
 
 msgid "A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it."
 msgstr "A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it."
+
+msgid "A credit memo of <0/> for the early return is drafted too."
+msgstr "A credit memo of <0/> for the early return is drafted too."
 
 msgid "A Cumulative event bills only after every event before it."
 msgstr "A Cumulative event bills only after every event before it."
@@ -3862,6 +3871,12 @@ msgstr "All open jobs"
 msgid "All Others"
 msgstr "All Others"
 
+msgid "All remaining"
+msgstr "All remaining"
+
+msgid "All remaining bills every period left in one invoice."
+msgstr "All remaining bills every period left in one invoice."
+
 msgid "All returnable lines"
 msgstr "All returnable lines"
 
@@ -4014,11 +4029,14 @@ msgstr "Amount Type"
 msgid "Amounts and quantities can't be changed on one document."
 msgstr "Amounts and quantities can't be changed on one document."
 
-msgid "Amounts are before tax."
-msgstr "Amounts are before tax."
-
 msgid "Amounts are padded to their currency's decimal places."
 msgstr "Amounts are padded to their currency's decimal places."
+
+msgid "Amounts exclude tax."
+msgstr "Amounts exclude tax."
+
+msgid "Amounts include tax."
+msgstr "Amounts include tax."
 
 msgid "Amounts show only the digits that carry value."
 msgstr "Amounts show only the digits that carry value."
@@ -4679,7 +4697,7 @@ msgstr "Are you sure you want to approve this supplier? This will make it active
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId
+#. placeholder {0}: routeData?.rfqSummary?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 
@@ -6106,6 +6124,9 @@ msgstr "Billing timing"
 
 msgid "Billing Timing"
 msgstr "Billing Timing"
+
+msgid "Bills and ships invoices drafted from now on"
+msgstr "Bills and ships invoices drafted from now on"
 
 msgid "Bills each period until every unit is returned."
 msgstr "Bills each period until every unit is returned."
@@ -9197,6 +9218,9 @@ msgstr "Create Change Notice"
 
 msgid "Create Contract"
 msgstr "Create Contract"
+
+msgid "Create Draft Invoice"
+msgstr "Create Draft Invoice"
 
 msgid "Create element"
 msgstr "Create element"
@@ -13222,6 +13246,9 @@ msgstr "Excluded ({excludedCount})"
 msgid "Excluded from Missing Time"
 msgstr "Excluded from Missing Time"
 
+msgid "Excludes tax: the tax codes could not be read."
+msgstr "Excludes tax: the tax codes could not be read."
+
 msgid "Executive P&L"
 msgstr "Executive P&L"
 
@@ -16336,6 +16363,9 @@ msgstr "Invoice {0}"
 msgid "Invoice {invoiceDate}"
 msgstr "Invoice {invoiceDate}"
 
+msgid "Invoice {readableId}"
+msgstr "Invoice {readableId}"
+
 msgid "Invoice {readableId} now?"
 msgstr "Invoice {readableId} now?"
 
@@ -16436,6 +16466,9 @@ msgstr "Invoice supplier location"
 msgid "Invoice Supplier Location"
 msgstr "Invoice Supplier Location"
 
+msgid "Invoice the next"
+msgstr "Invoice the next"
+
 msgid "Invoice Total"
 msgstr "Invoice Total"
 
@@ -16468,9 +16501,6 @@ msgstr "Invoices and bills sync after you activate accounting"
 
 msgid "Invoices are created as drafts. Nothing is posted or emailed until you do it."
 msgstr "Invoices are created as drafts. Nothing is posted or emailed until you do it."
-
-msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
-msgstr "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "Invoices are created automatically once the agreement is active."
@@ -17474,6 +17504,10 @@ msgstr "Leave empty, or enter 0, to show everything MRP plans."
 
 msgid "Leave this page"
 msgstr "Leave this page"
+
+#. placeholder {0}: field.name
+msgid "Leave Value empty to print the “{0}” custom field."
+msgstr "Leave Value empty to print the “{0}” custom field."
 
 msgid "Left item"
 msgstr "Left item"
@@ -19914,6 +19948,9 @@ msgstr "Next 7 days"
 msgid "Next billing event"
 msgstr "Next billing event"
 
+msgid "Next billing event total"
+msgstr "Next billing event total"
+
 msgid "Next Calibration"
 msgstr "Next Calibration"
 
@@ -19961,6 +19998,9 @@ msgstr "Next invoice {date} is created automatically, then posted and sent via S
 
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "Next invoice {date} is created automatically, then posted."
+
+msgid "Next invoice total"
+msgstr "Next invoice total"
 
 msgid "Next page"
 msgstr "Next page"
@@ -20136,6 +20176,9 @@ msgstr "No billable items yet. Work charged to the billing element and the eleme
 
 msgid "No billing lines yet"
 msgstr "No billing lines yet"
+
+msgid "No billing periods are left. Only what is due is drafted."
+msgstr "No billing periods are left. Only what is due is drafted."
 
 msgid "No billing periods."
 msgstr "No billing periods."
@@ -21757,6 +21800,21 @@ msgstr "One payment for each year of the term."
 msgid "One payment for every three months."
 msgstr "One payment for every three months."
 
+msgid "One period is 28 days."
+msgstr "One period is 28 days."
+
+msgid "One period is a calendar month; the first and last can be part months."
+msgstr "One period is a calendar month; the first and last can be part months."
+
+msgid "One period is a month from the start date (the {startDay, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} to the {endDay, selectordinal, one {#st} two {#nd} few {#rd} other {#th}})."
+msgstr "One period is a month from the start date (the {startDay, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} to the {endDay, selectordinal, one {#st} two {#nd} few {#rd} other {#th}})."
+
+msgid "One period is a month from the start date (the 1st to the end of the month)."
+msgstr "One period is a month from the start date (the 1st to the end of the month)."
+
+msgid "One period is a month from the start date."
+msgstr "One period is a month from the start date."
+
 msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 msgstr "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
 
@@ -23158,6 +23216,9 @@ msgstr "Period unlocked"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Periodic depreciation expense for fixed assets"
+
+msgid "Periods to invoice"
+msgstr "Periods to invoice"
 
 msgid "Periods up to this date were invoiced in your previous system"
 msgstr "Periods up to this date were invoiced in your previous system"
@@ -28298,6 +28359,9 @@ msgstr "Send to Carbon"
 msgid "Send Via"
 msgstr "Send Via"
 
+msgid "Send via email"
+msgstr "Send via email"
+
 msgid "Sender Email"
 msgstr "Sender Email"
 
@@ -31521,6 +31585,9 @@ msgstr "The cutover date is valid"
 msgid "The cutover date must be the first day of a period."
 msgstr "The cutover date must be the first day of a period."
 
+msgid "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+msgstr "The daily run only bills units treated as a sale. Use Invoice to bill the other periods yourself."
+
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "The dashed threshold you don't want inventory to fall below."
 
@@ -31802,6 +31869,9 @@ msgstr "The invoice for this payment is drafted on this date"
 
 msgid "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
 msgstr "The invoice is posted, so the change is also posted to the Rounding Account and Accounts Payable on the invoice's posting date."
+
+msgid "The invoice stays a draft. Nothing is posted or emailed."
+msgstr "The invoice stays a draft. Nothing is posted or emailed."
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
@@ -32325,6 +32395,9 @@ msgstr "The record a workflow notification points at, named as an id plus its ki
 
 msgid "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
 msgstr "The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts."
+
+msgid "The record's value"
+msgstr "The record's value"
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
@@ -32893,6 +32966,9 @@ msgstr "This cost posted to {lineAccount}, not the job's {jobAccount}."
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "This counterparty has nothing outstanding — the payment will be recorded on-account."
 
+msgid "This custom field no longer exists. Remove the block."
+msgstr "This custom field no longer exists. Remove the block."
+
 msgid "This customer has no assets"
 msgstr "This customer has no assets"
 
@@ -33281,6 +33357,9 @@ msgstr "This will create a draft revenue recognition run for the period ending {
 #. placeholder {0}: formatDate(run.periodEnd)
 msgid "This will create a new draft depreciation run for the same period ({0}), including only active assets not already covered by an existing run."
 msgstr "This will create a new draft depreciation run for the same period ({0}), including only active assets not already covered by an existing run."
+
+msgid "This will email the sales order to {name}."
+msgstr "This will email the sales order to {name}."
 
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "This will make this version read-only and replace any material make methods with this version."
@@ -34960,6 +35039,10 @@ msgstr "Value (blank uses the computed value)"
 msgid "Value {0}"
 msgstr "Value {0}"
 
+#. placeholder {0}: field.name
+msgid "Value comes from the “{0}” custom field."
+msgstr "Value comes from the “{0}” custom field."
+
 msgid "Value of events completed earlier"
 msgstr "Value of events completed earlier"
 
@@ -35660,6 +35743,9 @@ msgstr "What has actually been picked to lineside for this material, per part. A
 
 msgid "What is {translatedTerm}?"
 msgstr "What is {translatedTerm}?"
+
+msgid "What is a period?"
+msgstr "What is a period?"
 
 msgid "What is leased, for example Forklift FL-12"
 msgstr "What is leased, for example Forklift FL-12"

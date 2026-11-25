@@ -160,14 +160,12 @@ function withServices(params: {
         : params.runAction(job);
     }
   );
-  const search = vi.fn(
-    async (): Promise<SearchOutcome> => ({
-      ok: true,
-      value: params.found,
-      matched: params.found.kind === "list" ? params.found.items.length : 1,
-      dropped: 0
-    })
-  );
+  const search = vi.fn(async (): Promise<SearchOutcome> => ({
+    ok: true,
+    value: params.found,
+    matched: params.found.kind === "list" ? params.found.items.length : 1,
+    dropped: 0
+  }));
   vi.mocked(createWorkflowServices).mockReturnValue({
     runAction,
     runIntegration: async () => ({ ok: false as const, error: "not stubbed" }),

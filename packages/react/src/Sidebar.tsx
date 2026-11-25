@@ -16,8 +16,8 @@ import { useShortcutKeys } from "./hooks/useShortcutKeys";
 import { IconButton } from "./IconButton";
 import { Input } from "./Input";
 import { Separator } from "./Separator";
-import { Skeleton } from "./Skeleton";
 import { SHORTCUTS } from "./shortcuts";
+import { Skeleton } from "./Skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -100,7 +100,6 @@ const SidebarProvider = React.forwardRef<
     );
 
     // Helper to toggle the sidebar.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const toggleSidebar = React.useCallback(() => {
       return isMobile
         ? setOpenMobile((open) => !open)
@@ -121,7 +120,6 @@ const SidebarProvider = React.forwardRef<
     // This makes it easier to style the sidebar with Tailwind classes.
     const state = open ? "expanded" : "collapsed";
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const contextValue = React.useMemo<SidebarContext>(
       () => ({
         state,

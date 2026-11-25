@@ -171,8 +171,8 @@ export function BatchCompleteModal({
     const m = members[i];
     return Boolean(
       m?.requiresBatchTracking &&
-        m?.trackedEntityId &&
-        toNumber(rows[i]?.quantity ?? "0") > 0
+      m?.trackedEntityId &&
+      toNumber(rows[i]?.quantity ?? "0") > 0
     );
   };
   const merged = Boolean(batch.mergeOutput && batch.outputLotNumber);

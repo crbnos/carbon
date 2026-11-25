@@ -40,9 +40,9 @@ import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
+import { SalesRFQStatus } from ".";
 import { salesRFQStatusType } from "../../sales.models";
 import type { SalesRFQ } from "../../types";
-import { SalesRFQStatus } from ".";
 
 type SalesRFQsTableProps = {
   data: SalesRFQ[];

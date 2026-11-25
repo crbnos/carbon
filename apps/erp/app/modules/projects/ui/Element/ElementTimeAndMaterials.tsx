@@ -38,13 +38,6 @@ import type {
   ElementOpenTimeRow
 } from "../../projects.service";
 import {
-  CostCard,
-  CostToolbar,
-  FigureSeparator,
-  NoMatchingCosts,
-  useCostTypeLabels
-} from "./CostCards";
-import {
   type ActualSort,
   type CostTypeFilter,
   type FoldedLedgerEntry,
@@ -53,6 +46,13 @@ import {
   matchesSearch,
   sortActualCards
 } from "./cost-cards";
+import {
+  CostCard,
+  CostToolbar,
+  FigureSeparator,
+  NoMatchingCosts,
+  useCostTypeLabels
+} from "./CostCards";
 import { OpenTimeAction } from "./OpenTimeAction";
 import type { PlanLineType } from "./plan-rows";
 import { TimesheetEntryStatus } from "./TimesheetEntryStatus";

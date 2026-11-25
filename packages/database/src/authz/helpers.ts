@@ -55,7 +55,6 @@ export const RETIRED_HELPERS: Readonly<Record<string, string>> = {
   "util.process_embeddings": EVENT_SYSTEM_TAKEOVER
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: libpg-query's AST is untyped JSON
 type Ast = any;
 
 /**

@@ -95,7 +95,8 @@ const commandInputVariants = cva(
 );
 
 interface CommandInputProps
-  extends Omit<ComponentPropsWithoutRef<typeof CommandPrimitive.Input>, "size">,
+  extends
+    Omit<ComponentPropsWithoutRef<typeof CommandPrimitive.Input>, "size">,
     VariantProps<typeof commandInputVariants> {}
 
 const CommandInput = forwardRef<
@@ -161,7 +162,8 @@ const commandInputTextFieldVariants = cva(
 );
 
 interface CommandInputTextFieldProps
-  extends Omit<ComponentPropsWithoutRef<typeof CommandPrimitive.Input>, "size">,
+  extends
+    Omit<ComponentPropsWithoutRef<typeof CommandPrimitive.Input>, "size">,
     VariantProps<typeof commandInputTextFieldVariants> {
   isInvalid?: boolean;
   isDisabled?: boolean;
@@ -386,7 +388,8 @@ export const multiSelectTriggerVariants = cva(
 );
 
 interface CommandTriggerProps
-  extends ComponentPropsWithoutRef<"button">,
+  extends
+    ComponentPropsWithoutRef<"button">,
     VariantProps<typeof commandTriggerVariants> {
   icon?: React.ReactNode;
   asButton?: boolean;

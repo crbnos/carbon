@@ -1,0 +1,83 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { authorize } from "@carbon/auth/auth.server";
+import {
+  getOnshapeClient,
+  type OnshapeDocument,
+  OnshapeElementType,
+  OnshapeWVMType
+} from "@carbon/ee/onshape";
+import { getLogger } from "@carbon/logger";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
+
+const logger = getLogger("erp", "integrations-onshape-d-did-v-vid-elements");
+
+export const shouldRevalidate: ShouldRevalidateFunction = () => {
+  return false;
+};
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId, userId } = await authorize(request);
+
+  const { did } = params;
+  if (!did) {
+    return {
+      data: [],
+      error: "Document ID is required"
+    };
+  }
+
+  const { vid } = params;
+  if (!vid) {
+    return {
+      data: [],
+      error: "Version ID is required"
+    };
+  }
+
+  const result = await getOnshapeClient(client, companyId, userId);
+
+  if (result.error !== null) {
+    return {
+      data: [],
+      error: result.error
+    };
+  }
+
+  const onshapeClient = result.client;
+  const document: OnshapeDocument = {
+    documentId: did,
+    wvm: OnshapeWVMType.VERSION,
+    wvmId: vid
+  };
+
+  try {
+    const documentAssemblies = await onshapeClient.getElements(
+      document,
+      OnshapeElementType.ASSEMBLY
+    );
+
+    return {
+      data: documentAssemblies,
+      error: null
+    };
+  } catch (error) {
+    logger.error("Failed to get assemblies from Onshape", {
+      did,
+      vid,
+      error
+    });
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to get assemblies from Onshape"
+    };
+  }
+}

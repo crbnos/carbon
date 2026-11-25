@@ -22,10 +22,7 @@ export type {
 } from "../table-jobs/handlers.ts";
 export { setTableJobHandlers } from "../table-jobs/handlers.ts";
 export type { TableJobLock } from "../table-jobs/lock.ts";
-export {
-  releaseTableJobLock,
-  takeTableJobLock
-} from "../table-jobs/lock.ts";
+export { releaseTableJobLock, takeTableJobLock } from "../table-jobs/lock.ts";
 export { TABLE_JOB_PAGE_SIZE } from "../table-jobs/paging.ts";
 export {
   tableExportStorageKey,

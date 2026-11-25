@@ -5,7 +5,7 @@ paths:
   - "packages/database/supabase/migrations/**"
   - "packages/database/supabase/tests/authz-*.test.sql"
   - "packages/database/supabase/tests/item-child-write-policies.test.sql"
-  - "packages/checks/src/conformance/no-authz-ddl-in-migrations.ts"
+  - "packages/checks/src/conformance/authz.ts"
   - "packages/dev/src/services/migrations.ts"
 ---
 

@@ -119,7 +119,15 @@ export const SAMPLE_SALES_INVOICE = {
     invoicePostalCode: "60601",
     invoiceCountryName: "United States",
     contactName: "Hank Scorpio",
-    contactEmail: "hank@globex.example"
+    contactEmail: "hank@globex.example",
+    // The shipment went to another address than the invoice's.
+    shipmentCustomerName: "Globex Corporation",
+    shipmentAddressLine1: "88 Harbor Road",
+    shipmentAddressLine2: "Dock 3",
+    shipmentCity: "Springfield",
+    shipmentStateProvince: "IL",
+    shipmentPostalCode: "62701",
+    shipmentCountryName: "United States"
   },
   salesInvoiceShipment: {
     shippingCost: 0,

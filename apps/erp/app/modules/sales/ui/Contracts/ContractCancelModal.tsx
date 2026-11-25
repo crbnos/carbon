@@ -97,9 +97,9 @@ const ContractCancelBody = ({
     setSubmittedDate(date);
     previewFetcher.submit(formData, { method: "post", action });
   }, 300);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the date is the only input; the debounced submitter is a new function each render
   useEffect(() => {
     if (endDate) submitPreview(endDate);
+    // oxlint-disable-next-line react/exhaustive-deps -- the date is the only input; the debounced submitter is a new function each render
   }, [endDate]);
 
   const isPreviewing =

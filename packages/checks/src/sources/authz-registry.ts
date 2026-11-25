@@ -2,10 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
-import { ERP_ROUTES_DIR } from "../conformance/route-maps-to-page";
 
 /** The registry helper files `findStaleRegistryHelpers` compares; a missing one has no contents. */
 export function loadRegistryHelperFiles(
@@ -20,23 +19,4 @@ export function loadRegistryHelperFiles(
       contents: existsSync(path) ? readFileSync(path, "utf-8") : undefined
     };
   });
-}
-
-/**
- * The ERP route files under `x+` that `findRoutePageGaps` maps, relative to
- * `x+`: the files remix-flat-routes builds routes from (`apps/erp/app/routes.ts`
- * ignores dot folders, `__` names and `.server`/`.client`/`.test` files).
- */
-export function loadErpRouteFiles(root: string): string[] {
-  return (
-    readdirSync(join(root, ERP_ROUTES_DIR), { recursive: true }) as string[]
-  )
-    .map((file) => file.split("\\").join("/"))
-    .filter(
-      (file) =>
-        /\.(tsx?|jsx?)$/.test(file) &&
-        !file.split("/").some((part) => part.startsWith(".")) &&
-        !/(^|\/)__|\.(server|client|test)\./.test(file)
-    )
-    .sort();
 }

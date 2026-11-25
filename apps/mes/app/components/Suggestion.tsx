@@ -81,7 +81,6 @@ const Suggestion = () => {
 
   const companyId = user.company.id;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once per submission result
   useEffect(() => {
     if (fetcher.data?.success) {
       toast.success(fetcher.data.message);
@@ -95,6 +94,7 @@ const Suggestion = () => {
     } else if (fetcher.data?.message) {
       toast.error(fetcher.data.message);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- runs once per submission result
   }, [fetcher.data]);
 
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {

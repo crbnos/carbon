@@ -37,7 +37,7 @@ export function VariablePickControl({
   return (
     // The whole box opens the menu, chip or not — clicking a select's own text is how
     // anyone expects to reopen it. The chip's clear button stops the click itself.
-    // biome-ignore lint/a11y/noStaticElementInteractions: role is dynamic — "button" when a chip is shown (the box is the control), "presentation" otherwise (the inner <button> is the control)
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- role is dynamic — "button" when a chip is shown (the box is the control), "presentation" otherwise (the inner <button> is the control)
     <div
       role={isBoxControl ? "button" : "presentation"}
       tabIndex={isBoxControl ? 0 : undefined}

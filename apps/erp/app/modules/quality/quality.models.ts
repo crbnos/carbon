@@ -164,7 +164,7 @@ export const gaugeCalibrationRecordValidator = z.object({
     .transform((val) => {
       try {
         return val ? JSON.parse(val) : {};
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+        // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
       } catch (e) {
         return {};
       }
@@ -250,7 +250,7 @@ export const issueWorkflowValidator = z.object({
     .transform((val) => {
       try {
         return JSON.parse(val);
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+        // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
       } catch (e) {
         return {};
       }
@@ -264,7 +264,7 @@ export const issueWorkflowValidator = z.object({
       if (!val) return [];
       try {
         return JSON.parse(val) as string[];
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+        // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
       } catch (e) {
         return [];
       }
@@ -289,7 +289,7 @@ const entityAssignmentsFromForm = z
     try {
       const parsed = JSON.parse(val);
       return Array.isArray(parsed) ? parsed : undefined;
-      // biome-ignore lint/correctness/noUnusedVariables: required by try/catch
+      // oxlint-disable-next-line no-unused-vars -- required by try/catch
     } catch (e) {
       return undefined;
     }
@@ -447,7 +447,7 @@ export const riskRegisterValidator = z.object({
     .transform((val) => {
       try {
         return val ? JSON.parse(val) : {};
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+        // oxlint-disable-next-line no-unused-vars -- suppressed due to migration
       } catch (e) {
         return {};
       }

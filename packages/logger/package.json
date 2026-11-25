@@ -42,7 +42,7 @@
   "private": true,
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
-    "lint": "biome lint --write ",
+    "lint": "oxlint --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

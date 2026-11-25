@@ -86,7 +86,6 @@ function JobBoMExplorerContent({ method }: { method: FlatTree<JobMethod> }) {
   const isDetailsRoute =
     jobId && location.pathname === path.to.jobDetails(jobId);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: supress
   useEffect(() => {
     if (!selectedMaterialId) {
       if (isDetailsRoute) {
@@ -115,6 +114,7 @@ function JobBoMExplorerContent({ method }: { method: FlatTree<JobMethod> }) {
         selectNode(node.id);
       }
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- supress
   }, [selectedMaterialId, methodId, location.pathname, jobId]);
 
   return (

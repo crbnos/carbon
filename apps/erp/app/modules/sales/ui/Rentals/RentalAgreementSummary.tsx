@@ -20,6 +20,7 @@ import { CustomerAvatar, DateTime, MotionMoney } from "~/components";
 import { useCurrencyDecimals, useRouteData } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import { rentalLineDocuments } from "../../sales.utils";
+import { useInvoiceAutomationHint } from "../useInvoiceAutomationHint";
 import { LeaseClassificationBadge } from "./RentalLeaseClassification";
 import RentalStatus from "./RentalStatus";
 import type {
@@ -68,10 +69,12 @@ const RentalAgreementSummary = ({
     billingLines.every((line) => line.rateUnit === "Month")
       ? billingLines.reduce((sum, line) => sum + Number(line.rate), 0)
       : null;
+  const automationHint = useInvoiceAutomationHint();
   const invoicingSchedule = invoicingScheduleText(
     rentalAgreement.status,
     rentalAgreement.nextDueOn,
-    rentalAgreement.effectiveInvoiceAutomation
+    rentalAgreement.effectiveInvoiceAutomation,
+    automationHint
   );
 
   return (
@@ -286,8 +289,12 @@ function SummaryLine({
 function invoicingScheduleText(
   status: RentalAgreementStatusType | null,
   nextDueOn: string | null,
-  mode: RentalAgreement["effectiveInvoiceAutomation"]
+  mode: RentalAgreement["effectiveInvoiceAutomation"],
+  automationHint: ReturnType<typeof useInvoiceAutomationHint>
 ): ReactNode {
+  if (mode === "Manual" && (status === "Draft" || status === "Active")) {
+    return automationHint(mode);
+  }
   if (status === "Draft") {
     return (
       <Trans>

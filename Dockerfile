@@ -64,7 +64,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
 # go; a package missing from this list only costs size.
 RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
         -name 'sst@*' -o -name 'sst-linux-*' -o -name 'sst-darwin-*' -o -name 'sst-win32-*' -o \
-        -name '@biomejs+*' -o \
+        -name 'oxlint@*' -o -name '@oxlint+*' -o \
         -name 'turbo@*' -o -name '@turbo+*' -o \
         -name 'typescript@*' -o \
         -name 'ts-morph@*' -o -name '@ts-morph+*' -o \

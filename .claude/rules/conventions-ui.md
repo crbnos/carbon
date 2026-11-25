@@ -164,8 +164,9 @@ applies `rounded-2xl` + layered shadow on the outer shell and `rounded-2xl` on
 
 ## Accessibility tree
 
-Biome enforces `useKeyWithClickEvents`, `noStaticElementInteractions`,
-`useButtonType` and `noSvgWithoutTitle` (`biome.jsonc`). The patterns the
+oxlint enforces `jsx-a11y/click-events-have-key-events`,
+`jsx-a11y/no-static-element-interactions` and `react/button-has-type`
+(`oxlint.config.ts`). The patterns the
 codebase settled on:
 
 - **One control per action.** A clickable row is a link stretched over the
@@ -176,7 +177,7 @@ codebase settled on:
 - **A `role="button"` element never contains a link, a button or a field.**
   Its children are presentational to assistive tech, so they cannot be reached.
   When a row toggles and also holds controls (the document line summaries),
-  the row is a pointer-only target (a `biome-ignore` with the reason, and a
+  the row is a pointer-only target (an `oxlint-disable-next-line` with the reason, and a
   click handler that ignores clicks on `a, button`) and the chevron is the
   `<button aria-expanded>` (see §7 below). A `role="button"` element that handles
   Enter/Space checks `e.target === e.currentTarget` first.

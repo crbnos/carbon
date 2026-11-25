@@ -640,7 +640,6 @@ const Table = <T extends object>({
 
   // Read only after hydration. The server and first client render use the
   // same defaults, then the browser's preference replaces them.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: defaults are caller literals and view is the saved-view identity
   useEffect(() => {
     let saved: RememberedTableState | null = null;
     if (storageKey) {
@@ -661,6 +660,7 @@ const Table = <T extends object>({
     setColumnOrder(columns.columnOrder);
     setColumnPinning(columns.columnPinning);
     setHydratedKey(storageKey);
+    // oxlint-disable-next-line react/exhaustive-deps -- defaults are caller literals and view is the saved-view identity
   }, [storageKey, view]);
 
   // A list's loader reads URL filters. Restore them by replacing the bare
@@ -892,11 +892,11 @@ const Table = <T extends object>({
     ? table.getSelectedRowModel().flatRows.map((row) => row.original)
     : [];
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (typeof onSelectedRowsChange === "function") {
       onSelectedRowsChange(selectedRows);
     }
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [rowSelection, onSelectedRowsChange]);
 
   const selectAllBar = (
@@ -936,7 +936,6 @@ const Table = <T extends object>({
     Record<string, AggregateFunction>
   >({});
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const focusOnSelectedCell = useCallback(() => {
     if (selectedCell == null) return;
     const cell = tableContainerRef.current?.querySelector(
@@ -1037,7 +1036,6 @@ const Table = <T extends object>({
   // keys are handled before the cell editor sees them (react-aria's
   // NumberField swallows Enter without propagation and steps the value on
   // ArrowUp/Down — capture lets the table own those keys while editing).
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (!selectedCell) return;
@@ -1193,9 +1191,9 @@ const Table = <T extends object>({
     ]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (selectedCell) setSelectedCell(null);
+    // oxlint-disable-next-line react/exhaustive-deps -- suppressed due to migration
   }, [editMode]);
 
   const filters = useMemo(
@@ -1282,7 +1280,6 @@ const Table = <T extends object>({
 
   // Where each data row's group header, row and expanded row sit among the
   // drawn body rows, so every one of them gets its own `aria-rowindex`.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: isGroupCollapsed and isRowExpandable read only the listed values
   const bodyRows = useMemo(
     () =>
       bodyRowPositions(
@@ -1296,6 +1293,7 @@ const Table = <T extends object>({
           };
         })
       ),
+    // oxlint-disable-next-line react/exhaustive-deps -- isGroupCollapsed and isRowExpandable read only the listed values
     [
       rows,
       groupHeaders,
@@ -1314,7 +1312,6 @@ const Table = <T extends object>({
   const hasRows = rows.length > 0;
   const theadRef = useRef<HTMLTableSectionElement>(null);
   const [headerHeight, setHeaderHeight] = useState(ESTIMATED_HEADER_HEIGHT);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the header mounts with the first row
   useEffect(() => {
     const el = theadRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
@@ -1348,10 +1345,10 @@ const Table = <T extends object>({
     });
 
   // Keyboard moves in edit mode can leave the view: follow the selected row.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: follows the selected row only
   useEffect(() => {
     if (!editMode || selectedRowIndex === undefined || isPhoneList) return;
     rowVirtualizer.scrollToIndex(selectedRowIndex, { align: "auto" });
+    // oxlint-disable-next-line react/exhaustive-deps -- follows the selected row only
   }, [editMode, selectedRowIndex]);
 
   /* Infinite scroll (a sentinel after the rows), the scroll offset for Back,
@@ -1385,7 +1382,6 @@ const Table = <T extends object>({
   );
   const [columnSizeMap, setColumnSizeMap] = useState<ColumnSizeMap>(new Map());
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     const calculateColumnWidths = () => {
       const tableWrapperEl = getTableWrapperEl();
@@ -1477,7 +1473,6 @@ const Table = <T extends object>({
   // the body: `tableRef` is null on first mount (the table only renders once
   // there are rows), so the observer must be re-registered when the structure
   // changes, or the overflow is never detected.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-attach triggers
   useEffect(() => {
     const el = tableContainerRef.current;
     if (!el) return;

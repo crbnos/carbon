@@ -12,7 +12,7 @@ File naming: `.ai/plans/improve/NNN-short-slug.md`, numbered in recommended exec
 
 **Carbon command rules the plan must respect** (bake into every plan):
 - Typecheck is **scoped to one package**: `turbo run typecheck --filter=<pkg>`. NEVER a whole-repo typecheck (it OOMs).
-- Lint read-only: `pnpm exec biome lint <paths>`. Format only if the plan explicitly intends it: `pnpm exec biome format --write <paths>`.
+- Lint read-only: `pnpm exec oxlint <paths>`. Format only if the plan explicitly intends it: `pnpm exec oxfmt <paths>`.
 - Tests: `pnpm --filter <pkg> test` (vitest).
 - **The executor never runs database migrations/seeds/rebuilds** (`pnpm db:migrate`, `db:seed`, `db:types`, `crbn migrate`). If a plan adds a migration, the executor writes the SQL file per `.claude/rules/workflow-database-migration.md`; **the user applies it**. State this explicitly.
 
@@ -71,7 +71,7 @@ The facts the executor needs, inlined — never "as discussed" or "see the cache
 |---------------|----------------------------------------------|-------------------------|
 | Install       | `pnpm install`                               | exit 0                  |
 | Typecheck     | `turbo run typecheck --filter=<pkg>`         | exit 0, no errors       |
-| Lint          | `pnpm exec biome lint <in-scope paths>`      | exit 0, no diagnostics  |
+| Lint          | `pnpm exec oxlint <in-scope paths>`          | exit 0, no diagnostics  |
 | Tests         | `pnpm --filter <pkg> test`                   | all pass                |
 | Single test   | `pnpm --filter <pkg> exec vitest run <file>` | target tests pass       |
 
@@ -139,7 +139,7 @@ Machine-checkable. ALL must hold:
 
 - [ ] `turbo run typecheck --filter=<pkg>` exits 0
 - [ ] `pnpm --filter <pkg> test` exits 0; new tests for <X> exist and pass
-- [ ] `pnpm exec biome lint <in-scope paths>` reports no diagnostics
+- [ ] `pnpm exec oxlint <in-scope paths>` reports no diagnostics
 - [ ] `grep -rn "<old pattern>" <in-scope dir>` returns no matches
 - [ ] No files outside the in-scope list are modified (`git status`)
 - [ ] `.ai/plans/improve/README.md` status row updated

@@ -37,11 +37,11 @@ import { usePermissions } from "~/hooks";
 import { MACHINE_TIME_REVIEW_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import type { getUnattributedMachineTime } from "../../production.service";
+import type { MachineTimeSuggestion } from "./machine-time-suggestions.ee";
 import {
   MachineTimeInstant,
   useMachineTimeDuration
 } from "./MachineTimeTable.ee";
-import type { MachineTimeSuggestion } from "./machine-time-suggestions.ee";
 
 type JobOperationStatus = Database["public"]["Enums"]["jobOperationStatus"];
 

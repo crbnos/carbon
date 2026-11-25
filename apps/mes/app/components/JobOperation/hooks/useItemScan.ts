@@ -176,7 +176,6 @@ export function useItemScan({
   });
 
   // Another unit is held: scans waiting for the old one are not issued.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: on a change of unit only
   useEffect(() => {
     const kept = keepScansForUnit(queue.current, heldUnitId);
     const lost = kept.dropped;
@@ -184,11 +183,11 @@ export function useItemScan({
     queue.current = kept.queue;
     showProgress();
     toast.error(t`${lost} scanned pieces were not issued. Scan them again.`);
+    // oxlint-disable-next-line react/exhaustive-deps -- on a change of unit only
   }, [heldUnitId]);
 
   // Leaving the screen (the operation finished, another unit was opened) ends
   // the queue: say what was scanned and never sent.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: on unmount only
   useEffect(
     () => () => {
       toast.dismiss(PROGRESS_TOAST);
@@ -200,6 +199,7 @@ export function useItemScan({
         );
       }
     },
+    // oxlint-disable-next-line react/exhaustive-deps -- on unmount only
     []
   );
 }

@@ -8,9 +8,8 @@ vi.mock("@carbon/ee/workflows.server", () => ({
   requireWorkflowsEntitlement: vi.fn(async () => undefined)
 }));
 
-const { publishWorkflowVersion, OWNER_ONLY_PUBLISH_MESSAGE } = await import(
-  "./workflows.service"
-);
+const { publishWorkflowVersion, OWNER_ONLY_PUBLISH_MESSAGE } =
+  await import("./workflows.service");
 
 /** A client whose `workflow` row has the given owner; records every update. */
 function clientWithOwner(ownerId: string) {

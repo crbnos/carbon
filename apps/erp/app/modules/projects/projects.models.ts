@@ -1264,7 +1264,7 @@ export function planElementDrop<
     e.parentId && byId.has(e.parentId) ? e.parentId : null;
 
   // The target may not sit in the dragged element's subtree.
-  for (let id: string | null = targetId; id; ) {
+  for (let id: string | null = targetId; id;) {
     if (id === elementId) return null;
     const current = byId.get(id);
     id = current ? parentOf(current) : null;
@@ -5189,7 +5189,7 @@ export type MspdiInput = {
 };
 
 /** Control characters XML 1.0 forbids even escaped: one makes the file unreadable. */
-// biome-ignore lint/suspicious/noControlCharactersInRegex: matching them is the point
+// oxlint-disable-next-line no-control-regex -- matching them is the point
 const XML_INVALID_CHARACTERS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g;
 
 const xmlEscape = (value: string) =>

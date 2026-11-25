@@ -1,0 +1,60 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "trailingComma": "none",
+  "sortPackageJson": false,
+  // Import order: node: first, then packages, then ~/ aliases, then relative
+  // paths, with no blank lines added. Blank lines and comments split a block.
+  "sortImports": {
+    "newlinesBetween": false,
+    "partitionByNewline": true,
+    "partitionByComment": true,
+    "customGroups": [
+      {
+        "groupName": "protocol",
+        "elementNamePattern": [
+          "node:*",
+          "node:*/**",
+          "bun:*",
+          "jsr:*",
+          "jsr:*/**",
+          "npm:*",
+          "npm:*/**"
+        ]
+      }
+    ],
+    "groups": [
+      "protocol",
+      ["builtin", "external"],
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      "unknown"
+    ]
+  },
+  // Formats JSON, the apps' app/ and the packages' src/ TypeScript, and the
+  // contrib examples. Everything else is ignored, even when named on the
+  // command line.
+  "ignorePatterns": [
+    "*",
+    "!*/",
+    "!**/*.json",
+    "!apps/**/app/**/*.ts",
+    "!apps/**/app/**/*.tsx",
+    "!packages/**/src/**/*.ts",
+    "!packages/**/src/**/*.tsx",
+    "!contrib/building/examples/**/*.js",
+    "!contrib/building/examples/**/*.mjs",
+    "!contrib/building/examples/**/*.ts",
+    "!contrib/building/examples/**/*.tsx",
+    "!contrib/building/examples/**/*.css",
+    "!contrib/building/examples/**/*.webmanifest",
+    "/.vscode/",
+    "packages/database/src/types.ts",
+    "packages/database/src/constants.ts",
+    "**/mcp*/lib/tools/",
+    "**/mcp*/lib/server.ts",
+    "**/mcp*/lib/tool-metadata.json",
+    // One line per operation keeps a changed schema a one-line hunk.
+    "**/mcp*/lib/tool-manifest.digest.json"
+  ]
+}

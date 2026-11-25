@@ -44,9 +44,9 @@ export function EditableField({
   // while focused, so a concurrent revalidation can't clobber live typing.
   // Depend on the resolved string (not the raw descriptor object, whose identity
   // changes every render) so the effect doesn't re-fire on every render.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on external value change only
   useEffect(() => {
     if (!focused.current) setDraft(resolved);
+    // oxlint-disable-next-line react/exhaustive-deps -- reset on external value change only
   }, [value, resolvedDefault]);
 
   if (!canEdit) {
