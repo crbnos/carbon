@@ -7,6 +7,7 @@ import {
   ancestorsOf,
   nameParts,
   nodesIn,
+  readableSql,
   sqlFragments,
   sqlNodes,
   tokensFrom,
@@ -211,5 +212,25 @@ describe("typeNamesIn and tokensFrom", () => {
     expect(
       statement && tokensFrom(statement, at).map((token) => token.text)
     ).toEqual(["REFERENCES", '"job"', "ON", "DELETE", "NO", "ACTION", ")"]);
+  });
+});
+
+describe("readableSql", () => {
+  it("returns the files when the parser reads every one", () => {
+    const files = [
+      { file: "a.sql", contents: "SELECT 1;" },
+      { file: "empty.sql", contents: "\n" },
+      { file: "comment.sql", contents: "-- nothing to run yet\n" }
+    ];
+    expect(readableSql(files)).toBe(files);
+  });
+
+  it("fails, naming the file, when the parser refuses one", () => {
+    expect(() =>
+      readableSql([
+        { file: "a.sql", contents: "SELECT 1;" },
+        { file: "b.sql", contents: "CREATE TABEL t (a TEXT);" }
+      ])
+    ).toThrow(/cannot read b\.sql,/);
   });
 });

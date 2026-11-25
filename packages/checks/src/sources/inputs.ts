@@ -9,6 +9,7 @@
 import { loadPluginFindings } from "./biome";
 import { loadSqlFiles, migrationsDir } from "./migrations";
 import { loadModules, modulesDir } from "./modules";
+import { readableSql } from "./sql";
 import {
   loadTypescriptFiles,
   REQUEST_HANDLING_ROOTS,
@@ -16,7 +17,8 @@ import {
 } from "./typescript";
 
 /** Every migration, in apply order; `file` is the bare file name. */
-export const migrations = (root: string) => loadSqlFiles(migrationsDir(root));
+export const migrations = (root: string) =>
+  readableSql(loadSqlFiles(migrationsDir(root)));
 
 /** The app and shared-package TypeScript, client and server. */
 export const typescript = (root: string) => loadTypescriptFiles(root);

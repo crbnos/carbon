@@ -11,6 +11,7 @@ import {
   scanSync,
   type TypeName
 } from "libpg-query";
+import type { SourceFile } from "../check";
 
 // A check that asks what a migration DOES reads the statements Postgres's own
 // parser returns (libpg-query is that parser, compiled to WebAssembly), so a
@@ -486,6 +487,26 @@ export function sqlFragments(contents: string): SqlFragment[] {
   const fragments = file ? [file, ...bodiesOf(file)] : [];
   parsed.set(contents, fragments);
   return fragments;
+}
+
+/**
+ * `files`, once the parser has read every one of them. A file the parser
+ * refuses has no statements, so every SQL check would pass it unread; it
+ * fails here instead, by name.
+ */
+export function readableSql(files: SourceFile[]): SourceFile[] {
+  const refused = files
+    .filter(
+      ({ contents }) =>
+        contents.trim() !== "" && sqlFragments(contents).length === 0
+    )
+    .map(({ file }) => file);
+  if (refused.length > 0) {
+    throw new Error(
+      `The SQL parser cannot read ${refused.join(", ")}, so no SQL check can check it. Correct the SQL; if Postgres accepts it as written, update libpg-query.`
+    );
+  }
+  return files;
 }
 
 type SqlFileNode = SqlNode & {
