@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type Check, fileCheck, type Violation } from "../check";
+import { type Check, defineCheck, type Violation } from "../check";
 import { typescript } from "../sources/inputs";
 
 // Checks on numeric precision: value-bearing rounding goes through the
@@ -22,7 +22,8 @@ const RAW_ROUNDING = /Math\.(?:round|ceil|floor)\(|\.toFixed\(/;
 // The precision module IS the implementation of rounding.
 const ROUNDING_EXCLUDED_FILES = new Set(["packages/database/src/precision.ts"]);
 
-export const noRawRounding = fileCheck(typescript, {
+export const noRawRounding = defineCheck({
+  files: typescript,
   id: "no-raw-rounding",
   description:
     "Value-bearing rounding goes through @carbon/utils round/scrapAllowance/applyRate/deriveRate, not Math.round/ceil/floor or toFixed",
@@ -89,7 +90,8 @@ const FRACTION_DIGITS_EXCLUDED_FILES = new Set([
   "packages/utils/src/format.ts"
 ]);
 
-export const noInlineFractionDigits = fileCheck(typescript, {
+export const noInlineFractionDigits = defineCheck({
+  files: typescript,
   id: "no-inline-fraction-digits",
   description:
     "Pick a named kind from @carbon/utils format.ts (money/price/percent/quantity, INPUT_FORMAT.*) instead of passing digits",
@@ -271,7 +273,8 @@ const COMPARE_PATTERNS = [
   )
 ];
 
-export const noUnroundedTrackedQuantity = fileCheck(typescript, {
+export const noUnroundedTrackedQuantity = defineCheck({
+  files: typescript,
   id: "no-unrounded-tracked-quantity",
   description:
     "A tracked entity's quantity is rounded at the persist boundary (round/settleQuantity) and split gates compare through isFullDraw — never raw float arithmetic or a raw ===/< on a stored quantity.",

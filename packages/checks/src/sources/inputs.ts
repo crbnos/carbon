@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The inputs several checks share, each as a named loader for `repo.read`.
+// The inputs several checks share, each as a named loader a check declares.
 // A loader that already takes only `root` (`loadServerFiles`, `loadDbTableColumns`,
-// `loadTestFiles`, …) is passed to `repo.read` as it is and is not repeated here.
+// `loadTestFiles`, …) is declared as it is and is not repeated here.
 
 import { loadSqlFiles, migrationsDir } from "./migrations";
 import { loadModules, modulesDir } from "./modules";

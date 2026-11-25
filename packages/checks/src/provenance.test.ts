@@ -103,8 +103,10 @@ const isCheck = (value: unknown): value is Check =>
   value !== null &&
   "id" in value &&
   typeof value.id === "string" &&
-  "find" in value &&
-  typeof value.find === "function";
+  "run" in value &&
+  typeof value.run === "function" &&
+  "reads" in value &&
+  Array.isArray(value.reads);
 
 /**
  * Every check a `conformance/` module exports, with that module's file: a

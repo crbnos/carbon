@@ -21,7 +21,7 @@ import {
   type MovedTablesRegistry,
   noAuthzDdlInMigrations,
   noLegacyRls,
-  noModulePermissionKey,
+  scanModulePermissionKeys,
   REGISTRY_HELPERS_FIX,
   type RouteRegistry,
   routeGateNamesPage
@@ -271,7 +271,7 @@ describe("noLegacyRls", () => {
 const ROUTE = "apps/erp/app/routes/x+/inventory+/receipts.tsx";
 
 const scanKeys = (contents: string, file = ROUTE) =>
-  noModulePermissionKey.scan(file, contents).map((v) => v.snippet);
+  scanModulePermissionKeys(file, contents).map((v) => v.snippet);
 
 describe("no-module-permission-key — TypeScript", () => {
   it("flags a module key string", () => {

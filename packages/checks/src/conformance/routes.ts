@@ -6,9 +6,9 @@ import { posix } from "node:path";
 import type { Program } from "oxc-parser";
 import {
   type Check,
-  type ConformanceCheck,
+  defineCheck,
   eachFile,
-  fileCheck,
+  type Scan,
   type SourceFile,
   type Violation
 } from "../check";
@@ -43,7 +43,7 @@ const ID = "route-action-shape";
  * ERP routes and leaves out test files. The baseline holds auth routes only
  * (the OAuth routes, invite, unlock, account security and passkeys).
  */
-export const routeActionShape: Check = {
+export const routeActionShape = defineCheck({
   id: ID,
   description:
     "An ERP route writes only through a service function: no client, Kysely or posting writes in the route",
@@ -53,12 +53,12 @@ export const routeActionShape: Check = {
       "one `defineServiceFn` per operation, called through `authorize(request)`",
     since: "2026-10-15"
   },
-  find: (repo) =>
-    repo
-      .read(pluginFindings)
+  reads: { findings: pluginFindings },
+  find: ({ findings }) =>
+    findings
       .filter((finding) => finding.checkId === ID)
       .map((finding) => finding.violation)
-};
+});
 
 // An index route that renders nothing exists to redirect (`/x/issue/:id` →
 // `…/details`). React Router runs the loaders of a matched branch in parallel,
@@ -73,7 +73,8 @@ const REDIRECT = /\bredirect\s*\(/;
 const MIDDLEWARE =
   /^export\s+const\s+middleware\b[^;]*\bredirectBeforeLoaders\s*\(\s*loader\s*\)/m;
 
-export const indexRedirectBeforeLoaders = fileCheck(routeTypescript, {
+export const indexRedirectBeforeLoaders = defineCheck({
+  files: routeTypescript,
   id: "index-redirect-before-loaders",
   description:
     "An index route that only redirects must run the redirect before its parents' loaders",
@@ -154,7 +155,8 @@ function argument(contents: string, open: number): string {
   return "";
 }
 
-export const noStateCopyOfLoaderData = fileCheck(typescript, {
+export const noStateCopyOfLoaderData = defineCheck({
+  files: typescript,
   id: "no-state-copy-of-loader-data",
   description:
     "state must not be seeded from loader or route data: it is a copy no reload updates",
@@ -262,9 +264,8 @@ const ABOUT = {
  * company of the group, reads whose page derives its types from the building
  * block, and the write-on-GET `upsertPickMethod` calls.
  */
-export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
+export function loaderReadsThroughApi(wrapped: Set<string>): { scan: Scan } {
   return {
-    ...ABOUT,
     scan(file: string, contents: string): Violation[] {
       if (!LOADER_ROUTES.test(file) || !contents.includes(".service"))
         return [];
@@ -328,18 +329,16 @@ export function loaderReadsThroughApi(wrapped: Set<string>): ConformanceCheck {
   };
 }
 
-export const loaderReadsThroughApiCheck: Check = {
+export const loaderReadsThroughApiCheck = defineCheck({
   ...ABOUT,
-  find: (repo) =>
+  reads: { routes: routeTypescript, modules: loadModuleServerFiles },
+  find: ({ routes, modules }) =>
     eachFile(
-      repo.read(routeTypescript),
-      loaderReadsThroughApi(
-        wrappedBuildingBlocks(
-          repo.read(loadModuleServerFiles).map((f) => f.server)
-        )
-      ).scan
+      routes,
+      loaderReadsThroughApi(wrappedBuildingBlocks(modules.map((f) => f.server)))
+        .scan
     )
-};
+});
 
 // React Router keeps a route's components mounted when only its params change
 // (part A to part B, one order line to the next). Whatever the page seeded once
@@ -350,7 +349,29 @@ export const loaderReadsThroughApiCheck: Check = {
 const OUTLET_ROUTES = /^apps\/(?:erp|mes)\/app\/routes\/x\+\//;
 const OUTLET = /<Outlet(?=[\s/>])([^>]*)>/g;
 
-export const noBareOutlet: ConformanceCheck & Check = {
+/** `no-bare-outlet` over one route file: an outlet the file renders itself. */
+export function scanBareOutlets(file: string, contents: string): Violation[] {
+  if (!OUTLET_ROUTES.test(file)) return [];
+  const violations: Violation[] = [];
+  for (const match of contents.matchAll(OUTLET)) {
+    // An outlet with its own key already says when its page remounts (the
+    // shell keys on the company).
+    if (/\bkey=/.test(match[1]!)) continue;
+    const line = lineOf(contents, match.index);
+    const text = contents.split("\n")[line - 1]?.trim() ?? "";
+    if (text.startsWith("//") || text.startsWith("*")) continue;
+    violations.push({
+      file,
+      line,
+      snippet: text,
+      message:
+        'Render `<RecordOutlet />` from "@carbon/react": a plain outlet keeps the page mounted when the record changes, with the previous record\'s form and editor state'
+    });
+  }
+  return violations;
+}
+
+export const noBareOutlet = defineCheck({
   id: "no-bare-outlet",
   description:
     "a route under /x renders RecordOutlet, which remounts its page when the record changes",
@@ -359,31 +380,12 @@ export const noBareOutlet: ConformanceCheck & Check = {
     replacedBy: '<RecordOutlet /> from "@carbon/react"',
     since: "2026-10-06"
   },
-  scan(file: string, contents: string): Violation[] {
-    if (!OUTLET_ROUTES.test(file)) return [];
-    const violations: Violation[] = [];
-    for (const match of contents.matchAll(OUTLET)) {
-      // An outlet with its own key already says when its page remounts (the
-      // shell keys on the company).
-      if (/\bkey=/.test(match[1]!)) continue;
-      const line = lineOf(contents, match.index);
-      const text = contents.split("\n")[line - 1]?.trim() ?? "";
-      if (text.startsWith("//") || text.startsWith("*")) continue;
-      violations.push({
-        file,
-        line,
-        snippet: text,
-        message:
-          'Render `<RecordOutlet />` from "@carbon/react": a plain outlet keeps the page mounted when the record changes, with the previous record\'s form and editor state'
-      });
-    }
-    return violations;
-  },
-  find: (repo) => [
-    ...eachFile(repo.read(typescript), noBareOutlet.scan),
-    ...findNestedOutlets(repo.read(typescript))
+  reads: { files: typescript },
+  find: ({ files }) => [
+    ...eachFile(files, scanBareOutlets),
+    ...findNestedOutlets(files)
   ]
-};
+});
 
 // A file that renders its own outlet must not also render a component that
 // renders one. Both outlets render the same child route, so a route dialog

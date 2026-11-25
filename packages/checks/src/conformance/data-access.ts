@@ -11,9 +11,9 @@ import type {
 } from "oxc-parser";
 import {
   type Check,
-  type ConformanceCheck,
+  defineCheck,
   eachFile,
-  fileCheck,
+  type Scan,
   type SourceFile,
   type Violation
 } from "../check";
@@ -79,21 +79,6 @@ function matchedLines(
   return violations;
 }
 
-/**
- * A check over the app TypeScript whose scan is built from repo data (the
- * generated columns), so a test builds it from its own map.
- */
-function builtFrom<T>(
-  about: Omit<ConformanceCheck, "scan">,
-  load: (root: string) => T,
-  build: (data: T) => ConformanceCheck
-): Check {
-  return {
-    ...about,
-    find: (repo) => eachFile(repo.read(typescript), build(repo.read(load)).scan)
-  };
-}
-
 const UNIQUE_VIOLATION = /["']23505["']/g;
 
 /**
@@ -109,7 +94,8 @@ const EXEMPT_FILES = new Set([
  * The literals that existed when the check landed are baselined. Each one
  * should move to `isUniqueViolation`; the baseline does not make them right.
  */
-export const noInlineUniqueViolation = fileCheck(typescript, {
+export const noInlineUniqueViolation = defineCheck({
+  files: typescript,
   id: "no-inline-unique-violation",
   description:
     'Branch on a unique violation with isUniqueViolation(), never a literal "23505".',
@@ -133,7 +119,8 @@ export const noInlineUniqueViolation = fileCheck(typescript, {
 // failed with PGRST100. `searchFilter` (`@carbon/utils`) quotes the term.
 const RAW_OR_SEARCH = /\.or\(\s*`[^`]*\.ilike\.%?\$\{/g;
 
-export const noRawOrSearch = fileCheck(typescript, {
+export const noRawOrSearch = defineCheck({
+  files: typescript,
   id: "no-raw-or-search",
   description:
     "Search text goes into an .or() filter through searchFilter, which quotes it",
@@ -162,7 +149,8 @@ export const noRawOrSearch = fileCheck(typescript, {
 // See .claude/rules/realtime-system.md.
 const POSTGRES_CHANGES = /["'`]postgres_changes["'`]/g;
 
-export const noPostgresChanges = fileCheck(typescript, {
+export const noPostgresChanges = defineCheck({
+  files: typescript,
   id: "no-postgres-changes",
   description:
     "Realtime subscriptions use broadcast topics, never postgres_changes",
@@ -208,7 +196,8 @@ const DB_CLIENT =
 
 const COMMENT_LINE = /^\s*(?:\/\/|\/?\*)/;
 
-export const noDbClientInService = fileCheck(typescript, {
+export const noDbClientInService = defineCheck({
+  files: typescript,
   id: "no-db-client-in-service",
   description:
     "A *.service.ts never constructs or fetches a DB pool/Kysely client — its caller passes one in as `db` (ctx.asSystem.pg in a service function, getDatabaseClient() in a route).",
@@ -356,7 +345,8 @@ function literalTable(text: string, openParen: number): string | null {
   return m?.[1] ?? null;
 }
 
-export const noUnscopedKyselyWrite = fileCheck(typescript, {
+export const noUnscopedKyselyWrite = defineCheck({
+  files: typescript,
   id: "no-unscoped-kysely-write",
   description:
     "Every Kysely updateTable/deleteFrom in app/jobs code carries a companyId predicate — Kysely bypasses RLS, so the statement's own WHERE is the only tenant boundary.",
@@ -582,11 +572,10 @@ const AUDIT_ABOUT = {
  * `scan` stays pure and a test passes its own map. The one site it found was
  * fixed when the check landed, so any finding is new.
  */
-export function noMissingAuditColumn(
-  columns: Map<string, Set<string>>
-): ConformanceCheck {
+export function noMissingAuditColumn(columns: Map<string, Set<string>>): {
+  scan: Scan;
+} {
   return {
-    ...AUDIT_ABOUT,
     scan(file, contents) {
       // Parse only a file that could hold a finding.
       if (!AUDIT_TARGET.test(contents) || !AUDIT_FIELD.test(contents)) {
@@ -617,11 +606,12 @@ export function noMissingAuditColumn(
   };
 }
 
-export const noMissingAuditColumnCheck = builtFrom(
-  AUDIT_ABOUT,
-  loadDbTableColumns,
-  noMissingAuditColumn
-);
+export const noMissingAuditColumnCheck = defineCheck({
+  ...AUDIT_ABOUT,
+  reads: { files: typescript, columns: loadDbTableColumns },
+  find: ({ files, columns }) =>
+    eachFile(files, noMissingAuditColumn(columns).scan)
+});
 
 /**
  * A service function's `payload(ctx, value)…forCreate()` (or `forUpdate`,
@@ -920,16 +910,13 @@ function fromTable(node: Node, contents: string): string | undefined {
   }
 }
 
-export const stampMatchesColumns: Check = {
+export const stampMatchesColumns = defineCheck({
   id: "stamp-matches-columns",
   description:
     "A service function's `payload(ctx, value)…forCreate()` (or `forUpdate`, `forUpsert`, `for(op)`, `build`) adds identity fields to the payload it hands a building block.",
-  find: (repo) =>
-    findStampColumnMismatches(
-      repo.read(loadModuleServerFiles),
-      repo.read(loadDbTableColumns)
-    )
-};
+  reads: { modules: loadModuleServerFiles, columns: loadDbTableColumns },
+  find: ({ modules, columns }) => findStampColumnMismatches(modules, columns)
+});
 
 /**
  * supabase-js never throws: a failed query resolves to `data: null`, so
@@ -1277,7 +1264,8 @@ function requestEnd(text: string, from: number): number {
  * sampled ones were real: a notes autosave that dropped a failed update, and a
  * picker that showed an empty list on a failed read.
  */
-export const noDiscardedQueryError = fileCheck(typescript, {
+export const noDiscardedQueryError = defineCheck({
+  files: typescript,
   id: "no-discarded-query-error",
   description:
     "A supabase-js result is never read without its error: no `{ data }` destructure without `error`, no `(await …).data`, no `r.data` from a result whose `r.error` is never read, and no awaited write whose result is dropped.",
@@ -1522,7 +1510,8 @@ function analyze(file: string, contents: string): Analysis {
   return { writes, picks, resolving };
 }
 
-export const mesUnitWriteResolvesUnit = fileCheck(typescript, {
+export const mesUnitWriteResolvesUnit = defineCheck({
+  files: typescript,
   id: "mes-unit-write-resolves-unit",
   description:
     "An MES function that writes a serial unit calls resolveWorkUnit, and only the resolver picks a unit on the server",
@@ -1754,10 +1743,9 @@ function readRowWrites(contents: string): {
 
 export function statusWriteGuarded(
   columnTypes: Map<string, Map<string, string>>
-): ConformanceCheck {
+): { scan: Scan } {
   const columns = statusColumns(columnTypes);
   return {
-    ...STATUS_ABOUT,
     scan(file, contents) {
       const { text, regions, locks, writes } = readRowWrites(contents);
       const violations: Violation[] = [];
@@ -1810,11 +1798,12 @@ export function statusWriteGuarded(
   };
 }
 
-export const statusWriteGuardedCheck = builtFrom(
-  STATUS_ABOUT,
-  loadDbTableColumnTypes,
-  statusWriteGuarded
-);
+export const statusWriteGuardedCheck = defineCheck({
+  ...STATUS_ABOUT,
+  reads: { files: typescript, columnTypes: loadDbTableColumnTypes },
+  find: ({ files, columnTypes }) =>
+    eachFile(files, statusWriteGuarded(columnTypes).scan)
+});
 
 /**
  * A running total (`quantityIssued`, `quantityReceived`, …) must be added to in
@@ -1981,9 +1970,8 @@ const COUNTER_ABOUT = {
 
 export function counterWriteRelative(
   columnTypes: Map<string, Map<string, string>>
-): ConformanceCheck {
+): { scan: Scan } {
   return {
-    ...COUNTER_ABOUT,
     scan(file, contents) {
       const { text, regions, locks, writes } = readRowWrites(contents);
       const violations: Violation[] = [];
@@ -2036,11 +2024,12 @@ export function counterWriteRelative(
   };
 }
 
-export const counterWriteRelativeCheck = builtFrom(
-  COUNTER_ABOUT,
-  loadDbTableColumnTypes,
-  counterWriteRelative
-);
+export const counterWriteRelativeCheck = defineCheck({
+  ...COUNTER_ABOUT,
+  reads: { files: typescript, columnTypes: loadDbTableColumnTypes },
+  find: ({ files, columnTypes }) =>
+    eachFile(files, counterWriteRelative(columnTypes).scan)
+});
 
 /** The data-access checks, in the order they are written above. */
 export const checks: Check[] = [

@@ -16,7 +16,7 @@ export type Finding = { checkId: string; violation: Violation };
 /** What `checks` find in `repo`, each violation under the id of its check. */
 export function runChecks(checks: Check[], repo: Repo): Finding[] {
   return checks.flatMap((check) =>
-    check.find(repo).map((violation) => ({ checkId: check.id, violation }))
+    check.run(repo).map((violation) => ({ checkId: check.id, violation }))
   );
 }
 
@@ -35,41 +35,15 @@ type FromWorker =
   | { checkId: string; violations: Violation[] }
   | { checkId: string; error: unknown };
 
-/** Thrown by the probe repo of `firstInput` at the first read. */
-class FirstRead extends Error {
-  constructor(readonly load: unknown) {
-    super("A probe stops a check at its first read");
-  }
-}
-
 /**
- * The loader the check named `checkId` reads first, found by running it on a
- * repo that throws at the first read. A check that reads nothing, or throws
- * before it reads, gets its own id, so it is a group of its own.
+ * `checkIds` grouped by the input each check declares first, each group in
+ * `checkIds` order. A check that declares nothing is a group of its own.
  */
-function firstInput(checkId: string, root: string): unknown {
-  const probe: Repo = {
-    root,
-    read(load) {
-      throw new FirstRead(load);
-    }
-  };
-  try {
-    CHECKS.find((check) => check.id === checkId)?.find(probe);
-  } catch (error) {
-    if (error instanceof FirstRead) return error.load;
-  }
-  return checkId;
-}
-
-/** `checkIds` grouped by the input each reads first, each group in `checkIds` order. */
-function groupByFirstInput(
-  checkIds: readonly string[],
-  root: string
-): string[][] {
+function groupByFirstInput(checkIds: readonly string[]): string[][] {
   const groups = new Map<unknown, string[]>();
   for (const checkId of checkIds) {
-    const input = firstInput(checkId, root);
+    const check = CHECKS.find((candidate) => candidate.id === checkId);
+    const input = check?.reads[0] ?? checkId;
     const group = groups.get(input);
     if (group) group.push(checkId);
     else groups.set(input, [checkId]);
@@ -80,7 +54,7 @@ function groupByFirstInput(
 /**
  * What the checks of `CHECKS` named by `checkIds` find under `root`, run on
  * `workers` worker threads, in `checkIds` order. Each worker takes the next id
- * when it finishes one, from the checks that read the same input first.
+ * when it finishes one, from the checks that declare the same first input.
  * Rejects, naming the check, when a check throws.
  */
 export function findOnWorkers(
@@ -88,13 +62,15 @@ export function findOnWorkers(
   root: string,
   workers: number
 ): Promise<Finding[]> {
-  const groups = groupByFirstInput(checkIds, root);
+  const groups = groupByFirstInput(checkIds);
   const groupOf = new Map<Worker, string[]>();
   // Each worker has its own loader and SQL-parse caches, so an input is read
-  // and parsed again on every worker that runs a check of it. A worker keeps
-  // to its group, then takes the largest group no other worker is on. It does
-  // not help with a group another worker has: reading that group's input
-  // again took longer than the help saved.
+  // and parsed again on every worker that runs a check of it. The groups come
+  // from what the checks declare, so no check runs to be grouped; a check that
+  // also reads the migrations declares them first, to share their parse. A
+  // worker keeps to its group, then takes the largest group no other worker is
+  // on. It does not help with a group another worker has: reading that
+  // group's input again took longer than the help saved.
   const nextFor = (worker: Worker): string | undefined => {
     let group = groupOf.get(worker);
     if (!group?.length) {

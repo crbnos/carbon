@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type Check, fileCheck, type Violation } from "../check";
+import { type Check, defineCheck, type Violation } from "../check";
 import {
   classifyFile,
   type HeaderStatus,
@@ -28,7 +28,8 @@ const MESSAGES: Record<Exclude<HeaderStatus, "ok">, string> = {
     "Carries a third-party notice (SPDX id, @license or copyright) — add it to PATH_EXCLUSIONS in license-headers.ts with its reason, or fix the header by hand"
 };
 
-export const spdxLicenseHeader = fileCheck(loadLicenseFiles, {
+export const spdxLicenseHeader = defineCheck({
+  files: loadLicenseFiles,
   id: "spdx-license-header",
   description:
     "Every first-party source file starts with its SPDX license header",

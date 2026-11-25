@@ -12,9 +12,9 @@ import type {
 } from "oxc-parser";
 import {
   type Check,
-  type ConformanceCheck,
+  defineCheck,
   eachFile,
-  fileCheck,
+  type Scan,
   type SourceFile,
   type Violation
 } from "../check";
@@ -38,7 +38,8 @@ import { lineOf } from "../sources/text";
 const OWN_MODULE_MOCK =
   /\bvi\.(mock|doMock)\(\s*(?:import\(\s*)?(["'`])((?:\.{1,2}|~)\/[^"'`]*)\2/g;
 
-export const testMocksOwnModule = fileCheck(loadTestFiles, {
+export const testMocksOwnModule = defineCheck({
+  files: loadTestFiles,
   id: "test-mocks-own-module",
   description: "Tests do not vi.mock a first-party module by relative path",
   provenance: {
@@ -154,7 +155,8 @@ function context(text: string, decls: Map<string, string>): string {
   return out;
 }
 
-export const testReadsSource = fileCheck(loadTestFiles, {
+export const testReadsSource = defineCheck({
+  files: loadTestFiles,
   id: "test-reads-source",
   description: "Tests do not read source or migration text",
   provenance: {
@@ -564,11 +566,10 @@ const ABOUT = {
  *
  * Hooks, `describe` and functions nested inside the callback are not read.
  */
-export function noSilentTestPass(
-  sharedWrappers: readonly string[]
-): ConformanceCheck {
+export function noSilentTestPass(sharedWrappers: readonly string[]): {
+  scan: Scan;
+} {
   return {
-    ...ABOUT,
     scan(file: string, contents: string): Violation[] {
       // Without a `return` there is no guard to find, so the file is not parsed.
       if (!contents.includes("return")) return [];
@@ -601,15 +602,12 @@ export function noSilentTestPass(
   };
 }
 
-export const noSilentTestPassCheck: Check = {
+export const noSilentTestPassCheck = defineCheck({
   ...ABOUT,
-  find: (repo) =>
-    eachFile(
-      repo.read(loadTestFiles),
-      noSilentTestPass(sharedTestWrappers(repo.read(loadSharedTestFixtures)))
-        .scan
-    )
-};
+  reads: { files: loadTestFiles, fixtures: loadSharedTestFixtures },
+  find: ({ files, fixtures }) =>
+    eachFile(files, noSilentTestPass(sharedTestWrappers(fixtures)).scan)
+});
 
 /** The tests checks, in the order they are written above. */
 export const checks: Check[] = [

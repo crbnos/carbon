@@ -36,9 +36,9 @@ import type {
 } from "oxc-parser";
 import {
   type Check,
-  type ConformanceCheck,
+  defineCheck,
   eachFile,
-  fileCheck,
+  type Scan,
   type SourceFile,
   type Violation
 } from "../check";
@@ -72,7 +72,8 @@ import { loadTypescriptFiles } from "../sources/typescript";
  */
 const AUTH_CALL = /(?<!function\s+)\b(requireCaller|requireServiceRole)\s*\(/;
 
-export const edgeFunctionAuthorizesCaller = fileCheck(loadEdgeFunctions, {
+export const edgeFunctionAuthorizesCaller = defineCheck({
+  files: loadEdgeFunctions,
   id: "edge-function-authorizes-caller",
   description:
     "Every edge function authorizes its caller in-function (requireCaller / requireServiceRole).",
@@ -144,15 +145,14 @@ const registryHelpers = (root: string) => {
   };
 };
 
-export const registryHelpersFresh: Check = {
+export const registryHelpersFresh = defineCheck({
   id: REGISTRY_HELPERS_FRESH,
   description:
     "The managed helpers whose bodies are the registry (every file `renderRegistryHelpers()` renders) are written from `access/pages` by `authz sync`.",
-  find: (repo) => {
-    const { rendered, files } = repo.read(registryHelpers);
-    return findStaleRegistryHelpers(rendered, files);
-  }
-};
+  reads: { helpers: registryHelpers },
+  find: ({ helpers }) =>
+    findStaleRegistryHelpers(helpers.rendered, helpers.files)
+});
 
 // --- no-authz-ddl-in-migrations ---
 
@@ -310,8 +310,7 @@ const AUTHZ_DDL_ABOUT = {
 /** The check for a given set of managed functions: tests pass their own. */
 export const noAuthzDdlInMigrations = (
   functions: ManagedFunction[]
-): ConformanceCheck => ({
-  ...AUTHZ_DDL_ABOUT,
+): { scan: Scan } => ({
   scan(file, contents) {
     const timestamp = /^(\d{14})_/.exec(file)?.[1];
     if (
@@ -375,18 +374,17 @@ export const noAuthzDdlInMigrations = (
   }
 });
 
-export const noAuthzDdlInMigrationsCheck: Check = {
+export const noAuthzDdlInMigrationsCheck = defineCheck({
   ...AUTHZ_DDL_ABOUT,
-  find: (repo) =>
-    eachFile(
-      repo.read(migrations),
-      noAuthzDdlInMigrations(repo.read(loadManagedFunctions)).scan
-    )
-};
+  reads: { files: migrations, functions: loadManagedFunctions },
+  find: ({ files, functions }) =>
+    eachFile(files, noAuthzDdlInMigrations(functions).scan)
+});
 
 // --- no-legacy-rls ---
 
-export const noLegacyRls = fileCheck(migrations, {
+export const noLegacyRls = defineCheck({
+  files: migrations,
   id: "no-legacy-rls",
   description:
     "Use get_companies_with_employee_permission(...), not has_role()/has_company_permission().",
@@ -641,32 +639,6 @@ function scanSql(file: string, contents: string): Violation[] {
   return violations;
 }
 
-export const noModulePermissionKey: ConformanceCheck & Check = {
-  id: "no-module-permission-key",
-  description:
-    "Permission checks name a page (<module>.<page>_<action>, { page: Level }), never a module",
-  provenance: {
-    deprecates:
-      "module permission keys (inventory_view, { inventory: Edit }, { view: inventory })",
-    replacedBy:
-      "page keys from the access registry (packages/database/src/access/pages)",
-    since: LAST_MODULE_KEY_MIGRATION
-  },
-  scan(file, contents) {
-    if (file.endsWith(".sql")) return scanSql(file, contents);
-    return scanTypescript(file, contents);
-  },
-  find: (repo) =>
-    eachFile(
-      [
-        ...repo.read(migrations),
-        ...repo.read(loadManagedFunctionFiles),
-        ...repo.read(moduleKeyTypescript)
-      ],
-      noModulePermissionKey.scan
-    )
-};
-
 /** Where module keys are looked for in TypeScript: every gate and client check, and the workflow engine. */
 export const MODULE_KEY_ROOTS = [
   "apps/erp/app/components",
@@ -683,6 +655,40 @@ export const MODULE_KEY_ROOTS = [
 
 const moduleKeyTypescript = (root: string) =>
   loadTypescriptFiles(root, MODULE_KEY_ROOTS);
+
+/** `no-module-permission-key` over one SQL or TypeScript file. */
+export function scanModulePermissionKeys(
+  file: string,
+  contents: string
+): Violation[] {
+  if (file.endsWith(".sql")) return scanSql(file, contents);
+  return scanTypescript(file, contents);
+}
+
+export const noModulePermissionKey = defineCheck({
+  id: "no-module-permission-key",
+  description:
+    "Permission checks name a page (<module>.<page>_<action>, { page: Level }), never a module",
+  provenance: {
+    deprecates:
+      "module permission keys (inventory_view, { inventory: Edit }, { view: inventory })",
+    replacedBy:
+      "page keys from the access registry (packages/database/src/access/pages)",
+    since: LAST_MODULE_KEY_MIGRATION
+  },
+  // Migrations first: the runner groups a check by its first input, so this
+  // check runs on the worker that has already parsed their SQL.
+  reads: {
+    migrations,
+    functions: loadManagedFunctionFiles,
+    typescript: moduleKeyTypescript
+  },
+  find: ({ migrations, functions, typescript }) =>
+    eachFile(
+      [...migrations, ...functions, ...typescript],
+      scanModulePermissionKeys
+    )
+});
 
 // --- moved-tables-covered ---
 
@@ -814,12 +820,13 @@ export function findMovedTableGaps(
   return violations;
 }
 
-export const movedTablesCovered: Check = {
+export const movedTablesCovered = defineCheck({
   id: MOVED_TABLES_COVERED,
   description:
     "A table whose page is now in another module than one its policies checked before page permissions keeps that module's holders.",
-  find: (repo) => findMovedTableGaps(livePolicies(repo.read(migrations)))
-};
+  reads: { migrations },
+  find: ({ migrations }) => findMovedTableGaps(livePolicies(migrations))
+});
 
 // --- route-maps-to-page ---
 
@@ -998,12 +1005,13 @@ export function findRoutePageGaps(
   return violations;
 }
 
-export const routeMapsToPage: Check = {
+export const routeMapsToPage = defineCheck({
   id: ROUTE_MAPS_TO_PAGE,
   description:
     "Every ERP route under `x+` belongs to one page of the access registry, so a gate, the sidebar and `pageOfUrl` agree on whose screen it is, or is listed in `UNPAGED_ROUTES` with the reason.",
-  find: (repo) => findRoutePageGaps(repo.read(loadErpRouteFiles))
-};
+  reads: { routes: loadErpRouteFiles },
+  find: ({ routes }) => findRoutePageGaps(routes)
+});
 
 // --- route-gate-names-page ---
 
@@ -1270,9 +1278,8 @@ const ROUTE_GATE_ABOUT = {
 export function routeGateNamesPage(
   constants: ReadonlyMap<string, readonly string[]>,
   lists: ReadonlyMap<string, readonly string[]> = new Map()
-): ConformanceCheck {
+): { scan: Scan } {
   return {
-    ...ROUTE_GATE_ABOUT,
     scan(file: string, contents: string): Violation[] {
       const route = ROUTE.exec(file)?.[1];
       if (
@@ -1312,17 +1319,19 @@ const erpModuleTypescript = (root: string) =>
 const listRegistryTypescript = (root: string) =>
   loadTypescriptFiles(root, ["apps/erp/app/utils/list-registry"]);
 
-export const routeGateNamesPageCheck: Check = {
+export const routeGateNamesPageCheck = defineCheck({
   ...ROUTE_GATE_ABOUT,
-  find: (repo) =>
+  reads: {
+    routes: routeTypescript,
+    modules: erpModuleTypescript,
+    lists: listRegistryTypescript
+  },
+  find: ({ routes, modules, lists }) =>
     eachFile(
-      repo.read(routeTypescript),
-      routeGateNamesPage(
-        gateConstants(repo.read(erpModuleTypescript)),
-        listGates(repo.read(listRegistryTypescript))
-      ).scan
+      routes,
+      routeGateNamesPage(gateConstants(modules), listGates(lists)).scan
     )
-};
+});
 
 /** The authz checks, in the order they are written above. */
 export const checks: Check[] = [

@@ -5,9 +5,9 @@
 import type { Node } from "libpg-query";
 import {
   type Check,
-  type ConformanceCheck,
+  defineCheck,
   eachFile,
-  fileCheck,
+  type Scan,
   type Violation
 } from "../check";
 import { blankComments } from "../sources/comments";
@@ -144,7 +144,8 @@ const provenance = {
  * and wait for a decision. Each fix is a schema change, so the user decides. A
  * version snapshot may want `history` rather than `RESTRICT` semantics.
  */
-export const accountFkRestrict = fileCheck(migrations, {
+export const accountFkRestrict = defineCheck({
+  files: migrations,
   id: "account-fk-restrict",
   description: "A foreign key to account must be ON DELETE RESTRICT.",
   provenance,
@@ -183,9 +184,8 @@ const ABOUT = {
 export function accountFkClassified({
   classified,
   unclassified
-}: AccountReferencePolicy): ConformanceCheck {
+}: AccountReferencePolicy): { scan: Scan } {
   return {
-    ...ABOUT,
     scan(file, contents) {
       const violations: Violation[] = [];
       for (const { line, snippet, ref } of accountReferences(file, contents)) {
@@ -208,14 +208,11 @@ export function accountFkClassified({
   };
 }
 
-export const accountFkClassifiedCheck: Check = {
+export const accountFkClassifiedCheck = defineCheck({
   ...ABOUT,
-  find: (repo) =>
-    eachFile(
-      repo.read(migrations),
-      accountFkClassified(repo.read(loadAccountReferencePolicy)).scan
-    )
-};
+  reads: { files: migrations, policy: loadAccountReferencePolicy },
+  find: ({ files, policy }) => eachFile(files, accountFkClassified(policy).scan)
+});
 
 // A journal reader that filters `status <> 'Draft'` counts every non-Draft
 // status, so the Provisional and Superseded journals of the accounting cutover
@@ -472,7 +469,23 @@ function scanSql(file: string, contents: string): Violation[] {
   return violations.sort((a, b) => a.line - b.line);
 }
 
-export const journalStatusFilter: ConformanceCheck & Check = {
+/** `journal-status-filter` over one migration or TypeScript file. */
+export function scanJournalStatusFilter(
+  file: string,
+  contents: string
+): Violation[] {
+  if (!contents.includes("Draft") || !/journal/i.test(contents)) return [];
+  if (file.endsWith(".sql")) {
+    if (basename(file) < SINCE_MIGRATION) return [];
+    return scanSql(file, contents);
+  }
+  return scanStatements(file, contents, blankComments(contents), TS_JOURNAL, [
+    ...TS_NOT_DRAFT,
+    ...SQL_NOT_DRAFT
+  ]);
+}
+
+export const journalStatusFilter = defineCheck({
   id: "journal-status-filter",
   description:
     "Journal readers filter status with a named status list, not `status <> 'Draft'`",
@@ -482,22 +495,12 @@ export const journalStatusFilter: ConformanceCheck & Check = {
       "GL_JOURNAL_STATUSES, DOCUMENT_JOURNAL_STATUSES or OPEN_ITEM_JOURNAL_STATUSES from @carbon/database/accounting-posting",
     since: SINCE_MIGRATION
   },
-  scan(file: string, contents: string): Violation[] {
-    if (!contents.includes("Draft") || !/journal/i.test(contents)) return [];
-    if (file.endsWith(".sql")) {
-      if (basename(file) < SINCE_MIGRATION) return [];
-      return scanSql(file, contents);
-    }
-    return scanStatements(file, contents, blankComments(contents), TS_JOURNAL, [
-      ...TS_NOT_DRAFT,
-      ...SQL_NOT_DRAFT
-    ]);
-  },
-  find: (repo) => [
-    ...eachFile(repo.read(migrations), journalStatusFilter.scan),
-    ...eachFile(repo.read(typescript), journalStatusFilter.scan)
-  ]
-};
+  // Migrations first: the runner groups a check by its first input, so this
+  // check runs on the worker that has already parsed their SQL.
+  reads: { migrations, typescript },
+  find: ({ migrations, typescript }) =>
+    eachFile([...migrations, ...typescript], scanJournalStatusFilter)
+});
 
 /** The accounting checks, in the order they are written above. */
 export const checks: Check[] = [

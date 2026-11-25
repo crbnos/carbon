@@ -12,9 +12,9 @@ import type {
 } from "oxc-parser";
 import {
   type Check,
-  fileCheck,
+  defineCheck,
+  type ModuleDir,
   type SourceFile,
-  type StructureCheck,
   type Violation
 } from "../check";
 import { erpModules, typescript } from "../sources/inputs";
@@ -38,7 +38,65 @@ const BARRELS = ["index.ts", "index.server.ts"];
 
 const isTest = (entry: string) => /\.(test|spec)\.tsx?$/.test(entry);
 
-export const moduleShape: StructureCheck = {
+function moduleShapeViolations(module: ModuleDir): Violation[] {
+  const violations: Violation[] = [];
+  const add = (snippet: string, message: string) =>
+    violations.push({ file: module.name, line: 0, snippet, message });
+
+  for (const name of REQUIRED_ENTRIES) {
+    if (!module.entries.includes(name)) {
+      add(`missing:${name}`, `Module "${module.name}" is missing ${name}.`);
+    }
+  }
+
+  for (const kind of ["service", "models"] as const) {
+    const canonical = `${module.name}.${kind}.ts`;
+    // A `.ee` infix marks a file as commercial-licensed (see root LICENSE);
+    // a module may keep its single service/models file under that name.
+    const eeVariant = `${module.name}.ee.${kind}.ts`;
+    const found = module.entries.filter((e) => e.endsWith(`.${kind}.ts`));
+    if (!found.includes(canonical) && !found.includes(eeVariant)) {
+      add(
+        `missing:${canonical}`,
+        `Module "${module.name}" must have ${canonical} (or ${eeVariant}).`
+      );
+    }
+    for (const extra of found.filter(
+      (e) => e !== canonical && e !== eeVariant
+    )) {
+      add(
+        `extra-${kind}:${extra}`,
+        `Extra ${kind} file "${extra}" — fold into ${canonical}.`
+      );
+    }
+  }
+
+  for (const barrel of BARRELS.filter((b) => module.entries.includes(b))) {
+    add(
+      `barrel:${barrel}`,
+      `Module "${module.name}" has a barrel (${barrel}): import from the file that defines a thing, and let the router import ${module.name}.server.ts as a namespace.`
+    );
+  }
+
+  const server = `${module.name}.server.ts`;
+  const servers = [server, `${module.name}.ee.server.ts`];
+  for (const extra of module.entries.filter(
+    (e) =>
+      /\.server\.tsx?$/.test(e) &&
+      !servers.includes(e) &&
+      !isTest(e) &&
+      !BARRELS.includes(e)
+  )) {
+    add(
+      `extra-server:${extra}`,
+      `"${extra}": a module's only .server file is ${server}, and it holds service functions. Move its functions into ${module.name}.service.ts.`
+    );
+  }
+
+  return violations;
+}
+
+export const moduleShapeCheck = defineCheck({
   id: "module-shape",
   description:
     "Each ERP module: one <name>.service.ts (or <name>.ee.service.ts), one <name>.models.ts, types.ts, ui/, at most one <name>.server.ts, and no barrel.",
@@ -48,71 +106,9 @@ export const moduleShape: StructureCheck = {
     replacedBy:
       "one <module>.service.ts + one <module>.models.ts; <module>.server.ts for the service functions; imports from the defining file"
   },
-  inspect(module): Violation[] {
-    const violations: Violation[] = [];
-    const add = (snippet: string, message: string) =>
-      violations.push({ file: module.name, line: 0, snippet, message });
-
-    for (const name of REQUIRED_ENTRIES) {
-      if (!module.entries.includes(name)) {
-        add(`missing:${name}`, `Module "${module.name}" is missing ${name}.`);
-      }
-    }
-
-    for (const kind of ["service", "models"] as const) {
-      const canonical = `${module.name}.${kind}.ts`;
-      // A `.ee` infix marks a file as commercial-licensed (see root LICENSE);
-      // a module may keep its single service/models file under that name.
-      const eeVariant = `${module.name}.ee.${kind}.ts`;
-      const found = module.entries.filter((e) => e.endsWith(`.${kind}.ts`));
-      if (!found.includes(canonical) && !found.includes(eeVariant)) {
-        add(
-          `missing:${canonical}`,
-          `Module "${module.name}" must have ${canonical} (or ${eeVariant}).`
-        );
-      }
-      for (const extra of found.filter(
-        (e) => e !== canonical && e !== eeVariant
-      )) {
-        add(
-          `extra-${kind}:${extra}`,
-          `Extra ${kind} file "${extra}" — fold into ${canonical}.`
-        );
-      }
-    }
-
-    for (const barrel of BARRELS.filter((b) => module.entries.includes(b))) {
-      add(
-        `barrel:${barrel}`,
-        `Module "${module.name}" has a barrel (${barrel}): import from the file that defines a thing, and let the router import ${module.name}.server.ts as a namespace.`
-      );
-    }
-
-    const server = `${module.name}.server.ts`;
-    const servers = [server, `${module.name}.ee.server.ts`];
-    for (const extra of module.entries.filter(
-      (e) =>
-        /\.server\.tsx?$/.test(e) &&
-        !servers.includes(e) &&
-        !isTest(e) &&
-        !BARRELS.includes(e)
-    )) {
-      add(
-        `extra-server:${extra}`,
-        `"${extra}": a module's only .server file is ${server}, and it holds service functions. Move its functions into ${module.name}.service.ts.`
-      );
-    }
-
-    return violations;
-  }
-};
-
-export const moduleShapeCheck: Check = {
-  id: moduleShape.id,
-  description: moduleShape.description,
-  provenance: moduleShape.provenance,
-  find: (repo) => repo.read(erpModules).flatMap((m) => moduleShape.inspect(m))
-};
+  reads: { modules: erpModules },
+  find: ({ modules }) => modules.flatMap(moduleShapeViolations)
+});
 
 /**
  * A module's `<module>.server.ts` (or `<module>.ee.server.ts`) is its API: every export is a
@@ -187,7 +183,8 @@ const statementName = (node: Directive | Statement) => {
   return STATEMENT_NAMES[node.type] ?? node.type;
 };
 
-export const serviceFnFile = fileCheck(typescript, {
+export const serviceFnFile = defineCheck({
+  files: typescript,
   id: "service-fn-file",
   description:
     "A module's <module>.server.ts exports only defineServiceFn consts; every other function lives in <module>.service.ts.",
@@ -311,12 +308,13 @@ export function findDuplicatedAppFiles(files: SourceFile[]): Violation[] {
   return violations;
 }
 
-export const noDuplicatedAppFile: Check = {
+export const noDuplicatedAppFile = defineCheck({
   id: NO_DUPLICATED_APP_FILE,
   description:
     "A component or hook needed by both ERP and MES lives in a package; each app may keep a file of that name that only re-exports it.",
-  find: (repo) => findDuplicatedAppFiles(repo.read(sharedAppTypescript))
-};
+  reads: { files: sharedAppTypescript },
+  find: ({ files }) => findDuplicatedAppFiles(files)
+});
 
 /**
  * Code that runs in the browser — components, hooks, stores, a module's `ui/`,
@@ -415,7 +413,8 @@ function scanRoute(file: string, contents: string): Violation[] {
   return violations;
 }
 
-export const noServerCodeInClient = fileCheck(typescript, {
+export const noServerCodeInClient = defineCheck({
+  files: typescript,
   id: "no-server-code-in-client",
   description:
     "Components, hooks, ui/, models, utils, types and a route's browser code never import a .service or .server file.",
@@ -534,13 +533,13 @@ export function findUndeclaredSideEffectImports(
   return violations;
 }
 
-export const sideEffectImportDeclared: Check = {
+export const sideEffectImportDeclared = defineCheck({
   id: SIDE_EFFECT_IMPORT_DECLARED,
   description:
     'In a package whose package.json says `"sideEffects": false`, or lists only some files, the production bundler drops a bare import of any file it does not list.',
-  find: (repo) =>
-    findUndeclaredSideEffectImports(repo.read(loadSideEffectPackages))
-};
+  reads: { packages: loadSideEffectPackages },
+  find: ({ packages }) => findUndeclaredSideEffectImports(packages)
+});
 
 /** The modules checks, in the order they are written above. */
 export const checks: Check[] = [

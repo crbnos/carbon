@@ -7,7 +7,12 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { validateEnv } from "@carbon/env/validate";
 import type { Node } from "libpg-query";
-import type { Check, SourceFile, Violation } from "../check";
+import {
+  type Check,
+  defineCheck,
+  type SourceFile,
+  type Violation
+} from "../check";
 import {
   loadIntegrationConfigs,
   read,
@@ -26,7 +31,7 @@ import { lineOf } from "../sources/text";
 // Checks that keep two places in step: a value written in one file and
 // repeated in another, where nothing else fails when only one side changes.
 // Each is a pure `find*` function over the files it compares, so its tests pass
-// their own fixtures, and a `Check` that reads those files from the repo.
+// their own fixtures, and a check that declares those files in its `reads`.
 
 export const EVENT_IGNORED_COLUMNS = "event-ignored-columns";
 
@@ -94,15 +99,14 @@ export function findIgnoredColumnDrift(
   return out;
 }
 
-export const eventIgnoredColumns: Check = {
+export const eventIgnoredColumns = defineCheck({
   id: EVENT_IGNORED_COLUMNS,
   description:
     "The event triggers drop an UPDATE that changes only bookkeeping columns before it is queued, broadcast or logged, because the audit diff would discard it anyway (`auditConfig.skipFields`).",
-  find: (repo) => {
-    const { functions, auditConfig } = repo.read(loadEventFunctionSources);
-    return findIgnoredColumnDrift(functions, auditConfig);
-  }
-};
+  reads: { sources: loadEventFunctionSources },
+  find: ({ sources }) =>
+    findIgnoredColumnDrift(sources.functions, sources.auditConfig)
+});
 
 export const PROVIDER_ROLE_BACKFILLED = "provider-role-backfilled";
 
@@ -211,16 +215,15 @@ export function findProviderRoleDrift(
   return out;
 }
 
-export const providerRoleBackfilled: Check = {
+export const providerRoleBackfilled = defineCheck({
   id: PROVIDER_ROLE_BACKFILLED,
   description:
     "An integration's providerRole in its config matches the role the migrations set on its row.",
-  find: (repo) =>
-    findProviderRoleDrift(
-      repo.read(loadIntegrationConfigs),
-      repo.read(migrations)
-    )
-};
+  // Migrations first: the runner groups a check by its first input, so this
+  // check runs on the worker that has already parsed their SQL.
+  reads: { migrations, configs: loadIntegrationConfigs },
+  find: ({ configs, migrations }) => findProviderRoleDrift(configs, migrations)
+});
 
 export const SCHEDULED_SQL_CONSTANTS = "scheduled-sql-constants";
 
@@ -335,16 +338,16 @@ export function findScheduledSqlDrift(
   return out;
 }
 
-export const scheduledSqlConstants: Check = {
+export const scheduledSqlConstants = defineCheck({
   id: SCHEDULED_SQL_CONSTANTS,
   description:
     "pg_cron wakes a scheduled function only when its `util.*_has_work()` says a run would do something, and that SQL repeats the function's constants.",
-  find: (repo) =>
-    findScheduledSqlDrift(
-      repo.read(migrations),
-      repo.read(loadScheduledConstantSources)
-    )
-};
+  // Migrations first: the runner groups a check by its first input, so this
+  // check runs on the worker that has already parsed their SQL.
+  reads: { migrations, constants: loadScheduledConstantSources },
+  find: ({ migrations, constants }) =>
+    findScheduledSqlDrift(migrations, constants)
+});
 
 export const DOCUMENT_SEQUENCE_SYNCED = "document-sequence-synced";
 
@@ -503,13 +506,13 @@ export function findUnsyncedDocumentSequences(sources: {
   return out;
 }
 
-export const documentSequenceSynced: Check = {
+export const documentSequenceSynced = defineCheck({
   id: DOCUMENT_SEQUENCE_SYNCED,
   description:
     "Every counter is either kept ahead of saved numbers by sync_advance_document_sequence or exempt with a reason, and the interceptor's table list matches the tables it is attached to.",
-  find: (repo) =>
-    findUnsyncedDocumentSequences(repo.read(loadDocumentSequenceSources))
-};
+  reads: { sources: loadDocumentSequenceSources },
+  find: ({ sources }) => findUnsyncedDocumentSequences(sources)
+});
 
 export const DEPLOYMENTS_SET_REQUIRED_ENV = "deployments-set-required-env";
 
@@ -597,17 +600,18 @@ export function findDeploymentEnvGaps(
   );
 }
 
-export const deploymentsSetRequiredEnv: Check = {
+export const deploymentsSetRequiredEnv = defineCheck({
   id: DEPLOYMENTS_SET_REQUIRED_ENV,
   description:
     "A variable that stops startup when missing must already be set by every deployment, or adding it takes production down.",
-  find: (repo) =>
-    findDeploymentEnvGaps(repo.read(loadDeploymentEnvSources), (env) =>
+  reads: { sources: loadDeploymentEnvSources },
+  find: ({ sources }) =>
+    findDeploymentEnvGaps(sources, (env) =>
       validateEnv(env)
         .problems.filter((p) => p.level === "error")
         .map((p) => p.name)
     )
-};
+});
 
 export const OFFLINE_PAGE_CACHE_BUMPED = "offline-page-cache-bumped";
 
@@ -724,12 +728,13 @@ export function findStaleOfflinePageCaches(
   return out;
 }
 
-export const offlinePageCacheBumped: Check = {
+export const offlinePageCacheBumped = defineCheck({
   id: OFFLINE_PAGE_CACHE_BUMPED,
   description:
     "A worker re-caches offline.html only when it reinstalls, which takes a change to service-worker.js: a new page needs new cache names.",
-  find: (repo) => findStaleOfflinePageCaches(repo.read(loadOfflinePageSources))
-};
+  reads: { sources: loadOfflinePageSources },
+  find: ({ sources }) => findStaleOfflinePageCaches(sources)
+});
 
 /** The drift checks, in the order they are written above. */
 export const checks: Check[] = [

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   accountFkClassified,
   accountFkRestrict,
-  journalStatusFilter,
+  scanJournalStatusFilter,
   parseReferencePolicy
 } from "./accounting";
 
@@ -226,7 +226,7 @@ describe("journal-status-filter", () => {
 FROM "journalLine" jl
 JOIN "journal" j ON j."id" = jl."journalId"
 WHERE j."status" <> 'Draft';`;
-    const violations = journalStatusFilter.scan(
+    const violations = scanJournalStatusFilter(
       "20261010000000_new-reader.sql",
       sql
     );
@@ -238,7 +238,7 @@ WHERE j."status" <> 'Draft';`;
   it("skips a migration older than the GL readers migration", () => {
     const sql = `SELECT * FROM "journal" j WHERE j."status" <> 'Draft';`;
     expect(
-      journalStatusFilter.scan("20260101000000_old-reader.sql", sql)
+      scanJournalStatusFilter("20260101000000_old-reader.sql", sql)
     ).toHaveLength(0);
   });
 
@@ -246,7 +246,7 @@ WHERE j."status" <> 'Draft';`;
     const sql = `-- Each of these read \`status <> 'Draft'\`.
 SELECT * FROM "journal";`;
     expect(
-      journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
+      scanJournalStatusFilter("20261010000000_new-reader.sql", sql)
     ).toHaveLength(0);
   });
 
@@ -255,14 +255,14 @@ SELECT * FROM "journal";`;
   .from("journal")
   .select("id")
   .neq("status", "Draft");`;
-    const violations = journalStatusFilter.scan("a.ts", ts);
+    const violations = scanJournalStatusFilter("a.ts", ts);
     expect(violations).toHaveLength(1);
     expect(violations[0]?.line).toBe(4);
   });
 
   it("flags a Kysely not-Draft filter in a TS file that reads journal", () => {
     const ts = `await db.selectFrom("journal").where("status", "<>", "Draft");`;
-    expect(journalStatusFilter.scan("a.ts", ts)).toHaveLength(1);
+    expect(scanJournalStatusFilter("a.ts", ts)).toHaveLength(1);
   });
 
   it("flags a qualified status in a Kysely chain", () => {
@@ -271,7 +271,7 @@ SELECT * FROM "journal";`;
   .innerJoin("journal", "journal.id", "journalLine.journalId")
   .where("journal.status", "<>", "Draft")
   .execute();`;
-    const violations = journalStatusFilter.scan("a.ts", ts);
+    const violations = scanJournalStatusFilter("a.ts", ts);
     expect(violations).toHaveLength(1);
     expect(violations[0]?.line).toBe(4);
   });
@@ -282,12 +282,12 @@ SELECT * FROM "journal";`;
   .where("j.status", "!=", "Draft")
   .where("j.companyId", "=", companyId)
   .execute();`;
-    expect(journalStatusFilter.scan("a.ts", ts)).toHaveLength(1);
+    expect(scanJournalStatusFilter("a.ts", ts)).toHaveLength(1);
   });
 
   it("flags a not-in list that excludes Draft", () => {
     const ts = `await db.selectFrom("journal as j").where("j.status", "not in", ["Draft"]).execute();`;
-    expect(journalStatusFilter.scan("a.ts", ts)).toHaveLength(1);
+    expect(scanJournalStatusFilter("a.ts", ts)).toHaveLength(1);
   });
 
   it("flags an unquoted, aliased SQL join", () => {
@@ -295,7 +295,7 @@ SELECT * FROM "journal";`;
 FROM "journalLine" jl
 JOIN journal j ON j.id = jl."journalId"
 WHERE j.status != 'Draft';`;
-    const violations = journalStatusFilter.scan(
+    const violations = scanJournalStatusFilter(
       "20261010000000_new-reader.sql",
       sql
     );
@@ -306,7 +306,7 @@ WHERE j.status != 'Draft';`;
   it("flags a NOT IN that excludes Draft in SQL", () => {
     const sql = `SELECT * FROM journal j WHERE j.status NOT IN ('Draft', 'Superseded');`;
     expect(
-      journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
+      scanJournalStatusFilter("20261010000000_new-reader.sql", sql)
     ).toHaveLength(1);
   });
 
@@ -317,7 +317,7 @@ WHERE j.status != 'Draft';`;
   JOIN "journal" j ON j."id" = jl."journalId"
   WHERE j."status" <> 'Draft'
 \`.execute(db);`;
-    const violations = journalStatusFilter.scan("a.ts", ts);
+    const violations = scanJournalStatusFilter("a.ts", ts);
     expect(violations).toHaveLength(1);
     expect(violations[0]?.line).toBe(5);
   });
@@ -327,7 +327,7 @@ WHERE j.status != 'Draft';`;
   "SELECT id FROM journal WHERE status <> 'Draft' AND \"companyId\" = $1",
   [companyId]
 );`;
-    expect(journalStatusFilter.scan("a.ts", ts)).toHaveLength(1);
+    expect(scanJournalStatusFilter("a.ts", ts)).toHaveLength(1);
   });
 
   it("does not flag a Draft guard on another table in a file that reads journal", () => {
@@ -356,7 +356,7 @@ BEGIN
 END;
 $function$;`;
     expect(
-      journalStatusFilter.scan(
+      scanJournalStatusFilter(
         "20261009145057_accounting-cutover-guards.sql",
         sql
       )
@@ -366,7 +366,7 @@ $function$;`;
   it("does not flag a TS Draft filter on another table in a file that reads journal", () => {
     const ts = `const journals = await db.selectFrom("journal").select("id").execute();
 const charges = await client.from("charge").select("id").neq("status", "Draft");`;
-    expect(journalStatusFilter.scan("a.ts", ts)).toHaveLength(0);
+    expect(scanJournalStatusFilter("a.ts", ts)).toHaveLength(0);
   });
 
   it("does not flag another table's status in a statement that joins journal", () => {
@@ -376,20 +376,20 @@ JOIN "journal" j ON j."documentId" = i."id"
 WHERE j."status" IN ('Posted', 'Reversed')
   AND i."status" NOT IN ('Draft', 'Pending', 'Voided');`;
     expect(
-      journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
+      scanJournalStatusFilter("20261010000000_new-reader.sql", sql)
     ).toHaveLength(0);
     const ts = `await db
   .selectFrom("purchaseInvoice as invoice")
   .innerJoin("journal as j", "j.documentId", "invoice.id")
   .where("invoice.status", "not in", ["Draft", "Pending", "Voided"])
   .execute();`;
-    expect(journalStatusFilter.scan("a.ts", ts)).toHaveLength(0);
+    expect(scanJournalStatusFilter("a.ts", ts)).toHaveLength(0);
   });
 
   it("does not take journalLine for journal", () => {
     const sql = `SELECT * FROM "journalLine" jl WHERE jl.status <> 'Draft';`;
     expect(
-      journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
+      scanJournalStatusFilter("20261010000000_new-reader.sql", sql)
     ).toHaveLength(0);
   });
 
@@ -401,7 +401,7 @@ WHERE j."status" IN ('Posted', 'Reversed')
     (test) => {
       const sql = `SELECT * FROM "journal" j WHERE ${test};`;
       expect(
-        journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
+        scanJournalStatusFilter("20261010000000_new-reader.sql", sql)
       ).toHaveLength(0);
     }
   );
@@ -410,19 +410,19 @@ WHERE j."status" IN ('Posted', 'Reversed')
     const sql = `UPDATE "charge" SET "updatedAt" = now() WHERE "status" <> 'Draft';
 SELECT "id" FROM "journal";`;
     expect(
-      journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
+      scanJournalStatusFilter("20261010000000_new-reader.sql", sql)
     ).toHaveLength(0);
   });
 
   it("reports a SQL line once when it holds two not-Draft filters", () => {
     const sql = `SELECT * FROM "journal" j WHERE j."status" <> 'Draft' AND "status" NOT IN ('Draft', 'Superseded');`;
     expect(
-      journalStatusFilter.scan("20261010000000_new-reader.sql", sql)
+      scanJournalStatusFilter("20261010000000_new-reader.sql", sql)
     ).toHaveLength(1);
   });
 
   it("skips a TS file that does not read journal", () => {
     const ts = `await client.from("salesOrder").select("id").neq("status", "Draft");`;
-    expect(journalStatusFilter.scan("a.ts", ts)).toHaveLength(0);
+    expect(scanJournalStatusFilter("a.ts", ts)).toHaveLength(0);
   });
 });

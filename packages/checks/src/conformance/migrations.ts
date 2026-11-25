@@ -5,7 +5,7 @@
 import type { Node, RangeVar } from "libpg-query";
 import {
   type Check,
-  fileCheck,
+  defineCheck,
   type SourceFile,
   type Violation
 } from "../check";
@@ -39,7 +39,8 @@ function integerOf(modifier: Node): number | undefined {
   return "A_Const" in modifier ? modifier.A_Const.ival?.ival : undefined;
 }
 
-export const noNumericPrecision = fileCheck(migrations, {
+export const noNumericPrecision = defineCheck({
+  files: migrations,
   id: "no-numeric-precision",
   description: "Use bare NUMERIC, not NUMERIC(x,y).",
   provenance: {
@@ -87,7 +88,8 @@ function divides(expression: Node | undefined): boolean {
   return false;
 }
 
-export const noDerivedPercentColumn = fileCheck(migrations, {
+export const noDerivedPercentColumn = defineCheck({
+  files: migrations,
   id: "no-derived-percent-column",
   description:
     "Percent/rate columns must be plain stored values, never GENERATED expressions that divide",
@@ -142,7 +144,8 @@ const SUPPLIES_A_VALUE = new Set([
 ]);
 const SERIAL_TYPES = new Set(["smallserial", "serial", "bigserial"]);
 
-export const noRequiredColumnWithoutDefault = fileCheck(migrations, {
+export const noRequiredColumnWithoutDefault = defineCheck({
+  files: migrations,
   id: "no-required-column-without-default",
   description:
     "A new NOT NULL column must ship a DEFAULT, so existing backups stay restorable.",
@@ -210,7 +213,8 @@ function writesOnDelete(statement: SqlStatement, location: number): boolean {
   return false;
 }
 
-export const noForeignKeyWithoutOnDelete = fileCheck(migrations, {
+export const noForeignKeyWithoutOnDelete = defineCheck({
+  files: migrations,
   id: "no-foreign-key-without-on-delete",
   description:
     "A foreign key must state ON DELETE. The default (NO ACTION) is a decision nobody made.",
@@ -280,7 +284,8 @@ function quoted(view: RangeVar | undefined): string {
     .join(".");
 }
 
-export const noViewWithoutInvoker = fileCheck(migrations, {
+export const noViewWithoutInvoker = defineCheck({
+  files: migrations,
   id: "no-view-without-invoker",
   description:
     "A view must state security_invoker, or it runs as its owner and bypasses RLS.",
@@ -465,12 +470,13 @@ function functionBodies(
   return out;
 }
 
-export const functionRedefinitionKeepsChanges: Check = {
+export const functionRedefinitionKeepsChanges = defineCheck({
   id: FUNCTION_REDEFINITION_KEEPS_CHANGES,
   description:
     "A migration that redefines a function must start from its newest definition.",
-  find: (repo) => findDroppedFunctionChanges(repo.read(migrations))
-};
+  reads: { migrations },
+  find: ({ migrations }) => findDroppedFunctionChanges(migrations)
+});
 
 // --- migration-replay-safe ---
 
@@ -1036,7 +1042,8 @@ export function scanReplaySafety(file: string, contents: string): Violation[] {
   return violations.sort((a, b) => a.line - b.line);
 }
 
-export const migrationReplaySafe = fileCheck(migrations, {
+export const migrationReplaySafe = defineCheck({
+  files: migrations,
   id: "migration-replay-safe",
   description:
     "Every migration statement must succeed when the migration is re-run over a failed deploy's partial state.",

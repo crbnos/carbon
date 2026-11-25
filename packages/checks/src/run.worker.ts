@@ -22,7 +22,7 @@ async function main() {
     try {
       const check = byId.get(checkId);
       if (!check) throw new Error(`No check in CHECKS has the id ${checkId}`);
-      port.postMessage({ checkId, violations: check.find(repo) });
+      port.postMessage({ checkId, violations: check.run(repo) });
     } catch (error) {
       port.postMessage({ checkId, error });
     }

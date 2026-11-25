@@ -16,29 +16,34 @@ fails on any violation the committed baseline does not list.
   subject (`migrations.ts`, `authz.ts`, `data-access.ts`, `ui.ts`, …). Each
   check's rule, its exemptions and the incident that prompted it are in the
   comments above it. This guide does not repeat them.
-- **Add a check as one object and one line.** Write a `Check`
-  (`src/check.ts`: `id`, `description`, `provenance`, `find(repo)`) in its
-  subject's file and add it to the `checks` list at the end of that file.
-  `src/checks.ts` joins those lists into `CHECKS`. Nothing else registers it.
-  There are three ways to write one; copy the closest:
-  - It reads one file at a time: `fileCheck(input, { …, scan })`. Tests call
-    `scan(file, contents)` with a fixture string. Example:
+- **Add a check as one `defineCheck` and one line.** Write it
+  (`src/check.ts`: `id`, `description`, `provenance`, the inputs it reads and
+  its rule) in its subject's file and add it to the `checks` list at the end of
+  that file. `src/checks.ts` joins those lists into `CHECKS`. Nothing else
+  registers it. A check declares every input it reads, and its rule gets them
+  loaded and never sees the repo. There are two shapes; copy the closest:
+  - It reads one file at a time: `defineCheck({ …, files: loader, scan })`.
+    Tests call `check.scan(file, contents)` with a fixture string. Example:
     `noNumericPrecision` in `migrations.ts`.
-  - Its scan needs data from the repo (the generated columns, the managed
-    functions): keep a factory that takes the data, so tests pass their own,
-    and export a `Check` that reads the data with `repo.read`. Example:
-    `noAuthzDdlInMigrationsCheck` in `authz.ts`.
-  - It compares several files: a pure `find*` function over its inputs, and a
-    `Check` that reads them. Example: `providerRoleBackfilled` in `drift.ts`.
+  - It reads several inputs: `defineCheck({ …, reads: { name: loader, … },
+    find })`, and `find({ name, … })` gets each one loaded. Tests call
+    `check.find({ … })` with their own values, or the pure `find*` function the
+    check calls. Example: `providerRoleBackfilled` in `drift.ts`. A per-file
+    scan that needs data from the repo (the generated columns, the managed
+    functions) is this shape too: keep a factory that takes the data, so tests
+    pass their own, and let `find` run its `scan` over the files. Example:
+    `noAuthzDdlInMigrationsCheck` in `authz.ts`. A per-file scan over several
+    inputs is an exported function the tests call:
+    `scanJournalStatusFilter` in `accounting.ts`.
 - **Keep a check self-contained.** The gate runs the checks on worker threads,
   each taking the next check when it finishes one, so two checks may run in
   different threads in any order. A check shares nothing with another check but
   its loaders: no module state one check writes and another reads. The gate
-  groups checks by the loader each reads first (it calls `find` with a repo
-  that throws at the first `repo.read`), so do no work before that read.
-- **Read every input through `repo.read(loader)`.** A loader is a function
-  `(root) => T`. `repo` runs each loader once and shares the result, so pass
-  the same function every time:
+  groups checks by the first loader each declares, so a check that also reads
+  the migrations declares them first and shares the worker that parsed them.
+- **Name every input as a loader.** A loader is a function `(root) => T`. The
+  repo runs each loader once and shares the result, so declare the same
+  function every time:
   - An input several checks share is a named loader in `src/sources/inputs.ts`
     (`migrations`, `typescript`, `routeTypescript`, …) or a loader in
     `src/sources/`.
@@ -131,7 +136,7 @@ The gate runs in four places with the same command
 
 | Path | Holds |
 |---|---|
-| `src/check.ts` | The types (`Check`, `Repo`, `Violation`, `Provenance`) and `fileCheck`, `eachFile` |
+| `src/check.ts` | The types (`Check`, `Loader`, `Repo`, `Violation`, `Provenance`) and `defineCheck`, `eachFile` |
 | `src/checks.ts` | `CHECKS`: the subject files' `checks` lists, joined |
 | `src/run.ts`, `src/run.worker.ts` | `collectFindings` (runs `CHECKS` on up to 4 worker threads, each with its own `repo`), `runChecks` (one `repo`, in process) and `newViolations` (minus the baseline) |
 | `src/repo.ts` | `openRepo`: reads each input once |

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type Check, fileCheck, type Violation } from "../check";
+import { type Check, defineCheck, type Violation } from "../check";
 import { requestHandlingTypescript, typescript } from "../sources/inputs";
 import { loadServerFiles } from "../sources/server-files";
 import { lineOf } from "../sources/text";
@@ -20,7 +20,8 @@ import { lineOf } from "../sources/text";
 const RAW_IMPORT =
   /import\s*\{[^}]*?\b(redirect|redirectDocument|replace)\b[^}]*\}\s*from\s*["']react-router["']/g;
 
-export const noRawRedirect = fileCheck(requestHandlingTypescript, {
+export const noRawRedirect = defineCheck({
+  files: requestHandlingTypescript,
   id: "no-raw-redirect",
   description: "Redirect with redirect / redirectExternal from @carbon/utils",
   provenance: {
@@ -58,7 +59,8 @@ const RAW_READ =
 
 const HELPERS = "packages/utils/src/headers.ts";
 
-export const noRawForwardedHeaders = fileCheck(requestHandlingTypescript, {
+export const noRawForwardedHeaders = defineCheck({
+  files: requestHandlingTypescript,
   id: "no-raw-forwarded-headers",
   description:
     "Read the client IP / protocol / host / origin with the @carbon/utils request helpers",
@@ -92,7 +94,8 @@ export const noRawForwardedHeaders = fileCheck(requestHandlingTypescript, {
 // Name it instead: "Failed to upload {fileName}", { fileName: file.name }.
 const INTERPOLATED = /\b\w*[lL]og(?:ger)?\.(?:error|fatal)\(\s*`[^`]*\$\{/g;
 
-export const noInterpolatedErrorLog = fileCheck(requestHandlingTypescript, {
+export const noInterpolatedErrorLog = defineCheck({
+  files: requestHandlingTypescript,
   id: "no-interpolated-error-log",
   description:
     "Error log messages name their values as {placeholders}, never interpolate them",
@@ -129,7 +132,8 @@ export const noInterpolatedErrorLog = fileCheck(requestHandlingTypescript, {
  */
 const ZERO_CONCURRENCY = /concurrency\s*:\s*\{[^{}]*?\blimit\s*:\s*0\b/g;
 
-export const noZeroConcurrency = fileCheck(loadServerFiles, {
+export const noZeroConcurrency = defineCheck({
+  files: loadServerFiles,
   id: "no-zero-concurrency",
   description: "Inngest concurrency.limit must be >= 1.",
   provenance: {
@@ -200,7 +204,8 @@ const BANNED = [
 /** Text every pattern of BANNED contains, so a file or line without any is skipped. */
 const MAY_BE_BANNED = /getLocalTimeZone|new Date\(|\.setHours\(/;
 
-export const noLocalTimezone = fileCheck(loadServerFiles, {
+export const noLocalTimezone = defineCheck({
+  files: loadServerFiles,
   id: "no-local-timezone",
   description:
     "Server code derives calendar days via datetime.today(tz), never the process clock or UTC-slicing.",
@@ -278,7 +283,8 @@ const EXCLUDED = [
   /^packages\/ee\/src\/(xero|quickbooks|rillet|ramp|slack|jira|linear|onshape|paperless-parts|email|sage|stripe-connect|sense)\//
 ];
 
-export const noIntegrationIdBranching = fileCheck(typescript, {
+export const noIntegrationIdBranching = defineCheck({
+  files: typescript,
   id: "no-integration-id-branching",
   description:
     "Branch on an integration's declared providerRole or the resolved topology, never on its id",

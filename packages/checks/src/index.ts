@@ -4,15 +4,15 @@
 
 export type {
   Check,
-  ConformanceCheck,
+  Loader,
   ModuleDir,
   Provenance,
   Repo,
+  Scan,
   SourceFile,
-  StructureCheck,
   Violation
 } from "./check";
-export { eachFile, fileCheck } from "./check";
+export { defineCheck, eachFile } from "./check";
 export { CHECKS } from "./checks";
 export { findClobbers, objectRefs } from "./clobber";
 export {

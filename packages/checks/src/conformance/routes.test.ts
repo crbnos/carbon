@@ -7,7 +7,7 @@ import {
   findNestedOutlets,
   indexRedirectBeforeLoaders,
   loaderReadsThroughApi,
-  noBareOutlet,
+  scanBareOutlets,
   noStateCopyOfLoaderData,
   wrappedBuildingBlocks
 } from "./routes";
@@ -244,7 +244,7 @@ export async function action() {
 const scanOutlet = (
   contents: string,
   file = "apps/erp/app/routes/x+/part+/$itemId.tsx"
-) => noBareOutlet.scan(file, contents);
+) => scanBareOutlets(file, contents);
 
 describe("noBareOutlet", () => {
   it("flags a plain outlet in a route under /x, in either app", () => {

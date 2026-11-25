@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { Check } from "./check";
+import { defineCheck } from "./check";
 import { CHECKS } from "./checks";
 import { openRepo } from "./repo";
 import { findOnWorkers, newViolations, runChecks } from "./run";
@@ -11,18 +11,18 @@ import { repoRoot } from "./sources/migrations";
 
 describe("runChecks", () => {
   const words = () => ["red", "red blue", "green"];
-  const flags = (id: string, word: string): Check => ({
-    id,
-    description: "",
-    find: (repo) =>
-      repo
-        .read(words)
-        .flatMap((text, index) =>
+  const flags = (id: string, word: string) =>
+    defineCheck({
+      id,
+      description: "",
+      reads: { words },
+      find: ({ words }) =>
+        words.flatMap((text, index) =>
           text.includes(word)
             ? [{ file: `${index}.sql`, line: 1, snippet: word, message: "" }]
             : []
         )
-  });
+    });
 
   it("gives every violation of every check, under that check's id", () => {
     const found = runChecks(
@@ -42,14 +42,8 @@ describe("runChecks", () => {
       reads++;
       return [root];
     };
-    const reader = (id: string): Check => ({
-      id,
-      description: "",
-      find: (repo) => {
-        repo.read(input);
-        return [];
-      }
-    });
+    const reader = (id: string) =>
+      defineCheck({ id, description: "", reads: { input }, find: () => [] });
     runChecks([reader("a"), reader("b")], openRepo("/repo"));
     expect(reads).toBe(1);
   });

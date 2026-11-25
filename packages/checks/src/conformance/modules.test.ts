@@ -8,7 +8,7 @@ import {
   declaresSideEffects,
   findDuplicatedAppFiles,
   findUndeclaredSideEffectImports,
-  moduleShape,
+  moduleShapeCheck,
   noServerCodeInClient,
   serviceFnFile
 } from "./modules";
@@ -27,13 +27,16 @@ const COMPLIANT = [
   "sales.server.ts"
 ];
 
+const inspect = (module: ModuleDir) =>
+  moduleShapeCheck.find({ modules: [module] });
+
 describe("moduleShape", () => {
   it("passes a compliant module", () => {
-    expect(moduleShape.inspect(mod("sales", COMPLIANT))).toHaveLength(0);
+    expect(inspect(mod("sales", COMPLIANT))).toHaveLength(0);
   });
 
   it("flags a missing required entry (types.ts)", () => {
-    const v = moduleShape.inspect(
+    const v = inspect(
       mod("sales", ["sales.service.ts", "sales.models.ts", "ui"])
     );
     expect(v).toHaveLength(1);
@@ -41,7 +44,7 @@ describe("moduleShape", () => {
   });
 
   it("flags an extra service file", () => {
-    const v = moduleShape.inspect(
+    const v = inspect(
       mod("settings", [
         ...COMPLIANT.map((e) => e.replace("sales", "settings")),
         "backups.service.ts"
@@ -53,7 +56,7 @@ describe("moduleShape", () => {
   });
 
   it("accepts the .ee-licensed service/server variant as the primary file", () => {
-    const v = moduleShape.inspect(
+    const v = inspect(
       mod("widget", [
         "widget.ee.service.ts",
         "widget.models.ts",
@@ -66,7 +69,7 @@ describe("moduleShape", () => {
   });
 
   it("still flags a second service file alongside the .ee variant", () => {
-    const v = moduleShape.inspect(
+    const v = inspect(
       mod("widget", [
         "widget.ee.service.ts",
         "widget.models.ts",
@@ -79,14 +82,12 @@ describe("moduleShape", () => {
   });
 
   it("flags a missing primary service file", () => {
-    const v = moduleShape.inspect(
-      mod("sales", ["sales.models.ts", "types.ts", "ui"])
-    );
+    const v = inspect(mod("sales", ["sales.models.ts", "types.ts", "ui"]));
     expect(v.map((x) => x.snippet)).toContain("missing:sales.service.ts");
   });
 
   it("flags a barrel", () => {
-    const v = moduleShape.inspect(
+    const v = inspect(
       mod("sales", [...COMPLIANT, "index.ts", "index.server.ts"])
     );
     expect(v.map((x) => x.snippet)).toEqual([
@@ -96,7 +97,7 @@ describe("moduleShape", () => {
   });
 
   it("allows one server file, and its tests", () => {
-    const v = moduleShape.inspect(
+    const v = inspect(
       mod("sales", [
         ...COMPLIANT,
         "sales.server.test.ts",

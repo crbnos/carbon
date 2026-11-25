@@ -4,7 +4,7 @@
 
 import {
   type Check,
-  fileCheck,
+  defineCheck,
   type SourceFile,
   type Violation
 } from "../check";
@@ -26,7 +26,8 @@ import { lineOf } from "../sources/text";
 const NOOP_HANDLER =
   /onOpenChange=\{\s*(?:\(\w*\)\s*=>\s*(?:\{\s*(?:\/\*[\s\S]*?\*\/|\/\/[^\n]*)?\s*\}|undefined|null|void 0)|noop)\s*\}/g;
 
-export const noNoopOpenChange = fileCheck(typescript, {
+export const noNoopOpenChange = defineCheck({
+  files: typescript,
   id: "no-noop-open-change",
   description:
     "A dialog that cannot be dismissed omits onOpenChange instead of passing a handler that does nothing",
@@ -283,7 +284,8 @@ function clearsGuardOnClose(
   return false;
 }
 
-export const noUnmountingDialog = fileCheck(typescript, {
+export const noUnmountingDialog = defineCheck({
+  files: typescript,
   id: "no-unmounting-dialog",
   description:
     "A modal or drawer stays mounted and closes through its open prop, so its closing animation plays",
@@ -465,7 +467,8 @@ function inValidatedForm(contents: string, index: number): boolean {
   return close === -1 || close > index;
 }
 
-export const noUnguardedSubmit = fileCheck(typescript, {
+export const noUnguardedSubmit = defineCheck({
+  files: typescript,
   id: "no-unguarded-submit",
   description:
     'A submit button must disable while its submission is in flight — use <Submit> inside a ValidatedForm, or isDisabled={fetcher.state !== "idle"} with isLoading',
@@ -529,7 +532,8 @@ const GROUPED =
 
 export const FORM_FIELD_BUDGET = 14;
 
-export const formFieldBudget = fileCheck(typescript, {
+export const formFieldBudget = defineCheck({
+  files: typescript,
   id: "form-field-budget",
   description: `a form with more than ${FORM_FIELD_BUDGET} fields groups them (FormGroup / FormFold) or steps them (FormStep*)`,
   provenance: {
@@ -608,7 +612,8 @@ function receiverBefore(text: string, dotIndex: number): string {
   return text.slice(i + 1, dotIndex);
 }
 
-export const noDefaultOnEffects = fileCheck(typescript, {
+export const noDefaultOnEffects = defineCheck({
+  files: typescript,
   id: "no-default-on-effects",
   description:
     "`.default()` on a schema with transforms/refinements/pipes is not re-parsed in zod v4 — use `.prefault()` when the default must run through the schema",
@@ -653,7 +658,8 @@ const ROUTER_IMPORT =
 // The wrapper itself: the one place that takes React Router's.
 const DEFINITION = "packages/react/src/hooks/useRevalidator.ts";
 
-export const noRawRevalidator = fileCheck(typescript, {
+export const noRawRevalidator = defineCheck({
+  files: typescript,
   id: "no-raw-revalidator",
   description:
     "useRevalidator must come from @carbon/query, which holds a revalidation while a save is in flight",
@@ -690,7 +696,8 @@ const CORE_T_IMPORT =
 // descriptor built elsewhere, `i18n._(descriptor)`, is fine and not matched.
 const UNWRAPPED_MSG = /[._]\(\s*msg`|\bt\(\s*msg\(/g;
 
-export const linguiMacroMisuse = fileCheck(requestHandlingTypescript, {
+export const linguiMacroMisuse = defineCheck({
+  files: requestHandlingTypescript,
   id: "lingui-macro-misuse",
   description:
     "Translate with useLingui().t / <Trans>; never the global t, never i18n._(msg`...`)",
@@ -728,7 +735,8 @@ export const linguiMacroMisuse = fileCheck(requestHandlingTypescript, {
 // stuttered (frames over 100 ms with 82 cards).
 const INLINE_OPTIONS = /^useSensor\(\s*\w+\s*,\s*\{/;
 
-export const noInlineSensorOptions = fileCheck(typescript, {
+export const noInlineSensorOptions = defineCheck({
+  files: typescript,
   id: "no-inline-sensor-options",
   description:
     "useSensor options must be a module constant, not an object literal created on every render",
@@ -916,15 +924,14 @@ export function findUnselectedListColumns(
   return out;
 }
 
-export const listSelectCoversColumns: Check = {
+export const listSelectCoversColumns = defineCheck({
   id: "list-select-covers-columns",
   description:
     "Every list table's accessorKeys, and the columns its cursor reads, are in the columns its endpoint selects.",
-  find: (repo) => {
-    const { services, tables } = repo.read(loadListSources);
-    return findUnselectedListColumns(services, tables);
-  }
-};
+  reads: { sources: loadListSources },
+  find: ({ sources }) =>
+    findUnselectedListColumns(sources.services, sources.tables)
+});
 
 /** The ui checks, in the order they are written above. */
 export const checks: Check[] = [
