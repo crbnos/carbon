@@ -110,9 +110,9 @@ msgstr "{0} の保全表示"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
@@ -255,6 +255,9 @@ msgstr "{recorded}/{0}件の製造指図"
 
 msgid "{scrapped} scrapped"
 msgstr "{scrapped} 廃棄"
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} は保留中です"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "在庫 {unbinned}、ビンなし"
@@ -2248,6 +2251,9 @@ msgstr "最も古い順"
 msgid "On Hold"
 msgstr "保留中"
 
+msgid "On hold · {issueNumbers}"
+msgstr "保留中 · {issueNumbers}"
+
 msgid "On its way"
 msgstr "移動中"
 
@@ -2630,6 +2636,9 @@ msgstr "品質問題"
 
 msgid "Quality issue created"
 msgstr "品質問題が作成されました"
+
+msgid "Quality rejected this unit for production."
+msgstr "品質部門がこのユニットを生産に使用できないと判定しました。"
 
 msgid "Quantity"
 msgstr "数量"
@@ -3580,6 +3589,9 @@ msgstr "この個はここで完了しています"
 msgid "This unit is not part of this operation"
 msgstr "この個はこの工程に含まれていません"
 
+msgid "This unit is on hold"
+msgstr "このユニットは保留中です"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
 
@@ -3898,6 +3910,9 @@ msgstr "作業区ディスプレイ"
 
 msgid "Work instructions"
 msgstr "作業手順書"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "品質担当が以下の問題をすべてクローズするまで、このユニットの作業は保留されます。他のユニットには影響しません。"
 
 msgid "Work Site"
 msgstr "作業現場"

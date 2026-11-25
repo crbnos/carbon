@@ -3734,6 +3734,9 @@ msgstr "After"
 msgid "After (calculation method)"
 msgstr "After (calculation method)"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "After Quality releases a unit, reopen the job to receive it."
+
 msgid "After the correction"
 msgstr "After the correction"
 
@@ -7901,7 +7904,7 @@ msgstr "Completed Date"
 msgid "Completed Qty"
 msgstr "Completed Qty"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "Completes to fixed asset class {0}"
 
@@ -8968,6 +8971,9 @@ msgstr "Could not load operations"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr "Could not load the receipt preview. Reopen the Complete dialog to try again."
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Could not load what ran on {workCenterName}."
@@ -16674,6 +16680,9 @@ msgstr "Issues by type, with cumulative percentage"
 msgid "Issues opened and closed by week"
 msgstr "Issues opened and closed by week"
 
+msgid "Issues: Hold Units"
+msgstr "Issues: Hold Units"
+
 msgid "It could not start. Try again."
 msgstr "It could not start. Try again."
 
@@ -22027,6 +22036,12 @@ msgstr "Open Issues"
 msgid "Open issues by criticality and weeks open"
 msgstr "Open issues by criticality and weeks open"
 
+msgid "Open issues do not stop work"
+msgstr "Open issues do not stop work"
+
+msgid "Open issues no longer stop work"
+msgstr "Open issues no longer stop work"
+
 msgid "Open item details"
 msgstr "Open item details"
 
@@ -25249,7 +25264,9 @@ msgstr "Received"
 msgid "Received {0}"
 msgstr "Received {0}"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "Received {0} of {1}"
@@ -29922,6 +29939,9 @@ msgstr "Stop Receiving"
 msgid "Stop Shipping"
 msgstr "Stop Shipping"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "Stop shop floor work on a serial unit while an issue linked to it is open."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Stop using {0} in this step"
@@ -30630,7 +30650,7 @@ msgstr "Suspected Failure Mode"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "Sweeps cost to asset {0}"
 
@@ -34388,6 +34408,9 @@ msgstr "Units"
 msgid "Units don't match"
 msgstr "Units don't match"
 
+msgid "Units excluded from this receipt"
+msgstr "Units excluded from this receipt"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "Units of base currency per one unit of this currency; used to translate amounts on posting."
 
@@ -34405,6 +34428,12 @@ msgstr "Units that failed a sample stay Rejected. Every other unit, including un
 
 msgid "Units this customer owns show here once registered."
 msgstr "Units this customer owns show here once registered."
+
+msgid "Units with an open issue are now on hold"
+msgstr "Units with an open issue are now on hold"
+
+msgid "Units with an open issue are on hold"
+msgstr "Units with an open issue are on hold"
 
 msgid "Unknown"
 msgstr "Unknown"
@@ -35835,6 +35864,9 @@ msgstr "When deferred, accrued and lease-interest revenue will be recognized"
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+
 msgid "When expired stock is used"
 msgstr "When expired stock is used"
 
@@ -36467,14 +36499,13 @@ msgid "You can only see this key once. Store it safely."
 msgstr "You can only see this key once. Store it safely."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
 msgstr "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
 
 msgid "You do not have permission to do this"

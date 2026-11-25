@@ -48,8 +48,8 @@ async function waitForBlockedConnection(
   throw new Error("Expected database connection to wait for the held lock");
 }
 
-// Two issues of a batch-tracked material, each from its own lot, confirmed
-// past the requirement (allowOverIssue), so neither locks the job material.
+// Both postings draw the same job material for different parent units, so the
+// parent locks are independent. allowOverIssue leaves the material row unlocked.
 // The second reads quantityIssued, then waits on its lot; the first commits.
 // Both units left their lots, so quantityIssued counts both.
 databaseTest(
@@ -113,23 +113,24 @@ databaseTest(
         .returning("id")
         .executeTakeFirstOrThrow();
 
-      const parentId = `${f.prefix}-unit`;
+      const parentA = `${f.prefix}-unit-a`;
+      const parentB = `${f.prefix}-unit-b`;
       const lotA = `${f.prefix}-lot-a`;
       const lotB = `${f.prefix}-lot-b`;
       await seed(f, async (trx) => {
         await trx
           .insertInto("trackedEntity")
           .values([
-            {
-              id: parentId,
+            ...[parentA, parentB].map((id) => ({
+              id,
               quantity: 1,
-              status: "Reserved",
-              sourceDocument: "Item",
+              status: "Reserved" as const,
+              sourceDocument: "Item" as const,
               sourceDocumentId: f.assemblyId,
               itemId: f.assemblyId,
               companyId: f.companyId,
               createdBy: USER
-            },
+            })),
             ...[lotA, lotB].map((id) => ({
               id,
               readableId: id,
@@ -159,14 +160,18 @@ databaseTest(
           .execute();
       });
 
-      const issueFrom = (db: Kysely<KyselyDatabase>, lot: string) =>
+      const issueFrom = (
+        db: Kysely<KyselyDatabase>,
+        lot: string,
+        parentTrackedEntityId: string
+      ) =>
         invokePosting(
           { db, companyId: f.companyId, userId: USER },
           "issue",
           {
             type: "trackedEntitiesToOperation",
             materialId: material.id,
-            parentTrackedEntityId: parentId,
+            parentTrackedEntityId,
             children: [{ trackedEntityId: lot, quantity: 1 }],
             allowOverIssue: true
           },
@@ -186,12 +191,12 @@ databaseTest(
       void blocking.catch(() => {});
       await Promise.race([held.promise, blocking]);
 
-      const later = issueFrom(second, lotB);
+      const later = issueFrom(second, lotB, parentB);
       issuing = later;
       void later.catch(() => {});
       await waitForBlockedConnection(monitor, blockerPid, secondPid);
 
-      expect((await issueFrom(f.db, lotA)).error).toBeNull();
+      expect((await issueFrom(f.db, lotA, parentA)).error).toBeNull();
       release.resolve();
       await blocking;
       expect((await later).error).toBeNull();

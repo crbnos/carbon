@@ -110,9 +110,9 @@ msgstr "{0} 유지보수 화면"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{1} 중 {0}"
 
@@ -255,6 +255,9 @@ msgstr "{recorded}/{0} 작업 지시"
 
 msgid "{scrapped} scrapped"
 msgstr "{scrapped}개 폐기"
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} 보류 중"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "재고 {unbinned}, 빈 미지정"
@@ -2248,6 +2251,9 @@ msgstr "오래된순"
 msgid "On Hold"
 msgstr "보류"
 
+msgid "On hold · {issueNumbers}"
+msgstr "보류 · {issueNumbers}"
+
 msgid "On its way"
 msgstr "이동 중"
 
@@ -2630,6 +2636,9 @@ msgstr "품질 이슈"
 
 msgid "Quality issue created"
 msgstr "품질 이슈가 생성되었습니다"
+
+msgid "Quality rejected this unit for production."
+msgstr "품질 부서에서 이 단위를 생산에 사용할 수 없다고 판정했습니다."
 
 msgid "Quantity"
 msgstr "수량"
@@ -3580,6 +3589,9 @@ msgstr "이 개는 이 지점에서 완료되었습니다"
 msgid "This unit is not part of this operation"
 msgstr "이 개는 이 공정에 속하지 않습니다"
 
+msgid "This unit is on hold"
+msgstr "이 유닛은 보류 중입니다"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "이 유닛은 영구적으로 스크랩되고 대체 유닛이 생성됩니다."
 
@@ -3898,6 +3910,9 @@ msgstr "작업장 화면"
 
 msgid "Work instructions"
 msgstr "작업 표준서"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "품질 담당이 아래의 모든 이슈를 종결할 때까지 이 유닛의 작업이 대기합니다. 다른 유닛은 영향을 받지 않습니다."
 
 msgid "Work Site"
 msgstr "작업 현장"

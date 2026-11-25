@@ -3734,6 +3734,9 @@ msgstr "이후"
 msgid "After (calculation method)"
 msgstr "이후(계산 방법)"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "품질 부서에서 보류를 해제하면 작업을 다시 열어 해당 단위를 입고하세요."
+
 msgid "After the correction"
 msgstr "수정 후"
 
@@ -7901,7 +7904,7 @@ msgstr "완료일"
 msgid "Completed Qty"
 msgstr "완료 수량"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "고정자산 클래스 {0}으로 완료됨"
 
@@ -8968,6 +8971,9 @@ msgstr "공정을 로드할 수 없습니다"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "MRP 제외 보관 단위를 불러오지 못했습니다. 일부 표시가 누락될 수 있습니다."
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr "입고 미리 보기를 불러올 수 없습니다. “완료 처리” 대화상자를 다시 열어 다시 시도하세요."
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName}에서 실행된 항목을 로드할 수 없습니다."
@@ -16674,6 +16680,9 @@ msgstr "유형별 이슈, 누적 백분율 포함"
 msgid "Issues opened and closed by week"
 msgstr "주별 등록 및 마감 이슈"
 
+msgid "Issues: Hold Units"
+msgstr "이슈: 유닛 보류"
+
 msgid "It could not start. Try again."
 msgstr "시작할 수 없습니다. 다시 시도하세요."
 
@@ -22027,6 +22036,12 @@ msgstr "미결 이슈"
 msgid "Open issues by criticality and weeks open"
 msgstr "중요도 및 미결 주수별 미결 이슈"
 
+msgid "Open issues do not stop work"
+msgstr "미결 이슈가 있어도 작업을 중지하지 않습니다"
+
+msgid "Open issues no longer stop work"
+msgstr "이제 미결 이슈가 작업을 중지하지 않습니다"
+
 msgid "Open item details"
 msgstr "품목 세부 정보 열기"
 
@@ -25249,7 +25264,9 @@ msgstr "수령됨"
 msgid "Received {0}"
 msgstr "입고됨 {0}"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "{1} 중 {0} 입고됨"
@@ -29922,6 +29939,9 @@ msgstr "수령 중지"
 msgid "Stop Shipping"
 msgstr "배송 중지"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "시리얼 번호 유닛에 연결된 이슈가 미결인 동안 해당 유닛의 현장 작업을 중지합니다."
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "이 단계에서 {0} 사용 중지"
@@ -30630,7 +30650,7 @@ msgstr "의심되는 고장 모드"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "원가를 자산 {0}로 이관"
 
@@ -34388,6 +34408,9 @@ msgstr "단위"
 msgid "Units don't match"
 msgstr "단위가 일치하지 않습니다"
 
+msgid "Units excluded from this receipt"
+msgstr "이 입고에서 제외된 단위"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "이 통화 1단위당 기준 통화 단위 수로, 전기 시 금액 환산에 사용됩니다."
 
@@ -34405,6 +34428,12 @@ msgstr "샘플에서 불합격한 단위는 반려 상태로 유지됩니다. �
 
 msgid "Units this customer owns show here once registered."
 msgstr "이 고객이 보유한 개(단위)는 등록되면 여기에 표시됩니다."
+
+msgid "Units with an open issue are now on hold"
+msgstr "이제 미결 이슈가 있는 유닛은 보류됩니다"
+
+msgid "Units with an open issue are on hold"
+msgstr "미결 이슈가 있는 유닛은 보류됩니다"
 
 msgid "Unknown"
 msgstr "알 수 없음"
@@ -35835,6 +35864,9 @@ msgstr "이연, 발생 및 임차료 이자 매출이 인식될 때"
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "임차료 계약 또는 계약의 각 청구 기간이 송장 발급 시 도래할 때: 기간이 사용되기 전 첫 날에 선급하거나, 이익이 발생한 후 마지막 날에 후급합니다."
 
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "이 설정을 켜면 폐기 또는 공급업체 반품으로 판정된 단위는 이슈가 종료된 후에도 차단됩니다."
+
 msgid "When expired stock is used"
 msgstr "만료된 재고가 사용될 때"
 
@@ -36467,12 +36499,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "이 키는 한 번만 확인할 수 있습니다. 안전하게 보관하세요."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "발주 수량 {1}보다 {0} {leftoverQuantity}개를 더 완료했습니다. 초과 부품을 어떻게 하시겠습니까?"
+msgstr "발주 수량 {jobQuantity}보다 {leftoverQuantity} {0} 더 완료했습니다. 초과된 부품을 어떻게 하시겠습니까?"
 
 msgid "You do not have permission to do this"
 msgstr "이를 수행할 권한이 없습니다"

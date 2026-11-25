@@ -110,9 +110,9 @@ msgstr "Vista de mantenimiento de {0}"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} de {1}"
 
@@ -255,6 +255,9 @@ msgstr "{recorded}/{0} órdenes de trabajo"
 
 msgid "{scrapped} scrapped"
 msgstr "{scrapped} descartadas"
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} está suspendida"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} en existencias, en ningún contenedor"
@@ -2248,6 +2251,9 @@ msgstr "Más antiguo primero"
 msgid "On Hold"
 msgstr "Suspendido"
 
+msgid "On hold · {issueNumbers}"
+msgstr "Suspendida · {issueNumbers}"
+
 msgid "On its way"
 msgstr "En camino"
 
@@ -2630,6 +2636,9 @@ msgstr "Problema de Calidad"
 
 msgid "Quality issue created"
 msgstr "Problema de calidad creado"
+
+msgid "Quality rejected this unit for production."
+msgstr "Calidad rechazó esta unidad para producción."
 
 msgid "Quantity"
 msgstr "Cantidad"
@@ -3580,6 +3589,9 @@ msgstr "Esta unidad está completada aquí"
 msgid "This unit is not part of this operation"
 msgstr "Esta unidad no forma parte de esta operación"
 
+msgid "This unit is on hold"
+msgstr "Esta unidad está suspendida"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Esta unidad será descartada permanentemente y se creará una unidad de reemplazo."
 
@@ -3898,6 +3910,9 @@ msgstr "Pantallas del Centro de Trabajo"
 
 msgid "Work instructions"
 msgstr "Instrucciones de trabajo"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "El trabajo en esta unidad espera hasta que calidad cierre todos los problemas siguientes. Las demás unidades no se ven afectadas."
 
 msgid "Work Site"
 msgstr "Sitio de trabajo"

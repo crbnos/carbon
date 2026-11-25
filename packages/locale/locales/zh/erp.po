@@ -3734,6 +3734,9 @@ msgstr "之后"
 msgid "After (calculation method)"
 msgstr "之后（计算方法）"
 
+msgid "After Quality releases a unit, reopen the job to receive it."
+msgstr "质量部门放行后，重新打开工单，将该件产品入库。"
+
 msgid "After the correction"
 msgstr "纠正之后"
 
@@ -7901,7 +7904,7 @@ msgstr "完成日期"
 msgid "Completed Qty"
 msgstr "已完成数量"
 
-#. placeholder {0}: job.fixedAssetClassId
+#. placeholder {0}: tracking?.fixedAssetClassId
 msgid "Completes to fixed asset class {0}"
 msgstr "完成至固定资产类别 {0}"
 
@@ -8968,6 +8971,9 @@ msgstr "无法加载工序"
 
 msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 msgstr "无法加载不计入MRP的存储单元。部分标记可能缺失。"
+
+msgid "Could not load the receipt preview. Reopen the Complete dialog to try again."
+msgstr "无法加载收货预览。请重新打开“完成”对话框后重试。"
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "无法加载在 {workCenterName} 上运行的内容。"
@@ -16674,6 +16680,9 @@ msgstr "按类型统计的问题及累计百分比"
 msgid "Issues opened and closed by week"
 msgstr "每周开启和关闭的问题"
 
+msgid "Issues: Hold Units"
+msgstr "问题：搁置单元"
+
 msgid "It could not start. Try again."
 msgstr "无法启动。请重试。"
 
@@ -22027,6 +22036,12 @@ msgstr "未结领料"
 msgid "Open issues by criticality and weeks open"
 msgstr "按严重程度和未结周数统计的未结问题"
 
+msgid "Open issues do not stop work"
+msgstr "未关闭的问题不会停止作业"
+
+msgid "Open issues no longer stop work"
+msgstr "未关闭的问题不再停止作业"
+
 msgid "Open item details"
 msgstr "打开物料详情"
 
@@ -25249,7 +25264,9 @@ msgstr "已接收"
 msgid "Received {0}"
 msgstr "已接收 {0}"
 
+#. placeholder {0}: routeData.job.quantityReceivedToInventory ?? 0
 #. placeholder {0}: status?.received
+#. placeholder {1}: routeData.job.quantity ?? 0
 #. placeholder {1}: status?.ordered
 msgid "Received {0} of {1}"
 msgstr "已接收 {1} 中的 {0}"
@@ -29922,6 +29939,9 @@ msgstr "停止接收"
 msgid "Stop Shipping"
 msgstr "停止发货"
 
+msgid "Stop shop floor work on a serial unit while an issue linked to it is open."
+msgstr "当带序列号的单元关联的问题未关闭时，停止该单元的车间作业。"
+
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "在此步骤中停止使用 {0}"
@@ -30630,7 +30650,7 @@ msgstr "疑似故障模式"
 msgid "SV"
 msgstr "SV"
 
-#. placeholder {0}: job.fixedAssetId ?? ""
+#. placeholder {0}: tracking?.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
 msgstr "将成本扫入资产 {0}"
 
@@ -34388,6 +34408,9 @@ msgstr "单位"
 msgid "Units don't match"
 msgstr "单位不一致"
 
+msgid "Units excluded from this receipt"
+msgstr "本次入库排除的产品"
+
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
 msgstr "基础货币单位对该货币一个单位的比率;用于过账时金额的转换。"
 
@@ -34405,6 +34428,12 @@ msgstr "抽样不合格的单元仍为已拒绝。其他所有单元，包括从
 
 msgid "Units this customer owns show here once registered."
 msgstr "此客户拥有的单位在已登记后显示在此处。"
+
+msgid "Units with an open issue are now on hold"
+msgstr "有未关闭问题的单元现在会被搁置"
+
+msgid "Units with an open issue are on hold"
+msgstr "有未关闭问题的单元被搁置"
 
 msgid "Unknown"
 msgstr "未知"
@@ -35835,6 +35864,9 @@ msgstr "当递延收入、应计收入和租赁利息收入被确认时"
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
 msgstr "当租赁协议或合同的每个计费期到期开票时：可选择在第一天（期间使用前）的提前开票方式，或在最后一天（期间应得后）的后付开票方式。"
 
+msgid "When enabled, units marked Scrap or Return to Supplier stay blocked after the issue closes."
+msgstr "启用后，判定为报废或退回供应商的产品在问题关闭后仍会被阻止使用。"
+
 msgid "When expired stock is used"
 msgstr "当使用已过期库存时"
 
@@ -36467,15 +36499,11 @@ msgid "You can only see this key once. Store it safely."
 msgstr "您只能看到此密钥一次。请妥善保管。"
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
-#. placeholder {1}: job.quantity
 msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
-"                        ordered quantity of {1}. What would you like\n"
+"                        ordered quantity of {jobQuantity}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "您完成了 {leftoverQuantity} 个以上 \n"
-"                        {0}，比 \n"
-"                        订购数量 {1} 多。您想 \n"
-"                        用多余的零件怎么办？"
+msgstr "您完成的数量比订购数量 {jobQuantity} 多出 {leftoverQuantity} {0}。您想如何处理多出的零件？"
 
 msgid "You do not have permission to do this"
 msgstr "您没有权限执行此操作"

@@ -45,6 +45,7 @@ import {
   requiredScanMessage,
   requiredScanShortfall
 } from "~/utils/trackedMaterials";
+import { completedAtOperation } from "~/utils/workUnit";
 import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
   batchStepRecordsValidator,
@@ -821,18 +822,11 @@ export async function finishJobOperation(
     companyId: string;
   }
 ) {
-  // Callers pass a service-role client, so the companyId filter is the tenant
-  // check: an operation id from another company updates nothing, and nothing
-  // downstream (GL posting, picked-material returns, moments) may run for it.
-  const result = await client
-    .from("jobOperation")
-    .update({
-      status: "Done",
-      updatedBy: args.userId
-    })
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .select("id, jobId");
+  const result = await client.rpc("finish_mes_job_operation", {
+    p_job_operation_id: args.jobOperationId,
+    p_company_id: args.companyId,
+    p_user_id: args.userId
+  });
 
   if (!result.error && result.data.length === 0) {
     log.warning("finishJobOperation: job operation not found in company", {
@@ -1280,7 +1274,9 @@ export async function getJobOperationForCompany(
 ) {
   return client
     .from("jobOperation")
-    .select("id, jobId, jobMakeMethodId, jobOperationBatchId, operationType")
+    .select(
+      "id, jobId, jobMakeMethodId, jobOperationBatchId, operationType, jobMakeMethod(requiresSerialTracking)"
+    )
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -2538,11 +2534,12 @@ export type SerialEntityForSelection = Pick<
    * absent means the operation applies to every unit.
    */
   inOperationScope?: boolean;
+  completedOperationId?: string;
 };
 
 /**
  * A serial tracked entity is still "incomplete" for a job operation when its
- * attributes carry no `Operation ${jobOperationId}` completion marker and it has
+ * attributes and production genealogy carry no completion here and it has
  * not been consumed. Shared by the serial auto-selection (routes) and the manual
  * serial picker (`useOperation`) so both agree on "done for this operation".
  */
@@ -2550,18 +2547,25 @@ export function isSerialEntityIncompleteForOperation(
   entity: SerialEntityForSelection,
   jobOperationId: string
 ): boolean {
-  const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
   // Scrapped is terminal like Consumed — a scrapped unit is never a work
   // candidate; its replacement is the spawned Reserved entity.
   return (
     entity.inOperationScope !== false &&
-    !(`Operation ${jobOperationId}` in attributes) &&
+    !completedAtOperation(entity, jobOperationId) &&
     entity.status !== "Consumed" &&
     entity.status !== "Scrapped"
   );
 }
 
 type TrackedEntityRow = Database["public"]["Tables"]["trackedEntity"]["Row"];
+
+type OperationUnitRead = {
+  jobId: string;
+  operationId: string;
+  jobMakeMethodId: string;
+  companyId: string;
+  includeSerialOutputs: boolean;
+};
 
 /**
  * The units of an operation's make method, in unit-axis order, each flagged
@@ -2578,7 +2582,7 @@ type TrackedEntityRow = Database["public"]["Tables"]["trackedEntity"]["Row"];
  */
 export async function getTrackedEntitiesForOperation(
   client: SupabaseClient<Database>,
-  args: { operationId: string; jobMakeMethodId: string; companyId: string }
+  args: OperationUnitRead
 ) {
   return readOperationUnits<TrackedEntityRow>(client, args, "*");
 }
@@ -2589,7 +2593,7 @@ export async function getTrackedEntitiesForOperation(
  */
 export async function getOperationUnitAxis(
   client: SupabaseClient<Database>,
-  args: { operationId: string; jobMakeMethodId: string; companyId: string }
+  args: OperationUnitRead
 ) {
   return readOperationUnits<
     Pick<TrackedEntityRow, "id" | "status" | "attributes">
@@ -2599,10 +2603,10 @@ export async function getOperationUnitAxis(
 /** The one paged read of an operation's units, in unit-axis order. */
 async function readOperationUnits<T extends { id: string }>(
   client: SupabaseClient<Database>,
-  args: { operationId: string; jobMakeMethodId: string; companyId: string },
+  args: OperationUnitRead,
   columns: string
 ) {
-  const [entities, scope] = await Promise.all([
+  const [entities, scope, outputs, receipts] = await Promise.all([
     fetchAll<T>(() =>
       client
         .from("trackedEntity")
@@ -2620,28 +2624,55 @@ async function readOperationUnits<T extends { id: string }>(
         .eq("jobOperationId", args.operationId)
         .eq("companyId", args.companyId)
         .order("trackedEntityId", { ascending: true })
-    )
+    ),
+    // Older serial production can have an activity output without a unit
+    // attribute. Posting treats either as completion at this operation.
+    args.includeSerialOutputs
+      ? fetchAll<{ trackedEntityId: string }>(() =>
+          client
+            .from("trackedActivityOutput")
+            .select("trackedEntityId, trackedActivity!inner(id)")
+            .eq("companyId", args.companyId)
+            .eq("trackedActivity.companyId", args.companyId)
+            .eq("trackedActivity.sourceDocument", "Job Operation")
+            .eq("trackedActivity.sourceDocumentId", args.operationId)
+            .in("trackedActivity.type", ["Complete", "Produce"])
+            .order("trackedActivityId")
+            .order("trackedEntityId")
+        )
+      : { data: [], error: null },
+    args.includeSerialOutputs
+      ? fetchAll<{ trackedEntityId: string }>(() =>
+          client
+            .from("jobReceivedSerial")
+            .select("trackedEntityId")
+            .eq("companyId", args.companyId)
+            .eq("jobId", args.jobId)
+            .order("trackedEntityId")
+        )
+      : { data: [], error: null }
   ]);
 
   if (entities.error) return { data: null, error: entities.error };
   if (scope.error) return { data: null, error: scope.error };
 
+  if (outputs.error) return { data: null, error: outputs.error };
+  if (receipts.error) return { data: null, error: receipts.error };
+  const scopedIds = new Set(scope.data?.map((row) => row.trackedEntityId));
+  const completedIds = new Set(outputs.data?.map((row) => row.trackedEntityId));
+  for (const receipt of receipts.data ?? []) {
+    completedIds.add(receipt.trackedEntityId);
+  }
   return {
-    data: flagOperationScope(entities.data ?? [], scope.data ?? []),
+    data: (entities.data ?? []).map((entity) => ({
+      ...entity,
+      inOperationScope: scopedIds.size === 0 || scopedIds.has(entity.id),
+      completedOperationId: completedIds.has(entity.id)
+        ? args.operationId
+        : undefined
+    })),
     error: null
   };
-}
-
-function flagOperationScope<T extends { id: string }>(
-  entities: T[],
-  scope: { trackedEntityId: string }[]
-) {
-  const scopedIds =
-    scope.length > 0 ? new Set(scope.map((row) => row.trackedEntityId)) : null;
-  return entities.map((entity) => ({
-    ...entity,
-    inOperationScope: scopedIds ? scopedIds.has(entity.id) : true
-  }));
 }
 
 /**
@@ -3338,64 +3369,6 @@ export async function insertProductionQuantity(
   }
 
   return result;
-}
-
-/**
- * Records one completion only while the operation's completed quantity is
- * still `expectedQuantityComplete`, read under the operation's row lock, so
- * two requests for one unit record it once. Kysely bypasses RLS: the caller
- * checks `create: production` (the productionQuantity insert policy) first.
- */
-export async function insertProductionQuantityIfCurrent(
-  db: Kysely<KyselyDatabase>,
-  data: z.infer<typeof nonScrapQuantityValidator> & {
-    companyId: string;
-    createdBy: string;
-  },
-  expectedQuantityComplete: number
-): Promise<{ id: string } | null> {
-  const inserted = await db.transaction().execute(async (trx) => {
-    const operation = await trx
-      .selectFrom("jobOperation")
-      .select("quantityComplete")
-      .where("id", "=", data.jobOperationId)
-      .where("companyId", "=", data.companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (
-      !operation ||
-      Number(operation.quantityComplete ?? 0) !== expectedQuantityComplete
-    ) {
-      return null;
-    }
-    return trx
-      .insertInto("productionQuantity")
-      .values({
-        jobOperationId: data.jobOperationId,
-        type: "Production",
-        quantity: data.quantity,
-        notes: data.notes ?? null,
-        setupProductionEventId: data.setupProductionEventId ?? null,
-        laborProductionEventId: data.laborProductionEventId ?? null,
-        machineProductionEventId: data.machineProductionEventId ?? null,
-        companyId: data.companyId,
-        createdBy: data.createdBy
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-  });
-
-  if (inserted) {
-    trackWorkEvent("production_quantity_reported", {
-      companyId: data.companyId,
-      userId: data.createdBy,
-      productionQuantityId: inserted.id,
-      jobOperationId: data.jobOperationId,
-      quantity: data.quantity,
-      source: "mes"
-    });
-  }
-  return inserted;
 }
 
 export async function insertScrapQuantity(

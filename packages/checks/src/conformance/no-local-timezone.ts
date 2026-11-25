@@ -44,6 +44,11 @@ const BANNED = [
   }
 ];
 
+/** A local assigned the current instant: `const now = new Date();`. */
+const NOW_LOCAL = /\b(?:const|let|var)\s+(\w+)\s*=\s*new Date\(\s*\)\s*;/g;
+
+const NOW_MESSAGE = BANNED[2]!.message;
+
 export const noLocalTimezone: ConformanceCheck = {
   id: "no-local-timezone",
   description:
@@ -51,15 +56,37 @@ export const noLocalTimezone: ConformanceCheck = {
   provenance: {
     deprecates: "getLocalTimeZone() / toISOString() day-slicing in server code",
     replacedBy: "@carbon/utils datetime + company/location timezone",
-    since: "20260805020925_company-timezone.sql"
+    since: "20260805020925_company-timezone.sql",
+    // getScheduledEmployeesToday rostered the server's day of week, and
+    // getWeeklyHoursForEmployees cut the payroll week at process-zone midnight.
+    incidents: ["92c041c48e"]
   },
   scan(file, contents) {
     const violations: Violation[] = [];
+    // `const now = new Date(); now.getDay()` is the same date part of "now",
+    // split over two lines.
+    const nowNames = [...contents.matchAll(NOW_LOCAL)].map((m) => m[1]);
+    const nowParts =
+      nowNames.length > 0
+        ? new RegExp(
+            String.raw`\b(?:${nowNames.join("|")})\s*\.get(?:Day|Date|Month|FullYear|Hours|Minutes)\(`,
+            "g"
+          )
+        : null;
     contents.split("\n").forEach((text, i) => {
       for (const { pattern, message } of BANNED) {
         for (const m of text.matchAll(pattern)) {
           violations.push({ file, line: i + 1, snippet: m[0], message });
         }
+      }
+      if (!nowParts) return;
+      for (const m of text.matchAll(nowParts)) {
+        violations.push({
+          file,
+          line: i + 1,
+          snippet: m[0],
+          message: NOW_MESSAGE
+        });
       }
     });
     return violations;

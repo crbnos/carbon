@@ -23,6 +23,11 @@ import {
   getInspectionMeasurements,
   getInspectionSamplingPlans
 } from "~/services/quality.service";
+import { readUnitHolds } from "~/services/unit-hold.server";
+import {
+  type InspectionOutcomeSample,
+  inspectionEntityEligible
+} from "~/utils/inspectionOutcome";
 
 type ServiceRole = Awaited<ReturnType<typeof getCarbonServiceRole>>;
 
@@ -255,12 +260,6 @@ export async function createQualityIssue(
   return { data: { id: nonConformanceId }, error: null, message: null };
 }
 
-export type InspectionOutcomeSample = {
-  id: string;
-  trackedEntityId: string | null;
-  status: string;
-};
-
 // Everything the disposition / complete-passed routes need to turn a verdict
 // into physical postings, recomputed fresh from the DB on every POST (client
 // form fields are operator intent, never trusted arithmetic).
@@ -289,9 +288,10 @@ export type InspectionOutcomeState = {
   opAccounted: number;
   opRemaining: number;
   // Serial only: the make method's WIP entities and the eligibility test
-  // (not Consumed, not Rejected, not already completed at this operation).
+  // (not Consumed, not Rejected, not on hold for an open quality issue, not
+  // already completed at this operation).
   entities: { id: string; status: string | null; attributes: unknown }[];
-  entityEligible: (entityId: string) => boolean;
+  entityEligible: (entityId: string, includeHeld?: boolean) => boolean;
 };
 
 export async function getInspectionOutcomeState(
@@ -371,9 +371,21 @@ export async function getInspectionOutcomeState(
       ? await getTrackedEntitiesForOperation(serviceRole, {
           operationId: jobOperationId,
           jobMakeMethodId: operation.jobMakeMethodId,
+          jobId: operation.jobId,
+          includeSerialOutputs: true,
           companyId: args.companyId
         })
       : null;
+
+  const unitReadError =
+    jobMakeMethod?.error ?? trackedEntities?.error ?? linkedRows.error;
+  if (unitReadError) {
+    return {
+      data: null,
+      error: unitReadError,
+      message: "Failed to read the inspection's production units"
+    };
+  }
 
   const samples: InspectionOutcomeSample[] = [
     ...((inspection.inspectionSample ?? []) as any[])
@@ -413,20 +425,32 @@ export async function getInspectionOutcomeState(
     id: e.id,
     status: e.status,
     attributes: e.attributes,
+    completedOperationId: e.completedOperationId,
     inOperationScope: e.inOperationScope
   }));
-  const opAttrKey = `Operation ${jobOperationId}`;
   const entityById = new Map(entities.map((e) => [e.id, e]));
-  const entityEligible = (entityId: string) => {
+  // A unit on hold for an open quality issue is not completed by a lot's
+  // decision either: these completions do not go through `resolveWorkUnit`.
+  const holds = requiresSerialTracking
+    ? await readUnitHolds(serviceRole, {
+        companyId: args.companyId,
+        unitIds: entities.map((entity) => entity.id)
+      })
+    : { data: {}, error: null };
+  if (holds.error) {
+    return {
+      data: null,
+      error: holds.error,
+      message: "Failed to check the units on hold"
+    };
+  }
+  const unitHolds = holds.data;
+  const entityEligible = (entityId: string, includeHeld = false) => {
     const entity = entityById.get(entityId);
-    if (!entity) return false;
-    // A rework copy of the inspection completes only the units sent into it.
-    if (!entity.inOperationScope) return false;
-    if (entity.status === "Consumed" || entity.status === "Rejected") {
-      return false;
-    }
-    const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
-    return !attributes[opAttrKey];
+    return (
+      !!entity &&
+      inspectionEntityEligible(entity, jobOperationId, unitHolds, includeHeld)
+    );
   };
 
   return {
@@ -451,53 +475,6 @@ export async function getInspectionOutcomeState(
     error: null,
     message: null
   };
-}
-
-// The serial units a completion pass may post, in ascending sample order:
-// sampled units whose sample isn't linked yet, then (optionally) sample-less
-// eligible units. Verdict-driven double-posting is impossible — the sample
-// link's partial UNIQUE index guards sampled units, and the `Operation <opId>`
-// entity attribute (via entityEligible) guards sample-less ones.
-export function getSerialCompletionCandidates(
-  state: InspectionOutcomeState,
-  opts: {
-    // Accept completes Pending-sampled units too (identify-only scans that
-    // never failed); progressive complete-passed takes Passed only.
-    includePending: boolean;
-    // Accept sweeps un-sampled eligible units; Partial/complete-passed don't.
-    includeSampleless: boolean;
-    excludeEntityIds?: Set<string>;
-  }
-): { trackedEntityId: string; inspectionSampleId: string | null }[] {
-  const candidates: {
-    trackedEntityId: string;
-    inspectionSampleId: string | null;
-  }[] = [];
-  const sampledEntityIds = new Set<string>();
-  for (const sample of state.samples) {
-    if (sample.trackedEntityId) sampledEntityIds.add(sample.trackedEntityId);
-    const statusOk =
-      sample.status === "Passed" ||
-      (opts.includePending && sample.status === "Pending");
-    if (!statusOk) continue;
-    if (!sample.trackedEntityId) continue;
-    if (state.linkedSampleIds.has(sample.id)) continue;
-    if (!state.entityEligible(sample.trackedEntityId)) continue;
-    if (opts.excludeEntityIds?.has(sample.trackedEntityId)) continue;
-    candidates.push({
-      trackedEntityId: sample.trackedEntityId,
-      inspectionSampleId: sample.id
-    });
-  }
-  if (opts.includeSampleless) {
-    for (const entity of state.entities) {
-      if (sampledEntityIds.has(entity.id)) continue;
-      if (!state.entityEligible(entity.id)) continue;
-      if (opts.excludeEntityIds?.has(entity.id)) continue;
-      candidates.push({ trackedEntityId: entity.id, inspectionSampleId: null });
-    }
-  }
-  return candidates;
 }
 
 // One `issue` serial-complete per unit (quantity 1), carrying the provenance

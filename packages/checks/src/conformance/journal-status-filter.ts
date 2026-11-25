@@ -66,23 +66,26 @@ const TS_NOT_DRAFT = [
   )
 ];
 
-/** The statement reads the journal table: quoted or not, aliased or not. */
+/**
+ * The statement reads the journal table, or the `journalLines` view, which
+ * carries the journal's status on each line: quoted or not, aliased or not.
+ */
 const SQL_JOURNAL = [
-  /\b(?:FROM|JOIN|UPDATE)\s+(?:"?public"?\s*\.\s*)?"?journal"?(?![\w"])/i,
-  /\bjournal"?\s*\.\s*"?status\b/i
+  /\b(?:FROM|JOIN|UPDATE)\s+(?:"?public"?\s*\.\s*)?"?journal(?:Lines)?"?(?![\w"])/i,
+  /\bjournal(?:Lines)?"?\s*\.\s*"?status\b/i
 ];
 const TS_JOURNAL = [
   ...SQL_JOURNAL,
   // .from("journal"), selectFrom("journal as j"), innerJoin("journal as j", …)
-  /\b(?:from|selectFrom|innerJoin|leftJoin|rightJoin|fullJoin|updateTable|deleteFrom)\(\s*["'`]journal(?:\s+as\s+\w+)?["'`]/,
+  /\b(?:from|selectFrom|innerJoin|leftJoin|rightJoin|fullJoin|updateTable|deleteFrom)\(\s*["'`]journal(?:Lines)?(?:\s+as\s+\w+)?["'`]/,
   // a Supabase embed: select("…, journal!inner(status)")
   /\bjournal(?:!\w+)?\s*\(/
 ];
 
 /** `FROM journal j`, `JOIN "journal" AS j`, `"journal as j"` — the alias. */
 const JOURNAL_ALIAS = [
-  /\b(?:FROM|JOIN)\s+(?:"?public"?\s*\.\s*)?"?journal"?\s+(?:AS\s+)?"?(\w+)"?/gi,
-  /["'`]journal\s+as\s+(\w+)["'`]/g
+  /\b(?:FROM|JOIN)\s+(?:"?public"?\s*\.\s*)?"?journal(?:Lines)?"?\s+(?:AS\s+)?"?(\w+)"?/gi,
+  /["'`]journal(?:Lines)?\s+as\s+(\w+)["'`]/g
 ];
 const NOT_AN_ALIAS = new Set([
   "on",
@@ -106,7 +109,7 @@ const NOT_AN_ALIAS = new Set([
 
 /** The names a status may be qualified with to mean the journal's status. */
 function journalNames(statement: string): Set<string> {
-  const names = new Set(["journal"]);
+  const names = new Set(["journal", "journallines"]);
   for (const pattern of JOURNAL_ALIAS) {
     for (const m of statement.matchAll(pattern)) {
       const alias = m[1]?.toLowerCase();
@@ -179,7 +182,8 @@ export const journalStatusFilter: ConformanceCheck = {
     deprecates: "journal status filters written as status <> 'Draft'",
     replacedBy:
       "GL_JOURNAL_STATUSES, DOCUMENT_JOURNAL_STATUSES or OPEN_ITEM_JOURNAL_STATUSES from @carbon/database/accounting-posting",
-    since: SINCE_MIGRATION
+    since: SINCE_MIGRATION,
+    incidents: ["c0cf421500"]
   },
   scan(file: string, contents: string): Violation[] {
     if (!contents.includes("Draft") || !/journal/i.test(contents)) return [];

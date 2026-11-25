@@ -135,6 +135,9 @@ type IssueMaterialModalProps = {
   // The parent unit is complete at this operation (a finished unit looked
   // back at): nothing is issued to it, but its parts can still be unconsumed.
   issueBlocked?: boolean;
+  // Why it is blocked: the parent unit is on hold for an open quality issue,
+  // not complete here. Changes the notice's title only.
+  parentOnHold?: boolean;
   // Assembly view only: the step + 1-based unit the operator is on, stamped onto the
   // consume so issued quantities can be attributed per-unit/per-step even for a batch
   // parent (where all units share one lot entity). Omitted by the operation view.
@@ -179,6 +182,7 @@ function IssueMaterialBody({
   parentId,
   parentIdIsSerialized,
   issueBlocked = false,
+  parentOnHold = false,
   jobOperationStepId,
   unitNumber,
   trackedInputs = [],
@@ -1633,7 +1637,11 @@ function IssueMaterialBody({
                 )}
               {issueBlocked && inventoryMode === "issue" && (
                 <Alert variant="warning">
-                  <AlertTitle>{t`This unit is complete here`}</AlertTitle>
+                  <AlertTitle>
+                    {parentOnHold
+                      ? t`This unit is on hold`
+                      : t`This unit is complete here`}
+                  </AlertTitle>
                   <AlertDescription>
                     {t`Pick an open unit to issue parts.`}
                   </AlertDescription>
@@ -2323,7 +2331,11 @@ function IssueMaterialBody({
               )}
               {issueBlocked && activeTab !== "unconsume" && (
                 <Alert variant="warning">
-                  <AlertTitle>{t`This unit is complete here`}</AlertTitle>
+                  <AlertTitle>
+                    {parentOnHold
+                      ? t`This unit is on hold`
+                      : t`This unit is complete here`}
+                  </AlertTitle>
                   <AlertDescription>
                     {t`Pick an open unit to issue parts. Parts already in this unit can still be unconsumed.`}
                   </AlertDescription>

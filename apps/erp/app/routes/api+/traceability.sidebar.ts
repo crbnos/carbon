@@ -4,8 +4,7 @@
 
 import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { fetchJobStepRecords } from "~/modules/inventory/inventory.service";
-import type { StepRecord } from "~/modules/inventory/ui/Traceability/utils";
+import { fetchActivityStepRecords } from "~/modules/inventory/inventory.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(
@@ -17,37 +16,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const activityId = url.searchParams.get("activityId");
 
-  if (!activityId) {
-    return Response.json({ stepRecords: [] as StepRecord[] });
-  }
-
-  const activityRes = await client
-    .from("trackedActivity")
-    .select("attributes")
-    .eq("id", activityId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  const jobId = (activityRes.data?.attributes as Record<string, unknown> | null)
-    ?.Job;
-
-  if (typeof jobId !== "string" || !jobId) {
-    return Response.json({ stepRecords: [] as StepRecord[] });
-  }
-
-  // The step records RPC filters on the job id alone and `client` is the
-  // service role, so the job must be this company's too.
-  const jobRes = await client
-    .from("job")
-    .select("id")
-    .eq("id", jobId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  if (!jobRes.data) {
-    return Response.json({ stepRecords: [] as StepRecord[] });
-  }
-
-  const stepRecords = await fetchJobStepRecords(client, jobId, companyId);
-  return Response.json({ stepRecords });
+  return Response.json({
+    activityId,
+    stepRecords: activityId
+      ? await fetchActivityStepRecords(client, activityId, companyId)
+      : []
+  });
 }

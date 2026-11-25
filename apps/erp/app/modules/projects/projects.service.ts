@@ -124,6 +124,7 @@ import {
   calculateCOGS,
   createAdjustmentJournal,
   invokePosting,
+  lockUntrackedDraws,
   planUntrackedDraw,
   resolveAccountingPeriod
 } from "~/modules/shared/shared.service";
@@ -7573,6 +7574,8 @@ async function planProjectIssueDraw(
  * issues of the item (and lot) drew from, newest draw first, each up to what
  * it still has out. What they do not cover goes to no storage unit, as
  * before. A Return goes to one stripe: the project's stock, else common.
+ * Takes the item's draw lock (`lockUntrackedDraws`) before it reads, so two
+ * Returns of one item never give back what one bin had out twice.
  */
 async function planProjectReturn(
   trx: Transaction<DB>,
@@ -7586,6 +7589,11 @@ async function planProjectReturn(
     stripe: string | null;
   }
 ): Promise<ProjectIssueDraw[]> {
+  await lockUntrackedDraws(trx, {
+    companyId: args.companyId,
+    locationId: args.locationId,
+    itemIds: [args.itemId]
+  });
   const rows = await trx
     .selectFrom("itemLedger")
     .select(["storageUnitId", "quantity", "entryNumber"])
@@ -7647,6 +7655,10 @@ export async function postProjectIssue(
   } = input;
   const projectElementId = input.projectElementId ?? null;
   const isIssue = direction === "Issue";
+  // A quantity that rounds to 0 books nothing.
+  if (round(quantity) <= 0) {
+    throw new InvalidInputError("Enter a quantity above 0");
+  }
 
   // The ids come from the caller: re-read them under companyId.
   await inOrder([

@@ -136,7 +136,8 @@ FOR SELECT USING (
 ALTER TABLE "itemPlanning"
   ADD COLUMN IF NOT EXISTS "minimumReserveQuantity" NUMERIC NOT NULL DEFAULT 0;`;
 
-// 20261118204200_supplier-card-payments.sql before 751aea1a2b.
+// 20261118204200_supplier-card-payments.sql before #2311, which fixed a
+// hand-made group, not a re-run: its INSERT was guarded already.
 const CARD_GROUP_INSERT = `INSERT INTO "account" (
   number, name, "isGroup", "accountType", "incomeBalance", class,
   "parentId", "isSystem", "companyGroupId", "createdBy"
@@ -189,9 +190,9 @@ describe("migrationReplaySafe", () => {
     expect(scan(CB75_AFTER)).toEqual([]);
   });
 
-  // 751aea1a2b failed on its first run (a guard on the wrong key), not on a
+  // #2311 fixed a migration that failed on its first run (a guard on the wrong key), not on a
   // re-run: out of scope.
-  it("passes the NOT EXISTS-guarded INSERT of 751aea1a2b, and its ON CONFLICT fix", () => {
+  it("passes the NOT EXISTS-guarded INSERT of the card migration, and its ON CONFLICT fix (#2311)", () => {
     expect(scan(CARD_GROUP_INSERT)).toEqual([]);
     expect(
       scan(

@@ -110,9 +110,9 @@ msgstr "Painel de manutenção de {0}"
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: Math.max( units.length, operation.operationQuantity ?? 0 )
 #. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} de {1}"
 
@@ -255,6 +255,9 @@ msgstr "{recorded}/{0} ordens de produção"
 
 msgid "{scrapped} scrapped"
 msgstr "{scrapped} refugo"
+
+msgid "{serialNumber} is on hold"
+msgstr "{serialNumber} está suspensa"
 
 msgid "{unbinned} in stock, in no bin"
 msgstr "{unbinned} em estoque, sem compartimento"
@@ -2248,6 +2251,9 @@ msgstr "Mais antigo primeiro"
 msgid "On Hold"
 msgstr "Suspenso"
 
+msgid "On hold · {issueNumbers}"
+msgstr "Suspensa · {issueNumbers}"
+
 msgid "On its way"
 msgstr "A caminho"
 
@@ -2630,6 +2636,9 @@ msgstr "Problema de Qualidade"
 
 msgid "Quality issue created"
 msgstr "Problema de qualidade criado"
+
+msgid "Quality rejected this unit for production."
+msgstr "A Qualidade rejeitou esta unidade para produção."
 
 msgid "Quantity"
 msgstr "Quantidade"
@@ -3580,6 +3589,9 @@ msgstr "Esta unidade está concluída aqui"
 msgid "This unit is not part of this operation"
 msgstr "Esta unidade não faz parte desta operação"
 
+msgid "This unit is on hold"
+msgstr "Esta unidade está suspensa"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Esta unidade será permanentemente descartada e uma unidade de substituição será criada."
 
@@ -3898,6 +3910,9 @@ msgstr "Exibições do Centro de Trabalho"
 
 msgid "Work instructions"
 msgstr "Instruções de trabalho"
+
+msgid "Work on this unit waits until quality closes every issue below. Other units are not affected."
+msgstr "O trabalho nesta unidade aguarda até que a qualidade feche todos os problemas abaixo. As outras unidades não são afetadas."
 
 msgid "Work Site"
 msgstr "Local de trabalho"

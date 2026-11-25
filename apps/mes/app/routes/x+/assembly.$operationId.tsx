@@ -38,12 +38,14 @@ import {
   isFirstOpenOperationOfMakeMethod
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
+import { readScreenUnitHolds } from "~/services/unit-hold.server";
 import { isFirstOperationOfMakeMethod } from "~/services/work-unit.server";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
+import { operationUnits } from "~/utils/workUnit";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -127,6 +129,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const operationPromise = getJobOperationById(serviceRole, operationId);
+  const unitsPromise = jobMakeMethodId
+    ? getTrackedEntitiesForOperation(serviceRole, {
+        jobId,
+        includeSerialOutputs:
+          ownedOperation.data.jobMakeMethod?.requiresSerialTracking === true,
+        operationId,
+        jobMakeMethodId,
+        companyId
+      })
+    : null;
+  const makeMethodPromise = jobMakeMethodId
+    ? getJobMakeMethod(serviceRole, jobMakeMethodId)
+    : null;
   const procedurePromise = getJobOperationProcedure(serviceRole, operationId);
   const [
     job,
@@ -149,7 +164,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     abilityWarning,
     openEvent,
     isFirstOperation,
-    isFirstOpenOperation
+    isFirstOpenOperation,
+    unitHolds
   ] = await Promise.all([
     getJob(serviceRole, jobId),
     operationPromise,
@@ -164,14 +180,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         companyId
       )
     ),
-    jobMakeMethodId
-      ? getTrackedEntitiesForOperation(serviceRole, {
-          operationId,
-          jobMakeMethodId: jobMakeMethodId,
-          companyId
-        })
-      : null,
-    jobMakeMethodId ? getJobMakeMethod(serviceRole, jobMakeMethodId) : null,
+    unitsPromise,
+    makeMethodPromise,
     procedurePromise,
     getToolsByOperationId(serviceRole, operationId),
     getNcrsByJobOperationId(serviceRole, operationId),
@@ -241,7 +251,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           operationId,
           jobMakeMethodId
         )
-      : false
+      : false,
+    // The units on hold for an open quality issue. Chained on the units and
+    // make method reads, so it stays in this wave.
+    Promise.all([unitsPromise, makeMethodPromise]).then(([units, makeMethod]) =>
+      readScreenUnitHolds(serviceRole, {
+        companyId,
+        operationId,
+        serial: !!makeMethod?.data?.requiresSerialTracking,
+        unitIds: (units?.data ?? []).map((unit) => unit.id)
+      })
+    )
   ]);
 
   if (job.error)
@@ -314,13 +334,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // A rework or correction copy works only the units sent into it, so the
   // navigable units are those; each keeps its place in the full axis, which
   // keys its step records and issue stamps (AssemblyView does the same).
-  const scopedAxis = isParentTracked
-    ? allEntities
-        .map((entity, axisIndex) => ({ entity, axisIndex }))
-        .filter(({ entity }) => entity.inOperationScope !== false)
-        .slice(0, opQty)
+  const navEntities = isParentTracked
+    ? operationUnits(
+        allEntities,
+        opQty,
+        jobMakeMethod?.data?.requiresSerialTracking
+          ? { operationId, holds: unitHolds }
+          : undefined
+      )
     : [];
-  const navEntities = scopedAxis.map(({ entity }) => entity);
   const unitParam = Number.parseInt(url.searchParams.get("unit") ?? "", 10);
   const entityIndex = trackedEntityId
     ? navEntities.findIndex((te) => te.id === trackedEntityId)
@@ -356,7 +378,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiresSerialTracking:
       jobMakeMethod?.data?.requiresSerialTracking ?? false,
     requiresBatchTracking: jobMakeMethod?.data?.requiresBatchTracking ?? false,
-    unitIndex: scopedAxis[unitIndex]?.axisIndex ?? unitIndex
+    unitIndex: navEntities[unitIndex]
+      ? allEntities.indexOf(navEntities[unitIndex])
+      : unitIndex
   });
 
   return {
@@ -366,6 +390,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     thumbnailPath,
     correctionName,
     trackedEntities: trackedEntities?.data ?? [],
+    unitHolds,
     // The resolved entity for the current unit, or null for untracked units, so the
     // component falls back to the ?unit index instead of snapping back to unit 0.
     trackedEntityId: effectiveEntityId ?? null,

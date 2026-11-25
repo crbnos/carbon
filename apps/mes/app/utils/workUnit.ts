@@ -12,18 +12,67 @@
 // the URL only mirrors the pick, so a refresh, a link or Back asks again. On
 // the first operation units flow in order, so the unit is the URL's, or the
 // next open one when it is done.
+//
+// A unit on hold for an open quality issue (`isOnHold`) is not open: no work
+// names it, and it is never the next unit or the one left. A unit the
+// operator picked stays on screen when it goes on hold, so they see why.
 
-type UnitLike = { id: string; inOperationScope?: boolean };
+import { isUnitOnHold, type UnitHolds } from "./unitHold";
 
-/** The units an operation works, in axis order: those in its scope, capped to its quantity. */
+type UnitLike = {
+  id: string;
+  inOperationScope?: boolean;
+  completedOperationId?: string;
+  attributes?: unknown;
+  status?: string | null;
+};
+
+/** The marker records the unit index, including index zero. Legacy scalar
+ * attributes carry no operation marker. */
+export function completedAtOperation(
+  unit: Pick<UnitLike, "attributes" | "completedOperationId">,
+  operationId: string
+): boolean {
+  const { attributes } = unit;
+  return (
+    unit.completedOperationId === operationId ||
+    (attributes !== null &&
+      typeof attributes === "object" &&
+      Object.prototype.hasOwnProperty.call(
+        attributes,
+        `Operation ${operationId}`
+      ))
+  );
+}
+
+/** Keep the step-record order. Completed units consume capacity. A blocked
+ * serial remains visible for review and leaves its place available to a replacement. */
 export function operationUnits<T extends UnitLike>(
   entities: T[],
-  unitCount: number | null | undefined
+  unitCount: number | null | undefined,
+  quality?: { operationId: string; holds: UnitHolds | undefined }
 ): T[] {
   const inScope = entities.filter(
     (entity) => entity.inOperationScope !== false
   );
-  return unitCount && unitCount > 0 ? inScope.slice(0, unitCount) : inScope;
+  if (!unitCount || unitCount <= 0 || inScope.length <= unitCount)
+    return inScope;
+  if (!quality) return inScope.slice(0, unitCount);
+  const completedHere = (unit: T) =>
+    completedAtOperation(unit, quality.operationId);
+  let remaining = unitCount - inScope.filter(completedHere).length;
+  return inScope.filter((unit) => {
+    if (
+      completedHere(unit) ||
+      isUnitOnHold(quality.holds, unit.id) ||
+      unit.status === "Consumed" ||
+      unit.status === "Scrapped"
+    )
+      return true;
+    if (remaining <= 0) return false;
+    remaining--;
+    return true;
+  });
 }
 
 export type WorkUnitState = {
@@ -100,7 +149,8 @@ export function serialUnitSelection<T extends UnitLike>({
   units,
   urlUnitId,
   state,
-  isOpen
+  isOpen: isIncomplete,
+  isOnHold
 }: {
   /** A serial part, not batched. */
   serial: boolean;
@@ -109,9 +159,16 @@ export function serialUnitSelection<T extends UnitLike>({
   units: T[];
   urlUnitId: string | null;
   state: WorkUnitState;
+  /** Still to do at this operation. */
   isOpen: (unit: T) => boolean;
+  /** On hold for an open quality issue: work on it waits. */
+  isOnHold?: (unit: T) => boolean;
 }) {
+  const isOpen = (unit: T) => isIncomplete(unit) && !isOnHold?.(unit);
   const openUnits = units.filter(isOpen);
+  const onHoldUnits = isOnHold
+    ? units.filter((unit) => isIncomplete(unit) && isOnHold(unit))
+    : [];
   const soleOpenUnit = openUnits.length === 1 ? openUnits[0] : undefined;
   const find = (id: string | null | undefined) =>
     id ? units.find((unit) => unit.id === id) : undefined;
@@ -120,7 +177,10 @@ export function serialUnitSelection<T extends UnitLike>({
   let unit: T | undefined;
   if (serial) {
     const picked = find(state.pick?.unitId);
-    if (picked && (state.pick?.review || isOpen(picked))) {
+    if (
+      picked &&
+      (state.pick?.review || isOpen(picked) || isOnHold?.(picked))
+    ) {
       unit = picked;
     } else if (isFirstOperation) {
       // Units flow in order: a finished one gives way to the next.
@@ -131,7 +191,12 @@ export function serialUnitSelection<T extends UnitLike>({
     }
   }
   const unitIsOpen = !!unit && isOpen(unit);
-  const canPick = requiresPick && !unitIsOpen && openUnits.length > 0;
+  // With only units on hold left and none on screen, the picker still opens:
+  // it lists them with their issue, so the operator sees why work waits.
+  const canPick =
+    requiresPick &&
+    !unitIsOpen &&
+    (openUnits.length > 0 || (!unit && onHoldUnits.length > 0));
 
   return {
     /** A later operation of a serial part: work waits for a held unit. */
@@ -139,8 +204,10 @@ export function serialUnitSelection<T extends UnitLike>({
     unit,
     unitIsOpen,
     openUnits,
+    /** Still to do here, but on hold: the picker lists them to look at. */
+    onHoldUnits,
     soleOpenUnit,
-    /** No open unit is held, but one is left to pick. */
+    /** No open unit is held, but one is left to pick (or, on hold, to look at). */
     canPick,
     /** A later operation holds no open unit: the screen asks for one. */
     noUnitHeld: requiresPick && !unitIsOpen,

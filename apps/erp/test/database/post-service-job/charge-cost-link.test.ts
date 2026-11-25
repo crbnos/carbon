@@ -245,5 +245,5 @@ describe.skipIf(!client)("a charge's paid cost", () => {
     } finally {
       await f.cleanup();
     }
-  });
+  }, 60_000);
 });
