@@ -8,7 +8,7 @@ import { dirname, join } from "node:path";
 import { expect, it } from "vitest";
 import { ACCOUNT_REFERENCE_POLICY_FILE } from "../conformance/account-fk-restrict";
 import { MANAGED_FUNCTION_SETS } from "../conformance/no-authz-ddl-in-migrations";
-import { repoRoot } from "../sources/migrations";
+import { migrationsDir, repoRoot } from "../sources/migrations";
 import { buildBriefIndex } from "./index-builder";
 
 function fixtureRoot(): string {
@@ -27,6 +27,8 @@ function fixtureRoot(): string {
   for (const { dir } of MANAGED_FUNCTION_SETS) {
     mkdirSync(join(root, dir), { recursive: true });
   }
+  // …and reads every migration for the tables keyed on ("id", "companyId").
+  mkdirSync(migrationsDir(root), { recursive: true });
   writeFileSync(
     join(root, ".claude/rules/database-patterns.md"),
     [

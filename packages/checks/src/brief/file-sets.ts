@@ -17,7 +17,15 @@ import { noRawOrSearch } from "../conformance/no-raw-or-search";
 import { noRawRedirect } from "../conformance/no-raw-redirect";
 import { noRawRevalidator } from "../conformance/no-raw-revalidator";
 import { noStateCopyOfLoaderData } from "../conformance/no-state-copy-of-loader-data";
+import {
+  noUntimedFetch,
+  UNTIMED_FETCH_ROOTS
+} from "../conformance/no-untimed-fetch";
 import { spdxLicenseHeader } from "../conformance/spdx-license-header";
+import {
+  tenantFkComposite,
+  tenantKeysFromMigrations
+} from "../conformance/tenant-fk-composite";
 import { classifyPath, isLicenseCandidate } from "../license-headers";
 import {
   CONFORMANCE_CHECKS,
@@ -27,6 +35,7 @@ import {
   TS_CHECKS
 } from "../run";
 import { loadAccountReferencePolicy } from "../sources/cross-file";
+import { loadSqlFiles, migrationsDir } from "../sources/migrations";
 import {
   ERP_MODULES_ROOT,
   ERP_SERVER_SUFFIXES,
@@ -54,6 +63,7 @@ export type FileSet = {
     | "typescript"
     | "request-handling"
     | "routes"
+    | "untimed-fetch"
     | "license"
     | "tests";
   includes(path: string): boolean;
@@ -112,7 +122,10 @@ export const FILE_SETS: FileSet[] = [
     checks: (root) => [
       ...CONFORMANCE_CHECKS,
       noAuthzDdlInMigrations(loadManagedFunctions(root)),
-      accountFkClassified(loadAccountReferencePolicy(root))
+      accountFkClassified(loadAccountReferencePolicy(root)),
+      tenantFkComposite(
+        tenantKeysFromMigrations(loadSqlFiles(migrationsDir(root)))
+      )
     ]
   },
   {
@@ -159,6 +172,14 @@ export const FILE_SETS: FileSet[] = [
     violationFile: samePath,
     prepare: asIs,
     checks: () => [indexRedirectBeforeLoaders]
+  },
+  {
+    name: "untimed-fetch",
+    includes: (path) =>
+      under(path, UNTIMED_FETCH_ROOTS) && isTypescriptSource(path),
+    violationFile: samePath,
+    prepare: asIs,
+    checks: () => [noUntimedFetch]
   },
   {
     name: "license",

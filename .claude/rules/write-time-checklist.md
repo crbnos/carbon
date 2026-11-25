@@ -31,13 +31,17 @@ Answer before you write a file, and again over the diff before you commit. `/exe
   `no-foreign-key-without-on-delete`, `no-local-timezone` (server code),
   `no-missing-audit-column`, `no-required-column-without-default`,
   `no-numeric-precision`, `no-raw-rounding`, `route-action-shape`,
-  `service-fn-file`, `no-db-client-in-service`, `function-redefinition-keeps-changes`.
+  `service-fn-file`, `no-db-client-in-service`, `function-redefinition-keeps-changes`,
+  `no-unscoped-supabase-write` (supabase-js update/delete carry companyId),
+  `no-chained-client-writes`, `tenant-fk-composite`, `no-untimed-fetch`.
   If a check fires, fix the code. Do not baseline a new hit.
 
 ## Writes (service function, route action, engine, job)
 
 - Does every UPDATE/DELETE carry each predicate you checked (status, companyId, location)? End it with `.select("id")` or `.returning(...)`; an empty result means "changed since read", never success. [database-patterns]
 - Does every status write name its from-state (`.eq("status", from)` or `.in(...)`)?
+- Does the write set only the fields the request changed? A field filled from an earlier read (`{ ...current, ...input }`, `x ?? current.x`) loses a concurrent edit; compare and set, or lock first. [concurrency]
+- Does every child id the caller sent (a line, a contact, a bin) belong to the parent the request names, not only to the company? [conventions-services]
 - Does one writer own each column? Grep for the existing writer and call it. Read the helper you call to its end: does it recompute a parent status, re-sequence, or notify?
 - Is a bulk write one statement (`WHERE id = ANY(...) AND "companyId" = ... RETURNING id`) when every row gets the same value, or one transaction with `UPDATE ... FROM (VALUES ...)` and explicit casts when they differ? Never a per-row loop. Guard the empty list, and dedupe ids in the validator. [database-patterns]
 - Is success derived from every outcome (applied, refused, failed), counted from the rows returned rather than the ids requested?
@@ -61,6 +65,7 @@ Answer before you write a file, and again over the diff before you commit. `/exe
 ## Reads at volume
 
 - Is every `.in()` list bounded by a page size or constant, never by a result set? Past about 100 ids, `chunkArray` it and re-sort. Embed over the FK instead of a second lookup. [database-patterns]
+- Does a read whose rows feed a total, a gate, a map or a loop page past 1,000 rows (`fetchAllFromTable`, `fetchAll`, `fetchAllByIds`)? PostgREST stops at 1,000 in production and the local stack does not, so the truncation passes every local test. [database-patterns]
 - Inside a loop, no per-id `.single()`. Read the batch before the loop, and `Promise.all` independent reads.
 - **Only if** an engine or job deletes rows absent from a read: read with `fetchAllFromTable` or `fetchAll` and a deterministic `.order()`. A bare `.select()` or `.rpc()` stops at 1000 rows, and the diff deletes the rest.
 - **Only if** the task writes SQL functions: `LANGUAGE sql` reads are `STABLE`; `CREATE OR REPLACE ... plpgsql` restates `SET search_path`; a signature change drops both signatures. [database-migration-patterns]

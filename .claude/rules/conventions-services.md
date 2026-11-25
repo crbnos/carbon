@@ -107,6 +107,14 @@ export const cancelJob = defineServiceFn({
   transfer). Before an RLS-bypassing write keyed on an id the caller sent,
   `refuseUnlessOwned(ctx, table, match)` (`shared/shared.service.ts`) returns
   a refusal unless the row is the company's.
+- **A child id belongs to its parent.** An id the caller sent for a child row
+  (a line, a contact, a storage unit, a production event) must belong to the
+  parent the request names, not only to the company. Put the parent in the
+  check (`refuseUnlessOwned(ctx, "quoteMaterial", { id, quoteLineId })`,
+  `sales.server.ts`) or in the write's own filter (`.eq("salesOrderId",
+  orderId)`). In a route, the parent is the URL's `params`, never a second id
+  in the body. A company-only check lets a same-company caller write another
+  order's line.
 - **Transactions**: `ctx.transaction(async (tx) => …)` on `asSystem.pg`. A
   returned `CarbonError` rolls back; a nested call joins the open
   transaction; `tx.asCaller` throws, because that client is outside it.
@@ -219,7 +227,7 @@ export async function upsertCustomer(
   }
   return client
     .from("customer")
-    .update({ ...sanitize(customer), updatedAt: today(getLocalTimeZone()).toString() })
+    .update({ ...sanitize(customer), updatedAt: datetime.timestamp() })
     .eq("id", customer.id)
     .select("id")
     .single();

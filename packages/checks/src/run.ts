@@ -62,6 +62,7 @@ import {
   noAuthzDdlInMigrations
 } from "./conformance/no-authz-ddl-in-migrations";
 import { findNestedOutlets, noBareOutlet } from "./conformance/no-bare-outlet";
+import { noChainedClientWrites } from "./conformance/no-chained-client-writes";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
@@ -103,6 +104,11 @@ import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 import { noUnmountingDialog } from "./conformance/no-unmounting-dialog";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
+import { noUnscopedSupabaseWrite } from "./conformance/no-unscoped-supabase-write";
+import {
+  noUntimedFetch,
+  UNTIMED_FETCH_ROOTS
+} from "./conformance/no-untimed-fetch";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import {
@@ -142,6 +148,10 @@ import {
   STAMP_MATCHES_COLUMNS
 } from "./conformance/stamp-matches-columns";
 import { statusWriteGuarded } from "./conformance/status-write-guarded";
+import {
+  tenantFkComposite,
+  tenantKeysFromMigrations
+} from "./conformance/tenant-fk-composite";
 import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 import { testReadsSource } from "./conformance/test-reads-source";
 import {
@@ -195,7 +205,8 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
 export const SERVER_CHECKS: ConformanceCheck[] = [
   noLocalTimezone,
   noZeroConcurrency,
-  routeActionShape
+  routeActionShape,
+  noChainedClientWrites
 ];
 
 /** Checks that run over ALL app + shared-package TS (client and server). */
@@ -303,7 +314,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
       noAuthzDdlInMigrations(loadManagedFunctions(root)),
-      accountFkClassified(loadAccountReferencePolicy(root))
+      accountFkClassified(loadAccountReferencePolicy(root)),
+      tenantFkComposite(tenantKeysFromMigrations(migrations))
     ]),
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
@@ -315,7 +327,11 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       ...TS_CHECKS,
       noMissingAuditColumn(loadDbTableColumns(root)),
       statusWriteGuarded(columnTypes),
-      counterWriteRelative(columnTypes)
+      counterWriteRelative(columnTypes),
+      noUnscopedSupabaseWrite(columnTypes)
+    ]),
+    ...scanAll(loadTypescriptFiles(root, UNTIMED_FETCH_ROOTS), [
+      noUntimedFetch
     ]),
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders,

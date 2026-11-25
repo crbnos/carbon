@@ -105,6 +105,21 @@ between your read and your write is lost or counted twice.
   function, which a text check cannot follow. Review it, and prove a retried
   create with a database test that runs it twice.
 
+## 5. Write only the fields the request changed
+
+Do not fill the fields a request omitted from an earlier read and write the
+whole row back (`{ ...current, ...input }`, `rate: input.rate ?? current.rate`,
+a JSONB object merged in JavaScript). A concurrent edit to a field this request
+never touched is lost.
+
+- Write only the columns the input names (`sanitize(input)` drops the omitted
+  ones), and merge JSONB in SQL (`` sql`"attributes" || ${toJson(patch)}` ``).
+- When the new value depends on the old one, compare and set: put the value you
+  read in the UPDATE's filter (`.eq("updatedAt", read.updatedAt)`), and refuse
+  when no row changed (rule 2). Or read it under the row lock (rule 1).
+- No check enforces this rule. CodeRabbit flagged it 26 times, 15 of them in
+  November 2026 (`.ai/research/2026-11-25-coderabbit-review-findings.md`).
+
 ## When a check flags your code
 
 Fix the code; do not add it to the baseline. The baseline

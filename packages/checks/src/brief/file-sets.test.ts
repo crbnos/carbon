@@ -16,7 +16,15 @@ import { noRawOrSearch } from "../conformance/no-raw-or-search";
 import { noRawRedirect } from "../conformance/no-raw-redirect";
 import { noRawRevalidator } from "../conformance/no-raw-revalidator";
 import { noStateCopyOfLoaderData } from "../conformance/no-state-copy-of-loader-data";
+import {
+  noUntimedFetch,
+  UNTIMED_FETCH_ROOTS
+} from "../conformance/no-untimed-fetch";
 import { spdxLicenseHeader } from "../conformance/spdx-license-header";
+import {
+  tenantFkComposite,
+  tenantKeysFromMigrations
+} from "../conformance/tenant-fk-composite";
 import {
   CONFORMANCE_CHECKS,
   loadManagedFunctions,
@@ -58,6 +66,10 @@ describe("FILE_SETS matches the loaders the gate scans", () => {
       loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS).map((f) => f.file)
     ],
     ["routes", loadTypescriptFiles(root, ROUTE_ROOTS).map((f) => f.file)],
+    [
+      "untimed-fetch",
+      loadTypescriptFiles(root, UNTIMED_FETCH_ROOTS).map((f) => f.file)
+    ],
     ["license", loadLicenseFiles(root).map((f) => f.file)],
     ["tests", loadTestFiles(root).map((f) => f.file)]
   ];
@@ -79,6 +91,7 @@ describe("FILE_SETS excludes files outside each set", () => {
     ["typescript", "packages/ee/node_modules/x/a.ts"],
     ["request-handling", "packages/react/src/Button.tsx"],
     ["routes", "apps/erp/app/modules/sales/sales.server.ts"],
+    ["untimed-fetch", "packages/react/src/Button.tsx"],
     ["license", "docs/README.md"],
     ["tests", "packages/checks/src/run.test.ts"],
     ["tests", "apps/erp/app/modules/sales/sales.service.ts"]
@@ -94,6 +107,9 @@ it("holds exactly the single-file checks the gate runs", () => {
     ...CONFORMANCE_CHECKS,
     noAuthzDdlInMigrations(loadManagedFunctions(root)),
     accountFkClassified(loadAccountReferencePolicy(root)),
+    tenantFkComposite(
+      tenantKeysFromMigrations(loadSqlFiles(migrationsDir(root)))
+    ),
     ...SERVER_CHECKS,
     ...TS_CHECKS,
     noRawOrSearch,
@@ -107,6 +123,7 @@ it("holds exactly the single-file checks the gate runs", () => {
     noRawRedirect,
     linguiMacroMisuse,
     indexRedirectBeforeLoaders,
+    noUntimedFetch,
     spdxLicenseHeader,
     ...TEST_CHECKS
   ].map((check) => check.id);
