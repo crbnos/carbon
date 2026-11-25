@@ -23,6 +23,15 @@
       "tests": ["apps/erp/test/database/document-posting-concurrency.test.ts"]
     },
     {
+      "file": "apps/erp/app/modules/inventory/inventory.service.ts",
+      "functions": ["lockAverageIssueAndReturnItems", "lockStockPostingUnits"],
+      "markers": ["const restoredItems = [", "if (expectedSerialSlots.size) {"],
+      "tests": [
+        "apps/erp/test/database/serialized-return-average.test.ts",
+        "apps/erp/test/database/serialized-return-provenance.test.ts"
+      ]
+    },
+    {
       "file": "apps/erp/app/modules/shared/shared.service.ts",
       "functions": ["lockPostable"],
       "tests": ["apps/erp/test/database/document-posting-concurrency.test.ts"]

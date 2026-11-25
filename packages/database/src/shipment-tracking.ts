@@ -4,7 +4,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types.ts";
-import { fetchAllRecords } from "./utils.ts";
+import { fetchAllByIds, fetchAllRecords } from "./utils.ts";
 
 export type ShipmentTrackingAttributes = {
   Shipment?: string;
@@ -40,7 +40,7 @@ export function getTaggedShipmentTracking(
   );
 }
 
-/** Read the historical sales shipment from its debits. Other documents use their current tags. */
+/** Use immutable slots for voided returns and stock debits for posted or voided sales. */
 export async function getShipmentTracking(
   client: SupabaseClient<Database>,
   shipmentId: string,
@@ -58,6 +58,52 @@ export async function getShipmentTracking(
     if (header.error) return { data: null, error: header.error };
     if (!header.data) return { data: [], error: null };
     shipment = header.data;
+  }
+  if (
+    shipment.sourceDocument === "Sales Return Order" &&
+    shipment.status === "Voided"
+  ) {
+    // A replacement draft may already own the serial's live tags. The void
+    // captured the slots it released after locking every shipped unit.
+    const reversal = await client
+      .from("trackedActivity")
+      .select("attributes")
+      .eq("companyId", companyId)
+      .eq("sourceDocument", "Shipment")
+      .eq("sourceDocumentId", shipmentId)
+      .eq("type", "Void Shipment")
+      .maybeSingle();
+    if (reversal.error) return { data: null, error: reversal.error };
+    const slots = (
+      reversal.data?.attributes as {
+        "Shipment Slots"?: { id: string; lineId?: string; index?: number }[];
+      } | null
+    )?.["Shipment Slots"];
+    if (Array.isArray(slots)) {
+      const byId = new Map(slots.map((slot) => [slot.id, slot]));
+      const units = await fetchAllByIds([...byId.keys()], (ids) =>
+        client
+          .from("trackedEntity")
+          .select("*")
+          .eq("companyId", companyId)
+          .in("id", ids)
+          .order("id")
+      );
+      if (units.error) return units;
+      const history: typeof units.data = units.data.map((unit) => {
+        const slot = byId.get(unit.id)!;
+        return {
+          ...unit,
+          attributes: {
+            ...(unit.attributes as ShipmentTrackingAttributes | null),
+            Shipment: shipmentId,
+            "Shipment Line": slot.lineId,
+            "Shipment Line Index": slot.index
+          }
+        };
+      });
+      return { data: history, error: null };
+    }
   }
   if (
     shipment.sourceDocument !== "Sales Order" ||

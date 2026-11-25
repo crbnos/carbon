@@ -2381,16 +2381,21 @@ export async function assignShipmentSerial(
       )
         return "This serial is already assigned to another shipment slot.";
 
-      // The old slot must be on a posted shipment. A stock return has a
+      // A voided ship-back releases its slot for the same RMA. A stock return has a
       // later credit for the same physical unit. A depot return is proven
       // by the service job above and the posted receipt of that customer's RMA.
-      const prior = await sql<{ id: string }>`
-        SELECT prior.id FROM shipment prior
+      const prior = await sql<{ status: string }>`
+        SELECT prior.status FROM shipment prior
         JOIN receipt back ON back."companyId" = prior."companyId" AND back.id = ${receiptId}
         WHERE prior."companyId" = ${companyId} AND prior.id = ${previousShipmentId}
-          AND prior.status = 'Posted' AND back.status = 'Posted' AND back."sourceDocument" = 'Sales Return Order'
+          AND back.status = 'Posted' AND back."sourceDocument" = 'Sales Return Order'
           AND (NOT ${line.sourceDocument === "Sales Return Order"} OR back."sourceDocumentId" = ${line.sourceDocumentId})
-          AND CASE WHEN ${Boolean(serviceJob)} THEN prior."customerId" = ${line.customerId}
+          AND CASE
+            WHEN prior.status = 'Voided' THEN ${line.sourceDocument === "Sales Return Order"}
+              AND prior."sourceDocument" = 'Sales Return Order' AND prior."sourceDocumentId" = back."sourceDocumentId"
+              AND prior."customerId" = ${line.customerId}
+            WHEN prior.status <> 'Posted' THEN false
+            WHEN ${Boolean(serviceJob)} THEN prior."customerId" = ${line.customerId}
             ELSE EXISTS (
               SELECT 1 FROM "itemLedger" received
               WHERE received."companyId" = back."companyId" AND received."documentId" = back.id
@@ -2424,6 +2429,22 @@ export async function assignShipmentSerial(
       `.execute(trx);
       if (!prior.rows.length)
         return "This serial is already assigned to another shipment slot.";
+      if (prior.rows[0].status === "Voided") {
+        // Voids posted before slot snapshots still have their original tags.
+        // Capture those slots before the first replacement pick moves one.
+        await sql`
+          UPDATE "trackedActivity" reversal
+          SET attributes = coalesce(reversal.attributes, '{}'::jsonb) || jsonb_build_object('Shipment Slots', (
+            SELECT jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
+              'id', u.id, 'lineId', u.attributes->>'Shipment Line', 'index', u.attributes->'Shipment Line Index'
+            ))) FROM "trackedEntity" u WHERE u."companyId" = reversal."companyId"
+              AND u.attributes->>'Shipment' = reversal."sourceDocumentId"
+          ))
+          WHERE reversal."companyId" = ${companyId} AND reversal."sourceDocument" = 'Shipment'
+            AND reversal."sourceDocumentId" = ${previousShipmentId} AND reversal.type = 'Void Shipment'
+            AND reversal.attributes->'Shipment Slots' IS NULL
+        `.execute(trx);
+      }
     }
     if (currentId) {
       await trx
@@ -18681,6 +18702,8 @@ export async function postReceipt(
         const serviceUnits: ServiceReturnUnit[] = [];
         const serviceLineIds = new Set<string>();
 
+        const expectedSerialSlots = new Map<string, TrackedEntityAttributes>();
+
         for (const receiptLine of receiptLines.data ?? []) {
           if (!receiptLine.itemId || !receiptLine.lineId) continue;
           const returnLine = returnLineById.get(receiptLine.lineId);
@@ -18717,6 +18740,12 @@ export async function postReceipt(
             if (itemTrackingType === "Serial" && !serial) {
               throw new InvalidInputError(
                 "Assign the serial before posting a service receipt"
+              );
+            }
+            if (itemTrackingType === "Serial" && serial) {
+              expectedSerialSlots.set(
+                serial.id,
+                serial.attributes as TrackedEntityAttributes
               );
             }
             const serviceLocationId =
@@ -18831,6 +18860,10 @@ export async function postReceipt(
                   "Assign each returned serial before posting the receipt."
                 );
               }
+              expectedSerialSlots.set(
+                trackingWithIndex.id,
+                trackingWithIndex.attributes as TrackedEntityAttributes
+              );
               const sale = saleByUnit.get(trackingWithIndex.id);
               if (
                 sale &&
@@ -18948,11 +18981,54 @@ export async function postReceipt(
           await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
-          await lockStockPostingUnits(
-            trx,
-            companyId,
-            Object.keys(trackedEntityUpdates)
-          );
+          await lockStockPostingUnits(trx, companyId, [
+            ...Object.keys(trackedEntityUpdates),
+            ...expectedSerialSlots.keys()
+          ]);
+          // A ship-back void can return the selected unit to our custody
+          // after the clerk picked it, including on a stockless depot return.
+          if (expectedSerialSlots.size) {
+            const picks = await trx
+              .selectFrom("trackedEntity")
+              .select(["id", "status", "attributes"])
+              .where("companyId", "=", companyId)
+              .where(
+                "id",
+                "=",
+                sql<string>`ANY(${[...expectedSerialSlots.keys()]}::text[])`
+              )
+              .where(sql<boolean>`attributes->>'Receipt' = ${receiptId}`)
+              .execute();
+            // A clerk can also enter a previously unrecorded serial. A new
+            // receipt slot starts On Hold and has no live stock history.
+            const entered = picks.filter((unit) => unit.status === "On Hold");
+            const history = await idsWithLiveStockHistory(
+              trx,
+              companyId,
+              entered.map((unit) => unit.id)
+            );
+            if (
+              picks.length !== expectedSerialSlots.size ||
+              picks.some((unit) => {
+                const current = unit.attributes as TrackedEntityAttributes;
+                const selected = expectedSerialSlots.get(unit.id)!;
+                const newSerial =
+                  unit.status === "On Hold" &&
+                  !current.Shipment &&
+                  !history.has(unit.id);
+                return (
+                  (unit.status !== "Consumed" && !newSerial) ||
+                  current["Receipt Line"] !== selected["Receipt Line"] ||
+                  current["Receipt Line Index"] !==
+                    selected["Receipt Line Index"]
+                );
+              })
+            ) {
+              throw new InvalidInputError(
+                "A selected return serial is no longer shipped or its receipt slot changed. Refresh the receipt."
+              );
+            }
+          }
           await lockAverageIssueAndReturnItems(
             trx,
             companyId,
@@ -24085,6 +24161,13 @@ export async function postShipment(
             const shippedLinesRead = (salesOrderLines.data ?? []).filter(
               (line) => line.id in salesOrderLineUpdates
             );
+            const restoredItems = [
+              ...new Set(
+                itemLedgerInserts
+                  .filter((row) => row.quantity > 0)
+                  .map((row) => row.itemId)
+              )
+            ];
             await db.transaction().execute(async (trx) => {
               await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
@@ -24098,19 +24181,23 @@ export async function postShipment(
                 .where("status", "=", "Posted")
                 .returning("id")
                 .executeTakeFirstOrThrow();
+              // Lock every restored unit before its valuation, in the same
+              // order as an issue or customer return.
+              await lockStockPostingUnits(trx, companyId, [
+                ...shippedSerials,
+                ...Object.keys(trackedEntityUpdates)
+              ]);
               if (shippedSerials.length > 0) {
                 const returnedIds = new Set(
                   itemLedgerInserts.map((row) => row.trackedEntityId)
                 );
-                // Lock the serials named by the original stock debit. If a
-                // later receipt or sale moved one, a void would duplicate stock.
+                // A later receipt or sale of the original serial would make
+                // this void duplicate stock.
                 const units = await trx
                   .selectFrom("trackedEntity")
                   .select(["id", "status", "attributes"])
                   .where("companyId", "=", companyId)
                   .where("id", "=", sql<string>`ANY(${shippedSerials}::text[])`)
-                  .orderBy("id")
-                  .forUpdate()
                   .execute();
                 if (
                   units.length !== shippedSerials.length ||
@@ -24130,6 +24217,12 @@ export async function postShipment(
                   );
                 }
               }
+              await lockAverageIssueAndReturnItems(
+                trx,
+                companyId,
+                restoredItems,
+                "return"
+              );
               await lockOrderLinesAsRead(
                 trx,
                 "salesOrderLine",
@@ -24256,13 +24349,6 @@ export async function postShipment(
               }
 
               await clearShipmentTags(trx, { companyId, shipmentId });
-              const restoredItems = [
-                ...new Set(
-                  itemLedgerInserts
-                    .filter((row) => row.quantity > 0)
-                    .map((row) => row.itemId)
-                )
-              ];
               if (restoredItems.length > 0) {
                 // Mirror the booked sale, including its original valuation if
                 // the item master has changed. Older sales pooled costs by SKU.
@@ -24844,6 +24930,89 @@ export async function postShipment(
               await setInspectionRelease(trx);
               await lockPostedShipment(trx, companyId, shipmentId);
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+              // Read the physical posting: a later pick can replace its tags,
+              // and a service/warranty ship-back has no item ledger at all.
+              const shipped = await trx
+                .selectFrom("trackedEntity as unit")
+                .select([
+                  "unit.id",
+                  "unit.status",
+                  "unit.attributes",
+                  "unit.quantity"
+                ])
+                .where("unit.companyId", "=", companyId)
+                .where(({ eb, or, exists, selectFrom }) =>
+                  or([
+                    eb(
+                      "unit.id",
+                      "=",
+                      sql<string>`ANY(${(originalItemLedger.data ?? []).flatMap((row) => row.trackedEntityId ?? [])}::text[])`
+                    ),
+                    sql<boolean>`unit.attributes->>'Shipment' = ${shipmentId}`,
+                    exists(
+                      selectFrom("trackedActivityInput as input")
+                        .innerJoin(
+                          "trackedActivity as activity",
+                          "activity.id",
+                          "input.trackedActivityId"
+                        )
+                        .select("input.trackedEntityId")
+                        .whereRef("input.trackedEntityId", "=", "unit.id")
+                        .whereRef("input.companyId", "=", "unit.companyId")
+                        .whereRef("activity.companyId", "=", "unit.companyId")
+                        .where("activity.type", "=", "Return Shipment")
+                        .where("activity.sourceDocument", "=", "Shipment")
+                        .where("activity.sourceDocumentId", "=", shipmentId)
+                    )
+                  ])
+                )
+                .orderBy("unit.id")
+                .forUpdate()
+                .execute();
+              const shippedIds = shipped.map((unit) => unit.id);
+              if (shippedIds.length) {
+                // A stock debit orders later moves even on the same posting
+                // date. A depot ship-back records the stock cursor it observed.
+                // The posted receipt of a linked second RMA also proves a
+                // later handoff when the old shipment has no stock cursor.
+                const later = await sql`
+                  SELECT id FROM "trackedEntity" unit WHERE unit."companyId" = ${companyId}
+                    AND unit.id = ANY(${shippedIds}::text[]) AND (
+                      unit.status <> 'Consumed' OR unit.attributes->>'Shipment' IS DISTINCT FROM ${shipmentId}
+                      OR EXISTS (SELECT 1 FROM receipt r WHERE r."companyId" = unit."companyId"
+                        AND r.id = unit.attributes->>'Receipt' AND r.status = 'Posted'
+                        AND r."sourceDocument" = 'Sales Return Order' AND r."sourceDocumentId" IS DISTINCT FROM ${shipmentHeader.sourceDocumentId})
+                      OR EXISTS (SELECT 1 FROM "shipmentLine" original
+                        JOIN "salesReturnOrderLine" next ON next."shipmentLineId" = original.id AND next."companyId" = original."companyId"
+                        JOIN "receiptLine" line ON line."lineId" = next.id AND line."companyId" = next."companyId"
+                        JOIN receipt r ON r.id = line."receiptId" AND r."companyId" = line."companyId"
+                        JOIN "trackedActivity" a ON a."sourceDocumentId" = r.id AND a."companyId" = r."companyId"
+                        JOIN "trackedActivityOutput" o ON o."trackedActivityId" = a.id AND o."companyId" = a."companyId"
+                        WHERE original."shipmentId" = ${shipmentId} AND original."companyId" = unit."companyId"
+                          AND r.status = 'Posted' AND r."sourceDocument" = 'Sales Return Order'
+                          AND r."sourceDocumentId" = next."salesReturnOrderId" AND line."receivedQuantity" > 0
+                          AND a.type = 'Return Receipt' AND a."sourceDocument" = 'Receipt' AND o."trackedEntityId" = unit.id)
+                      OR EXISTS (SELECT 1 FROM "itemLedger" sent JOIN "itemLedger" later
+                        ON later."companyId" = sent."companyId" AND later."trackedEntityId" = sent."trackedEntityId"
+                        AND later."entryNumber" > sent."entryNumber" AND later.quantity <> 0
+                        WHERE sent."companyId" = unit."companyId" AND sent."trackedEntityId" = unit.id
+                          AND sent."documentId" = ${shipmentId} AND sent."documentType" = 'Sales Return Shipment' AND sent.quantity < 0)
+                      OR EXISTS (SELECT 1 FROM "trackedActivity" activity
+                        JOIN "trackedActivityInput" input ON input."trackedActivityId" = activity.id
+                          AND input."companyId" = activity."companyId"
+                        JOIN "itemLedger" later ON later."trackedEntityId" = input."trackedEntityId"
+                          AND later."companyId" = activity."companyId"
+                        AND later."entryNumber" > (activity.attributes->>'Stock Entry Number')::bigint
+                        WHERE activity."companyId" = unit."companyId" AND activity.type = 'Return Shipment'
+                          AND activity."sourceDocument" = 'Shipment' AND activity."sourceDocumentId" = ${shipmentId}
+                          AND later."trackedEntityId" = unit.id AND later.quantity <> 0)
+                    ) LIMIT 1
+                `.execute(trx);
+                if (later.rows.length)
+                  throw new InvalidInputError(
+                    "Cannot void: a unit has moved since this return shipment."
+                  );
+              }
               const reversingItemLedger = (originalItemLedger.data ?? []).map(
                 (entry) => ({
                   postingDate: today,
@@ -24884,6 +25053,7 @@ export async function postShipment(
                   adjustment: false,
                   documentType: "Sales Return Shipment",
                   documentId: row.documentId,
+                  trackedEntityId: row.trackedEntityId,
                   externalDocumentId: row.externalDocumentId ?? undefined,
                   projectId: row.projectId,
                   itemId: row.itemId,
@@ -25003,6 +25173,14 @@ export async function postShipment(
                   attributes: {
                     "Sales Return Order": shipmentHeader.sourceDocumentId,
                     Shipment: shipmentId,
+                    "Shipment Slots": shipped.map((unit) => {
+                      const tags = unit.attributes as TrackedEntityAttributes;
+                      return {
+                        id: unit.id,
+                        lineId: tags["Shipment Line"],
+                        index: tags["Shipment Line Index"]
+                      };
+                    }),
                     Employee: userId
                   },
                   companyId,
@@ -25039,11 +25217,47 @@ export async function postShipment(
               await unshipServiceUnits(trx, {
                 companyId,
                 userId,
+                shipmentId,
                 salesReturnOrderLineIds: [...serviceLineIds]
               });
 
-              const shipmentLineTrackingEntities =
-                shipmentLineTracking.data ?? [];
+              const shipmentLineTrackingEntities = shipped;
+              // Picking a second draft receipt can overwrite (or clear) the
+              // receipt tags. The first RMA's posted receipt still owns the
+              // restored unit. Recover its line from the actual receipt activity.
+              const origin = shippedIds.length
+                ? await sql<{
+                    unitId: string;
+                    receiptId: string;
+                    lineId: string;
+                    quantity: number;
+                  }>`
+                SELECT out."trackedEntityId" AS "unitId", r.id AS "receiptId", line.id AS "lineId",
+                  line."receivedQuantity" AS quantity
+                FROM "trackedActivityOutput" out
+                JOIN "trackedActivity" a ON a.id = out."trackedActivityId" AND a."companyId" = out."companyId"
+                JOIN receipt r ON r.id = a."sourceDocumentId" AND r."companyId" = a."companyId"
+                JOIN "receiptLine" line ON line."receiptId" = r.id AND line."companyId" = r."companyId"
+                JOIN "shipmentLine" slot ON slot."lineId" = line."lineId" AND slot."companyId" = line."companyId"
+                JOIN "trackedEntity" u ON u.id = out."trackedEntityId" AND u."companyId" = out."companyId"
+                  AND u.attributes->>'Shipment Line' = slot.id
+                WHERE out."companyId" = ${companyId} AND out."trackedEntityId" = ANY(${shippedIds}::text[])
+                  AND a.type = 'Return Receipt' AND a."sourceDocument" = 'Receipt' AND r.status = 'Posted'
+                  AND r."sourceDocument" = 'Sales Return Order' AND r."sourceDocumentId" = ${shipmentHeader.sourceDocumentId}
+                  AND slot."shipmentId" = ${shipmentId}
+              `.execute(trx)
+                : { rows: [] };
+              const receiptByUnit = new Map<
+                string,
+                (typeof origin.rows)[number]
+              >();
+              for (const row of origin.rows) {
+                if (receiptByUnit.has(row.unitId))
+                  throw new InvalidInputError(
+                    "The unit has more than one posted receipt on this return line."
+                  );
+                receiptByUnit.set(row.unitId, row);
+              }
               await updateRowsById(
                 trx,
                 "trackedEntity",
@@ -25055,9 +25269,31 @@ export async function postShipment(
                   const isServiceUnit =
                     typeof shipmentLineId === "string" &&
                     serviceShipmentLineIds.has(shipmentLineId);
+                  const receipt = receiptByUnit.get(entity.id);
+                  const tags = entity.attributes as TrackedEntityAttributes;
+                  // Keep a known index; a historic multi-unit receipt can
+                  // prove its line without proving the position in it.
+                  const restoreReceipt =
+                    receipt &&
+                    (tags.Receipt !== receipt.receiptId ||
+                      tags["Receipt Line"] !== receipt.lineId);
                   return {
                     id: entity.id,
-                    data: { status: isServiceUnit ? "Available" : "On Hold" }
+                    data: {
+                      status: isServiceUnit ? "Available" : "On Hold",
+                      ...(restoreReceipt
+                        ? {
+                            attributes: {
+                              ...withoutReceiptTracking({ ...tags }),
+                              Receipt: receipt.receiptId,
+                              "Receipt Line": receipt.lineId,
+                              ...(Number(receipt.quantity) === 1
+                                ? { "Receipt Line Index": 0 }
+                                : {})
+                            } as Json
+                          }
+                        : {})
+                    }
                   };
                 })
               );

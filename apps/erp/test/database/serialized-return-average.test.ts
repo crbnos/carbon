@@ -467,50 +467,64 @@ async function prepareStockIssue(
 for (const scenario of [
   {
     issue: "sale",
-    type: "post",
-    receiptFirst: true,
+    operation: "return post",
+    documentFirst: true,
     issuedAt: 31,
     remainingCost: 31
   },
   {
     issue: "sale",
-    type: "post",
-    receiptFirst: false,
+    operation: "return post",
+    documentFirst: false,
     issuedAt: 22,
     remainingCost: 40
   },
   {
     issue: "sale",
-    type: "void",
-    receiptFirst: true,
+    operation: "return void",
+    documentFirst: true,
     issuedAt: 22,
     remainingCost: null
   },
   {
     issue: "sale",
-    type: "void",
-    receiptFirst: false,
+    operation: "return void",
+    documentFirst: false,
     issuedAt: 31,
     remainingCost: 31
   },
   {
     issue: "material issue",
-    type: "post",
-    receiptFirst: true,
+    operation: "return post",
+    documentFirst: true,
     issuedAt: 31,
     remainingCost: 31
   },
   {
     issue: "material issue",
-    type: "post",
-    receiptFirst: false,
+    operation: "return post",
+    documentFirst: false,
+    issuedAt: 22,
+    remainingCost: 40
+  },
+  {
+    issue: "material issue",
+    operation: "shipment void",
+    documentFirst: true,
+    issuedAt: 31,
+    remainingCost: 31
+  },
+  {
+    issue: "material issue",
+    operation: "shipment void",
+    documentFirst: false,
     issuedAt: 22,
     remainingCost: 40
   }
 ] as const) {
-  const { issue, type, receiptFirst, issuedAt, remainingCost } = scenario;
+  const { issue, operation, documentFirst, issuedAt, remainingCost } = scenario;
   postgrestTest(
-    `a ${issue} and a return ${type} serialize Average valuation when the ${receiptFirst ? "return" : issue} posts first`,
+    `a ${issue} and a ${operation} serialize Average valuation when the ${documentFirst ? operation : issue} posts first`,
     async (client) => {
       const f = await alwaysPostFixture();
       const firstConnection = await connectLocalTestDatabase();
@@ -522,20 +536,25 @@ for (const scenario of [
         await stampCutover(f);
         const ctx = operationContext(f, client, USER);
         const handles = handlesOf(f.ctx);
-        let receiptId!: string;
+        let documentId!: string;
         const { itemId, outputs } = await packSerials(
           f,
           "Average",
           await stockSerials(f),
           async (item, unit) => {
-            receiptId = (await sellAndSelectReturn(f, ctx, item, unit, 40))
+            if (operation === "shipment void") {
+              const sale = await shipPackedUnit(f, item, unit);
+              documentId = sale.shipmentId;
+              return;
+            }
+            documentId = (await sellAndSelectReturn(f, ctx, item, unit, 40))
               .receiptId;
-            if (type === "void")
+            if (operation === "return void")
               unwrap(
                 await invokePosting(
                   handles,
                   "post-receipt",
-                  { type: "post", receiptId },
+                  { type: "post", receiptId: documentId },
                   postReceipt
                 )
               );
@@ -569,7 +588,7 @@ for (const scenario of [
               table &&
               TableNode.is(table) &&
               table.table.identifier.name ===
-                (receiptFirst ? "itemCost" : stockIssue.writeTable)
+                (documentFirst ? "itemCost" : stockIssue.writeTable)
             )
               writes.add(queryId);
             return node;
@@ -582,19 +601,31 @@ for (const scenario of [
             return result;
           }
         });
-        const postOrVoidReceipt = async (db: typeof paused) => {
+        const postDocument = async (db: typeof paused) => {
+          if (operation === "shipment void") {
+            unwrap(
+              await invokePosting(
+                { ...handles, db },
+                "post-shipment",
+                { type: "void", shipmentId: documentId },
+                postShipment
+              )
+            );
+            return;
+          }
           const result = await invokePosting(
             { ...handles, db },
             "post-receipt",
-            { type, receiptId },
+            {
+              type: operation === "return post" ? "post" : "void",
+              receiptId: documentId
+            },
             postReceipt
           );
-          if (receiptFirst || type === "post") unwrap(result);
+          if (documentFirst || operation === "return post") unwrap(result);
           else expect(result.error?.message).toMatch(/Cannot void.*Average/);
         };
-        first = receiptFirst
-          ? postOrVoidReceipt(paused)
-          : stockIssue.post(paused);
+        first = documentFirst ? postDocument(paused) : stockIssue.post(paused);
         await Promise.race([
           writing.promise,
           first.then(() => {
@@ -603,9 +634,9 @@ for (const scenario of [
         ]);
         let completed = false;
         other = (
-          receiptFirst
+          documentFirst
             ? stockIssue.post(otherConnection)
-            : postOrVoidReceipt(otherConnection)
+            : postDocument(otherConnection)
         ).finally(() => {
           completed = true;
         });
@@ -625,6 +656,11 @@ for (const scenario of [
         resume.resolve();
         await Promise.all([first, other]);
 
+        if (operation === "shipment void") {
+          expect(
+            await postedAmounts(f, documentId, f.account("finished-goods"))
+          ).toEqual([-40, 40]);
+        }
         expect(
           await postedAmounts(f, stockIssue.documentId, stockIssue.debitAccount)
         ).toEqual([issuedAt]);

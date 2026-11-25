@@ -338,9 +338,14 @@ databaseTest(
   }
 );
 
-for (const heldCount of [0, 1, 2]) {
+for (const [openIssue, secondStatus] of [
+  [false, "Available"],
+  [true, "Available"],
+  [true, "On Hold"],
+  [false, "Rejected"]
+] as const) {
   databaseTest(
-    `the final supplier delivery posts with ${heldCount} of its two packed units held by Quality`,
+    `the final supplier delivery posts with the first unit ${openIssue ? "under NCR" : "available"} and the second ${secondStatus}`,
     async () => {
       const f = await alwaysPostFixture();
       try {
@@ -421,23 +426,32 @@ for (const heldCount of [0, 1, 2]) {
           .execute();
 
         await holdUnits(f, true);
-        const issue = heldCount
+        const issue = openIssue
           ? await raiseIssueOnUnit(f, outputIds[0]!, 1)
           : null;
-        // Inventory can also place a unit On Hold without a linked NCR.
-        const setSecondUnitStatus = (status: "On Hold" | "Available") =>
+        // Inventory can also hold or reject a unit without a linked NCR.
+        const setSecondUnitStatus = (
+          status: "On Hold" | "Available" | "Rejected"
+        ) =>
           f.db
             .updateTable("trackedEntity")
             .set({ status })
             .where("companyId", "=", f.companyId)
             .where("id", "=", outputIds[1]!)
             .execute();
-        if (heldCount === 2) await setSecondUnitStatus("On Hold");
+        if (secondStatus === "On Hold") await setSecondUnitStatus("On Hold");
         await receiveOutside(f, order.purchaseOrderId, 1);
         expect(
           (await getJobReceiptSnapshot(f.db, job.jobId, f.companyId))
             ?.pairedSerials
         ).toEqual([]);
+        if (secondStatus === "Rejected") {
+          await setSecondUnitStatus("Rejected");
+          expect(await operation(f, outsideId)).toEqual({
+            status: "In Progress",
+            quantityComplete: 1
+          });
+        }
         await receiveOutside(f, order.purchaseOrderId, 1);
         const received = () =>
           f.db
@@ -457,11 +471,39 @@ for (const heldCount of [0, 1, 2]) {
           readableId: unit.serial,
           quantity: 1
         }));
-        expect(await received()).toEqual(units.slice(heldCount));
+        expect(await received()).toEqual(
+          units.filter((_, i) =>
+            i === 0 ? !openIssue : secondStatus === "Available"
+          )
+        );
         expect(await operation(f, outsideId)).toEqual({
           status: "Done",
           quantityComplete: 2
         });
+        if (secondStatus === "Rejected") {
+          const rejected = await f.db
+            .selectFrom("trackedEntity")
+            .select("status")
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", outputIds[1]!)
+            .executeTakeFirstOrThrow();
+          expect(rejected.status).toBe("Rejected");
+          const partial = await jobReceived(f, job.jobId);
+          expect(partial.received).toBe(1);
+          expect(partial.status).not.toBe("Completed");
+          expect(
+            (await getJobReceiptSnapshot(f.db, job.jobId, f.companyId))
+              ?.pairedSerials
+          ).toEqual([]);
+          await expect(
+            sql`SELECT receive_job_to_inventory(${job.jobId}, 2, ${f.companyId}, ${USER},
+            p_expected_serials => ARRAY[${production.second.serial}])`.execute(
+              f.db
+            )
+          ).rejects.toThrow(/Only 0 completed paired unit/);
+          expect(await received()).toEqual([units[0]]);
+          return;
+        }
         if (issue) {
           expect((await jobReceived(f, job.jobId)).status).not.toBe(
             "Completed"
@@ -478,9 +520,10 @@ for (const heldCount of [0, 1, 2]) {
               .where("id", "=", issue)
               .execute();
           });
-          if (heldCount === 2) await setSecondUnitStatus("Available");
+          if (secondStatus === "On Hold")
+            await setSecondUnitStatus("Available");
           const serials = units
-            .slice(0, heldCount)
+            .slice(0, secondStatus === "On Hold" ? 2 : 1)
             .map((unit) => unit.readableId);
           expect(
             (await getJobReceiptSnapshot(f.db, job.jobId, f.companyId))

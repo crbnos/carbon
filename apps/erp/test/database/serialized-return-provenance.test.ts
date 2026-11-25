@@ -2,10 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { sql, TableNode } from "kysely";
 import { expect } from "vitest";
 import {
   assignReceiptReturnEntity,
   getSerialNumbersForItem,
+  getShipmentTracking,
   assignShipmentLineEntity
 } from "../../app/modules/inventory/inventory.server";
 import {
@@ -25,6 +27,7 @@ import {
   USER
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
+import { connectLocalTestDatabase } from "./fixtures/local-database";
 import { operationContext, postgrestTest } from "./fixtures/local-supabase";
 import { createPackedShipment, postPackedShipment } from "./fixtures/packout-shipment";
 import {
@@ -390,13 +393,29 @@ postgrestTest(
   }
 );
 
-for (const returnType of [
+const returnTypes = [
   "Return to Stock",
   "Return for Service",
   "Return for Warranty"
-] as const) {
+] as const;
+const shipBackCases = returnTypes.flatMap((returnType) =>
+  [false, true].map((legacy) => ({ returnType, legacy, depotReceipt: false }))
+);
+shipBackCases.push({
+  returnType: "Return for Warranty",
+  legacy: true,
+  depotReceipt: true
+});
+
+for (const { returnType, legacy, depotReceipt } of shipBackCases) {
   postgrestTest(
-    "the RMA ships its serial back after " + returnType,
+    depotReceipt
+      ? "a later stockless depot receipt prevents voiding its serial's ship-back"
+      : legacy
+        ? "a " +
+          returnType +
+          " ship-back can be replaced until the legacy serial is received again"
+        : "the RMA ships its serial back after " + returnType,
     async (client) => {
       const f = await alwaysPostFixture();
       try {
@@ -414,7 +433,11 @@ for (const returnType of [
         // A production unit can name its job as provenance and its SKU via itemId.
         await f.db
           .updateTable("trackedEntity")
-          .set({ sourceDocument: "Job", sourceDocumentId: f.prefix + "-job" })
+          .set(
+            legacy
+              ? { itemId: null }
+              : { sourceDocument: "Job", sourceDocumentId: f.prefix + "-job" }
+          )
           .where("companyId", "=", f.companyId)
           .where("id", "=", unit!.id)
           .execute();
@@ -473,7 +496,9 @@ for (const returnType of [
               status: "Completed",
               repairable: true,
               // A service job may name its physical serial without an asset record.
-              ...(returnType === "Return for Warranty" ? { customerAssetId: null } : {})
+              ...(returnType === "Return for Warranty"
+                ? { customerAssetId: null }
+                : {})
             })
             .where("salesReturnOrderLineId", "=", rma.returnLineId)
             .where("companyId", "=", f.companyId)
@@ -507,46 +532,133 @@ for (const returnType of [
         expect(
           (await pick(ordinary.shipmentId, ordinary.shipmentLineId)).error
         ).toBeTruthy();
-        const shipment = unwrap(
-          await invokeCreate(handles, {
-            type: "shipmentFromSalesReturnOrder",
-            salesReturnOrderId: rma.rmaId,
-            locationId: f.locationId
-          })
-        );
-        const line = await f.db
-          .selectFrom("shipmentLine")
-          .select("id")
-          .where("companyId", "=", f.companyId)
-          .where("shipmentId", "=", shipment.id)
-          .where("lineId", "=", rma.returnLineId)
-          .executeTakeFirstOrThrow();
+        const createShipBack = async () => {
+          const shipment = unwrap(
+            await invokeCreate(handles, {
+              type: "shipmentFromSalesReturnOrder",
+              salesReturnOrderId: rma.rmaId,
+              locationId: f.locationId
+            })
+          );
+          const line = await f.db
+            .selectFrom("shipmentLine")
+            .select("id")
+            .where("companyId", "=", f.companyId)
+            .where("shipmentId", "=", shipment.id)
+            .where("lineId", "=", rma.returnLineId)
+            .executeTakeFirstOrThrow();
+          return { shipmentId: shipment.id, shipmentLineId: line.id };
+        };
+        const postShipBack = (shipmentId: string, type: "post" | "void") =>
+          invokePosting(
+            handles,
+            "post-shipment",
+            { type, shipmentId },
+            postShipment
+          );
+        let shipBack = await createShipBack();
         const resize = (quantity: number) =>
           f.db
             .updateTable("shipmentLine")
             .set({ shippedQuantity: quantity })
             .where("companyId", "=", f.companyId)
-            .where("id", "=", line.id)
+            .where("id", "=", shipBack.shipmentLineId)
             .execute();
         await resize(2);
-        expect((await pick(shipment.id, line.id)).error).toBeNull();
-        expect((await pick(shipment.id, line.id, 1)).error?.message).toMatch(
-          /already assigned/
-        );
+        expect(
+          (await pick(shipBack.shipmentId, shipBack.shipmentLineId)).error
+        ).toBeNull();
+        expect(
+          (await pick(shipBack.shipmentId, shipBack.shipmentLineId, 1)).error
+            ?.message
+        ).toMatch(/already assigned/);
         await resize(1);
-        unwrap(
-          await invokePosting(
-            handles,
-            "post-shipment",
-            { type: "post", shipmentId: shipment.id },
-            postShipment
-          )
-        );
+        unwrap(await postShipBack(shipBack.shipmentId, "post"));
+        if (legacy) {
+          const voided = shipBack;
+          const pending = await createLinkedSerialReturn(
+            f,
+            f.assemblyId,
+            shipBack.shipmentLineId
+          );
+          unwrap(
+            await assignReceiptReturnEntity(ctx, {
+              receiptId: pending.receiptId,
+              receiptLineId: pending.receiptLineId,
+              trackedEntityId: unit!.id,
+              index: 0
+            })
+          );
+          // The second receipt has read its picks and locked its header.
+          // Let the first shipment's void take the physical serial first.
+          const receiptConnection = await connectLocalTestDatabase();
+          try {
+            const headerLock = new WeakSet<object>();
+            const db = receiptConnection.withPlugin({
+              transformQuery({ node, queryId }) {
+                if (node.kind === "SelectQueryNode") {
+                  const table = node.from?.froms[0];
+                  if (
+                    table &&
+                    TableNode.is(table) &&
+                    table.table.identifier.name === "receipt" &&
+                    node.endModifiers?.some(
+                      (modifier) => modifier.modifier === "ForUpdate"
+                    )
+                  ) {
+                    headerLock.add(queryId);
+                  }
+                }
+                return node;
+              },
+              async transformResult({ queryId, result }) {
+                if (headerLock.has(queryId))
+                  unwrap(await postShipBack(shipBack.shipmentId, "void"));
+                return result;
+              }
+            });
+            const staleReceipt = await invokePosting(
+              { ...handles, db },
+              "post-receipt",
+              { type: "post", receiptId: pending.receiptId },
+              postReceipt
+            );
+            expect(staleReceipt.error?.message).toMatch(/no longer shipped/);
+          } finally {
+            await receiptConnection.destroy();
+          }
+          if (returnType === "Return to Stock") {
+            // A void recorded by an earlier version has no slot snapshot.
+            await f.db
+              .updateTable("trackedActivity")
+              .set({ attributes: sql`attributes - 'Shipment Slots'` })
+              .where("sourceDocumentId", "=", voided.shipmentId)
+              .where("type", "=", "Void Shipment")
+              .where("companyId", "=", f.companyId)
+              .execute();
+          }
+          shipBack = await createShipBack();
+          unwrap(await pick(shipBack.shipmentId, shipBack.shipmentLineId));
+          const history = unwrap(
+            await getShipmentTracking(ctx, { shipmentId: voided.shipmentId })
+          );
+          expect(history).toEqual([
+            expect.objectContaining({
+              id: unit!.id,
+              attributes: expect.objectContaining({
+                Shipment: voided.shipmentId,
+                "Shipment Line": voided.shipmentLineId,
+                "Shipment Line Index": 0
+              })
+            })
+          ]);
+          unwrap(await postShipBack(shipBack.shipmentId, "post"));
+        }
         const moves = await f.db
           .selectFrom("itemLedger")
           .select(["trackedEntityId", "quantity"])
           .where("companyId", "=", f.companyId)
-          .where("documentId", "=", shipment.id)
+          .where("documentId", "=", shipBack.shipmentId)
           .where("documentType", "=", "Sales Return Shipment")
           .execute();
         expect(moves).toEqual(
@@ -556,8 +668,16 @@ for (const returnType of [
         const again = await createLinkedSerialReturn(
           f,
           f.assemblyId,
-          line.id
+          shipBack.shipmentLineId
         );
+        if (depotReceipt) {
+          await f.db
+            .updateTable("salesReturnOrderLine")
+            .set({ returnType: "Return for Warranty" })
+            .where("id", "=", again.returnLineId)
+            .where("companyId", "=", f.companyId)
+            .execute();
+        }
         expect(
           (
             await getShippedTrackedEntitiesForCustomer(
@@ -587,6 +707,55 @@ for (const returnType of [
             postReceipt
           )
         );
+        // The second receipt owns this unit. Reversing the earlier ship-back
+        // would either duplicate its stock or release its inspection hold.
+        const staleVoid = await postShipBack(shipBack.shipmentId, "void");
+        expect(staleVoid.error?.message).toMatch(/unit has moved/i);
+        const physical = await f.db
+          .selectFrom("trackedEntity")
+          .select("status")
+          .where("companyId", "=", f.companyId)
+          .where("id", "=", unit!.id)
+          .executeTakeFirstOrThrow();
+        expect(physical.status).toBe(depotReceipt ? "Available" : "On Hold");
+        const stock = await f.db
+          .selectFrom("itemLedger")
+          .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+          .where("trackedEntityId", "=", unit!.id)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow();
+        expect(Number(stock.quantity)).toBe(depotReceipt ? 0 : 1);
+        const priorShipment = await f.db
+          .selectFrom("shipment")
+          .select("status")
+          .where("id", "=", shipBack.shipmentId)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow();
+        expect(priorShipment.status).toBe("Posted");
+        if (depotReceipt) {
+          // Legacy depot shipments lacked the stock entry number. Even when
+          // live tags no longer identify the second RMA, its posted receipt
+          // proves custody of this exact unit moved on from the first one.
+          await f.db
+            .updateTable("trackedActivity")
+            .set({ attributes: sql`attributes - 'Stock Entry Number'` })
+            .where("sourceDocumentId", "=", shipBack.shipmentId)
+            .where("type", "=", "Return Shipment")
+            .where("companyId", "=", f.companyId)
+            .execute();
+          await f.db
+            .updateTable("trackedEntity")
+            .set({
+              status: "Consumed",
+              attributes: sql`attributes - 'Receipt' - 'Receipt Line' - 'Receipt Line Index'`
+            })
+            .where("id", "=", unit!.id)
+            .where("companyId", "=", f.companyId)
+            .execute();
+          const legacyVoid = await postShipBack(shipBack.shipmentId, "void");
+          expect(legacyVoid.error?.message).toMatch(/unit has moved/i);
+          return;
+        }
         expect(
           (
             await setSalesReturnOrderLineDisposition(ctx, {

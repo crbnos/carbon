@@ -148,7 +148,7 @@ AS $function$
   JOIN "trackedEntity" output ON output.id = pair."outputId" AND output."companyId" = pair."companyId"
   JOIN "trackedEntity" source ON source.id = pair."sourceId" AND source."companyId" = pair."companyId"
   CROSS JOIN LATERAL (
-    SELECT output.status = 'On Hold' OR EXISTS (SELECT 1 FROM "unitQualityHold" hold
+    SELECT output.status IN ('On Hold', 'Rejected') OR EXISTS (SELECT 1 FROM "unitQualityHold" hold
       WHERE hold."companyId" = pair."companyId" AND hold."trackedEntityId" = output.id) AS held
   ) quality
   WHERE pair."jobId" = p_job_id AND pair."companyId" = p_company_id AND pair."releasedAt" IS NULL
@@ -159,8 +159,7 @@ AS $function$
     AND source."readableId" = pair.serial AND output."readableId" = pair.serial
     AND output."itemId" = j."itemId" AND output.attributes->>'Job' = j.id
     AND output.attributes->>'Job Make Method' = material."jobMakeMethodId"
-    AND output.quantity = 1 AND (output.status = 'Available'
-      OR (quality.held AND output.status IN ('On Hold', 'Rejected')))
+    AND output.quantity = 1 AND output.status IN ('Available', 'On Hold', 'Rejected')
     AND EXISTS (SELECT 1 FROM terminal WHERE "reworkId" IS NULL)
     AND NOT EXISTS (
       SELECT 1 FROM required t

@@ -198,6 +198,18 @@ export async function shipServiceUnits(
       );
     }
 
+    // The unit has no outbound stock row. Remember the stock history
+    // observed under its row lock so a later move prevents this shipment's void.
+    const stock = await trx
+      .selectFrom("itemLedger")
+      .select((eb) => eb.fn.max("entryNumber").as("entryNumber"))
+      .where("companyId", "=", companyId)
+      .where(
+        "trackedEntityId",
+        "in",
+        sent.map((row) => row.id)
+      )
+      .executeTakeFirstOrThrow();
     const activity = await trx
       .insertInto("trackedActivity")
       .values({
@@ -209,7 +221,8 @@ export async function shipServiceUnits(
           "Sales Return Order": args.salesReturnOrderId,
           Shipment: args.shipmentId,
           Employee: userId,
-          "At Depot": false
+          "At Depot": false,
+          "Stock Entry Number": String(stock.entryNumber ?? 0)
         },
         companyId,
         createdBy: userId,
@@ -260,28 +273,39 @@ export async function shipServiceUnits(
  */
 export async function unshipServiceUnits(
   trx: Transaction<DB>,
-  args: { companyId: string; userId: string; salesReturnOrderLineIds: string[] }
+  args: {
+    companyId: string;
+    userId: string;
+    shipmentId: string;
+    salesReturnOrderLineIds: string[];
+  }
 ): Promise<void> {
-  if (args.salesReturnOrderLineIds.length === 0) return;
-  await trx
+  const jobs = await loadReturnLineJobs(
+    trx,
+    args.companyId,
+    args.salesReturnOrderLineIds
+  );
+  const assetIds = [
+    ...new Set(Array.from(jobs.values()).flatMap((job) => job.assetId ?? []))
+  ];
+  if (!assetIds.length) return;
+  const restored = await trx
     .updateTable("customerAsset")
     .set({
       status: "At Depot",
       updatedBy: args.userId,
       updatedAt: datetime.timestamp()
     })
-    .where("id", "in", (eb) =>
-      eb
-        .selectFrom("serviceJob")
-        .select("customerAssetId")
-        .where("salesReturnOrderLineId", "in", args.salesReturnOrderLineIds)
-        .where("status", "!=", "Cancelled")
-        .where("customerAssetId", "is not", null)
-        .where("companyId", "=", args.companyId)
-        .$narrowType<{ customerAssetId: string }>()
-    )
+    .where("id", "in", assetIds)
+    .where("shipmentId", "=", args.shipmentId)
+    .where("status", "=", "In Service")
     .where("companyId", "=", args.companyId)
+    .returning("id")
     .execute();
+  if (restored.length !== assetIds.length)
+    throw new InvalidInputError(
+      "Cannot void: a unit has moved since this return shipment."
+    );
 }
 
 /**
