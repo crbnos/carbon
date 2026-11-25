@@ -62,7 +62,7 @@ function resolveImport(from: string, specifier: string): string | null {
  */
 function importedSpecifiers(file: string): string[] {
   const text = readFileSync(file, "utf8");
-  const { program, module } = parseSync(file, text);
+  const { program, module, comments } = parseSync(file, text);
   const specifiers = module.staticImports.map(
     ({ moduleRequest }) => moduleRequest.value
   );
@@ -85,7 +85,12 @@ function importedSpecifiers(file: string): string[] {
   }
   // `import("…")` is read from the text, so that one in a type position
   // (`typeof import("x")`) counts as well: the parser lists only the calls.
-  for (const match of text.matchAll(/\bimport\(\s*(["'`])([^"'`$]+)\1\s*\)/g)) {
+  // Comments are blanked first: an import named only in a comment is not one.
+  let code = text;
+  for (const { start, end } of comments) {
+    code = code.slice(0, start) + " ".repeat(end - start) + code.slice(end);
+  }
+  for (const match of code.matchAll(/\bimport\(\s*(["'`])([^"'`$]+)\1\s*\)/g)) {
     if (match[2]) specifiers.push(match[2]);
   }
   return specifiers;
