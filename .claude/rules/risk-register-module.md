@@ -72,6 +72,9 @@ UPDATE → `quality_update`; DELETE → `quality_delete`.
   current user and fires a `notify` job (`NotificationEvent.RiskAssignment`) when
   an assignee is set. `updateRisk` (`risks.$id.tsx`) notifies a new
   assignee. `upsertRisk` is the bare row write and is not published.
+- Both operations refuse an `itemId`, or a `sourceId` for its `source` kind, that
+  is not the company's (`riskReferenceRefusal`, `quality.service.ts`): the
+  `itemId` foreign key is on the id alone, so the database does not.
 
 ## Code map (verified)
 

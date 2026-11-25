@@ -1306,7 +1306,8 @@ export const stopMaintenanceEvent = defineServiceFn({
  * inventory at the dispatch's location. The stock leaves inventory through the
  * `issue` posting, whose refusal is returned as it is.
  *
- * @returns The new part's id (`id`), with the dispatch and the item.
+ * @returns The new part's id (`id`), with the dispatch and the item. `id` is
+ * left out only when the posting did not report it; the part was still issued.
  *
  * @mcp
  */
@@ -1366,11 +1367,14 @@ export const issueMaintenancePart = defineServiceFn({
     );
     if (issued.error) return unwrap(ctx, issued) as CarbonError;
     const id = issued.data.maintenanceDispatchItemId;
+    // The stock has moved: a refusal here would have a retry issue it twice.
     if (typeof id !== "string") {
-      return ctx.error(
-        "internal",
-        "The part was issued, but the posting did not return its id. Reload the dispatch to see it."
-      );
+      logger.error("The issue posting returned no dispatch part id", {
+        companyId: ctx.company.id,
+        dispatchId,
+        itemId
+      });
+      return { dispatchId, itemId };
     }
     return { id, dispatchId, itemId };
   }
@@ -1994,9 +1998,11 @@ export const deleteMaintenanceDispatch = defineServiceFn({
         deleted.error
       );
     }
-    // Completed, cancelled or deleted since it was read.
     if (deleted.data.length === 0) {
-      return ctx.error("conflict", service.DISPATCH_LOCKED);
+      return ctx.error(
+        "conflict",
+        "The dispatch was completed, cancelled or deleted since it was read"
+      );
     }
     return deleted.data;
   }

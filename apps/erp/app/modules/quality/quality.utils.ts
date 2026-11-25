@@ -31,29 +31,35 @@ export function receiptLotIssueType<Type extends { id: string; name: string }>(
 export function requiredActionIdList(
   value: readonly string[] | string
 ): string[] | null {
-  let ids: readonly unknown[];
-  const text = typeof value === "string" ? value.trim() : null;
-  if (text === null) {
-    ids = value as readonly string[];
-  } else if (text.startsWith("[")) {
-    try {
-      const parsed: unknown = JSON.parse(text);
-      if (!Array.isArray(parsed)) return null;
-      ids = parsed;
-    } catch {
-      return null;
-    }
-  } else {
-    ids = text.replace(/^\{([\s\S]*)\}$/, "$1").split(",");
+  if (typeof value !== "string") return uniqueIds(value);
+  const text = value.trim();
+  if (text.startsWith("[")) return jsonIdList(text);
+  return uniqueIds(arrayLiteralItems(text));
+}
+
+function uniqueIds(ids: readonly unknown[]): string[] {
+  return [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
+}
+
+function jsonIdList(text: string): string[] | null {
+  try {
+    const parsed: unknown = JSON.parse(text);
+    return Array.isArray(parsed) ? uniqueIds(parsed) : null;
+  } catch {
+    return null;
   }
-  const list = ids
-    .map((id) =>
-      String(id)
-        .trim()
-        .replace(/^"([\s\S]*)"$/, "$1")
-    )
-    .filter(Boolean);
-  return [...new Set(list)];
+}
+
+/** The items of a Postgres array literal (`{a,"b"}`) or of a comma-separated list. */
+function arrayLiteralItems(text: string): string[] {
+  const inner =
+    text.startsWith("{") && text.endsWith("}") ? text.slice(1, -1) : text;
+  return inner.split(",").map((item) => unquoted(item.trim()));
+}
+
+function unquoted(text: string): string {
+  const quoted = text.length > 1 && text.startsWith('"') && text.endsWith('"');
+  return quoted ? text.slice(1, -1) : text;
 }
 
 /**
@@ -148,15 +154,18 @@ export function compareInspectionFeatures(
   a: { createdAt?: string | null; label?: string | null; id: string },
   b: { createdAt?: string | null; label?: string | null; id: string }
 ): number {
-  const aCreated = a.createdAt ?? "";
-  const bCreated = b.createdAt ?? "";
   return (
-    (aCreated < bCreated ? -1 : aCreated > bCreated ? 1 : 0) ||
+    compareText(a.createdAt ?? "", b.createdAt ?? "") ||
     (a.label ?? "").localeCompare(b.label ?? "", undefined, {
       numeric: true
     }) ||
     a.id.localeCompare(b.id)
   );
+}
+
+function compareText(a: string, b: string): number {
+  if (a < b) return -1;
+  return a > b ? 1 : 0;
 }
 
 /**

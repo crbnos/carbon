@@ -216,6 +216,19 @@ describe("issuing a spare part to a dispatch", () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
+  // The stock has moved: a refusal would invite a retry that issues it again.
+  it("answers the issue when the posting reports no part id", async () => {
+    invoke.mockResolvedValue({ data: { success: true }, error: null });
+    const { ctx } = contextWith(open);
+
+    const result = await issueMaintenancePart(ctx, { ...part, quantity: 2 });
+
+    expect(result).toEqual({
+      data: { dispatchId: "md-1", itemId: "item-1" },
+      error: null
+    });
+  });
+
   it("issues tracked entities as themselves, and anything else by quantity", async () => {
     const { ctx } = contextWith(open);
     const children = [
@@ -297,7 +310,7 @@ describe("deleting a maintenance dispatch", () => {
   });
 
   // The delete's own status predicate matched no row: the dispatch was
-  // completed or cancelled after it was read.
+  // completed, cancelled or deleted after it was read.
   it("refuses a dispatch the delete no longer reaches", async () => {
     const { ctx } = contextWith({
       "maintenanceDispatch:read": { id: "md-1", status: "Open" },
@@ -306,7 +319,11 @@ describe("deleting a maintenance dispatch", () => {
 
     const result = await deleteMaintenanceDispatch(ctx, { dispatchId: "md-1" });
 
-    expect(result.error?.category).toBe("conflict");
+    expect(result.error).toMatchObject({
+      category: "conflict",
+      message:
+        "The dispatch was completed, cancelled or deleted since it was read"
+    });
   });
 });
 

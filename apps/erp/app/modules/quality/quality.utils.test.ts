@@ -5,6 +5,7 @@
 import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
+  compareInspectionFeatures,
   gaugeCalibrationStatusFromDates,
   issueTrendAxis,
   receiptLotIssueType,
@@ -56,6 +57,21 @@ describe("requiredActionIdList", () => {
 
   it("refuses a JSON list that does not parse", () => {
     expect(requiredActionIdList('["a"')).toBeNull();
+  });
+});
+
+describe("compareInspectionFeatures", () => {
+  it("orders by createdAt, then by label naturally, then by id", () => {
+    const features = [
+      { id: "c", createdAt: "20260101000000000002", label: "1" },
+      { id: "b", createdAt: "20260101000000000001", label: "10" },
+      { id: "a", createdAt: "20260101000000000001", label: "2" },
+      { id: "e", createdAt: "20260101000000000001", label: "2" },
+      { id: "d", createdAt: null, label: "9" }
+    ];
+    expect(
+      [...features].sort(compareInspectionFeatures).map((f) => f.id)
+    ).toEqual(["d", "a", "e", "b", "c"]);
   });
 });
 

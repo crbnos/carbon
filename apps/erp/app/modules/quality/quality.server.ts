@@ -26,6 +26,7 @@ import {
   async,
   datetime,
   EPSILON,
+  filterEmpty,
   NOT_APPLIED_CODE,
   pick,
   pluckUnique,
@@ -136,37 +137,29 @@ export const createIssue = defineServiceFn({
     // from the caller — each lands in this company's issue as a reference
     // whose single-column FK accepts another company's row. One scoped read
     // per table; a miss refuses the whole create.
-    const refs: [string, string[]][] = [
-      ["location", [input.locationId]],
-      ["nonConformanceType", [input.nonConformanceTypeId]],
-      [
-        "nonConformanceWorkflow",
-        input.nonConformanceWorkflowId ? [input.nonConformanceWorkflowId] : []
-      ],
-      [
+    const refusals = await Promise.all([
+      service.refuseUnlessAllOwned(ctx, "location", [input.locationId]),
+      service.refuseUnlessAllOwned(ctx, "nonConformanceType", [
+        input.nonConformanceTypeId
+      ]),
+      service.refuseUnlessAllOwned(ctx, "nonConformanceWorkflow", [
+        input.nonConformanceWorkflowId
+      ]),
+      service.refuseUnlessAllOwned(
+        ctx,
         "nonConformanceRequiredAction",
-        [...new Set(input.requiredActionIds ?? [])]
-      ],
-      ["item", [...new Set(input.items ?? [])]],
-      ["customer", input.customerId ? [input.customerId] : []],
-      ["supplier", input.supplierId ? [input.supplierId] : []],
-      ["trackedEntity", trackedEntityIds]
-    ];
-    const owned = await Promise.all(
-      refs.map(async ([table, ids]) => {
-        if (ids.length === 0) return true;
-        const rows = await serviceRole
-          .from(table as "location")
-          .select("id")
-          .in("id", ids)
-          .eq("companyId", companyId);
-        return !rows.error && (rows.data ?? []).length === ids.length;
-      })
-    );
-    if (owned.some((ok) => !ok)) {
+        input.requiredActionIds ?? []
+      ),
+      service.refuseUnlessAllOwned(ctx, "item", input.items ?? []),
+      service.refuseUnlessAllOwned(ctx, "customer", [input.customerId]),
+      service.refuseUnlessAllOwned(ctx, "supplier", [input.supplierId]),
+      service.refuseUnlessAllOwned(ctx, "trackedEntity", trackedEntityIds)
+    ]);
+    const refused = filterEmpty(refusals);
+    if (refused.length > 0) {
       logger.error("Issue references records outside the company", {
         companyId,
-        refs: refs.filter((_, index) => !owned[index])
+        refusals: refused.map((refusal) => refusal.message)
       });
       return ctx.error("notFound", "Failed to insert issue");
     }
@@ -2470,7 +2463,8 @@ const riskInput = riskRegisterValidator
  * As the New Risk form does. Any employee of the company may (the register's
  * row-level security); an API key needs Create on quality.risks. It is assigned to
  * `assignee`, which must be an active employee of the company, or to the
- * caller; a named assignee is notified. Returns the new risk's id.
+ * caller; a named assignee is notified. The item and the record `sourceId`
+ * names must be the company's. Returns the new risk's id.
  *
  * @param notes - The notes: Markdown, or a Tiptap document.
  * @param severity - 1 (lowest) to 5.
@@ -2499,6 +2493,8 @@ export const createRisk = defineServiceFn({
     ) {
       return ctx.error("rule", "Choose an employee of this company");
     }
+    const referenceRefused = await service.riskReferenceRefusal(ctx, input);
+    if (referenceRefused) return referenceRefused;
     const result = await service.upsertRisk(ctx.asCaller.supabase, {
       ...input,
       notes: input.notes ?? {},
@@ -2521,8 +2517,9 @@ export const createRisk = defineServiceFn({
  *
  * @remarks
  * As the risk's edit form does. A new assignee must be an active employee of
- * the company, and is notified; an unchanged assignee is kept as it is. Notes
- * left out keep their value.
+ * the company, and is notified; an unchanged assignee is kept as it is. A
+ * changed item or source record must be the company's. Notes left out keep
+ * their value.
  *
  * @param notes - The notes: Markdown, or a Tiptap document.
  *
@@ -2549,12 +2546,23 @@ export const updateRisk = defineServiceFn({
     ) {
       return ctx.error("rule", "Choose an employee of this company");
     }
+    // Only a changed reference is checked, as the assignee is.
+    const sourceChanged =
+      input.source !== previous.source ||
+      (input.sourceId ?? null) !== previous.sourceId;
+    const referenceRefused = await service.riskReferenceRefusal(ctx, {
+      itemId:
+        (input.itemId ?? null) !== previous.itemId ? input.itemId : undefined,
+      source: input.source,
+      sourceId: sourceChanged ? input.sourceId : undefined
+    });
+    if (referenceRefused) return referenceRefused;
     const result = await service.upsertRisk(client, {
       ...input,
       // A key left out is not written; `sanitize` would write undefined as
       // null.
       ...(notes !== undefined ? { notes } : {}),
-      ...(assigneeChanged ? { assignee: posted ?? undefined } : {}),
+      ...(assigneeChanged ? { assignee: posted } : {}),
       id,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
@@ -3670,8 +3678,8 @@ export const insertGauge = defineServiceFn({
     serialNumber: z.string().optional(),
     description: z.string().optional(),
     dateAcquired: z.string().optional(),
-    lastCalibrationDate: z.string().optional(),
-    nextCalibrationDate: z.string().optional(),
+    lastCalibrationDate: z.iso.date().optional(),
+    nextCalibrationDate: z.iso.date().optional(),
     locationId: z.string().optional(),
     storageUnitId: z.string().optional(),
     calibrationIntervalInMonths: z.number().min(1).optional(),
@@ -3719,8 +3727,8 @@ export const updateGauge = defineServiceFn({
     serialNumber: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     dateAcquired: z.string().nullable().optional(),
-    lastCalibrationDate: z.string().nullable().optional(),
-    nextCalibrationDate: z.string().nullable().optional(),
+    lastCalibrationDate: z.iso.date().nullable().optional(),
+    nextCalibrationDate: z.iso.date().nullable().optional(),
     locationId: z.string().nullable().optional(),
     storageUnitId: z.string().nullable().optional(),
     calibrationIntervalInMonths: z.number().min(1).optional(),
@@ -3747,19 +3755,20 @@ export const updateGauge = defineServiceFn({
       return ctx.error("internal", "Failed to load the gauge", stored.error);
     }
     if (!stored.data) return ctx.error("notFound", "Gauge not found");
+    const dates = {
+      lastCalibrationDate: service.sentOrStored(
+        input.lastCalibrationDate,
+        stored.data.lastCalibrationDate
+      ),
+      nextCalibrationDate: service.sentOrStored(
+        input.nextCalibrationDate,
+        stored.data.nextCalibrationDate
+      )
+    };
     const status = timeZone
       ? {
           gaugeCalibrationStatus: gaugeCalibrationStatusFromDates(
-            {
-              lastCalibrationDate:
-                input.lastCalibrationDate !== undefined
-                  ? input.lastCalibrationDate
-                  : stored.data.lastCalibrationDate,
-              nextCalibrationDate:
-                input.nextCalibrationDate !== undefined
-                  ? input.nextCalibrationDate
-                  : stored.data.nextCalibrationDate
-            },
+            dates,
             datetime.today(timeZone)
           )
         }
@@ -3777,7 +3786,7 @@ export const updateGauge = defineServiceFn({
 const gaugeCalibrationRecordInput = z.object({
   gaugeId: z.string().min(1),
   supplierId: z.string().optional(),
-  dateCalibrated: z.string().min(1),
+  dateCalibrated: z.iso.date(),
   requiresAction: z.boolean().optional(),
   requiresAdjustment: z.boolean().optional(),
   requiresRepair: z.boolean().optional(),
@@ -3825,16 +3834,10 @@ export const createGaugeCalibrationRecord = defineServiceFn({
   }),
   permission: { "quality.records": "Create" },
   async run(ctx, { id, ...input }) {
-    const saved = await service.saveGaugeCalibrationRecord(ctx.asSystem.pg, {
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId,
-      today: datetime.today(
-        await getCompanyTimeZone(ctx.asSystem.pg, ctx.company.id)
-      ),
+    return service.saveGaugeCalibrationRecord(ctx, {
       newId: id,
       record: input
     });
-    return "refused" in saved ? ctx.error(saved.refused, saved.message) : saved;
   }
 });
 
@@ -3863,16 +3866,7 @@ export const updateGaugeCalibrationRecord = defineServiceFn({
   }),
   permission: { "quality.records": "Edit" },
   async run(ctx, { id, ...input }) {
-    const saved = await service.saveGaugeCalibrationRecord(ctx.asSystem.pg, {
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId,
-      today: datetime.today(
-        await getCompanyTimeZone(ctx.asSystem.pg, ctx.company.id)
-      ),
-      id,
-      record: input
-    });
-    return "refused" in saved ? ctx.error(saved.refused, saved.message) : saved;
+    return service.saveGaugeCalibrationRecord(ctx, { id, record: input });
   }
 });
 
@@ -4051,9 +4045,11 @@ export const createIssueWorkflow = defineServiceFn({
   input: issueWorkflowInput,
   permission: { "quality.issueWorkflows": "Create" },
   async run(ctx, input) {
-    const refused = await service.requiredActionsRefusal(
+    const refused = await service.refuseUnlessAllOwned(
       ctx,
-      input.requiredActionIds
+      "nonConformanceRequiredAction",
+      input.requiredActionIds ?? [],
+      "required action"
     );
     if (refused) return refused;
     return unwrap(
@@ -4086,9 +4082,11 @@ export const updateIssueWorkflow = defineServiceFn({
   // The route gated on create; the write runs under the update policy.
   permission: { "quality.issueWorkflows": "Edit" },
   async run(ctx, input) {
-    const refused = await service.requiredActionsRefusal(
+    const refused = await service.refuseUnlessAllOwned(
       ctx,
-      input.requiredActionIds
+      "nonConformanceRequiredAction",
+      input.requiredActionIds ?? [],
+      "required action"
     );
     if (refused) return refused;
     const updated = await service.updateIssueWorkflow(

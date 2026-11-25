@@ -45,7 +45,7 @@ function client(rows: Record<string, unknown>) {
         ? { data: null, error: rows[table] }
         : { data: rows[table] ?? null, error: null };
     const chain: Record<string, unknown> = {};
-    for (const method of ["select", "eq", "in", "limit", "order"]) {
+    for (const method of ["select", "eq", "in", "match", "limit", "order"]) {
       chain[method] = () => chain;
     }
     for (const method of ["insert", "update", "delete"]) {
@@ -357,6 +357,22 @@ describe("gauges", () => {
     expect(update).not.toHaveProperty("gaugeCalibrationStatus");
   });
 
+  it.each([
+    ["a new gauge", (ctx: never) =>
+      insertGauge(ctx, {
+        gaugeTypeId: "type-1",
+        gaugeRole: "Standard",
+        nextCalibrationDate: "next June"
+      })],
+    ["an update", (ctx: never) =>
+      updateGauge(ctx, { id: "g-1", lastCalibrationDate: "2026-02-30x" })]
+  ])("%s refuses a date that is not one, before any read", async (_name, save) => {
+    const { ctx, writes } = contextWith();
+    const result = await save(ctx as never);
+    expect(result.error?.category).toBe("validation");
+    expect(writes).toEqual([]);
+  });
+
   it("an update that sends one date derives the status from it and the stored other", async () => {
     const { ctx, written } = contextWith({
       gauge: {
@@ -480,6 +496,38 @@ describe("recording a risk", () => {
     expect(result.error?.category).toBe("validation");
     expect(writes).toEqual([]);
   });
+
+  // The register's itemId foreign key is single-column, and sourceId has none.
+  it.each([
+    ["an item", { source: "Item", itemId: "item-9" }, "item"],
+    ["a job", { source: "Job", sourceId: "job-9" }, "job"],
+    ["a customer", { source: "Customer", sourceId: "cust-9" }, "customer"],
+    ["a supplier", { source: "Supplier", sourceId: "sup-9" }, "supplier"],
+    ["a work center", { source: "Work Center", sourceId: "wc-9" }, "workCenter"],
+    ["a quote line", { source: "Quote Line", sourceId: "ql-9" }, "quoteLine"]
+  ] as const)(
+    "refuses %s of another company, before any write",
+    async (_name, reference, table) => {
+      const { ctx, writes } = contextWith({ [table]: null });
+      const result = await createRisk(ctx, { ...risk, ...reference });
+      expect(result.error?.category).toBe("notFound");
+      expect(writes).toEqual([]);
+    }
+  );
+
+  it("records a risk on the company's item", async () => {
+    const { ctx } = contextWith({
+      item: { id: "item-1" },
+      riskRegister: { id: "risk-1" }
+    });
+    const result = await createRisk(ctx, {
+      ...risk,
+      source: "Item",
+      itemId: "item-1",
+      sourceId: "item-1"
+    });
+    expect(result).toEqual({ data: { id: "risk-1" }, error: null });
+  });
 });
 
 describe("changing a risk", () => {
@@ -534,6 +582,56 @@ describe("changing a risk", () => {
     const [update] = written;
     expect(update?.values).not.toHaveProperty("assignee");
     expect(update?.values).not.toHaveProperty("notes");
+  });
+
+  it("refuses a changed item or source record of another company, before any write", async () => {
+    const stored = {
+      id: "risk-1",
+      assignee: null,
+      source: "Item",
+      sourceId: "item-1",
+      itemId: "item-1"
+    };
+    const { ctx, writes } = contextWith({ riskRegister: stored, item: null });
+    const item = await updateRisk(ctx, {
+      ...risk,
+      source: "Item",
+      itemId: "item-9",
+      sourceId: "item-1"
+    });
+    const source = await updateRisk(ctx, {
+      ...risk,
+      source: "Item",
+      itemId: "item-1",
+      sourceId: "item-9"
+    });
+    expect([item.error?.category, source.error?.category]).toEqual([
+      "notFound",
+      "notFound"
+    ]);
+    expect(writes).toEqual([]);
+  });
+
+  // The form posts the saved references on every edit.
+  it("saves a risk whose unchanged item is not checked again", async () => {
+    const { ctx, writes } = contextWith({
+      riskRegister: {
+        id: "risk-1",
+        assignee: null,
+        source: "Item",
+        sourceId: "item-1",
+        itemId: "item-1"
+      },
+      item: null
+    });
+    const result = await updateRisk(ctx, {
+      ...risk,
+      source: "Item",
+      itemId: "item-1",
+      sourceId: "item-1"
+    });
+    expect(result).toEqual({ data: { id: "risk-1" }, error: null });
+    expect(writes).toEqual(["update:riskRegister"]);
   });
 
   it("clears an assignee the form sends empty", async () => {
