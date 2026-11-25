@@ -30,6 +30,10 @@ fails on any violation the committed baseline does not list.
     `noAuthzDdlInMigrationsCheck` in `authz.ts`.
   - It compares several files: a pure `find*` function over its inputs, and a
     `Check` that reads them. Example: `providerRoleBackfilled` in `drift.ts`.
+- **Keep a check self-contained.** The gate runs the checks on worker threads,
+  each taking the next check when it finishes one, so two checks may run in
+  different threads in any order. A check shares nothing with another check but
+  its loaders: no module state one check writes and another reads.
 - **Read every input through `repo.read(loader)`.** A loader is a function
   `(root) => T`. `repo` runs each loader once and shares the result, so pass
   the same function every time:
@@ -129,7 +133,7 @@ The gate runs in four places with the same command
 |---|---|
 | `src/check.ts` | The types (`Check`, `Repo`, `Violation`, `Provenance`) and `fileCheck`, `eachFile` |
 | `src/checks.ts` | `CHECKS`: the subject files' `checks` lists, joined |
-| `src/run.ts` | `collectFindings` (runs `CHECKS` over one `repo`) and `newViolations` (minus the baseline) |
+| `src/run.ts`, `src/run.worker.ts` | `collectFindings` (runs `CHECKS` on up to 4 worker threads, each with its own `repo`), `runChecks` (one `repo`, in process) and `newViolations` (minus the baseline) |
 | `src/repo.ts` | `openRepo`: reads each input once |
 | `src/conformance/` | One file per subject, with its tests in `<subject>.test.ts` |
 | `src/sources/` | Loaders several checks share; `sql.ts` (parsed SQL), `syntax.ts` (parsed TypeScript) and `biome.ts` (plugin findings) |
