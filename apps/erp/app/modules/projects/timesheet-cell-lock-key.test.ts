@@ -26,16 +26,6 @@ describe("timesheetCellLockKey", () => {
     );
   });
 
-  it.each([
-    "2026-11-24T00:00:00Z",
-    "2026-11-24T23:30:00-05:00",
-    "2026-11-24 08:00:00"
-  ])("gives %s the key of the day the DATE column stores", (entryDate) => {
-    expect(timesheetCellLockKey(base({ entryDate }))).toBe(
-      timesheetCellLockKey(base({ entryDate: "2026-11-24" }))
-    );
-  });
-
   it.each<[string, Partial<Cell>]>([
     ["project", { projectId: "prj2" }],
     ["element", { projectElementId: "el2" }],
@@ -61,11 +51,5 @@ describe("timesheetCellLockKey", () => {
     expect(timesheetCellLockKey(base({ workLocationId: "null" }))).not.toBe(
       timesheetCellLockKey(base())
     );
-  });
-
-  it("refuses a date that is not a calendar day", () => {
-    expect(() =>
-      timesheetCellLockKey(base({ entryDate: "2026-02-30" }))
-    ).toThrow();
   });
 });

@@ -58,7 +58,7 @@
     },
     {
       "file": "packages/database/src/sales-invoice-send.ts",
-      "functions": ["withSalesInvoiceSendLock"],
+      "functions": ["withSalesInvoiceSendLock", "waitForSalesInvoiceSendLock"],
       "tests": ["apps/erp/test/database/sales-invoice-send-lock.test.ts"]
     },
     {
@@ -74,7 +74,12 @@
     },
     {
       "file": "apps/erp/app/modules/accounting/accounting.service.ts",
-      "functions": ["recalculateRevenueRecognitionRun"],
+      "functions": [
+        "recalculateRevenueRecognitionRun",
+        "postRevenueRecognitionRun",
+        "reverseRevenueRecognitionRun",
+        "deleteRevenueRecognitionRun"
+      ],
       "tests": [
         "apps/erp/test/database/post-sales-invoice/contract-posting.test.ts"
       ]

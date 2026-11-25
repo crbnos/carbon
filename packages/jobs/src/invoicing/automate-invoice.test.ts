@@ -41,24 +41,22 @@ vi.mock("@carbon/stripe/send-sales-invoice.server", async (importOriginal) => ({
   >()),
   sendPostedSalesInvoiceViaStripe: (...args: unknown[]) => stripeSend(...args)
 }));
-// The advisory lock, as a try-lock in memory: a second caller is refused while
-// the first runs (the Postgres lock itself: sales-invoice-send-lock.test.ts).
+// The advisory lock, in memory: a second caller waits for the first (the
+// Postgres lock itself: sales-invoice-send-lock.test.ts).
 vi.mock("@carbon/database/sales-invoice-send", () => {
-  const held = new Set<string>();
+  const queues = new Map<string, Promise<unknown>>();
+  const noop = () => undefined;
   return {
-    withSalesInvoiceSendLock: async (
+    waitForSalesInvoiceSendLock: (
       _db: unknown,
       lock: { companyId: string; invoiceId: string },
       send: () => Promise<unknown>
     ) => {
       const key = `${lock.companyId}:${lock.invoiceId}`;
-      if (held.has(key)) return { locked: false };
-      held.add(key);
-      try {
-        return { locked: true, result: await send() };
-      } finally {
-        held.delete(key);
-      }
+      const turn = (queues.get(key) ?? Promise.resolve()).then(send);
+      // The next caller waits for this one to end, whether it sent or threw.
+      queues.set(key, turn.then(noop, noop));
+      return turn;
     }
   };
 });

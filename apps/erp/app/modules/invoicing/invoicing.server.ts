@@ -618,12 +618,13 @@ export const voidSalesInvoice = defineServiceFn({
       return ctx.error("rule", "Sales invoice is already voided");
     }
     if (
-      await service.invoiceHasPostedSettlement(
+      service.isPaidStatus(invoice.data.status) ||
+      (await service.invoiceHasPostedSettlement(
         ctx.asSystem.pg,
         "sales",
         ctx.company.id,
         invoiceId
-      )
+      ))
     ) {
       return ctx.error("rule", service.SALES_INVOICE_SETTLED_VOID_ERROR);
     }
@@ -1352,12 +1353,13 @@ export const voidPurchaseInvoice = defineServiceFn({
       return ctx.error("rule", "Purchase invoice is already voided");
     }
     if (
-      await service.invoiceHasPostedSettlement(
+      service.isPaidStatus(status) ||
+      (await service.invoiceHasPostedSettlement(
         ctx.asSystem.pg,
         "purchase",
         ctx.company.id,
         invoiceId
-      )
+      ))
     ) {
       return ctx.error("rule", service.PURCHASE_INVOICE_SETTLED_VOID_ERROR);
     }

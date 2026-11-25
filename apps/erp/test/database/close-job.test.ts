@@ -412,9 +412,11 @@ async function finishState(
   };
 }
 
-for (const status of ["Closed", "Cancelled"] as const) {
+// Planned: a status the trigger's first, unlocked gate refuses (no batch), so
+// the gate under the lock must refuse it too.
+for (const status of ["Closed", "Cancelled", "Planned"] as const) {
   databaseTest(
-    `marking the last operation Done while a ${status} commits keeps the job ${status} and the Done`,
+    `marking the last operation Done while the job moves to ${status} keeps the job ${status} and the Done`,
     async () => {
       const f = await alwaysPostFixture();
       const closer = await connectLocalTestDatabase();

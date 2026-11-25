@@ -57,17 +57,22 @@ BEGIN
   END IF;
 
   IF is_last_job_operation(p_new->>'id') THEN
-    -- The status read above takes no lock, so a Close or Cancel can commit
-    -- after it. Read the status again under the job lock the receipt takes
-    -- anyway. util.receive_job_output refuses a Closed or Cancelled job, and a
-    -- refusal here would roll back the Done update itself, so skip instead.
+    -- The status read above takes no lock, so a Close, a Cancel or another
+    -- status change can commit after it. Read the status again under the job
+    -- lock the receipt takes anyway, and apply the same gate. The receipt
+    -- refuses a Closed or Cancelled job, and a refusal here would roll back
+    -- the Done update itself, so skip instead.
     SELECT "locationId", "storageUnitId", quantity, "salesOrderId", "quantityReceivedToInventory", status
     INTO v_job_location_id, v_job_storage_unit_id, v_job_quantity, v_sales_order_id, v_quantity_received, v_job_status
     FROM "job"
     WHERE id = p_new->>'jobId'
     FOR UPDATE;
 
-    IF v_job_status IN ('Closed', 'Cancelled') THEN
+    IF v_job_status NOT IN ('Ready', 'In Progress', 'Paused')
+       AND NOT (
+         (p_new->>'jobOperationBatchId') IS NOT NULL
+         AND v_job_status IN ('Draft', 'Planned')
+       ) THEN
       RETURN;
     END IF;
 

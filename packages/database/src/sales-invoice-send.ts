@@ -39,15 +39,55 @@ export async function withSalesInvoiceSendLock<T>(
   args: { companyId: string; invoiceId: string },
   send: () => Promise<T>
 ): Promise<SalesInvoiceSendLock<T>> {
+  return runUnderSendLock(db, args, send, "try");
+}
+
+/** How long a job waits for another sender before its step fails and is
+ *  retried: longer than a send takes, shorter than a step may run. */
+const SEND_LOCK_WAIT = "30s";
+
+/**
+ * `withSalesInvoiceSendLock` for a job: waits for another sender to finish
+ * instead of returning at once. The job then reads `sentAt` under the lock and
+ * skips an invoice the other sender sent, or sends one it did not (it failed,
+ * or its worker died). Returning "not sent" at once instead left the job's
+ * step done with nothing sent, and nothing sent the invoice after a failed
+ * holder. A wait longer than SEND_LOCK_WAIT throws (lock_timeout), so the step
+ * fails and Inngest retries it.
+ */
+export async function waitForSalesInvoiceSendLock<T>(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; invoiceId: string },
+  send: () => Promise<T>
+): Promise<T> {
+  const sent = await runUnderSendLock(db, args, send, "wait");
+  if (!sent.locked) throw new Error("The send lock was not taken");
+  return sent.result;
+}
+
+async function runUnderSendLock<T>(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; invoiceId: string },
+  send: () => Promise<T>,
+  mode: "try" | "wait"
+): Promise<SalesInvoiceSendLock<T>> {
+  const key = `salesInvoiceSend:${args.companyId}:${args.invoiceId}`;
   let sent: { locked: true; result: T } | undefined;
   try {
     return await db.transaction().execute(async (trx) => {
-      const lock = await sql<{ locked: boolean }>`
-        SELECT pg_try_advisory_xact_lock(
-          hashtextextended(${`salesInvoiceSend:${args.companyId}:${args.invoiceId}`}, 0)
-        ) AS locked
-      `.execute(trx);
-      if (!lock.rows[0]?.locked) return { locked: false } as const;
+      if (mode === "wait") {
+        await sql`SELECT set_config('lock_timeout', ${SEND_LOCK_WAIT}, true)`.execute(
+          trx
+        );
+        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`.execute(
+          trx
+        );
+      } else {
+        const lock = await sql<{ locked: boolean }>`
+          SELECT pg_try_advisory_xact_lock(hashtextextended(${key}, 0)) AS locked
+        `.execute(trx);
+        if (!lock.rows[0]?.locked) return { locked: false } as const;
+      }
       sent = { locked: true, result: await send() };
       return sent;
     });

@@ -9839,16 +9839,30 @@ export async function invoiceHasPostedSettlement(
   return settlement !== undefined;
 }
 
-/** Refuses the void of an invoice that a posted payment or memo settles, so
- *  no settlement is left against a voided invoice. Read under the invoice
- *  lock, which payment posting also takes. */
+/** A stored Paid or Partially Paid status. Payment posting never writes it,
+ *  but an accounting sync does (a Xero bill or invoice marked PAID there), so
+ *  it refuses a void as a posted settlement does. */
+export function isPaidStatus(status: string | null | undefined): boolean {
+  return status === "Paid" || status === "Partially Paid";
+}
+
+/** Refuses the void of an invoice that a posted payment or memo settles, or
+ *  whose stored status is Paid, so no settlement is left against a voided
+ *  invoice. Read under the invoice lock, which payment posting also takes. */
 async function refuseVoidOfSettledInvoice(
   trx: Kysely<KyselyDatabase>,
   side: "sales" | "purchase",
-  companyId: string,
-  invoiceId: string
+  invoice: { companyId: string; invoiceId: string; status: string | undefined }
 ): Promise<void> {
-  if (await invoiceHasPostedSettlement(trx, side, companyId, invoiceId)) {
+  if (
+    isPaidStatus(invoice.status) ||
+    (await invoiceHasPostedSettlement(
+      trx,
+      side,
+      invoice.companyId,
+      invoice.invoiceId
+    ))
+  ) {
     throw new InvalidInputError(
       side === "sales"
         ? SALES_INVOICE_SETTLED_VOID_ERROR
@@ -11509,6 +11523,22 @@ export async function postSalesInvoice(
             throw new InvalidInputError(RECOGNIZED_REVENUE_VOID_ERROR);
           }
         }
+        // Whether the void writes schedule rows or contract positions, and so
+        // needs the company's position lock: a contract, rental or service
+        // line (whose accruals it unbills), or a schedule row of a line. The
+        // rows an invoice owns are written when it posts, so this stays true.
+        const holdsSchedules =
+          contractInvoiceLines.length > 0 ||
+          rentalLineIds.length > 0 ||
+          salesInvoiceLines.data.some((line) => !!line.serviceJobId) ||
+          (invoiceLineIds.length > 0 &&
+            (await db
+              .selectFrom("revenueRecognitionSchedule")
+              .select("id")
+              .where("companyId", "=", companyId)
+              .where("salesInvoiceLineId", "in", invoiceLineIds)
+              .limit(1)
+              .executeTakeFirst()) !== undefined);
 
         // Create reversing item ledger entries
         const reversingItemLedgerEntries: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
@@ -11564,7 +11594,11 @@ export async function postSalesInvoice(
           if (locked?.status === "Voided") {
             throw new InvalidInputError("Sales invoice is already voided");
           }
-          await refuseVoidOfSettledInvoice(trx, "sales", companyId, invoiceId);
+          await refuseVoidOfSettledInvoice(trx, "sales", {
+            companyId,
+            invoiceId,
+            status: locked?.status
+          });
           await lockOrderLinesAsRead(
             trx,
             "salesOrderLine",
@@ -11634,10 +11668,10 @@ export async function postSalesInvoice(
           }));
 
           // The position lock before any schedule row, as a recognition
-          // proposal and a run's Recalculate take it before they claim or
-          // release schedule rows. Taken after them, a void holding a
-          // Draft run's row deadlocked with a Recalculate of that run.
-          await lockContractPositions(trx, companyId);
+          // proposal and a run's Recalculate, Post, Reverse and Delete take it
+          // before they touch the run or its schedule rows. Taken after them,
+          // a void holding a Draft run's row deadlocked with that run.
+          if (holdsSchedules) await lockContractPositions(trx, companyId);
 
           if (invoiceLineIds.length > 0) {
             // Re-checked under lock: a run may have posted since the check
@@ -11915,7 +11949,8 @@ export async function postSalesInvoice(
             "journalId"
           >[] = [];
           if (contractInvoiceLines.length > 0) {
-            // The position lock is held: taken above, before the schedule rows.
+            // The position lock is held (holdsSchedules): taken above, before
+            // the schedule rows.
             const invoiceEntries = await trx
               .selectFrom("customerContractLedgerEntry")
               .select([
@@ -18339,7 +18374,11 @@ export async function postPurchaseInvoice(
         if (locked?.status === "Voided") {
           throw new InvalidInputError("Purchase invoice is already voided");
         }
-        await refuseVoidOfSettledInvoice(trx, "purchase", companyId, invoiceId);
+        await refuseVoidOfSettledInvoice(trx, "purchase", {
+          companyId,
+          invoiceId,
+          status: locked?.status
+        });
         // Every line of the orders: the order's status is set from them.
         await lockOrderLinesAsRead(
           trx,

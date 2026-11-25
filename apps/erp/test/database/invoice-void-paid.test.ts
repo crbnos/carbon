@@ -7,7 +7,8 @@
 // An invoice with a posted payment applied cannot be voided: the void would
 // leave the settlement standing against a voided invoice. Payment posting
 // never writes Paid to the invoice; its status is derived from the
-// settlements, so that is what the void must read.
+// settlements, so that is what the void must read. An accounting sync does
+// write Paid (a bill paid in Xero), and that refuses the void too.
 
 import { expect } from "vitest";
 import {
@@ -281,6 +282,42 @@ databaseTest(
       expect(await salesInvoiceStatus(f, invoiceId)).toEqual({
         status: "Credit Note Issued"
       });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a purchase invoice an accounting sync marked Paid cannot be voided",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const invoiceId = await postSuppliesInvoice(f);
+      // No settlement in Carbon: the bill was paid in the accounting system.
+      await seed(f, (trx) =>
+        trx
+          .updateTable("purchaseInvoice")
+          .set({ status: "Paid" })
+          .where("id", "=", invoiceId)
+          .execute()
+      );
+
+      const voided = await invokePosting(
+        handlesOf(f.ctx),
+        "post-purchase-invoice",
+        { type: "void", invoiceId },
+        postPurchaseInvoice
+      );
+
+      expect(voided.error?.message).toBe(PURCHASE_INVOICE_SETTLED_VOID_ERROR);
+      expect(
+        await f.db
+          .selectFrom("purchaseInvoice")
+          .select("status")
+          .where("id", "=", invoiceId)
+          .executeTakeFirstOrThrow()
+      ).toEqual({ status: "Paid" });
     } finally {
       await f.cleanup();
     }

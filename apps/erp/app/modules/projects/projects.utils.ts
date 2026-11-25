@@ -5,7 +5,6 @@
 // Reads the project form runs in the browser (through the caller's client).
 
 import type { Database } from "@carbon/database";
-import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RdActivityRole } from "./projects.models";
 
@@ -44,8 +43,8 @@ export async function getPlanningGroupsList(client: Client, companyId: string) {
  * The advisory lock key of one timesheet cell, from the columns every read of
  * the cell in `save` matches exactly. The job and job operation are left out:
  * a save that leaves them out reads the cell whatever the job, so it waits on
- * a save of any job. The date is the calendar day the `DATE` column stores:
- * Postgres keeps the date of `2026-11-24T00:00:00Z` and drops the time.
+ * a save of any job. The input schema takes the date as `YYYY-MM-DD` only, so
+ * one cell always has one key.
  */
 export function timesheetCellLockKey(cell: {
   companyId: string;
@@ -57,12 +56,11 @@ export function timesheetCellLockKey(cell: {
   workLocationId: string | null;
   rdActivityRole: RdActivityRole | null;
 }): string {
-  const entryDate = parseDate(cell.entryDate.slice(0, 10)).toString();
   // JSON keeps each column apart and null distinct from any id.
   return `timesheet-cell:${JSON.stringify([
     cell.companyId,
     cell.employeeId,
-    entryDate,
+    cell.entryDate,
     cell.projectId,
     cell.projectElementId,
     cell.laborCategoryId,
