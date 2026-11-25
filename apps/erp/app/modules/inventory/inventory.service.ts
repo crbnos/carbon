@@ -352,6 +352,7 @@ import {
 } from "./shipment-customer-contract";
 import {
   addReturnLineQuantityShipped,
+  loadReturnLineJobs,
   loadServiceReturnLineIds,
   loadWarrantyReturnLineIds,
   type ServiceUnit,
@@ -2286,6 +2287,8 @@ export async function assignShipmentSerial(
       )
       .select([
         "doc.status",
+        "doc.customerId",
+        "line.lineId",
         "doc.sourceDocument",
         "doc.sourceDocumentId",
         "doc.supplierId",
@@ -2340,6 +2343,21 @@ export async function assignShipmentSerial(
     ) {
       return "This unit changed. Refresh the shipment and choose an available serial.";
     }
+    // A depot receipt creates a service job for the customer's serial; it
+    // has no inventory debit or credit. Its RMA line must ship that unit.
+    const serviceJob =
+      line.sourceDocument === "Sales Return Order" && line.lineId
+        ? (await loadReturnLineJobs(trx, companyId, [line.lineId])).get(
+            line.lineId
+          )
+        : undefined;
+    if (
+      serviceJob &&
+      (serviceJob.trackedEntityId !== selected.id ||
+        (serviceJob.assetId && serviceJob.assetStatus !== "At Depot"))
+    ) {
+      return "Choose the serial received at the depot for this service line.";
+    }
     const occupants = rows.filter((row) => row.inSlot);
     if (occupants.length > 1)
       return "Multiple units occupy this serial slot. Correct the shipment before posting.";
@@ -2354,51 +2372,57 @@ export async function assignShipmentSerial(
         attributes["Shipment Line"] !== input.shipmentLineId ||
         attributes["Shipment Line Index"] != null)
     ) {
-      // A posted sale's tag is also the provenance for customer returns. A
-      // released unit can change slots once a later posted receipt put that
-      // same physical unit back. An open draft has no such sale debit.
-      const returned =
-        isShippableEntityStatus(line.sourceDocument, selected.status) &&
-        typeof attributes.Shipment === "string" &&
-        typeof attributes.Receipt === "string" &&
-        (await trx
-          .selectFrom("itemLedger as sold")
-          .innerJoin("itemLedger as back", (join) =>
-            join
-              .onRef("back.companyId", "=", "sold.companyId")
-              .onRef("back.itemId", "=", "sold.itemId")
-              .onRef("back.trackedEntityId", "=", "sold.trackedEntityId")
-              .onRef("back.entryNumber", ">", "sold.entryNumber")
-          )
-          .innerJoin("receipt as r", (join) =>
-            join
-              .onRef("r.id", "=", "back.documentId")
-              .onRef("r.companyId", "=", "back.companyId")
-          )
-          .innerJoin("shipment as s", (join) =>
-            join
-              .onRef("s.id", "=", "sold.documentId")
-              .onRef("s.companyId", "=", "sold.companyId")
-          )
-          .select("back.id")
-          .where("sold.companyId", "=", companyId)
-          .where("sold.itemId", "=", itemId)
-          .where("sold.trackedEntityId", "=", selected.id)
-          .where("sold.documentType", "=", "Sales Shipment")
-          .where("sold.documentId", "=", attributes.Shipment)
-          .where("s.status", "=", "Posted")
-          .where("sold.quantity", "<", 0)
-          .where("back.documentType", "=", "Sales Return Receipt")
-          .where("back.documentId", "=", attributes.Receipt)
-          .where("r.status", "=", "Posted")
-          .$if(line.sourceDocument === "Sales Return Order", (query) =>
-            query
-              .where("r.sourceDocument", "=", "Sales Return Order")
-              .where("r.sourceDocumentId", "=", line.sourceDocumentId!)
-          )
-          .where("back.quantity", ">", 0)
-          .executeTakeFirst());
-      if (!returned)
+      const previousShipmentId = attributes.Shipment;
+      const receiptId = attributes.Receipt;
+      if (
+        !isShippableEntityStatus(line.sourceDocument, selected.status) ||
+        typeof previousShipmentId !== "string" ||
+        typeof receiptId !== "string"
+      )
+        return "This serial is already assigned to another shipment slot.";
+
+      // The old slot must be on a posted shipment. A stock return has a
+      // later credit for the same physical unit. A depot return is proven
+      // by the service job above and the posted receipt of that customer's RMA.
+      const prior = await sql<{ id: string }>`
+        SELECT prior.id FROM shipment prior
+        JOIN receipt back ON back."companyId" = prior."companyId" AND back.id = ${receiptId}
+        WHERE prior."companyId" = ${companyId} AND prior.id = ${previousShipmentId}
+          AND prior.status = 'Posted' AND back.status = 'Posted' AND back."sourceDocument" = 'Sales Return Order'
+          AND (NOT ${line.sourceDocument === "Sales Return Order"} OR back."sourceDocumentId" = ${line.sourceDocumentId})
+          AND CASE WHEN ${Boolean(serviceJob)} THEN prior."customerId" = ${line.customerId}
+            ELSE EXISTS (
+              SELECT 1 FROM "itemLedger" received
+              WHERE received."companyId" = back."companyId" AND received."documentId" = back.id
+                AND received."itemId" = ${itemId} AND received."trackedEntityId" = ${selected.id}
+                AND received."documentType" = 'Sales Return Receipt' AND received.quantity > 0
+                AND (EXISTS (
+                  SELECT 1 FROM "itemLedger" sent
+                  WHERE sent."companyId" = prior."companyId" AND sent."documentId" = prior.id
+                    AND sent."itemId" = received."itemId" AND sent."trackedEntityId" = received."trackedEntityId"
+                    AND sent."documentType" IN ('Sales Shipment', 'Sales Return Shipment') AND sent.quantity < 0
+                    AND sent."entryNumber" < received."entryNumber"
+                ) OR (
+                  -- A service ship-back wrote custody history only. Verify the
+                  -- serial left on that shipment and this receipt still holds it.
+                  EXISTS (
+                    SELECT 1 FROM "trackedActivity" activity
+                    JOIN "trackedActivityInput" unit ON unit."trackedActivityId" = activity.id
+                      AND unit."companyId" = activity."companyId"
+                    WHERE activity."companyId" = prior."companyId" AND activity."sourceDocument" = 'Shipment'
+                      AND activity."sourceDocumentId" = prior.id AND activity.type = 'Return Shipment'
+                      AND activity.attributes @> '{"At Depot": false}'::jsonb
+                      AND unit."trackedEntityId" = received."trackedEntityId"
+                  ) AND NOT EXISTS (
+                    SELECT 1 FROM "itemLedger" later WHERE later."companyId" = received."companyId"
+                      AND later."trackedEntityId" = received."trackedEntityId" AND later."entryNumber" > received."entryNumber"
+                      AND later."entryType" <> 'Transfer' AND later.quantity <> 0
+                  )
+                ))
+            )
+          END
+      `.execute(trx);
+      if (!prior.rows.length)
         return "This serial is already assigned to another shipment slot.";
     }
     if (currentId) {
@@ -15145,6 +15169,24 @@ async function lockAverageIssueAndReturnItems(
   ) AS locks`.execute(trx);
 }
 
+/** Stock postings take every physical-unit lock before the item valuation
+ * locks. A batch pick holds them across all of its member operations. */
+async function lockStockPostingUnits(
+  trx: Kysely<KyselyDatabase>,
+  companyId: string,
+  ids: string[]
+): Promise<void> {
+  if (ids.length === 0) return;
+  await trx
+    .selectFrom("trackedEntity")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("id", "=", sql<string>`ANY(${ids}::text[])`)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+}
+
 /** A later return can refill the original bin with the same serial. Only
  * fully reversed bin transfers may intervene between this receipt and its void. */
 async function assertLatestSerialReturn(
@@ -15154,14 +15196,6 @@ async function assertLatestSerialReturn(
   serialIds: string[]
 ): Promise<void> {
   if (serialIds.length === 0) return;
-  await trx
-    .selectFrom("trackedEntity")
-    .select("id")
-    .where("companyId", "=", companyId)
-    .where("id", "=", sql<string>`ANY(${serialIds}::text[])`)
-    .orderBy("id")
-    .forUpdate()
-    .execute();
   const interveningMove = await trx
     .selectFrom("itemLedger as receipt")
     .innerJoin("itemLedger as move", (join) =>
@@ -15772,6 +15806,10 @@ export async function postReceipt(
           db.transaction().execute(async (trx) => {
             await lockPostedReceipt(trx, companyId, receiptId);
             await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+            await lockStockPostingUnits(trx, companyId, [
+              ...serialIds,
+              ...(receiptLineTracking.data ?? []).map((unit) => unit.id)
+            ]);
             await assertLatestSerialReturn(
               trx,
               companyId,
@@ -18910,21 +18948,11 @@ export async function postReceipt(
           await lockPostable(trx, "receipt", receiptId, companyId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
-          // Match sale and void lock order: physical serials, item valuation,
-          // then order lines. Posting the return changes both stock and rate.
-          const returnedUnits = costLedgerInserts.flatMap((row) =>
-            row.trackedEntityId ? [row.trackedEntityId] : []
+          await lockStockPostingUnits(
+            trx,
+            companyId,
+            Object.keys(trackedEntityUpdates)
           );
-          if (returnedUnits.length > 0) {
-            await trx
-              .selectFrom("trackedEntity")
-              .select("id")
-              .where("companyId", "=", companyId)
-              .where("id", "in", returnedUnits)
-              .orderBy("id")
-              .forUpdate()
-              .execute();
-          }
           await lockAverageIssueAndReturnItems(
             trx,
             companyId,
@@ -20555,14 +20583,7 @@ export async function trackedShipmentSourceBins(
       )
     ];
     if (ids.length === 0) return;
-    await trx
-      .selectFrom("trackedEntity")
-      .select("id")
-      .where("id", "in", ids)
-      .where("companyId", "=", args.companyId)
-      .orderBy("id")
-      .forUpdate()
-      .execute();
+    await lockStockPostingUnits(trx, args.companyId, ids);
     const current = await readBins(trx);
     for (const pick of chosen) {
       const storageUnitId = resolve(
@@ -29408,11 +29429,13 @@ async function issueJobOperationMaterials(
   // these locks: read it again under them, or a backflush that committed
   // after the read above is issued a second time.
   if (!dryRun) {
+    const itemIds = pluckUnique(materialsToIssue, (m) => m.itemId);
     await lockUntrackedDraws(trx, {
       companyId,
       locationId: job.locationId,
-      itemIds: pluckUnique(materialsToIssue, (m) => m.itemId)
+      itemIds
     });
+    await lockAverageIssueAndReturnItems(trx, companyId, itemIds, "issue");
     const issued = await trx
       .selectFrom("jobMaterial")
       .select(["id", "quantityIssued"])
@@ -32401,14 +32424,12 @@ async function consumeTrackedEntitiesIntoOperation(
   }
 
   if (itemLedgerInserts.length > 0) {
-    if (binding === "pack") {
-      await lockAverageIssueAndReturnItems(
-        trx,
-        companyId,
-        itemLedgerInserts.map((row) => row.itemId),
-        "issue"
-      );
-    }
+    await lockAverageIssueAndReturnItems(
+      trx,
+      companyId,
+      itemLedgerInserts.map((row) => row.itemId),
+      "issue"
+    );
     await trx.insertInto("itemLedger").values(itemLedgerInserts).execute();
 
     // Update pickMethod defaultStorageUnitId if needed for each inserted ledger
@@ -33888,6 +33909,7 @@ export async function issueMaterial(
         quantity,
         scrapReasonId,
         trackedEntityId: scrapEntityId,
+        inspectionId,
         notes,
         laborProductionEventId,
         machineProductionEventId,
@@ -34056,6 +34078,23 @@ export async function issueMaterial(
       let newEntityId: string | undefined;
       await db.transaction().execute(async (trx) => {
         await lockProductionJob(trx, job.id, companyId);
+        if (inspectionId) {
+          const lot = await trx
+            .selectFrom("inspection")
+            .select("id")
+            .where("id", "=", inspectionId)
+            .where("companyId", "=", companyId)
+            .where("sourceDocument", "=", "Job Operation")
+            .where("sourceDocumentId", "=", job.id)
+            .where("sourceDocumentLineId", "=", jobOperationId)
+            .where("status", "in", ["Failed", "Partial"])
+            .executeTakeFirst();
+          if (!lot || !isSerial) {
+            throw new InvalidInputError(
+              "Inspection scrap requires a rejected or partially accepted lot for this serial operation."
+            );
+          }
+        }
         if (scrapEntityId) {
           await releaseJobUnit(trx, {
             companyId,
@@ -34078,6 +34117,7 @@ export async function issueMaterial(
             jobOperationId,
             quantity,
             type: "Scrap",
+            inspectionId,
             scrapReasonId,
             notes,
             laborProductionEventId,
@@ -34209,12 +34249,16 @@ export async function issueMaterial(
 
         // 4. Reopen Done ops + capacity top-up beyond the planned allowance
         //    so replacement units can run the FULL routing.
-        await applyScrapReplacement(trx, {
-          jobMakeMethodId: operation.jobMakeMethodId!,
-          jobId: job.id,
-          companyId,
-          userId
-        });
+        // Inspection scrap settles the failed pieces in the lot decision.
+        // Only the floor's Log Scrap action plans replacement units.
+        if (!inspectionId) {
+          await applyScrapReplacement(trx, {
+            jobMakeMethodId: operation.jobMakeMethodId!,
+            jobId: job.id,
+            companyId,
+            userId
+          });
+        }
 
         // 5. Serial: spawn the replacement Reserved unit. Same convention as
         //    jobOperationSerialComplete — spawn while total entities <
@@ -34232,7 +34276,8 @@ export async function issueMaterial(
             .executeTakeFirst();
           const capacity = Number(updatedOperation?.operationQuantity ?? 0);
           const replacementUnits =
-            seedUnitsLeft + (existingEntityCount < capacity ? 1 : 0);
+            seedUnitsLeft +
+            (!inspectionId && existingEntityCount < capacity ? 1 : 0);
           if (replacementUnits > 0) {
             // Under serialNumberTiming = 'production' the replacement stays
             // unnumbered until it is first touched, and so does a seed.
@@ -34720,16 +34765,23 @@ export async function issueMaterial(
         }
         // Before the material row: the completion's lock order is operation,
         // draw, material.
+        const drawnItemIds = pluckUnique(
+          [itemId, materialOwner?.itemId].filter(
+            (drawnItemId): drawnItemId is string => !!drawnItemId
+          ),
+          (drawnItemId) => drawnItemId
+        );
         await lockUntrackedDraws(trx, {
           companyId,
           locationId: job.locationId,
-          itemIds: pluckUnique(
-            [itemId, materialOwner?.itemId].filter(
-              (drawnItemId): drawnItemId is string => !!drawnItemId
-            ),
-            (drawnItemId) => drawnItemId
-          )
+          itemIds: drawnItemIds
         });
+        await lockAverageIssueAndReturnItems(
+          trx,
+          companyId,
+          drawnItemIds,
+          "issue"
+        );
 
         if (materialId) {
           // Locked, so two issues of one material never both write
@@ -36048,6 +36100,13 @@ export async function issueMaterial(
             .map((m) => [m.jobMakeMethodId as string, m.id])
         );
 
+        // The first member's issue takes the shared Average lock. Lock every
+        // picked unit first, including lots drawn only by a later member.
+        await lockStockPostingUnits(
+          trx,
+          companyId,
+          children.map((row) => row.trackedEntityId)
+        );
         // Lock the member material rows so a concurrent batch pick (or a
         // member-level manual issue) cannot double-allocate the remaining
         // requirement.
@@ -36628,14 +36687,12 @@ export async function issueMaterial(
         }
 
         if (itemLedgerInserts.length > 0) {
-          if (returnsPackedMaterial) {
-            await lockAverageIssueAndReturnItems(
-              trx,
-              companyId,
-              itemLedgerInserts.map((row) => row.itemId),
-              "return"
-            );
-          }
+          await lockAverageIssueAndReturnItems(
+            trx,
+            companyId,
+            itemLedgerInserts.map((row) => row.itemId),
+            returnsPackedMaterial ? "return" : "issue"
+          );
           const returnEntries = itemLedgerInserts.map((l) => ({
             itemId: l.itemId as string,
             trackedEntityId: returnsPackedMaterial ? l.trackedEntityId : null,

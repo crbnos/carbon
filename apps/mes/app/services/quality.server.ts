@@ -270,6 +270,7 @@ export type InspectionOutcomeState = {
   jobId: string;
   requiresSerialTracking: boolean;
   requiresBatchTracking: boolean;
+  isJobOutput: boolean;
   // The make method's batch WIP entity (batch-tracked completions accumulate
   // onto it via jobOperationBatchComplete).
   batchTrackedEntityId: string | null;
@@ -466,6 +467,7 @@ export async function getInspectionOutcomeState(
       jobId: operation.jobId,
       requiresSerialTracking,
       requiresBatchTracking,
+      isJobOutput: jobMakeMethod?.data?.parentMaterialId === null,
       batchTrackedEntityId: jobMakeMethod?.data?.trackedEntityId ?? null,
       samples,
       lotSize: Number(inspection.lotSize ?? 0),

@@ -21,9 +21,9 @@ import { handlesOf } from "./fixtures/handles";
 import { receiveProductionPair } from "./fixtures/packout-production";
 import { createPairedJob, confirmPackoutCommand } from "./fixtures/paired-job";
 
-async function packout(f: Fixture) {
+async function packout(f: Fixture, quantity = 2) {
   const production = await receiveProductionPair(f);
-  const job = await createPairedJob(f, production.productionItemId);
+  const job = await createPairedJob(f, production.productionItemId, quantity);
   const post = async (input: Parameters<typeof issueMaterial>[1]) =>
     unwrap(
       await invokePosting(
@@ -378,3 +378,124 @@ databaseTest(
     }
   }
 );
+
+for (const historical of [false, true]) {
+  databaseTest(
+    `${historical ? "Historical" : "New"} inspection scrap accounts for the sole output when Finish closes the packing job`,
+    async () => {
+      const f = await alwaysPostFixture();
+      try {
+        const { production, job, post, assign, reason } = await packout(f, 1);
+        await assign(production.first.id!);
+        const lot = await f.db
+          .insertInto("inspection")
+          .values({
+            inspectionId: `${f.prefix}-inspection`,
+            sourceDocument: "Job Operation",
+            sourceDocumentId: job.jobId,
+            sourceDocumentLineId: job.operationId,
+            itemId: job.salesItemId,
+            lotSize: 1,
+            samplingStandard: "ANSI_Z1_4",
+            samplingPlanType: "All",
+            sampleSize: 1,
+            acceptanceNumber: 0,
+            rejectionNumber: 1,
+            status: "Failed",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        if (historical) {
+          await f.db
+            .updateTable("trackedEntity")
+            .set({ status: "Rejected" })
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", job.unitId)
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          // Reject alone can be followed by rework or release.
+          expect(
+            (
+              await sql<{
+                n: number;
+              }>`SELECT job_scrapped_paired_output_count(${job.jobId}, ${f.companyId}) AS n`.execute(
+                f.db
+              )
+            ).rows[0]?.n
+          ).toBe(0);
+          await f.db
+            .insertInto("productionQuantity")
+            .values({
+              type: "Scrap",
+              companyId: f.companyId,
+              createdBy: USER,
+              inspectionId: lot.id,
+              jobOperationId: job.operationId,
+              scrapReasonId: reason.id,
+              quantity: 1
+            })
+            .execute();
+        } else {
+          await post({
+            type: "jobOperationScrap",
+            jobOperationId: job.operationId,
+            trackedEntityId: job.unitId,
+            quantity: 1,
+            scrapReasonId: reason.id,
+            inspectionId: lot.id
+          });
+        }
+        expect(
+          await f.db
+            .selectFrom("productionQuantity")
+            .select(["inspectionId", "quantity"])
+            .where("companyId", "=", f.companyId)
+            .where("jobOperationId", "=", job.operationId)
+            .where("type", "=", "Scrap")
+            .execute()
+        ).toEqual([{ inspectionId: lot.id, quantity: 1 }]);
+        expect(
+          await f.db
+            .selectFrom("trackedEntity")
+            .select(["id", "status"])
+            .where("companyId", "=", f.companyId)
+            .where("itemId", "=", job.salesItemId)
+            .execute()
+        ).toEqual([
+          { id: job.unitId, status: historical ? "Rejected" : "Scrapped" }
+        ]);
+        await f.db
+          .updateTable("jobOperation")
+          .set({ status: "Done", updatedBy: USER })
+          .where("companyId", "=", f.companyId)
+          .where("id", "=", job.operationId)
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        expect(
+          await f.db
+            .selectFrom("job")
+            .select(["status", "quantityReceivedToInventory"])
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", job.jobId)
+            .executeTakeFirstOrThrow()
+        ).toMatchObject({
+          status: "Completed",
+          quantityReceivedToInventory: 0
+        });
+        expect(
+          await f.db
+            .selectFrom("itemLedger")
+            .select("id")
+            .where("companyId", "=", f.companyId)
+            .where("documentId", "=", job.jobId)
+            .where("documentType", "=", "Job Receipt")
+            .execute()
+        ).toEqual([]);
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}

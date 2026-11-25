@@ -14,12 +14,18 @@ import {
   USER,
   unwrap
 } from "./fixtures/always-post";
+import { holdUnits, raiseIssueOnUnit } from "./fixtures/job-unit-hold";
 import { handlesOf } from "./fixtures/handles";
 import {
   connectLocalTestDatabase,
   databaseTest
 } from "./fixtures/local-database";
-import { orderOutsideOperation, receive as receiveOutside } from "./fixtures/outside-processing";
+import {
+  jobReceived,
+  operation,
+  orderOutsideOperation,
+  receive as receiveOutside
+} from "./fixtures/outside-processing";
 import { confirmPackoutCommand, createPairedJob } from "./fixtures/paired-job";
 import { receiveProductionPair } from "./fixtures/packout-production";
 import { shipPackedUnit } from "./fixtures/packout-shipment";
@@ -332,108 +338,165 @@ databaseTest(
   }
 );
 
-databaseTest(
-  "the final supplier receipt receives the serials logged at the preceding in-house operation",
-  async () => {
-    const f = await alwaysPostFixture();
-    try {
-      const production = await receiveProductionPair(f);
-      const job = await createPairedJob(f, production.productionItemId, 2);
-      const outsideId = `${f.prefix}-outside-pack`;
-      await seed(f, async (trx) => {
-        const pack = await trx
-          .selectFrom("jobOperation")
-          .select(["jobMakeMethodId", "processId"])
-          .where("companyId", "=", f.companyId)
+for (const heldCount of [0, 1, 2]) {
+  databaseTest(
+    `the final supplier delivery posts with ${heldCount} of its two packed units held by Quality`,
+    async () => {
+      const f = await alwaysPostFixture();
+      try {
+        const production = await receiveProductionPair(f);
+        const job = await createPairedJob(f, production.productionItemId, 2);
+        const outsideId = `${f.prefix}-outside-pack`;
+        await seed(f, async (trx) => {
+          const pack = await trx
+            .selectFrom("jobOperation")
+            .select(["jobMakeMethodId", "processId"])
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", job.operationId)
+            .executeTakeFirstOrThrow();
+          await trx
+            .insertInto("jobOperation")
+            .values({
+              ...pack,
+              id: outsideId,
+              jobId: job.jobId,
+              order: 2,
+              description: "Coat",
+              operationType: "Outside Processing",
+              operationQuantity: 2,
+              targetQuantity: 2,
+              status: "Waiting",
+              companyId: f.companyId,
+              createdBy: USER
+            })
+            .execute();
+          await trx
+            .insertInto("jobOperationDependency")
+            .values({
+              operationId: outsideId,
+              dependsOnId: job.operationId,
+              jobId: job.jobId,
+              companyId: f.companyId
+            })
+            .execute();
+        });
+        const order = await orderOutsideOperation(
+          { ...f, assemblyId: job.salesItemId },
+          { jobId: job.jobId, operationId: outsideId },
+          "coat",
+          [2],
+          5
+        );
+        const outputIds: string[] = [];
+        for (const source of [production.first, production.second]) {
+          const output = await f.db
+            .selectFrom("trackedEntity")
+            .select("id")
+            .where("companyId", "=", f.companyId)
+            .where("itemId", "=", job.salesItemId)
+            .where(sql<boolean>`attributes->>'Job' = ${job.jobId}`)
+            .where("readableId", "is", null)
+            .executeTakeFirstOrThrow();
+          outputIds.push(output.id);
+          await post(f, {
+            type: "trackedEntitiesToOperation",
+            jobOperationId: job.operationId,
+            materialId: job.materialId,
+            parentTrackedEntityId: output.id,
+            children: [{ trackedEntityId: source.id!, quantity: 1 }]
+          });
+          await post(f, {
+            type: "jobOperationSerialComplete",
+            jobOperationId: job.operationId,
+            trackedEntityId: output.id,
+            quantity: 1
+          });
+        }
+        // Log Quantity and Finish are separate on operations that do not auto-finish.
+        await f.db
+          .updateTable("jobOperation")
+          .set({ status: "Done", updatedBy: USER })
           .where("id", "=", job.operationId)
-          .executeTakeFirstOrThrow();
-        await trx
-          .insertInto("jobOperation")
-          .values({
-            ...pack,
-            id: outsideId,
-            jobId: job.jobId,
-            order: 2,
-            description: "Coat",
-            operationType: "Outside Processing",
-            operationQuantity: 2,
-            targetQuantity: 2,
-            status: "Waiting",
-            companyId: f.companyId,
-            createdBy: USER
-          })
-          .execute();
-        await trx
-          .insertInto("jobOperationDependency")
-          .values({
-            operationId: outsideId,
-            dependsOnId: job.operationId,
-            jobId: job.jobId,
-            companyId: f.companyId
-          })
-          .execute();
-      });
-      const order = await orderOutsideOperation(
-        { ...f, assemblyId: job.salesItemId },
-        { jobId: job.jobId, operationId: outsideId },
-        "coat",
-        [2],
-        5
-      );
-      for (const source of [production.first, production.second]) {
-        const output = await f.db
-          .selectFrom("trackedEntity")
-          .select("id")
           .where("companyId", "=", f.companyId)
-          .where("itemId", "=", job.salesItemId)
-          .where(sql<boolean>`attributes->>'Job' = ${job.jobId}`)
-          .where("readableId", "is", null)
-          .executeTakeFirstOrThrow();
-        await post(f, {
-          type: "trackedEntitiesToOperation",
-          jobOperationId: job.operationId,
-          materialId: job.materialId,
-          parentTrackedEntityId: output.id,
-          children: [{ trackedEntityId: source.id!, quantity: 1 }]
-        });
-        await post(f, {
-          type: "jobOperationSerialComplete",
-          jobOperationId: job.operationId,
-          trackedEntityId: output.id,
-          quantity: 1
-        });
-      }
-      // Log Quantity and Finish are separate on operations that do not auto-finish.
-      await f.db
-        .updateTable("jobOperation")
-        .set({ status: "Done", updatedBy: USER })
-        .where("id", "=", job.operationId)
-        .where("companyId", "=", f.companyId)
-        .execute();
+          .execute();
 
-      await receiveOutside(f, order.purchaseOrderId, 1);
-      expect(
-        (await getJobReceiptSnapshot(f.db, job.jobId, f.companyId))
-          ?.pairedSerials
-      ).toEqual([]);
-      await receiveOutside(f, order.purchaseOrderId, 1);
-      const received = await f.db
-        .selectFrom("itemLedger as ledger")
-        .innerJoin("trackedEntity as unit", "unit.id", "ledger.trackedEntityId")
-        .select(["unit.readableId", "ledger.quantity"])
-        .where("ledger.companyId", "=", f.companyId)
-        .where("ledger.documentId", "=", job.jobId)
-        .where("ledger.documentType", "=", "Job Receipt")
-        .orderBy("unit.readableId")
-        .execute();
-      expect(received).toEqual(
-        [production.first, production.second].map((unit) => ({
+        await holdUnits(f, true);
+        const issue = heldCount
+          ? await raiseIssueOnUnit(f, outputIds[0]!, 1)
+          : null;
+        // Inventory can also place a unit On Hold without a linked NCR.
+        const setSecondUnitStatus = (status: "On Hold" | "Available") =>
+          f.db
+            .updateTable("trackedEntity")
+            .set({ status })
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", outputIds[1]!)
+            .execute();
+        if (heldCount === 2) await setSecondUnitStatus("On Hold");
+        await receiveOutside(f, order.purchaseOrderId, 1);
+        expect(
+          (await getJobReceiptSnapshot(f.db, job.jobId, f.companyId))
+            ?.pairedSerials
+        ).toEqual([]);
+        await receiveOutside(f, order.purchaseOrderId, 1);
+        const received = () =>
+          f.db
+            .selectFrom("itemLedger as ledger")
+            .innerJoin(
+              "trackedEntity as unit",
+              "unit.id",
+              "ledger.trackedEntityId"
+            )
+            .select(["unit.readableId", "ledger.quantity"])
+            .where("ledger.companyId", "=", f.companyId)
+            .where("ledger.documentId", "=", job.jobId)
+            .where("ledger.documentType", "=", "Job Receipt")
+            .orderBy("unit.readableId")
+            .execute();
+        const units = [production.first, production.second].map((unit) => ({
           readableId: unit.serial,
           quantity: 1
-        }))
-      );
-    } finally {
-      await f.cleanup();
+        }));
+        expect(await received()).toEqual(units.slice(heldCount));
+        expect(await operation(f, outsideId)).toEqual({
+          status: "Done",
+          quantityComplete: 2
+        });
+        if (issue) {
+          expect((await jobReceived(f, job.jobId)).status).not.toBe(
+            "Completed"
+          );
+          expect(
+            (await getJobReceiptSnapshot(f.db, job.jobId, f.companyId))
+              ?.pairedSerials
+          ).toEqual([]);
+          await seed(f, async (trx) => {
+            await trx
+              .updateTable("nonConformance")
+              .set({ status: "Closed" })
+              .where("companyId", "=", f.companyId)
+              .where("id", "=", issue)
+              .execute();
+          });
+          if (heldCount === 2) await setSecondUnitStatus("Available");
+          const serials = units
+            .slice(0, heldCount)
+            .map((unit) => unit.readableId);
+          expect(
+            (await getJobReceiptSnapshot(f.db, job.jobId, f.companyId))
+              ?.pairedSerials
+          ).toEqual(serials);
+          await sql`SELECT receive_job_to_inventory(${job.jobId}, 2, ${f.companyId}, ${USER},
+          p_expected_serials => ${serials}::text[])`.execute(f.db);
+        }
+        expect(await jobReceived(f, job.jobId)).toEqual({
+          status: "Completed",
+          received: 2
+        });
+        expect(await received()).toEqual(units);
+      } finally {
+        await f.cleanup();
+      }
     }
-  }
-);
+  );
+}

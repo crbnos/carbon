@@ -86,6 +86,7 @@ export const issueInput = z.discriminatedUnion("type", [
     scrapReasonId: z.string(),
     trackedEntityId: z.string().optional(),
     pairingId: z.string().optional(),
+    inspectionId: z.string().optional(),
     notes: z.string().optional(),
     laborProductionEventId: z.string().optional(),
     machineProductionEventId: z.string().optional(),

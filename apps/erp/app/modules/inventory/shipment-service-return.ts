@@ -45,6 +45,7 @@ export async function loadReturnLineJobs(
     string,
     {
       status: string;
+      trackedEntityId: string | null;
       assetId: string | null;
       assetStatus: string | null;
     }
@@ -60,6 +61,7 @@ export async function loadReturnLineJobs(
     .select([
       "sj.salesReturnOrderLineId",
       "sj.status",
+      "sj.trackedEntityId",
       "ca.id as assetId",
       "ca.status as assetStatus"
     ])
@@ -73,6 +75,7 @@ export async function loadReturnLineJobs(
       continue;
     byLine.set(job.salesReturnOrderLineId, {
       status: job.status,
+      trackedEntityId: job.trackedEntityId,
       assetId: job.assetId,
       assetStatus: job.assetStatus
     });
@@ -159,6 +162,11 @@ export async function shipServiceUnits(
         "Complete the unit's service job before you ship it back"
       );
     }
+    if (unit.trackedEntityId && job.trackedEntityId !== unit.trackedEntityId) {
+      throw new InvalidInputError(
+        "The selected serial is not the unit received on this service job"
+      );
+    }
     if (job.assetId) {
       if (job.assetStatus !== "At Depot") {
         throw new InvalidInputError(
@@ -171,7 +179,7 @@ export async function shipServiceUnits(
 
   const serials = units.filter((unit) => unit.trackedEntityId);
   if (serials.length > 0) {
-    await trx
+    const sent = await trx
       .updateTable("trackedEntity")
       .set({ status: "Consumed" })
       .where(
@@ -180,7 +188,16 @@ export async function shipServiceUnits(
         serials.map((unit) => unit.trackedEntityId!)
       )
       .where("companyId", "=", companyId)
+      .where("status", "=", "Available")
+      .where(sql<boolean>`attributes->>'Shipment' = ${args.shipmentId}`)
+      .returning("id")
       .execute();
+    if (sent.length !== serials.length) {
+      throw new InvalidInputError(
+        "The selected service serial changed. Refresh the shipment before posting."
+      );
+    }
+
     const activity = await trx
       .insertInto("trackedActivity")
       .values({

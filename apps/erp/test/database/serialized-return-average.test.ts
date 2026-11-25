@@ -9,6 +9,7 @@ import {
   assignShipmentLineEntity
 } from "../../app/modules/inventory/inventory.server";
 import {
+  issueMaterial,
   postReceipt,
   postShipment
 } from "../../app/modules/inventory/inventory.service";
@@ -17,6 +18,7 @@ import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
   type Fixture,
+  jobFixture,
   stampCutover,
   USER,
   unwrap
@@ -390,15 +392,125 @@ for (const { costs, average, reason } of [
   );
 }
 
+async function prepareStockIssue(
+  f: Fixture,
+  ctx: ReturnType<typeof operationContext>,
+  itemId: string,
+  unit: string,
+  issue: "sale" | "material issue"
+) {
+  const handles = handlesOf(f.ctx);
+  if (issue === "material issue") {
+    // A separate ordinary job consumes the sales SKU as a component.
+    const job = await jobFixture(
+      { ...f, partId: itemId, assemblyId: f.partId },
+      "ordinary"
+    );
+    const output = await f.db
+      .insertInto("trackedEntity")
+      .values({
+        itemId: f.partId,
+        sourceDocument: "Item",
+        sourceDocumentId: f.partId,
+        status: "Reserved",
+        quantity: 1,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    return {
+      documentId: job.jobId,
+      debitAccount: f.account("wip"),
+      writeTable: "costLedger",
+      post: (db: Fixture["db"]) =>
+        invokePosting(
+          { ...handles, db },
+          "issue",
+          {
+            type: "trackedEntitiesToOperation",
+            materialId: job.materialId,
+            jobOperationId: job.operationId,
+            parentTrackedEntityId: output.id!,
+            children: [{ trackedEntityId: unit, quantity: 1 }]
+          },
+          issueMaterial
+        ).then(unwrap)
+    };
+  }
+  const sale = await createPackedShipment(f, itemId, unit);
+  expect(
+    (
+      await assignShipmentLineEntity(ctx, {
+        shipmentId: sale.shipmentId,
+        shipmentLineId: sale.shipmentLineId,
+        trackedEntityId: unit,
+        trackingType: "serial",
+        index: 0
+      })
+    ).error
+  ).toBeNull();
+  return {
+    documentId: sale.shipmentId,
+    debitAccount: f.account("cogs"),
+    writeTable: "shipment",
+    post: (db: Fixture["db"]) =>
+      invokePosting(
+        { ...handles, db },
+        "post-shipment",
+        { type: "post", shipmentId: sale.shipmentId },
+        postShipment
+      ).then(unwrap)
+  };
+}
+
 for (const scenario of [
-  { type: "post", receiptFirst: true, soldAt: 31, remainingCost: 31 },
-  { type: "post", receiptFirst: false, soldAt: 22, remainingCost: 40 },
-  { type: "void", receiptFirst: true, soldAt: 22, remainingCost: null },
-  { type: "void", receiptFirst: false, soldAt: 31, remainingCost: 31 }
+  {
+    issue: "sale",
+    type: "post",
+    receiptFirst: true,
+    issuedAt: 31,
+    remainingCost: 31
+  },
+  {
+    issue: "sale",
+    type: "post",
+    receiptFirst: false,
+    issuedAt: 22,
+    remainingCost: 40
+  },
+  {
+    issue: "sale",
+    type: "void",
+    receiptFirst: true,
+    issuedAt: 22,
+    remainingCost: null
+  },
+  {
+    issue: "sale",
+    type: "void",
+    receiptFirst: false,
+    issuedAt: 31,
+    remainingCost: 31
+  },
+  {
+    issue: "material issue",
+    type: "post",
+    receiptFirst: true,
+    issuedAt: 31,
+    remainingCost: 31
+  },
+  {
+    issue: "material issue",
+    type: "post",
+    receiptFirst: false,
+    issuedAt: 22,
+    remainingCost: 40
+  }
 ] as const) {
-  const { type, receiptFirst, soldAt, remainingCost } = scenario;
+  const { issue, type, receiptFirst, issuedAt, remainingCost } = scenario;
   postgrestTest(
-    `a sale and a return ${type} serialize Average valuation when the ${receiptFirst ? "return" : "sale"} posts first`,
+    `a ${issue} and a return ${type} serialize Average valuation when the ${receiptFirst ? "return" : issue} posts first`,
     async (client) => {
       const f = await alwaysPostFixture();
       const firstConnection = await connectLocalTestDatabase();
@@ -429,39 +541,41 @@ for (const scenario of [
               );
           }
         );
-        const sale = await createPackedShipment(f, itemId, outputs[1]!);
-        expect(
-          (
-            await assignShipmentLineEntity(ctx, {
-              shipmentId: sale.shipmentId,
-              shipmentLineId: sale.shipmentLineId,
-              trackedEntityId: outputs[1]!,
-              trackingType: "serial",
-              index: 0
-            })
-          ).error
-        ).toBeNull();
+        const stockIssue = await prepareStockIssue(
+          f,
+          ctx,
+          itemId,
+          outputs[1]!,
+          issue
+        );
         const pid = (
           await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
             otherConnection
           )
         ).rows[0]!.pid;
         const writing = Promise.withResolvers<void>();
-        const updates = new WeakSet<object>();
+        const writes = new WeakSet<object>();
         const paused = firstConnection.withPlugin({
           transformQuery({ node, queryId }) {
+            // Pause after costing and before the issue locks its accounting
+            // period, so the other posting reaches the actual valuation lock.
+            const table =
+              node.kind === "UpdateQueryNode"
+                ? node.table
+                : node.kind === "InsertQueryNode"
+                  ? node.into
+                  : undefined;
             if (
-              node.kind === "UpdateQueryNode" &&
-              node.table &&
-              TableNode.is(node.table) &&
-              node.table.table.identifier.name ===
-                (receiptFirst ? "itemCost" : "shipment")
+              table &&
+              TableNode.is(table) &&
+              table.table.identifier.name ===
+                (receiptFirst ? "itemCost" : stockIssue.writeTable)
             )
-              updates.add(queryId);
+              writes.add(queryId);
             return node;
           },
           async transformResult({ queryId, result }) {
-            if (updates.has(queryId)) {
+            if (writes.has(queryId)) {
               writing.resolve();
               await resume.promise;
             }
@@ -478,17 +592,9 @@ for (const scenario of [
           if (receiptFirst || type === "post") unwrap(result);
           else expect(result.error?.message).toMatch(/Cannot void.*Average/);
         };
-        const postSale = async (db: typeof paused) => {
-          unwrap(
-            await invokePosting(
-              { ...handles, db },
-              "post-shipment",
-              { type: "post", shipmentId: sale.shipmentId },
-              postShipment
-            )
-          );
-        };
-        first = receiptFirst ? postOrVoidReceipt(paused) : postSale(paused);
+        first = receiptFirst
+          ? postOrVoidReceipt(paused)
+          : stockIssue.post(paused);
         await Promise.race([
           writing.promise,
           first.then(() => {
@@ -498,7 +604,7 @@ for (const scenario of [
         let completed = false;
         other = (
           receiptFirst
-            ? postSale(otherConnection)
+            ? stockIssue.post(otherConnection)
             : postOrVoidReceipt(otherConnection)
         ).finally(() => {
           completed = true;
@@ -508,9 +614,10 @@ for (const scenario of [
         for (let i = 0; i < 400 && !completed && !waiting; i++) {
           const state = await sql<{
             waiting: boolean;
-          }>`SELECT cardinality(pg_blocking_pids(${pid})) > 0 AS waiting`.execute(
-            f.db
-          );
+          }>`SELECT EXISTS (
+            SELECT 1 FROM pg_locks
+            WHERE pid = ${pid} AND locktype = 'advisory' AND NOT granted
+          ) AS waiting`.execute(f.db);
           waiting = state.rows[0]!.waiting;
           if (!waiting) await new Promise((resolve) => setTimeout(resolve, 10));
         }
@@ -519,11 +626,15 @@ for (const scenario of [
         await Promise.all([first, other]);
 
         expect(
-          await postedAmounts(f, sale.shipmentId, f.account("cogs"))
-        ).toEqual([soldAt]);
+          await postedAmounts(f, stockIssue.documentId, stockIssue.debitAccount)
+        ).toEqual([issuedAt]);
         expect(
-          await postedAmounts(f, sale.shipmentId, f.account("finished-goods"))
-        ).toEqual([-soldAt]);
+          await postedAmounts(
+            f,
+            stockIssue.documentId,
+            f.account("finished-goods")
+          )
+        ).toEqual([-issuedAt]);
         expect(await valuation(f, itemId)).toEqual(
           remainingCost === null
             ? []

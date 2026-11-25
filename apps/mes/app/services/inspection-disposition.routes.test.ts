@@ -149,3 +149,86 @@ it.each(["unsampled", "Pending", "corrected failure"])(
     ]);
   }
 );
+
+it("posts the rejected pack-out unit and its displayed pairing as inspection scrap", async () => {
+  const entities = serialUnits("method", "op", [{ id: "a" }]).map((unit) => ({
+    ...unit,
+    pairings: [{ id: "binding" }]
+  }));
+  const fake = fakeClient(
+    {
+      inspection: [
+        {
+          id: "lot",
+          companyId: "co",
+          lotSize: 1,
+          status: "In Progress",
+          sourceDocument: "Job Operation",
+          sourceDocumentLineId: "op",
+          inspectionSample: [
+            { id: "sample", trackedEntityId: "a", status: "Failed" }
+          ]
+        }
+      ],
+      jobOperation: [
+        {
+          id: "op",
+          companyId: "co",
+          jobId: "job",
+          jobMakeMethodId: "method",
+          targetQuantity: 1,
+          quantityComplete: 0
+        }
+      ],
+      trackedEntity: entities,
+      jobMakeMethod: [
+        { id: "method", requiresSerialTracking: true, parentMaterialId: null }
+      ]
+    },
+    { job_requires_serial_pairing: true }
+  );
+  ports.authorize.mockResolvedValue({
+    client: fake.client,
+    companyId: "co",
+    userId: "operator"
+  });
+  ports.service.mockResolvedValue(fake.client);
+  ports.close.mockResolvedValue({ error: null });
+  vi.stubEnv("ERP_URL", "http://erp.test");
+  const posts: Record<string, unknown>[] = [];
+  vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
+    posts.push(JSON.parse(String(init.body)));
+    return Response.json({ data: {}, error: null });
+  });
+  const body = new FormData();
+  body.set("operationId", "op");
+  body.set("decision", "Reject");
+  body.set("scrapEntityIds", JSON.stringify(["a"]));
+  body.set("scrapReasonId", "damaged");
+  body.set("pairings", JSON.stringify({ a: "binding" }));
+  const url = new URL("/x/inspection-lot/lot/disposition", "http://mes.test");
+  const response = await disposition({
+    params: { id: "lot" },
+    url,
+    pattern: "/x/inspection-lot/:id/disposition",
+    context: {},
+    request: new Request(url, { method: "POST", body })
+  }).catch((error: unknown) => error);
+  expect(response).toBeInstanceOf(Response);
+  expect(posts.filter((post) => post.type !== "jobOperationDryRun")).toEqual([
+    expect.objectContaining({
+      type: "jobOperationScrap",
+      jobOperationId: "op",
+      trackedEntityId: "a",
+      pairingId: "binding",
+      inspectionId: "lot",
+      quantity: 1,
+      scrapReasonId: "damaged"
+    })
+  ]);
+  expect(
+    fake.calls.filter(
+      (call) => call.table === "productionQuantity" && call.op === "insert"
+    )
+  ).toEqual([]);
+});

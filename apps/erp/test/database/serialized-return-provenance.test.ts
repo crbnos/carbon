@@ -390,110 +390,228 @@ postgrestTest(
   }
 );
 
-postgrestTest(
-  "an RMA ships the on-hold serial received from its customer back on the same order",
-  async (client) => {
-    const f = await alwaysPostFixture();
-    try {
-      await stampCutover(f);
-      const [unit] = await stockSerials(f, [40]);
-      const ctx = operationContext(f, client, USER);
-      const pick = (shipmentId: string, shipmentLineId: string) =>
-        assignShipmentLineEntity(ctx, {
-          trackingType: "serial",
-          shipmentId,
-          shipmentLineId,
-          trackedEntityId: unit!.id,
-          index: 0
-        });
-      // A production unit can name its job as provenance and its SKU via itemId.
-      await f.db
-        .updateTable("trackedEntity")
-        .set({ sourceDocument: "Job", sourceDocumentId: f.prefix + "-job" })
-        .where("companyId", "=", f.companyId)
-        .where("id", "=", unit!.id)
-        .execute();
-      const sale = await createPackedShipment(f, f.assemblyId, "sold");
-      expect(
-        (await pick(sale.shipmentId, sale.shipmentLineId)).error
-      ).toBeNull();
-      await postPackedShipment(f, sale, f.assemblyId, unit!.id);
-      const rma = await createLinkedSerialReturn(
-        f,
-        f.assemblyId,
-        sale.shipmentLineId
-      );
-      expect(
-        (
-          await assignReceiptReturnEntity(ctx, {
-            receiptId: rma.receiptId,
-            receiptLineId: rma.receiptLineId,
+for (const returnType of [
+  "Return to Stock",
+  "Return for Service",
+  "Return for Warranty"
+] as const) {
+  postgrestTest(
+    "the RMA ships its serial back after " + returnType,
+    async (client) => {
+      const f = await alwaysPostFixture();
+      try {
+        await stampCutover(f);
+        const [unit] = await stockSerials(f, [40]);
+        const ctx = operationContext(f, client, USER);
+        const pick = (shipmentId: string, shipmentLineId: string, index = 0) =>
+          assignShipmentLineEntity(ctx, {
+            trackingType: "serial",
+            shipmentId,
+            shipmentLineId,
             trackedEntityId: unit!.id,
-            index: 0
+            index
+          });
+        // A production unit can name its job as provenance and its SKU via itemId.
+        await f.db
+          .updateTable("trackedEntity")
+          .set({ sourceDocument: "Job", sourceDocumentId: f.prefix + "-job" })
+          .where("companyId", "=", f.companyId)
+          .where("id", "=", unit!.id)
+          .execute();
+        const sale = await createPackedShipment(f, f.assemblyId, "sold");
+        expect(
+          (await pick(sale.shipmentId, sale.shipmentLineId)).error
+        ).toBeNull();
+        await postPackedShipment(f, sale, f.assemblyId, unit!.id);
+        const rma = await createLinkedSerialReturn(
+          f,
+          f.assemblyId,
+          sale.shipmentLineId
+        );
+        const serviced = returnType !== "Return to Stock";
+        if (serviced) {
+          await f.db
+            .insertInto("sequence")
+            .values({
+              table: "serviceJob",
+              name: "Service Job",
+              prefix: "SJ-",
+              companyId: f.companyId
+            })
+            .onConflict((oc) => oc.doNothing())
+            .execute();
+          await f.db
+            .updateTable("salesReturnOrderLine")
+            .set({ returnType })
+            .where("id", "=", rma.returnLineId)
+            .where("companyId", "=", f.companyId)
+            .execute();
+        }
+        expect(
+          (
+            await assignReceiptReturnEntity(ctx, {
+              receiptId: rma.receiptId,
+              receiptLineId: rma.receiptLineId,
+              trackedEntityId: unit!.id,
+              index: 0
+            })
+          ).error
+        ).toBeNull();
+        const handles = handlesOf(f.ctx);
+        unwrap(
+          await invokePosting(
+            handles,
+            "post-receipt",
+            { type: "post", receiptId: rma.receiptId },
+            postReceipt
+          )
+        );
+        if (serviced) {
+          await f.db
+            .updateTable("serviceJob")
+            .set({
+              status: "Completed",
+              repairable: true,
+              // A service job may name its physical serial without an asset record.
+              ...(returnType === "Return for Warranty" ? { customerAssetId: null } : {})
+            })
+            .where("salesReturnOrderLineId", "=", rma.returnLineId)
+            .where("companyId", "=", f.companyId)
+            .returning("id")
+            .executeTakeFirstOrThrow();
+        } else {
+          expect(
+            (
+              await setSalesReturnOrderLineDisposition(ctx, {
+                lineId: rma.returnLineId,
+                disposition: "Return to Customer"
+              })
+            ).error
+          ).toBeNull();
+        }
+        const options = await getSerialNumbersForItem(ctx, {
+          itemId: f.assemblyId,
+          salesReturnOrderId: rma.rmaId
+        });
+        expect(options.data).toEqual([
+          expect.objectContaining({
+            id: unit!.id,
+            status: serviced ? "Available" : "On Hold"
           })
-        ).error
-      ).toBeNull();
-      const handles = handlesOf(f.ctx);
-      unwrap(
-        await invokePosting(
-          handles,
-          "post-receipt",
-          { type: "post", receiptId: rma.receiptId },
-          postReceipt
-        )
-      );
-      expect(
-        (
-          await setSalesReturnOrderLineDisposition(ctx, {
-            lineId: rma.returnLineId,
-            disposition: "Return to Customer"
+        ]);
+        const ordinary = await createPackedShipment(
+          f,
+          f.assemblyId,
+          "ordinary"
+        );
+        expect(
+          (await pick(ordinary.shipmentId, ordinary.shipmentLineId)).error
+        ).toBeTruthy();
+        const shipment = unwrap(
+          await invokeCreate(handles, {
+            type: "shipmentFromSalesReturnOrder",
+            salesReturnOrderId: rma.rmaId,
+            locationId: f.locationId
           })
-        ).error
-      ).toBeNull();
-      const options = await getSerialNumbersForItem(ctx, {
-        itemId: f.assemblyId,
-        salesReturnOrderId: rma.rmaId
-      });
-      expect(options.data).toEqual([
-        expect.objectContaining({ id: unit!.id, status: "On Hold" })
-      ]);
-      const ordinary = await createPackedShipment(f, f.assemblyId, "ordinary");
-      expect(
-        (await pick(ordinary.shipmentId, ordinary.shipmentLineId)).error
-      ).toBeTruthy();
-      const shipment = unwrap(
-        await invokeCreate(handles, {
-          type: "shipmentFromSalesReturnOrder",
-          salesReturnOrderId: rma.rmaId,
-          locationId: f.locationId
-        })
-      );
-      const line = await f.db
-        .selectFrom("shipmentLine")
-        .select("id")
-        .where("companyId", "=", f.companyId)
-        .where("shipmentId", "=", shipment.id)
-        .where("lineId", "=", rma.returnLineId)
-        .executeTakeFirstOrThrow();
-      expect((await pick(shipment.id, line.id)).error).toBeNull();
-      unwrap(
-        await invokePosting(
-          handles,
-          "post-shipment",
-          { type: "post", shipmentId: shipment.id },
-          postShipment
-        )
-      );
-      const moves = await f.db
-        .selectFrom("itemLedger")
-        .select(["trackedEntityId", "quantity"])
-        .where("companyId", "=", f.companyId)
-        .where("documentId", "=", shipment.id)
-        .where("documentType", "=", "Sales Return Shipment")
-        .execute();
-      expect(moves).toEqual([{ trackedEntityId: unit!.id, quantity: -1 }]);
-    } finally {
-      await f.cleanup();
+        );
+        const line = await f.db
+          .selectFrom("shipmentLine")
+          .select("id")
+          .where("companyId", "=", f.companyId)
+          .where("shipmentId", "=", shipment.id)
+          .where("lineId", "=", rma.returnLineId)
+          .executeTakeFirstOrThrow();
+        const resize = (quantity: number) =>
+          f.db
+            .updateTable("shipmentLine")
+            .set({ shippedQuantity: quantity })
+            .where("companyId", "=", f.companyId)
+            .where("id", "=", line.id)
+            .execute();
+        await resize(2);
+        expect((await pick(shipment.id, line.id)).error).toBeNull();
+        expect((await pick(shipment.id, line.id, 1)).error?.message).toMatch(
+          /already assigned/
+        );
+        await resize(1);
+        unwrap(
+          await invokePosting(
+            handles,
+            "post-shipment",
+            { type: "post", shipmentId: shipment.id },
+            postShipment
+          )
+        );
+        const moves = await f.db
+          .selectFrom("itemLedger")
+          .select(["trackedEntityId", "quantity"])
+          .where("companyId", "=", f.companyId)
+          .where("documentId", "=", shipment.id)
+          .where("documentType", "=", "Sales Return Shipment")
+          .execute();
+        expect(moves).toEqual(
+          serviced ? [] : [{ trackedEntityId: unit!.id, quantity: -1 }]
+        );
+        // A second RMA receives the same serial from the return shipment.
+        const again = await createLinkedSerialReturn(
+          f,
+          f.assemblyId,
+          line.id
+        );
+        expect(
+          (
+            await getShippedTrackedEntitiesForCustomer(
+              client,
+              f.db,
+              f.companyId,
+              f.customerId,
+              f.assemblyId
+            )
+          ).data
+        ).toEqual([expect.objectContaining({ id: unit!.id })]);
+        expect(
+          (
+            await assignReceiptReturnEntity(ctx, {
+              receiptId: again.receiptId,
+              receiptLineId: again.receiptLineId,
+              trackedEntityId: unit!.id,
+              index: 0
+            })
+          ).error
+        ).toBeNull();
+        unwrap(
+          await invokePosting(
+            handles,
+            "post-receipt",
+            { type: "post", receiptId: again.receiptId },
+            postReceipt
+          )
+        );
+        expect(
+          (
+            await setSalesReturnOrderLineDisposition(ctx, {
+              lineId: again.returnLineId,
+              disposition: "Use As Is"
+            })
+          ).error
+        ).toBeNull();
+        expect(
+          (
+            await getSerialNumbersForItem(ctx, {
+              itemId: f.assemblyId,
+              stockShipment: true
+            })
+          ).data
+        ).toEqual([
+          expect.objectContaining({ id: unit!.id, status: "Available" })
+        ]);
+        expect(
+          (await pick(ordinary.shipmentId, ordinary.shipmentLineId)).error
+        ).toBeNull();
+        await postPackedShipment(f, ordinary, f.assemblyId, unit!.id);
+      } finally {
+        await f.cleanup();
+      }
     }
-  }
-);
+  );
+}

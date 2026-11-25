@@ -55,14 +55,17 @@ RETURNS integer
 LANGUAGE sql STABLE SECURITY INVOKER
 SET search_path = public
 AS $function$
-  WITH physical_scrap AS (
-    SELECT count(*) AS quantity
+  WITH job_outputs AS (
+    SELECT unit.id, unit.quantity, unit.status, mm.id AS method_id
     FROM "trackedEntity" unit
     JOIN "job" j ON j.id = p_job_id AND j."companyId" = p_company_id AND j."itemId" = unit."itemId"
     JOIN "jobMakeMethod" mm ON mm.id = unit.attributes->>'Job Make Method' AND mm."companyId" = j."companyId"
       AND mm."jobId" = j.id AND mm."parentMaterialId" IS NULL
     WHERE unit."companyId" = p_company_id AND unit.attributes->>'Job' = p_job_id
-      AND unit.quantity = 1 AND unit.status = 'Scrapped'
+  ), physical_scrap AS (
+    SELECT count(*) AS quantity
+    FROM job_outputs unit
+    WHERE unit.quantity = 1 AND unit.status = 'Scrapped'
       AND EXISTS (
         SELECT 1 FROM "trackedActivityInput" ai
         JOIN "trackedActivity" activity ON activity.id = ai."trackedActivityId" AND activity."companyId" = ai."companyId"
@@ -76,18 +79,34 @@ AS $function$
           AND il."documentType" = 'Job Receipt' AND il."documentId" = p_job_id
       )
   )
-  SELECT LEAST(physical_scrap.quantity, GREATEST(0, j.quantity - (
+  -- The earlier inspection action wrote one lot-level Scrap quantity and
+  -- marked its selected outputs Rejected without recording per-unit genealogy.
+  -- On a one-piece job with exactly one output, that posting identifies the
+  -- unit unambiguously, even though its fitted component still appears active.
+  SELECT CASE WHEN j.quantity = 1 AND (SELECT count(*) FROM job_outputs) = 1
+    AND EXISTS (
+      SELECT 1 FROM job_outputs u
+      JOIN "jobOperation" op ON op."jobMakeMethodId" = u.method_id AND op."companyId" = j."companyId"
+      JOIN inspection insp ON insp."companyId" = op."companyId" AND insp."sourceDocument" = 'Job Operation'
+        AND insp."sourceDocumentId" = j.id AND insp."sourceDocumentLineId" = op.id AND insp.status IN ('Failed','Partial')
+      JOIN "productionQuantity" pq ON pq."inspectionId" = insp.id AND pq."companyId" = insp."companyId"
+        AND pq."jobOperationId" = op.id AND pq.type = 'Scrap' AND pq.quantity = 1 AND pq."scrapReasonId" IS NOT NULL
+      WHERE u.status = 'Rejected' AND u.quantity = 1 AND NOT EXISTS (
+        SELECT 1 FROM "itemLedger" il WHERE il."companyId" = j."companyId" AND il."documentId" = j.id
+          AND il."documentType" = 'Job Receipt'
+      )
+    ) THEN 1 ELSE LEAST(physical_scrap.quantity, GREATEST(0, j.quantity - (
     SELECT count(*) FROM job_started_paired_outputs(p_job_id, p_company_id)
-  )))::integer
+  )))::integer END
   FROM physical_scrap CROSS JOIN job j
   WHERE j.id = p_job_id AND j."companyId" = p_company_id
 $function$;
 
--- A packed output is receivable once its exact source is consumed and the
--- physical output has been logged through its terminal operations. The picker
--- and the receipt use this same ordered set. ERP takes the requested prefix.
-CREATE OR REPLACE FUNCTION util.receivable_paired_units(p_job_id text, p_company_id text, p_finishing_operation jsonb)
-RETURNS SETOF text
+-- A finished pair has its exact source consumed and its routing completed.
+-- Track its quality hold separately so the supplier's delivered quantity and
+-- the serials entering stock can both be recorded correctly.
+CREATE OR REPLACE FUNCTION util.completed_paired_units(p_job_id text, p_company_id text, p_finishing_operation jsonb)
+RETURNS TABLE(id text, serial text, held boolean)
 LANGUAGE sql STABLE SECURITY INVOKER
 SET search_path = public
 AS $function$
@@ -121,13 +140,17 @@ AS $function$
       AND parent."reworkId" IS NOT DISTINCT FROM child."reworkId"
     WHERE child."operationType" = 'Outside Processing'
   )
-  SELECT output.id
+  SELECT output.id, pair.serial, quality.held
   FROM "jobUnitPairing" pair
   JOIN "job" j ON j.id = pair."jobId" AND j."companyId" = pair."companyId"
   JOIN "jobMaterial" material ON material.id = pair."jobMaterialId"
     AND material."companyId" = pair."companyId" AND material."jobId" = pair."jobId"
   JOIN "trackedEntity" output ON output.id = pair."outputId" AND output."companyId" = pair."companyId"
   JOIN "trackedEntity" source ON source.id = pair."sourceId" AND source."companyId" = pair."companyId"
+  CROSS JOIN LATERAL (
+    SELECT output.status = 'On Hold' OR EXISTS (SELECT 1 FROM "unitQualityHold" hold
+      WHERE hold."companyId" = pair."companyId" AND hold."trackedEntityId" = output.id) AS held
+  ) quality
   WHERE pair."jobId" = p_job_id AND pair."companyId" = p_company_id AND pair."releasedAt" IS NULL
     AND COALESCE(source."itemId", CASE WHEN source."sourceDocument" = 'Item' THEN source."sourceDocumentId" END) = material."itemId"
     AND source.quantity = 1 AND source.status = 'Consumed'
@@ -136,9 +159,8 @@ AS $function$
     AND source."readableId" = pair.serial AND output."readableId" = pair.serial
     AND output."itemId" = j."itemId" AND output.attributes->>'Job' = j.id
     AND output.attributes->>'Job Make Method' = material."jobMakeMethodId"
-    AND output.quantity = 1 AND output.status = 'Available'
-    AND NOT EXISTS (SELECT 1 FROM "unitQualityHold" hold
-      WHERE hold."companyId" = p_company_id AND hold."trackedEntityId" = output.id)
+    AND output.quantity = 1 AND (output.status = 'Available'
+      OR (quality.held AND output.status IN ('On Hold', 'Rejected')))
     AND EXISTS (SELECT 1 FROM terminal WHERE "reworkId" IS NULL)
     AND NOT EXISTS (
       SELECT 1 FROM required t
@@ -184,11 +206,12 @@ $function$;
 CREATE OR REPLACE FUNCTION public.job_receivable_paired_units(p_job_id text, p_company_id text)
 RETURNS SETOF text LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public
 BEGIN ATOMIC
-  SELECT * FROM util.receivable_paired_units(p_job_id, p_company_id, NULL);
+  SELECT u.id FROM util.completed_paired_units(p_job_id, p_company_id, NULL) u
+  WHERE NOT u.held ORDER BY u.serial, u.id;
 END;
 
-REVOKE ALL ON FUNCTION util.receivable_paired_units(text, text, jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION util.receivable_paired_units(text, text, jsonb) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION util.completed_paired_units(text, text, jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION util.completed_paired_units(text, text, jsonb) TO authenticated, service_role;
 
 REVOKE ALL ON FUNCTION public.job_receivable_paired_units(text, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.job_receivable_paired_units(text, text) TO authenticated, service_role;
@@ -266,6 +289,8 @@ DECLARE
   v_prior_qty NUMERIC;
   v_serial_unit_ids TEXT[];
   v_paired BOOLEAN;
+  v_supplier_finish BOOLEAN := p_automatic_finish AND p_finishing_operation->>'operationType' = 'Outside Processing';
+  v_confirmed_units INTEGER;
   v_partial_paired_receipt BOOLEAN := false;
   v_planned_quantity NUMERIC;
   v_production_quantity NUMERIC;
@@ -598,16 +623,38 @@ BEGIN
     END IF;
 
     v_scrapped_outputs := job_scrapped_paired_output_count(p_job_id, p_company_id);
-    v_partial_paired_receipt := p_quantity_complete + v_scrapped_outputs < v_planned_quantity;
 
     v_serial_unit_ids := ARRAY(
-      SELECT id FROM util.receivable_paired_units(p_job_id, p_company_id, p_finishing_operation) AS ready(id)
+      SELECT u.id FROM util.completed_paired_units(p_job_id, p_company_id, p_finishing_operation) u
+      WHERE v_supplier_finish OR NOT u.held ORDER BY u.serial, u.id
       LIMIT v_quantity_received_to_inventory::integer
     );
     IF cardinality(v_serial_unit_ids) <> v_quantity_received_to_inventory THEN
       RAISE EXCEPTION 'Only % completed paired unit(s) are ready on job %; % requested. Scan and log each production unit first.',
         cardinality(v_serial_unit_ids), v_job_id_readable, v_quantity_received_to_inventory;
     END IF;
+
+    -- Job actions serialize through the job row; inventory can change the
+    -- quality status independently. Lock these exact entities and recheck.
+    PERFORM 1 FROM "jobUnitPairing" p
+      JOIN "trackedEntity" source ON source.id = p."sourceId" AND source."companyId" = p."companyId"
+      JOIN "trackedEntity" output ON output.id = p."outputId" AND output."companyId" = p."companyId"
+      WHERE p."companyId" = p_company_id AND p."jobId" = p_job_id AND p."releasedAt" IS NULL
+        AND p."outputId" = ANY(v_serial_unit_ids)
+      ORDER BY p."outputId" FOR UPDATE OF p, source, output;
+    -- A supplier reports all finished pieces together. A quality hold defers
+    -- the stock receipt for that particular serial, including when every
+    -- piece is held. Missing pairings and unfinished in-house work still fail.
+    SELECT count(*), COALESCE(array_agg(u.id ORDER BY u.serial, u.id) FILTER (WHERE NOT u.held), '{}')
+      INTO v_confirmed_units, v_serial_unit_ids
+    FROM util.completed_paired_units(p_job_id, p_company_id, p_finishing_operation) u
+    WHERE u.id = ANY(v_serial_unit_ids) AND (v_supplier_finish OR NOT u.held);
+    IF v_confirmed_units <> v_quantity_received_to_inventory THEN
+      RAISE EXCEPTION 'Packed units on job % changed; refresh the receipt and try again', v_job_id_readable;
+    END IF;
+    v_quantity_received_to_inventory := cardinality(v_serial_unit_ids);
+    p_quantity_complete := COALESCE(v_prior_quantity_received, 0) + v_quantity_received_to_inventory;
+    v_partial_paired_receipt := p_quantity_complete + v_scrapped_outputs < v_planned_quantity;
 
     IF NOT p_automatic_finish THEN
       IF COALESCE(cardinality(p_expected_serials), 0) = 0 THEN
@@ -643,19 +690,6 @@ BEGIN
       SELECT 1 FROM job WHERE id = p_job_id AND "companyId" = p_company_id AND status IN ('Completed', 'Closed')
     )) THEN
       RETURN;
-    END IF;
-
-    -- Job actions serialize through the job row; inventory can change the
-    -- quality status independently. Lock these exact entities and recheck.
-    PERFORM 1 FROM "jobUnitPairing" p
-      JOIN "trackedEntity" source ON source.id = p."sourceId" AND source."companyId" = p."companyId"
-      JOIN "trackedEntity" output ON output.id = p."outputId" AND output."companyId" = p."companyId"
-      WHERE p."companyId" = p_company_id AND p."jobId" = p_job_id AND p."releasedAt" IS NULL
-        AND p."outputId" = ANY(v_serial_unit_ids)
-      ORDER BY p."outputId" FOR UPDATE OF p, source, output;
-    IF (SELECT count(*) FROM util.receivable_paired_units(p_job_id, p_company_id, p_finishing_operation) ready(id)
-        WHERE id = ANY(v_serial_unit_ids)) <> v_quantity_received_to_inventory THEN
-      RAISE EXCEPTION 'Packed units on job % changed; refresh the receipt and try again', v_job_id_readable;
     END IF;
   END IF;
 
