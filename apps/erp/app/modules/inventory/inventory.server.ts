@@ -3800,7 +3800,10 @@ export const postInventoryCount = defineServiceFn({
  * takes the one numbered `readableId` in `storageUnitId` (with no number,
  * stock with no number in the unit, else the unit's only serial or lot); a
  * scrap, and a move to another storage unit (`originalStorageUnitId`), need
- * `trackedEntityId`. A serial item moves one unit at a time, and an increase
+ * `trackedEntityId`; an unscrap without it restores stock with no serial or
+ * lot. A `trackedEntityId` that names no serial or lot is a new one, as the
+ * page sends: an increase creates it, a decrease is taken as above, and a
+ * move is refused. A serial item moves one unit at a time, and an increase
  * that would give a serial more than one unit is refused.
  *
  * The posting date is today in the company's time zone; there is no other.
@@ -4406,14 +4409,10 @@ export const scanKanban = defineServiceFn({
     // job, and with auto-release releases it, as the system. A Buy card
     // writes as the key, but RLS refuses a new order only after its number
     // is taken.
-    const cardRefused =
-      card.replenishmentSystem === "Make"
-        ? refuseKeyWithout(ctx, {
-            "production.jobs": card.autoRelease ? "Edit" : "Create"
-          })
-        : card.replenishmentSystem === "Buy"
-          ? refuseKeyWithout(ctx, { "purchasing.purchaseOrders": "Create" })
-          : null;
+    const cardPermission = service.kanbanKeyPermission(card);
+    const cardRefused = cardPermission
+      ? refuseKeyWithout(ctx, cardPermission)
+      : null;
     if (cardRefused) return cardRefused;
 
     // replenishKanban checks a Transfer card's units itself, for scans and

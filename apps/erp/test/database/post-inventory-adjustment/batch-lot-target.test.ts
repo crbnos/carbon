@@ -482,7 +482,14 @@ describe.skipIf(!hasLocalDatabase)("adjustment of a named lot", () => {
           quantity
         });
 
-      expect((await scrap(8)).error?.status).toBe(400);
+      // 8 of the lot, and the whole lot (quantity 0), are more than bin A holds.
+      for (const quantity of [8, 0]) {
+        const refused = await scrap(quantity);
+        expect(refused.error?.status).toBe(400);
+        expect(refused.error?.message).toBe(
+          "The lot is in more than one storage unit: scrap a quantity from one, or move it first"
+        );
+      }
       expect(await onHandByBin(itemId)).toEqual({ [binA]: 6, [binB]: 4 });
 
       expect((await scrap(6)).error).toBeNull();

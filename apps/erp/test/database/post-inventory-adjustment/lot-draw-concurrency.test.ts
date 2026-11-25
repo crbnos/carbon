@@ -9,7 +9,7 @@
 // pick) must count: the adjustment reads the lot again under the lock, so
 // its check, the entity's quantity and the ledger agree.
 
-import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import type { KyselyTx } from "@carbon/database/client";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect } from "vitest";
 import { postInventoryAdjustment as postInventoryAdjustmentBody } from "../../../app/modules/inventory/inventory.service";
@@ -25,40 +25,9 @@ import {
   databaseTest,
   hasLocalDatabase
 } from "../fixtures/local-database";
+import { backendPid, waitUntilBlocked } from "../fixtures/row-lock-race";
 
-type Db = Kysely<KyselyDatabase>;
 type Input = Parameters<typeof postInventoryAdjustmentBody>[1];
-
-async function backendPid(db: Db) {
-  const { rows } = await sql<{
-    pid: number;
-  }>`SELECT pg_backend_pid() AS pid`.execute(db);
-  return rows[0]!.pid;
-}
-
-/** Waits until `waiter` waits on a lock `blocker` holds, or until the
- *  adjustment has finished: one that never takes the lot's lock does not
- *  wait, and finishes on what it read before the draw. */
-async function waitUntilBlocked(
-  monitor: Db,
-  blocker: number,
-  waiter: number,
-  finished: () => boolean
-) {
-  const deadline = performance.now() + 15_000;
-  while (performance.now() < deadline) {
-    if (finished()) return;
-    const { rows } = await sql<{ blocked: boolean }>`
-      SELECT EXISTS (
-        SELECT 1 FROM pg_stat_activity
-        WHERE pid = ${waiter} AND ${blocker} = ANY(pg_blocking_pids(pid))
-      ) AS blocked
-    `.execute(monitor);
-    if (rows[0]?.blocked) return;
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  }
-  throw new Error("The adjustment never waited on the lot's lock");
-}
 
 describe.skipIf(!hasLocalDatabase)("an adjustment during a draw", () => {
   let f: Fixture;
@@ -367,6 +336,97 @@ describe.skipIf(!hasLocalDatabase)("an adjustment during a draw", () => {
       expect(await lotState(lot.lotId)).toEqual({
         entity: 10,
         status: "Available",
+        ledger: 10
+      });
+    }
+  );
+
+  // The hold check before the transaction reads the lot the caller names; a
+  // decrease that finds the lot by its number named none, and drew it down.
+  databaseTest(
+    "a decrease that finds a lot held for inspection by its number is refused",
+    async () => {
+      const lot = await lotOfTen("held");
+      const line = `${f.prefix}-held-line`;
+      await seed(f, async (trx) => {
+        const receipt = await trx
+          .insertInto("receipt")
+          .values({
+            receiptId: `${f.prefix}-RE-held`,
+            locationId: f.locationId,
+            sourceDocument: "Purchase Order",
+            status: "Posted",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("receiptLine")
+          .values({
+            id: line,
+            receiptId: receipt.id,
+            itemId: lot.itemId,
+            locationId: f.locationId,
+            storageUnitId: bin,
+            orderQuantity: 10,
+            receivedQuantity: 10,
+            unitOfMeasure: "EA",
+            unitPrice: 0,
+            requiresInspection: true,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .updateTable("trackedEntity")
+          .set({
+            status: "On Hold",
+            attributes: JSON.stringify({ "Receipt Line": line })
+          })
+          .where("id", "=", lot.lotId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await trx
+          .insertInto("inspection")
+          .values({
+            inspectionId: `${f.prefix}-INS-held`,
+            itemId: lot.itemId,
+            lotSize: 10,
+            samplingStandard: "ANSI_Z1_4",
+            samplingPlanType: "All",
+            sampleSize: 10,
+            acceptanceNumber: 0,
+            rejectionNumber: 1,
+            sourceDocument: "Receipt",
+            sourceDocumentId: receipt.id,
+            sourceDocumentLineId: line,
+            storageUnitId: bin,
+            status: "Pending",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+
+      const result = await invokePosting(
+        { db: f.db, companyId: f.companyId, userId: USER },
+        "post-inventory-adjustment",
+        {
+          adjustmentType: "Negative Adjmt.",
+          itemId: lot.itemId,
+          locationId: f.locationId,
+          storageUnitId: bin,
+          readableId: "held-B1",
+          quantity: 2
+        },
+        postInventoryAdjustmentBody
+      );
+
+      expect(result.error?.message).toMatch(/held for inspection/);
+      expect(await lotState(lot.lotId)).toEqual({
+        entity: 10,
+        status: "On Hold",
         ledger: 10
       });
     }

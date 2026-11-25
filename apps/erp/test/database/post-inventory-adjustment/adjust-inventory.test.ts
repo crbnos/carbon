@@ -395,6 +395,63 @@ describe.skipIf(!hasLocalDatabase)("an adjustment read against its item", () => 
     }
   );
 
+  // An id that names nothing found no stock of it to move and answered
+  // success with no ledger row.
+  databaseTest(
+    "refuses a move to another storage unit of a lot no entity has",
+    async () => {
+      const itemId = await item("move-unknown", "Batch");
+      const id = await lot(
+        itemId,
+        { locationId: f.locationId, storageUnitId: binA },
+        6
+      );
+
+      const result = await adjust({
+        adjustmentType: "Set Quantity",
+        itemId,
+        locationId: f.locationId,
+        originalStorageUnitId: binA,
+        storageUnitId: binB,
+        trackedEntityId: `${itemId}-unknown`,
+        quantity: 6
+      });
+
+      expect(result.error?.message).toBe("Tracked entity not found");
+      expect(await ledger(itemId)).toEqual([[id, 6]]);
+    }
+  );
+
+  // The quantities page mints an id for an adjustment it does not open on a
+  // row, so a decrease with an id that names nothing takes the lot by number.
+  databaseTest(
+    "takes a decrease with a new id from the lot of its number in the bin",
+    async () => {
+      const itemId = await item("decrease-minted", "Batch");
+      const id = await lot(
+        itemId,
+        { locationId: f.locationId, storageUnitId: binA },
+        6
+      );
+
+      const result = await adjust({
+        adjustmentType: "Negative Adjmt.",
+        itemId,
+        locationId: f.locationId,
+        storageUnitId: binA,
+        trackedEntityId: `${itemId}-minted`,
+        readableId: "LOT-1",
+        quantity: 2
+      });
+
+      expect(result.error).toBeNull();
+      expect(await ledger(itemId)).toEqual([
+        [id, 6],
+        [id, -2]
+      ]);
+    }
+  );
+
   // As the MES posts it: no serial or lot named.
   databaseTest(
     "books an increase of a batch item that names no lot as a new lot",
