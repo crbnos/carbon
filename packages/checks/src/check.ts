@@ -74,40 +74,106 @@ export function eachFile(files: SourceFile[], scan: Scan): Violation[] {
   return files.flatMap(({ file, contents }) => scan(file, contents));
 }
 
+/** PURE: the violations in several loaded inputs. */
+type Find<T> = (inputs: T) => Violation[];
+
+type Loaders<T> = { [K in keyof T]: Loader<T[K]> };
+
 type FileRule = About & { files: Loader<SourceFile[]>; scan: Scan };
 
+/** A file rule whose `Scan`, and everything it needs, `rule()` builds on first use. */
+type LazyFileRule = About & { files: Loader<SourceFile[]>; rule(): Scan };
+
 type InputsRule<T> = About & {
-  reads: { [K in keyof T]: Loader<T[K]> };
+  reads: Loaders<T>;
   find(inputs: T): Violation[];
 };
+
+/** An inputs rule whose `find`, and everything it needs, `rule()` builds on first use. */
+type LazyInputsRule<T> = About & { reads: Loaders<T>; rule(): Find<T> };
+
+// A module namespace lists its exports alphabetically, not as written, so each
+// check keeps the order it was defined in for `checksOf`.
+const definedAt = new WeakMap<Check, number>();
+let defined = 0;
 
 /**
  * A check, from the inputs it reads and its rule over them. A rule over one
  * file at a time names its `files` and a `scan`; a rule over several inputs
- * names them in `reads` and gets them loaded in `find`. Neither sees the repo,
- * so a check reads only what it declares, and a test calls `scan` or `find`
- * with its own values.
+ * names them in `reads` and gets them loaded in `find`. Either may instead
+ * give `rule()`, which builds that `scan` or `find` the first time the check
+ * runs, so importing a check builds nothing. Neither sees the repo, so a check
+ * reads only what it declares, and a test calls `scan` or `find` with its own
+ * values.
  */
 export function defineCheck(rule: FileRule): Check & { scan: Scan };
+export function defineCheck(rule: LazyFileRule): Check & { scan: Scan };
 export function defineCheck<T extends Record<string, unknown>>(
   rule: InputsRule<T>
 ): Check & { find(inputs: T): Violation[] };
+export function defineCheck<T extends Record<string, unknown>>(
+  rule: LazyInputsRule<T>
+): Check & { find(inputs: T): Violation[] };
 export function defineCheck(
-  rule: FileRule | InputsRule<Record<string, unknown>>
+  rule:
+    | FileRule
+    | LazyFileRule
+    | InputsRule<Record<string, unknown>>
+    | LazyInputsRule<Record<string, unknown>>
 ): Check & {
   scan?: Scan;
   find?(inputs: Record<string, unknown>): Violation[];
 } {
+  const check = fromRule(rule);
+  definedAt.set(check, defined++);
+  return check;
+}
+
+function fromRule(
+  rule:
+    | FileRule
+    | LazyFileRule
+    | InputsRule<Record<string, unknown>>
+    | LazyInputsRule<Record<string, unknown>>
+) {
   if ("files" in rule) {
-    const { files, scan, ...about } = rule;
-    return {
-      ...about,
-      scan,
-      reads: [files],
-      run: (repo) => eachFile(repo.read(files), scan)
-    };
+    if ("scan" in rule) {
+      const { files, scan, ...about } = rule;
+      return fileCheck(about, files, () => scan);
+    }
+    const { files, rule: build, ...about } = rule;
+    return fileCheck(about, files, build);
   }
-  const { reads, find, ...about } = rule;
+  if ("find" in rule) {
+    const { reads, find, ...about } = rule;
+    return inputsCheck(about, reads, () => find);
+  }
+  const { reads, rule: build, ...about } = rule;
+  return inputsCheck(about, reads, build);
+}
+
+function fileCheck(
+  about: About,
+  files: Loader<SourceFile[]>,
+  build: () => Scan
+): Check & { scan: Scan } {
+  const built = once(build);
+  const scan: Scan = (file, contents) => built()(file, contents);
+  return {
+    ...about,
+    scan,
+    reads: [files],
+    run: (repo) => eachFile(repo.read(files), scan)
+  };
+}
+
+function inputsCheck(
+  about: About,
+  reads: Loaders<Record<string, unknown>>,
+  build: () => Find<Record<string, unknown>>
+): Check & { find: Find<Record<string, unknown>> } {
+  const built = once(build);
+  const find: Find<Record<string, unknown>> = (inputs) => built()(inputs);
   return {
     ...about,
     find,
@@ -119,4 +185,24 @@ export function defineCheck(
         )
       )
   };
+}
+
+/** What `build` returns, built on the first call and kept. */
+function once<T>(build: () => T): () => T {
+  let built: { value: T } | undefined;
+  return () => {
+    built ??= { value: build() };
+    return built.value;
+  };
+}
+
+/**
+ * The checks of a subject file whose every export is a check, in the order the
+ * file defines them. It takes the file's namespace (`import * as`), so any
+ * other value the file exports is a type error.
+ */
+export function checksOf(exports: Record<string, Check>): Check[] {
+  return Object.values(exports).sort(
+    (a, b) => (definedAt.get(a) ?? 0) - (definedAt.get(b) ?? 0)
+  );
 }

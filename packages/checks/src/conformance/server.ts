@@ -2,10 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type Check, defineCheck, type Violation } from "../check";
+import { defineCheck } from "../check";
 import { requestHandlingTypescript, typescript } from "../sources/inputs";
+import {
+  type Banned,
+  bannedHits,
+  lineViolations,
+  matchViolations
+} from "../sources/matches";
 import { loadServerFiles } from "../sources/server-files";
-import { lineOf } from "../sources/text";
 
 // Server: rules for code that handles requests and runs jobs. They cover where
 // a redirect may go, how the client's address and the calendar day are read,
@@ -17,9 +22,6 @@ import { lineOf } from "../sources/text";
 // remembered to validate it — one signup route did not. `redirect` from
 // @carbon/utils only goes to a path on this origin; `redirectExternal` is the
 // named way to leave it.
-const RAW_IMPORT =
-  /import\s*\{[^}]*?\b(redirect|redirectDocument|replace)\b[^}]*\}\s*from\s*["']react-router["']/g;
-
 export const noRawRedirect = defineCheck({
   files: requestHandlingTypescript,
   id: "no-raw-redirect",
@@ -30,21 +32,17 @@ export const noRawRedirect = defineCheck({
     replacedBy: "redirect, redirectExternal (@carbon/utils)",
     since: "2026-10-04"
   },
-  scan(file: string, contents: string): Violation[] {
-    const violations: Violation[] = [];
-    for (const match of contents.matchAll(RAW_IMPORT)) {
-      const line = lineOf(contents, match.index);
-      violations.push({
-        file,
-        line,
+  rule() {
+    const rawImport =
+      /import\s*\{[^}]*?\b(redirect|redirectDocument|replace)\b[^}]*\}\s*from\s*["']react-router["']/g;
+    return (file, contents) =>
+      matchViolations(file, contents, rawImport, (match) => ({
         snippet: `import { ${match[1]} } from "react-router"`,
         message:
           match[1] === "redirect"
             ? "Import redirect from @carbon/utils; use redirectExternal to leave this origin"
             : `${match[1]} from react-router goes wherever it is told; use redirect from @carbon/utils`
-      });
-    }
-    return violations;
+      }));
   }
 });
 
@@ -54,11 +52,6 @@ export const noRawRedirect = defineCheck({
 // them by hand is how login rate limits and ITAR audit records ended up keyed on
 // an address the caller chose. getClientIp / getRequestProtocol / getRequestHost /
 // getRequestOrigin in @carbon/utils are the one reading.
-const RAW_READ =
-  /(?:\.(?:get|has)\(\s*|\[\s*)["'`](?:x-forwarded-(?:for|host|proto)|x-real-ip)["'`]/i;
-
-const HELPERS = "packages/utils/src/headers.ts";
-
 export const noRawForwardedHeaders = defineCheck({
   files: requestHandlingTypescript,
   id: "no-raw-forwarded-headers",
@@ -71,20 +64,18 @@ export const noRawForwardedHeaders = defineCheck({
       "getClientIp, getRequestProtocol, getRequestHost, getRequestOrigin (@carbon/utils)",
     since: "2026-09-28"
   },
-  scan(file: string, contents: string): Violation[] {
-    if (file === HELPERS) return [];
-    const violations: Violation[] = [];
-    contents.split("\n").forEach((text, i) => {
-      if (!RAW_READ.test(text)) return;
-      violations.push({
-        file,
-        line: i + 1,
-        snippet: text.trim(),
-        message:
-          "Use getClientIp / getRequestProtocol / getRequestHost / getRequestOrigin from @carbon/utils"
-      });
-    });
-    return violations;
+  rule() {
+    const rawRead =
+      /(?:\.(?:get|has)\(\s*|\[\s*)["'`](?:x-forwarded-(?:for|host|proto)|x-real-ip)["'`]/i;
+    const helpers = "packages/utils/src/headers.ts";
+    const message =
+      "Use getClientIp / getRequestProtocol / getRequestHost / getRequestOrigin from @carbon/utils";
+    return (file, contents) => {
+      if (file === helpers) return [];
+      return lineViolations(file, contents, rawRead, (text) => [
+        { snippet: text.trim(), message }
+      ]);
+    };
   }
 });
 
@@ -92,8 +83,6 @@ export const noRawForwardedHeaders = defineCheck({
 // grouped by. A value interpolated into it (`Failed to upload ${file.name}`)
 // makes every occurrence a different error and puts the value in the trace.
 // Name it instead: "Failed to upload {fileName}", { fileName: file.name }.
-const INTERPOLATED = /\b\w*[lL]og(?:ger)?\.(?:error|fatal)\(\s*`[^`]*\$\{/g;
-
 export const noInterpolatedErrorLog = defineCheck({
   files: requestHandlingTypescript,
   id: "no-interpolated-error-log",
@@ -104,34 +93,19 @@ export const noInterpolatedErrorLog = defineCheck({
     replacedBy: 'logger.error("… {value}", { value })',
     since: "2026-10-04"
   },
-  scan(file: string, contents: string): Violation[] {
-    return [...contents.matchAll(INTERPOLATED)].map((match) => {
-      const line = lineOf(contents, match.index);
-      return {
-        file,
-        line,
+  rule() {
+    const interpolated = /\b\w*[lL]og(?:ger)?\.(?:error|fatal)\(\s*`[^`]*\$\{/g;
+    return (file, contents) =>
+      matchViolations(file, contents, interpolated, (match) => ({
         snippet: match[0].replace(/\s+/g, " "),
         message:
           'Use a {placeholder} in the message and pass the value as a property: logger.error("Failed to upload {fileName}", { fileName })'
-      };
-    });
+      }));
   }
 });
 
-/**
- * Matches `limit: 0` inside an Inngest `concurrency` block.
- *
- * `[^{}]*?` cannot cross a brace, so the match is confined to the concurrency
- * object itself — an unrelated `limit: 0` after it closes (a query limit, a
- * pagination default) is not flagged. A bounded `[\s\S]` span would reach past
- * the `}` and match `concurrency: {}, const q = { limit: 0 }`.
- *
- * The concurrency object contains no nested braces in practice (`limit`, `key`,
- * `scope` are all scalars), so excluding braces entirely is exact rather than
- * approximate.
- */
-const ZERO_CONCURRENCY = /concurrency\s*:\s*\{[^{}]*?\blimit\s*:\s*0\b/g;
-
+// `limit: 0` inside an Inngest `concurrency` block is no capacity, not
+// unlimited: every run parks in QUEUED forever.
 export const noZeroConcurrency = defineCheck({
   files: loadServerFiles,
   id: "no-zero-concurrency",
@@ -140,18 +114,23 @@ export const noZeroConcurrency = defineCheck({
     deprecates: "concurrency: { limit: 0 }",
     replacedBy: "concurrency: { limit: 1 }"
   },
-  scan(file, contents) {
-    const violations: Violation[] = [];
-    for (const m of contents.matchAll(ZERO_CONCURRENCY)) {
-      violations.push({
-        file,
-        line: lineOf(contents, m.index),
-        snippet: m[0].replace(/\s+/g, " "),
+  rule() {
+    // `[^{}]*?` cannot cross a brace, so the match is confined to the
+    // concurrency object itself — an unrelated `limit: 0` after it closes (a
+    // query limit, a pagination default) is not flagged. A bounded `[\s\S]`
+    // span would reach past the `}` and match
+    // `concurrency: {}, const q = { limit: 0 }`.
+    //
+    // The concurrency object contains no nested braces in practice (`limit`,
+    // `key`, `scope` are all scalars), so excluding braces entirely is exact
+    // rather than approximate.
+    const zeroConcurrency = /concurrency\s*:\s*\{[^{}]*?\blimit\s*:\s*0\b/g;
+    return (file, contents) =>
+      matchViolations(file, contents, zeroConcurrency, (match) => ({
+        snippet: match[0].replace(/\s+/g, " "),
         message:
           "concurrency.limit 0 is no capacity, not unlimited — every run parks in QUEUED forever. Use >= 1, or omit the concurrency block."
-      });
-    }
-    return violations;
+      }));
   }
 });
 
@@ -175,43 +154,6 @@ export const noZeroConcurrency = defineCheck({
  * blanked first (`maskClientCode`). The loaders, actions and the module-level
  * helpers they call stay.
  */
-const NOW_MESSAGE =
-  'Server code: this is a date part of "now" in the process zone — use datetime.today(tz) / getDayOfWeek with the company/location timezone.';
-
-const BANNED = [
-  {
-    pattern: /getLocalTimeZone\s*\(/g,
-    message:
-      "Server code: resolve company/location timezone and use datetime.today(tz) — getLocalTimeZone() is the process zone, not the user's."
-  },
-  {
-    // [^)]* also catches supplied instants: new Date(eventAt).toISOString()
-    // .slice(0, 10) is that event's UTC day, not its business day.
-    pattern:
-      /new Date\([^)]*\)\s*\.toISOString\(\)\s*\.(?:split\(\s*["']T["']\s*\)\s*\[0\]|slice\(\s*0,\s*10\s*\))/g,
-    message:
-      "Server code: this is the UTC calendar day — use datetime.today(tz) / datetime.businessDay(instant, tz) with the company/location timezone."
-  },
-  {
-    pattern: /new Date\(\)\s*\.get(?:Day|Date|Month|FullYear|Hours|Minutes)\(/g,
-    message: NOW_MESSAGE
-  },
-  {
-    pattern: /\.setHours\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/g,
-    message:
-      "Server code: this is midnight in the process zone — derive the day boundary via today(tz)/startOfWeek(...).toDate(tz) instead."
-  }
-];
-
-/**
- * Text every pattern of BANNED contains, so a line without any is skipped by
- * BANNED. A file without any is skipped whole: NOW_LOCAL needs `new Date(` too.
- */
-const MAY_BE_BANNED = /getLocalTimeZone|new Date\(|\.setHours\(/;
-
-/** A local assigned the current instant: `const now = new Date();`. */
-const NOW_LOCAL = /\b(?:const|let|var)\s+(\w+)\s*=\s*new Date\(\s*\)\s*;/g;
-
 export const noLocalTimezone = defineCheck({
   files: loadServerFiles,
   id: "no-local-timezone",
@@ -225,38 +167,61 @@ export const noLocalTimezone = defineCheck({
     // getWeeklyHoursForEmployees cut the payroll week at process-zone midnight.
     incidents: ["92c041c48e"]
   },
-  scan(file, contents) {
-    if (!MAY_BE_BANNED.test(contents)) return [];
-    // `const now = new Date(); now.getDay()` is the same date part of "now",
-    // split over two lines, so its second line has none of MAY_BE_BANNED.
-    const nowNames = [...contents.matchAll(NOW_LOCAL)].map((m) => m[1]);
-    const nowParts =
-      nowNames.length > 0
-        ? new RegExp(
-            String.raw`\b(?:${nowNames.join("|")})\s*\.get(?:Day|Date|Month|FullYear|Hours|Minutes)\(`,
-            "g"
-          )
-        : null;
-    const violations: Violation[] = [];
-    contents.split("\n").forEach((text, i) => {
-      if (MAY_BE_BANNED.test(text)) {
-        for (const { pattern, message } of BANNED) {
-          for (const m of text.matchAll(pattern)) {
-            violations.push({ file, line: i + 1, snippet: m[0], message });
-          }
-        }
+  rule() {
+    const nowMessage =
+      'Server code: this is a date part of "now" in the process zone — use datetime.today(tz) / getDayOfWeek with the company/location timezone.';
+    const banned: Banned[] = [
+      {
+        pattern: /getLocalTimeZone\s*\(/g,
+        message:
+          "Server code: resolve company/location timezone and use datetime.today(tz) — getLocalTimeZone() is the process zone, not the user's."
+      },
+      {
+        // [^)]* also catches supplied instants: new Date(eventAt).toISOString()
+        // .slice(0, 10) is that event's UTC day, not its business day.
+        pattern:
+          /new Date\([^)]*\)\s*\.toISOString\(\)\s*\.(?:split\(\s*["']T["']\s*\)\s*\[0\]|slice\(\s*0,\s*10\s*\))/g,
+        message:
+          "Server code: this is the UTC calendar day — use datetime.today(tz) / datetime.businessDay(instant, tz) with the company/location timezone."
+      },
+      {
+        pattern:
+          /new Date\(\)\s*\.get(?:Day|Date|Month|FullYear|Hours|Minutes)\(/g,
+        message: nowMessage
+      },
+      {
+        pattern: /\.setHours\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/g,
+        message:
+          "Server code: this is midnight in the process zone — derive the day boundary via today(tz)/startOfWeek(...).toDate(tz) instead."
       }
-      if (!nowParts) return;
-      for (const m of text.matchAll(nowParts)) {
-        violations.push({
-          file,
-          line: i + 1,
-          snippet: m[0],
-          message: NOW_MESSAGE
-        });
+    ];
+    // Text every banned pattern contains, so a line without any is skipped. A
+    // file without any is skipped whole: nowLocal needs `new Date(` too.
+    const mayBeBanned = /getLocalTimeZone|new Date\(|\.setHours\(/;
+    // A local assigned the current instant: `const now = new Date();`.
+    const nowLocal = /\b(?:const|let|var)\s+(\w+)\s*=\s*new Date\(\s*\)\s*;/g;
+    return (file, contents) => {
+      if (!mayBeBanned.test(contents)) return [];
+      const nowNames = [...contents.matchAll(nowLocal)].map((m) => m[1]);
+      if (nowNames.length === 0) {
+        return lineViolations(file, contents, mayBeBanned, (text) =>
+          bannedHits(text, banned)
+        );
       }
-    });
-    return violations;
+      // `const now = new Date(); now.getDay()` is the same date part of "now",
+      // split over two lines, so its second line has none of mayBeBanned.
+      const nowPart = String.raw`\b(?:${nowNames.join("|")})\s*\.get(?:Day|Date|Month|FullYear|Hours|Minutes)\(`;
+      const withNow: Banned[] = [
+        ...banned,
+        { pattern: new RegExp(nowPart, "g"), message: nowMessage }
+      ];
+      return lineViolations(
+        file,
+        contents,
+        new RegExp(`${mayBeBanned.source}|${nowPart}`),
+        (text) => bannedHits(text, withNow)
+      );
+    };
   }
 });
 
@@ -267,53 +232,6 @@ export const noLocalTimezone = defineCheck({
 //
 // Ask the registry instead: `getIntegrationsByRole` / `getIntegrationIdsByRole`
 // (`@carbon/ee`), or the resolved `IntegrationTopology`.
-const INTEGRATION_IDS = [
-  "xero",
-  "quickbooks",
-  "rillet",
-  "ramp",
-  "sense",
-  "slack",
-  "jira",
-  "linear",
-  "onshape",
-  "onshape-government",
-  "onshape-v2-government",
-  "paperless-parts",
-  "email",
-  "sage",
-  "stripe-connect"
-];
-
-const quoted = INTEGRATION_IDS.map((id) => `["']${id}["']`).join("|");
-
-/** `x === "ramp"`, `x !== "ramp"` — a branch on identity. */
-const COMPARISON = new RegExp(`[!=]==?\\s*(?:${quoted})`, "g");
-
-/** `["xero", "quickbooks"]` / `new Set(["ramp", …])` — an ad-hoc membership list. */
-const ID_LIST = new RegExp(`(?:${quoted})\\s*,\\s*(?:${quoted})`, "g");
-
-/** Both patterns need a quoted id, so a file or line without one is skipped. */
-const ANY_ID = new RegExp(quoted);
-
-/**
- * Files that are legitimately id-keyed: the registry itself, a provider naming
- * ITSELF, and the maps whose whole purpose is per-id data (secret keys, server
- * hooks, error copy).
- */
-const EXCLUDED = [
-  /^packages\/ee\/src\/index\.ts$/,
-  /^packages\/ee\/src\/hooks\.server\.ts$/,
-  /^packages\/ee\/src\/integrations\/secrets\.ts$/,
-  /^packages\/ee\/src\/sync\//,
-  // The issue-tracker sync engine dispatches each linked issue to its
-  // tracker, as the accounting sync engine does to its provider.
-  /^packages\/ee\/src\/issue-sync\//,
-  /^apps\/erp\/app\/modules\/settings\/integration-errors\.ts$/,
-  // A provider's own directory may name itself.
-  /^packages\/ee\/src\/(xero|quickbooks|rillet|ramp|slack|jira|linear|onshape|paperless-parts|email|sage|stripe-connect|sense)\//
-];
-
 export const noIntegrationIdBranching = defineCheck({
   files: typescript,
   id: "no-integration-id-branching",
@@ -326,36 +244,60 @@ export const noIntegrationIdBranching = defineCheck({
       "providerRole + getIntegrationsByRole/getIntegrationIdsByRole (@carbon/ee) or IntegrationTopology",
     since: "20260924133915_integration-provider-role.sql"
   },
-  scan(file: string, contents: string): Violation[] {
-    if (EXCLUDED.some((pattern) => pattern.test(file))) return [];
-    if (!ANY_ID.test(contents)) return [];
-
-    const violations: Violation[] = [];
-    contents.split("\n").forEach((text, i) => {
-      if (!ANY_ID.test(text)) return;
-      for (const pattern of [COMPARISON, ID_LIST]) {
-        pattern.lastIndex = 0;
-        for (const match of text.matchAll(pattern)) {
-          violations.push({
-            file,
-            line: i + 1,
-            snippet: match[0],
-            message:
-              "Branching on an integration id excludes every provider added later — ask the registry for the role instead (getIntegrationIdsByRole / IntegrationTopology)."
-          });
-        }
+  rule() {
+    const quoted = [
+      "xero",
+      "quickbooks",
+      "rillet",
+      "ramp",
+      "sense",
+      "slack",
+      "jira",
+      "linear",
+      "onshape",
+      "onshape-government",
+      "onshape-v2-government",
+      "paperless-parts",
+      "email",
+      "sage",
+      "stripe-connect"
+    ]
+      .map((id) => `["']${id}["']`)
+      .join("|");
+    const message =
+      "Branching on an integration id excludes every provider added later — ask the registry for the role instead (getIntegrationIdsByRole / IntegrationTopology).";
+    const branches: Banned[] = [
+      // `x === "ramp"`, `x !== "ramp"` — a branch on identity.
+      { pattern: new RegExp(`[!=]==?\\s*(?:${quoted})`, "g"), message },
+      // `["xero", "quickbooks"]` / `new Set(["ramp", …])` — an ad-hoc membership list.
+      {
+        pattern: new RegExp(`(?:${quoted})\\s*,\\s*(?:${quoted})`, "g"),
+        message
       }
-    });
-    return violations;
+    ];
+    // Both branches need a quoted id, so a file or line without one is skipped.
+    const anyId = new RegExp(quoted);
+    // Files that are legitimately id-keyed: the registry itself, a provider
+    // naming ITSELF, and the maps whose whole purpose is per-id data (secret
+    // keys, server hooks, error copy).
+    const excluded = [
+      /^packages\/ee\/src\/index\.ts$/,
+      /^packages\/ee\/src\/hooks\.server\.ts$/,
+      /^packages\/ee\/src\/integrations\/secrets\.ts$/,
+      /^packages\/ee\/src\/sync\//,
+      // The issue-tracker sync engine dispatches each linked issue to its
+      // tracker, as the accounting sync engine does to its provider.
+      /^packages\/ee\/src\/issue-sync\//,
+      /^apps\/erp\/app\/modules\/settings\/integration-errors\.ts$/,
+      // A provider's own directory may name itself.
+      /^packages\/ee\/src\/(xero|quickbooks|rillet|ramp|slack|jira|linear|onshape|paperless-parts|email|sage|stripe-connect|sense)\//
+    ];
+    return (file, contents) => {
+      if (excluded.some((pattern) => pattern.test(file))) return [];
+      if (!anyId.test(contents)) return [];
+      return lineViolations(file, contents, anyId, (text) =>
+        bannedHits(text, branches)
+      );
+    };
   }
 });
-
-/** The server checks, in the order they are written above. */
-export const checks: Check[] = [
-  noRawRedirect,
-  noRawForwardedHeaders,
-  noInterpolatedErrorLog,
-  noZeroConcurrency,
-  noLocalTimezone,
-  noIntegrationIdBranching
-];
