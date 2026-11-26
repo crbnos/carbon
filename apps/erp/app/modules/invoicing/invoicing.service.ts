@@ -1378,21 +1378,30 @@ export async function updatePurchaseInvoice(
     exchangeRate?: number;
     exchangeRateUpdatedAt?: string;
     customFields?: Json;
-  }
+  },
+  /** Write only while the invoice is still a Draft: `data` is null when it is not. */
+  options: { draftOnly?: boolean } = {}
 ): Promise<{
   data: { id: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
 }> {
   const { id, ...rest } = input;
-  const result = await client
+  let update = client
     .from("purchaseInvoice")
     .update({
       ...sanitize(rest),
       updatedAt: datetime.timestamp()
     })
-    .eq("id", id)
-    .select("id")
-    .single();
+    .eq("id", id);
+  if (options.draftOnly) {
+    const result = await update
+      .eq("status", "Draft")
+      .select("id")
+      .maybeSingle();
+    if (result.error) return { data: null, error: result.error };
+    return { data: result.data ? { id: result.data.id } : null, error: null };
+  }
+  const result = await update.select("id").single();
 
   if (result.error) return { data: null, error: result.error };
   return { data: { id: result.data.id }, error: null };

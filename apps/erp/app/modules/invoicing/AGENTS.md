@@ -339,9 +339,12 @@ tagged `@mcp` (all below except the two `*Field` updates and the two `*LinePoste
   `sendSalesInvoice`, `deleteDraftSalesInvoice`; `createSalesInvoiceLine` /
   `updateSalesInvoiceLine` / `deleteDraftSalesInvoiceLine` /
   `changeSalesInvoiceLineAccount` / `getSalesInvoiceLinePostedAccount`
-- Purchase invoices: `createPurchaseInvoice`, `updatePurchaseInvoiceField`,
-  `postPurchaseInvoice`, `voidPurchaseInvoice`, `deleteDraftPurchaseInvoice`,
-  `mapPurchaseInvoiceLines`; `deleteDraftPurchaseInvoiceLine`
+- Purchase invoices: `createPurchaseInvoice`, `updatePurchaseInvoice` (the full form, also the
+  API and MCP tool: a posted invoice refuses a change of `supplierId`, and a Draft's supplier
+  change writes only while it is still a Draft, since the posting booked that supplier's payable
+  and an accounting provider finds its copy of the bill by number and supplier),
+  `updatePurchaseInvoiceField`, `postPurchaseInvoice`, `voidPurchaseInvoice`,
+  `deleteDraftPurchaseInvoice`, `mapPurchaseInvoiceLines`; `deleteDraftPurchaseInvoiceLine`
 - Purchase invoice lines: `createPurchaseInvoiceLine` / `updatePurchaseInvoiceLine` /
   `changePurchaseInvoiceLineAccount` / `getPurchaseInvoiceLinePostedAccount`
 - Payments: `createPayment`, `postPayment`, `voidPayment`
