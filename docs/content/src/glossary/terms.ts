@@ -1404,7 +1404,8 @@ export const terms = {
   },
   "item-planning-horizon": {
     term: msg`Planning Horizon (Days)`,
-    definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`
+    definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`,
+    href: "/docs/reference/planning#planning-horizon"
   },
   "planning-time-fence": {
     term: msg`Planning time fence`,
