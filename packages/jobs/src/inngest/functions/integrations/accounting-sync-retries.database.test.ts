@@ -773,9 +773,9 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
     expect(fake.contacts.map((c) => c.Name)).toEqual(["After"]);
   });
 
-  // QuickBooks keys a create by its requestid. A customer created under the
-  // same key as before the rename was answered with the first create's
-  // replayed response, the old name, and linked as the renamed version.
+  // QuickBooks answers a repeated requestid with the first create's
+  // response. The retry sends the same key, so it gets the customer the lost
+  // create made, and then writes the rename over it: no second customer.
   it("a QuickBooks customer renamed after a create whose response was lost is pushed with its new name", async () => {
     const scope = await quickBooksCompany();
     const customerId = `${scope.prefix}-customer`;
@@ -836,9 +836,11 @@ describe.skipIf(!hasLocalStack)("accounting sync retries (Postgres)", () => {
       .where("entityType", "=", "customer")
       .where("entityId", "=", customerId)
       .executeTakeFirstOrThrow();
-    expect(
-      quickBooks.customers.find((c) => c.Id === mapping.externalId)?.DisplayName
-    ).toBe("After");
+    // One customer, the one the first create made, now carrying the rename.
+    expect(quickBooks.customers.map((c) => [c.Id, c.DisplayName])).toEqual([
+      ["1", "After"]
+    ]);
+    expect(mapping.externalId).toBe("1");
   });
 
   /** A company that consolidates Transfer Receipts daily, with one posted journal per name queued. */

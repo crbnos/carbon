@@ -8,7 +8,8 @@ import {
   buildQboRequestId,
   QBO_DIMENSION_TARGET_CLASS,
   QBO_DIMENSION_TARGET_DEPARTMENT,
-  QboProvider
+  QboProvider,
+  toQboRequestId
 } from "../provider";
 
 const REALM_ID = "9130357849328710";
@@ -92,14 +93,23 @@ describe("QboProvider dimension entities (Class / Department)", () => {
     await expect(makeProvider().listDepartments()).resolves.toEqual([]);
   });
 
-  it("creates a Class by NAME (dimension autoCreate)", async () => {
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({ Class: { Id: "301", SyncToken: "0", Name: "Boston" } })
+  const replacing = (operation: string, label: string) => (deletedId: string) =>
+    buildQboRequestId(
+      "company-1",
+      operation,
+      `${label}:replacing:${deletedId}`
     );
+
+  it("creates a Class by NAME (dimension autoCreate)", async () => {
+    const boston = { Id: "301", SyncToken: "0", Name: "Boston", Active: true };
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ Class: boston }))
+      .mockResolvedValueOnce(jsonResponse({ Class: boston }));
 
     const created = await makeProvider().createClass(
       { Name: "Boston" },
-      buildQboRequestId("company-1", "class", "Boston")
+      buildQboRequestId("company-1", "class", "Boston"),
+      replacing("class", "Boston")
     );
     expect(created.Id).toBe("301");
 
@@ -112,20 +122,65 @@ describe("QboProvider dimension entities (Class / Department)", () => {
   });
 
   it("creates a Department by NAME (dimension autoCreate)", async () => {
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({
-        Department: { Id: "500", SyncToken: "0", Name: "Operations" }
-      })
-    );
+    const operations = { Id: "500", SyncToken: "0", Name: "Operations" };
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ Department: operations }))
+      .mockResolvedValueOnce(jsonResponse({ Department: operations }));
 
     const created = await makeProvider().createDepartment(
       { Name: "Operations" },
-      buildQboRequestId("company-1", "department", "Operations")
+      buildQboRequestId("company-1", "department", "Operations"),
+      replacing("department", "Operations")
     );
     expect(created.Id).toBe("500");
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
       `/v3/company/${REALM_ID}/department`
     );
+  });
+
+  // Intuit answers the label's key with the first create's stored response,
+  // even after that class was deleted in QuickBooks: linking it again would
+  // tag every line with a deleted class.
+  it("creates the class again when the key answers with one since deleted", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          Class: { Id: "301", SyncToken: "0", Name: "Boston", Active: true }
+        })
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          Class: {
+            Id: "301",
+            SyncToken: "1",
+            Name: "Boston (deleted)",
+            Active: false
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          Class: { Id: "302", SyncToken: "0", Name: "Boston", Active: true }
+        })
+      );
+
+    const created = await makeProvider().createClass(
+      { Name: "Boston" },
+      buildQboRequestId("company-1", "class", "Boston"),
+      replacing("class", "Boston")
+    );
+
+    expect(created.Id).toBe("302");
+    const requestIds = fetchMock.mock.calls.map(([url]) =>
+      new URL(String(url)).searchParams.get("requestid")
+    );
+    expect(requestIds).toEqual([
+      toQboRequestId(buildQboRequestId("company-1", "class", "Boston")),
+      null,
+      toQboRequestId(
+        buildQboRequestId("company-1", "class", "Boston:replacing:301")
+      )
+    ]);
   });
 });
 

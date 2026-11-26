@@ -12,7 +12,7 @@ import { JournalEntrySyncError } from "../../../core/posting";
 import { EMPLOYEE_VENDOR_ENTITY_TYPE } from "../../../core/reimbursement-source";
 import type { ShouldSyncContext } from "../../../core/types";
 import { parseQboDate, type Qbo } from "../models";
-import type { QboProvider } from "../provider";
+import { type QboProvider, qboCreateRetry } from "../provider";
 import { loadQboAccountRefsById } from "./shared";
 
 /**
@@ -345,9 +345,15 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
     // QBO requires the counterparty ref (CustomerRef on a Payment, VendorRef on
     // a BillPayment); it is NOT inferable from the LinkedTxn alone.
     const counterpartyRef = await this.resolveCounterpartyRef(context);
-    const key = this.createKey(
-      `${context.carbonPaymentId}:${context.targetDocumentId}`,
-      "payment"
+    const settlement = `${context.carbonPaymentId}:${context.targetDocumentId}`;
+    const key = this.createKey(settlement, "payment");
+    // A payment does not change once posted, so a replay is already current.
+    const attempt = this.attemptOf(context.carbonPaymentId);
+    const retry = qboCreateRetry(
+      attempt === undefined
+        ? undefined
+        : this.createKey(`${settlement}:attempt:${attempt}`, "payment"),
+      { refresh: false }
     );
 
     if (context.family === "ap") {
@@ -369,7 +375,8 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
             }
           ]
         },
-        key
+        key,
+        retry
       );
       return {
         remoteId,
@@ -395,7 +402,8 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
           }
         ]
       },
-      key
+      key,
+      retry
     );
     return {
       remoteId,

@@ -18,7 +18,7 @@ import {
   type ShouldSyncContext
 } from "../../../core/types";
 import { parseQboDate, type Qbo } from "../models";
-import type { QboProvider } from "../provider";
+import { type QboProvider, qboCreateRetry } from "../provider";
 import { buildQboBillPayloadLines } from "./bill-lines";
 import {
   isQboUsCompany,
@@ -781,7 +781,8 @@ export class QboBillSyncer extends BaseEntitySyncer<
     if (!existingRemoteId) {
       const created = await this.qboProvider.createBill(
         data,
-        this.createKey(localId)
+        this.createKey(localId),
+        qboCreateRetry(this.attemptCreateKey(localId), { refresh: true })
       );
       this.rememberRemoteEntity(created);
       return created.Id;

@@ -177,7 +177,10 @@ describe("BaseEntitySyncer.pushBatchToAccounting", () => {
 
 describe("mayExistRemotely", () => {
   it("trusts the attempted set only for the entity type it was built for", async () => {
-    const attempted = { entityType: "bill" as const, ids: new Set(["a"]) };
+    const attempted = {
+      entityType: "bill" as const,
+      ids: new Map([["a", "op-1:2"]])
+    };
     const bills = syncer(fakeDatabase(), { attempted });
     // A dependency of another type built from a spread of the bill context.
     const invoices = syncer(fakeDatabase(), {

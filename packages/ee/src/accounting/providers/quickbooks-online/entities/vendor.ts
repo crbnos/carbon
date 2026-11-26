@@ -7,6 +7,7 @@ import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import type { Accounting } from "../../../core/types";
 import { contactsWithEmailFirst } from "../../../core/utils";
 import type { Qbo } from "../models";
+import { qboCreateRetry } from "../provider";
 import {
   escapeQboQueryValue,
   mapContactToQboContact,
@@ -381,7 +382,8 @@ export class QboVendorSyncer extends QboEntitySyncer<
       if (!existingRemoteId) {
         const created = await this.qboProvider.createVendor(
           data,
-          this.editableCreateKey(localId, data)
+          this.createKey(localId),
+          qboCreateRetry(this.attemptCreateKey(localId), { refresh: true })
         );
         this.rememberRemoteEntity(created);
         return created.Id;

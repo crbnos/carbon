@@ -1086,7 +1086,16 @@ export async function drainSyncOperations(args: {
             ? {
                 attempted: {
                   entityType: entityType as AccountingEntityType,
-                  ids: attempted.data
+                  ids: new Map(
+                    operations
+                      .filter((operation) =>
+                        attempted.data.has(operation.entityId)
+                      )
+                      .map((operation) => [
+                        operation.entityId,
+                        `${operation.id}:${operation.attemptCount}`
+                      ])
+                  )
                 }
               }
             : {})

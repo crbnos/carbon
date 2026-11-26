@@ -34,7 +34,8 @@ import {
   isQboDuplicateNameError,
   QBO_DIMENSION_TARGET_CLASS,
   QBO_DIMENSION_TARGET_DEPARTMENT,
-  type QboProvider
+  type QboProvider,
+  qboCreateRetry
 } from "../provider";
 import type { QboJournalDimensionArgs } from "./journal-entry";
 import {
@@ -272,14 +273,18 @@ export class QboReimbursementSyncer extends ChargeSyncerBase<
         if (slot.target === QBO_DIMENSION_TARGET_CLASS) {
           const created = await this.qboProvider.createClass(
             { Name: label },
-            this.createKey(label, "class")
+            this.createKey(label, "class"),
+            (deletedId) =>
+              this.createKey(`${label}:replacing:${deletedId}`, "class")
           );
           return created.Id;
         }
         if (slot.target === QBO_DIMENSION_TARGET_DEPARTMENT) {
           const created = await this.qboProvider.createDepartment(
             { Name: label },
-            this.createKey(label, "department")
+            this.createKey(label, "department"),
+            (deletedId) =>
+              this.createKey(`${label}:replacing:${deletedId}`, "department")
           );
           return created.Id;
         }
@@ -581,7 +586,10 @@ export class QboReimbursementSyncer extends ChargeSyncerBase<
     // https://blogs.a.intuit.com/2018/09/10/quickbooks-online-api-best-practices/
     const created = await this.qboProvider.createBill(
       data,
-      buildQboRequestId(this.companyId, "reimbursement", localId)
+      buildQboRequestId(this.companyId, "reimbursement", localId),
+      qboCreateRetry(this.attemptCreateKey(localId, "reimbursement"), {
+        refresh: false
+      })
     );
     if (!created?.Id) {
       throw new Error(

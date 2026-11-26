@@ -34,7 +34,8 @@ import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
   QBO_DIMENSION_TARGET_CLASS,
   QBO_DIMENSION_TARGET_DEPARTMENT,
-  type QboProvider
+  type QboProvider,
+  qboCreateRetry
 } from "../provider";
 import type { QboJournalDimensionArgs } from "./journal-entry";
 import {
@@ -313,14 +314,18 @@ export class QboChargeSyncer extends ChargeSyncerBase<
         if (slot.target === QBO_DIMENSION_TARGET_CLASS) {
           const created = await this.qboProvider.createClass(
             { Name: label },
-            this.createKey(label, "class")
+            this.createKey(label, "class"),
+            (deletedId) =>
+              this.createKey(`${label}:replacing:${deletedId}`, "class")
           );
           return created.Id;
         }
         if (slot.target === QBO_DIMENSION_TARGET_DEPARTMENT) {
           const created = await this.qboProvider.createDepartment(
             { Name: label },
-            this.createKey(label, "department")
+            this.createKey(label, "department"),
+            (deletedId) =>
+              this.createKey(`${label}:replacing:${deletedId}`, "department")
           );
           return created.Id;
         }
@@ -557,7 +562,12 @@ export class QboChargeSyncer extends ChargeSyncerBase<
       // https://blogs.a.intuit.com/2018/09/10/quickbooks-online-api-best-practices/
       const created = await this.qboProvider.createPurchase(
         data,
-        this.createKey(localId, "charge")
+        this.createKey(localId, "charge"),
+        // A replay is the charge as the earlier attempt sent it; an edit made
+        // since is sent over it, or the link would record it as synced.
+        qboCreateRetry(this.attemptCreateKey(localId, "charge"), {
+          refresh: true
+        })
       );
       if (!created?.Id)
         throw new Error(

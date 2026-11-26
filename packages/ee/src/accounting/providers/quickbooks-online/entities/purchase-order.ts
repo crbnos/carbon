@@ -25,7 +25,7 @@ import {
 } from "../../../core/types";
 import { contactsWithEmailFirst } from "../../../core/utils";
 import { parseQboDate, type Qbo } from "../models";
-import type { QboProvider } from "../provider";
+import { type QboProvider, qboCreateRetry } from "../provider";
 import {
   buildQboTxnTaxDetail,
   isQboUsCompany,
@@ -694,7 +694,8 @@ export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
     if (!existingRemoteId) {
       const created = await this.qboProvider.createPurchaseOrder(
         data,
-        this.editableCreateKey(localId, data)
+        this.createKey(localId),
+        qboCreateRetry(this.attemptCreateKey(localId), { refresh: true })
       );
       return created.Id;
     }

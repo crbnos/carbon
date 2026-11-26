@@ -431,12 +431,17 @@ export interface SyncContext {
   entityType: AccountingEntityType;
   /**
    * The local ids of `entityType` an earlier push attempt may already have
-   * created remotely (`getAttemptedEntityIds`). Only these pay a provider's
-   * recovery read before their create. A syncer of another entity type (a
-   * dependency built from a spread of this context) ignores it, and so does
-   * every create when it is absent: those read first.
+   * created remotely (`getAttemptedEntityIds`), each to this attempt
+   * (`<operationId>:<attemptCount>`). Only these pay a provider's recovery
+   * read before their create, and their creates can be told apart
+   * (`attemptCreateKey`). A syncer of another entity type (a dependency built
+   * from a spread of this context) ignores it, and so does every create when
+   * it is absent: those read first.
    */
-  attempted?: { entityType: AccountingEntityType; ids: ReadonlySet<string> };
+  attempted?: {
+    entityType: AccountingEntityType;
+    ids: ReadonlyMap<string, string>;
+  };
 }
 
 /** A batch upsert's outcome for one document: its remote id, or why it failed. */
@@ -593,25 +598,36 @@ export abstract class BaseEntitySyncer<
       : true;
   }
 
+  /**
+   * This attempt's own create key when an earlier attempt may have created
+   * `localId` remotely; undefined on a first attempt or when the attempt is
+   * unknown. A provider that replays a key's first response sends it when
+   * that replay cannot be used (QuickBooks: a replayed validation fault).
+   */
+  protected attemptCreateKey(
+    localId: string,
+    operation: string = this.entityType
+  ): RemoteCreateKey | undefined {
+    const attempt = this.attemptOf(localId);
+    return attempt === undefined
+      ? undefined
+      : this.createKey(`${localId}:attempt:${attempt}`, operation);
+  }
+
+  /** This attempt at `localId` (`<operationId>:<attemptCount>`) when it is a retry. */
+  protected attemptOf(localId: string): string | undefined {
+    const attempted = this.context.attempted;
+    return attempted?.entityType === this.entityType
+      ? attempted.ids.get(localId)
+      : undefined;
+  }
+
   /** The key every attempt at creating `localId` remotely sends. */
   protected createKey(
     localId: string,
     operation: string = this.entityType
   ): RemoteCreateKey {
     return remoteCreateKey({ companyId: this.companyId, operation, localId });
-  }
-
-  /**
-   * The create key of a record a person can edit between attempts (customer,
-   * vendor, item, purchase order): keyed by what is sent too, so a retry that
-   * carries an edit is not answered with an older create's replayed response,
-   * which would then be linked as the edited version.
-   */
-  protected editableCreateKey(
-    localId: string,
-    payload: unknown
-  ): RemoteCreateKey {
-    return this.createKey(`${localId}:${JSON.stringify(payload)}`);
   }
 
   /**

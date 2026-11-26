@@ -42,7 +42,8 @@ import {
   QBO_DIMENSION_TARGET_CLASS,
   QBO_DIMENSION_TARGET_DEPARTMENT,
   QBO_FAULT_CODES,
-  type QboProvider
+  type QboProvider,
+  qboCreateRetry
 } from "../provider";
 import {
   buildQboDocNumberFields,
@@ -389,14 +390,18 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
         if (slot.target === QBO_DIMENSION_TARGET_CLASS) {
           const created = await this.qboProvider.createClass(
             { Name: label },
-            this.createKey(label, "class")
+            this.createKey(label, "class"),
+            (deletedId) =>
+              this.createKey(`${label}:replacing:${deletedId}`, "class")
           );
           return created.Id;
         }
         if (slot.target === QBO_DIMENSION_TARGET_DEPARTMENT) {
           const created = await this.qboProvider.createDepartment(
             { Name: label },
-            this.createKey(label, "department")
+            this.createKey(label, "department"),
+            (deletedId) =>
+              this.createKey(`${label}:replacing:${deletedId}`, "department")
           );
           return created.Id;
         }
@@ -732,7 +737,9 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
     try {
       const created = await this.qboProvider.createJournalEntry(
         data,
-        this.createKey(localId)
+        this.createKey(localId),
+        // A posted journal does not change, so a replay is already current.
+        qboCreateRetry(this.attemptCreateKey(localId), { refresh: false })
       );
       return created.Id;
     } catch (error) {
